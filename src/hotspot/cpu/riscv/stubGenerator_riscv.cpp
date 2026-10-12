@@ -4221,7 +4221,7 @@ class StubGenerator: public StubCodeGenerator {
   /******************************************************************************/
   //                     String handling intrinsics(SIMD)
   //                     --------------------------
-  //
+  // "SIMD-friendly algorithm for substring searching"
   // Currently implements scheme described in http://0x80.pl/articles/simd-strfind.html
   // Implementation can be found at https://github.com/WojciechMula/sse4-strstr
   //
@@ -4312,16 +4312,15 @@ class StubGenerator: public StubCodeGenerator {
 
     // load first and last char of needle
     __ subi(tmp, needle_len, 1);
+    __ shift_left_add(ch_last, tmp, needle, needle_chr_shift, ch_last /* tmp */);
     if (needle_isL) {
       __ lbu(ch_first, Address(needle));
-      __ shadd(ch_last, tmp, needle, ch_last /* tmp */, needle_chr_shift);
       __ lbu(ch_last, Address(ch_last));
     } else {
       __ lhu(ch_first, Address(needle));
-      __ shadd(ch_last, tmp, needle, ch_last /* tmp */, needle_chr_shift);
       __ lhu(ch_last, Address(ch_last));
     }
-    __ shadd(hs_last, tmp, haystack, hs_last /* tmp */, haystack_chr_shift);
+    __ shift_left_add(hs_last, tmp, haystack,  haystack_chr_shift, hs_last /* tmp */);
 
     // character index of the chunk hs points at
     __ mv(idx, zr);
@@ -4329,7 +4328,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(OptoLoopAlignment);
     // Loop of scanning haystack to find candidates
     __ bind(L_SCAN_LOOP);
-    __ vsetvli(chunk_vl, hs_remains, haystack_sew, lmul);
+    __ vsetvli(chunk_vl, hs_remains, haystack_sew, lmul, Assembler::mu);
     __ vlex_v(v2, hs, haystack_sew);
     __ vmseq_vx(mask0, v2, ch_first);
     // in case no first char match, skip the second vector load and goto next chunk
@@ -4337,12 +4336,11 @@ class StubGenerator: public StubCodeGenerator {
     __ bltz(mpos, L_NEXT_CHUNK);
     // hs_last = hs + k -1, hs_remains is in [0 .. (haystack_len - needle_len +1)]
     __ vlex_v(v4, hs_last, haystack_sew);
-    __ vmseq_vx(mask1, v4, ch_last);
-    // Logical and 2 vector registers to get candidates
-    __ vmand_mm(mask0, mask0, mask1);
+    // compare with last char of needle, mask0 has candidates of matched position
+    __ vmseq_vx(mask0, v4, ch_last, Assembler::v0_t);
 
     // We can use fewer instructions (vfirst_m/vmsif_m/vmandn_mm) to check and clear candidate bit.
-    // But in my test, vector instruction is slower than scalar instruction.
+    // But in my test, vector instruction is much slower than scalar instruction.
     // So I move mask0 to GR here to reduce vector instructions
     if (haystack_isL) {
       // We need take 32 bit mask value
@@ -4357,17 +4355,12 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(cand, L_NEXT_CHUNK);
 
     __ bind(L_CANDIDATE_LOOP);
-    // cand is nonzero here. Take the lowest candidate and retire its bit right
-    // away so that the mismatch exit only has to test the GPR. Nothing below
-    // reads vl until the next vsetvli, so the widened vtype of the bitmap read
-    // needs no restoring.
+    // cand is nonzero here. Take the lowest bit as candidate position
     __ ctz(mpos, cand);
-    __ addi(tmp, cand, -1);
-    __ andr(cand, tmp, cand);
 
     // needle[0] and needle[k - 1] match, compare to needle[1, k - 2]
     __ subi(ncnt, needle_len, 2);
-    __ shadd(hptr, mpos, hs, hptr /* tmp */, haystack_chr_shift);
+    __ shift_left_add(hptr, mpos, hs, haystack_chr_shift, hptr /* tmp */);
     __ addi(hptr, hptr, haystack_chr_size);
     __ addi(nptr, needle, needle_chr_size);
 
@@ -4388,14 +4381,17 @@ class StubGenerator: public StubCodeGenerator {
     __ vmsne_vv(mask1, v2, v4);
     __ vfirst_m(tmp2, mask1);
     __ bltz(tmp2, L_CONTINUE_CMP); // characters of tmp length matched, continue to check rest
-    // mismatch: check next candidate.
+
+    // mismatch: clear lowest bit and check next candidate.
+    __ addi(tmp, cand, -1);
+    __ andr(cand, tmp, cand);
     __ bnez(cand, L_CANDIDATE_LOOP);
     __ j(L_NEXT_CHUNK);
 
     __ bind(L_CONTINUE_CMP);
     __ sub(ncnt, ncnt, tmp);
-    __ shadd(hptr, tmp, hptr, tmp2, haystack_chr_shift);
-    __ shadd(nptr, tmp, nptr, tmp2, needle_chr_shift);
+    __ shift_left_add(hptr, tmp, hptr, haystack_chr_shift, tmp2 /* tmp */);
+    __ shift_left_add(nptr, tmp, nptr, needle_chr_shift, tmp2 /* tmp */);
     __ bnez(ncnt, L_CMP_LOOP);
     // all matches: found it
     __ j(L_FOUND);
@@ -4405,8 +4401,8 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(hs_remains, NOMATCH);
     __ add(idx, idx, chunk_vl);
     // advance both cursors by chunk_vl characters
-    __ shadd(hs, chunk_vl, hs, tmp, haystack_chr_shift);
-    __ shadd(hs_last, chunk_vl, hs_last, tmp, haystack_chr_shift);
+    __ shift_left_add(hs, chunk_vl, hs, haystack_chr_shift, tmp /* tmp */);
+    __ shift_left_add(hs_last, chunk_vl, hs_last, haystack_chr_shift, tmp /* tmp */);
     __ j(L_SCAN_LOOP);
 
     __ bind(L_FOUND);
@@ -4425,7 +4421,6 @@ class StubGenerator: public StubCodeGenerator {
 
     return entry;
   }
-  #endif
 
   void generate_string_indexof_stubs()
   {
@@ -4439,7 +4434,6 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-#ifdef COMPILER2
   void generate_lookup_secondary_supers_table_stub() {
     StubId stub_id = StubId::stubgen_lookup_secondary_supers_table_id;
     GrowableArray<address> entries;

@@ -134,7 +134,7 @@ define_pd_global(bool, ValueTypeReturnedAsFields, false);
           "Use Zvkn group extension, Zvkned, Zvknhb, Zvkb, Zvkt")                \
   product(bool, UseCtxFencei, false, EXPERIMENTAL,                               \
           "Use PR_RISCV_CTX_SW_FENCEI_ON to avoid explicit icache flush")        \
-  product(bool, UseVectorizedStringIndexOf, true, DIAGNOSTIC,                    \
+  product(bool, UseVectorizedStringIndexOf, false, DIAGNOSTIC,                   \
           "Use the RVV vectorized String.indexOf(String) stub")
 
 #endif // CPU_RISCV_GLOBALS_RISCV_HPP
