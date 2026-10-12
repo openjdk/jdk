@@ -316,9 +316,16 @@ public:
     return _types.fast_lookup(n->_idx);
   }
   // Record a type for a node.
-  void    set_type(const Node* n, const Type *t) {
+  void set_type(const Node* n, const Type* t) {
     assert(t != nullptr, "type must not be null");
     _types.map(n->_idx, t);
+  }
+  void set_type_and_raise_bottom_type(Node* n, const Type* t) {
+    assert(t != nullptr, "type must not be null");
+    set_type(n, t);
+    // If k is a TypeNode (or anything that contains its own type),
+    // capture any more-precise type permanently into Node
+    n->raise_bottom_type(t);
   }
   void    clear_type(const Node* n) {
     if (n->_idx < _types.Size()) {
