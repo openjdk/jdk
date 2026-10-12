@@ -1087,8 +1087,14 @@ Method* Universe::loader_addClass_method()           { return _loader_addClass_c
 Method* Universe::throw_illegal_access_error()       { return _throw_illegal_access_error_cache.get_method(); }
 Method* Universe::throw_no_such_method_error()       { return _throw_no_such_method_error_cache.get_method(); }
 Method* Universe::do_stack_walk_method()             { return _do_stack_walk_cache.get_method(); }
-Method* Universe::is_substitutable_method()          { return _is_substitutable_cache.get_method(); }
-Method* Universe::value_object_hash_code_method()    { return _value_object_hash_code_cache.get_method(); }
+Method* Universe::is_substitutable_method()          {
+  assert(vmClasses::ValueObjectMethods_klass()->is_initialized(), "value object comparison occurring too early");
+  return _is_substitutable_cache.get_method();
+}
+Method* Universe::value_object_hash_code_method()    {
+  assert(vmClasses::ValueObjectMethods_klass()->is_initialized(), "value object hashcode occurring too early");
+  return _value_object_hash_code_cache.get_method();
+}
 
 void Universe::initialize_known_methods(JavaThread* current) {
   // Set up static method for registering finalizers

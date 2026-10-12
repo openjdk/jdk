@@ -108,7 +108,7 @@ public:
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
     G1MonotonicArenaMemoryStats _total;
-    G1CollectionSetCandidates* candidates = g1h->collection_set()->candidates();
+    G1CollectionSetCandidates* candidates = g1h->collection_set_candidates();
     for (G1CardSetGroup* gr : candidates->from_marking_groups()) {
       _total.add(gr->card_set_memory_stats());
     }
@@ -853,7 +853,7 @@ public:
 
     bool has_new_retained_regions = _num_retained_regions.load_relaxed() != 0;
     if (has_new_retained_regions) {
-      G1CollectionSetCandidates* candidates = _g1h->collection_set()->candidates();
+      G1CollectionSetCandidates* candidates = _g1h->collection_set_candidates();
       candidates->sort_by_efficiency();
     }
 

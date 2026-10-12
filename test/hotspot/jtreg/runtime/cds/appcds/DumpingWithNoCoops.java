@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,19 +79,6 @@ public class DumpingWithNoCoops {
         new HeapArgs( 2, 1, 33),
     };
 
-    static void checkExpectedMessages(HeapArgs ha, OutputAnalyzer output) throws Exception {
-        final int DUMPTIME_MAX_HEAP = 4; // 4 GB
-        if (ha.minSize > DUMPTIME_MAX_HEAP) {
-            output.shouldContain("Setting MinHeapSize to 4G for CDS dumping");
-        }
-        if (ha.initialSize > DUMPTIME_MAX_HEAP) {
-            output.shouldContain("Setting InitialHeapSize to 4G for CDS dumping");
-        }
-        if (ha.maxSize > DUMPTIME_MAX_HEAP) {
-            output.shouldContain("Setting MaxHeapSize to 4G for CDS dumping");
-        }
-    }
-
     public static void main(String[] args) throws Exception {
         final String noCoops = "-XX:-UseCompressedOops";
         final String logArg = "-Xlog:gc+heap=trace,cds=debug,aot=debug";
@@ -118,7 +105,6 @@ public class DumpingWithNoCoops {
                     dumptimeArgs.add(heapSize);
                 }
                 output = TestCommon.dump(appJar, appClasses, dumptimeArgs.toArray(new String[0]));
-                checkExpectedMessages(ha, output);
             }
 
             TestCommon.checkDump(output);

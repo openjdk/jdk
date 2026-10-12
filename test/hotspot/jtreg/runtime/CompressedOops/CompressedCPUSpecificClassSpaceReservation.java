@@ -94,13 +94,13 @@ public class CompressedCPUSpecificClassSpaceReservation {
             }
             output.shouldMatch(tryReserveFor16bitMoveIntoQ3Regex);
         } else if (Platform.isRISCV64()) {
-            output.shouldContain(tryReserveForUnscaled); // unconditionally
+            output.shouldContain(tryReserveBelow4G); // unconditionally
             // bits 32..44
             output.shouldContain("reserve_between (range [0x0000000100000000-0x0000100000000000)");
             // bits 44..64
             output.shouldContain("reserve_between (range [0x0000100000000000-0xffffffffffffffff)");
         } else if (Platform.isS390x()) {
-            output.shouldContain(tryReserveForUnscaled); // unconditionally
+            output.shouldContain(tryReserveBelow4G); // unconditionally
             if (CDS) {
                 output.shouldNotContain(tryReserveForZeroBased);
             } else {
