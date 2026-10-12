@@ -26,9 +26,9 @@
 #define SHARE_UTILITIES_HASHTABLE_HPP
 
 #include "cppstdlib/type_traits.hpp"
+#include "gc/shared/numberSeq.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/numberSeq.hpp"
 #include "utilities/tableStatistics.hpp"
 
 template<typename K, typename V>

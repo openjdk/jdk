@@ -30,6 +30,7 @@
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/shared/gcCause.hpp"
+#include "gc/shared/numberSeq.hpp"
 #include "gc/shared/partialArraySplitter.hpp"
 #include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/partialArrayTaskStats.hpp"
@@ -41,7 +42,6 @@
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/compilerWarnings.hpp"
-#include "utilities/numberSeq.hpp"
 
 class ConcurrentGCTimer;
 class G1CollectedHeap;

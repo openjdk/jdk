@@ -26,12 +26,12 @@
 #include "gc/g1/g1AnalyticsSequences.inline.hpp"
 #include "gc/g1/g1Predictions.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/numberSeq.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "services/cpuTimeUsage.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/numberSeq.hpp"
 
 // Different defaults for different number of GC threads
 // They were chosen by running GCOld and SPECjbb on debris with different

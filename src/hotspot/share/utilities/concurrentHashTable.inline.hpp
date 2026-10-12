@@ -28,6 +28,7 @@
 #include "utilities/concurrentHashTable.hpp"
 
 #include "cppstdlib/type_traits.hpp"
+#include "gc/shared/numberSeq.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -36,7 +37,6 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/globalCounter.inline.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/numberSeq.hpp"
 #include "utilities/spinYield.hpp"
 
 // 2^30 = 1G buckets

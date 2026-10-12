@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMMUTRACKER_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMMUTRACKER_HPP
 
-#include "utilities/numberSeq.hpp"
+#include "gc/shared/numberSeq.hpp"
 
 class ShenandoahGeneration;
 class ShenandoahMmuTask;
