@@ -209,6 +209,10 @@ public:
   // Flushes cycle timings to global timings and prints the phase timings for the last completed cycle.
   void process_gc_stats() const;
 
+  // Prints GC statistics for the entire GC run. Called by the control thread once it has
+  // finished updating them.
+  void print_gc_stats_at_exit() const;
+
   void prepare_for_verify() override;
   void verify(VerifyOption vo) override;
 
@@ -869,13 +873,6 @@ public:
   static inline void atomic_clear_oop(narrowOop* addr, narrowOop compare);
 
   size_t trash_humongous_region_at(ShenandoahHeapRegion *r) const;
-
-  static inline void increase_object_age(oop obj, uint additional_age);
-
-  // Return the object's age, or a sentinel value when the age can't
-  // necessarily be determined because of concurrent locking by the
-  // mutator
-  static inline uint get_object_age(oop obj);
 
   void log_heap_status(const char *msg) const;
 

@@ -2308,7 +2308,7 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
 }
 
 // Binary src (Replicate scalar/immediate)
-static bool is_vector_scalar_bitwise_pattern(Node* n, Node* m) {
+static bool is_vector_scalar_binary_pattern(Node* n, Node* m) {
   if (n == nullptr || m == nullptr) {
     return false;
   }
@@ -2350,12 +2350,29 @@ static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
   return false;
 }
 
+// 'n' is the current user of input 'm', which is being considered for cloning.
+// Other users must also allow cloning to avoid matching 'm' both folded and standalone.
+static bool are_users_clone_compatible(Node* n, Node* m) {
+  for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
+    Node* use = m->fast_out(i);
+    if (use == n) {
+      continue;
+    }
+    if (!is_vector_bitwise_not_pattern(use, m) &&
+        !is_vector_scalar_binary_pattern(use, m)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // Should the Matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   assert_cond(m != nullptr);
   if (is_vshift_con_pattern(n, m) || // ShiftV src (ShiftCntV con)
-      is_vector_bitwise_not_pattern(n, m) ||
-      is_vector_scalar_bitwise_pattern(n, m) ||
+      ((is_vector_bitwise_not_pattern(n, m) ||
+        is_vector_scalar_binary_pattern(n, m)) &&
+       are_users_clone_compatible(n, m)) ||
       is_encode_and_store_pattern(n, m)) {
     mstack.push(m, Visit);
     return true;
@@ -2439,7 +2456,20 @@ encode %{
         __ mov_metadata(dst_reg, (Metadata*)con, t0);
       } else {
         assert(rtype == relocInfo::none || rtype == relocInfo::external_word_type, "unexpected reloc type");
-        __ mv(dst_reg, $src$$constant);
+        // Load fake address constants as a plain immediate. They are not real
+        // addresses (a bci may be used as a jsr return address, and compiling
+        // an unreachable unsafe access can produce a bad base) so they are of
+        // no interest to the AOT code cache, and movptr() only materializes
+        // the low 48 bits.
+        if (rtype == relocInfo::none ||
+            (uint64_t)con >= (1ull << 48) ||
+            con < (address)(uintptr_t)os::vm_page_size()) {
+          __ mv(dst_reg, $src$$constant);
+        } else {
+          // Use a relocation so that the address can be fixed up when this code
+          // is loaded from the AOT code cache in a new JVM instance.
+          __ la(dst_reg, Address(con, rtype));
+        }
       }
     }
   %}
@@ -5088,6 +5118,24 @@ instruct loadN_volatile(iRegNNoSp dst, indirect mem)
   %}
 
   ins_pipe(pipe_serial);
+%}
+
+// Fuse DecodeN and LoadN: when compressed oops are zero-based and unscaled,
+// decoding is a no-op zero-extension, which lwu already performs.
+instruct loadN2P_unscaled(iRegPNoSp dst, memory mem)
+%{
+    predicate(CompressedOops::shift() == 0 && n->in(1)->as_Load()->is_unordered() &&
+              n->in(1)->as_Load()->barrier_data() == 0);
+    match(Set dst (DecodeN (LoadN mem)));
+
+    ins_cost(LOAD_COST);
+    format %{ "lwu $dst, $mem\t# compressed ptr decode (zero-based unscaled)" %}
+
+    ins_encode %{
+       __ lwu(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
+    %}
+
+    ins_pipe(iload_reg_mem);
 %}
 
 // Load Klass Pointer
@@ -9651,7 +9699,7 @@ instruct decodeHeapOop(iRegPNoSp dst, iRegN src) %{
             n->bottom_type()->is_ptr()->ptr() != TypePtr::Constant);
   match(Set dst (DecodeN src));
 
-  ins_cost(0);
+  ins_cost(ALU_COST);
   format %{ "decode_heap_oop  $dst, $src\t#@decodeHeapOop" %}
   ins_encode %{
     Register s = $src$$Register;
@@ -9666,7 +9714,7 @@ instruct decodeHeapOop_not_null(iRegPNoSp dst, iRegN src) %{
             n->bottom_type()->is_ptr()->ptr() == TypePtr::Constant);
   match(Set dst (DecodeN src));
 
-  ins_cost(0);
+  ins_cost(ALU_COST);
   format %{ "decode_heap_oop_not_null $dst, $src\t#@decodeHeapOop_not_null" %}
   ins_encode %{
     Register s = $src$$Register;
