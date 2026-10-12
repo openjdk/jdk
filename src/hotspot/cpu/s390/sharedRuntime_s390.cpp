@@ -4215,7 +4215,7 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
   __ save_return_pc(); // save return_pc (Z_R14)
   __ push_frame_abi160(0);
   Label frame_pc;
- __ z_larl(Z_R1_scratch, frame_pc);
+   __ z_larl(Z_R1_scratch, frame_pc);
   int frame_complete = __ pc() - start;
   __ set_last_Java_frame(Z_SP, Z_R1_scratch);
 
