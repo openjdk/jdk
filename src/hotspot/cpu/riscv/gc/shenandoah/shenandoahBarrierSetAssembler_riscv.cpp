@@ -709,7 +709,7 @@ void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, Mac
   ShenandoahBarrierStubC2::load_store_pre(masm, node, Address(addr), tmp1, tmp2, tmp3, narrow);
 
   // CAS!
-  __ cmpxchg(addr, oldval, newval, size, order, /* result */ res, !exchange /* result_as_bool */);
+  __ cmpxchg(addr, oldval, newval, size, order, /* result */ res, /* result_as_bool */ !exchange);
 
   ShenandoahBarrierStubC2::load_store_post(masm, node, Address(addr, 0), tmp2, tmp3);
 }

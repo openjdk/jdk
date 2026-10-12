@@ -2316,17 +2316,17 @@ address LIR_Assembler::int_constant(jlong n) {
 }
 
 void LIR_Assembler::casw(Register addr, Register newval, Register cmpval) {
-  __ cmpxchg(addr, cmpval, newval, Assembler::int32, memory_order_seq_cst, t0, true /* result as bool */);
+  __ cmpxchg(addr, cmpval, newval, Assembler::int32, memory_order_seq_cst, t0, /* result as bool */ true);
   __ seqz(t0, t0); // cmpxchg not equal, set t0 to 1
 }
 
 void LIR_Assembler::caswu(Register addr, Register newval, Register cmpval) {
-  __ cmpxchg(addr, cmpval, newval, Assembler::uint32, memory_order_seq_cst, t0, true /* result as bool */);
+  __ cmpxchg(addr, cmpval, newval, Assembler::uint32, memory_order_seq_cst, t0, /* result as bool */ true);
   __ seqz(t0, t0); // cmpxchg not equal, set t0 to 1
 }
 
 void LIR_Assembler::casl(Register addr, Register newval, Register cmpval) {
-  __ cmpxchg(addr, cmpval, newval, Assembler::int64, memory_order_seq_cst, t0, true /* result as bool */);
+  __ cmpxchg(addr, cmpval, newval, Assembler::int64, memory_order_seq_cst, t0, /* result as bool */ true);
   __ seqz(t0, t0); // cmpxchg not equal, set t0 to 1
 }
 

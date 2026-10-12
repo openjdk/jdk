@@ -183,7 +183,7 @@ instruct zCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newva
     Address ref_addr($mem$$Register);
     z_color(masm, $oldval_tmp$$Register, $oldval$$Register, $tmp1$$Register);
     z_store_barrier(masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, $tmp1$$Register, true /* is_atomic */);
-    __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::int64, memory_order_release, $res$$Register, true /* result_as_bool */);
+    __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::int64, memory_order_release, $res$$Register, /* result_as_bool */ true);
   %}
 
   ins_pipe(pipe_slow);
@@ -206,7 +206,7 @@ instruct zCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
     Address ref_addr($mem$$Register);
     z_color(masm, $oldval_tmp$$Register, $oldval$$Register, $tmp1$$Register);
     z_store_barrier(masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, $tmp1$$Register, true /* is_atomic */);
-    __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::int64, memory_order_seq_cst, $res$$Register, true /* result_as_bool */);
+    __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::int64, memory_order_seq_cst, $res$$Register, /* result_as_bool */ true);
   %}
 
   ins_pipe(pipe_slow);

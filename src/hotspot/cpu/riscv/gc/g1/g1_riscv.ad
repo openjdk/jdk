@@ -516,7 +516,7 @@ instruct g1CompareAndSwapP(iRegINoSp res, indirect mem, iRegP newval, iRegPNoSp 
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
                memory_order_release, $res$$Register,
-               /*result as bool*/ true);
+               /* result as bool */ true);
     write_barrier_post(masm, this,
                        $mem$$Register    /* store_addr */,
                        $newval$$Register /* new_val */,
@@ -548,7 +548,7 @@ instruct g1CompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP newval, iRegPNo
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
                memory_order_seq_cst, $res$$Register,
-               /*result as bool*/ true);
+               /* result as bool */ true);
     write_barrier_post(masm, this,
                        $mem$$Register    /* store_addr */,
                        $newval$$Register /* new_val */,
@@ -580,7 +580,7 @@ instruct g1CompareAndSwapN(iRegINoSp res, indirect mem, iRegN newval, iRegPNoSp 
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::uint32,
                memory_order_release, $res$$Register,
-               /*result as bool*/ true);
+               /* result as bool */ true);
     __ decode_heap_oop($tmp1$$Register, $newval$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register  /* store_addr */,
@@ -613,7 +613,7 @@ instruct g1CompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN newval, iRegPNo
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::uint32,
               memory_order_seq_cst, $res$$Register,
-              /*result as bool*/ true);
+              /* result as bool */ true);
     __ decode_heap_oop($tmp1$$Register, $newval$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register  /* store_addr */,

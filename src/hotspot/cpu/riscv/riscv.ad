@@ -5922,8 +5922,8 @@ instruct compareAndSwapBAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval
 
   ins_encode %{
     __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-                            memory_order_seq_cst, $res$$Register,
-                            true /* result as bool */, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+                            memory_order_seq_cst, $res$$Register, /* result as bool */ true,
+                            $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -5944,8 +5944,7 @@ instruct compareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI new
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-               memory_order_seq_cst, $res$$Register,
-               true /* result as bool */);
+               memory_order_seq_cst, $res$$Register, /* result as bool */ true);
   %}
 
   ins_pipe(pipe_slow);
@@ -5969,8 +5968,8 @@ instruct compareAndSwapSAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval
 
   ins_encode %{
     __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-                            memory_order_seq_cst, $res$$Register,
-                            true /* result as bool */, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+                            memory_order_seq_cst, $res$$Register, /* result as bool */ true,
+                            $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -5991,8 +5990,7 @@ instruct compareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI new
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-               memory_order_seq_cst, $res$$Register,
-               true /* result as bool */);
+               memory_order_seq_cst, $res$$Register, /* result as bool */ true);
   %}
 
   ins_pipe(pipe_slow);
@@ -6013,8 +6011,7 @@ instruct compareAndSwapIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI new
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
-               memory_order_seq_cst, $res$$Register,
-               /*result as bool*/ true);
+               memory_order_seq_cst, $res$$Register, /* result as bool */ true);
   %}
 
   ins_pipe(pipe_slow);
@@ -6035,8 +6032,7 @@ instruct compareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL new
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
-               memory_order_seq_cst, $res$$Register,
-               /*result as bool*/ true);
+               memory_order_seq_cst, $res$$Register, /* result as bool */ true);
   %}
 
   ins_pipe(pipe_slow);
@@ -6057,8 +6053,7 @@ instruct compareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP new
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
-               memory_order_seq_cst, $res$$Register,
-               /*result as bool*/ true);
+               memory_order_seq_cst, $res$$Register, /* result as bool */ true);
   %}
 
   ins_pipe(pipe_slow);
@@ -6079,8 +6074,7 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN new
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
-               memory_order_seq_cst, $res$$Register,
-               /*result as bool*/ true);
+               memory_order_seq_cst, $res$$Register, /* result as bool */ true);
   %}
 
   ins_pipe(pipe_slow);
@@ -6109,8 +6103,8 @@ instruct compareAndExchangeB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
   ins_encode %{
     __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-                            memory_order_release, $res$$Register,
-                            /*result_as_bool*/ false, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+                            memory_order_release, $res$$Register, /*result_as_bool*/ false,
+                            $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6153,8 +6147,8 @@ instruct compareAndExchangeS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
   ins_encode %{
     __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-                            memory_order_release, $res$$Register,
-                            /*result_as_bool*/ false, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+                            memory_order_release, $res$$Register, /*result_as_bool*/ false,
+                            $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6277,8 +6271,8 @@ instruct compareAndExchangeBAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 ol
 
   ins_encode %{
     __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-                            memory_order_seq_cst, $res$$Register,
-                            /*result_as_bool*/ false, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+                            memory_order_seq_cst, $res$$Register, /*result_as_bool*/ false,
+                            $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6321,8 +6315,8 @@ instruct compareAndExchangeSAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 ol
 
   ins_encode %{
     __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-                            memory_order_seq_cst, $res$$Register,
-                            /*result_as_bool*/ false, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+                            memory_order_seq_cst, $res$$Register, /*result_as_bool*/ false,
+                            $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_slow);
