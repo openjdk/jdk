@@ -315,7 +315,7 @@ int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int f
   // C1 code is not hot enough to micro optimize the nmethod entry barrier with an out-of-line stub
   bs->nmethod_entry_barrier(this, nullptr /* slow_path */, nullptr /* continuation */, nullptr /* guard */);
 
-  mov(r19, (intptr_t) ces->method());
+  mov_metadata(r19, ces->method());
   if (is_value_ro_entry) {
     far_call(RuntimeAddress(Runtime1::entry_for(StubId::c1_buffer_value_args_no_receiver_id)));
   } else {

@@ -22,47 +22,36 @@
  * questions.
  *
  */
-package sun.jvm.hotspot.utilities;
+package sun.jvm.hotspot.oops;
 
 import sun.jvm.hotspot.debugger.Address;
-import sun.jvm.hotspot.oops.ValueFieldLayoutInfo;
 import sun.jvm.hotspot.runtime.VM;
-import sun.jvm.hotspot.runtime.VMObjectFactory;
+import sun.jvm.hotspot.runtime.VMObject;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 import sun.jvm.hotspot.types.WrongTypeException;
 
 
-public class ValueFieldLayoutInfoArray extends GenericArray {
+public class ValueFieldInfo extends VMObject {
 
-    private static long dataFieldOffset;
-    private static Type elemType;
+    private static MetadataField klassField;
 
     static {
         VM.registerVMInitializedObserver((_, _) -> initialize(VM.getVM().getTypeDataBase()));
     }
 
     private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-        elemType = db.lookupType("ValueFieldLayoutInfo");
-        Type type = db.lookupType("Array<ValueFieldLayoutInfo>");
-        dataFieldOffset = type.getAddressField("_data").getOffset();
+        Type type = db.lookupType("ValueFieldInfo");
+
+        klassField = new MetadataField(type.getAddressField("_klass"), 0);
     }
 
-    public ValueFieldLayoutInfoArray(Address addr) {
-        super(addr, dataFieldOffset);
+    public ValueFieldInfo(Address addr) {
+        super(addr);
     }
 
-    public ValueFieldLayoutInfo at(int i) {
-        if (i < 0 || i >= length()) {
-            throw new ArrayIndexOutOfBoundsException(i);
-        }
-
-        var addr = getDataStart().addOffsetTo(i * getElemType().getSize());
-        return new ValueFieldLayoutInfo(addr);
+    public ValueKlass getKlass() {
+        return (ValueKlass)klassField.getValue(this);
     }
 
-    @Override
-    public Type getElemType() {
-        return elemType;
-    }
 }

@@ -23,19 +23,20 @@
  *
  */
 
+#include "../../share/runtime/globals.hpp"
 #include "asm/macroAssembler.inline.hpp"
-#include "compiler/disassembler.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
 #include "memory/universe.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedFieldEntry.hpp"
@@ -2726,9 +2727,9 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   // volatile accesses forms a sequentially-consistent set of
   // operations when combined with STLR and LDAR.  Without a leading
   // membar it's possible for a simple Dekker test to fail if loads
-  // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
+  // use LDR;DMB but stores use STLR. This can happen if C1 or C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!CompilerConfig::is_c1_or_interpreter_only()){
+  {
     Label notVolatile;
     __ tbz(flags, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::AnyAny);
@@ -2892,10 +2893,12 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 
   __ bind(Done);
 
-  Label notVolatile;
-  __ tbz(flags, ResolvedFieldEntry::is_volatile_shift, notVolatile);
-  __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  __ bind(notVolatile);
+  {
+    Label notVolatile;
+    __ tbz(flags, ResolvedFieldEntry::is_volatile_shift, notVolatile);
+    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+    __ bind(notVolatile);
+  }
 }
 
 
@@ -3073,7 +3076,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
         __ bind(is_flat);
         if (UseFieldFlattening) {
           pop_and_check_object(r7);
-          __ write_flat_field(cache, off, index, flags, r7);
+          __ write_flat_field(cache, index, flags, r7);
         }
         __ bind(rewrite_value);
         if (rc == may_rewrite) {
@@ -3285,8 +3288,6 @@ void TemplateTable::fast_storefield(TosState state)
     __ bind(notVolatile);
   }
 
-  Label notVolatile;
-
   // Get object from stack
   pop_and_check_object(r2);
 
@@ -3297,26 +3298,21 @@ void TemplateTable::fast_storefield(TosState state)
   switch (bytecode()) {
   case Bytecodes::_fast_vputfield:
     {
-      if (Arguments::is_valhalla_enabled()) {
-        Label is_flat, done;
-        if (UseFieldFlattening) {
-          __ test_field_is_flat(r5, noreg /* temp */, is_flat);
-        }
-        __ null_check(r0);
-        do_oop_store(_masm, field, r0, IN_HEAP);
-        __ b(done);
-        __ bind(is_flat);
-        if (UseFieldFlattening) {
-          __ load_field_entry(r4, r5);
-          // Re-shuffle registers because of VM calls calling convention
-          __ mov(r19, r1);
-          __ mov(r7, r2);
-          __ write_flat_field(r4, r19, r6, r8, r7);
-        }
-        __ bind(done);
-      } else {
-        __ stop("ShouldNotReachHere");
+      Label is_flat, done;
+      if (UseFieldFlattening) {
+        __ test_field_is_flat(r5, noreg /* temp */, is_flat);
       }
+      __ null_check(r0);
+      do_oop_store(_masm, field, r0, IN_HEAP);
+      __ b(done);
+      __ bind(is_flat);
+      if (UseFieldFlattening) {
+        __ load_field_entry(r4, r5);
+        // Re-shuffle registers because of VM calls calling convention
+        __ mov(r7, r2);
+        __ write_flat_field(r4, r6, r8, r7);
+      }
+      __ bind(done);
     }
     break;
   case Bytecodes::_fast_aputfield:
@@ -3403,9 +3399,9 @@ void TemplateTable::fast_accessfield(TosState state)
   // volatile accesses forms a sequentially-consistent set of
   // operations when combined with STLR and LDAR.  Without a leading
   // membar it's possible for a simple Dekker test to fail if loads
-  // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
+  // use LDR;DMB but stores use STLR. This can happen if C1 or C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!CompilerConfig::is_c1_or_interpreter_only()) {
+  {
     Label notVolatile;
     __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::AnyAny);
@@ -3477,9 +3473,9 @@ void TemplateTable::fast_xaccess(TosState state)
   // volatile accesses forms a sequentially-consistent set of
   // operations when combined with STLR and LDAR.  Without a leading
   // membar it's possible for a simple Dekker test to fail if loads
-  // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
+  // use LDR;DMB but stores use STLR. This can happen if C1 or C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!CompilerConfig::is_c1_or_interpreter_only()) {
+  {
     Label notVolatile;
     __ load_unsigned_byte(r3, Address(r2, in_bytes(ResolvedFieldEntry::flags_offset())));
     __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
