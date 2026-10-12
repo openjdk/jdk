@@ -116,6 +116,8 @@ source %{
         break;
       case Op_MulReductionVF:
       case Op_MulReductionVD:
+        // Vector API only (auto-vectorization is disabled for these). Keep vlen == 2:
+        // without the rule, reduceLanes(MUL) hits the much slower scalar fallback.
         if (vlen < 2 || !is_power_of_2(vlen)) {
           return false;
         }
