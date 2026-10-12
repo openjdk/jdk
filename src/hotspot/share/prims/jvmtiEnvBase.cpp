@@ -408,22 +408,22 @@ JvmtiEnvBase::set_native_method_prefixes(jint prefix_count, char** prefixes) {
     _native_method_prefixes = nullptr;
   } else {
     // there are prefixes, allocate an array to hold them, and fill it
-    char** new_prefixes = (char**)os::malloc((prefix_count) * sizeof(char*), mtInternal);
+    char** new_prefixes = (char**)os::malloc((prefix_count) * sizeof(char*), mtServiceability);
     if (new_prefixes == nullptr) {
       return JVMTI_ERROR_OUT_OF_MEMORY;
     }
     for (int i = 0; i < prefix_count; i++) {
       char* prefix = prefixes[i];
       if (prefix == nullptr) {
-        for (int j = 0; j < (i-1); j++) {
+        for (int j = 0; j < i; j++) {
           os::free(new_prefixes[j]);
         }
         os::free(new_prefixes);
         return JVMTI_ERROR_NULL_POINTER;
       }
-      prefix = os::strdup(prefixes[i]);
+      prefix = os::strdup(prefixes[i], mtServiceability);
       if (prefix == nullptr) {
-        for (int j = 0; j < (i-1); j++) {
+        for (int j = 0; j < i; j++) {
           os::free(new_prefixes[j]);
         }
         os::free(new_prefixes);
@@ -2172,10 +2172,15 @@ JvmtiEnvBase::check_top_frame(Thread* current_thread, JavaThread* java_thread,
     return JVMTI_ERROR_OPAQUE_FRAME;
   }
 
-  // Prevent ForceEarlyReturnVoid from returning early from value class constructor as
-  // the instance fields are strictly-initialized fields.
-  if ((tos == vtos) && jvf->method()->is_object_constructor() && jvf->method()->method_holder()->is_inline_klass()) {
-    return JVMTI_ERROR_OPAQUE_FRAME;
+  // Prevent ForceEarlyReturnVoid from returning early from the class initializer of a class with
+  // strictly-initialized static fields, or a constructor of a class with strictly-initialized
+  // instance fields in the class hierarchy.
+  if (tos == vtos) {
+    Method* method = jvf->method();
+    if ((method->is_class_initializer() && method->method_holder()->has_strict_static_fields()) ||
+        (method->is_object_constructor() && method->method_holder()->has_strict_instance_fields_in_hierarchy())) {
+      return JVMTI_ERROR_OPAQUE_FRAME;
+    }
   }
 
   // If the frame is a compiled one, need to deoptimize it.

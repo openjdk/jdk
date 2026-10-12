@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,14 +46,7 @@ public enum BlobType {
                     || type == BlobType.MethodNonProfiled;
         }
     },
-    MethodHot(2, "CodeHeap 'hot nmethods'", "HotCodeHeapSize") {
-        @Override
-        public boolean allowTypeWhenOverflow(BlobType type) {
-            return super.allowTypeWhenOverflow(type)
-                    || type == BlobType.MethodNonProfiled
-                    || type == BlobType.MethodProfiled;
-        }
-    },
+    MethodHot(2, "CodeHeap 'hot nmethods'", "HotCodeHeapSize"),
     // Non-nmethods like Buffers, Adapters and Runtime Stubs
     NonNMethod(3, "CodeHeap 'non-nmethods'", "NonNMethodCodeHeapSize") {
         @Override

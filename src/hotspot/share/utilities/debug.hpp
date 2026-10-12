@@ -288,8 +288,6 @@ void report_untested(const char* file, int line, const char* message);
 ATTRIBUTE_PRINTF(1, 2)
 void warning(const char* format, ...);
 
-#define STATIC_ASSERT(Cond) static_assert((Cond), #Cond)
-
 // out of memory reporting
 void report_java_out_of_memory(const char* message);
 

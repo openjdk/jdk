@@ -25,6 +25,8 @@
 
 #include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalFullGC.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
@@ -107,10 +109,11 @@ void ShenandoahGenerationalFullGC::log_live_in_old(ShenandoahHeap* heap) {
   if (lt.is_enabled()) {
     size_t live_bytes_in_old = 0;
     for (size_t i = 0; i < heap->num_regions(); i++) {
-      ShenandoahHeapRegion* r = heap->get_region(i);
-      if (r->is_old()) {
-        live_bytes_in_old += r->get_live_data_bytes();
+      if (!heap->is_region_old(i)) {
+        continue;
       }
+
+      live_bytes_in_old += heap->get_region(i)->get_live_data_bytes();
     }
     log_debug(gc)("Live bytes in old after STW mark: " PROPERFMT, PROPERFMTARGS(live_bytes_in_old));
   }
@@ -245,9 +248,9 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
   assert(_heap->global_generation()->complete_marking_context()->is_marked(p), "must be marked");
   assert(!_heap->global_generation()->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
 
-  size_t obj_size = p->size();
+  size_t obj_size = ShenandoahForwarding::size(p);
   uint from_region_age = _from_region->age();
-  uint object_age = p->age();
+  uint object_age = ShenandoahForwarding::age(p);
 
   bool promote_object = false;
   if ((_from_affiliation == ShenandoahAffiliation::YOUNG_GENERATION) &&
@@ -315,7 +318,7 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
 
     // After full gc compaction, all regions have age 0.  Embed the region's age into the object's age in order to preserve
     // tenuring progress.
-    ShenandoahHeap::increase_object_age(p, from_region_age + 1);
+    ShenandoahForwarding::increase_age(p, from_region_age + 1);
 
     if (_young_compact_point + obj_size > _young_to_region->end()) {
       ShenandoahHeapRegion* new_to_region;

@@ -33,7 +33,7 @@
 #include "interpreter/interp_masm.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_s390.hpp"
-#include "oops/inlineKlass.hpp"
+#include "oops/valueKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -50,6 +50,9 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#if INCLUDE_ZGC
+#include "gc/z/zBarrierSetAssembler.hpp"
+#endif
 
 // Declaration and definition of StubGenerator (no .hpp file).
 // For a more detailed description of the stub routine structure
@@ -126,7 +129,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
-    if (InlineTypeReturnedAsFields) {
+    if (ValueTypeReturnedAsFields) {
       __ stop("fix T_OBJECT");
     }
 
@@ -1372,6 +1375,12 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, T_OBJECT, Z_ARG1, Z_ARG2, Z_ARG3);
 
+#if INCLUDE_ZGC
+    if (UseZGC) {
+      ZBarrierSetAssembler *zbs = (ZBarrierSetAssembler*)bs;
+      zbs->generate_disjoint_oop_copy(_masm, dest_uninitialized);
+    } else
+#endif
     generate_disjoint_copy(aligned, size, true, true);
 
     bs->arraycopy_epilogue(_masm, decorators, T_OBJECT, Z_ARG2, Z_ARG3, true);
@@ -1483,6 +1492,12 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, T_OBJECT, Z_ARG1, Z_ARG2, Z_ARG3);
 
+#if INCLUDE_ZGC
+    if (UseZGC) {
+      ZBarrierSetAssembler *zbs = (ZBarrierSetAssembler*)bs;
+      zbs->generate_conjoint_oop_copy(_masm, dest_uninitialized);
+    } else
+#endif
     generate_conjoint_copy(aligned, size, true);  // Must preserve ARG2, ARG3.
 
     bs->arraycopy_epilogue(_masm, decorators, T_OBJECT, Z_ARG2, Z_ARG3, true);
@@ -3448,11 +3463,11 @@ class StubGenerator: public StubCodeGenerator {
     __ resolve_global_jobject(Z_ARG1, Z_tmp_1, Z_tmp_2);
       // Load target method from receiver
     __ load_heap_oop(Z_method, Address(Z_ARG1, java_lang_invoke_MethodHandle::form_offset()),
-                    noreg, noreg, IS_NOT_NULL);
+                    Z_tmp_1, Z_tmp_2, IS_NOT_NULL);
     __ load_heap_oop(Z_method, Address(Z_method, java_lang_invoke_LambdaForm::vmentry_offset()),
-                    noreg, noreg, IS_NOT_NULL);
+                    Z_tmp_1, Z_tmp_2, IS_NOT_NULL);
     __ load_heap_oop(Z_method, Address(Z_method, java_lang_invoke_MemberName::method_offset()),
-                    noreg, noreg, IS_NOT_NULL);
+                    Z_tmp_1, Z_tmp_2, IS_NOT_NULL);
     __ z_lg(Z_method, Address(Z_method, java_lang_invoke_ResolvedMethodName::vmtarget_offset()));
     __ z_stg(Z_method, Address(Z_thread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
 

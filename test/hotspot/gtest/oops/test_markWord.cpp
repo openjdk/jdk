@@ -131,7 +131,7 @@ static void assert_copy_set_hash(markWord mark) {
 
 static void assert_type(markWord mark) {
   EXPECT_FALSE(mark.is_flat_array());
-  EXPECT_FALSE(mark.is_inline_type());
+  EXPECT_FALSE(mark.is_value_type());
 }
 
 TEST_VM(markWord, prototype) {
@@ -147,18 +147,18 @@ TEST_VM(markWord, prototype) {
   assert_type(mark);
 }
 
-static void assert_inline_type(markWord mark) {
+static void assert_value_type(markWord mark) {
   EXPECT_FALSE(mark.is_flat_array());
-  EXPECT_TRUE(mark.is_inline_type());
+  EXPECT_TRUE(mark.is_value_type());
   EXPECT_FALSE(mark.is_null_free_array());
 }
 
-TEST_VM(markWord, inline_type_prototype) {
-  markWord mark = markWord::inline_type_prototype();
+TEST_VM(markWord, value_type_prototype) {
+  markWord mark = markWord::value_type_prototype();
   assert_lock_neutral_state(mark);
-  assert_test_pattern(&mark, " inline_type");
+  assert_test_pattern(&mark, " value_type");
 
-  assert_inline_type(mark);
+  assert_value_type(mark);
 
   EXPECT_FALSE(mark.has_hash());
   EXPECT_FALSE(mark.is_marked());
@@ -168,7 +168,7 @@ TEST_VM(markWord, inline_type_prototype) {
 
 static void assert_flat_array_type(markWord mark) {
   EXPECT_TRUE(mark.is_flat_array());
-  EXPECT_FALSE(mark.is_inline_type());
+  EXPECT_FALSE(mark.is_value_type());
 }
 
 TEST_VM(markWord, null_free_flat_array_prototype) {
@@ -207,7 +207,7 @@ TEST_VM(markWord, nullable_flat_array_prototype) {
 
 static void assert_null_free_array_type(markWord mark) {
   EXPECT_FALSE(mark.is_flat_array());
-  EXPECT_FALSE(mark.is_inline_type());
+  EXPECT_FALSE(mark.is_value_type());
   EXPECT_TRUE(mark.is_null_free_array());
 }
 

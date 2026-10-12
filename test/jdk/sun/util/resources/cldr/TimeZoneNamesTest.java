@@ -21,7 +21,7 @@
  * questions.
  */
 
- /*
+/*
  * @test
  * @bug 8181157 8202537 8234347 8236548 8261279 8322647 8174269 8346948
  *      8354548 8381379 8382020 8384043 8371842
@@ -299,15 +299,17 @@ public class TimeZoneNamesTest {
     }
 
     private static Stream<Arguments> explicitDstOffsets() {
+        var irl = Locale.of("en", "IE");
+
         return Stream.of(
             // CLDR v48
-            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("Europe/Dublin")), "Irish Standard Time", "IST"),
-            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("Europe/Dublin")), "Greenwich Mean Time", "GMT"),
-            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("Eire")), "Irish Standard Time", "IST"),
-            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("Eire")), "Greenwich Mean Time", "GMT"),
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("Europe/Dublin")), irl, "Irish Standard Time", "IST"),
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("Europe/Dublin")), irl, "Greenwich Mean Time", "GMT"),
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("Eire")), irl, "Irish Standard Time", "IST"),
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("Eire")), irl, "Greenwich Mean Time", "GMT"),
             // CLDR v48.2 & tz2026b. America/Vancouver switched to permanent DST
-            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("America/Vancouver")), "Pacific Daylight Time", "PDT"),
-            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("America/Vancouver")), "Pacific Daylight Time", "PDT")
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("America/Vancouver")), Locale.CANADA, "Pacific Daylight Time", "PDT"),
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("America/Vancouver")), Locale.CANADA, "Pacific Daylight Time", "PDT")
         );
     }
 
@@ -348,18 +350,18 @@ public class TimeZoneNamesTest {
     // updated TZDB data are required (e.g., tz2026b for America/Vancouver).
     @ParameterizedTest
     @MethodSource("explicitDstOffsets")
-    public void test_ExplicitMetazoneOffsets(ZonedDateTime zdt, String expectedLong, String expectedShort) {
+    public void test_ExplicitMetazoneOffsets(ZonedDateTime zdt, Locale l, String expectedLong, String expectedShort) {
         // java.time
-        assertEquals(expectedLong, DateTimeFormatter.ofPattern("zzzz").format(zdt));
-        assertEquals(expectedShort, DateTimeFormatter.ofPattern("z").format(zdt));
+        assertEquals(expectedLong, DateTimeFormatter.ofPattern("zzzz").withLocale(l).format(zdt));
+        assertEquals(expectedShort, DateTimeFormatter.ofPattern("z").withLocale(l).format(zdt));
 
         // java.text/util
         var date = Date.from(zdt.toInstant());
         var tz = TimeZone.getTimeZone(zdt.getZone());
-        var sdf = new SimpleDateFormat("zzzz");
+        var sdf = new SimpleDateFormat("zzzz", l);
         sdf.setTimeZone(tz);
         assertEquals(expectedLong, sdf.format(date));
-        sdf = new SimpleDateFormat("z");
+        sdf = new SimpleDateFormat("z", l);
         sdf.setTimeZone(tz);
         assertEquals(expectedShort, sdf.format(date));
     }

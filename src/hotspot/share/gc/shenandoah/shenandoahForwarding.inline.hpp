@@ -31,90 +31,84 @@
 #include "oops/markWord.hpp"
 #include "runtime/javaThread.hpp"
 
-inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {
-  shenandoah_assert_in_heap_bounds(nullptr, obj);
-  return get_forwardee_raw_unchecked(obj);
+inline oop ShenandoahForwarding::forwardee_raw(oop obj) {
+  return forwardee_raw(obj, obj->mark());
 }
 
-inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj) {
-  // JVMTI and JFR code use mark words for marking objects for their needs.
-  // On this path, we can encounter the "marked" object, but with null
-  // fwdptr. That object is still not forwarded, and we need to return
-  // the object itself.
-  markWord mark = obj->mark();
+inline oop ShenandoahForwarding::forwardee_raw(oop obj, markWord mark) {
+  assert(mark.is_forwarded(), "Must only be here for forwarded objects");
   if (mark.is_marked()) {
-    HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
-    if (fwdptr != nullptr) {
-      return cast_to_oop(fwdptr);
-    }
+    // Historically, JVMTI and JFR used mark words for marking objects
+    // for their needs, without regard for GC. This path is now unreachable:
+    // incompatible JFR code is disabled with Shenandoah. Assert paranoidly.
+    HeapWord* fwd = (HeapWord*) mark.clear_lock_bits().to_pointer();
+    assert(fwd != nullptr, "Sanity: forwardee must be set");
+    return cast_to_oop(fwd);
   }
-  // Self-forwarded (evacuation failure): the object stays put; the
-  // self-fwd bit is set alongside normal lock bits.
+  // Self-forwarded. Report itself.
+  assert(mark.is_self_forwarded(), "The only remaining case");
   return obj;
 }
 
-inline oop ShenandoahForwarding::get_forwardee(oop obj) {
+inline oop ShenandoahForwarding::forwardee(oop obj) {
   shenandoah_assert_correct(nullptr, obj);
-  return get_forwardee_raw_unchecked(obj);
+  return forwardee_raw(obj);
+}
+
+inline oop ShenandoahForwarding::forwardee_or_null(oop obj) {
+  shenandoah_assert_correct(nullptr, obj);
+  markWord mark = obj->mark();
+  if (mark.is_forwarded()) {
+    return forwardee_raw(obj, mark);
+  } else {
+    return nullptr;
+  }
 }
 
 inline bool ShenandoahForwarding::is_forwarded(oop obj) {
   return obj->mark().is_forwarded();
 }
 
+inline bool ShenandoahForwarding::is_real_forwarded(oop obj) {
+  return obj->mark().is_marked();
+}
+
 inline bool ShenandoahForwarding::is_self_forwarded(oop obj) {
   return obj->mark().is_self_forwarded();
 }
 
-inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
+inline oop ShenandoahForwarding::try_forward_to(oop obj, oop update) {
+  shenandoah_assert_correct(nullptr, obj);
+
+  // Optimistic: check if object is already forwarded.
   markWord old_mark = obj->mark();
-  if (old_mark.is_marked()) {
-    return cast_to_oop(old_mark.clear_lock_bits().to_pointer());
-  }
-  if (old_mark.is_self_forwarded()) {
-    // Another thread lost the evacuation race; the object stays put.
-    return obj;
+  if (old_mark.is_forwarded()) {
+    return forwardee_raw(obj, old_mark);
   }
 
-  markWord new_mark = markWord::encode_pointer_as_mark(update);
+  // Attempt to install and return on success.
+  markWord new_mark = (update != obj) ?
+    markWord::encode_pointer_as_mark(update) :
+    old_mark.set_self_forwarded();
   markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
   if (prev_mark == old_mark) {
     return update;
   }
-  // Concurrent writers on a cset object's mark can only be other evacuation
-  // threads installing forwarding (real or self). Mutators cannot reach the
-  // mark of a not-yet-forwarded cset object: LRB + stack watermark barriers
-  // redirect all reference uses before a Java-level operation can touch it.
-  // So the only possible failure modes are a regular forwardee (marked) or
-  // a self-forward (possibly with mutator lock/hash mods layered on top
-  // after the self-forward became visible).
-  if (prev_mark.is_marked()) {
-    return cast_to_oop(prev_mark.clear_lock_bits().to_pointer());
-  }
-  assert(prev_mark.is_self_forwarded(),
-         "concurrent writers on cset objects must install forwarding: prev=" INTPTR_FORMAT,
-         prev_mark.value());
-  return obj;
+
+  // Lost the update race. Pick the forwarding from the existing mark.
+  // Barriers guarantee that we can see only forwardings here, either real or self.
+  // Mutators cannot modify mark without executing barriers first and
+  // completing the forwarding install. Self-forwarded objects can have
+  // more data layered on top of mark word, this code handles it too.
+  assert(prev_mark.is_forwarded(), "Must be forwarded: prev=" INTPTR_FORMAT, prev_mark.value());
+  return forwardee_raw(obj, prev_mark);
 }
 
-inline oop ShenandoahForwarding::try_forward_to_self(oop obj, markWord old_mark) {
-  assert(!old_mark.is_forwarded(),
-         "caller must pass a non-forwarded mark: old=" INTPTR_FORMAT, old_mark.value());
-  markWord new_mark = old_mark.set_self_forwarded();
-  markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
-  if (prev_mark == old_mark) {
-    // We installed the self-forward.
-    return nullptr;
+inline void ShenandoahForwarding::unset_self_forwarded(oop obj) {
+  markWord m = obj->mark();
+  if (m.is_self_forwarded()) {
+    obj->set_mark(m.unset_self_forwarded());
   }
-  // Same invariant as in try_update_forwardee: the only races on a
-  // cset object's mark come from other evac threads installing forwarding.
-  if (prev_mark.is_marked()) {
-    return cast_to_oop(prev_mark.clear_lock_bits().to_pointer());
-  }
-  assert(prev_mark.is_self_forwarded(),
-         "concurrent writers on cset objects must install forwarding: prev=" INTPTR_FORMAT,
-         prev_mark.value());
-  return obj;
 }
 
 inline Klass* ShenandoahForwarding::klass(oop obj) {
@@ -122,6 +116,7 @@ inline Klass* ShenandoahForwarding::klass(oop obj) {
     markWord mark = obj->mark();
     if (mark.is_marked()) {
       oop fwd = cast_to_oop(mark.clear_lock_bits().to_pointer());
+      assert(fwd != nullptr, "Sanity: forwarding pointer must be set");
       mark = fwd->mark();
     }
     return mark.klass();
@@ -132,6 +127,32 @@ inline Klass* ShenandoahForwarding::klass(oop obj) {
 
 inline size_t ShenandoahForwarding::size(oop obj) {
   return obj->size_given_klass(klass(obj));
+}
+
+inline uint ShenandoahForwarding::age(oop obj) {
+  markWord mark = obj->mark();
+  uint age;
+  if (!mark.is_marked()) {
+    // Object has trustworthy mark.
+    age = mark.age();
+  } else {
+    // Otherwise resolve the forwardee and pick age from there.
+    oop fwd = forwardee_raw(obj, mark);
+    markWord fwd_mark = fwd->mark();
+    assert(!fwd_mark.is_marked(), "Must not be");
+    age = fwd_mark.age();
+  }
+  assert(age <= markWord::max_age, "Age is in bounds");
+  return age;
+}
+
+inline void ShenandoahForwarding::increase_age(oop obj, uint add) {
+  // This method is expected to be called on new copy before it is exposed.
+  // It also means mark is safe to modify with a non-CAS store.
+  markWord mark = obj->mark();
+  assert(!mark.is_marked(), "Must not be");
+  mark = mark.set_age(MIN2(markWord::max_age, mark.age() + add));
+  obj->set_mark(mark);
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_INLINE_HPP
