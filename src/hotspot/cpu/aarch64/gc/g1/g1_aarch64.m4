@@ -1,4 +1,4 @@
-dnl Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+dnl Copyright (c) 2024, 2026 Oracle and/or its affiliates. All rights reserved.
 dnl DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 dnl
 dnl This code is free software; you can redistribute it and/or modify it
