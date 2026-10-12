@@ -4620,9 +4620,13 @@ static void cmpxchg_memory_order(enum atomic_memory_order order,
       release = Assembler::rl;
       break;
     case memory_order_acq_rel:
-    case memory_order_seq_cst:
       acquire = Assembler::aq;
       release = Assembler::rl;
+      break;
+    case memory_order_seq_cst:
+      acquire = Assembler::aq;
+      // Zalasr acquire loads provide RCsc ordering after SC.rl; plain loads need SC.aqrl.
+      release = UseZalasr ? Assembler::rl : Assembler::aqrl;
       break;
     default:
       ShouldNotReachHere();
@@ -4693,14 +4697,6 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
     orr(scratch0, scratch0, new_val);
     store_conditional(scratch0, scratch0, aligned_addr, operand_size::int32, release);
     bnez(scratch0, retry);
-    if (order == memory_order_seq_cst && (!UseZalasr)) {
-      // seq_cst needs a trailing StoreLoad ordering between this CAS's sc.w and
-      // subsequent volatile loads. With Zalasr those loads are acquiring (l.aq) and
-      // the sc.w.rl -> l.aq RCsc chain already supplies it. Without Zalasr they are
-      // plain loads, which a releasing sc.w does not order after it (RVWMO has no
-      // StoreLoad from a release store to a plain load), so emit the fence.
-      membar(MacroAssembler::AnyAny);
-    }
   }
 
   if (result_as_bool) {
@@ -4788,14 +4784,6 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
     orr(scratch0, scratch0, new_val);
     store_conditional(scratch0, scratch0, aligned_addr, operand_size::int32, release);
     bnez(scratch0, fail);
-    if (order == memory_order_seq_cst && (!UseZalasr)) {
-      // seq_cst needs a trailing StoreLoad ordering between this CAS's sc.w and
-      // subsequent volatile loads. With Zalasr those loads are acquiring (l.aq) and
-      // the sc.w.rl -> l.aq RCsc chain already supplies it. Without Zalasr they are
-      // plain loads, which a releasing sc.w does not order after it (RVWMO has no
-      // StoreLoad from a release store to a plain load), so emit the fence.
-      membar(MacroAssembler::AnyAny);
-    }
   }
 
   // Success
@@ -4853,14 +4841,6 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
   bne(t0, expected, ne_done);
   store_conditional(t0, new_val, addr, size, release);
   bnez(t0, retry_load);
-  if (order == memory_order_seq_cst && (!UseZalasr)) {
-    // seq_cst needs a trailing StoreLoad ordering between this CAS's sc.w and
-    // subsequent volatile loads. With Zalasr those loads are acquiring (l.aq) and
-    // the sc.w.rl -> l.aq RCsc chain already supplies it. Without Zalasr they are
-    // plain loads, which a releasing sc.w does not order after it (RVWMO has no
-    // StoreLoad from a release store to a plain load), so emit the fence.
-    membar(MacroAssembler::AnyAny);
-  }
 
   // equal, succeed
   if (result_as_bool) {
@@ -4904,14 +4884,6 @@ void MacroAssembler::weak_cmpxchg(Register addr, Register expected,
   bne(t0, expected, fail);
   store_conditional(t0, new_val, addr, size, release);
   bnez(t0, fail);
-  if (order == memory_order_seq_cst && (!UseZalasr)) {
-    // seq_cst needs a trailing StoreLoad ordering between this CAS's sc.w and
-    // subsequent volatile loads. With Zalasr those loads are acquiring (l.aq) and
-    // the sc.w.rl -> l.aq RCsc chain already supplies it. Without Zalasr they are
-    // plain loads, which a releasing sc.w does not order after it (RVWMO has no
-    // StoreLoad from a release store to a plain load), so emit the fence.
-    membar(MacroAssembler::AnyAny);
-  }
 
   // Success
   mv(result, 1);
