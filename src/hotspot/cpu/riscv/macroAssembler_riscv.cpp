@@ -685,7 +685,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // offset is no longer needed after the address is computed.
   add(t1, mdp, offset);
   weak_cmpxchg(/*addr*/ t1, /*expected*/ zr, /*new*/ recv, Assembler::int64,
-               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::relaxed, /*result*/ t0);
+               memory_order_relaxed, /*result*/ t0);
 
   // CAS success means the slot now has the receiver we want. CAS failure means
   // something had claimed the slot concurrently: it can be the same receiver we want,
@@ -4602,17 +4602,47 @@ void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expecte
   andr(new_val, new_val, mask);
 }
 
+// Map a C++11-style memory order onto the RISC-V aq/rl bits applied to the
+// load-reserved (acquire) and store-conditional / amocas (release) halves of a CAS.
+static void cmpxchg_memory_order(enum atomic_memory_order order,
+                                 Assembler::Aqrl& acquire, Assembler::Aqrl& release) {
+  switch (order) {
+    case memory_order_relaxed:
+      acquire = Assembler::relaxed;
+      release = Assembler::relaxed;
+      break;
+    case memory_order_acquire:
+      acquire = Assembler::aq;
+      release = Assembler::relaxed;
+      break;
+    case memory_order_release:
+      acquire = Assembler::relaxed;
+      release = Assembler::rl;
+      break;
+    case memory_order_acq_rel:
+    case memory_order_seq_cst:
+      acquire = Assembler::aq;
+      release = Assembler::rl;
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
 // cmpxchg_narrow_value will kill t0, t1, expected, new_val and tmps.
 // It's designed to implement compare and swap byte/boolean/char/short by lr.w/sc.w or amocas.w,
 // which are forced to work with 4-byte aligned address.
 void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
                                           Register new_val,
                                           Assembler::operand_size size,
-                                          Assembler::Aqrl acquire, Assembler::Aqrl release,
+                                          enum atomic_memory_order order,
                                           Register result, bool result_as_bool,
                                           Register tmp1, Register tmp2, Register tmp3) {
   assert(!(UseZacas && UseZabha), "Use amocas");
   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
+
+  Assembler::Aqrl acquire, release;
+  cmpxchg_memory_order(order, acquire, release);
 
   Register scratch0 = t0, aligned_addr = t1;
   Register shift = tmp1, mask = tmp2, scratch1 = tmp3;
@@ -4663,6 +4693,14 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
     orr(scratch0, scratch0, new_val);
     store_conditional(scratch0, scratch0, aligned_addr, operand_size::int32, release);
     bnez(scratch0, retry);
+    if (order == memory_order_seq_cst && (!UseZalasr)) {
+      // seq_cst needs a trailing StoreLoad ordering between this CAS's sc.w and
+      // subsequent volatile loads. With Zalasr those loads are acquiring (l.aq) and
+      // the sc.w.rl -> l.aq RCsc chain already supplies it. Without Zalasr they are
+      // plain loads, which a releasing sc.w does not order after it (RVWMO has no
+      // StoreLoad from a release store to a plain load), so emit the fence.
+      membar(MacroAssembler::AnyAny);
+    }
   }
 
   if (result_as_bool) {
@@ -4694,11 +4732,14 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
 void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
                                                Register new_val,
                                                Assembler::operand_size size,
-                                               Assembler::Aqrl acquire, Assembler::Aqrl release,
+                                               enum atomic_memory_order order,
                                                Register result,
                                                Register tmp1, Register tmp2, Register tmp3) {
   assert(!(UseZacas && UseZabha), "Use amocas");
   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
+
+  Assembler::Aqrl acquire, release;
+  cmpxchg_memory_order(order, acquire, release);
 
   Register scratch0 = t0, aligned_addr = t1;
   Register shift = tmp1, mask = tmp2, scratch1 = tmp3;
@@ -4747,6 +4788,14 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
     orr(scratch0, scratch0, new_val);
     store_conditional(scratch0, scratch0, aligned_addr, operand_size::int32, release);
     bnez(scratch0, fail);
+    if (order == memory_order_seq_cst && (!UseZalasr)) {
+      // seq_cst needs a trailing StoreLoad ordering between this CAS's sc.w and
+      // subsequent volatile loads. With Zalasr those loads are acquiring (l.aq) and
+      // the sc.w.rl -> l.aq RCsc chain already supplies it. Without Zalasr they are
+      // plain loads, which a releasing sc.w does not order after it (RVWMO has no
+      // StoreLoad from a release store to a plain load), so emit the fence.
+      membar(MacroAssembler::AnyAny);
+    }
   }
 
   // Success
@@ -4763,12 +4812,15 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
 void MacroAssembler::cmpxchg(Register addr, Register expected,
                              Register new_val,
                              Assembler::operand_size size,
-                             Assembler::Aqrl acquire, Assembler::Aqrl release,
+                             enum atomic_memory_order order,
                              Register result, bool result_as_bool) {
   assert((UseZacas && UseZabha) || (size != int8 && size != int16), "unsupported operand size");
   assert_different_registers(addr, t0);
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
+
+  Assembler::Aqrl acquire, release;
+  cmpxchg_memory_order(order, acquire, release);
 
   // NOTE:
   // Register _result_ may be the same register as _new_val_ or _expected_.
@@ -4801,6 +4853,14 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
   bne(t0, expected, ne_done);
   store_conditional(t0, new_val, addr, size, release);
   bnez(t0, retry_load);
+  if (order == memory_order_seq_cst && (!UseZalasr)) {
+    // seq_cst needs a trailing StoreLoad ordering between this CAS's sc.w and
+    // subsequent volatile loads. With Zalasr those loads are acquiring (l.aq) and
+    // the sc.w.rl -> l.aq RCsc chain already supplies it. Without Zalasr they are
+    // plain loads, which a releasing sc.w does not order after it (RVWMO has no
+    // StoreLoad from a release store to a plain load), so emit the fence.
+    membar(MacroAssembler::AnyAny);
+  }
 
   // equal, succeed
   if (result_as_bool) {
@@ -4824,7 +4884,7 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
 void MacroAssembler::weak_cmpxchg(Register addr, Register expected,
                                   Register new_val,
                                   Assembler::operand_size size,
-                                  Assembler::Aqrl acquire, Assembler::Aqrl release,
+                                  enum atomic_memory_order order,
                                   Register result) {
   assert((UseZacas && UseZabha) || (size != int8 && size != int16), "unsupported operand size");
   assert_different_registers(addr, t0);
@@ -4832,15 +4892,26 @@ void MacroAssembler::weak_cmpxchg(Register addr, Register expected,
   assert_different_registers(new_val, t0);
 
   if (UseZacas) {
-    cmpxchg(addr, expected, new_val, size, acquire, release, result, true);
+    cmpxchg(addr, expected, new_val, size, order, result, true);
     return;
   }
+
+  Assembler::Aqrl acquire, release;
+  cmpxchg_memory_order(order, acquire, release);
 
   Label fail, done;
   load_reserved(t0, addr, size, acquire);
   bne(t0, expected, fail);
   store_conditional(t0, new_val, addr, size, release);
   bnez(t0, fail);
+  if (order == memory_order_seq_cst && (!UseZalasr)) {
+    // seq_cst needs a trailing StoreLoad ordering between this CAS's sc.w and
+    // subsequent volatile loads. With Zalasr those loads are acquiring (l.aq) and
+    // the sc.w.rl -> l.aq RCsc chain already supplies it. Without Zalasr they are
+    // plain loads, which a releasing sc.w does not order after it (RVWMO has no
+    // StoreLoad from a release store to a plain load), so emit the fence.
+    membar(MacroAssembler::AnyAny);
+  }
 
   // Success
   mv(result, 1);
@@ -7357,7 +7428,7 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register tmp1,
 
   xori(t, mark, markWord::lock_neutral_value);
   cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
-          /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ t);
+          memory_order_acquire, /*result*/ t);
   bne(mark, t, slow, /* is_far */ true);
 
   bind(push);
@@ -7428,7 +7499,7 @@ void MacroAssembler::fast_unlock(Register obj, Register tmp1, Register tmp2, Reg
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
   ori(t, mark, markWord::lock_neutral_value);
   cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
-          /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, /*result*/ t);
+          memory_order_release, /*result*/ t);
   beq(mark, t, unlocked);
 
   bind(push_and_slow);

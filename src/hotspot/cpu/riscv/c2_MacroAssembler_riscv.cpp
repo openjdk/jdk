@@ -126,7 +126,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     ori(tmp1_mark, tmp1_mark, markWord::lock_neutral_value);
     xori(tmp3_t, tmp1_mark, markWord::lock_neutral_value);
     cmpxchg(/*addr*/ obj, /*expected*/ tmp1_mark, /*new*/ tmp3_t, Assembler::int64,
-            /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_t);
+            memory_order_acquire, /*result*/ tmp3_t);
     bne(tmp1_mark, tmp3_t, slow_path);
 
     bind(push);
@@ -206,7 +206,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     Register tid = tmp4;
     ld(tid, Address(xthread, JavaThread::monitor_owner_id_offset()));
     cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ tid, Assembler::int64,
-            /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
+            memory_order_acquire, /*result*/ tmp3_owner);
     beqz(tmp3_owner, monitor_locked);
 
     // Normally, a contended monitor enters the runtime slow path here.
@@ -229,7 +229,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
       wrs_sto();
       bind(retry);
       cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ tid, Assembler::int64,
-              /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
+              memory_order_acquire, /*result*/ tmp3_owner);
       beqz(tmp3_owner, monitor_locked);
       bne(tmp3_owner, tid, slow_path);
       bind(recursive);
@@ -321,7 +321,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
     ori(tmp3_t, tmp1_mark, markWord::lock_neutral_value);
     cmpxchg(/*addr*/ obj, /*expected*/ tmp1_mark, /*new*/ tmp3_t, Assembler::int64,
-            /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, /*result*/ tmp3_t);
+            memory_order_release, /*result*/ tmp3_t);
     beq(tmp1_mark, tmp3_t, unlocked);
 
     bind(push_and_slow_path);
