@@ -4367,7 +4367,7 @@ TypeInstPtr::TypeInstPtr(PTR ptr, ciKlass* k, const TypeInterfaces* interfaces, 
   assert(k != nullptr &&
          (k->is_loaded() || o == nullptr),
          "cannot have constants with non-loaded klass");
-  assert(!xk || k->is_loaded(), "pointer to an oop of an exact type must be loaded");
+  assert(!xk || (k->is_loaded() && !k->is_abstract()), "pointer to an oop of an exact type must be concrete");
   assert(!xk || interfaces->eq(k->as_instance_klass()), "inconsistency between k and interfaces");
 };
 
