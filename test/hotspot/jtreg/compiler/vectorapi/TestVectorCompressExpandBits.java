@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Alibaba Group Holding Limited. All Rights Reserved.
  * Copyright (c) 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,15 +34,17 @@ import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
 /**
  * @test
- * @bug 8301012
+ * @bug 8301012 8391921
  * @key randomness
  * @library /test/lib /
- * @requires os.arch == "aarch64" & vm.cpu.features ~= ".*sve2.*" & vm.cpu.features ~= ".*svebitperm.*"
- * @summary [vectorapi]: Intrinsify CompressBitsV/ExpandBitsV and add the AArch64 SVE backend implementation
+ * @requires (os.arch == "aarch64" & vm.cpu.features ~= ".*sve2.*" & vm.cpu.features ~= ".*svebitperm.*") |
+ *           (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
+ * @summary [vectorapi]: Test CompressBitsV and ExpandBitsV
  * @modules jdk.incubator.vector
  * @run driver compiler.vectorapi.TestVectorCompressExpandBits
  */
@@ -76,7 +79,7 @@ public class TestVectorCompressExpandBits {
         }
     }
 
-    // Test for vectorized Integer.compress operation in SVE2
+    // Test for vectorized Integer.compress operation
     @Test
     @IR(counts = {IRNode.COMPRESS_BITS_VI, "> 0"})
     public static void testIntCompress() {
@@ -95,7 +98,7 @@ public class TestVectorCompressExpandBits {
         }
     }
 
-    // Test for vectorized Integer.expand operation in SVE2
+    // Test for vectorized Integer.expand operation
     @Test
     @IR(counts = {IRNode.EXPAND_BITS_VI, "> 0"})
     public static void testIntExpand() {
@@ -114,7 +117,7 @@ public class TestVectorCompressExpandBits {
         }
     }
 
-    // Test for vectorized Long.compress operation in SVE2
+    // Test for vectorized Long.compress operation
     @Test
     @IR(counts = {IRNode.COMPRESS_BITS_VL, "> 0"})
     public static void testLongCompress() {
@@ -133,7 +136,7 @@ public class TestVectorCompressExpandBits {
         }
     }
 
-    // Test for vectorized Long.expand operation in SVE2
+    // Test for vectorized Long.expand operation
     @Test
     @IR(counts = {IRNode.EXPAND_BITS_VL, "> 0"})
     public static void testLongExpand() {
@@ -153,7 +156,11 @@ public class TestVectorCompressExpandBits {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
-                                   "-XX:UseSVE=2");
+        TestFramework testFramework = new TestFramework();
+        testFramework.addFlags("--add-modules=jdk.incubator.vector");
+        if (Platform.isAArch64()) {
+            testFramework.addFlags("-XX:UseSVE=2");
+        }
+        testFramework.start();
     }
 }
