@@ -100,7 +100,7 @@ import jdk.internal.vm.annotation.Stable;
  * used in the result's representation.
  *
  * The different representations of the same numerical value are
- * called members of the same <i>cohort</i>. The {@linkplain
+ * called members of the same <dfn>{@index cohort}</dfn>. The {@linkplain
  * compareTo(BigDecimal) natural order} of {@code BigDecimal}
  * considers members of the same cohort to be equal to each other. In
  * contrast, the {@link equals equals} method requires both the
@@ -108,6 +108,12 @@ import jdk.internal.vm.annotation.Stable;
  * hold. The results of methods like {@link #scale()} and {@link
  * #unscaledValue()} will differ for numerically equal values with
  * different representations.
+ *
+ * <p>In the terminology {@linkplain Double##fpNumericalEq discussed
+ * for binary floating-point}, {@code BigDecimal.equals} uses
+ * <i>representation equivalence</i> while {@code BigDecimal.compareTo}
+ * uses <i>numerical equality</i> to compare members of the same
+ * cohort.
  *
  * <p>In general the rounding modes and precision setting determine
  * how operations return results with a limited number of digits when
@@ -3228,7 +3234,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
     /**
      * Compares this {@code BigDecimal} with the specified {@code
-     * Object} for equality.  Unlike {@link #compareTo(BigDecimal)
+     * Object} for equality using {@linkplain Double##fpNumericalEq
+     * representation equivalence}.
+     * Unlike {@link #compareTo(BigDecimal)
      * compareTo}, this method considers two {@code BigDecimal}
      * objects equal only if they are equal in value and
      * scale. Therefore 2.0 is not equal to 2.00 when compared by this
@@ -3244,9 +3252,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * HALF_UP)} which evaluates to 0.7 and <br>
      * {@code new BigDecimal("2.00").divide(BigDecimal.valueOf(3),
      * HALF_UP)} which evaluates to 0.67.
-     * The behavior of this method is analogous to checking the
-     * {@linkplain Double##repEquivalence representation equivalence}
-     * of {@code double} values.
      *
      * @param  x {@code Object} to which this {@code BigDecimal} is
      *         to be compared.

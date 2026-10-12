@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  */
 
 package jdk.jfr.api.metadata.annotations;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Map;
 
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.BooleanFlag;
@@ -57,7 +62,6 @@ import jdk.test.lib.Asserts;
  * @run main/othervm jdk.jfr.api.metadata.annotations.TestTypesIdentical
  */
 public class TestTypesIdentical {
-
     @MetadataDefinition
     @interface CustomAnnotation {
         String value();
@@ -79,15 +83,30 @@ public class TestTypesIdentical {
         assertTypeId(CustomAnnotation.class);
     }
 
-    private static void assertTypeId(Class<? extends java.lang.annotation.Annotation> clz) {
-        AnnotationElement a1, a2;
-        try {
-            a1 = new AnnotationElement(clz, "value");
-            a2 = new AnnotationElement(clz, "value2");
-        } catch(IllegalArgumentException x) {
-            a1 = new AnnotationElement(clz);
-            a2 = new AnnotationElement(clz);
-        }
+    private static void assertTypeId(Class<? extends java.lang.annotation.Annotation> clz) throws Exception {
+        AnnotationElement a1 = new AnnotationElement(clz, createDefaultMap(clz));
+        AnnotationElement a2 = new AnnotationElement(clz, createDefaultMap(clz));
         Asserts.assertEquals(a1.getTypeId(), a2.getTypeId());
+    }
+
+    private static Map<String, Object> createDefaultMap(Class<?> annotationClass) throws Exception {
+        Map<String, Object> map = new HashMap<>();
+        for (Method method : annotationClass.getDeclaredMethods()) {
+            int modifiers = method.getModifiers();
+            if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
+                Class<?> type = method.getReturnType();
+                String name = method.getName();
+                if (type == String.class) {
+                    map.put(name, "text");
+                } else if (type == boolean.class) {
+                    map.put(name, true);
+                } else if (type == String[].class) {
+                    map.put(name, new String[] { "text" });
+                } else {
+                    throw new Exception("Test error. No default value for type " + type.getName());
+                }
+            }
+        }
+        return map;
     }
 }

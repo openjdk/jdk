@@ -81,6 +81,6 @@ class objArrayOopDesc : public arrayOopDesc {
 };
 
 // See similar requirement for oopDesc.
-static_assert(std::is_trivially_default_constructible<objArrayOopDesc>::value, "required");
+static_assert(std::is_trivially_default_constructible<objArrayOopDesc>::value);
 
 #endif // SHARE_OOPS_OBJARRAYOOP_HPP

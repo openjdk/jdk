@@ -40,6 +40,21 @@ struct NameAndSig {
   NameAndSig(Symbol* n, Symbol* s) : _name(n), _signature(s) {}
 };
 
+inline unsigned int nameandsig_hash(NameAndSig const& field) {
+  Symbol* name = field._name;
+  return (unsigned int) name->identity_hash();
+}
+
+inline bool nameandsig_equals(NameAndSig const& f1, NameAndSig const& f2) {
+  return f1._name == f2._name &&
+          f1._signature == f2._signature;
+}
+
+// List of unset strict fields. The boolean value is a dummy so this acts as a set
+typedef HashTable<NameAndSig, bool, 17,
+                  AnyObj::RESOURCE_AREA, mtInternal,
+                  nameandsig_hash, nameandsig_equals> AssertUnsetFieldTable;
+
 // The verifier class
 class Verifier : AllStatic {
  public:
@@ -167,7 +182,7 @@ class ErrorContext {
     STACK_UNDERFLOW,      // Attempt to pop and empty expression stack
     MISSING_STACKMAP,     // No stackmap for this location and there should be
     BAD_STACKMAP,         // Format error in stackmap
-    WRONG_INLINE_TYPE,    // Mismatched inline type
+    WRONG_VALUE_TYPE,     // Mismatched value type
     NO_FAULT,             // No error
     UNKNOWN
   } FaultType;
@@ -239,8 +254,8 @@ class ErrorContext {
   static ErrorContext bad_stackmap(int index, StackMapFrame* frame) {
     return ErrorContext(0, BAD_STACKMAP, TypeOrigin::frame(frame));
   }
-  static ErrorContext bad_inline_type(int bci, TypeOrigin type, TypeOrigin exp) {
-    return ErrorContext(bci, WRONG_INLINE_TYPE, type, exp);
+  static ErrorContext bad_value_type(int bci, TypeOrigin type, TypeOrigin exp) {
+    return ErrorContext(bci, WRONG_VALUE_TYPE, type, exp);
   }
 
   bool is_valid() const { return _fault != NO_FAULT; }

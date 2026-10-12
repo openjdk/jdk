@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.PathGroup;
@@ -54,6 +55,27 @@ import jdk.jpackage.internal.util.PathGroup;
  * in the derived interfaces must comply to this constrain.
  */
 public interface AppImageLayout {
+
+    interface DirectorySelector {
+        Path resolve(AppImageLayout layout);
+    };
+
+    enum Directory implements DirectorySelector {
+        RUNTIME_DIR(AppImageLayout::runtimeDirectory),
+        ROOT_DIR(AppImageLayout::rootDirectory),
+        ;
+
+        Directory(Function<AppImageLayout, Path> func) {
+            this.func = Objects.requireNonNull(func);
+        }
+
+        @Override
+        public Path resolve(AppImageLayout target) {
+            return func.apply(target);
+        }
+
+        private Function<AppImageLayout, Path> func;
+    }
 
     /**
      * A path to Java runtime directory.

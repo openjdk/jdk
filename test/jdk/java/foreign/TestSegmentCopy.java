@@ -186,6 +186,17 @@ public class TestSegmentCopy {
     }
 
     @Test
+    public void testClosedZeroLengthCopy() {
+        MemorySegment closed;
+        try (Arena arena = Arena.ofConfined()) {
+            closed = arena.allocate(4, 1);
+        }
+        var alive = MemorySegment.ofArray(new byte[4]);
+        assertThrows(IllegalStateException.class, () -> MemorySegment.copy(closed, 0, alive, 0, 0));
+        assertThrows(IllegalStateException.class, () -> MemorySegment.copy(alive, 0, closed, 0, 0));
+    }
+
+    @Test
     public void badCopy6Arg() {
         try (Arena scope = Arena.ofConfined()) {
             MemorySegment dest = scope.allocate(ValueLayout.JAVA_INT).asReadOnly();

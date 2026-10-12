@@ -1223,15 +1223,15 @@ void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
 
   // Touch the polling page.
   if (need_polling) {
-      Label dummy_label;
-      Label* code_stub = &dummy_label;
-      if (!C->output()->in_scratch_emit_size()) {
-        C2SafepointPollStub* stub = new (C->comp_arena()) C2SafepointPollStub(__ offset());
-        C->output()->add_stub(stub);
-        code_stub = &stub->entry();
-        __ relocate(relocInfo::poll_return_type);
-      }
-      __ safepoint_poll(*code_stub, Z_R0_scratch, true /* at_return */, true /* in_nmethod */);
+    Label dummy_label;
+    Label* code_stub = &dummy_label;
+    if (!C->output()->in_scratch_emit_size()) {
+      C2SafepointPollStub* stub = new (C->comp_arena()) C2SafepointPollStub(__ offset());
+      C->output()->add_stub(stub);
+      code_stub = &stub->entry();
+      __ relocate(relocInfo::poll_return_type);
+    }
+    __ safepoint_poll(*code_stub, Z_R0_scratch, true /* at_return */, true /* in_nmethod */);
   }
 }
 
@@ -5370,12 +5370,12 @@ instruct castN2X(iRegL dst, iRegN src) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-// Cast Integer to Narrow Pointer for inline types.
+// Cast Integer to Narrow Pointer for value types.
 instruct castI2N(iRegN dst, iRegI src) %{
   match(Set dst (CastI2N src));
-  size(2); // LR is 2 bytes
-  format %{ "LR      $dst,$src\t # CastI2N" %}
-  ins_encode %{ __ lr_if_needed($dst$$Register, $src$$Register); %}
+  size(4); // LLGFR is 4 bytes
+  format %{ "LLGFR      $dst,$src\t # CastI2N" %}
+  ins_encode %{ __ z_llgfr($dst$$Register, $src$$Register); %}
   ins_pipe(pipe_class_dummy);
 %}
 

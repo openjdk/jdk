@@ -448,9 +448,6 @@ public:
 
   bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, true); }
 
-  // Helper to call Node::Ideal() and BarrierSetC2::ideal_node().
-  Node* apply_ideal(Node* i, bool can_reshape);
-
   // Helper to call Node::Identity() and verify that it returns an existing node.
   Node* apply_identity(Node* n);
 
@@ -479,6 +476,8 @@ private:
 
   // Idealize old Node 'n' with respect to its inputs and its value
   virtual Node *transform_old( Node *a_node );
+
+  bool can_kill(Node* n) const;
 
   // Drain the IGVN worklist: process nodes until the worklist is empty.
   // Returns true if compilation was aborted (node limit or infinite loop),
@@ -612,7 +611,10 @@ public:
   // Passing the old node (as 'n'), rather than the new node,
   // prevents unnecessary notifications when the new node already
   // has other users.
-  void add_users_to_worklist(Node* n);
+  void add_users_to_worklist(Node* n) const;
+  // The generic version that will add it to a given worklist instead of
+  // the current this->_worklist.
+  static void add_users_to_worklist(Node* n, Unique_Node_List& worklist);
 
   // Replace old node with new one.
   void replace_node( Node *old, Node *nn ) {
@@ -720,7 +722,6 @@ class PhaseCCP : public PhaseIterGVN {
   static void push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, const Node* use);
   static void push_cast(Unique_Node_List& worklist, const Node* use);
   void push_loadp(Unique_Node_List& worklist, const Node* use) const;
-  static void push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2* barrier_set, const Node* use);
   void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
   void push_cast_ii(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
   void push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Node* use) const;

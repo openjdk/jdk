@@ -1103,10 +1103,6 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   // Save result (push state before jvmti call and pop it afterwards) and notify jvmti.
   notify_method_exit(false, state, notify_jvmti ? NotifyJVMTI : SkipNotifyJVMTI);
 
-  if (UseArrayFlattening) {
-    stop("implement function InterpreterMacroAssembler::remove_activation #2");
-  }
-
   if (StackReservedPages > 0) {
     BLOCK_COMMENT("reserved_stack_check:");
     // Test if reserved zone needs to be enabled.
@@ -1134,7 +1130,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     bind(no_reserved_zone_enabling);
   }
 
-  if (state == atos && InlineTypeReturnedAsFields) {
+  if (state == atos && ValueTypeReturnedAsFields) {
     stop("implement function InterpreterMacroAssembler::remove_activation");
   }
 
@@ -1379,17 +1375,17 @@ void InterpreterMacroAssembler::profile_acmp(Register mdp,
 
     profile_obj_type(left, Address(mdp, in_bytes(ACmpData::left_offset())), tmp);
 
-    Label left_not_inline_type;
-    test_oop_is_not_inline_type(left, tmp, left_not_inline_type);
-    set_mdp_flag_at(mdp, ACmpData::left_inline_type_byte_constant());
-    bind(left_not_inline_type);
+    Label left_not_value_type;
+    test_oop_is_not_value_type(left, tmp, left_not_value_type);
+    set_mdp_flag_at(mdp, ACmpData::left_value_type_byte_constant());
+    bind(left_not_value_type);
 
     profile_obj_type(right, Address(mdp, in_bytes(ACmpData::right_offset())), tmp);
 
-    Label right_not_inline_type;
-    test_oop_is_not_inline_type(right, tmp, right_not_inline_type);
-    set_mdp_flag_at(mdp, ACmpData::right_inline_type_byte_constant());
-    bind(right_not_inline_type);
+    Label right_not_value_type;
+    test_oop_is_not_value_type(right, tmp, right_not_value_type);
+    set_mdp_flag_at(mdp, ACmpData::right_value_type_byte_constant());
+    bind(right_not_value_type);
 
     bind(profile_continue);
   }
@@ -2215,7 +2211,7 @@ void InterpreterMacroAssembler::pop_interpreter_frame(Register return_pc, Regist
 }
 
 //-------------------------------------
-//  Valhalla inline type support
+//  Valhalla value type support
 //-------------------------------------
 
 void InterpreterMacroAssembler::read_flat_field(Register entry, Register obj) {
@@ -2224,37 +2220,20 @@ void InterpreterMacroAssembler::read_flat_field(Register entry, Register obj) {
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::read_flat_field), obj, entry);
 }
 
-void InterpreterMacroAssembler::write_flat_field(Register entry, Register field_offset,
-                                                 Register tmp1, Register tmp2,
-                                                 Register obj) {
-  assert_different_registers(entry, field_offset, tmp1, tmp2, obj);
+void InterpreterMacroAssembler::write_flat_field(Register entry, Register tmp1,
+                                                 Register tmp2, Register obj) {
+  assert_different_registers(entry, tmp1, tmp2, obj);
   Label slow_path, done;
 
-  // Load flags and check if field is null-free inline type.
+  // Load flags and check if field is null-free value type.
   load_sized_value(tmp1, Address(entry, in_bytes(ResolvedFieldEntry::flags_offset())), sizeof(u1), false);
-  test_field_is_not_null_free_inline_type(tmp1, slow_path);
+  test_field_is_not_null_free_value_type(tmp1, slow_path);
 
   // Null check the value being stored (Z_tos holds the value oop).
   null_check(Z_tos);  // FIXME JDK-8341120
 
-  // Advance obj to the exact field address inside the object.
-  z_agr(obj, field_offset);
-
-  // Compute the payload address of the value oop (Z_tos).
-  // load_klass clobbers tmp1; payload_addr overwrites Z_tos in-place using tmp1 as the klass.
-  load_klass(tmp1, Z_tos);
-  payload_addr(Z_tos, Z_tos, tmp1);
-
-  // Load the InlineLayoutInfo for this field:
-  //   field_index (u2) from the entry, holder klass pointer from the entry.
-  // Reuse field_offset as the layout_info register from here on.
-  Register layout_info = field_offset;
-  load_sized_value(tmp1, Address(entry, in_bytes(ResolvedFieldEntry::field_index_offset())), sizeof(u2), false);
-  load_sized_value(tmp2, Address(entry, in_bytes(ResolvedFieldEntry::field_holder_offset())), sizeof(void*), false);
-  inline_layout_info(tmp2, tmp1, layout_info);
-
-  // Inline byte-copy of the value's payload into the flat field slot.
-  flat_field_copy(IN_HEAP, Z_tos, obj, layout_info);
+  z_lgr(tmp1, Z_tos);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::write_null_free_flat_field), obj, tmp1, entry);
   z_bru(done);
 
   bind(slow_path);

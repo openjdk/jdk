@@ -549,7 +549,6 @@ void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool
   __ add2reg(Z_ARG1, 8);
   __ add2reg(Z_ARG2, 8);
   __ add2reg(Z_ARG3, -1);
-
   __ bind(done);
 
   __ restore_return_pc();

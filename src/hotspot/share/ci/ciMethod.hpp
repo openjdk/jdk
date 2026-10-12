@@ -74,7 +74,8 @@ class ciMethod : public ciMetadata {
   ciInstanceKlass* _holder;
   ciSignature*     _signature;
   ciMethodData*    _method_data;
-  ciMethodBlocks*   _method_blocks;
+  ciMethodData*    _method_data_recorded;
+  ciMethodBlocks*  _method_blocks;
 
   // Code attributes.
   int _code_size;
@@ -119,7 +120,7 @@ class ciMethod : public ciMetadata {
 
   void load_code();
 
-  bool ensure_method_data(const methodHandle& h_m);
+  bool ensure_method_data(const methodHandle& h_m, bool training_data_only);
 
   void code_at_put(int bci, Bytecodes::Code code) {
     Bytecodes::check(code);
@@ -275,7 +276,7 @@ class ciMethod : public ciMetadata {
                                            bool& flat_array, bool& null_free);
   bool          acmp_profiled_type(int bci, ciKlass*& left_type, ciKlass*& right_type,
                                    ProfilePtrKind& left_ptr, ProfilePtrKind& right_ptr,
-                                   bool& left_inline_type, bool& right_inline_type);
+                                   bool& left_value_type, bool& right_value_type);
   ciField*      get_field_at_bci( int bci, bool &will_link);
   ciMethod*     get_method_at_bci(int bci, bool &will_link, ciSignature* *declared_signature);
   ciMethod*     get_method_at_bci(int bci) {
@@ -320,8 +321,8 @@ class ciMethod : public ciMetadata {
   bool has_unloaded_classes_in_signature();
   bool is_klass_loaded(int refinfo_index, Bytecodes::Code bc, bool must_be_resolved) const;
   bool check_call(int refinfo_index, bool is_static) const;
-  bool ensure_method_data();  // make sure it exists in the VM also
-  MethodCounters* ensure_method_counters();
+  bool ensure_method_data(bool training_data_only = false);  // make sure it exists in the VM also
+  ciMetadata* ensure_method_counters();
 
   int inline_instructions_size();
   int scale_count(int count, float prof_factor = 1.);  // make MDO count commensurate with IIC
@@ -391,7 +392,7 @@ class ciMethod : public ciMetadata {
 
   static bool is_consistent_info(ciMethod* declared_method, ciMethod* resolved_method);
 
-  // Support for the inline type calling convention
+  // Support for the value type calling convention
   bool is_scalarized_arg(int idx) const;
   bool is_scalarized_buffer_arg(int idx) const;
   bool has_scalarized_args() const;
