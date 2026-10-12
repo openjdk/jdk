@@ -6103,7 +6103,7 @@ instruct compareAndExchangeB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
   ins_encode %{
     __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-                            memory_order_release, $res$$Register, /*result_as_bool*/ false,
+                            memory_order_release, $res$$Register, /* result as bool */ false,
                             $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
@@ -6147,7 +6147,7 @@ instruct compareAndExchangeS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
   ins_encode %{
     __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-                            memory_order_release, $res$$Register, /*result_as_bool*/ false,
+                            memory_order_release, $res$$Register, /* result as bool */ false,
                             $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
@@ -6271,7 +6271,7 @@ instruct compareAndExchangeBAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 ol
 
   ins_encode %{
     __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-                            memory_order_seq_cst, $res$$Register, /*result_as_bool*/ false,
+                            memory_order_seq_cst, $res$$Register, /* result as bool */ false,
                             $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
@@ -6315,7 +6315,7 @@ instruct compareAndExchangeSAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 ol
 
   ins_encode %{
     __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-                            memory_order_seq_cst, $res$$Register, /*result_as_bool*/ false,
+                            memory_order_seq_cst, $res$$Register, /* result as bool */ false,
                             $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
