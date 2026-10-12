@@ -546,7 +546,8 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
             if (kw > MAX_KER) kw = kw/2;
           off += kw;
 
-          sp = sl;
+          /* The final window has no next row to prefetch. */
+          sp = (j + 1 < hgt) ? sl : sl - sll;
           dp = dl;
 
           if (kw == 7) {
@@ -817,7 +818,9 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
         dp += chan1;
       }
 
-      for (l = 0; l < (m - 1); l++) buffn[wid + l] = sp[l*chan1];
+      if (j + 1 < hgt) {
+        for (l = 0; l < (m - 1); l++) buffn[wid + l] = sp[l*chan1];
+      }
 
       /* next line */
       sl += sll;
