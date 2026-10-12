@@ -36,13 +36,9 @@
 #define BUFF_SIZE           15360
 #define MAX_TRIES           3
 
-#define STS_NO_CONFIG       0x0             /* no configuration found */
 #define STS_SL_FOUND        0x1             /* search list found */
 #define STS_NS_FOUND        0x2             /* name servers found */
 #define STS_ERROR           -1              /* error return  lodConfig failed memory allccation failure*/
-
-#define IS_SL_FOUND(sts)    (sts & STS_SL_FOUND)
-#define IS_NS_FOUND(sts)    (sts & STS_NS_FOUND)
 
 /* JNI ids */
 static jfieldID searchlistID;
@@ -227,7 +223,7 @@ static int loadConfig(JNIEnv *env, char *sl, char *ns) {
 
     free(adapters);
 
-    return STS_SL_FOUND & STS_NS_FOUND;
+    return STS_SL_FOUND | STS_NS_FOUND;
 }
 
 
@@ -242,6 +238,7 @@ Java_sun_net_dns_ResolverConfigurationImpl_init0(JNIEnv *env, jclass cls)
     CHECK_NULL(searchlistID);
     nameserversID = (*env)->GetStaticFieldID(env, cls, "os_nameservers",
                                       "Ljava/lang/String;");
+    CHECK_NULL(nameserversID);
 }
 
 /*
