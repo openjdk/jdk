@@ -163,6 +163,9 @@ source %{
     switch (opcode) {
       case Op_MulReductionVF:
       case Op_MulReductionVD:
+        // RVV has no floating-point multiply-reduction instruction. Let C2 emulate the
+        // masked operation by replacing inactive lanes with the multiplication identity
+        // (1.0) before applying the unmasked reduction rule.
         return false;
       case Op_SelectFromTwoVector:
         // There is no masked version of selectFrom two vector, i.e. selectFrom(av, bv, mask) in vector API.
