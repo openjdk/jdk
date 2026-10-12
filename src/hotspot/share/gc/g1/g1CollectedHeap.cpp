@@ -2513,7 +2513,7 @@ void G1CollectedHeap::gc_epilogue(bool full) {
 }
 
 uint G1CollectedHeap::uncommit_regions(uint max_num_regions_to_uncommit) {
-  return _hrm.uncommit_pending_uncommit_regions(max_num_regions_to_uncommit);
+  return _hrm.uncommit_regions(max_num_regions_to_uncommit);
 }
 
 bool G1CollectedHeap::has_pending_uncommit_regions() {

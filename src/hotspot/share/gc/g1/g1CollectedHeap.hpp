@@ -583,7 +583,8 @@ public:
 
   // Check if there is memory to uncommit and if so schedule a task to do it.
   void uncommit_regions_if_necessary();
-  // Immediately uncommit regions pending uncommit.
+  // Immediately uncommit regions, at most the given number of regions. Returns
+  // the number of regions actually uncommitted.
   uint uncommit_regions(uint max_num_regions_to_uncommit);
   bool has_pending_uncommit_regions();
 

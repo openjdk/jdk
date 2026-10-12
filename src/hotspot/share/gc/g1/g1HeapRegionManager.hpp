@@ -282,7 +282,7 @@ public:
 
   // Uncommit pending uncommit regions. Limit the number of regions to uncommit by the
   // given value and return actual number uncommitted.
-  uint uncommit_pending_uncommit_regions(uint max_num_regions_to_uncommit);
+  uint uncommit_regions(uint max_num_regions_to_uncommit);
 
   void verify();
 

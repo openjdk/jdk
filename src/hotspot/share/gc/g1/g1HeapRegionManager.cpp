@@ -290,7 +290,7 @@ bool G1HeapRegionManager::has_pending_uncommit_regions() const {
   return _committed_map.num_pending_uncommit_regions() > 0;
 }
 
-uint G1HeapRegionManager::uncommit_pending_uncommit_regions(uint max_num_regions_to_uncommit) {
+uint G1HeapRegionManager::uncommit_regions(uint max_num_regions_to_uncommit) {
   assert(max_num_regions_to_uncommit > 0, "Need to specify at least one region to uncommit");
 
   uint num_uncommitted_regions = 0;
