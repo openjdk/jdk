@@ -3696,7 +3696,7 @@ operand uimmI6_ge32() %{
 
 // Unsigned Integer Immediate:  6-bit int, less than 32
 operand uimmI6_lt32() %{
-  predicate(Assembler::is_uimm(n->get_int(), 6) && n->get_int() < 32);
+  predicate(Assembler::is_uimm(n->get_int(), 5));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -8332,7 +8332,7 @@ instruct lShiftL_regI_immGE32(iRegLdst dst, iRegIorL2I src1, uimmI6_ge32 src2) %
   ins_pipe(pipe_class_default);
 %}
 
-// Shift a postivie int to the left.
+// Shift a positive int to the left.
 // Clrlsldi clears the upper 32 bits and shifts.
 // Only valid for shift amounts < 32.
 // Shift amounts >= 32 are handled by lShiftL_regI_immGE32.
