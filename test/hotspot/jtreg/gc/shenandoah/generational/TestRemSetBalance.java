@@ -1,6 +1,5 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +57,9 @@ public class TestRemSetBalance {
       int line_no = index + 1;
       String[] tokens = line.split("\\s+");
       if (tokens.length > 8) {
+        // We are looking for output lines of the following format:
+        // [21.947s][info][gc,stats]   RS: Work                       662295 us total, per worker: 169895, 155334, 167446, 169620, ---, ---, ---, ---,
+        // We want to enforce low variance in the us consumed by individual GC workers, representing good balance.
         if (tokens[1].equals("RS:") && tokens[2].equals("Work") && tokens[4].equals("us")
             && tokens[5].equals("total,") && tokens[6].equals("per") && tokens[7].equals("worker:")) {
           int min_work = 0x7fff_ffff;
@@ -80,9 +82,8 @@ public class TestRemSetBalance {
           }
           if (min_work < 10) {
             if (max_work > 100) {
-              System.out.println("Out of balance: max work: " + Integer.toString(max_work) +
-                                 " is greater than 100 when min work: " + Integer.toString(min_work) +
-                                 " is smaller than 10 at line " + Integer.toString(line_no));
+              System.out.println("Out of balance: max work: " + max_work + " is greater than 100 when min work: " + min_work +
+                                 " is smaller than 10 at line " + line_no);
               System.out.println("  line: " + line);
               return false;
             }
@@ -91,17 +92,13 @@ public class TestRemSetBalance {
             // Allow deviation from average plus or minus 9.375%)
             int deviation_bound = (3 * average) / 32;
             if (max_work > average + deviation_bound) {
-              System.out.println("Out of balance: max work: " + Integer.toString(max_work) +
-                                 " is greater than average work: " + Integer.toString(average) +
-                                 " plus bound: " + Integer.toString(deviation_bound) + " at line " +
-                                 Integer.toString(line_no));
+              System.out.println("Out of balance: max work: " + max_work + " is greater than average work: " + average +
+                                 " plus bound: " + deviation_bound + " at line " + line_no);
               System.out.println("  line: " + line);
               return false;
             } else if (min_work < average - deviation_bound) {
-              System.out.println("Out of balance: min work: " + Integer.toString(min_work) +
-                                 " is less than average work: " + Integer.toString(average) +
-                                 " minus bound: " + Integer.toString(deviation_bound) + " at line " +
-                                 Integer.toString(line_no));
+              System.out.println("Out of balance: min work: " + min_work + " is less than average work: " + average +
+                                 " minus bound: " + deviation_bound + " at line " + line_no);
               System.out.println("  line: " + line);
               return false;
             }
