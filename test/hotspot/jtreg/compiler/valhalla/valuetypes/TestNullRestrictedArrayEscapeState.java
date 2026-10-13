@@ -86,6 +86,16 @@ class TestNullRestrictedArrayEscapeState {
         return holder;
     }
 
+    @ForceInline
+    static ValueHolder[] createNullRestrictedAtomicArray(ValueHolder holder) {
+        return (ValueHolder[])ValueClass.newNullRestrictedAtomicArray(ValueHolder.class, 1, holder);
+    }
+
+    @ForceInline
+    static ValueHolder[] createNullRestrictedNonAtomicArray(ValueHolder holder) {
+        return (ValueHolder[])ValueClass.newNullRestrictedNonAtomicArray(ValueHolder.class, 1, holder);
+    }
+
     @DontInline
     static void escapeFirstHolder(ValueHolder[] holders) {
         globalHolder = holders[0];
@@ -102,8 +112,7 @@ class TestNullRestrictedArrayEscapeState {
     @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
     static void testAllocateEscapingNullRestrictedAtomicArray() {
         ValueHolder holder = createValueHolderWithSynchronizedFieldWrite();
-        ValueHolder[] holders =
-            (ValueHolder[])ValueClass.newNullRestrictedAtomicArray(ValueHolder.class, 1, holder);
+        ValueHolder[] holders = createNullRestrictedAtomicArray(holder);
         globalHolders = holders;
     }
 
@@ -112,8 +121,7 @@ class TestNullRestrictedArrayEscapeState {
     @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
     static void testAllocateEscapingNullRestrictedNonAtomicArray() {
         ValueHolder holder = createValueHolderWithSynchronizedFieldWrite();
-        ValueHolder[] holders =
-            (ValueHolder[])ValueClass.newNullRestrictedNonAtomicArray(ValueHolder.class, 1, holder);
+        ValueHolder[] holders = createNullRestrictedNonAtomicArray(holder);
         globalHolders = holders;
     }
 
@@ -125,8 +133,7 @@ class TestNullRestrictedArrayEscapeState {
     @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
     static void testAllocateNullRestrictedAtomicArrayWithEscapingElements() {
         ValueHolder holder = createValueHolderWithSynchronizedFieldWrite();
-        ValueHolder[] holders =
-            (ValueHolder[])ValueClass.newNullRestrictedAtomicArray(ValueHolder.class, 1, holder);
+        ValueHolder[] holders = createNullRestrictedAtomicArray(holder);
         escapeFirstHolder(holders);
     }
 
@@ -138,8 +145,7 @@ class TestNullRestrictedArrayEscapeState {
     @IR(failOn = {IRNode.FAST_LOCK, IRNode.FAST_UNLOCK})
     static void testAllocateNullRestrictedAtomicArrayWithNonEscapingElements() {
         ValueHolder holder = createValueHolderWithSynchronizedFieldWrite();
-        ValueHolder[] holders =
-            (ValueHolder[])ValueClass.newNullRestrictedAtomicArray(ValueHolder.class, 1, holder);
+        ValueHolder[] holders = createNullRestrictedAtomicArray(holder);
         dontUse(holders);
     }
 
@@ -154,11 +160,9 @@ class TestNullRestrictedArrayEscapeState {
     @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
     static void testAllocateNullRestrictedArraysThenCopyThenLoadAndEscape() {
         ValueHolder srcHolder = createValueHolderWithSynchronizedFieldWrite();
-        ValueHolder[] src =
-            (ValueHolder[])ValueClass.newNullRestrictedAtomicArray(ValueHolder.class, 1, srcHolder);
+        ValueHolder[] src = createNullRestrictedAtomicArray(srcHolder);
         ValueHolder dstHolder = new ValueHolder(null);
-        ValueHolder[] dst =
-            (ValueHolder[])ValueClass.newNullRestrictedAtomicArray(ValueHolder.class, 1, dstHolder);
+        ValueHolder[] dst = createNullRestrictedAtomicArray(dstHolder);
         System.arraycopy(src, 0, dst, 0, 1);
         globalObj = dst[0].obj;
     }
@@ -170,11 +174,9 @@ class TestNullRestrictedArrayEscapeState {
     @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
     static void testAllocateNullRestrictedArraysThenCopyThenLoadAndEscapeHolder() {
         ValueHolder srcHolder = createValueHolderWithSynchronizedFieldWrite();
-        ValueHolder[] src =
-            (ValueHolder[])ValueClass.newNullRestrictedAtomicArray(ValueHolder.class, 1, srcHolder);
+        ValueHolder[] src = createNullRestrictedAtomicArray(srcHolder);
         ValueHolder dstHolder = new ValueHolder(null);
-        ValueHolder[] dst =
-            (ValueHolder[])ValueClass.newNullRestrictedAtomicArray(ValueHolder.class, 1, dstHolder);
+        ValueHolder[] dst = createNullRestrictedAtomicArray(dstHolder);
         System.arraycopy(src, 0, dst, 0, 1);
         globalHolder = dst[0];
     }
