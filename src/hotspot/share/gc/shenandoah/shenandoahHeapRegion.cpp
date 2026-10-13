@@ -901,9 +901,9 @@ public:
   }
 
   void do_object(oop obj) override {
-    assert(obj->is_forwarded(), "Marked object " PTR_FORMAT " in cset region should be forwarded", p2i(obj));
+    assert(ShenandoahForwarding::is_forwarded(obj), "Marked object " PTR_FORMAT " in cset region should be forwarded", p2i(obj));
 
-    if (obj->is_self_forwarded()) {
+    if (ShenandoahForwarding::is_self_forwarded(obj)) {
       HeapWord* current = cast_from_oop<HeapWord*>(obj);
       const size_t object_size = ShenandoahForwarding::size(obj);
 

@@ -537,7 +537,7 @@ public:
   ShenandoahNonForwardedObjectToOopClosure(T* cl) : _cl(cl) {}
 
   void do_object(oop obj) override {
-    if (obj->is_self_forwarded() || !obj->is_forwarded()) {
+    if (!ShenandoahForwarding::is_real_forwarded(obj)) {
       obj->oop_iterate(_cl);
     }
   }

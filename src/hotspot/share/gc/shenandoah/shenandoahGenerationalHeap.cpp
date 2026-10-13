@@ -826,8 +826,8 @@ private:
 
   template<class T>
   void update_references_in_old_region(T &cl, const ShenandoahMarkingContext* ctx, ShenandoahScanRemembered* scanner,
-                                    const ShenandoahHeapRegion* r, HeapWord* start_of_range,
-                                    HeapWord* end_of_range) const {
+                                       const ShenandoahHeapRegion* r, HeapWord* start_of_range,
+                                       HeapWord* end_of_range) const {
     // In case last object in my range spans boundary of my chunk, I may need to scan all the way to top()
     ShenandoahObjectToOopBoundedClosure<T> objs(&cl, start_of_range, r->top());
 
@@ -843,7 +843,8 @@ private:
     while (p < end_of_range) {
       // p is known to point to the beginning of marked object obj
       oop obj = cast_to_oop(p);
-      if (obj->is_self_forwarded() || !obj->is_forwarded()) {
+      if (!ShenandoahForwarding::is_real_forwarded(obj)) {
+        // Update references in the object if it was not evacuated
         objs.do_object(obj);
       }
       HeapWord* prev_p = p;
