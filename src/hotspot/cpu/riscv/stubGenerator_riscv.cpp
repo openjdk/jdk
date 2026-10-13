@@ -7957,7 +7957,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     const Register tmp2   = t1;
     const Register result = t2;
 
-    __ vectorized_mismatch(obja, objb, length, scale, result, tmp1, tmp2, v0, v4, v8);
+    __ vectorized_mismatch(obja, objb, length, scale, result, tmp1, tmp2);
 
     __ mv(x10, result);
     __ leave();

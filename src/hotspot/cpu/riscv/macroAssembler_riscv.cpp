@@ -7446,15 +7446,16 @@ void MacroAssembler::fast_unlock(Register obj, Register tmp1, Register tmp2, Reg
 // result contains element index of first mismatch (>= 0), or -1 if all match.
 void MacroAssembler::vectorized_mismatch(Register obja, Register objb,
                                          Register length, Register log2_array_indxscale,
-                                         Register result, Register tmp1, Register tmp2,
-                                         VectorRegister vreg0, VectorRegister vreg1, VectorRegister vreg2) {
+                                         Register result, Register tmp1, Register tmp2) {
   assert(UseRVV && UseZbb, "RVV and Zbb must be enabled");
 
   Label NOT_EQUAL, ALL_MATCH, DONE;
   Label CONVERT_RESULT;
 
   assert_different_registers(obja, objb, length, log2_array_indxscale, result, tmp1, tmp2);
-  assert_different_registers(vreg0, vreg1, vreg2);
+  VectorRegister vreg0 = v0;
+  VectorRegister vreg1 = v4;
+  VectorRegister vreg2 = v8;
   // Convert element count to byte count
   sll(length, length, log2_array_indxscale);
   mv(result, zr);

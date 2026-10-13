@@ -392,8 +392,7 @@ class MacroAssembler: public Assembler {
   // Compares two arrays byte-by-byte using vector loads and comparisons.
   // Returns the element index of the first mismatch, or -1 if all elements match.
   void vectorized_mismatch(Register obja, Register objb, Register length, Register log2_array_indxscale,
-                           Register result, Register tmp1, Register tmp2,
-                           VectorRegister vreg0, VectorRegister vreg1, VectorRegister vreg2);
+                           Register result, Register tmp1, Register tmp2);
 
   // As above, but with a constant super_klass.
   // The result is in Register result, not the condition codes.
