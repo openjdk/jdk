@@ -229,7 +229,7 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_LIBC],
     *linux*-musl*)
       VAR_LIBC=musl
       ;;
-    *linux*-gnu)
+    *linux*-gnu*)
       VAR_LIBC=gnu
       ;;
     *)

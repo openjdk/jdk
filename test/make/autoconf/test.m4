@@ -96,8 +96,10 @@ AC_DEFUN([TEST_PLATFORM_LIBC],
     UTIL_ASSERT_STRING_EQUALS($VAR_LIBC, musl, [Incorrect libc for $TEST_OS])
   done
 
-  PLATFORM_EXTRACT_VARS_FROM_LIBC(linux-gnu)
-  UTIL_ASSERT_STRING_EQUALS($VAR_LIBC, gnu)
+  for TEST_OS in linux-gnu linux-gnueabi linux-gnueabihf linux-gnuabi64; do
+    PLATFORM_EXTRACT_VARS_FROM_LIBC($TEST_OS)
+    UTIL_ASSERT_STRING_EQUALS($VAR_LIBC, gnu, [Incorrect libc for $TEST_OS])
+  done
 ])
 
 # Use the CUSTOM_EARLY_HOOK to inject our test after basic init is done.
