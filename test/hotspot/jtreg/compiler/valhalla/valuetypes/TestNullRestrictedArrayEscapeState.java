@@ -181,10 +181,24 @@ class TestNullRestrictedArrayEscapeState {
         globalHolder = dst[0];
     }
 
+    // Variant of the above test where the loaded identity object does not
+    // escape. C2 should optimize away the synchronization operations.
+    @Test
+    @IR(failOn = {IRNode.FAST_LOCK, IRNode.FAST_UNLOCK})
+    static int testAllocateNullRestrictedArraysThenCopyThenLoadButDontEscape() {
+        ValueHolder srcHolder = createValueHolderWithSynchronizedFieldWrite();
+        ValueHolder[] src = createNullRestrictedAtomicArray(srcHolder);
+        ValueHolder dstHolder = new ValueHolder(null);
+        ValueHolder[] dst = createNullRestrictedAtomicArray(dstHolder);
+        System.arraycopy(src, 0, dst, 0, 1);
+        return dst[0].obj.val;
+    }
+
     // Use a standalone runner to ensure we assert IR properties on the final C2
     // compilation, where the array copy is fully expanded.
     @Run(test = {"testAllocateNullRestrictedArraysThenCopyThenLoadAndEscape",
-                 "testAllocateNullRestrictedArraysThenCopyThenLoadAndEscapeHolder"},
+                 "testAllocateNullRestrictedArraysThenCopyThenLoadAndEscapeHolder",
+                 "testAllocateNullRestrictedArraysThenCopyThenLoadButDontEscape"},
          mode = RunMode.STANDALONE)
     static void runArrayCopyTests() {
         for (int i = 0; i < 10_000; i++) {
@@ -192,6 +206,9 @@ class TestNullRestrictedArrayEscapeState {
         }
         for (int i = 0; i < 10_000; i++) {
             testAllocateNullRestrictedArraysThenCopyThenLoadAndEscapeHolder();
+        }
+        for (int i = 0; i < 10_000; i++) {
+            testAllocateNullRestrictedArraysThenCopyThenLoadButDontEscape();
         }
     }
 }
