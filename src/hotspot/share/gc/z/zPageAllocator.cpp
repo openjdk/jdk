@@ -1716,12 +1716,14 @@ void ZPageAllocator::shrink_heuristic_max(size_t shrink_amount) {
   for (;;) {
     const size_t heuristic_max = _heuristic_max_capacity.load_relaxed();
     const size_t capacity = MAX2(heuristic_max - MIN2(shrink_amount, heuristic_max), ZGranuleSize);
-    if (heuristic_max > capacity) {
-      if (_heuristic_max_capacity.compare_exchange(heuristic_max, capacity) == heuristic_max) {
-        break;
-      }
+
+    if (heuristic_max <= capacity) {
+      return;
     }
-    return;
+
+    if (_heuristic_max_capacity.compare_exchange(heuristic_max, capacity) == heuristic_max) {
+      break;
+    }
   }
 }
 
