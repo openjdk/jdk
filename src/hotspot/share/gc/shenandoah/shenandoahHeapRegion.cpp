@@ -941,7 +941,7 @@ void ShenandoahHeapRegion::partially_recycle() {
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahScanRemembered* cards = is_old() ? heap->old_generation()->card_scan() : nullptr;
-  if (cards) {
+  if (cards != nullptr) {
     // Some of the objects here may be dead or forwarded, we don't want any stale object registrations or dirty cards.
     // We will rebuild the registrations and dirty cards for self-forwarded objects that stay in this region.
     cards->mark_range_as_empty(this->bottom(), region_size_words());
