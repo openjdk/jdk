@@ -125,7 +125,7 @@ private:
     void set_resolve_function() {
       // Size requirement to prevent word tearing
       // when functions pointers are updated.
-      STATIC_ASSERT(sizeof(_function[0]) == sizeof(void*));
+      static_assert(sizeof(_function[0]) == sizeof(void*));
       if (UseCompressedOops) {
         _function[KlassType::Kind] = &oop_oop_iterate<KlassType, narrowOop>;
       } else {
