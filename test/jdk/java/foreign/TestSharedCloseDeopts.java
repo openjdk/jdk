@@ -42,7 +42,6 @@
  *   -XX:-UseOnStackReplacement
  *   -XX:-BackgroundCompilation
  *   -Xlog:foreign+deoptimization=trace:file=test_deopts.txt:none
- *   -Xlog:jit+compilation=info,deoptimization=debug,dependencies=debug
  *   TestSharedCloseDeopts
  */
 
