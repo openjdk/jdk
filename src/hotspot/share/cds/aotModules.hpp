@@ -27,6 +27,7 @@
 
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
 class ClassLoaderData;
@@ -34,6 +35,8 @@ class MetaspaceClosure;
 class ModuleEntry;
 class SerializeClosure;
 
+// This class manages the information (such as module oops, ModuleEntry's, and ClassLoaderData's)
+// for the archived module system.
 class AOTModules : AllStatic {
   static bool _full_module_graph_loaded;
   CDS_JAVA_HEAP_ONLY(static void ensure_module_entry_table_exists(oop class_loader);)
