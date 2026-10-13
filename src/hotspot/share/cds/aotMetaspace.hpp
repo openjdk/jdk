@@ -76,7 +76,7 @@ class AOTMetaspace : AllStatic {
 
   static void dump_static_archive(TRAPS) NOT_CDS_RETURN;
 #ifdef _LP64
- static void init_heap_settings() NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_heap_settings() NOT_CDS_JAVA_HEAP_RETURN;
 #endif
 
 private:
@@ -92,6 +92,7 @@ public:
   static void initialize_for_static_dump() NOT_CDS_RETURN;
   static void initialize_runtime_shared_and_meta_spaces() NOT_CDS_RETURN;
   static void post_initialize(TRAPS) NOT_CDS_RETURN;
+  static void get_aot_code_region_size() NOT_CDS_RETURN;
 
   static void print_on(outputStream* st);
 
@@ -123,6 +124,7 @@ public:
   static void report_loading_error(const char* format, ...) ATTRIBUTE_PRINTF(1, 0);
   [[noreturn]] static void unrecoverable_writing_error(const char* message = nullptr);
   static void writing_error(const char* message = nullptr);
+  static void writing_error(oop exception_oop);
 
   static void make_method_handle_intrinsics_shareable() NOT_CDS_RETURN;
   static void write_method_handle_intrinsics() NOT_CDS_RETURN;

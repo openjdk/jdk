@@ -429,9 +429,15 @@ Symbol* Method::klass_name() const {
 }
 
 void Method::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(aot)("Iter(Method): %p", this);
-
-  if (!method_holder()->is_rewritten() || Arguments::is_valhalla_enabled()) {
+  LogStreamHandle(Trace, aot) lsh;
+  if (lsh.is_enabled() && method_holder() != nullptr) {
+    lsh.print("Iter(Method): %p ", this);
+    print_external_name(&lsh);
+    lsh.cr();
+  }
+  // holder is null for MH intrinsic methods
+  if ((method_holder() != nullptr && !method_holder()->is_rewritten()) ||
+      Arguments::is_valhalla_enabled()) {
     it->push(&_constMethod, MetaspaceClosure::_writable);
   } else {
     it->push(&_constMethod);
@@ -1303,6 +1309,7 @@ void Method::remove_unshareable_flags() {
   set_is_not_c2_compilable(false);
   set_is_not_c1_compilable(false);
   set_is_not_c2_osr_compilable(false);
+  set_is_not_c1_osr_compilable(false);
   set_on_stack_flag(false);
   set_has_scalarized_args(false);
 }

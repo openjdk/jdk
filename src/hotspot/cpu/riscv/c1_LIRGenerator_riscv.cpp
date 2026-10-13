@@ -116,9 +116,9 @@ bool LIRGenerator::can_store_as_constant(Value v, BasicType type) const {
   } else if (v->type()->as_ObjectConstant() != nullptr) {
     return v->type()->as_ObjectConstant()->value()->is_null_object();
   } else if (v->type()->as_FloatConstant() != nullptr) {
-    return jint_cast(v->type()->as_FloatConstant()->value()) == 0.0f;
+    return jint_cast(v->type()->as_FloatConstant()->value()) == 0;
   } else if (v->type()->as_DoubleConstant() != nullptr) {
-    return jlong_cast(v->type()->as_DoubleConstant()->value()) == 0.0;
+    return jlong_cast(v->type()->as_DoubleConstant()->value()) == 0;
   }
   return false;
 }
@@ -206,13 +206,6 @@ LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
       ShouldNotReachHere();
   }
   return r;
-}
-
-void LIRGenerator::increment_counter(address counter, BasicType type, int step) {
-  LIR_Opr pointer = new_pointer_register();
-  __ move(LIR_OprFact::intptrConst(counter), pointer);
-  LIR_Address* addr = new LIR_Address(pointer, type);
-  increment_counter(addr, step);
 }
 
 void LIRGenerator::increment_counter(LIR_Address* addr, int step) {

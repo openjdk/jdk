@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_VALUETYPENODE_HPP
-#define SHARE_VM_OPTO_VALUETYPENODE_HPP
+#ifndef SHARE_OPTO_VALUETYPENODE_HPP
+#define SHARE_OPTO_VALUETYPENODE_HPP
 
 #include "ci/ciValueKlass.hpp"
 #include "oops/accessDecorators.hpp"
@@ -261,4 +261,4 @@ private:
   static Node* set_payload_value(PhaseIterGVN& igvn, BasicType payload_bt, Node* payload, BasicType val_bt, Node* value, int offset);
 };
 
-#endif // SHARE_VM_OPTO_VALUETYPENODE_HPP
+#endif // SHARE_OPTO_VALUETYPENODE_HPP

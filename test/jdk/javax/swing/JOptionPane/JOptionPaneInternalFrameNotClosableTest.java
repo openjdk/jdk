@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8388824
+ * @key headful
  * @summary Verifies that JOptionPane internal frames are not closable
  *          for all installed look and feels
  * @run main JOptionPaneInternalFrameNotClosableTest
@@ -35,7 +36,6 @@ import java.util.List;
 import javax.swing.JDesktopPane;
 import javax.swing.JInternalFrame;
 import javax.swing.JOptionPane;
-import javax.swing.LookAndFeel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
