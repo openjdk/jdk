@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,6 +134,7 @@ public class Paint9Painter extends CachedPainter {
         super.paint(c, g, x, y, w, h, source, sInsets, dInsets, type, mask);
     }
 
+    @Override
     protected void paintToImage(Component c, Image destImage, Graphics g,
                                 int w, int h, Object[] args) {
         int argIndex = 0;
@@ -329,6 +330,7 @@ public class Paint9Painter extends CachedPainter {
     /**
      * Subclassed to always create a translucent image.
      */
+    @Override
     protected Image createImage(Component c, int w, int h,
                                 GraphicsConfiguration config,
                                 Object[] args) {
