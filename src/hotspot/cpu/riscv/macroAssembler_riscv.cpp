@@ -6546,8 +6546,8 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
   add(processed, processed, taken);
   sub(total, total, taken);
   const int taken_shift = exact_log2(wordSize);
-  shadd(obja, taken, obja, t0, taken_shift);
-  shadd(objb, taken, objb, t0, taken_shift);
+  shift_left_add(obja, taken, obja, taken_shift, t0);
+  shift_left_add(objb, taken, objb, taken_shift, t0);
   bnez(total, VEC_LOOP);
 
   bind(NO_MISMATCH_FOUND);
