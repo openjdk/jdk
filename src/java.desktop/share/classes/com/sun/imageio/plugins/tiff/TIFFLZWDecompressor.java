@@ -132,6 +132,11 @@ class TIFFLZWDecompressor extends TIFFDecompressor {
     public int decode(byte[] sdata, int srcOffset,
                       byte[] ddata, int dstOffset)
         throws IOException {
+        // TIFF spec requires atleast 9 bit ClearCode and a 9 bit EOI code
+        // in a LZW strip.
+        if (sdata.length < 3) {
+            throw new IIOException("Invalid LZW compressed strip/tile data");
+        }
         if (sdata[0] == (byte)0x00 && sdata[1] == (byte)0x01) {
             throw new IIOException
                 ("TIFF 5.0-style LZW compression is not supported!");
