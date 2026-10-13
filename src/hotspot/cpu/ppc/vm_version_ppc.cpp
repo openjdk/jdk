@@ -80,7 +80,7 @@ void VM_Version::initialize() {
   guarantee(PowerArchitecturePPC64_ok, "PowerArchitecturePPC64 cannot be set to "
             "%zu on this machine", PowerArchitecturePPC64);
 
-  // Power 8: Configure Data Stream Control Register.
+  // Configure Data Stream Control Register.
   if (VM_Version::has_mfdscr()) {
     config_dscr();
   }
@@ -531,7 +531,7 @@ void VM_Version::determine_features() {
          "processors with smaller cache line size are no longer supported");
 }
 
-// Power 8: Configure Data Stream Control Register.
+// Configure Data Stream Control Register.
 void VM_Version::config_dscr() {
   // 7 InstWords for each call (function descriptor + blr instruction).
   const int code_size = (2+2*7)*BytesPerInstWord;

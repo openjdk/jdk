@@ -519,13 +519,11 @@ class MacroAssembler: public Assembler {
                        Register addr_base, int semantics, bool cmpxchgx_hint, Register int_flag_success,
                        Label* failed_ext, bool contention_hint, bool weak, int size);
  public:
-  // Temps and addr_base are killed if processor does not support Power 8 instructions.
   // Result will be sign extended.
   void getandsetb(Register dest_current_value, Register exchange_value, Register addr_base,
                   Register tmp1, Register tmp2, Register tmp3, bool cmpxchgx_hint) {
     atomic_get_and_modify_generic(dest_current_value, exchange_value, addr_base, tmp1, tmp2, tmp3, cmpxchgx_hint, false, 1);
   }
-  // Temps and addr_base are killed if processor does not support Power 8 instructions.
   // Result will be sign extended.
   void getandseth(Register dest_current_value, Register exchange_value, Register addr_base,
                   Register tmp1, Register tmp2, Register tmp3, bool cmpxchgx_hint) {
@@ -537,13 +535,11 @@ class MacroAssembler: public Assembler {
   }
   void getandsetd(Register dest_current_value, Register exchange_value, Register addr_base,
                   bool cmpxchgx_hint);
-  // tmp2/3 and addr_base are killed if processor does not support Power 8 instructions (tmp1 is always needed).
   // Result will be sign extended.
   void getandaddb(Register dest_current_value, Register inc_value, Register addr_base,
                   Register tmp1, Register tmp2, Register tmp3, bool cmpxchgx_hint) {
     atomic_get_and_modify_generic(dest_current_value, inc_value, addr_base, tmp1, tmp2, tmp3, cmpxchgx_hint, true, 1);
   }
-  // tmp2/3 and addr_base are killed if processor does not support Power 8 instructions (tmp1 is always needed).
   // Result will be sign extended.
   void getandaddh(Register dest_current_value, Register inc_value, Register addr_base,
                   Register tmp1, Register tmp2, Register tmp3, bool cmpxchgx_hint) {
@@ -555,7 +551,6 @@ class MacroAssembler: public Assembler {
   }
   void getandaddd(Register dest_current_value, Register exchange_value, Register addr_base,
                   Register tmp, bool cmpxchgx_hint);
-  // Temps, addr_base and exchange_value are killed if processor does not support Power 8 instructions.
   // compare_value must be at least 32 bit sign extended. Result will be sign extended.
   void cmpxchgb(ConditionRegister flag, Register dest_current_value,
                 RegisterOrConstant compare_value, Register exchange_value,
@@ -565,7 +560,6 @@ class MacroAssembler: public Assembler {
     cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, semantics,
                     cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 1);
   }
-  // Temps, addr_base and exchange_value are killed if processor does not support Power 8 instructions.
   // compare_value must be at least 32 bit sign extended. Result will be sign extended.
   void cmpxchgh(ConditionRegister flag, Register dest_current_value,
                 RegisterOrConstant compare_value, Register exchange_value,
