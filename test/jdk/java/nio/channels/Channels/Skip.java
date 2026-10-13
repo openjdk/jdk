@@ -281,7 +281,7 @@ class Skip {
 
     /**
      * Test InputStream.skip for input stream that reads from a socket associated
-     * a socket channel.
+     * with a socket channel.
      */
     @Test
     void testSocketChannelAdaptor() throws Exception {
