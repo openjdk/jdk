@@ -233,16 +233,12 @@ void VM_Version::initialize() {
     ContendedPaddingWidth = cache_line_size;
   }
 
-  if (!UseCRC32Intrinsics) {
-    if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
-      FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
-    }
+  if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
+    FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
   }
 
-  if (!UseCRC32CIntrinsics) {
-    if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
-      FLAG_SET_DEFAULT(UseCRC32CIntrinsics, true);
-    }
+  if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
+    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, true);
   }
 
   if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
