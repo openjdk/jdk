@@ -493,7 +493,7 @@ void AOTMetaspace::write_method_handle_intrinsics() {
 void AOTMetaspace::early_serialize(SerializeClosure* soc) {
   int tag = 0;
   soc->do_tag(--tag);
-  AOTModules::serialize_archived_module_info(soc);
+  CDS_JAVA_HEAP_ONLY(Modules::serialize_archived_module_info(soc);)
   soc->do_tag(666);
 }
 
@@ -740,7 +740,7 @@ public:
 char* VM_PopulateDumpSharedSpace::dump_early_read_only_tables() {
   ArchiveBuilder::OtherROAllocMark mark;
 
-  AOTModules::dump_archived_module_info();
+  CDS_JAVA_HEAP_ONLY(Modules::dump_archived_module_info());
 
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();

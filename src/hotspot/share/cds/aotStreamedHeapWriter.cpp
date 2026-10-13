@@ -22,7 +22,6 @@
  *
  */
 
-#include "cds/aotModules.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/aotStreamedHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
@@ -323,7 +322,7 @@ size_t AOTStreamedHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
 
   if (java_lang_Module::is_instance(src_obj)) {
     // These native pointers will be restored explicitly at run time.
-    AOTModules::check_archived_module_oop(src_obj);
+    Modules::check_archived_module_oop(src_obj);
     update_buffered_object_field<ModuleEntry*>(to, java_lang_Module::module_entry_offset(), nullptr);
   } else if (java_lang_ClassLoader::is_instance(src_obj)) {
 #ifdef ASSERT

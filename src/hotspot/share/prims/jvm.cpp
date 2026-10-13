@@ -24,7 +24,6 @@
 
 #include "cds/aotClassInitializer.hpp"
 #include "cds/aotMetaspace.hpp"
-#include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
@@ -1346,7 +1345,7 @@ JVM_END
 JVM_ENTRY(void, JVM_DefineArchivedModules(JNIEnv *env, jobject platform_loader, jobject system_loader))
   Handle h_platform_loader (THREAD, JNIHandles::resolve(platform_loader));
   Handle h_system_loader (THREAD, JNIHandles::resolve(system_loader));
-  AOTModules::define_archived_modules(h_platform_loader, h_system_loader, CHECK);
+  Modules::define_archived_modules(h_platform_loader, h_system_loader, CHECK);
 JVM_END
 
 // Reflection support //////////////////////////////////////////////////////////////////////////////

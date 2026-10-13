@@ -24,7 +24,6 @@
 
 #include "cds/aotMappedHeap.hpp"
 #include "cds/aotMappedHeapWriter.hpp"
-#include "cds/aotModules.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
@@ -420,7 +419,7 @@ void AOTMappedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtC
     _buffer_offset_to_source_obj_table->maybe_grow();
 
     if (java_lang_Module::is_instance(src_obj)) {
-      AOTModules::check_archived_module_oop(src_obj);
+      Modules::check_archived_module_oop(src_obj);
     }
   }
 

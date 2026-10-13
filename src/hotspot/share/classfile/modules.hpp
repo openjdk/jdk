@@ -33,6 +33,7 @@ class SerializeClosure;
 class Symbol;
 
 class Modules : AllStatic {
+  static void check_cds_restrictions(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
 
 public:
   // define_module defines a module containing the specified packages. It binds the
@@ -52,6 +53,24 @@ public:
   //  NullPointerExceptions are thrown if module is null.
   static void define_module(Handle module, jboolean is_open, jstring version,
                             jstring location, jobjectArray packages, TRAPS);
+
+  static void check_archived_module_oop(oop orig_module_obj) NOT_CDS_JAVA_HEAP_RETURN;
+  static void define_archived_modules(Handle h_platform_loader, Handle h_system_loader,
+                                      TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_archived_modules(JavaThread* current, Handle h_platform_loader, Handle h_system_loader)
+                                   NOT_CDS_JAVA_HEAP_RETURN;
+  static void dump_archived_module_info() NOT_CDS_JAVA_HEAP_RETURN;
+  static void serialize_archived_module_info(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+
+#if INCLUDE_CDS_JAVA_HEAP
+private:
+  class ArchivedProperty;
+
+  static ArchivedProperty _archived_props[];
+  static constexpr size_t num_archived_props();
+  static ArchivedProperty& archived_prop(size_t i);
+public:
+#endif
 
   // Provides the java.lang.Module for the unnamed module defined
   // to the boot loader.
