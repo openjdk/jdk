@@ -2337,42 +2337,47 @@ void PhaseIterGVN::remove_globally_dead_node(Node* dead, NodeOrigin origin) {
         }
         bool recurse = false;
         // Remove from hash table
-        _table.hash_delete( dead );
+        _table.hash_delete(dead);
         // Smash all inputs to 'dead', isolating him completely
         for (uint i = 0; i < dead->req(); i++) {
-          Node *in = dead->in(i);
-          if (in != nullptr && in != C->top()) {  // Points to something?
-            int nrep = dead->replace_edge(in, nullptr, this);  // Kill edges
-            assert((nrep > 0), "sanity");
-            if (in->outcnt() == 0) { // Made input go dead?
-              stack.push(in, PROCESS_INPUTS); // Recursively remove
-              recurse = true;
-            } else if (in->outcnt() == 1 && in->has_special_unique_user()) {
-              add_users_to_worklist(in);
-            } else if (in->outcnt() <= 2 && dead->is_Phi()) {
-              if (in->Opcode() == Op_Region) {
-                _worklist.push(in);
-              } else if (in->is_Store()) {
-                DUIterator_Fast imax, i = in->fast_outs(imax);
+          Node* in = dead->in(i);
+          if (in == nullptr) {
+            continue;
+          }
+          int nrep = dead->replace_edge(in, nullptr, this); // Kill edges
+          assert((nrep > 0), "sanity");
+          if (in == C->top()) {
+            continue;
+          }
+          if (in->outcnt() == 0) {
+            // Made input go dead?
+            stack.push(in, PROCESS_INPUTS); // Recursively remove
+            recurse = true;
+          } else if (in->outcnt() == 1 && in->has_special_unique_user()) {
+            add_users_to_worklist(in);
+          } else if (in->outcnt() <= 2 && dead->is_Phi()) {
+            if (in->Opcode() == Op_Region) {
+              _worklist.push(in);
+            } else if (in->is_Store()) {
+              DUIterator_Fast imax, i = in->fast_outs(imax);
+              _worklist.push(in->fast_out(i));
+              i++;
+              if (in->outcnt() == 2) {
                 _worklist.push(in->fast_out(i));
                 i++;
-                if (in->outcnt() == 2) {
-                  _worklist.push(in->fast_out(i));
-                  i++;
-                }
-                assert(!(i < imax), "sanity");
               }
-            } else if (in->should_process_when_disconnect_output(dead)) {
-              _worklist.push(in);
+              assert(!(i < imax), "sanity");
             }
-            if (ReduceFieldZeroing && dead->is_Load() && i == MemNode::Memory &&
-                in->is_Proj() && in->in(0) != nullptr && in->in(0)->is_Initialize()) {
-              // A Load that directly follows an InitializeNode is
-              // going away. The Stores that follow are candidates
-              // again to be captured by the InitializeNode.
-              add_users_to_worklist_if(_worklist, in, [](Node* n) { return n->is_Store(); });
-            }
-          } // if (in != nullptr && in != C->top())
+          } else if (in->should_process_when_disconnect_output(dead)) {
+            _worklist.push(in);
+          }
+          if (ReduceFieldZeroing && dead->is_Load() && i == MemNode::Memory &&
+              in->is_Proj() && in->in(0) != nullptr && in->in(0)->is_Initialize()) {
+            // A Load that directly follows an InitializeNode is
+            // going away. The Stores that follow are candidates
+            // again to be captured by the InitializeNode.
+            add_users_to_worklist_if(_worklist, in, [](Node* n) { return n->is_Store(); });
+          }
         } // for (uint i = 0; i < dead->req(); i++)
         if (recurse) {
           continue;
@@ -2736,6 +2741,13 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     add_users_to_worklist_if(worklist, use, [](Node* u) {
       return u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL ||
              u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
+    });
+  }
+  // If changed AndL inputs, check ConvL2I users for
+  // "ConvL2I(AndL(x, 0xFFFFFFFF))" => "ConvL2I(x)" optimization in ConvL2INode::Ideal.
+  if (use_op == Op_AndL) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_ConvL2I;
     });
   }
   // Check for redundant conversion patterns:

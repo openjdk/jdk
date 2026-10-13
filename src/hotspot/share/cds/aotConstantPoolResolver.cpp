@@ -26,6 +26,8 @@
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/heapShared.hpp"
+#include "cds/lambdaFormInvokers.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -147,6 +149,29 @@ void AOTConstantPoolResolver::preresolve_string_cp_entries(InstanceKlass* ik, TR
     case JVM_CONSTANT_String:
       resolve_string(cp, cp_index, CHECK); // may throw OOM when interning strings.
       break;
+    }
+  }
+
+  // Normally, we don't want to archive any CP entries that were not resolved
+  // in the training run. Otherwise the AOT/JIT may inline too much code that has not
+  // been executed.
+  //
+  // However, we want to aggressively resolve all klass/field/method constants for
+  // LambdaForm Invoker Holder classes, Lambda Proxy classes, and LambdaForm classes,
+  // so that the compiler can inline through them.
+  if (SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
+    bool eager_resolve = false;
+
+    if (LambdaFormInvokers::may_be_regenerated_class(ik->name())) {
+      eager_resolve = true;
+    }
+    if (ik->is_hidden() && HeapShared::is_archivable_hidden_klass(ik)) {
+      eager_resolve = true;
+    }
+
+    if (eager_resolve) {
+      preresolve_class_cp_entries(THREAD, ik, nullptr);
+      preresolve_field_and_method_cp_entries(THREAD, ik, nullptr);
     }
   }
 }

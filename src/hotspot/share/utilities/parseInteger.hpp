@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_PARSE_INTEGER_HPP
-#define SHARE_UTILITIES_PARSE_INTEGER_HPP
+#ifndef SHARE_UTILITIES_PARSEINTEGER_HPP
+#define SHARE_UTILITIES_PARSEINTEGER_HPP
 
 #include "cppstdlib/cstdlib.hpp"
 #include "cppstdlib/limits.hpp"
@@ -170,4 +170,4 @@ inline bool parse_integer(const char *s, T* result) {
   return rc;
 }
 
-#endif // SHARE_UTILITIES_PARSE_INTEGER_HPP
+#endif // SHARE_UTILITIES_PARSEINTEGER_HPP

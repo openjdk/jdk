@@ -97,6 +97,7 @@ public class ClassHistogramParallelTest {
         OutputAnalyzer appOut = new OutputAnalyzer(app.getProcessStdout());
 
         if (Arrays.asList(gcArgs).contains("-XX:+UseSerialGC")) {
+            System.out.println("Serial GC detected.");
             expectedDiagWorkers = 0;
         }
 
@@ -181,7 +182,7 @@ public class ClassHistogramParallelTest {
 
     private static void verifyHistogram(OutputAnalyzer out) throws Exception {
         out.shouldHaveExitValue(0);
-        // Verify that the histogram was printed
+        // Verify that the histogram was printed.
         out.shouldMatch("^Total\\s+\\d+\\s+\\d+");
     }
 }

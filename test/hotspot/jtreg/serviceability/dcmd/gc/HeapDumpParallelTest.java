@@ -38,7 +38,7 @@ import jdk.test.lib.hprof.HprofParser;
 
 /*
  * @test id=Serial
- * @bug 8306441 8319053 8392050
+ * @bug 8306441 8319053 8384612 8392050
  * @requires vm.gc.Serial
  * @summary Verify the integrity of generated heap dump and that parallel dump requests run serially (Serial GC)
  * @library /test/lib
@@ -47,7 +47,7 @@ import jdk.test.lib.hprof.HprofParser;
 
 /*
  * @test id=Parallel
- * @bug 8306441 8319053 8392050
+ * @bug 8306441 8319053 8384612 8392050
  * @requires vm.gc.Parallel
  * @summary Verify the integrity of generated heap dump and capability of parallel dump (Parallel GC)
  * @library /test/lib
@@ -56,7 +56,7 @@ import jdk.test.lib.hprof.HprofParser;
 
 /*
  * @test id=G1
- * @bug 8306441 8319053 8392050
+ * @bug 8306441 8319053 8384612 8392050
  * @requires vm.gc.G1
  * @summary Verify the integrity of generated heap dump and capability of parallel dump (G1 GC)
  * @library /test/lib
@@ -65,7 +65,7 @@ import jdk.test.lib.hprof.HprofParser;
 
 /*
  * @test id=Shenandoah
- * @bug 8306441 8319053 8392050
+ * @bug 8306441 8319053 8384612 8392050
  * @requires vm.gc.Shenandoah
  * @summary Verify the integrity of generated heap dump and capability of parallel dump (Shenandoah GC)
  * @library /test/lib
@@ -74,7 +74,7 @@ import jdk.test.lib.hprof.HprofParser;
 
 /*
  * @test id=ShenandoahGenerational
- * @bug 8306441 8319053 8392050
+ * @bug 8306441 8319053 8384612 8392050
  * @requires vm.gc.Shenandoah
  * @summary Verify the integrity of generated heap dump and capability of parallel dump (Generational Shenandoah GC)
  * @library /test/lib
@@ -83,7 +83,7 @@ import jdk.test.lib.hprof.HprofParser;
 
 /*
  * @test id=Z
- * @bug 8306441 8319053 8392050
+ * @bug 8306441 8319053 8384612 8392050
  * @requires vm.gc.Z
  * @summary Verify the integrity of generated heap dump and capability of parallel dump (Z GC)
  * @library /test/lib
@@ -96,13 +96,15 @@ public class HeapDumpParallelTest {
     private static final int ACTIVE_PROCESSOR_COUNT = 2;
     private static final int PARALLEL_GC_THREADS = 4;
 
-    private static void checkAndVerify(OutputAnalyzer dcmdOut, LingeredApp app, File heapDumpFile, int expectedDiagWorkers, String[] gcArgs) throws Exception {
+    private static void checkAndVerify(OutputAnalyzer dcmdOut, LingeredApp app, File heapDumpFile, int expectedDiagWorkers) throws Exception {
         dcmdOut.shouldHaveExitValue(0);
         dcmdOut.shouldContain("Heap dump file created");
         OutputAnalyzer appOut = new OutputAnalyzer(app.getProcessStdout());
         appOut.shouldMatch("\\[heapdump *\\]");
-        if (Arrays.asList(gcArgs).contains("-XX:+UseSerialGC")) {
-            System.out.println("UseSerialGC detected.");
+        // Check the target VM's selected GC, including ergonomic selection.
+        appOut.shouldMatch("\\[gc *\\] Using ");
+        if (appOut.getStdout().contains("Using Serial")) {
+            System.out.println("Serial GC detected.");
             expectedDiagWorkers = 0;
         }
         if (expectedDiagWorkers > 1) {
@@ -133,8 +135,7 @@ public class HeapDumpParallelTest {
 
     private static LingeredApp launchApp(String[] gcArgs) throws IOException {
         LingeredApp theApp = new LingeredApp();
-        List<String> jvmArgs = new ArrayList<>(List.of("-Xlog:heapdump,gc+task",
-                                                       "-Xmx512m",
+        List<String> jvmArgs = new ArrayList<>(List.of("-Xlog:gc,heapdump,gc+task", "-Xmx512m",
                                                        "-XX:ActiveProcessorCount=" + ACTIVE_PROCESSOR_COUNT,
                                                        "-XX:ParallelGCThreads=" + PARALLEL_GC_THREADS));
         jvmArgs.addAll(Arrays.asList(gcArgs));
@@ -182,7 +183,7 @@ public class HeapDumpParallelTest {
         try {
             OutputAnalyzer dcmdOut = attachJcmdHeapDump(heapDumpFile, theApp.getPid(), arg);
             theApp.stopApp();
-            checkAndVerify(dcmdOut, theApp, heapDumpFile, expectedDiagWorkers, gcArgs);
+            checkAndVerify(dcmdOut, theApp, heapDumpFile, expectedDiagWorkers);
         } finally {
             theApp.stopApp();
         }

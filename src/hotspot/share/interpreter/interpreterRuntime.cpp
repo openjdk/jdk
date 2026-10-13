@@ -250,6 +250,15 @@ JRT_BLOCK_ENTRY(void, InterpreterRuntime::read_flat_field(JavaThread* current, o
   JRT_BLOCK_END
 JRT_END
 
+JRT_LEAF(void, InterpreterRuntime::write_null_free_flat_field(oopDesc* obj, oopDesc* value, ResolvedFieldEntry* entry))
+  assert(value != nullptr, "Expecting null-free value");
+  assert(oopDesc::is_oop(obj), "Sanity check");
+  assert(oopDesc::is_oop(value), "Sanity check");
+
+  FlatFieldPayload payload(instanceOop(obj), entry);
+  payload.write_without_nullability_check(valueOop(value));
+JRT_END
+
 JRT_ENTRY(void, InterpreterRuntime::write_flat_field(JavaThread* current, oopDesc* obj, oopDesc* value, ResolvedFieldEntry* entry))
   assert(oopDesc::is_oop(obj), "Sanity check");
   assert(oopDesc::is_oop_or_null(value), "Sanity check");
@@ -327,7 +336,6 @@ JRT_ENTRY(jboolean, InterpreterRuntime::is_substitutable(JavaThread* current, oo
   args.push_oop(ha);
   args.push_oop(hb);
   methodHandle method(current, Universe::is_substitutable_method());
-  method->method_holder()->initialize(CHECK_false); // Ensure class ValueObjectMethods is initialized
   JavaCalls::call(&result, method, &args, THREAD);
   Exceptions::wrap_exception_in_internal_error("Internal error in substitutability test", CHECK_false);
 
