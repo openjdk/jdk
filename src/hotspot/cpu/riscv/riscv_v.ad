@@ -48,6 +48,9 @@ source %{
   }
 
   bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
+    if (opcode == Op_MulReductionVF || opcode == Op_MulReductionVD) {
+      return false;
+    }
     return match_rule_supported_vector(opcode, vlen, bt);
   }
 
@@ -111,6 +114,14 @@ source %{
           return false;
         }
         break;
+      case Op_MulReductionVF:
+      case Op_MulReductionVD:
+        // Vector API only (auto-vectorization is disabled for these). Keep vlen == 2:
+        // without the rule, reduceLanes(MUL) hits the much slower scalar fallback.
+        if (vlen < 2 || !is_power_of_2(vlen)) {
+          return false;
+        }
+        break;
       case Op_VectorCastHF2F:
       case Op_VectorCastF2HF:
         return UseZvfh || UseZvfhmin;
@@ -150,6 +161,12 @@ source %{
     }
 
     switch (opcode) {
+      case Op_MulReductionVF:
+      case Op_MulReductionVD:
+        // RVV has no floating-point multiply-reduction instruction. Let C2 emulate the
+        // masked operation by replacing inactive lanes with the multiplication identity
+        // (1.0) before applying the unmasked reduction rule.
+        return false;
       case Op_SelectFromTwoVector:
         // There is no masked version of selectFrom two vector, i.e. selectFrom(av, bv, mask) in vector API.
         return false;
@@ -2688,6 +2705,7 @@ instruct vreduce_max(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (MaxReductionV src1 src2));
+  match(Set dst (UMaxReductionV src1 src2));
   effect(TEMP tmp);
   format %{ "vreduce_max $dst, $src1, $src2\t# KILL $tmp" %}
   ins_encode %{
@@ -2702,6 +2720,7 @@ instruct vreduce_max(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
 instruct vreduce_maxL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (MaxReductionV src1 src2));
+  match(Set dst (UMaxReductionV src1 src2));
   effect(TEMP tmp);
   format %{ "vreduce_maxL $dst, $src1, $src2\t# KILL $tmp" %}
   ins_encode %{
@@ -2720,6 +2739,7 @@ instruct vreduce_max_masked(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegMask_
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (MaxReductionV (Binary src1 src2) v0));
+  match(Set dst (UMaxReductionV (Binary src1 src2) v0));
   effect(TEMP tmp);
   format %{ "vreduce_max_masked $dst, $src1, $src2, $v0\t# KILL $tmp" %}
   ins_encode %{
@@ -2735,6 +2755,7 @@ instruct vreduce_max_masked(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegMask_
 instruct vreduce_maxL_masked(iRegLNoSp dst, iRegL src1, vReg src2, vRegMask_V0 v0, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (MaxReductionV (Binary src1 src2) v0));
+  match(Set dst (UMaxReductionV (Binary src1 src2) v0));
   effect(TEMP tmp);
   format %{ "vreduce_maxL_masked $dst, $src1, $src2, $v0\t# KILL $tmp" %}
   ins_encode %{
@@ -2754,6 +2775,7 @@ instruct vreduce_min(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (MinReductionV src1 src2));
+  match(Set dst (UMinReductionV src1 src2));
   effect(TEMP tmp);
   format %{ "vreduce_min $dst, $src1, $src2\t# KILL $tmp" %}
   ins_encode %{
@@ -2768,6 +2790,7 @@ instruct vreduce_min(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
 instruct vreduce_minL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (MinReductionV src1 src2));
+  match(Set dst (UMinReductionV src1 src2));
   effect(TEMP tmp);
   format %{ "vreduce_minL $dst, $src1, $src2\t# KILL $tmp" %}
   ins_encode %{
@@ -2786,6 +2809,7 @@ instruct vreduce_min_masked(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegMask_
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (MinReductionV (Binary src1 src2) v0));
+  match(Set dst (UMinReductionV (Binary src1 src2) v0));
   effect(TEMP tmp);
   format %{ "vreduce_min_masked $dst, $src1, $src2, $v0\t# KILL $tmp" %}
   ins_encode %{
@@ -2801,6 +2825,7 @@ instruct vreduce_min_masked(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegMask_
 instruct vreduce_minL_masked(iRegLNoSp dst, iRegL src1, vReg src2, vRegMask_V0 v0, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (MinReductionV (Binary src1 src2) v0));
+  match(Set dst (UMinReductionV (Binary src1 src2) v0));
   effect(TEMP tmp);
   format %{ "vreduce_minL_masked $dst, $src1, $src2, $v0\t# KILL $tmp" %}
   ins_encode %{
@@ -2994,6 +3019,36 @@ instruct reduce_mulL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc,
                              as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
                              Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc),
                              Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_mulF(fRegF dst, fRegF fsrc, vReg vsrc,
+                     vReg tmp1, vReg tmp2) %{
+  predicate(!n->as_Reduction()->requires_strict_order());
+  match(Set dst (MulReductionVF fsrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  format %{ "reduce_mulF $dst, $fsrc, $vsrc\t# KILL $tmp1, $tmp2" %}
+
+  ins_encode %{
+    __ reduce_mul_fp_v($dst$$FloatRegister, $fsrc$$FloatRegister, as_VectorRegister($vsrc$$reg),
+                       as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
+                       false /* is_double */, Matcher::vector_length(this, $vsrc));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_mulD(fRegD dst, fRegD dsrc, vReg vsrc,
+                     vReg tmp1, vReg tmp2) %{
+  predicate(!n->as_Reduction()->requires_strict_order());
+  match(Set dst (MulReductionVD dsrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  format %{ "reduce_mulD $dst, $dsrc, $vsrc\t# KILL $tmp1, $tmp2" %}
+
+  ins_encode %{
+    __ reduce_mul_fp_v($dst$$FloatRegister, $dsrc$$FloatRegister, as_VectorRegister($vsrc$$reg),
+                       as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
+                       true /* is_double */, Matcher::vector_length(this, $vsrc));
   %}
   ins_pipe(pipe_slow);
 %}

@@ -41,7 +41,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
@@ -799,6 +798,8 @@ void AOTStreamedHeapLoader::cleanup() {
   }
 
   FREE_C_HEAP_ARRAY(_object_index_to_heap_object_table);
+  _object_index_to_heap_object_table = nullptr;
+  _roots_archive = nullptr;
 
   // Unmap regions
   FileMapInfo::current_info()->unmap_region(AOTMetaspace::hp);
