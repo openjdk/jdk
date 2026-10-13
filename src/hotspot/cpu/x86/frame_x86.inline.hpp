@@ -402,7 +402,12 @@ ALWAYSINLINE frame frame::sender(RegisterMap* map) const {
   }
 
   // Calling frame::id() is currently not supported for heap frames.
-  assert(result._on_heap || this->_on_heap || result.is_older(this->id()), "Must be");
+  // For an async map, registers are sampled at an arbitrary point,
+  // which means that the apparent sender may not be a valid frame
+  // suitable for walking. Because of this we only assert if the
+  // sender frame is older than this frame for non-async maps.
+  assert(result._on_heap || this->_on_heap || map->is_async() ||
+         result.is_older(this->id()), "Must be");
 
   return result;
 }

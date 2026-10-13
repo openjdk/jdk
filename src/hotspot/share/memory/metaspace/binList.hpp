@@ -82,8 +82,8 @@ class BinListImpl {
 #define BLOCK_FORMAT_ARGS(b, sz)  p2i(b), (sz), p2i((b)->_next)
 
   // Block size must be exactly one word size.
-  STATIC_ASSERT(sizeof(Block) == BytesPerWord);
-  STATIC_ASSERT(num_lists > 0);
+  static_assert(sizeof(Block) == BytesPerWord);
+  static_assert(num_lists > 0);
 
 public:
 

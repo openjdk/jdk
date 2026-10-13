@@ -49,18 +49,6 @@ mlib_status mlib_c_convMxNnw_u8(mlib_image       *dst,
                                 mlib_s32         scale,
                                 mlib_s32         cmask);
 
-mlib_status mlib_c_convMxNext_u8(mlib_image       *dst,
-                                 const mlib_image *src,
-                                 const mlib_s32   *kern,
-                                 mlib_s32         m,
-                                 mlib_s32         n,
-                                 mlib_s32         dx_l,
-                                 mlib_s32         dx_r,
-                                 mlib_s32         dy_t,
-                                 mlib_s32         dy_b,
-                                 mlib_s32         scale,
-                                 mlib_s32         cmask);
-
 /* for x86, using integer multiplies is faster */
 
 mlib_status mlib_i_convMxNnw_s16(mlib_image       *dst,
@@ -92,42 +80,6 @@ mlib_status mlib_i_convMxNnw_u8(mlib_image       *dst,
                                 mlib_s32         dn,
                                 mlib_s32         scale,
                                 mlib_s32         cmask);
-
-mlib_status mlib_i_convMxNext_u8(mlib_image       *dst,
-                                 const mlib_image *src,
-                                 const mlib_s32   *kern,
-                                 mlib_s32         m,
-                                 mlib_s32         n,
-                                 mlib_s32         dx_l,
-                                 mlib_s32         dx_r,
-                                 mlib_s32         dy_t,
-                                 mlib_s32         dy_b,
-                                 mlib_s32         scale,
-                                 mlib_s32         cmask);
-
-mlib_status mlib_i_convMxNext_s16(mlib_image       *dst,
-                                  const mlib_image *src,
-                                  const mlib_s32   *kernel,
-                                  mlib_s32         m,
-                                  mlib_s32         n,
-                                  mlib_s32         dx_l,
-                                  mlib_s32         dx_r,
-                                  mlib_s32         dy_t,
-                                  mlib_s32         dy_b,
-                                  mlib_s32         scale,
-                                  mlib_s32         cmask);
-
-mlib_status mlib_i_convMxNext_u16(mlib_image       *dst,
-                                  const mlib_image *src,
-                                  const mlib_s32   *kernel,
-                                  mlib_s32         m,
-                                  mlib_s32         n,
-                                  mlib_s32         dx_l,
-                                  mlib_s32         dx_r,
-                                  mlib_s32         dy_t,
-                                  mlib_s32         dy_b,
-                                  mlib_s32         scale,
-                                  mlib_s32         cmask);
 
 #ifdef __cplusplus
 }

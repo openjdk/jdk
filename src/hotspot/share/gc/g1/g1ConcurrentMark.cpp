@@ -370,14 +370,14 @@ void G1CMMarkStack::set_empty() {
   _chunk_allocator.reset();
 }
 
-G1CMRootMemRegions::G1CMRootMemRegions(uint const max_regions) :
-    _root_regions(MemRegion::create_array(max_regions, mtGC)),
-    _max_regions(max_regions),
+G1CMRootMemRegions::G1CMRootMemRegions(uint const max_num_regions) :
+    _root_regions(MemRegion::create_array(max_num_regions, mtGC)),
+    _max_num_regions(max_num_regions),
     _num_regions(0),
     _num_claimed_regions(0) { }
 
 G1CMRootMemRegions::~G1CMRootMemRegions() {
-  MemRegion::destroy_array(_root_regions, _max_regions);
+  MemRegion::destroy_array(_root_regions, _max_num_regions);
 }
 
 void G1CMRootMemRegions::reset() {
@@ -391,7 +391,7 @@ void G1CMRootMemRegions::reset() {
 void G1CMRootMemRegions::add(HeapWord* start, HeapWord* end) {
   assert_at_safepoint();
   uint idx = _num_regions.fetch_then_add(1u);
-  assert(idx < _max_regions, "Trying to add more root MemRegions than there is space %u", _max_regions);
+  assert(idx < _max_num_regions, "Trying to add more root MemRegions than there is space %u", _max_num_regions);
   assert(start != nullptr && end != nullptr && start <= end, "Start (" PTR_FORMAT ") should be less or equal to "
          "end (" PTR_FORMAT ")", p2i(start), p2i(end));
   _root_regions[idx].set_start(start);
@@ -1418,7 +1418,7 @@ void G1ConcurrentMark::remark() {
 
       if (_needs_remembered_set_rebuild) {
         GrowableArrayCHeap<G1HeapRegion*, mtGC>* selected = cl.sort_and_prune_old_selected();
-        _g1h->policy()->candidates()->set_candidates_from_marking(selected);
+        _g1h->collection_set_candidates()->set_candidates_from_marking(selected);
       }
     }
 
@@ -3266,9 +3266,9 @@ void G1PrintRegionLivenessInfoClosure::log_card_set_groups() {
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  log_card_set_group_add_total(g1h->young_regions_card_set_group(), "Y");
+  log_card_set_group_add_total(g1h->collection_set()->young_regions_card_set_group(), "Y");
 
-  G1CollectionSetCandidates* candidates = g1h->policy()->candidates();
+  G1CollectionSetCandidates* candidates = g1h->collection_set_candidates();
   log_card_set_group_list(candidates->from_marking_groups(), "M");
   log_card_set_group_list(candidates->retained_groups(), "R");
 }

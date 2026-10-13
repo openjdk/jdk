@@ -245,7 +245,7 @@ void G1HeapRegionManager::reactivate_regions(uint start, uint num_regions) {
 }
 
 void G1HeapRegionManager::deactivate_regions(uint start, uint num_regions) {
-  assert(num_regions > 0, "Need to specify at least one region to uncommit, tried to uncommit zero regions at %u", start);
+  assert(num_regions > 0, "Need to specify at least one region to deactivate, tried to deactivate zero regions at %u", start);
   assert(num_committed_regions() >= num_regions, "pre-condition");
 
   // Reset NUMA index to and print state change.
@@ -290,10 +290,10 @@ bool G1HeapRegionManager::has_inactive_regions() const {
   return _committed_map.num_inactive_regions() > 0;
 }
 
-uint G1HeapRegionManager::uncommit_inactive_regions(uint limit) {
-  assert(limit > 0, "Need to specify at least one region to uncommit");
+uint G1HeapRegionManager::uncommit_inactive_regions(uint max_num_regions_to_uncommit) {
+  assert(max_num_regions_to_uncommit > 0, "Need to specify at least one region to uncommit");
 
-  uint uncommitted = 0;
+  uint num_uncommitted_regions = 0;
   uint offset = 0;
   do {
     MutexLocker uc(G1Uncommit_lock, Mutex::_no_safepoint_check_flag);
@@ -301,22 +301,22 @@ uint G1HeapRegionManager::uncommit_inactive_regions(uint limit) {
     // No more regions available for uncommit. Return the number of regions
     // already uncommitted or 0 if there were no longer any inactive regions.
     if (range.num_regions() == 0) {
-      return uncommitted;
+      return num_uncommitted_regions;
     }
 
     uint start = range.start();
-    uint num_regions = MIN2(range.num_regions(), limit - uncommitted);
-    uncommitted += num_regions;
+    uint num_regions = MIN2(range.num_regions(), max_num_regions_to_uncommit - num_uncommitted_regions);
+    num_uncommitted_regions += num_regions;
     uncommit_regions(start, num_regions);
-  } while (uncommitted < limit);
+  } while (num_uncommitted_regions < max_num_regions_to_uncommit);
 
-  assert(uncommitted == limit, "Invariant");
-  return uncommitted;
+  assert(num_uncommitted_regions == max_num_regions_to_uncommit, "Invariant");
+  return num_uncommitted_regions;
 }
 
 uint G1HeapRegionManager::expand_inactive(uint num_regions) {
   uint offset = 0;
-  uint expanded = 0;
+  uint num_expanded_regions = 0;
 
   do {
     G1HeapRegionRange regions = _committed_map.next_inactive_range(offset);
@@ -325,20 +325,20 @@ uint G1HeapRegionManager::expand_inactive(uint num_regions) {
       break;
     }
 
-    uint to_expand = MIN2(num_regions - expanded, regions.num_regions());
-    reactivate_regions(regions.start(), to_expand);
-    expanded += to_expand;
+    uint num_regions_to_expand = MIN2(num_regions - num_expanded_regions, regions.num_regions());
+    reactivate_regions(regions.start(), num_regions_to_expand);
+    num_expanded_regions += num_regions_to_expand;
     offset = regions.end();
-  } while (expanded < num_regions);
+  } while (num_expanded_regions < num_regions);
 
-  return expanded;
+  return num_expanded_regions;
 }
 
 uint G1HeapRegionManager::expand_any(uint num_regions, WorkerThreads* pretouch_workers) {
   assert(num_regions > 0, "Must expand at least 1 region");
 
   uint offset = 0;
-  uint expanded = 0;
+  uint num_expanded_regions = 0;
 
   do {
     G1HeapRegionRange regions = _committed_map.next_committable_range(offset);
@@ -347,13 +347,13 @@ uint G1HeapRegionManager::expand_any(uint num_regions, WorkerThreads* pretouch_w
       break;
     }
 
-    uint to_expand = MIN2(num_regions - expanded, regions.num_regions());
-    expand(regions.start(), to_expand, pretouch_workers);
-    expanded += to_expand;
+    uint num_regions_to_expand = MIN2(num_regions - num_expanded_regions, regions.num_regions());
+    expand(regions.start(), num_regions_to_expand, pretouch_workers);
+    num_expanded_regions += num_regions_to_expand;
     offset = regions.end();
-  } while (expanded < num_regions);
+  } while (num_expanded_regions < num_regions);
 
-  return expanded;
+  return num_expanded_regions;
 }
 
 uint G1HeapRegionManager::expand_by(uint num_regions, WorkerThreads* pretouch_workers) {
@@ -361,15 +361,15 @@ uint G1HeapRegionManager::expand_by(uint num_regions, WorkerThreads* pretouch_wo
 
   // First "undo" any requests to uncommit memory concurrently by
   // reverting such regions to being available.
-  uint expanded = expand_inactive(num_regions);
+  uint num_expanded_regions = expand_inactive(num_regions);
 
   // Commit more regions if needed.
-  if (expanded < num_regions) {
-    expanded += expand_any(num_regions - expanded, pretouch_workers);
+  if (num_expanded_regions < num_regions) {
+    num_expanded_regions += expand_any(num_regions - num_expanded_regions, pretouch_workers);
   }
 
   verify_optional();
-  return expanded;
+  return num_expanded_regions;
 }
 
 void G1HeapRegionManager::expand_exact(uint start, uint num_regions, WorkerThreads* pretouch_workers) {
@@ -502,9 +502,7 @@ G1HeapRegion* G1HeapRegionManager::next_region_in_heap(const G1HeapRegion* r) co
 }
 
 void G1HeapRegionManager::iterate(G1HeapRegionClosure* blk) const {
-  uint len = max_num_regions();
-
-  for (uint i = 0; i < len; i++) {
+  for (uint i = 0; i < max_num_regions(); i++) {
     if (!is_available(i)) {
       continue;
     }
@@ -517,9 +515,7 @@ void G1HeapRegionManager::iterate(G1HeapRegionClosure* blk) const {
 }
 
 void G1HeapRegionManager::iterate(G1HeapRegionIndexClosure* blk) const {
-  uint len = max_num_regions();
-
-  for (uint i = 0; i < len; i++) {
+  for (uint i = 0; i < max_num_regions(); i++) {
     if (!is_available(i)) {
       continue;
     }
@@ -530,16 +526,16 @@ void G1HeapRegionManager::iterate(G1HeapRegionIndexClosure* blk) const {
   }
 }
 
-bool G1HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* num_regions_committed, WorkerThreads* pretouch_workers) {
-  size_t commits = 0;
+bool G1HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* num_newly_activated_regions, WorkerThreads* pretouch_workers) {
+  size_t num_activated_regions = 0;
   uint start_index = (uint)_regions.get_index_by_address(range.start());
   uint last_index = (uint)_regions.get_index_by_address(range.last());
 
   // Ensure that each G1 region in the range is free, returning false if not.
-  // Commit those that are not yet available, and keep count.
+  // Activates inactive regions and commits others (making them Active) if necessary.
   for (uint curr_index = start_index; curr_index <= last_index; curr_index++) {
     if (!is_available(curr_index)) {
-      commits++;
+      num_activated_regions++;
       expand_exact(curr_index, 1, pretouch_workers);
     }
     G1HeapRegion* curr_region  = _regions.get_by_index(curr_index);
@@ -549,7 +545,7 @@ bool G1HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* n
   }
 
   allocate_free_regions_starting_at(start_index, (last_index - start_index) + 1);
-  *num_regions_committed = commits;
+  *num_newly_activated_regions = num_activated_regions;
   return true;
 }
 
@@ -592,24 +588,24 @@ uint G1HeapRegionManager::shrink_by(uint num_regions_to_remove) {
     return 0;
   }
 
-  uint removed = 0;
+  uint num_removed_regions = 0;
   uint cur = _next_highest_used_hrm_index;
   uint idx_last_found = 0;
   uint num_last_found = 0;
 
-  while ((removed < num_regions_to_remove) &&
+  while ((num_removed_regions < num_regions_to_remove) &&
       (num_last_found = find_empty_from_idx_reverse(cur, &idx_last_found)) > 0) {
-    uint to_remove = MIN2(num_regions_to_remove - removed, num_last_found);
+    uint num_regions_to_remove_from_range = MIN2(num_regions_to_remove - num_removed_regions, num_last_found);
 
-    shrink_at(idx_last_found + num_last_found - to_remove, to_remove);
+    shrink_at(idx_last_found + num_last_found - num_regions_to_remove_from_range, num_regions_to_remove_from_range);
 
     cur = idx_last_found;
-    removed += to_remove;
+    num_removed_regions += num_regions_to_remove_from_range;
   }
 
   verify_optional();
 
-  return removed;
+  return num_removed_regions;
 }
 
 void G1HeapRegionManager::shrink_at(uint index, size_t num_regions) {
@@ -685,7 +681,6 @@ void G1HeapRegionManager::verify() {
               i, HR_FORMAT_PARAMS(hr), p2i(prev_end));
     guarantee(hr->hrm_index() == i,
               "invariant: i: %u hrm_index(): %u", i, hr->hrm_index());
-    // Asserts will fire if i is >= _length
     HeapWord* addr = hr->bottom();
     guarantee(addr_to_region(addr) == hr, "sanity");
     // We cannot check whether the region is part of a particular set: at the time
@@ -724,7 +719,7 @@ G1HeapRegionClaimer::~G1HeapRegionClaimer() {
 uint G1HeapRegionClaimer::offset_for_worker(uint worker_id) const {
   assert(_num_workers > 0, "must be set");
   assert(worker_id < _num_workers, "Invalid worker_id.");
-  return _num_regions * worker_id / _num_workers;
+  return (uint)((uint64_t)_num_regions * worker_id / _num_workers);
 }
 
 bool G1HeapRegionClaimer::is_region_claimed(uint region_index) const {

@@ -453,6 +453,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/complexURI \
  -runtime/cds/appcds/customLoader \
  -runtime/cds/appcds/dynamicArchive \
+ -runtime/cds/appcds/invoke \
  -runtime/cds/appcds/jigsaw/ExactOptionMatch.java \
  -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndFMG.java \
  -runtime/cds/appcds/loaderConstraints/DynamicLoaderConstraintsTest.java \
@@ -462,7 +463,6 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/jcmd/JCmdTestFileSafety.java \
  -runtime/cds/appcds/jvmti/redefineClasses/OldClassAndRedefineClass.java \
  -runtime/cds/appcds/lambdaForm/DefaultClassListLFInvokers.java \
- -runtime/cds/appcds/methodHandles \
  -runtime/cds/appcds/sharedStrings \
  -runtime/cds/appcds/resolvedConstants \
  -runtime/cds/appcds/ArchiveRelocationTest.java \
@@ -553,10 +553,15 @@ tier1_runtime_appcds = \
   runtime/cds/appcds/aotCache/HelloAOTCache.java \
   runtime/cds/appcds/aotCode \
   runtime/cds/appcds/HelloTest.java \
-  -runtime/cds/appcds/aotCode/AOTCodeFlags.java
+  -runtime/cds/appcds/aotCode/AOTCodeFlags.java \
+  -runtime/cds/appcds/aotCode/TestAOTCodeCounters.java \
+  -runtime/cds/appcds/aotCode/TestAOTCodeFeatures.java
 
 tier1_runtime_appcds_exclude = \
   runtime/cds/appcds/ \
+  runtime/cds/appcds/aotCode/AOTCodeFlags.java \
+  runtime/cds/appcds/aotCode/TestAOTCodeCounters.java \
+  runtime/cds/appcds/aotCode/TestAOTCodeFeatures.java \
   -:tier1_runtime_appcds
 
 tier1_runtime_no_cds = \
