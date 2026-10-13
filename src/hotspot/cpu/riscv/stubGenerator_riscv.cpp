@@ -5901,18 +5901,16 @@ class StubGenerator: public StubCodeGenerator {
   void md5_HH(BufRegCache& reg_cache,
               Register a, Register b, Register c, Register d,
               int k, int s, int t,
-              Register rtmp1, Register rtmp2) {
-    // precomputed rtmp2 = (c ^ d)
-    // rtmp1 = b ^ (c ^ d) = b ^ rtmp2
-    __ xorr(rtmp1, b, rtmp2);
+              Register rtmp1) {
+    // rtmp1 = c ^ d
+    __ xorr(rtmp1, c, d);
 
     // a += x + ac
     reg_cache.add_u32(a, k);
     __ addw(a, a, t, t1);
 
-    // rtmp2 = b ^ (c ^ d) ^ d == (b ^ c)
-    // rtmp2 will be next round's (c ^ d)
-    __ xorr(rtmp2, rtmp1, d);
+    // rtmp1 = b ^ (c ^ d)
+    __ xorr(rtmp1, b, rtmp1);
 
     // a += rtmp1
     __ addw(a, a, rtmp1);
@@ -6145,24 +6143,22 @@ class StubGenerator: public StubCodeGenerator {
     md5_GG(reg_cache, b, c, d, a, 12, S24, 0x8d2a4c8a, rtmp1, rtmp2);
 
     // Round 3
-    // pre-compute (c ^ d) for the first HH round.
-    __ xorr(rtmp2, c, d);
-    md5_HH(reg_cache, a, b, c, d,  5, S31, 0xfffa3942, rtmp1, rtmp2);
-    md5_HH(reg_cache, d, a, b, c,  8, S32, 0x8771f681, rtmp1, rtmp2);
-    md5_HH(reg_cache, c, d, a, b, 11, S33, 0x6d9d6122, rtmp1, rtmp2);
-    md5_HH(reg_cache, b, c, d, a, 14, S34, 0xfde5380c, rtmp1, rtmp2);
-    md5_HH(reg_cache, a, b, c, d,  1, S31, 0xa4beea44, rtmp1, rtmp2);
-    md5_HH(reg_cache, d, a, b, c,  4, S32, 0x4bdecfa9, rtmp1, rtmp2);
-    md5_HH(reg_cache, c, d, a, b,  7, S33, 0xf6bb4b60, rtmp1, rtmp2);
-    md5_HH(reg_cache, b, c, d, a, 10, S34, 0xbebfbc70, rtmp1, rtmp2);
-    md5_HH(reg_cache, a, b, c, d, 13, S31, 0x289b7ec6, rtmp1, rtmp2);
-    md5_HH(reg_cache, d, a, b, c,  0, S32, 0xeaa127fa, rtmp1, rtmp2);
-    md5_HH(reg_cache, c, d, a, b,  3, S33, 0xd4ef3085, rtmp1, rtmp2);
-    md5_HH(reg_cache, b, c, d, a,  6, S34, 0x04881d05, rtmp1, rtmp2);
-    md5_HH(reg_cache, a, b, c, d,  9, S31, 0xd9d4d039, rtmp1, rtmp2);
-    md5_HH(reg_cache, d, a, b, c, 12, S32, 0xe6db99e5, rtmp1, rtmp2);
-    md5_HH(reg_cache, c, d, a, b, 15, S33, 0x1fa27cf8, rtmp1, rtmp2);
-    md5_HH(reg_cache, b, c, d, a,  2, S34, 0xc4ac5665, rtmp1, rtmp2);
+    md5_HH(reg_cache, a, b, c, d,  5, S31, 0xfffa3942, rtmp1);
+    md5_HH(reg_cache, d, a, b, c,  8, S32, 0x8771f681, rtmp1);
+    md5_HH(reg_cache, c, d, a, b, 11, S33, 0x6d9d6122, rtmp1);
+    md5_HH(reg_cache, b, c, d, a, 14, S34, 0xfde5380c, rtmp1);
+    md5_HH(reg_cache, a, b, c, d,  1, S31, 0xa4beea44, rtmp1);
+    md5_HH(reg_cache, d, a, b, c,  4, S32, 0x4bdecfa9, rtmp1);
+    md5_HH(reg_cache, c, d, a, b,  7, S33, 0xf6bb4b60, rtmp1);
+    md5_HH(reg_cache, b, c, d, a, 10, S34, 0xbebfbc70, rtmp1);
+    md5_HH(reg_cache, a, b, c, d, 13, S31, 0x289b7ec6, rtmp1);
+    md5_HH(reg_cache, d, a, b, c,  0, S32, 0xeaa127fa, rtmp1);
+    md5_HH(reg_cache, c, d, a, b,  3, S33, 0xd4ef3085, rtmp1);
+    md5_HH(reg_cache, b, c, d, a,  6, S34, 0x04881d05, rtmp1);
+    md5_HH(reg_cache, a, b, c, d,  9, S31, 0xd9d4d039, rtmp1);
+    md5_HH(reg_cache, d, a, b, c, 12, S32, 0xe6db99e5, rtmp1);
+    md5_HH(reg_cache, c, d, a, b, 15, S33, 0x1fa27cf8, rtmp1);
+    md5_HH(reg_cache, b, c, d, a,  2, S34, 0xc4ac5665, rtmp1);
 
     // Round 4
     md5_II(reg_cache, a, b, c, d,  0, S41, 0xf4292244, rtmp1, rtmp2);
