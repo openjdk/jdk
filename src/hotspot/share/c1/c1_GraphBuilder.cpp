@@ -1828,8 +1828,7 @@ void GraphBuilder::copy_value_content(ciValueKlass* vk, Value src, int src_off, 
         append(new UnsafePut(T_BOOLEAN, dest, offset, nm, false));
       }
     } else {
-      LoadField* load = new LoadField(src, src_off + offset, field, false, state_before, false);
-      Value value = append(load);
+      Value value = append(new LoadField(src, src_off + offset, field, false, state_before, false));
       null_checks.needs_src = false;
       StoreField* store = new StoreField(dest, dest_off + offset, field, value, false, state_before, false);
       store->set_enclosing_field(enclosing_field);
