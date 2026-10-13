@@ -623,7 +623,8 @@ ShenandoahHeuristics* ShenandoahOldGeneration::initialize_heuristics(ShenandoahM
   return _heuristics;
 }
 
-void ShenandoahOldGeneration::record_success_concurrent(bool abbreviated) {
+void ShenandoahOldGeneration::record_success_concurrent(bool abbreviated, size_t gc_id) {
+  update_completed_gc_id(_started_gc_id.load_relaxed());
   heuristics()->record_success_concurrent();
   ShenandoahHeap::heap()->shenandoah_policy()->record_success_old();
 }
