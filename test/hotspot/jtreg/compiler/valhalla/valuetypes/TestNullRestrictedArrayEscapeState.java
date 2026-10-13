@@ -28,7 +28,7 @@ import jdk.internal.value.ValueClass;
 
 /**
  * @test
- * @bug 8392838
+ * @bug 8392838 8394450
  * @summary Test that C2 propagates the correct escape state from
  *          null-restricted array allocations to their initialization values.
  * @library /test/lib /
