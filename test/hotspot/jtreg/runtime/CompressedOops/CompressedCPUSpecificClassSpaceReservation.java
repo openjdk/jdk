@@ -70,12 +70,14 @@ public class CompressedCPUSpecificClassSpaceReservation {
 
         final boolean doNotOptimizeForZeroBased = CDS || COH;
         final String tryReserveBelow4G = "reserve_between (range [0x0000000000000000-0x0000000100000000)";
-        // Encoding range for unscaled:
+        // The encoding range for unscaled depends on the size of narrow class pointer,
+        // which is dictated by the status of Compressed Object Headers:
         // +COH: [0, 2^22)
         // -COH: [0, 2^32)
         final String tryReserveForUnscaled = "reserve_between (range [" +
                 (COH ? "0x0000000000000000-0x0000000000400000" : "0x0000000000000000-0x0000000100000000") + ")";
-        // Encoding range for zero based:
+        // The encoding range for zero based depends on the size of narrow class pointer and max shift,
+        // which are dictated by the status of Compressed Object Headers:
         // +COH: [2^22, 2^32)
         // -COH: [0, 2^35)
         final String tryReserveForZeroBased = "reserve_between (range [" +
