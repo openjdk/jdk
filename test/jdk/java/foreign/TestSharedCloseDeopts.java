@@ -123,7 +123,8 @@ public class TestSharedCloseDeopts {
                 // Await compilation while polluting the profile to avoid
                 // uncommon trap deopt as result of loop backedge test.
                 // The Holder::shouldHold method will toggle the value
-                // it returns on each invocation to make sure we see both.
+                // it returns on each invocation to make sure we see both
+                // true and false in the profile.
                 NMethod code;
                 do {
                     assertTrue(WB.isMethodCompilable(testCase.method(), C2_COMPILED_LEVEL, false));
