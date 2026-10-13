@@ -57,7 +57,6 @@ class ShenandoahFullGC : public ShenandoahGC {
   friend class ShenandoahPrepareForCompactionObjectClosure;
   friend class VM_ShenandoahFullGC;
 
-  ShenandoahHeap* _heap;
   GCTimer* _gc_timer;
   PreservedMarksSet* _preserved_marks;
 
