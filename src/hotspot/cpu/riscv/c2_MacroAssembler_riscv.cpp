@@ -2081,6 +2081,8 @@ void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Regis
   }
 }
 
+// Set dst to 0 if the condition specified by cmpFlag is true, or 1 otherwise.
+// cmpFlag may include unsigned_branch_mask for an unsigned comparison.
 void C2_MacroAssembler::enc_cmove_zero_one(int cmpFlag, Register op1, Register op2, Register dst) {
   bool is_unsigned = (cmpFlag & unsigned_branch_mask) == unsigned_branch_mask;
   int op_select = cmpFlag & (~unsigned_branch_mask);
@@ -2218,6 +2220,8 @@ void C2_MacroAssembler::enc_cmove_fp_cmp_fp(int cmpFlag,
   }
 }
 
+  // Set dst to 0 if the floating-point condition is true, or 1 otherwise.
+  // Preserve CmpF/CmpD unordered-less semantics when either operand is NaN.
 void C2_MacroAssembler::enc_cmove_cmp_fp_zero_one(int cmpFlag, FloatRegister op1, FloatRegister op2, Register dst, bool is_single) {
   switch (cmpFlag) {
     case BoolTest::eq: // NaN ordered: eq false -> dst = 1
