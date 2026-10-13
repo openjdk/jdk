@@ -79,26 +79,12 @@ class OopMapCache;
 class InterpreterOopMap;
 class PackageEntry;
 class ModuleEntry;
+class ValueKlass;
 
-// This is used in iterators below.
+// FieldClosure is used to visit fields of an InstanceKlass.
 class FieldClosure: public StackObj {
-public:
-  virtual void do_field(fieldDescriptor* fd) = 0;
-};
-
-// Print fields.
-// If "obj" argument to constructor is null, prints fields as if they are static fields,
-// otherwise prints non-static fields. It is possible to print non-static fields the same
-// way as static fields when no oops are available, such as when debug printing classes.
-class FieldPrinter: public FieldClosure {
-   oop _obj;
-   outputStream* _st;
-   int _indent;
-   int _base_offset;
  public:
-   FieldPrinter(outputStream* st, oop obj = nullptr, int indent = 0, int base_offset = 0) :
-                 _obj(obj), _st(st), _indent(indent), _base_offset(base_offset) {}
-   void do_field(fieldDescriptor* fd);
+  virtual void do_field(fieldDescriptor* fd) = 0;
 };
 
 // Describes where oops are located in instances of this klass.
@@ -141,15 +127,14 @@ class OopMapBlock {
 
 struct JvmtiCachedClassFileData;
 
-class ValueFieldLayoutInfo : public MetaspaceObj {
+class ValueFieldInfo : public MetaspaceObj {
   friend class VMStructs;
 
   ValueKlass* _klass;
   LayoutKind _kind;
-  int _null_marker_offset; // null marker offset for this field, relative to the beginning of the current container
 
  public:
-  ValueFieldLayoutInfo(): _klass(nullptr), _kind(LayoutKind::UNKNOWN), _null_marker_offset(-1)  {}
+  ValueFieldInfo(): _klass(nullptr), _kind(LayoutKind::UNKNOWN)  {}
 
   ValueKlass* klass() const { return _klass; }
   void set_klass(ValueKlass* k) { _klass = k; }
@@ -160,17 +145,10 @@ class ValueFieldLayoutInfo : public MetaspaceObj {
   }
   void set_kind(LayoutKind lk) { _kind = lk; }
 
-  int null_marker_offset() const {
-    assert(_null_marker_offset != -1, "Not set");
-    return _null_marker_offset;
-  }
-  void set_null_marker_offset(int o) { _null_marker_offset = o; }
-
   void metaspace_pointers_do(MetaspaceClosure* it);
-  MetaspaceObj::Type type() const { return ValueFieldLayoutInfoType; }
+  MetaspaceObj::Type type() const { return ValueFieldInfoType; }
 
-  static ByteSize klass_offset() { return byte_offset_of(ValueFieldLayoutInfo, _klass); }
-  static ByteSize null_marker_offset_offset() { return byte_offset_of(ValueFieldLayoutInfo, _null_marker_offset); }
+  static ByteSize klass_offset() { return byte_offset_of(ValueFieldInfo, _klass); }
 
   // Print
   void print() const;
@@ -328,7 +306,7 @@ class InstanceKlass: public Klass {
   Array<u1>*          _fieldinfo_search_table;
   Array<FieldStatus>* _fields_status;
 
-  Array<ValueFieldLayoutInfo>* _value_field_layout_info_array;
+  Array<ValueFieldInfo>* _value_field_info_array;
   Array<u2>* _loadable_descriptors;
   Array<int>* _acmp_maps_array; // Metadata copy of the acmp_maps oop used in value classes.
                                 // When loading a value klass from the CDS/AOT archive
@@ -386,8 +364,8 @@ class InstanceKlass: public Klass {
   bool has_localvariable_table() const     { return _misc_flags.has_localvariable_table(); }
   void set_has_localvariable_table(bool b) { _misc_flags.set_has_localvariable_table(b); }
 
-  bool has_inlined_fields() const { return _misc_flags.has_inlined_fields(); }
-  void set_has_inlined_fields()   { _misc_flags.set_has_inlined_fields(true); }
+  bool has_flat_fields() const { return _misc_flags.has_flat_fields(); }
+  void set_has_flat_fields()   { _misc_flags.set_has_flat_fields(true); }
 
   bool has_null_restricted_static_fields() const { return _misc_flags.has_null_restricted_static_fields(); }
   void set_has_null_restricted_static_fields()   { _misc_flags.set_has_null_restricted_static_fields(true); }
@@ -477,9 +455,10 @@ class InstanceKlass: public Klass {
   bool field_is_flat(int index) const { return field_flags(index).is_flat(); }
   bool field_has_null_marker(int index) const { return field_flags(index).has_null_marker(); }
   bool field_is_null_free_value_type(int index) const;
+  bool field_is_strict(int index) const { return field(index).access_flags().is_strict(); }
   bool is_class_in_loadable_descriptors_attribute(Symbol* name) const;
 
-  int field_null_marker_offset(int index) const { return value_field_layout_info(index).null_marker_offset(); }
+  int field_null_marker_offset(int index) const;
 
   // Number of Java declared fields
   int java_fields_count() const;
@@ -621,6 +600,8 @@ public:
   ClassState  init_state() const           { return AtomicAccess::load_acquire(&_init_state); }
   const char* init_state_name() const;
   bool is_rewritten() const                { return _misc_flags.rewritten(); }
+
+  static const char* state2name(ClassState state);
 
   // is this a sealed class
   bool is_sealed() const;
@@ -994,7 +975,7 @@ public:
   JFR_ONLY(DEFINE_KLASS_TRACE_ID_OFFSET;)
   static ByteSize init_thread_offset() { return byte_offset_of(InstanceKlass, _init_thread); }
 
-  static ByteSize value_field_layout_info_array_offset() { return byte_offset_of(InstanceKlass, _value_field_layout_info_array); }
+  static ByteSize value_field_info_array_offset() { return byte_offset_of(InstanceKlass, _value_field_info_array); }
   static ByteSize adr_value_klass_members_offset() { return byte_offset_of(InstanceKlass, _adr_value_klass_members); }
 
   // subclass/subinterface checks
@@ -1087,17 +1068,17 @@ public:
   // Sub-klasses can place their fields after this address.
   inline address end_of_instance_klass() const;
 
-  void set_value_field_layout_info_array(Array<ValueFieldLayoutInfo>* array) { _value_field_layout_info_array = array; }
-  Array<ValueFieldLayoutInfo>* value_field_layout_info_array() const { return _value_field_layout_info_array; }
+  void set_value_field_info_array(Array<ValueFieldInfo>* array) { _value_field_info_array = array; }
+  Array<ValueFieldInfo>* value_field_info_array() const { return _value_field_info_array; }
 
-  ValueFieldLayoutInfo value_field_layout_info(int index) const {
-    assert(_value_field_layout_info_array != nullptr, "Array not created");
-    return _value_field_layout_info_array->at(index);
+  ValueFieldInfo value_field_info(int index) const {
+    assert(_value_field_info_array != nullptr, "Array not created");
+    return _value_field_info_array->at(index);
   }
 
-  ValueFieldLayoutInfo* value_field_layout_info_adr(int index) {
-    assert(_value_field_layout_info_array != nullptr, "Array not created");
-    return _value_field_layout_info_array->adr_at(index);
+  ValueFieldInfo* value_field_info_adr(int index) {
+    assert(_value_field_info_array != nullptr, "Array not created");
+    return _value_field_info_array->adr_at(index);
   }
 
   inline ValueKlass* get_value_type_field_klass(int idx) const ;
@@ -1305,9 +1286,7 @@ public:
   void print_class_flags(outputStream* st) const;
 
   void oop_print_value_on(oop obj, outputStream* st) override;
-
-  void oop_print_on      (oop obj, outputStream* st) override { oop_print_on(obj, st, 0, 0); }
-  void oop_print_on      (oop obj, outputStream* st, int indent = 0, int base_offset = 0);
+  void oop_print_on      (oop obj, outputStream* st) override;
 
 #ifndef PRODUCT
   void print_dependent_nmethods(bool verbose = false);

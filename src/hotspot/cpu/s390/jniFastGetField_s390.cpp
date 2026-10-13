@@ -38,7 +38,7 @@
 
 #define __ masm->
 
-#define BUFFER_SIZE 30*sizeof(jint)
+#define BUFFER_SIZE 100*sizeof(jint)
 
 // Common register usage:
 // Z_RET/Z_FRET: result
@@ -88,10 +88,6 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ z_lgr(Robj, Z_ARG2);
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->try_resolve_jobject_in_native(masm, Z_ARG1, Robj, Rtmp, slow);
-
-  if (UseArrayFlattening) {
-    __ stop("implement function JNI_FastGetField::generate_fast_get_int_field0");
-  }
 
   __ z_srlg(Rtmp, Z_ARG3, jfieldIDWorkaround::offset_shift); // offset
   __ z_agr(Robj, Rtmp);

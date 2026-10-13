@@ -58,16 +58,16 @@ public class ClhsdbInspectWithValueObject {
             ClhsdbLauncher test = new ClhsdbLauncher();
 
             theApp = new LingeredAppWithValueObject();
-            LingeredApp.startApp(
+            LingeredApp.startAppExactJvmOpts(
                 theApp,
                 "--enable-preview",
+                "-Djava.io.tmpdir=" + System.getProperty("java.io.tmpdir"),
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
                 "-Xbootclasspath/a:.",
                 "-XX:+UnlockExperimentalVMOptions",
-                "-XX:+UseEpsilonGC" // Use Epsilon GC to prevent object migration
+                "-XX:+UseEpsilonGC" // Use Epsilon GC to prevent object promotion
             );
-            theApp.waitAppReadyOrCrashed();
 
             Properties addresses = new Properties();
             try (var in = Files.newInputStream(LingeredAppWithValueObject.ADDR_FILE_PATH)) {

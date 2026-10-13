@@ -1246,8 +1246,9 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
 
   // We need to mark the code position where the load from the safepoint
   // polling page was emitted as relocInfo::poll_return_type here.
+  code_stub->set_safepoint_offset(__ offset());
   __ relocate(relocInfo::poll_return_type);
-  __ load_from_polling_page(Z_R1_scratch);
+  __ safepoint_poll(*code_stub->entry(), Z_R0_scratch, true /* at_return */, true /* in_nmethod */);
 
   __ z_br(Z_R14); // Return to caller.
 }
@@ -3172,7 +3173,7 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
   move(op->not_equal_result(), op->result_opr());
   __ branch_optimized(Assembler::bcondAlways, L_end);
 
-  // We've returned from the stub. Z_R2 (stub's _scratch_reg) contains 0x0 IFF the two
+  // We've returned from the stub. Z_R2 (stub's _stub_result_reg) contains 0x0 IFF the two
   // operands are not substitutable.
   __ bind(*op->stub()->continuation());
   __ compare64_and_branch(Z_R2, (intptr_t)0, Assembler::bcondEqual, L_oops_not_equal);

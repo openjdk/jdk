@@ -33,58 +33,47 @@
  */
 
 /*
- * @test id=64_COOP_CCP_NCOH
+ * @test id=64_COOP_NCOH
  * @requires vm.bits == 64
  * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  * @enablePreview
  * @compile FieldLayoutAnalyzer.java NullMarkersTest.java
- * @run main runtime.valhalla.valuetypes.field_layout.NullMarkersTest 64_COOP_CCP_NCOH
+ * @run main runtime.valhalla.valuetypes.field_layout.NullMarkersTest 64_COOP_NCOH
  */
 
 /*
- * @test id=64_NCOOP_CCP_NCOH
+ * @test id=64_NCOOP_NCOH
  * @requires vm.bits == 64
  * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  * @enablePreview
  * @compile FieldLayoutAnalyzer.java NullMarkersTest.java
- * @run main runtime.valhalla.valuetypes.field_layout.NullMarkersTest 64_NCOOP_CCP_NCOH
+ * @run main runtime.valhalla.valuetypes.field_layout.NullMarkersTest 64_NCOOP_NCOH
  */
 
 /*
- * @test id=64_NCOOP_NCCP_NCOH
+ * @test id=64_COOP_COH
  * @requires vm.bits == 64
  * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  * @enablePreview
  * @compile FieldLayoutAnalyzer.java NullMarkersTest.java
- * @run main runtime.valhalla.valuetypes.field_layout.NullMarkersTest 64_NCOOP_NCCP_NCOH
+ * @run main runtime.valhalla.valuetypes.field_layout.NullMarkersTest 64_COOP_COH
  */
 
 /*
- * @test id=64_COOP_CCP_COH
+ * @test id=64_NCOOP_COH
  * @requires vm.bits == 64
  * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  * @enablePreview
  * @compile FieldLayoutAnalyzer.java NullMarkersTest.java
- * @run main runtime.valhalla.valuetypes.field_layout.NullMarkersTest 64_COOP_CCP_COH
- */
-
-/*
- * @test id=64_NCOOP_CCP_COH
- * @requires vm.bits == 64
- * @requires vm.flagless
- * @library /test/lib
- * @modules java.base/jdk.internal.vm.annotation
- * @enablePreview
- * @compile FieldLayoutAnalyzer.java NullMarkersTest.java
- * @run main runtime.valhalla.valuetypes.field_layout.NullMarkersTest 64_NCOOP_CCP_COH
+ * @run main runtime.valhalla.valuetypes.field_layout.NullMarkersTest 64_NCOOP_COH
  */
 
 package runtime.valhalla.valuetypes.field_layout;
@@ -328,7 +317,7 @@ static final String pkg_path = "runtime.valhalla.valuetypes.field_layout.";
     Asserts.assertTrue(fb1.hasNullMarker());
   }
 
-  static ProcessBuilder exec(String compressedOopsArg, String compressedKlassPointersArg, String... args) throws Exception {
+  static ProcessBuilder exec(String compressedOopsArg, String compactObjectHeaderArg, String... args) throws Exception {
     List<String> argsList = new ArrayList<>();
     Collections.addAll(argsList, "--enable-preview");
     Collections.addAll(argsList, "-XX:+UnlockDiagnosticVMOptions");
@@ -337,8 +326,8 @@ static final String pkg_path = "runtime.valhalla.valuetypes.field_layout.";
     if (compressedOopsArg != null) {
       Collections.addAll(argsList, compressedOopsArg);
     }
-    if (compressedKlassPointersArg != null) {
-      Collections.addAll(argsList, compressedKlassPointersArg);
+    if (compactObjectHeaderArg != null) {
+      Collections.addAll(argsList, compactObjectHeaderArg);
     }
     Collections.addAll(argsList, "-Xmx256m");
     Collections.addAll(argsList, "-XX:+UseNullableAtomicValueFlattening");
@@ -349,38 +338,27 @@ static final String pkg_path = "runtime.valhalla.valuetypes.field_layout.";
 
   public static void main(String[] args) throws Exception {
     String compressedOopsArg;
-    String compressedKlassPointersArg;
     String compactObjectHeaderArg;
 
     switch(args[0]) {
       case "32":
         compressedOopsArg = null;
-        compressedKlassPointersArg = null;
         compactObjectHeaderArg = null;
         break;
-      case "64_COOP_CCP_NCOH":
+      case "64_COOP_NCOH":
         compressedOopsArg = "-XX:+UseCompressedOops";
-        compressedKlassPointersArg =  "-XX:+UseCompressedClassPointers";
         compactObjectHeaderArg = "-XX:-UseCompactObjectHeaders";
         break;
-      case "64_NCOOP_CCP_NCOH":
+      case "64_NCOOP_NCOH":
         compressedOopsArg = "-XX:-UseCompressedOops";
-        compressedKlassPointersArg = "-XX:+UseCompressedClassPointers";
         compactObjectHeaderArg = "-XX:-UseCompactObjectHeaders";
         break;
-      case "64_NCOOP_NCCP_NCOH":
-        compressedOopsArg = "-XX:-UseCompressedOops";
-        compressedKlassPointersArg = "-XX:-UseCompressedClassPointers";
-        compactObjectHeaderArg = "-XX:-UseCompactObjectHeaders";
-        break;
-      case "64_COOP_CCP_COH":
+      case "64_COOP_COH":
         compressedOopsArg = "-XX:+UseCompressedOops";
-        compressedKlassPointersArg = "-XX:+UseCompressedClassPointers";
         compactObjectHeaderArg = "-XX:+UseCompactObjectHeaders";
         break;
-      case "64_NCOOP_CCP_COH":
+      case "64_NCOOP_COH":
         compressedOopsArg = "-XX:-UseCompressedOops";
-        compressedKlassPointersArg = "-XX:+UseCompressedClassPointers";
         compactObjectHeaderArg = "-XX:+UseCompactObjectHeaders";
         break;
       default: throw new RuntimeException("Unrecognized configuration");
@@ -390,7 +368,7 @@ static final String pkg_path = "runtime.valhalla.valuetypes.field_layout.";
     NullMarkersTest fat = new NullMarkersTest();
 
     // Execute the test runner in charge of loading all test classes
-    ProcessBuilder pb = exec(compressedOopsArg, compressedKlassPointersArg, pkg+"NullMarkersTest$TestRunner");
+    ProcessBuilder pb = exec(compressedOopsArg, compactObjectHeaderArg, pkg+"NullMarkersTest$TestRunner");
     OutputAnalyzer out = new OutputAnalyzer(pb.start());
 
     if (out.getExitValue() != 0) {
