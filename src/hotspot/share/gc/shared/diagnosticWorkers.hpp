@@ -46,12 +46,12 @@ public:
   // Can only be called by the VM thread at a safepoint.
   static WorkerThreads* workers();
 
-  // Applies the closure to each diagnostic worker only if the worker pool is initialized.
+  // Applies the closure to each diagnostic worker if the worker pool has been created.
   static void diagnostic_threads_do(ThreadClosure* tc);
 
   // Sets the number of active worker threads (capped at max_workers()) and returns the
-  // active thread count. Returns 0 if worker pool isn't initialized or num_workers is 0.
-  // Can only be called by the VM thread at a safepoint.
+  // active thread count. Returns 0 if the worker pool hasn't been created or num_workers
+  // is 0. Can only be called by the VM thread at a safepoint.
   static uint try_and_set_active_workers(uint num_workers);
 
   // Returns true if the thread passed in is a diagnostic worker thread. Used only in
