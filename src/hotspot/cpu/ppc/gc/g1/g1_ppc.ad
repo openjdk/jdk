@@ -421,8 +421,7 @@ instruct g1CompareAndExchangeN_acq(iRegNdst res, indirect mem, iRegNsrc oldval, 
 
 instruct g1CompareAndSwapP_acq(iRegIdst res, indirect mem, iRegPsrc oldval, iRegPsrc newval, iRegPdst tmp, flagsRegCR0 cr0)
 %{
-  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0 &&
-            (((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst));
+  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0);
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   effect(TEMP_DEF res, TEMP tmp, KILL cr0);
   format %{ "CMPXCHGD acq $res, $mem, $oldval, $newval; as bool; ptr" %}
@@ -460,8 +459,7 @@ instruct g1CompareAndSwapP_acq(iRegIdst res, indirect mem, iRegPsrc oldval, iReg
 
 instruct g1CompareAndSwapN_acq(iRegIdst res, indirect mem, iRegNsrc oldval, iRegNsrc newval, iRegPdst tmp, flagsRegCR0 cr0)
 %{
-  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0 &&
-            (((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst));
+  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0);
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
   effect(TEMP_DEF res, TEMP tmp, KILL cr0);
   format %{ "CMPXCHGW acq $res, $mem, $oldval, $newval; as bool; ptr" %}
