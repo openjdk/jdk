@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_CLASSFILE_CLASSLOADERDATASHARED_HPP
-#define SHARE_CLASSFILE_CLASSLOADERDATASHARED_HPP
+#ifndef SHARE_CDS_AOTMODULES_HPP
+#define SHARE_CDS_AOTMODULES_HPP
 
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -34,7 +34,7 @@ class MetaspaceClosure;
 class ModuleEntry;
 class SerializeClosure;
 
-class ClassLoaderDataShared : AllStatic {
+class AOTModules : AllStatic {
   static bool _full_module_graph_loaded;
   CDS_JAVA_HEAP_ONLY(static void ensure_module_entry_table_exists(oop class_loader);)
 public:
@@ -57,4 +57,4 @@ public:
   static bool is_full_module_graph_loaded() { return _full_module_graph_loaded; }
 };
 
-#endif // SHARE_CLASSFILE_CLASSLOADERDATASHARED_HPP
+#endif // SHARE_CDS_AOTMODULES_HPP

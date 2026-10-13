@@ -25,12 +25,12 @@
 #include "cds/aotLogging.hpp"
 #include "cds/aotMapLogger.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.inline.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "code/aotCodeCache.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -1060,7 +1060,7 @@ void CDSConfig::disable_full_module_graph() {
 }
 
 bool CDSConfig::is_using_full_module_graph() {
-  if (ClassLoaderDataShared::is_full_module_graph_loaded()) {
+  if (AOTModules::is_full_module_graph_loaded()) {
     return true;
   }
 
@@ -1089,7 +1089,7 @@ void CDSConfig::stop_dumping_full_module_graph(const char* reason) {
 }
 
 void CDSConfig::stop_using_full_module_graph(const char* reason) {
-  assert(!ClassLoaderDataShared::is_full_module_graph_loaded(), "you call this function too late!");
+  assert(!AOTModules::is_full_module_graph_loaded(), "you call this function too late!");
   if (_is_using_full_module_graph) {
     _is_using_full_module_graph = false;
     if (reason != nullptr) {
