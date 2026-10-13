@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,7 @@ public class WindowsPlacesBar extends JToolBar
         setFloatable(false);
         putClientProperty("JToolBar.isRollover", Boolean.TRUE);
 
-        boolean isXPPlatform = (OSInfo.getOSType() == OSInfo.OSType.WINDOWS &&
-                OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_XP) >= 0);
+        boolean isXPPlatform = (OSInfo.getOSType() == OSInfo.OSType.WINDOWS);
 
         if (isXPStyle) {
             buttonSize = new Dimension(83, 69);

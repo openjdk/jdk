@@ -185,6 +185,13 @@ bool frame::safe_for_sender(JavaThread *thread) {
     return false;
   }
 
+  // sender_fp must be within the stack and above (but not equal) to
+  // current frame's fp.
+  address sender_fp = (address)this->link();
+  if (!thread->is_in_stack_range_excl(sender_fp, fp)) {
+    return false;
+  }
+
   return true;
 }
 

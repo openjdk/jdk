@@ -552,18 +552,18 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size) {
   // when mmap'ing archived heap data in, so pre-touching is wasted.
   FlagSetting fs(AlwaysPreTouch, false);
 
-  size_t commits = 0;
+  size_t num_newly_activated_regions = 0;
   // Attempt to allocate towards the end of the heap.
   HeapWord* start_addr = reserved.end() - align_up(word_size, G1HeapRegion::GrainWords);
   MemRegion range = MemRegion(start_addr, word_size);
   HeapWord* last_address = range.last();
-  if (!_hrm.allocate_containing_regions(range, &commits, workers())) {
+  if (!_hrm.allocate_containing_regions(range, &num_newly_activated_regions, workers())) {
     return nullptr;
   }
   increase_used(word_size * HeapWordSize);
-  if (commits != 0) {
+  if (num_newly_activated_regions != 0) {
     log_debug(gc, ergo, heap)("Attempt heap expansion (allocate archive regions). Total size: %zuB",
-                              G1HeapRegion::GrainWords * HeapWordSize * commits);
+                              G1HeapRegion::GrainWords * HeapWordSize * num_newly_activated_regions);
   }
 
   // Mark each G1 region touched by the range as old, add it to
@@ -607,22 +607,22 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
          p2i(start_address), p2i(last_address));
   size_used += range.byte_size();
 
-  uint max_shrink_count = 0;
+  uint max_num_regions_to_shrink = 0;
   if (capacity() > MinHeapSize) {
     size_t max_shrink_bytes = capacity() - MinHeapSize;
-    max_shrink_count = (uint)(max_shrink_bytes / G1HeapRegion::GrainBytes);
+    max_num_regions_to_shrink = (uint)(max_shrink_bytes / G1HeapRegion::GrainBytes);
   }
 
-  uint shrink_count = 0;
+  uint num_shrunk_regions = 0;
   // Free, empty and uncommit regions with CDS archive content.
   auto dealloc_archive_region = [&] (G1HeapRegion* r, bool is_last) {
     guarantee(r->is_old(), "Expected old region at index %u", r->hrm_index());
     _old_set.remove(r);
     r->set_free();
     r->set_top(r->bottom());
-    if (shrink_count < max_shrink_count) {
+    if (num_shrunk_regions < max_num_regions_to_shrink) {
       _hrm.shrink_at(r->hrm_index(), 1);
-      shrink_count++;
+      num_shrunk_regions++;
     } else {
       _hrm.insert_into_free_list(r);
     }
@@ -630,11 +630,11 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
 
   iterate_regions_in_range(range, dealloc_archive_region);
 
-  if (shrink_count != 0) {
+  if (num_shrunk_regions != 0) {
     log_debug(gc, ergo, heap)("Attempt heap shrinking (CDS archive regions). Total size: %zuB (%u Regions)",
-                              G1HeapRegion::GrainWords * HeapWordSize * shrink_count, shrink_count);
+                              G1HeapRegion::GrainWords * HeapWordSize * num_shrunk_regions, num_shrunk_regions);
     // Explicit uncommit.
-    uncommit_regions(shrink_count);
+    uncommit_regions(num_shrunk_regions);
   }
   decrease_used(size_used);
 }
@@ -1326,11 +1326,10 @@ G1CollectedHeap::G1CollectedHeap() :
   _gc_tracer_stw(new G1NewTracer()),
   _policy(new G1Policy(_gc_timer_stw)),
   _heap_sizing_policy(nullptr),
-  _collection_set(this, _policy),
   _rem_set(nullptr),
   _card_set_config(),
   _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
-  _young_regions_card_set_group(card_set_config(), &_card_set_freelist_pool, G1CardSetGroup::YoungId),
+  _collection_set(this, _policy),
   _cm(nullptr),
   _cr(nullptr),
   _task_queues(nullptr),
@@ -1621,6 +1620,7 @@ jint G1CollectedHeap::initialize() {
   // values in the heap have been properly initialized.
   _monitoring_support = new G1MonitoringSupport(this);
 
+  _collection_set_candidates.initialize(max_num_regions());
   _collection_set.initialize(max_num_regions());
 
   start_new_collection_set();
@@ -2245,15 +2245,15 @@ void G1CollectedHeap::collection_set_iterate_increment_from(G1HeapRegionClosure 
 void G1CollectedHeap::par_iterate_regions_array(G1HeapRegionClosure* cl,
                                                 G1HeapRegionClaimer* hr_claimer,
                                                 const uint regions[],
-                                                size_t length,
+                                                size_t num_regions,
                                                 uint worker_id) const {
   assert_at_safepoint();
-  if (length == 0) {
+  if (num_regions == 0) {
     return;
   }
   uint total_workers = workers()->active_workers();
 
-  size_t start_pos = (worker_id * length) / total_workers;
+  size_t start_pos = (worker_id * num_regions) / total_workers;
   size_t cur_pos = start_pos;
 
   do {
@@ -2265,7 +2265,7 @@ void G1CollectedHeap::par_iterate_regions_array(G1HeapRegionClosure* cl,
     }
 
     cur_pos++;
-    if (cur_pos == length) {
+    if (cur_pos == num_regions) {
       cur_pos = 0;
     }
   } while (cur_pos != start_pos);
@@ -2512,8 +2512,8 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   _refinement_epoch++;
 }
 
-uint G1CollectedHeap::uncommit_regions(uint region_limit) {
-  return _hrm.uncommit_inactive_regions(region_limit);
+uint G1CollectedHeap::uncommit_regions(uint max_num_regions_to_uncommit) {
+  return _hrm.uncommit_inactive_regions(max_num_regions_to_uncommit);
 }
 
 bool G1CollectedHeap::has_uncommittable_regions() {
@@ -2847,8 +2847,7 @@ void G1CollectedHeap::set_humongous_stats(uint num_humongous_total, uint num_hum
 }
 
 bool G1CollectedHeap::should_sample_collection_set_candidates() const {
-  const G1CollectionSetCandidates* candidates = collection_set()->candidates();
-  return !candidates->is_empty();
+  return !collection_set_candidates()->is_empty();
 }
 
 void G1CollectedHeap::set_collection_set_candidates_stats(G1MonotonicArenaMemoryStats& stats) {
@@ -2903,7 +2902,7 @@ void G1CollectedHeap::free_region(G1HeapRegion* hr, G1FreeRegionList* free_list)
 
 void G1CollectedHeap::retain_region(G1HeapRegion* hr) {
   MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
-  collection_set()->candidates()->add_retained_region_unsorted(hr);
+  collection_set_candidates()->add_retained_region_unsorted(hr);
 }
 
 void G1CollectedHeap::free_humongous_region(G1HeapRegion* hr,

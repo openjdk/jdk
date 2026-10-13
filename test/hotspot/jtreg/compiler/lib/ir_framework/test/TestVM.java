@@ -492,7 +492,6 @@ public class TestVM {
                              "Cannot define compilation level SKIP or WAIT_FOR_COMPILATION in @ForceCompile at " + ex);
             compLevel = restrictCompLevel(forceCompileAnno.value());
             if (FLIP_C1_C2) {
-                compLevel = compLevel.flipCompLevel();
                 compLevel = restrictCompLevel(compLevel.flipCompLevel());
             }
             if (EXCLUDE_RANDOM) {
@@ -585,7 +584,6 @@ public class TestVM {
         }
         CompLevel compLevel = restrictCompLevel(testAnno.compLevel());
         if (FLIP_C1_C2) {
-            compLevel = compLevel.flipCompLevel();
             compLevel = restrictCompLevel(compLevel.flipCompLevel());
         }
         if (EXCLUDE_RANDOM) {
@@ -771,7 +769,9 @@ public class TestVM {
         CustomRunTest customRunTest = new CustomRunTest(m, getAnnotation(m, Warmup.class), runAnno, tests, shouldExcludeTest);
         allTests.add(customRunTest);
         if (PRINT_VALID_IR_RULES) {
-            tests.forEach(test -> irMatchRulePrinter.emitApplicableIRRules(test.getTestMethod(), customRunTest.isSkipped()));
+            // Even though we cannot exclude a @Test method from being run when invoked from a @Run method for multiple
+            // tests, we can disable its IR verification.
+            tests.forEach(test -> irMatchRulePrinter.emitApplicableIRRules(test.getTestMethod(), shouldExcludeTest(test.getTestMethod())));
         }
     }
 

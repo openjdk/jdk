@@ -34,9 +34,10 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  * @enablePreview
+ * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @compile FlattenableSemanticTest.java
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UseFieldFlattening runtime.valhalla.valuetypes.FlattenableSemanticTest
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:ForceNonTearable=* runtime.valhalla.valuetypes.FlattenableSemanticTest
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UseFieldFlattening ${test.main.class}
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:ForceNonTearable=* ${test.main.class}
  */
 public class FlattenableSemanticTest {
 

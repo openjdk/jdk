@@ -116,7 +116,7 @@ class MallocSiteTable : AllStatic {
   // Each bucket chain cannot be longer than what a 16 bit pos idx can hold (hopefully way shorter)
 #define MAX_BUCKET_LENGTH         (USHRT_MAX - 1)
 
-  STATIC_ASSERT(table_size <= MAX_MALLOCSITE_TABLE_SIZE);
+  static_assert(table_size <= MAX_MALLOCSITE_TABLE_SIZE);
 
   static uint32_t build_marker(unsigned bucket_idx, unsigned pos_idx) {
     assert(bucket_idx <= MAX_MALLOCSITE_TABLE_SIZE && pos_idx < MAX_BUCKET_LENGTH, "overflow");

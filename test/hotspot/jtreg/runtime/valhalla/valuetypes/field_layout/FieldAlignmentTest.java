@@ -33,58 +33,47 @@
  */
 
 /*
- * @test id=64_COOP_CCP_NCOH
+ * @test id=64_COOP_NCOH
  * @requires vm.bits == 64
  * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  * @enablePreview
  * @compile FieldLayoutAnalyzer.java FieldAlignmentTest.java
- * @run main runtime.valhalla.valuetypes.field_layout.FieldAlignmentTest 64_COOP_CCP_NCOH
+ * @run main runtime.valhalla.valuetypes.field_layout.FieldAlignmentTest 64_COOP_NCOH
  */
 
 /*
- * @test id=64_NCOOP_CCP_NCOH
+ * @test id=64_NCOOP_NCOH
  * @requires vm.bits == 64
  * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  * @enablePreview
  * @compile FieldLayoutAnalyzer.java FieldAlignmentTest.java
- * @run main runtime.valhalla.valuetypes.field_layout.FieldAlignmentTest 64_NCOOP_CCP_NCOH
+ * @run main runtime.valhalla.valuetypes.field_layout.FieldAlignmentTest 64_NCOOP_NCOH
  */
 
 /*
- * @test id=64_NCOOP_NCCP_NCOH
+ * @test id=64_COOP_COH
  * @requires vm.bits == 64
  * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  * @enablePreview
  * @compile FieldLayoutAnalyzer.java FieldAlignmentTest.java
- * @run main runtime.valhalla.valuetypes.field_layout.FieldAlignmentTest 64_NCOOP_NCCP_NCOH
+ * @run main runtime.valhalla.valuetypes.field_layout.FieldAlignmentTest 64_COOP_COH
  */
 
 /*
- * @test id=64_COOP_CCP_COH
+ * @test id=64_NCOOP_COH
  * @requires vm.bits == 64
  * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  * @enablePreview
  * @compile FieldLayoutAnalyzer.java FieldAlignmentTest.java
- * @run main runtime.valhalla.valuetypes.field_layout.FieldAlignmentTest 64_COOP_CCP_COH
- */
-
-/*
- * @test id=64_NCOOP_CCP_COH
- * @requires vm.bits == 64
- * @requires vm.flagless
- * @library /test/lib
- * @modules java.base/jdk.internal.vm.annotation
- * @enablePreview
- * @compile FieldLayoutAnalyzer.java FieldAlignmentTest.java
- * @run main runtime.valhalla.valuetypes.field_layout.FieldAlignmentTest 64_NCOOP_CCP_COH
+ * @run main runtime.valhalla.valuetypes.field_layout.FieldAlignmentTest 64_NCOOP_COH
  */
 
  package runtime.valhalla.valuetypes.field_layout;
@@ -187,7 +176,6 @@
   }
 
   static ProcessBuilder exec(String compressedOopsArg,
-                             String compressedKlassPointersArg,
                              String compactObjectHeader,
                              String... args) throws Exception {
     List<String> argsList = new ArrayList<>();
@@ -197,9 +185,6 @@
     Collections.addAll(argsList, "-Xshare:off");
     if (compressedOopsArg != null) {
       Collections.addAll(argsList, compressedOopsArg);
-    }
-    if (compressedKlassPointersArg != null) {
-      Collections.addAll(argsList, compressedKlassPointersArg);
     }
     if (compactObjectHeader != null) {
       Collections.addAll(argsList, compactObjectHeader);
@@ -212,38 +197,27 @@
 
   public static void main(String[] args) throws Exception {
     String compressedOopsArg;
-    String compressedKlassPointersArg;
     String compactObjectHeaderArg;
 
     switch(args[0]) {
       case "32":
         compressedOopsArg = null;
-        compressedKlassPointersArg = null;
         compactObjectHeaderArg = null;
         break;
-      case "64_COOP_CCP_NCOH":
+      case "64_COOP_NCOH":
         compressedOopsArg = "-XX:+UseCompressedOops";
-        compressedKlassPointersArg =  "-XX:+UseCompressedClassPointers";
         compactObjectHeaderArg = "-XX:-UseCompactObjectHeaders";
         break;
-      case "64_NCOOP_CCP_NCOH":
+      case "64_NCOOP_NCOH":
         compressedOopsArg = "-XX:-UseCompressedOops";
-        compressedKlassPointersArg = "-XX:+UseCompressedClassPointers";
         compactObjectHeaderArg = "-XX:-UseCompactObjectHeaders";
         break;
-      case "64_NCOOP_NCCP_NCOH":
-        compressedOopsArg = "-XX:-UseCompressedOops";
-        compressedKlassPointersArg = "-XX:-UseCompressedClassPointers";
-        compactObjectHeaderArg = "-XX:-UseCompactObjectHeaders";
-        break;
-      case "64_COOP_CCP_COH":
+      case "64_COOP_COH":
         compressedOopsArg = "-XX:+UseCompressedOops";
-        compressedKlassPointersArg = "-XX:+UseCompressedClassPointers";
         compactObjectHeaderArg = "-XX:+UseCompactObjectHeaders";
         break;
-      case "64_NCOOP_CCP_COH":
+      case "64_NCOOP_COH":
         compressedOopsArg = "-XX:-UseCompressedOops";
-        compressedKlassPointersArg = "-XX:+UseCompressedClassPointers";
         compactObjectHeaderArg = "-XX:+UseCompactObjectHeaders";
         break;
       default: throw new RuntimeException("Unrecognized configuration");
@@ -255,7 +229,7 @@
     fat.generateTestRunner();
 
     // Execute the test runner in charge of loading all test classes
-    ProcessBuilder pb = exec(compressedOopsArg, compressedKlassPointersArg, compactObjectHeaderArg, "TestRunner");
+    ProcessBuilder pb = exec(compressedOopsArg, compactObjectHeaderArg, "TestRunner");
     OutputAnalyzer out = new OutputAnalyzer(pb.start());
 
     if (out.getExitValue() != 0) {

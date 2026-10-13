@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_ARM_CONTINUATION_ARM_INLINE_HPP
-#define CPU_ARM_CONTINUATION_ARM_INLINE_HPP
+#ifndef CPU_ARM_CONTINUATIONFREEZETHAW_ARM_INLINE_HPP
+#define CPU_ARM_CONTINUATIONFREEZETHAW_ARM_INLINE_HPP
 
 #include "oops/stackChunkOop.inline.hpp"
 #include "runtime/frame.hpp"
@@ -123,4 +123,4 @@ inline void ThawBase::prefetch_chunk_pd(void* start, int size) {
   Unimplemented();
 }
 
-#endif // CPU_ARM_CONTINUATION_ARM_INLINE_HPP
+#endif // CPU_ARM_CONTINUATIONFREEZETHAW_ARM_INLINE_HPP
