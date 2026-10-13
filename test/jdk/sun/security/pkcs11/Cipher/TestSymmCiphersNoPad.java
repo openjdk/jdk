@@ -110,7 +110,7 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
             System.out.println(debugBuf);
             throw ex;
         }
-
+        System.out.println(debugBuf);
         if (!skippedList.isEmpty()){
             throw new SkippedException("Some tests skipped: " + skippedList);
         }
@@ -135,6 +135,8 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
             ByteBuffer outBuf = ByteBuffer.allocate(outLen);
             ByteBuffer outDirectBuf = ByteBuffer.allocateDirect(outLen);
             ByteBuffer inMemBuf = arena.allocate(in.length).asByteBuffer();
+            inMemBuf.put(in);
+            inMemBuf.position(0);
             ByteBuffer outMemBuf = arena.allocate(outLen).asByteBuffer();
 
             // test#1: byte[] in + byte[] out
@@ -212,6 +214,26 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
                 debugBuf.append("Caught Exception during stream reading\n");
                 throw ex;
             }
+            match(outBuf, answer);
+
+
+            debugBuf.append("Test #7: memory segments\n");
+            cipher.update(inMemBuf, outMemBuf);
+            cipher.doFinal(inMemBuf, outMemBuf);
+            match(outMemBuf, answer);
+
+            debugBuf.append("Test#8: direct buffer in, memory segment out\n");
+            inDirectBuf.position(0);
+            outMemBuf.position(0);
+            cipher.update(inDirectBuf, outMemBuf);
+            cipher.doFinal(inDirectBuf, outMemBuf);
+            match(outMemBuf, answer);
+
+            debugBuf.append("Test#9: memory segment in, direct buffer out\n");
+            inMemBuf.position(0);
+            outBuf.position(0);
+            cipher.update(inMemBuf, outBuf);
+            cipher.doFinal(inMemBuf, outBuf);
             match(outBuf, answer);
         }
         debugBuf.setLength(0);

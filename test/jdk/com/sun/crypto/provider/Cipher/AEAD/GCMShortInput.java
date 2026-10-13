@@ -51,6 +51,12 @@ public class GCMShortInput {
         cipher.init(Cipher.DECRYPT_MODE, keySpec, params);
         try {
             cipher.doFinal(ByteBuffer.allocate(0), ByteBuffer.allocate(0));
+            throw new AssertionError("AEADBadTagException expected");
+        } catch (AEADBadTagException e) {
+            // expected
+        }
+
+        try {
             try (Arena arena = Arena.ofConfined()) {
                 cipher.doFinal(arena.allocate(0).asByteBuffer(), arena.allocate(0).asByteBuffer());
             }
