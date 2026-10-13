@@ -126,7 +126,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     ori(tmp1_mark, tmp1_mark, markWord::lock_neutral_value);
     xori(tmp3_t, tmp1_mark, markWord::lock_neutral_value);
     cmpxchg(/*addr*/ obj, /*expected*/ tmp1_mark, /*new*/ tmp3_t, Assembler::int64,
-            /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_t);
+            memory_order_acquire, /*result*/ tmp3_t);
     bne(tmp1_mark, tmp3_t, slow_path);
 
     bind(push);
@@ -206,7 +206,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     Register tid = tmp4;
     ld(tid, Address(xthread, JavaThread::monitor_owner_id_offset()));
     cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ tid, Assembler::int64,
-            /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
+            memory_order_acquire, /*result*/ tmp3_owner);
     beqz(tmp3_owner, monitor_locked);
 
     // Normally, a contended monitor enters the runtime slow path here.
@@ -229,7 +229,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
       wrs_sto();
       bind(retry);
       cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ tid, Assembler::int64,
-              /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
+              memory_order_acquire, /*result*/ tmp3_owner);
       beqz(tmp3_owner, monitor_locked);
       bne(tmp3_owner, tid, slow_path);
       bind(recursive);
@@ -321,7 +321,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
     ori(tmp3_t, tmp1_mark, markWord::lock_neutral_value);
     cmpxchg(/*addr*/ obj, /*expected*/ tmp1_mark, /*new*/ tmp3_t, Assembler::int64,
-            /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, /*result*/ tmp3_t);
+            memory_order_release, /*result*/ tmp3_t);
     beq(tmp1_mark, tmp3_t, unlocked);
 
     bind(push_and_slow_path);
@@ -1861,8 +1861,7 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   const VectorRegister v_coeffs = v6;
   const VectorRegister v_tmp    = v8;
 
-  const address adr_pows31 = StubRoutines::riscv::arrays_hashcode_powers_of_31()
-                           + sizeof(jint);
+  const address adr_pows31 = StubRoutines::riscv::arrays_hashcode_powers_of_31();
   Label VEC_LOOP, DONE, SCALAR_TAIL, SCALAR_TAIL_LOOP;
 
   // NB: at this point (a) 'result' already has some value,
@@ -1872,6 +1871,9 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   beqz(t0, SCALAR_TAIL);
 
   la(t1, ExternalAddress(adr_pows31));
+  // Keep the relocation target at the registered stub entry, then skip the
+  // first element when loading the vector coefficients.
+  addi(t1, t1, sizeof(jint));
   lw(pow31_highest, Address(t1, -1 * sizeof(jint)));
 
   vsetvli(consumed, cnt, Assembler::e32, Assembler::m2);
@@ -3069,6 +3071,34 @@ void C2_MacroAssembler::reduce_minmax_fp_v(FloatRegister dst,
   bind(L_done);
 }
 
+void C2_MacroAssembler::reduce_mul_fp_v(FloatRegister dst, FloatRegister src1, VectorRegister src2,
+                                        VectorRegister vtmp1, VectorRegister vtmp2,
+                                        bool is_double, uint vector_length) {
+  assert(vector_length >= 2, "unsupported vector length");
+  assert(is_power_of_2(vector_length), "vector length must be a power of two");
+  assert_different_registers(dst, src1);
+  assert_different_registers(src2, vtmp1, vtmp2);
+
+  BasicType bt = is_double ? T_DOUBLE : T_FLOAT;
+  vsetvli_helper(bt, vector_length);
+
+  vector_length /= 2;
+  slidedown_v(vtmp1, src2, vector_length);
+  vsetvli_helper(bt, vector_length);
+  vfmul_vv(vtmp1, vtmp1, src2);
+
+  while (vector_length > 1) {
+    vector_length /= 2;
+    slidedown_v(vtmp2, vtmp1, vector_length);
+    vsetvli_helper(bt, vector_length);
+    vfmul_vv(vtmp1, vtmp1, vtmp2);
+  }
+
+  vfmv_f_s(dst, vtmp1);
+  is_double ? fmul_d(dst, dst, src1)
+            : fmul_s(dst, dst, src1);
+}
+
 bool C2_MacroAssembler::in_scratch_emit_size() {
   if (ciEnv::current()->task() != nullptr) {
     PhaseOutput* phase_output = Compile::current()->output();
@@ -3102,8 +3132,14 @@ void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
     case Op_MaxReductionV:
       vredmax_vs(tmp, src2, tmp, vm);
       break;
+    case Op_UMaxReductionV:
+      vredmaxu_vs(tmp, src2, tmp, vm);
+      break;
     case Op_MinReductionV:
       vredmin_vs(tmp, src2, tmp, vm);
+      break;
+    case Op_UMinReductionV:
+      vredminu_vs(tmp, src2, tmp, vm);
       break;
     default:
       ShouldNotReachHere();
