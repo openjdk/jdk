@@ -1020,7 +1020,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
         // and it hasn't already been cached, cache it
         JvmtiCachedClassFileData *p;
         p = (JvmtiCachedClassFileData *)os::malloc(
-          offset_of(JvmtiCachedClassFileData, data) + _curr_len, mtInternal);
+          offset_of(JvmtiCachedClassFileData, data) + _curr_len, mtServiceability);
         if (p == nullptr) {
           vm_exit_out_of_memory(offset_of(JvmtiCachedClassFileData, data) + _curr_len,
             OOM_MALLOC_ERROR,

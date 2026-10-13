@@ -37,7 +37,6 @@ import jdk.internal.org.commonmark.node.Node;
 import jdk.internal.org.commonmark.renderer.html.HtmlNodeRendererContext;
 import jdk.internal.org.commonmark.renderer.html.HtmlWriter;
 
-import java.util.Collections;
 import java.util.Map;
 
 public class TableHtmlNodeRenderer extends TableNodeRenderer {
@@ -50,6 +49,7 @@ public class TableHtmlNodeRenderer extends TableNodeRenderer {
         this.context = context;
     }
 
+    @Override
     protected void renderBlock(TableBlock tableBlock) {
         htmlWriter.line();
         htmlWriter.tag("table", getAttributes(tableBlock, "table"));
@@ -58,6 +58,7 @@ public class TableHtmlNodeRenderer extends TableNodeRenderer {
         htmlWriter.line();
     }
 
+    @Override
     protected void renderHead(TableHead tableHead) {
         htmlWriter.line();
         htmlWriter.tag("thead", getAttributes(tableHead, "thead"));
@@ -66,6 +67,7 @@ public class TableHtmlNodeRenderer extends TableNodeRenderer {
         htmlWriter.line();
     }
 
+    @Override
     protected void renderBody(TableBody tableBody) {
         htmlWriter.line();
         htmlWriter.tag("tbody", getAttributes(tableBody, "tbody"));
@@ -74,6 +76,7 @@ public class TableHtmlNodeRenderer extends TableNodeRenderer {
         htmlWriter.line();
     }
 
+    @Override
     protected void renderRow(TableRow tableRow) {
         htmlWriter.line();
         htmlWriter.tag("tr", getAttributes(tableRow, "tr"));
@@ -82,6 +85,7 @@ public class TableHtmlNodeRenderer extends TableNodeRenderer {
         htmlWriter.line();
     }
 
+    @Override
     protected void renderCell(TableCell tableCell) {
         String tagName = tableCell.isHeader() ? "th" : "td";
         htmlWriter.line();
@@ -92,14 +96,14 @@ public class TableHtmlNodeRenderer extends TableNodeRenderer {
     }
 
     private Map<String, String> getAttributes(Node node, String tagName) {
-        return context.extendAttributes(node, tagName, Collections.<String, String>emptyMap());
+        return context.extendAttributes(node, tagName, Map.of());
     }
 
     private Map<String, String> getCellAttributes(TableCell tableCell, String tagName) {
         if (tableCell.getAlignment() != null) {
-            return context.extendAttributes(tableCell, tagName, Collections.singletonMap("align", getAlignValue(tableCell.getAlignment())));
+            return context.extendAttributes(tableCell, tagName, Map.of("align", getAlignValue(tableCell.getAlignment())));
         } else {
-            return context.extendAttributes(tableCell, tagName, Collections.<String, String>emptyMap());
+            return context.extendAttributes(tableCell, tagName, Map.of());
         }
     }
 

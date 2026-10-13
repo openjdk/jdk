@@ -258,11 +258,14 @@ class ReplaceOpaqueStrideInput : public BFSActions {
 class ReplaceOpaqueInitNode : public BFSActions {
   Node* _new_opaque_init_node;
   PhaseIterGVN& _igvn;
+  const uint _last_node_index;
 
   public:
-  ReplaceOpaqueInitNode(Node* new_opaque_init_node, PhaseIterGVN& igvn)
+  ReplaceOpaqueInitNode(Node* new_opaque_init_node, PhaseIterGVN& igvn, uint last_node_index)
       : _new_opaque_init_node(new_opaque_init_node),
-        _igvn(igvn) {}
+        _igvn(igvn),
+        _last_node_index(last_node_index) {
+    }
   NONCOPYABLE(ReplaceOpaqueInitNode);
 
   void replace_for(OpaqueTemplateAssertionPredicateNode* opaque_node) {
@@ -275,7 +278,10 @@ class ReplaceOpaqueInitNode : public BFSActions {
   }
 
   bool is_target_node(Node* node) const override {
-    return node->is_OpaqueLoopInit();
+    // An OpaqueLoopInit node could be shared between several template assertion predicates: in that case, the
+    // OpaqueLoopInit encountered here could be one that was replaced already. The _last_node_index guarantees it's not
+    // replaced again.
+    return node->is_OpaqueLoopInit() && node->_idx < _last_node_index;
   }
 
   void target_node_action(Node* child, uint i) override {
@@ -292,9 +298,9 @@ void TemplateAssertionPredicate::replace_opaque_stride_input(Node* new_stride, P
 }
 
 // Replace the OpaqueLoopInitNode with 'new_init' and leave the other nodes unchanged.
-void TemplateAssertionPredicate::replace_opaque_init_node(Node* new_init, PhaseIterGVN& igvn) const {
+void TemplateAssertionPredicate::replace_opaque_init_node(Node* new_init, PhaseIterGVN& igvn, uint last_node_index) const {
   DEBUG_ONLY(verify();)
-  ReplaceOpaqueInitNode replace_opaque_init_node(new_init, igvn);
+  ReplaceOpaqueInitNode replace_opaque_init_node(new_init, igvn, last_node_index);
   replace_opaque_init_node.replace_for(opaque_node());
 }
 
@@ -1244,7 +1250,7 @@ void UpdateStrideForAssertionPredicates::connect_initialized_assertion_predicate
 }
 
 void UpdateInitForTemplateAssertionPredicates::visit(const TemplateAssertionPredicate& template_assertion_predicate) {
-  template_assertion_predicate.replace_opaque_init_node(_new_init, _phase->igvn());
+  template_assertion_predicate.replace_opaque_init_node(_new_init, _phase->igvn(), _last_node_index);
 }
 
 // Do the following to find and eliminate useless Parse and Template Assertion Predicates:

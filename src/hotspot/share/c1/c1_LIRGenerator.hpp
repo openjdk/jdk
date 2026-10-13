@@ -209,8 +209,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIR_Opr rlock(Value instr);                      // lock a free register
   LIR_Opr rlock_result(Value instr);
   LIR_Opr rlock_result(Value instr, BasicType type);
-  LIR_Opr rlock_byte(BasicType type);
-  LIR_Opr rlock_callee_saved(BasicType type);
+  LIR_Opr rlock_byte();
 
   // get a constant into a register and get track of what register was used
   LIR_Opr load_constant(Constant* x);
@@ -334,7 +333,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   // specific implementations
   void array_store_check(LIR_Opr value, LIR_Opr array, CodeEmitInfo* store_check_info, ciMethod* profiled_method, int profiled_bci);
 
-  static LIR_Opr result_register_for(ValueType* type, bool callee = false);
+  static LIR_Opr result_register_for(ValueType* type);
 
   ciObject* get_jobject_constant(Value value);
 
@@ -346,8 +345,8 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   // volatile field operations are never patchable because a klass
   // must be loaded to know it's volatile which means that the offset
   // is always known as well.
+  // volatile_field_store and volatile_field_load provide MO_SEQ_CST semantics.
   void volatile_field_store(LIR_Opr value, LIR_Address* address, CodeEmitInfo* info);
-  // volatile_field_load provides trailing membar semantics
   void volatile_field_load(LIR_Address* address, LIR_Opr result, CodeEmitInfo* info);
 
   void put_Object_unsafe(LIR_Opr src, LIR_Opr offset, LIR_Opr data, BasicType type, bool is_volatile);
@@ -355,7 +354,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   void arithmetic_call_op (Bytecodes::Code code, LIR_Opr result, LIR_OprList* args);
 
-  void increment_counter(address counter, BasicType type, int step = 1);
   void increment_counter(LIR_Address* addr, int step = 1);
 
   void arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr tmp, CodeEmitInfo* info = nullptr);

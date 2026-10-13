@@ -126,7 +126,11 @@ const size_t minimumSymbolTableSize = 1024;
                                                                             \
   product(bool, AOTCompatibleOopCompression, false, DIAGNOSTIC,             \
           "Always use HeapBasedNarrowOop mode, so that AOT code will "      \
-          "always work regardless of runtime heap range")                   \
+          "always work regardless of runtime heap range; this is set "      \
+          "by default when assembling an AOT cache which contains code, "   \
+          "and by default in a production run that uses that AOT cache; "   \
+          "to diagnose possible effects on performance, you can assemble "  \
+          "an AOT cache by disabling either AOTCodeCaching or this flag")   \
                                                                             \
   product(bool, UseCompactObjectHeaders, true,                              \
           "Use compact 64-bit object headers in 64-bit VM")                 \
@@ -805,7 +809,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, PrintValueLayout, false, DIAGNOSTIC,                        \
           "Print field layout for each value class or class containing "    \
-          "inlined value fields")                                           \
+          "flattenable value fields")                                       \
                                                                             \
   product(bool, PrintFlatArrayLayout, false, DIAGNOSTIC,                    \
           "Print array layout for each flattened value array")              \
@@ -815,7 +819,7 @@ const int ObjectAlignmentInBytes = 8;
           "when it determines it is possible and beneficial to do so")      \
                                                                             \
   product(bool, UseFieldFlattening, true, DIAGNOSTIC,                       \
-          "Allow the JVM to inline the fields of concrete value objects "   \
+          "Allow the JVM to flatten the fields of concrete value objects "  \
           "when it determines it is possible and beneficial to do so")      \
                                                                             \
   product(bool, UseNullableAtomicValueFlattening, true, DIAGNOSTIC,         \
@@ -995,7 +999,8 @@ const int ObjectAlignmentInBytes = 8;
           "Use population count instruction")                               \
                                                                             \
   develop(bool, TraceMethodReplacement, false,                              \
-          "Print when methods are replaced do to recompilation")            \
+          "Print when AOT or tiered JIT methods are replaced due to "       \
+          "recompilation")                                                  \
                                                                             \
   product(intx, MinPassesBeforeFlush, 10, DIAGNOSTIC,                       \
           "Minimum number of sweeper passes before an nmethod "             \

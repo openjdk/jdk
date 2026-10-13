@@ -84,7 +84,7 @@ void WorkerTaskDispatcher::worker_run_task() {
 
 WorkerThreads::WorkerThreads(const char* name, uint max_workers) :
     _name(name),
-    _workers(NEW_C_HEAP_ARRAY(WorkerThread*, max_workers, mtInternal)),
+    _workers(NEW_C_HEAP_ARRAY(WorkerThread*, max_workers, mtGC)),
     _max_workers(max_workers),
     _created_workers(0),
     _active_workers(0),
