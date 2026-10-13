@@ -233,16 +233,12 @@ void VM_Version::initialize() {
     ContendedPaddingWidth = cache_line_size;
   }
 
-  // If running on Power8 or newer hardware, the implementation uses the available vector instructions.
-  // In all other cases, the implementation uses only generally available instructions.
   if (!UseCRC32Intrinsics) {
     if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
       FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
     }
   }
 
-  // Implementation does not use any of the vector instructions available with Power8.
-  // Their exploitation is still pending (aka "work in progress").
   if (!UseCRC32CIntrinsics) {
     if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
       FLAG_SET_DEFAULT(UseCRC32CIntrinsics, true);

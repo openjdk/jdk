@@ -9735,7 +9735,7 @@ instruct convD2IRaw_regD(regD dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Double to Int conversion, NaN is mapped to 0. Special version for Power8.
+// Double to Int conversion, NaN is mapped to 0.
 instruct convD2I_reg_mffprd_ExEx(iRegIdst dst, regD src) %{
   match(Set dst (ConvD2I src));
   ins_cost(DEFAULT_COST);
@@ -9763,7 +9763,7 @@ instruct convF2IRaw_regF(regF dst, regF src) %{
 %}
 
 
-// Float to Int conversion, NaN is mapped to 0. Special version for Power8.
+// Float to Int conversion, NaN is mapped to 0.
 instruct convF2I_regF_mffprd_ExEx(iRegIdst dst, regF src) %{
   match(Set dst (ConvF2I src));
   ins_cost(DEFAULT_COST);
@@ -9856,7 +9856,7 @@ instruct convF2LRaw_regF(regF dst, regF src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Float to Long conversion, NaN is mapped to 0. Special version for Power8.
+// Float to Long conversion, NaN is mapped to 0.
 instruct convF2L_reg_mffprd_ExEx(iRegLdst dst, regF src) %{
   match(Set dst (ConvF2L src));
   ins_cost(DEFAULT_COST);
@@ -9883,7 +9883,7 @@ instruct convD2LRaw_regD(regD dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Double to Long conversion, NaN is mapped to 0. Special version for Power8.
+// Double to Long conversion, NaN is mapped to 0.
 instruct convD2L_reg_mffprd_ExEx(iRegLdst dst, regD src) %{
   match(Set dst (ConvD2L src));
   ins_cost(DEFAULT_COST);
@@ -9938,7 +9938,7 @@ instruct convL2FRaw_regF(regF dst, regD src) %{
 %}
 
 
-// Integer to Float conversion. Special version for Power8.
+// Integer to Float conversion.
 instruct convI2F_ireg_mtfprd_Ex(regF dst, iRegIorL2I src) %{
   match(Set dst (ConvI2F src));
   ins_cost(DEFAULT_COST);
@@ -9951,7 +9951,7 @@ instruct convI2F_ireg_mtfprd_Ex(regF dst, iRegIorL2I src) %{
 %}
 
 
-// L2F to avoid runtime call.  Special version for Power8.
+// L2F to avoid runtime call.
 instruct convL2F_ireg_mtfprd_Ex(regF dst, iRegLsrc src) %{
   match(Set dst (ConvL2F src));
   ins_cost(DEFAULT_COST);
@@ -9969,7 +9969,7 @@ instruct convL2F_ireg_mtfprd_Ex(regF dst, iRegLsrc src) %{
 // Convert to Double
 
 
-// Integer to Double conversion. Special version for Power8.
+// Integer to Double conversion.
 instruct convI2D_reg_mtfprd_Ex(regD dst, iRegIorL2I src) %{
   match(Set dst (ConvI2D src));
   ins_cost(DEFAULT_COST);
@@ -9982,7 +9982,7 @@ instruct convI2D_reg_mtfprd_Ex(regD dst, iRegIorL2I src) %{
 %}
 
 
-// Long to Double conversion. Special version for Power8.
+// Long to Double conversion.
 instruct convL2D_reg_mtfprd_Ex(regD dst, iRegLsrc src) %{
   match(Set dst (ConvL2D src));
   ins_cost(DEFAULT_COST);

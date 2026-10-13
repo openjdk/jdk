@@ -2052,7 +2052,6 @@ class Assembler : public AbstractAssembler {
   inline void smt_yield();
   inline void smt_mdoio();
   inline void smt_mdoom();
-  // >= Power8
   inline void smt_miso();
 
   // trap instructions
