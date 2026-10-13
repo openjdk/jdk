@@ -122,7 +122,7 @@ public class DKSTest {
      * domain keystore: system
      */
     @Test
-    public void SystemTest() throws Exception {
+    public void systemTest() throws Exception {
         final URI config = new URI(CONFIG + "#system");
         final KeyStore keystore = KeyStore.getInstance("DKS");
         // load entries
@@ -137,7 +137,7 @@ public class DKSTest {
      * domain keystore: system_plus
      */
     @Test
-    public void SystemPlusTest() throws Exception {
+    public void systemPlusTest() throws Exception {
         final URI config = new URI(CONFIG + "#system_plus");
         final KeyStore keystore = KeyStore.getInstance("DKS");
         // load entries
