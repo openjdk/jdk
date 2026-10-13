@@ -145,7 +145,7 @@ class TestNullRestrictedArrayEscapeState {
 
     // Allocate two null-restricted atomic arrays and initialize the source
     // array with a holder that references an identity object. Then array-copy
-    // the source array into the desitnation array, load the holder, and store
+    // the source array into the destination array, load the holder, and store
     // its referent identity object globally, causing it to escape. C2 should
     // propagate the global escape state all the way from the destination
     // array's load to the identity object, and preserve the synchronization
