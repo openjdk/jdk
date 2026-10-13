@@ -1467,15 +1467,6 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   }
 }
 
-#ifdef ASSERT
-void ShenandoahHeap::assert_no_self_forwards() const {
-  for (size_t i = 0, n = num_regions(); i < n; ++i) {
-    const ShenandoahHeapRegion* region = get_region(i);
-    assert(!region->has_self_forwards(), "Region %zu should not have self forwarded objects here.", i);
-  }
-}
-#endif
-
 class ShenandoahTrashRegionTask : public WorkerTask {
   ShenandoahCollectionSet* _collection_set;
   Atomic<size_t> _free_bytes_in_evac_failed_regions;

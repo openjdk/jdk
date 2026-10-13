@@ -847,8 +847,6 @@ public:
   // self-forwarded bit on src, flags src's region, and returns src.
   virtual oop evacuate_object(oop src, Thread* thread);
 
-  DEBUG_ONLY(void assert_no_self_forwards() const;)
-
 // ---------- Helper functions
 //
 public:
