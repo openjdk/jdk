@@ -858,7 +858,7 @@ public final class ML_KEM {
                         allDone = false;
                         while (!allDone) {
                             allDone = true;
-                            parXof.squeezeBlock();
+                            parXof.squeezeBlock(parInd);
                             for (int k = 0; k < parInd; k++) {
                                 int parsedOfs = 0;
                                 int tmp;

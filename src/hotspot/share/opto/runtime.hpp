@@ -77,7 +77,7 @@ private:
 
  public:
   NamedCounter(const char *n, CounterTag tag = NoTag):
-    _name(n == nullptr ? nullptr : os::strdup(n)),
+    _name(n == nullptr ? nullptr : os::strdup(n, mtCompiler)),
     _count(0),
     _tag(tag),
     _next(nullptr) {}
@@ -125,6 +125,7 @@ class OptoRuntime : public AllStatic {
   // static TypeFunc* data members
   static const TypeFunc* _new_instance_Type;
   static const TypeFunc* _new_array_Type;
+  static const TypeFunc* _new_array_nozero_Type;
   static const TypeFunc* _multianewarray2_Type;
   static const TypeFunc* _multianewarray3_Type;
   static const TypeFunc* _multianewarray4_Type;
@@ -148,6 +149,7 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _checkcast_arraycopy_Type;
   static const TypeFunc* _generic_arraycopy_Type;
   static const TypeFunc* _slow_arraycopy_Type;
+  static const TypeFunc* _compile_method_Type;
   static const TypeFunc* _unsafe_setmemory_Type;
   static const TypeFunc* _array_fill_Type;
   static const TypeFunc* _array_sort_Type;
@@ -215,7 +217,7 @@ class OptoRuntime : public AllStatic {
   static void new_instance_C(Klass* instance_klass, JavaThread* current);
 
   // Allocate storage for a objArray or typeArray
-  static void new_array_C(Klass* array_klass, int len, JavaThread* current);
+  static void new_array_C(Klass* array_klass, int len, oopDesc* init_val, JavaThread* current);
   static void new_array_nozero_C(Klass* array_klass, int len, JavaThread* current);
 
   // Allocate storage for a multi-dimensional arrays
@@ -232,6 +234,7 @@ class OptoRuntime : public AllStatic {
                                oopDesc* dest, jint dest_pos,
                                jint length, JavaThread* thread);
   static void complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* current);
+  static void compile_method_C(Method* method, JavaThread* current);
 
 public:
   static void monitor_notify_C(oopDesc* obj, JavaThread* current);
@@ -264,6 +267,8 @@ private:
   static void register_finalizer_C(oopDesc* obj, JavaThread* current);
 
  public:
+  static void load_unknown_value_C(flatArrayOopDesc* array, int index, JavaThread* current);
+  static void store_unknown_value_C(instanceOopDesc* buffer, flatArrayOopDesc* array, int index, JavaThread* current);
 
   static bool is_callee_saved_register(MachRegisterNumbers reg);
 
@@ -296,6 +301,9 @@ private:
 
   static address slow_arraycopy_Java()                   { return _slow_arraycopy_Java; }
   static address register_finalizer_Java()               { return _register_finalizer_Java; }
+  static address compile_method_Java()                   { return _compile_method_Java; }
+  static address load_unknown_value_Java()               { return _load_unknown_value_Java; }
+  static address store_unknown_value_Java()              { return _store_unknown_value_Java; }
 
   static address vthread_end_first_transition_Java()     { return _vthread_end_first_transition_Java; }
   static address vthread_start_final_transition_Java()   { return _vthread_start_final_transition_Java; }
@@ -327,7 +335,8 @@ private:
   }
 
   static inline const TypeFunc* new_array_nozero_Type() {
-    return new_array_Type();
+    assert(_new_array_nozero_Type != nullptr, "should be initialized");
+    return _new_array_nozero_Type;
   }
 
   static const TypeFunc* multianewarray_Type(int ndim); // multianewarray
@@ -462,6 +471,11 @@ private:
     // There are no intptr_t (int/long) arguments.
     return _slow_arraycopy_Type;
   }   // the full routine
+
+  static inline const TypeFunc* compile_method_Type() {
+    assert(_compile_method_Type != nullptr, "should be initialized");
+    return _compile_method_Type;
+  }
 
   static inline const TypeFunc* unsafe_setmemory_Type() {
     assert(_unsafe_setmemory_Type != nullptr, "should be initialized");
@@ -764,6 +778,12 @@ private:
     return _class_id_load_barrier_Type;
   }
 #endif // INCLUDE_JFR
+
+  static const TypeFunc* load_unknown_value_Type();
+  static const TypeFunc* store_unknown_value_Type();
+
+  static const TypeFunc* store_value_type_fields_Type();
+  static const TypeFunc* pack_value_type_Type();
 
   // Dtrace support. entry and exit probes have the same signature
   static inline const TypeFunc* dtrace_method_entry_exit_Type() {

@@ -171,16 +171,25 @@ public class NonbranchyTree {
 class Node {
     Node left;
     Node right;
-    byte[] core;
+    Object storage;
 
     Node(int size) {
         left = null;
         right = null;
-        core = new byte[size];
+        // Initialize the core array
+        if (Memory.isValhallaEnabled()) {
+            Byte[] core = new Byte[size];
+            for (int i = 0; i < core.length; i++) {
+                core[i] = (byte) i;
+            }
+            storage = core;
+        } else {
+            byte[] core = new byte[size];
+            for (int i = 0; i < size; i++)
+                core[i] = (byte) i;
+            storage = core;
+        }
 
-        // Initizlize the core array
-        for (int i = 0; i < size; i++)
-            core[i] = (byte) i;
     }
 
     // Print the node info

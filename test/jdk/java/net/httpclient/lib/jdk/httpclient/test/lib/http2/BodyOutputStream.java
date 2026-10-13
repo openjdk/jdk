@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,13 @@ import java.util.Objects;
 import java.util.concurrent.Semaphore;
 
 import jdk.internal.net.http.frame.DataFrame;
+import jdk.internal.net.http.frame.Http2Frame;
 import jdk.internal.net.http.frame.ResetFrame;
 
 /**
  * OutputStream. Incoming window updates handled by the main connection
  * reader thread.
  */
-@SuppressWarnings({"rawtypes","unchecked"})
 public class BodyOutputStream extends OutputStream {
     final static byte[] EMPTY_BARRAY = new byte[0];
 
@@ -44,10 +44,9 @@ public class BodyOutputStream extends OutputStream {
     final Semaphore window;
     volatile boolean closed;
     volatile BodyInputStream bis;
-    volatile int resetErrorCode;
     boolean goodToGo = false; // not allowed to send until headers sent
     final Http2TestServerConnection conn;
-    final Queue outputQ;
+    final Queue<? super Http2Frame> outputQ;
 
     BodyOutputStream(int streamid, int initialWindow, Http2TestServerConnection conn) {
         this.window = new Semaphore(initialWindow);

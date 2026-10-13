@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019, Red Hat Inc.
  * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -139,7 +139,16 @@ public class RISCV64CurrentFrameGuess {
                 setValues(curSP, null, pc);
                 return true;
               }
+              Frame oldFrame = frame;
               frame = frame.sender(map);
+              if (frame != null && frame.getSP().lessThanOrEqual(oldFrame.getSP())) {
+                // A guessed frame can point to itself or in the wrong direction.
+                // Reject this candidate and continue searching at the next offset.
+                if (DEBUG) {
+                  System.out.println("CurrentFrameGuess: frame <= oldFrame: " + frame);
+                }
+                break;
+              }
             }
           } catch (Exception e) {
             if (DEBUG) {

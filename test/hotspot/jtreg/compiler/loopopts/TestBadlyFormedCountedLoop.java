@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,8 @@
  * @test
  * @bug 8273115
  * @summary CountedLoopEndNode::stride_con crash in debug build with -XX:+TraceLoopOpts
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+TraceLoopOpts -Xcomp -XX:-TieredCompilation
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:-DisplayVMOutput -XX:+TraceLoopOpts -Xcomp -XX:-TieredCompilation
  *                   -XX:CompileOnly=TestBadlyFormedCountedLoop::main TestBadlyFormedCountedLoop
  */
 

@@ -1561,14 +1561,16 @@ public class Float16Vector64Tests extends AbstractVectorTest {
     }
 
     static short cornerCaseValue(int i) {
-        return switch(i % 8) {
+        return switch(i % 10) {
             case 0  -> float16ToRawShortBits(Float16.MAX_VALUE);
             case 1  -> float16ToRawShortBits(Float16.MIN_VALUE);
             case 2  -> float16ToRawShortBits(Float16.NEGATIVE_INFINITY);
             case 3  -> float16ToRawShortBits(Float16.POSITIVE_INFINITY);
             case 4  -> float16ToRawShortBits(Float16.NaN);
             case 5  -> float16ToRawShortBits(shortBitsToFloat16((short)0x7FFA));
-            case 6  -> float16ToShortBits(Float16.valueOf(0.0f));
+            case 6  -> float16ToRawShortBits(shortBitsToFloat16((short)0x7c01)); // signaling NaN
+            case 7  -> float16ToRawShortBits(shortBitsToFloat16((short)0x7e00)); // quiet NaN
+            case 8  -> float16ToShortBits(Float16.valueOf(0.0f));
             default -> float16ToShortBits(Float16.valueOf(-0.0f));
         };
     }
@@ -5410,7 +5412,8 @@ public class Float16Vector64Tests extends AbstractVectorTest {
             String str = av.toString();
 
             short subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
-            Assert.assertTrue(str.equals(Arrays.toString(subarr)), "at index " + i + ", string should be = " + Arrays.toString(subarr) + ", but is = " + str);
+            String expectedStr = Arrays.toString(toFloat16Array(subarr));
+            Assert.assertTrue(str.equals(expectedStr), "at index " + i + ", string should be = " + expectedStr + ", but is = " + str);
         }
     }
 
@@ -5423,9 +5426,17 @@ public class Float16Vector64Tests extends AbstractVectorTest {
             int hash = av.hashCode();
 
             short subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
-            int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(subarr));
+            int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(toFloat16Array(subarr)));
             Assert.assertTrue(hash == expectedHash, "at index " + i + ", hash should be = " + expectedHash + ", but is = " + hash);
         }
+    }
+
+    static Float16[] toFloat16Array(short[] bits) {
+        Float16[] a = new Float16[bits.length];
+        for (int j = 0; j < bits.length; j++) {
+            a[j] = shortBitsToFloat16(bits[j]);
+        }
+        return a;
     }
 
 

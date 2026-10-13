@@ -41,12 +41,25 @@ inline void OrderAccess::storeload()  { fence(); }
 #define READ_MEM_BARRIER  __atomic_thread_fence(__ATOMIC_ACQUIRE);
 #define WRITE_MEM_BARRIER __atomic_thread_fence(__ATOMIC_RELEASE);
 
+// A compiler barrier, forcing the C++ compiler to invalidate all memory assumptions
+static inline void compiler_barrier() {
+  __asm__ volatile ("" : : : "memory");
+}
+
 inline void OrderAccess::acquire() {
-  READ_MEM_BARRIER;
+  if (UseZtso) {
+    compiler_barrier();
+  } else {
+    READ_MEM_BARRIER;
+  }
 }
 
 inline void OrderAccess::release() {
-  WRITE_MEM_BARRIER;
+  if (UseZtso) {
+    compiler_barrier();
+  } else {
+    WRITE_MEM_BARRIER;
+  }
 }
 
 inline void OrderAccess::fence() {

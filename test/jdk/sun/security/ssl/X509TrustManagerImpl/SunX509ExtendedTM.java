@@ -30,7 +30,6 @@
  * @test
  * @bug 6916074
  * @summary Add support for TLS 1.2
- * @enablePreview
  * @run main/othervm SunX509ExtendedTM
  */
 

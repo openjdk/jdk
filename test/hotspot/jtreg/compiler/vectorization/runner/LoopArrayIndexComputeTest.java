@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,26 +26,13 @@
  * @test
  * @summary Vectorization test on loop array index computation
  * @library /test/lib /
- *
- * @build jdk.test.whitebox.WhiteBox
- *        compiler.vectorization.runner.VectorizationTestRunner
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.LoopArrayIndexComputeTest nAV_ySAC
- *
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.LoopArrayIndexComputeTest yAV_ySAC
- *
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.LoopArrayIndexComputeTest nAV_nSAC
- *
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.LoopArrayIndexComputeTest yAV_nSAC
- *
  * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
  * @requires vm.compiler2.enabled
+ *
+ * @run driver ${test.main.class} nAV_ySAC
+ * @run driver ${test.main.class} yAV_ySAC
+ * @run driver ${test.main.class} nAV_nSAC
+ * @run driver ${test.main.class} yAV_nSAC
  */
 
 package compiler.vectorization.runner;
@@ -60,10 +47,10 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @Override
     protected String[] testVMFlags(String[] args) {
         return switch (args[0]) {
-            case "nAV_ySAC" -> new String[]{"-XX:-AlignVector", "-XX:+UseAutoVectorizationSpeculativeAliasingChecks"};
-            case "yAV_ySAC" -> new String[]{"-XX:+AlignVector", "-XX:+UseAutoVectorizationSpeculativeAliasingChecks"};
-            case "nAV_nSAC" -> new String[]{"-XX:-AlignVector", "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"};
-            case "yAV_nSAC" -> new String[]{"-XX:+AlignVector", "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"};
+            case "nAV_ySAC" -> new String[]{"-XX:+UnlockDiagnosticVMOptions", "-XX:-AlignVector", "-XX:+UseAutoVectorizationSpeculativeAliasingChecks"};
+            case "yAV_ySAC" -> new String[]{"-XX:+UnlockDiagnosticVMOptions", "-XX:+AlignVector", "-XX:+UseAutoVectorizationSpeculativeAliasingChecks"};
+            case "nAV_nSAC" -> new String[]{"-XX:+UnlockDiagnosticVMOptions", "-XX:-AlignVector", "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"};
+            case "yAV_nSAC" -> new String[]{"-XX:+UnlockDiagnosticVMOptions", "-XX:+AlignVector", "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"};
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         };
     }
