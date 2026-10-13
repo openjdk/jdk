@@ -23,8 +23,8 @@
 
 /**
 * @test
-* @bug 8303762
-* @summary Optimize vector slice operation with constant index using VPALIGNR instruction
+* @bug 8303762 8394465
+* @summary Optimize vector slice operation with constant index using VPALIGNR on x86 and EXT on aarch64
 * @modules jdk.incubator.vector
 * @library /test/lib /
 * @run main/othervm compiler.vectorapi.TestSliceOptValueTransforms
@@ -40,25 +40,28 @@ import static compiler.lib.generators.Generators.G;
 public class TestSliceOptValueTransforms {
     public static final int SIZE = 1024;
 
+    public static final VectorSpecies<Byte> B64 = ByteVector.SPECIES_64;
+    public static final VectorSpecies<Byte> B128 = ByteVector.SPECIES_128;
     public static final VectorSpecies<Byte> B256 = ByteVector.SPECIES_256;
     public static final VectorSpecies<Byte> B512 = ByteVector.SPECIES_512;
+    public static final VectorSpecies<Short> S64 = ShortVector.SPECIES_64;
+    public static final VectorSpecies<Short> S128 = ShortVector.SPECIES_128;
     public static final VectorSpecies<Short> S256 = ShortVector.SPECIES_256;
     public static final VectorSpecies<Short> S512 = ShortVector.SPECIES_512;
+    public static final VectorSpecies<Integer> I64 = IntVector.SPECIES_64;
+    public static final VectorSpecies<Integer> I128 = IntVector.SPECIES_128;
     public static final VectorSpecies<Integer> I256 = IntVector.SPECIES_256;
     public static final VectorSpecies<Integer> I512 = IntVector.SPECIES_512;
+    public static final VectorSpecies<Long> L128 = LongVector.SPECIES_128;
     public static final VectorSpecies<Long> L256 = LongVector.SPECIES_256;
     public static final VectorSpecies<Long> L512 = LongVector.SPECIES_512;
+    public static final VectorSpecies<Float> F64 = FloatVector.SPECIES_64;
+    public static final VectorSpecies<Float> F128 = FloatVector.SPECIES_128;
     public static final VectorSpecies<Float> F256 = FloatVector.SPECIES_256;
     public static final VectorSpecies<Float> F512 = FloatVector.SPECIES_512;
+    public static final VectorSpecies<Double> D128 = DoubleVector.SPECIES_128;
     public static final VectorSpecies<Double> D256 = DoubleVector.SPECIES_256;
     public static final VectorSpecies<Double> D512 = DoubleVector.SPECIES_512;
-
-    public static final VectorMask<Byte> bmask = VectorMask.fromLong(B256, 0xF);
-    public static final VectorMask<Short> smask = VectorMask.fromLong(S256, 0xF);
-    public static final VectorMask<Integer> imask = VectorMask.fromLong(I256, 0xF);
-    public static final VectorMask<Long> lmask = VectorMask.fromLong(L256, 0xF);
-    public static final VectorMask<Float> fmask = VectorMask.fromLong(F256, 0xF);
-    public static final VectorMask<Double> dmask = VectorMask.fromLong(D256, 0x3);
 
     public static byte [] bsrc1;
     public static byte [] bsrc2;
@@ -132,8 +135,8 @@ public class TestSliceOptValueTransforms {
     // Byte tests
 
     @Test
-    @IR(failOn = {IRNode.VECTOR_SLICE_B}, applyIfCPUFeatureAnd = {"avx2", "true"})
-    public void testZeroSliceIndexByte() {
+    @IR(failOn = {IRNode.VECTOR_SLICE_B}, applyIfCPUFeature = {"avx2", "true"})
+    public void testZeroSliceIndexByteX86() {
         for (int i = 0; i < B256.loopBound(SIZE); i += B256.length()) {
             ByteVector.fromArray(B256, bsrc1, i)
                       .slice(0, ByteVector.fromArray(B256, bsrc2, i))
@@ -142,8 +145,18 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_B}, applyIfCPUFeature = {"asimd", "true"})
+    public void testZeroSliceIndexByteAArch64() {
+        for (int i = 0; i < B128.loopBound(SIZE); i += B128.length()) {
+            ByteVector.fromArray(B128, bsrc1, i)
+                      .slice(0, ByteVector.fromArray(B128, bsrc2, i))
+                      .intoArray(bdst, i);
+        }
+    }
+
+    @Test
     @IR(failOn = {IRNode.VECTOR_SLICE_B}, applyIfCPUFeature = {"avx2", "true"})
-    public void testMaxSliceIndexByte() {
+    public void testMaxSliceIndexByteX86() {
         for (int i = 0; i < B256.loopBound(SIZE); i += B256.length()) {
             ByteVector.fromArray(B256, bsrc1, i)
                       .slice(B256.length(), ByteVector.fromArray(B256, bsrc2, i))
@@ -152,11 +165,41 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_B}, applyIfCPUFeature = {"asimd", "true"})
+    public void testMaxSliceIndexByteAArch64() {
+        for (int i = 0; i < B128.loopBound(SIZE); i += B128.length()) {
+            ByteVector.fromArray(B128, bsrc1, i)
+                      .slice(B128.length(), ByteVector.fromArray(B128, bsrc2, i))
+                      .intoArray(bdst, i);
+        }
+    }
+
+    @Test
     @IR(counts = {IRNode.VECTOR_SLICE_B, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"avx2", "true"})
-    public void testConstantSliceIndexByte() {
+    public void testConstantSliceIndexByteX86() {
         for (int i = 0; i < B256.loopBound(SIZE); i += B256.length()) {
             ByteVector.fromArray(B256, bsrc1, i)
-                      .slice(1, ByteVector.fromArray(B256, bsrc2, i), bmask)
+                      .slice(1, ByteVector.fromArray(B256, bsrc2, i))
+                      .intoArray(bdst, i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_B, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"asimd", "true"})
+    public void testConstantSliceIndexByteAArch64() {
+        for (int i = 0; i < B128.loopBound(SIZE); i += B128.length()) {
+            ByteVector.fromArray(B128, bsrc1, i)
+                      .slice(1, ByteVector.fromArray(B128, bsrc2, i))
+                      .intoArray(bdst, i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_B, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"asimd", "true"})
+    public void test8BSliceIndexByteAArch64() {
+        for (int i = 0; i < B64.loopBound(SIZE); i += B64.length()) {
+            ByteVector.fromArray(B64, bsrc1, i)
+                      .slice(1, ByteVector.fromArray(B64, bsrc2, i))
                       .intoArray(bdst, i);
         }
     }
@@ -164,7 +207,7 @@ public class TestSliceOptValueTransforms {
     @Test
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_16_16B_AVX, " >0 "},
         phase = {CompilePhase.MATCHING}, applyIfCPUFeatureAnd = {"avx512f", "false", "avx2", "true"})
-    public void test16BSliceIndexByte() {
+    public void test16BSliceIndexByteX86() {
         for (int i = 0; i < B256.loopBound(SIZE); i += B256.length()) {
             ByteVector.fromArray(B256, bsrc1, i)
                       .slice(16, ByteVector.fromArray(B256, bsrc2, i))
@@ -176,7 +219,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testMultipleOf4BSliceIndexByte() {
+    public void testMultipleOf4BSliceIndexByteX86() {
         for (int i = 0; i < B256.loopBound(SIZE); i += B256.length()) {
             ByteVector.fromArray(B256, bsrc1, i)
                       .slice(8, ByteVector.fromArray(B256, bsrc2, i))
@@ -188,7 +231,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_32, " >0 "},
         failOn = {IRNode.VECTOR_SLICE_B, IRNode.VECTOR_SIZE_32},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512_vbmi", "true"})
-    public void testGT16AndLT48SliceIndexByte() {
+    public void testGT16AndLT48SliceIndexByteX86() {
         for (int i = 0; i < B256.loopBound(SIZE); i += B256.length()) {
             ByteVector.fromArray(B256, bsrc1, i)
                       .slice(17, ByteVector.fromArray(B256, bsrc2, i))
@@ -200,7 +243,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_GT16_AND_LT48_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true", "avx512_vbmi", "false"})
-    public void testGT16AndLT48SliceIndexByteNoVBMI() {
+    public void testGT16AndLT48SliceIndexByteNoVBMIX86() {
         for (int i = 0; i < B256.loopBound(SIZE); i += B256.length()) {
             ByteVector.fromArray(B256, bsrc1, i)
                       .slice(17, ByteVector.fromArray(B256, bsrc2, i))
@@ -212,7 +255,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_LT16_OR_GT48_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testLT16SliceIndexByte() {
+    public void testLT16SliceIndexByteX86() {
         for (int i = 0; i < B256.loopBound(SIZE); i += B256.length()) {
             ByteVector.fromArray(B256, bsrc1, i)
                       .slice(3, ByteVector.fromArray(B256, bsrc2, i))
@@ -224,7 +267,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_LT16_OR_GT48_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testGT48SliceIndexByte() {
+    public void testGT48SliceIndexByteX86() {
         for (int i = 0; i < B512.loopBound(SIZE); i += B512.length()) {
             ByteVector.fromArray(B512, bsrc1, i)
                       .slice(49, ByteVector.fromArray(B512, bsrc2, i))
@@ -235,8 +278,8 @@ public class TestSliceOptValueTransforms {
     // Short tests
 
     @Test
-    @IR(failOn = {IRNode.VECTOR_SLICE_S}, applyIfCPUFeatureAnd = {"avx2", "true"})
-    public void testZeroSliceIndexShort() {
+    @IR(failOn = {IRNode.VECTOR_SLICE_S}, applyIfCPUFeature = {"avx2", "true"})
+    public void testZeroSliceIndexShortX86() {
         for (int i = 0; i < S256.loopBound(SIZE); i += S256.length()) {
             ShortVector.fromArray(S256, ssrc1, i)
                        .slice(0, ShortVector.fromArray(S256, ssrc2, i))
@@ -245,8 +288,18 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_S}, applyIfCPUFeature = {"asimd", "true"})
+    public void testZeroSliceIndexShortAArch64() {
+        for (int i = 0; i < S128.loopBound(SIZE); i += S128.length()) {
+            ShortVector.fromArray(S128, ssrc1, i)
+                       .slice(0, ShortVector.fromArray(S128, ssrc2, i))
+                       .intoArray(sdst, i);
+        }
+    }
+
+    @Test
     @IR(failOn = {IRNode.VECTOR_SLICE_S}, applyIfCPUFeature = {"avx2", "true"})
-    public void testMaxSliceIndexShort() {
+    public void testMaxSliceIndexShortX86() {
         for (int i = 0; i < S256.loopBound(SIZE); i += S256.length()) {
             ShortVector.fromArray(S256, ssrc1, i)
                        .slice(S256.length(), ShortVector.fromArray(S256, ssrc2, i))
@@ -255,11 +308,41 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_S}, applyIfCPUFeature = {"asimd", "true"})
+    public void testMaxSliceIndexShortAArch64() {
+        for (int i = 0; i < S128.loopBound(SIZE); i += S128.length()) {
+            ShortVector.fromArray(S128, ssrc1, i)
+                       .slice(S128.length(), ShortVector.fromArray(S128, ssrc2, i))
+                       .intoArray(sdst, i);
+        }
+    }
+
+    @Test
     @IR(counts = {IRNode.VECTOR_SLICE_S, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"avx2", "true"})
-    public void testConstantSliceIndexShort() {
+    public void testConstantSliceIndexShortX86() {
         for (int i = 0; i < S256.loopBound(SIZE); i += S256.length()) {
             ShortVector.fromArray(S256, ssrc1, i)
-                       .slice(1, ShortVector.fromArray(S256, ssrc2, i), smask)
+                       .slice(1, ShortVector.fromArray(S256, ssrc2, i))
+                       .intoArray(sdst, i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_S, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"asimd", "true"})
+    public void testConstantSliceIndexShortAArch64() {
+        for (int i = 0; i < S128.loopBound(SIZE); i += S128.length()) {
+            ShortVector.fromArray(S128, ssrc1, i)
+                       .slice(1, ShortVector.fromArray(S128, ssrc2, i))
+                       .intoArray(sdst, i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_S, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"asimd", "true"})
+    public void test8BSliceIndexShortAArch64() {
+        for (int i = 0; i < S64.loopBound(SIZE); i += S64.length()) {
+            ShortVector.fromArray(S64, ssrc1, i)
+                       .slice(1, ShortVector.fromArray(S64, ssrc2, i))
                        .intoArray(sdst, i);
         }
     }
@@ -267,7 +350,7 @@ public class TestSliceOptValueTransforms {
     @Test
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_16_16B_AVX, " >0 "},
         phase = {CompilePhase.MATCHING}, applyIfCPUFeatureAnd = {"avx512f", "false", "avx2", "true"})
-    public void test16BSliceIndexShort() {
+    public void test16BSliceIndexShortX86() {
         for (int i = 0; i < S256.loopBound(SIZE); i += S256.length()) {
             ShortVector.fromArray(S256, ssrc1, i)
                        .slice(8, ShortVector.fromArray(S256, ssrc2, i))
@@ -279,7 +362,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testMultipleOf4BSliceIndexShort() {
+    public void testMultipleOf4BSliceIndexShortX86() {
         for (int i = 0; i < S256.loopBound(SIZE); i += S256.length()) {
             ShortVector.fromArray(S256, ssrc1, i)
                        .slice(4, ShortVector.fromArray(S256, ssrc2, i))
@@ -291,7 +374,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_16, " >0 "},
         failOn = {IRNode.VECTOR_SLICE_S, IRNode.VECTOR_SIZE_16},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testGT16AndLT48SliceIndexShort() {
+    public void testGT16AndLT48SliceIndexShortX86() {
         for (int i = 0; i < S256.loopBound(SIZE); i += S256.length()) {
             ShortVector.fromArray(S256, ssrc1, i)
                        .slice(9, ShortVector.fromArray(S256, ssrc2, i))
@@ -303,7 +386,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_LT16_OR_GT48_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testLT16SliceIndexShort() {
+    public void testLT16SliceIndexShortX86() {
         for (int i = 0; i < S256.loopBound(SIZE); i += S256.length()) {
             ShortVector.fromArray(S256, ssrc1, i)
                        .slice(3, ShortVector.fromArray(S256, ssrc2, i))
@@ -315,7 +398,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_LT16_OR_GT48_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testGT48SliceIndexShort() {
+    public void testGT48SliceIndexShortX86() {
         for (int i = 0; i < S512.loopBound(SIZE); i += S512.length()) {
             ShortVector.fromArray(S512, ssrc1, i)
                        .slice(25, ShortVector.fromArray(S512, ssrc2, i))
@@ -326,8 +409,8 @@ public class TestSliceOptValueTransforms {
     // Int tests
 
     @Test
-    @IR(failOn = {IRNode.VECTOR_SLICE_I}, applyIfCPUFeatureAnd = {"avx2", "true"})
-    public void testZeroSliceIndexInt() {
+    @IR(failOn = {IRNode.VECTOR_SLICE_I}, applyIfCPUFeature = {"avx2", "true"})
+    public void testZeroSliceIndexIntX86() {
         for (int i = 0; i < I256.loopBound(SIZE); i += I256.length()) {
             IntVector.fromArray(I256, isrc1, i)
                      .slice(0, IntVector.fromArray(I256, isrc2, i))
@@ -336,8 +419,18 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_I}, applyIfCPUFeature = {"asimd", "true"})
+    public void testZeroSliceIndexIntAArch64() {
+        for (int i = 0; i < I128.loopBound(SIZE); i += I128.length()) {
+            IntVector.fromArray(I128, isrc1, i)
+                     .slice(0, IntVector.fromArray(I128, isrc2, i))
+                     .intoArray(idst, i);
+        }
+    }
+
+    @Test
     @IR(failOn = {IRNode.VECTOR_SLICE_I}, applyIfCPUFeature = {"avx2", "true"})
-    public void testMaxSliceIndexInt() {
+    public void testMaxSliceIndexIntX86() {
         for (int i = 0; i < I256.loopBound(SIZE); i += I256.length()) {
             IntVector.fromArray(I256, isrc1, i)
                      .slice(I256.length(), IntVector.fromArray(I256, isrc2, i))
@@ -346,11 +439,41 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_I}, applyIfCPUFeature = {"asimd", "true"})
+    public void testMaxSliceIndexIntAArch64() {
+        for (int i = 0; i < I128.loopBound(SIZE); i += I128.length()) {
+            IntVector.fromArray(I128, isrc1, i)
+                     .slice(I128.length(), IntVector.fromArray(I128, isrc2, i))
+                     .intoArray(idst, i);
+        }
+    }
+
+    @Test
     @IR(counts = {IRNode.VECTOR_SLICE_I, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"avx2", "true"})
-    public void testConstantSliceIndexInt() {
+    public void testConstantSliceIndexIntX86() {
         for (int i = 0; i < I256.loopBound(SIZE); i += I256.length()) {
             IntVector.fromArray(I256, isrc1, i)
-                     .slice(1, IntVector.fromArray(I256, isrc2, i), imask)
+                     .slice(1, IntVector.fromArray(I256, isrc2, i))
+                     .intoArray(idst, i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_I, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"asimd", "true"})
+    public void testConstantSliceIndexIntAArch64() {
+        for (int i = 0; i < I128.loopBound(SIZE); i += I128.length()) {
+            IntVector.fromArray(I128, isrc1, i)
+                     .slice(1, IntVector.fromArray(I128, isrc2, i))
+                     .intoArray(idst, i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_I, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"asimd", "true"})
+    public void test8BSliceIndexIntAArch64() {
+        for (int i = 0; i < I64.loopBound(SIZE); i += I64.length()) {
+            IntVector.fromArray(I64, isrc1, i)
+                     .slice(1, IntVector.fromArray(I64, isrc2, i))
                      .intoArray(idst, i);
         }
     }
@@ -358,7 +481,7 @@ public class TestSliceOptValueTransforms {
     @Test
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_16_16B_AVX, " >0 "},
         phase = {CompilePhase.MATCHING}, applyIfCPUFeatureAnd = {"avx512f", "false", "avx2", "true"})
-    public void test16BSliceIndexInt() {
+    public void test16BSliceIndexIntX86() {
         for (int i = 0; i < I256.loopBound(SIZE); i += I256.length()) {
             IntVector.fromArray(I256, isrc1, i)
                      .slice(4, IntVector.fromArray(I256, isrc2, i))
@@ -370,7 +493,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testMultipleOf4BSliceIndexInt() {
+    public void testMultipleOf4BSliceIndexIntX86() {
         for (int i = 0; i < I256.loopBound(SIZE); i += I256.length()) {
             IntVector.fromArray(I256, isrc1, i)
                      .slice(4, IntVector.fromArray(I256, isrc2, i))
@@ -382,7 +505,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testLT16SliceIndexInt() {
+    public void testLT16SliceIndexIntX86() {
         for (int i = 0; i < I256.loopBound(SIZE); i += I256.length()) {
             IntVector.fromArray(I256, isrc1, i)
                      .slice(2, IntVector.fromArray(I256, isrc2, i))
@@ -394,7 +517,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testGT16AndLT48SliceIndexInt() {
+    public void testGT16AndLT48SliceIndexIntX86() {
         for (int i = 0; i < I256.loopBound(SIZE); i += I256.length()) {
             IntVector.fromArray(I256, isrc1, i)
                      .slice(5, IntVector.fromArray(I256, isrc2, i))
@@ -406,7 +529,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testGT48SliceIndexInt() {
+    public void testGT48SliceIndexIntX86() {
         for (int i = 0; i < I512.loopBound(SIZE); i += I512.length()) {
             IntVector.fromArray(I512, isrc1, i)
                      .slice(13, IntVector.fromArray(I512, isrc2, i))
@@ -417,8 +540,8 @@ public class TestSliceOptValueTransforms {
     // Long tests
 
     @Test
-    @IR(failOn = {IRNode.VECTOR_SLICE_L}, applyIfCPUFeatureAnd = {"avx2", "true"})
-    public void testZeroSliceIndexLong() {
+    @IR(failOn = {IRNode.VECTOR_SLICE_L}, applyIfCPUFeature = {"avx2", "true"})
+    public void testZeroSliceIndexLongX86() {
         for (int i = 0; i < L256.loopBound(SIZE); i += L256.length()) {
             LongVector.fromArray(L256, lsrc1, i)
                       .slice(0, LongVector.fromArray(L256, lsrc2, i))
@@ -427,8 +550,18 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_L}, applyIfCPUFeature = {"asimd", "true"})
+    public void testZeroSliceIndexLongAArch64() {
+        for (int i = 0; i < L128.loopBound(SIZE); i += L128.length()) {
+            LongVector.fromArray(L128, lsrc1, i)
+                      .slice(0, LongVector.fromArray(L128, lsrc2, i))
+                      .intoArray(ldst, i);
+        }
+    }
+
+    @Test
     @IR(failOn = {IRNode.VECTOR_SLICE_L}, applyIfCPUFeature = {"avx2", "true"})
-    public void testMaxSliceIndexLong() {
+    public void testMaxSliceIndexLongX86() {
         for (int i = 0; i < L256.loopBound(SIZE); i += L256.length()) {
             LongVector.fromArray(L256, lsrc1, i)
                       .slice(L256.length(), LongVector.fromArray(L256, lsrc2, i))
@@ -437,11 +570,31 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_L}, applyIfCPUFeature = {"asimd", "true"})
+    public void testMaxSliceIndexLongAArch64() {
+        for (int i = 0; i < L128.loopBound(SIZE); i += L128.length()) {
+            LongVector.fromArray(L128, lsrc1, i)
+                      .slice(L128.length(), LongVector.fromArray(L128, lsrc2, i))
+                      .intoArray(ldst, i);
+        }
+    }
+
+    @Test
     @IR(counts = {IRNode.VECTOR_SLICE_L, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"avx2", "true"})
-    public void testConstantSliceIndexLong() {
+    public void testConstantSliceIndexLongX86() {
         for (int i = 0; i < L256.loopBound(SIZE); i += L256.length()) {
             LongVector.fromArray(L256, lsrc1, i)
-                      .slice(1, LongVector.fromArray(L256, lsrc2, i), lmask)
+                      .slice(1, LongVector.fromArray(L256, lsrc2, i))
+                      .intoArray(ldst, i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_L, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"asimd", "true"})
+    public void testConstantSliceIndexLongAArch64() {
+        for (int i = 0; i < L128.loopBound(SIZE); i += L128.length()) {
+            LongVector.fromArray(L128, lsrc1, i)
+                      .slice(1, LongVector.fromArray(L128, lsrc2, i))
                       .intoArray(ldst, i);
         }
     }
@@ -449,7 +602,7 @@ public class TestSliceOptValueTransforms {
     @Test
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_16_16B_AVX, " >0 "},
         phase = {CompilePhase.MATCHING}, applyIfCPUFeatureAnd = {"avx512f", "false", "avx2", "true"})
-    public void test16BSliceIndexLong() {
+    public void test16BSliceIndexLongX86() {
         for (int i = 0; i < L256.loopBound(SIZE); i += L256.length()) {
             LongVector.fromArray(L256, lsrc1, i)
                       .slice(2, LongVector.fromArray(L256, lsrc2, i))
@@ -461,7 +614,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testMultipleOf4BSliceIndexLong() {
+    public void testMultipleOf4BSliceIndexLongX86() {
         for (int i = 0; i < L256.loopBound(SIZE); i += L256.length()) {
             LongVector.fromArray(L256, lsrc1, i)
                       .slice(2, LongVector.fromArray(L256, lsrc2, i))
@@ -473,7 +626,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testLT16SliceIndexLong() {
+    public void testLT16SliceIndexLongX86() {
         for (int i = 0; i < L256.loopBound(SIZE); i += L256.length()) {
             LongVector.fromArray(L256, lsrc1, i)
                       .slice(1, LongVector.fromArray(L256, lsrc2, i))
@@ -485,7 +638,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testGT16AndLT48SliceIndexLong() {
+    public void testGT16AndLT48SliceIndexLongX86() {
         for (int i = 0; i < L256.loopBound(SIZE); i += L256.length()) {
             LongVector.fromArray(L256, lsrc1, i)
                       .slice(3, LongVector.fromArray(L256, lsrc2, i))
@@ -497,7 +650,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testGT48SliceIndexLong() {
+    public void testGT48SliceIndexLongX86() {
         for (int i = 0; i < L512.loopBound(SIZE); i += L512.length()) {
             LongVector.fromArray(L512, lsrc1, i)
                       .slice(7, LongVector.fromArray(L512, lsrc2, i))
@@ -508,8 +661,8 @@ public class TestSliceOptValueTransforms {
     // Float tests
 
     @Test
-    @IR(failOn = {IRNode.VECTOR_SLICE_F}, applyIfCPUFeatureAnd = {"avx2", "true"})
-    public void testZeroSliceIndexFloat() {
+    @IR(failOn = {IRNode.VECTOR_SLICE_F}, applyIfCPUFeature = {"avx2", "true"})
+    public void testZeroSliceIndexFloatX86() {
         for (int i = 0; i < F256.loopBound(SIZE); i += F256.length()) {
             FloatVector.fromArray(F256, fsrc1, i)
                        .slice(0, FloatVector.fromArray(F256, fsrc2, i))
@@ -518,8 +671,18 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_F}, applyIfCPUFeature = {"asimd", "true"})
+    public void testZeroSliceIndexFloatAArch64() {
+        for (int i = 0; i < F128.loopBound(SIZE); i += F128.length()) {
+            FloatVector.fromArray(F128, fsrc1, i)
+                       .slice(0, FloatVector.fromArray(F128, fsrc2, i))
+                       .intoArray(fdst, i);
+        }
+    }
+
+    @Test
     @IR(failOn = {IRNode.VECTOR_SLICE_F}, applyIfCPUFeature = {"avx2", "true"})
-    public void testMaxSliceIndexFloat() {
+    public void testMaxSliceIndexFloatX86() {
         for (int i = 0; i < F256.loopBound(SIZE); i += F256.length()) {
             FloatVector.fromArray(F256, fsrc1, i)
                        .slice(F256.length(), FloatVector.fromArray(F256, fsrc2, i))
@@ -528,11 +691,41 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_F}, applyIfCPUFeature = {"asimd", "true"})
+    public void testMaxSliceIndexFloatAArch64() {
+        for (int i = 0; i < F128.loopBound(SIZE); i += F128.length()) {
+            FloatVector.fromArray(F128, fsrc1, i)
+                       .slice(F128.length(), FloatVector.fromArray(F128, fsrc2, i))
+                       .intoArray(fdst, i);
+        }
+    }
+
+    @Test
     @IR(counts = {IRNode.VECTOR_SLICE_F, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"avx2", "true"})
-    public void testConstantSliceIndexFloat() {
+    public void testConstantSliceIndexFloatX86() {
         for (int i = 0; i < F256.loopBound(SIZE); i += F256.length()) {
             FloatVector.fromArray(F256, fsrc1, i)
-                       .slice(1, FloatVector.fromArray(F256, fsrc2, i), fmask)
+                       .slice(1, FloatVector.fromArray(F256, fsrc2, i))
+                       .intoArray(fdst, i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_F, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"asimd", "true"})
+    public void testConstantSliceIndexFloatAArch64() {
+        for (int i = 0; i < F128.loopBound(SIZE); i += F128.length()) {
+            FloatVector.fromArray(F128, fsrc1, i)
+                       .slice(1, FloatVector.fromArray(F128, fsrc2, i))
+                       .intoArray(fdst, i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_F, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"asimd", "true"})
+    public void test8BSliceIndexFloatAArch64() {
+        for (int i = 0; i < F64.loopBound(SIZE); i += F64.length()) {
+            FloatVector.fromArray(F64, fsrc1, i)
+                       .slice(1, FloatVector.fromArray(F64, fsrc2, i))
                        .intoArray(fdst, i);
         }
     }
@@ -540,7 +733,7 @@ public class TestSliceOptValueTransforms {
     @Test
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_16_16B_AVX, " >0 "},
         phase = {CompilePhase.MATCHING}, applyIfCPUFeatureAnd = {"avx512f", "false", "avx2", "true"})
-    public void test16BSliceIndexFloat() {
+    public void test16BSliceIndexFloatX86() {
         for (int i = 0; i < F256.loopBound(SIZE); i += F256.length()) {
             FloatVector.fromArray(F256, fsrc1, i)
                        .slice(4, FloatVector.fromArray(F256, fsrc2, i))
@@ -552,7 +745,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testMultipleOf4BSliceIndexFloat() {
+    public void testMultipleOf4BSliceIndexFloatX86() {
         for (int i = 0; i < F256.loopBound(SIZE); i += F256.length()) {
             FloatVector.fromArray(F256, fsrc1, i)
                        .slice(4, FloatVector.fromArray(F256, fsrc2, i))
@@ -564,7 +757,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testLT16SliceIndexFloat() {
+    public void testLT16SliceIndexFloatX86() {
         for (int i = 0; i < F256.loopBound(SIZE); i += F256.length()) {
             FloatVector.fromArray(F256, fsrc1, i)
                        .slice(2, FloatVector.fromArray(F256, fsrc2, i))
@@ -576,7 +769,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testGT16AndLT48SliceIndexFloat() {
+    public void testGT16AndLT48SliceIndexFloatX86() {
         for (int i = 0; i < F256.loopBound(SIZE); i += F256.length()) {
             FloatVector.fromArray(F256, fsrc1, i)
                        .slice(5, FloatVector.fromArray(F256, fsrc2, i))
@@ -588,7 +781,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testGT48SliceIndexFloat() {
+    public void testGT48SliceIndexFloatX86() {
         for (int i = 0; i < F512.loopBound(SIZE); i += F512.length()) {
             FloatVector.fromArray(F512, fsrc1, i)
                        .slice(13, FloatVector.fromArray(F512, fsrc2, i))
@@ -599,8 +792,8 @@ public class TestSliceOptValueTransforms {
     // Double tests
 
     @Test
-    @IR(failOn = {IRNode.VECTOR_SLICE_D}, applyIfCPUFeatureAnd = {"avx2", "true"})
-    public void testZeroSliceIndexDouble() {
+    @IR(failOn = {IRNode.VECTOR_SLICE_D}, applyIfCPUFeature = {"avx2", "true"})
+    public void testZeroSliceIndexDoubleX86() {
         for (int i = 0; i < D256.loopBound(SIZE); i += D256.length()) {
             DoubleVector.fromArray(D256, dsrc1, i)
                         .slice(0, DoubleVector.fromArray(D256, dsrc2, i))
@@ -609,8 +802,18 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_D}, applyIfCPUFeature = {"asimd", "true"})
+    public void testZeroSliceIndexDoubleAArch64() {
+        for (int i = 0; i < D128.loopBound(SIZE); i += D128.length()) {
+            DoubleVector.fromArray(D128, dsrc1, i)
+                        .slice(0, DoubleVector.fromArray(D128, dsrc2, i))
+                        .intoArray(ddst, i);
+        }
+    }
+
+    @Test
     @IR(failOn = {IRNode.VECTOR_SLICE_D}, applyIfCPUFeature = {"avx2", "true"})
-    public void testMaxSliceIndexDouble() {
+    public void testMaxSliceIndexDoubleX86() {
         for (int i = 0; i < D256.loopBound(SIZE); i += D256.length()) {
             DoubleVector.fromArray(D256, dsrc1, i)
                         .slice(D256.length(), DoubleVector.fromArray(D256, dsrc2, i))
@@ -619,11 +822,31 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_D}, applyIfCPUFeature = {"asimd", "true"})
+    public void testMaxSliceIndexDoubleAArch64() {
+        for (int i = 0; i < D128.loopBound(SIZE); i += D128.length()) {
+            DoubleVector.fromArray(D128, dsrc1, i)
+                        .slice(D128.length(), DoubleVector.fromArray(D128, dsrc2, i))
+                        .intoArray(ddst, i);
+        }
+    }
+
+    @Test
     @IR(counts = {IRNode.VECTOR_SLICE_D, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"avx2", "true"})
-    public void testConstantSliceIndexDouble() {
+    public void testConstantSliceIndexDoubleX86() {
         for (int i = 0; i < D256.loopBound(SIZE); i += D256.length()) {
             DoubleVector.fromArray(D256, dsrc1, i)
-                        .slice(1, DoubleVector.fromArray(D256, dsrc2, i), dmask)
+                        .slice(1, DoubleVector.fromArray(D256, dsrc2, i))
+                        .intoArray(ddst, i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_D, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"asimd", "true"})
+    public void testConstantSliceIndexDoubleAArch64() {
+        for (int i = 0; i < D128.loopBound(SIZE); i += D128.length()) {
+            DoubleVector.fromArray(D128, dsrc1, i)
+                        .slice(1, DoubleVector.fromArray(D128, dsrc2, i))
                         .intoArray(ddst, i);
         }
     }
@@ -631,7 +854,7 @@ public class TestSliceOptValueTransforms {
     @Test
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_16_16B_AVX, " >0 "},
         phase = {CompilePhase.MATCHING}, applyIfCPUFeatureAnd = {"avx512f", "false", "avx2", "true"})
-    public void test16BSliceIndexDouble() {
+    public void test16BSliceIndexDoubleX86() {
         for (int i = 0; i < D256.loopBound(SIZE); i += D256.length()) {
             DoubleVector.fromArray(D256, dsrc1, i)
                         .slice(2, DoubleVector.fromArray(D256, dsrc2, i))
@@ -643,7 +866,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testMultipleOf4BSliceIndexDouble() {
+    public void testMultipleOf4BSliceIndexDoubleX86() {
         for (int i = 0; i < D256.loopBound(SIZE); i += D256.length()) {
             DoubleVector.fromArray(D256, dsrc1, i)
                         .slice(2, DoubleVector.fromArray(D256, dsrc2, i))
@@ -655,7 +878,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testLT16SliceIndexDouble() {
+    public void testLT16SliceIndexDoubleX86() {
         for (int i = 0; i < D256.loopBound(SIZE); i += D256.length()) {
             DoubleVector.fromArray(D256, dsrc1, i)
                         .slice(1, DoubleVector.fromArray(D256, dsrc2, i))
@@ -667,7 +890,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testGT16AndLT48SliceIndexDouble() {
+    public void testGT16AndLT48SliceIndexDoubleX86() {
         for (int i = 0; i < D256.loopBound(SIZE); i += D256.length()) {
             DoubleVector.fromArray(D256, dsrc1, i)
                         .slice(3, DoubleVector.fromArray(D256, dsrc2, i))
@@ -679,7 +902,7 @@ public class TestSliceOptValueTransforms {
     @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, " >0 "},
         phase = {CompilePhase.MATCHING},
         applyIfCPUFeatureAnd = {"avx512vl", "true", "avx512bw", "true"})
-    public void testGT48SliceIndexDouble() {
+    public void testGT48SliceIndexDoubleX86() {
         for (int i = 0; i < D512.loopBound(SIZE); i += D512.length()) {
             DoubleVector.fromArray(D512, dsrc1, i)
                         .slice(7, DoubleVector.fromArray(D512, dsrc2, i))
