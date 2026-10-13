@@ -3189,7 +3189,7 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
   load_to_reg(this, op->not_equal_result(), op->result_opr());
   __ b(L_end);
 
-  // We've returned from the stub. R3_RET (stub's _scratch_reg) contains 0x0 IFF the two
+  // We've returned from the stub. R3_RET (stub's _stub_return_reg) contains 0x0 IFF the two
   // operands are not substitutable. (Don't compare against 0x1 in case the
   // C compiler is naughty)
   __ bind(*op->stub()->continuation());

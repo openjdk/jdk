@@ -392,17 +392,13 @@ extern "C" int SpinPause () {
 juint os::cpu_microcode_revision() {
   juint result = 0;
   BYTE data[8] = {0};
-  HKEY key;
-  DWORD status = RegOpenKey(HKEY_LOCAL_MACHINE,
-               "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &key);
+  DWORD size = sizeof(data);
+  DWORD status = RegGetValueA(HKEY_LOCAL_MACHINE,
+                              "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+                              "Update Revision", RRF_RT_ANY, nullptr, data, &size);
   if (status == ERROR_SUCCESS) {
-    DWORD size = sizeof(data);
-    status = RegQueryValueEx(key, "Update Revision", nullptr, nullptr, data, &size);
-    if (status == ERROR_SUCCESS) {
-      if (size == 4) result = *((juint*)data);
-      if (size == 8) result = *((juint*)data + 1); // upper 32-bits
-    }
-    RegCloseKey(key);
+    if (size == 4) result = *((juint*)data);
+    if (size == 8) result = *((juint*)data + 1); // upper 32-bits
   }
   return result;
 }

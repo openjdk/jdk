@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,107 +28,107 @@
  *
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=MD5
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-1
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-224
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-256
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-384
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-512
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA3-224
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA3-256
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA3-384
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA3-512
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  *
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=MD5   -Doffset=1
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-1   -Doffset=1
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-224 -Doffset=1
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-256 -Doffset=1
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-384 -Doffset=1
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-512 -Doffset=1
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA3-224 -Doffset=1
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA3-256 -Doffset=1
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA3-384 -Doffset=1
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA3-512 -Doffset=1
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  *
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-1   -Dalgorithm2=SHA-256
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-1   -Dalgorithm2=SHA-512
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-256 -Dalgorithm2=SHA-512
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  *
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-1   -Dalgorithm2=MD5
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=MD5     -Dalgorithm2=SHA-1
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  *
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-1   -Dalgorithm2=SHA3-224
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-1   -Dalgorithm2=SHA3-256
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-1   -Dalgorithm2=SHA3-384
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-1   -Dalgorithm2=SHA3-512
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA3-224 -Dalgorithm2=SHA-1
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA3-256 -Dalgorithm2=SHA-1
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA3-384 -Dalgorithm2=SHA-1
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA3-512 -Dalgorithm2=SHA-1
- *      compiler.intrinsics.sha.TestDigest
+ *      ${test.main.class}
  */
 
 package compiler.intrinsics.sha;
@@ -146,23 +146,21 @@ public class TestDigest {
         String algorithm2 = System.getProperty("algorithm2", "");
         int msgSize = Integer.getInteger("msgSize", 1024);
         int offset = Integer.getInteger("offset", 0)  % ALIGN;
-        int iters = (args.length > 0 ? Integer.valueOf(args[0]) : 100000);
-        int warmupIters = (args.length > 1 ? Integer.valueOf(args[1]) : 20000);
+        int iters = 20000;
 
-        testDigest(provider, algorithm, msgSize, offset, iters, warmupIters);
+        testDigest(provider, algorithm, msgSize, offset, iters);
 
         if (algorithm2.equals("") == false) {
-            testDigest(provider, algorithm2, msgSize, offset, iters, warmupIters);
+            testDigest(provider, algorithm2, msgSize, offset, iters);
         }
     }
 
     public static void testDigest(String provider, String algorithm, int msgSize,
-                        int offset, int iters, int warmupIters) throws Exception {
+                        int offset, int iters) throws Exception {
         System.out.println("provider = " + provider);
         System.out.println("algorithm = " + algorithm);
         System.out.println("msgSize = " + msgSize + " bytes");
         System.out.println("offset = " + offset);
-        System.out.println("iters = " + iters);
 
         byte[] expectedHash = new byte[HASH_LEN];
         byte[] hash = new byte[HASH_LEN];
@@ -179,8 +177,8 @@ public class TestDigest {
             digest.update(data, offset, msgSize);
             expectedHash = digest.digest();
 
-            /* warm up */
-            for (int i = 0; i < warmupIters; i++) {
+            /* trigger compilation to use intrinsics */
+            for (int i = 0; i < iters; i++) {
                 digest.reset();
                 digest.update(data, offset, msgSize);
                 hash = digest.digest();
@@ -196,20 +194,6 @@ public class TestDigest {
             } else {
                 showArray(hash, "hash");
             }
-
-            /* measure performance */
-            long start = System.nanoTime();
-            for (int i = 0; i < iters; i++) {
-                digest.reset();
-                digest.update(data, offset, msgSize);
-                hash = digest.digest();
-            }
-            long end = System.nanoTime();
-            double total = (double)(end - start)/1e9;         /* in seconds */
-            double thruput = (double)msgSize*iters/1e6/total; /* in MB/s */
-            System.out.println("TestDigest runtime = " + total + " seconds");
-            System.out.println("TestDigest throughput = " + thruput + " MB/s");
-            System.out.println();
         } catch (Exception e) {
             System.out.println("Exception: " + e);
             //System.exit(1);

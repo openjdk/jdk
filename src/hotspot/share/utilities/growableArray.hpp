@@ -837,7 +837,7 @@ template <typename E, MemTag MT>
 class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, MT> > {
   friend class GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, MT> >;
 
-  STATIC_ASSERT(MT != mtNone);
+  static_assert(MT != mtNone);
 
   static E* allocate(int max, MemTag mem_tag) {
     return (E*)GrowableArrayCHeapAllocator::allocate(max, sizeof(E), mem_tag);

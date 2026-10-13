@@ -25,6 +25,7 @@
 #ifdef COMPILER2
 
 #include "code/codeCache.hpp"
+#include "code/nmethod.hpp"
 #include "logging/log.hpp"
 #include "runtime/hotCodeSampler.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -62,50 +63,63 @@ bool ThreadSampler::sample_all_java_threads() {
     }
 
     CodeBlob* cb = CodeCache::find_blob(pc);
-    if (cb != nullptr && cb->is_nmethod()) {
-      bool created = false;
-      int *count = _samples.put_if_absent(cb->as_nmethod(), 0, &created);
-      (*count)++;
-      if (created) {
-        _samples.maybe_grow();
-      }
+    if (cb == nullptr || !cb->is_nmethod()) {
+      continue;
+    }
+
+    nmethod* nm = cb->as_nmethod();
+
+    // We can dereference the nmethod pointer here because we are sampling from a JavaThread and
+    // the code blob cannot be purged while the thread does not reach a safepoint.
+    assert(Thread::current()->is_Java_thread(), "ThreadSampler should only be called from a JavaThread");
+    int compile_id = nm->compile_id();
+    CodeBlobType code_blob_type = CodeCache::get_code_blob_type(nm);
+
+    if (code_blob_type == CodeBlobType::MethodHot) {
+      _hot_sample_count++;
+      continue;
+    }
+
+    if (code_blob_type != CodeBlobType::MethodNonProfiled) {
+      continue;
+    }
+
+    _non_profiled_sample_count++;
+
+    bool created = false;
+    Pair<nmethod*, int>* sampled_nm = _samples.put_if_absent(compile_id, Pair(nm, 0), &created);
+    sampled_nm->second++;
+    if (created) {
+      _samples.maybe_grow();
     }
   }
   return true;
 }
 
+#define NMETHOD_PTR(sampled_nm) (sampled_nm.first)
+#define SAMPLE_COUNT(sampled_nm) (sampled_nm.second)
+
 Candidates::Candidates(ThreadSampler& sampler)
-  : _hot_sample_count(0), _non_profiled_sample_count(0) {
-  auto func = [&](nmethod* nm, int count) {
-    if (CodeCache::get_code_blob_type(nm) == CodeBlobType::MethodNonProfiled) {
-      _candidates.append(Pair<nmethod*, int>(nm, count));
-      add_non_profiled_sample_count(count);
-    } else if (CodeCache::get_code_blob_type(nm) == CodeBlobType::MethodHot) {
-      add_hot_sample_count(count);
-    }
+  : _hot_sample_count(sampler.hot_sample_count()),
+    _non_profiled_sample_count(sampler.non_profiled_sample_count()) {
+  auto func = [&](int compile_id, const Pair<nmethod*, int> sampled_nm) {
+    _candidates.append(Candidate(NMETHOD_PTR(sampled_nm), compile_id, SAMPLE_COUNT(sampled_nm)));
   };
   sampler.iterate_samples(func);
 
   log_info(hotcode)("Generated candidate list from %d samples corresponding to %d nmethods", _non_profiled_sample_count + _hot_sample_count, _candidates.length());
 }
 
-void Candidates::add_candidate(nmethod* nm, int count) {
-  _candidates.append(Pair<nmethod*, int>(nm, count));
-}
-
-void Candidates::add_hot_sample_count(int count) {
+void Candidates::move_samples_to_hot(int count) {
   _hot_sample_count += count;
-}
-
-void Candidates::add_non_profiled_sample_count(int count) {
-  _non_profiled_sample_count += count;
+  _non_profiled_sample_count -= count;
 }
 
 void Candidates::sort() {
   _candidates.sort(
-    [](Pair<nmethod*, int>* a, Pair<nmethod*, int>* b) {
-      if (a->second > b->second) return 1;
-      if (a->second < b->second) return -1;
+    [](Candidate* a, Candidate* b) {
+      if (a->get_sample_count() > b->get_sample_count()) return 1;
+      if (a->get_sample_count() < b->get_sample_count()) return -1;
       return 0;
     }
   );
@@ -115,14 +129,9 @@ bool Candidates::has_candidates() {
   return !_candidates.is_empty();
 }
 
-nmethod* Candidates::get_candidate() {
+Candidate Candidates::get_candidate() {
   assert(has_candidates(), "must not be empty");
-  Pair<nmethod*, int> candidate = _candidates.pop();
-
-  _hot_sample_count += candidate.second;
-  _non_profiled_sample_count -= candidate.second;
-
-  return candidate.first;
+  return _candidates.pop();
 }
 
 double Candidates::get_hot_sample_percent() {

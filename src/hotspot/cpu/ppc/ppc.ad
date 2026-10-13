@@ -1045,6 +1045,7 @@ source_hpp %{
   // To keep related declarations/definitions/uses close together,
   // we switch between source %{ }% and source_hpp %{ }% freely as needed.
 
+#include "oops/compressedKlass.inline.hpp"
 #include "opto/convertnode.hpp"
 
   // Returns true if Node n is followed by a MemBar node that
@@ -1623,15 +1624,15 @@ static enum RC rc_class(OptoReg::Name reg) {
   if (reg == OptoReg::Bad) return rc_bad;
 
   // We have 64 integer register halves, starting at index 0.
-  STATIC_ASSERT((int)ConcreteRegisterImpl::max_gpr == (int)MachRegisterNumbers::F0_num);
+  static_assert((int)ConcreteRegisterImpl::max_gpr == (int)MachRegisterNumbers::F0_num);
   if (reg < ConcreteRegisterImpl::max_gpr) return rc_int;
 
   // We have 64 floating-point register halves, starting at index 64.
-  STATIC_ASSERT((int)ConcreteRegisterImpl::max_fpr == (int)MachRegisterNumbers::VR0_num);
+  static_assert((int)ConcreteRegisterImpl::max_fpr == (int)MachRegisterNumbers::VR0_num);
   if (reg < ConcreteRegisterImpl::max_fpr) return rc_float;
 
   // We have 64 vector-scalar registers, starting at index 128.
-  STATIC_ASSERT((int)ConcreteRegisterImpl::max_vr == (int)MachRegisterNumbers::CR0_num);
+  static_assert((int)ConcreteRegisterImpl::max_vr == (int)MachRegisterNumbers::CR0_num);
   if (reg < ConcreteRegisterImpl::max_vr) return rc_vec;
 
   // Condition and special purpose registers are not allocated. We only accept stack from here.
@@ -2957,27 +2958,6 @@ encode %{
     assert(!(ra_->is_oop(this)), "sanity"); // This is not supposed to be GC'ed.
   %}
 
-  enc_class postalloc_expand_encode_oop_not_null(iRegNdst dst, iRegPdst src) %{
-
-    encodeP_subNode *n1 = new encodeP_subNode();
-    n1->add_req(n_region, n_src);
-    n1->_opnds[0] = op_dst;
-    n1->_opnds[1] = op_src;
-    n1->_bottom_type = _bottom_type;
-
-    encodeP_shiftNode *n2 = new encodeP_shiftNode();
-    n2->add_req(n_region, n1);
-    n2->_opnds[0] = op_dst;
-    n2->_opnds[1] = op_dst;
-    n2->_bottom_type = _bottom_type;
-    ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    nodes->push(n1);
-    nodes->push(n2);
-    assert(!(ra_->is_oop(this)), "sanity"); // This is not supposed to be GC'ed.
-  %}
-
   enc_class postalloc_expand_decode_oop(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
     decodeN_shiftNode *n_shift    = new decodeN_shiftNode();
     cmpN_reg_imm0Node *n_compare  = new cmpN_reg_imm0Node();
@@ -3019,29 +2999,6 @@ encode %{
     nodes->push(n_cond_set);
 
   %}
-
-  enc_class postalloc_expand_decode_oop_not_null(iRegPdst dst, iRegNsrc src) %{
-    decodeN_shiftNode *n1 = new decodeN_shiftNode();
-    n1->add_req(n_region, n_src);
-    n1->_opnds[0] = op_dst;
-    n1->_opnds[1] = op_src;
-    n1->_bottom_type = _bottom_type;
-
-    decodeN_addNode *n2 = new decodeN_addNode();
-    n2->add_req(n_region, n1);
-    n2->_opnds[0] = op_dst;
-    n2->_opnds[1] = op_dst;
-    n2->_bottom_type = _bottom_type;
-    ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
-    ra_->set_oop(n2, true);
-
-    nodes->push(n1);
-    nodes->push(n2);
-  %}
-
 
   // This enc_class is needed so that scheduler gets proper
   // input mapping for latency computation.
@@ -3833,16 +3790,6 @@ operand immN_0() %{
 operand immNKlass() %{
   match(ConNKlass);
 
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// This operand can be used to avoid matching of an instruct
-// with chain rule.
-operand immNKlass_NM() %{
-  match(ConNKlass);
-  predicate(false);
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);
@@ -5709,56 +5656,12 @@ instruct loadConN0(iRegNdst dst, immN_0 src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Load hi part of compressed oop constant.
-instruct loadConN_hi(iRegNdst dst, immN src) %{
-  effect(DEF dst, USE src);
-  ins_cost(DEFAULT_COST);
-
-  format %{ "LIS     $dst, $src \t// narrow oop hi" %}
-  size(4);
-  ins_encode %{
-    __ lis($dst$$Register, 0); // Will get patched.
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Add lo part of compressed oop constant to already loaded hi part.
-instruct loadConN_lo(iRegNdst dst, iRegNsrc src1, immN src2) %{
-  effect(DEF dst, USE src1, USE src2);
-  ins_cost(DEFAULT_COST);
-
-  format %{ "ORI     $dst, $src1, $src2 \t// narrow oop lo" %}
-  size(4);
-  ins_encode %{
-    AddressLiteral addrlit = __ constant_oop_address((jobject)$src2$$constant);
-    __ relocate(addrlit.rspec(), /*compressed format*/ 1);
-    __ ori($dst$$Register, $src1$$Register, 0); // Will get patched.
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 instruct rldicl(iRegLdst dst, iRegLsrc src, immI16 shift, immI16 mask_begin) %{
   effect(DEF dst, USE src, USE shift, USE mask_begin);
 
   size(4);
   ins_encode %{
     __ rldicl($dst$$Register, $src$$Register, $shift$$constant, $mask_begin$$constant);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Needed to postalloc expand loadConN: ConN is loaded as ConI
-// leaving the upper 32 bits with sign-extension bits.
-// This clears these bits: dst = src & 0xFFFFFFFF.
-// TODO: Eventually call this maskN_regN_FFFFFFFF.
-instruct clearMs32b(iRegNdst dst, iRegNsrc src) %{
-  effect(DEF dst, USE src);
-  predicate(false);
-
-  format %{ "MASK    $dst, $src, 0xFFFFFFFF" %} // mask
-  size(4);
-  ins_encode %{
-    __ clrldi($dst$$Register, $src$$Register, 0x20);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -5775,128 +5678,36 @@ instruct loadBase(iRegLdst dst) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Loading ConN must be postalloc expanded so that edges between
-// the nodes are safe. They may not interfere with a safepoint.
-// GL TODO: This needs three instructions: better put this into the constant pool.
-instruct loadConN_Ex(iRegNdst dst, immN src) %{
+instruct loadConN(iRegNdst dst, immN src) %{
+  match(Set dst src);
+  ins_cost(DEFAULT_COST*3);
+
+  format %{ "LIS/ORI/CLRLDI $dst, $src" %}
+  size(12);
+  ins_encode %{
+    AddressLiteral addrlit = __ constant_oop_address((jobject)$src$$constant);
+    __ lis($dst$$Register, 0);                              // Will get patched.
+    __ relocate(addrlit.rspec(), /*compressed format*/ 1);
+    __ ori($dst$$Register, $dst$$Register, 0);              // Will get patched.
+    __ clrldi($dst$$Register, $dst$$Register, 0x20);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct loadConNKlass(iRegNdst dst, immNKlass src) %{
   match(Set dst src);
   ins_cost(DEFAULT_COST*2);
 
-  format %{ "LoadN   $dst, $src \t// postalloc expanded" %} // mask
-  postalloc_expand %{
-    MachNode *m1 = new loadConN_hiNode();
-    MachNode *m2 = new loadConN_loNode();
-    MachNode *m3 = new clearMs32bNode();
-    m1->_bottom_type = bottom_type();
-    m2->_bottom_type = bottom_type();
-    m3->_bottom_type = bottom_type();
-    m1->add_req(nullptr);
-    m2->add_req(nullptr, m1);
-    m3->add_req(nullptr, m2);
-    m1->_opnds[0] = op_dst;
-    m1->_opnds[1] = op_src;
-    m2->_opnds[0] = op_dst;
-    m2->_opnds[1] = op_dst;
-    m2->_opnds[2] = op_src;
-    m3->_opnds[0] = op_dst;
-    m3->_opnds[1] = op_dst;
-    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(m3->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    nodes->push(m1);
-    nodes->push(m2);
-    nodes->push(m3);
-  %}
-%}
-
-// We have seen a safepoint between the hi and lo parts, and this node was handled
-// as an oop. Therefore this needs a match rule so that build_oop_map knows this is
-// not a narrow oop.
-instruct loadConNKlass_hi(iRegNdst dst, immNKlass_NM src) %{
-  match(Set dst src);
-  effect(DEF dst, USE src);
-  ins_cost(DEFAULT_COST);
-
-  format %{ "LIS     $dst, $src \t// narrow klass hi" %}
-  size(4);
+  format %{ "LOAD $dst, $src" %}
   ins_encode %{
-    intptr_t Csrc = CompressedKlassPointers::encode((Klass *)$src$$constant);
-    __ lis($dst$$Register, (int)(short)((Csrc >> 16) & 0xffff));
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// As loadConNKlass_hi this must be recognized as narrow klass, not oop!
-instruct loadConNKlass_mask(iRegNdst dst, immNKlass_NM src1, iRegNsrc src2) %{
-  match(Set dst src1);
-  effect(TEMP src2);
-  ins_cost(DEFAULT_COST);
-
-  format %{ "MASK    $dst, $src2, 0xFFFFFFFF" %} // mask
-  size(4);
-  ins_encode %{
-    __ clrldi($dst$$Register, $src2$$Register, 0x20);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// This needs a match rule so that build_oop_map knows this is
-// not a narrow oop.
-instruct loadConNKlass_lo(iRegNdst dst, immNKlass_NM src1, iRegNsrc src2) %{
-  match(Set dst src1);
-  effect(TEMP src2);
-  ins_cost(DEFAULT_COST);
-
-  format %{ "ORI     $dst, $src1, $src2 \t// narrow klass lo" %}
-  size(4);
-  ins_encode %{
-    // Notify OOP recorder (don't need the relocation)
-    AddressLiteral md = __ constant_metadata_address((Klass*)$src1$$constant);
-    intptr_t Csrc = CompressedKlassPointers::encode((Klass*)md.value());
-    __ ori($dst$$Register, $src2$$Register, Csrc & 0xffff);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Loading ConNKlass must be postalloc expanded so that edges between
-// the nodes are safe. They may not interfere with a safepoint.
-instruct loadConNKlass_Ex(iRegNdst dst, immNKlass src) %{
-  match(Set dst src);
-  ins_cost(DEFAULT_COST*2);
-
-  format %{ "LoadN   $dst, $src \t// postalloc expanded" %} // mask
-  postalloc_expand %{
-    // Load high bits into register. Sign extended.
-    MachNode *m1 = new loadConNKlass_hiNode();
-    m1->_bottom_type = bottom_type();
-    m1->add_req(nullptr);
-    m1->_opnds[0] = op_dst;
-    m1->_opnds[1] = op_src;
-    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    nodes->push(m1);
-
-    MachNode *m2 = m1;
-    if (!Assembler::is_uimm((jlong)CompressedKlassPointers::encode((Klass *)op_src->constant()), 31)) {
-      // Value might be 1-extended. Mask out these bits.
-      m2 = new loadConNKlass_maskNode();
-      m2->_bottom_type = bottom_type();
-      m2->add_req(nullptr, m1);
-      m2->_opnds[0] = op_dst;
-      m2->_opnds[1] = op_src;
-      m2->_opnds[2] = op_dst;
-      ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      nodes->push(m2);
+    if (!ra_->C->output()->in_scratch_emit_size()) {
+      // Notify OOP recorder (don't need the relocation).
+      __ constant_metadata_address((Klass*)$src$$constant);
     }
-
-    MachNode *m3 = new loadConNKlass_loNode();
-    m3->_bottom_type = bottom_type();
-    m3->add_req(nullptr, m2);
-    m3->_opnds[0] = op_dst;
-    m3->_opnds[1] = op_src;
-    m3->_opnds[2] = op_dst;
-    ra_->set_pair(m3->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    nodes->push(m3);
+    narrowKlass Csrc = CompressedKlassPointers::encode((Klass*)$src$$constant);
+    __ load_const_optimized($dst$$Register, Csrc, R0);
   %}
+  ins_pipe(pipe_class_default);
 %}
 
 // 0x1 is used in object initialization (initial object header).
@@ -6301,7 +6112,7 @@ instruct encodeP_shift(iRegNdst dst, iRegNsrc src) %{
   format %{ "SRDI    $dst, $src, 3 \t// encode" %}
   size(4);
   ins_encode %{
-    __ srdi($dst$$Register, $src$$Register, CompressedOops::shift() & 0x3f);
+    __ srdi($dst$$Register, $src$$Register, CompressedOops::shift());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6376,14 +6187,18 @@ instruct encodeP_Ex(iRegNdst dst, flagsReg crx, iRegPsrc src) %{
 %}
 
 // shift != 0, base != 0
-instruct encodeP_not_null_Ex(iRegNdst dst, iRegPsrc src) %{
+instruct encodeP_not_null(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodeP src));
   predicate(n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull &&
             CompressedOops::shift() != 0 &&
             CompressedOops::base_overlaps());
 
-  format %{ "EncodeP $dst, $src\t// $src != Null, postalloc expanded" %}
-  postalloc_expand( postalloc_expand_encode_oop_not_null(dst, src) );
+  format %{ "EncodeP $dst, $src\t// $src != Null" %}
+  ins_encode %{
+    __ sub_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
+    __ srdi($dst$$Register, $dst$$Register, CompressedOops::shift());
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // shift != 0, base == 0
@@ -6396,7 +6211,7 @@ instruct encodeP_not_null_base_null(iRegNdst dst, iRegPsrc src) %{
   format %{ "SRDI    $dst, $src, #3 \t// encodeP, $src != nullptr" %}
   size(4);
   ins_encode %{
-    __ srdi($dst$$Register, $src$$Register, CompressedOops::shift() & 0x3f);
+    __ srdi($dst$$Register, $src$$Register, CompressedOops::shift());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6612,7 +6427,7 @@ instruct decodeN_Disjoint_isel_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
 %}
 
 // src != 0, shift != 0, base != 0
-instruct decodeN_notNull_addBase_Ex(iRegPdst dst, iRegNsrc src) %{
+instruct decodeN_notNull_addBase(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeN src));
   predicate((n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
              n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
@@ -6620,8 +6435,12 @@ instruct decodeN_notNull_addBase_Ex(iRegPdst dst, iRegNsrc src) %{
             CompressedOops::base() != nullptr);
   ins_cost(2 * DEFAULT_COST);
 
-  format %{ "DecodeN $dst, $src \t// $src != nullptr, postalloc expanded" %}
-  postalloc_expand( postalloc_expand_decode_oop_not_null(dst, src));
+  format %{ "DecodeN $dst, $src \t// $src != nullptr" %}
+  ins_encode %{
+    __ sldi($dst$$Register, $src$$Register, CompressedOops::shift());
+    __ add_const_optimized($dst$$Register, $dst$$Register, CompressedOops::base(), R0);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // Compressed OOPs with narrow_oop_shift == 0.

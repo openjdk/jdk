@@ -443,9 +443,6 @@
   product(bool, MergeStores, true, DIAGNOSTIC,                              \
           "Optimize stores by combining values into larger store")          \
                                                                             \
-  product_pd(bool, OptoBundling,                                            \
-          "Generate nops to fill i-cache lines")                            \
-                                                                            \
   product_pd(intx, ConditionalMoveLimit,                                    \
           "Limit of ops to make speculative when using CMOVE")              \
           range(0, max_jint)                                                \
@@ -494,8 +491,8 @@
           "instructions.")                                                  \
                                                                             \
   develop(bool, StressRecompilation, false,                                 \
-          "Recompile each compiled method without subsuming loads "         \
-          "or escape analysis.")                                            \
+          "Recompile each compiled method while progressively disabling "   \
+          "selected optimizations.")                                        \
                                                                             \
   develop(intx, ImplicitNullCheckThreshold, 3,                              \
           "Don't do implicit null checks if NPE's in a method exceeds "     \
@@ -762,10 +759,6 @@
           "Clone compares and control flow through merge points to fold "   \
           "some branches")                                                  \
                                                                             \
-  develop(intx, FreqCountInvocations,  1,                                   \
-          "Scaling factor for branch frequencies (deprecated)")             \
-          range(1, max_intx)                                                \
-                                                                            \
   develop(bool, VerifyAliases, false,                                       \
           "perform extra checks on the results of alias analysis")          \
                                                                             \
@@ -942,6 +935,9 @@
           "Use StoreStore barrier instead of Release barrier at the end "   \
           "of constructors")                                                \
                                                                             \
+  product(bool, PreloadReduceTraps, true, DIAGNOSTIC,                       \
+          "Preload code should avoid traps as much as possible.")           \
+                                                                            \
   develop(bool, KillPathsReachableByDeadTypeNode, true,                     \
           "When a Type node becomes top, make paths where the node is "     \
           "used dead by replacing them with a Halt node. Turning this off " \
@@ -995,11 +991,25 @@
                                                                             \
   product(uint, HotCodeMaxSamplingMs, 15, EXPERIMENTAL,                     \
           "Maximum sampling interval in milliseconds")                      \
-          range(0, max_juint)                                               \
+          range(1, max_juint)                                               \
                                                                             \
   product(uint, HotCodeCallLevel, 1, EXPERIMENTAL,                          \
           "Number of levels of callees to relocate per candidate")          \
           range(0, max_juint)                                               \
+                                                                            \
+  /* Next three AOT code flags are used only during assembly phase */       \
+  /* for tier4 AOT compilation and they are ignored in other phases */      \
+                                                                            \
+  product(double, AOTCodeInvokeBase, 100.0, DIAGNOSTIC,                     \
+          "AOT code invocation base limit")                                 \
+          range(1.0, 10000.0)                                               \
+                                                                            \
+  product(double, AOTCodeInvokeScale, 1.0, DIAGNOSTIC,                      \
+          "scale AOT code invocation limit")                                \
+          range(0.001, 1000.0)                                              \
+                                                                            \
+  product(bool, UseAOTCodeCounters, true, DIAGNOSTIC,                       \
+          "Use AOT code counter to trigger JIT compilation")                \
 
 // end of C2_FLAGS
 
