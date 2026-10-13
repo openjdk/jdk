@@ -1499,7 +1499,7 @@ public:
         r->make_trash();
       }
     }
-    _free_bytes_in_evac_failed_regions.add_then_fetch(free_bytes);
+    _free_bytes_in_evac_failed_regions.add_then_fetch(free_bytes, memory_order_relaxed);
   }
 };
 

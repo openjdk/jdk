@@ -48,7 +48,7 @@ size_t ShenandoahController::get_gc_id() const {
 void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &req) {
   assert(current()->is_Java_thread(), "expect Java thread here");
 
-  _alloc_stall_count.add_then_fetch(1UL);
+  _alloc_stall_count.add_then_fetch(1UL, memory_order_relaxed);
   increase_concurrent_worker_count();
   ShenandoahHeap::heap()->shenandoah_policy()->record_allocation_stall(get_phase());
   const bool is_humongous = ShenandoahHeapRegion::requires_humongous(req.size());
