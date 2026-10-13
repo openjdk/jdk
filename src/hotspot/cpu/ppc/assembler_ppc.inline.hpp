@@ -499,11 +499,10 @@ inline bool Assembler::is_within_range_of_b(address a, address pc) {
   // Guard against illegal branch targets, e.g. -1 (see CompiledDirectCall and ad-file).
   if ((((uint64_t)a) & 0x3) != 0) return false;
 
-  const int range = 1 << (29-6); // li field is from bit 6 to bit 29.
-  int value = disp(intptr_t(a), intptr_t(pc));
-  bool result = -range <= value && value < range-1;
+  int disp_instr_words = disp(intptr_t(a), intptr_t(pc));
+  bool result = is_simm(disp_instr_words, 24); // li field is 24 bits.
 #ifdef ASSERT
-  if (result) li(value); // Assert that value is in correct range.
+  if (result) li(disp_instr_words); // Assert that value is in correct range.
 #endif
   return result;
 }
@@ -513,11 +512,10 @@ inline bool Assembler::is_within_range_of_bcxx(address a, address pc) {
   // Guard against illegal branch targets, e.g. -1 (see CompiledDirectCall and ad-file).
   if ((((uint64_t)a) & 0x3) != 0) return false;
 
-  const int range = 1 << (29-16); // bd field is from bit 16 to bit 29.
-  int value = disp(intptr_t(a), intptr_t(pc));
-  bool result = -range <= value && value < range-1;
+  int disp_instr_words = disp(intptr_t(a), intptr_t(pc));
+  bool result = is_simm(disp_instr_words, 14); // bd field is 14 bits.
 #ifdef ASSERT
-  if (result) bd(value); // Assert that value is in correct range.
+  if (result) bd(disp_instr_words); // Assert that value is in correct range.
 #endif
   return result;
 }
@@ -1011,7 +1009,7 @@ inline void Assembler::vmuluwm( VectorRegister d, VectorRegister a, VectorRegist
 inline void Assembler::vmhaddshs(VectorRegister d,VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMHADDSHS_OPCODE | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
 inline void Assembler::vmhraddshs(VectorRegister d,VectorRegister a,VectorRegister b, VectorRegister c) { emit_int32( VMHRADDSHS_OPCODE| vrt(d) | vra(a) | vrb(b)| vrc(c)); }
 inline void Assembler::vmladduhm(VectorRegister d,VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMLADDUHM_OPCODE | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
-inline void Assembler::vmsubuhm(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMSUBUHM_OPCODE  | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
+inline void Assembler::vmsumubm(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMSUMUBM_OPCODE  | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
 inline void Assembler::vmsummbm(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMSUMMBM_OPCODE  | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
 inline void Assembler::vmsumshm(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMSUMSHM_OPCODE  | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
 inline void Assembler::vmsumshs(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMSUMSHS_OPCODE  | vrt(d) | vra(a) | vrb(b)| vrc(c)); }

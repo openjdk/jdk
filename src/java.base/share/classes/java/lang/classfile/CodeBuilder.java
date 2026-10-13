@@ -2517,7 +2517,7 @@ public sealed interface CodeBuilder
      * @see InvokeDynamicInstruction
      */
     default CodeBuilder invokedynamic(DynamicCallSiteDesc ref) {
-        MethodHandleEntry bsMethod = handleDescToHandleInfo(constantPool(), (DirectMethodHandleDesc) ref.bootstrapMethod());
+        MethodHandleEntry bsMethod = handleDescToHandleInfo(constantPool(), ref.bootstrapMethod());
         var cpArgs = ref.bootstrapArgs();
         List<LoadableConstantEntry> bsArguments = new ArrayList<>(cpArgs.length);
         for (var constantValue : cpArgs) {

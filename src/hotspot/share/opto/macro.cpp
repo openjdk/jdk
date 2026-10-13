@@ -38,11 +38,14 @@
 #include "opto/compile.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/graphKit.hpp"
+#include "opto/int128tnode.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/macro.hpp"
+#include "opto/matcher.hpp"
 #include "opto/memnode.hpp"
+#include "opto/movenode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
@@ -90,20 +93,16 @@ int PhaseMacroExpand::replace_input(Node *use, Node *oldref, Node *newref) {
 }
 
 
-Node* PhaseMacroExpand::opt_bits_test(Node* ctrl, Node* region, int edge, Node* word) {
-  Node* cmp = word;
+Node* PhaseMacroExpand::opt_bits_test(Node* ctrl, Node* region, int edge, CmpNode* cmp) {
   Node* bol = transform_later(new BoolNode(cmp, BoolTest::ne));
   IfNode* iff = new IfNode( ctrl, bol, PROB_MIN, COUNT_UNKNOWN );
   transform_later(iff);
 
-  // Fast path taken.
-  Node *fast_taken = transform_later(new IfFalseNode(iff));
+  Node* fast_path = transform_later(new IfFalseNode(iff));
+  Node* slow_path = transform_later(new IfTrueNode(iff));
 
-  // Fast path not-taken, i.e. slow path
-  Node *slow_taken = transform_later(new IfTrueNode(iff));
-
-    region->init_req(edge, fast_taken); // Capture fast-control
-    return slow_taken;
+  region->init_req(edge, fast_path); // Capture fast-control
+  return slow_path;
 }
 
 //--------------------copy_predefined_input_for_runtime_call--------------------
@@ -832,6 +831,18 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
             can_eliminate = false;
           }
         }
+      } else if (use->is_ArrayCopy() && !use->in(ArrayCopyNode::Src)->is_top() &&
+                 use->in(ArrayCopyNode::Src)->get_ptr_type()->is_atomic() &&
+                 use->in(ArrayCopyNode::Src)->get_ptr_type()->is_flat() &&
+                 !use->in(ArrayCopyNode::Src)
+                      ->get_ptr_type()
+                      ->isa_aryptr()
+                      ->elem()
+                      ->value_klass()
+                      ->is_naturally_atomic(
+                          use->in(ArrayCopyNode::Src)->get_ptr_type()->is_null_free())) {
+        NOT_PRODUCT(fail_eliminate = "Array element requires atomicity");
+        can_eliminate = false;
       } else if (use->is_ArrayCopy() &&
                  (use->as_ArrayCopy()->is_clonebasic() ||
                   use->as_ArrayCopy()->is_arraycopy_validated() ||
@@ -848,7 +859,12 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
           DEBUG_ONLY(disq_node = use;)
           NOT_PRODUCT(fail_eliminate = "Object is passed as argument";)
           can_eliminate = false;
+        } else if (sfpt->is_StoreFlat() && sfpt->as_StoreFlat()->has_non_debug_use(res) && sfpt->as_StoreFlat()->value() != res) {
+          DEBUG_ONLY(disq_node = use;)
+          NOT_PRODUCT(fail_eliminate = "Object is stored with StoreFlat";)
+          can_eliminate = false;
         }
+
         Node* sfptMem = sfpt->memory();
         if (sfptMem == nullptr || sfptMem->is_top()) {
           DEBUG_ONLY(disq_node = use;)
@@ -941,53 +957,36 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
   return can_eliminate;
 }
 
-void PhaseMacroExpand::undo_previous_scalarizations(Unique_Node_List& safepoints_done, AllocateNode* alloc) {
+void PhaseMacroExpand::undo_previous_scalarizations(Node_List& safepoints_done, Node_List& scalar_objects_done, AllocateNode* alloc) {
   Node* res = alloc->result_cast();
-  int nfields = 0;
   assert(res == nullptr || res->is_CheckCastPP(), "unexpected AllocateNode result");
-
-  if (res != nullptr) {
-    const TypeOopPtr* res_type = _igvn.type(res)->isa_oopptr();
-
-    if (res_type->isa_instptr()) {
-      // find the fields of the class which will be needed for safepoint debug information
-      ciInstanceKlass* iklass = res_type->is_instptr()->instance_klass();
-      nfields = iklass->nof_nonstatic_fields();
-    } else {
-      // find the array's elements which will be needed for safepoint debug information
-      nfields = alloc->in(AllocateNode::ALength)->find_int_con(-1);
-      assert(nfields >= 0, "must be an array klass.");
-    }
-  }
+  assert(safepoints_done.size() == scalar_objects_done.size(), "inconsistent count");
 
   // rollback processed safepoints
   while (safepoints_done.size() > 0) {
     SafePointNode* sfpt_done = safepoints_done.pop()->as_SafePoint();
+    SafePointScalarObjectNode* scobj = scalar_objects_done.pop()->as_SafePointScalarObject();
+    assert(scobj->alloc() == alloc, "sanity");
 
     SafePointNode::NodeEdgeTempStorage non_debug_edges_worklist(igvn());
-
     sfpt_done->remove_non_debug_edges(non_debug_edges_worklist);
 
-    // remove any extra entries we added to the safepoint
+    // Remove the scalarized-object description appended to the safepoint
     assert(sfpt_done->jvms()->endoff() == sfpt_done->req(), "no extra edges past debug info allowed");
-    uint last = sfpt_done->req() - 1;
-    for (int k = 0;  k < nfields; k++) {
-      sfpt_done->del_req(last--);
+    JVMState* jvms = sfpt_done->jvms();
+    uint first_index = scobj->first_index(jvms);
+    assert(first_index <= sfpt_done->req(), "invalid scalarized-object description");
+    while (sfpt_done->req() > first_index) {
+      sfpt_done->del_req(sfpt_done->req() - 1);
     }
-    JVMState *jvms = sfpt_done->jvms();
     jvms->set_endoff(sfpt_done->req());
     // Now make a pass over the debug information replacing any references
     // to SafePointScalarObjectNode with the allocated object.
     int start = jvms->debug_start();
     int end   = jvms->debug_end();
     for (int i = start; i < end; i++) {
-      if (sfpt_done->in(i)->is_SafePointScalarObject()) {
-        SafePointScalarObjectNode* scobj = sfpt_done->in(i)->as_SafePointScalarObject();
-        if (scobj->first_index(jvms) == sfpt_done->req() &&
-            scobj->n_fields() == (uint)nfields) {
-          assert(scobj->alloc() == alloc, "sanity");
-          sfpt_done->set_req(i, res);
-        }
+      if (sfpt_done->in(i) == scobj) {
+        sfpt_done->set_req(i, res);
       }
     }
 
@@ -995,19 +994,23 @@ void PhaseMacroExpand::undo_previous_scalarizations(Unique_Node_List& safepoints
 
     _igvn._worklist.push(sfpt_done);
   }
+  assert(scalar_objects_done.size() == 0, "Missed a scalar object");
 }
 
 #ifdef ASSERT
   // Verify if a value can be written into a field.
-  void verify_type_compatability(const Type* value_type, const Type* field_type) {
+  void verify_value_type_compatibility(const Type* value_type, const Type* field_type) {
     BasicType value_bt = value_type->basic_type();
     BasicType field_bt = field_type->basic_type();
 
-    // Primitive types must match.
-    if (is_java_primitive(value_bt) && value_bt == field_bt) { return; }
+    // Primitive types must match or have a matching reinterpreted variant
+    if (is_java_primitive(value_bt) &&
+        (value_bt == field_bt || MemNode::get_reinterpret_variant(value_bt) == field_bt)) {
+      return;
+    }
 
     // I have been struggling to make a similar assert for non-primitive
-    // types. I we can add one in the future. For now, I just let them
+    // types. If we can add one in the future. For now, I just let them
     // pass without checks.
     // In particular, I was struggling with a value that came from a call,
     // and had only a non-null check CastPP. There was also a checkcast
@@ -1055,7 +1058,7 @@ void PhaseMacroExpand::process_field_value_at_safepoint(const Type* field_type, 
       value_worklist->push(field_val);
     }
   }
-  DEBUG_ONLY(verify_type_compatability(field_val->bottom_type(), field_type);)
+  DEBUG_ONLY(verify_value_type_compatibility(field_val->bottom_type(), field_type);)
   sfpt->add_req(field_val);
 }
 
@@ -1225,7 +1228,7 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
       assert(nfields >= 0, "must be an array klass.");
     }
 
-    if (res->bottom_type()->is_valueklassptr()) {
+    if (res_type->is_valueklassptr()) {
       // Nullable value types have a null marker field which is added to the safepoint when scalarizing them (see
       // ValueTypeNode::make_scalar_in_safepoint()). When having circular value types, we stop scalarizing at depth 1
       // to avoid an endless recursion. Therefore, we do not have a SafePointScalarObjectNode node here, yet.
@@ -1267,7 +1270,8 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
 
 // Do scalar replacement.
 bool PhaseMacroExpand::scalar_replacement(AllocateNode* alloc, Unique_Node_List& safepoints) {
-  Unique_Node_List safepoints_done;
+  Node_List safepoints_done;
+  Node_List scalar_objects_done;
   Node* res = alloc->result_cast();
   assert(res == nullptr || res->is_CheckCastPP(), "unexpected AllocateNode result");
   const TypeOopPtr* res_type = nullptr;
@@ -1290,7 +1294,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode* alloc, Unique_Node_List&
 
     if (sobj == nullptr) {
       sfpt->restore_non_debug_edges(non_debug_edges_worklist);
-      undo_previous_scalarizations(safepoints_done, alloc);
+      undo_previous_scalarizations(safepoints_done, scalar_objects_done, alloc);
       return false;
     }
 
@@ -1304,6 +1308,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode* alloc, Unique_Node_List&
 
     // keep it for rollback
     safepoints_done.push(sfpt);
+    scalar_objects_done.push(sobj);
   }
   // Scalarize value types that were added to the safepoint.
   // Don't allow linking a constant oop (if available) for flat array elements
@@ -1412,7 +1417,14 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc, bool value_t
         // Process users
         for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++) {
           Node* u = use->fast_out(k);
-          if (!u->is_ValueType() && !u->is_StoreFlat()) {
+          // If u is a SafePoint either:
+          // - "use" is a debug info input an is removed by Compile::process_inline_types()
+          // - "use" is the value stored by StoreFlat and is removed when StoreFlat is expanded
+          assert(!u->is_SafePoint() ||
+                 (u->is_Call() && !u->as_Call()->has_non_debug_use(use)) ||
+                 (u->is_LoadFlat() && !u->as_LoadFlat()->has_non_debug_use(use)) ||
+                 (u->is_StoreFlat() && (!u->as_StoreFlat()->has_non_debug_use(use) || u->as_StoreFlat()->value() == use)), "unexpected InlineType use at safepoint");
+          if (!u->is_ValueType() && !u->is_SafePoint()) {
             worklist.push(u);
           }
         }
@@ -2519,13 +2531,6 @@ void PhaseMacroExpand::mark_eliminated_box(Node* box, Node* obj) {
         next_edge = false;
       }
     }
-    if (u->is_FastLock() && u->as_FastLock()->obj_node()->eqv_uncast(obj)) {
-      FastLockNode* flock = u->as_FastLock();
-      assert(flock->box_node() == oldbox, "sanity");
-      _igvn.rehash_node_delayed(flock);
-      flock->set_box_node(newbox);
-      next_edge = false;
-    }
 
     // Replace old box in monitor debug info.
     if (u->is_SafePoint() && u->as_SafePoint()->jvms()) {
@@ -2673,14 +2678,6 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
     Node* memproj = membar->proj_out(TypeFunc::Memory);
     _igvn.replace_node(ctrlproj, fallthroughproj);
     _igvn.replace_node(memproj, memproj_fallthrough);
-
-    // Delete FastLock node also if this Lock node is unique user
-    // (a loop peeling may clone a Lock node).
-    Node* flock = alock->as_Lock()->fastlock_node();
-    if (flock->outcnt() == 1) {
-      assert(flock->unique_out() == alock, "sanity");
-      _igvn.replace_node(flock, top());
-    }
   }
 
   // Search for MemBarReleaseLock node and delete it also.
@@ -2709,7 +2706,6 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   Node* mem = lock->in(TypeFunc::Memory);
   Node* obj = lock->obj_node();
   Node* box = lock->box_node();
-  Node* flock = lock->fastlock_node();
 
   assert(!box->as_BoxLock()->is_eliminated(), "sanity");
 
@@ -2720,9 +2716,10 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
 
   region  = new RegionNode(3);
   // create a Phi for the memory state
-  mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
+  mem_phi = new PhiNode(region, Type::MEMORY, TypeRawPtr::BOTTOM);
 
   // Optimize test; set region slot 2
+  FastLockNode* flock = transform_later(new FastLockNode(ctrl, obj, box))->as_FastLock();
   slow_path = opt_bits_test(ctrl, region, 2, flock);
   mem_phi->init_req(2, mem);
 
@@ -3164,6 +3161,49 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
   }
 }
 
+void PhaseMacroExpand::expand_add_sub_i128t_node(Int128TBinaryNode* addsub) {
+  if (Matcher::match_rule_supported(addsub->Opcode())) {
+    addsub->remove_flag(Node::Flag_is_macro);
+    C->remove_macro_node(addsub);
+    return;
+  }
+
+  bool is_add = addsub->Opcode() == Op_AddI128T;
+  Node* new_lo;
+  if (is_add) {
+    new_lo = _igvn.transform(new AddLNode(addsub->lo1(), addsub->lo2()));
+  } else {
+    new_lo = _igvn.transform(new SubLNode(addsub->lo1(), addsub->lo2()));
+  }
+
+  if (Node* lo = addsub->result_lo_or_null(); lo != nullptr) {
+    _igvn.replace_node(lo, new_lo);
+  }
+
+  // uint64_t lo1, lo2, hi1, hi2
+  // uint64_t sum_lo = lo1 + lo2
+  // uint64_t sum_lo_overflow = sum_lo < lo2 ? 1 : 0
+  // uint64_t sum_hi = hi1 + hi2 + sum_lo_overflow = hi1 + hi2 + (sum_lo < lo2 ? 1 : 0)
+  // uint64_t dif_lo = lo1 - lo2
+  // uint64_t dif_lo_overflow = lo1 < lo2 ? 1 : 0
+  // uint64_t dif_hi = hi1 - hi2 - dif_lo_overflow = hi1 - hi2 - (lo1 < lo2 ? 1 : 0)
+  if (Node* hi = addsub->result_hi_or_null(); hi != nullptr) {
+    Node* overflow_cmp = _igvn.transform(new CmpULNode(is_add ? new_lo : addsub->lo1(), addsub->lo2()));
+    Node* overflow_bol = _igvn.transform(new BoolNode(overflow_cmp, BoolTest::lt));
+    Node* overflow_int = _igvn.transform(new CMoveLNode(overflow_bol, _igvn.longcon(0), _igvn.longcon(1), TypeLong::LONG));
+    Node* hi2 = _igvn.transform(new AddLNode(addsub->hi2(), overflow_int));
+    Node* new_hi;
+    if (is_add) {
+      new_hi = _igvn.transform(new AddLNode(addsub->hi1(), hi2));
+    } else {
+      new_hi = _igvn.transform(new SubLNode(addsub->hi1(), hi2));
+    }
+    _igvn.replace_node(hi, new_hi);
+  }
+
+  _igvn.remove_dead_node(addsub, PhaseIterGVN::NodeOrigin::Graph);
+}
+
 // Perform refining of strip mined loop nodes in the macro nodes list.
 void PhaseMacroExpand::refine_strip_mined_loop_macro_nodes() {
    for (int i = C->macro_count(); i > 0; i--) {
@@ -3279,7 +3319,9 @@ void PhaseMacroExpand::eliminate_macro_nodes(bool eliminate_locks) {
                n->is_OpaqueConstantBool()    ||
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
-               n->Opcode() == Op_MinL,
+               n->Opcode() == Op_MinL      ||
+               n->Opcode() == Op_AddI128T  ||
+               n->Opcode() == Op_SubI128T,
                "unknown node type in macro list");
       }
       if (C->failing()) {
@@ -3470,6 +3512,10 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         transform_later(call);
         break;
       }
+      case Op_AddI128T:
+      case Op_SubI128T:
+        expand_add_sub_i128t_node(static_cast<Int128TBinaryNode*>(n));
+        break;
       default:
         assert(false, "unknown node type in macro list");
       }

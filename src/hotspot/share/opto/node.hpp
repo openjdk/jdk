@@ -496,7 +496,7 @@ public:
     Compile::current()->record_modified_node(this);
   }
   // Find first occurrence of n among my edges:
-  int find_edge(Node* n);
+  int find_edge(const Node* n) const;
   int find_prec_edge(Node* n) {
     for (uint i = req(); i < len(); i++) {
       if (_in[i] == n) return i;
@@ -1464,6 +1464,8 @@ public:
 
   bool is_div_or_mod(BasicType bt) const;
 
+  bool is_boxing_or_unboxing_call() const;
+
 //----------------- Printing, etc
 #ifndef PRODUCT
  public:
@@ -1972,7 +1974,7 @@ public:
   }
 
   // Used after parsing to remove useless nodes before Iterative GVN
-  void remove_useless_nodes(VectorSet& useful);
+  void remove_useless_nodes(const VectorSet& useful);
 
   // If the idx of the Nodes change, we must recompute the VectorSet
   void recompute_idx_set() {

@@ -109,14 +109,18 @@ inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
     oop obj = CompressedOops::decode_not_null(o);
     if (in_collection_set(obj)) {
       // Corner case: when evacuation fails, there are objects in collection
-      // set that are not really forwarded. We can still go and try and update them
-      // (uselessly) to simplify the common path.
+      // set that are not forwarded, and can still be in cset.
       shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahForwarding::get_forwardee(obj);
-      shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
+      oop resolved = ShenandoahForwarding::forwardee_or_null(obj);
+      if (resolved == nullptr) {
+        resolved = obj;
+      }
+      shenandoah_assert_not_in_cset_except(p, resolved, cancelled_gc());
 
-      // Unconditionally store the update: no concurrent updates expected.
-      RawAccess<IS_NOT_NULL>::oop_store(p, fwd);
+      if (resolved != obj) {
+        // Unconditionally store the update: no concurrent updates expected.
+        RawAccess<IS_NOT_NULL>::oop_store(p, resolved);
+      }
     }
   }
 }
@@ -127,20 +131,20 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
     if (in_collection_set(obj)) {
-      // Corner case: when evacuation fails, there are objects in collection
-      // set that are not really forwarded. We can still go and try CAS-update them
-      // (uselessly) to simplify the common path.
-      shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahForwarding::get_forwardee(obj);
-      shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
+      // For concurrent update-refs, we cannot reach the state
+      // with non-forwarded objects in cset.
+      shenandoah_assert_forwarded(p, obj);
+      oop resolved = ShenandoahForwarding::forwardee(obj);
+      shenandoah_assert_not_in_cset(p, resolved);
 
-      // Sanity check: we should not be updating the cset regions themselves,
-      // unless we are recovering from the evacuation failure.
-      shenandoah_assert_not_in_cset_loc_except(p, !is_in(p) || cancelled_gc());
+      // We should not be updating the cset regions themselves.
+      shenandoah_assert_not_in_cset_loc_except(p, !is_in(p));
 
-      // Either we succeed in updating the reference, or something else gets in our way.
-      // We don't care if that is another concurrent GC update, or another mutator update.
-      atomic_update_oop(fwd, p, o);
+      if (resolved != obj) {
+        // Either we succeed in updating the reference, or something else gets in our way.
+        // We don't care if that is another concurrent GC update, or another mutator update.
+        atomic_update_oop(resolved, p, o);
+      }
     }
   }
 }
@@ -298,27 +302,6 @@ inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size
     return obj;
   }
   return allocate_from_gclab_slow(thread, size);
-}
-
-void ShenandoahHeap::increase_object_age(oop obj, uint additional_age) {
-  // This operates on new copy of an object. This means that the object's mark-word
-  // is thread-local and therefore safe to access.
-  markWord w = obj->mark();
-  // It is possible that we have copied the object after another thread has
-  // already successfully completed evacuation. While harmless (we would never
-  // publish our copy), don't even attempt to modify the age when that
-  // happens.
-  if (!w.is_marked()) {
-    w = w.set_age(MIN2(markWord::max_age, w.age() + additional_age));
-    obj->set_mark(w);
-  }
-}
-
-uint ShenandoahHeap::get_object_age(oop obj) {
-  markWord w = obj->mark();
-  assert(!w.is_marked(), "must not be forwarded");
-  assert(w.age() <= markWord::max_age, "Impossible!");
-  return w.age();
 }
 
 inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {

@@ -27,6 +27,7 @@
 
 #include "ci/ciMethod.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
@@ -253,6 +254,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_subtractExactI(bool is_decrement);
   bool inline_math_subtractExactL(bool is_decrement);
   bool inline_min_max(vmIntrinsics::ID id);
+  bool inline_int128t_addsub(vmIntrinsics::ID id);
   bool inline_notify(vmIntrinsics::ID id);
   // This returns Type::AnyPtr, RawPtr, or OopPtr.
   int classify_unsafe_addr(Node* &base, Node* &offset, BasicType type);
@@ -262,7 +264,7 @@ class LibraryCallKit : public GraphKit {
   DecoratorSet mo_decorator_for_access_kind(AccessKind kind);
   bool inline_unsafe_access(bool is_store, BasicType type, AccessKind kind, bool is_unaligned);
   bool inline_unsafe_flat_access(bool is_store, AccessKind kind);
-  static bool klass_needs_init_guard(Node* kls);
+  bool klass_needs_init_guard(Node* kls) const;
   bool inline_unsafe_allocate();
   bool inline_unsafe_newArray(bool uninitialized);
   bool inline_newArray(bool null_free, bool atomic);
@@ -438,6 +440,7 @@ private:
   bool inline_vector_convert();
   bool inline_vector_extract();
   bool inline_vector_insert();
+  bool inline_vector_slice();
   bool inline_vector_compress_expand();
   bool inline_index_vector();
   bool inline_index_partially_in_upper_range();

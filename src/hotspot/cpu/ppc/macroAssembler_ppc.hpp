@@ -844,10 +844,6 @@ class MacroAssembler: public Assembler {
 
   void load_metadata(Register dst, Register src);
 
-  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register value_field_layout_info);
-
-  void value_field_layout_info(Register holder_klass, Register index, Register layout_info);
-
   // value type data payload offsets...
   void payload_offset(Register value_klass, Register offset);
   void payload_address(Register oop, Register data, Register value_klass, Register t1);
