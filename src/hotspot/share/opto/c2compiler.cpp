@@ -24,6 +24,7 @@
 
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmIntrinsics.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
@@ -127,8 +128,15 @@ void C2Compiler::initialize() {
 
 void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, bool install_code, DirectiveSet* directive) {
   assert(is_initialized(), "Compiler thread must be initialized");
-
   CompilationMemoryStatisticMark cmsm(directive);
+  CompileTask* task = env->task();
+  if (task->is_aot_load()) {
+    assert(install_code, "AOT code loading requires install_code");
+    AOTCodeCache::load_nmethod(env, target, entry_bci, this);
+    // We want to go quickly through AOT code load requests
+    // instead of spending time on normal compilation.
+    return;
+  }
 
   bool subsume_loads = SubsumeLoads;
   bool do_escape_analysis = DoEscapeAnalysis;
@@ -138,6 +146,8 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool do_locks_coarsening = EliminateLocks;
   bool do_superword = UseSuperWord;
   bool do_stringopts = OptimizeStringConcat;
+  bool for_aot_preload = (task->compile_reason() == CompileTask::Reason_AOTCompileForPreload);
+  assert(!for_aot_preload || (ClassInitBarrierMode > 0), "sanity");
 
   while (!env->failing()) {
     ResourceMark rm;
@@ -150,6 +160,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
                     do_locks_coarsening,
                     do_superword,
                     do_stringopts,
+                    for_aot_preload,
                     install_code);
     Compile C(env, target, entry_bci, options, directive);
 

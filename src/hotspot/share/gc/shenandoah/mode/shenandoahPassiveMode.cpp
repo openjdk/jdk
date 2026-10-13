@@ -31,7 +31,6 @@
 void ShenandoahPassiveMode::initialize_flags() const {
   // Do not allow concurrent cycles.
   FLAG_SET_DEFAULT(ExplicitGCInvokesConcurrent, false);
-  FLAG_SET_DEFAULT(ShenandoahImplicitGCInvokesConcurrent, false);
 
   // No need for evacuation reserve with Full GC
   if (FLAG_IS_DEFAULT(ShenandoahEvacReserve)) {

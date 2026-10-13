@@ -3385,7 +3385,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
           Register flat_entry = tos_state;
           Register flat_index = oopStore_tmp2; // Z_R1_scratch (index scratch, discarded after load)
           __ load_field_entry(flat_entry, flat_index);
-          __ write_flat_field(flat_entry, off, flat_index, oopStore_tmp3, oopStore_tmp1);
+          __ write_flat_field(flat_entry, flat_index, oopStore_tmp3, oopStore_tmp1);
         }__ bind(rewrite_value);
         if (do_rewrite) {
           patch_bytecode(Bytecodes::_fast_vputfield, bc_reg, patch_tmp, true, byte_no);
@@ -3573,9 +3573,9 @@ void TemplateTable::fast_storefield(TosState state) {
           Register flat_entry = Z_ARG4;  // R5  — safe for call_VM arg_3 slot
           Register flat_index = Z_ARG3;  // R4  — discarded after load_field_entry
           __ load_field_entry(flat_entry, flat_index);
-          // entry=R5, field_offset=off=R11, tmp1=Z_ARG2=R3, tmp2=flat_index=Z_ARG3=R4, obj=Z_tmp_1=R10
-          // All five are distinct; obj(R10) != Z_tos(R2) so flat_field_copy is safe.
-          __ write_flat_field(flat_entry, off, Z_ARG2, flat_index, obj);
+          // entry=R5, tmp1=Z_ARG2=R3, tmp2=flat_index=Z_ARG3=R4, obj=Z_tmp_1=R10
+          // All four are distinct; obj(R10) != Z_tos(R2) so implementation is safe.
+          __ write_flat_field(flat_entry, Z_ARG2, flat_index, obj);
         }
         __ bind(done);
       }
