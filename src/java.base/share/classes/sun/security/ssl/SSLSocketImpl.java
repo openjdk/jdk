@@ -1415,6 +1415,11 @@ public final class SSLSocketImpl
         }
     }
 
+    @Override
+    public String [] getSupportedNamedGroups() {
+        return NamedGroup.namesOf(sslContext.getSupportedNamedGroups());
+    }
+
     /**
      * Read the initial handshake records.
      */

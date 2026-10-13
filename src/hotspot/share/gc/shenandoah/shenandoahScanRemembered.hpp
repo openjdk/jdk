@@ -369,7 +369,7 @@ private:
   static const uint8_t FirstStartBits           = 0x7f;
 
   // Check that we have enough bits to store the largest possible offset into a card for an object start.
-  STATIC_ASSERT((MaxGCCardSizeInBytes / HeapWordSize) - 1 <= FirstStartBits);
+  static_assert((MaxGCCardSizeInBytes / HeapWordSize) - 1 <= FirstStartBits);
 
   crossing_info* _object_starts;
 
@@ -749,7 +749,7 @@ public:
     delete _scc;
     if (ShenandoahEnableCardStats) {
       for (uint i = 0; i < ParallelGCThreads; i++) {
-        delete _card_stats[i];
+        delete[] _card_stats[i];
       }
       FREE_C_HEAP_ARRAY(_card_stats);
       _card_stats = nullptr;

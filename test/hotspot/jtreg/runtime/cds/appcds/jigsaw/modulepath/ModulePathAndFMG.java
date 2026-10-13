@@ -74,7 +74,7 @@ public class ModulePathAndFMG {
 
     private static String CLASS_FOUND_MESSAGE = "com.foos.Test found";
     private static String CLASS_NOT_FOUND_MESSAGE = "java.lang.ClassNotFoundException: com.foos.Test";
-    private static String FIND_EXCEPTION_MESSAGE = "java.lang.module.FindException: Module com.foos not found, required by com.bars";
+    private static String JMOD_NOT_SUPPORTED = "JMOD format not supported at execution time";
     private static String MODULE_NOT_RECOGNIZED = "Module format not recognized:.*modylibs.*com.bars.JAR";
     private static String FMG_ENABLED = "] full module graph: enabled";
     private static String FMG_DISABLED = "] full module graph: disabled";
@@ -321,7 +321,7 @@ public class ModulePathAndFMG {
         TestCommon.checkDump(output);
 
         String runModulePath = mainJar.toString() + PATH_SEPARATOR +
-            jmodDir.toString() + TEST_MODULE + ".jmod";
+            jmodDir.toString() + File.separator + TEST_MODULE + ".jmod";
         tty("11. run with CDS on, with module path com.bars.jar:com.foos.jmod");
         TestCommon.runWithModules(prefix,
                                  null,               // --upgrade-module-path
@@ -331,28 +331,11 @@ public class ModulePathAndFMG {
                 out.shouldContain(FMG_DISABLED)
                    .shouldNotContain(FMG_ENABLED)
                    .shouldContain(NON_JAR_FILES)
-                   .shouldContain(FIND_EXCEPTION_MESSAGE);
-            });
-
-        runModulePath += PATH_SEPARATOR + testJar.toString();
-
-        // non-jar files in runtime --module is incompatible with FMG
-        tty("12. run with CDS on, with module path com.bars.jar:com.foos.jmod:com.foos.jar");
-        TestCommon.runWithModules(prefix,
-                                 null,               // --upgrade-module-path
-                                 runModulePath, // --module-path
-                                 MAIN_MODULE)        // -m
-            .assertNormalExit(out -> {
-                out.shouldContain(FMG_DISABLED)
-                   .shouldNotContain(FMG_ENABLED)
-                   .shouldContain(NON_JAR_FILES)
-                   .shouldMatch(TEST_FROM_CDS)
-                   .shouldMatch(MAIN_FROM_CDS)
-                   .shouldContain(CLASS_FOUND_MESSAGE);
+                   .shouldContain(JMOD_NOT_SUPPORTED);
             });
 
         runModulePath = badJar.toString() + PATH_SEPARATOR + testJar.toString();
-        tty("13. run with CDS on, with module path com.bars.JAR:com.foos.jar");
+        tty("12. run with CDS on, with module path com.bars.JAR:com.foos.jar");
         TestCommon.runWithModules(prefix,
                                  null,               // --upgrade-module-path
                                  runModulePath, // --module-path

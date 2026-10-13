@@ -270,8 +270,8 @@ void G1BlockOffsetTable::verify_for_block(HeapWord* blk_start, HeapWord* blk_end
     Atomic<uint8_t>* value = current_card;
     if (offset_array(prev) != offset_array(value)) {
       assert(offset_array(value) >= offset_array(prev), "monotonic");
-      size_t n_cards_back = BOTConstants::entry_to_cards_back(offset_array(value));
-      assert(start_card == (current_card - n_cards_back), "inv");
+      size_t num_cards_back = BOTConstants::entry_to_cards_back(offset_array(value));
+      assert(start_card == (current_card - num_cards_back), "inv");
     }
   }
 }

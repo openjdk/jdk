@@ -477,6 +477,8 @@ private:
   // Idealize old Node 'n' with respect to its inputs and its value
   virtual Node *transform_old( Node *a_node );
 
+  bool can_kill(Node* n) const;
+
   // Drain the IGVN worklist: process nodes until the worklist is empty.
   // Returns true if compilation was aborted (node limit or infinite loop),
   // false on normal completion.
@@ -609,7 +611,10 @@ public:
   // Passing the old node (as 'n'), rather than the new node,
   // prevents unnecessary notifications when the new node already
   // has other users.
-  void add_users_to_worklist(Node* n);
+  void add_users_to_worklist(Node* n) const;
+  // The generic version that will add it to a given worklist instead of
+  // the current this->_worklist.
+  static void add_users_to_worklist(Node* n, Unique_Node_List& worklist);
 
   // Replace old node with new one.
   void replace_node( Node *old, Node *nn ) {
