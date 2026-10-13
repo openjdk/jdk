@@ -27,6 +27,7 @@
 
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
@@ -35,12 +36,31 @@ class MetaspaceClosure;
 class ModuleEntry;
 class SerializeClosure;
 
-// This class manages the information (such as module oops, ModuleEntry's, and ClassLoaderData's)
+// This class manages the information (such as properties, module oops, ModuleEntry's, and ClassLoaderData's)
 // for the archived module system.
 class AOTModules : AllStatic {
   static bool _full_module_graph_loaded;
   CDS_JAVA_HEAP_ONLY(static void ensure_module_entry_table_exists(oop class_loader);)
+
+#if INCLUDE_CDS_JAVA_HEAP
+  class ArchivedProperty;
+
+  static ArchivedProperty _archived_props[];
+  static constexpr size_t num_archived_props();
+  static ArchivedProperty& archived_prop(size_t i);
+#endif
+
 public:
+
+  static void check_archived_module_oop(oop orig_module_obj) NOT_CDS_JAVA_HEAP_RETURN;
+  static void define_archived_modules(Handle h_platform_loader, Handle h_system_loader,
+                                      TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_archived_modules(JavaThread* current, Handle h_platform_loader, Handle h_system_loader)
+                                   NOT_CDS_JAVA_HEAP_RETURN;
+  static void dump_archived_module_info() NOT_CDS_JAVA_HEAP_RETURN;
+  static void serialize_archived_module_info(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+
+  static void check_restrictions(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void load_archived_platform_and_system_class_loaders() NOT_CDS_JAVA_HEAP_RETURN;
   static void restore_archived_modules_for_preloading_classes(JavaThread* current) NOT_CDS_JAVA_HEAP_RETURN;
   static void build_tables(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
