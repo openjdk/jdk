@@ -36,7 +36,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
-#include "oops/oopCast.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "oops/refArrayOop.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/javaCalls.hpp"
