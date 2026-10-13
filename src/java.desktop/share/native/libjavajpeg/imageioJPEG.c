@@ -725,13 +725,14 @@ static int setQTables(JNIEnv *env,
         }
 
         for (j = 0; j < 64; j++) {
-            quant_ptr->quantval[j] = (UINT16)qdataBody[j];
-            if (quant_ptr->quantval[j] < 1) {
-                quant_ptr->quantval[j] = 1;
+            int q = qdataBody[j];
+            if (q < 1) {
+                q = 1;
             }
-            if (quant_ptr->quantval[j] > 255) { // ImageIO supports baseline only
-                quant_ptr->quantval[j] = 255;
+            if (q > 255) { // ImageIO supports baseline only
+                q = 255;
             }
+            quant_ptr->quantval[j] = (UINT16)q;
         }
         quant_ptr->sent_table = !write;
         (*env)->ReleasePrimitiveArrayCritical(env,
