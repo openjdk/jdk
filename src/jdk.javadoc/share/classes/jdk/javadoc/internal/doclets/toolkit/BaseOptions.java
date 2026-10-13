@@ -610,7 +610,6 @@ public abstract class BaseOptions {
                 new Option(resources, "-sourcetab", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        linkSource = true;
                         try {
                             sourceTabSize = Integer.parseInt(args.get(0));
                         } catch (NumberFormatException e) {

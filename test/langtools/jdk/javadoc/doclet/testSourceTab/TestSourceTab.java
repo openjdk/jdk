@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4510979
+ * @bug 4510979 8392605
  * @summary Test to make sure that the source documentation is indented properly
  * when -linksourcetab is used.
  * @library ../../lib
@@ -65,12 +65,38 @@ public class TestSourceTab extends JavadocTester {
                 "-sourcepath", tmpSrcDir,
                 "-notimestamp",
                 "-sourcetab", "4",
+                "-linksource",
                 tmpSrcDir + "/DoubleTab/C.java");
         checkExit(Exit.OK);
 
         diff(outdir1, outdir2,
                 "src-html/C.html",
                 "C.html");
+    }
+
+    // Specifying the -sourcetab option should not imply -linksource.
+    @Test
+    public void testNoSource() throws Exception {
+        String tmpSrcDir = "tmpSrc";
+        String outdir = "out-noSource";
+        initTabs(new File(testSrc), new File(tmpSrcDir));
+
+        // Run Javadoc with -sourcetab option, but no -linksource
+        javadoc("-d", outdir,
+                "-sourcetab", "3",
+                "-notimestamp",
+                tmpSrcDir + "/SingleTab/C.java");
+        checkExit(Exit.OK);
+
+        // Tabs in doc comments should be converted to 3 spaces.
+        checkOutput("C.html", true, """
+                <div class="block"><pre>
+                   This source
+                   is indented
+                   with tabs.
+                </pre></div>""");
+        // We did not ask for source code to be generated.
+        checkFiles(false, "src-html", "src-html/C.html");
     }
 
     void initTabs(File from, File to) throws IOException {
