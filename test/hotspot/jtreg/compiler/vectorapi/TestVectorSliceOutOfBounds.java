@@ -34,12 +34,12 @@ import jdk.internal.vm.vector.VectorSupport;
  * @modules java.base/jdk.internal.vm.vector
  *          jdk.incubator.vector
  * @library /test/lib /
- * @run main/othervm --add-exports=java.base/jdk.internal.vm.vector=ALL-UNNAMED
- *                   -Xcomp -XX:-TieredCompilation
- *                   -XX:CompileCommand=compileonly,compiler.vectorapi.TestVectorSliceOutOfBounds$Test1::test
+ * @run main/othervm -Xcomp -XX:-TieredCompilation
+ *                   -XX:CompileCommand=compileonly,${test.main.class}$Test1::test
  *                   -XX:CompileCommand=dontinline,java.util.Objects::checkIndex
  *                   -XX:CompileCommand=dontinline,jdk.internal.util.Preconditions::checkIndex
- *                   compiler.vectorapi.TestVectorSliceOutOfBounds Test1
+ *                   ${test.main.class} Test1
+ * @run main ${test.main.class} Test1
  */
 
 /*
@@ -49,10 +49,10 @@ import jdk.internal.vm.vector.VectorSupport;
  * @modules java.base/jdk.internal.vm.vector
  *          jdk.incubator.vector
  * @library /test/lib /
- * @run main/othervm --add-exports=java.base/jdk.internal.vm.vector=ALL-UNNAMED
- *                   -Xbatch -XX:-TieredCompilation
- *                   -XX:CompileCommand=compileonly,compiler.vectorapi.TestVectorSliceOutOfBounds$Test2::test
- *                   compiler.vectorapi.TestVectorSliceOutOfBounds Test2
+ * @run main/othervm -Xbatch -XX:-TieredCompilation
+ *                   -XX:CompileCommand=compileonly,${test.main.class}$Test2::test
+ *                   ${test.main.class} Test2
+ * @run main ${test.main.class} Test2
  */
 
 public class TestVectorSliceOutOfBounds {
