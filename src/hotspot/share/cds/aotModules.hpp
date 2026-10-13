@@ -27,7 +27,6 @@
 
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 

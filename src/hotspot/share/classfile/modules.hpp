@@ -26,9 +26,10 @@
 #define SHARE_CLASSFILE_MODULES_HPP
 
 #include "memory/allStatic.hpp"
+#include "runtime/handles.hpp"
 
-class Handle;
 class ModuleEntryTable;
+class SerializeClosure;
 class Symbol;
 
 class Modules : AllStatic {
