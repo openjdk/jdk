@@ -1509,8 +1509,8 @@ void ShenandoahHeap::trash_cset_regions() {
   if (has_self_forwarded_objects()) {
     ShenandoahTrashRegionTask task(set);
     workers()->run_task(&task);
-    log_info(gc, free)("Memory available in regions that failed evacuation: " PROPERFMT,
-                       PROPERFMTARGS(task.free_bytes_in_evac_failed_regions()));
+    log_debug(gc, free)("Memory available in regions that failed evacuation: " PROPERFMT,
+                        PROPERFMTARGS(task.free_bytes_in_evac_failed_regions()));
   } else {
     ShenandoahHeapRegion* r;
     while ((r = set->next()) != nullptr) {
