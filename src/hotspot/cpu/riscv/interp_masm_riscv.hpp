@@ -168,9 +168,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   //   - assumes holder_klass and valueKlass field klass have both been resolved
   void read_flat_field(Register entry, Register obj);
 
-  void write_flat_field(Register entry, Register field_offset,
-                        Register tmp1, Register tmp2,
-                        Register obj);
+  void write_flat_field(Register entry, Register tmp1,
+                        Register tmp2, Register obj);
 
   // Load cpool->resolved_references(index).
   void load_resolved_reference_at_index(Register result, Register index, Register tmp = x15);

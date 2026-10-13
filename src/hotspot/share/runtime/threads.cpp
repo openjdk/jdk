@@ -35,6 +35,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerThread.hpp"
 #include "compiler/compileTask.hpp"
@@ -376,6 +377,11 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   // initialize the hardware-specific constants needed by Unsafe
   initialize_class(vmSymbols::jdk_internal_misc_UnsafeConstants(), CHECK);
   jdk_internal_misc_UnsafeConstants::set_unsafe_constants();
+
+  // Initialize Value type support - this also initializes Unsafe.
+  if (Arguments::is_valhalla_enabled()) {
+    initialize_class(vmSymbols::java_lang_runtime_ValueObjectMethods(), CHECK);
+  }
 
   // The VM preresolves methods to these classes. Make sure that they get initialized
   initialize_class(vmSymbols::java_lang_reflect_Method(), CHECK);
@@ -813,6 +819,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     // startup with the proper message that CodeCache size is too small.
     initialize_class(vmSymbols::jdk_internal_vm_Continuation(), CHECK_JNI_ERR);
   }
+
+  // Pre-load AOT compiled methods
+  AOTCodeCache::preload_code(CHECK_JNI_ERR);
 
   if (NativeHeapTrimmer::enabled()) {
     NativeHeapTrimmer::initialize();

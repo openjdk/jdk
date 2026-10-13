@@ -103,7 +103,7 @@ void ParkEvent::Release (ParkEvent * ev) {
 // although Niagara's hash function should help.
 
 void * ParkEvent::operator new (size_t sz) throw() {
-  return (void *) ((intptr_t (AllocateHeap(sz + 256, mtInternal, CALLER_PC)) + 256) & -256) ;
+  return (void *) ((intptr_t (AllocateHeap(sz + 256, mtSynchronizer, CALLER_PC)) + 256) & -256);
 }
 
 void ParkEvent::operator delete (void * a) {

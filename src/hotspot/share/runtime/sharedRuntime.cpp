@@ -1201,13 +1201,8 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     bc = Bytecodes::_invokestatic;
     methodHandle attached_method(THREAD, extract_attached_method(vfst));
     assert(attached_method.not_null(), "must have attached method");
-    vmClasses::ValueObjectMethods_klass()->initialize(CHECK_NH);
     LinkResolver::resolve_invoke(callinfo, receiver, attached_method, bc, false, CHECK_NH);
-#ifdef ASSERT
-    Symbol* subst_method_name = vmSymbols::isSubstitutable_name();
-    Method* is_subst = vmClasses::ValueObjectMethods_klass()->find_method(subst_method_name, vmSymbols::object_object_boolean_signature());
-    assert(callinfo.selected_method() == is_subst, "must be isSubstitutable method");
-#endif
+    assert(callinfo.selected_method() == Universe::is_substitutable_method(), "must be isSubstitutable method");
     return receiver;
   }
 
@@ -3252,7 +3247,7 @@ void AdapterHandlerLibrary::lookup_aot_cache(AdapterHandlerEntry* handler) {
   const char* name = AdapterHandlerLibrary::name(handler);
   const uint32_t id = AdapterHandlerLibrary::id(handler);
 
-  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::Adapter, id, name);
+  CodeBlob* blob = AOTCodeCache::load_adapter(id, name);
   if (blob != nullptr) {
     handler->set_adapter_blob(blob->as_adapter_blob());
   }
@@ -3366,7 +3361,7 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
     // try to save generated code
     const char* name = AdapterHandlerLibrary::name(handler);
     const uint32_t id = AdapterHandlerLibrary::id(handler);
-    bool success = AOTCodeCache::store_code_blob(*adapter_blob, AOTCodeEntry::Adapter, id, name);
+    bool success = AOTCodeCache::store_adapter(*adapter_blob, id, name);
     assert(success || !AOTCodeCache::is_dumping_adapter(), "caching of adapter must be disabled");
   }
 #endif // ZERO
