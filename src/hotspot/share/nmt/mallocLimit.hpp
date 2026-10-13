@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 SAP SE. All rights reserved.
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARE_SERVICES_MALLOCLIMIT_HPP
-#define SHARE_SERVICES_MALLOCLIMIT_HPP
+#ifndef SHARE_NMT_MALLOCLIMIT_HPP
+#define SHARE_NMT_MALLOCLIMIT_HPP
 
 #include "memory/allStatic.hpp"
 #include "nmt/memTag.hpp"
@@ -78,4 +78,4 @@ public:
   static bool have_limit() { return _have_limit; }
 };
 
-#endif // SHARE_SERVICES_MALLOCLIMIT_HPP
+#endif // SHARE_NMT_MALLOCLIMIT_HPP

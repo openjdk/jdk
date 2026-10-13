@@ -59,7 +59,9 @@ public class TestFloat16VectorFMAAccumSpill {
     final short[] output;                // ROWS * COLS * L result tile
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
+        // Hardcoding UseTLAB here since test timeouts with -XX:-UseTLAB.
+        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
+                                   "-XX:+UseTLAB");
     }
 
     public TestFloat16VectorFMAAccumSpill() {

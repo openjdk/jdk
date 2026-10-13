@@ -1289,9 +1289,17 @@ bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint strid
     register_new_node(new_limit, predicates.entry());
   } else {
     assert(bt == T_INT && known_short_running_loop, "only CountedLoop statically known to be short running");
+    // If an OpaqueLoopInitNode is shared by several template assertion predicates, the code that updates them (below)
+    // will encounter it several times. Updating it more than once introduces a dead loop:
+    // 1- current OpaqueLoopInitNode is replaced by (AddI (OpaqueLoopInitNode ..)) with a new OpaqueLoopInitNode
+    // 2- The new OpaqueLoopInitNode in (AddI (OpaqueLoopInitNode ..)) is encountered again and replaced by the same
+    //    (AddI (OpaqueLoopInitNode ..)) resulting in a dead loop
+    // new_nodes is set so the new OpaqueLoopInitNode is ignored by UpdateInitForTemplateAssertionPredicates so step 2
+    // doesn't happen
+    uint last_node_index = C->unique();
     PredicateIterator predicate_iterator(entry_control);
     Node* new_init = new_assertion_predicate_opaque_init(entry_control, init, int_zero);
-    UpdateInitForTemplateAssertionPredicates update_init_for_template_assertion_predicates(new_init, this);
+    UpdateInitForTemplateAssertionPredicates update_init_for_template_assertion_predicates(new_init, this, last_node_index);
     predicate_iterator.for_each(update_init_for_template_assertion_predicates);
   }
   IfNode* exit_test = head->loopexit();
@@ -4155,7 +4163,7 @@ static float estimate_path_freq( Node *n ) {
         n = n->in(0);
         continue;
       }
-      return data->as_CounterData()->count()/FreqCountInvocations;
+      return data->as_CounterData()->count();
     }
     // See if there's a gating IF test
     Node *n_c = n->in(0);
@@ -4382,10 +4390,9 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
   visited.set(_head->_idx);
   while (stack.size() > 0) {
     Node* n = stack.pop();
-    if (n->is_Call() && n->as_Call()->guaranteed_safepoint()
-        && !(n->is_CallStaticJava() && n->as_CallStaticJava()->is_boxing_method())) {
+    if (n->is_Call() && n->as_Call()->guaranteed_safepoint() && !n->is_boxing_or_unboxing_call()) {
       // Terminate this path: guaranteed safepoint found.
-      // Boxing CallStaticJava calls are excluded as they may lack a safepoint on the fast path. This is
+      // Boxing and unboxing calls are excluded as they may lack a safepoint on the fast path. This is
       // not done via CallStaticJavaNode::guaranteed_safepoint() as that also controls PcDesc emission.
       // In the future, guaranteed_safepoint() should be reworked to correctly handle boxing methods
       // to avoid this additional check.
@@ -4486,12 +4493,11 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
     if (!_irreducible) {
       // Scan the dom-path nodes from tail to head
       for (Node* n = tail(); n != _head; n = _phase->idom(n)) {
-        // Boxing CallStaticJava calls are excluded as they may lack a safepoint on the fast path. This is
+        // Boxing and unboxing calls are excluded as they may lack a safepoint on the fast path. This is
         // not done via CallStaticJavaNode::guaranteed_safepoint() as that also controls PcDesc emission.
         // In the future, guaranteed_safepoint() should be reworked to correctly handle boxing methods
         // to avoid this additional check.
-        if (n->is_Call() && n->as_Call()->guaranteed_safepoint()
-            && !(n->is_CallStaticJava() && n->as_CallStaticJava()->is_boxing_method())) {
+        if (n->is_Call() && n->as_Call()->guaranteed_safepoint() && !n->is_boxing_or_unboxing_call()) {
           has_call = true;
           _has_sfpt = 1;          // Then no need for a safept!
           break;

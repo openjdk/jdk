@@ -26,7 +26,7 @@
 ################################################################################
 # It is recommended to use exactly this version of pandoc, especially for
 # re-generating checked in html files
-RECOMMENDED_PANDOC_VERSION=2.19.2
+RECOMMENDED_PANDOC_VERSION=3.6.4
 
 ################################################################################
 # Setup the most fundamental tools, used for setting up build platform and
