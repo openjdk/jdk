@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,16 @@ import jdk.test.lib.jfr.EventNames;
 
 /**
  * @test
- * @requires vm.hasJFR
+ * @requires vm.hasJFR & vm.continuations
  * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
- * @build jdk.jfr.event.profiling.BaseTestFullStackTrace
+ * @build jdk.jfr.event.profiling.StackTraceTestMatrix
  * @run main/othervm jdk.jfr.event.profiling.TestFullStackTrace
- * @run main/othervm -XX:CompileCommand=compileonly,jdk.test.lib.jfr.RecurseThread::recurse* -XX:+PreserveFramePointer jdk.jfr.event.profiling.TestFullStackTrace
  */
 public class TestFullStackTrace {
 
     public static void main(String[] args) throws Throwable {
-        new BaseTestFullStackTrace(EventNames.ExecutionSample, "sampledThread").run();
+        StackTraceTestMatrix.runAllThreadKinds(EventNames.ExecutionSample, "sampledThread");
     }
 
 }

@@ -2142,13 +2142,13 @@ float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* t
   }
 
   // Compute frequency that we arrive here
-  float sum = taken + not_taken;
+  cnt = taken + not_taken;
   // Adjust, if this block is a cloned private block but the
   // Jump counts are shared.  Taken the private counts for
   // just this path instead of the shared counts.
-  if( block()->count() > 0 )
-    sum = block()->count();
-  cnt = sum / FreqCountInvocations;
+  if (block()->count() > 0) {
+    cnt = block()->count();
+  }
 
   // Pin probability to sane limits
   float prob;
@@ -2251,7 +2251,7 @@ inline int Parse::repush_if_args() {
 }
 
 // Used by StressUnstableIfTraps
-static volatile int _trap_stress_counter = 0;
+volatile int Parse::_trap_stress_counter = 0;
 
 void Parse::increment_trap_stress_counter(Node*& counter, Node*& incr_store) {
   Node* counter_addr = makecon(TypeRawPtr::make((address)&_trap_stress_counter));

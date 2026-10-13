@@ -27,6 +27,7 @@
  * @modules java.base/jdk.internal.value
  * @library /test/lib
  * @enablePreview
+ * @requires (vm.opt.UseFieldFlattening == null | vm.opt.UseFieldFlattening == "true")
  * @compile ${test.file}
  * @run driver jdk.test.lib.helpers.StrictProcessor
  *             ValueClassPreviewTest$StrictStuff

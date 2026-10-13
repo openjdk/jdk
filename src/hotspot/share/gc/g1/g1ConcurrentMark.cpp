@@ -1418,7 +1418,7 @@ void G1ConcurrentMark::remark() {
 
       if (_needs_remembered_set_rebuild) {
         GrowableArrayCHeap<G1HeapRegion*, mtGC>* selected = cl.sort_and_prune_old_selected();
-        _g1h->policy()->candidates()->set_candidates_from_marking(selected);
+        _g1h->collection_set_candidates()->set_candidates_from_marking(selected);
       }
     }
 
@@ -3266,9 +3266,9 @@ void G1PrintRegionLivenessInfoClosure::log_card_set_groups() {
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  log_card_set_group_add_total(g1h->young_regions_card_set_group(), "Y");
+  log_card_set_group_add_total(g1h->collection_set()->young_regions_card_set_group(), "Y");
 
-  G1CollectionSetCandidates* candidates = g1h->policy()->candidates();
+  G1CollectionSetCandidates* candidates = g1h->collection_set_candidates();
   log_card_set_group_list(candidates->from_marking_groups(), "M");
   log_card_set_group_list(candidates->retained_groups(), "R");
 }
