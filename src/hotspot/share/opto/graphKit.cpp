@@ -1957,6 +1957,13 @@ Node* GraphKit::array_element_address(Node* ary, Node* idx, BasicType elembt,
   return basic_plus_adr(ary, base, scale);
 }
 
+// The three methods below, get_flat_array_klass(), get_flat_array_klass_exact() and
+// cast_to_flat_array() break down the processus to cast an array node into a flat array node.
+// The first step involves obtaining the ciObjArrayKlass instance representing the flat array.
+// The second step uses this ciObjArrayKlass instance to implement the cast on the array node.
+// If retrieving the flat array klass fails, the returned ciObjArrayKlass instance is marked
+// as being in an unloaded state, but it retains the array type name; this instance can be used
+// to create an uncommon trap with Reason unloaded.
 ciObjArrayKlass* GraphKit::get_flat_array_klass(ciValueKlass* elem_vk) {
   assert(elem_vk->maybe_flat_in_array(), "no flat array for %s", elem_vk->name()->as_utf8());
   if (!elem_vk->has_null_free_atomic_layout() && !elem_vk->has_nullable_atomic_layout()) {
