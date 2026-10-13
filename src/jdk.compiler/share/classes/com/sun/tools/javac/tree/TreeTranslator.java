@@ -193,8 +193,14 @@ public class TreeTranslator extends JCTree.Visitor {
         result = tree;
     }
 
+    public void visitEnhancedVariableDeclaration(JCEnhancedVariableDeclaration tree) {
+        tree.pattern = translate(tree.pattern);
+        tree.expr = translate(tree.expr);
+        result = tree;
+    }
+
     public void visitForeachLoop(JCEnhancedForLoop tree) {
-        tree.var = translate(tree.var);
+        tree.varOrRecordPattern = translate(tree.varOrRecordPattern);
         tree.expr = translate(tree.expr);
         tree.body = translate(tree.body);
         result = tree;

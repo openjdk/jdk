@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8291769 8300195
+ * @bug 8291769 8300195 8372170
  * @summary Verify the compiled code does not have unwanted constructs.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -55,6 +55,8 @@ import toolbox.ToolBox;
 
 public class PatternDesugaring extends TestRunner {
 
+    private static final String JAVA_VERSION = System.getProperty("java.specification.version");
+
     ToolBox tb;
 
     public static void main(String... args) throws Exception {
@@ -68,6 +70,49 @@ public class PatternDesugaring extends TestRunner {
 
     public void runTests() throws Exception {
         runTests(m -> new Object[] { Paths.get(m.getName()) });
+    }
+
+    @Test
+    public void testEnhancedLocalVariableDeclarations(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   static Integer simple(Point p) {
+                       Point(Integer x, Integer y) = p;
+                       return x;
+                   }
+
+                   record Point(Integer x, Integer y) {}
+               }
+               """,
+               decompiled -> {
+                   if (decompiled.split("instanceof").length != 1) {
+                       throw new AssertionError("Unexpected number of instanceof checks.");
+                   }
+               },
+               true);
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   static Integer sealedSuper(I p) {
+                       Point(Integer x, Integer y) = p;
+                       return x;
+                   }
+
+                   sealed interface I permits Point {}
+                   record Point(Integer x, Integer y) implements I {}
+               }
+               """,
+               decompiled -> {
+                   if (decompiled.split("instanceof").length != 2) {
+                       throw new AssertionError("Unexpected number of instanceof checks.");
+                   }
+               },
+               true);
     }
 
     @Test
@@ -149,6 +194,11 @@ public class PatternDesugaring extends TestRunner {
     }
 
     private void doTest(Path base, String[] libraryCode, String testCode, Consumer<String> validate) throws IOException {
+        doTest(base, libraryCode, testCode, validate, false);
+    }
+
+    private void doTest(Path base, String[] libraryCode, String testCode,
+                        Consumer<String> validate, boolean enablePreview) throws IOException {
         Path current = base.resolve(".");
         Path libClasses = current.resolve("libClasses");
 
@@ -176,10 +226,17 @@ public class PatternDesugaring extends TestRunner {
 
         var log =
                 new JavacTask(tb)
-                    .options("-XDrawDiagnostics",
-                             "-Xlint:-preview",
-                             "--class-path", libClasses.toString(),
-                             "-XDshould-stop.at=FLOW")
+                    .options(enablePreview ?
+                             new String[] {"-XDrawDiagnostics",
+                                           "-Xlint:-preview",
+                                           "--enable-preview",
+                                           "-source", JAVA_VERSION,
+                                           "--class-path", libClasses.toString(),
+                                           "-XDshould-stop.at=FLOW"} :
+                             new String[] {"-XDrawDiagnostics",
+                                           "-Xlint:-preview",
+                                           "--class-path", libClasses.toString(),
+                                           "-XDshould-stop.at=FLOW"})
                     .outdir(classes)
                     .files(tb.findJavaFiles(src))
                     .run(Task.Expect.SUCCESS)

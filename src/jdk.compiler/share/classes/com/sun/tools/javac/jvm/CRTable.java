@@ -287,7 +287,7 @@ implements CRTFlags {
 
         public void visitForeachLoop(JCEnhancedForLoop tree) {
             SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
-            sr.mergeWith(csp(tree.var));
+            sr.mergeWith(csp(tree.varOrRecordPattern));
             sr.mergeWith(csp(tree.expr));
             sr.mergeWith(csp(tree.body));
             result = sr;
