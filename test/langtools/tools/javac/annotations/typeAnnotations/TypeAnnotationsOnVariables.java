@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8371155 8379550 8381965 8384843
+ * @bug 8371155 8379550 8381965 8384843 8392468
  * @summary Verify type annotations on local-like variables are propagated to
  *          their types at an appropriate time.
  * @library /tools/lib
@@ -743,6 +743,84 @@ public class TypeAnnotationsOnVariables {
                              this::getAnnotationsFromHeader,
                              "      0: LTest$TypeAnno;(): METHOD_FORMAL_PARAMETER, param_index=0",
                              "        Test$TypeAnno");
+    }
+
+    @Test
+    void catchParameter() throws Exception {
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          import java.io.IOException;
+                          import java.lang.annotation.ElementType;
+                          import java.lang.annotation.Target;
+
+                          class Test {
+                              @Target(ElementType.TYPE_USE)
+                              @interface TypeAnno { }
+
+                              private void test1() {
+                                  try {
+                                      new Object();
+                                  } catch (@TypeAnno Exception ex1) {}
+                              }
+
+                              private void test2() {
+                                  try {
+                                      throw new IOException();
+                                  } catch (java.io.IOException | java.lang.@TypeAnno RuntimeException ex2) {}
+                              }
+                          }
+                          """);
+        Files.createDirectories(classes);
+        List<String> actual = new ArrayList<>();
+        new JavacTask(tb)
+                .options("-d", classes.toString())
+                .files(tb.findJavaFiles(src))
+                .callback(task -> {
+                    task.addTaskListener(new TaskListener() {
+                        @Override
+                        public void finished(TaskEvent e) {
+                            if (e.getKind() != TaskEvent.Kind.ANALYZE) {
+                                return ;
+                            }
+                            Trees trees = Trees.instance(task);
+                            new TreePathScanner<Void, Void>() {
+                                @Override
+                                public Void visitVariable(VariableTree node, Void p) {
+                                    actual.add(node.getName() + ": " + typeToString(trees.getTypeMirror(getCurrentPath())));
+                                    return super.visitVariable(node, p);
+                                }
+                            }.scan(e.getCompilationUnit(), null);
+                        }
+                    });
+                })
+                .run()
+                .writeAll();
+
+        List<String> expected = List.of(
+            "ex1: java.lang.@Test.TypeAnno Exception",
+            "ex2: java.io.IOException | java.lang.@Test.TypeAnno RuntimeException"
+        );
+
+        actual.forEach(System.out::println);
+        if (!expected.equals(actual)) {
+            throw new AssertionError("Expected: " + expected + ", but got: " + actual);
+        }
+
+        Path testClass = classes.resolve("Test.class");
+        TestClassDesc testClassDesc = TestClassDesc.create(testClass);
+
+        checkTypeAnnotations(testClassDesc,
+                             "test1",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno");
+        checkTypeAnnotations(testClassDesc,
+                             "test2",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=1",
+                             "          Test$TypeAnno");
     }
 
     private void checkTypeAnnotations(TestClassDesc testClassDesc,
