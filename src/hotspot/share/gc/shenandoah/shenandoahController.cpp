@@ -133,18 +133,19 @@ void ShenandoahController::increase_concurrent_worker_count() {
 
 void ShenandoahController::decrease_concurrent_worker_count() {
   const size_t alloc_stalls = _alloc_stall_count.exchange(0);
+  const int max_conc_gc_threads = checked_cast<int>(ConcGCThreads);
   if (alloc_stalls != 0) {
     log_info(gc, ergo)("Allocation stalls: %zu, holding concurrent worker count at: %zu",
                        alloc_stalls, _concurrent_worker_count.load_relaxed());
   } else {
     // There were no stalls during this cycle, try to reduce the concurrent gc workers
     while (true) {
-      const size_t workers = _concurrent_worker_count.load_relaxed();
-      if (workers == ConcGCThreads) {
+      const int workers = _concurrent_worker_count.load_relaxed();
+      if (workers == max_conc_gc_threads) {
         break;
       }
 
-      const size_t new_value = MAX2(workers - 1, checked_cast<size_t>(ConcGCThreads));
+      const size_t new_value = MAX2(workers - 1, max_conc_gc_threads);
       if (_concurrent_worker_count.compare_set(workers, new_value, memory_order_relaxed)) {
         break;
       }
