@@ -144,7 +144,7 @@ class Skip {
         var ch = new SeekableByteChannel() {
             int offset;
             @Override
-            public int read(ByteBuffer dst) throws IOException {
+            public int read(ByteBuffer dst) {
                 if (!dst.hasRemaining())
                     return 0;
                 if (offset >= size)
@@ -155,7 +155,7 @@ class Skip {
                 return n;
             }
             @Override
-            public int write(ByteBuffer src) throws IOException {
+            public int write(ByteBuffer src) {
                 throw new NonWritableChannelException();
             }
             @Override
@@ -202,7 +202,7 @@ class Skip {
         var ch = new ReadableByteChannel() {
             private final ByteBuffer src = ByteBuffer.wrap(bytes);
             @Override
-            public int read(ByteBuffer dst) throws IOException {
+            public int read(ByteBuffer dst) {
                 if (!dst.hasRemaining())
                     return 0;
                 if (!src.hasRemaining())
@@ -256,8 +256,8 @@ class Skip {
         for (int n = 1; n <= 3; n++) {
             assertEquals(n, in.skip(n));
             remaining -= n;
-            assertTrue(remaining >= 0);
         }
+        assertTrue(remaining >= 0);
 
         assertEquals(0L, in.skip(0));
 
