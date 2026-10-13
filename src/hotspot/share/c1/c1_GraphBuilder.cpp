@@ -1389,7 +1389,6 @@ void GraphBuilder::if_node(Value x, If::Condition cond, Value y, ValueStack* sta
       }
     }
   }
-  // TODO: check if profile_acmp() is consistent with Valhalla/preview mode on and off.
   if (Arguments::is_valhalla_enabled() && (stream()->cur_bc() == Bytecodes::_if_acmpeq || stream()->cur_bc() == Bytecodes::_if_acmpne) &&
       profile_acmp()) {
     compilation()->set_would_profile(true);
