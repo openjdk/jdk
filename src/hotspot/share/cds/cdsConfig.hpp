@@ -65,6 +65,7 @@ class CDSConfig : public AllStatic {
                                     const char** top_archive_path);
   static int num_archive_paths(const char* path_spec);
   static void check_flag_single_path(const char* flag_name, const char* value);
+  static void disable_profile_and_compiled_code();
 
   // Checks before Arguments::apply_ergo()
   static void check_new_flag(bool new_flag_is_default, const char* new_flag_name);

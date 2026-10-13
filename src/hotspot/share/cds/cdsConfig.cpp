@@ -587,7 +587,12 @@ void CDSConfig::check_aotmode_record() {
       FLAG_SET_ERGO_IF_DEFAULT(AOTClassLinking, true);
     }
     if (!AOTClassLinking) {
-      vm_exit_during_initialization("AOTClassLinking cannot be disabled when both AOTCache and AOTConfiguration are specified");
+      if (has_config) {
+        vm_exit_during_initialization("AOTClassLinking cannot be disabled when both AOTCache and AOTConfiguration are specified");
+      } else {
+        assert(has_output, "checked above");
+        vm_exit_during_initialization("AOTClassLinking cannot be disabled when both AOTCache and AOTCacheOutput are specified");
+      }
     }
     // Re-training -- we must be able to load the specified AOTCache
     log_info(aot)("re-training: loading AOTCache=%s and writing AOTConfiguration=%s",
@@ -774,10 +779,7 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
 
 void CDSConfig::setup_compiler_args() {
   if (!new_aot_flags_used() || CompilerConfig::is_interpreter_only()) {
-    FLAG_SET_ERGO(AOTReplayTraining, false);
-    FLAG_SET_ERGO(AOTRecordTraining, false);
-    disable_dumping_aot_code();
-    AOTCodeCache::disable_caching();
+    disable_profile_and_compiled_code();
     return;
   }
 
@@ -785,37 +787,34 @@ void CDSConfig::setup_compiler_args() {
 
   if (is_dumping_preimage_static_archive()) {
     // --- AOT training
-    if (AOTClassLinking) { // Note: is_dumping_aot_linked_classes() is false in training run.
-      FLAG_SET_ERGO_IF_DEFAULT(AOTRecordTraining, true);
-      if (is_using_archive()) {
-        // Re-training
-        FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
-        AOTCodeCache::enable_caching();
-      } else {
-        FLAG_SET_ERGO(AOTReplayTraining, false);
-        AOTCodeCache::disable_caching();
-      }
+    if (!AOTClassLinking) { // Note: is_dumping_aot_linked_classes() is false in training run.
+      disable_profile_and_compiled_code();
+      return;
+    }
+
+    FLAG_SET_ERGO_IF_DEFAULT(AOTRecordTraining, true);
+    if (is_using_archive()) {
+      // Re-training
+      FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
+      AOTCodeCache::enable_caching();
     } else {
       FLAG_SET_ERGO(AOTReplayTraining, false);
-      FLAG_SET_ERGO(AOTRecordTraining, false);
       AOTCodeCache::disable_caching();
     }
     disable_dumping_aot_code(); // No AOT code generation during training run
   } else if (is_dumping_final_static_archive()) {
     // --- AOT assembly
-    if (is_dumping_aot_linked_classes()) {
-      FLAG_SET_ERGO(AOTRecordTraining, false);
-      FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
-      AOTCodeCache::enable_caching(); // Generate AOT code during assembly phase.
-    } else {
-      FLAG_SET_ERGO(AOTReplayTraining, false);
-      FLAG_SET_ERGO(AOTRecordTraining, false);
-      AOTCodeCache::disable_caching();
+    if (!is_dumping_aot_linked_classes()) {
+      disable_profile_and_compiled_code();
+      return;
     }
+
+    FLAG_SET_ERGO(AOTRecordTraining, false);
+    FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
+    AOTCodeCache::enable_caching(); // Generate AOT code during assembly phase.
     disable_dumping_aot_code(); // Don't dump AOT code until metadata and heap are dumped.
-  } else {
+  } else if (is_using_archive()) {
     // --- AOT production
-    assert(is_using_archive(), "");
     FLAG_SET_ERGO(AOTRecordTraining, false);
     FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
     // Use AOT code only when training data enabled
@@ -824,7 +823,17 @@ void CDSConfig::setup_compiler_args() {
     } else {
       AOTCodeCache::disable_caching();
     }
+  } else {
+    disable_profile_and_compiled_code();
   }
+}
+
+// Disable all loading and dumping of profile and compiled code.
+void CDSConfig::disable_profile_and_compiled_code() {
+  FLAG_SET_ERGO(AOTReplayTraining, false);
+  FLAG_SET_ERGO(AOTRecordTraining, false);
+  disable_dumping_aot_code();
+  AOTCodeCache::disable_caching();
 }
 
 void CDSConfig::prepare_for_dumping() {

@@ -986,9 +986,9 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
       DumpTimeClassInfo* p = get_info_locked(ik);
       return should_be_excluded_impl(ik, p);
     } else {
-      // When called within the CDS safepoint, the correctness of this function
+      // When called within the AOT safepoint, the correctness of this function
       // relies on the call to AOTMetaspace::link_all_loaded_classes()
-      // that happened right before we enter the CDS safepoint.
+      // that happened right before we enter the AOT safepoint.
       //
       // Do not call this function in other types of safepoints. For example, if this
       // is called in a GC safepoint, a klass may be improperly excluded because some

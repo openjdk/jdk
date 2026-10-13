@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @summary "AOT" aliases for traditional CDS command-line options
+ * @summary General use of AOT flags
  * @requires vm.cds.supports.aot.code.caching
  * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
@@ -378,6 +378,42 @@ public class AOTFlags {
 
         out = CDSTestUtils.executeAndLog(pb, "re-train-neg");
         out.shouldContain("Unable to use AOT cache.");
+        out.shouldNotHaveExitValue(0);
+
+        //----------------------------------------------------------------------
+        printTestCase("Retrain: cannot use AOTCache created with -XX:-AOTClassLinking");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:AOTCacheOutput=hello-noaotlink.aot",
+            "-XX:-AOTClassLinking",
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "re-train-neg");
+        out.shouldHaveExitValue(0);
+
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:AOTCache=hello-noaotlink.aot",
+            "-XX:AOTCacheOutput=" + aotCacheFile,
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "re-train-neg");
+        out.shouldContain("AOT cache was created with AOTClassLinking disabled. It cannot be used when AOTClassLinking is enabled");
+        out.shouldNotHaveExitValue(0);
+
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:AOTCache=hello-noaotlink.aot",
+            "-XX:AOTMode=record",
+            "-XX:AOTConfiguration=" + aotConfigFile,
+            "-XX:-AOTClassLinking",
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "re-train-neg");
+        out.shouldContain("AOTClassLinking cannot be disabled when both AOTCache and AOTConfiguration are specified");
+        out.shouldNotHaveExitValue(0);
+
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:AOTCache=hello-noaotlink.aot",
+            "-XX:AOTCacheOutput=" + aotCacheFile,
+            "-XX:-AOTClassLinking",
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "re-train-neg");
+        out.shouldContain("AOTClassLinking cannot be disabled when both AOTCache and AOTCacheOutput are specified");
         out.shouldNotHaveExitValue(0);
 
         //----------------------------------------------------------------------
