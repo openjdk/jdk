@@ -26,6 +26,7 @@
  * @bug 8392533 8393322
  * @summary Test null checks for field accesses with empty value classes.
  * @enablePreview
+ * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  * @run main ${test.main.class}
