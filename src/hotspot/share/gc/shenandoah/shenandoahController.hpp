@@ -62,13 +62,20 @@ protected:
   const Mutex::Rank WAITERS_LOCK_RANK = Mutex::safepoint - 5;
   const Mutex::Rank CONTROL_LOCK_RANK = Mutex::nosafepoint - 2;
 
+  // This lock is used to coordinate waking up the control thread and protecting _requested_gc_cause.
+  // The generational derived class also uses this lock to protect _gc_mode and _requested_generation
+  Monitor _control_lock;
+
   // Threads waiting for a complete gc cycle (full gc or concurrent global) will wait here.
   Monitor _gc_waiters_lock;
 
-  // Threads waiting for the gc to free memory will wait here. Note that immediate garabge may be reclaimed
+  // Threads waiting for the gc to free memory will wait here. Note that immediate garbage may be reclaimed
   // midcycle during final mark, so we want to notify alloc waiters independently of cycle waiters. Similarly,
   // no threads should be notified when a concurrent old mark increment is interrupted.
   Monitor _alloc_waiters_lock;
+
+  // Represents a gc request
+  GCCause::Cause _requested_gc_cause;
 
   // The number of stalls experienced during the cycle. Incremented by mutators, reset by control thread.
   shenandoah_padding(2);
@@ -142,5 +149,8 @@ public:
 
 protected:
   void handle_requested_gc(GCCause::Cause cause);
+
+  // Used at the end of a cycle to clear allocation failure and notify alloc waiters
+  virtual void clear_allocation_failure_and_notify_waiters();
 };
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLLER_HPP

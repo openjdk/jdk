@@ -32,8 +32,10 @@
 ShenandoahController::ShenandoahController():
   _gc_id(0),
   _phase(UNSET),
+  _control_lock(CONTROL_LOCK_RANK, "ShenandoahControl_lock", true),
   _gc_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahGCWaiters_lock", true),
   _alloc_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahAllocWaiters_lock", true),
+  _requested_gc_cause(GCCause::_no_gc),
   _alloc_stall_count(0),
   _concurrent_worker_count(ConcGCThreads) { }
 
@@ -115,6 +117,22 @@ void ShenandoahController::handle_requested_gc(GCCause::Cause cause) {
     notify_control_thread(cause, global);
     ml.wait();
   }
+}
+
+void ShenandoahController::clear_allocation_failure_and_notify_waiters() {
+  MonitorLocker waiters(&_alloc_waiters_lock, Mutex::_no_safepoint_check_flag);
+  {
+    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
+    if (ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
+      // If an allocation failure occurred during this cycle, we'll have threads waiting
+      // for reclaimed memory. We'll wake them up, and they'll retry their allocation.
+      // If our waiters cannot allocate, they will signal the control thread again
+      // to start another cycle. If we didn't clear the request here, the control thread would
+      // immediately begin another allocation failure cycle.
+      _requested_gc_cause = GCCause::_no_gc;
+    }
+  }
+  waiters.notify_all();
 }
 
 void ShenandoahController::increase_concurrent_worker_count() {

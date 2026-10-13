@@ -38,12 +38,6 @@ class ShenandoahControlThread: public ShenandoahController {
     stw_full
   } GCMode;
 
-  GCCause::Cause _requested_gc_cause;
-
-  // This lock is used to coordinate waking up the control thread and
-  // protecting _requested_gc_cause.
-  Monitor _control_lock;
-
 public:
   ShenandoahControlThread();
 
@@ -58,7 +52,6 @@ protected:
 private:
   void service_concurrent_normal_cycle(GCCause::Cause cause);
   void service_stw_full_cycle(GCCause::Cause cause);
-  void clear_allocation_failure_and_notify_waiters();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLTHREAD_HPP

@@ -47,8 +47,6 @@
 #include "utilities/events.hpp"
 
 ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
-  _control_lock(CONTROL_LOCK_RANK, "ShenandoahGCRequest_lock", true),
-  _requested_gc_cause(GCCause::_no_gc),
   _requested_generation(nullptr),
   _gc_mode(none),
   _heap(ShenandoahGenerationalHeap::heap()) {
@@ -224,25 +222,12 @@ void ShenandoahGenerationalControlThread::maybe_print_young_region_ages() const 
 }
 
 void ShenandoahGenerationalControlThread::clear_allocation_failure_and_notify_waiters() {
-  MonitorLocker waiters(&_alloc_waiters_lock, Mutex::_no_safepoint_check_flag);
-  {
-    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-    if (ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
-      // If an allocation failure occurred during this cycle, we'll have threads waiting
-      // for reclaimed memory. We'll wake them up, and they'll retry their allocation.
-      // If our waiters cannot allocate, they will signal the control thread again
-      // to start another cycle. If we didn't clear the request here, the control thread would
-      // immediately begin another allocation failure cycle.
-      _requested_gc_cause = GCCause::_no_gc;
-    }
-
-    if (_heap->old_generation()->clear_failed_evacuation()) {
-      // Immediately run a full GC.
-      log_info(gc, ergo)("Requesting a full gc because of evacuation failures in old");
-      notify_control_thread(ml, GCCause::_shenandoah_upgrade_to_full_gc, _heap->global_generation());
-    }
+  ShenandoahController::clear_allocation_failure_and_notify_waiters();
+  if (_heap->old_generation()->clear_failed_evacuation()) {
+    // Immediately run a full GC.
+    log_info(gc, ergo)("Requesting a full gc because of evacuation failures in old");
+    notify_control_thread(GCCause::_shenandoah_upgrade_to_full_gc, _heap->global_generation());
   }
-  waiters.notify_all();
 }
 
 void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest& request) {
