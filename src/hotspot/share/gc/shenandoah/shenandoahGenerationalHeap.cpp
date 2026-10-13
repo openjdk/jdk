@@ -321,7 +321,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     if (fwd == p) {
       // Now self-forwarded. Flag the from-region so that other threads
       // don't waste time evacuating this region.
-      set_has_self_forwarded_objects(true);
+      set_has_self_forwarded_objects();
       from_region->set_has_self_forwards();
     }
     return fwd;

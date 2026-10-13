@@ -479,9 +479,13 @@ public:
     return _has_self_forwarded_objects.is_set();
   }
 
-  // Set whether self forwarded objects exist in the heap
-  void set_has_self_forwarded_objects(bool value) {
-    _has_self_forwarded_objects.set_cond(value);
+  // Set when self forwarded objects exist in the heap
+  void set_has_self_forwarded_objects() {
+    _has_self_forwarded_objects.try_set();
+  }
+
+  void unset_has_self_forwarded_objects() {
+    _has_self_forwarded_objects.unset();
   }
 
 private:
