@@ -29,6 +29,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmIntrinsics.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -2290,7 +2291,9 @@ Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
 const Type*
 LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
                                  ciKlass* klass) const {
-  assert(!UseCompactObjectHeaders || tkls->offset() != in_bytes(Klass::prototype_header_offset()),
+  assert(!UseCompactObjectHeaders ||
+         AOTCodeCache::is_on_for_dump() ||
+         tkls->offset() != in_bytes(Klass::prototype_header_offset()),
          "must not happen");
 
   if (tkls->isa_instklassptr() && tkls->offset() == in_bytes(InstanceKlass::access_flags_offset())) {
@@ -2512,10 +2515,14 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
         assert(Opcode() == Op_LoadI, "must load an int from _layout_kind");
         return TypeInt::make(static_cast<jint>(klass->as_flat_array_klass()->layout_kind()));
       }
-      if (UseCompactObjectHeaders && tkls->offset() == in_bytes(Klass::prototype_header_offset())) {
-        // The field is Klass::_prototype_header. Return its (constant) value.
-        assert(this->Opcode() == Op_LoadX, "must load a proper type from _prototype_header");
-        return TypeX::make(klass->prototype_header());
+      // Class encoding and some class's values may change between runs.
+      // Force loading them when AOT code is generated.
+      if (!AOTCodeCache::is_on_for_dump()) {
+        if (UseCompactObjectHeaders && tkls->offset() == in_bytes(Klass::prototype_header_offset())) {
+          // The field is Klass::_prototype_header. Return its (constant) value.
+          assert(this->Opcode() == Op_LoadX, "must load a proper type from _prototype_header");
+          return TypeX::make(klass->prototype_header());
+        }
       }
       // Compute index into primary_supers array
       juint depth = (tkls->offset() - in_bytes(Klass::primary_supers_offset())) / sizeof(Klass*);
@@ -2806,8 +2813,7 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
   const Type *t2 = phase->type( adr );
   if (t2 == Type::TOP)  return Type::TOP;
   const TypePtr *tp = t2->is_ptr();
-  if (TypePtr::above_centerline(tp->ptr()) ||
-      tp->ptr() == TypePtr::Null)  return Type::TOP;
+  if (TypePtr::is_top(tp->ptr()) || tp->ptr() == TypePtr::Null)  return Type::TOP;
 
   // Return a more precise klass, if possible
   const TypeInstPtr *tinst = tp->isa_instptr();
@@ -3044,7 +3050,7 @@ const Type* LoadRangeNode::Value(PhaseGVN* phase) const {
   const Type *t2 = phase->type( adr );
   if( t2 == Type::TOP ) return Type::TOP;
   const TypePtr *tp = t2->is_ptr();
-  if (TypePtr::above_centerline(tp->ptr()))  return Type::TOP;
+  if (TypePtr::is_top(tp->ptr())) return Type::TOP;
   const TypeAryPtr *tap = tp->isa_aryptr();
   if( !tap ) return _type;
   return tap->size();
