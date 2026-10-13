@@ -115,6 +115,7 @@ public class EventNames {
     public static final String ShenandoahHeapRegionInformation = PREFIX + "ShenandoahHeapRegionInformation";
     public static final String ShenandoahHeapRegionStateChange = PREFIX + "ShenandoahHeapRegionStateChange";
     public static final String ShenandoahEvacuationInformation = PREFIX + "ShenandoahEvacuationInformation";
+    public static final String ShenandoahPromotionInformation = PREFIX + "ShenandoahPromotionInformation";
     public static final String TenuringDistribution = PREFIX + "TenuringDistribution";
     public static final String GarbageCollection = PREFIX + "GarbageCollection";
     public static final String ParallelOldGarbageCollection = PREFIX + "ParallelOldGarbageCollection";

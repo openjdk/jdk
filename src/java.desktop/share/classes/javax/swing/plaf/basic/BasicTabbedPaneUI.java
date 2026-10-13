@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -504,7 +504,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
             tabPane.addFocusListener(focusListener);
         }
         tabPane.addContainerListener(getHandler());
-        if (tabPane.getTabCount()>0) {
+        if (tabPane.getTabCount() > 0) {
             Boolean htmlDisabled = (Boolean)
                                     tabPane.getClientProperty("html.disable");
             if (!(Boolean.TRUE.equals(htmlDisabled))) {
@@ -949,8 +949,8 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         // Paint tabRuns of tabs from back to front
         for (int i = runCount - 1; i >= 0; i--) {
             int start = tabRuns[i];
-            int next = tabRuns[(i == runCount - 1)? 0 : i + 1];
-            int end = (next != 0? next - 1: tabCount - 1);
+            int next = tabRuns[(i == runCount - 1) ? 0 : i + 1];
+            int end = (next != 0 ? next - 1 : tabCount - 1);
             for (int j = start; j <= end; j++) {
                 if (j != selectedIndex && rects[j].intersects(clipRect)) {
                     paintTab(g, tabPlacement, rects, j, iconRect, textRect);
@@ -1118,7 +1118,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
             int xx = x;
             g.setColor(shadow);
             while(xx <= x+rects[tabIndex].width) {
-                for (int i=0; i < xCropLen.length; i+=2) {
+                for (int i = 0; i < xCropLen.length; i += 2) {
                     g.drawLine(xx+yCropLen[i],y-xCropLen[i],
                                xx+yCropLen[i+1]-1,y-xCropLen[i+1]);
                 }
@@ -1133,7 +1133,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
             int yy = y;
             g.setColor(shadow);
             while(yy <= y+rects[tabIndex].height) {
-                for (int i=0; i < xCropLen.length; i+=2) {
+                for (int i = 0; i < xCropLen.length; i += 2) {
                     g.drawLine(x-xCropLen[i],yy+yCropLen[i],
                                x-xCropLen[i+1],yy+yCropLen[i+1]-1);
                 }
@@ -1549,7 +1549,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
     protected void paintContentBorderTopEdge(Graphics g, int tabPlacement,
                                          int selectedIndex,
                                          int x, int y, int w, int h) {
-        Rectangle selRect = selectedIndex < 0? null :
+        Rectangle selRect = selectedIndex < 0 ? null :
                                getTabBounds(selectedIndex, calcRect);
 
         g.setColor(lightHighlight);
@@ -1588,7 +1588,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
     protected void paintContentBorderLeftEdge(Graphics g, int tabPlacement,
                                                int selectedIndex,
                                                int x, int y, int w, int h) {
-        Rectangle selRect = selectedIndex < 0? null :
+        Rectangle selRect = selectedIndex < 0 ? null :
                                getTabBounds(selectedIndex, calcRect);
 
         g.setColor(lightHighlight);
@@ -1624,7 +1624,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
     protected void paintContentBorderBottomEdge(Graphics g, int tabPlacement,
                                                int selectedIndex,
                                                int x, int y, int w, int h) {
-        Rectangle selRect = selectedIndex < 0? null :
+        Rectangle selRect = selectedIndex < 0 ? null :
                                getTabBounds(selectedIndex, calcRect);
 
         g.setColor(shadow);
@@ -1667,7 +1667,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
     protected void paintContentBorderRightEdge(Graphics g, int tabPlacement,
                                                int selectedIndex,
                                                int x, int y, int w, int h) {
-        Rectangle selRect = selectedIndex < 0? null :
+        Rectangle selRect = selectedIndex < 0 ? null :
                                getTabBounds(selectedIndex, calcRect);
 
         g.setColor(shadow);
@@ -4090,7 +4090,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
                     setHtmlView(v, inserted, index);
                 }
             } else {                             // Not HTML
-                if (htmlViews != null) {           // Add placeholder
+                if (htmlViews != null) {         // Add placeholder
                     setHtmlView(null, inserted, index);
                 }                                // else nada!
             }
@@ -4336,8 +4336,8 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
     private Vector<View> createHTMLVector() {
         Vector<View> htmlViews = new Vector<View>();
         int count = tabPane.getTabCount();
-        if (count>0) {
-            for (int i=0 ; i<count; i++) {
+        if (count > 0) {
+            for (int i = 0 ; i < count; i++) {
                 String title = tabPane.getTitleAt(i);
                 if (BasicHTML.isHTMLString(title)) {
                     htmlViews.addElement(BasicHTML.createHTMLView(tabPane, title));

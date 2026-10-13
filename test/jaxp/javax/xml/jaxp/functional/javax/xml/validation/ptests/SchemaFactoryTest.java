@@ -22,13 +22,10 @@
  */
 package javax.xml.validation.ptests;
 
-import jaxp.library.JAXPDataProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.w3c.dom.Document;
@@ -78,7 +75,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @run junit/othervm javax.xml.validation.ptests.SchemaFactoryTest
  * @summary Class containing the test cases for SchemaFactory
  */
-@Execution(ExecutionMode.SAME_THREAD)
 @TestInstance(Lifecycle.PER_CLASS)
 public class SchemaFactoryTest {
 

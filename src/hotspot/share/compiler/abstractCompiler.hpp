@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ typedef void (*initializer)(void);
 
 // Per-compiler statistics
 class CompilerStatistics {
+ public:
   class Data {
     friend class VMStructs;
   public:
@@ -50,9 +51,11 @@ class CompilerStatistics {
     }
   };
 
- public:
   Data _standard;  // stats for non-OSR compilations
   Data _osr;       // stats for OSR compilations
+  Data _bailout;
+  Data _invalidated;
+  Data _made_not_entrant;
   uint _nmethods_size; //
   uint _nmethods_code_size;
 
@@ -73,6 +76,7 @@ class CompilerStatistics {
 class AbstractCompiler : public CHeapObj<mtCompiler> {
  private:
   volatile int _num_compiler_threads;
+  volatile int _num_aot_compiler_threads;
 
  protected:
   volatile int _compiler_state;
@@ -83,17 +87,22 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // This thread will initialize the compiler runtime.
   bool should_perform_init();
 
+  void wait_for_initialization();
+
  private:
   const CompilerType _type;
 
   CompilerStatistics _stats;
 
  public:
-  AbstractCompiler(CompilerType type) : _num_compiler_threads(0), _compiler_state(uninitialized), _type(type) {}
+  AbstractCompiler(CompilerType type) : _num_compiler_threads(0),
+                                        _num_aot_compiler_threads(0),
+                                        _compiler_state(uninitialized),
+                                        _type(type) {}
 
   // This function determines the compiler thread that will perform the
   // shutdown of the corresponding compiler runtime.
-  bool should_perform_shutdown();
+  bool should_perform_shutdown(bool is_aot_comp_thread);
 
   // Name of this compiler
   virtual const char* name() = 0;
@@ -146,38 +155,25 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // Compiler type queries.
   bool is_c1() const                     { return _type == compiler_c1; }
   bool is_c2() const                     { return _type == compiler_c2; }
-  bool is_jvmci() const                  { return _type == compiler_jvmci; }
   CompilerType type() const              { return _type; }
-
-  // Compiler threads are hidden by default.
-  virtual bool is_hidden_from_external_view() const { return true; }
 
   // Customization
   virtual void initialize () = 0;
 
   void set_num_compiler_threads(int num) { _num_compiler_threads = num;  }
-  int num_compiler_threads()             { return _num_compiler_threads; }
+  int num_compiler_threads() const       { return _num_compiler_threads; }
+
+  void set_num_aot_compiler_threads(int num) { _num_aot_compiler_threads = num;  }
+  int num_aot_compiler_threads() const       { return _num_aot_compiler_threads; }
 
   // Get/set state of compiler objects
-  bool is_initialized()           { return _compiler_state == initialized; }
-  bool is_failed     ()           { return _compiler_state == failed;}
+  bool is_initialized() const     { return _compiler_state == initialized; }
+  bool is_failed     () const     { return _compiler_state == failed;}
   void set_state     (int state);
   void set_shut_down ()           { set_state(shut_down); }
   // Compilation entry point for methods
   virtual void compile_method(ciEnv* env, ciMethod* target, int entry_bci, bool install_code, DirectiveSet* directive) {
     ShouldNotReachHere();
-  }
-
-  // Notifies this compiler that the current thread (`current`) is about to stop.
-  // The current thread currently holds the CompileThread_lock.
-  virtual void stopping_compiler_thread(CompilerThread* current) {
-    // Do nothing
-  }
-
-  // Notifies this compiler that queue is empty just prior to waiting on
-  // MethodCompileQueue_lock which is held by the current thread (`thread`).
-  virtual void on_empty_queue(CompileQueue* queue, CompilerThread* thread) {
-    // Do nothing
   }
 
   // Print compilation timers and statistics

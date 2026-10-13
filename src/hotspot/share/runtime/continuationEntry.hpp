@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_CONTINUATIONENTRY_HPP
-#define SHARE_VM_RUNTIME_CONTINUATIONENTRY_HPP
+#ifndef SHARE_RUNTIME_CONTINUATIONENTRY_HPP
+#define SHARE_RUNTIME_CONTINUATIONENTRY_HPP
 
 #include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -40,7 +40,6 @@ class RegisterMap;
 // Metadata stored in the continuation entry frame
 class ContinuationEntry {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   ContinuationEntryPD _pd;
 #ifdef ASSERT
  private:
@@ -151,4 +150,4 @@ class ContinuationEntry {
 #endif
 };
 
-#endif // SHARE_VM_RUNTIME_CONTINUATIONENTRY_HPP
+#endif // SHARE_RUNTIME_CONTINUATIONENTRY_HPP

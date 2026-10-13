@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,6 +158,9 @@ public class setvalues001a {
     }
 
     // tested thread class
+    // Note: TestedThreadClass must extend Thread, not ThreadWrapper. JDWP
+    // StackFrame.SetValues returns OPAQUE_FRAME for a virtual thread suspended
+    // with ThreadReference.Suspend rather than at an event. See JDK-8382276.
     public static class TestedThreadClass extends Thread {
 
         public TestedThreadClass(String name) {

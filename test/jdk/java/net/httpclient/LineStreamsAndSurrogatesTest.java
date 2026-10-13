@@ -49,7 +49,7 @@ import org.junit.jupiter.api.Test;
  *       In particular tests that surrogate characters are handled
  *       correctly.
  * @modules java.net.http java.logging
- * @run junit/othervm LineStreamsAndSurrogatesTest
+ * @run junit/othervm ${test.main.class}
  */
 
 public class LineStreamsAndSurrogatesTest {

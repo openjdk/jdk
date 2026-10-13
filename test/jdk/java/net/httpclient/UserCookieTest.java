@@ -31,7 +31,7 @@
  * @run junit/othervm
  *       -Djdk.tls.acknowledgeCloseNotify=true
  *       -Djdk.httpclient.HttpClient.log=trace,headers,requests
- *       UserCookieTest
+ *       ${test.main.class}
  */
 
 import java.io.IOException;

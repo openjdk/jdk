@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,9 @@ public sealed interface TableSwitchInstruction extends Instruction
      * @param defaultTarget the default target of the switch
      * @param cases the cases of the switch; duplicate or out of bound case
      *              handling is not specified
+     * @throws IllegalArgumentException if the low value is greater than the
+     *         high value, or if there are too many targets between the low
+     *         and high values
      */
     static TableSwitchInstruction of(int lowValue, int highValue, Label defaultTarget, List<SwitchCase> cases) {
         return new AbstractInstruction.UnboundTableSwitchInstruction(lowValue, highValue, defaultTarget, cases);

@@ -23,12 +23,12 @@
 
 package nsk.share.gc.gp;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.invoke.*;
 import java.util.*;
 import jdk.test.whitebox.WhiteBox;
+import nsk.share.gc.DefaultProducer;
 import nsk.share.gc.gp.array.*;
 import nsk.share.gc.gp.string.*;
 import nsk.share.gc.gp.list.*;
@@ -47,7 +47,7 @@ public final class GarbageUtils {
         private static GarbageProducers garbageProducers;
         private static List<GarbageProducer> primitiveArrayProducers;
         private static List<GarbageProducer> arrayProducers;
-        private static final GarbageProducer  byteArrayProducer = new ByteArrayProducer();
+        private static final GarbageProducer defaultProducer = new DefaultProducer();
         public static enum OOM_TYPE {
             ANY (),
             HEAP("Java heap space"),
@@ -102,7 +102,7 @@ public final class GarbageUtils {
             Object referenceArray[] = new Object[YOUNG_GC_ITERATIONS];
 
             while (iteration < YOUNG_GC_ITERATIONS) {
-                referenceArray[iteration++] = byteArrayProducer.create(memChunk);
+                referenceArray[iteration++] = defaultProducer.create(memChunk);
                 WhiteBox.getWhiteBox().youngGC();
             }
             WhiteBox.getWhiteBox().fullGC();
@@ -152,7 +152,7 @@ public final class GarbageUtils {
          * @return number of OOME occured
          */
         public static int eatMemory(ExecutionController stresser) {
-            return eatMemory(stresser, byteArrayProducer, 50, 100, 2, OOM_TYPE.ANY);
+            return eatMemory(stresser, defaultProducer, 50, 100, 2, OOM_TYPE.ANY);
         }
 
         /**
@@ -190,7 +190,7 @@ public final class GarbageUtils {
          * @return number of OOME occured
          */
         public static int eatMemory(ExecutionController stresser,long initialFactor, long minMemoryChunk, long factor) {
-            return eatMemory(stresser, byteArrayProducer, initialFactor, minMemoryChunk, factor, OOM_TYPE.ANY);
+            return eatMemory(stresser, defaultProducer, initialFactor, minMemoryChunk, factor, OOM_TYPE.ANY);
         }
 
         /**
@@ -394,6 +394,12 @@ public final class GarbageUtils {
                         return new FloatArrayProducer();
                 else if (id.equals("doubleArr"))
                         return new DoubleArrayProducer();
+                else if (id.equals("BooleanObjArr"))
+                    return new BooleanObjArrayProducer();
+                else if (id.equals("ByteObjArr"))
+                    return new BooleanObjArrayProducer();
+                else if (id.equals("IntegerObjArr"))
+                    return new IntegerObjArrayProducer();
                 else if (id.equals("objectArr"))
                         return new ObjectArrayProducer();
                 else if (id.equals("randomString"))

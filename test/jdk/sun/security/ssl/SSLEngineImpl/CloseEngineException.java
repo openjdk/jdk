@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  * @summary javax.net.ssl.SSLSocket.SSLSocket(InetAddress,int) shouldn't
  *              throw exception
  * @library /javax/net/ssl/templates
- * @run main/othervm CloseEngineException
+ * @run main/othervm -Dtest.debug=true CloseEngineException
  */
 
 //
@@ -45,7 +45,7 @@ import javax.net.ssl.*;
 // Note that this test case depends on JSSE provider implementation details.
 public class CloseEngineException extends SSLEngineTemplate {
 
-    private static boolean debug = true;
+    private static boolean debug = Boolean.getBoolean("test.debug");
 
     private void runTest() throws Exception {
         boolean dataDone = false;

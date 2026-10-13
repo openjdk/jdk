@@ -58,6 +58,7 @@
    and that causes invalid macro expansion.
 */
 #undef aarch64
+#undef arm
 #include <capstone.h>
 
 #include "hsdis.h"
@@ -163,9 +164,9 @@ void* decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
   size_t count = cs_disasm(cs_handle, buffer, length, (uintptr_t) buffer, 0 , &insn);
   if (count) {
     for (unsigned int j = 0; j < count; j++) {
-      (*event_callback)(event_stream, "insn", (void*) insn[j].address);
+      (*event_callback)(event_stream, "insn", (void*)(uintptr_t) insn[j].address);
       print("%s\t\t%s", insn[j].mnemonic, insn[j].op_str);
-      (*event_callback)(event_stream, "/insn", (void*) (insn[j].address + insn[j].size));
+      (*event_callback)(event_stream, "/insn", (void*)(uintptr_t) (insn[j].address + insn[j].size));
       if (newline) {
         /* follow each complete insn by a nice newline */
         print("\n");

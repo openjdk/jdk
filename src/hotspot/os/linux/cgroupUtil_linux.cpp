@@ -25,7 +25,7 @@
 
 #include "cgroupUtil_linux.hpp"
 
-bool CgroupUtil::processor_count(CgroupCpuController* cpu_ctrl, int upper_bound, double& value) {
+bool CgroupUtil::processor_count(CgroupCpuController* cpu_ctrl, double upper_bound, double& value) {
   assert(upper_bound > 0, "upper bound of cpus must be positive");
   int quota = -1;
   int period = -1;
@@ -68,8 +68,8 @@ physical_memory_size_type CgroupUtil::get_updated_mem_limit(CgroupMemoryControll
 // Get an updated cpu limit. The return value is strictly less than or equal to the
 // passed in 'lowest' value.
 double CgroupUtil::get_updated_cpu_limit(CgroupCpuController* cpu,
-                                     int lowest,
-                                     int upper_bound) {
+                                     double lowest,
+                                     double upper_bound) {
   assert(lowest > 0 && lowest <= upper_bound, "invariant");
   double cpu_limit_val = -1;
   if (CgroupUtil::processor_count(cpu, upper_bound, cpu_limit_val) && cpu_limit_val != upper_bound) {
@@ -95,15 +95,14 @@ void CgroupUtil::adjust_controller(CgroupMemoryController* mem, physical_memory_
     return;
   }
   log_trace(os, container)("Adjusting controller path for memory: %s", mem->subsystem_path());
-  char* orig = os::strdup(mem->cgroup_path());
-  char* cg_path = os::strdup(orig);
+  char* orig = os::strdup(mem->cgroup_path(), mtInternal);
+  char* cg_path = os::strdup(orig, mtInternal);
   char* last_slash;
   assert(cg_path[0] == '/', "cgroup path must start with '/'");
   char* limit_cg_path = nullptr;
   physical_memory_size_type limit = value_unlimited;
-  physical_memory_size_type lowest_limit = upper_bound;
-  lowest_limit = get_updated_mem_limit(mem, lowest_limit, upper_bound);
-  physical_memory_size_type orig_limit = lowest_limit != upper_bound ? lowest_limit : upper_bound;
+  physical_memory_size_type lowest_limit = get_updated_mem_limit(mem, upper_bound, upper_bound);
+  const physical_memory_size_type orig_limit = lowest_limit;
   while ((last_slash = strrchr(cg_path, '/')) != cg_path) {
     *last_slash = '\0'; // strip path
     // update to shortened path and try again
@@ -112,7 +111,7 @@ void CgroupUtil::adjust_controller(CgroupMemoryController* mem, physical_memory_
     if (limit < lowest_limit) {
       lowest_limit = limit;
       os::free(limit_cg_path); // handles nullptr
-      limit_cg_path = os::strdup(cg_path);
+      limit_cg_path = os::strdup(cg_path, mtInternal);
     }
   }
   // need to check limit at mount point
@@ -121,7 +120,7 @@ void CgroupUtil::adjust_controller(CgroupMemoryController* mem, physical_memory_
   if (limit < lowest_limit) {
     lowest_limit = limit;
     os::free(limit_cg_path); // handles nullptr
-    limit_cg_path = os::strdup("/");
+    limit_cg_path = os::strdup("/", mtInternal);
   }
   assert(lowest_limit <= upper_bound, "limit must not exceed upper bound");
   if (lowest_limit != orig_limit) {
@@ -145,7 +144,7 @@ void CgroupUtil::adjust_controller(CgroupMemoryController* mem, physical_memory_
   os::free(limit_cg_path);
 }
 
-void CgroupUtil::adjust_controller(CgroupCpuController* cpu, int upper_bound) {
+void CgroupUtil::adjust_controller(CgroupCpuController* cpu, double upper_bound) {
   assert(cpu->cgroup_path() != nullptr, "invariant");
   if (strstr(cpu->cgroup_path(), "../") != nullptr) {
     log_warning(os, container)("Cgroup cpu controller path at '%s' seems to have moved "
@@ -159,13 +158,13 @@ void CgroupUtil::adjust_controller(CgroupCpuController* cpu, int upper_bound) {
     return;
   }
   log_trace(os, container)("Adjusting controller path for cpu: %s", cpu->subsystem_path());
-  char* orig = os::strdup(cpu->cgroup_path());
-  char* cg_path = os::strdup(orig);
+  char* orig = os::strdup(cpu->cgroup_path(), mtInternal);
+  char* cg_path = os::strdup(orig, mtInternal);
   char* last_slash;
   assert(cg_path[0] == '/', "cgroup path must start with '/'");
-  int lowest_limit = upper_bound;
-  double cpus = get_updated_cpu_limit(cpu, lowest_limit, upper_bound);
-  int orig_limit = lowest_limit != upper_bound ? lowest_limit : upper_bound;
+  double lowest_limit = get_updated_cpu_limit(cpu, upper_bound, upper_bound);
+  double cpus = lowest_limit;
+  const double orig_limit = lowest_limit;
   char* limit_cg_path = nullptr;
   while ((last_slash = strrchr(cg_path, '/')) != cg_path) {
     *last_slash = '\0'; // strip path
@@ -175,7 +174,7 @@ void CgroupUtil::adjust_controller(CgroupCpuController* cpu, int upper_bound) {
     if (cpus != upper_bound && cpus < lowest_limit) {
       lowest_limit = cpus;
       os::free(limit_cg_path); // handles nullptr
-      limit_cg_path = os::strdup(cg_path);
+      limit_cg_path = os::strdup(cg_path, mtInternal);
     }
   }
   // need to check limit at mount point
@@ -184,7 +183,7 @@ void CgroupUtil::adjust_controller(CgroupCpuController* cpu, int upper_bound) {
   if (cpus != upper_bound && cpus < lowest_limit) {
     lowest_limit = cpus;
     os::free(limit_cg_path); // handles nullptr
-    limit_cg_path = os::strdup(cg_path);
+    limit_cg_path = os::strdup("/", mtInternal);
   }
   assert(lowest_limit >= 0, "limit must be positive");
   if (lowest_limit != orig_limit) {
@@ -193,10 +192,10 @@ void CgroupUtil::adjust_controller(CgroupCpuController* cpu, int upper_bound) {
     assert(limit_cg_path != nullptr, "limit path must be set");
     cpu->set_subsystem_path(limit_cg_path);
     log_trace(os, container)("Adjusted controller path for cpu to: %s. "
-                             "Lowest limit was: %d",
+                             "Lowest limit was: %.2f",
                              cpu->subsystem_path(), lowest_limit);
   } else {
-    log_trace(os, container)("Lowest limit was: %d", lowest_limit);
+    log_trace(os, container)("Lowest limit was: %.2f", lowest_limit);
     log_trace(os, container)("No lower limit found for cpu in hierarchy %s, "
                              "adjusting to original path %s",
                               cpu->mount_point(), orig);

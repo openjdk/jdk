@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "logging/logMessage.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "runtime/javaThread.hpp"
 
 #define JFR_LOG_TAGS_CONCATED(T0, T1, T2, T3, T4, T5, ...)  \
@@ -130,9 +131,7 @@ void JfrJavaLog::log_event(JNIEnv* env, jint level, jobjectArray lines, bool sys
     return;
   }
 
-  objArrayOop the_lines = objArrayOop(JfrJavaSupport::resolve_non_null(lines));
-  assert(the_lines != nullptr, "invariant");
-  assert(the_lines->is_array(), "must be array");
+  refArrayOop the_lines = oop_cast<refArrayOop>(JfrJavaSupport::resolve_non_null(lines));
   const int length = the_lines->length();
 
   ResourceMark rm(THREAD);

@@ -410,6 +410,15 @@ JVM_ENTRY_NO_ENV(jlong, jfr_host_total_swap_memory(JNIEnv* env, jclass jvm))
   return static_cast<jlong>(total_swap_space);
 JVM_END
 
+JVM_ENTRY_NO_ENV(jlong, jfr_host_memory_usage(JNIEnv* env, jclass jvm))
+  physical_memory_size_type memory_usage = 0;
+  if (!os::Machine::used_memory(memory_usage)) {
+    // Return -1 to signal failure to get memory usage.
+    return static_cast<jlong>(-1);
+  }
+  return static_cast<jlong>(memory_usage);
+JVM_END
+
 JVM_ENTRY_NO_ENV(void, jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes))
   EventDataLoss::commit(bytes, min_jlong);
 JVM_END
@@ -440,4 +449,9 @@ JVM_END
 
 JVM_ENTRY_NO_ENV(jlongArray, jfr_drain_stale_method_tracer_ids(JNIEnv* env, jclass jvm))
   return JfrMethodTracer::drain_stale_class_ids(thread);
+JVM_END
+
+JVM_ENTRY_NO_ENV(jboolean, jfr_try_update_epoch(JNIEnv * env, jclass jvm, jobject obj))
+  oop oop = JfrJavaSupport::resolve_non_null(obj);
+  return JfrTraceIdEpoch::try_update(oop) ? JNI_TRUE : JNI_FALSE;
 JVM_END

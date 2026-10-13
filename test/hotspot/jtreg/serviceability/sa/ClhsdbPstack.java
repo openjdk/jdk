@@ -46,6 +46,7 @@ import jtreg.SkippedException;
  * @bug 8190198
  * @summary Test clhsdb pstack command on a core file
  * @requires vm.hasSA
+ * @requires !vm.ubsan
  * @requires vm.gc != "Z"
  * @library /test/lib
  * @run main/othervm/timeout=480 ClhsdbPstack true
@@ -54,6 +55,10 @@ import jtreg.SkippedException;
 public class ClhsdbPstack {
 
     public static void main(String[] args) throws Exception {
+        if (Platform.isMusl()) {
+            throw new SkippedException("This test does not work on musl libc.");
+        }
+
         boolean withCore = Boolean.parseBoolean(args[0]);
         System.out.println("Starting ClhsdbPstack test: withCore==" + withCore);
 

@@ -30,6 +30,7 @@ import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -68,15 +69,14 @@ public class SetupPreviewFeature {
                         var trees = Trees.instance(task);
                         var elPath = trees.getPath(el);
                         insertPosition = (int) trees.getSourcePositions()
-                                                    .getStartPosition(elPath.getCompilationUnit(),
-                                                                      elPath.getLeaf());
+                                                    .getStartPosition(elPath.getLeaf());
                     }
                 }
             }
             var target = Path.of(args[1]);
             Files.createDirectories(target.getParent());
             if (constantsToAdd.isEmpty()) {
-                Files.copy(source, target);
+                Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
             } else {
                 String sourceCode = Files.readString(source);
                 try (var out = Files.newBufferedWriter(target)) {

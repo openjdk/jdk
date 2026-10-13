@@ -25,21 +25,54 @@
 #ifndef SHARE_INTERPRETER_BYTECODETRACER_HPP
 #define SHARE_INTERPRETER_BYTECODETRACER_HPP
 
+#include "interpreter/bytecodes.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// The BytecodeTracer is a helper class used by the interpreter for run-time
-// bytecode tracing. If TraceBytecodes turned on, trace_interpreter() will be called
-// for each bytecode.
-
+class Method;
 class methodHandle;
 class outputStream;
-
 class BytecodeClosure;
+
+// The BytecodeTracer is a helper class used by the interpreter for run-time
+// bytecode tracing. If TraceBytecodes is turned on, trace_interpreter() will be called
+// for each bytecode.
 class BytecodeTracer: AllStatic {
  public:
-  NOT_PRODUCT(static void trace_interpreter(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st);)
+  NOT_PRODUCT(static void trace_interpreter(const methodHandle& method, intptr_t* fp, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st);)
   static void print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags, bool buffered = true);
+};
+
+// Provides tracing-centric context whose lifespan exceeds the printing of
+// a single bytecode. For instance, it is needed to determine method switches
+// in order to print the appropriate signature once a switch happens.
+class BytecodeTracerData {
+ private:
+  Method*         _current_method; // for method switches
+  intptr_t*       _current_fp;     // for self-recursion
+  bool            _is_wide;        // to parse the next bytecode properly
+
+ public:
+  BytecodeTracerData() : _current_method(nullptr),
+                         _current_fp(nullptr),
+                         _is_wide(false) {}
+
+  // The current method may point to a stale/garbage Method. While pointer
+  // comparison is safe, it should only be dereferenced while guaranteed to
+  // be valid. For example, if the current method is set to the result of a
+  // methodHandle call, current_method() may be dereferenced while the handle
+  // is live. It is always up to the caller to ensure that current_method()
+  // is safe to dereference.
+  Method*         current_method() const                 { return _current_method; }
+  void            set_current_method(Method* current)    { _current_method = current; }
+
+  // The frame pointer should only ever be used for pointer comparison and may
+  // never be dereferenced.
+  intptr_t*       current_fp() const                     { return _current_fp; }
+  void            set_current_fp(intptr_t* current)      { _current_fp = current; }
+
+  bool            is_wide() const                        { return _is_wide; }
+  void            set_wide(bool wide)                    { _is_wide = wide; }
 };
 
 #endif // SHARE_INTERPRETER_BYTECODETRACER_HPP

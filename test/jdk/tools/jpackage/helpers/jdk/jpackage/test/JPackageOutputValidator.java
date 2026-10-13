@@ -130,13 +130,18 @@ public final class JPackageOutputValidator {
      * <p>
      * If the stream contains lines without timestampts, the validation will fail.
      * <p>
-     * Use {@link #matchTimestamps()) to filter out lines without timestamps and
+     * Use {@link #matchTimestamps()} to filter out lines without timestamps and
      * prevent validation failure.
      *
      * @return this
      */
     public JPackageOutputValidator stripTimestamps() {
         stripTimestamps = true;
+        return this;
+    }
+
+    public JPackageOutputValidator mutate(Consumer<JPackageOutputValidator> mutator) {
+        mutator.accept(this);
         return this;
     }
 

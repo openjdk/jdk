@@ -38,14 +38,6 @@
  * @run main/othervm/native -Djdk.lang.Process.launchMechanism=fork -agentlib:FDLeaker FDLeakTest
  */
 
-/**
- * @test id=vfork
- * @summary Check that we don't leak FDs to child processes
- * @requires os.family == "linux"
- * @library /test/lib
- * @run main/othervm/native -Djdk.lang.Process.launchMechanism=vfork -agentlib:FDLeaker FDLeakTest
- */
-
 import jdk.test.lib.process.ProcessTools;
 public class FDLeakTest {
     // This test has two native parts:

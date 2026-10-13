@@ -45,7 +45,7 @@
  *          java.net.http/jdk.internal.net.http.qpack.writers
  *          java.security.jgss
  * @modules java.base/jdk.internal.util
- * @run junit/othervm/timeout=60 -Djavax.net.debug=ssl -Djdk.httpclient.HttpClient.log=all ErrorTest
+ * @run junit/othervm/timeout=60 -Djavax.net.debug=ssl -Djdk.httpclient.HttpClient.log=all ${test.main.class}
  * @summary check exception thrown when bad TLS parameters selected
  */
 

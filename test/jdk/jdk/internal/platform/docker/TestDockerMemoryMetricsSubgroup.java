@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,6 +42,7 @@ import jtreg.SkippedException;
  * @summary Cgroup v1 subsystem fails to set subsystem path
  * @requires container.support
  * @requires !vm.asan
+ * @requires !vm.ubsan
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @build MetricsMemoryTester
@@ -87,7 +89,7 @@ public class TestDockerMemoryMetricsSubgroup {
             new DockerRunOptions(imageName, "sh", "-c");
         opts.javaOpts = new ArrayList<>();
         opts.appendTestJavaOptions = false;
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
             .addDockerOpts("--volume", Utils.TEST_JDK + ":/jdk")
             .addDockerOpts("--privileged")
             .addDockerOpts("--cgroupns=" + (privateNamespace ? "private" : "host"))
@@ -109,7 +111,7 @@ public class TestDockerMemoryMetricsSubgroup {
             new DockerRunOptions(imageName, "sh", "-c");
         opts.javaOpts = new ArrayList<>();
         opts.appendTestJavaOptions = false;
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
             .addDockerOpts("--volume", Utils.TEST_JDK + ":/jdk")
             .addDockerOpts("--privileged")
             .addDockerOpts("--cgroupns=" + (privateNamespace ? "private" : "host"))

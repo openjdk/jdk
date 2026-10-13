@@ -31,16 +31,17 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
+import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
 @SuppressWarnings("cast")  // warning: redundant cast
+@ValueBased
 final class DoubleVectorMax extends DoubleVector {
     static final DoubleSpecies VSPECIES =
         (DoubleSpecies) DoubleVector.SPECIES_MAX;
@@ -358,7 +359,7 @@ final class DoubleVectorMax extends DoubleVector {
     @Override
     @ForceInline
     public final DoubleShuffleMax toShuffle() {
-        return (DoubleShuffleMax) toShuffle(vspecies(), false);
+        return (DoubleShuffleMax) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -556,7 +557,7 @@ final class DoubleVectorMax extends DoubleVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class DoubleMaskMax extends AbstractMask<Double> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -604,7 +605,7 @@ final class DoubleVectorMax extends DoubleVector {
 
         @Override
         DoubleMaskMax uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -614,7 +615,7 @@ final class DoubleVectorMax extends DoubleVector {
 
         @Override
         DoubleMaskMax bOp(VectorMask<Double> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = ((DoubleMaskMax)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -764,16 +765,16 @@ final class DoubleVectorMax extends DoubleVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, DoubleMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((DoubleMaskMax)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper(((DoubleMaskMax)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, DoubleMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((DoubleMaskMax)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper(((DoubleMaskMax)m).getBits()));
         }
 
         @ForceInline
@@ -781,7 +782,7 @@ final class DoubleVectorMax extends DoubleVector {
         static DoubleMaskMax maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(DoubleMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final DoubleMaskMax  TRUE_MASK = new DoubleMaskMax(true);
         private static final DoubleMaskMax FALSE_MASK = new DoubleMaskMax(false);
@@ -789,7 +790,7 @@ final class DoubleVectorMax extends DoubleVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class DoubleShuffleMax extends AbstractShuffle<Double> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -830,7 +831,7 @@ final class DoubleVectorMax extends DoubleVector {
         @Override
         @ForceInline
         public DoubleVectorMax toVector() {
-            return (DoubleVectorMax) toBitsVector().castShape(vspecies(), 0);
+            return (DoubleVectorMax) toBitsVector().castShape(VSPECIES, 0);
         }
 
         @Override
@@ -841,7 +842,7 @@ final class DoubleVectorMax extends DoubleVector {
 
         @Override
         LongVectorMax toBitsVector0() {
-            return ((LongVectorMax) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return ((LongVectorMax) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -915,7 +916,7 @@ final class DoubleVectorMax extends DoubleVector {
         @ForceInline
         public final DoubleMaskMax laneIsValid() {
             return (DoubleMaskMax) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -923,7 +924,7 @@ final class DoubleVectorMax extends DoubleVector {
         public final DoubleShuffleMax rearrange(VectorShuffle<Double> shuffle) {
             DoubleShuffleMax concreteShuffle = (DoubleShuffleMax) shuffle;
             return (DoubleShuffleMax) toBitsVector().rearrange(concreteShuffle.cast(LongVector.SPECIES_MAX))
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
         }
 
         @ForceInline
@@ -936,7 +937,7 @@ final class DoubleVectorMax extends DoubleVector {
                 v = (LongVectorMax) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return (DoubleShuffleMax) v.toShuffle(vspecies(), false);
+            return (DoubleShuffleMax) v.toShuffle(VSPECIES, false);
         }
 
         private static long[] prepare(int[] indices, int offset) {

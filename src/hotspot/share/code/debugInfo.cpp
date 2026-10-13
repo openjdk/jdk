@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,6 +161,7 @@ void ObjectValue::set_value(oop value) {
 void ObjectValue::read_object(DebugInfoReadStream* stream) {
   _is_root = stream->read_bool();
   _klass = read_from(stream);
+  _properties = read_from(stream);
   assert(_klass->is_constant_oop(), "should be constant java mirror oop");
   int length = stream->read_int();
   for (int i = 0; i < length; i++) {
@@ -179,6 +180,7 @@ void ObjectValue::write_on(DebugInfoWriteStream* stream) {
     stream->write_int(_id);
     stream->write_bool(_is_root);
     _klass->write_on(stream);
+    _properties->write_on(stream);
     int length = _field_values.length();
     stream->write_int(length);
     for (int i = 0; i < length; i++) {
@@ -345,9 +347,7 @@ void ConstantDoubleValue::print_on(outputStream* st) const {
 void ConstantOopWriteValue::write_on(DebugInfoWriteStream* stream) {
 #ifdef ASSERT
   {
-    // cannot use ThreadInVMfromNative here since in case of JVMCI compiler,
-    // thread is already in VM state.
-    ThreadInVMfromUnknown tiv;
+    ThreadInVMfromNative tiv(JavaThread::current());
     assert(JNIHandles::resolve(value()) == nullptr ||
            Universe::heap()->is_in(JNIHandles::resolve(value())),
            "Should be in heap");
@@ -358,9 +358,7 @@ void ConstantOopWriteValue::write_on(DebugInfoWriteStream* stream) {
 }
 
 void ConstantOopWriteValue::print_on(outputStream* st) const {
-  // using ThreadInVMfromUnknown here since in case of JVMCI compiler,
-  // thread is already in VM state.
-  ThreadInVMfromUnknown tiv;
+  ThreadInVMfromNative tiv(JavaThread::current());
   JNIHandles::resolve(value())->print_value_on(st);
 }
 

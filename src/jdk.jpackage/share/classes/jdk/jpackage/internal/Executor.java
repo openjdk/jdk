@@ -24,11 +24,11 @@
  */
 package jdk.jpackage.internal;
 
-import java.io.BufferedReader;
+import static jdk.jpackage.internal.log.StandardLogger.COMMAND_LOGGER;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.log.CommandLogger;
 import jdk.jpackage.internal.model.ExecutableAttributesWithCapturedOutput;
 import jdk.jpackage.internal.util.CommandLineFormat;
 import jdk.jpackage.internal.util.CommandOutputControl;
@@ -175,9 +176,13 @@ public final class Executor {
         return args;
     }
 
-    public Executor setQuiet(boolean v) {
+    public Executor quiet(boolean v) {
         quietCommand = v;
         return this;
+    }
+
+    public Executor quiet() {
+        return quiet(true);
     }
 
     public Executor mapper(UnaryOperator<Executor> v) {
@@ -212,8 +217,10 @@ public final class Executor {
             throw new IllegalStateException("No target to execute");
         }
 
-        if (dumpOutput()) {
-            Log.verbose(String.format("Running %s", CommandLineFormat.DEFAULT.apply(List.of(commandLine().getFirst()))));
+        var logger = logger();
+
+        if (logger.enabled()) {
+            logger.beforeCommandExecuted(quietCommand, CommandLineFormat.DEFAULT.apply(commandLine()));
         }
 
         var printableOutputBuilder = new PrintableOutputBuilder(coc);
@@ -229,8 +236,21 @@ public final class Executor {
         }
 
         var printableOutput = printableOutputBuilder.create();
-        if (dumpOutput()) {
-            log(result, printableOutput);
+
+        if (logger.enabled()) {
+            Optional<Long> pid;
+            if (result.execAttrs() instanceof ProcessAttributes attrs) {
+                pid = attrs.pid();
+            } else {
+                pid = Optional.empty();
+            }
+
+            logger.afterCommandExecuted(
+                    quietCommand,
+                    result.execAttrs().printableCommandLine(),
+                    pid,
+                    result.exitCode(),
+                    printableOutput);
         }
 
         return ExecutableAttributesWithCapturedOutput.augmentResultWithOutput(result, printableOutput);
@@ -271,6 +291,10 @@ public final class Executor {
         }
     }
 
+    private CommandLogger logger() {
+        return Globals.instance().logger(COMMAND_LOGGER);
+    }
+
     private ProcessBuilder copyProcessBuilder() {
         if (processBuilder == null) {
             throw new IllegalStateException();
@@ -283,47 +307,6 @@ public final class Executor {
         env.putAll(processBuilder.environment());
 
         return copy;
-    }
-
-    private boolean dumpOutput() {
-        return Log.isVerbose() && !quietCommand;
-    }
-
-    private static void log(Result result, String printableOutput) throws IOException {
-        Objects.requireNonNull(result);
-        Objects.requireNonNull(printableOutput);
-
-        Optional<Long> pid;
-        if (result.execAttrs() instanceof ProcessAttributes attrs) {
-            pid = attrs.pid();
-        } else {
-            pid = Optional.empty();
-        }
-
-        var sb = new StringBuilder();
-        sb.append("Command");
-        pid.ifPresent(p -> {
-            sb.append(" [PID: ").append(p).append("]");
-        });
-        sb.append(":\n    ").append(result.execAttrs().printableCommandLine());
-        Log.verbose(sb.toString());
-
-        if (!printableOutput.isEmpty()) {
-            sb.delete(0, sb.length());
-            sb.append("Output:");
-            try (var lines = new BufferedReader(new StringReader(printableOutput)).lines()) {
-                lines.forEach(line -> {
-                    sb.append("\n    ").append(line);
-                });
-            }
-            Log.verbose(sb.toString());
-        }
-
-        result.exitCode().ifPresentOrElse(exitCode -> {
-            Log.verbose("Returned: " + exitCode + "\n");
-        }, () -> {
-            Log.verbose("Aborted: timed-out" + "\n");
-        });
     }
 
     private static final class PrintableOutputBuilder {

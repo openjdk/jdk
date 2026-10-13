@@ -36,7 +36,6 @@ import java.time.Instant;
 /*
  * @test
  * @bug 8048621 8133090 8167371 8236671 8374808
- * @enablePreview
  * @summary Test basic operations with keystores (jks, jceks, pkcs12)
  * @author Yu-Ching Valerie PENG
  */

@@ -35,7 +35,7 @@
 #include <dirent.h>
 
 ExplicitHugePageSupport::ExplicitHugePageSupport() :
-  _initialized{false}, _os_supported{}, _pre_allocated{}, _default_hugepage_size{SIZE_MAX}, _inconsistent{false} {}
+  _initialized{false}, _os_supported{}, _pre_allocated{}, _default_hugepage_size{0}, _inconsistent{false} {}
 
 os::PageSizes ExplicitHugePageSupport::os_supported() const {
   assert(_initialized, "Not initialized");
@@ -68,7 +68,7 @@ static size_t scan_default_hugepagesize() {
   // format has been changed), we'll set largest page size to 0
 
   FILE *fp = os::fopen("/proc/meminfo", "r");
-  if (fp) {
+  if (fp != nullptr) {
     while (!feof(fp)) {
       int x = 0;
       char buf[16];
@@ -81,7 +81,7 @@ static size_t scan_default_hugepagesize() {
         // skip to next line
         for (;;) {
           int ch = fgetc(fp);
-          if (ch == EOF || ch == (int)'\n') break;
+          if (ch == EOF || ch == '\n') break;
         }
       }
     }
@@ -187,7 +187,7 @@ void ExplicitHugePageSupport::scan_os() {
 }
 
 THPSupport::THPSupport() :
-    _initialized(false), _mode(THPMode::never), _pagesize(SIZE_MAX) {}
+    _initialized{false}, _mode{THPMode::never}, _pagesize{0} {}
 
 
 THPMode THPSupport::mode() const {
@@ -221,7 +221,6 @@ void THPSupport::scan_os() {
   }
 
   // Scan large page size for THP from hpage_pmd_size
-  _pagesize = 0;
   if (read_number_file("/sys/kernel/mm/transparent_hugepage/hpage_pmd_size", &_pagesize)) {
     assert(_pagesize > 0, "Expected");
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,7 @@ import javax.naming.directory.*;
  * </pre>
  *
  * @see PersistentSearchControl
- * @see com.sun.jndi.ldap.ctl.ResponseControlFactory ResponseControlFactory
- * @author Vincent Ryan
+ * @see DefaultResponseControlFactory
  */
 public final class EntryChangeResponseControl extends BasicControl {
 

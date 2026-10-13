@@ -49,7 +49,8 @@ import static jdk.incubator.vector.VectorOperators.*;
  * {@code long} values.
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract class LongVector extends AbstractVector<Long> {
+public abstract sealed class LongVector extends AbstractVector<Long>
+         permits LongVector64, LongVector128, LongVector256, LongVector512, LongVectorMax {
 
     LongVector(long[] vec) {
         super(vec);
@@ -1917,6 +1918,7 @@ public abstract class LongVector extends AbstractVector<Long> {
                 m = compare(LT, (long) 0);
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
@@ -1948,6 +1950,7 @@ public abstract class LongVector extends AbstractVector<Long> {
                 m = compare(LT, (long) 0, m);
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
@@ -2162,15 +2165,20 @@ public abstract class LongVector extends AbstractVector<Long> {
     /*package-private*/
     final
     @ForceInline
-    LongVector sliceTemplate(int origin, Vector<Long> v1) {
+    <V extends Vector<Long>>
+    LongVector sliceTemplate(int origin, V v1) {
         LongVector that = (LongVector) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        LongVector iotaVector = (LongVector) iotaShuffle().toBitsVector();
-        LongVector filter = broadcast((long)(length() - origin));
-        VectorMask<Long> blendMask = iotaVector.compare(VectorOperators.LT, filter);
-        AbstractShuffle<Long> iota = iotaShuffle(origin, 1, true);
-        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
+        return (LongVector)VectorSupport.sliceOp(origin, getClass(), LANE_TYPE_ORDINAL, length(), this, that,
+            (index, vec1, vec2) ->  {
+                LongVector iotaVector = (LongVector) vec1.iotaShuffle().toBitsVector();
+                LongVector filter = vec1.broadcast((long)(vec1.length() - index));
+                VectorMask<Long> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+                AbstractShuffle<Long> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.rearrange(iota).blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**
@@ -2197,11 +2205,16 @@ public abstract class LongVector extends AbstractVector<Long> {
     @ForceInline
     LongVector sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        LongVector iotaVector = (LongVector) iotaShuffle().toBitsVector();
-        LongVector filter = broadcast((long)(length() - origin));
-        VectorMask<Long> blendMask = iotaVector.compare(VectorOperators.LT, filter);
-        AbstractShuffle<Long> iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+        LongVector that = (LongVector) vspecies().zero();
+        return (LongVector)VectorSupport.sliceOp(origin, getClass(), LANE_TYPE_ORDINAL, length(), this, that,
+            (index, vec1, vec2) ->  {
+                LongVector iotaVector = (LongVector) vec1.iotaShuffle().toBitsVector();
+                LongVector filter = vec1.broadcast((long)(vec1.length() - index));
+                VectorMask<Long> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+                AbstractShuffle<Long> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**
@@ -2219,6 +2232,9 @@ public abstract class LongVector extends AbstractVector<Long> {
         LongVector that = (LongVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
+        if ((-2 & part) != 0) {
+            throw wrongPartForSlice(part);
+        }
         LongVector iotaVector = (LongVector) iotaShuffle().toBitsVector();
         LongVector filter = broadcast((long)origin);
         VectorMask<Long> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter);
@@ -3657,18 +3673,6 @@ public abstract class LongVector extends AbstractVector<Long> {
                 .reinterpretAsLongs();
         }
         return this;
-    }
-
-    @Override
-    @ForceInline
-    final
-    LongVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
-        int subLanesPerSrc = subLanesToSwap(srcSpecies);
-        if (subLanesPerSrc < 0) {
-            return this;
-        }
-        VectorShuffle<Long> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
-        return (LongVector) this.rearrange(shuffle);
     }
 
     static final int ARRAY_SHIFT =

@@ -257,7 +257,7 @@ public class Exchanger<V> {
      * The bound for spins while waiting for a match before either
      * blocking or possibly shrinking arena.
      */
-    private static final int SPINS = 1 << 10;
+    private static final int SPINS = 24576; // Determined using benchmarks
 
     /**
      * Padded arena cells to avoid false-sharing memory contention

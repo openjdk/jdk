@@ -36,6 +36,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
+import java.util.List;
 
 public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
 

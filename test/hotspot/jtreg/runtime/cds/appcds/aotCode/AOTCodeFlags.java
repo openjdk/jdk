@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,72 @@
  */
 
 /**
- * @test
+ * @test id=default_gc
+ * @requires vm.gc != "Z"
  * @summary Sanity test of combinations of the AOT Code Caching diagnostic flags
  * @requires vm.cds.supports.aot.code.caching
+ * @requires vm.compMode != "Xcomp" & vm.compMode != "Xint"
+ * @comment It runs for long time (hours) with -Xcomp and AOT code caching enabled
+ *          on (virtual) machine with small number of cores
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
  *          compiler's runtime blobs generation.
- * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
- * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeFlags JavacBenchApp
+ * @build AOTCodeFlags AOTCodeSimpleTestApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
- *                 JavacBenchApp
- *                 JavacBenchApp$ClassFile
- *                 JavacBenchApp$FileManager
- *                 JavacBenchApp$SourceFile
- * @run driver AOTCodeFlags
+ *                 AOTCodeSimpleTestApp
+ * @run driver/timeout=1500 AOTCodeFlags
+ */
+/**
+ * @test id=Z
+ * @requires vm.gc.Z
+ * @summary Sanity test of combinations of the AOT Code Caching diagnostic flags
+ * @requires vm.cds.supports.aot.code.caching
+ * @requires vm.compMode != "Xcomp" & vm.compMode != "Xint"
+ * @comment It runs for long time (hours) with -Xcomp and AOT code caching enabled
+ *          on (virtual) machine with small number of cores
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
+ * @comment Both C1 and C2 JIT compilers are required because the test verifies
+ *          compiler's runtime blobs generation.
+ * @library /test/lib /test/setup_aot
+ * @build AOTCodeFlags AOTCodeSimpleTestApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ *                 AOTCodeSimpleTestApp
+ * @run driver/timeout=1500 AOTCodeFlags Z
+ */
+/**
+ * @test id=shenandoah
+ * @requires vm.gc.Shenandoah
+ * @summary Sanity test of combinations of the AOT Code Caching diagnostic flags
+ * @requires vm.cds.supports.aot.code.caching
+ * @requires vm.compMode != "Xcomp" & vm.compMode != "Xint"
+ * @comment It runs for long time (hours) with -Xcomp and AOT code caching enabled
+ *          on (virtual) machine with small number of cores
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
+ * @comment Both C1 and C2 JIT compilers are required because the test verifies
+ *          compiler's runtime blobs generation.
+ * @library /test/lib /test/setup_aot
+ * @build AOTCodeFlags AOTCodeSimpleTestApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ *                 AOTCodeSimpleTestApp
+ * @run driver/timeout=1500 AOTCodeFlags Shenandoah
+ */
+/**
+ * @test id=parallel
+ * @requires vm.gc.Parallel
+ * @summary Sanity test of combinations of the AOT Code Caching diagnostic flags
+ * @requires vm.cds.supports.aot.code.caching
+ * @requires vm.compMode != "Xcomp" & vm.compMode != "Xint"
+ * @comment It runs for long time (hours) with -Xcomp and AOT code caching enabled
+ *          on (virtual) machine with small number of cores
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
+ * @comment Both C1 and C2 JIT compilers are required because the test verifies
+ *          compiler's runtime blobs generation.
+ * @library /test/lib /test/setup_aot
+ * @build AOTCodeFlags AOTCodeSimpleTestApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ *                 AOTCodeSimpleTestApp
+ * @run driver/timeout=1500 AOTCodeFlags Parallel
  */
 
 import java.util.ArrayList;
@@ -48,40 +98,72 @@ import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class AOTCodeFlags {
+    private static String appName = AOTCodeSimpleTestApp.class.getName();
+    private static String gcName = null;
     public static void main(String... args) throws Exception {
-        Tester t = new Tester();
-        // Run only 2 modes (0 - no AOT code, 1 - AOT adapters) until JDK-8357398 is fixed
-        for (int mode = 0; mode < 2; mode++) {
-            t.setTestMode(mode);
-            t.run(new String[] {"AOT", "--two-step-training"});
+        Tester t = new Tester(args.length == 0 ? null : args[0]);
+        // mode bits 0,1,2 encode AOTAdapterCaching, AOTStubCaching and AOTCodeCaching settings
+        // aMode is used for assembly run, pMode for production run
+        for (int aMode = 0; aMode < 8; aMode++) {
+            for (int pMode = 0; pMode < 8; pMode++) {
+                t.setTestMode(aMode, pMode);
+                t.run(new String[] {"AOT", "--two-step-training"});
+            }
         }
     }
     static class Tester extends CDSAppTester {
-        private int testMode;
+        private int aMode, pMode;
+        private String gcName;
 
-        public Tester() {
+        public Tester(String name) {
             super("AOTCodeFlags");
-            testMode = 0;
+            aMode = 0;
+            pMode = 0;
+            gcName = name;
         }
 
-        boolean isAdapterCachingOn() {
-            return (testMode & 0x1) != 0;
+        boolean isAdapterCachingOn(int mode) {
+            return (mode & 0x1) != 0;
         }
 
-        boolean isStubCachingOn() {
-            return (testMode & 0x2) != 0;
+        boolean isStubCachingOn(int mode) {
+            return (mode & 0x2) != 0;
         }
 
-        public void setTestMode(int mode) {
-            testMode = mode;
+        boolean isCodeCachingOn(int mode) {
+            return (mode & 0x4) != 0;
         }
 
-        public List<String> getVMArgsForTestMode() {
+        public void setTestMode(int aMode, int pMode) {
+            this.aMode = aMode;
+            this.pMode = pMode;
+        }
+
+        public List<String> getVMArgsForTestMode(int mode) {
             List<String> list = new ArrayList<String>();
             list.add("-XX:+UnlockDiagnosticVMOptions");
-            list.add(isAdapterCachingOn() ? "-XX:+AOTAdapterCaching" : "-XX:-AOTAdapterCaching");
-            list.add(isStubCachingOn() ? "-XX:+AOTStubCaching" : "-XX:-AOTStubCaching");
+            list.add(isAdapterCachingOn(mode) ? "-XX:+AOTAdapterCaching" : "-XX:-AOTAdapterCaching");
+            list.add(isStubCachingOn(mode) ? "-XX:+AOTStubCaching" : "-XX:-AOTStubCaching");
+            list.add(isCodeCachingOn(mode) ? "-XX:+AOTCodeCaching" : "-XX:-AOTCodeCaching");
             return list;
+        }
+
+        public List<String> getGCArgs() {
+            List<String> args = new ArrayList<String>();
+            args.add("-Xmx100M");
+            if (gcName == null) {
+                return args;
+            }
+            switch (gcName) {
+            case "G1":
+            case "Z":
+            case "Shenandoah":
+            case "Parallel":
+                args.add("-XX:+Use" + gcName + "GC");
+            return args;
+            default:
+                throw new RuntimeException("Unexpected GC name " + gcName);
+            }
         }
 
         @Override
@@ -91,74 +173,116 @@ public class AOTCodeFlags {
 
         @Override
         public String[] vmArgs(RunMode runMode) {
+            List<String> args = getGCArgs();
+            args.addAll(List.of("-Xlog:aot+codecache+init=debug",
+                                "-Xlog:aot+codecache+exit=debug",
+                                "-Xlog:aot+codecache+nmethod=info",
+                                "-Xlog:aot+codecache+stubs=debug"));
+
+            // Ensure compilations are finished before the JVM exits.
+            args.add("-Xbatch");
+
             switch (runMode) {
             case RunMode.ASSEMBLY:
-            case RunMode.PRODUCTION: {
-                    List<String> args = getVMArgsForTestMode();
-                    args.addAll(List.of("-Xlog:aot+codecache+init=debug",
-                                        "-Xlog:aot+codecache+exit=debug"));
-                    return args.toArray(new String[0]);
-                }
+                args.addAll(getVMArgsForTestMode(aMode));
+                break;
+            case RunMode.PRODUCTION:
+                args.addAll(getVMArgsForTestMode(pMode));
+                break;
+            default:
+                break;
             }
-            return new String[] {};
+            return args.toArray(new String[args.size()]);
         }
 
         @Override
         public String[] appCommandLine(RunMode runMode) {
-            return new String[] {
-                "JavacBenchApp", "10"
-            };
+            return new String[] { appName };
         }
 
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
-            if (!isAdapterCachingOn() && !isStubCachingOn()) { // this is equivalent to completely disable AOT code cache
-                switch (runMode) {
-                case RunMode.ASSEMBLY:
-                case RunMode.PRODUCTION:
-                    out.shouldNotMatch("Adapters:\\s+total");
-                    out.shouldNotMatch("Shared Blobs:\\s+total");
-                    out.shouldNotMatch("C1 Blobs:\\s+total");
-                    out.shouldNotMatch("C2 Blobs:\\s+total");
-                    break;
-                }
-            } else {
-                if (isAdapterCachingOn()) {
-                    switch (runMode) {
-                    case RunMode.ASSEMBLY:
-                    case RunMode.PRODUCTION:
-                        // AOTAdapterCaching is on, non-zero adapters should be stored/loaded
-                        out.shouldMatch("Adapters:\\s+total=[1-9][0-9]+");
-                        break;
-                    }
+            if (runMode == RunMode.ASSEMBLY) {
+                if (!isAdapterCachingOn(aMode) && !isStubCachingOn(aMode) && !isCodeCachingOn(aMode)) {
+                    // this is equivalent to completely disable AOT code cache
+                    out.shouldNotMatch("Adapter:\\s+total");
+                    out.shouldNotMatch("SharedBlob:\\s+total");
+                    out.shouldNotMatch("C1Blob:\\s+total");
+                    out.shouldNotMatch("C2Blob:\\s+total");
+                    out.shouldNotMatch("StubGenBlob:\\s+total");
+                    out.shouldNotMatch("Nmethod:\\s+total");
                 } else {
-                    switch (runMode) {
-                    case RunMode.ASSEMBLY:
-                    case RunMode.PRODUCTION:
-                        // AOTAdapterCaching is off, no adapters should be stored/loaded
-                        out.shouldMatch("Adapters:\\s+total=0");
-                        break;
+                    if (isAdapterCachingOn(aMode)) {
+                        // AOTAdapterCaching is on, adapters should be stored
+                        out.shouldMatch("Adapter:\\s+total=[1-9][0-9]+");
+                    } else {
+                        // AOTAdapterCaching is off, no adapters should be stored
+                        out.shouldMatch("Adapter:\\s+total=0");
+                    }
+                    if (isStubCachingOn(aMode)) {
+                        // AOTStubCaching is on, stubs should be stored
+                        out.shouldMatch("SharedBlob:\\s+total=[1-9][0-9]+");
+                        out.shouldMatch("C1Blob:\\s+total=[1-9][0-9]+");
+                        out.shouldMatch("C2Blob:\\s+total=[1-9][0-9]+");
+                        out.shouldMatch("StubGenBlob:\\s+total=[1-9]+");
+                    } else {
+                        // AOTStubCaching is off, no stubs should be stored
+                        out.shouldMatch("SharedBlob:\\s+total=0");
+                        out.shouldMatch("C1Blob:\\s+total=0");
+                        out.shouldMatch("C2Blob:\\s+total=0");
+                        out.shouldMatch("StubGenBlob:\\s+total=0");
+                    }
+                    if (isCodeCachingOn(aMode)) {
+                        // AOTCodeCaching is on, nmethods should be stored
+                        out.shouldMatch("Nmethod:\\s+total=[1-9][0-9]+");
+                    } else {
+                        // AOTCodeCaching is off, no nmethods should be stored
+                        out.shouldMatch("Nmethod:\\s+total=0");
                     }
                 }
-                if (isStubCachingOn()) {
-                    switch (runMode) {
-                    case RunMode.ASSEMBLY:
-                    case RunMode.PRODUCTION:
-                        // AOTStubCaching is on, non-zero stubs should be stored/loaded
-                        out.shouldMatch("Shared Blobs:\\s+total=[1-9][0-9]+");
-                        out.shouldMatch("C1 Blobs:\\s+total=[1-9][0-9]+");
-                        out.shouldMatch("C2 Blobs:\\s+total=[1-9][0-9]+");
-                        break;
-                    }
+            } else if (runMode == RunMode.PRODUCTION) {
+                // Irrespective of assembly run mode, if all types of code caching is disabled
+                // in production run, then it is equivalent to completely disabling AOT code cache
+                if (!isAdapterCachingOn(pMode) && !isStubCachingOn(pMode) && !isCodeCachingOn(pMode)) {
+                    out.shouldNotMatch("Adapter:\\s+total");
+                    out.shouldNotMatch("SharedBlob:\\s+total");
+                    out.shouldNotMatch("C1Blob:\\s+total");
+                    out.shouldNotMatch("C2Blob:\\s+total");
+                    out.shouldNotMatch("StubGenBlob:\\s+total");
+                    out.shouldNotMatch("Nmethod:\\s+total");
                 } else {
-                    switch (runMode) {
-                    case RunMode.ASSEMBLY:
-                    case RunMode.PRODUCTION:
-                        // AOTStubCaching is off, no stubs should be stored/loaded
-                        out.shouldMatch("Shared Blobs:\\s+total=0");
-                        out.shouldMatch("C1 Blobs:\\s+total=0");
-                        out.shouldMatch("C2 Blobs:\\s+total=0");
-                        break;
+                    // If AOT code cache is effectively disabled in the assembly run, then production run
+                    // would emit empty code cache message.
+                    if (!isAdapterCachingOn(aMode) && !isStubCachingOn(aMode) && !isCodeCachingOn(aMode)) {
+                        if (isAdapterCachingOn(pMode) || isStubCachingOn(pMode) || isCodeCachingOn(pMode)) {
+                            out.shouldMatch("AOT Code Cache is empty");
+                        }
+                    } else {
+                        if (isAdapterCachingOn(aMode)) {
+                            if (isAdapterCachingOn(pMode)) {
+                                out.shouldMatch("Loaded blob.*kind=Adapter.*");
+                            } else {
+                                out.shouldNotMatch("Loaded blob.*kind=Adapter.*");
+                            }
+                        }
+                        if (isStubCachingOn(aMode)) {
+                            if (isStubCachingOn(pMode)) {
+                                out.shouldMatch("Loaded blob.*kind=SharedBlob.*");
+                                out.shouldMatch("Loaded blob.*kind=C1Blob.*");
+                                out.shouldMatch("Loaded blob.*kind=StubGenBlob.*");
+                            } else {
+                                out.shouldNotMatch("Loaded blob.*kind=SharedBlob.*");
+                                out.shouldNotMatch("Loaded blob.*kind=C1Blob.*");
+                                out.shouldNotMatch("Loaded blob.*kind=StubGenBlob.*");
+                            }
+                        }
+                        if (isCodeCachingOn(aMode)) {
+                            if (isCodeCachingOn(pMode)) {
+                                out.shouldMatch("Loaded nmethod .*");
+                            } else {
+                                out.shouldNotMatch("Loaded nmethod .*");
+                            }
+                        }
                     }
                 }
             }

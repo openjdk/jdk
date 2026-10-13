@@ -37,12 +37,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.stream.Stream;
 
-import jtreg.SkippedException;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.opentest4j.TestAbortedException;
 
 /*
  * @test
@@ -180,7 +179,7 @@ public class ReaderWriterTest {
             cs = Charset.forName(encoding);
             System.out.println("Charset: " + cs);
         } catch (UnsupportedCharsetException use) {
-            throw new SkippedException("Charset not supported: " + encoding);
+            throw new TestAbortedException("Charset not supported: " + encoding);
         }
         String cleanCSName = cleanCharsetName(cs);
 

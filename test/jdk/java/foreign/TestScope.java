@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,9 @@
 
 /*
  * @test
- * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestScope
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED TestScope
  */
 
-import org.testng.annotations.*;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -37,7 +36,8 @@ import java.nio.IntBuffer;
 import java.util.HexFormat;
 import java.util.stream.LongStream;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class TestScope {
 
@@ -49,21 +49,21 @@ public class TestScope {
     public void testDifferentArrayScope() {
         MemorySegment.Scope scope1 = MemorySegment.ofArray(new byte[10]).scope();
         MemorySegment.Scope scope2 = MemorySegment.ofArray(new byte[10]).scope();
-        assertNotEquals(scope1, scope2);
+        assertNotEquals(scope2, scope1);
     }
 
     @Test
     public void testDifferentBufferScope() {
         MemorySegment.Scope scope1 = MemorySegment.ofBuffer(ByteBuffer.allocateDirect(10)).scope();
         MemorySegment.Scope scope2 = MemorySegment.ofBuffer(ByteBuffer.allocateDirect(10)).scope();
-        assertNotEquals(scope1, scope2);
+        assertNotEquals(scope2, scope1);
     }
 
     @Test
     public void testDifferentArenaScope() {
         MemorySegment.Scope scope1 = Arena.ofAuto().allocate(10).scope();
         MemorySegment.Scope scope2 = Arena.ofAuto().allocate(10).scope();
-        assertNotEquals(scope1, scope2);
+        assertNotEquals(scope2, scope1);
     }
 
     @Test
@@ -71,7 +71,7 @@ public class TestScope {
         byte[] arr = new byte[10];
         assertEquals(MemorySegment.ofArray(arr).scope(), MemorySegment.ofArray(arr).scope());
         ByteBuffer buf = ByteBuffer.wrap(arr);
-        assertEquals(MemorySegment.ofArray(arr).scope(), MemorySegment.ofBuffer(buf).scope());
+        assertEquals(MemorySegment.ofBuffer(buf).scope(), MemorySegment.ofArray(arr).scope());
         testDerivedBufferScope(MemorySegment.ofArray(arr));
     }
 
@@ -87,7 +87,7 @@ public class TestScope {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment1 = arena.allocate(10);
             MemorySegment segment2 = arena.allocate(10);
-            assertEquals(segment1.scope(), segment2.scope());
+            assertEquals(segment2.scope(), segment1.scope());
             testDerivedBufferScope(segment1);
         }
     }
@@ -96,9 +96,9 @@ public class TestScope {
     public void testSameNativeScope() {
         MemorySegment segment1 = MemorySegment.ofAddress(42);
         MemorySegment segment2 = MemorySegment.ofAddress(43);
-        assertEquals(segment1.scope(), segment2.scope());
-        assertEquals(segment1.scope(), segment2.reinterpret(10).scope());
-        assertEquals(segment1.scope(), Arena.global().scope());
+        assertEquals(segment2.scope(), segment1.scope());
+        assertEquals(segment2.reinterpret(10).scope(), segment1.scope());
+        assertEquals(Arena.global().scope(), segment1.scope());
         testDerivedBufferScope(segment1.reinterpret(10));
     }
 
@@ -107,7 +107,7 @@ public class TestScope {
         SymbolLookup loaderLookup = SymbolLookup.loaderLookup();
         MemorySegment segment1 = loaderLookup.find("f").get();
         MemorySegment segment2 = loaderLookup.find("c").get();
-        assertEquals(segment1.scope(), segment2.scope());
+        assertEquals(segment2.scope(), segment1.scope());
         testDerivedBufferScope(segment1.reinterpret(10));
     }
 
@@ -138,7 +138,7 @@ public class TestScope {
     void testDerivedBufferScope(MemorySegment segment) {
         ByteBuffer buffer = segment.asByteBuffer();
         MemorySegment.Scope expectedScope = segment.scope();
-        assertEquals(MemorySegment.ofBuffer(buffer).scope(), expectedScope);
+        assertEquals(expectedScope, MemorySegment.ofBuffer(buffer).scope());
         // buffer slices should have same scope
         ByteBuffer slice = buffer.slice(0, 2);
         assertEquals(expectedScope, MemorySegment.ofBuffer(slice).scope());
@@ -153,7 +153,7 @@ public class TestScope {
         long byteSize = ZEROED_MEMORY.byteSize();
         var segment = arena.allocate(byteSize, Long.BYTES);
         long mismatch = ZEROED_MEMORY.mismatch(segment);
-        assertEquals(mismatch, -1);
+        assertEquals(-1, mismatch);
     }
 
 }

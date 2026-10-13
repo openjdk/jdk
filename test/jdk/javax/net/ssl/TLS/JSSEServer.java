@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.SocketException;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
@@ -44,7 +45,7 @@ public class JSSEServer extends CipherTestUtils.Server {
                 new TrustManager[]{cipherTest.getServerTrustManager()},
                 CipherTestUtils.secureRandom);
         SSLServerSocketFactory factory =
-                (SSLServerSocketFactory)serverContext.getServerSocketFactory();
+                serverContext.getServerSocketFactory();
         serverSocket =
                 (SSLServerSocket) factory.createServerSocket(serverPort);
         serverSocket.setEnabledProtocols(protocol.split(","));
@@ -70,6 +71,12 @@ public class JSSEServer extends CipherTestUtils.Server {
                     e.printStackTrace(System.out);
                 }
             } catch (Exception e) {
+                if (e instanceof SocketException && closeServer) {
+                    // letting the server close
+                    System.out.println("SocketException:");
+                    e.printStackTrace(System.out);
+                    break;
+                }
                 CipherTestUtils.addFailure(e);
                 System.out.println("Exception:");
                 e.printStackTrace(System.out);
@@ -86,6 +93,19 @@ public class JSSEServer extends CipherTestUtils.Server {
         closeServer = true;
         if (serverSocket != null && !serverSocket.isClosed()) {
             serverSocket.close();
+        }
+
+        final Thread serverThread = getServerThread();
+        try {
+            if (serverThread != null &&
+                serverThread != Thread.currentThread()) {
+
+                serverThread.join();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(
+                    "Interrupted while waiting for server thread", e);
         }
     }
 }

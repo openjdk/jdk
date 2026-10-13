@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -629,4 +629,33 @@ void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer)
   intptr_t load_const_bytes = (*(intptr_t*)code_buffer) & 0xffffffffffff0000L;
   *(intptr_t*)instr_addr = load_const_bytes | bytes_after_jump;
   ICache::invalidate_range(instr_addr, 6);
+}
+
+void NativeDeoptInstruction::verify() {
+}
+
+void NativePostCallNop::make_deopt() {
+  NativeDeoptInstruction::insert(addr_at(0));
+}
+
+void NativeDeoptInstruction::insert(address code_pos) {
+  ResourceMark rm;
+  int code_size = 2; // z_illtrap is of 2 bytes
+  CodeBuffer cb(code_pos, code_size + 1);
+  MacroAssembler* a = new MacroAssembler(&cb);
+  a->z_illtrap();
+  // forcing CPU to reload these 2 bytes of instruction by setting current range invalid
+  ICache::invalidate_range(code_pos, code_size);
+}
+
+bool NativeDeoptInstruction::is_deopt_at(address instr){
+  // Check if the instruction is an illtrap (illegal instruction used for deoptimization)
+  if (!Assembler::is_z_illtrap(instr)) return false;
+
+  // Verify the instruction belongs to an nmethod
+  CodeBlob* cb = CodeCache::find_blob(instr);
+  if (cb == nullptr || !cb->is_nmethod()) {
+    return false;
+  }
+  return true;
 }

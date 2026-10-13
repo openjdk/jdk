@@ -42,21 +42,18 @@ public class MetaspaceAllocGaps {
     public static void main(String[] args) throws Exception {
         String appJar = ClassFileInstaller.getJarPath("hello.jar");
         for (int i = 0; i < 2; i++) {
+            // Exclude AOT training data for consistency.
             String compressedOops = "-XX:" + (i == 0 ? "-" : "+") + "UseCompressedOops";
             SimpleCDSAppTester.of("MetaspaceAllocGaps" + i)
                 .addVmArgs("-Xlog:aot=debug,aot+alloc=trace",
+                           "-XX:+UnlockDiagnosticVMOptions",
+                           "-XX:-AOTRecordTraining",
                            "-XX:+UseCompactObjectHeaders")
                 .classpath(appJar)
                 .appCommandLine("Hello")
                 .setTrainingChecker((OutputAnalyzer out) -> {
-                    // Typically all gaps should be filled. If not, we probably have a regression in C++ class ArchiveUtils.
-                    //
-                    // [0.422s][debug][aot ] Detailed metadata info (excluding heap region):
-                    // [...]
-                    // [0.422s][debug][aot ] Gap : 0 0 0.0 | 0 0 0.0 | 0 0 0.0 <<< look for this pattern
-                    out.shouldMatch("Allocated [1-9][0-9]+ objects of [1-9][0-9]+ bytes in gaps .remain = 0 bytes")
-                       .shouldMatch("debug.* Gap .*0[.]0.*0[.]0.*0[.]0")
-                       .shouldNotMatch("Unexpected .* gaps .* for Klass alignment");
+                    // We should have only very minimal amount of gaps left unfilled. See JDK-8383503
+                    out.shouldNotMatch("Unexpected .* gaps .* for Klass alignment");
                 })
                 .setProductionChecker((OutputAnalyzer out) -> {
                     out.shouldContain("HelloWorld");

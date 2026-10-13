@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,11 +101,11 @@ class ClassLoaderData;
 #define PERM_REFCOUNT 0xffff
 #endif
 
-class Symbol : public MetaspaceObj {
+// VerificationType::TypeMask == 0x7 demands 8-byte aligned Symbol*
+class alignas(8) Symbol : public MetaspaceObj {
   friend class VMStructs;
   friend class SymbolTable;
   friend class vmSymbols;
-  friend class JVMCIVMStructs;
 
  private:
 
@@ -240,11 +240,17 @@ class Symbol : public MetaspaceObj {
     return code_byte == char_at(position);
   }
 
+  // True if this is a descriptor for a method with void return.
+  // (Assumes it is a valid descriptor.)
+  bool is_void_method_signature() const {
+    return starts_with('(') && ends_with('V');
+  }
+
   // Test if the symbol has the give substring at or after the i-th char.
   int index_of_at(int i, const char* substr, int substr_len) const;
 
   // Three-way compare for sorting; returns -1/0/1 if receiver is </==/> than arg
-  // note that the ordering is not alfabetical
+  // note that the ordering is not alphabetical
   inline int fast_compare(const Symbol* other) const;
 
   // Returns receiver converted to null-terminated UTF-8 string; string is

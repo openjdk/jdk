@@ -28,7 +28,7 @@
  * @modules java.net.http/jdk.internal.net.http.common
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
- * @run junit/othervm/timeout=480 ResponseBodyBeforeError
+ * @run junit/othervm/timeout=480 ${test.main.class}
  */
 
 import java.io.Closeable;

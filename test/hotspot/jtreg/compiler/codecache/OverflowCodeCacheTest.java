@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,27 @@
  *                   compiler.codecache.OverflowCodeCacheTest
  */
 
+/*
+ * @test OverflowCodeCacheTest
+ * @bug 8059550 8279356 8326205 8390662
+ * @requires vm.compiler2.enabled
+ * @summary testing of code cache segments overflow
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:HotCodeHeapSize=8M
+ *                   -Xmixed -XX:TieredStopAtLevel=4
+ *                   compiler.codecache.OverflowCodeCacheTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:-TieredCompilation -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:HotCodeHeapSize=8M
+ *                   -Xmixed -XX:TieredStopAtLevel=4
+ *                   compiler.codecache.OverflowCodeCacheTest
+ */
+
 package compiler.codecache;
 
 import jdk.test.lib.Asserts;
@@ -85,11 +106,14 @@ public class OverflowCodeCacheTest {
         System.out.println("allocating till possible...");
         ArrayList<Long> blobs = new ArrayList<>();
         int compilationActivityMode = -1;
+        int compilationActivityModeBefore = -1;
+        CodeCacheConstraints constraints = getCodeCacheConstraints(type);
         // Lock compilation to be able to better control code cache space
         WHITE_BOX.lockCompilation();
         try {
             long addr;
             int size = (int) (getHeapSize() >> 7);
+            compilationActivityModeBefore = WHITE_BOX.getCompilationActivityMode();
             while ((addr = WHITE_BOX.allocateCodeBlob(size, type.id)) != 0) {
                 blobs.add(addr);
 
@@ -115,6 +139,7 @@ public class OverflowCodeCacheTest {
             } catch (VirtualMachineError e) {
                 // Expected
             }
+            constraints.check();
             // Free code cache space
             for (Long blob : blobs) {
                 WHITE_BOX.freeCodeBlob(blob);
@@ -131,6 +156,12 @@ public class OverflowCodeCacheTest {
                 helper.method(0, 0, 0, null);
             }
         }
+
+        if (type == BlobType.MethodHot) {
+            Asserts.assertEQ(compilationActivityMode, compilationActivityModeBefore,
+                    "MethodHot overflow must not change compilation activity mode");
+        }
+
         // Only check this if compilation is disabled, otherwise the sweeper might have
         // freed enough nmethods to allow for re-enabling compilation.
         if (COMPILATION_DISABLED) {
@@ -143,4 +174,22 @@ public class OverflowCodeCacheTest {
         return bean.getUsage().getMax();
     }
 
+    class CodeCacheConstraints {
+        void check() {}
+    }
+
+    CodeCacheConstraints getCodeCacheConstraints(final BlobType type) {
+        if (Boolean.TRUE.equals(WHITE_BOX.getBooleanVMFlag("HotCodeHeap")) && type != BlobType.MethodHot) {
+            // HotCodeHeap should not be used when other heap runs out of space.
+            return new CodeCacheConstraints() {
+                final int hotCount = WHITE_BOX.getCodeHeapEntries(BlobType.MethodHot.id).length;
+                @Override
+                void check() {
+                    Asserts.assertEQ(hotCount, WHITE_BOX.getCodeHeapEntries(BlobType.MethodHot.id).length);
+                }
+            };
+        }
+
+        return new CodeCacheConstraints();
+    }
 }

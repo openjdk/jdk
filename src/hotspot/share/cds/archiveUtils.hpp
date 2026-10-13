@@ -36,6 +36,8 @@
 #include "runtime/semaphore.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/growableArray.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 
 class BootstrapInfo;
@@ -44,7 +46,6 @@ class ReservedSpace;
 class VirtualSpace;
 
 template<class E> class Array;
-template<class E> class GrowableArray;
 
 // ArchivePtrMarker is used to mark the location of pointers embedded in a CDS archive. E.g., when an
 // InstanceKlass k is dumped, we mark the location of the k->_name pointer by effectively calling
@@ -54,6 +55,7 @@ class ArchivePtrMarker : AllStatic {
   static CHeapBitMap*  _ptrmap;
   static CHeapBitMap*  _rw_ptrmap;
   static CHeapBitMap*  _ro_ptrmap;
+  static CHeapBitMap*  _ac_ptrmap;
   static VirtualSpace* _vs;
 
   // Once _ptrmap is compacted, we don't allow bit marking anymore. This is to
@@ -65,7 +67,7 @@ class ArchivePtrMarker : AllStatic {
 
 public:
   static void initialize(CHeapBitMap* ptrmap, VirtualSpace* vs);
-  static void initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap);
+  static void initialize_rw_ro_ac_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap, CHeapBitMap* ac_ptrmap);
   static void mark_pointer(address* ptr_loc);
   static void clear_pointer(address* ptr_loc);
   static void compact(address relocatable_base, address relocatable_end);
@@ -94,10 +96,15 @@ public:
     return _ro_ptrmap;
   }
 
+  static CHeapBitMap* ac_ptrmap() {
+    return _ac_ptrmap;
+  }
+
   static void reset_map_and_vs() {
     _ptrmap = nullptr;
     _rw_ptrmap = nullptr;
     _ro_ptrmap = nullptr;
+    _ac_ptrmap = nullptr;
     _vs = nullptr;
   }
 };
@@ -289,6 +296,15 @@ public:
   static Array<T>* archive_array(GrowableArray<T>* tmp_array) {
     return archive_ptr_array(tmp_array);
   }
+
+  // Compute the address at the given offset from requested_base, which must be the
+  // requested address of the bottom of the static or dynamic archive. In the case of
+  // the static archive, it's possible for requested_base to have the numerical value
+  // of 0x0, so we use integer arithmetic to avoid UB pointer arithmetic.
+  template <typename T>
+  static address offset_from_requested_base(T requested_base, size_t offset) {
+    return (address)((uintptr_t)requested_base + offset);
+  }
 };
 
 class HeapRootSegments {
@@ -400,5 +416,40 @@ public:
   ~ArchiveWorkers();
   void run_task(ArchiveWorkerTask* task);
 };
+
+// A utility class for writing an array of unique items into the
+// AOT cache. For determinism, the order of the array is the same
+// as calls to add(). I.e., if items are added in the order
+// of A, B, A, C, B, D, then the array will be written as {A, B, C, D}
+template <typename T, unsigned SIZE = 15889>
+class ArchivableTable : public AnyObj {
+  using Table = HashTable<T, bool, SIZE, AnyObj::C_HEAP, mtClassShared>;
+  Table* _seen_items;
+  GrowableArray<T>* _ordered_array;
+public:
+  ArchivableTable() {
+    _seen_items = new (mtClassShared)Table();
+     _ordered_array = new (mtClassShared)GrowableArray<T>(128, mtClassShared);
+  }
+
+  ~ArchivableTable() {
+    delete _seen_items;
+    delete _ordered_array;
+  }
+
+  void add(T t) {
+    bool created;
+    _seen_items->put_if_absent(t, &created);
+    if (created) {
+      _ordered_array->append(t);
+    }
+  }
+
+  Array<T>* write_ordered_array() {
+    return ArchiveUtils::archive_array(_ordered_array);
+  }
+};
+
+using ArchivableKlassTable = ArchivableTable<Klass*>;
 
 #endif // SHARE_CDS_ARCHIVEUTILS_HPP

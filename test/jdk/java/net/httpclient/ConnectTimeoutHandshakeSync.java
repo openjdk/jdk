@@ -33,7 +33,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @bug 8208391
  * @library /test/lib
  * @build AbstractConnectTimeoutHandshake
- * @run junit/othervm ConnectTimeoutHandshakeSync
+ * @run junit/othervm ${test.main.class}
  */
 
 public class ConnectTimeoutHandshakeSync

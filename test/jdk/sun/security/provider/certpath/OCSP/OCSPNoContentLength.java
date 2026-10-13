@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *          java.base/sun.security.provider.certpath
  *          java.base/sun.security.util
  * @library /test/lib
- * @run main/othervm OCSPNoContentLength
+ * @run main/othervm -Dtest.debug=true OCSPNoContentLength
  */
 
 import java.io.IOException;
@@ -55,7 +55,7 @@ public class OCSPNoContentLength {
     static String EE_ALIAS = "endentity";
 
     // Enable debugging for additional output
-    static final boolean debug = true;
+    static final boolean debug = Boolean.getBoolean("test.debug");
 
     // PKI components we will need for this test
     static X509Certificate rootCert;        // The root CA certificate

@@ -89,16 +89,21 @@ void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address 
   NativeMovConstReg* method_holder
     = nativeMovConstReg_at(stub + NativeInstruction::instruction_size);
 
+  // In AOT "production" run we have mixture of AOTed and normal JITed code.
+  // Static call stub in AOTed nmethod always has far jump.
+  // Normal JITed nmethod may have short or far jump depending on distance.
+  // Determine actual jump instruction we have in code.
+  address next_instr = method_holder->next_instruction_address();
+  bool is_general_jump = nativeInstruction_at(next_instr)->is_general_jump();
+
 #ifdef ASSERT
-  NativeJump* jump = MacroAssembler::codestub_branch_needs_far_jump()
-                         ? nativeGeneralJump_at(method_holder->next_instruction_address())
-                         : nativeJump_at(method_holder->next_instruction_address());
+  NativeJump* jump = is_general_jump ? nativeGeneralJump_at(next_instr) : nativeJump_at(next_instr);
   verify_mt_safe(callee, entry, method_holder, jump);
 #endif
 
   // Update stub.
   method_holder->set_data((intptr_t)callee());
-  MacroAssembler::pd_patch_instruction(method_holder->next_instruction_address(), entry);
+  MacroAssembler::pd_patch_instruction(next_instr, entry);
   ICache::invalidate_range(stub, to_interp_stub_size());
   // Update jump to call.
   set_destination_mt_safe(stub);
@@ -109,12 +114,19 @@ void CompiledDirectCall::set_stub_to_clean(static_stub_Relocation* static_stub) 
   address stub = static_stub->addr();
   assert(stub != nullptr, "stub not found");
   assert(CompiledICLocker::is_safe(stub), "mt unsafe call");
+
   // Creation also verifies the object.
   NativeMovConstReg* method_holder
     = nativeMovConstReg_at(stub + NativeInstruction::instruction_size);
   method_holder->set_data(0);
-  NativeJump* jump = nativeJump_at(method_holder->next_instruction_address());
-  jump->set_jump_destination((address)-1);
+
+  // See comment about AOT in set_to_interpreted().
+  address next_instr = method_holder->next_instruction_address();
+  if (nativeInstruction_at(next_instr)->is_general_jump()) {
+    nativeGeneralJump_at(next_instr)->set_jump_destination((address)-1);
+  } else {
+    nativeJump_at(next_instr)->set_jump_destination((address)-1);
+  }
 }
 
 //-----------------------------------------------------------------------------

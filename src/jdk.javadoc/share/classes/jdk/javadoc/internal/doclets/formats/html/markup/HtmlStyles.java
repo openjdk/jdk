@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -735,6 +735,16 @@ public enum HtmlStyles implements HtmlStyle {
     pageSearchInfo,
 
     /**
+     * The class for a {@code div} element in the search widget containing the search form inputs.
+     */
+    searchForm,
+
+    /**
+     * The class for a {@code div} element in the search widget containing search-related links.
+     */
+    searchLinks,
+
+    /**
      * The class for a link in the static "Index" pages to a custom searchable item,
      * such as defined with an {@code @index} tag.
      */
@@ -1084,6 +1094,11 @@ public enum HtmlStyles implements HtmlStyle {
      * the package uses page.
      */
     packageUses,
+
+    /**
+     * The class of a {@code div} element representing a heading in the settings panel.
+     */
+    panelHeading,
 
     /**
      * The class for the list of references to an external specification.

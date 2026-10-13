@@ -29,7 +29,7 @@
  *       ReferenceTracker AggregateRequestBodyTest
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors,headers,frames
- *                     AggregateRequestBodyTest
+ *                     ${test.main.class}
  * @summary Tests HttpRequest.BodyPublishers::concat
  */
 

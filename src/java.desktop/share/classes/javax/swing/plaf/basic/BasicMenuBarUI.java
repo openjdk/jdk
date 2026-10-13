@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,10 +237,10 @@ public class BasicMenuBarUI extends MenuBarUI  {
         // ChangeListener
         //
         public void stateChanged(ChangeEvent e) {
-            int i,c;
-            for(i=0,c = menuBar.getMenuCount() ; i < c ; i++) {
+            final int c = menuBar.getMenuCount();
+            for (int i = 0; i < c; i++) {
                 JMenu menu = menuBar.getMenu(i);
-                if(menu != null && menu.isSelected()) {
+                if (menu != null && menu.isSelected()) {
                     menuBar.getSelectionModel().setSelectedIndex(i);
                     break;
                 }

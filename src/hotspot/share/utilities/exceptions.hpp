@@ -61,7 +61,6 @@ class methodHandle;
 
 class ThreadShadow: public CHeapObj<mtThread> {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
  protected:
   oop  _pending_exception;                       // Thread has gc actions.
@@ -182,6 +181,8 @@ class Exceptions {
 
   static void throw_stack_overflow_exception(JavaThread* thread, const char* file, int line, const methodHandle& method);
 
+  static void wrap_exception_in_internal_error(const char* message, JavaThread* thread);
+
   static void wrap_dynamic_exception(bool is_indy, JavaThread* thread);
 
   // Exception counting of interesting exceptions that may have caused a
@@ -268,6 +269,8 @@ class Exceptions {
 // with a TRAPS argument.
 
 #define THREAD_AND_LOCATION                      THREAD, __FILE__, __LINE__
+#define THREAD_AND_LOCATION_DECL                 TRAPS, const char* file, int line
+#define THREAD_AND_LOCATION_ARGS                 THREAD, file, line
 
 #define THROW_OOP(e)                                \
   { Exceptions::_throw_oop(THREAD_AND_LOCATION, e);                             return;  }

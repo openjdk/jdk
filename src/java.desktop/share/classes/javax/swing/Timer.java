@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,8 +173,7 @@ public class Timer implements Serializable
     private final transient Lock lock = new ReentrantLock();
 
     // This field is maintained by TimerQueue.
-    // eventQueued can also be reset by the TimerQueue, but will only ever
-    // happen in an AppContext case when TimerQueues thread is destroyed.
+    // eventQueued can also be reset by the TimerQueue
     // access to this field is synchronized on getLock() lock.
     transient TimerQueue.DelayedTimer delayedTimer = null;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import com.sun.java.swing.plaf.windows.TMSchema.State;
 /**
  * Windows rendition of the component.
  */
-public final class WindowsMenuUI extends BasicMenuUI {
+public class WindowsMenuUI extends BasicMenuUI {
     protected Integer menuBarHeight;
     protected boolean hotTrackingOn;
 
@@ -121,10 +121,7 @@ public final class WindowsMenuUI extends BasicMenuUI {
     @Override
     protected void installDefaults() {
         super.installDefaults();
-        if (!WindowsLookAndFeel.isClassicWindows()) {
-            menuItem.setRolloverEnabled(true);
-        }
-
+        menuItem.setRolloverEnabled(true);
         menuBarHeight = (Integer)UIManager.getInt("MenuBar.height");
 
         Object obj      = UIManager.get("MenuBar.rolloverEnabled");
@@ -167,10 +164,8 @@ public final class WindowsMenuUI extends BasicMenuUI {
         JMenu menu = (JMenu)menuItem;
         ButtonModel model = menu.getModel();
 
-        // Use superclass method for the old Windows LAF,
-        // for submenus, and for XP toplevel if selected or pressed
-        if (WindowsLookAndFeel.isClassicWindows() ||
-            !menu.isTopLevelMenu() ||
+        // Use superclass method for submenus, and for XP toplevel if selected or pressed
+        if (!menu.isTopLevelMenu() ||
             (XPStyle.getXP() != null && (model.isArmed() || model.isSelected()))) {
 
             super.paintBackground(g, menu, bgColor);
@@ -260,8 +255,7 @@ public final class WindowsMenuUI extends BasicMenuUI {
             }
         }
 
-        if ((model.isSelected() && (WindowsLookAndFeel.isClassicWindows() ||
-                                    !menu.isTopLevelMenu())) ||
+        if ((model.isSelected() && !menu.isTopLevelMenu()) ||
             (XPStyle.getXP() != null && (paintRollover ||
                                          model.isArmed() ||
                                          model.isSelected()))) {
@@ -283,7 +277,7 @@ public final class WindowsMenuUI extends BasicMenuUI {
      * true when the mouse enters the menu and false when it exits.
      * @since 1.4
      */
-    protected final class WindowsMouseInputHandler extends BasicMenuUI.MouseInputHandler {
+    protected class WindowsMouseInputHandler extends BasicMenuUI.MouseInputHandler {
         @Override
         public void mouseEntered(MouseEvent evt) {
             super.mouseEntered(evt);

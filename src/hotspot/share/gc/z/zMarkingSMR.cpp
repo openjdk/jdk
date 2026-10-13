@@ -66,6 +66,9 @@ void ZMarkingSMR::free_node(ZMarkStackListNode* node) {
     return;
   }
 
+  // Order the hazard pointers loads w.r.t. the unlinking of the head node.
+  OrderAccess::fence();
+
   ZPerWorkerIterator<ZWorkerState> iter(&_worker_states);
   ZArray<ZMarkStackListNode*>* const scanned_hazards = &local_state->_scanned_hazards;
 

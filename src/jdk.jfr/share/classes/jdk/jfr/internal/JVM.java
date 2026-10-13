@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.jfr.internal;
 
+import java.lang.reflect.Field;
 import java.util.List;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -658,6 +659,12 @@ public final class JVM {
     public static native long hostTotalSwapMemory();
 
     /**
+     * Returns the amount of memory used in the host system whether or not this
+     * JVM runs in a container.
+     */
+    public static native long hostMemoryUsage();
+
+    /**
      * Emit a jdk.DataLoss event for the specified amount of bytes.
      *
      * @param bytes number of bytes that were lost
@@ -768,4 +775,14 @@ public final class JVM {
      * @return the unloaded IDs, or null if no unloading has occurred.
      */
     public static native long[] drainStaleMethodTracerIds();
+
+    /**
+     * The tryUpdateEpoch() method(s) takes a state object as an argument
+     * and returns true if the epoch was exclusively updated by the current thread.
+     *
+     * @param root A {@link java.lang.reflect.Field} instance root, not {@code null}
+     * @return {@code true} if the epoch was updated by the current thread.
+     */
+    @IntrinsicCandidate
+    public static native boolean tryUpdateEpoch(Field root);
 }

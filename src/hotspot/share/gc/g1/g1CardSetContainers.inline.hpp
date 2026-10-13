@@ -335,7 +335,7 @@ inline bool G1CardSetHowl::contains(uint card_idx, G1CardSetConfiguration* confi
 template <class CardOrRangeVisitor>
 inline void G1CardSetHowl::iterate(CardOrRangeVisitor& found, G1CardSetConfiguration* config) {
   for (uint i = 0; i < config->num_buckets_in_howl(); ++i) {
-    iterate_cardset(at(i), i, found, config);
+    iterate_card_set(at(i), i, found, config);
   }
 }
 
@@ -347,7 +347,7 @@ inline void G1CardSetHowl::iterate(ContainerPtrVisitor& found, uint num_card_set
 }
 
 template <class CardOrRangeVisitor>
-inline void G1CardSetHowl::iterate_cardset(ContainerPtr const container, uint index, CardOrRangeVisitor& found, G1CardSetConfiguration* config) {
+inline void G1CardSetHowl::iterate_card_set(ContainerPtr const container, uint index, CardOrRangeVisitor& found, G1CardSetConfiguration* config) {
   switch (G1CardSet::container_type(container)) {
     case G1CardSet::ContainerInlinePtr: {
       if (found.start_iterate(G1GCPhaseTimes::MergeRSHowlInline)) {

@@ -27,7 +27,9 @@ import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,14 +37,17 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
@@ -241,21 +246,49 @@ public class WindowsHelper {
 
     public enum WixType {
         WIX3,
-        WIX4
+        WIX4,
+        ;
+
+        /**
+         * Returns the file name of the WiX build tool outputting MSI files.
+         *
+         * @return the name of the WiX tool outputting MSI files
+         */
+        public String buildTool() {
+            return switch (this) {
+                case WIX3 -> "light.exe";
+                case WIX4 -> "wix.exe";
+            };
+        }
     }
 
     public static WixType getWixTypeFromVerboseJPackageOutput(Executor.Result result) {
-        return result.getOutput().stream().map(str -> {
-            if (str.contains("[light.exe]")) {
+        return getWixTypeFromVerboseJPackageOutput(Locale.getDefault(), result);
+    }
+
+    public static WixType getWixTypeFromVerboseJPackageOutput(Locale resultLocale, Executor.Result result) {
+
+        final String summaryWixVersion;
+        if (resultLocale.equals(Locale.getDefault())) {
+            summaryWixVersion = JPackageStringBundle.MAIN.cannedFormattedString(
+                    "summary.property.win-wix-version").getValue() + ": ";
+        } else {
+            summaryWixVersion = JPackageResourceBundleCache.INSTANCE.get(resultLocale).getString(
+                    "summary.property.win-wix-version") + ": ";
+        }
+
+        return result.stdout().stream().filter(str -> {
+            return str.startsWith(summaryWixVersion);
+        }).findFirst().map(str -> {
+            var ver = str.substring(summaryWixVersion.length());
+            if (DottedVersion.compareComponents(DottedVersion.lazy(ver), DottedVersion.greedy("4.0")) < 0) {
                 return WixType.WIX3;
-            } else if (str.contains("[wix.exe]")) {
-                return WixType.WIX4;
             } else {
-                return null;
+                return WixType.WIX4;
             }
-        }).filter(Objects::nonNull).reduce((a, b) -> {
-            throw new IllegalArgumentException("Invalid input: multiple invocations of WiX tools");
-        }).orElseThrow(() -> new IllegalArgumentException("Invalid input: no invocations of WiX tools"));
+        }).orElseThrow(() -> {
+            return new IllegalArgumentException("Failed to detect WiX version. Likely, the input is missing the summary");
+        });
     }
 
     static Optional<Path> toShortPath(Path path) {
@@ -287,7 +320,7 @@ public class WindowsHelper {
     }
 
     public static String getExecutableDescription(Path pathToExeFile) {
-        Executor exec = Executor.of("powershell",
+        Executor exec = Executor.of(PowerShellPath(),
                 "-NoLogo",
                 "-NoProfile",
                 "-Command",
@@ -436,7 +469,7 @@ public class WindowsHelper {
         ;
 
         Path getPath() {
-            final var str = Executor.of("powershell", "-NoLogo", "-NoProfile",
+            final var str = Executor.of(PowerShellPath(), "-NoLogo", "-NoProfile",
                     "-NonInteractive", "-Command",
                     String.format("[Environment]::GetFolderPath('%s')", name())
                     ).saveFirstLineOfOutput().execute().getFirstLineOfOutput();
@@ -627,6 +660,26 @@ public class WindowsHelper {
     }
 
 
+    private static final class JPackageResourceBundleCache {
+
+        ResourceBundle get(Locale locale) {
+            synchronized (items) {
+                var value = Optional.ofNullable(items.get(locale)).map(Reference::get).orElse(null);
+                if (value == null) {
+                    value = ResourceBundle.getBundle("jdk.jpackage.internal.resources.WinResources",
+                            locale, ModuleLayer.boot().findModule("jdk.jpackage").orElseThrow());
+                    items.put(locale, new WeakReference<>(value));
+                }
+                return value;
+            }
+        }
+
+        private final Map<Locale, WeakReference<ResourceBundle>> items = new HashMap<>();
+
+        static final JPackageResourceBundleCache INSTANCE = new JPackageResourceBundleCache();
+    }
+
+
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
             "bin\\server\\jvm.dll"));
 
@@ -642,4 +695,11 @@ public class WindowsHelper {
     private static final String USER_SHELL_FOLDERS_REGKEY = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders";
 
     private static final int WIN_MAX_PATH = 260;
+
+    public static String PowerShellPath() {
+        String systemRoot = System.getenv("SystemRoot");
+        String suffix = "\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
+        String fullPath = systemRoot == null ? null : systemRoot + suffix;
+        return (fullPath != null && Files.exists(Path.of(fullPath))) ? fullPath : "powershell";
+    }
 }

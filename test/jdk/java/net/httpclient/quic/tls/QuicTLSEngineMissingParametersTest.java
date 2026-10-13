@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *          java.base/jdk.internal.net.quic
  * @build jdk.test.lib.net.SimpleSSLContext
  * @summary Verify that a missing transport parameters extension results in missing_extension alert
- * @run junit/othervm QuicTLSEngineMissingParametersTest
+ * @run junit/othervm ${test.main.class}
  */
 public class QuicTLSEngineMissingParametersTest {
 

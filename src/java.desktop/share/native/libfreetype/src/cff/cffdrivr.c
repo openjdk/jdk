@@ -4,7 +4,7 @@
  *
  *   OpenType font driver implementation (body).
  *
- * Copyright (C) 1996-2025 by
+ * Copyright (C) 1996-2026 by
  * David Turner, Robert Wilhelm, Werner Lemberg, and Dominik Röttsches.
  *
  * This file is part of the FreeType project, and may only be used,

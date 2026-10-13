@@ -26,8 +26,6 @@ package javax.xml.parsers.ptests;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.FactoryConfigurationError;
@@ -44,7 +42,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @library /javax/xml/jaxp/libs
  * @run junit/othervm javax.xml.parsers.ptests.FactoryConfErrorTest
  */
-@Execution(ExecutionMode.SAME_THREAD)
 public class FactoryConfErrorTest {
 
     /**

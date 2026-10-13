@@ -32,6 +32,9 @@
 #include "jfr/utilities/jfrTryLock.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "logging/log.hpp"
+#ifdef COMPILER2
+#include "opto/c2_globals.hpp"
+#endif
 #include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -288,7 +291,19 @@ class OSThreadSampler : public SuspendedThreadTask {
  public:
   OSThreadSampler(JavaThread* jt) : SuspendedThreadTask(jt),
                                     _result(THREAD_SUSPENSION_ERROR) {}
-  void request_sample() { run(); }
+  void request_sample() {
+#ifdef COMPILER2
+    if (HotCodeHeap) {
+      JfrMutexTryLock try_lock(SuspendedThreadTask_lock);
+      if (try_lock.acquired()) {
+        run();
+      }
+      return;
+    }
+#endif
+    run();
+  }
+
   JfrSampleResult result() const { return _result; }
 
   void do_task(const SuspendedThreadTaskContext& context) {

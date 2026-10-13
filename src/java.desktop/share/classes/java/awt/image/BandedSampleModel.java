@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,9 +167,10 @@ public final class BandedSampleModel extends ComponentSampleModel
      * can be used with.  The new BandedSampleModel/DataBuffer
      * combination will represent an image with a subset of the bands
      * of the original BandedSampleModel/DataBuffer combination.
+     * @throws NullPointerException if {@code bands} is {@code null}
+     * @throws IllegalArgumentException if the number of bands is not greater than 0
      * @throws RasterFormatException if the number of bands is greater than
      *                               the number of banks in this sample model.
-     * @throws IllegalArgumentException if the number of bands is not greater than 0
      * @throws ArrayIndexOutOfBoundsException if any of the bank indices is out of bounds
      */
     public SampleModel createSubsetSampleModel(int[] bands) {
@@ -440,6 +441,11 @@ public final class BandedSampleModel extends ComponentSampleModel
      */
     public int[] getPixels(int x, int y, int w, int h,
                            int[] iArray, DataBuffer data) {
+
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int x1 = x + w;
         int y1 = y + h;
 
@@ -542,6 +548,10 @@ public final class BandedSampleModel extends ComponentSampleModel
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int[] samples;
         if (iArray != null) {
            samples = iArray;
@@ -668,7 +678,7 @@ public final class BandedSampleModel extends ComponentSampleModel
 
     /**
      * {@inheritDoc}
-     * @throws NullPointerException if {@code iArray} or {code data} is {@code null}.
+     * @throws NullPointerException if {@code iArray} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code iArray} is too small to hold the input.
      */
@@ -688,7 +698,7 @@ public final class BandedSampleModel extends ComponentSampleModel
      * {@inheritDoc}
      * @throws NullPointerException if {@code iArray} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
-     * not in bounds, or {@code w} or {@code h} is negative.
+     * not in bounds, or {@code w} or {@code h} is negative,
      * or if {@code iArray} is too small to hold the input.
      */
     public void setPixels(int x, int y, int w, int h,
@@ -701,6 +711,13 @@ public final class BandedSampleModel extends ComponentSampleModel
         {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
+        }
+
+        if (iArray == null) {
+            throw new NullPointerException("Array must not be null");
+        }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
         }
 
         for (int k = 0; k < numBands; k++) {
@@ -786,6 +803,14 @@ public final class BandedSampleModel extends ComponentSampleModel
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
+
+        if (iArray == null) {
+            throw new NullPointerException("Array must not be null");
+        }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int lineOffset = y*scanlineStride + x + bandOffsets[b];
         int srcOffset = 0;
         int bank = bankIndices[b];

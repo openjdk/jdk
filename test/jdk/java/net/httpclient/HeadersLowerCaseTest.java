@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run junit/othervm -Djdk.internal.httpclient.debug=true HeadersLowerCaseTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 public class HeadersLowerCaseTest implements HttpServerAdapters {
 

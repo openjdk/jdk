@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,7 +417,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * the label.
      *
      * @return an <code>Insets</code> object specifying the margin
-     *          between the botton's border and the label
+     *          between the button's border and the label
      * @see #setMargin
      */
     public Insets getMargin() {
