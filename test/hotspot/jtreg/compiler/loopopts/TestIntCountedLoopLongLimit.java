@@ -168,6 +168,40 @@ public class TestIntCountedLoopLongLimit {
     }
 
     @Test
+    @IR(counts = { IRNode.COUNTED_LOOP, "2", IRNode.LOOP_LIMIT_CHECK_TRAP, "1" })
+    @IR(failOn = { IRNode.LOOP })
+    public static int testEarlyReturn(long limit) {
+        int sum = 0;
+        for (int i = 0; i < limit; i++) {
+            sum += i;
+            if (sum > 100) {
+                return sum;
+            }
+        }
+        return sum;
+    }
+
+    @Test
+    @IR(counts = { IRNode.COUNTED_LOOP, "2", IRNode.LOOP_LIMIT_CHECK_TRAP, "1" })
+    @IR(failOn = { IRNode.LOOP })
+    public static int testEarlyBreak(long limit) {
+        int sum = 0;
+        for (int i = 0; i < limit; i++) {
+            sum += i;
+            if (sum > 100) {
+                break;
+            }
+        }
+        return sum;
+    }
+
+    @Run(test = { "testEarlyReturn", "testEarlyBreak" })
+    public static void runTestEarlyExitLoops() {
+        long limit = SMALL_INT_RANGE_LONGS.next();
+        Asserts.assertEQ(testEarlyReturn(limit), testEarlyBreak(limit));
+    }
+
+    @Test
     @IR(counts = { IRNode.CONV_I2L, "1" })
     @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.CONV_L2I, IRNode.LOOP_LIMIT_CHECK_TRAP })
     public static int testLimitNotInvariant(long limit) {
