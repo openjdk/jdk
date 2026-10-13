@@ -126,7 +126,8 @@ public class SyncProviderException extends java.sql.SQLException {
      *     implementation is also returned if the <code>SyncResolver()</code> or
      *     <code>SyncResolver(String)</code> constructors are used to instantiate
      *     the <code>SyncResolver</code> instance.
-     * @throws IllegalStateException if a {@code SyncResolver} cannot be loaded.
+     * @throws IllegalStateException if a {@code SyncResolver} is not set and the default
+     *      implementation cannot be loaded.
      */
     public SyncResolver getSyncResolver() {
         if (syncResolver != null) {
