@@ -222,7 +222,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   // heuristics say there are no regions to compact, and all the collection comes from immediately
   // reclaimable regions, Shenandoah can skip the evacuation phase.
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (ShenandoahHeap::heap()->cancelled_gc()) {
+  if (heap->cancelled_gc()) {
     // Need to report at "gc" level to report GC ID proper.
     log_info(gc)("Cancelled before cycle started");
     return;
