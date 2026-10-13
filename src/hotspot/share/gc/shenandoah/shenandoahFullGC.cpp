@@ -151,8 +151,6 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 
 void ShenandoahFullGC::do_it() {
   _heap->release_injected_pins();
-  // A full GC must be entered directly, though it is possible for concurrent marking to be
-  // in progress.
 
   if (_heap->mode()->is_generational()) {
     ShenandoahGenerationalFullGC::prepare();
