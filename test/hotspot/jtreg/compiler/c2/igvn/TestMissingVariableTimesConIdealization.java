@@ -30,13 +30,13 @@ package compiler.c2.igvn;
  *          ((x << c1) + (x << c2)) + x -> c * x
  * @library /test/lib /
  * @run main/othervm -XX:-TieredCompilation -Xbatch
- *                   -XX:+UnlockDiagnosticVMOptions -XX:VerifyIterativeGVN=1110
+ *                   -XX:+IgnoreUnrecognizedVMOptions  -XX:+UnlockDiagnosticVMOptions -XX:VerifyIterativeGVN=1110
  *                   -XX:CompileOnly=${test.main.class}::test*
  *                   -XX:+StressIGVN
  *                   ${test.main.class}
  * @run main/othervm --enable-preview
  *                   -XX:-TieredCompilation -Xcomp
- *                   -XX:+UnlockDiagnosticVMOptions -XX:VerifyIterativeGVN=1110
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:VerifyIterativeGVN=1110
  *                   -XX:CompileOnly=${test.main.class}::test*
  *                   -XX:+StressIGVN
  *                   ${test.main.class}

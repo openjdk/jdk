@@ -29,7 +29,7 @@ package compiler.c2.igvn;
  * @summary C2 IGVN should idealize: (x | c1) & c2 -> (x & c2) | (c1 & c2)
  * @library /test/lib /
  * @run main/othervm -XX:-TieredCompilation -Xcomp
- *                   -XX:+UnlockDiagnosticVMOptions -XX:VerifyIterativeGVN=1110
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:VerifyIterativeGVN=1110
  *                   -XX:CompileOnly=${test.main.class}::test*
  *                   -XX:+StressIGVN
  *                   ${test.main.class}
