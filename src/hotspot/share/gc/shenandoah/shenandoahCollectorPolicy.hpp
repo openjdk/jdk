@@ -33,6 +33,7 @@
 #include "memory/allocation.hpp"
 
 class ShenandoahHeapRegion;
+class ShenandoahMode;
 
 class ShenandoahCollectorPolicy : public CHeapObj<mtGC> {
 private:
@@ -54,10 +55,11 @@ private:
 
   ShenandoahSharedFlag _in_shutdown;
   ShenandoahTracer* _tracer;
+  ShenandoahMode* _mode;
 
 public:
 
-  ShenandoahCollectorPolicy();
+  ShenandoahCollectorPolicy(ShenandoahMode* mode);
 
   void record_mixed_cycle();
   void record_success_old();

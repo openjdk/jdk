@@ -201,7 +201,7 @@ public:
   const char* name()          const override { return "Shenandoah"; }
   ShenandoahHeap::Name kind() const override { return CollectedHeap::Shenandoah; }
 
-  ShenandoahHeap(ShenandoahCollectorPolicy* policy);
+  ShenandoahHeap();
   jint initialize() override;
   void post_initialize() override;
   virtual void initialize_generations();

@@ -27,6 +27,7 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/plab.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
@@ -35,7 +36,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/ostream.hpp"
 
-ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
+ShenandoahCollectorPolicy::ShenandoahCollectorPolicy(ShenandoahMode* mode) :
   _success_concurrent_gcs(0),
   _abbreviated_concurrent_gcs(0),
   _last_whole_heap_gc_id(0),
@@ -44,7 +45,8 @@ ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
   _mixed_gcs(0),
   _success_old_gcs(0),
   _interrupted_old_gcs(0),
-  _alloc_failure_full(0) {
+  _alloc_failure_full(0),
+  _mode(mode) {
   Copy::zero_to_bytes(_stall_counts, sizeof(size_t) * ShenandoahController::PHASE_LIMIT);
   Copy::zero_to_bytes(_collection_cause_counts, sizeof(size_t) * GCCause::_last_gc_cause);
 
@@ -63,7 +65,7 @@ void ShenandoahCollectorPolicy::record_alloc_failure_to_full() {
 void ShenandoahCollectorPolicy::record_allocation_stall(ShenandoahController::ShenandoahCollectorPhase phase) {
   assert(phase < ShenandoahController::PHASE_LIMIT, "Invalid phase: %d", phase);
   assert(ShenandoahController::UNSET <= phase, "Invalid phase: %d", phase);
-  _stall_counts[phase].add_then_fetch(1UL);
+  _stall_counts[phase].add_then_fetch(1UL, memory_order_relaxed);
 }
 
 void ShenandoahCollectorPolicy::record_success_concurrent(size_t gc_id, bool is_young, bool is_abbreviated) {
@@ -271,7 +273,7 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
   out->print_cr("  %5zu abbreviated (%.2f%%)",  _abbreviated_concurrent_gcs, percent_of(_abbreviated_concurrent_gcs, _success_concurrent_gcs));
   out->cr();
 
-  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+  if (_mode->is_generational()) {
     out->print_cr("%5zu Completed Old GCs (%.2f%%)",     _success_old_gcs, percent_of(_success_old_gcs, completed_gcs));
     out->print_cr("  %5zu mixed",                        _mixed_gcs);
     out->print_cr("  %5zu interruptions",                _interrupted_old_gcs);

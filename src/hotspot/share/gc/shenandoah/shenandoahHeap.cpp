@@ -559,7 +559,7 @@ void ShenandoahHeap::initialize_heuristics() {
 #pragma warning( disable:4355 ) // 'this' : used in base member initializer list
 #endif
 
-ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
+ShenandoahHeap::ShenandoahHeap() :
   CollectedHeap(),
   _active_generation(nullptr),
   _initial_size(0),
@@ -581,7 +581,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _uncommit_thread(nullptr),
   _young_generation(nullptr),
   _old_generation(nullptr),
-  _shenandoah_policy(policy),
   _gc_mode(nullptr),
   _free_set(nullptr),
   _allocator(nullptr),
@@ -607,6 +606,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   // Initialize GC mode early, many subsequent initialization procedures depend on it
   initialize_mode();
   _cancelled_gc.unset();
+  _shenandoah_policy = new ShenandoahCollectorPolicy(mode());
 }
 
 #ifdef _MSC_VER

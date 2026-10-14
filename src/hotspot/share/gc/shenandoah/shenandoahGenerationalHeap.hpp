@@ -38,7 +38,7 @@ class ShenandoahGenerationalHeap : public ShenandoahHeap {
   void stop() override;
 
 public:
-  explicit ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy);
+  ShenandoahGenerationalHeap();
   void post_initialize() override;
   void initialize_generations() override;
   void initialize_heuristics() override;

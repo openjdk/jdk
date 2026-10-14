@@ -22,6 +22,7 @@
  *
  */
 
+#include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
 #include "unittest.hpp"
@@ -30,7 +31,8 @@
 using ::testing::HasSubstr;
 
 TEST_VM(ShenandoahCollectorPolicyTest, track_allocation_stalls) {
-  ShenandoahCollectorPolicy policy;
+  ShenandoahGenerationalMode mode;
+  ShenandoahCollectorPolicy policy(&mode);
   for (int i = 0; i < ShenandoahController::PHASE_LIMIT; ++i) {
     policy.record_allocation_stall(static_cast<ShenandoahController::ShenandoahCollectorPhase>(i));
   }
