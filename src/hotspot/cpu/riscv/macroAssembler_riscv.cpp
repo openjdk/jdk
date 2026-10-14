@@ -6523,39 +6523,55 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
   assert(UseVectorizedMismatchIntrinsic, "sanity");
   assert_different_registers(obja, objb, length, log2_array_indxscale, tmp1, tmp2, t0, t1);
 
-  const Register processed = t1;
-  const Register total = tmp1;
+  const Register total = t1;
+  const Register remaining = tmp1;
   const Register taken = tmp2;
   const Register idx = t0;
   const VectorRegister vrm = v0;
   const VectorRegister vra = v8;
   const VectorRegister vrb = v16;
-  Label MISMATCH_FOUND, NO_MISMATCH_FOUND, VEC_LOOP, DONE;
+  Label NO_MISMATCH, MISMATCH, MISMATCH_SHORTARY, VEC_START, VEC_LOOP, DONE;
+
+  Assembler::LMUL short_ary_lmul = Assembler::m1;
+  const int short_ary_mask = ~((MaxVectorSize << short_ary_lmul) - 1);
 
   // read arrays as bytes since no guarantees w.r.t. their alignment
   sll(total, length, log2_array_indxscale);
-  mv(processed, x0);
+  andi(t0, total, short_ary_mask);
+  bnez(t0, VEC_START);
 
-  bind(VEC_LOOP);
-  vsetvli(taken, total, Assembler::e8, Assembler::m8);
+  vsetvli(x0, total, Assembler::e8, short_ary_lmul, Assembler::ma, Assembler::ta);
   vle8_v(vra, obja);
   vle8_v(vrb, objb);
   vmsne_vv(vrm, vra, vrb);
   vfirst_m(idx, vrm);
-  bgez(idx, MISMATCH_FOUND);
-  add(processed, processed, taken);
-  sub(total, total, taken);
-  const int taken_shift = exact_log2(wordSize);
-  shift_left_add(obja, taken, obja, taken_shift, t0);
-  shift_left_add(objb, taken, objb, taken_shift, t0);
-  bnez(total, VEC_LOOP);
+  bgez(idx, MISMATCH_SHORTARY);
+  j(NO_MISMATCH);
 
-  bind(NO_MISMATCH_FOUND);
+  bind(VEC_START);
+  mv(remaining, total);
+
+  align(OptoLoopAlignment);
+  bind(VEC_LOOP);
+  vsetvli(taken, remaining, Assembler::e8, Assembler::m8, Assembler::ma, Assembler::ta);
+  vle8_v(vra, obja);
+  vle8_v(vrb, objb);
+  add(obja, obja, taken);
+  add(objb, objb, taken);
+  sub(remaining, remaining, taken);
+  vmsne_vv(vrm, vra, vrb);
+  vfirst_m(idx, vrm);
+  bgez(idx, MISMATCH);
+  bnez(remaining, VEC_LOOP);
+
+  bind(NO_MISMATCH);
   mv(result, -1);
   j(DONE);
 
-  bind(MISMATCH_FOUND);
-  add(idx, processed, idx);
+  bind(MISMATCH);
+  sub(total, total, remaining);
+  add(idx, total, idx);
+  bind(MISMATCH_SHORTARY);
   srl(result, idx, log2_array_indxscale);
 
   bind(DONE);
