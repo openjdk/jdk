@@ -1646,7 +1646,6 @@ void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, 
   };
 }
 
-// Temps, addr_base and exchange_value are killed if size < 4 and processor does not support respective instructions.
 // Only signed types are supported with size < 4.
 void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_current_value,
                                        RegisterOrConstant compare_value, Register exchange_value,
