@@ -22,21 +22,22 @@
  *
  */
 
-#include "gc/shared/diagnosticWorkers.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
+#include "services/diagnosticWorkers.hpp"
 
 Atomic<WorkerThreads*> DiagnosticWorkers::_workers{};
 
 WorkerThreads* DiagnosticWorkers::workers() {
   assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
   assert_at_safepoint();
-  if (_workers.load_relaxed() == nullptr && ParallelGCThreads > 1) {
-    WorkerThreads* pool = new WorkerThreads("DiagWorker", ParallelGCThreads);
+  const uint max_workers = (uint)os::initial_active_processor_count();
+  if (_workers.load_relaxed() == nullptr && max_workers > 1) {
+    WorkerThreads* pool = new WorkerThreads("DiagWorker", max_workers);
     _workers.release_store(pool);
     log_info(gc, task)("Created diagnostic worker pool (max %u workers)", pool->max_workers());
   }
@@ -60,32 +61,3 @@ uint DiagnosticWorkers::try_and_set_active_workers(uint num_workers) {
 
   return workers->set_active_workers(MIN2(num_workers, workers->max_workers()));
 }
-
-#ifdef ASSERT
-class DiagnosticThreadClosure : public ThreadClosure {
-private:
-  bool _found = false;
-  const Thread* _target;
-public:
-  DiagnosticThreadClosure(const Thread* t) : _target(t) {}
-
-  void do_thread(Thread* t) override {
-    if (_target == t) {
-      _found = true;
-    }
-  }
-
-  bool found() const { return _found; }
-};
-
-bool DiagnosticWorkers::is_diagnostic_thread(const Thread* t) {
-  WorkerThreads* workers = _workers.load_acquire();
-  if (workers == nullptr) {
-    return false;
-  }
-
-  DiagnosticThreadClosure cl(t);
-  workers->threads_do(&cl);
-  return cl.found();
-}
-#endif // ASSERT

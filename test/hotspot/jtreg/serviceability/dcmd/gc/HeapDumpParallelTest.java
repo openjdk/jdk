@@ -93,8 +93,7 @@ import jdk.test.lib.hprof.HprofParser;
 public class HeapDumpParallelTest {
 
     private static final String heapDumpFileName = "parallelHeapDump.bin";
-    private static final int ACTIVE_PROCESSOR_COUNT = 2;
-    private static final int PARALLEL_GC_THREADS = 4;
+    private static final int ACTIVE_PROCESSOR_COUNT = 4;
 
     private static void checkAndVerify(OutputAnalyzer dcmdOut, LingeredApp app, File heapDumpFile, int expectedDiagWorkers) throws Exception {
         dcmdOut.shouldHaveExitValue(0);
@@ -108,7 +107,7 @@ public class HeapDumpParallelTest {
             expectedDiagWorkers = 0;
         }
         if (expectedDiagWorkers > 1) {
-            appOut.shouldContain("Created diagnostic worker pool (max " + PARALLEL_GC_THREADS + " workers)");
+            appOut.shouldContain("Created diagnostic worker pool (max " + ACTIVE_PROCESSOR_COUNT + " workers)");
             appOut.shouldContain("Dump heap objects in parallel");
             appOut.shouldContain("Merge heap files complete");
             appOut.shouldContain("active dump threads " + expectedDiagWorkers + ",");
@@ -136,8 +135,7 @@ public class HeapDumpParallelTest {
     private static LingeredApp launchApp(String[] gcArgs) throws IOException {
         LingeredApp theApp = new LingeredApp();
         List<String> jvmArgs = new ArrayList<>(List.of("-Xlog:gc,heapdump,gc+task", "-Xmx512m",
-                                                       "-XX:ActiveProcessorCount=" + ACTIVE_PROCESSOR_COUNT,
-                                                       "-XX:ParallelGCThreads=" + PARALLEL_GC_THREADS));
+                                                       "-XX:ActiveProcessorCount=" + ACTIVE_PROCESSOR_COUNT));
         jvmArgs.addAll(Arrays.asList(gcArgs));
         LingeredApp.startApp(theApp, jvmArgs.toArray(new String[0]));
         return theApp;
@@ -169,10 +167,10 @@ public class HeapDumpParallelTest {
             test(heapDumpFile, "-parallel=" + 2, 2, args);
 
             // Expect parallel dump
-            test(heapDumpFile, "-parallel=" + Integer.MAX_VALUE, PARALLEL_GC_THREADS, args);
+            test(heapDumpFile, "-parallel=" + Integer.MAX_VALUE, ACTIVE_PROCESSOR_COUNT, args);
 
             // Expect parallel dump
-            test(heapDumpFile, "-gz=9 -overwrite -parallel=" + PARALLEL_GC_THREADS, PARALLEL_GC_THREADS, args);
+            test(heapDumpFile, "-gz=9 -overwrite -parallel=" + ACTIVE_PROCESSOR_COUNT, ACTIVE_PROCESSOR_COUNT, args);
         } finally {
             theApp.stopApp();
         }

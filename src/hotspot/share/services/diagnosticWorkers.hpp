@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_DIAGNOSTICWORKERS_HPP
-#define SHARE_GC_SHARED_DIAGNOSTICWORKERS_HPP
+#ifndef SHARE_SERVICES_DIAGNOSTICWORKERS_HPP
+#define SHARE_SERVICES_DIAGNOSTICWORKERS_HPP
 
 #include "memory/allStatic.hpp"
 #include "runtime/atomic.hpp"
@@ -42,8 +42,8 @@ private:
 
 public:
   // Returns the diagnostic worker pool, creating it on the first call. Returns
-  // nullptr if ParallelGCThreads <= 1, since the pool could not run in parallel.
-  // Can only be called by the VM thread at a safepoint.
+  // nullptr if the active processor count is 1. Can only be called by the VM thread
+  // at a safepoint.
   static WorkerThreads* workers();
 
   // Applies the closure to each diagnostic worker if the worker pool has been created.
@@ -53,10 +53,6 @@ public:
   // active thread count. Returns 0 if the worker pool hasn't been created or num_workers
   // is 0. Can only be called by the VM thread at a safepoint.
   static uint try_and_set_active_workers(uint num_workers);
-
-  // Returns true if the thread passed in is a diagnostic worker thread. Used only in
-  // debug builds.
-  DEBUG_ONLY(static bool is_diagnostic_thread(const Thread* t);)
 };
 
 #endif // SHARE_GC_SHARED_DIAGNOSTICWORKERS_HPP

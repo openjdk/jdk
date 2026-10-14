@@ -276,6 +276,7 @@ private:
 public:
   uint max_workers();
   void assert_gc_workers(uint nworker) NOT_DEBUG_RETURN;
+  DEBUG_ONLY(bool is_gc_worker_thread(const Thread* t) const;)
 
   WorkerThreads* workers() const;
 

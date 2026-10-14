@@ -86,10 +86,9 @@ import jdk.test.lib.process.OutputAnalyzer;
  */
 
 public class ClassHistogramParallelTest {
-    private static final int ACTIVE_PROCESSOR_COUNT = 2;
-    private static final int PARALLEL_GC_THREADS = 4;
+    private static final int ACTIVE_PROCESSOR_COUNT = 4;
     private static final String POOL_CREATION_MSG =
-        "Created diagnostic worker pool (max " + PARALLEL_GC_THREADS + " workers)";
+        "Created diagnostic worker pool (max " + ACTIVE_PROCESSOR_COUNT + " workers)";
 
     private static void checkAndVerify(OutputAnalyzer threadPrintOut, LingeredApp app,
                                        int expectedDiagWorkers, String[] gcArgs) throws Exception {
@@ -122,8 +121,7 @@ public class ClassHistogramParallelTest {
         LingeredApp theApp = new LingeredApp();
         List<String> jvmArgs = new ArrayList<>(List.of("-Xlog:gc+task",
                                                        "-Xmx512m",
-                                                       "-XX:ActiveProcessorCount=" + ACTIVE_PROCESSOR_COUNT,
-                                                       "-XX:ParallelGCThreads=" + PARALLEL_GC_THREADS));
+                                                       "-XX:ActiveProcessorCount=" + ACTIVE_PROCESSOR_COUNT));
         jvmArgs.addAll(Arrays.asList(gcArgs));
         LingeredApp.startApp(theApp, jvmArgs.toArray(new String[0]));
         return theApp;
@@ -145,8 +143,8 @@ public class ClassHistogramParallelTest {
 
             // Expect parallel heap inspection.
             test("-parallel=2", 2, args, 1);
-            test("-parallel=" + PARALLEL_GC_THREADS, PARALLEL_GC_THREADS, args, 1);
-            test("-parallel=" + Integer.MAX_VALUE, PARALLEL_GC_THREADS, args, 1);
+            test("-parallel=" + ACTIVE_PROCESSOR_COUNT, ACTIVE_PROCESSOR_COUNT, args, 1);
+            test("-parallel=" + Integer.MAX_VALUE, ACTIVE_PROCESSOR_COUNT, args, 1);
 
             // Expect that the diagnostic worker pool is created once for multiple requests.
             test("-parallel=2", 2, args, 5);

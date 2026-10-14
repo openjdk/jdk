@@ -26,7 +26,6 @@
 #if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
 
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/diagnosticWorkers.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
@@ -40,6 +39,7 @@
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
+#include "services/diagnosticWorkers.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -175,12 +175,12 @@ static bool vma_touches_thread_stack(const void* from, const void* to, const Thr
   return t->stack_base_or_null() != nullptr && range_intersects(from, to, (const void*)t->stack_end(), (const void*)t->stack_base());
 }
 
-struct GCThreadClosure : public ThreadClosure {
+struct ThreadStackClosure : public ThreadClosure {
   bool _found;
   uintx _tid;
   const void* const _from;
   const void* const _to;
-  GCThreadClosure(const void* from, const void* to) : _found(false), _tid(0), _from(from), _to(to) {}
+  ThreadStackClosure(const void* from, const void* to) : _found(false), _tid(0), _from(from), _to(to) {}
   void do_thread(Thread* t) override {
     if (_tid == 0 && t != nullptr && vma_touches_thread_stack(_from, _to, t)) {
       _found = true;
@@ -222,14 +222,14 @@ static void print_thread_details_for_supposed_stack_address(const void* from, co
 #undef HANDLE_THREAD
 
   if (Universe::heap() != nullptr) {
-    GCThreadClosure gc_cl(from, to);
+    ThreadStackClosure gc_cl(from, to);
     Universe::heap()->gc_threads_do(&gc_cl);
     if (gc_cl._found) {
       print_thread_details(gc_cl._tid, "GC Thread", st);
       return;
     }
 
-    GCThreadClosure diag_cl(from, to);
+    ThreadStackClosure diag_cl(from, to);
     DiagnosticWorkers::diagnostic_threads_do(&diag_cl);
     if (diag_cl._found) {
       print_thread_details(diag_cl._tid, "DiagWorker", st);

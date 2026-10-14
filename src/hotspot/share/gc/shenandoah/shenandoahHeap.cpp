@@ -2555,6 +2555,28 @@ void ShenandoahHeap::assert_gc_workers(uint nworkers) {
            ConcGCThreads, nworkers);
   }
 }
+
+class ShenandoahIsGCWorkerClosure : public ThreadClosure {
+private:
+  bool _found = false;
+  const Thread* _target;
+public:
+  ShenandoahIsGCWorkerClosure(const Thread* t): _target(t) {}
+
+  void do_thread(Thread* t) override {
+    if (_target == t) {
+      _found = true;
+    }
+  }
+
+  bool found() const { return _found; }
+};
+
+bool ShenandoahHeap::is_gc_worker_thread(const Thread* t) const {
+  ShenandoahIsGCWorkerClosure cl(t);
+  workers()->threads_do(&cl);
+  return cl.found();
+}
 #endif
 
 ShenandoahVerifier* ShenandoahHeap::verifier() {

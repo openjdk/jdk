@@ -31,7 +31,6 @@
 
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
-#include "gc/shared/diagnosticWorkers.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -289,8 +288,7 @@ inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size
 
   PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
   if (gclab == nullptr) {
-    assert(!thread->is_Java_thread() &&
-           (!thread->is_Worker_thread() || DiagnosticWorkers::is_diagnostic_thread(thread)),
+    assert(!thread->is_Java_thread() && !is_gc_worker_thread(thread),
            "Performance: thread should have GCLAB: %s", thread->name());
     // No GCLABs in this thread, fallback to shared allocation
     return nullptr;

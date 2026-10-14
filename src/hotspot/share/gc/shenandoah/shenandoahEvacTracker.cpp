@@ -23,11 +23,11 @@
  *
  */
 
-#include "gc/shared/diagnosticWorkers.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 
 ShenandoahEvacuationStats::ShenandoahEvacuations* ShenandoahEvacuationStats::get_category(
@@ -121,8 +121,7 @@ ShenandoahCycleStats ShenandoahEvacuationTracker::flush_cycle_to_global() {
   java_threads_iterator.list()->threads_do(&aggregate_mutators);
 
   ShenandoahStatAggregator aggregate_workers(&workers);
-  ShenandoahHeap::heap()->gc_threads_do(&aggregate_workers);
-  DiagnosticWorkers::diagnostic_threads_do(&aggregate_workers);
+  Threads::non_java_threads_do(&aggregate_workers);
 
   _mutators_global.accumulate(&mutators);
   _workers_global.accumulate(&workers);

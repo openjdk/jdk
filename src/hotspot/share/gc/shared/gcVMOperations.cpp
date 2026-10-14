@@ -25,7 +25,6 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
-#include "gc/shared/diagnosticWorkers.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -206,14 +205,9 @@ void VM_GC_HeapInspection::doit() {
   }
   HeapInspection inspect;
   if (Universe::heap()->supports_parallel_heap_iteration() && _parallel_thread_num > 1) {
-    // Use the diagnostic worker pool to inspect the heap in parallel. If the
-    // pool isn't available or fewer than two workers are active, then fall
-    // back to serial heap inspection.
-    WorkerThreads* workers = DiagnosticWorkers::workers();
-    const uint active_workers = DiagnosticWorkers::try_and_set_active_workers(_parallel_thread_num);
-    inspect.heap_inspection(_out, active_workers > 1 ? workers : nullptr);
+    inspect.heap_inspection(_out, _parallel_thread_num);
   } else {
-    inspect.heap_inspection(_out, nullptr);
+    inspect.heap_inspection(_out, 1);
   }
 }
 
