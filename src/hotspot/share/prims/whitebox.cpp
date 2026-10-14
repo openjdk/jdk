@@ -126,6 +126,8 @@
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #endif // INCLUDE_SHENANDOAHGC
 #if INCLUDE_ZGC
 #include "gc/z/zAddress.inline.hpp"
@@ -717,6 +719,9 @@ WB_END
 
 WB_ENTRY(jlong, WB_ShenandoahOldMarkGC(JNIEnv* env, jobject o, jint timeout_seconds))
   if (UseShenandoahGC && ShenandoahHeap::heap()->mode()->is_generational()) {
+    if (timeout_seconds < 0) {
+      THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "WB_ShenandoahOldMarkGC: Timeout must be non-negative");
+    }
     if (ShenandoahGenerationalHeap::heap()->wait_for_old_collection(timeout_seconds)) {
       return ShenandoahHeap::heap()->old_generation()->completed_gc_id();
     }
@@ -3020,7 +3025,7 @@ static JNINativeMethod methods[] = {
 #if INCLUDE_SHENANDOAHGC
   {CC"shenandoahRegionSize",   CC"()I",                   (void*)&WB_ShenandoahRegionSize  },
   {CC"shenandoahRegionCount",  CC"()I",                   (void*)&WB_ShenandoahRegionCount },
-  {CC"shenandoahOldMarkGC",    CC"(I)J",                  (void*)&WB_ShenandoahOldMarkGC },
+  {CC"shenandoahOldMarkGC",    CC"(I)J",                  (void*)&WB_ShenandoahOldMarkGC   },
 #endif // INCLUDE_SHENANDOAHGC
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
   {CC"NMTMallocWithPseudoStack", CC"(JI)J",           (void*)&WB_NMTMallocWithPseudoStack},
