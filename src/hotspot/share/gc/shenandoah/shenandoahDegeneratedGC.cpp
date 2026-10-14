@@ -466,6 +466,7 @@ void ShenandoahDegenGC::op_cleanup_complete() {
     assert(satb_qs.get_filter_out_young(), "Must be");
     ShenandoahFlushSATB flush_satb(satb_qs);
     Threads::threads_do(&flush_satb);
+    heap->workers()->threads_do(&flush_satb);
   } else {
     assert(!satb_qs.get_filter_out_young(), "Must not be");
   }
