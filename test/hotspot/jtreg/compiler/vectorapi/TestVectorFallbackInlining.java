@@ -30,10 +30,10 @@ import jdk.incubator.vector.VectorSpecies;
 
 /*
  * @test
- * @bug 8382713
+ * @bug 8382713 8394272
  * @summary Verify that the fallback implementation of a failed vector intrinsic is
  *          inlined (rather than left as a static call) when IncrementalInlineVector
- *          is enabled.
+ *          is enabled, and only for the selected set of operations.
  * @modules jdk.incubator.vector
  * @library /test/lib /
  * @requires vm.compiler2.enabled
@@ -41,23 +41,25 @@ import jdk.incubator.vector.VectorSpecies;
  */
 
 /**
- * Vector.withLane with a non-constant lane index cannot be intrinsified: the
- * insert inline expander bails out because the index is not a compile-time constant.
- * This is a species- and platform-agnostic limitation of the expander -- it is independent
+ * Vector.slice and Vector.withLane with a non-constant index cannot be intrinsified: the
+ * slice and insert inline expanders bail out because the index is not a compile-time constant.
+ * This is a species- and platform-agnostic limitation of the expanders -- it is independent
  * of the element type, vector shape and the available CPU features -- so the vector
- * intrinsic reliably fails to expand and the fallback implementation
- * is exercised on every configuration.
+ * intrinsics reliably fail to expand and the fallback implementations
+ * are exercised on every configuration.
  *
- * With IncrementalInlineVector enabled (the default) the fallback is late-inlined into the
- * caller, so no static call to intrinsic entry point survives; with the flag disabled, the
- * static call to the fallback remains.
+ * For slice, with IncrementalInlineVector enabled (the default) the fallback is late-inlined
+ * into the caller, so no static call to the intrinsic entry point survives; with the flag
+ * disabled, the static call to the fallback remains. For insert, which is not a selected
+ * operation, the static call remains either way.
  */
 public class TestVectorFallbackInlining {
     private static final VectorSpecies<Float> SPECIES = FloatVector.SPECIES_MAX;
     private static final int LENGTH = 1024;
 
-    // Non-final so the JIT cannot treat the lane index as a compile-time constant, which
-    // is what forces the insert intrinsic to bail out to its fallback implementation.
+    // Non-final so the JIT cannot treat the index as a compile-time constant, which
+    // is what forces the slice and insert intrinsics to bail out to their fallback
+    // implementations.
     private static int INDEX = SPECIES.length() - 1;
 
     private static final float[] a = new float[LENGTH];
@@ -70,12 +72,12 @@ public class TestVectorFallbackInlining {
     }
 
     // The fallback is only late-inlined if it also passes the regular inlining heuristics.
-    // During warmup VectorSupport::insert is called from the interpreter often enough to be
+    // During warmup VectorSupport::sliceOp is called from the interpreter often enough to be
     // compiled on its own, and with assertions enabled its nmethod grows beyond
     // InlineSmallCode, so C2 rejects it as "already compiled into a big method". Keep it
     // inlinable so that the rules below only depend on the late inlining machinery.
     private static final String FORCE_INLINE_FALLBACK =
-            "-XX:CompileCommand=inline,jdk.internal.vm.vector.VectorSupport::insert";
+            "-XX:CompileCommand=inline,jdk.internal.vm.vector.VectorSupport::sliceOp";
 
     public static void main(String[] args) {
         // Note: Some platforms don't activate EnableVectorSupport by default. Required here.
@@ -91,11 +93,37 @@ public class TestVectorFallbackInlining {
                                    "-XX:+EnableVectorSupport");
     }
 
+    // slice is a selected operation, so its fallback is late-inlined when the flag is enabled.
     @Test
-    @IR(counts = {IRNode.VECTORAPI_INSERT_OP, ">= 1"},
+    @IR(counts = {IRNode.VECTORAPI_SLICE_OP, ">= 1"},
         applyIf = {"IncrementalInlineVector", "false"})
-    @IR(failOn = {IRNode.VECTORAPI_INSERT_OP},
+    @IR(failOn = {IRNode.VECTORAPI_SLICE_OP},
         applyIf = {"IncrementalInlineVector", "true"})
+    public static void testSlice() {
+        for (int i = 0; i < LENGTH; i += SPECIES.length()) {
+            FloatVector va = FloatVector.fromArray(SPECIES, a, i);
+            va.slice(INDEX).intoArray(c, i);
+        }
+    }
+
+    @Run(test = "testSlice")
+    @Warmup(10000)
+    public static void runSlice() {
+        testSlice();
+        float[] expected = new float[LENGTH];
+        for (int i = 0; i < LENGTH; i += SPECIES.length()) {
+            for (int j = 0; j < SPECIES.length(); j++) {
+                int src = i + INDEX + j;
+                expected[i + j] = (INDEX + j < SPECIES.length()) ? a[src] : 0.0f;
+            }
+        }
+        Verify.checkEQ(expected, c);
+    }
+
+    // insert is not a selected operation, so the static call to the fallback survives
+    // regardless of the flag.
+    @Test
+    @IR(counts = {IRNode.VECTORAPI_INSERT_OP, ">= 1"})
     public static void testInsert() {
         for (int i = 0; i < LENGTH; i += SPECIES.length()) {
             FloatVector va = FloatVector.fromArray(SPECIES, a, i);
