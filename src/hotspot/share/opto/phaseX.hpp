@@ -582,6 +582,12 @@ public:
   // Optional 'orig' is an earlier version of this node.
   // It is significant only for debugging and profiling.
   Node* register_new_node_with_optimizer(Node* n, Node* orig = nullptr);
+  // Same as before, but also add to the hash table of node, so they are available
+  // to be commoned even in their non-ideal form. It is useful if we may create
+  // the same node multiple time, and transforming them would lead to even more nodes.
+  // It also cannot be the default strategy as it confuses loops. In particular, loops
+  // optimization often clone loops and modify nodes right away, so it is both useless
+  // and forbidden to put these new nodes in the hash table.
   Node* register_and_hash_new_node_with_optimizer(Node* n, Node* orig = nullptr);
 
   // Origin of a dead node, describing why it is dying.
