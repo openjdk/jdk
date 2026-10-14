@@ -241,20 +241,10 @@ class TestNullRestrictedArrayEscapeState {
     static void runArrayCopyTests() {
         for (int i = 0; i < 10_000; i++) {
             testAllocateNullRestrictedArraysThenCopyThenLoadAndEscape();
-        }
-        for (int i = 0; i < 10_000; i++) {
             testAllocateNullRestrictedArraysThenCopyThenLoadAndEscapeHolder();
-        }
-        for (int i = 0; i < 10_000; i++) {
             testAllocateNullRestrictedArraysThenCloneThenLoadAndEscape();
-        }
-        for (int i = 0; i < 10_000; i++) {
             testAllocateNullRestrictedNonAtomicArraysThenCopyThenLoadAndEscape();
-        }
-        for (int i = 0; i < 10_000; i++) {
             testAllocateNullRestrictedArraysThenCopyThenLoadButDontEscape();
-        }
-        for (int i = 0; i < 10_000; i++) {
             testAllocateNullRestrictedArraysThenCloneThenLoadButDontEscape();
         }
     }

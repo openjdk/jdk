@@ -129,8 +129,7 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
     Node* unknown_offset = alloc->in(AllocateNode::RawInitValue);
     assert(unknown_offset != nullptr &&
            !igvn->type(unknown_offset)->is_intptr_t()->is_con(), "RawInitValue should be opaque");
-    AddPNode* addp = AddPNode::make_off_heap(result, unknown_offset);
-    igvn->register_new_node_with_optimizer(addp);
+    igvn->register_new_node_with_optimizer(AddPNode::make_off_heap(result, unknown_offset));
   }
   int invocation = 0;
   if (C->congraph() != nullptr) {
@@ -3895,12 +3894,7 @@ void ConnectionGraph::add_field(Node *n, PointsToNode::EscapeState es, int offse
     return;
   }
   bool unsafe = false;
-  bool is_oop;
-  if (is_virtual_array_init_field_node(n)) {
-    is_oop = true;
-  } else {
-    is_oop = is_oop_field(n, offset, &unsafe);
-  }
+  bool is_oop = is_virtual_array_init_field_node(n) || is_oop_field(n, offset, &unsafe);
   if (unsafe) {
     es = PointsToNode::GlobalEscape;
   }
@@ -4305,13 +4299,9 @@ bool ConnectionGraph::is_load_array_klass_related(const Node* uncast_base) {
 #endif
 
 bool ConnectionGraph::is_virtual_array_init_field_node(Node* n) {
-  if (!n->is_AddP()) {
-    return false;
-  }
+  precond(n->is_AddP());
   Node* base = get_addp_base(n);
-  if (base == nullptr) {
-    return false;
-  }
+  assert(base != nullptr, "there must be a base address");
   AllocateNode* alloc = AllocateNode::Ideal_allocation(base);
   return alloc != nullptr &&
          alloc->is_AllocateArray() &&
