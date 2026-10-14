@@ -1431,7 +1431,7 @@ bool G1Policy::next_gc_should_be_mixed() const {
 }
 
 size_t G1Policy::allowed_waste_in_collection_set() const {
-  return G1HeapWastePercent * _g1h->capacity() / 100;
+  return static_cast<uint64_t>(G1HeapWastePercent) * _g1h->capacity() / 100;
 }
 
 bool G1Policy::try_get_available_bytes_estimate(size_t& available_bytes) const {
