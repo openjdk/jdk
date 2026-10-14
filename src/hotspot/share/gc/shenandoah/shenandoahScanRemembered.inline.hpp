@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@
 
 #include "gc/shenandoah/shenandoahScanRemembered.hpp"
 
-#include "gc/shared/collectorCounters.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -37,8 +35,11 @@
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
-#include "oops/objArrayOop.hpp"
 #include "oops/oop.hpp"
+
+void ShenandoahScanRemembered::mark_card_as_dirty(HeapWord* p) const {
+  _rs->mark_card_as_dirty(p);
+}
 
 // Process all objects starting within count clusters beginning with first_cluster and for which the start address is
 // less than end_of_range.  For any non-array object whose header lies on a dirty card, scan the entire object,
@@ -425,6 +426,12 @@ inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *as
   assignment->_chunk_offset = offset_within_region;
   assignment->_chunk_size = group_chunk_size;
   return true;
+}
+
+void ShenandoahDirectCardMarkRememberedSet::mark_card_as_dirty(HeapWord* p) const {
+  size_t index = card_index_for_addr(p);
+  CardValue* bp = &(_card_table->write_byte_map())[index];
+  bp[0] = CardTable::dirty_card_val();
 }
 
 #endif   // SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBEREDINLINE_HPP

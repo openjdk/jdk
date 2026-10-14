@@ -159,7 +159,8 @@ public class VectorCompareWithZeroTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VMASK_CMP_ZERO_I_NEON, ">= 1" })
+    @IR(counts = { IRNode.VMASK_CMP_ZERO_I_NEON, ">= 1" },
+        applyIf = { "TieredCompilation", "true" })
     public static void testByteVectorEqualToZero() {
         ByteVector av = ByteVector.fromArray(B_SPECIES, ba, 0);
         av.compare(VectorOperators.EQ, 0).intoArray(br, 0);
@@ -172,7 +173,8 @@ public class VectorCompareWithZeroTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VMASK_CMP_ZERO_I_NEON, ">= 1" })
+    @IR(counts = { IRNode.VMASK_CMP_ZERO_I_NEON, ">= 1" },
+        applyIf = { "TieredCompilation", "true" })
     public static void testShortVectorNotEqualToZero() {
         ShortVector av = ShortVector.fromArray(S_SPECIES, sa, 0);
         av.compare(VectorOperators.NE, 0).intoArray(sr, 0);
@@ -185,7 +187,8 @@ public class VectorCompareWithZeroTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VMASK_CMP_ZERO_I_NEON, ">= 1" })
+    @IR(counts = { IRNode.VMASK_CMP_ZERO_I_NEON, ">= 1" },
+        applyIf = { "TieredCompilation", "true" })
     public static void testIntVectorGreaterEqualToZero() {
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
         av.compare(VectorOperators.GE, 0).intoArray(ir, 0);
@@ -198,7 +201,8 @@ public class VectorCompareWithZeroTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VMASK_CMP_ZERO_L_NEON, ">= 1" })
+    @IR(counts = { IRNode.VMASK_CMP_ZERO_L_NEON, ">= 1" },
+        applyIf = { "TieredCompilation", "true" })
     public static void testLongVectorGreaterThanZero() {
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
         av.compare(VectorOperators.GT, 0).intoArray(lr, 0);
@@ -211,7 +215,8 @@ public class VectorCompareWithZeroTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VMASK_CMP_ZERO_F_NEON, ">= 1" })
+    @IR(counts = { IRNode.VMASK_CMP_ZERO_F_NEON, ">= 1" },
+        applyIf = { "TieredCompilation", "true" })
     public static void testFloatVectorLessEqualToZero() {
         FloatVector av = FloatVector.fromArray(F_SPECIES, fa, 0);
         av.compare(VectorOperators.LE, 0).intoArray(fr, 0);
@@ -224,7 +229,8 @@ public class VectorCompareWithZeroTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VMASK_CMP_ZERO_D_NEON, ">= 1" })
+    @IR(counts = { IRNode.VMASK_CMP_ZERO_D_NEON, ">= 1" },
+        applyIf = { "TieredCompilation", "true" })
     public static void testDoubleVectorLessThanZero() {
         DoubleVector av = DoubleVector.fromArray(D_SPECIES, da, 0);
         av.compare(VectorOperators.LT, 0).intoArray(dr, 0);
@@ -237,20 +243,31 @@ public class VectorCompareWithZeroTest {
     }
 
     @Test
-    @IR(failOn = { IRNode.VMASK_CMP_ZERO_I_NEON })
+    @IR(failOn = { IRNode.VMASK_CMP_ZERO_I_NEON },
+        applyIf = { "TieredCompilation", "true" })
     public static void testIntVectorUnsignedCondition() {
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
         av.compare(VectorOperators.UGT, 0).intoArray(ir, 0);
     }
 
     @Test
-    @IR(failOn = { IRNode.VMASK_CMP_ZERO_L_NEON })
+    @IR(failOn = { IRNode.VMASK_CMP_ZERO_L_NEON },
+        applyIf = { "TieredCompilation", "true" })
     public static void testLongVectorUnsignedCondition() {
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
         av.compare(VectorOperators.UGE, 0).intoArray(lr, 0);
     }
 
     public static void main(String[] args) {
+        // The @IR rules in this test verify that the optimized NEON compare-with-zero
+        // instructions (vmaskcmp_zero*_neon) are generated. IncrementalInlineVector is
+        // enabled by default; when a vector intrinsic fails to intrinsify, inlining its
+        // fallback implementation enlarges the compilation unit and, under unstable profiling,
+        // may prevent AbstractMask::intoArray() from being inlined. When intoArray() is not
+        // inlined, the mask is boxed before the call, which breaks the compare-with-zero
+        // match so the expected vmaskcmp_zero*_neon nodes are not produced. This only happens
+        // under unstable profiling (which makes the intoArray inlining decision
+        // non-deterministic); under the default profiling the match is stable.
         TestFramework testFramework = new TestFramework();
         testFramework.setDefaultWarmup(10000)
                      .addFlags("--add-modules=jdk.incubator.vector")

@@ -380,6 +380,12 @@ void before_exit(JavaThread* thread, bool halt) {
 
   Events::log(thread, "Before exit entered");
 
+  // A GC requested after we shut down the heap blocks that requesting Java thread.
+  // Suppress GC-a-lot for threads entering shutdown as Monitor::lock() calls in the
+  // remainder of the shutdown sequence could otherwise block when executing a
+  // GC-a-lot caused collection.
+  NOT_PRODUCT(thread->set_skip_gcalot(true);)
+
   // Note: don't use a Mutex to guard the entire before_exit(), as
   // JVMTI post_thread_end_event and post_vm_death_event will run native code.
   // A CAS or OSMutex would work just fine but then we need to manipulate
@@ -753,21 +759,21 @@ void JDK_Version::to_string(char* buffer, size_t buflen) const {
 }
 
 void JDK_Version::set_java_version(const char* version) {
-  _java_version = os::strdup(version);
+  _java_version = os::strdup(version, mtInternal);
 }
 
 void JDK_Version::set_runtime_name(const char* name) {
-  _runtime_name = os::strdup(name);
+  _runtime_name = os::strdup(name, mtInternal);
 }
 
 void JDK_Version::set_runtime_version(const char* version) {
-  _runtime_version = os::strdup(version);
+  _runtime_version = os::strdup(version, mtInternal);
 }
 
 void JDK_Version::set_runtime_vendor_version(const char* vendor_version) {
-  _runtime_vendor_version = os::strdup(vendor_version);
+  _runtime_vendor_version = os::strdup(vendor_version, mtInternal);
 }
 
 void JDK_Version::set_runtime_vendor_vm_bug_url(const char* vendor_vm_bug_url) {
-  _runtime_vendor_vm_bug_url = os::strdup(vendor_vm_bug_url);
+  _runtime_vendor_vm_bug_url = os::strdup(vendor_vm_bug_url, mtInternal);
 }

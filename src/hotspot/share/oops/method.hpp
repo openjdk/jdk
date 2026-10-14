@@ -92,9 +92,9 @@ class Method : public Metadata {
   address _i2i_entry;           // All-args-on-stack calling convention
   // Entry point for calling from compiled code, to compiled code if it exists
   // or else the interpreter.
-  volatile address _from_compiled_entry;           // Cache of: _code ? _code->entry_point() : _adapter->c2i_entry()
-  volatile address _from_compiled_inline_ro_entry; // Cache of: _code ? _code->verified_inline_ro_entry_point() : _adapter->c2i_inline_ro_entry()
-  volatile address _from_compiled_inline_entry;    // Cache of: _code ? _code->verified_inline_entry_point()    : _adapter->c2i_inline_entry()
+  volatile address _from_compiled_entry;          // Cache of: _code ? _code->entry_point() : _adapter->c2i_entry()
+  volatile address _from_compiled_value_ro_entry; // Cache of: _code ? _code->verified_value_ro_entry_point() : _adapter->c2i_value_ro_entry()
+  volatile address _from_compiled_value_entry;    // Cache of: _code ? _code->verified_value_entry_point()    : _adapter->c2i_value_entry()
   // The entry point for calling both from and to compiled code is
   // "_code->entry_point()".  Because of tiered compilation and de-opt, this
   // field can come and go.  It can transition from null to not-null at any
@@ -134,8 +134,8 @@ class Method : public Metadata {
 
   static void make_adapters(const methodHandle& mh, TRAPS);
   address from_compiled_entry() const;
-  address from_compiled_inline_ro_entry() const;
-  address from_compiled_inline_entry() const;
+  address from_compiled_value_ro_entry() const;
+  address from_compiled_value_entry() const;
   address from_interpreted_entry() const;
 
   // access flag
@@ -364,8 +364,8 @@ class Method : public Metadata {
 
   // nmethod/verified compiler entry
   address verified_code_entry();
-  address verified_inline_code_entry();
-  address verified_inline_ro_code_entry();
+  address verified_value_code_entry();
+  address verified_value_ro_code_entry();
   bool check_code() const;      // Not inline to avoid circular ref
   nmethod* code() const;
 
@@ -390,19 +390,19 @@ public:
   void set_from_compiled_entry(address entry) {
     _from_compiled_entry = entry;
   }
-  void set_from_compiled_inline_ro_entry(address entry) {
-    _from_compiled_inline_ro_entry = entry;
+  void set_from_compiled_value_ro_entry(address entry) {
+    _from_compiled_value_ro_entry = entry;
   }
-  void set_from_compiled_inline_entry(address entry) {
-    _from_compiled_inline_entry = entry;
+  void set_from_compiled_value_entry(address entry) {
+    _from_compiled_value_entry = entry;
   }
 
   address get_i2c_entry();
   address get_c2i_entry();
-  address get_c2i_inline_entry();
-  address get_c2i_inline_ro_entry();
+  address get_c2i_value_entry();
+  address get_c2i_value_ro_entry();
   address get_c2i_unverified_entry();
-  address get_c2i_unverified_inline_entry();
+  address get_c2i_unverified_value_entry();
   address get_c2i_no_clinit_check_entry();
   AdapterHandlerEntry* adapter() const {
     return _adapter;
@@ -516,7 +516,7 @@ public:
   Symbol* klass_name() const;                    // returns the name of the method holder
   BasicType result_type() const                  { return constMethod()->result_type(); }
   bool is_returning_oop() const                  { BasicType r = result_type(); return is_reference_type(r); }
-  InlineKlass* returns_inline_type() const;
+  ValueKlass* returns_value_type() const;
 
   // Checked exceptions thrown by this method (resolved to mirrors)
   objArrayHandle resolved_checked_exceptions(TRAPS) { return resolved_checked_exceptions_impl(this, THREAD); }
@@ -625,8 +625,8 @@ public:
   static ByteSize const_offset()                 { return byte_offset_of(Method, _constMethod       ); }
   static ByteSize access_flags_offset()          { return byte_offset_of(Method, _access_flags      ); }
   static ByteSize from_compiled_offset()         { return byte_offset_of(Method, _from_compiled_entry); }
-  static ByteSize from_compiled_inline_offset()  { return byte_offset_of(Method, _from_compiled_inline_entry); }
-  static ByteSize from_compiled_inline_ro_offset(){ return byte_offset_of(Method, _from_compiled_inline_ro_entry); }
+  static ByteSize from_compiled_value_offset()   { return byte_offset_of(Method, _from_compiled_value_entry); }
+  static ByteSize from_compiled_value_ro_offset(){ return byte_offset_of(Method, _from_compiled_value_ro_entry); }
   static ByteSize code_offset()                  { return byte_offset_of(Method, _code); }
   static ByteSize flags_offset()                 { return byte_offset_of(Method, _flags); }
 

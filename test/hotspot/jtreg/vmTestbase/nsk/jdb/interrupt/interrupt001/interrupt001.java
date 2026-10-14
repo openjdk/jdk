@@ -105,6 +105,8 @@ public class interrupt001 extends JdbTest {
         Paragrep grep;
         String found;
         String[] threads;
+        String[] mainThreads;
+        String mainThread;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
         waitForTestedThreadStarts(THREAD_STARTED_BREAK, numThreads);
@@ -118,6 +120,23 @@ public class interrupt001 extends JdbTest {
         }
 
         pauseTillAllThreadsWaiting(threads);
+
+        mainThreads = jdb.getThreadIdsByName("main");
+        if (mainThreads.length != 1) {
+            log.complain("Failed to properly find one main thread: " + mainThreads.length);
+            success = false;
+        }
+        mainThread = mainThreads[0];
+
+        // Right now all threads are suspended. Before doing the interrupts we need to
+        // resume all threads except for the main thread. Otherwise, in the case of
+        // virtual threads, we can get a deadlock. To accomplish this we issue a
+        // "suspend" on the main thread so its suspend count is one higher than all
+        // the other threads, and then we "resume" on all threads, which should resume
+        // every thread except for the main thread.
+        reply = jdb.receiveReplyFor(JdbCommand.suspend + mainThread);
+        reply = jdb.receiveReplyFor(JdbCommand.resume, false); // don't expect a compound prompt
+        reply = jdb.receiveReplyFor(JdbCommand.thread + mainThread); // get compound prompt back
 
         for (int i = 0; i < threads.length; i++) {
             reply = jdb.receiveReplyFor(JdbCommand.interrupt + threads[i]);

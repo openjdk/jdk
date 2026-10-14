@@ -46,7 +46,7 @@ template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) =
 inline bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
   // Don't use strtol -- on 64-bit builds, "long" could be either 32- or 64-bits
   // so the range tests could be tautological and might cause compiler warnings.
-  STATIC_ASSERT(sizeof(long long) >= 8); // C++ specification
+  static_assert(sizeof(long long) >= 8); // C++ specification
   errno = 0; // errno is thread safe
   long long v = strtoll(s, endptr, base);
   if (errno != 0 || v < min_jint || v > max_jint) {
@@ -62,7 +62,7 @@ inline bool parse_integer_impl(const char *s, char **endptr, int base, T* result
     return false;
   }
   // Don't use strtoul -- same reason as above.
-  STATIC_ASSERT(sizeof(unsigned long long) >= 8); // C++ specification
+  static_assert(sizeof(unsigned long long) >= 8); // C++ specification
   errno = 0; // errno is thread safe
   unsigned long long v = strtoull(s, endptr, base);
   if (errno != 0 || v > max_juint) {
@@ -115,7 +115,7 @@ inline bool multiply_by_1k(T& n) {
 // Example: "1024M:oom" will yield true, result=1G, endptr pointing to ":oom"
 
 template<typename T>
-static bool parse_integer(const char *s, char **endptr, T* result) {
+inline bool parse_integer(const char *s, char **endptr, T* result) {
 
   if (!isdigit(s[0]) && s[0] != '-') {
     // strtoll/strtoull may allow leading spaces. Forbid it.
@@ -163,7 +163,7 @@ static bool parse_integer(const char *s, char **endptr, T* result) {
 // characters. No remainder are allowed here.
 // Example: "100m" - okay, "100m:oom" -> not okay
 template<typename T>
-static bool parse_integer(const char *s, T* result) {
+inline bool parse_integer(const char *s, T* result) {
   char* remainder;
   bool rc = parse_integer(s, &remainder, result);
   rc = rc && (*remainder == '\0');

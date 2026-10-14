@@ -48,8 +48,9 @@ public class AddReads {
 
     private static final Path USER_DIR = Paths.get(CDSTestUtils.getOutputDir());
 
+    // runtime/cds/appcds/jigsaw/modulepath/src
     private static final Path SRC_DIR = Paths.get(System.getProperty("test.src")).
-        resolve( ".." + SEP + "jigsaw" + SEP + "modulepath" + SEP + "src");
+        resolve( ".." + SEP + ".." + SEP + "jigsaw" + SEP + "modulepath" + SEP + "src");
 
     private static final Path MODS_DIR = Paths.get("mods");
 

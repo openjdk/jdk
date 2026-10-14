@@ -33,8 +33,8 @@
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "oops/accessBackend.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/objArrayOop.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -451,7 +451,7 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(o
 
 // Iterate over a value payload and visit all blocks of primitive fields and all oops.
 template <typename PrimitiveFunction, typename OopFunction>
-void value_primitive_and_oop_iterate(InlineKlass* klass,
+void value_primitive_and_oop_iterate(ValueKlass* klass,
                                      address payload,
                                      size_t payload_size,
                                      PrimitiveFunction primitive_function,
@@ -495,7 +495,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_copy_in_heap(const ValuePayload& src, const ValuePayload& dst) {
   precond(src.klass() == dst.klass());
 
-  InlineKlass* const klass = src.klass();
+  ValueKlass* const klass = src.klass();
 
   const LayoutKind layout_kind = LayoutKindHelper::get_copy_layout(src.layout_kind(), dst.layout_kind());
   const size_t payload_size = klass->layout_size_in_bytes(layout_kind);
@@ -525,7 +525,7 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_copy_in_h
 
 template <DecoratorSet decorators, typename BarrierSetT>
 inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_store_null_in_heap(const ValuePayload& dst) {
-  InlineKlass* const klass = dst.klass();
+  ValueKlass* const klass = dst.klass();
   const LayoutKind layout_kind = dst.layout_kind();
 
   assert(!LayoutKindHelper::is_null_free_flat(layout_kind),

@@ -27,21 +27,42 @@
  * @requires vm.cds.supports.aot.class.linking
  * @requires vm.debug
  * @enablePreview
- * @library /test/jdk/lib/testlibrary /test/lib
+ * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes/
  * @modules java.base/jdk.internal.value
+ * @modules java.base/jdk.internal.vm.annotation
  * @build FlatArrayTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
- *             FlatArrayTestApp MyAOTInitedClass CharPair Wrapper
+ *             FlatArrayTestApp
+ *             MyAOTInitedClass
+ *             valueclasses.BytePair
+ *             valueclasses.BytePairWrapper
+ *             valueclasses.BytePairWrapperWrapper
+ *             valueclasses.CharPair
+ *             valueclasses.IntegerWrapper
+ *             valueclasses.ShortPair
+ *             valueclasses.ShortPairWrapper
+ *             valueclasses.ValueClassHelper
  * @run driver FlatArrayTest AOT --two-step-training
  */
 
 import java.util.Arrays;
 import jdk.internal.value.ValueClass;
+import jdk.internal.vm.annotation.NullRestricted;
 
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.StringArrayUtils;
+
+// From ../test-classes/
+import valueclasses.BytePair;
+import valueclasses.BytePairWrapper;
+import valueclasses.BytePairWrapperWrapper;
+import valueclasses.CharPair;
+import valueclasses.ShortPair;
+import valueclasses.ShortPairWrapper;
+import valueclasses.IntegerWrapper;
+import valueclasses.ValueClassHelper;
 
 public class FlatArrayTest {
     static final String appJar = ClassFileInstaller.getJarPath("app.jar");
@@ -89,8 +110,13 @@ public class FlatArrayTest {
                 out.shouldContain("Y = 123");
             } else if (runMode == RunMode.ASSEMBLY) {
                 out.shouldMatch("klasses.* app .*MyAOTInitedClass .* inited");
+                out.shouldMatch("klasses.* app .*BytePair .* inited");
+                out.shouldMatch("klasses.* app .*BytePairWrapper .* inited");
+                out.shouldMatch("klasses.* app .*BytePairWrapperWrapper .* inited");
                 out.shouldMatch("klasses.* app .*CharPair .* inited");
-                out.shouldMatch("klasses.* app .*Wrapper .* inited");
+                out.shouldMatch("klasses.* app .*IntegerWrapper .* inited");
+                out.shouldMatch("klasses.* app .*ShortPair .* inited");
+                out.shouldMatch("klasses.* app .*ShortPairWrapper .* inited");
             } else if (runMode == RunMode.PRODUCTION) {
                 out.shouldContain("Y = 45");
             }
@@ -98,44 +124,13 @@ public class FlatArrayTest {
     }
 }
 
+// NOTE: this class is NOT aot-initialized.
 class FlatArrayTestApp {
     static int X = 45;
+
     public static void main(String[] args) {
         X = 123;
         MyAOTInitedClass.test(args[0]);
-    }
-}
-
-value class CharPair implements Comparable<CharPair> {
-    char c0, c1;
-
-    public String toString() {
-        return "(" + c0 + ", " + c1 + ")";
-    }
-
-    public int compareTo(CharPair o) {
-        return (c0 - o.c0) - (c1 - o.c1);
-    }
-
-    public CharPair(char c0, char c1) {
-        this.c0 = c0;
-        this.c1 = c1;
-    }
-}
-
-value class Wrapper implements Comparable<Wrapper> {
-    Integer i;
-
-    public String toString() {
-        return i.toString();
-    }
-
-    public int compareTo(Wrapper o) {
-        return i - o.i;
-    }
-
-    Wrapper(int i) {
-        this.i = new Integer(i);
     }
 }
 
@@ -147,15 +142,23 @@ class MyAOTInitedClass {
 
     static Integer[] intArray;
     static CharPair[] charPairArray;
-    static Wrapper[] wrapperArray;
+    static IntegerWrapper[] integerWrapperArray;
+    static ShortPairWrapper[] spwArray;
+    static BytePairWrapperWrapper[] bpwwArray;
 
+    // A non-flattened instance of CharPair.
     static CharPair charPair;
-    static Wrapper wrapper;
+
+    // We don't have non-flattened instances of IntegerWrapper, but
+    // the IntegerWrapper class should still be AOT-initialized, as
+    // we can read a reference object of type IntegerWrapper from
+    // integerWrapperArray[0]
+    //
+    // The same is also true for BytePair, BytePairWrapper, BytePairWrapperWrapper,
+    // ShortPair, and ShortPairWrapper, for similar reasons.
 
     static {
         intArray = new Integer[3];
-        intArray[0] = null;
-        System.out.println("TEST: " + (intArray[0] == null));
         intArray[0] = new Integer(0);
         intArray[1] = new Integer(1);
         intArray[2] = new Integer(2);
@@ -165,13 +168,22 @@ class MyAOTInitedClass {
         charPairArray[1] = new CharPair('c', 'd');
         charPairArray[2] = new CharPair('e', 'f');
 
-        wrapperArray = new Wrapper[3];
-        wrapperArray[0] = new Wrapper(0);
-        wrapperArray[1] = new Wrapper(1);
-        wrapperArray[2] = new Wrapper(2);
+        integerWrapperArray = new IntegerWrapper[3];
+        integerWrapperArray[0] = new IntegerWrapper(0);
+        integerWrapperArray[1] = new IntegerWrapper(1);
+        integerWrapperArray[2] = new IntegerWrapper(2);
+
+        spwArray = new ShortPairWrapper[3];
+        spwArray[0] = new ShortPairWrapper(0, 1);
+        spwArray[1] = new ShortPairWrapper(2, 3);
+        spwArray[2] = new ShortPairWrapper(4, 5);
+
+        bpwwArray = new BytePairWrapperWrapper[3];
+        bpwwArray[0] = new BytePairWrapperWrapper(0, 1);
+        bpwwArray[1] = new BytePairWrapperWrapper(2, 3);
+        bpwwArray[2] = new BytePairWrapperWrapper(4, 5);
 
         charPair = new CharPair('x', 'y');
-        wrapper = new Wrapper(5);
     }
 
     static void test(String runMode) {
@@ -188,36 +200,72 @@ class MyAOTInitedClass {
             throw new RuntimeException("CharPair array should be flat");
         }
 
-        if (!ValueClass.isFlatArray(wrapperArray)) {
-            throw new RuntimeException("Wrapper array should be flat");
+        if (!ValueClass.isFlatArray(integerWrapperArray)) {
+            throw new RuntimeException("IntegerWrapper array should be flat");
+        }
+
+        if (!ValueClass.isFlatArray(spwArray)) {
+            throw new RuntimeException("ShortPairWrapper array should be flat");
+        }
+
+        if (!ValueClass.isFlatArray(bpwwArray)) {
+            throw new RuntimeException("BytePairWrapperWrapper array should be flat");
         }
 
         // Ensure archived arrays are restored properly
-        Integer[] runtimeIntArray = new Integer[3];
-        runtimeIntArray[0] = new Integer(0);
-        runtimeIntArray[1] = new Integer(1);
-        runtimeIntArray[2] = new Integer(2);
+        Integer[] runtime_intArray = new Integer[3];
+        runtime_intArray[0] = new Integer(0);
+        runtime_intArray[1] = new Integer(1);
+        runtime_intArray[2] = new Integer(2);
 
-        CharPair[] runtimeCharPairArray = new CharPair[3];
-        runtimeCharPairArray[0] = new CharPair('a', 'b');
-        runtimeCharPairArray[1] = new CharPair('c', 'd');
-        runtimeCharPairArray[2] = new CharPair('e', 'f');
+        CharPair[] runtime_charPairArray = new CharPair[3];
+        runtime_charPairArray[0] = new CharPair('a', 'b');
+        runtime_charPairArray[1] = new CharPair('c', 'd');
+        runtime_charPairArray[2] = new CharPair('e', 'f');
 
-        Wrapper[] runtimeWrapperArray = new Wrapper[3];
-        runtimeWrapperArray[0] = new Wrapper(0);
-        runtimeWrapperArray[1] = new Wrapper(1);
-        runtimeWrapperArray[2] = new Wrapper(2);
+        IntegerWrapper[] runtime_integerWrapperArray = new IntegerWrapper[3];
+        runtime_integerWrapperArray[0] = new IntegerWrapper(0);
+        runtime_integerWrapperArray[1] = new IntegerWrapper(1);
+        runtime_integerWrapperArray[2] = new IntegerWrapper(2);
 
-        if (Arrays.compare(intArray, runtimeIntArray) != 0) {
+        ShortPairWrapper[] runtime_spwArray = new ShortPairWrapper[3];
+        runtime_spwArray[0] = new ShortPairWrapper(0, 1);
+        runtime_spwArray[1] = new ShortPairWrapper(2, 3);
+        runtime_spwArray[2] = new ShortPairWrapper(4, 5);
+
+        BytePairWrapperWrapper[] runtime_bpwwArray = new BytePairWrapperWrapper[3];
+        runtime_bpwwArray[0] = new BytePairWrapperWrapper(0, 1);
+        runtime_bpwwArray[1] = new BytePairWrapperWrapper(2, 3);
+        runtime_bpwwArray[2] = new BytePairWrapperWrapper(4, 5);
+
+        if (Arrays.compare(intArray, runtime_intArray) != 0) {
             throw new RuntimeException("Integer array not restored correctly");
         }
 
-        if (Arrays.compare(charPairArray, runtimeCharPairArray) != 0) {
+        if (Arrays.compare(charPairArray, runtime_charPairArray) != 0) {
             throw new RuntimeException("CharPair array not restored correctly");
         }
 
-        if (Arrays.compare(wrapperArray, runtimeWrapperArray) != 0) {
-            throw new RuntimeException("Wrapper array not restored correctly");
+        if (Arrays.compare(integerWrapperArray, runtime_integerWrapperArray) != 0) {
+            throw new RuntimeException("IntegerWrapper array not restored correctly");
+        }
+
+        if (Arrays.compare(spwArray, runtime_spwArray) != 0) {
+            throw new RuntimeException("ShortPairWrapper array not restored correctly");
+        }
+
+        if (Arrays.compare(bpwwArray, runtime_bpwwArray) != 0) {
+            throw new RuntimeException("BytePairWrapperWrapper array not restored correctly");
+        }
+
+        if (runMode.equals("PRODUCTION")) {
+            ValueClassHelper.assertAOTInited_BytePair();
+            ValueClassHelper.assertAOTInited_BytePairWrapper();
+            ValueClassHelper.assertAOTInited_BytePairWrapperWrapper();
+            ValueClassHelper.assertAOTInited_CharPair();
+            ValueClassHelper.assertAOTInited_IntegerWrapper();
+            ValueClassHelper.assertAOTInited_ShortPair();
+            ValueClassHelper.assertAOTInited_ShortPairWrapper();
         }
     }
 }

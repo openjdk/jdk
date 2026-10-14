@@ -62,7 +62,7 @@ RefArrayKlass *RefArrayKlass::allocate_klass(ClassLoaderData* loader_data, int n
 RefArrayKlass* RefArrayKlass::allocate_refArray_klass(ClassLoaderData* loader_data, int n,
                                                       Klass* element_klass, ArrayProperties props,
                                                       TRAPS) {
-  assert(!props.is_null_restricted() || (n == 1 && element_klass->is_inline_klass()),
+  assert(!props.is_null_restricted() || (n == 1 && element_klass->is_value_klass()),
          "null-free unsupported");
 
   // Eagerly allocate the direct array supertype.

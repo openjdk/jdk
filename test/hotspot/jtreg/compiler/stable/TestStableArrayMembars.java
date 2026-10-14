@@ -57,9 +57,9 @@ public class TestStableArrayMembars {
                     "--add-exports=java.base/jdk.internal.value=ALL-UNNAMED");
         if (Integer.class.isValue()) {
             tf.addCrossProductScenarios(Set.of("", "-XX:-UseArrayFlattening",
-                                               "-XX:-UseArrayFlattening -XX:-InlineTypePassFieldsAsArgs",
-                                               "-XX:-UseArrayFlattening -XX:-InlineTypeReturnedAsFields",
-                                               "-XX:-UseArrayFlattening -XX:-InlineTypePassFieldsAsArgs -XX:-InlineTypeReturnedAsFields"));
+                                               "-XX:-UseArrayFlattening -XX:-ValueTypePassFieldsAsArgs",
+                                               "-XX:-UseArrayFlattening -XX:-ValueTypeReturnedAsFields",
+                                               "-XX:-UseArrayFlattening -XX:-ValueTypePassFieldsAsArgs -XX:-ValueTypeReturnedAsFields"));
         }
         tf.start();
     }

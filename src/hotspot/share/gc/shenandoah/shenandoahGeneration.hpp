@@ -140,7 +140,7 @@ public:
   // Cancel marking (used by Full collect and when cancelling cycle).
   virtual void cancel_marking();
 
-  virtual bool contains(ShenandoahAffiliation affiliation) const = 0;
+  virtual bool contains(ShenandoahAffiliation affiliation) const override = 0;
 
   // Return true if this region is affiliated with this generation.
   virtual bool contains(ShenandoahHeapRegion* region) const override = 0;
@@ -172,7 +172,6 @@ public:
 
   // Task queues
   ShenandoahObjToScanQueueSet* task_queues() const { return _task_queues; }
-  virtual void reserve_task_queues(uint workers);
   virtual ShenandoahObjToScanQueueSet* old_gen_task_queues() const;
 
   // Scan remembered set at start of concurrent young-gen marking.

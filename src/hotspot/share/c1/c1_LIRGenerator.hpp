@@ -209,8 +209,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIR_Opr rlock(Value instr);                      // lock a free register
   LIR_Opr rlock_result(Value instr);
   LIR_Opr rlock_result(Value instr, BasicType type);
-  LIR_Opr rlock_byte(BasicType type);
-  LIR_Opr rlock_callee_saved(BasicType type);
+  LIR_Opr rlock_byte();
 
   // get a constant into a register and get track of what register was used
   LIR_Opr load_constant(Constant* x);
@@ -303,7 +302,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
  public:
   void access_store_at(DecoratorSet decorators, BasicType type,
                        LIRItem& base, LIR_Opr offset, LIR_Opr value,
-                       CodeEmitInfo* patch_info = nullptr, CodeEmitInfo* store_emit_info = nullptr, ciInlineKlass* vk = nullptr);
+                       CodeEmitInfo* patch_info = nullptr, CodeEmitInfo* store_emit_info = nullptr, ciValueKlass* vk = nullptr);
 
   void access_load_at(DecoratorSet decorators, BasicType type,
                       LIRItem& base, LIR_Opr offset, LIR_Opr result,
@@ -334,7 +333,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   // specific implementations
   void array_store_check(LIR_Opr value, LIR_Opr array, CodeEmitInfo* store_check_info, ciMethod* profiled_method, int profiled_bci);
 
-  static LIR_Opr result_register_for(ValueType* type, bool callee = false);
+  static LIR_Opr result_register_for(ValueType* type);
 
   ciObject* get_jobject_constant(Value value);
 
@@ -380,7 +379,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void monitor_enter (LIR_Opr object, LIR_Opr lock, LIR_Opr hdr, LIR_Opr scratch, int monitor_no, CodeEmitInfo* info_for_exception, CodeEmitInfo* info, CodeStub* throw_ie_stub = nullptr);
   void monitor_exit  (LIR_Opr object, LIR_Opr lock, LIR_Opr hdr, LIR_Opr scratch, int monitor_no);
 
-  void new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unresolved, bool allow_inline, LIR_Opr scratch1, LIR_Opr scratch2, LIR_Opr scratch3, LIR_Opr scratch4, LIR_Opr klass_reg, CodeEmitInfo* info);
+  void new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unresolved, bool allow_value, LIR_Opr scratch1, LIR_Opr scratch2, LIR_Opr scratch3, LIR_Opr scratch4, LIR_Opr klass_reg, CodeEmitInfo* info);
 
   // machine dependent
   void cmp_mem_int(LIR_Condition condition, LIR_Opr base, int disp, int c, CodeEmitInfo* info);
@@ -496,7 +495,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void profile_null_free_array(LIRItem array, ciMethodData* md, ciProfileData* load_store);
   template <class ArrayData> void profile_array_type(AccessIndexed* x, ciMethodData*& md, ArrayData*& load_store);
   void profile_element_type(Value element, ciMethodData* md, ciArrayLoadData* load_store);
-  bool profile_inline_klass(ciMethodData* md, ciProfileData* data, Value value, int flag);
+  bool profile_value_klass(ciMethodData* md, ciProfileData* data, Value value, int flag);
   LIR_Opr mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& null_check_info);
 
  public:

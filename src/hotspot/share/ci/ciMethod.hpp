@@ -275,7 +275,7 @@ class ciMethod : public ciMetadata {
                                            bool& flat_array, bool& null_free);
   bool          acmp_profiled_type(int bci, ciKlass*& left_type, ciKlass*& right_type,
                                    ProfilePtrKind& left_ptr, ProfilePtrKind& right_ptr,
-                                   bool& left_inline_type, bool& right_inline_type);
+                                   bool& left_value_type, bool& right_value_type);
   ciField*      get_field_at_bci( int bci, bool &will_link);
   ciMethod*     get_method_at_bci(int bci, bool &will_link, ciSignature* *declared_signature);
   ciMethod*     get_method_at_bci(int bci) {
@@ -391,7 +391,7 @@ class ciMethod : public ciMetadata {
 
   static bool is_consistent_info(ciMethod* declared_method, ciMethod* resolved_method);
 
-  // Support for the inline type calling convention
+  // Support for the value type calling convention
   bool is_scalarized_arg(int idx) const;
   bool is_scalarized_buffer_arg(int idx) const;
   bool has_scalarized_args() const;

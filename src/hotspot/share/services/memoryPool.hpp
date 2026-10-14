@@ -27,6 +27,7 @@
 
 #include "memory/heap.hpp"
 #include "oops/oop.hpp"
+#include "oops/oopHandle.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/macros.hpp"
 
@@ -42,7 +43,7 @@ class MemoryManager;
 class SensorInfo;
 class ThresholdSupport;
 
-class MemoryPool : public CHeapObj<mtInternal> {
+class MemoryPool : public CHeapObj<mtServiceability> {
   friend class MemoryManager;
  public:
   enum PoolType {

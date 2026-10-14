@@ -72,11 +72,12 @@ void C2_MacroAssembler::entry_barrier() {
 
 // jdk.internal.util.ArraysSupport.vectorizedHashCode
 address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register result,
-                                           FloatRegister vdata0, FloatRegister vdata1,
-                                           FloatRegister vdata2, FloatRegister vdata3,
-                                           FloatRegister vmul0, FloatRegister vmul1,
-                                           FloatRegister vmul2, FloatRegister vmul3,
-                                           FloatRegister vpow, FloatRegister vpowm,
+                                           Register blocks, Register tail, Register sum,
+                                           FloatRegister v_block0, FloatRegister v_block1,
+                                           FloatRegister v_block2, FloatRegister v_block3,
+                                           FloatRegister v_p0, FloatRegister v_p1,
+                                           FloatRegister v_p2, FloatRegister v_p3,
+                                           FloatRegister v_input1, FloatRegister v_input2,
                                            BasicType eltype) {
   ARRAYS_HASHCODE_REGISTERS;
 
@@ -116,9 +117,8 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
     ShouldNotReachHere();
   }
 
-  // large_arrays_hashcode(T_INT) performs worse than the scalar loop below when the Neon loop
-  // implemented by the stub executes just once. Call the stub only if at least two iterations will
-  // be executed.
+  // large_arrays_hashcode(T_INT) uses SIMD for >= 8 elements.
+  // For lower lengths we use an unrolled loop.
   const size_t large_threshold = eltype == T_INT ? vf * 2 : vf;
   cmpw(cnt, large_threshold);
   br(Assembler::HS, LARGE);
@@ -221,8 +221,8 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a lea");
 
     // Try to lock. Transition lock-bits 0b01 => 0b00
-    orr(t1_mark, t1_mark, markWord::unlocked_value);
-    eor(t3_t, t1_mark, markWord::unlocked_value);
+    orr(t1_mark, t1_mark, markWord::lock_neutral_value);
+    eor(t3_t, t1_mark, markWord::lock_neutral_value);
     cmpxchg(/*addr*/ obj, /*expected*/ t1_mark, /*new*/ t3_t, Assembler::xword, memory_order_acquire);
     br(Assembler::NE, slow_path);
 
@@ -383,7 +383,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box, Register t1,
 
     // Try to unlock. Transition lock bits 0b00 => 0b01
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
-    orr(t3_t, t1_mark, markWord::unlocked_value);
+    orr(t3_t, t1_mark, markWord::lock_neutral_value);
     cmpxchg(/*addr*/ obj, /*expected*/ t1_mark, /*new*/ t3_t, Assembler::xword, memory_order_release);
     br(Assembler::EQ, unlocked);
 
@@ -1129,6 +1129,43 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1,
   BIND(DONE);
 }
 
+void C2_MacroAssembler::string_equals_sve(Register a1, Register a2,
+                                      Register result, Register cnt1,
+                                      FloatRegister ztmp1, FloatRegister ztmp2,
+                                      PRegister pg, PRegister pdata) {
+  Label LOOP, TAIL, END;
+  Register vec_len = rscratch1;
+  Register tmp_cnt1     = rscratch2;
+  sve_cntb(vec_len);
+  // Keep original cnt1 for the len <= VL tail decision.
+  // If length(cnt1) <= VL go to the tail
+  subs(tmp_cnt1, cnt1, vec_len);
+  br(Assembler::LE, TAIL);
+  sve_ptrue(pg, B);
+  bind(LOOP);
+    sve_ld1b(ztmp1, B, pg, Address(a1));
+    sve_ld1b(ztmp2, B, pg, Address(a2));
+    add(a1, a1, vec_len);
+    add(a2, a2, vec_len);
+    sve_cmp(Assembler::NE, pdata, B, pg, ztmp1, ztmp2);
+    br(Assembler::NE, END);
+    subs(tmp_cnt1, tmp_cnt1, vec_len);
+    br(Assembler::HI, LOOP);
+  // Final overlapped full-VL compare.
+  sve_ld1b(ztmp1, B, pg, Address(a1, tmp_cnt1));
+  sve_ld1b(ztmp2, B, pg, Address(a2, tmp_cnt1));
+  sve_cmp(Assembler::NE, pdata, B, pg, ztmp1, ztmp2);
+  b(END);
+
+  bind(TAIL);
+    sve_whilelt(pg, B, zr, cnt1);
+    sve_ld1b(ztmp1, B, pg, Address(a1));
+    sve_ld1b(ztmp2, B, pg, Address(a2));
+    sve_cmp(Assembler::NE, pdata, B, pg, ztmp1, ztmp2);
+  bind(END);
+    cset(result, Assembler::EQ);
+}
+
 // Compare strings.
 void C2_MacroAssembler::string_compare(Register str1, Register str2,
     Register cnt1, Register cnt2, Register result, Register tmp1, Register tmp2,
@@ -1567,13 +1604,18 @@ void C2_MacroAssembler::sve_compare(PRegister pd, BasicType bt, PRegister pg,
 }
 
 // Get index of the last mask lane that is set
-void C2_MacroAssembler::sve_vmask_lasttrue(Register dst, BasicType bt, PRegister src, PRegister ptmp) {
+// Clobbers: rflags
+void C2_MacroAssembler::sve_vmask_lasttrue(Register dst, BasicType bt,
+                                           PRegister src, FloatRegister vtmp) {
   SIMD_RegVariant size = elemType_to_regVariant(bt);
-  sve_rev(ptmp, size, src);
-  sve_brkb(ptmp, ptrue, ptmp, false);
-  sve_cntp(dst, size, ptrue, ptmp);
-  movw(rscratch1, MaxVectorSize / type2aelembytes(bt) - 1);
-  subw(dst, rscratch1, dst);
+  // vtmp = 0, 1, 2, ...
+  sve_index(vtmp, size, 0, 1);
+  // dst = last true or the highest-numbered element if src is all false
+  sve_lastb(dst, size, src, vtmp);
+  // Zero flag = 1 iff no active lane
+  sve_ptest(ptrue, src);
+  // active: keep; else -1
+  csinvw(dst, dst, zr, Assembler::NE);
 }
 
 // Extend integer vector src to dst with the same lane count
