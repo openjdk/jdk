@@ -8323,9 +8323,11 @@ instruct lShiftL_regI_immGE32(iRegLdst dst, iRegIorL2I src1, uimmI6_ge32 src2) %
   ins_pipe(pipe_class_default);
 %}
 
-// Shift a postivie int to the left.
+// Shift a positive int to the left.
 // Clrlsldi clears the upper 32 bits and shifts.
-instruct scaledPositiveI2L_lShiftL_convI2L_reg_imm6(iRegLdst dst, iRegIorL2I src1, uimmI6 src2) %{
+// Only valid for shift amounts < 32.
+// Shift amounts >= 32 are handled by lShiftL_regI_immGE32.
+instruct scaledPositiveI2L_lShiftL_convI2L_reg_imm6(iRegLdst dst, iRegIorL2I src1, uimmI5 src2) %{
   match(Set dst (LShiftL (ConvI2L src1) src2));
   predicate(((ConvI2LNode*)(_kids[0]->_leaf))->type()->is_long()->is_positive_int());
 
