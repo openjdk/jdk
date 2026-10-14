@@ -209,6 +209,7 @@ public final class LinuxRISCV64CFrame extends DwarfCFrame {
            var jthread = getJavaThreadFromThreadProxy(thread);
            var contEntry = jthread.getContEntry();
            // The walk can reach enclosing frames while the thread still points to the innermost entry.
+           // Thaw permits SP == entrySP, which getContinuationEntryForSP() would skip.
            while (contEntry != null && contEntry.getEntrySP().lessThan(sp())) {
              contEntry = contEntry.getParent();
            }

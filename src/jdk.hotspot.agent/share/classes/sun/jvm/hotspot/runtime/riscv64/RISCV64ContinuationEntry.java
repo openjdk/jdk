@@ -38,6 +38,7 @@ public class RISCV64ContinuationEntry extends ContinuationEntry {
 
     @Override
     public Address getEntryFP() {
+        // The entry FP is above the two words holding the saved caller FP and RA.
         return super.getEntryFP().addOffsetTo(2 * VM.getVM().getAddressSize());
     }
 
