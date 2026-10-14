@@ -819,7 +819,10 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
     notify_control_thread(cause, ShenandoahHeap::heap()->global_generation());
     return;
   }
-  ShenandoahGeneration* generation = cause == GCCause::_wb_young_gc
+
+  // We can only run concurrent young GCs. If the request is to run a young gc, but
+  // explicit invokes concurrent is disabled, you get a global/full GC.
+  ShenandoahGeneration* generation = cause == GCCause::_wb_young_gc && ExplicitGCInvokesConcurrent
                                    ? ShenandoahHeap::heap()->young_generation()
                                    : ShenandoahHeap::heap()->global_generation();
   wait_for_gc_cycle(cause, generation);

@@ -207,7 +207,7 @@ public class TestWhiteBoxOldMarkGC {
             "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UseShenandoahGC", "-XX:ShenandoahGCMode=generational",
-            "-Xlog:gc*:/tmp/cancel.jvm.log", "-Xmx128M", "-ea",
+            "-Xlog:gc*", "-Xmx128M", "-ea",
             "-XX:ShenandoahGenerationalMinTenuringAge=1",
             "-XX:ShenandoahGenerationalMaxTenuringAge=1",
         };
