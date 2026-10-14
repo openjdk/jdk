@@ -24,45 +24,42 @@
 
 /*
  * @test id=old
- * @requires vm.gc.Shenandoah
+ * @bug 8394388
  * @summary Test that WhiteBox::shenandoahOldMarkGC is robust
+ * @requires vm.gc.Shenandoah
  * @requires vm.flagless
- * @bug 8373203
  * @library /test/lib /
  * @build jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run driver gc.shenandoah.generational.TestWhiteBoxGCs old
+ * @run driver gc.shenandoah.generational.TestWhiteBoxOldMarkGC old
  */
 
 /*
  * @test id=mixed
+ * @bug 8394388
+ * @summary Test that WhiteBox::shenandoahOldMarkGC will expedite mixed
+ *          evacuations to finish an extent OldGC.
  * @requires vm.gc.Shenandoah
- * @summary Test that WhiteBox::shenandoahOldMarkGC is robust
  * @requires vm.flagless
- * @bug 8373203
  * @library /test/lib /
  * @build jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run driver gc.shenandoah.generational.TestWhiteBoxGCs mixed
+ * @run driver gc.shenandoah.generational.TestWhiteBoxOldMarkGC mixed
  */
 
 /*
  * @test id=cancel
+ * @bug 8394388
+ * @summary Test that WhiteBox::shenandoahOldMarkGC will timeout and fail when
+ *          the old mark is canceled by a full GC.
  * @requires vm.gc.Shenandoah
- * @summary Test that WhiteBox::shenandoahOldMarkGC is robust
  * @requires vm.flagless
- * @bug 8373203
  * @library /test/lib /
  * @build jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run driver gc.shenandoah.generational.TestWhiteBoxGCs cancel
+ * @run driver gc.shenandoah.generational.TestWhiteBoxOldMarkGC cancel
  */
 package gc.shenandoah.generational;
-
-import com.sun.management.GarbageCollectionNotificationInfo;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.whitebox.WhiteBox;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -70,33 +67,35 @@ import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.whitebox.WhiteBox;
+
+import com.sun.management.GarbageCollectionNotificationInfo;
+
 import static gc.shenandoah.generational.TestHelpers.promote;
 
-public class TestWhiteBoxGCs {
+public class TestWhiteBoxOldMarkGC {
     public static final int OBJECT_COUNT = 2048;
 
     public static void main(String[] argv) throws Exception {
-        assert argv.length == 1;
         switch (argv[0]) {
             case "old"    -> Old.runTest();
             case "mixed"  -> Mixed.runTest();
             case "cancel" -> Cancelled.runTest();
+            default -> throw new IllegalArgumentException("Argument should be: old|mixed|cancel");
         }
     }
 
     public static class Old {
         private static void runTest() throws Exception {
             OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
-                    "-Xbootclasspath/a:.",
-                    "-XX:+IgnoreUnrecognizedVMOptions",
-                    "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-                    "-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC", "-XX:ShenandoahGCMode=generational", "-Xlog:gc",
-                    "-Xmx128M", "-ea",
-                    TestWhiteBoxGCs.Old.class.getName()
+                getCommandLineArguments(Old.class.getName())
             );
+
             output.shouldContain("WhiteBox Old Mark");
             output.shouldNotContain("WhiteBox Old Expedite Mixed");
+            output.shouldHaveExitValue(0);
         }
 
         public static void main(String[] argv) {
@@ -116,23 +115,12 @@ public class TestWhiteBoxGCs {
     public static class Mixed {
         private static void runTest() throws Exception {
             OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
-                    "-Xbootclasspath/a:.",
-                    "-XX:+IgnoreUnrecognizedVMOptions",
-                    "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-                    "-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC", "-XX:ShenandoahGCMode=generational", "-Xlog:gc",
-                    "-XX:ShenandoahGenerationalMinTenuringAge=1", "-XX:ShenandoahGenerationalMaxTenuringAge=1",
-                    "-Xmx128M", "-ea",
-                    TestWhiteBoxGCs.Mixed.class.getName()
+                    getCommandLineArguments(Mixed.class.getName())
             );
 
-            for (var line : output.asLines()) {
-                if (line.contains("Trigger")) {
-                    System.out.println(line);
-                }
-            }
             output.shouldContain("WhiteBox Old Mark");
             output.shouldContain("WhiteBox Old Expedite Mixed");
+            output.shouldHaveExitValue(0);
         }
 
         public static void main(String[] argv) {
@@ -165,23 +153,12 @@ public class TestWhiteBoxGCs {
     }
 
     public static class Cancelled {
+
         private static void runTest() throws Exception {
             OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
-                    "-Xbootclasspath/a:.",
-                    "-XX:+IgnoreUnrecognizedVMOptions",
-                    "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-                    "-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC", "-XX:ShenandoahGCMode=generational", "-Xlog:gc",
-                    "-XX:ShenandoahGenerationalMinTenuringAge=1", "-XX:ShenandoahGenerationalMaxTenuringAge=1",
-                    "-Xmx128M", "-ea",
-                    TestWhiteBoxGCs.Cancelled.class.getName()
+                getCommandLineArguments(TestWhiteBoxOldMarkGC.Cancelled.class.getName())
             );
-
-            for (var line : output.asLines()) {
-                if (line.contains("Trigger")) {
-                    System.out.println(line);
-                }
-            }
+            output.shouldHaveExitValue(0);
         }
 
         public static void main(String[] argv) throws Exception {
@@ -223,4 +200,16 @@ public class TestWhiteBoxGCs {
             }
         }
     }
- }
+
+    private static String[] getCommandLineArguments(String testName) {
+        return new String[]{"-Xbootclasspath/a:.",
+                "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:+UseShenandoahGC", "-XX:ShenandoahGCMode=generational",
+                "-Xlog:gc", "-Xmx128M", "-ea",
+                "-XX:ShenandoahGenerationalMinTenuringAge=1",
+                "-XX:ShenandoahGenerationalMaxTenuringAge=1",
+                testName
+        };
+    }
+}

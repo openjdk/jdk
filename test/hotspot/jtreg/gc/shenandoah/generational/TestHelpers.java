@@ -32,13 +32,13 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import com.sun.management.GarbageCollectionNotificationInfo;
-import jdk.test.whitebox.WhiteBox;
-
 import javax.management.Notification;
 import javax.management.NotificationEmitter;
 import javax.management.NotificationListener;
 import javax.management.openmbean.CompositeData;
+
+import com.sun.management.GarbageCollectionNotificationInfo;
+import jdk.test.whitebox.WhiteBox;
 
 class TestHelpers {
     interface GcNotificationListener {
@@ -101,6 +101,8 @@ class TestHelpers {
             WB.fullGC();
             ++tries;
         }
+
+        assert allAreInOld(objects) : "Not all objects were promoted";
     }
 
     static boolean allAreInOld(List<?> objects) {
