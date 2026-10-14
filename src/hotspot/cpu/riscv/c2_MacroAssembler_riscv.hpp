@@ -142,13 +142,13 @@
                            FloatRegister dst, FloatRegister src,
                            bool cmp_single, bool cmov_single);
 
-  void compress_bits_v(VectorRegister dst, VectorRegister src, VectorRegister mask,
+  void compress_bits_v(VectorRegister dst, VectorRegister src, VectorRegister bit_mask,
                        VectorRegister src_tmp, VectorRegister mask_tmp,
                        VectorRegister tmp1, VectorRegister tmp2,
                        BasicType bt, uint vector_length,
                        VectorMask vm = Assembler::unmasked);
 
-  void expand_bits_v(VectorRegister dst, VectorRegister src, VectorRegister mask,
+  void expand_bits_v(VectorRegister dst, VectorRegister src, VectorRegister bit_mask,
                      VectorRegister src_tmp, VectorRegister mask_tmp,
                      VectorRegister mask_move1, VectorRegister mask_move2,
                      VectorRegister mask_move3, VectorRegister mask_move4,

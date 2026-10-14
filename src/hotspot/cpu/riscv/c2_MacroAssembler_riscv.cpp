@@ -2253,7 +2253,7 @@ static void parallel_suffix_v(C2_MacroAssembler* masm, VectorRegister dst,
 // vector element while preserving their order. This is the vector equivalent
 // of Integer.compress and Long.compress and uses the same movement-mask algorithm.
 void C2_MacroAssembler::compress_bits_v(VectorRegister dst, VectorRegister src,
-                                        VectorRegister mask, VectorRegister src_tmp,
+                                        VectorRegister bit_mask, VectorRegister src_tmp,
                                         VectorRegister mask_tmp, VectorRegister tmp1,
                                         VectorRegister tmp2, BasicType bt,
                                         uint vector_length, VectorMask vm) {
@@ -2263,8 +2263,8 @@ void C2_MacroAssembler::compress_bits_v(VectorRegister dst, VectorRegister src,
   const int rounds = exact_log2(bits);
 
   vsetvli_helper(bt, vector_length);
-  vand_vv(dst, src, mask, vm);
-  vmv_v_v(mask_tmp, mask);
+  vand_vv(dst, src, bit_mask, vm);
+  vmv_v_v(mask_tmp, bit_mask);
   vnot_v(tmp1, mask_tmp);
   vshift_left(this, tmp1, tmp1, 1);
 
@@ -2290,7 +2290,7 @@ void C2_MacroAssembler::compress_bits_v(VectorRegister dst, VectorRegister src,
 // vector element. First record the movement masks used by compression, then
 // apply them in reverse order to implement Integer.expand and Long.expand.
 void C2_MacroAssembler::expand_bits_v(VectorRegister dst, VectorRegister src,
-                                      VectorRegister mask, VectorRegister src_tmp,
+                                      VectorRegister bit_mask, VectorRegister src_tmp,
                                       VectorRegister mask_tmp, VectorRegister mask_move1,
                                       VectorRegister mask_move2, VectorRegister mask_move3,
                                       VectorRegister mask_move4, VectorRegister mask_move5,
@@ -2307,7 +2307,7 @@ void C2_MacroAssembler::expand_bits_v(VectorRegister dst, VectorRegister src,
 
   vsetvli_helper(bt, vector_length);
   vmv_v_v(src_tmp, src);
-  vmv_v_v(mask_tmp, mask);
+  vmv_v_v(mask_tmp, bit_mask);
   vor_vv(dst, mask_tmp, mask_tmp, vm);
   vnot_v(tmp1, mask_tmp);
   vshift_left(this, tmp1, tmp1, 1);
