@@ -114,6 +114,501 @@ public class GenCondCast {
         else return 0;
     }
 
+    static int testLarge_anno(boolean b) {
+        int result;
+        if ((@Ann Boolean) (b && (result = 1) > 0)) {
+            //enough code here to force long jumps:
+            record R(String s0, String s1, String s2, String s3, String s4) {}
+            Object r = new R("", "", "", "", "");
+            switch (r) {
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                case R(var s0, var s1, var s2, var s3, var s4) when !s0.isEmpty() ->
+                    System.out.print(s0 + s1 + s2 + s3 + s4);
+                default -> {}
+            }
+            return result;
+        } else {
+            return 0;
+        }
+    }
+
+    static int testRedundant1_anno(boolean b) {
+        int result;
+        if ((@Ann Boolean) (@Ann Boolean) (@Ann Boolean) (b && (result = 1) > 0)) return result;
+        return 0;
+    }
+
+    static int testRedundant2_anno(boolean b) {
+        int result;
+        if ((@Ann Boolean) (@Ann boolean) (@Ann Boolean) (b && (result = 1) > 0)) return result;
+        return 0;
+    }
+
     static int annotated(boolean b) {
         {
             int result;
@@ -165,23 +660,68 @@ public class GenCondCast {
         doTest(GenCondCast::test3_anno);
         doTest(GenCondCast::test4);
         doTest(GenCondCast::test4_anno);
+        doTest(GenCondCast::testLarge_anno);
+        doTest(GenCondCast::testRedundant1_anno);
+        doTest(GenCondCast::testRedundant2_anno);
 
         byte[] classBytes = GenCondCast.class.getClassLoader().getResourceAsStream(GenCondCast.class.getName().replace('.', '/') + ".class").readAllBytes();
         ClassModel model = ClassFile.of().parse(classBytes);
-        MethodModel annotated = model.methods().stream().filter(m -> m.methodName().equalsString("annotated")).findAny().orElseThrow();
-        RuntimeInvisibleTypeAnnotationsAttribute typeAnnotations = annotated.code().orElseThrow().findAttribute(Attributes.runtimeInvisibleTypeAnnotations()).orElseThrow();
-        List<String> actualTAs = typeAnnotations.annotations().stream().map(ta -> toString(ta.targetInfo())  + ", " + ta.targetPath() + ", " + ta.annotation()).toList();
-        List<String> expectedTAs = List.of(
-            "CAST:0:7, [], Annotation[LGenCondCast$Ann;]",
-            "CAST:0:15, [], Annotation[LGenCondCast$Ann;]",
-            "CAST:0:49, [], Annotation[LGenCondCast$Ann;]",
-            "CAST:0:79, [], Annotation[LGenCondCast$Ann;]",
-            "CAST:0:93, [], Annotation[LGenCondCast$Ann;]",
-            "CAST:0:98, [], Annotation[LGenCondCast$Ann;]"
-        );
+        {
+            MethodModel annotated = model.methods().stream().filter(m -> m.methodName().equalsString("annotated")).findAny().orElseThrow();
+            RuntimeInvisibleTypeAnnotationsAttribute typeAnnotations = annotated.code().orElseThrow().findAttribute(Attributes.runtimeInvisibleTypeAnnotations()).orElseThrow();
+            List<String> actualTAs = typeAnnotations.annotations().stream().map(ta -> toString(ta.targetInfo())  + ", " + ta.targetPath() + ", " + ta.annotation()).toList();
+            List<String> expectedTAs = List.of(
+                "CAST:0:7, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:15, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:49, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:79, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:93, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:98, [], Annotation[LGenCondCast$Ann;]"
+            );
 
-        if (!Objects.equals(expectedTAs, actualTAs)) {
-            throw new AssertionError("expected: " + expectedTAs + ", got: " + actualTAs);
+            if (!Objects.equals(expectedTAs, actualTAs)) {
+                throw new AssertionError("expected: " + expectedTAs + ", got: " + actualTAs);
+            }
+        }
+        {
+            MethodModel testLarge_anno = model.methods().stream().filter(m -> m.methodName().equalsString("testLarge_anno")).findAny().orElseThrow();
+            RuntimeInvisibleTypeAnnotationsAttribute typeAnnotations = testLarge_anno.code().orElseThrow().findAttribute(Attributes.runtimeInvisibleTypeAnnotations()).orElseThrow();
+            List<String> actualTAs = typeAnnotations.annotations().stream().map(ta -> toString(ta.targetInfo())  + ", " + ta.targetPath() + ", " + ta.annotation()).toList();
+            List<String> expectedTAs = List.of(
+                "CAST:0:37, [], Annotation[LGenCondCast$Ann;]"
+            );
+
+            if (!Objects.equals(expectedTAs, actualTAs)) {
+                throw new AssertionError("expected: " + expectedTAs + ", got: " + actualTAs);
+            }
+        }
+        {
+            MethodModel testRedundant1_anno = model.methods().stream().filter(m -> m.methodName().equalsString("testRedundant1_anno")).findAny().orElseThrow();
+            RuntimeInvisibleTypeAnnotationsAttribute typeAnnotations = testRedundant1_anno.code().orElseThrow().findAttribute(Attributes.runtimeInvisibleTypeAnnotations()).orElseThrow();
+            List<String> actualTAs = typeAnnotations.annotations().stream().map(ta -> toString(ta.targetInfo())  + ", " + ta.targetPath() + ", " + ta.annotation()).toList();
+            List<String> expectedTAs = List.of(
+                "CAST:0:25, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:25, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:25, [], Annotation[LGenCondCast$Ann;]"
+            );
+
+            if (!Objects.equals(expectedTAs, actualTAs)) {
+                throw new AssertionError("expected: " + expectedTAs + ", got: " + actualTAs);
+            }
+        }
+        {
+            MethodModel testRedundant2_anno = model.methods().stream().filter(m -> m.methodName().equalsString("testRedundant2_anno")).findAny().orElseThrow();
+            RuntimeInvisibleTypeAnnotationsAttribute typeAnnotations = testRedundant2_anno.code().orElseThrow().findAttribute(Attributes.runtimeInvisibleTypeAnnotations()).orElseThrow();
+            List<String> actualTAs = typeAnnotations.annotations().stream().map(ta -> toString(ta.targetInfo())  + ", " + ta.targetPath() + ", " + ta.annotation()).toList();
+            List<String> expectedTAs = List.of(
+                "CAST:0:47, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:43, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:25, [], Annotation[LGenCondCast$Ann;]"
+            );
+
+            if (!Objects.equals(expectedTAs, actualTAs)) {
+                throw new AssertionError("expected: " + expectedTAs + ", got: " + actualTAs);
+            }
         }
     }
 

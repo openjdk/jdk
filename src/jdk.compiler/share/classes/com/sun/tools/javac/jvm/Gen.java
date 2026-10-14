@@ -798,9 +798,7 @@ public class Gen extends JCTree.Visitor {
             return res;
         } else if (inner_tree instanceof JCMethodInvocation mi &&
                    mi.boxingKind == JCMethodInvocation.BoxingKind.UNBOX &&
-                   TreeInfo.skipParens(((JCFieldAccess) mi.meth).selected) instanceof JCTypeCast tc &&
-                   tc.type.tsym == types.boxedClass(syms.booleanType) &&
-                   tc.expr instanceof JCMethodInvocation boxing &&
+                   skipCasts(((JCFieldAccess) mi.meth).selected) instanceof JCMethodInvocation boxing &&
                    boxing.boxingKind == JCMethodInvocation.BoxingKind.BOX) {
             //case like:
             //(Boolean) (b && (result = 1) > 0)
@@ -829,6 +827,8 @@ public class Gen extends JCTree.Visitor {
                                       falseJumps);
             if (markBranches) result.tree = _tree;
 
+            boxing.args.head = boxedValue;
+
             return result;
         } else {
             CondItem result = genExpr(_tree, syms.booleanType).mkCond();
@@ -836,6 +836,15 @@ public class Gen extends JCTree.Visitor {
             return result;
         }
     }
+        //where:
+        JCTree skipCasts(JCTree source) {
+            if (TreeInfo.skipParens(source) instanceof JCTypeCast tc &&
+                tc.type.tsym == types.boxedClass(syms.booleanType)) {
+                return skipCasts(tc.expr);
+            } else {
+                return source;
+            }
+        }
 
     public Code getCode() {
         return code;
