@@ -70,6 +70,29 @@ OPERAND_VMEMORYA_INDIRECT_OFFSET(L)
 // size equals to memory element (load from/store to) size.
 opclass vmemA(indirect, vmemA_indOffI4, vmemA_indOffL4);
 
+// 4 bit signed offset -- for narrowing int to byte store
+operand vmemA_immLOffset4_ItoB() %{
+  predicate(Address::offset_ok_for_sve_immed(n->get_long(), 4,
+            Matcher::scalable_vector_reg_size(T_INT)));
+  match(ConL);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand vmemA_indOffL4_ItoB(iRegP reg, vmemA_immLOffset4_ItoB off) %{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    `index'(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
 source_hpp %{
   // Assert that the given node is not a variable shift.
   bool assert_not_var_shift(const Node* n);
@@ -588,6 +611,22 @@ instruct storeV_masked(vReg src, vmemA mem, pRegGov pg) %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
     loadStoreA_predicated(masm, /* is_store */ true, $src$$FloatRegister,
                           $pg$$PRegister, bt, bt, $mem->opcode(),
+                          as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Store Vector with narrowing (int to byte)
+
+instruct storeV_narrow_ItoB(vmemA_indOffL4_ItoB mem, vReg src) %{
+  predicate(UseSVE > 0 &&
+            Matcher::vector_element_basic_type(n->in(MemNode::ValueIn)) == T_BYTE &&
+            Matcher::vector_length_in_bytes(n->in(MemNode::ValueIn)->in(1)) == MaxVectorSize);
+  match(Set mem (StoreVector mem (VectorCastI2X src)));
+  format %{ "storeV_narrow_ItoB $mem, $src\t# vector (sve)" %}
+  ins_encode %{
+    loadStoreA_predicated(masm, /* is_store */ true, $src$$FloatRegister,
+                          ptrue, T_BYTE, T_INT, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
   ins_pipe(pipe_slow);
