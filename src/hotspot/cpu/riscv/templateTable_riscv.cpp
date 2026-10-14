@@ -2618,22 +2618,21 @@ void TemplateTable::pop_and_check_object(Register r) {
 
 // 8179954: We need to make sure that the code generated for volatile accesses
 // forms a sequentially-consistent set of operations when combined with the
-// Zalasr load-acquire and store-release instructions used by C2.
+// Zalasr load-acquire and store-release instructions used by C1 and C2.
 //
-// With UseZalasr, C2 compiles a volatile store to a bare s{b|h|w|d}.rl and
-// elides the trailing StoreLoad fence, relying on RVWMO preserved program
+// With UseZalasr, C1 and C2 compile a volatile store to a bare s{b|h|w|d}.rl and
+// elide the trailing StoreLoad fence, relying on RVWMO preserved program
 // order rule 7 ("a and b both have RCsc annotations") to order that store
 // before a later l{b|h|w|d}.aq. The interpreter reads volatile fields with a
 // plain load followed by a trailing fence, and a plain load carries no RCsc
 // annotation, so no preserved-program-order rule applies. Without a leading
 // fence it is possible for a simple Dekker test to fail if loads use
-// load;fence but stores use s.rl. This can happen if C2 compiles the stores
+// load;fence but stores use s.rl. This can happen if C1 or C2 compiles the stores
 // in one method and we interpret the loads in another.
 //
-// The fence is only needed when C2 may be used; flags must hold the resolved
-// field entry flags and t0 is clobbered.
+// flags must hold the resolved field entry flags and t0 is clobbered.
 static bool needs_volatile_load_leading_fence() {
-  return UseZalasr && !CompilerConfig::is_c1_or_interpreter_only();
+  return UseZalasr;
 }
 
 static void volatile_load_leading_fence(Register flags, InterpreterMacroAssembler* _masm) {
@@ -3025,7 +3024,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
         __ j(rewrite_value);
         __ bind(is_flat);
         pop_and_check_object(x17);
-        __ write_flat_field(cache, off, index, flags, x17);
+        __ write_flat_field(cache, index, flags, x17);
         __ bind(rewrite_value);
         if (rc == may_rewrite) {
           patch_bytecode(Bytecodes::_fast_vputfield, bc, x9, true, byte_no);
@@ -3285,9 +3284,8 @@ void TemplateTable::fast_storefield(TosState state) {
         __ bind(is_flat);
         __ load_field_entry(x14, x13);
         // Re-shuffle registers because of VM calls calling convention
-        __ mv(x9, x11);
         __ mv(x17, x12);
-        __ write_flat_field(x14, x9, x16, x18, x17);
+        __ write_flat_field(x14, x16, x18, x17);
         __ bind(done);
       }
       break;

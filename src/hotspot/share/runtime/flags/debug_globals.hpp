@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_DEBUG_GLOBALS_HPP
-#define SHARE_RUNTIME_DEBUG_GLOBALS_HPP
+#ifndef SHARE_RUNTIME_FLAGS_DEBUG_GLOBALS_HPP
+#define SHARE_RUNTIME_FLAGS_DEBUG_GLOBALS_HPP
 
 #include "runtime/globals_shared.hpp"
 #include "utilities/macros.hpp"
@@ -90,4 +90,4 @@
 
 DECLARE_FLAGS(DEBUG_RUNTIME_FLAGS)
 
-#endif // SHARE_RUNTIME_DEBUG_GLOBALS_HPP
+#endif // SHARE_RUNTIME_FLAGS_DEBUG_GLOBALS_HPP
