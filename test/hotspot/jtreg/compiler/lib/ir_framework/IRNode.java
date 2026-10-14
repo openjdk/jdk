@@ -1563,6 +1563,11 @@ public class IRNode {
         machOnlyNameRegex(AARCH64_VMASK_ALL_IMM_L, "vmaskAll_immL");
     }
 
+    public static final String AARCH64_STORE_V_NARROW_I2B = PREFIX + "AARCH64_STORE_V_NARROW_I2B" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_STORE_V_NARROW_I2B, "storeV_narrow_ItoB");
+    }
+
     public static final String VECTOR_LONG_TO_MASK = PREFIX + "VECTOR_LONG_TO_MASK" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTOR_LONG_TO_MASK, "VectorLongToMask");

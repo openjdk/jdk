@@ -93,6 +93,8 @@ operand vmemA_indOffL4_ItoB(iRegP reg, vmemA_immLOffset4_ItoB off) %{
   %}
 %}
 
+opclass vmemA_ItoB(indirect, vmemA_indOffL4_ItoB);
+
 source_hpp %{
   // Assert that the given node is not a variable shift.
   bool assert_not_var_shift(const Node* n);
@@ -618,7 +620,7 @@ instruct storeV_masked(vReg src, vmemA mem, pRegGov pg) %{
 
 // Store Vector with narrowing (int to byte)
 
-instruct storeV_narrow_ItoB(vmemA_indOffL4_ItoB mem, vReg src) %{
+instruct storeV_narrow_ItoB(vmemA_ItoB mem, vReg src) %{
   predicate(UseSVE > 0 &&
             Matcher::vector_element_basic_type(n->in(MemNode::ValueIn)) == T_BYTE &&
             Matcher::vector_length_in_bytes(n->in(MemNode::ValueIn)->in(1)) == MaxVectorSize);
