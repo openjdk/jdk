@@ -45,11 +45,8 @@ class TestHelpers {
         void handleNotification(GarbageCollectionNotificationInfo info);
     }
 
-    public static class EventLogger implements GcNotificationListener {
-        @Override
-        public void handleNotification(GarbageCollectionNotificationInfo event) {
-            System.out.println(event.getGcAction() + ", " + event.getGcCause() + ", " + event.getGcName());
-        }
+    public static void logEvent(GarbageCollectionNotificationInfo event) {
+        System.out.println(event.getGcAction() + ", " + event.getGcCause() + ", " + event.getGcName());
     }
 
     static class ScopedListener implements Closeable {
@@ -57,7 +54,7 @@ class TestHelpers {
         private final CountDownLatch sawSystemGC;
 
         ScopedListener() {
-            this(new EventLogger());
+            this(TestHelpers::logEvent);
         }
 
         ScopedListener(final GcNotificationListener gcListener) {

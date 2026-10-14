@@ -63,9 +63,11 @@ package gc.shenandoah.generational;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -152,11 +154,15 @@ public class TestWhiteBoxOldMarkGC {
         }
     }
 
+    // TODO: Old mark cancellation is broken. Fixed by JDK-8387790.
+    // The test makes no assertions because we cannot readily test the old
+    // mark cancellation case.
     public static class Cancelled {
-
         private static void runTest() throws Exception {
             OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
-                getCommandLineArguments(TestWhiteBoxOldMarkGC.Cancelled.class.getName())
+                getCommandLineArguments(
+                        TestWhiteBoxOldMarkGC.Cancelled.class.getName()
+                )
             );
             output.shouldHaveExitValue(0);
         }
@@ -183,33 +189,31 @@ public class TestWhiteBoxOldMarkGC {
                 }
             }
 
-            final var gate = new CountDownLatch(1);
-            TestHelpers.GcNotificationListener startGlobal = (GarbageCollectionNotificationInfo event) -> {
-                if (event.getGcAction().contains("end of Young GC cycle")) {
-                    WB.fullGC();
-                    gate.countDown();
-                }
-            };
+            final var fullGC = new Thread(WB::fullGC);
+            try (var _ = new TestHelpers.ScopedListener()) {
+                fullGC.start();
+                WB.shenandoahOldMarkGC(5);
 
-            try (var _ = new TestHelpers.ScopedListener(startGlobal)) {
-                WB.shenandoahOldMarkGC();
-
-                gate.await(5, TimeUnit.SECONDS);
+                fullGC.join(10000);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
     }
 
-    private static String[] getCommandLineArguments(String testName) {
-        return new String[]{"-Xbootclasspath/a:.",
-                "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-                "-XX:+UnlockExperimentalVMOptions",
-                "-XX:+UseShenandoahGC", "-XX:ShenandoahGCMode=generational",
-                "-Xlog:gc", "-Xmx128M", "-ea",
-                "-XX:ShenandoahGenerationalMinTenuringAge=1",
-                "-XX:ShenandoahGenerationalMaxTenuringAge=1",
-                testName
+    private static String[] getCommandLineArguments(String... additional) {
+        var defaultArguments = new String[] {
+            "-Xbootclasspath/a:.",
+            "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+UseShenandoahGC", "-XX:ShenandoahGCMode=generational",
+            "-Xlog:gc*:/tmp/cancel.jvm.log", "-Xmx128M", "-ea",
+            "-XX:ShenandoahGenerationalMinTenuringAge=1",
+            "-XX:ShenandoahGenerationalMaxTenuringAge=1",
         };
+        var arguments = new String[defaultArguments.length + additional.length];
+        System.arraycopy(defaultArguments, 0, arguments, 0, defaultArguments.length);
+        System.arraycopy(additional, 0, arguments, defaultArguments.length, additional.length);
+        return arguments;
     }
 }
