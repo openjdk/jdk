@@ -890,14 +890,14 @@ private:
 
 void ShenandoahGenerationalHeap::update_heap_references(ShenandoahGeneration* generation) {
   assert(!is_full_gc_in_progress(), "Only for concurrent GC");
-  const uint nworkers = workers()->active_workers();
-  ShenandoahRegionChunkIterator work_list(nworkers);
+  ShenandoahRegionChunkIterator work_list(this);
   ShenandoahRegionIterator update_refs_iterator(this);
   ShenandoahGenerationalUpdateHeapRefsTask task(generation, &update_refs_iterator, &work_list);
   workers()->run_task(&task);
 
   if (ShenandoahEnableCardStats) {
     // Only do this if we are collecting card stats
+    const uint nworkers = workers()->active_workers();
     ShenandoahScanRemembered* card_scan = old_generation()->card_scan();
     assert(card_scan != nullptr, "Card table must exist when card stats are enabled");
     card_scan->log_card_stats(nworkers, CARD_STAT_UPDATE_REFS);
