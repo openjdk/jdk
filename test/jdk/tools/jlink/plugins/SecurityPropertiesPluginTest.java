@@ -183,6 +183,12 @@ public class SecurityPropertiesPluginTest {
      */
     private static void testWithCustomJDKImage() throws Exception {
 
+        if (!helper.jdkHasPackagedModules()) {
+            System.out.println("Skipping testWithCustomJDKImage test case, " +
+                               "no jmods in image");
+            return;
+        }
+
         // Copy JDK's jmods directory
         Path jdkJmodsPath = Path.of(System.getProperty("test.jdk"), "jmods");
         Path jdkJmodsCopyPath = Path.of(TEST_DIR, "jmodsCopy");
