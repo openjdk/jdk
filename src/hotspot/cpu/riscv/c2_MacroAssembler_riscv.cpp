@@ -2213,25 +2213,23 @@ void C2_MacroAssembler::enc_cmove_fp_cmp_fp(int cmpFlag,
   }
 }
 
-static void vshift_left(C2_MacroAssembler* masm, VectorRegister dst, VectorRegister src,
-                        int shift, Register tmp) {
+static void vshift_left(C2_MacroAssembler* masm, VectorRegister dst, VectorRegister src, int shift) {
   assert(shift >= 0 && shift <= BitsPerInt, "unexpected shift amount");
   if (shift < BitsPerInt) {
     masm->vsll_vi(dst, src, shift);
   } else {
-    masm->mv(tmp, shift);
-    masm->vsll_vx(dst, src, tmp);
+    masm->mv(t0, shift);
+    masm->vsll_vx(dst, src, t0);
   }
 }
 
-static void vshift_right(C2_MacroAssembler* masm, VectorRegister dst, VectorRegister src,
-                         int shift, Register tmp) {
+static void vshift_right(C2_MacroAssembler* masm, VectorRegister dst, VectorRegister src, int shift) {
   assert(shift >= 0 && shift <= BitsPerInt, "unexpected shift amount");
   if (shift < BitsPerInt) {
     masm->vsrl_vi(dst, src, shift);
   } else {
-    masm->mv(tmp, shift);
-    masm->vsrl_vx(dst, src, tmp);
+    masm->mv(t0, shift);
+    masm->vsrl_vx(dst, src, t0);
   }
 }
 
@@ -2240,14 +2238,13 @@ static void vshift_right(C2_MacroAssembler* masm, VectorRegister dst, VectorRegi
 // vector element, dst bit k is src[k] ^ src[k-1] ^ ... ^ src[0]. Each round
 // doubles the number of source bits covered.
 static void parallel_suffix_v(C2_MacroAssembler* masm, VectorRegister dst,
-                              VectorRegister src, VectorRegister tmp,
-                              Register shift_tmp, bool is_int) {
+                              VectorRegister src, VectorRegister tmp, bool is_int) {
   const int bits = is_int ? BitsPerInt : BitsPerLong;
   const int rounds = exact_log2(bits);
 
   masm->vmv_v_v(dst, src);
   for (int i = 0; i < rounds; i++) {
-    vshift_left(masm, tmp, dst, 1 << i, shift_tmp);
+    vshift_left(masm, tmp, dst, 1 << i);
     masm->vxor_vv(dst, dst, tmp);
   }
 }
@@ -2258,8 +2255,7 @@ static void parallel_suffix_v(C2_MacroAssembler* masm, VectorRegister dst,
 void C2_MacroAssembler::compress_bits_v(VectorRegister dst, VectorRegister src,
                                         VectorRegister mask, VectorRegister src_tmp,
                                         VectorRegister mask_tmp, VectorRegister tmp1,
-                                        VectorRegister tmp2, Register tmp,
-                                        BasicType bt, uint vector_length) {
+                                        VectorRegister tmp2, BasicType bt, uint vector_length) {
   assert(bt == T_INT || bt == T_LONG, "unsupported element type");
   const bool is_int = bt == T_INT;
   const int bits = is_int ? BitsPerInt : BitsPerLong;
@@ -2269,22 +2265,22 @@ void C2_MacroAssembler::compress_bits_v(VectorRegister dst, VectorRegister src,
   vand_vv(dst, src, mask);
   vmv_v_v(mask_tmp, mask);
   vnot_v(tmp1, mask_tmp);
-  vshift_left(this, tmp1, tmp1, 1, tmp);
+  vshift_left(this, tmp1, tmp1, 1);
 
   for (int i = 0; i < rounds; i++) {
     const int shift = 1 << i;
-    parallel_suffix_v(this, tmp2, tmp1, src_tmp, tmp, is_int);
+    parallel_suffix_v(this, tmp2, tmp1, src_tmp, is_int);
     vand_vv(src_tmp, tmp2, mask_tmp);
     vnot_v(tmp2, tmp2);
     vand_vv(tmp1, tmp1, tmp2);
 
     vxor_vv(mask_tmp, mask_tmp, src_tmp);
-    vshift_right(this, tmp2, src_tmp, shift, tmp);
+    vshift_right(this, tmp2, src_tmp, shift);
     vor_vv(mask_tmp, mask_tmp, tmp2);
 
     vand_vv(tmp2, dst, src_tmp);
     vxor_vv(dst, dst, tmp2);
-    vshift_right(this, tmp2, tmp2, shift, tmp);
+    vshift_right(this, tmp2, tmp2, shift);
     vor_vv(dst, dst, tmp2);
   }
 }
@@ -2302,8 +2298,7 @@ void C2_MacroAssembler::expand_bits_v(VectorRegister dst, VectorRegister src,
                                       VectorRegister mask_move5,
                                       VectorRegister mask_move6,
                                       VectorRegister tmp1, VectorRegister tmp2,
-                                      Register tmp, BasicType bt,
-                                      uint vector_length) {
+                                      BasicType bt, uint vector_length) {
   assert(bt == T_INT || bt == T_LONG, "unsupported element type");
   const bool is_int = bt == T_INT;
   const int bits = is_int ? BitsPerInt : BitsPerLong;
@@ -2317,23 +2312,23 @@ void C2_MacroAssembler::expand_bits_v(VectorRegister dst, VectorRegister src,
   vmv_v_v(mask_tmp, mask);
   vmv_v_v(dst, mask_tmp);
   vnot_v(tmp1, mask_tmp);
-  vshift_left(this, tmp1, tmp1, 1, tmp);
+  vshift_left(this, tmp1, tmp1, 1);
 
   for (int i = 0; i < rounds; i++) {
     const int shift = 1 << i;
-    parallel_suffix_v(this, tmp2, tmp1, mask_moves[i], tmp, is_int);
+    parallel_suffix_v(this, tmp2, tmp1, mask_moves[i], is_int);
     vand_vv(mask_moves[i], tmp2, mask_tmp);
     vnot_v(tmp2, tmp2);
     vand_vv(tmp1, tmp1, tmp2);
 
     vxor_vv(mask_tmp, mask_tmp, mask_moves[i]);
-    vshift_right(this, tmp2, mask_moves[i], shift, tmp);
+    vshift_right(this, tmp2, mask_moves[i], shift);
     vor_vv(mask_tmp, mask_tmp, tmp2);
   }
 
   for (int i = rounds - 1; i >= 0; i--) {
     const int shift = 1 << i;
-    vshift_left(this, tmp2, src_tmp, shift, tmp);
+    vshift_left(this, tmp2, src_tmp, shift);
     vxor_vv(tmp2, tmp2, src_tmp);
     vand_vv(tmp2, tmp2, mask_moves[i]);
     vxor_vv(src_tmp, src_tmp, tmp2);

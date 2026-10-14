@@ -1642,13 +1642,12 @@ instruct vdiv_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 // vector bit compress
 
 instruct vcompressBits(vReg dst, vReg src, vReg mask,
-                       vReg tmp1, vReg tmp2,
-                       vReg tmp3, vReg tmp4, iRegINoSp tmp) %{
+                       vReg tmp1, vReg tmp2, vReg tmp3, vReg tmp4) %{
   predicate(Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (CompressBitsV src mask));
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp);
-  format %{ "vcompressBits $dst, $src, $mask\t# KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp" %}
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
+  format %{ "vcompressBits $dst, $src, $mask\t# KILL $tmp1, $tmp2, $tmp3, $tmp4" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ compress_bits_v(as_VectorRegister($dst$$reg),
@@ -1658,7 +1657,7 @@ instruct vcompressBits(vReg dst, vReg src, vReg mask,
                        as_VectorRegister($tmp2$$reg),
                        as_VectorRegister($tmp3$$reg),
                        as_VectorRegister($tmp4$$reg),
-                       $tmp$$Register, bt, Matcher::vector_length(this));
+                       bt, Matcher::vector_length(this));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1668,14 +1667,14 @@ instruct vcompressBits(vReg dst, vReg src, vReg mask,
 instruct vexpandBits(vReg dst, vReg src, vReg mask,
                      vReg tmp1, vReg tmp2, vReg tmp3, vReg tmp4,
                      vReg tmp5, vReg tmp6, vReg tmp7, vReg tmp8,
-                     vReg tmp9, vReg tmp10, iRegINoSp tmp) %{
+                     vReg tmp9, vReg tmp10) %{
   predicate(Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (ExpandBitsV src mask));
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4,
          TEMP tmp5, TEMP tmp6, TEMP tmp7, TEMP tmp8,
-         TEMP tmp9, TEMP tmp10, TEMP tmp);
-  format %{ "vexpandBits $dst, $src, $mask\t# KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $tmp6, $tmp7, $tmp8, $tmp9, $tmp10, $tmp" %}
+         TEMP tmp9, TEMP tmp10);
+  format %{ "vexpandBits $dst, $src, $mask\t# KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $tmp6, $tmp7, $tmp8, $tmp9, $tmp10" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ expand_bits_v(as_VectorRegister($dst$$reg),
@@ -1691,7 +1690,7 @@ instruct vexpandBits(vReg dst, vReg src, vReg mask,
                      as_VectorRegister($tmp8$$reg),
                      as_VectorRegister($tmp9$$reg),
                      as_VectorRegister($tmp10$$reg),
-                     $tmp$$Register, bt, Matcher::vector_length(this));
+                     bt, Matcher::vector_length(this));
   %}
   ins_pipe(pipe_slow);
 %}
