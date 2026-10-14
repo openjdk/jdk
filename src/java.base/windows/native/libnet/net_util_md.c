@@ -37,9 +37,6 @@
 #define IPTOS_PREC_MASK 0xe0
 #endif
 
-/* true if SO_RCVTIMEO is supported */
-jboolean isRcvTimeoutSupported = JNI_TRUE;
-
 /*
  * Table of Windows Sockets errors, the specific exception we
  * throw for the error, and the error text.
