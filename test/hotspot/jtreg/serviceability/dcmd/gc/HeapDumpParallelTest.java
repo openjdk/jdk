@@ -90,20 +90,31 @@ import jdk.test.lib.hprof.HprofParser;
  * @run driver HeapDumpParallelTest -XX:+UseZGC
  */
 
+/*
+ * @test id=Epsilon
+ * @bug 8306441 8319053 8384612 8392050
+ * @requires vm.gc.Epsilon
+ * @summary Verify the integrity of generated heap dump and that parallel dump requests run serially (Epsilon GC)
+ * @library /test/lib
+ * @run driver HeapDumpParallelTest -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ */
+
 public class HeapDumpParallelTest {
 
     private static final String heapDumpFileName = "parallelHeapDump.bin";
-    private static final int ACTIVE_PROCESSOR_COUNT = 4;
+    private static final int ACTIVE_PROCESSOR_COUNT = 8;
+    private static final int DEFAULT_WORKERS = Math.max(1, ACTIVE_PROCESSOR_COUNT * 3 / 8);
 
-    private static void checkAndVerify(OutputAnalyzer dcmdOut, LingeredApp app, File heapDumpFile, int expectedDiagWorkers) throws Exception {
+    private static void checkAndVerify(OutputAnalyzer dcmdOut, LingeredApp app, File heapDumpFile,
+                                       int expectedDiagWorkers) throws Exception {
         dcmdOut.shouldHaveExitValue(0);
         dcmdOut.shouldContain("Heap dump file created");
         OutputAnalyzer appOut = new OutputAnalyzer(app.getProcessStdout());
         appOut.shouldMatch("\\[heapdump *\\]");
         // Check the target VM's selected GC, including ergonomic selection.
         appOut.shouldMatch("\\[gc *\\] Using ");
-        if (appOut.getStdout().contains("Using Serial")) {
-            System.out.println("Serial GC detected.");
+        if (appOut.getStdout().contains("Using Serial") || appOut.getStdout().contains("Using Epsilon")) {
+            System.out.println("Serial or Epsilon GC detected.");
             expectedDiagWorkers = 0;
         }
         if (expectedDiagWorkers > 1) {
@@ -171,6 +182,10 @@ public class HeapDumpParallelTest {
 
             // Expect parallel dump
             test(heapDumpFile, "-gz=9 -overwrite -parallel=" + ACTIVE_PROCESSOR_COUNT, ACTIVE_PROCESSOR_COUNT, args);
+
+            // If no parallel threads are passed in, the default number of parallel threads
+            // to use is based on CPUs: max(1, ACTIVE_PROCESSOR_COUNT * 3 / 8).
+            test(heapDumpFile, "", DEFAULT_WORKERS, args);
         } finally {
             theApp.stopApp();
         }

@@ -85,8 +85,18 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @run driver ClassHistogramParallelTest -XX:+UseZGC
  */
 
+/*
+ * @test id=Epsilon
+ * @bug 8392050
+ * @requires vm.gc.Epsilon
+ * @summary Verify serial heap inspection doesn't create and use the diagnostic worker pool (Epsilon GC)
+ * @library /test/lib
+ * @run driver ClassHistogramParallelTest -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ */
+
 public class ClassHistogramParallelTest {
-    private static final int ACTIVE_PROCESSOR_COUNT = 4;
+    private static final int ACTIVE_PROCESSOR_COUNT = 8;
+    private static final int DEFAULT_WORKERS = Math.max(1, ACTIVE_PROCESSOR_COUNT * 3 / 8);
     private static final String POOL_CREATION_MSG =
         "Created diagnostic worker pool (max " + ACTIVE_PROCESSOR_COUNT + " workers)";
 
@@ -95,8 +105,9 @@ public class ClassHistogramParallelTest {
         threadPrintOut.shouldHaveExitValue(0);
         OutputAnalyzer appOut = new OutputAnalyzer(app.getProcessStdout());
 
-        if (Arrays.asList(gcArgs).contains("-XX:+UseSerialGC")) {
-            System.out.println("Serial GC detected.");
+        List<String> gcFlags = Arrays.asList(gcArgs);
+        if (gcFlags.contains("-XX:+UseSerialGC") || gcFlags.contains("-XX:+UseEpsilonGC")) {
+            System.out.println("Serial or Epsilon GC detected.");
             expectedDiagWorkers = 0;
         }
 
@@ -134,12 +145,13 @@ public class ClassHistogramParallelTest {
             OutputAnalyzer out = attachJcmd(theApp.getPid(), "GC.class_histogram -parallel=-1");
             out.shouldContain("Parallel thread number out of range (>=0): -1");
 
-            // If no parallel threads are passed in or -parallel=0, the default number of parallel
-            // threads to use is based on CPUs: max(1, (ACTIVE_PROCESSOR_COUNT * 3 / 8)). If the
-            // result is <= 1, then heap inspection will run serially.
-            test("", 0, args, 1);
-            test("-parallel=0", 0, args, 1);
+            // Expect serial inspection.
             test("-parallel=1", 0, args, 1);
+
+            // If no parallel threads are passed in or -parallel=0, the default number of parallel
+            // threads to use is based on CPUs: max(1, ACTIVE_PROCESSOR_COUNT * 3 / 8).
+            test("", DEFAULT_WORKERS, args, 1);
+            test("-parallel=0", DEFAULT_WORKERS, args, 1);
 
             // Expect parallel heap inspection.
             test("-parallel=2", 2, args, 1);
