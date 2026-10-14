@@ -1797,10 +1797,10 @@ public:
   virtual const Type* xjoin_helper(const Type* t) const;
 
   // Value type array properties
-  const TypeAryPtr* cast_to_flat(bool flat) const;
-  const TypeAryPtr* cast_to_not_flat(bool not_flat = true) const;
-  const TypeAryPtr* cast_to_null_free(bool null_free) const;
-  const TypeAryPtr* cast_to_not_null_free(bool not_null_free = true) const;
+  const TypeAryPtr* cast_to_flat() const;
+  const TypeAryPtr* cast_to_not_flat() const;
+  const TypeAryPtr* cast_to_null_free() const;
+  const TypeAryPtr* cast_to_not_null_free() const;
   const TypeAryPtr* update_properties(const TypeAryPtr* new_type) const;
   jint flat_layout_helper() const;
   int flat_elem_size() const;
@@ -1826,17 +1826,21 @@ public:
 
   // Convenience common pre-built types.
   static const TypeAryPtr* BOTTOM;
-  static const TypeAryPtr *RANGE;
-  static const TypeAryPtr *OOPS;
-  static const TypeAryPtr *NARROWOOPS;
-  static const TypeAryPtr *BYTES;
-  static const TypeAryPtr *SHORTS;
-  static const TypeAryPtr *CHARS;
-  static const TypeAryPtr *INTS;
-  static const TypeAryPtr *LONGS;
-  static const TypeAryPtr *FLOATS;
-  static const TypeAryPtr *DOUBLES;
-  static const TypeAryPtr *INLINES;
+  static const TypeAryPtr* RANGE;
+  static const TypeAryPtr* OOPS;
+  static const TypeAryPtr* NARROWOOPS;
+  static const TypeAryPtr* BYTES;
+  static const TypeAryPtr* SHORTS;
+  static const TypeAryPtr* CHARS;
+  static const TypeAryPtr* INTS;
+  static const TypeAryPtr* LONGS;
+  static const TypeAryPtr* FLOATS;
+  static const TypeAryPtr* DOUBLES;
+  static const TypeAryPtr* INLINES;
+  static const TypeAryPtr* REFERENCES;
+  static const TypeAryPtr* NULL_FREES;
+  static const TypeAryPtr* NULLABLES;
+
   // selects one of the above:
   static const TypeAryPtr *get_array_body_type(BasicType elem) {
     assert((uint)elem <= T_CONFLICT && _array_body_type[elem] != nullptr, "bad elem type");
