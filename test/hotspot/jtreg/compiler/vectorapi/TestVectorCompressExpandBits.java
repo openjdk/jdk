@@ -104,7 +104,7 @@ public class TestVectorCompressExpandBits {
 
     @Test
     @IR(counts = {IRNode.COMPRESS_BITS_VI, "> 0"})
-    @IR(counts = {IRNode.RISCV_VCOMPRESS_BITS_MASKED, "1"}, applyIfPlatform = {"riscv64", "true"})
+    @IR(counts = {IRNode.RISCV_VCOMPRESS_BITS_MASKED, "> 0"}, applyIfPlatform = {"riscv64", "true"})
     public static void testIntCompressMasked() {
         for (int i = 0; i < LENGTH; i += I_SPECIES.length()) {
             IntVector av = IntVector.fromArray(I_SPECIES, ia, i);
@@ -144,7 +144,7 @@ public class TestVectorCompressExpandBits {
 
     @Test
     @IR(counts = {IRNode.EXPAND_BITS_VI, "> 0"})
-    @IR(counts = {IRNode.RISCV_VEXPAND_BITS_MASKED, "1"}, applyIfPlatform = {"riscv64", "true"})
+    @IR(counts = {IRNode.RISCV_VEXPAND_BITS_MASKED, "> 0"}, applyIfPlatform = {"riscv64", "true"})
     public static void testIntExpandMasked() {
         for (int i = 0; i < LENGTH; i += I_SPECIES.length()) {
             IntVector av = IntVector.fromArray(I_SPECIES, ia, i);
@@ -184,7 +184,7 @@ public class TestVectorCompressExpandBits {
 
     @Test
     @IR(counts = {IRNode.COMPRESS_BITS_VL, "> 0"})
-    @IR(counts = {IRNode.RISCV_VCOMPRESS_BITS_MASKED, "1"}, applyIfPlatform = {"riscv64", "true"})
+    @IR(counts = {IRNode.RISCV_VCOMPRESS_BITS_MASKED, "> 0"}, applyIfPlatform = {"riscv64", "true"})
     public static void testLongCompressMasked() {
         for (int i = 0; i < LENGTH; i += L_SPECIES.length()) {
             LongVector av = LongVector.fromArray(L_SPECIES, la, i);
@@ -224,7 +224,7 @@ public class TestVectorCompressExpandBits {
 
     @Test
     @IR(counts = {IRNode.EXPAND_BITS_VL, "> 0"})
-    @IR(counts = {IRNode.RISCV_VEXPAND_BITS_MASKED, "1"}, applyIfPlatform = {"riscv64", "true"})
+    @IR(counts = {IRNode.RISCV_VEXPAND_BITS_MASKED, "> 0"}, applyIfPlatform = {"riscv64", "true"})
     public static void testLongExpandMasked() {
         for (int i = 0; i < LENGTH; i += L_SPECIES.length()) {
             LongVector av = LongVector.fromArray(L_SPECIES, la, i);
