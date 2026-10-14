@@ -62,6 +62,7 @@ ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation
   _invocation(invocation),
   _build_iterations(0),
   _build_time(0.),
+  _virtual_array_init_nodes(C->comp_arena(), 0, 0, nullptr),
   _node_map(C->comp_arena()) {
   // Add unknown java object.
   add_java_object(C->top(), PointsToNode::GlobalEscape);
@@ -77,6 +78,29 @@ ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation
     Node* noop_null = igvn->zerocon(T_NARROWOOP);
     assert(noop_null->_idx < nodes_size(), "should be created already");
     map_ideal_node(noop_null, null_obj);
+  }
+  // Add artificial AddP nodes to make the connection between allocated arrays
+  // and their initialization values explicit.
+  for (int i = 0; i < C->macro_count(); i++) {
+    Node* n = C->macro_node(i);
+    if (!n->is_AllocateArray() || n->in(AllocateNode::InitValue) == nullptr) {
+      continue;
+    }
+    AllocateArrayNode* alloc = n->as_AllocateArray();
+    // Model the AddP as a raw address so that artificial AddP nodes are still
+    // created even if the AllocateArray OOP is unused. The resulting Field
+    // nodes are treated specially to avoid inhibiting scalar replacement.
+    Node* result = alloc->proj_out_or_null(AllocateNode::RawAddress);
+    if (result == nullptr) {
+      continue;
+    }
+    Node* unknown_offset = alloc->in(AllocateNode::RawInitValue);
+    assert(unknown_offset != nullptr && !igvn->type(unknown_offset)->is_intptr_t()->is_con(),
+           "RawInitValue should be opaque");
+    AddPNode* addp = AddPNode::make_off_heap(result, unknown_offset);
+    igvn->register_new_node_with_optimizer(addp);
+    _virtual_array_init_nodes.push(addp);
+    _nodes.at_put_grow(addp->_idx, nullptr, nullptr);
   }
 }
 
@@ -111,26 +135,6 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   // to create space for them in ConnectionGraph::_nodes[].
   Node* oop_null = igvn->zerocon(T_OBJECT);
   Node* noop_null = igvn->zerocon(T_NARROWOOP);
-  // Add artificial AddP nodes to make the connection between allocated arrays
-  // and their initialization values explicit.
-  for (int i = 0; i < C->macro_count(); i++) {
-    Node* n = C->macro_node(i);
-    if (!n->is_AllocateArray() || n->in(AllocateNode::InitValue) == nullptr) {
-      continue;
-    }
-    AllocateArrayNode* alloc = n->as_AllocateArray();
-    // Model the AddP as a raw address so that artificial AddP nodes are still
-    // created even if the AllocateArray OOP is unused. The resulting Field
-    // nodes are treated specially to avoid inhibiting scalar replacement.
-    Node* result = alloc->proj_out_or_null(AllocateNode::RawAddress);
-    if (result == nullptr) {
-      continue;
-    }
-    Node* unknown_offset = alloc->in(AllocateNode::RawInitValue);
-    assert(unknown_offset != nullptr &&
-           !igvn->type(unknown_offset)->is_intptr_t()->is_con(), "RawInitValue should be opaque");
-    igvn->register_new_node_with_optimizer(AddPNode::make_off_heap(result, unknown_offset));
-  }
   int invocation = 0;
   if (C->congraph() != nullptr) {
     invocation = C->congraph()->_invocation + 1;
@@ -1749,7 +1753,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       } else {
         n_ptn = ptnode_adr(n_idx);
         add_base(n_ptn->as_Field(), ptn_base);
-        if (is_virtual_array_init_field_node(n)) {
+        if (is_virtual_array_init(n)) {
           delayed_worklist->push(n);
         }
       }
@@ -1934,7 +1938,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
       PointsToNode* ptn_base = ptnode_adr(base->_idx);
       assert(ptn_base != nullptr, "field's base should be registered");
       add_base(n_ptn->as_Field(), ptn_base);
-      if (is_virtual_array_init_field_node(n)) {
+      if (is_virtual_array_init(n)) {
         // Connect allocated arrays and their initialization values explicitly.
         // Note that, for flat arrays, propagating the array's fields escape
         // state into the initialization value is a conservative
@@ -3369,7 +3373,7 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Uniq
       // 1. An object is not scalar replaceable if the field into which it is
       // stored has unknown offset (stored into unknown element of an array).
       if (field->offset() == Type::OffsetBot &&
-          !is_virtual_array_init_field_node(field->ideal_node())) {
+          !is_virtual_array_init(field->ideal_node())) {
         set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is stored at unknown offset"));
         return;
       }
@@ -3429,7 +3433,7 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Uniq
 
     // Non-escaping object node should point only to field nodes.
     FieldNode* field = j.get()->as_Field();
-    if (is_virtual_array_init_field_node(field->ideal_node())) {
+    if (is_virtual_array_init(field->ideal_node())) {
       continue;
     }
     int offset = field->as_Field()->offset();
@@ -3569,8 +3573,7 @@ void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNod
         if (use->is_Field()) {
           FieldNode* field = use->as_Field();
           assert(field->is_oop() && field->scalar_replaceable(), "sanity");
-          assert(field->offset() != Type::OffsetBot ||
-                 is_virtual_array_init_field_node(field->ideal_node()), "sanity");
+          assert(field->offset() != Type::OffsetBot || is_virtual_array_init(field->ideal_node()), "sanity");
           for (BaseIterator i(field); i.has_next(); i.next()) {
             PointsToNode* base = i.get();
             // An object is not scalar replaceable if the field into which
@@ -3894,7 +3897,7 @@ void ConnectionGraph::add_field(Node *n, PointsToNode::EscapeState es, int offse
     return;
   }
   bool unsafe = false;
-  bool is_oop = is_virtual_array_init_field_node(n) || is_oop_field(n, offset, &unsafe);
+  bool is_oop = is_virtual_array_init(n) || is_oop_field(n, offset, &unsafe);
   if (unsafe) {
     es = PointsToNode::GlobalEscape;
   }
@@ -4297,17 +4300,6 @@ bool ConnectionGraph::is_load_array_klass_related(const Node* uncast_base) {
          in2->uncast()->Opcode() == Op_LoadKlass;
 }
 #endif
-
-bool ConnectionGraph::is_virtual_array_init_field_node(Node* n) {
-  precond(n->is_AddP());
-  Node* base = get_addp_base(n);
-  assert(base != nullptr, "there must be a base address");
-  AllocateNode* alloc = AllocateNode::Ideal_allocation(base);
-  return alloc != nullptr &&
-         alloc->is_AllocateArray() &&
-         alloc->in(AllocateNode::InitValue) != nullptr &&
-         n->in(AddPNode::Offset) == alloc->in(AllocateNode::RawInitValue);
-}
 
 Node* ConnectionGraph::find_second_addp(Node* addp, Node* n) {
   assert(addp->is_AddP() && addp->outcnt() > 0, "Don't process dead nodes");

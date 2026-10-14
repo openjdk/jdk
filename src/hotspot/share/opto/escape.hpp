@@ -349,6 +349,9 @@ private:
   int        _build_iterations; // Number of iterations took to build graph
   double           _build_time; // Time (sec) took to build graph
 
+  // Virtual AddP nodes, created to make array initialization explicit in the CG.
+  GrowableArray<Node*> _virtual_array_init_nodes;
+
 public:
   JavaObjectNode* phantom_obj; // Unknown object
 
@@ -675,9 +678,12 @@ public:
   Node* get_addp_base(Node* addp);
   DEBUG_ONLY(static bool is_load_array_klass_related(const Node* uncast_base));
 
-  // Whether n is a virtual AddP node introduced just to model the array
-  // initialization connection explicitly via a Field node in the CG.
-  bool is_virtual_array_init_field_node(Node* n);
+  // Whether n is a virtual AddP node introduced to model array initialization
+  // explicitly in the CG.
+  bool is_virtual_array_init(Node* n) const {
+    precond(n->is_AddP());
+    return _virtual_array_init_nodes.contains(n);
+  }
 
   // Utility function for nodes that load an object
   void add_objload_to_connection_graph(Node* n, Unique_Node_List* delayed_worklist);
