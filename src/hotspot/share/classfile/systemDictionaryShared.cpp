@@ -747,7 +747,7 @@ void SystemDictionaryShared::copy_unregistered_classes_for_retraining(JavaThread
   // from the AOT cache into _unregistered_classes_table.
   precond(_unregistered_classes_table == nullptr);
   _info_for_static_archive._unregistered_dictionary.iterate_all([&](const RunTimeClassInfo* info) {
-    copy_cached_unregistered_class(current, info->klass());
+    copy_unregistered_class(current, info->klass());
   });
 }
 
@@ -755,7 +755,7 @@ void SystemDictionaryShared::copy_unregistered_classes_for_retraining(JavaThread
 // (a) from the AOT config file (in assembly phase), or
 // (b) from the AOT cache file (in retraining run)
 // In both cases, we should never see two classes with the same name.
-void SystemDictionaryShared::copy_cached_unregistered_class(JavaThread* current, InstanceKlass* k) {
+void SystemDictionaryShared::copy_unregistered_class(JavaThread* current, InstanceKlass* k) {
   precond(k->in_aot_cache());
   precond(CDSConfig::is_dumping_with_input_archive());
   init_dumptime_info(k);

@@ -782,7 +782,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
 void VM_PopulateDumpSharedSpace::doit() {
   CDSConfig::set_is_at_aot_safepoint(true);
 
-  if (!CDSConfig::is_dumping_final_static_archive() && !CDSConfig::is_redumping_aot_configuration()) {
+  if (!CDSConfig::is_dumping_with_input_archive()) {
     guarantee(!CDSConfig::is_using_archive(), "We should not be using an archive when we dump");
   }
 
