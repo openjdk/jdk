@@ -66,7 +66,6 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/objLayout.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/refArrayKlass.hpp"
 #include "oops/typeArrayKlass.hpp"

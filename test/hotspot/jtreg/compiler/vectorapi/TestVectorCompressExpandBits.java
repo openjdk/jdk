@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Alibaba Group Holding Limited. All Rights Reserved.
  * Copyright (c) 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,19 +30,22 @@ import java.util.Random;
 
 import jdk.incubator.vector.IntVector;
 import jdk.incubator.vector.LongVector;
+import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
 /**
  * @test
- * @bug 8301012
+ * @bug 8301012 8391921
  * @key randomness
  * @library /test/lib /
- * @requires os.arch == "aarch64" & vm.cpu.features ~= ".*sve2.*" & vm.cpu.features ~= ".*svebitperm.*"
- * @summary [vectorapi]: Intrinsify CompressBitsV/ExpandBitsV and add the AArch64 SVE backend implementation
+ * @requires (os.arch == "aarch64" & vm.cpu.features ~= ".*sve2.*" & vm.cpu.features ~= ".*svebitperm.*") |
+ *           (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
+ * @summary [vectorapi]: Test intrinsification of CompressBitsV/ExpandBitsV
  * @modules jdk.incubator.vector
  * @run driver compiler.vectorapi.TestVectorCompressExpandBits
  */
@@ -59,6 +63,7 @@ public class TestVectorCompressExpandBits {
     private static long[] la;
     private static long[] lb;
     private static long[] lr;
+    private static boolean[] laneMask;
 
     static {
         ia = new int[LENGTH];
@@ -67,16 +72,18 @@ public class TestVectorCompressExpandBits {
         la = new long[LENGTH];
         lb = new long[LENGTH];
         lr = new long[LENGTH];
+        laneMask = new boolean[LENGTH];
 
         for (int i = 0; i < LENGTH; i++) {
             ia[i] = RD.nextInt(25);
             ib[i] = RD.nextInt(25);
             la[i] = RD.nextLong(25);
             lb[i] = RD.nextLong(25);
+            laneMask[i] = RD.nextBoolean();
         }
     }
 
-    // Test for vectorized Integer.compress operation in SVE2
+    // Test for vectorized Integer.compress operation
     @Test
     @IR(counts = {IRNode.COMPRESS_BITS_VI, "> 0"})
     public static void testIntCompress() {
@@ -95,7 +102,28 @@ public class TestVectorCompressExpandBits {
         }
     }
 
-    // Test for vectorized Integer.expand operation in SVE2
+    @Test
+    @IR(counts = {IRNode.COMPRESS_BITS_VI, "> 0"})
+    @IR(counts = {IRNode.RISCV_VCOMPRESS_BITS_MASKED, "> 0"}, applyIfPlatform = {"riscv64", "true"})
+    public static void testIntCompressMasked() {
+        for (int i = 0; i < LENGTH; i += I_SPECIES.length()) {
+            IntVector av = IntVector.fromArray(I_SPECIES, ia, i);
+            IntVector bv = IntVector.fromArray(I_SPECIES, ib, i);
+            VectorMask<Integer> vm = VectorMask.fromArray(I_SPECIES, laneMask, i);
+            av.lanewise(VectorOperators.COMPRESS_BITS, bv, vm).intoArray(ir, i);
+        }
+    }
+
+    @Run(test = "testIntCompressMasked")
+    public static void testIntCompressMasked_runner() {
+        testIntCompressMasked();
+        for (int i = 0; i < LENGTH; i++) {
+            int expected = laneMask[i] ? Integer.compress(ia[i], ib[i]) : ia[i];
+            Asserts.assertEquals(expected, ir[i]);
+        }
+    }
+
+    // Test for vectorized Integer.expand operation
     @Test
     @IR(counts = {IRNode.EXPAND_BITS_VI, "> 0"})
     public static void testIntExpand() {
@@ -114,7 +142,28 @@ public class TestVectorCompressExpandBits {
         }
     }
 
-    // Test for vectorized Long.compress operation in SVE2
+    @Test
+    @IR(counts = {IRNode.EXPAND_BITS_VI, "> 0"})
+    @IR(counts = {IRNode.RISCV_VEXPAND_BITS_MASKED, "> 0"}, applyIfPlatform = {"riscv64", "true"})
+    public static void testIntExpandMasked() {
+        for (int i = 0; i < LENGTH; i += I_SPECIES.length()) {
+            IntVector av = IntVector.fromArray(I_SPECIES, ia, i);
+            IntVector bv = IntVector.fromArray(I_SPECIES, ib, i);
+            VectorMask<Integer> vm = VectorMask.fromArray(I_SPECIES, laneMask, i);
+            av.lanewise(VectorOperators.EXPAND_BITS, bv, vm).intoArray(ir, i);
+        }
+    }
+
+    @Run(test = "testIntExpandMasked")
+    public static void testIntExpandMasked_runner() {
+        testIntExpandMasked();
+        for (int i = 0; i < LENGTH; i++) {
+            int expected = laneMask[i] ? Integer.expand(ia[i], ib[i]) : ia[i];
+            Asserts.assertEquals(expected, ir[i]);
+        }
+    }
+
+    // Test for vectorized Long.compress operation
     @Test
     @IR(counts = {IRNode.COMPRESS_BITS_VL, "> 0"})
     public static void testLongCompress() {
@@ -133,7 +182,28 @@ public class TestVectorCompressExpandBits {
         }
     }
 
-    // Test for vectorized Long.expand operation in SVE2
+    @Test
+    @IR(counts = {IRNode.COMPRESS_BITS_VL, "> 0"})
+    @IR(counts = {IRNode.RISCV_VCOMPRESS_BITS_MASKED, "> 0"}, applyIfPlatform = {"riscv64", "true"})
+    public static void testLongCompressMasked() {
+        for (int i = 0; i < LENGTH; i += L_SPECIES.length()) {
+            LongVector av = LongVector.fromArray(L_SPECIES, la, i);
+            LongVector bv = LongVector.fromArray(L_SPECIES, lb, i);
+            VectorMask<Long> vm = VectorMask.fromArray(L_SPECIES, laneMask, i);
+            av.lanewise(VectorOperators.COMPRESS_BITS, bv, vm).intoArray(lr, i);
+        }
+    }
+
+    @Run(test = "testLongCompressMasked")
+    public static void testLongCompressMasked_runner() {
+        testLongCompressMasked();
+        for (int i = 0; i < LENGTH; i++) {
+            long expected = laneMask[i] ? Long.compress(la[i], lb[i]) : la[i];
+            Asserts.assertEquals(expected, lr[i]);
+        }
+    }
+
+    // Test for vectorized Long.expand operation
     @Test
     @IR(counts = {IRNode.EXPAND_BITS_VL, "> 0"})
     public static void testLongExpand() {
@@ -152,8 +222,33 @@ public class TestVectorCompressExpandBits {
         }
     }
 
+    @Test
+    @IR(counts = {IRNode.EXPAND_BITS_VL, "> 0"})
+    @IR(counts = {IRNode.RISCV_VEXPAND_BITS_MASKED, "> 0"}, applyIfPlatform = {"riscv64", "true"})
+    public static void testLongExpandMasked() {
+        for (int i = 0; i < LENGTH; i += L_SPECIES.length()) {
+            LongVector av = LongVector.fromArray(L_SPECIES, la, i);
+            LongVector bv = LongVector.fromArray(L_SPECIES, lb, i);
+            VectorMask<Long> vm = VectorMask.fromArray(L_SPECIES, laneMask, i);
+            av.lanewise(VectorOperators.EXPAND_BITS, bv, vm).intoArray(lr, i);
+        }
+    }
+
+    @Run(test = "testLongExpandMasked")
+    public static void testLongExpandMasked_runner() {
+        testLongExpandMasked();
+        for (int i = 0; i < LENGTH; i++) {
+            long expected = laneMask[i] ? Long.expand(la[i], lb[i]) : la[i];
+            Asserts.assertEquals(expected, lr[i]);
+        }
+    }
+
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
-                                   "-XX:UseSVE=2");
+        TestFramework testFramework = new TestFramework();
+        testFramework.addFlags("--add-modules=jdk.incubator.vector");
+        if (Platform.isAArch64()) {
+            testFramework.addFlags("-XX:UseSVE=2");
+        }
+        testFramework.start();
     }
 }

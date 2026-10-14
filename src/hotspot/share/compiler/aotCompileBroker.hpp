@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#include "export.h"
+#ifndef SHARE_COMPILER_AOTCOMPILEBROKER_HPP
+#define SHARE_COMPILER_AOTCOMPILEBROKER_HPP
 
-typedef struct { double x, y, z; } HVAPoint3D;
+#include "memory/allStatic.hpp"
+#include "utilities/exceptions.hpp"
 
-EXPORT HVAPoint3D recurse(int depth, HVAPoint3D (*cb)(int)) {
-  if (depth == 0) {
-    HVAPoint3D result = { 2, 1, 0};
-    return result;
-  }
+class ArchiveBuilder;
 
-  HVAPoint3D result = cb(depth - 1);
-  result.x += 1;
-  result.y += 1;
-  result.z += 1;
-  return result;
-}
+class AOTCompileBroker : AllStatic  {
+public:
+  static void compile_aot_code(ArchiveBuilder* builder, TRAPS) NOT_CDS_RETURN;
+};
+
+#endif // SHARE_COMPILER_AOTCOMPILEBROKER_HPP
