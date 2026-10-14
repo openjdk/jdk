@@ -86,6 +86,7 @@ public class TestReductionReassociation {
                 comp.compile("--add-modules=jdk.incubator.vector");
 
                 String[] flags = new String[] {
+                    "-XX:+IgnoreUnrecognizedVMOptions",
                     "-XX:-UseSuperWord", "-XX:LoopMaxUnroll=0", "-XX:VerifyIterativeGVN=1000",
                     "-XX:CompileCommand=dontinline,*::*dontinline*",
                     "--add-modules=jdk.incubator.vector", "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED"
@@ -94,6 +95,7 @@ public class TestReductionReassociation {
             }
             case "edge-cases" -> {
                 TestFramework.runWithFlags(
+                    "-XX:+IgnoreUnrecognizedVMOptions",
                     "-XX:-UseSuperWord", "-XX:LoopMaxUnroll=0",
                     "-XX:CompileCommand=dontinline,*::*dontinline*", "-XX:VerifyIterativeGVN=1000"
                 );
