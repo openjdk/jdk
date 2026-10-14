@@ -207,7 +207,9 @@ public class TestIntCountedLoopLongLimit {
         int sum = 0;
         for (int i = 0; i < limit; i++) {
             sum += i;
-            if (sum > 100) return sum;
+            if (sum > 100) {
+                return sum;
+            }
         }
         return sum;
     }
