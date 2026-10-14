@@ -2252,11 +2252,10 @@ static void parallel_suffix_v(C2_MacroAssembler* masm, VectorRegister dst,
 // Compress the bits selected by mask toward the least-significant bit of each
 // vector element while preserving their order. This is the vector equivalent
 // of Integer.compress and Long.compress and uses the same movement-mask algorithm.
-void C2_MacroAssembler::compress_bits_v(VectorRegister dst, VectorRegister src,
-                                        VectorRegister bit_mask, VectorRegister src_tmp,
-                                        VectorRegister mask_tmp, VectorRegister tmp1,
-                                        VectorRegister tmp2, BasicType bt,
-                                        uint vector_length, VectorMask vm) {
+void C2_MacroAssembler::compress_bits_v(VectorRegister dst, VectorRegister src, VectorRegister bit_mask,
+                                        VectorRegister src_tmp, VectorRegister mask_tmp,
+                                        VectorRegister tmp1, VectorRegister tmp2,
+                                        BasicType bt, uint vector_length, VectorMask vm) {
   assert(bt == T_INT || bt == T_LONG, "unsupported element type");
   const bool is_int = bt == T_INT;
   const int bits = is_int ? BitsPerInt : BitsPerLong;
@@ -2289,14 +2288,13 @@ void C2_MacroAssembler::compress_bits_v(VectorRegister dst, VectorRegister src,
 // Expand the low-order bits of src into the positions selected by mask in each
 // vector element. First record the movement masks used by compression, then
 // apply them in reverse order to implement Integer.expand and Long.expand.
-void C2_MacroAssembler::expand_bits_v(VectorRegister dst, VectorRegister src,
-                                      VectorRegister bit_mask, VectorRegister src_tmp,
-                                      VectorRegister mask_tmp, VectorRegister mask_move1,
-                                      VectorRegister mask_move2, VectorRegister mask_move3,
-                                      VectorRegister mask_move4, VectorRegister mask_move5,
-                                      VectorRegister mask_move6, VectorRegister tmp1,
-                                      VectorRegister tmp2, BasicType bt,
-                                      uint vector_length, VectorMask vm) {
+void C2_MacroAssembler::expand_bits_v(VectorRegister dst, VectorRegister src, VectorRegister bit_mask,
+                                      VectorRegister src_tmp, VectorRegister mask_tmp,
+                                      VectorRegister mask_move1, VectorRegister mask_move2,
+                                      VectorRegister mask_move3, VectorRegister mask_move4,
+                                      VectorRegister mask_move5, VectorRegister mask_move6,
+                                      VectorRegister tmp1, VectorRegister tmp2,
+                                      BasicType bt, uint vector_length, VectorMask vm) {
   assert(bt == T_INT || bt == T_LONG, "unsupported element type");
   const bool is_int = bt == T_INT;
   const int bits = is_int ? BitsPerInt : BitsPerLong;
