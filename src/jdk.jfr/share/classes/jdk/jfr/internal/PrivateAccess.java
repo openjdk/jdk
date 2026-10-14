@@ -74,15 +74,13 @@ public abstract class PrivateAccess {
 
     public abstract AnnotationElement newAnnotation(Type annotationType, List<Object> values, boolean boot);
 
-    public abstract ValueDescriptor newValueDescriptor(String name, Type fieldType, List<AnnotationElement> annotations, int dimension, boolean constantPool, String fieldName);
+    public abstract ValueDescriptor newValueDescriptor(String name, Type fieldType, List<AnnotationElement> annotations, int dimension, boolean constantPool);
 
     public abstract PlatformRecording getPlatformRecording(Recording r);
 
     public abstract PlatformEventType getPlatformEventType(EventType eventType);
 
     public abstract boolean isConstantPool(ValueDescriptor v);
-
-    public abstract String getFieldName(ValueDescriptor v);
 
     public abstract ValueDescriptor newValueDescriptor(Class<?> type, String name);
 

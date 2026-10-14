@@ -1967,18 +1967,17 @@ Node* GraphKit::cast_to_flat_array(Node* array, ciValueKlass* elem_vk) {
     return cast_to_flat_array_exact(array, elem_vk, false, true);
   }
 
-  bool is_null_free = false;
-  if (!elem_vk->has_nullable_atomic_layout()) {
-    // Element does not have a nullable flat layout, cannot be nullable
-    is_null_free = true;
-  }
-
   ciArrayKlass* array_klass = ciObjArrayKlass::make(elem_vk, false);
   if (!array_klass->is_loaded()) {
     return top();
   }
+
   const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->isa_aryptr();
-  arytype = arytype->cast_to_flat(true)->cast_to_null_free(is_null_free);
+  arytype = arytype->cast_to_flat();
+  if (!elem_vk->has_nullable_atomic_layout()) {
+    arytype = arytype->cast_to_null_free();
+  }
+
   return _gvn.transform(new CheckCastPPNode(control(), array, arytype, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
 }
 

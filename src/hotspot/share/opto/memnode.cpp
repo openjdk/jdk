@@ -355,38 +355,20 @@ Node *MemNode::optimize_memory_chain(Node *mchain, const TypePtr *t_adr, Node *l
   if (t_oop == nullptr)
     return mchain;  // don't try to optimize non-oop types
   Node* result = optimize_simple_memory_chain(mchain, t_oop, load, phase);
+
+  // optimized_memory_chain is called both during IGVN and during split_unique_types in escape
+  // analysis, so we may need to split_out_instance if result is a memory Phi corresponding to
+  // TypePtr::BOTTOM or the general oop of the known instance t_oop
   bool is_instance = t_oop->is_known_instance_field();
-  PhaseIterGVN *igvn = phase->is_IterGVN();
+  PhaseIterGVN* igvn = phase->is_IterGVN();
   if (is_instance && igvn != nullptr && result->is_Phi()) {
-    PhiNode *mphi = result->as_Phi();
-    assert(mphi->bottom_type() == Type::MEMORY, "memory phi required");
-    const TypePtr* t = mphi->out_adr_type();
-    bool do_split = false;
-    // In the following cases, Load memory input can be further optimized based on
-    // its precise address type
-    if (t == TypePtr::BOTTOM || t == TypeRawPtr::BOTTOM ) {
-      do_split = true;
-    } else if (t->isa_oopptr() && !t->is_oopptr()->is_known_instance()) {
-      const TypeOopPtr* mem_t =
-        t->is_oopptr()->cast_to_exactness(true)
-        ->is_oopptr()->cast_to_ptr_type(t_oop->ptr())
-        ->is_oopptr()->cast_to_instance_id(t_oop->instance_id());
-      if (t_oop->isa_aryptr()) {
-        mem_t = mem_t->is_aryptr()
-                     ->cast_to_stable(t_oop->is_aryptr()->is_stable())
-                     ->cast_to_size(t_oop->is_aryptr()->size())
-                     ->cast_to_not_flat(t_oop->is_aryptr()->is_not_flat())
-                     ->cast_to_not_null_free(t_oop->is_aryptr()->is_not_null_free())
-                     ->with_offset(t_oop->is_aryptr()->offset())
-                     ->is_aryptr();
-      }
-      do_split = mem_t == t_oop;
-    }
-    if (do_split) {
-      // clone the Phi with our address type
-      result = mphi->split_out_instance(t_adr, igvn);
-    } else {
-      assert(phase->C->get_alias_index(t) == phase->C->get_alias_index(t_adr), "correct memory chain");
+    PhiNode* phi = result->as_Phi();
+    assert(phi->bottom_type() == Type::MEMORY, "memory phi required");
+    const TypePtr* phi_at = phi->out_adr_type();
+    assert(t_oop->higher_equal(phi_at), "a memory Phi must have the a wider adr_type than an access");
+    const TypePtr* t_oop_widened = phase->C->get_adr_type(phase->C->get_alias_index(t_oop));
+    if (t_oop_widened != phi_at) {
+      result = phi->split_out_instance(t_oop_widened, igvn);
     }
   }
   return result;
@@ -2814,8 +2796,7 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
   const Type *t2 = phase->type( adr );
   if (t2 == Type::TOP)  return Type::TOP;
   const TypePtr *tp = t2->is_ptr();
-  if (TypePtr::above_centerline(tp->ptr()) ||
-      tp->ptr() == TypePtr::Null)  return Type::TOP;
+  if (TypePtr::is_top(tp->ptr()) || tp->ptr() == TypePtr::Null)  return Type::TOP;
 
   // Return a more precise klass, if possible
   const TypeInstPtr *tinst = tp->isa_instptr();
@@ -3052,7 +3033,7 @@ const Type* LoadRangeNode::Value(PhaseGVN* phase) const {
   const Type *t2 = phase->type( adr );
   if( t2 == Type::TOP ) return Type::TOP;
   const TypePtr *tp = t2->is_ptr();
-  if (TypePtr::above_centerline(tp->ptr()))  return Type::TOP;
+  if (TypePtr::is_top(tp->ptr())) return Type::TOP;
   const TypeAryPtr *tap = tp->isa_aryptr();
   if( !tap ) return _type;
   return tap->size();
