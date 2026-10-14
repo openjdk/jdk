@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -21,8 +22,8 @@
  * questions.
  */
 
-#ifndef SHARE_GC_SERIAL_STRINGDEDUP_HPP
-#define SHARE_GC_SERIAL_STRINGDEDUP_HPP
+#ifndef SHARE_GC_SERIAL_SERIALSTRINGDEDUP_HPP
+#define SHARE_GC_SERIAL_SERIALSTRINGDEDUP_HPP
 
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -43,4 +44,4 @@ public:
 
 };
 
-#endif // SHARE_GC_SERIAL_STRINGDEDUP_HPP
+#endif // SHARE_GC_SERIAL_SERIALSTRINGDEDUP_HPP

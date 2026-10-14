@@ -111,7 +111,7 @@ inline bool ShenandoahMarkBitMap::is_marked(HeapWord* addr) const {
 
 template<ShenandoahMarkBitMap::bm_word_t flip, bool aligned_right>
 inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_next_bit_impl(idx_t l_index, idx_t r_index) const {
-  STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
+  static_assert(flip == find_ones_flip || flip == find_zeros_flip);
   verify_range(l_index, r_index);
   assert(!aligned_right || is_aligned(r_index, BitsPerWord), "r_index not aligned");
 
@@ -172,7 +172,7 @@ inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_next_bit_impl(idx_t
 
 template<ShenandoahMarkBitMap::bm_word_t flip, bool aligned_left>
 inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index) const {
-  STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
+  static_assert(flip == find_ones_flip || flip == find_zeros_flip);
   verify_range(l_index, r_index);
   assert(!aligned_left || is_aligned(l_index, BitsPerWord), "l_index not aligned");
 

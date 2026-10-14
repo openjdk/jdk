@@ -64,6 +64,7 @@
 
   void string_indexof_char_short(Register str1, Register cnt1,
                                  Register ch, Register result,
+                                 Register start_index,
                                  bool isL);
 
   void string_indexof_char(Register str1, Register cnt1,
@@ -260,6 +261,10 @@
                           VectorRegister tmp1, VectorRegister tmp2,
                           bool is_double, bool is_min, uint vector_length,
                           VectorMask vm = Assembler::unmasked);
+
+  void reduce_mul_fp_v(FloatRegister dst, FloatRegister src1, VectorRegister src2,
+                       VectorRegister vtmp1, VectorRegister vtmp2,
+                       bool is_double, uint vector_length);
 
   void reduce_integral_v(Register dst, Register src1,
                         VectorRegister src2, VectorRegister tmp,

@@ -26,15 +26,16 @@
 #include "ci/ciSignature.hpp"
 #include "ci/ciTypeFlow.hpp"
 #include "compiler/compileLog.hpp"
+#include "interpreter/invocationCounter.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
+#include "oops/trainingData.hpp"
 #include "opto/addnode.hpp"
 #include "opto/c2compiler.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/locknode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/opaquenode.hpp"
@@ -42,6 +43,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/type.hpp"
+#include "opto/valuetypenode.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -180,7 +182,7 @@ Node* Parse::check_interpreter_type(Node* l, ciType* ci_type, SafePointNode* &ba
     // TypeFlow asserted a specific object type. Value must have that type.
     assert(_gvn.type(l) == TypePtr::NULL_PTR || _gvn.type(l)->isa_oopptr(), "must be an oop");
     if (ci_type->is_null_free()) {
-      // Check inline types for null here to prevent checkcast from adding an
+      // Check value types for null here to prevent checkcast from adding an
       // exception state before the bytecode entry (use 'bad_type_ctrl' instead).
       Node* bad_type_ctrl = nullptr;
       l = null_check_oop(l, &bad_type_ctrl);
@@ -258,26 +260,25 @@ void Parse::load_interpreter_state(Node* osr_buf) {
     osr_box->set_coarsened();
     osr_box->set_unbalanced();
 
-    Node* box = _gvn.transform(osr_box);
+    BoxLockNode* box = _gvn.transform(osr_box)->as_BoxLock();
 
-    // Displaced headers and locked objects are interleaved in the
+    // Object monitor cache and locked objects are interleaved in the
     // temp OSR buffer.  We only copy the locked objects out here.
-    // Fetch the locked object from the OSR temp buffer and copy to our fastlock node.
+    // Fetch the locked object from the OSR temp buffer and keep it around.
     Node* lock_object = fetch_interpreter_state(index*2, Type::get_const_basic_type(T_OBJECT), monitors_addr);
-    // Try and copy the displaced header to the BoxNode
-    Node* displaced_hdr = fetch_interpreter_state((index*2) + 1, Type::get_const_basic_type(T_ADDRESS), monitors_addr);
+    // Try and copy the object monitor cache to the BoxNode
+    Node* object_monitor_cache = fetch_interpreter_state((index*2) + 1, Type::get_const_basic_type(T_ADDRESS), monitors_addr);
 
-    store_to_memory(control(), box, displaced_hdr, T_ADDRESS, MemNode::unordered);
+    store_to_memory(control(), box, object_monitor_cache, T_ADDRESS, MemNode::unordered);
 
-    // Build a bogus FastLockNode (no code will be generated) and push the
-    // monitor into our debug info.
-    const FastLockNode *flock = _gvn.transform(new FastLockNode( nullptr, lock_object, box ))->as_FastLock();
-    map()->push_monitor(flock);
+    // Push the monitor info into our debug info.
+    map()->push_monitor(box, lock_object);
 
     // If the lock is our method synchronization lock, tuck it away in
     // _sync_lock for return and rethrow exit paths.
     if (index == 0 && method()->is_synchronized()) {
-      _synch_lock = flock;
+      _sync_lock_box = box;
+      _sync_lock_obj = lock_object;
     }
   }
 
@@ -393,7 +394,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
       // Keep all oop locals alive until the method returns as if there are
       // reachability fences for them at the end of the method.
       Node* loc = local(index);
-      if (!loc->is_InlineType() && loc->bottom_type() != TypePtr::NULL_PTR) {
+      if (!loc->is_ValueType() && loc->bottom_type() != TypePtr::NULL_PTR) {
         assert(loc->bottom_type()->isa_oopptr() != nullptr, "%s", Type::str(loc->bottom_type()));
         _stress_rf_hook->add_req(loc);
       }
@@ -410,7 +411,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
       // Keep all oops on stack alive until the method returns as if there are
       // reachability fences for them at the end of the method.
       Node* stk = stack(index);
-      if (!stk->is_InlineType() && stk->bottom_type() != TypePtr::NULL_PTR) {
+      if (!stk->is_ValueType() && stk->bottom_type() != TypePtr::NULL_PTR) {
         assert(stk->bottom_type()->isa_oopptr() != nullptr, "%s", Type::str(stk->bottom_type()));
         _stress_rf_hook->add_req(stk);
       }
@@ -459,6 +460,8 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _alloc_with_final_or_stable = nullptr;
   _stress_rf_hook = (StressReachabilityFences ? new Node(1) : nullptr);
   _block = nullptr;
+  _sync_lock_box = nullptr;
+  _sync_lock_obj = nullptr;
   _first_return = true;
   _replaced_nodes_for_exceptions = false;
   _new_idx = C->unique();
@@ -901,15 +904,15 @@ JVMState* Compile::build_start_state(StartNode* start, const TypeFunc* tf) {
   for (uint j = 0; i < (uint)arg_size; i++) {
     const Type* t = tf->domain_sig()->field_at(i);
     Node* parm = nullptr;
-    if (t->is_inlinetypeptr() && method()->is_scalarized_arg(arg_num)) {
-      // Inline type arguments are not passed by reference: we get an argument per
-      // field of the inline type. Build InlineTypeNodes from the inline type arguments.
+    if (t->is_valueklassptr() && method()->is_scalarized_arg(arg_num)) {
+      // Value type arguments are not passed by reference: we get an argument per
+      // field of the value type. Build ValueTypeNodes from the value type arguments.
       GraphKit kit(jvms, &gvn);
       kit.set_control(map->control());
       Node* old_mem = map->memory();
-      // Use immutable memory for inline type loads and restore it below
+      // Use immutable memory for value type loads and restore it below
       kit.set_all_memory(C->immutable_memory());
-      parm = InlineTypeNode::make_from_multi(&kit, start, t->inline_klass(), j, /* in= */ true, /* null_free= */ !t->maybe_null());
+      parm = ValueTypeNode::make_from_multi(&kit, start, t->value_klass(), j, /* in= */ true, /* null_free= */ !t->maybe_null());
       assert(map == kit.map(), "broken if map changes");
       map->set_control(kit.control());
       map->set_memory(old_mem);
@@ -959,17 +962,17 @@ void Compile::return_values(JVMState* jvms) {
     kit.inc_sp(-ret_size);  // pop the return value(s)
     kit.sync_jvms();
     Node* res = kit.argument(0);
-    if (tf()->returns_inline_type_as_fields()) {
-      // Multiple return values (inline type fields): add as many edges
+    if (tf()->returns_value_type_as_fields()) {
+      // Multiple return values (value type fields): add as many edges
       // to the Return node as returned values.
-      InlineTypeNode* vt = res->as_InlineType();
+      ValueTypeNode* vt = res->as_ValueType();
       ret->add_req_batch(nullptr, tf()->range_cc()->cnt() - TypeFunc::Parms);
       if (vt->is_allocated(&kit.gvn()) && !StressCallingConvention) {
         ret->init_req(TypeFunc::Parms, vt);
       } else {
         // Return the tagged klass pointer to signal scalarization to the caller
         Node* tagged_klass = vt->tagged_klass(kit.gvn());
-        // Return null if the inline type is null (null marker field is not set)
+        // Return null if the value type is null (null marker field is not set)
         Node* conv   = kit.gvn().transform(new ConvI2LNode(vt->get_null_marker()));
         Node* shl    = kit.gvn().transform(new LShiftLNode(conv, kit.intcon(63)));
         Node* shr    = kit.gvn().transform(new RShiftLNode(shl, kit.intcon(63)));
@@ -1174,13 +1177,12 @@ void Parse::do_exits() {
       JVMState* caller = kit.jvms();
       JVMState* ex_jvms = caller->clone_shallow(C);
       ex_jvms->bind_map(kit.clone_map());
-      ex_jvms->set_bci(   InvocationEntryBci);
+      ex_jvms->set_bci(InvocationEntryBci);
       kit.set_jvms(ex_jvms);
       if (do_synch) {
         // Add on the synchronized-method box/object combo
-        kit.map()->push_monitor(_synch_lock);
-        // Unlock!
-        kit.shared_unlock(_synch_lock->box_node(), _synch_lock->obj_node());
+        kit.map()->push_monitor(_sync_lock_box, _sync_lock_obj);
+        kit.shared_unlock(_sync_lock_box, _sync_lock_obj); // Unlock!
       }
       if (C->env()->dtrace_method_probes()) {
         kit.make_dtrace_method_exit(method());
@@ -1226,9 +1228,11 @@ SafePointNode* Parse::create_entry_map() {
   _caller->map()->delete_replaced_nodes();
 
   // If this is an inlined method, we may have to do a receiver null check.
-  if (_caller->has_method() && is_normal_parse() && !method()->is_static()) {
+  if (_caller->has_method() && is_normal_parse()) {
     GraphKit kit(_caller);
-    kit.null_check_receiver_before_call(method());
+    if (!method()->is_static()) {
+      kit.null_check_receiver_before_call(method());
+    }
     _caller = kit.transfer_exceptions_into_jvms();
 
     if (kit.stopped()) {
@@ -1297,6 +1301,149 @@ static bool is_auto_boxed_primitive(Node* n) {
           n->in(0)->as_CallJava()->method()->is_boxing_method());
 }
 
+#if INCLUDE_CDS
+// Even the highest tier of AOT code (A4) incorporates an invocation
+// counter on entry to an AOT nmethod.  This is necessary because AOT
+// optimizations are performed on less accurate information than JIT
+// optimizations.  A long-running JVM is likely to eventually
+// recompile AOT code with the JIT compiler, so as to reoptimize with
+// the fullest possible information.  This helps AOT-assisted
+// workloads attain the same peak performance as pure JIT-based
+// workloads.
+//
+// One example of "less accurate" information for optimization is a
+// static final field value which the AOT compiler refuses to fold as
+// a constant, because many static finals cannot be predicted AOT.
+// Another is the exact configuration of block and type profiles; the
+// AOT compiler only sees profile information from the training run up
+// to the point at which the AOT cache was built, while a production
+// run may execute much longer, eventually adding very different
+// information to the profile.
+//
+// The counter helps decide when to reoptimize.  The counter limit
+// chosen depends on the invocation count observed during the training
+// run.  The limit is an approximately linear function of the observed
+// count, but at least about a hundred (see AOTCodeInvokeBase), and
+// saturating out to about a million (times AOTCodeInvokeScale).
+//
+// The diagnostic flag UseAOTCodeCounters can be used to determine
+// whether the counter overhead affected application performance.
+// Note that the counter is only on the root method of any given
+// nmethod.  Inlined method calls are not counted.  Counting overhead
+// is therefore expected to be small.
+//
+// After JDK-8380476 TODO: The interpreter also uses a backedge counter
+// to ensure eventual optimization of a method with a small invocation
+// count that sits in a long-running loop.  A4 methods could be given an
+// equivalent counter, if they contain loops which may turn out to be
+// long-running.  It is help to deoptimize a long-running loop to the
+// interpreter, without replacing the A4 method.  The interpreter
+// could be primed with a high backedge count, so that the loop will
+// be reoptimized quickly by an OSR compilation.  This whole concern
+// is a corner case of a corner case, since OSR assumes low invocation
+// count, while reoptimization to peak assumes a long-lived production
+// run.
+
+static int scale_limit(int64_t limit) {
+ // To scale invocation limit a hyperbolic saturation curve formula
+ // is used with upper limit 1M.
+ return (int)(AOTCodeInvokeBase + limit / (1.0 + limit / (1000000.0 * AOTCodeInvokeScale)));
+}
+
+void Parse::count_aot_code_calls() {
+  bool is_aot_compilation = C->env()->is_aot_compile();
+  if (UseAOTCodeCounters && (depth() == 1) && is_aot_compilation) {
+    // Clear out dead values from the debug info in following runtime call
+    kill_dead_locals();
+
+    // Use method invocations count during training run and compare
+    // to invocations of AOT code during production run to trigger JIT
+    // compilation and replace AOT code with normal JITed code.
+    ciMetadata* mcp = method()->ensure_method_counters();
+    assert(mcp != nullptr, "CompileBroker should create MethodCounters if it is missing");
+    const TypePtr* mc_type = TypeMetadataPtr::make(TypePtr::Constant, mcp, Type::Offset(0));
+    Node* mc = makecon(mc_type);
+
+    assert(MethodTrainingData::have_data(), "TrainingData should be present for AOT compilation");
+    methodHandle mh(Thread::current(), method()->get_Method());
+    MethodTrainingData* mtd = MethodTrainingData::find_fast(mh);
+    assert(mtd != nullptr, "AOT compiled method should have MethodTrainingData");
+    int64_t limit = mtd->invocation_count();
+    int step = InvocationCounter::count_increment;
+    int scaled_limit = step * scale_limit(limit);
+
+    // Count AOT compiled code invocations (use 32 bits because scaled limit fits into 32 bits)
+    intptr_t offset = in_bytes(MethodCounters::invocation_counter_offset());
+    Node* cnt_adr = off_heap_plus_addr(mc, offset);
+    Node* ctrl = control();
+    Node* cnt  = make_load(ctrl, cnt_adr, TypeInt::INT, T_INT, MemNode::unordered);
+    Node* incr = _gvn.transform(new AddINode(cnt, intcon(step)));
+    store_to_memory(ctrl, cnt_adr, incr, T_INT, MemNode::unordered);
+    // Preserve memory for Phi node below
+    Node* st_mem = MergeMemNode::make(map()->memory());
+    _gvn.set_type_bottom(st_mem);
+
+    Node* lim = intcon(scaled_limit);
+    Node* chk = _gvn.transform( new CmpINode(incr, lim) );
+    Node* tst = _gvn.transform( new BoolNode(chk, BoolTest::lt) );
+    IfNode* iff = create_and_map_if(control(), tst, PROB_ALWAYS, (float)limit);
+
+    RegionNode* result_rgn = new RegionNode(4);
+    record_for_igvn(result_rgn);
+
+    Node*  skip_call = _gvn.transform(new IfTrueNode(iff));
+    result_rgn->init_req(1, skip_call);
+
+    Node* in1_io  = i_o();
+    Node* in1_mem = st_mem;
+    // These two phis are pre-filled with copies of the fast IO and Memory
+    Node* io_phi   = PhiNode::make(result_rgn, in1_io,  Type::ABIO);
+    Node* mem_phi  = PhiNode::make(result_rgn, in1_mem, Type::MEMORY, TypePtr::BOTTOM);
+
+    Node* needs_call = _gvn.transform(new IfFalseNode(iff));
+    set_control(needs_call);
+
+    // InvocationCounter::carry_mask is private, calculate it from step
+    int carry_bits = step - 1;
+    Node* recomp_bit = intcon(carry_bits);
+    Node* rbit = _gvn.transform( new AndINode(incr, recomp_bit) );
+    Node* chk2 = _gvn.transform( new CmpINode(rbit, intcon(0)) );
+    Node* tst2 = _gvn.transform( new BoolNode(chk2, BoolTest::ne) );
+    IfNode* iff2 = create_and_map_if(control(), tst2, PROB_FAIR, COUNT_UNKNOWN);
+
+    Node*  skip_call2 = _gvn.transform(new IfTrueNode(iff2));
+    result_rgn->init_req(2, skip_call2);
+
+    Node* needs_call2 = _gvn.transform(new IfFalseNode(iff2));
+    set_control(needs_call2);
+
+    Node* new_val = _gvn.transform(new OrINode(incr, recomp_bit));
+    store_to_memory(control(), cnt_adr, new_val, T_INT, MemNode::unordered);
+
+    const TypePtr* m_type = TypeMetadataPtr::make(method());
+    Node* m = makecon(m_type);
+    make_runtime_call(RC_NO_LEAF | RC_UNCOMMON,
+                      OptoRuntime::compile_method_Type(),
+                      OptoRuntime::compile_method_Java(),
+                      "compile_method", TypePtr::BOTTOM, m);
+
+    // State before call
+    io_phi ->init_req(2, in1_io);
+    mem_phi->init_req(2, in1_mem);
+
+    // State after call
+    result_rgn->init_req(3, control());
+    io_phi ->init_req(3, i_o());
+    mem_phi->init_req(3, reset_memory());
+
+    set_all_memory( _gvn.transform(mem_phi) );
+    set_i_o(        _gvn.transform(io_phi) );
+    set_control(    _gvn.transform(result_rgn) );
+  }
+}
+
+#endif // INCLUDE_CDS
+
 //-----------------------------do_method_entry--------------------------------
 // Emit any code needed in the pseudo-block before BCI zero.
 // The main thing to do is lock the receiver of a synchronized method.
@@ -1346,7 +1493,7 @@ void Parse::do_method_entry() {
     int max_locals = jvms()->loc_size();
     for (int idx = 0; idx < max_locals; idx++) {
       Node* loc = local(idx);
-      if (!loc->is_InlineType() &&
+      if (!loc->is_ValueType() &&
           loc->bottom_type()->isa_oopptr() != nullptr &&
           !is_auto_boxed_primitive(loc)) { // ignore auto-boxed primitives
         _stress_rf_hook->add_req(loc);
@@ -1383,13 +1530,11 @@ void Parse::do_method_entry() {
   // If the method is synchronized, we need to construct a lock node, attach
   // it to the Start node, and pin it there.
   if (method()->is_synchronized()) {
-    // Insert a FastLockNode right after the Start which takes as arguments
+    // Insert a LockNode right after the Start which takes as arguments
     // the current thread pointer, the "this" pointer & the address of the
     // stack slot pair used for the lock.  The "this" pointer is a projection
     // off the start node, but the locking spot has to be constructed by
-    // creating a ConLNode of 0, and boxing it with a BoxLockNode.  The BoxLockNode
-    // becomes the second argument to the FastLockNode call.  The
-    // FastLockNode becomes the new control parent to pin it to the start.
+    // creating a ConLNode of 0, and boxing it with a BoxLockNode.
 
     // Setup Object Pointer
     Node *lock_obj = nullptr;
@@ -1399,14 +1544,15 @@ void Parse::do_method_entry() {
       lock_obj = makecon(t_lock);
     } else {                  // Else pass the "this" pointer,
       lock_obj = local(0);    // which is Parm0 from StartNode
-      assert(!_gvn.type(lock_obj)->make_oopptr()->can_be_inline_type(), "can't be an inline type");
+      assert(!_gvn.type(lock_obj)->make_oopptr()->can_be_value_type(), "can't be a value type");
     }
     // Clear out dead values from the debug info.
     kill_dead_locals();
-    // Build the FastLockNode
-    _synch_lock = shared_lock(lock_obj);
-    // Check for bailout in shared_lock
-    if (failing()) { return; }
+    BoxLockNode* box = shared_lock(lock_obj);
+    if (failing()) { return; } // check for bailout in shared_lock
+    assert(box != nullptr, "missing");
+    _sync_lock_box = box;
+    _sync_lock_obj = lock_obj;
   }
 
   // Feed profiling data for parameters to the type system so it can
@@ -1418,12 +1564,12 @@ void Parse::do_method_entry() {
   for (int i = 0; i < arg_size; i++) {
     Node* parm = local(i);
     const Type* t = _gvn.type(parm);
-    if (t->is_inlinetypeptr()) {
+    if (t->is_valueklassptr()) {
       // If the parameter is a value object, try to scalarize it if we know that it is unrestricted (not early larval)
       // Parameters are non-larval except the receiver of a constructor, which must be an early larval object.
       if (!(i == 0 && method()->receiver_maybe_larval())) {
-        // Create InlineTypeNode from the oop and replace the parameter
-        Node* vt = InlineTypeNode::make_from_oop(this, parm, t->inline_klass());
+        // Create ValueTypeNode from the oop and replace the parameter
+        Node* vt = ValueTypeNode::make_from_oop(this, parm, t->value_klass());
         replace_in_map(parm, vt);
       }
     } else if (UseTypeSpeculation && (i == (arg_size - 1)) && depth() == 1 && method()->is_varargs() && t->isa_aryptr()) {
@@ -1456,6 +1602,8 @@ void Parse::do_method_entry() {
       }
     }
   }
+
+  CDS_ONLY( count_aot_code_calls(); )
 }
 
 //------------------------------init_blocks------------------------------------
@@ -1784,7 +1932,7 @@ void Parse::do_one_block() {
     if (failing()) return;
 
     assert(!have_se || stopped() || failing() || (sp() - pre_bc_sp) == depth,
-           "incorrect depth prediction: sp=%d, pre_bc_sp=%d, depth=%d", sp(), pre_bc_sp, depth);
+           "incorrect depth prediction: bc=%s bci=%d, sp=%d, pre_bc_sp=%d, depth=%d", Bytecodes::name(bc()), bci(), sp(), pre_bc_sp, depth);
 
     do_exceptions();
 
@@ -1884,7 +2032,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
   assert(sp() == target->start_sp(), "");
   clean_stack(sp());
 
-  // Check for merge conflicts involving inline types
+  // Check for merge conflicts involving value types
   JVMState* old_jvms = map()->jvms();
   int old_bci = bci();
   JVMState* tmp_jvms = old_jvms->clone_shallow(C);
@@ -1911,21 +2059,21 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
         ct = target->flow()->stack_type_at(stk_idx);
       }
       if (t != nullptr && t != Type::BOTTOM) {
-        // An object can appear in the JVMS as either an oop or an InlineTypeNode. If the merge is
-        // an InlineTypeNode, we need all the merge inputs to be InlineTypeNodes. Else, if the
+        // An object can appear in the JVMS as either an oop or an ValueTypeNode. If the merge is
+        // an ValueTypeNode, we need all the merge inputs to be ValueTypeNodes. Else, if the
         // merge is an oop, each merge input needs to be either an oop or an buffered
-        // InlineTypeNode.
-        if (!t->is_inlinetypeptr()) {
-          // The merge cannot be an InlineTypeNode, ensure the input is buffered if it is an
-          // InlineTypeNode
-          if (n->is_InlineType()) {
-            map()->set_req(j, n->as_InlineType()->buffer(this));
+        // ValueTypeNode.
+        if (!t->is_valueklassptr()) {
+          // The merge cannot be an ValueTypeNode, ensure the input is buffered if it is an
+          // ValueTypeNode
+          if (n->is_ValueType()) {
+            map()->set_req(j, n->as_ValueType()->buffer(this));
           }
         } else {
           // Scalarize the value object if it is not larval
-          if (!n->is_InlineType() && !ct->is_early_larval()) {
+          if (!n->is_ValueType() && !ct->is_early_larval()) {
             assert(_gvn.type(n) == TypePtr::NULL_PTR, "must be a null constant");
-            map()->set_req(j, InlineTypeNode::make_null(_gvn, t->inline_klass()));
+            map()->set_req(j, ValueTypeNode::make_null(_gvn, t->value_klass()));
           }
         }
       }
@@ -2031,7 +2179,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       Node* phi;
       if (m->is_Phi() && m->as_Phi()->region() == r) {
         phi = m;
-      } else if (m->is_InlineType() && m->as_InlineType()->has_phi_inputs(r)) {
+      } else if (m->is_ValueType() && m->as_ValueType()->has_phi_inputs(r)) {
         phi = m;
       } else {
         phi = nullptr;
@@ -2082,18 +2230,18 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       //  - the corresponding control edges is top (a dead incoming path)
       // It is a bug if we create a phi which sees a garbage value on a live path.
 
-      // Merging two inline types?
-      if (phi != nullptr && phi->is_InlineType()) {
+      // Merging two value types?
+      if (phi != nullptr && phi->is_ValueType()) {
         // Reload current state because it may have been updated by ensure_phi
         assert(phi == map()->in(j), "unexpected value in map");
-        assert(phi->as_InlineType()->has_phi_inputs(r), "");
-        InlineTypeNode* vtm = phi->as_InlineType(); // Current inline type
-        InlineTypeNode* vtn = n->as_InlineType(); // Incoming inline type
-        assert(vtm == phi, "Inline type should have Phi input");
+        assert(phi->as_ValueType()->has_phi_inputs(r), "");
+        ValueTypeNode* vtm = phi->as_ValueType(); // Current value type
+        ValueTypeNode* vtn = n->as_ValueType(); // Incoming value type
+        assert(vtm == phi, "Value type should have Phi input");
 
 #ifdef ASSERT
         if (TraceOptoParse) {
-          tty->print_cr("\nMerging inline types");
+          tty->print_cr("\nMerging value types");
           tty->print_cr("Current:");
           vtm->dump(2);
           tty->print_cr("Incoming:");
@@ -2280,8 +2428,8 @@ int Parse::Block::add_new_path() {
       if (n->is_Phi() && n->as_Phi()->region() == r) {
         assert(n->req() == pnum, "must be same size as region");
         n->add_req(nullptr);
-      } else if (n->is_InlineType() && n->as_InlineType()->has_phi_inputs(r)) {
-        n->as_InlineType()->add_new_path(r);
+      } else if (n->is_ValueType() && n->as_ValueType()->has_phi_inputs(r)) {
+        n->as_ValueType()->add_new_path(r);
       }
     }
   }
@@ -2319,7 +2467,7 @@ Node* Parse::ensure_phi(int idx, bool nocreate) {
   if (o->is_Phi() && o->as_Phi()->region() == region) {
     return o->as_Phi();
   }
-  InlineTypeNode* vt = o->isa_InlineType();
+  ValueTypeNode* vt = o->isa_ValueType();
   if (vt != nullptr && vt->has_phi_inputs(region)) {
     return vt;
   }
@@ -2356,10 +2504,10 @@ Node* Parse::ensure_phi(int idx, bool nocreate) {
     return nullptr;
   }
 
-  if (vt != nullptr && t->is_inlinetypeptr()) {
-    // Inline types are merged by merging their field values.
-    // Create a cloned InlineTypeNode with phi inputs that
-    // represents the merged inline type and update the map.
+  if (vt != nullptr && t->is_valueklassptr()) {
+    // Value types are merged by merging their field values.
+    // Create a cloned ValueTypeNode with phi inputs that
+    // represents the merged value type and update the map.
     vt = vt->clone_with_phis(&_gvn, region);
     map->set_req(idx, vt);
     return vt;
@@ -2490,6 +2638,9 @@ void Parse::call_register_finalizer() {
 
 // Add check to deoptimize once holder klass is fully initialized.
 void Parse::clinit_deopt() {
+  if (method()->holder()->is_initialized()) {
+    return; // in case do_clinit_barriers() is true
+  }
   assert(C->has_method(), "only for normal compilations");
   assert(depth() == 1, "only for main compiled method");
   assert(is_normal_parse(), "no barrier needed on osr entry");
@@ -2512,28 +2663,28 @@ void Parse::return_current(Node* value) {
   if (value != nullptr) {
     Node* phi = _exits.argument(0);
     const Type* return_type = phi->bottom_type();
-    if ((tf()->returns_inline_type_as_fields() || (_caller->has_method() && !Compile::current()->inlining_incrementally())) &&
-        return_type->is_inlinetypeptr()) {
-      // Inline type is returned as fields, make sure it is scalarized
-      if (!value->is_InlineType()) {
-        value = InlineTypeNode::make_from_oop(this, value, return_type->inline_klass());
+    if ((tf()->returns_value_type_as_fields() || (_caller->has_method() && !Compile::current()->inlining_incrementally())) &&
+        return_type->is_valueklassptr()) {
+      // Value type is returned as fields, make sure it is scalarized
+      if (!value->is_ValueType()) {
+        value = ValueTypeNode::make_from_oop(this, value, return_type->value_klass());
       }
       if (!_caller->has_method() || Compile::current()->inlining_incrementally()) {
         // Returning from root or an incrementally inlined method. Make sure all non-flat
         // fields are buffered and re-execute if allocation triggers deoptimization.
         PreserveReexecuteState preexecs(this);
-        assert(tf()->returns_inline_type_as_fields(), "must be returned as fields");
+        assert(tf()->returns_value_type_as_fields(), "must be returned as fields");
         jvms()->set_should_reexecute(true);
         inc_sp(1);
-        value = value->as_InlineType()->allocate_fields(this);
+        value = value->as_ValueType()->allocate_fields(this);
       }
-    } else if (value->is_InlineType()) {
-      // Inline type is returned as oop, make sure it is buffered and re-execute
+    } else if (value->is_ValueType()) {
+      // Value type is returned as oop, make sure it is buffered and re-execute
       // if allocation triggers deoptimization.
       PreserveReexecuteState preexecs(this);
       jvms()->set_should_reexecute(true);
       inc_sp(1);
-      value = value->as_InlineType()->buffer(this);
+      value = value->as_ValueType()->buffer(this);
     }
     // ...else
     // If returning oops to an interface-return, there is a silent free
@@ -2553,7 +2704,7 @@ void Parse::return_current(Node* value) {
   // Do not set_parse_bci, so that return goo is credited to the return insn.
   set_bci(InvocationEntryBci);
   if (method()->is_synchronized()) {
-    shared_unlock(_synch_lock->box_node(), _synch_lock->obj_node());
+    shared_unlock(_sync_lock_box, _sync_lock_obj);
   }
   if (C->env()->dtrace_method_probes()) {
     make_dtrace_method_exit(method());

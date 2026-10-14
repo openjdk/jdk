@@ -35,10 +35,8 @@ import org.openjdk.jmh.infra.Blackhole;
 @Measurement(iterations=5, time=1)
 @Threads(2)
 @Fork(value = 1,
-      jvmArgs = {"-Djmh.blackhole.mode=COMPILER",
-                        "--enable-preview"})
+      jvmArgs = {"-Djmh.blackhole.mode=COMPILER"})
 @State(Scope.Thread)
-@SuppressWarnings("preview")
 public class Exactness {
 
     private static boolean int_float_based_on_leading_trailing(int n) {

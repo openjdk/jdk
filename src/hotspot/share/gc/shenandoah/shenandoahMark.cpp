@@ -64,10 +64,6 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, StringDedup::R
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahLiveData* ld = heap->get_liveness_cache(w);
 
-  // Take outstanding work from queues not covered by current workers.
-  // We expect there is little work in those queues.
-  mark_drain_extra_queues<CANCELLABLE>(queues, q);
-
   // TODO: We can clean up this if we figure out how to do templated oop closures that
   // play nice with specialized_oop_iterators.
   if (update_refs) {
@@ -130,35 +126,6 @@ void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, Shena
     } else {
       mark_loop<false, false>(worker_id, terminator, generation_type, nullptr);
     }
-  }
-}
-
-template <bool CANCELLABLE>
-void ShenandoahMark::mark_drain_extra_queues(ShenandoahObjToScanQueueSet* queues, ShenandoahObjToScanQueue* local_q) {
-  uintx stride = ShenandoahMarkLoopStride;
-
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahMarkTask t;
-
-  assert(queues->get_reserved() == heap->workers()->active_workers(),
-         "Safety: claimable queues do not intersect with worker queues: %u == %u",
-         queues->get_reserved(), heap->workers()->active_workers());
-
-  ShenandoahObjToScanQueue* q = queues->claim_next();
-  while (q != nullptr) {
-    while (!q->is_empty()) {
-      if (CANCELLABLE && heap->check_cancelled_gc_and_yield()) {
-        return;
-      }
-      for (uint i = 0; i < stride; i++) {
-        if (q->pop(t)) {
-          local_q->push(t);
-        } else {
-          break;
-        }
-      }
-    }
-    q = queues->claim_next();
   }
 }
 

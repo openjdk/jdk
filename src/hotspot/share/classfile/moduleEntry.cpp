@@ -443,7 +443,7 @@ void ModuleEntry::remove_unshareable_info() {
 }
 
 void ModuleEntry::load_from_archive(ClassLoaderData* loader_data) {
-  assert(CDSConfig::is_using_archive(), "runtime only");
+  assert(CDSConfig::is_using_full_module_graph(), "runtime only");
   set_loader_data(loader_data);
   JFR_ONLY(INIT_ID(this);)
 }
@@ -453,7 +453,7 @@ void ModuleEntry::preload_archived_oops() {
 }
 
 void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
-  assert(CDSConfig::is_using_archive(), "runtime only");
+  assert(CDSConfig::is_using_full_module_graph(), "runtime only");
   Handle module_handle(Thread::current(), HeapShared::get_root(_archived_module_index, /*clear=*/true));
   assert(module_handle.not_null(), "huh");
   set_module_handle(loader_data->add_handle(module_handle));
@@ -474,7 +474,7 @@ void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
 }
 
 void ModuleEntry::clear_archived_oops() {
-  assert(CDSConfig::is_using_archive(), "runtime only");
+  assert(CDSConfig::is_using_archive() && !CDSConfig::is_using_full_module_graph(), "runtime only");
   HeapShared::clear_root(_archived_module_index);
 }
 
@@ -509,7 +509,7 @@ Array<ModuleEntry*>* ModuleEntryTable::build_aot_table(ClassLoaderData* loader_d
 
 void ModuleEntryTable::load_archived_entries(ClassLoaderData* loader_data,
                                              Array<ModuleEntry*>* archived_modules) {
-  assert(CDSConfig::is_using_archive(), "runtime only");
+  assert(CDSConfig::is_using_full_module_graph(), "runtime only");
 
   for (int i = 0; i < archived_modules->length(); i++) {
     ModuleEntry* archived_entry = archived_modules->at(i);
@@ -519,7 +519,7 @@ void ModuleEntryTable::load_archived_entries(ClassLoaderData* loader_data,
 }
 
 void ModuleEntryTable::restore_archived_oops(ClassLoaderData* loader_data, Array<ModuleEntry*>* archived_modules) {
-  assert(CDSConfig::is_using_archive(), "runtime only");
+  assert(CDSConfig::is_using_full_module_graph(), "runtime only");
   for (int i = 0; i < archived_modules->length(); i++) {
     ModuleEntry* archived_entry = archived_modules->at(i);
     archived_entry->restore_archived_oops(loader_data);
@@ -617,18 +617,7 @@ void ModuleEntryTable::patch_javabase_entries(JavaThread* current, Handle module
   for (int i = 0; i < list_length; i++) {
     Klass* k = list->at(i);
     assert(k->is_klass(), "List should only hold classes");
-#ifndef PRODUCT
-    if (HeapShared::is_a_test_class_in_unnamed_module(k)) {
-      // We allow -XX:ArchiveHeapTestClass to archive additional classes
-      // into the CDS heap, but these must be in the unnamed module.
-      ModuleEntry* unnamed_module = ClassLoaderData::the_null_class_loader_data()->unnamed_module();
-      Handle unnamed_module_handle(current, unnamed_module->module_oop());
-      java_lang_Class::fixup_module_field(k, unnamed_module_handle);
-    } else
-#endif
-    {
-      java_lang_Class::fixup_module_field(k, module_handle);
-    }
+    java_lang_Class::fixup_module_field(k, module_handle);
     k->class_loader_data()->dec_keep_alive_ref_count();
   }
 
