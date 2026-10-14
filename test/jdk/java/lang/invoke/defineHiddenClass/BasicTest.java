@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8330467
  * @modules jdk.compiler
+ *          java.base/jdk.internal.misc
  * @library /test/lib
  * @compile BadClassFile.jcod
  *          BadClassFile2.jcod
@@ -49,6 +50,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+import jdk.internal.misc.PreviewFeatures;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.Utils;
 
@@ -306,7 +308,11 @@ public class BasicTest {
                 throw new IllegalArgumentException("unexpected access flag: " + accessFlags);
         }
         assertTrue(hc.isHidden());
-        assertEquals(hc.getModifiers(), ACC_PUBLIC | accessFlags);
+        int expectedAccessFlags = ACC_PUBLIC | accessFlags;
+        if ((accessFlags & ACC_INTERFACE) == 0 && PreviewFeatures.isEnabled()) {
+            expectedAccessFlags |= ACC_IDENTITY;
+        }
+        assertEquals(hc.getModifiers(), expectedAccessFlags);
         assertFalse(hc.isLocalClass());
         assertFalse(hc.isMemberClass());
         assertFalse(hc.isAnonymousClass());

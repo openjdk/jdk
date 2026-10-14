@@ -25,7 +25,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/codeCache.hpp"
 #include "cppstdlib/new.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCAdjustTask.hpp"
 #include "gc/g1/g1FullGCCompactTask.hpp"
@@ -85,7 +85,7 @@ uint G1FullCollector::calc_active_workers() {
 
   // Consider G1HeapWastePercent to decide max number of workers. Each worker
   // will in average cause half a region waste.
-  uint max_wasted_regions_allowed = ((heap->num_committed_regions() * G1HeapWastePercent) / 100);
+  uint max_wasted_regions_allowed = ((heap->num_active_regions() * G1HeapWastePercent) / 100);
   uint waste_worker_count = MAX2((max_wasted_regions_allowed * 2) , 1u);
   uint heap_waste_worker_limit = MIN2(waste_worker_count, max_worker_count);
 

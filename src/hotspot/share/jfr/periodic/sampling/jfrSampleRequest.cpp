@@ -130,8 +130,8 @@ static bool build_for_interpreter(JfrSampleRequest& request, JavaThread* jt) {
     request._sample_sp = request._sample_bcp;
     // Get real bcp.
     void* const bcp = interpreter_frame_bcp(request);
-    // Setting bcp = 1 marks the sample request to represent a native method.
-    request._sample_bcp = bcp != nullptr ? bcp : reinterpret_cast<address>(1);
+    // Setting bcp == JfrSampleRequestFrameType::INTERPRETER marks the sample request to represent an interpreted native method.
+    request._sample_bcp = bcp != nullptr ? bcp : reinterpret_cast<address>(JfrSampleRequestFrameType::INTERPRETER);
     return true;
   }
   intptr_t* fp = sender_for_interpreter_frame(request, jt);

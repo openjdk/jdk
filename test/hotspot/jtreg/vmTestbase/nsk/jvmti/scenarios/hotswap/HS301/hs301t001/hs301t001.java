@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,11 +85,11 @@ public class hs301t001 extends RedefineAgent {
         }
         cls.doThis();
         if (!pass)  {
-            log.println(" Error occured, error in redefineing (as expected).");
-            log.println(" Case passed.");
+            log.display(" Error occured, error in redefineing (as expected).");
+            log.display(" Case passed.");
         } else {
-            log.println(" Successfully redefined, (which is not execpeted).");
-            log.println(" Case failed.");
+            log.display(" Successfully redefined, (which is not execpeted).");
+            log.display(" Case failed.");
         }
         return pass;
     }

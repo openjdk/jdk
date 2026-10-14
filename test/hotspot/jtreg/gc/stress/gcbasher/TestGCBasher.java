@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class TestGCBasher {
@@ -39,10 +40,13 @@ public class TestGCBasher {
 
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
         try (Stream<Path> s = Files.walk(fs.getPath("/"))) {
-            for (Path p : (Iterable<Path>)s::iterator) {
+            for (Path p : (Iterable<Path>) s::iterator) {
                 if (p.toString().endsWith(".class") &&
-                    !p.getFileName().toString().equals("module-info.class")) {
-                    byte[] data = Files.readAllBytes(p);
+                        !p.getFileName().toString().equals("module-info.class")) {
+                    byte[] rData = Files.readAllBytes(p);
+                    Byte[] data = IntStream.range(0, rData.length)
+                            .mapToObj(i -> rData[i])
+                            .toArray(Byte[]::new);
                     Decompiler d = new Decompiler(data);
                     ClassInfo ci = d.getClassInfo();
                     deps.put(ci.getName(), ci);

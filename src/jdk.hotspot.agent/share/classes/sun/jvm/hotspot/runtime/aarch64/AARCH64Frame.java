@@ -83,6 +83,14 @@ public class AARCH64Frame extends Frame {
       });
   }
 
+  public static long ropProtection() {
+    return ropProtectionField.getValue();
+  }
+
+  public static long pacMask() {
+    return pacMaskField.getValue();
+  }
+
   private static synchronized void initialize(TypeDataBase db) {
     INTERPRETER_FRAME_MDX_OFFSET                  = INTERPRETER_FRAME_METHOD_OFFSET - 1;
     INTERPRETER_FRAME_PADDING_OFFSET              = INTERPRETER_FRAME_MDX_OFFSET - 1;

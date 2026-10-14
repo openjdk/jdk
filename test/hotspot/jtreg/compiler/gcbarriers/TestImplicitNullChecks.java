@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,17 @@
 package compiler.gcbarriers;
 
 import compiler.lib.ir_framework.*;
-import java.lang.invoke.VarHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import jdk.test.lib.Asserts;
+import jdk.internal.misc.Unsafe;
 
 /**
  * @test
  * @summary Test that implicit null checks are generated as expected for
             different GC memory accesses.
  * @library /test/lib /
+ * @modules java.base/jdk.internal.misc
  * @run driver compiler.gcbarriers.TestImplicitNullChecks
  */
 
@@ -51,20 +49,22 @@ public class TestImplicitNullChecks {
         volatile Object f;
     }
 
-    static final VarHandle fVarHandle;
+    static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    static final long F_OFFSET;
     static {
-        MethodHandles.Lookup l = MethodHandles.lookup();
         try {
-            fVarHandle = l.findVarHandle(Outer.class, "f", Object.class);
+            F_OFFSET = UNSAFE.objectFieldOffset(Outer.class.getDeclaredField("f"));
         } catch (Exception e) {
             throw new Error(e);
         }
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:CompileCommand=inline,java.lang.ref.*::*",
+        TestFramework.runWithFlags("--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                                   "-XX:CompileCommand=inline,java.lang.ref.*::*",
                                    "-XX:-TieredCompilation");
-        TestFramework.runWithFlags("-XX:CompileCommand=inline,java.lang.ref.*::*",
+        TestFramework.runWithFlags("--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                                   "-XX:CompileCommand=inline,java.lang.ref.*::*",
                                    "-XX:+TieredCompilation", "-XX:TieredStopAtLevel=1");
     }
 
@@ -82,10 +82,19 @@ public class TestImplicitNullChecks {
     @Test
     // On aarch64, volatile loads always use indirect memory operands, which
     // leads to a pattern that cannot be exploited by the current C2 analysis.
+    // The same holds on RISC-V when UseZalasr is enabled.
     // On PPC64, volatile loads are preceded by membar_volatile instructions,
     // which also inhibits the current C2 analysis.
-    @IR(applyIfPlatformAnd = {"aarch64", "false", "ppc", "false"},
+    @IR(applyIfPlatformAnd = {"aarch64", "false", "ppc", "false", "riscv64", "false"},
         applyIfOr = {"UseZGC", "true", "UseG1GC", "true"},
+        counts = {IRNode.NULL_CHECK, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfAnd = {"UseZalasr", "false", "UseZGC", "true"},
+        counts = {IRNode.NULL_CHECK, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfAnd = {"UseZalasr", "false", "UseG1GC", "true"},
         counts = {IRNode.NULL_CHECK, "1"},
         phase = CompilePhase.FINAL_CODE)
     static Object testLoadVolatile(OuterWithVolatileField o) {
@@ -137,12 +146,49 @@ public class TestImplicitNullChecks {
         o.f = o1;
     }
 
-    @Run(test = {"testStore"})
+    @Test
+    // G1 and ZGC stores cannot be currently used to implement implicit null
+    // checks, because they expand into multiple memory access instructions that
+    // are not necessarily located at the initial instruction start address.
+    @IR(applyIfOr = {"UseZGC", "true", "UseG1GC", "true"},
+        failOn = IRNode.NULL_CHECK,
+        phase = CompilePhase.FINAL_CODE)
+    static void testStoreVolatile(OuterWithVolatileField o, Object o1) {
+        o.f = o1;
+    }
+
+    @Run(test = {"testStore",
+                 "testStoreVolatile"})
     static void runStoreTests() {
         {
             Outer o = new Outer();
             Object o1 = new Object();
-            testStore(o, o1);
+            // Trigger compilation with implicit null check.
+            for (int i = 0; i < 10_000; i++) {
+                testStore(o, o1);
+            }
+            // Trigger null pointer exception.
+            o = null;
+            boolean nullPointerException = false;
+            try {
+                testStore(o, o1);
+            } catch (NullPointerException e) { nullPointerException = true; }
+            Asserts.assertTrue(nullPointerException);
+        }
+        {
+            OuterWithVolatileField o = new OuterWithVolatileField();
+            Object o1 = new Object();
+            // Trigger compilation with implicit null check.
+            for (int i = 0; i < 10_000; i++) {
+                testStoreVolatile(o, o1);
+            }
+            // Trigger null pointer exception.
+            o = null;
+            boolean nullPointerException = false;
+            try {
+                testStoreVolatile(o, o1);
+            } catch (NullPointerException e) { nullPointerException = true; }
+            Asserts.assertTrue(nullPointerException);
         }
     }
 
@@ -156,7 +202,7 @@ public class TestImplicitNullChecks {
         failOn = IRNode.NULL_CHECK,
         phase = CompilePhase.FINAL_CODE)
     static Object testCompareAndExchange(Outer o, Object oldVal, Object newVal) {
-        return fVarHandle.compareAndExchange(o, oldVal, newVal);
+        return UNSAFE.compareAndExchangeReference(o, F_OFFSET, oldVal, newVal);
     }
 
     @Test
@@ -164,7 +210,7 @@ public class TestImplicitNullChecks {
         failOn = IRNode.NULL_CHECK,
         phase = CompilePhase.FINAL_CODE)
     static boolean testCompareAndSwap(Outer o, Object oldVal, Object newVal) {
-        return fVarHandle.compareAndSet(o, oldVal, newVal);
+        return UNSAFE.compareAndSetReference(o, F_OFFSET, oldVal, newVal);
     }
 
     @Test
@@ -172,7 +218,7 @@ public class TestImplicitNullChecks {
         failOn = IRNode.NULL_CHECK,
         phase = CompilePhase.FINAL_CODE)
     static Object testGetAndSet(Outer o, Object newVal) {
-        return fVarHandle.getAndSet(o, newVal);
+        return UNSAFE.getAndSetReference(o, F_OFFSET, newVal);
     }
 
     @Run(test = {"testCompareAndExchange",

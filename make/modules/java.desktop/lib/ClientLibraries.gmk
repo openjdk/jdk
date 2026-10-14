@@ -343,7 +343,7 @@ else
       expansion-to-defined dangling-reference maybe-uninitialized
   HARFBUZZ_DISABLED_WARNINGS_clang := missing-field-initializers \
       range-loop-analysis unused-variable
-  HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244
+  HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244 4189
 
   LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
 endif

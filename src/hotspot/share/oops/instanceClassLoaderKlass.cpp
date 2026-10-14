@@ -24,6 +24,7 @@
 
 #include "cds/cdsConfig.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
 
 InstanceClassLoaderKlass::InstanceClassLoaderKlass() {
   assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");

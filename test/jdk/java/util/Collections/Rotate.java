@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,12 @@
  * @bug 4323074
  * @summary Basic test for new rotate algorithm
  * @key randomness
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.VClass;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -69,5 +72,10 @@ public class Rotate {
                                             ", should be "+index);
             }
         }
+
+        List<VClass> vl = new ArrayList<>(Arrays.asList(new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 }), new VClass(3, new int[] { 3 }), new VClass(4, new int[] { 4 })));
+        Collections.rotate(vl, 1);
+        if (!vl.equals(Arrays.asList(new VClass(4, new int[] { 4 }), new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 }), new VClass(3, new int[] { 3 }))))
+            throw new RuntimeException("value rotate failed");
     }
 }
