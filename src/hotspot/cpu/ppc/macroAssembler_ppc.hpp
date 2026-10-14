@@ -509,7 +509,7 @@ class MacroAssembler: public Assembler {
  private:
   // Helper functions for word/sub-word atomics.
   void atomic_get_and_modify_generic(Register dest_current_value, Register exchange_value,
-                                     Register addr_base, Register tmp1, Register tmp2, Register tmp3,
+                                     Register addr_base, Register tmp,
                                      bool cmpxchgx_hint, bool is_add, int size);
   void cmpxchg_loop_body(ConditionRegister flag, Register dest_current_value,
                          RegisterOrConstant compare_value, Register exchange_value,
@@ -520,34 +520,30 @@ class MacroAssembler: public Assembler {
                        Label* failed_ext, bool contention_hint, bool weak, int size);
  public:
   // Result will be sign extended.
-  void getandsetb(Register dest_current_value, Register exchange_value, Register addr_base,
-                  Register tmp1, Register tmp2, Register tmp3, bool cmpxchgx_hint) {
-    atomic_get_and_modify_generic(dest_current_value, exchange_value, addr_base, tmp1, tmp2, tmp3, cmpxchgx_hint, false, 1);
+  void getandsetb(Register dest_current_value, Register exchange_value, Register addr_base, bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, exchange_value, addr_base, noreg, cmpxchgx_hint, false, 1);
   }
   // Result will be sign extended.
-  void getandseth(Register dest_current_value, Register exchange_value, Register addr_base,
-                  Register tmp1, Register tmp2, Register tmp3, bool cmpxchgx_hint) {
-    atomic_get_and_modify_generic(dest_current_value, exchange_value, addr_base, tmp1, tmp2, tmp3, cmpxchgx_hint, false, 2);
+  void getandseth(Register dest_current_value, Register exchange_value, Register addr_base, bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, exchange_value, addr_base, noreg, cmpxchgx_hint, false, 2);
   }
-  void getandsetw(Register dest_current_value, Register exchange_value, Register addr_base,
-                  bool cmpxchgx_hint) {
-    atomic_get_and_modify_generic(dest_current_value, exchange_value, addr_base, noreg, noreg, noreg, cmpxchgx_hint, false, 4);
+  void getandsetw(Register dest_current_value, Register exchange_value, Register addr_base, bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, exchange_value, addr_base, noreg, cmpxchgx_hint, false, 4);
   }
-  void getandsetd(Register dest_current_value, Register exchange_value, Register addr_base,
-                  bool cmpxchgx_hint);
+  void getandsetd(Register dest_current_value, Register exchange_value, Register addr_base, bool cmpxchgx_hint);
   // Result will be sign extended.
   void getandaddb(Register dest_current_value, Register inc_value, Register addr_base,
-                  Register tmp1, Register tmp2, Register tmp3, bool cmpxchgx_hint) {
-    atomic_get_and_modify_generic(dest_current_value, inc_value, addr_base, tmp1, tmp2, tmp3, cmpxchgx_hint, true, 1);
+                  Register tmp, bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, inc_value, addr_base, tmp, cmpxchgx_hint, true, 1);
   }
   // Result will be sign extended.
   void getandaddh(Register dest_current_value, Register inc_value, Register addr_base,
-                  Register tmp1, Register tmp2, Register tmp3, bool cmpxchgx_hint) {
-    atomic_get_and_modify_generic(dest_current_value, inc_value, addr_base, tmp1, tmp2, tmp3, cmpxchgx_hint, true, 2);
+                  Register tmp, bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, inc_value, addr_base, tmp, cmpxchgx_hint, true, 2);
   }
   void getandaddw(Register dest_current_value, Register inc_value, Register addr_base,
-                  Register tmp1, bool cmpxchgx_hint) {
-    atomic_get_and_modify_generic(dest_current_value, inc_value, addr_base, tmp1, noreg, noreg, cmpxchgx_hint, true, 4);
+                  Register tmp, bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, inc_value, addr_base, tmp, cmpxchgx_hint, true, 4);
   }
   void getandaddd(Register dest_current_value, Register exchange_value, Register addr_base,
                   Register tmp, bool cmpxchgx_hint);

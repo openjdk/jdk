@@ -7384,7 +7384,7 @@ instruct getAndAddB(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src, flagsRegCR0 
   format %{ "GetAndAddB $res, $mem_ptr, $src" %}
   ins_encode %{
     __ getandaddb($res$$Register, $src$$Register, $mem_ptr$$Register,
-                  R0, noreg, noreg, MacroAssembler::cmpxchgx_hint_atomic_update());
+                  R0, MacroAssembler::cmpxchgx_hint_atomic_update());
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       __ isync();
     } else {
@@ -7400,7 +7400,7 @@ instruct getAndAddS(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src, flagsRegCR0 
   format %{ "GetAndAddS $res, $mem_ptr, $src" %}
   ins_encode %{
     __ getandaddh($res$$Register, $src$$Register, $mem_ptr$$Register,
-                  R0, noreg, noreg, MacroAssembler::cmpxchgx_hint_atomic_update());
+                  R0, MacroAssembler::cmpxchgx_hint_atomic_update());
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       __ isync();
     } else {
@@ -7449,7 +7449,7 @@ instruct getAndSetB(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src, flagsRegCR0 
   format %{ "GetAndSetB $res, $mem_ptr, $src" %}
   ins_encode %{
     __ getandsetb($res$$Register, $src$$Register, $mem_ptr$$Register,
-                  noreg, noreg, noreg, MacroAssembler::cmpxchgx_hint_atomic_update());
+                  MacroAssembler::cmpxchgx_hint_atomic_update());
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       __ isync();
     } else {
@@ -7465,7 +7465,7 @@ instruct getAndSetS(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src, flagsRegCR0 
   format %{ "GetAndSetS $res, $mem_ptr, $src" %}
   ins_encode %{
     __ getandseth($res$$Register, $src$$Register, $mem_ptr$$Register,
-                  noreg, noreg, noreg, MacroAssembler::cmpxchgx_hint_atomic_update());
+                  MacroAssembler::cmpxchgx_hint_atomic_update());
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       __ isync();
     } else {

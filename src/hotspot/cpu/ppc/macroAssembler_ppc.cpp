@@ -1603,15 +1603,14 @@ void MacroAssembler::getandaddd(Register dest_current_value, Register inc_value,
 
 // Word/sub-word atomic helper functions
 
-// Temps and addr_base are killed if size < 4 and processor does not support respective instructions.
 // Only signed types are supported with size < 4.
-// Atomic add always kills tmp1.
+// Only atomic add kills tmp.
 void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, Register exchange_value,
-                                                   Register addr_base, Register tmp1, Register tmp2, Register tmp3,
+                                                   Register addr_base, Register tmp,
                                                    bool cmpxchgx_hint, bool is_add, int size) {
 
   Label retry;
-  Register modval = is_add ? tmp1 : exchange_value;
+  Register modval = is_add ? tmp : exchange_value;
 
   // atomic emulation loop
   bind(retry);
