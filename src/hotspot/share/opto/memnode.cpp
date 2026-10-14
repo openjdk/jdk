@@ -2597,8 +2597,8 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     if (mem->is_Parm() && mem->in(0)->is_Start()) {
       assert(mem->as_Parm()->_con == TypeFunc::Memory, "must be memory Parm");
       // TODO 8350865 Scalar replacement does not work well for flat arrays.
-      // Escape Analysis assumes that arrays are always zeroed during allocation which is not true for null-free arrays
-      // ConnectionGraph::split_unique_types will re-wire the memory of loads from such arrays around the allocation
+      // Scalar replacement assumes that arrays are zero-initialized, which is not true for null-free arrays.
+      // ConnectionGraph::split_unique_types will re-wire the memory of loads from such arrays around the allocation.
       // TestArrays::test6 and test152 and TestBasicFunctionality::test20 are affected by this.
       if (tp->isa_aryptr() && tp->is_aryptr()->is_flat() && tp->is_aryptr()->is_null_free()) {
         intptr_t offset = 0;
