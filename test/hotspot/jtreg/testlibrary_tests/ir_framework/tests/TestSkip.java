@@ -21,7 +21,7 @@
  * questions.
  */
 
-package testlibrary_tests.ir_framework.tests;
+package ir_framework.tests;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.TestVMException;
@@ -122,11 +122,11 @@ public class TestSkip {
             // Expected.
             String message = e.getExceptionInfo();
             Asserts.assertTrue(message.contains("Failed IR Rules (3) of Methods (3)"));
-            Asserts.assertTrue(message.contains("Method \"testlibrary_tests.ir_framework.tests." +
+            Asserts.assertTrue(message.contains("Method \"ir_framework.tests." +
                                                 "TestSkip$IRVerification::testFailingIrCustomRunTest"));
-            Asserts.assertTrue(message.contains("Method \"testlibrary_tests.ir_framework.tests." +
+            Asserts.assertTrue(message.contains("Method \"ir_framework.tests." +
                                                 "TestSkip$IRVerification::testFailingIrCheckedTest"));
-            Asserts.assertTrue(message.contains("Method \"testlibrary_tests.ir_framework.tests." +
+            Asserts.assertTrue(message.contains("Method \"ir_framework.tests." +
                                                 "TestSkip$IRVerification::testFailingIrBaseTest"));
         }
     }

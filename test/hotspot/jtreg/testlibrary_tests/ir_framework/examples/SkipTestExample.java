@@ -21,7 +21,7 @@
  * questions.
  */
 
-package testlibrary_tests.ir_framework.examples;
+package ir_framework.examples;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.TestVMException;

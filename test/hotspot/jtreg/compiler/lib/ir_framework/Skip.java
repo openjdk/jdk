@@ -24,7 +24,6 @@
 package compiler.lib.ir_framework;
 
 import compiler.lib.ir_framework.shared.TestFormatException;
-import testlibrary_tests.ir_framework.examples.SkipTestExample;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -35,8 +34,8 @@ import java.lang.annotation.RetentionPolicy;
  *
  * <p>
  * It is preferable to use {@link Skip @Skip} over commenting a test out because one can still execute the skipped
- * test by passing the property flag {@code -DIgnoreSkip=true} (see {@link SkipTestExample}). This can be useful when
- * trying to quickly verify if a disabled test is still failing or not.
+ * test by passing the property flag {@code -DIgnoreSkip=true} (see {@link ir_framework.examples.SkipTestExample}).
+ * This can be useful when trying to quickly verify if a disabled test is still failing or not.
  *
  * <p>
  * The {@link Skip @Skip} annotation can only be used at {@link Test @Test}-annotated methods. If the
