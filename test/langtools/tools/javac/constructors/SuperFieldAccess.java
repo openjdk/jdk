@@ -168,6 +168,20 @@ public class SuperFieldAccess {
                     """,
                     "Super.java:10:19: compiler.err.cant.ref.before.ctor.called: super",
                     "1 error");
+        failingCase("""
+                    class NotInheritedTest {
+                        private int field;
+                        class Intermediate extends NotInheritedTest {}
+                        class Nested extends Intermediate {
+                            Nested() {
+                                super.field = 0;
+                                super();
+                            }
+                        }
+                    }
+                    """,
+                    "NotInheritedTest.java:6:18: compiler.err.report.access: field, private, NotInheritedTest",
+                    "1 error");
     }
 
     private void failingCase(String code, String... errors) throws IOException {
@@ -190,13 +204,15 @@ public class SuperFieldAccess {
         passingCase("""
                     class Test {
                     class Super {
-                        int field;
+                        int field1;
+                        int field2;
                     }
 
                     class T1 extends Super {
                         class Nested {
                             Nested() {
-                                T1.super.field = 1;
+                                T1.super.field1 = 1;
+                                field2 = 2;
                                 super();
                             }
                         }
@@ -204,11 +220,13 @@ public class SuperFieldAccess {
                     void main() {
                         T1 t1 = new T1();
                         t1.new Nested();
-                        System.out.println(t1.field);
+                        System.out.println(t1.field1);
+                        System.out.println(t1.field2);
                     }
                     }
                     """,
-                    "1");
+                    "1",
+                    "2");
     }
 
     private void passingCase(String code, String... output) throws IOException {
