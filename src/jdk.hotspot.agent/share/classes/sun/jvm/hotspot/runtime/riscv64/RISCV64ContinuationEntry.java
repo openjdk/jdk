@@ -27,12 +27,18 @@ package sun.jvm.hotspot.runtime.riscv64;
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.runtime.ContinuationEntry;
 import sun.jvm.hotspot.runtime.Frame;
+import sun.jvm.hotspot.runtime.VM;
 
 
 public class RISCV64ContinuationEntry extends ContinuationEntry {
 
     public RISCV64ContinuationEntry(Address addr) {
         super(addr);
+    }
+
+    @Override
+    public Address getEntryFP() {
+        return super.getEntryFP().addOffsetTo(2 * VM.getVM().getAddressSize());
     }
 
     @Override
