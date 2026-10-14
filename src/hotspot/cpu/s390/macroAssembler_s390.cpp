@@ -6928,11 +6928,11 @@ void MacroAssembler::post_call_nop() {
   if (!Continuations::enabled()) {
     return;
   }
-  // We use CLFI R0, imm32 to encode post call nops.
+  // We use CLFI SP, imm32 to encode post call nops.
   // Refer to NativePostCallNop for details.
   relocate(post_call_nop_Relocation::spec());
   InlineSkippedInstructionsCounter skipCounter(this);
-  z_clfi(Z_R0, 0);
+  z_clfi(Z_SP, 0);
   assert(is_post_call_nop(pc() - 6), "post call nop not found");
 }
 
