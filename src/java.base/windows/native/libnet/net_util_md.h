@@ -24,18 +24,6 @@
  */
 #include <winsock2.h>
 #include <WS2tcpip.h>
-#include <iphlpapi.h>
-#include <icmpapi.h>
-#include <mstcpip.h>
-
-/* used to disable connection reset messages on Windows XP */
-#ifndef SIO_UDP_CONNRESET
-#define SIO_UDP_CONNRESET _WSAIOW(IOC_VENDOR,12)
-#endif
-
-#ifndef IPV6_V6ONLY
-#define IPV6_V6ONLY     27 /* Treat wildcard bind as AF_INET6-only. */
-#endif
 
 typedef union {
     struct sockaddr     sa;

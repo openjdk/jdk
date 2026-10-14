@@ -23,6 +23,7 @@
  * questions.
  */
 #include "net_util.h"
+#include <iphlpapi.h>
 #include "NetworkInterface.h"
 
 #include "java_net_InetAddress.h"

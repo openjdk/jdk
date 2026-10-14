@@ -26,6 +26,8 @@
 #include <winternl.h>
 
 #include "net_util.h"
+#include <iphlpapi.h>
+#include <icmpapi.h>
 
 #include "java_net_InetAddress.h"
 #include "java_net_Inet4AddressImpl.h"

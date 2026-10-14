@@ -30,6 +30,7 @@
 #include <assert.h>
 
 #include "net_util.h"
+#include <iphlpapi.h>
 #include "jni_util.h"
 
 #define MAX_STR_LEN         1024

@@ -23,6 +23,7 @@
  * questions.
  */
 #include "net_util.h"
+#include <mstcpip.h>
 
 #include "java_net_InetAddress.h"
 #include "java_net_SocketOptions.h"
