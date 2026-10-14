@@ -1407,6 +1407,10 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
       set_has_self_forwarded_objects();
       from_region->set_has_self_forwards();
     }
+
+    // It does not matter if this thread did the self forwarding or not.
+    // This thread failed to allocate an evacuation copy.
+    ShenandoahThreadLocalData::set_has_evac_failures(thread, true);
     return fwd;
   }
 

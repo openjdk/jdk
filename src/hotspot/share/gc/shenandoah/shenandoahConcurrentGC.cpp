@@ -933,6 +933,13 @@ void ShenandoahConcurrentGC::op_thread_roots() {
   const ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(heap->is_evacuation_in_progress(), "Checked by caller");
   ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_thread_roots);
+
+  // Evacuation is beginning, reset workers' flags
+  ShenandoahThreadLambdaClosure cl([] (Thread* t) {
+    ShenandoahThreadLocalData::set_has_evac_failures(t, false);
+  });
+  heap->workers()->threads_do(&cl);
+
   ShenandoahConcurrentEvacUpdateThreadTask task(heap->workers()->active_workers());
   heap->workers()->run_task(&task);
 }

@@ -188,19 +188,16 @@ static PLAB* shenandoah_get_lab(ShenandoahHeapRegion* region) {
 }
 
 bool ShenandoahCollectorPolicy::should_abandon_evacuations(ShenandoahHeapRegion* region) {
-  if (region->has_self_forwards()) {
-    PLAB* lab = shenandoah_get_lab(region);
-    if (lab->words_remaining() < PLAB::min_size()) {
-      // This region and this thread are lost. This thread has evacuated all it can. If
-      // we let it continue on to other regions, it will only fail those as well. We want
-      // to let other threads try the regions that this thread could not. This isn't as
-      // precise as it could be. In a mixed collection, we would ideally have a way to
-      // stop this thread from claiming old or young regions, depending on which lab is
-      // exhausted.
-      log_debug(gc, thread)("Region (%zu) has self-forwards and labs are exhausted (remaining words: %zu)",
-                            region->index(), lab->words_remaining());
-      return true;
-    }
+  if (region->has_self_forwards() && ShenandoahThreadLocalData::has_evac_failures()) {
+    // This region and this thread are lost. This thread has evacuated all it can. If
+    // we let it continue on to other regions, it will only fail those as well. We want
+    // to let other threads try the regions that this thread could not. This isn't as
+    // precise as it could be. In a mixed collection, we would ideally have a way to
+    // stop this thread from claiming old or young regions, depending on which lab is
+    // exhausted.
+    log_debug(gc, thread)("Region (%zu) has self-forwards and this thread has evacuation failures (LAB words remaining: %zu)",
+                          region->index(), shenandoah_get_lab(region)->words_remaining());
+    return true;
   }
   return false;
 }

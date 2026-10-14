@@ -281,6 +281,19 @@ private:
   const double _stall_start_seconds;
 };
 
+// A simple adapter to reduce closure subclass boilerplate.
+template <typename LambdaT>
+class ShenandoahThreadLambdaClosure : public ThreadClosure {
+  LambdaT _func;
+
+public:
+  explicit ShenandoahThreadLambdaClosure(LambdaT func) : _func(func) {}
+
+  void do_thread(Thread* thread) override {
+    _func(thread);
+  }
+};
+
 // Casting a double that cannot be represented as a size_t may result in undefined behavior.
 // This small function checks if the given double is representable in a size_t and returns
 // that representation if it is. Otherwise, if the double cannot be safely cast to a size_t
