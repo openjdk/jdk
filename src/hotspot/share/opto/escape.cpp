@@ -94,10 +94,8 @@ ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation
     if (result == nullptr) {
       continue;
     }
-    Node* unknown_offset = alloc->in(AllocateNode::RawInitValue);
-    assert(unknown_offset != nullptr && !igvn->type(unknown_offset)->is_intptr_t()->is_con(),
-           "RawInitValue should be opaque");
-    AddPNode* addp = AddPNode::make_off_heap(result, unknown_offset);
+    // Use an arbitrary offset. The corresponding CG Field node uses OffsetBot.
+    AddPNode* addp = AddPNode::make_off_heap(result, igvn->MakeConX(0));
     igvn->register_new_node_with_optimizer(addp);
     _virtual_array_init_nodes.push(addp);
     _nodes.at_put_grow(addp->_idx, nullptr, nullptr);
@@ -1746,14 +1744,16 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       // adjust_scalar_replaceable_state() and split_unique_types().
       // Note, non-oop fields will have only base edges in Connection
       // Graph because such fields are not used for oop loads and stores.
-      int offset = address_offset(n, igvn);
+      bool is_virtual = is_virtual_array_init(n);
+      assert(!is_virtual || n->outcnt() == 0, "virtual AddPs must be unused");
+      int offset = is_virtual ? Type::OffsetBot : address_offset(n, igvn);
       add_field(n, PointsToNode::NoEscape, offset);
       if (ptn_base == nullptr) {
         delayed_worklist->push(n); // Process it later.
       } else {
         n_ptn = ptnode_adr(n_idx);
         add_base(n_ptn->as_Field(), ptn_base);
-        if (is_virtual_array_init(n)) {
+        if (is_virtual) {
           delayed_worklist->push(n);
         }
       }
@@ -3371,7 +3371,8 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Uniq
       FieldNode* field = use->as_Field();
       assert(field->is_oop() && field->scalar_replaceable(), "sanity");
       // 1. An object is not scalar replaceable if the field into which it is
-      // stored has unknown offset (stored into unknown element of an array).
+      // stored has unknown offset (stored into unknown element of an array),
+      // with the exception of virtual array initialization fields.
       if (field->offset() == Type::OffsetBot &&
           !is_virtual_array_init(field->ideal_node())) {
         set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is stored at unknown offset"));
