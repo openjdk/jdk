@@ -147,7 +147,7 @@ jobs:
         run: |
           # Run Visual Studio Installer
           '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
-            modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise' \
+            modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\18\Enterprise' \
             --add Microsoft.VisualStudio.Component.VC.${{ inputs.msvc-toolset-version }}.ARM64
         if: ${{ ( inputs.architecture == 'ARM64') && (steps.toolchain-check-arm64.outputs.toolchain-installed != 'true') }}
 

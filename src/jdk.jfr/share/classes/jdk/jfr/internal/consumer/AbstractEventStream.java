@@ -165,7 +165,21 @@ public abstract class AbstractEventStream implements EventStream {
     @Override
     public final void onClose(Runnable action) {
         Objects.requireNonNull(action, "action");
-        streamConfiguration.addCloseAction(action);
+        if (!addClose(action)) {
+            action.run();
+        }
+    }
+
+    private boolean addClose(Runnable action) {
+        // Lock ensures action registration is serialized with
+        // the closed state change in EventStream::close implementations.
+        synchronized (parserState) {
+            if (!parserState.isClosed()) {
+                streamConfiguration.addCloseAction(action);
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

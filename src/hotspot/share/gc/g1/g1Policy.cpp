@@ -585,7 +585,7 @@ void G1Policy::record_full_collection_start() {
   record_pause_start_time();
   // Release the future to-space so that it is available for compaction into.
   collector_state()->set_in_full_gc();
-  _collection_set->abandon_all_candidates();
+  candidates()->clear();
 }
 
 void G1Policy::record_full_collection_end(size_t allocation_word_size) {
@@ -612,7 +612,7 @@ void G1Policy::record_full_collection_end(size_t allocation_word_size) {
 static void log_refinement_stats(const G1ConcurrentRefineStats& stats) {
   log_debug(gc, refine, stats)
            ("Refinement: sweep: %.2fms, yield: %.2fms refined: %zu, dirtied: %zu",
-            TimeHelper::counter_to_millis(stats.sweep_duration()),
+            TimeHelper::counter_to_millis(stats.sweep_work_duration()),
             TimeHelper::counter_to_millis(stats.yield_during_sweep_duration()),
             stats.refined_cards(),
             stats.cards_pending());
@@ -624,7 +624,7 @@ void G1Policy::record_refinement_stats(G1ConcurrentRefineStats* refine_stats) {
   // Record the rate at which cards were refined.
   // Don't update the rate if the current sample is empty or time is zero (which is
   // the case during GC).
-  double refinement_time = TimeHelper::counter_to_millis(refine_stats->sweep_duration());
+  double refinement_time = TimeHelper::counter_to_millis(refine_stats->sweep_work_duration());
   size_t refined_cards = refine_stats->refined_cards();
   if ((refined_cards > 0) && (refinement_time > 0)) {
     double rate = refined_cards / refinement_time;
@@ -720,7 +720,7 @@ void G1Policy::record_concurrent_mark_remark_end() {
 }
 
 G1CollectionSetCandidates* G1Policy::candidates() const {
-  return _collection_set->candidates();
+  return _g1h->collection_set_candidates();
 }
 
 double G1Policy::average_time_ms(G1GCPhaseTimes::GCParPhases phase) const {
@@ -1375,7 +1375,7 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
 }
 
 void G1Policy::abandon_collection_set_candidates() {
-  _collection_set->abandon_all_candidates();
+  candidates()->clear();
 }
 
 void G1Policy::update_gc_pause_time_ratios(Pause gc_type, double start_time_sec, double end_time_sec) {

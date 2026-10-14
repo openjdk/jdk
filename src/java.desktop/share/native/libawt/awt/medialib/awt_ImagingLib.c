@@ -2133,36 +2133,6 @@ allocateArray(JNIEnv *env, BufImageS_t *imageP,
     /* increment width.  Expanding top and left requires bumping      */
     /* around pointers and incrementing the width/height              */
 
-#if 0
-    if (0 && useEdges) {
-        baseWidth  = rasterP->baseRasterWidth;
-        baseHeight = rasterP->baseRasterHeight;
-        baseXoff = rasterP->baseOriginX;
-        baseYoff = rasterP->baseOriginY;
-
-        if (rasterP->minX + rasterP->width < baseXoff + baseWidth) {
-            /* Can use edge */
-            width++;
-        }
-        if (rasterP->minY + rasterP->height < baseYoff + baseHeight) {
-            /* Can use edge */
-            height++;
-        }
-
-        if (rasterP->minX > baseXoff ) {
-            /* Can use edge */
-            width++;
-            /* NEED TO BUMP POINTER BACK A PIXELSTRIDE */
-        }
-        if (rasterP->minY  > baseYoff) {
-            /* Can use edge */
-            height++;
-            /* NEED TO BUMP POINTER BACK A SCANLINE */
-        }
-
-
-    }
-#endif
     if (cvtToDefault) {
         int status = 0;
         *mlibImagePP = (*sMlibSysFns.createFP)(MLIB_BYTE, 4, width, height);
@@ -2317,36 +2287,6 @@ allocateRasterArray(JNIEnv *env, RasterS_t *rasterP,
     /* increment width.  Expanding top and left requires bumping      */
     /* around pointers and incrementing the width/height              */
 
-#if 0
-    if (0 && useEdges) {
-        baseWidth  = rasterP->baseRasterWidth;
-        baseHeight = rasterP->baseRasterHeight;
-        baseXoff = rasterP->baseOriginX;
-        baseYoff = rasterP->baseOriginY;
-
-        if (rasterP->minX + rasterP->width < baseXoff + baseWidth) {
-            /* Can use edge */
-            width++;
-        }
-        if (rasterP->minY + rasterP->height < baseYoff + baseHeight) {
-            /* Can use edge */
-            height++;
-        }
-
-        if (rasterP->minX > baseXoff ) {
-            /* Can use edge */
-            width++;
-            /* NEED TO BUMP POINTER BACK A PIXELSTRIDE */
-        }
-        if (rasterP->minY  > baseYoff) {
-            /* Can use edge */
-            height++;
-            /* NEED TO BUMP POINTER BACK A SCANLINE */
-        }
-
-
-    }
-#endif
     switch (rasterP->type) {
     case sun_awt_image_IntegerComponentRaster_TYPE_INT_8BIT_SAMPLES:
         if (!((rasterP->chanOffsets[0] == 0 || SAFE_TO_ALLOC_2(rasterP->chanOffsets[0], 4)) &&
