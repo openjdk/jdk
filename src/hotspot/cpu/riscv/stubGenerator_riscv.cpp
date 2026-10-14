@@ -7473,8 +7473,11 @@ class StubGenerator: public StubCodeGenerator {
     // construct a NaN in 32 bits from the NaN in 16 bits,
     // we need the payloads of non-canonical NaNs to be preserved.
     __ mv(t1, 0x7f800000);
-    // sign-bit was already set via sign-extension if necessary.
-    __ slli(t0, src, 13);
+    // The upper 16 bits of a short argument are unspecified. Sign-extend the
+    // low 16 bits before shifting so that the float sign bit comes from the
+    // float16 sign bit.
+    __ sext(t0, src, 16);
+    __ slli(t0, t0, 13);
     __ orr(t1, t0, t1);
     __ fmv_w_x(dst, t1);
 

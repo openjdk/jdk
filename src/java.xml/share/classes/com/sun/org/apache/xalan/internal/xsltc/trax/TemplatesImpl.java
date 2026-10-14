@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -58,6 +58,7 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.URIResolver;
 import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.XMLSecurityManager;
 
 
 /**
@@ -65,7 +66,7 @@ import jdk.xml.internal.JdkConstants;
  * @author G. Todd Millerj
  * @author Jochen Cordes <Jochen.Cordes@t-online.de>
  * @author Santiago Pericas-Geertsen
- * @LastModified: Jan 2025
+ * @LastModified: July 2026
  */
 public final class TemplatesImpl implements Templates, Serializable {
     static final long serialVersionUID = 673094361519270707L;
@@ -147,6 +148,7 @@ public final class TemplatesImpl implements Templates, Serializable {
      * protocols allowed for external references set by the stylesheet processing instruction, Import and Include element.
      */
     private transient String _accessExternalStylesheet = JdkConstants.EXTERNAL_ACCESS_DEFAULT;
+    private transient XMLSecurityManager _xsm;
 
     /**
      * @serialField _name String The Name of the main class
@@ -240,6 +242,7 @@ public final class TemplatesImpl implements Templates, Serializable {
         _tfactory = tfactory;
         _overrideDefaultParser = tfactory.overrideDefaultParser();
         _accessExternalStylesheet = (String) tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET);
+        _xsm = (XMLSecurityManager) tfactory.getAttribute(JdkConstants.SECURITY_MANAGER);
     }
     /**
      * Need for de-serialization, see readObject().
@@ -540,6 +543,7 @@ public final class TemplatesImpl implements Templates, Serializable {
             translet.setTemplates(this);
             translet.setOverrideDefaultParser(_overrideDefaultParser);
             translet.setAllowedProtocols(_accessExternalStylesheet);
+            translet.setXMLSecurityManager(_xsm);
             if (_auxClasses != null) {
                 translet.setAuxiliaryClasses(_auxClasses);
             }

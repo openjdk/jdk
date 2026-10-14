@@ -372,7 +372,12 @@ private:
   // Compute the escape state for arguments to a call.
   void process_call_arguments(CallNode *call);
 
-  bool returns_an_argument(CallNode* call);
+  // Whether a call returns one of its arguments, according to BCEA.
+  bool returns_an_argument(const CallNode* call);
+
+  // Whether a call's returned argument cannot be connected due to scalarization
+  // or type mismatches.
+  bool has_incompatible_argument_return(const CallNode* call);
 
   // Add PointsToNode node corresponding to a call
   void add_call_node(CallNode* call);
@@ -628,6 +633,9 @@ private:
   bool reduce_phi_on_safepoints(PhiNode* ophi);
   bool reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, Node* selector, Unique_Node_List& safepoints);
   void reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_worklist);
+#ifdef ASSERT
+  void verify_ram_after_reduce_phi(const Unique_Node_List &reducible_merges, const Unique_Node_List& reduced_merges);
+#endif
 
   void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {
 #ifndef PRODUCT

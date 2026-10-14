@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,33 +154,22 @@ static int loadConfig(JNIEnv *env, char *sl, char *ns) {
     WCHAR *suffix;
     DWORD ret, flags;
     DWORD dwLen;
-    ULONG ulType;
     char result[MAX_STR_LEN];
-    HANDLE hKey;
     SOCKADDR *sockAddr;
     struct sockaddr_in6 *sockAddrIpv6;
 
     /*
      * First see if there is a global suffix list specified.
      */
-    ret = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+    dwLen = sizeof(result);
+    ret = RegGetValueA(HKEY_LOCAL_MACHINE,
                        "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters",
-                       0,
-                       KEY_READ,
-                       (PHKEY)&hKey);
+                       "SearchList", RRF_RT_REG_SZ, NULL, result, &dwLen);
     if (ret == ERROR_SUCCESS) {
-        dwLen = sizeof(result);
-        ret = RegQueryValueEx(hKey, "SearchList", NULL, &ulType,
-                             (LPBYTE)&result, &dwLen);
-        if (ret == ERROR_SUCCESS) {
-            assert(ulType == REG_SZ);
-            if (strlen(result) > 0) {
-                strappend(sl, result);
-            }
+        if (strlen(result) > 0) {
+            strappend(sl, result);
         }
-        RegCloseKey(hKey);
     }
-
 
     // We only need DNS server addresses so skip everything else.
     flags = GAA_FLAG_SKIP_UNICAST;

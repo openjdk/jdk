@@ -52,7 +52,10 @@
     cflags(DumpReplay,              bool, false, DumpReplay) \
     cflags(DumpInline,              bool, false, DumpInline) \
     cflags(CompilerDirectivesIgnoreCompileCommands, bool, CompilerDirectivesIgnoreCompileCommands, Unknown) \
-    cflags(RepeatCompilation,       intx, RepeatCompilation, RepeatCompilation)
+    cflags(RepeatCompilation,       intx, RepeatCompilation, RepeatCompilation) \
+    cflags(DontAOTCompile,          bool, false, DontAOTCompile) \
+    cflags(DontPreload,             bool, false, DontPreload) \
+    cflags(IgnoreAOTCompiled,       bool, false, IgnoreAOTCompiled)
 #define compilerdirectives_common_string_flags(cflags)                           \
   cflags(DisableIntrinsic,        ccstrlist, DisableIntrinsic, DisableIntrinsic) \
   cflags(ControlIntrinsic,        ccstrlist, ControlIntrinsic, ControlIntrinsic)

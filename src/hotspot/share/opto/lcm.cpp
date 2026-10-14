@@ -114,10 +114,7 @@ void PhaseCFG::ensure_node_is_at_block_or_above(Node* n, Block* b) {
 // The val is the pointer being checked for nullness or
 // decodeHeapOop_not_null node if it did not fold into address.
 void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allowed_reasons) {
-  // Assume if null check need for 0 offset then always needed
-  // Intel solaris doesn't support any null checks yet and no
-  // mechanism exists (yet) to set the switches at an os_cpu level
-  if( !ImplicitNullChecks || MacroAssembler::needs_explicit_null_check(0)) return;
+  if (!ImplicitNullChecks) return;
 
   // Make sure the ptr-is-null path appears to be uncommon!
   float f = block->end()->as_MachIf()->_prob;

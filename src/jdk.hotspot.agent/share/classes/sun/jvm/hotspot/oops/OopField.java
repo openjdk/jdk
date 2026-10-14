@@ -49,7 +49,7 @@ public class OopField extends Field {
     }
     var heap = obj.getHeap();
     if (isFlat()) {
-      var layout = ((InstanceKlass)obj.getKlass()).getValueFieldLayoutInfoArray().at(getFieldIndex());
+      var layout = ((InstanceKlass)obj.getKlass()).getValueFieldInfoArray().at(getFieldIndex());
       ValueKlass vk = layout.getKlass();
 
       // OopHandle does not allow to call addOffsetTo() due to prevent interior

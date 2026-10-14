@@ -136,6 +136,10 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
     return true;
   }
 
+  if (!ik->is_linked() && SystemDictionaryShared::has_class_failed_verification(ik)) {
+    return false;
+  }
+
   if (ik->is_hidden()) {
     assert(!ik->defined_by_other_loaders(), "hidden classes are archived only for builtin loaders");
     if (!CDSConfig::is_dumping_method_handles()) {

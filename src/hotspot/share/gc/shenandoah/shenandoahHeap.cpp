@@ -1115,7 +1115,7 @@ public:
 
   void do_object(oop p) {
     shenandoah_assert_marked(nullptr, p);
-    if (!p->is_forwarded()) {
+    if (!ShenandoahForwarding::is_forwarded(p)) {
       _heap->evacuate_object(p, _thread);
     }
   }
@@ -1347,18 +1347,13 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     // the object as "already handled, do not try to evacuate". The CAS
     // may fail if another thread concurrently installed a real forwardee
     // (they succeeded where we failed) or self-forwarded first.
-    markWord old_mark = p->mark();
-    if (old_mark.is_forwarded()) {
-      return ShenandoahForwarding::get_forwardee(p);
-    }
-    oop winner = ShenandoahForwarding::try_forward_to_self(p, old_mark);
-    if (winner == nullptr) {
-      // We own the self-forwarding. Flag the region so the degen/full GC
+    oop fwd = ShenandoahForwarding::try_forward_to(p, p);
+    if (fwd == p) {
+      // Now self-forwarded. Flag the region so the degen/full GC
       // entry drain knows to scan it for self_fwd bits to clear.
       from_region->set_has_self_forwards();
-      return p;
     }
-    return winner;
+    return fwd;
   }
 
   if (ShenandoahEvacTracking) {
@@ -1380,7 +1375,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   }
 
   // Try to install the new forwarding pointer.
-  oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
+  oop result = ShenandoahForwarding::try_forward_to(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
     shenandoah_assert_correct(nullptr, copy_val);
@@ -1418,10 +1413,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
 class ShenandoahUnSelfForwardObjectClosure : public ObjectClosure {
 public:
   void do_object(oop obj) override {
-    markWord m = obj->mark();
-    if (m.is_self_forwarded()) {
-      obj->set_mark(m.unset_self_forwarded());
-    }
+    ShenandoahForwarding::unset_self_forwarded(obj);
   }
 };
 
@@ -1698,6 +1690,12 @@ void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
 }
 
 void ShenandoahHeap::print_tracing_info() const {
+  // Do nothing. The control thread prints out GC statistics once it's finished updating them.
+}
+
+void ShenandoahHeap::print_gc_stats_at_exit() const {
+  assert(Thread::current() == control_thread(), "Only the control thread prints these stats");
+  assert(control_thread()->should_terminate(), "Only during shutdown");
   LogTarget(Info, gc, stats) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
@@ -2159,9 +2157,13 @@ void ShenandoahHeap::propagate_gc_state_to_all_threads() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at Shenandoah safepoint");
   if (_gc_state_changed) {
     // If we are only marking old, we do not need to process young pointers
-    ShenandoahBarrierSet::satb_mark_queue_set().set_filter_out_young(
-      is_concurrent_old_mark_in_progress() && !is_concurrent_young_mark_in_progress()
-    );
+#ifdef ASSERT
+    bool actual = ShenandoahBarrierSet::satb_mark_queue_set().get_filter_out_young();
+    bool expected = is_concurrent_old_mark_in_progress() && !is_concurrent_young_mark_in_progress();
+    assert(actual == expected,
+           "SATB young filter consistency, actual=%s, expected=%s",
+           BOOL_TO_STR(actual), BOOL_TO_STR(expected));
+#endif
     ShenandoahGCStatePropagatorHandshakeClosure propagator(_gc_state.raw_value());
     Threads::threads_do(&propagator);
     _gc_state_changed = false;
@@ -2223,6 +2225,11 @@ bool ShenandoahHeap::is_prepare_for_old_mark_in_progress() const {
 }
 
 void ShenandoahHeap::manage_satb_barrier(bool active) {
+  // If we are only marking old, we do not need to process young pointers
+  ShenandoahBarrierSet::satb_mark_queue_set().set_filter_out_young(
+    is_concurrent_old_mark_in_progress() && !is_concurrent_young_mark_in_progress()
+  );
+
   if (is_concurrent_mark_in_progress()) {
     // Ignore request to deactivate barrier while concurrent mark is in progress.
     // Do not attempt to re-activate the barrier if it is already active.

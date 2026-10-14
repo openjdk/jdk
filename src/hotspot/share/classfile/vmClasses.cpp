@@ -24,11 +24,11 @@
 
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotMappedHeapLoader.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -157,7 +157,7 @@ void vmClasses::resolve_all(TRAPS) {
     }
     if (HeapShared::is_archived_heap_in_use() && !CDSConfig::is_using_full_module_graph()) {
       // Need to remove all the archived java.lang.Module objects from HeapShared::roots().
-      ClassLoaderDataShared::clear_archived_oops();
+      AOTModules::clear_archived_oops();
     }
 #endif // INCLUDE_CDS_JAVA_HEAP
     // Initialize the constant pool for the Object_class

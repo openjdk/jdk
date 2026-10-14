@@ -28,10 +28,11 @@
  *          java.base/jdk.internal.misc
  * @library /test/lib
  * @enablePreview
- * @requires vm.opt.UseFieldFlattening != "false"
- * @requires vm.opt.UseNullableAtomicValueFlattening != "false"
+ * @requires (vm.opt.UseFieldFlattening == null | vm.opt.UseFieldFlattening == "true")
+ * @requires (vm.opt.UseNullableAtomicValueFlattening == null | vm.opt.UseNullableAtomicValueFlattening == "true")
+ * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @requires vm.compMode != "Xcomp"
- * @run main runtime.valhalla.valuetypes.TestFlatteningBudget
+ * @run main ${test.main.class}
  */
 
 package runtime.valhalla.valuetypes;

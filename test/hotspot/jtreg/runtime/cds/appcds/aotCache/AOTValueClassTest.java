@@ -25,19 +25,21 @@
 /*
  * @test
  * @summary Test archived value classes
- * @bug 8389233
+ * @bug 8389233 8392352
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.cds.supports.aot.class.linking
  * @requires vm.debug
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @enablePreview
  * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
  * @build AOTValueClassTest
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar archived_value_class.jar AOTValueClassApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar archived_value_class.jar AOTValueClassApp MyValue
  * @run driver AOTValueClassTest
  * @run driver AOTValueClassTest INIT_TEST_CLASS
  */
 
+import jdk.internal.vm.annotation.NullRestricted;
 import jdk.test.lib.cds.SimpleCDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -71,7 +73,27 @@ public class AOTValueClassTest {
 }
 
 value class AOTValueClassApp {
-    public static void main(String[] args) {
+    @NullRestricted
+    static final MyValue myStaticValue = new MyValue(42);
+    MyValue myInstanceValue;
+
+    AOTValueClassApp() {
+        myInstanceValue = myStaticValue;
+    }
+
+    public static void main(String[] args) throws Exception {
+        AOTValueClassApp app = new AOTValueClassApp();
+        if (AOTValueClassApp.myStaticValue.i != 42) {
+            throw new RuntimeException("Strict static field not correctly restored from AOT cache");
+        }
         System.out.println("Hello value class");
+    }
+}
+
+value class MyValue {
+    int i;
+
+    MyValue(int i) {
+        this.i = i;
     }
 }

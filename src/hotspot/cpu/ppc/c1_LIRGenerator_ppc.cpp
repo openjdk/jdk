@@ -259,14 +259,6 @@ LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
 }
 
 
-void LIRGenerator::increment_counter(address counter, BasicType type, int step) {
-  LIR_Opr pointer = new_pointer_register();
-  __ move(LIR_OprFact::intptrConst(counter), pointer);
-  LIR_Address* addr = new LIR_Address(pointer, type);
-  increment_counter(addr, step);
-}
-
-
 void LIRGenerator::increment_counter(LIR_Address* addr, int step) {
   LIR_Opr temp = new_register(addr->type());
   __ move(addr, temp);
@@ -1140,16 +1132,23 @@ void LIRGenerator::trace_block_entry(BlockBegin* block) {
 
 void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
                                         CodeEmitInfo* info) {
+  __ membar_release();
 #ifdef _LP64
   __ store(value, address, info);
 #else
   Unimplemented();
 //  __ volatile_store_mem_reg(value, address, info);
 #endif
+  if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ membar();
+  }
 }
 
 void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ membar();
+  }
 #ifdef _LP64
   __ load(address, result, info);
 #else

@@ -113,7 +113,7 @@ public class MotifInternalFrameTitlePane
         systemButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                systemMenu.show(systemButton, 0, BUTTON_SIZE);
+                showSystemMenu();
             }
         });
 
@@ -142,6 +142,10 @@ public class MotifInternalFrameTitlePane
         } catch (NumberFormatException e) {
             return -1;
         }
+    }
+
+    private boolean isOptionDialog() {
+        return "optionDialog".equals(frame.getClientProperty("JInternalFrame.frameType"));
     }
 
     @Override
@@ -245,7 +249,9 @@ public class MotifInternalFrameTitlePane
 
     @Override
     protected void showSystemMenu(){
-      systemMenu.show(systemButton, 0, BUTTON_SIZE);
+        if (!isOptionDialog()) {
+            systemMenu.show(systemButton, 0, BUTTON_SIZE);
+        }
     }
 
     protected void hideSystemMenu(){

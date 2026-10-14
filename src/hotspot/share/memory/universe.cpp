@@ -23,12 +23,12 @@
  */
 
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/stringTable.hpp"
@@ -66,7 +66,6 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/objLayout.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/refArrayKlass.hpp"
 #include "oops/typeArrayKlass.hpp"
@@ -940,7 +939,7 @@ jint universe_init() {
 #if INCLUDE_CDS
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_using_full_module_graph()) {
-    ClassLoaderDataShared::restore_archived_entries_for_null_class_loader_data();
+    AOTModules::restore_archived_entries_for_null_class_loader_data();
   }
 #endif // INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_archive()) {
@@ -1087,8 +1086,14 @@ Method* Universe::loader_addClass_method()           { return _loader_addClass_c
 Method* Universe::throw_illegal_access_error()       { return _throw_illegal_access_error_cache.get_method(); }
 Method* Universe::throw_no_such_method_error()       { return _throw_no_such_method_error_cache.get_method(); }
 Method* Universe::do_stack_walk_method()             { return _do_stack_walk_cache.get_method(); }
-Method* Universe::is_substitutable_method()          { return _is_substitutable_cache.get_method(); }
-Method* Universe::value_object_hash_code_method()    { return _value_object_hash_code_cache.get_method(); }
+Method* Universe::is_substitutable_method()          {
+  assert(vmClasses::ValueObjectMethods_klass()->is_initialized(), "value object comparison occurring too early");
+  return _is_substitutable_cache.get_method();
+}
+Method* Universe::value_object_hash_code_method()    {
+  assert(vmClasses::ValueObjectMethods_klass()->is_initialized(), "value object hashcode occurring too early");
+  return _value_object_hash_code_cache.get_method();
+}
 
 void Universe::initialize_known_methods(JavaThread* current) {
   // Set up static method for registering finalizers
@@ -1354,8 +1359,8 @@ static void log_cpu_time() {
     return;
   }
 
-  const double process_cpu_time = os::elapsed_process_cpu_time();
-  if (process_cpu_time == 0 || process_cpu_time == -1) {
+  double process_cpu_time;
+  if (!os::elapsed_process_cpu_time(process_cpu_time) || process_cpu_time == 0) {
     // 0 can happen e.g. for short running processes with
     // low CPU utilization
     return;

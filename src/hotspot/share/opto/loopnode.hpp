@@ -27,6 +27,7 @@
 
 #include "opto/cfgnode.hpp"
 #include "opto/multnode.hpp"
+#include "opto/node.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/predicates.hpp"
 #include "opto/subnode.hpp"
@@ -756,6 +757,9 @@ public:
 
   uint estimate_peeling(PhaseIdealLoop *phase);
 
+  bool can_elide_store_if_peeled(StoreNode* store);
+  bool can_elide_store_after_peeling(StoreNode* store, StoreNode* dominating_store);
+
   // Return TRUE or FALSE if the loop should be maximally unrolled. Stash any
   // known trip count in the counted loop node.
   bool policy_maximally_unroll(PhaseIdealLoop *phase) const;
@@ -871,6 +875,8 @@ public:
   bool empty_loop_candidate(PhaseIdealLoop* phase) const;
 
   bool empty_loop_with_extra_nodes_candidate(PhaseIdealLoop* phase) const;
+
+  bool can_elide_store_after_peeling_impl(StoreNode* store, StoreNode* dominating_store);
 };
 
 // -----------------------------PhaseIdealLoop---------------------------------
@@ -1281,6 +1287,9 @@ private:
     return n;
   }
 
+  void elide_redundant_tests_after_peeling(IdealLoopTree* loop, const Node_List& old_new);
+  void elide_redundant_stores_after_peeling(IdealLoopTree* loop, const Node_List& old_new);
+
 public:
   Node* idom(Node* n) const {
     return idom(n->_idx);
@@ -1526,10 +1535,7 @@ public:
                         IdealLoopTree* outer_loop, int dd, Node_List &old_new,
                         Node_List& extra_data_nodes);
 
-  // If we got the effect of peeling, either by actually peeling or by
-  // making a pre-loop which must execute at least once, we can remove
-  // all loop-invariant dominated tests in the main body.
-  void peeled_dom_test_elim( IdealLoopTree *loop, Node_List &old_new );
+  void elide_redundancies_after_peeling(IdealLoopTree* loop, const Node_List& old_new);
 
   // Generate code to do a loop peel for the given loop (and body).
   // old_new is a temp array.
@@ -1792,6 +1798,9 @@ public:
 
   // Split Node 'n' through merge point
   RegionNode* split_thru_region(Node* n, RegionNode* region);
+
+  static ProjNode* unique_scmem_proj_if_any(Node* n);
+
   // Split Node 'n' through merge point if there is enough win.
   Node *split_thru_phi( Node *n, Node *region, int policy );
   // Found an If getting its condition-code input from a Phi in the

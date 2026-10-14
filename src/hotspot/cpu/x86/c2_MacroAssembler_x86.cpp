@@ -588,7 +588,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, 
   // C2 uses the value of ZF to determine the continuation.
 }
 
-static void abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi) {
+void C2_MacroAssembler::abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi) {
   fatal("Invalid CastII, idx: %u, val: %d, lo: %d, hi: %d", idx, val, lo, hi);
 }
 
@@ -651,7 +651,7 @@ void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register
   BLOCK_COMMENT("} // CastII");
 }
 
-static void abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi) {
+void C2_MacroAssembler::abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi) {
   fatal("Invalid CastLL, idx: %u, val: " JLONG_FORMAT ", lo: " JLONG_FORMAT ", hi: " JLONG_FORMAT, idx, val, lo, hi);
 }
 
@@ -1447,7 +1447,7 @@ void C2_MacroAssembler::vgather8b_masked(BasicType elem_bt, XMMRegister dst,
       incq(mask_idx);
     }
   } else {
-    assert(elem_bt == T_BYTE, "");
+    assert(elem_bt == T_BYTE, "only handles short and byte");
     for (int i = 0; i < 8; i++) {
       // dst[i] = mask[i] ? src[idx_base[i]] : 0
       Label skip_load;
@@ -1472,7 +1472,7 @@ void C2_MacroAssembler::vgather8b(BasicType elem_bt, XMMRegister dst,
       pinsrw(dst, Address(base, rtmp, Address::times_2), i);
     }
   } else {
-    assert(elem_bt == T_BYTE, "");
+    assert(elem_bt == T_BYTE, "only handles short and byte");
     for (int i = 0; i < 8; i++) {
       // dst[i] = src[idx_base[i]]
       movl(rtmp, Address(idx_base, i * 4));
@@ -1509,7 +1509,7 @@ void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,
                                         Register rtmp, Register mask_idx,
                                         Register length, int vector_len, int vlen_enc) {
   Label GATHER8_LOOP;
-  assert(is_subword_type(elem_ty), "");
+  assert(is_signed_subword_type(elem_ty), "only handles short and byte");
   movl(length, vector_len);
   vpxor(xtmp1, xtmp1, xtmp1, vlen_enc); // xtmp1 = {0, ...}
   vpxor(dst, dst, dst, vlen_enc); // dst = {0, ...}
@@ -2513,7 +2513,7 @@ void C2_MacroAssembler::get_elem(BasicType typ, Register dst, XMMRegister src, i
   int esize =  type2aelembytes(typ);
   int elem_per_lane = 16/esize;
   int eindex = elemindex % elem_per_lane;
-  assert(is_integral_type(typ),"required");
+  assert(is_signed_subword_type(typ) || is_non_subword_integral_type(typ), "only handles signed integral types");
 
   if (eindex == 0) {
     if (typ == T_LONG) {
@@ -3572,9 +3572,9 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   // release bound
 
   // vresult *= IntVector.fromArray(I256, power_of_31_backwards, 1);
+  lea(tmp2, ExternalAddress(StubRoutines::x86::arrays_hashcode_powers_of_31() + (0 * sizeof(jint))));
   for (int idx = 0; idx < 4; idx++) {
-    lea(tmp2, ExternalAddress(StubRoutines::x86::arrays_hashcode_powers_of_31() + ((8 * idx + 1) * sizeof(jint))));
-    arrays_hashcode_elvload(vcoef[idx], Address(tmp2, 0), T_INT);
+    arrays_hashcode_elvload(vcoef[idx], Address(tmp2, (int)((8 * idx + 1) * sizeof(jint))), T_INT);
     vpmulld(vresult[idx], vresult[idx], vcoef[idx], Assembler::AVX_256bit);
   }
   // result += vresult.reduceLanes(ADD);

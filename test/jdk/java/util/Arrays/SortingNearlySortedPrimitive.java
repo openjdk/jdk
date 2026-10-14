@@ -29,8 +29,7 @@
  *          code that detects patterns in the array to determine if it is nearly
  *          sorted and if so employs and optimizes merge sort rather than a
  *          Dual-Pivot QuickSort.
- *
- * @run junit SortingNearlySortedPrimitive
+ * @run junit/othervm -Xmx64m SortingNearlySortedPrimitive
  */
 
 

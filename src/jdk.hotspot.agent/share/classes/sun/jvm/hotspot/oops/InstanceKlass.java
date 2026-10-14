@@ -106,7 +106,7 @@ public class InstanceKlass extends Klass {
     }
     headerSize           = type.getSize();
     accessFlags  = new CIntField(type.getCIntegerField("_access_flags"), 0);
-    valueFieldLayoutInfoArray = type.getAddressField("_value_field_layout_info_array");
+    valueFieldInfoArray = type.getAddressField("_value_field_info_array");
     adrValueKlassMembers = type.getAddressField("_adr_value_klass_members");
 
     // read internal field flags constants
@@ -175,7 +175,7 @@ public class InstanceKlass extends Klass {
   private static CIntField nestHostIndex;
   private static CIntField accessFlags;
   private static AddressField breakpoints;
-  private static AddressField valueFieldLayoutInfoArray;
+  private static AddressField valueFieldInfoArray;
   private static AddressField adrValueKlassMembers;
 
   // type safe enum for ClassState from instanceKlass.hpp
@@ -899,9 +899,9 @@ public class InstanceKlass extends Klass {
     return getAddress().getAddressAt(adrValueKlassMembers.getOffset());
   }
 
-  public ValueFieldLayoutInfoArray getValueFieldLayoutInfoArray() {
-    Address addr = valueFieldLayoutInfoArray.getValue(getAddress());
-    return VMObjectFactory.newObject(ValueFieldLayoutInfoArray.class, addr);
+  public ValueFieldInfoArray getValueFieldInfoArray() {
+    Address addr = valueFieldInfoArray.getValue(getAddress());
+    return VMObjectFactory.newObject(ValueFieldInfoArray.class, addr);
   }
 
   //----------------------------------------------------------------------

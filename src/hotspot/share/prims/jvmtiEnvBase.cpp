@@ -415,7 +415,7 @@ JvmtiEnvBase::set_native_method_prefixes(jint prefix_count, char** prefixes) {
     for (int i = 0; i < prefix_count; i++) {
       char* prefix = prefixes[i];
       if (prefix == nullptr) {
-        for (int j = 0; j < (i-1); j++) {
+        for (int j = 0; j < i; j++) {
           os::free(new_prefixes[j]);
         }
         os::free(new_prefixes);
@@ -423,7 +423,7 @@ JvmtiEnvBase::set_native_method_prefixes(jint prefix_count, char** prefixes) {
       }
       prefix = os::strdup(prefixes[i], mtServiceability);
       if (prefix == nullptr) {
-        for (int j = 0; j < (i-1); j++) {
+        for (int j = 0; j < i; j++) {
           os::free(new_prefixes[j]);
         }
         os::free(new_prefixes);

@@ -43,16 +43,16 @@ class G1HeapRegionRange : public StackObj {
   uint num_regions() const { return _end - _start; }
 };
 
-// The G1CommittedRegionMap keeps track of which regions are currently committed.
-// It tracks both regions ready for use and if there are any regions ready for
-// uncommit. We basically have three states. Uncommitted, Active, Inactive. All
-// regions that are either Active or Inactive are committed.
+// The G1CommittedRegionMap keeps track of the state of regions, one of
+// Active, PendingUncommit and Uncommitted.
+// Committed regions can be either ready for use (active) or ready for
+// uncommit (PendingUncommit).
 //
 // State transitions:
-//   Uncommitted -> Active      (activate())
-//   Active      -> Inactive    (deactivate())
-//   Inactive    -> Active      (reactivate())
-//   Inactive    -> Uncommitted (uncommit())
+//   Uncommitted     -> Active             (activate())
+//   Active          -> PendingUncommit    (deactivate())
+//   PendingUncommit -> Active             (reactivate())
+//   PendingUncommit -> Uncommitted        (uncommit())
 //
 class G1CommittedRegionMap : public CHeapObj<mtGC> {
   // Each bit in this bitmap indicates that the corresponding region is active
@@ -60,14 +60,14 @@ class G1CommittedRegionMap : public CHeapObj<mtGC> {
   CHeapBitMap _active;
   // Each bit in this bitmap indicates that the corresponding region is no longer
   // active and it can be uncommitted.
-  CHeapBitMap _inactive;
+  CHeapBitMap _pending_uncommit;
   // The union of these two bitmaps are the regions that are currently committed.
 
   // The number of regions active and available for use.
   uint _num_active_regions;
 
   // The number of regions ready to be uncommitted.
-  uint _num_inactive_regions;
+  uint _num_pending_uncommit_regions;
 
   uint max_num_regions() const;
 
@@ -76,49 +76,49 @@ class G1CommittedRegionMap : public CHeapObj<mtGC> {
   // details.
   void active_set_range(uint start, uint end);
   void active_clear_range(uint start, uint end);
-  void inactive_set_range(uint start, uint end);
-  void inactive_clear_range(uint start, uint end);
+  void set_range_to_pending_uncommit(uint start, uint end);
+  void clear_pending_uncommit_range(uint start, uint end);
 
 public:
   G1CommittedRegionMap();
   void initialize(uint num_regions);
 
   uint num_active_regions() const;
-  uint num_inactive_regions() const;
+  uint num_pending_uncommit_regions() const;
 
   // Check if a region is marked active.
   inline bool is_active(uint index) const;
-  // Check if a region is marked inactive.
-  inline bool is_inactive(uint index) const;
+  // Check if a region is marked pending uncommit.
+  inline bool is_pending_uncommit(uint index) const;
 
   // Mark a range of regions as active.
   void activate(uint start, uint end);
-  // Mark a range of regions as inactive and ready to be uncommitted.
+  // Mark a range of regions as pending uncommit.
   void deactivate(uint start, uint end);
-  // Mark a range of regions active again and no longer ready for uncommit.
+  // Mark a range of regions active again and no longer pending for uncommit.
   void reactivate(uint start, uint end);
-  // Uncommit a range of inactive regions.
+  // Uncommit a range of PendingUncommit regions.
   void uncommit(uint start, uint end);
 
   // Finds the next range of active regions starting at offset.
   G1HeapRegionRange next_active_range(uint offset) const;
-  // Finds the next range of inactive regions starting at offset.
-  G1HeapRegionRange next_inactive_range(uint offset) const;
+  // Finds the next range of PendingUncommit regions starting at offset.
+  G1HeapRegionRange next_pending_uncommit_range(uint offset) const;
   // Finds the next range of committable regions starting at offset.
-  // This function must only be called when no inactive regions are
+  // This function must only be called when no PendingUncommit regions are
   // present and can be used to activate more regions.
   G1HeapRegionRange next_committable_range(uint offset) const;
 
 protected:
   virtual void guarantee_mt_safety_active() const;
-  virtual void guarantee_mt_safety_inactive() const;
+  virtual void guarantee_mt_safety_pending_uncommit() const;
 
   void verify_active_range(uint start, uint end) const NOT_DEBUG_RETURN;
   void verify_free_range(uint start, uint end) const NOT_DEBUG_RETURN;
-  void verify_inactive_range(uint start, uint end) const NOT_DEBUG_RETURN;
-  void verify_no_inactive_regons() const NOT_DEBUG_RETURN;
+  void verify_pending_uncommit_range(uint start, uint end) const NOT_DEBUG_RETURN;
+  void verify_no_pending_uncommit_regions() const NOT_DEBUG_RETURN;
   void verify_num_active_regions(uint start, uint end, uint expected) const NOT_DEBUG_RETURN;
-  void verify_num_inactive_regions(uint start, uint end, uint expected) const NOT_DEBUG_RETURN;
+  void verify_num_pending_uncommit_regions(uint start, uint end, uint expected) const NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_GC_G1_G1COMMITTEDREGIONMAP_HPP

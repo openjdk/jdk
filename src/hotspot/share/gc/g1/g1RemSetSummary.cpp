@@ -23,6 +23,7 @@
  */
 
 #include "gc/g1/g1BarrierSet.hpp"
+#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
@@ -314,9 +315,9 @@ public:
   void do_card_set_groups() {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    accumulate_stats_for_group(g1h->young_regions_card_set_group(), &_young);
+    accumulate_stats_for_group(g1h->collection_set()->young_regions_card_set_group(), &_young);
 
-    G1CollectionSetCandidates* candidates = g1h->policy()->candidates();
+    G1CollectionSetCandidates* candidates = g1h->collection_set_candidates();
     for (G1CardSetGroup* group : candidates->from_marking_groups()) {
       accumulate_stats_for_group(group, &_old);
     }

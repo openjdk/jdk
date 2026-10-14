@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Sanity test for -XX:+AOTCompatibleOopCompression
- * @requires vm.cds.supports.aot.class.linking
+ * @requires vm.cds.supports.aot.code.caching
  * @requires vm.bits == 64 & vm.opt.final.UseCompressedOops == true
  * @library /test/lib
  * @build AOTCompatibleOopCompression

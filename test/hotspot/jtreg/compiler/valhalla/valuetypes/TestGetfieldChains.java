@@ -39,7 +39,6 @@ import jdk.test.lib.Asserts;
  * @key randomness
  * @summary Verify that chains of getfields on flat fields are correctly optimized.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -95,8 +94,7 @@ public class TestGetfieldChains {
                 new Scenario(1,
                         // C2 only. (Make sure the tests are correctly written)
                         "-XX:TieredStopAtLevel=4",
-                        "-XX:-TieredCompilation",
-                        "-XX:-OmitStackTraceInFastThrow"),
+                        "-XX:-TieredCompilation"),
                 new Scenario(2,
                         // interpreter only
                         "-Xint"),
@@ -109,13 +107,12 @@ public class TestGetfieldChains {
                         // Xcomp Only C2
                         "-XX:TieredStopAtLevel=4",
                         "-XX:-TieredCompilation",
-                        "-XX:-OmitStackTraceInFastThrow",
                         "-Xcomp")
         };
 
         ValueTypes.getFramework()
                    .addScenarios(scenarios)
-                   .addFlags("--enable-preview",
+                   .addFlags("--enable-preview", "-XX:-OmitStackTraceInFastThrow",
                              "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED",
                              "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED")
                    .start();

@@ -22,8 +22,8 @@
 *
 */
 
-#ifndef SHARE_JFR_SUPPORT_METHODTRACER_JFRFILTERCLASSCLOSURE_HPP
-#define SHARE_JFR_SUPPORT_METHODTRACER_JFRFILTERCLASSCLOSURE_HPP
+#ifndef SHARE_JFR_SUPPORT_METHODTRACER_JFRCLASSFILTERCLOSURE_HPP
+#define SHARE_JFR_SUPPORT_METHODTRACER_JFRCLASSFILTERCLOSURE_HPP
 
 #include "jfr/support/methodtracer/jfrInstrumentedClass.hpp"
 #include "jfr/utilities/jfrRelation.hpp"
@@ -86,4 +86,4 @@ class JfrFilterClassClosure : public KlassClosure {
   bool do_entry(const traceid& id, const InstanceKlass*& ik);
 };
 
-#endif // SHARE_JFR_SUPPORT_METHODTRACER_JFRFILTERCLASSCLOSURE_HPP
+#endif // SHARE_JFR_SUPPORT_METHODTRACER_JFRCLASSFILTERCLOSURE_HPP

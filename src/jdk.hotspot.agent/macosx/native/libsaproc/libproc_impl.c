@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,10 +95,18 @@ void print_debug(const char* format,...) {
   }
 }
 
+void print_warning(const char* format,...) {
+  va_list alist;
+  va_start(alist, format);
+  fputs("libsaproc WARNING: ", stdout);
+  vfprintf(stdout, format, alist);
+  va_end(alist);
+}
+
 void print_error(const char* format,...) {
   va_list alist;
   va_start(alist, format);
-  fputs("ERROR: ", stderr);
+  fputs("libsaproc ERROR: ", stderr);
   vfprintf(stderr, format, alist);
   va_end(alist);
 }

@@ -119,7 +119,7 @@
 # was the first nationwide legal time standard, and apparently
 # time was just called "Standard Time" or "Daylight Saving Time".
 
-# From Paul Eggert (2019-06-04):
+# From Paul Eggert (2019-06-04) and Tim Parenti (2026-07-21):
 # Here is the legal basis for the US federal rules.
 # * Public Law 65-106 (1918-03-19) implemented standard and daylight saving
 #   time for the first time across the US, springing forward on March's last
@@ -134,10 +134,15 @@
 # * Public Law 89-387 (1966-04-13) reinstituted a national standard for DST,
 #   from April's last Sunday to October's last Sunday, effective 1967.
 #   https://www.govinfo.gov/content/pkg/STATUTE-80/pdf/STATUTE-80-Pg107.pdf
-# * Public Law 93-182 (1973-12-15) moved the 1974 spring-forward to 01-06.
+# * Public Law 93-182 (1973-12-15) applied DST year-round as an emergency
+#   measure.  It took effect on the fourth Sunday after its enactment,
+#   effectively moving the 1974 spring-forward to 01-06.
 #   https://www.govinfo.gov/content/pkg/STATUTE-87/pdf/STATUTE-87-Pg707.pdf
-# * Public Law 93-434 (1974-10-05) moved the 1975 spring-forward to
-#   February's last Sunday.
+#   It was meant to last for 16 months or two winters (through 1975-04-27);
+#   however...
+# * Public Law 93-434 (1974-10-05) created an exemption for much of the second
+#   winter, restoring standard time from the usual date of 1974-10-27 while
+#   moving the 1975 spring-forward up to February's last Sunday.
 #   https://www.govinfo.gov/content/pkg/STATUTE-88/pdf/STATUTE-88-Pg1209.pdf
 # * Public Law 99-359 (1986-07-08) moved the spring-forward to April's first
 #   Sunday.
@@ -598,8 +603,12 @@ Zone America/Los_Angeles -7:52:58 -	LMT	1883 Nov 18 20:00u
 # Russian time, and it is more accurate to model this than to ignore it.
 # The database format requires an exact transition time; use the Russian
 # salute as a somewhat-arbitrary time for the formal transfer of control for
-# all of Alaska.  Sitka's UTC offset is -9:01:13; adjust its 15:30 to the
-# local times of other Alaskan locations so that they change simultaneously.
+# all of Alaska.
+#
+# From Tim Parenti (2026-08-26):
+# Sitka's UT offset changed from +14:58:47 to -9:01:13, so effectuate this
+# change at 15:30:00 +14:58:47, or 1867-10-19 00:31:13 UT in the Alaskan
+# locations below.
 
 # From Paul Eggert (2014-07-18):
 # One opinion of the early 1980s turmoil in Alaska over time zones and
@@ -679,7 +688,7 @@ Zone America/Los_Angeles -7:52:58 -	LMT	1883 Nov 18 20:00u
 # and are west of 169.5° W.
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Juneau	 15:02:19 -	LMT	1867 Oct 19 15:33:32
+Zone America/Juneau	 15:02:19 -	LMT	1867 Oct 19  0:31:13u
 			 -8:57:41 -	LMT	1900 Aug 20 12:00
 			 -8:00	-	PST	1942
 			 -8:00	US	P%sT	1946
@@ -689,7 +698,7 @@ Zone America/Juneau	 15:02:19 -	LMT	1867 Oct 19 15:33:32
 			 -8:00	US	P%sT	1983 Oct 30  2:00
 			 -9:00	US	Y%sT	1983 Nov 30
 			 -9:00	US	AK%sT
-Zone America/Sitka	 14:58:47 -	LMT	1867 Oct 19 15:30
+Zone America/Sitka	 14:58:47 -	LMT	1867 Oct 19  0:31:13u
 			 -9:01:13 -	LMT	1900 Aug 20 12:00
 			 -8:00	-	PST	1942
 			 -8:00	US	P%sT	1946
@@ -697,7 +706,7 @@ Zone America/Sitka	 14:58:47 -	LMT	1867 Oct 19 15:30
 			 -8:00	US	P%sT	1983 Oct 30  2:00
 			 -9:00	US	Y%sT	1983 Nov 30
 			 -9:00	US	AK%sT
-Zone America/Metlakatla	 15:13:42 -	LMT	1867 Oct 19 15:44:55
+Zone America/Metlakatla	 15:13:42 -	LMT	1867 Oct 19  0:31:13u
 			 -8:46:18 -	LMT	1900 Aug 20 12:00
 			 -8:00	-	PST	1942
 			 -8:00	US	P%sT	1946
@@ -707,14 +716,14 @@ Zone America/Metlakatla	 15:13:42 -	LMT	1867 Oct 19 15:44:55
 			 -9:00	US	AK%sT	2018 Nov  4  2:00
 			 -8:00	-	PST	2019 Jan 20  2:00
 			 -9:00	US	AK%sT
-Zone America/Yakutat	 14:41:05 -	LMT	1867 Oct 19 15:12:18
+Zone America/Yakutat	 14:41:05 -	LMT	1867 Oct 19  0:31:13u
 			 -9:18:55 -	LMT	1900 Aug 20 12:00
 			 -9:00	-	YST	1942
 			 -9:00	US	Y%sT	1946
 			 -9:00	-	YST	1969
 			 -9:00	US	Y%sT	1983 Nov 30
 			 -9:00	US	AK%sT
-Zone America/Anchorage	 14:00:24 -	LMT	1867 Oct 19 14:31:37
+Zone America/Anchorage	 14:00:24 -	LMT	1867 Oct 19  0:31:13u
 			 -9:59:36 -	LMT	1900 Aug 20 12:00
 			-10:00	-	AST	1942
 			-10:00	US	A%sT	1967 Apr
@@ -722,7 +731,7 @@ Zone America/Anchorage	 14:00:24 -	LMT	1867 Oct 19 14:31:37
 			-10:00	US	AH%sT	1983 Oct 30  2:00
 			 -9:00	US	Y%sT	1983 Nov 30
 			 -9:00	US	AK%sT
-Zone America/Nome	 12:58:22 -	LMT	1867 Oct 19 13:29:35
+Zone America/Nome	 12:58:22 -	LMT	1867 Oct 19  0:31:13u
 			-11:01:38 -	LMT	1900 Aug 20 12:00
 			-11:00	-	NST	1942
 			-11:00	US	N%sT	1946
@@ -731,7 +740,7 @@ Zone America/Nome	 12:58:22 -	LMT	1867 Oct 19 13:29:35
 			-11:00	US	B%sT	1983 Oct 30  2:00
 			 -9:00	US	Y%sT	1983 Nov 30
 			 -9:00	US	AK%sT
-Zone America/Adak	 12:13:22 -	LMT	1867 Oct 19 12:44:35
+Zone America/Adak	 12:13:22 -	LMT	1867 Oct 19  0:31:13u
 			-11:46:38 -	LMT	1900 Aug 20 12:00
 			-11:00	-	NST	1942
 			-11:00	US	N%sT	1946
@@ -1760,7 +1769,36 @@ Zone America/Toronto	-5:17:32 -	LMT	1895
 			-5:00	Canada	E%sT	1946
 			-5:00	Toronto	E%sT	1974
 			-5:00	Canada	E%sT
-# For Atikokan see America/Panama.
+# From Tim Parenti (2026-09-21), per Paul Eggert (2000-10-02, 2006-07-17):
+# In the northwest of the province, most portions of Kenora, Rainy River, and
+# Thunder Bay Districts lying broadly west of 90°W longitude have historically
+# been aligned with neighboring Manitoba and use America/Winnipeg, in
+# accordance with section 2(2) of Ontario's Time Act, RSO 1990 chapter T.9:
+# https://www.ontario.ca/laws/statute/90t09
+# With Manitoba now opting to stay on -05 year-round, if any of these areas do
+# not follow, it would require a new zone; however, given the short leadtime
+# ahead of a potential divergence on 2026-11-01 and in the interest of not
+# creating zones that may not be needed, assume for the time being that they
+# will.
+#
+# In practice, there are several exceptions to the 90°W dividing line set by
+# the province, all of which technically contravene the official Ontario rules:
+#   - An area around Big Trout Lake in Kenora District observes Central Time
+#     (-06/-05) despite extending east of 90°W.
+#   - An area around Upsala in the southwest of Thunder Bay District observes
+#     Eastern Time (-05/-04) like America/Toronto despite extending west of
+#     90°W.
+#   - Atikokan in the east of Rainy River District has observed year-round -05
+#     (EST) since at least 1952; this matches America/Panama since our 1970
+#     cutoff.
+#   - Pickle Lake and the Mishkeegogamang First Nation (formerly New Osnaburgh)
+#     in Kenora District have also observed year-round -05 (EST) since at least
+#     1998, though it is less clear how far back that arrangement goes; assume
+#     the area is covered in the same way as Atikokan.
+# See the 'backzone' file for further commentary.
+# At time of writing, it is not yet known to what extent Manitoba's 2026-09-17
+# announcement may spur further adaptations in northwestern Ontario; see
+# Manitoba, below.
 
 
 # Manitoba
@@ -1795,6 +1833,40 @@ Zone America/Toronto	-5:17:32 -	LMT	1895
 # the 1987 version would apply - the changeover was at 2:00 Central
 # Standard Time (i.e. not until 3:00 Central Daylight Time).
 
+# From Tim Parenti (2026-09-29):
+# As much of western Canada began announcing year-round DST in early 2026,
+# Manitoba Premier Wab Kinew publicly mused on forming a "Prairie time zone" by
+# joining Saskatchewan and Alberta on year-round -06, while committing to
+# conducting a public engagement survey on the matter.  The results, however,
+# showed that while "[a] total of 92 per cent of Manitobans surveyed wanted to
+# see an end to seasonal time changes", "[a] majority of Manitobans (58 per
+# cent) preferred to stay on permanent DST, while 34 per cent voted to
+# eliminate the time change but stay on standard time."
+#
+# The survey results were published on Thursday 2026-09-17 alongside a policy
+# announcement adopting permanent DST, or year-round -05, just over 6 weeks
+# before clocks would otherwise fall back on 2026-11-01.
+# https://news.gov.mb.ca/news/?item=75397
+# https://www.cbc.ca/news/canada/manitoba/daylight-time-manitoba-9.7347844
+#
+# While other potential options would have required further legislation, the
+# Official Time Amendment Act (Bill 2 of the 42nd Legislature's 5th Session),
+# assented to 2023-05-30, provides for year-round -05 upon proclamation.
+# https://web2.gov.mb.ca/laws/statutes/2023/pdf/c00423.pdf
+# Order in Council 221/2026, issued 2026-09-23, directed the proclamation
+# bringing the Act into force on 2026-10-31, 26 hours before clocks would
+# otherwise fall back.
+# https://oic.gov.mb.ca/OICDocs/2026/09/Municipal%20and%20Northern%20Relations.260923.%20Official%20Time%20Amendment%20Act.2212026.pdf
+# https://web2.gov.mb.ca/laws/statutes/proclamations/2023c4(2026-10-31).pdf
+#
+# The Act further allows for the Lieutenant Governor in Council to, on
+# recommendation of the relevant minister, "make regulations varying the
+# reckoning" of official time in Manitoba, provided the minister has "due
+# regard for the applicable time zone in neighbouring jurisdictions."
+#
+# Use a temporary hack like Alberta’s to work around potential CLDR
+# limitations.
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Winn	1916	only	-	Apr	23	0:00	1:00	D
 Rule	Winn	1916	only	-	Sep	17	0:00	0	S
@@ -1823,7 +1895,11 @@ Rule	Winn	1987	2005	-	Apr	Sun>=1	2:00s	1:00	D
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Winnipeg	-6:28:36 -	LMT	1887 Jul 16
 			-6:00	Winn	C%sT	2006
-			-6:00	Canada	C%sT
+			-6:00	Canada	C%sT	2026 Oct 31
+			# Temporary hack; see above.
+			-6:00	Canada	CDT	2026 Nov  1  2:00
+			# End of temporary hack.
+			-5:00	-	EST
 
 
 # Saskatchewan
@@ -1901,6 +1977,12 @@ Zone America/Winnipeg	-6:28:36 -	LMT	1887 Jul 16
 # for those areas to observe either "UTC-5, UTC-6 or UTC-7 for all or part of
 # the year" on at least 30 days' notice.
 # The new Act comes into force by order of the Lieutenant Governor in Council.
+# From Tim Parenti (2026-09-21):
+# With Manitoba now adopting year-round -05, the area around Creighton will
+# likely wish to follow.  As the area doesn't have a special charter like
+# Lloydminster, the existing de facto arrangement technically violates
+# provincial law already, but once the new Act takes effect it will better
+# allow for continued alignment with Manitoba, per the above.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Regina	1918	only	-	Apr	14	2:00	1:00	D
@@ -1960,7 +2042,7 @@ Zone America/Swift_Current -7:11:20 -	LMT	1905 Sep
 # https://docs.assembly.ab.ca/LADDAR_files/docs/bills/bill/legislature_31/session_2/20251023_bill-031.pdf
 # would repeal the Daylight Saving Time Act in the Revised Statutes of Alberta
 # 2000 Chapter D-5:
-# https://kings-printer.alberta.ca/documents/Acts/D05.pdf
+# https://web.archive.org/web/20240128134751/https://kings-printer.alberta.ca/documents/Acts/D05.pdf
 # ...and substitutes a new chapter with language that closely parallels the
 # original.  The new title is the Official Time Act and will be numbered
 # Chapter O-5.7.  The Act establishes a standard time of UTC−6 without
@@ -1990,6 +2072,10 @@ Zone America/Swift_Current -7:11:20 -	LMT	1905 Sep
 # term is reviewed by then for relevancy and need.  This plan for possible
 # obsolescence affects neither timekeeping nor TZDB’s data, which do
 # not contain the string “Alberta Time”.
+#
+# From Tim Parenti (2026-07-21):
+# The new Official Time Act is now in the Revised Statutes as Chapter O-5.7:
+# https://kings-printer.alberta.ca/documents/Acts/O05p7.pdf
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Edm	1918	1919	-	Apr	Sun>=8	2:00	1:00	D
@@ -2010,7 +2096,7 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 			-7:00	Edm	M%sT	1987
 			-7:00	Canada	M%sT	2026 Jun 18
 			# Temporary hack; see above.
-			-7:00	1:00	MDT	2026 Nov  1  2:00
+			-7:00	Canada	MDT	2026 Nov  1  2:00
 			# End of temporary hack.
 			-6:00	-	CST
 
@@ -2055,13 +2141,13 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 # on March 8 will be the last time change, ending twice-yearly clock changes.”
 # https://news.gov.bc.ca/releases/2026AG0013-000209
 #
-# From Paul Eggert (2026-07-02):
+# From Paul Eggert (2026-09-23):
 # The law says that 21 hours after the usual 2026-03-08 02:00 switch from
-# PST to PDT, the next day inaugurates the new standard time Pacific Time,
+# PST to PDT, the next day inaugurated the new standard time Pacific Time,
 # i.e., just one clock change but two name changes separated by 21 hours.
 # PT, the obvious abbreviation for Pacific Time, is one letter too short
 # to conform to TZDB’s (and POSIX’s) [-+[:alnum:]]{3,6} requirements.
-# I asked the BC government for advice, with no response. For now, do this:
+# For now, do this:
 #   1.	As a temporary hack, pretend that the BC law takes effect
 #	not on 2026-03-09 at 00:00, but on 2026-11-01 at 02:00.
 #	This pretense works around a limitation in CLDR 48.1 (2026-01-08),
@@ -2079,28 +2165,52 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 #	and already used in parts of BC and in Yukon
 #   PDT - almost as software-friendly, but confusing because it implies
 #	it is DST and is paired with PST, whereas PT is standard time
-#   PST - straightforward but even more confusing,
-#	and will likely break much software that assumes PST is -08
 #   -07 - accurate and clear in itself, but makes BC look odd vs neighbors
-#   PacT - straightforward but novel abbreviation for Pacific Time
+#   PCT - as I understand it, inspired by the phrase “Pacific Coast Time”
+#	though legally it’s “Pacific Time”; suggested by the BC government
+#	<https://news.gov.bc.ca/releases/2026CITZ0009-001073>
 
-# From Chris Walton (2026-03-15):
-# The Regional District of East Kootenay is planning to move to year-round
-# Mountain Standard Time (MST) on November 1, 2026....
-# https://www.rdek.bc.ca/news/entry/rdek_board_moves_to_transition_to_year_round_mountain_standard_time
-# (2026-03-17):
-# The final decision East Kootenay made a few days ago may turn out not to
-# be final after all. They are going to reopen the debate next month!
+# From Tim Parenti (2026-08-21):
+# In the southeast of the province, the Regional District of East Kootenay
+# (RDEK), Columbia Shuswap Regional District’s Electoral Area A (Rural Golden),
+# and the Town of Golden have all historically been aligned with neighboring
+# Alberta and use America/Edmonton.
+#
+# Shortly after the BC provincial government announced its adoption of
+# year-round -07, the RDEK Board of Directors on 2026-03-13 initially voted
+# narrowly, 8–7, that it would fall back one last time to rejoin the rest of BC
+# on -07 from November 2026.  However, citing the rushed decision and lack of
+# feedback from residents, Mayor Steve Fairbairn of Elkford used his power to
+# ask the question be called a second time, remarking, “Pardon the pun, but
+# this is not a time-sensitive issue,” and the initial decision was rescinded
+# by the RDEK Board at its 2026-04-10 meeting.
 # https://www.cbc.ca/news/canada/british-columbia/what-time-is-it-in-the-east-kootenay-debate-9.7132624
-# From Paul Eggert (2026-03-17):
-# Mayor Steve Fairbairn of Elkford asked the question be called a second time,
-# saying, “Pardon the pun, but this is not a time-sensitive issue.”
-# For now, merely mention the potential change in these comments.
-# If it happens it would likely affect clocks starting 2027-03-14 at 02:00.
-# From Tim Parenti (2026-05-14):
-# RDEK has historically been aligned with neighboring Alberta.  With the latter
-# now opting to stay on -06 year-round, if RDEK does not follow, it would
-# require a new zone for the Cranbrook area.
+# In the ensuing months, after Alberta announced and implemented its similar
+# shift to “permanent DST” (see above), RDEK coordinated a public survey across
+# all of the relevant BC communities.  The survey found 89% of respondents in
+# favor of ending seasonal time changes, with 66% of that group preferring to
+# remain aligned with Alberta time on year-round -06 instead of the rest of BC.
+# In line with those results, the RDEK Board adopted year-round -06 at its
+# 2026-08-14 meeting.
+# https://www.cbc.ca/news/canada/british-columbia/east-kootenay-stops-changing-clocks-9.7308201
+#
+# From Tim Parenti (2026-09-24):
+# Echoing RDEK’s earlier false step, the Town of Golden initially opted for
+# year-round -07 by a 4–2 Council vote on 2026-09-01.  This was met with
+# significant pushback from residents preferring to maintain the existing
+# alignment with RDEK and Alberta, with a formal petition swiftly gathering
+# 2,395 signatures in two weeks from the town of 3,986 and some smaller
+# neighboring communities.  In response, Council unanimously rescinded the
+# resolution at the following meeting on 2026-09-22, and unanimously replaced
+# it with year-round -06 to keep the regional alignment.
+# Acknowledging that “its initial move was driven in part by concerns about
+# dark winter mornings and pedestrian safety for children travelling to
+# school”, the new resolution directs town staff to partner on safety supports
+# and commits to reviewing the decision and its impacts in October 2027.
+# https://www.ctvnews.ca/calgary/article/golden-bc-council-reverses-course-on-time-zone-opts-for-mountain-daylight-time/
+# At time of writing, the surrounding CSRD Area A is yet to formalize its own
+# decision following a 2026-09-10 deferral “to gather and assess further
+# information”, but is expected to follow.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Vanc	1918	only	-	Apr	14	2:00	1:00	D
@@ -2117,7 +2227,7 @@ Zone America/Vancouver	-8:12:28 -	LMT	1884
 			-8:00	Vanc	P%sT	1987
 			-8:00	Canada	P%sT	2026 Mar  9
 			# Temporary hack; see above.
-			-8:00	1:00	PDT	2026 Nov  1  2:00
+			-8:00	Canada	PDT	2026 Nov  1  2:00
 			# End of temporary hack.
 			-7:00	-	MST
 Zone America/Dawson_Creek -8:00:56 -	LMT	1884
@@ -2452,15 +2562,17 @@ Zone America/Fort_Nelson	-8:10:47 -	LMT	1884
 # end seasonal time changes until Alberta does."
 # https://www.cbc.ca/news/canada/north/nwt-ends-daylight-saving-9.7170964
 #
-# From Tim Parenti (2026-06-19), per James Bellaire (2026-06-02):
-# Much of NWT has, to date, been represented by America/Edmonton, which alias
-# America/Yellowknife links to.  While Bill 13 (assented to 2021-03-31) would
-# enable NWT's proposed change mirroring Alberta's, at time of writing it has
-# not yet been formally enacted; if it doesn't move forward as expected,
-# America/Yellowknife would need to become its own zone as Alberta has stopped
-# changing its clocks.
-# If it does go ahead, draft changes to America/Inuvik, which represents the
-# remainder of NWT, are commented below.
+# From Tim Parenti (2026-07-24):
+# Now that Alberta has adopted year-round -06, NWT plans to follow through with
+# the same.  Bill 13 of the 19th Assembly's 2nd Session, assented to
+# 2021-03-31, provides the NWT Commissioner in Executive Council with authority
+# to fix a year-round standard time:
+# https://www.ntlegislativeassembly.ca/sites/default/files/legacy/bill_13_-_reprint_-_interpretation_a.pdf
+#
+# From Paul Eggert (2026-08-21):
+# The regulations were registered 2026-08-18 and came into force today:
+# https://www.justice.gov.nt.ca/en/files/legislation/interpretation/interpretation.r2.pdf
+# Use a temporary hack like Alberta’s.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	NT_YK	1918	only	-	Apr	14	2:00	1:00	D
@@ -2503,11 +2615,11 @@ Zone America/Cambridge_Bay 0	-	-00	1920 # trading post est.?
 Zone America/Inuvik	0	-	-00	1953 # Inuvik founded
 			-8:00	NT_YK	P%sT	1979 Apr lastSun  2:00
 			-7:00	NT_YK	M%sT	1980
-			-7:00	Canada	M%sT
-# Assuming Northwest Territories follows Alberta in abolishing seasonal time
-# changes, replace the above line with something like:
-#			-7:00	Canada	M%sT	2026 Nov  1  2:00
-#			-6:00	-	CST
+			-7:00	Canada	M%sT	2026 Aug 21
+			# Temporary hack; see above.
+			-7:00	Canada	MDT	2026 Nov  1  2:00
+			# End of temporary hack.
+			-6:00	-	CST
 Zone America/Whitehorse	-9:00:12 -	LMT	1900 Aug 20
 			-9:00	NT_YK	Y%sT	1965
 			-9:00	Yukon	Y%sT	1966 Feb 27  0:00

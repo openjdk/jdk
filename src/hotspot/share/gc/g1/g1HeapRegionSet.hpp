@@ -124,8 +124,8 @@ public:
     G1HeapRegionSetBase(name, checker) {
   }
 
-  void bulk_remove(const uint removed) {
-    _num_regions -= removed;
+  void bulk_remove(const uint num_removed_regions) {
+    _num_regions -= num_removed_regions;
   }
 };
 

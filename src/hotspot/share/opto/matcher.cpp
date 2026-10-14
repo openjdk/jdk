@@ -2226,22 +2226,6 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_VectorLoadMask:
       set_shared(n); // Force result into register (it will be anyways)
       break;
-    case Op_ConP: {  // Convert pointers above the centerline to NUL
-      TypeNode *tn = n->as_Type(); // Constants derive from type nodes
-      const TypePtr* tp = tn->type()->is_ptr();
-      if (tp->_ptr == TypePtr::AnyNull) {
-        tn->set_type(TypePtr::NULL_PTR);
-      }
-      break;
-    }
-    case Op_ConN: {  // Convert narrow pointers above the centerline to NUL
-      TypeNode *tn = n->as_Type(); // Constants derive from type nodes
-      const TypePtr* tp = tn->type()->make_ptr();
-      if (tp && tp->_ptr == TypePtr::AnyNull) {
-        tn->set_type(TypeNarrowOop::NULL_PTR);
-      }
-      break;
-    }
     case Op_Binary:         // These are introduced in the Post_Visit state.
       ShouldNotReachHere();
       break;

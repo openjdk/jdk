@@ -413,8 +413,8 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
                int len)
 {
 
-#ifdef MACOSX
-    /* macOS stores linger values as signed shorts in the kernel. */
+#ifdef _ALLBSD_SOURCE
+    /* macOS and BSD stores linger values as signed shorts in the kernel. */
     if (level == SOL_SOCKET && opt == SO_LINGER) {
         struct linger* to_cast = (struct linger*)arg;
         if (to_cast->l_linger > 32767) {

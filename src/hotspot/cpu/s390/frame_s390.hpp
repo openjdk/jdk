@@ -76,7 +76,10 @@
      log_2_of_alignment_in_bits = 6
   } frame_constants;
 
-  // Common ABI. On top of all frames, C and Java
+  // Common ABI. On top of all frames, C and Java.
+  // Note: return_pc is only valid for Java calls.
+  // Calls following the native convention would use
+  // z_abi_160_base::gpr14 to save their return pc.
   struct z_common_abi {
     uint64_t callers_sp;
     uint64_t return_pc;

@@ -2652,20 +2652,6 @@ __mlib_ImageConvMxN(mlib_image *dst,
 
 
 #if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageConvMxN_Fp mlib_ImageConvMxN_Fp
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageConvMxN_Fp(mlib_image *dst,
-                                    const mlib_image *src,
-                                    const mlib_d64 *kernel,
-                                    mlib_s32 m,
-                                    mlib_s32 n,
-                                    mlib_s32 dm,
-                                    mlib_s32 dn,
-                                    mlib_s32 cmask,
-                                    mlib_edge edge);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
 #define __mlib_ImageConvolveMxN mlib_ImageConvolveMxN
 #endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
 mlib_status  __mlib_ImageConvolveMxN(mlib_image *dst,
@@ -2677,21 +2663,6 @@ mlib_status  __mlib_ImageConvolveMxN(mlib_image *dst,
                                      mlib_s32 dn,
                                      mlib_s32 cmask,
                                      mlib_edge edge);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageConvolveMxN_Fp mlib_ImageConvolveMxN_Fp
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageConvolveMxN_Fp(mlib_image *dst,
-                                        const mlib_image *src,
-                                        const mlib_d64 *kernel,
-                                        mlib_s32 m,
-                                        mlib_s32 n,
-                                        mlib_s32 dm,
-                                        mlib_s32 dn,
-                                        mlib_s32 cmask,
-                                        mlib_edge edge);
-
 
 #if defined ( __MEDIALIB_OLD_NAMES )
 #define __mlib_ImageDilate4 mlib_ImageDilate4

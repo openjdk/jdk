@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,11 +50,11 @@ public class Sorting {
 
     // Array lengths used in a long run (default)
     private static final int[] LONG_RUN_LENGTHS = {
-        1, 3, 8, 21, 55, 100, 1_000, 10_000, 100_000 };
+        1, 3, 8, 21, 55, 100, 1_000, 17_000, 100_000 };
 
     // Array lengths used in a short run
     private static final int[] SHORT_RUN_LENGTHS = {
-        1, 8, 55, 100, 10_000 };
+        1, 8, 55, 100, 17_000 };
 
     // Random initial values used in a long run (default)
     private static final TestRandom[] LONG_RUN_RANDOMS = {
@@ -185,14 +185,32 @@ public class Sorting {
     }
 
     private void testStability(int length, TestRandom random) {
-        printTestName("Test stability", random, length);
+        for (int m = 1; m <= 2 * length; m <<= 1) {
+            testStability(length, m, random);
+        }
+    }
 
-        Pair[] a = build(length, random);
+    private void testStability(int length, int m, TestRandom random) {
+        printTestName("Test stability [" + m + "]", random, length);
+
+        Pair[] a = buildRandom(length, m, random);
+        sortingHelper.sort(a);
+        checkSorted(a);
+        checkStable(a);
+        checkStableRandom(a);
+
+        a = buildRandom(length, m, random);
+        sortingHelper.sort(a, pairComparator);
+        checkSorted(a);
+        checkStable(a);
+        checkStableRandom(a);
+
+        a = buildEqual(length, m, random);
         sortingHelper.sort(a);
         checkSorted(a);
         checkStable(a);
 
-        a = build(length, random);
+        a = buildEqual(length, m, random);
         sortingHelper.sort(a, pairComparator);
         checkSorted(a);
         checkStable(a);
@@ -391,38 +409,52 @@ public class Sorting {
         }
     }
 
-    private void checkStable(Pair[] a) {
-        for (int i = 0; i < a.length / 4; ) {
+    private void checkStableRandom(Pair[] a) {
+        for (int i = 0; i < a.length / 3; ) {
             int key1 = a[i].getKey();
             int value1 = a[i++].getValue();
             int key2 = a[i].getKey();
             int value2 = a[i++].getValue();
             int key3 = a[i].getKey();
             int value3 = a[i++].getValue();
-            int key4 = a[i].getKey();
-            int value4 = a[i++].getValue();
 
-            if (!(key1 == key2 && key2 == key3 && key3 == key4)) {
+            if (!(key1 == key2 && key2 == key3)) {
                 fail("Keys are different " + key1 + ", " + key2 + ", " +
-                    key3 + ", " + key4 + " at position " + i);
+                    key3 + " at position " + i);
             }
-            if (!(value1 < value2 && value2 < value3 && value3 < value4)) {
+            if (!(value1 < value2 && value2 < value3)) {
                 fail("Sorting is not stable at position " + i +
                     ". Second values have been changed: " + value1 + ", " +
-                    value2 + ", " + value3 + ", " + value4);
+                    value2 + ", " + value3);
             }
         }
     }
 
-    private Pair[] build(int length, Random random) {
-        Pair[] a = new Pair[length * 4];
+    private void checkStable(Pair[] a) {
+        for (int i = 1; i < a.length; ++i) {
+            if (a[i - 1].getKey() == a[i].getKey() && a[i - 1].getValue() > a[i].getValue()) {
+                fail("Sorting is not stable at position " + i + ": " + a[i - 1] + " and " + a[i]);
+            }
+        }
+    }
 
-        for (int i = 0; i < a.length; ) {
-            int key = random.nextInt();
-            a[i++] = new Pair(key, 1);
-            a[i++] = new Pair(key, 2);
-            a[i++] = new Pair(key, 3);
-            a[i++] = new Pair(key, 4);
+    private Pair[] buildRandom(int length, int m, Random random) {
+        Pair[] a = new Pair[3 * length];
+
+        for (int i = 0, k = 0; i < a.length; ) {
+            int key = random.nextInt(m);
+            a[i++] = new Pair(key, ++k);
+            a[i++] = new Pair(key, ++k);
+            a[i++] = new Pair(key, ++k);
+        }
+        return a;
+    }
+
+    private Pair[] buildEqual(int length, int m, Random random) {
+        Pair[] a = new Pair[length];
+
+        for (int i = 0; i < a.length; ++i) {
+            a[i] = new Pair(random.nextInt(m), i);
         }
         return a;
     }

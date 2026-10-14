@@ -1126,8 +1126,8 @@ void InterpreterMacroAssembler::read_flat_field(Register entry, Register obj) {
 }
 
 void InterpreterMacroAssembler::write_flat_field(Register entry, Register tmp1, Register tmp2,
-                                                 Register obj, Register off, Register value) {
-  assert_different_registers(entry, tmp1, tmp2, obj, off, value);
+                                                 Register obj, Register value) {
+  assert_different_registers(entry, tmp1, tmp2, obj, value);
 
   Label slow_path, done;
 
@@ -1136,19 +1136,7 @@ void InterpreterMacroAssembler::write_flat_field(Register entry, Register tmp1, 
 
   null_check(value); // FIXME JDK-8341120
 
-  lea(obj, Address(obj, off, Address::times_1));
-
-  load_klass(tmp2, value, tmp1);
-  payload_addr(value, value, tmp2);
-
-  Register idx = tmp1;
-  load_unsigned_short(idx, Address(entry, in_bytes(ResolvedFieldEntry::field_index_offset())));
-  movptr(tmp2, Address(entry, in_bytes(ResolvedFieldEntry::field_holder_offset())));
-
-  Register layout_info = off;
-  value_field_layout_info(tmp2, idx, layout_info);
-
-  flat_field_copy(IN_HEAP, value, obj, layout_info);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::write_null_free_flat_field), obj, value, entry);
   jmp(done);
 
   bind(slow_path);
