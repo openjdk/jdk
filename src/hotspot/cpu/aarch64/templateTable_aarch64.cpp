@@ -3421,7 +3421,7 @@ void TemplateTable::fast_accessfield(TosState state)
         __ read_flat_field(r2, r0);
         __ verify_oop(r0);
       } else {
-        __ stop("ShouldNotReachHere");
+        __ should_not_reach_here();
       }
     }
     break;

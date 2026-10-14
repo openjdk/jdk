@@ -3254,7 +3254,7 @@ void TemplateTable::fast_storefield_helper(Address field, Register rax, Register
         if (UseFieldFlattening) {
           __ test_field_is_flat(flags, rscratch1, is_flat);
         }
-        __ null_check(rax);  // FIXME JDK-8341120
+        __ null_check(rax);
         do_oop_store(_masm, field, rax);
         __ jmp(done);
         __ bind(is_flat);
