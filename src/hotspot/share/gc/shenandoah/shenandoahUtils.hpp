@@ -271,6 +271,16 @@ public:
   }
 };
 
+// Emit log messages for the beginning and end of an allocation stall.
+class ShenandoahAllocationStallLogger : public StackObj {
+public:
+  ShenandoahAllocationStallLogger(size_t request_size_bytes);
+  ~ShenandoahAllocationStallLogger();
+private:
+  const size_t _request_size_bytes;
+  const double _stall_start_seconds;
+};
+
 // Casting a double that cannot be represented as a size_t may result in undefined behavior.
 // This small function checks if the given double is representable in a size_t and returns
 // that representation if it is. Otherwise, if the double cannot be safely cast to a size_t

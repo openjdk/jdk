@@ -973,10 +973,8 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       // yet run, it will request one and retry the allocation one more time. If another thread has caused
       // a full GC to run, other threads will not request another full GC.
 
-      ResourceMark rm; // for Thread::name()
       const size_t req_byte = req.size() * HeapWordSize;
-      const double start = os::elapsedTime();
-      log_debug(gc)("Allocation Stall: " PROPERFMT ", Thread \"%s\"", PROPERFMTARGS(req_byte), Thread::current()->name());
+      ShenandoahAllocationStallLogger stall_logger(req_byte);
       AllocTracer::send_allocation_requiring_gc_event(req_byte, checked_cast<uint>(control_thread()->get_gc_id()));
 
       const size_t original_full_count = shenandoah_policy()->full_gc_count();
@@ -998,9 +996,6 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
           }
         }
       }
-
-      log_info(gc)("Allocation Stall: " PROPERFMT ", Thread \"%s\", %.3fms, Succeeded: %s",
-                   PROPERFMTARGS(req_byte), Thread::current()->name(), (os::elapsedTime() - start) * MILLIUNITS, BOOL_TO_STR(result != nullptr));
 
       if (result != nullptr) {
         // If our allocation request has been satisfied after it initially failed, we count this as good gc progress
