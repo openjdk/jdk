@@ -3487,7 +3487,7 @@ void PhiNode::dump_spec(outputStream *st) const {
   if (is_tripcount(T_INT) || is_tripcount(T_LONG)) {
     st->print(" #tripcount");
   }
-  if (type() == Type::MEMORY && adr_type() == TypePtr::BOTTOM && _excluded_idx != nullptr) {
+  if (type() == Type::MEMORY && out_adr_type() == TypePtr::BOTTOM && _excluded_idx != nullptr) {
     st->print(" #excluded_alias_idx:{");
     bool first = true;
     for (int alias_idx = Compile::AliasIdxRaw; alias_idx < Compile::current()->num_alias_types(); alias_idx++) {
