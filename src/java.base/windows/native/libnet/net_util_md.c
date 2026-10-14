@@ -22,8 +22,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include "net_util.h"
+#include <winsock2.h>
 #include <mstcpip.h>
+#include "net_util.h"
 
 #include "java_net_InetAddress.h"
 #include "java_net_SocketOptions.h"

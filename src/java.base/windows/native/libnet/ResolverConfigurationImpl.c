@@ -28,9 +28,10 @@
 #include <stddef.h>
 #include <time.h>
 #include <assert.h>
+#include <winsock2.h>
+#include <iphlpapi.h>
 
 #include "net_util.h"
-#include <iphlpapi.h>
 #include "jni_util.h"
 
 #define MAX_STR_LEN         1024
