@@ -31,6 +31,7 @@ AOTLinkedClassTable AOTLinkedClassTable::_instance;
 
 void AOTLinkedClassTable::serialize(SerializeClosure* soc) {
   if (soc->writing() && CDSConfig::is_redumping_aot_configuration()) {
+    // TODO: this should be cleaned up.
     void* foo = nullptr;
     soc->do_ptr((void**)&foo);
     soc->do_ptr((void**)&foo);
