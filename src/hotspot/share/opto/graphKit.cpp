@@ -1994,12 +1994,10 @@ Node* GraphKit::cast_to_flat_array(Node* array, ciObjArrayKlass* array_klass, bo
     assert(arytype->is_null_free() == array_klass->is_elem_null_free(), "inconsistency");
     assert(arytype->is_not_null_free() == !array_klass->is_elem_null_free(), "inconsistency");
   } else {
-    bool is_null_free = false;
+    arytype = arytype->cast_to_flat();
     if (!array_klass->element_klass()->as_value_klass()->has_nullable_atomic_layout()) {
-      // Element does not have a nullable flat layout, cannot be nullable
-      is_null_free = true;
+      arytype = arytype->cast_to_null_free();
     }
-    arytype = arytype->cast_to_flat(true)->cast_to_null_free(is_null_free);
   }
   return _gvn.transform(new CheckCastPPNode(control(), array, arytype, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
 }
@@ -2518,6 +2516,15 @@ Node* GraphKit::uncommon_trap(int trap_request,
     tty->print_cr("Uncommon trap %s at bci:%d",
                   Deoptimization::format_trap_request(buf, sizeof(buf),
                                                       trap_request), bci());
+  }
+
+  if (PreloadReduceTraps && C->for_aot_preload() && (action != Deoptimization::Action_none)) {
+    ResourceMark rm;
+    ciMethod* cim = C->method();
+    log_debug(aot, codecache, deoptimization)("Uncommon trap in AOT preload code: reason=%s action=%s method=%s::%s bci=%d, %s",
+                  Deoptimization::trap_reason_name(reason), Deoptimization::trap_action_name(action),
+                  cim->holder()->name()->as_klass_external_name(), cim->name()->as_klass_external_name(),
+                  bci(), comment);
   }
 
   CompileLog* log = C->log();
@@ -3423,6 +3430,32 @@ bool GraphKit::seems_never_null(Node* obj, ciProfileData* data, bool& speculatin
   return false;
 }
 
+void GraphKit::guard_klass_is_initialized(Node* klass) {
+  assert(C->do_clinit_barriers(), "should be called only for clinit barriers");
+  if (ClassInitBarrierMode == 0) {
+    return;
+  }
+  precond(ClassInitBarrierMode == 1); // catch new value
+  int init_state_off = in_bytes(InstanceKlass::init_state_offset());
+  Node* adr = basic_plus_adr(top(), klass, init_state_off);
+  Node* init_state = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
+                                    adr->bottom_type()->is_ptr(), TypeInt::BYTE,
+                                    T_BYTE, MemNode::acquire);
+  init_state = _gvn.transform(init_state);
+
+  Node* initialized_state = makecon(TypeInt::make(InstanceKlass::fully_initialized));
+
+  Node* chk = _gvn.transform(new CmpINode(initialized_state, init_state));
+  Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::eq));
+
+  { // uncommon trap on slow path
+    BuildCutout unless(this, tst, PROB_MAX);
+    // Do not deoptimize this nmethod. Go to Interpreter to initialize class.
+    uncommon_trap(Deoptimization::Reason_uninitialized, Deoptimization::Action_none);
+  }
+  C->set_has_clinit_barriers(true);
+}
+
 void GraphKit::guard_klass_being_initialized(Node* klass) {
   int init_state_off = in_bytes(InstanceKlass::init_state_offset());
   Node* adr = off_heap_plus_addr(klass, init_state_off);
@@ -3461,9 +3494,14 @@ void GraphKit::guard_init_thread(Node* klass) {
 }
 
 void GraphKit::clinit_barrier(ciInstanceKlass* ik, ciMethod* context) {
+  if (C->do_clinit_barriers()) {
+    Node* klass = makecon(TypeKlassPtr::make(ik, Type::trust_interfaces));
+    guard_klass_is_initialized(klass);
+    return;
+  }
   if (ik->is_being_initialized()) {
     if (C->needs_clinit_barrier(ik, context)) {
-      Node* klass = makecon(TypeKlassPtr::make(ik));
+      Node* klass = makecon(TypeKlassPtr::make(ik, Type::trust_interfaces));
       guard_klass_being_initialized(klass);
       guard_init_thread(klass);
       insert_mem_bar(Op_MemBarCPUOrder);
@@ -3471,6 +3509,10 @@ void GraphKit::clinit_barrier(ciInstanceKlass* ik, ciMethod* context) {
   } else if (ik->is_initialized()) {
     return; // no barrier needed
   } else {
+    if (C->env()->task()->is_aot_compile()) {
+      ResourceMark rm;
+      log_debug(aot, compilation)("Emitting uncommon trap (clinit barrier) in AOT code for %s", ik->name()->as_klass_external_name());
+    }
     uncommon_trap(Deoptimization::Reason_uninitialized,
                   Deoptimization::Action_reinterpret,
                   nullptr);
