@@ -121,29 +121,37 @@ public:
   static bool is_dumping_static_archive()                    { return CDS_ONLY(_is_dumping_static_archive) NOT_CDS(false); }
   static void enable_dumping_static_archive()                { CDS_ONLY(_is_dumping_static_archive = true); }
 
-  // A static CDS archive can be dumped in three modes:
+  // Types of AOT archives --
   //
-  // "classic"   - This is the traditional CDS workflow of
-  //               "java -Xshare:dump -XX:SharedClassListFile=file.txt".
+  // There are 4 types of AOT archives.
   //
-  // "preimage"  - This happens when we execute the JEP 483 training run, e.g:
-  //               "java -XX:AOTMode=record -XX:AOTConfiguration=app.aotconfig -cp app.jar App"
-  //               The above command writes app.aotconfig as a "CDS preimage". This
-  //               is a binary file that contains all the classes loaded during the
-  //               training run, plus profiling data (e.g., the resolved constant pool entries).
+  // [1] Classic static CDS archive
+  //     This is the output of the traditional CDS static archive creation workflow, e.g.:
+  //         java -Xshare:dump -XX:SharedClassListFile=file.txt -XX:SharedArchiveFile=static.jsa
   //
-  // "final"     - This happens when we execute the JEP 483 assembly phase, e.g:
-  //               "java -XX:AOTMode=create -XX:AOTConfiguration=app.aotconfig -XX:AOTCache=app.aot -cp app.jar"
-  //               The above command loads all classes from app.aotconfig, perform additional linking,
-  //               and writes app.aot as a "CDS final image" file.
+  // [2] AOT configuration file
+  //     This is the output of the AOT training run, e.g.:
+  //         java -XX:AOTMode=record -XX:AOTConfiguration=app.aotconfig -cp app.jar App
   //
-  // The main structural difference between "preimage" and "final" is that the preimage
-  // - has a different magic number (0xcafea07c)
-  // - does not have any archived Java heap objects
-  // - does not have aot-linked classes
+  // [3] AOT cache
+  //     This is the output of the AOT assembly phase, e.g.:
+  //         java -XX:AOTMode=create -XX:AOTConfiguration=app.aotconfig -XX:AOTCache=app.aot -cp app.jar
+  //
+  // [4] Dynamic CDS archive
+  //     The is the output of the traditional CDS dynamic archive creation workflow, e.g.:
+  //         java -XX:ArchiveClassesAtExit=dynamic.jsa -cp app.jar App
+  //
+  // The first 3 types are also referred to as "static archives". At any time, a JVM can load
+  // at most one static archive, and at most one dynamic archive.
+  //
+  // Note: [2] is also known as the "preimage static archive". [3] is also known as the "final static archive".
+  // These are outdated terminology and will be removed in the future.
   static bool is_dumping_classic_static_archive()            NOT_CDS_RETURN_(false);
   static bool is_dumping_preimage_static_archive()           NOT_CDS_RETURN_(false);
   static bool is_dumping_final_static_archive()              NOT_CDS_RETURN_(false);
+
+  // Is the current JVM loading classes from an input archive.
+  static bool has_input_archive() { return is_dumping_aot_cache() || is_redumping_aot_configuration(); }
 
   // New names:
   static bool is_dumping_aot_configuration() { return is_dumping_preimage_static_archive(); }

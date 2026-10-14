@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotLogging.hpp"
+#include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.inline.hpp"
 #include "cds/serializeClosure.hpp"
@@ -65,13 +66,6 @@ public:
   }
 
   void serialize(SerializeClosure* f) {
-    if (f->writing() && CDSConfig::is_redumping_aot_configuration()) {
-      void* foo = nullptr;
-      f->do_ptr((void**)&foo);
-      f->do_ptr((void**)&foo);
-      f->do_ptr((void**)&foo);
-      return;
-    }
     f->do_ptr(&_packages);
     f->do_ptr(&_modules);
     f->do_ptr(&_unnamed_module);
@@ -249,17 +243,14 @@ void ClassLoaderDataShared::remove_unshareable_info() {
 }
 
 void ClassLoaderDataShared::serialize(SerializeClosure* f) {
+  // These tables are used for loading cached modules in a retaining JVM. However,
+  // these tables should not be written into the AOT configuration file (which
+  // doesn't cache modules).
+  AOTWriteClosureDisabler disable_if(CDSConfig::is_redumping_aot_configuration());
+
   _archived_boot_loader_data.serialize(f);
   _archived_platform_loader_data.serialize(f);
   _archived_system_loader_data.serialize(f);
-
-  if (f->writing() && CDSConfig::is_redumping_aot_configuration()) {
-    void* foo = nullptr;
-    f->do_ptr((void**)&foo);
-    f->do_ptr((void**)&foo);
-    f->do_ptr((void**)&foo);
-    return;
-  }
 
   f->do_ptr(&_archived_javabase_moduleEntry);
   f->do_int(&_platform_loader_root_index);

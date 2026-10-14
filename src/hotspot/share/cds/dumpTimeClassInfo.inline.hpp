@@ -48,7 +48,7 @@ void DumpTimeSharedClassTable::iterate_all_live_classes(Function function) const
 
     if (!k->is_loaded()) {
       if ((CDSConfig::is_dumping_final_static_archive() || CDSConfig::is_redumping_aot_configuration()) && k->defined_by_other_loaders()) {
-        // Copy unregistered classes from the input cache to the output cache.
+        // Copy unregistered classes from the input archive to the output archive.
         function(k, info);
       } else {
         exclude_reason = "not loaded";

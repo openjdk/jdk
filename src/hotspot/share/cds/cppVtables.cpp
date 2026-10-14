@@ -266,7 +266,7 @@ void CppVtables::dumptime_init(ArchiveBuilder* builder) {
   assert(CDSConfig::is_dumping_static_archive(), "cpp tables are only dumped into static archive");
 
   if (CDSConfig::is_dumping_final_static_archive() || CDSConfig::is_redumping_aot_configuration()) {
-    // When dumping final archive, _index[kind] at this point is in the preimage.
+    // At this point, _index[kind] is in the input archive.
     // Remember these vtable pointers in _archived_cpp_vtptrs, as _index[kind] will now be rewritten
     // to point to the runtime vtable data.
     for (int i = 0; i < _num_cloned_vtable_kinds; i++) {

@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotLinkedClassTable.hpp"
+#include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/serializeClosure.hpp"
 #include "oops/array.hpp"
@@ -30,15 +31,10 @@
 AOTLinkedClassTable AOTLinkedClassTable::_instance;
 
 void AOTLinkedClassTable::serialize(SerializeClosure* soc) {
-  if (soc->writing() && CDSConfig::is_redumping_aot_configuration()) {
-    // TODO: this should be cleaned up.
-    void* foo = nullptr;
-    soc->do_ptr((void**)&foo);
-    soc->do_ptr((void**)&foo);
-    soc->do_ptr((void**)&foo);
-    soc->do_ptr((void**)&foo);
-    return;
-  }
+  // These tables are used for loading classes in a retaining JVM. However,
+  // these tables should not be written into the AOT configuration file (which
+  // doesn't store AOT-linked classes).
+  AOTWriteClosureDisabler disable_if(CDSConfig::is_redumping_aot_configuration());
 
   soc->do_ptr((void**)&_boot1);
   soc->do_ptr((void**)&_boot2);
