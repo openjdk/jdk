@@ -47,8 +47,6 @@
 #include "utilities/events.hpp"
 
 ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
-  _control_lock(CONTROL_LOCK_RANK, "ShenandoahGCRequest_lock", true),
-  _requested_gc_cause(GCCause::_no_gc),
   _requested_generation(nullptr),
   _gc_mode(none),
   _heap(ShenandoahGenerationalHeap::heap()) {
@@ -224,25 +222,12 @@ void ShenandoahGenerationalControlThread::maybe_print_young_region_ages() const 
 }
 
 void ShenandoahGenerationalControlThread::clear_allocation_failure_and_notify_waiters() {
-  MonitorLocker waiters(&_alloc_waiters_lock, Mutex::_no_safepoint_check_flag);
-  {
-    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-    if (ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
-      // If an allocation failure occurred during this cycle, we'll have threads waiting
-      // for reclaimed memory. We'll wake them up, and they'll retry their allocation.
-      // If our waiters cannot allocate, they will signal the control thread again
-      // to start another cycle. If we didn't clear the request here, the control thread would
-      // immediately begin another allocation failure cycle.
-      _requested_gc_cause = GCCause::_no_gc;
-    }
-
-    if (_heap->old_generation()->clear_failed_evacuation()) {
-      // Immediately run a full GC.
-      log_info(gc, ergo)("Requesting a full gc because of evacuation failures in old");
-      notify_control_thread(ml, GCCause::_shenandoah_upgrade_to_full_gc, _heap->global_generation());
-    }
+  ShenandoahController::clear_allocation_failure_and_notify_waiters();
+  if (_heap->old_generation()->clear_failed_evacuation()) {
+    // Immediately run a full GC.
+    log_info(gc, ergo)("Requesting a full gc because of evacuation failures in old");
+    notify_control_thread(GCCause::_shenandoah_upgrade_to_full_gc, _heap->global_generation());
   }
-  waiters.notify_all();
 }
 
 void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest& request) {
@@ -250,10 +235,9 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
   log_debug(gc, thread)("Starting GC (%s): %s, %s", gc_mode_name(gc_mode()), GCCause::to_string(request.cause), request.generation->name());
   assert(gc_mode() != none, "GC mode cannot be none here");
 
-  // Blow away all soft references on this cycle, if handling allocation failure,
-  // either implicit or explicit GC request, or we are requested to do so unconditionally.
   if (GCCause::should_clear_all_soft_refs(request.cause) || (request.generation->is_global() &&
       (ShenandoahCollectorPolicy::is_allocation_failure(request.cause) || ShenandoahCollectorPolicy::is_explicit_gc(request.cause) || ShenandoahAlwaysClearSoftRefs))) {
+    // Blow away all soft references on this cycle
     request.generation->ref_processor()->set_soft_reference_policy(true);
   }
 
@@ -351,29 +335,13 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     gc_mode_name(gc_mode()), GCCause::to_string(request.cause), request.generation->name(), BOOL_TO_STR(_heap->cancelled_gc()));
 }
 
-// Young and old concurrent cycles are initiated by the regulator. Implicit
-// and explicit GC requests are handled by the controller thread and always
-// run a global cycle (which is concurrent by default, but may be overridden
-// by command line options to run on a safepoint). If there is an allocation
-// failure during old marking, it will be cancelled. The next cycle will be
-// global to complete collection of old and young together. With the exception
-// of old marking, all concurrent cycles run to completion before returning
-// to IDLE to choose the next action.
-//
-//                                        +------------+
-//                                        |            |
-//       +--------------------------------+   IDLE     +--------------------------------+
-//       |                  +-------------+            +------------+                   |
-//       |                  |             +-----+------+            |                   |
-//       |                  |                   |                   |                   |
-//       |                  |                   |                   |                   |
-//       |                  |                   |                   |                   |
-// +-----v------+     +-----v------+      +-----v------+      +-----v------+      +-----v------+
-// |            |     |            |      |            |      |            |      |            |
-// |  YOUNG     |     |  BOOTSTRAP |      |  MARK OLD  |      |  GLOBAL    |      |   FULL     |
-// |            |     |            |      |            |      |            |      |            |
-// +------------+     +------------+      +------------+      +------------+      +------------+
-//
+// Young and old concurrent cycles are initiated by the regulator. GC requests are
+// handled by the controller thread and always run a global cycle (which is concurrent
+// by default, but may be overridden by command line options to run on a safepoint).
+// If there is an allocation failure during old marking, it will be cancelled. The
+// next cycle will be global to complete collection of old and young together. Except for
+// old marking, all concurrent cycles run to completion before returning to IDLE to choose
+// the next action.
 void ShenandoahGenerationalControlThread::service_concurrent_normal_cycle(const ShenandoahGCRequest& request) {
   log_info(gc, ergo)("Start GC cycle (%s)", request.generation->name());
   service_concurrent_cycle(request.generation, request.cause, false);
@@ -465,21 +433,10 @@ void ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
   }
 }
 
-// Normal cycle goes via all concurrent phases.
-// There is also a shortcut through the normal cycle: immediate garbage shortcut. When
-// heuristics say there are no regions to compact, and all the collection comes from immediately
-// reclaimable regions, Shenandoah can skip the evacuation phase.
-//
-// ................................................................................................
-//
-//                                    (immediate garbage shortcut)                Concurrent GC
-//                             /-------------------------------------------\
-//                             |                                           |
-//                             |                                           |
-//                             |                                           |
-//                             |                                           v
-// [START] ----> Conc Mark ----o----> Conc Evac --o--> Conc Update-Refs ---o----> [END]
-//
+// Normal cycle goes via all concurrent phases. There is also a shortcut through the normal
+// cycle: immediate garbage shortcut. When heuristics say there are no regions to compact,
+// and all the collection comes from immediately reclaimable regions, Shenandoah can skip the
+// evacuation phase.
 void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGeneration* generation,
                                                                    GCCause::Cause cause,
                                                                    bool do_old_gc_bootstrap) {

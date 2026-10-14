@@ -1409,7 +1409,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     if (fwd == p) {
       // Now self-forwarded. Flag the region so other threads will not
       // try to evacuate objects from here.
-      set_has_self_forwarded_objects(true);
+      set_has_self_forwarded_objects();
       from_region->set_has_self_forwards();
     }
     return fwd;
@@ -1467,15 +1467,6 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   }
 }
 
-#ifdef ASSERT
-void ShenandoahHeap::assert_no_self_forwards() const {
-  for (size_t i = 0, n = num_regions(); i < n; ++i) {
-    const ShenandoahHeapRegion* region = get_region(i);
-    assert(!region->has_self_forwards(), "Region %zu should not have self forwarded objects here.", i);
-  }
-}
-#endif
-
 class ShenandoahTrashRegionTask : public WorkerTask {
   ShenandoahCollectionSet* _collection_set;
   Atomic<size_t> _free_bytes_in_evac_failed_regions;
@@ -1499,7 +1490,7 @@ public:
         r->make_trash();
       }
     }
-    _free_bytes_in_evac_failed_regions.add_then_fetch(free_bytes);
+    _free_bytes_in_evac_failed_regions.add_then_fetch(free_bytes, memory_order_relaxed);
   }
 };
 
@@ -1509,8 +1500,8 @@ void ShenandoahHeap::trash_cset_regions() {
   if (has_self_forwarded_objects()) {
     ShenandoahTrashRegionTask task(set);
     workers()->run_task(&task);
-    log_info(gc, free)("Memory available in regions that failed evacuation: " PROPERFMT,
-                       PROPERFMTARGS(task.free_bytes_in_evac_failed_regions()));
+    log_debug(gc, free)("Memory available in regions that failed evacuation: " PROPERFMT,
+                        PROPERFMTARGS(task.free_bytes_in_evac_failed_regions()));
   } else {
     ShenandoahHeapRegion* r;
     while ((r = set->next()) != nullptr) {

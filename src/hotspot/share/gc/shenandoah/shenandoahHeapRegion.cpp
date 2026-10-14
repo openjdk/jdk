@@ -901,9 +901,9 @@ public:
   }
 
   void do_object(oop obj) override {
-    assert(obj->is_forwarded(), "Marked object " PTR_FORMAT " in cset region should be forwarded", p2i(obj));
+    assert(ShenandoahForwarding::is_forwarded(obj), "Marked object " PTR_FORMAT " in cset region should be forwarded", p2i(obj));
 
-    if (obj->is_self_forwarded()) {
+    if (ShenandoahForwarding::is_self_forwarded(obj)) {
       HeapWord* current = cast_from_oop<HeapWord*>(obj);
       const size_t object_size = ShenandoahForwarding::size(obj);
 
@@ -941,7 +941,7 @@ void ShenandoahHeapRegion::partially_recycle() {
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahScanRemembered* cards = is_old() ? heap->old_generation()->card_scan() : nullptr;
-  if (cards) {
+  if (cards != nullptr) {
     // Some of the objects here may be dead or forwarded, we don't want any stale object registrations or dirty cards.
     // We will rebuild the registrations and dirty cards for self-forwarded objects that stay in this region.
     cards->mark_range_as_empty(this->bottom(), region_size_words());

@@ -242,7 +242,7 @@ public:
 
   // WhiteBox testing support.
   bool supports_concurrent_gc_breakpoints() const override {
-    return true;
+    return mode()->is_concurrent();
   }
 
 // ---------- Heap counters and metrics
@@ -502,9 +502,13 @@ public:
     return _has_self_forwarded_objects.is_set();
   }
 
-  // Set whether self forwarded objects exist in the heap
-  void set_has_self_forwarded_objects(bool value) {
-    _has_self_forwarded_objects.set_cond(value);
+  // Set when self forwarded objects exist in the heap
+  void set_has_self_forwarded_objects() {
+    _has_self_forwarded_objects.try_set();
+  }
+
+  void unset_has_self_forwarded_objects() {
+    _has_self_forwarded_objects.unset();
   }
 
 private:
@@ -865,8 +869,6 @@ public:
   // by this thread, or by some other thread. On allocation failure, installs the
   // self-forwarded bit on src, flags src's region, and returns src.
   virtual oop evacuate_object(oop src, Thread* thread);
-
-  DEBUG_ONLY(void assert_no_self_forwards() const;)
 
 // ---------- Helper functions
 //

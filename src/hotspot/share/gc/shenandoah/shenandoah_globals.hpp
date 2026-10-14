@@ -428,7 +428,7 @@
           "not available, next recovery step would be triggered.")          \
           range(0, 100)                                                     \
                                                                             \
-  product(uintx, ShenandoahFullGCThreshold, 3, EXPERIMENTAL,                \
+  product(uintx, ShenandoahFullGCThreshold, 2, EXPERIMENTAL,                \
           "How many consecutive concurrent GCs a thread will wait for "     \
           "before going to a Full GC.")                                     \
                                                                             \
@@ -436,12 +436,6 @@
           "After this number of consecutive Full GCs fail to make "         \
           "progress, Shenandoah will raise out of memory errors. Note "     \
           "that progress is determined by ShenandoahCriticalFreeThreshold") \
-                                                                            \
-  product(bool, ShenandoahImplicitGCInvokesConcurrent, false, EXPERIMENTAL, \
-          "Should internally-caused GC requests invoke concurrent cycles, " \
-          "or should they do the stop-the-world Full GC? "                  \
-          "Many heuristics automatically enable this. This option is "      \
-          "similar to global ExplicitGCInvokesConcurrent.")                 \
                                                                             \
   product(bool, ShenandoahHumongousMoves, true, DIAGNOSTIC,                 \
           "Allow moving humongous regions. This makes GC more resistant "   \

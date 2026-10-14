@@ -210,7 +210,7 @@ protected:
   virtual void adjust_penalty(intx step);
 
   void decline_trigger() {
-    _declined_trigger_count.add_then_fetch(1UL);
+    _declined_trigger_count.add_then_fetch(1UL, memory_order_relaxed);
   }
 
   double get_most_recent_wake_time() const {

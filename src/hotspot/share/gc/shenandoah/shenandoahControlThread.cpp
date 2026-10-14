@@ -40,9 +40,7 @@
 #include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceUtils.hpp"
 
-ShenandoahControlThread::ShenandoahControlThread() :
-  _requested_gc_cause(GCCause::_no_gc),
-  _control_lock(CONTROL_LOCK_RANK, "ShenandoahControl_lock", true) {
+ShenandoahControlThread::ShenandoahControlThread() {
   set_name("ShenControl");
   create_and_start();
 }
@@ -222,7 +220,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   // heuristics say there are no regions to compact, and all the collection comes from immediately
   // reclaimable regions, Shenandoah can skip the evacuation phase.
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (ShenandoahHeap::heap()->cancelled_gc()) {
+  if (heap->cancelled_gc()) {
     // Need to report at "gc" level to report GC ID proper.
     log_info(gc)("Cancelled before cycle started");
     return;
@@ -259,22 +257,6 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 
   ShenandoahFullGC gc;
   gc.collect(cause);
-}
-
-void ShenandoahControlThread::clear_allocation_failure_and_notify_waiters() {
-  MonitorLocker waiters(&_alloc_waiters_lock, Mutex::_no_safepoint_check_flag);
-  {
-    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-    if (ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
-      // If an allocation failure occurred during this cycle, we'll have threads waiting
-      // for reclaimed memory. We'll wake them up, and they'll retry their allocation.
-      // If our waiters cannot allocate, they will signal the control thread again
-      // to start another cycle. If we didn't clear the request here, the control thread would
-      // immediately begin another allocation failure cycle.
-      _requested_gc_cause = GCCause::_no_gc;
-    }
-  }
-  waiters.notify_all();
 }
 
 bool ShenandoahControlThread::notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* ignored) {

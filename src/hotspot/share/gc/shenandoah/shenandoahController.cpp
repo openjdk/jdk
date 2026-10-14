@@ -32,8 +32,10 @@
 ShenandoahController::ShenandoahController():
   _gc_id(0),
   _phase(UNSET),
+  _control_lock(CONTROL_LOCK_RANK, "ShenandoahControl_lock", true),
   _gc_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahGCWaiters_lock", true),
   _alloc_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahAllocWaiters_lock", true),
+  _requested_gc_cause(GCCause::_no_gc),
   _alloc_stall_count(0),
   _concurrent_worker_count(ConcGCThreads) { }
 
@@ -48,7 +50,7 @@ size_t ShenandoahController::get_gc_id() const {
 void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &req) {
   assert(current()->is_Java_thread(), "expect Java thread here");
 
-  _alloc_stall_count.add_then_fetch(1UL);
+  _alloc_stall_count.add_then_fetch(1UL, memory_order_relaxed);
   increase_concurrent_worker_count();
   _coordinator.increase_workers(concurrent_worker_count());
   ShenandoahHeap::heap()->shenandoah_policy()->record_allocation_stall(get_phase());
@@ -118,6 +120,22 @@ void ShenandoahController::handle_requested_gc(GCCause::Cause cause) {
   }
 }
 
+void ShenandoahController::clear_allocation_failure_and_notify_waiters() {
+  MonitorLocker waiters(&_alloc_waiters_lock, Mutex::_no_safepoint_check_flag);
+  {
+    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
+    if (ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
+      // If an allocation failure occurred during this cycle, we'll have threads waiting
+      // for reclaimed memory. We'll wake them up, and they'll retry their allocation.
+      // If our waiters cannot allocate, they will signal the control thread again
+      // to start another cycle. If we didn't clear the request here, the control thread would
+      // immediately begin another allocation failure cycle.
+      _requested_gc_cause = GCCause::_no_gc;
+    }
+  }
+  waiters.notify_all();
+}
+
 void ShenandoahController::increase_concurrent_worker_count() {
   while (true) {
     const size_t workers = _concurrent_worker_count.load_relaxed();
@@ -134,18 +152,19 @@ void ShenandoahController::increase_concurrent_worker_count() {
 
 void ShenandoahController::decrease_concurrent_worker_count() {
   const size_t alloc_stalls = _alloc_stall_count.exchange(0);
+  const int max_conc_gc_threads = checked_cast<int>(ConcGCThreads);
   if (alloc_stalls != 0) {
     log_info(gc, ergo)("Allocation stalls: %zu, holding concurrent worker count at: %zu",
                        alloc_stalls, _concurrent_worker_count.load_relaxed());
   } else {
     // There were no stalls during this cycle, try to reduce the concurrent gc workers
     while (true) {
-      const size_t workers = _concurrent_worker_count.load_relaxed();
-      if (workers == ConcGCThreads) {
+      const int workers = _concurrent_worker_count.load_relaxed();
+      if (workers == max_conc_gc_threads) {
         break;
       }
 
-      const size_t new_value = MAX2(workers - 1, checked_cast<size_t>(ConcGCThreads));
+      const size_t new_value = MAX2(workers - 1, max_conc_gc_threads);
       if (_concurrent_worker_count.compare_set(workers, new_value, memory_order_relaxed)) {
         break;
       }

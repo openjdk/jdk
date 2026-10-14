@@ -1283,7 +1283,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
 
   heap->set_update_refs_in_progress(false);
   heap->set_has_forwarded_objects(false);
-  heap->set_has_self_forwarded_objects(false);
+  heap->unset_has_self_forwarded_objects();
 
   if (VerifyAfterGC) {
     Universe::verify();

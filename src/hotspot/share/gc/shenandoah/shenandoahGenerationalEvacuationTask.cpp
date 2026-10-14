@@ -50,7 +50,8 @@ public:
 static void maybe_log_region(const ShenandoahHeapRegion* r) {
   // This is true for every region we take action for, whether it is being evacuated or promoted in place
   assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
-  if (LogTarget(Debug, gc) lt; lt.is_enabled()) {
+  LogTarget(Debug, gc) lt;
+  if (lt.is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("GenerationalEvacuationTask, looking at %s region %zu, (age: %d) [%s, %s, %s]",
                 r->is_old()? "old": r->is_young()? "young": "free", r->index(), r->age(),

@@ -499,11 +499,10 @@ inline bool Assembler::is_within_range_of_b(address a, address pc) {
   // Guard against illegal branch targets, e.g. -1 (see CompiledDirectCall and ad-file).
   if ((((uint64_t)a) & 0x3) != 0) return false;
 
-  const int range = 1 << (29-6); // li field is from bit 6 to bit 29.
-  int value = disp(intptr_t(a), intptr_t(pc));
-  bool result = -range <= value && value < range-1;
+  int disp_instr_words = disp(intptr_t(a), intptr_t(pc));
+  bool result = is_simm(disp_instr_words, 24); // li field is 24 bits.
 #ifdef ASSERT
-  if (result) li(value); // Assert that value is in correct range.
+  if (result) li(disp_instr_words); // Assert that value is in correct range.
 #endif
   return result;
 }
@@ -513,11 +512,10 @@ inline bool Assembler::is_within_range_of_bcxx(address a, address pc) {
   // Guard against illegal branch targets, e.g. -1 (see CompiledDirectCall and ad-file).
   if ((((uint64_t)a) & 0x3) != 0) return false;
 
-  const int range = 1 << (29-16); // bd field is from bit 16 to bit 29.
-  int value = disp(intptr_t(a), intptr_t(pc));
-  bool result = -range <= value && value < range-1;
+  int disp_instr_words = disp(intptr_t(a), intptr_t(pc));
+  bool result = is_simm(disp_instr_words, 14); // bd field is 14 bits.
 #ifdef ASSERT
-  if (result) bd(value); // Assert that value is in correct range.
+  if (result) bd(disp_instr_words); // Assert that value is in correct range.
 #endif
   return result;
 }

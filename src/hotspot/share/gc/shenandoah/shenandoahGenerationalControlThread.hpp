@@ -55,14 +55,6 @@ public:
   };
 
 private:
-  // This lock is used to coordinate setting the _requested_gc_cause, _requested generation
-  // and _gc_mode. It is important that these be changed together and have a consistent view.
-  Monitor _control_lock;
-
-  // Represents a normal (non cancellation) gc request. This can be set by mutators (System.gc,
-  // whitebox gc, etc.) or by the regulator thread when the heuristics want to start a cycle.
-  GCCause::Cause  _requested_gc_cause;
-
   // This is the generation the request should operate on.
   ShenandoahGeneration* _requested_generation;
 
@@ -96,6 +88,8 @@ protected:
   void notify_alloc_stall(GCCause::Cause cause) override;
   bool notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) override;
 
+  // Will also schedule an immediate full gc if old evacuations failed
+  void clear_allocation_failure_and_notify_waiters() override;
 private:
 
   // Executes one GC cycle
@@ -137,9 +131,6 @@ private:
 
   // Print table for young region ages if log is enabled
   void maybe_print_young_region_ages() const;
-
-  // Will also schedule an immediate full gc if old evacuations failed
-  void clear_allocation_failure_and_notify_waiters();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALCONTROLTHREAD_HPP
