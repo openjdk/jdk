@@ -2255,14 +2255,15 @@ static void parallel_suffix_v(C2_MacroAssembler* masm, VectorRegister dst,
 void C2_MacroAssembler::compress_bits_v(VectorRegister dst, VectorRegister src,
                                         VectorRegister mask, VectorRegister src_tmp,
                                         VectorRegister mask_tmp, VectorRegister tmp1,
-                                        VectorRegister tmp2, BasicType bt, uint vector_length) {
+                                        VectorRegister tmp2, BasicType bt,
+                                        uint vector_length, VectorMask vm) {
   assert(bt == T_INT || bt == T_LONG, "unsupported element type");
   const bool is_int = bt == T_INT;
   const int bits = is_int ? BitsPerInt : BitsPerLong;
   const int rounds = exact_log2(bits);
 
   vsetvli_helper(bt, vector_length);
-  vand_vv(dst, src, mask);
+  vand_vv(dst, src, mask, vm);
   vmv_v_v(mask_tmp, mask);
   vnot_v(tmp1, mask_tmp);
   vshift_left(this, tmp1, tmp1, 1);
@@ -2279,9 +2280,9 @@ void C2_MacroAssembler::compress_bits_v(VectorRegister dst, VectorRegister src,
     vor_vv(mask_tmp, mask_tmp, tmp2);
 
     vand_vv(tmp2, dst, src_tmp);
-    vxor_vv(dst, dst, tmp2);
+    vxor_vv(dst, dst, tmp2, vm);
     vshift_right(this, tmp2, tmp2, shift);
-    vor_vv(dst, dst, tmp2);
+    vor_vv(dst, dst, tmp2, vm);
   }
 }
 
@@ -2290,15 +2291,12 @@ void C2_MacroAssembler::compress_bits_v(VectorRegister dst, VectorRegister src,
 // apply them in reverse order to implement Integer.expand and Long.expand.
 void C2_MacroAssembler::expand_bits_v(VectorRegister dst, VectorRegister src,
                                       VectorRegister mask, VectorRegister src_tmp,
-                                      VectorRegister mask_tmp,
-                                      VectorRegister mask_move1,
-                                      VectorRegister mask_move2,
-                                      VectorRegister mask_move3,
-                                      VectorRegister mask_move4,
-                                      VectorRegister mask_move5,
-                                      VectorRegister mask_move6,
-                                      VectorRegister tmp1, VectorRegister tmp2,
-                                      BasicType bt, uint vector_length) {
+                                      VectorRegister mask_tmp, VectorRegister mask_move1,
+                                      VectorRegister mask_move2, VectorRegister mask_move3,
+                                      VectorRegister mask_move4, VectorRegister mask_move5,
+                                      VectorRegister mask_move6, VectorRegister tmp1,
+                                      VectorRegister tmp2, BasicType bt,
+                                      uint vector_length, VectorMask vm) {
   assert(bt == T_INT || bt == T_LONG, "unsupported element type");
   const bool is_int = bt == T_INT;
   const int bits = is_int ? BitsPerInt : BitsPerLong;
@@ -2310,7 +2308,7 @@ void C2_MacroAssembler::expand_bits_v(VectorRegister dst, VectorRegister src,
   vsetvli_helper(bt, vector_length);
   vmv_v_v(src_tmp, src);
   vmv_v_v(mask_tmp, mask);
-  vmv_v_v(dst, mask_tmp);
+  vor_vv(dst, mask_tmp, mask_tmp, vm);
   vnot_v(tmp1, mask_tmp);
   vshift_left(this, tmp1, tmp1, 1);
 
@@ -2333,7 +2331,7 @@ void C2_MacroAssembler::expand_bits_v(VectorRegister dst, VectorRegister src,
     vand_vv(tmp2, tmp2, mask_moves[i]);
     vxor_vv(src_tmp, src_tmp, tmp2);
   }
-  vand_vv(dst, src_tmp, dst);
+  vand_vv(dst, src_tmp, dst, vm);
 }
 
 // Set dst to NaN if any NaN input.
