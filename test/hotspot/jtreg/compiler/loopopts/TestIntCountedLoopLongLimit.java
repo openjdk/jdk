@@ -202,6 +202,30 @@ public class TestIntCountedLoopLongLimit {
     }
 
     @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.LOOP_LIMIT_CHECK_TRAP })
+    public static int testRecompileAfterTrap(long limit) {
+        int sum = 0;
+        for (int i = 0; i < limit; i++) {
+            sum += i;
+            if (sum > 100) return sum;
+        }
+        return sum;
+    }
+
+    private static int recompileRunCount = 0;
+
+    @Run(test = "testRecompileAfterTrap")
+    @Warmup(20_000)
+    public static void runTestRecompileAfterTrap() {
+        recompileRunCount++;
+        if (recompileRunCount == 10_000) {
+            testRecompileAfterTrap((long) Integer.MAX_VALUE + 1L); // run once to trigger de-opt
+        } else {
+            testRecompileAfterTrap(SMALL_INT_RANGE_LONGS.next());
+        }
+    }
+
+    @Test
     @IR(counts = { IRNode.CONV_I2L, "1" })
     @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.CONV_L2I, IRNode.LOOP_LIMIT_CHECK_TRAP })
     public static int testLimitNotInvariant(long limit) {
