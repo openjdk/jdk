@@ -2602,10 +2602,9 @@ instruct vreduce_and(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   %}
   ins_encode %{
     vsetvli_if_needed(masm, this);
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    __ vredand_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                  as_VectorRegister($tmp$$reg));
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2621,10 +2620,9 @@ instruct vreduce_andL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   %}
   ins_encode %{
     vsetvli_if_needed(masm, this);
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    __ vredand_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                  as_VectorRegister($tmp$$reg));
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2641,10 +2639,9 @@ instruct vreduce_and_masked(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegMask_
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ vsetvli_helper(bt, Matcher::vector_length(this, $src2));
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    __ vredand_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                  as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode(), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2657,10 +2654,9 @@ instruct vreduce_andL_masked(iRegLNoSp dst, iRegL src1, vReg src2, vRegMask_V0 v
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ vsetvli_helper(bt, Matcher::vector_length(this, $src2));
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    __ vredand_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                  as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode(), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2681,10 +2677,9 @@ instruct vreduce_or(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   %}
   ins_encode %{
     vsetvli_if_needed(masm, this);
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    __ vredor_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                 as_VectorRegister($tmp$$reg));
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2700,10 +2695,9 @@ instruct vreduce_orL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   %}
   ins_encode %{
     vsetvli_if_needed(masm, this);
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    __ vredor_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                 as_VectorRegister($tmp$$reg));
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2720,10 +2714,9 @@ instruct vreduce_or_masked(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegMask_V
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ vsetvli_helper(bt, Matcher::vector_length(this, $src2));
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    __ vredor_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                 as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode(), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2736,10 +2729,9 @@ instruct vreduce_orL_masked(iRegLNoSp dst, iRegL src1, vReg src2, vRegMask_V0 v0
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ vsetvli_helper(bt, Matcher::vector_length(this, $src2));
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    __ vredor_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                 as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode(), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2760,10 +2752,9 @@ instruct vreduce_xor(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   %}
   ins_encode %{
     vsetvli_if_needed(masm, this);
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    __ vredxor_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                  as_VectorRegister($tmp$$reg));
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2779,10 +2770,9 @@ instruct vreduce_xorL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   %}
   ins_encode %{
     vsetvli_if_needed(masm, this);
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    __ vredxor_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                  as_VectorRegister($tmp$$reg));
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2799,10 +2789,9 @@ instruct vreduce_xor_masked(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegMask_
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ vsetvli_helper(bt, Matcher::vector_length(this, $src2));
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    __ vredxor_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                  as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode(), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2815,10 +2804,9 @@ instruct vreduce_xorL_masked(iRegLNoSp dst, iRegL src1, vReg src2, vRegMask_V0 v
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ vsetvli_helper(bt, Matcher::vector_length(this, $src2));
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    __ vredxor_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                  as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode(), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2839,10 +2827,9 @@ instruct vreduce_add(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   %}
   ins_encode %{
     vsetvli_if_needed(masm, this);
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    __ vredsum_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                  as_VectorRegister($tmp$$reg));
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2858,10 +2845,9 @@ instruct vreduce_addL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   %}
   ins_encode %{
     vsetvli_if_needed(masm, this);
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    __ vredsum_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                  as_VectorRegister($tmp$$reg));
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2963,10 +2949,9 @@ instruct vreduce_add_masked(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegMask_
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ vsetvli_helper(bt, Matcher::vector_length(this, $src2));
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    __ vredsum_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                  as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode(), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2979,10 +2964,9 @@ instruct vreduce_addL_masked(iRegLNoSp dst, iRegL src1, vReg src2, vRegMask_V0 v
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ vsetvli_helper(bt, Matcher::vector_length(this, $src2));
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    __ vredsum_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                  as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode(), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3032,15 +3016,9 @@ instruct vreduce_max(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   %}
   ins_encode %{
     vsetvli_if_needed(masm, this);
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    if (this->ideal_Opcode() == Op_UMaxReductionV) {
-      __ vredmaxu_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                     as_VectorRegister($tmp$$reg));
-    } else {
-      __ vredmax_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                    as_VectorRegister($tmp$$reg));
-    }
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3057,15 +3035,9 @@ instruct vreduce_maxL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   %}
   ins_encode %{
     vsetvli_if_needed(masm, this);
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    if (this->ideal_Opcode() == Op_UMaxReductionV) {
-      __ vredmaxu_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                     as_VectorRegister($tmp$$reg));
-    } else {
-      __ vredmax_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                    as_VectorRegister($tmp$$reg));
-    }
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3083,15 +3055,9 @@ instruct vreduce_max_masked(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegMask_
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ vsetvli_helper(bt, Matcher::vector_length(this, $src2));
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    if (this->ideal_Opcode() == Op_UMaxReductionV) {
-      __ vredmaxu_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                     as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    } else {
-      __ vredmax_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                    as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    }
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode(), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3105,15 +3071,9 @@ instruct vreduce_maxL_masked(iRegLNoSp dst, iRegL src1, vReg src2, vRegMask_V0 v
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ vsetvli_helper(bt, Matcher::vector_length(this, $src2));
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    if (this->ideal_Opcode() == Op_UMaxReductionV) {
-      __ vredmaxu_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                     as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    } else {
-      __ vredmax_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                    as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    }
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode(), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3135,15 +3095,9 @@ instruct vreduce_min(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   %}
   ins_encode %{
     vsetvli_if_needed(masm, this);
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    if (this->ideal_Opcode() == Op_UMinReductionV) {
-      __ vredminu_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                     as_VectorRegister($tmp$$reg));
-    } else {
-      __ vredmin_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                    as_VectorRegister($tmp$$reg));
-    }
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3160,15 +3114,9 @@ instruct vreduce_minL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   %}
   ins_encode %{
     vsetvli_if_needed(masm, this);
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    if (this->ideal_Opcode() == Op_UMinReductionV) {
-      __ vredminu_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                     as_VectorRegister($tmp$$reg));
-    } else {
-      __ vredmin_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                    as_VectorRegister($tmp$$reg));
-    }
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3186,15 +3134,9 @@ instruct vreduce_min_masked(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegMask_
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ vsetvli_helper(bt, Matcher::vector_length(this, $src2));
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    if (this->ideal_Opcode() == Op_UMinReductionV) {
-      __ vredminu_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                     as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    } else {
-      __ vredmin_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                    as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    }
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode(), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3208,15 +3150,9 @@ instruct vreduce_minL_masked(iRegLNoSp dst, iRegL src1, vReg src2, vRegMask_V0 v
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ vsetvli_helper(bt, Matcher::vector_length(this, $src2));
-    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
-    if (this->ideal_Opcode() == Op_UMinReductionV) {
-      __ vredminu_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                     as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    } else {
-      __ vredmin_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
-                    as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    }
-    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode(), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
