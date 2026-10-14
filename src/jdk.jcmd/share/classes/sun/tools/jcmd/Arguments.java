@@ -80,6 +80,8 @@ class Arguments {
             } else if (args[i].equals("-R")) {
                 i++;
                 revivalCachePath = args[i];
+            } else if (args[i].startsWith("-")) {
+                throw new IllegalArgumentException("Unknown option: " + args[i]);
             } else {
                 // Not a known argument, move on to read process string/pid.
                 break;
@@ -115,7 +117,7 @@ class Arguments {
                 sb.append(args[i]).append(" ");
             }
         }
-        if (!listCounters && sb.length() == 0 && !forceCore && isPID(processString)) {
+        if (!listCounters && sb.length() == 0 && !isCore(processString)) {
             // Omitting the command shall cause the target VM to print out a list
             // of available commands.
             // Not for cores as -L may be needed.
@@ -123,6 +125,14 @@ class Arguments {
         }
 
         command = sb.toString().trim();
+    }
+
+    private boolean isCore(String s) {
+        return isForceCore() || (!isPID(s) && isFile(s));
+    }
+
+    private static boolean isFile(String s) {
+        return new File(s).exists();
     }
 
     private static boolean isPID(String s) {
@@ -146,7 +156,7 @@ class Arguments {
     }
 
     public static void usage() {
-        System.out.println("Usage: jcmd <pid | main class> <command ...|PerfCounter.print|-f file>");
+        System.out.println("Usage: jcmd <pid | main class> <command ... | PerfCounter.print | -f file>");
         System.out.println("   or: jcmd [ -c ] [ -L LIB_PATH ] [ -R CACHE_PATH] <corefile> <command... | -f file>");
         System.out.println("   or: jcmd -l                                                    ");
         System.out.println("   or: jcmd -h                                                    ");
