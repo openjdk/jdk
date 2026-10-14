@@ -2210,7 +2210,7 @@ public:
   MethodData();
 
   static void initialize_striped_mutex();
-  
+
   static MethodData* allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS);
 
   virtual bool is_methodData() const { return true; }
