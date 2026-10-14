@@ -412,9 +412,9 @@ bool SystemDictionaryShared::check_self_exclusion(InstanceKlass* k) {
 
 const char* SystemDictionaryShared::check_self_exclusion_helper(InstanceKlass* k, bool& log_warning) {
   assert_lock_strong(DumpTimeTable_lock);
-  if ((CDSConfig::is_dumping_final_static_archive() || CDSConfig::is_redumping_aot_configuration()) && k->defined_by_other_loaders()
+  if (CDSConfig::is_dumping_with_input_archive() && k->defined_by_other_loaders()
       && k->in_aot_cache()) {
-    return nullptr; // Do not exclude: unregistered classes are passed from preimage to final image.
+    return nullptr; // Do not exclude: unregistered classes are passed from input archive to output archive..
   }
 
   if (k->is_in_error_state()) {
@@ -725,7 +725,7 @@ InstanceKlass* SystemDictionaryShared::get_unregistered_class(Symbol* name) {
 }
 
 void SystemDictionaryShared::copy_unregistered_class_size_and_crc32(InstanceKlass* klass) {
-  precond(CDSConfig::is_dumping_final_static_archive() || CDSConfig::is_redumping_aot_configuration());
+  precond(CDSConfig::is_dumping_with_input_archive());
   precond(klass->in_aot_cache());
 
   // A shared class must have a RunTimeClassInfo record
@@ -757,13 +757,13 @@ void SystemDictionaryShared::copy_unregistered_classes_for_retraining(JavaThread
 // In both cases, we should never see two classes with the same name.
 void SystemDictionaryShared::copy_cached_unregistered_class(JavaThread* current, InstanceKlass* k) {
   precond(k->in_aot_cache());
-  precond(CDSConfig::is_dumping_final_static_archive() || CDSConfig::is_redumping_aot_configuration());
+  precond(CDSConfig::is_dumping_with_input_archive());
   init_dumptime_info(k);
   bool added = add_unregistered_class(current, k);
   assert(added, "must not have duplicates");
   copy_unregistered_class_size_and_crc32(k);
-  copy_verification_info_from_preimage(k);
-  copy_linking_constraints_from_preimage(k);
+  copy_verification_info_from_input_archive(k);
+  copy_linking_constraints_from_input_archive(k);
 }
 
 void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs) {
@@ -824,7 +824,7 @@ void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
   }
 }
 
-void SystemDictionaryShared::init_dumptime_info_from_preimage(InstanceKlass* k) {
+void SystemDictionaryShared::init_dumptime_info_from_input_archive(InstanceKlass* k) {
   if (CDSConfig::is_dumping_preimage_static_archive() && k->defined_by_other_loaders()) {
     DEBUG_ONLY({
         DumpTimeClassInfo* info = _dumptime_table->get(k);
@@ -834,8 +834,8 @@ void SystemDictionaryShared::init_dumptime_info_from_preimage(InstanceKlass* k) 
   }
 
   init_dumptime_info(k);
-  copy_verification_info_from_preimage(k);
-  copy_linking_constraints_from_preimage(k);
+  copy_verification_info_from_input_archive(k);
+  copy_linking_constraints_from_input_archive(k);
 
   if (SystemDictionary::is_platform_class_loader(k->class_loader())) {
     AOTClassLocationConfig::dumptime_set_has_platform_classes();
@@ -1074,7 +1074,7 @@ void SystemDictionaryShared::dumptime_classes_do(MetaspaceClosure* it) {
     if (info.is_excluded()) {
       return;
     }
-    if ((CDSConfig::is_dumping_final_static_archive() || CDSConfig::is_redumping_aot_configuration()) && !k->is_loaded()) {
+    if ((CDSConfig::is_dumping_with_input_archive()) && !k->is_loaded()) {
       assert(k->defined_by_other_loaders(), "must be");
       info.metaspace_pointers_do(it);
     } else if (k->is_loader_alive()) {
@@ -1186,10 +1186,10 @@ void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass
   }
 }
 
-void SystemDictionaryShared::copy_verification_info_from_preimage(InstanceKlass* klass) {
+void SystemDictionaryShared::copy_verification_info_from_input_archive(InstanceKlass* klass) {
   assert(CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   DumpTimeClassInfo* dt_info = get_info(klass);
-  RunTimeClassInfo* rt_info = RunTimeClassInfo::get_for(klass); // from preimage
+  RunTimeClassInfo* rt_info = RunTimeClassInfo::get_for(klass); // from input_archive
 
   int length = rt_info->num_verifier_constraints();
   if (length > 0) {
@@ -1321,11 +1321,11 @@ bool SystemDictionaryShared::check_linking_constraints(Thread* current, Instance
   return false;
 }
 
-void SystemDictionaryShared::copy_linking_constraints_from_preimage(InstanceKlass* klass) {
+void SystemDictionaryShared::copy_linking_constraints_from_input_archive(InstanceKlass* klass) {
   assert(CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   JavaThread* current = JavaThread::current();
   if (klass->defined_by_platform_loader() || klass->defined_by_app_loader()) {
-    RunTimeClassInfo* rt_info = RunTimeClassInfo::get_for(klass); // from preimage
+    RunTimeClassInfo* rt_info = RunTimeClassInfo::get_for(klass); // from input_archive
 
     if (rt_info->num_loader_constraints() > 0) {
       for (int i = 0; i < rt_info->num_loader_constraints(); i++) {

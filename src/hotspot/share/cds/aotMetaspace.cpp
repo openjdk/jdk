@@ -1394,7 +1394,7 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
   JavaThread* THREAD = current; // For exception macros.
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
-  if (ik->in_aot_cache() && !(CDSConfig::is_dumping_final_static_archive() || CDSConfig::is_redumping_aot_configuration())) {
+  if (ik->in_aot_cache() && !CDSConfig::is_dumping_with_input_archive()) {
     assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
     return false;
   }

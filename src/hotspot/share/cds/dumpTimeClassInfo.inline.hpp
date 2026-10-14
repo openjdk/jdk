@@ -47,7 +47,7 @@ void DumpTimeSharedClassTable::iterate_all_live_classes(Function function) const
     const char* exclude_reason = nullptr;
 
     if (!k->is_loaded()) {
-      if ((CDSConfig::is_dumping_final_static_archive() || CDSConfig::is_redumping_aot_configuration()) && k->defined_by_other_loaders()) {
+      if (CDSConfig::is_dumping_with_input_archive() && k->defined_by_other_loaders()) {
         // Copy unregistered classes from the input archive to the output archive.
         function(k, info);
       } else {

@@ -1287,8 +1287,8 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   // notify a class loaded from shared object
   ClassLoadingService::notify_class_loaded(ik, true /* shared class */);
 
-  if (CDSConfig::is_dumping_final_static_archive() || CDSConfig::is_redumping_aot_configuration()) {
-    SystemDictionaryShared::init_dumptime_info_from_preimage(ik);
+  if (CDSConfig::is_dumping_with_input_archive()) {
+    SystemDictionaryShared::init_dumptime_info_from_input_archive(ik);
   }
 }
 

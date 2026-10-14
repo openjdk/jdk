@@ -110,20 +110,7 @@ public:
 
   // --- Basic CDS features
 
-  // archive(s) in general
-  static bool is_dumping_archive()                           { return is_dumping_static_archive() || is_dumping_dynamic_archive(); }
-
-  // input archive(s)
-  static bool is_using_archive()                             NOT_CDS_RETURN_(false);
-  static bool is_using_only_default_archive()                NOT_CDS_RETURN_(false);
-
-  // static_archive
-  static bool is_dumping_static_archive()                    { return CDS_ONLY(_is_dumping_static_archive) NOT_CDS(false); }
-  static void enable_dumping_static_archive()                { CDS_ONLY(_is_dumping_static_archive = true); }
-
-  // Types of AOT archives --
-  //
-  // There are 4 types of AOT archives.
+  // There are 4 types of AOT archives:
   //
   // [1] Classic static CDS archive
   //     This is the output of the traditional CDS static archive creation workflow, e.g.:
@@ -146,12 +133,24 @@ public:
   //
   // Note: [2] is also known as the "preimage static archive". [3] is also known as the "final static archive".
   // These are outdated terminology and will be removed in the future.
+
+  // archive(s) in general
+  static bool is_dumping_archive()                           { return is_dumping_static_archive() || is_dumping_dynamic_archive(); }
+
+  // input archive(s)
+  static bool is_using_archive()                             NOT_CDS_RETURN_(false);
+  static bool is_using_only_default_archive()                NOT_CDS_RETURN_(false);
+
+  // static_archive
+  static bool is_dumping_static_archive()                    { return CDS_ONLY(_is_dumping_static_archive) NOT_CDS(false); }
+  static void enable_dumping_static_archive()                { CDS_ONLY(_is_dumping_static_archive = true); }
+
   static bool is_dumping_classic_static_archive()            NOT_CDS_RETURN_(false);
   static bool is_dumping_preimage_static_archive()           NOT_CDS_RETURN_(false);
   static bool is_dumping_final_static_archive()              NOT_CDS_RETURN_(false);
 
-  // Is the current JVM loading classes from an input archive.
-  static bool has_input_archive() { return is_dumping_aot_cache() || is_redumping_aot_configuration(); }
+  // Is the current JVM loading classes from an input archive and dumping into an output archive.
+  static bool is_dumping_with_input_archive() { return is_dumping_aot_cache() || is_redumping_aot_configuration(); }
 
   // New names:
   static bool is_dumping_aot_configuration() { return is_dumping_preimage_static_archive(); }

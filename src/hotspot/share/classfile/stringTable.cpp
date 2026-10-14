@@ -988,7 +988,7 @@ void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
 }
 
 void StringTable::move_shared_strings_into_runtime_table() {
-  precond(CDSConfig::is_dumping_final_static_archive() || CDSConfig::is_redumping_aot_configuration());
+  precond(CDSConfig::is_dumping_with_input_archive());
   JavaThread* THREAD = JavaThread::current();
   HandleMark hm(THREAD);
 
