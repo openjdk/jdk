@@ -123,14 +123,13 @@ public class AsyncShutdownNowInvokeAnyRace {
                         throw ex;
                 } catch (TimeoutException ex) {
                     dumpTestThreads();
-                    int i = rep;
                     String detail = String.format(
                         "invokeAny timed out, "
                         + "nTasks=%d rep=%d threadsStarted=%d%n"
                         + "poolAtShutdownNow=%s%n"
                         + "poolAtTimeout=%s%n"
                         + "queuedTaskCount=%d queuedSubmissionCount=%d",
-                        nTasks, i, threadsStarted.get(),
+                        nTasks, rep, threadsStarted.get(),
                         poolAtShutdownNow,
                         pool,
                         pool.getQueuedTaskCount(),
@@ -139,6 +138,10 @@ public class AsyncShutdownNowInvokeAnyRace {
                 }
             } finally {
                 pool.shutdown();
+                if (!pool.awaitTermination(16, SECONDS)) {
+                    dumpTestThreads();
+                    throw new AssertionError("pool did not terminate after repetition " + rep);
+                }
             }
             if (falseAlarms != 0)
                 System.out.println("Premature shutdowns = " + falseAlarms);
