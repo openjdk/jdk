@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class TestZGCWithAOTHeap {
         String dumpGC = dumpWithZ ? Z : G1;
         String execGC = execWithZ ? Z : G1;
         String generalErrMsg = "Cannot use CDS heap data.";
-        String coopsErrMsg = generalErrMsg + " Selected GC not compatible -XX:-UseCompressedOops";
+        String coopsErrMsg = "CDS heap data cannot be used by the selected GC. Please choose a different GC or rebuild AOT cache with -XX:+AOTStreamableObjects";
         String coops = "-XX:-UseCompressedOops";
         String coh = shouldUseCOH ? "-XX:+UseCompactObjectHeaders" : "-XX:-UseCompactObjectHeaders";
         String stream = shouldStream ? "-XX:+AOTStreamableObjects" : "-XX:-AOTStreamableObjects";

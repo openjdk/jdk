@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,10 @@ inline Tickspan G1ParScanThreadState::trim_ticks() const {
 
 inline void G1ParScanThreadState::reset_trim_ticks() {
   _trim_ticks = Tickspan();
+}
+
+inline void G1ParScanThreadState::remember_nmethod_into_region(G1HeapRegion* r, nmethod* nm) {
+  _code_root_pairs.push(G1CodeRootPair{r->hrm_index(), nm});
 }
 
 template <typename T>

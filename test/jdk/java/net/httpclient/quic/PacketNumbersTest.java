@@ -37,7 +37,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
- * @run junit PacketNumbersTest
+ * @run junit ${test.main.class}
  */
 public class PacketNumbersTest {
 

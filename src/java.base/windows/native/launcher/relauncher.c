@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,7 +182,6 @@ int main(int argc, char* argv[]) {
     // Windows needs the command line as a single string, not as an array of char*
     size_t total_length = 0;
     for (int i = 0; java_args[i] != NULL; i++) {
-        char* arg = java_args[i];
         total_length += strlen(java_args[i]) + 1;
     }
 
@@ -220,6 +219,7 @@ int main(int argc, char* argv[]) {
     PROCESS_INFORMATION pi;
 
     memset(&si, 0, sizeof(si));
+    si.cb = sizeof(si);
     memset(&pi, 0, sizeof(pi));
 
     // Windows has no equivalent of exec, so start the process and wait for it

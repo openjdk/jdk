@@ -1245,6 +1245,10 @@ relativeError));
                 return fill(s * BUFFER_REPS,
                             i -> (((double)(i + 1) == 0) ? 1 : (double)(i + 1)));
             }),
+            withToString("double[smallOddValue(i)]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (double)(i % 7 == 0 ? -3 : (i % 3 == 0 ? -1 : 1)));
+            }),
             withToString("double[0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (double)0.01 + ((double)i / (i + 1)));
@@ -1590,6 +1594,205 @@ relativeError));
         return Double.compare(a, (double) 0) != 0 ? a : b;
     }
 
+
+    static double scalar_add(double a, double b) {
+        return (double)(a + b);
+    }
+
+    static double scalar_sub(double a, double b) {
+        return (double)(a - b);
+    }
+
+    static double scalar_mul(double a, double b) {
+        return (double)(a * b);
+    }
+
+    static double scalar_min(double a, double b) {
+        return (double)(Math.min(a, b));
+    }
+
+    static double scalar_max(double a, double b) {
+        return (double)(Math.max(a, b));
+    }
+
+    static double scalar_div(double a, double b) {
+        return (double)(a / b);
+    }
+
+    static double scalar_fma(double a, double b, double c) {
+        return (double)(Math.fma(a, b, c));
+    }
+
+    static double scalar_abs(double a) {
+        return (double)(Math.abs(a));
+    }
+
+    static double scalar_neg(double a) {
+        return ((double)-a);
+    }
+
+    static double scalar_sin(double a) {
+        return (double)Math.sin((double)a);
+    }
+
+    static double scalar_exp(double a) {
+        return (double)Math.exp((double)a);
+    }
+
+    static double scalar_log1p(double a) {
+        return (double)Math.log1p((double)a);
+    }
+
+    static double scalar_log(double a) {
+        return (double)Math.log((double)a);
+    }
+
+    static double scalar_log10(double a) {
+        return (double)Math.log10((double)a);
+    }
+
+    static double scalar_expm1(double a) {
+        return (double)Math.expm1((double)a);
+    }
+
+    static double scalar_cos(double a) {
+        return (double)Math.cos((double)a);
+    }
+
+    static double scalar_tan(double a) {
+        return (double)Math.tan((double)a);
+    }
+
+    static double scalar_sinh(double a) {
+        return (double)Math.sinh((double)a);
+    }
+
+    static double scalar_cosh(double a) {
+        return (double)Math.cosh((double)a);
+    }
+
+    static double scalar_tanh(double a) {
+        return (double)Math.tanh((double)a);
+    }
+
+    static double scalar_asin(double a) {
+        return (double)Math.asin((double)a);
+    }
+
+    static double scalar_acos(double a) {
+        return (double)Math.acos((double)a);
+    }
+
+    static double scalar_atan(double a) {
+        return (double)Math.atan((double)a);
+    }
+
+    static double scalar_cbrt(double a) {
+        return (double)Math.cbrt((double)a);
+    }
+
+    static double scalar_sqrt(double a) {
+        return (double)Math.sqrt((double)a);
+    }
+
+    static double scalar_hypot(double a, double b) {
+        return (double)Math.hypot((double)a, (double)b);
+    }
+
+    static double scalar_pow(double a, double b) {
+        return (double)Math.pow((double)a, (double)b);
+    }
+
+    static double scalar_atan2(double a, double b) {
+        return (double)Math.atan2((double)a, (double)b);
+    }
+
+    static double strict_scalar_sin(double a) {
+        return (double)StrictMath.sin((double)a);
+    }
+
+    static double strict_scalar_exp(double a) {
+        return (double)StrictMath.exp((double)a);
+    }
+
+    static double strict_scalar_log1p(double a) {
+        return (double)StrictMath.log1p((double)a);
+    }
+
+    static double strict_scalar_log(double a) {
+        return (double)StrictMath.log((double)a);
+    }
+
+    static double strict_scalar_log10(double a) {
+        return (double)StrictMath.log10((double)a);
+    }
+
+    static double strict_scalar_expm1(double a) {
+        return (double)StrictMath.expm1((double)a);
+    }
+
+    static double strict_scalar_cos(double a) {
+        return (double)StrictMath.cos((double)a);
+    }
+
+    static double strict_scalar_tan(double a) {
+        return (double)StrictMath.tan((double)a);
+    }
+
+    static double strict_scalar_sinh(double a) {
+        return (double)StrictMath.sinh((double)a);
+    }
+
+    static double strict_scalar_cosh(double a) {
+        return (double)StrictMath.cosh((double)a);
+    }
+
+    static double strict_scalar_tanh(double a) {
+        return (double)StrictMath.tanh((double)a);
+    }
+
+    static double strict_scalar_asin(double a) {
+        return (double)StrictMath.asin((double)a);
+    }
+
+    static double strict_scalar_acos(double a) {
+        return (double)StrictMath.acos((double)a);
+    }
+
+    static double strict_scalar_atan(double a) {
+        return (double)StrictMath.atan((double)a);
+    }
+
+    static double strict_scalar_cbrt(double a) {
+        return (double)StrictMath.cbrt((double)a);
+    }
+
+    static double strict_scalar_sqrt(double a) {
+        return (double)StrictMath.sqrt((double)a);
+    }
+
+    static double strict_scalar_hypot(double a, double b) {
+        return (double)StrictMath.hypot((double)a, (double)b);
+    }
+
+    static double strict_scalar_pow(double a, double b) {
+        return (double)StrictMath.pow((double)a, (double)b);
+    }
+
+    static double strict_scalar_atan2(double a, double b) {
+        return (double)StrictMath.atan2((double)a, (double)b);
+    }
+
+    static boolean isNaN(double a) {
+        return Double.isNaN(a);
+    }
+    static boolean isFinite(double a) {
+        return Double.isFinite(a);
+    }
+    static boolean isInfinite(double a) {
+        return Double.isInfinite(a);
+    }
+
     @Test
     static void smokeTest1() {
         DoubleVector three = DoubleVector.broadcast(SPECIES, (byte)-3);
@@ -1683,7 +1886,7 @@ relativeError));
     }
 
     static double ADD(double a, double b) {
-        return (double)(a + b);
+        return (double)(scalar_add(a, b));
     }
 
     @Test(dataProvider = "doubleBinaryOpProvider")
@@ -1704,7 +1907,7 @@ relativeError));
     }
 
     static double add(double a, double b) {
-        return (double)(a + b);
+        return (double)(scalar_add(a, b));
     }
 
     @Test(dataProvider = "doubleBinaryOpProvider")
@@ -1761,7 +1964,7 @@ relativeError));
     }
 
     static double SUB(double a, double b) {
-        return (double)(a - b);
+        return (double)(scalar_sub(a, b));
     }
 
     @Test(dataProvider = "doubleBinaryOpProvider")
@@ -1782,7 +1985,7 @@ relativeError));
     }
 
     static double sub(double a, double b) {
-        return (double)(a - b);
+        return (double)(scalar_sub(a, b));
     }
 
     @Test(dataProvider = "doubleBinaryOpProvider")
@@ -1839,7 +2042,7 @@ relativeError));
     }
 
     static double MUL(double a, double b) {
-        return (double)(a * b);
+        return (double)(scalar_mul(a, b));
     }
 
     @Test(dataProvider = "doubleBinaryOpProvider")
@@ -1860,7 +2063,7 @@ relativeError));
     }
 
     static double mul(double a, double b) {
-        return (double)(a * b);
+        return (double)(scalar_mul(a, b));
     }
 
     @Test(dataProvider = "doubleBinaryOpProvider")
@@ -1917,7 +2120,7 @@ relativeError));
     }
 
     static double DIV(double a, double b) {
-        return (double)(a / b);
+        return (double)(scalar_div(a, b));
     }
 
     @Test(dataProvider = "doubleBinaryOpProvider")
@@ -1938,7 +2141,7 @@ relativeError));
     }
 
     static double div(double a, double b) {
-        return (double)(a / b);
+        return (double)(scalar_div(a, b));
     }
 
     @Test(dataProvider = "doubleBinaryOpProvider")
@@ -1995,7 +2198,7 @@ relativeError));
     }
 
     static double FIRST_NONZERO(double a, double b) {
-        return (double)(Double.doubleToLongBits(a)!=0?a:b);
+        return (double)(firstNonZero(a, b));
     }
 
     @Test(dataProvider = "doubleBinaryOpProvider")
@@ -2297,7 +2500,7 @@ relativeError));
     }
 
     static double MIN(double a, double b) {
-        return (double)(Math.min(a, b));
+        return (double)(scalar_min(a, b));
     }
 
     @Test(dataProvider = "doubleBinaryOpProvider")
@@ -2318,7 +2521,7 @@ relativeError));
     }
 
     static double min(double a, double b) {
-        return (double)(Math.min(a, b));
+        return (double)(scalar_min(a, b));
     }
 
     @Test(dataProvider = "doubleBinaryOpProvider")
@@ -2337,7 +2540,7 @@ relativeError));
     }
 
     static double MAX(double a, double b) {
-        return (double)(Math.max(a, b));
+        return (double)(scalar_max(a, b));
     }
 
     @Test(dataProvider = "doubleBinaryOpProvider")
@@ -2358,7 +2561,7 @@ relativeError));
     }
 
     static double max(double a, double b) {
-        return (double)(Math.max(a, b));
+        return (double)(scalar_max(a, b));
     }
 
     @Test(dataProvider = "doubleBinaryOpProvider")
@@ -2435,7 +2638,7 @@ relativeError));
     static double ADDReduce(double[] a, int idx) {
         double res = ADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res += a[i];
+            res = scalar_add(res, a[i]);
         }
 
         return res;
@@ -2444,7 +2647,7 @@ relativeError));
     static double ADDReduceAll(double[] a) {
         double res = ADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res += ADDReduce(a, i);
+            res = scalar_add(res, ADDReduce(a, i));
         }
 
         return res;
@@ -2462,7 +2665,7 @@ relativeError));
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
                 double v = av.reduceLanes(VectorOperators.ADD);
                 r[i] = v;
-                ra += v;
+                ra = scalar_add(ra, v);
             }
         }
 
@@ -2475,20 +2678,20 @@ relativeError));
         double[] a = fa.apply(SPECIES.length());
         double id = ADD_IDENTITY;
 
-        assertEquals((double) (id + id), id,
+        assertEquals((double) (scalar_add(id, id)), id,
                             "ADD(ADD_IDENTITY, ADD_IDENTITY) != ADD_IDENTITY");
 
         double x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                assertEquals((double) (id + x), x);
-                assertEquals((double) (x + id), x);
+                assertEquals((double) (scalar_add(id, x)), x);
+                assertEquals((double) (scalar_add(x, id)), x);
             }
         } catch (AssertionError e) {
-            assertEquals((double) (id + x), x,
+            assertEquals((double) (scalar_add(id, x)), x,
                                 "ADD(ADD_IDENTITY, " + x + ") != " + x);
-            assertEquals((double) (x + id), x,
+            assertEquals((double) (scalar_add(x, id)), x,
                                 "ADD(" + x + ", ADD_IDENTITY) != " + x);
         }
     }
@@ -2497,7 +2700,7 @@ relativeError));
         double res = ADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
-                res += a[i];
+                res = scalar_add(res, a[i]);
         }
 
         return res;
@@ -2506,7 +2709,7 @@ relativeError));
     static double ADDReduceAllMasked(double[] a, boolean[] mask) {
         double res = ADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res += ADDReduceMasked(a, i, mask);
+            res = scalar_add(res, ADDReduceMasked(a, i, mask));
         }
 
         return res;
@@ -2526,7 +2729,7 @@ relativeError));
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
                 double v = av.reduceLanes(VectorOperators.ADD, vmask);
                 r[i] = v;
-                ra += v;
+                ra = scalar_add(ra, v);
             }
         }
 
@@ -2537,7 +2740,7 @@ relativeError));
     static double MULReduce(double[] a, int idx) {
         double res = MUL_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res *= a[i];
+            res = scalar_mul(res, a[i]);
         }
 
         return res;
@@ -2546,7 +2749,7 @@ relativeError));
     static double MULReduceAll(double[] a) {
         double res = MUL_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res *= MULReduce(a, i);
+            res = scalar_mul(res, MULReduce(a, i));
         }
 
         return res;
@@ -2564,7 +2767,7 @@ relativeError));
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
                 double v = av.reduceLanes(VectorOperators.MUL);
                 r[i] = v;
-                ra *= v;
+                ra = scalar_mul(ra, v);
             }
         }
 
@@ -2577,20 +2780,20 @@ relativeError));
         double[] a = fa.apply(SPECIES.length());
         double id = MUL_IDENTITY;
 
-        assertEquals((double) (id * id), id,
+        assertEquals((double) (scalar_mul(id, id)), id,
                             "MUL(MUL_IDENTITY, MUL_IDENTITY) != MUL_IDENTITY");
 
         double x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                assertEquals((double) (id * x), x);
-                assertEquals((double) (x * id), x);
+                assertEquals((double) (scalar_mul(id, x)), x);
+                assertEquals((double) (scalar_mul(x, id)), x);
             }
         } catch (AssertionError e) {
-            assertEquals((double) (id * x), x,
+            assertEquals((double) (scalar_mul(id, x)), x,
                                 "MUL(MUL_IDENTITY, " + x + ") != " + x);
-            assertEquals((double) (x * id), x,
+            assertEquals((double) (scalar_mul(x, id)), x,
                                 "MUL(" + x + ", MUL_IDENTITY) != " + x);
         }
     }
@@ -2599,7 +2802,7 @@ relativeError));
         double res = MUL_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
-                res *= a[i];
+                res = scalar_mul(res, a[i]);
         }
 
         return res;
@@ -2608,7 +2811,7 @@ relativeError));
     static double MULReduceAllMasked(double[] a, boolean[] mask) {
         double res = MUL_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res *= MULReduceMasked(a, i, mask);
+            res = scalar_mul(res, MULReduceMasked(a, i, mask));
         }
 
         return res;
@@ -2628,7 +2831,7 @@ relativeError));
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
                 double v = av.reduceLanes(VectorOperators.MUL, vmask);
                 r[i] = v;
-                ra *= v;
+                ra = scalar_mul(ra, v);
             }
         }
 
@@ -2639,7 +2842,7 @@ relativeError));
     static double MINReduce(double[] a, int idx) {
         double res = MIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res = (double) Math.min(res, a[i]);
+            res = scalar_min(res, a[i]);
         }
 
         return res;
@@ -2648,7 +2851,7 @@ relativeError));
     static double MINReduceAll(double[] a) {
         double res = MIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res = (double) Math.min(res, MINReduce(a, i));
+            res = scalar_min(res, MINReduce(a, i));
         }
 
         return res;
@@ -2666,7 +2869,7 @@ relativeError));
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
                 double v = av.reduceLanes(VectorOperators.MIN);
                 r[i] = v;
-                ra = (double) Math.min(ra, v);
+                ra = scalar_min(ra, v);
             }
         }
 
@@ -2679,20 +2882,20 @@ relativeError));
         double[] a = fa.apply(SPECIES.length());
         double id = MIN_IDENTITY;
 
-        assertEquals((double) Math.min(id, id), id,
+        assertEquals(scalar_min(id, id), id,
                             "MIN(MIN_IDENTITY, MIN_IDENTITY) != MIN_IDENTITY");
 
         double x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                assertEquals((double) Math.min(id, x), x);
-                assertEquals((double) Math.min(x, id), x);
+                assertEquals(scalar_min(id, x), x);
+                assertEquals(scalar_min(x, id), x);
             }
         } catch (AssertionError e) {
-            assertEquals((double) Math.min(id, x), x,
+            assertEquals(scalar_min(id, x), x,
                                 "MIN(MIN_IDENTITY, " + x + ") != " + x);
-            assertEquals((double) Math.min(x, id), x,
+            assertEquals(scalar_min(x, id), x,
                                 "MIN(" + x + ", MIN_IDENTITY) != " + x);
         }
     }
@@ -2701,7 +2904,7 @@ relativeError));
         double res = MIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
-                res = (double) Math.min(res, a[i]);
+                res = scalar_min(res, a[i]);
         }
 
         return res;
@@ -2710,7 +2913,7 @@ relativeError));
     static double MINReduceAllMasked(double[] a, boolean[] mask) {
         double res = MIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res = (double) Math.min(res, MINReduceMasked(a, i, mask));
+            res = scalar_min(res, MINReduceMasked(a, i, mask));
         }
 
         return res;
@@ -2730,7 +2933,7 @@ relativeError));
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
                 double v = av.reduceLanes(VectorOperators.MIN, vmask);
                 r[i] = v;
-                ra = (double) Math.min(ra, v);
+                ra = scalar_min(ra, v);
             }
         }
 
@@ -2741,7 +2944,7 @@ relativeError));
     static double MAXReduce(double[] a, int idx) {
         double res = MAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res = (double) Math.max(res, a[i]);
+            res = scalar_max(res, a[i]);
         }
 
         return res;
@@ -2750,7 +2953,7 @@ relativeError));
     static double MAXReduceAll(double[] a) {
         double res = MAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res = (double) Math.max(res, MAXReduce(a, i));
+            res = scalar_max(res, MAXReduce(a, i));
         }
 
         return res;
@@ -2768,7 +2971,7 @@ relativeError));
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
                 double v = av.reduceLanes(VectorOperators.MAX);
                 r[i] = v;
-                ra = (double) Math.max(ra, v);
+                ra = scalar_max(ra, v);
             }
         }
 
@@ -2781,20 +2984,20 @@ relativeError));
         double[] a = fa.apply(SPECIES.length());
         double id = MAX_IDENTITY;
 
-        assertEquals((double) Math.max(id, id), id,
+        assertEquals(scalar_max(id, id), id,
                             "MAX(MAX_IDENTITY, MAX_IDENTITY) != MAX_IDENTITY");
 
         double x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                assertEquals((double) Math.max(id, x), x);
-                assertEquals((double) Math.max(x, id), x);
+                assertEquals(scalar_max(id, x), x);
+                assertEquals(scalar_max(x, id), x);
             }
         } catch (AssertionError e) {
-            assertEquals((double) Math.max(id, x), x,
+            assertEquals(scalar_max(id, x), x,
                                 "MAX(MAX_IDENTITY, " + x + ") != " + x);
-            assertEquals((double) Math.max(x, id), x,
+            assertEquals(scalar_max(x, id), x,
                                 "MAX(" + x + ", MAX_IDENTITY) != " + x);
         }
     }
@@ -2803,7 +3006,7 @@ relativeError));
         double res = MAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
-                res = (double) Math.max(res, a[i]);
+                res = scalar_max(res, a[i]);
         }
 
         return res;
@@ -2812,7 +3015,7 @@ relativeError));
     static double MAXReduceAllMasked(double[] a, boolean[] mask) {
         double res = MAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res = (double) Math.max(res, MAXReduceMasked(a, i, mask));
+            res = scalar_max(res, MAXReduceMasked(a, i, mask));
         }
 
         return res;
@@ -2832,7 +3035,7 @@ relativeError));
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
                 double v = av.reduceLanes(VectorOperators.MAX, vmask);
                 r[i] = v;
-                ra = (double) Math.max(ra, v);
+                ra = scalar_max(ra, v);
             }
         }
 
@@ -3044,7 +3247,7 @@ relativeError));
     }
 
     static boolean testIS_FINITE(double a) {
-        return Double.isFinite(a);
+        return isFinite(a);
     }
 
     @Test(dataProvider = "doubleTestOpProvider")
@@ -3085,7 +3288,7 @@ relativeError));
     }
 
     static boolean testIS_NAN(double a) {
-        return Double.isNaN(a);
+        return isNaN(a);
     }
 
     @Test(dataProvider = "doubleTestOpProvider")
@@ -3126,7 +3329,7 @@ relativeError));
     }
 
     static boolean testIS_INFINITE(double a) {
-        return Double.isInfinite(a);
+        return isInfinite(a);
     }
 
     @Test(dataProvider = "doubleTestOpProvider")
@@ -3467,7 +3670,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), a[i + j] < b[i]);
+                assertEquals(mv.laneIsSet(j), lt(a[i + j], b[i]));
             }
         }
     }
@@ -3487,7 +3690,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (a[i + j] < b[i]));
+                assertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j], b[i])));
             }
         }
     }
@@ -3503,7 +3706,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), a[i + j] < (double)((long)b[i]));
+                assertEquals(mv.laneIsSet(j), lt(a[i + j], (double)((long)b[i])));
             }
         }
     }
@@ -3523,7 +3726,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (a[i + j] < (double)((long)b[i])));
+                assertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j], (double)((long)b[i]))));
             }
         }
     }
@@ -3539,7 +3742,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), a[i + j] == b[i]);
+                assertEquals(mv.laneIsSet(j), eq(a[i + j], b[i]));
             }
         }
     }
@@ -3559,7 +3762,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (a[i + j] == b[i]));
+                assertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j], b[i])));
             }
         }
     }
@@ -3575,7 +3778,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), a[i + j] == (double)((long)b[i]));
+                assertEquals(mv.laneIsSet(j), eq(a[i + j], (double)((long)b[i])));
             }
         }
     }
@@ -3595,7 +3798,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (a[i + j] == (double)((long)b[i])));
+                assertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j], (double)((long)b[i]))));
             }
         }
     }
@@ -4095,11 +4298,11 @@ relativeError));
     }
 
     static double SIN(double a) {
-        return (double)(Math.sin((double)a));
+        return (double)(scalar_sin(a));
     }
 
     static double strictSIN(double a) {
-        return (double)(StrictMath.sin((double)a));
+        return (double)(strict_scalar_sin(a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4118,11 +4321,11 @@ relativeError));
     }
 
     static double EXP(double a) {
-        return (double)(Math.exp((double)a));
+        return (double)(scalar_exp(a));
     }
 
     static double strictEXP(double a) {
-        return (double)(StrictMath.exp((double)a));
+        return (double)(strict_scalar_exp(a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4141,11 +4344,11 @@ relativeError));
     }
 
     static double LOG1P(double a) {
-        return (double)(Math.log1p((double)a));
+        return (double)(scalar_log1p(a));
     }
 
     static double strictLOG1P(double a) {
-        return (double)(StrictMath.log1p((double)a));
+        return (double)(strict_scalar_log1p(a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4164,11 +4367,11 @@ relativeError));
     }
 
     static double LOG(double a) {
-        return (double)(Math.log((double)a));
+        return (double)(scalar_log(a));
     }
 
     static double strictLOG(double a) {
-        return (double)(StrictMath.log((double)a));
+        return (double)(strict_scalar_log(a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4187,11 +4390,11 @@ relativeError));
     }
 
     static double LOG10(double a) {
-        return (double)(Math.log10((double)a));
+        return (double)(scalar_log10(a));
     }
 
     static double strictLOG10(double a) {
-        return (double)(StrictMath.log10((double)a));
+        return (double)(strict_scalar_log10(a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4210,11 +4413,11 @@ relativeError));
     }
 
     static double EXPM1(double a) {
-        return (double)(Math.expm1((double)a));
+        return (double)(scalar_expm1(a));
     }
 
     static double strictEXPM1(double a) {
-        return (double)(StrictMath.expm1((double)a));
+        return (double)(strict_scalar_expm1(a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4233,11 +4436,11 @@ relativeError));
     }
 
     static double COS(double a) {
-        return (double)(Math.cos((double)a));
+        return (double)(scalar_cos(a));
     }
 
     static double strictCOS(double a) {
-        return (double)(StrictMath.cos((double)a));
+        return (double)(strict_scalar_cos(a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4256,11 +4459,11 @@ relativeError));
     }
 
     static double TAN(double a) {
-        return (double)(Math.tan((double)a));
+        return (double)(scalar_tan(a));
     }
 
     static double strictTAN(double a) {
-        return (double)(StrictMath.tan((double)a));
+        return (double)(strict_scalar_tan(a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4279,11 +4482,11 @@ relativeError));
     }
 
     static double SINH(double a) {
-        return (double)(Math.sinh((double)a));
+        return (double)(scalar_sinh(a));
     }
 
     static double strictSINH(double a) {
-        return (double)(StrictMath.sinh((double)a));
+        return (double)(strict_scalar_sinh(a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4302,11 +4505,11 @@ relativeError));
     }
 
     static double COSH(double a) {
-        return (double)(Math.cosh((double)a));
+        return (double)(scalar_cosh(a));
     }
 
     static double strictCOSH(double a) {
-        return (double)(StrictMath.cosh((double)a));
+        return (double)(strict_scalar_cosh(a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4325,11 +4528,11 @@ relativeError));
     }
 
     static double TANH(double a) {
-        return (double)(Math.tanh((double)a));
+        return (double)(scalar_tanh(a));
     }
 
     static double strictTANH(double a) {
-        return (double)(StrictMath.tanh((double)a));
+        return (double)(strict_scalar_tanh(a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4348,11 +4551,11 @@ relativeError));
     }
 
     static double ASIN(double a) {
-        return (double)(Math.asin((double)a));
+        return (double)(scalar_asin(a));
     }
 
     static double strictASIN(double a) {
-        return (double)(StrictMath.asin((double)a));
+        return (double)(strict_scalar_asin(a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4371,11 +4574,11 @@ relativeError));
     }
 
     static double ACOS(double a) {
-        return (double)(Math.acos((double)a));
+        return (double)(scalar_acos(a));
     }
 
     static double strictACOS(double a) {
-        return (double)(StrictMath.acos((double)a));
+        return (double)(strict_scalar_acos(a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4394,11 +4597,11 @@ relativeError));
     }
 
     static double ATAN(double a) {
-        return (double)(Math.atan((double)a));
+        return (double)(scalar_atan(a));
     }
 
     static double strictATAN(double a) {
-        return (double)(StrictMath.atan((double)a));
+        return (double)(strict_scalar_atan(a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4417,11 +4620,11 @@ relativeError));
     }
 
     static double CBRT(double a) {
-        return (double)(Math.cbrt((double)a));
+        return (double)(scalar_cbrt(a));
     }
 
     static double strictCBRT(double a) {
-        return (double)(StrictMath.cbrt((double)a));
+        return (double)(strict_scalar_cbrt(a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4440,11 +4643,11 @@ relativeError));
     }
 
     static double HYPOT(double a, double b) {
-        return (double)(Math.hypot((double)a, (double)b));
+        return (double)(scalar_hypot(a, b));
     }
 
     static double strictHYPOT(double a, double b) {
-        return (double)(StrictMath.hypot((double)a, (double)b));
+        return (double)(strict_scalar_hypot(a, b));
     }
 
     @Test(dataProvider = "doubleBinaryOpProvider")
@@ -4466,11 +4669,11 @@ relativeError));
 
 
     static double POW(double a, double b) {
-        return (double)(Math.pow((double)a, (double)b));
+        return (double)(scalar_pow(a, b));
     }
 
     static double strictPOW(double a, double b) {
-        return (double)(StrictMath.pow((double)a, (double)b));
+        return (double)(strict_scalar_pow(a, b));
     }
 
     @Test(dataProvider = "doubleBinaryOpProvider")
@@ -4492,11 +4695,11 @@ relativeError));
 
 
     static double pow(double a, double b) {
-        return (double)(Math.pow((double)a, (double)b));
+        return (double)(scalar_pow(a, b));
     }
 
     static double strictpow(double a, double b) {
-        return (double)(StrictMath.pow((double)a, (double)b));
+        return (double)(strict_scalar_pow(a, b));
     }
 
     @Test(dataProvider = "doubleBinaryOpProvider")
@@ -4518,11 +4721,11 @@ relativeError));
 
 
     static double ATAN2(double a, double b) {
-        return (double)(Math.atan2((double)a, (double)b));
+        return (double)(scalar_atan2(a, b));
     }
 
     static double strictATAN2(double a, double b) {
-        return (double)(StrictMath.atan2((double)a, (double)b));
+        return (double)(strict_scalar_atan2(a, b));
     }
 
     @Test(dataProvider = "doubleBinaryOpProvider")
@@ -4574,11 +4777,11 @@ relativeError));
 
 
     static double FMA(double a, double b, double c) {
-        return (double)(Math.fma(a, b, c));
+        return (double)(scalar_fma(a, b, c));
     }
 
     static double fma(double a, double b, double c) {
-        return (double)(Math.fma(a, b, c));
+        return (double)(scalar_fma(a, b, c));
     }
 
     @Test(dataProvider = "doubleTernaryOpProvider")
@@ -4798,11 +5001,11 @@ relativeError));
     }
 
     static double NEG(double a) {
-        return (double)(-((double)a));
+        return (double)(scalar_neg((double)a));
     }
 
     static double neg(double a) {
-        return (double)(-((double)a));
+        return (double)(scalar_neg((double)a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4854,11 +5057,11 @@ relativeError));
     }
 
     static double ABS(double a) {
-        return (double)(Math.abs((double)a));
+        return (double)(scalar_abs((double)a));
     }
 
     static double abs(double a) {
-        return (double)(Math.abs((double)a));
+        return (double)(scalar_abs((double)a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4910,11 +5113,11 @@ relativeError));
     }
 
     static double SQRT(double a) {
-        return (double)(Math.sqrt((double)a));
+        return (double)(scalar_sqrt(a));
     }
 
     static double sqrt(double a) {
-        return (double)(Math.sqrt((double)a));
+        return (double)(scalar_sqrt(a));
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -5127,7 +5330,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), a[i + j] < b[i]);
+                assertEquals(mv.laneIsSet(j), lt(a[i + j], b[i]));
             }
         }
     }
@@ -5143,7 +5346,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), a[i + j] == b[i]);
+                assertEquals(mv.laneIsSet(j), eq(a[i + j], b[i]));
             }
         }
     }
@@ -5202,7 +5405,7 @@ relativeError));
     static long ADDReduceLong(double[] a, int idx) {
         double res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res += a[i];
+            res = scalar_add(res, a[i]);
         }
 
         return (long)res;
@@ -5211,7 +5414,7 @@ relativeError));
     static long ADDReduceAllLong(double[] a) {
         long res = 0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res += ADDReduceLong(a, i);
+            res = (long)scalar_add((double)res, (double)ADDReduceLong(a, i));
         }
 
         return res;
@@ -5229,8 +5432,8 @@ relativeError));
         }
 
         ra = 0;
-        for (int i = 0; i < a.length; i ++) {
-            ra += r[i];
+        for (int i = 0; i < a.length; i++) {
+            ra = (long)scalar_add((double)ra, (double)r[i]);
         }
 
         assertReductionLongArraysEquals(r, ra, a,
@@ -5240,8 +5443,9 @@ relativeError));
     static long ADDReduceLongMasked(double[] a, int idx, boolean[] mask) {
         double res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            if(mask[i % SPECIES.length()])
-                res += a[i];
+            if (mask[i % SPECIES.length()]) {
+                res = scalar_add(res, a[i]);
+            }
         }
 
         return (long)res;
@@ -5250,7 +5454,7 @@ relativeError));
     static long ADDReduceAllLongMasked(double[] a, boolean[] mask) {
         long res = 0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res += ADDReduceLongMasked(a, i, mask);
+            res = (long)scalar_add((double)res, (double)ADDReduceLongMasked(a, i, mask));
         }
 
         return res;
@@ -5270,8 +5474,8 @@ relativeError));
         }
 
         ra = 0;
-        for (int i = 0; i < a.length; i ++) {
-            ra += r[i];
+        for (int i = 0; i < a.length; i++) {
+            ra = (long)scalar_add((double)ra, (double)r[i]);
         }
 
         assertReductionLongArraysEqualsMasked(r, ra, a, mask,

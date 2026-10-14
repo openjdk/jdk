@@ -98,33 +98,10 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
     result = reserve_at_eor_compatible_address(size, aslr);
   }
 
-  // Movk-compatible reservation via probing.
-  if (result == nullptr) {
-    result = reserve_address_space_for_16bit_move(size, aslr);
-  }
-
-  // Movk-compatible reservation via overallocation.
-  // If that failed, attempt to allocate at any 4G-aligned address. Let the system decide where. For ASLR,
-  // we now rely on the system.
-  // Compared with the probing done above, this has two disadvantages:
-  // - on a kernel with 52-bit address space we may get an address that has bits set between [48, 52).
-  //   In that case, we may need two movk moves (not yet implemented).
-  // - this technique leads to temporary over-reservation of address space; it will spike the vsize of
-  //   the process. Therefore it may fail if a vsize limit is in place (e.g. ulimit -v).
-  if (result == nullptr) {
-    constexpr size_t alignment = nth_bit(32);
-    log_debug(metaspace, map)("Trying to reserve at a 32-bit-aligned address");
-    result = os::reserve_memory_aligned(size, alignment, mtNone);
-  }
-
   return result;
 }
 
-bool CompressedKlassPointers::check_klass_decode_mode(address base, int shift, const size_t range) {
-  return MacroAssembler::check_klass_decode_mode(base, shift, range);
-}
-
-bool CompressedKlassPointers::set_klass_decode_mode() {
+void CompressedKlassPointers::initialize_pd() {
   const size_t range = klass_range_end() - base();
-  return MacroAssembler::set_klass_decode_mode(_base, _shift, range);
+  MacroAssembler::initialize_klass_decode_mode(_base, _shift, range);
 }

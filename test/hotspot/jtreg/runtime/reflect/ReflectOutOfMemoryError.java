@@ -38,7 +38,8 @@ public class ReflectOutOfMemoryError {
         try {
             // Repository for objects, which should be allocated:
             int index = 0;
-            for (int size = 1 << 30; size > 0 && pool == null; size >>= 1)
+            // Halving loop starting from max possible size constrained by max heap size
+            for (int size = (int)(Runtime.getRuntime().maxMemory()>>2); size > 0 && pool == null; size >>= 1)
                 try {
                     pool = new Object[size];
                 } catch (OutOfMemoryError oome) {

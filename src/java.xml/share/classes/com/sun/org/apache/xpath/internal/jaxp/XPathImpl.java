@@ -51,7 +51,7 @@ import org.xml.sax.InputSource;
  * New methods: evaluateExpression
  * Refactored to share code with XPathExpressionImpl.
  *
- * @LastModified: June 2025
+ * @LastModified: Nov 2025
  */
 public class XPathImpl extends XPathImplUtil implements javax.xml.xpath.XPath {
 
@@ -175,7 +175,8 @@ public class XPathImpl extends XPathImplUtil implements javax.xml.xpath.XPath {
             // Can have errorListener
             XPathExpressionImpl ximpl = new XPathExpressionImpl (xpath,
                     prefixResolver, functionResolver, variableResolver,
-                    featureSecureProcessing, featureManager);
+                    featureSecureProcessing, featureManager,
+                    xmlSecMgr, xmlSecPropMgr);
             return ximpl;
         } catch (TransformerException te) {
             throw new XPathExpressionException (te) ;

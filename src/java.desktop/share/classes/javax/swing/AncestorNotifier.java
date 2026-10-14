@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,7 +213,7 @@ class AncestorNotifier implements ComponentListener, PropertyChangeListener, Ser
     public void propertyChange(PropertyChangeEvent evt) {
         String s = evt.getPropertyName();
 
-        if (s!=null && (s.equals("parent") || s.equals("ancestor"))) {
+        if (s != null && (s.equals("parent") || s.equals("ancestor"))) {
             JComponent component = (JComponent)evt.getSource();
 
             if (evt.getNewValue() != null) {

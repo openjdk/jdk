@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package jdk.jfr.internal.consumer.filter;
 
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -39,6 +40,9 @@ final class RecordingOutput implements Closeable {
     private long position;
 
     public RecordingOutput(File file) throws IOException {
+        // Truncates existing file if it exists
+        var fos = new FileOutputStream(file);
+        fos.close();
         this.file = new RandomAccessFile(file, "rw");
     }
 

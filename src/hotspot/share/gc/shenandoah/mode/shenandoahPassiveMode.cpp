@@ -35,7 +35,6 @@
 void ShenandoahPassiveMode::initialize_flags() const {
   // Do not allow concurrent cycles.
   FLAG_SET_DEFAULT(ExplicitGCInvokesConcurrent, false);
-  FLAG_SET_DEFAULT(ShenandoahImplicitGCInvokesConcurrent, false);
 
   // No need for evacuation reserve with Full GC, only for Degenerated GC.
   if (!ShenandoahDegeneratedGC) {
@@ -48,9 +47,7 @@ void ShenandoahPassiveMode::initialize_flags() const {
   // Disable known barriers by default.
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahLoadRefBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahSATBBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCASBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCloneBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahStackWatermarkBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCardBarrier);
 }
 

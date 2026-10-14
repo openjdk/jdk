@@ -96,8 +96,8 @@ public abstract class EventSettings {
         }
 
         @Override
-        public ValueDescriptor newValueDescriptor(String name, Type fieldType, List<AnnotationElement> annos, int dimension, boolean constantPool, String fieldName) {
-            return new ValueDescriptor(fieldType, name, annos, dimension, constantPool, fieldName);
+        public ValueDescriptor newValueDescriptor(String name, Type fieldType, List<AnnotationElement> annos, int dimension, boolean constantPool) {
+            return new ValueDescriptor(fieldType, name, annos, dimension, constantPool);
         }
 
         @Override
@@ -126,11 +126,6 @@ public abstract class EventSettings {
         }
 
         @Override
-        public String getFieldName(ValueDescriptor v) {
-            return v.getJavaFieldName();
-        }
-
-        @Override
         public ValueDescriptor newValueDescriptor(Class<?> type, String name) {
             return new ValueDescriptor(type, name, List.of(), true);
         }
@@ -151,8 +146,8 @@ public abstract class EventSettings {
         }
 
         @Override
-        public Recording newRecording(RecordingState state) {
-            return new Recording(state, Map.of());
+        public Recording newRecording(Boolean register) {
+            return new Recording(register, Map.of());
         }
 
         @Override

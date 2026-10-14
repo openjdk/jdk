@@ -26,6 +26,7 @@
  * @bug 8374582
  * @summary Tests the creation and removal of opaque nodes at range checks points in string intrinsics.
  * @requires vm.flagless
+ * @requires os.arch != "riscv64" | vm.cpu.features ~= ".*rvv.*"
  * @library /test/lib /
  * @run driver ${test.main.class}
  */

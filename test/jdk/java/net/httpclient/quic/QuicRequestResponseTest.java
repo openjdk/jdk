@@ -55,7 +55,7 @@ import org.junit.jupiter.api.Test;
  *        jdk.httpclient.test.lib.quic.ClientConnection
  *        jdk.httpclient.test.lib.common.TestUtil
  *        jdk.test.lib.net.SimpleSSLContext
- * @run junit/othervm -Djdk.internal.httpclient.debug=true QuicRequestResponseTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 public class QuicRequestResponseTest {
 
@@ -73,7 +73,7 @@ public class QuicRequestResponseTest {
                 .sslContext(sslContext)
                 .build();
         // add a handler which deals with incoming connections
-        server.addHandler(new EchoHandler(HELLO_MSG.length));
+        server.setHandler(new EchoHandler(HELLO_MSG.length));
         server.start();
         System.out.println("Server started at " + server.getAddress());
     }

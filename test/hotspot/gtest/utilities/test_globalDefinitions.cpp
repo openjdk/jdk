@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 
 #include "cppstdlib/type_traits.hpp"
-#include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -196,34 +195,33 @@ TEST(globalDefinitions, array_size) {
 
   {
     int test_array[test_size] = {};
-    static_assert(test_size == ARRAY_SIZE(test_array), "must be");
+    static_assert(test_size == ARRAY_SIZE(test_array));
   }
 
   {
     double test_array[test_size] = {};
-    static_assert(test_size == ARRAY_SIZE(test_array), "must be");
+    static_assert(test_size == ARRAY_SIZE(test_array));
   }
 
   struct ArrayElt { int x; };
 
   {
     ArrayElt test_array[test_size] = {};
-    static_assert(test_size == ARRAY_SIZE(test_array), "must be");
+    static_assert(test_size == ARRAY_SIZE(test_array));
   }
 
   {
     const ArrayElt test_array[] = { {0}, {1}, {2}, {3}, {4}, {5} };
-    static_assert(6 == ARRAY_SIZE(test_array), "must be");
+    static_assert(6 == ARRAY_SIZE(test_array));
   }
 
 }
 
 #define check_format(format, value, expected)                  \
   do {                                                         \
-    ResourceMark rm;                                           \
     stringStream out;                                          \
     out.print((format), (value));                              \
-    const char* result = out.as_string();                      \
+    const char* result = out.base();                           \
     EXPECT_STREQ((result), (expected)) << "Failed with"        \
         << " format '"   << (format)   << "'"                  \
         << " value '"    << (value);                           \

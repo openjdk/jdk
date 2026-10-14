@@ -38,7 +38,6 @@
 class Compile;
 class Node;
 class MachNode;
-class MachTypeNode;
 class MachOper;
 
 //---------------------------Matcher-------------------------------------------
@@ -221,12 +220,12 @@ public:
   // Convert a machine register to a machine register type, so-as to
   // properly match spill code.
   const int *_register_save_type;
+  #ifdef ASSERT
   // Maps from machine register to boolean; true if machine register can
   // be holding a call argument in some signature.
   static bool can_be_java_arg( int reg );
-  // Maps from machine register to boolean; true if machine register holds
-  // a spillable argument.
-  static bool is_spillable_arg( int reg );
+  #endif
+
   // Number of integer live ranges that constitute high register pressure
   static uint int_pressure_limit();
   // Number of float live ranges that constitute high register pressure
@@ -264,6 +263,8 @@ public:
 
   // Helper for match
   OptoReg::Name warp_incoming_stk_arg( VMReg reg );
+
+  RegMask* return_values_mask(const TypeFunc* tf) const;
 
   // Transform, then walk.  Does implicit DCE while walking.
   // Name changed from "transform" to avoid it being virtual.
@@ -341,7 +342,7 @@ public:
 
   // Identify if a vector mask operation prefers the input/output mask to be
   // saved with a predicate type or not.
-  // - Return true if it prefers a predicate type (i.e. TypeVectMask).
+  // - Return true if it prefers a predicate type (i.e. TypePVectMask).
   // - Return false if it prefers a general vector type (i.e. TypeVectA to TypeVectZ).
   static bool mask_op_prefers_predicate(int opcode, const TypeVect* vt);
 
@@ -414,24 +415,20 @@ public:
   // Return value register.  On Intel it is EAX.
   static OptoRegPair   return_value(uint ideal_reg);
   static OptoRegPair c_return_value(uint ideal_reg);
-  RegMask                     _return_value_mask;
+  RegMask*            _return_values_mask;
   // Inline Cache Register
   static OptoReg::Name  inline_cache_reg();
   static int            inline_cache_reg_encode();
 
-  // Register for DIVI projection of divmodI
-  static const RegMask& divI_proj_mask();
-  // Register for MODI projection of divmodI
-  static const RegMask& modI_proj_mask();
+  // Register for the first projection of an int pair
+  static const RegMask& firstI_proj_mask();
+  // Register for the second projection of an int pair
+  static const RegMask& secondI_proj_mask();
 
-  // Register for DIVL projection of divmodL
-  static const RegMask& divL_proj_mask();
-  // Register for MODL projection of divmodL
-  static const RegMask& modL_proj_mask();
-
-  // Use hardware DIV instruction when it is faster than
-  // a code which use multiply for division by constant.
-  static bool use_asm_for_ldiv_by_con( jlong divisor );
+  // Register for the first projection of a long pair
+  static const RegMask& firstL_proj_mask();
+  // Register for the second projection of a long pair
+  static const RegMask& secondL_proj_mask();
 
   // Java-Interpreter calling convention
   // (what you use when calling between compiled-Java and Interpreted-Java
@@ -442,9 +439,6 @@ public:
 
   // The Method-klass-holder may be passed in the inline_cache_reg
   // and then expanded into the inline_cache_reg and a method_ptr register
-
-  // Interpreter's Frame Pointer Register
-  static OptoReg::Name  interpreter_frame_pointer_reg();
 
   // Java-Native calling convention
   // (what you use when intercalling between Java and C++ code)

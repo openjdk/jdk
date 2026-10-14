@@ -10,7 +10,7 @@
                 $abstractvectortype$ av = $abstractvectortype$.fromArray(SPECIES, a, i);
                 $type$ v = av.reduceLanes(VectorOperators.[[TEST]], vmask);
                 r[i] = v;
-                ra [[TEST_OP]]= v;
+                ra = [[TEST_OP]](ra, v);
             }
         }
 

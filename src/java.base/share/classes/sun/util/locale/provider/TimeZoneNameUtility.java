@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.util.locale.provider;
 
 import java.lang.ref.SoftReference;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -37,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.TimeZoneNameProvider;
 import sun.util.calendar.ZoneInfo;
 import sun.util.cldr.CLDRLocaleProviderAdapter;
-import static sun.util.locale.provider.LocaleProviderAdapter.Type;
+import static sun.util.locale.provider.LocaleProviderAdapter.Type.CLDR;
 
 /**
  * Utility class that deals with the localized time zone names
@@ -60,6 +61,12 @@ public final class TimeZoneNameUtility {
      */
     private static final Map<String, SoftReference<Map<Locale, String[]>>> cachedDisplayNames =
         new ConcurrentHashMap<>();
+
+    /**
+     * Explicit DST offset map
+     */
+    private static final LazyConstant<Map<String, ZoneOffset>> explicitDstOffsets =
+        LazyConstant.of(TimeZoneNameUtility::initExplicitDstOffsets);
 
     /**
      * get time zone localized strings. Enumerate all keys.
@@ -169,8 +176,22 @@ public final class TimeZoneNameUtility {
      * Returns the canonical ID for the given ID
      */
     public static Optional<String> canonicalTZID(String id) {
-        return ((CLDRLocaleProviderAdapter)LocaleProviderAdapter.forType(Type.CLDR))
+        return ((CLDRLocaleProviderAdapter)LocaleProviderAdapter.forType(CLDR))
                     .canonicalTZID(id);
+    }
+
+    /**
+     * {@return the explicit metazone DST offset for the specified time zone ID if it exists, or else null}
+     * @param tzid the time zone ID
+     */
+    public static ZoneOffset explicitDstOffset(String tzid) {
+        return explicitDstOffsets.get().get(canonicalTZID(tzid).orElse(tzid));
+    }
+
+    private static Map<String, ZoneOffset> initExplicitDstOffsets() {
+        return LocaleProviderAdapter.forType(CLDR)
+            .getLocaleResources(Locale.ROOT)
+            .getExplicitDstOffsets();
     }
 
     private static String[] retrieveDisplayNamesImpl(String id, Locale locale) {

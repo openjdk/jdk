@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,7 @@ public class ClassFile {
         V69(69, 0),   // JDK 25
         V70(70, 0),   // JDK 26
         V71(71, 0),   // JDK 27
+        V72(72, 0),   // JDK 28
         ; // Reduce code churn when appending new constants
         Version(int major, int minor) {
             this.major = major;

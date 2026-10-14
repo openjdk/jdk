@@ -32,6 +32,7 @@ import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompilableIRMetho
 import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.HotSpotPidFileParser;
 import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.LoggedMethod;
 import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.LoggedMethods;
+import compiler.lib.ir_framework.driver.network.testvm.java.VMInfo;
 
 import java.util.Map;
 import java.util.SortedSet;

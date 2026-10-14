@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,11 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_TABLE_STATISTICS_HPP
-#define SHARE_UTILITIES_TABLE_STATISTICS_HPP
+#ifndef SHARE_UTILITIES_TABLESTATISTICS_HPP
+#define SHARE_UTILITIES_TABLESTATISTICS_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
@@ -35,8 +36,8 @@ class TableRateStatistics : public CHeapObj<mtStatistics> {
   friend class TableStatistics;
 
 private:
-  volatile size_t _added_items;
-  volatile size_t _removed_items;
+  Atomic<size_t> _added_items;
+  Atomic<size_t> _removed_items;
 
   jlong _time_stamp;
   double _seconds_stamp;
@@ -89,4 +90,4 @@ public:
   void print(outputStream* st, const char *table_name);
 };
 
-#endif // SHARE_UTILITIES_TABLE_STATISTICS_HPP
+#endif // SHARE_UTILITIES_TABLESTATISTICS_HPP

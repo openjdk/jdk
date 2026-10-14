@@ -30,6 +30,7 @@ import java.util.List;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedFormattedString;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
 import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.PackageTest;
@@ -86,6 +87,14 @@ public class WinResourceTest {
             // Create invalid WiX source file in a resource dir.
             TKit.createTextFile(resourceDir.resolve(wixSource), List.of(
                     "any string that is an invalid WiX source file"));
+
+            // Need summary to pick WiX version.
+            // Need errors to pick WiX error messages.
+            // Need resources to pick log messages on custom resource usage.
+            cmd.setEnabledMessageCategories(
+                    MessageCategory.SUMMARY,
+                    MessageCategory.ERRORS,
+                    MessageCategory.RESOURCES).setDisabledMessageCategories();
 
             new JPackageOutputValidator()
                     .matchTimestamps()

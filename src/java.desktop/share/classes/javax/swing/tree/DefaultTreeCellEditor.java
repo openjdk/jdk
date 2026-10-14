@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,7 +259,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
                                          ((MouseEvent)event).getY());
                     editable = (lastPath != null && path != null &&
                                lastPath.equals(path));
-                    if (path!=null) {
+                    if (path != null) {
                         lastRow = tree.getRowForPath(path);
                         Object value = path.getLastPathComponent();
                         boolean isSelected = tree.isRowSelected(lastRow);

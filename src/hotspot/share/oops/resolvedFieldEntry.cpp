@@ -22,10 +22,10 @@
  *
  */
 
+#include "cds/aotArtifactFinder.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cppstdlib/type_traits.hpp"
-#include "oops/instanceKlass.hpp"
-#include "oops/instanceOop.hpp"
+#include "interpreter/bytecodes.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "utilities/checkedCast.hpp"
@@ -40,7 +40,11 @@ class ResolvedFieldEntryWithExtra : public ResolvedFieldEntry {
 static_assert(sizeof(ResolvedFieldEntryWithExtra) > sizeof(ResolvedFieldEntry));
 
 void ResolvedFieldEntry::fill_in(const fieldDescriptor& info, u1 tos_state, u1 get_code, u1 put_code) {
-  set_flags(info.access_flags().is_final(), info.access_flags().is_volatile());
+  set_flags(info.access_flags().is_volatile(),
+            info.access_flags().is_final(),
+            info.is_flat(),
+            info.is_null_free_value_type(),
+            info.has_null_marker());
   _field_holder = info.field_holder();
   _field_offset = info.offset();
   _field_index = checked_cast<u2>(info.index());
@@ -66,6 +70,9 @@ void ResolvedFieldEntry::print_on(outputStream* st) const {
   st->print_cr(" - TOS: %s", type2name(as_BasicType((TosState)tos_state())));
   st->print_cr(" - Is Final: %d", is_final());
   st->print_cr(" - Is Volatile: %d", is_volatile());
+  st->print_cr(" - Is Flat: %d", is_flat());
+  st->print_cr(" - Is Null Free Value type: %d", is_null_free_value_type());
+  st->print_cr(" - Has null marker: %d", has_null_marker());
   st->print_cr(" - Get Bytecode: %s", Bytecodes::name((Bytecodes::Code)get_code()));
   st->print_cr(" - Put Bytecode: %s", Bytecodes::name((Bytecodes::Code)put_code()));
 }
@@ -77,16 +84,24 @@ void ResolvedFieldEntry::assert_is_valid() const {
          "field offset out of range %d >= %d", field_offset(), instanceOopDesc::base_offset_in_bytes());
   assert(as_BasicType((TosState)tos_state()) != T_ILLEGAL, "tos_state is ILLEGAL");
   assert(_flags < (1 << (max_flag_shift + 1)), "flags are too large %d", _flags);
-  assert((get_code() == 0 || get_code() == Bytecodes::_getstatic || get_code() == Bytecodes::_getfield),
-         "invalid get bytecode %d", get_code());
-  assert((put_code() == 0 || put_code() == Bytecodes::_putstatic || put_code() == Bytecodes::_putfield),
-          "invalid put bytecode %d", put_code());
+
+  // Read each bytecode once.
+  volatile Bytecodes::Code g = (Bytecodes::Code)get_code();
+  assert(g == 0 || g == Bytecodes::_getstatic || g == Bytecodes::_getfield, "invalid get bytecode %d", g);
+
+  volatile Bytecodes::Code p = (Bytecodes::Code)put_code();
+  assert(p == 0 || p == Bytecodes::_putstatic || p == Bytecodes::_putfield, "invalid put bytecode %d", p);
 }
 #endif
 
 #if INCLUDE_CDS
 void ResolvedFieldEntry::remove_unshareable_info() {
   *this = ResolvedFieldEntry(_cpool_index);
+}
+
+// Called from AOTArtifactFinder.
+void ResolvedFieldEntry::record_archivable_classes() {
+  AOTArtifactFinder::add_cached_class(_field_holder);
 }
 
 void ResolvedFieldEntry::mark_and_relocate() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.zip.Adler32;
+import java.util.zip.CRC32C;
 import javax.crypto.KDF;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -102,6 +102,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     private final Collection<SignatureScheme>     localSupportedSignAlgs;
     private Collection<SignatureScheme> peerSupportedSignAlgs; //for certificate
     private boolean             useDefaultPeerSignAlgs = false;
+    private NamedGroup          namedGroup;
     private List<byte[]>        statusResponses;
     private SecretKey           exporterMasterSecret;  // TLSv1.3+ exporter info
     private RandomCookie        clientRandom;          // TLSv1.2- exporter info
@@ -610,9 +611,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     }
 
     private static int getChecksum(byte[] input) {
-        Adler32 adler32 = new Adler32();
-        adler32.update(input);
-        return (int) adler32.getValue();
+        CRC32C crc32c = new CRC32C();
+        crc32c.update(input);
+        return (int) crc32c.getValue();
     }
 
     void setMasterSecret(SecretKey secret) {
@@ -1411,6 +1412,15 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      */
     Collection<SignatureScheme> getPeerSupportedSignatureSchemes() {
         return peerSupportedSignAlgs;
+    }
+
+    @Override
+    public String getNamedGroup() {
+        return namedGroup == null ? null : namedGroup.name;
+    }
+
+    void setNamedGroup(NamedGroup namedGroup) {
+        this.namedGroup = namedGroup;
     }
 
     /**

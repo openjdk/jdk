@@ -253,8 +253,6 @@ inline void Assembler::mr(      Register d, Register s)   { Assembler::orr(d, s,
 inline void Assembler::ori_opt( Register d, int ui16)     { if (ui16!=0) Assembler::ori( d, d, ui16); }
 inline void Assembler::oris_opt(Register d, int ui16)     { if (ui16!=0) Assembler::oris(d, d, ui16); }
 
-inline void Assembler::endgroup()                         { Assembler::ori(R1, R1, 0); }
-
 // count instructions
 inline void Assembler::cntlzw(  Register a, Register s)              { emit_int32(CNTLZW_OPCODE | rta(a) | rs(s) | rc(0)); }
 inline void Assembler::cntlzw_( Register a, Register s)              { emit_int32(CNTLZW_OPCODE | rta(a) | rs(s) | rc(1)); }
@@ -501,11 +499,10 @@ inline bool Assembler::is_within_range_of_b(address a, address pc) {
   // Guard against illegal branch targets, e.g. -1 (see CompiledDirectCall and ad-file).
   if ((((uint64_t)a) & 0x3) != 0) return false;
 
-  const int range = 1 << (29-6); // li field is from bit 6 to bit 29.
-  int value = disp(intptr_t(a), intptr_t(pc));
-  bool result = -range <= value && value < range-1;
+  int disp_instr_words = disp(intptr_t(a), intptr_t(pc));
+  bool result = is_simm(disp_instr_words, 24); // li field is 24 bits.
 #ifdef ASSERT
-  if (result) li(value); // Assert that value is in correct range.
+  if (result) li(disp_instr_words); // Assert that value is in correct range.
 #endif
   return result;
 }
@@ -515,11 +512,10 @@ inline bool Assembler::is_within_range_of_bcxx(address a, address pc) {
   // Guard against illegal branch targets, e.g. -1 (see CompiledDirectCall and ad-file).
   if ((((uint64_t)a) & 0x3) != 0) return false;
 
-  const int range = 1 << (29-16); // bd field is from bit 16 to bit 29.
-  int value = disp(intptr_t(a), intptr_t(pc));
-  bool result = -range <= value && value < range-1;
+  int disp_instr_words = disp(intptr_t(a), intptr_t(pc));
+  bool result = is_simm(disp_instr_words, 14); // bd field is 14 bits.
 #ifdef ASSERT
-  if (result) bd(value); // Assert that value is in correct range.
+  if (result) bd(disp_instr_words); // Assert that value is in correct range.
 #endif
   return result;
 }
@@ -644,7 +640,6 @@ inline void Assembler::crorc( ConditionRegister crdst, Condition cdst, Condition
   crorc(dst_bit, src_bit, dst_bit);
 }
 
-// Conditional move (>= Power7)
 inline void Assembler::isel(Register d, ConditionRegister cr, Condition cc, bool inv, Register a, Register b) {
   if (b == noreg) {
     b = d; // Can be omitted if old value should be kept in "else" case.
@@ -691,7 +686,7 @@ inline void Assembler::elemental_membar(int e) { assert(0 < e && e < 16, "invali
 
 // Wait instructions for polling.
 inline void Assembler::wait()    { emit_int32( WAIT_OPCODE); }
-inline void Assembler::waitrsv() { emit_int32( WAIT_OPCODE | 1<<(31-10)); } // WC=0b01 >=Power7
+inline void Assembler::waitrsv() { emit_int32( WAIT_OPCODE | 1<<(31-10)); } // WC=0b01
 
 // atomics
 // Use ra0mem to disallow R0 as base.
@@ -711,19 +706,16 @@ inline void Assembler::stwcx_(Register s, Register a, Register b)               
 inline void Assembler::stdcx_(Register s, Register a, Register b)                             { emit_int32( STDCX_OPCODE | rs(s) | ra0mem(a) | rb(b) | rc(1)); }
 inline void Assembler::stqcx_(Register s, Register a, Register b)                             { emit_int32( STQCX_OPCODE | rs(s) | ra0mem(a) | rb(b) | rc(1)); }
 
-// Instructions for adjusting thread priority
-// for simultaneous multithreading (SMT) on >= POWER5.
+// Instructions for adjusting thread priority for simultaneous multithreading (SMT).
 inline void Assembler::smt_prio_very_low()    { Assembler::or_unchecked(R31, R31, R31); }
 inline void Assembler::smt_prio_low()         { Assembler::or_unchecked(R1,  R1,  R1); }
 inline void Assembler::smt_prio_medium_low()  { Assembler::or_unchecked(R6,  R6,  R6); }
 inline void Assembler::smt_prio_medium()      { Assembler::or_unchecked(R2,  R2,  R2); }
 inline void Assembler::smt_prio_medium_high() { Assembler::or_unchecked(R5,  R5,  R5); }
-inline void Assembler::smt_prio_high()        { Assembler::or_unchecked(R3,  R3,  R3); }
-// >= Power7
+inline void Assembler::smt_prio_high()        { Assembler::or_unchecked(R3,  R3,  R3); }  // Restricted to supervisor state since Power9.
 inline void Assembler::smt_yield()            { Assembler::or_unchecked(R27, R27, R27); } // never actually implemented
-inline void Assembler::smt_mdoio()            { Assembler::or_unchecked(R29, R29, R29); } // never actually implemetned
+inline void Assembler::smt_mdoio()            { Assembler::or_unchecked(R29, R29, R29); } // never actually implemented
 inline void Assembler::smt_mdoom()            { Assembler::or_unchecked(R30, R30, R30); } // never actually implemented
-// Power8
 inline void Assembler::smt_miso()             { Assembler::or_unchecked(R26, R26, R26); } // never actually implemented
 
 inline void Assembler::twi_0(Register a)      { twi_unchecked(0, a, 0);}
@@ -768,10 +760,6 @@ inline void Assembler::frin( FloatRegister d, FloatRegister b) { emit_int32( FRI
 inline void Assembler::frip( FloatRegister d, FloatRegister b) { emit_int32( FRIP_OPCODE | frt(d) | frb(b) | rc(0)); }
 inline void Assembler::frim( FloatRegister d, FloatRegister b) { emit_int32( FRIM_OPCODE | frt(d) | frb(b) | rc(0)); }
 
-// These are special Power6 opcodes, reused for "lfdepx" and "stfdepx"
-// on Power7.  Do not use.
-//inline void Assembler::mffgpr( FloatRegister d, Register b)   { emit_int32( MFFGPR_OPCODE | frt(d) | rb(b) | rc(0)); }
-//inline void Assembler::mftgpr( Register d, FloatRegister b)   { emit_int32( MFTGPR_OPCODE | rt(d) | frb(b) | rc(0)); }
 // add cmpb and popcntb to detect ppc power version.
 inline void Assembler::cmpb(   Register a, Register s, Register b) { emit_int32( CMPB_OPCODE    | rta(a) | rs(s) | rb(b) | rc(0)); }
 inline void Assembler::popcntb(Register a, Register s)             { emit_int32( POPCNTB_OPCODE | rta(a) | rs(s)); };
@@ -839,7 +827,7 @@ inline void Assembler::fcmpu( ConditionRegister crx, FloatRegister a, FloatRegis
 inline void Assembler::fsqrt( FloatRegister d, FloatRegister b) { emit_int32( FSQRT_OPCODE  | frt(d) | frb(b) | rc(0)); }
 inline void Assembler::fsqrts(FloatRegister d, FloatRegister b) { emit_int32( FSQRTS_OPCODE | frt(d) | frb(b) | rc(0)); }
 
-// Vector instructions for >= Power6.
+// Vector instructions.
 inline void Assembler::lvebx( VectorRegister d, Register s1, Register s2) { emit_int32( LVEBX_OPCODE  | vrt(d) | ra0mem(s1) | rb(s2)); }
 inline void Assembler::lvehx( VectorRegister d, Register s1, Register s2) { emit_int32( LVEHX_OPCODE  | vrt(d) | ra0mem(s1) | rb(s2)); }
 inline void Assembler::lvewx( VectorRegister d, Register s1, Register s2) { emit_int32( LVEWX_OPCODE  | vrt(d) | ra0mem(s1) | rb(s2)); }
@@ -866,6 +854,14 @@ inline void Assembler::lxvd2x(  VectorSRegister d, Register s1)              { e
 inline void Assembler::lxvd2x(  VectorSRegister d, Register s1, Register s2) { emit_int32( LXVD2X_OPCODE  | vsrt(d) | ra0mem(s1) | rb(s2)); }
 inline void Assembler::stxvd2x( VectorSRegister d, Register s1)              { emit_int32( STXVD2X_OPCODE | vsrs(d) | ra(0) | rb(s1)); }
 inline void Assembler::stxvd2x( VectorSRegister d, Register s1, Register s2) { emit_int32( STXVD2X_OPCODE | vsrs(d) | ra0mem(s1) | rb(s2)); }
+inline void Assembler::lxvw4x(  VectorSRegister d, Register s1)              { emit_int32( LXVW4X_OPCODE  | vsrt(d) | ra(0) | rb(s1)); }
+inline void Assembler::lxvw4x(  VectorSRegister d, Register s1, Register s2) { emit_int32( LXVW4X_OPCODE  | vsrt(d) | ra0mem(s1) | rb(s2)); }
+inline void Assembler::stxvw4x( VectorSRegister d, Register s1)              { emit_int32( STXVW4X_OPCODE | vsrs(d) | ra(0) | rb(s1)); }
+inline void Assembler::stxvw4x( VectorSRegister d, Register s1, Register s2) { emit_int32( STXVW4X_OPCODE | vsrs(d) | ra0mem(s1) | rb(s2)); }
+inline void Assembler::lxvb16x( VectorSRegister d, Register s1)              { emit_int32( LXVB16X_OPCODE | vsrt(d) | ra(0) | rb(s1)); }
+inline void Assembler::lxvb16x( VectorSRegister d, Register s1, Register s2) { emit_int32( LXVB16X_OPCODE | vsrt(d) | ra0mem(s1) | rb(s2)); }
+inline void Assembler::stxvb16x(VectorSRegister d, Register s1)              { emit_int32( STXVB16X_OPCODE| vsrs(d) | ra(0) | rb(s1)); }
+inline void Assembler::stxvb16x(VectorSRegister d, Register s1, Register s2) { emit_int32( STXVB16X_OPCODE| vsrs(d) | ra0mem(s1) | rb(s2)); }
 inline void Assembler::mtvsrd(  VectorSRegister d, Register a)               { emit_int32( MTVSRD_OPCODE  | vsrt(d)  | ra(a)); }
 inline void Assembler::mtvsrdd( VectorSRegister d, Register a, Register b)   { emit_int32( MTVSRDD_OPCODE | vsrt(d)  | ra(a) | rb(b)); }
 inline void Assembler::mfvsrd(  Register d, VectorSRegister a)               { emit_int32( MFVSRD_OPCODE  | vsrs(a)  | ra(d)); }
@@ -1013,7 +1009,7 @@ inline void Assembler::vmuluwm( VectorRegister d, VectorRegister a, VectorRegist
 inline void Assembler::vmhaddshs(VectorRegister d,VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMHADDSHS_OPCODE | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
 inline void Assembler::vmhraddshs(VectorRegister d,VectorRegister a,VectorRegister b, VectorRegister c) { emit_int32( VMHRADDSHS_OPCODE| vrt(d) | vra(a) | vrb(b)| vrc(c)); }
 inline void Assembler::vmladduhm(VectorRegister d,VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMLADDUHM_OPCODE | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
-inline void Assembler::vmsubuhm(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMSUBUHM_OPCODE  | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
+inline void Assembler::vmsumubm(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMSUMUBM_OPCODE  | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
 inline void Assembler::vmsummbm(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMSUMMBM_OPCODE  | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
 inline void Assembler::vmsumshm(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMSUMSHM_OPCODE  | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
 inline void Assembler::vmsumshs(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMSUMSHS_OPCODE  | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
@@ -1240,6 +1236,108 @@ inline void Assembler::vec_perm(VectorRegister dest, VectorRegister first, Vecto
 #else
   vperm(dest, first, second, perm);
 #endif
+}
+
+inline void Assembler::load_byte_vector_unaligned(VectorRegister dest, int offs, Register base, Register tmp,
+                                                  VectorRegister vp) {
+  VectorSRegister vsr = dest->to_vsr();
+  if (PowerArchitecturePPC64 >= 9) {
+#if !defined(VM_LITTLE_ENDIAN)
+    lxv(vsr, offs, base); // all vector load/store instructions use the same byte order on BE
+#else
+    if (offs == 0) {
+      lxvb16x(vsr, base);
+    } else {
+      li(tmp, offs);
+      lxvb16x(vsr, base, tmp);
+    }
+#endif
+  } else { // Power8 only supports very limited instructions
+    if (offs == 0) {
+      lxvd2x(vsr, base);
+    } else {
+      li(tmp, offs);
+      lxvd2x(vsr, base, tmp);
+    }
+#if defined(VM_LITTLE_ENDIAN)
+    // need to swap bytes in both double-words
+    vperm(dest, dest, dest, vp);
+#endif
+  }
+}
+
+inline void Assembler::store_byte_vector_unaligned(VectorRegister val, int offs, Register base, Register tmp,
+                                                   VectorRegister vp, VectorRegister vtmp) {
+  VectorSRegister vsr = val->to_vsr();
+  if (PowerArchitecturePPC64 >= 9) {
+#if !defined(VM_LITTLE_ENDIAN)
+    stxv(vsr, offs, base); // all vector load/store instructions use the same byte order on BE
+#else
+    if (offs == 0) {
+      stxvb16x(vsr, base);
+    } else {
+      li(tmp, offs);
+      stxvb16x(vsr, base, tmp);
+    }
+#endif
+  } else { // Power8 only supports very limited instructions
+#if defined(VM_LITTLE_ENDIAN)
+    // need to swap bytes in both double-words
+    if (vtmp != vnoreg) {
+      vperm(vtmp, val, val, vp);
+      vsr = vtmp->to_vsr();
+    } else {
+      vperm(val, val, val, vp); // clobbers val!
+    }
+#endif
+    if (offs == 0) {
+      stxvd2x(vsr, base);
+    } else {
+      li(tmp, offs);
+      stxvd2x(vsr, base, tmp);
+    }
+  }
+}
+
+inline void Assembler::compute_vp_for_byte_vector_unaligned(VectorRegister dest, VectorRegister vtmp) {
+#if defined(VM_LITTLE_ENDIAN)
+  if (PowerArchitecturePPC64 < 9) {
+    li(R0, 0);
+    vspltisb(vtmp, 7);      // vtmp = [7, ..., 7]
+    lvsl(dest, R0);         // dest = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    vxor(dest, dest, vtmp); // dest = [7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8]
+  }
+#endif
+}
+
+inline void Assembler::load_word_vector_unaligned(VectorRegister dest, int offs, Register base, Register tmp) {
+  VectorSRegister vsr = dest->to_vsr();
+#if !defined(VM_LITTLE_ENDIAN)
+  if (PowerArchitecturePPC64 >= 9) {
+    lxv(vsr, offs, base); // all vector load/store instructions use the same byte order on BE
+  } else
+#endif
+  if (offs == 0) {
+    lxvw4x(vsr, base);
+  } else {
+    li(tmp, offs);
+    lxvw4x(vsr, base, tmp);
+  }
+}
+
+inline void Assembler::store_word_vector_unaligned(VectorRegister val, int offs, Register base, Register tmp) {
+  VectorSRegister vsr = val->to_vsr();
+#if !defined(VM_LITTLE_ENDIAN)
+  if (PowerArchitecturePPC64 >= 9) {
+    stxv(vsr, offs, base); // all vector load/store instructions use the same byte order on BE
+  } else
+#endif
+  if (offs == 0) {
+    stxvw4x(vsr, base);
+  } else {
+    li(tmp, offs);
+    stxvw4x(vsr, base, tmp);
+  }
 }
 
 inline void Assembler::load_const(Register d, void* x, Register tmp) {

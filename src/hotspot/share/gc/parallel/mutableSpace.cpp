@@ -49,7 +49,7 @@ void MutableSpace::numa_setup_pages(MemRegion mr, bool clear_space) {
   }
 
   if (clear_space) {
-    // Prefer page reallocation to migration.
+    // Prefer page discard and refault under the requested NUMA policy to migration.
     os::disclaim_memory((char*) mr.start(), mr.byte_size());
   }
   os::numa_make_global((char*) mr.start(), mr.byte_size());
@@ -64,7 +64,7 @@ void MutableSpace::initialize(MemRegion mr,
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
 
-  if (setup_pages && (UseNUMA || AlwaysPreTouch)) {
+  if (!mr.is_empty() && setup_pages && (UseNUMA || AlwaysPreTouch)) {
     // The space may move left and right or expand/shrink.
     // We'd like to enforce the desired page placement.
     MemRegion head, tail;
@@ -207,7 +207,7 @@ void MutableSpace::object_iterate(ObjectClosure* cl) {
 void MutableSpace::print_short() const { print_short_on(tty); }
 void MutableSpace::print_short_on( outputStream* st) const {
   st->print("space %zuK, %d%% used", capacity_in_bytes() / K,
-            (int) ((double) used_in_bytes() * 100 / capacity_in_bytes()));
+            (int)percent_of(used_in_bytes(), capacity_in_bytes()));
 }
 
 void MutableSpace::print() const { print_on(tty, ""); }

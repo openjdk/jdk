@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -188,7 +188,7 @@ public class THPsInThreadStackPreventionTest {
                 output.shouldHaveExitValue(0);
 
                 // this line indicates the mitigation is active:
-                output.shouldContain("[pagesize] JVM will attempt to prevent THPs in thread stacks.");
+                output.shouldMatch("\\[pagesize *\\] JVM will attempt to prevent THPs in thread stacks\\.");
 
                 ProcSelfStatus status = ProcSelfStatus.parse(output);
                 if (status.numLifeThreads < numThreads) {
@@ -225,7 +225,7 @@ public class THPsInThreadStackPreventionTest {
                 output.shouldHaveExitValue(0);
 
                 // We deliberately switched off mitigation, VM should tell us:
-                output.shouldContain("[pagesize] JVM will *not* prevent THPs in thread stacks. This may cause high RSS.");
+                output.shouldMatch("\\[pagesize *\\] JVM will \\*not\\* prevent THPs in thread stacks\\. This may cause high RSS\\.");
 
                 // Parse output from self/status
                 ProcSelfStatus status = ProcSelfStatus.parse(output);

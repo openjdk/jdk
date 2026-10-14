@@ -32,7 +32,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.DisplayChangedListener;
 import sun.awt.SunToolkit;
 import sun.java2d.SunGraphicsEnvironment;
@@ -380,7 +379,13 @@ public class RepaintManager
             return;
         }
         if (invalidComponents != null) {
-            invalidComponents.remove(component);
+            int n = invalidComponents.size();
+            for (int i = 0; i < n; i++) {
+                if (component == invalidComponents.get(i)) {
+                    invalidComponents.remove(i);
+                    break;
+                }
+            }
         }
     }
 
@@ -1021,7 +1026,7 @@ public class RepaintManager
 
         // If the window is non-opaque, it's double-buffered at peer's level
         Window w = (c instanceof Window) ? (Window)c : SwingUtilities.getWindowAncestor(c);
-        if (!w.isOpaque()) {
+        if (w != null && !w.isOpaque()) {
             Toolkit tk = Toolkit.getDefaultToolkit();
             if ((tk instanceof SunToolkit) && (((SunToolkit)tk).needUpdateWindow())) {
                 return null;
@@ -1733,21 +1738,14 @@ public class RepaintManager
         }
 
         private static void scheduleDisplayChanges() {
-            // To avoid threading problems, we notify each RepaintManager
+            // To avoid threading problems, we notify the RepaintManager
             // on the thread it was created on.
-            for (AppContext context : AppContext.getAppContexts()) {
-                synchronized(context) {
-                    if (!context.isDisposed()) {
-                        EventQueue eventQueue = (EventQueue)context.get(
-                            AppContext.EVENT_QUEUE_KEY);
-                        if (eventQueue != null) {
-                            eventQueue.postEvent(new InvocationEvent(
-                                Toolkit.getDefaultToolkit(),
-                                new DisplayChangedRunnable()));
-                        }
-                    }
-                }
-            }
+            EventQueue eventQueue = Toolkit.getDefaultToolkit().getSystemEventQueue();
+            eventQueue.postEvent(
+                new InvocationEvent(
+                    Toolkit.getDefaultToolkit(),
+                    new DisplayChangedRunnable())
+            );
         }
     }
 

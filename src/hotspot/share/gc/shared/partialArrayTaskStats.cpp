@@ -64,7 +64,7 @@ static const char* const stats_hdr[] = {
 };
 
 void PartialArrayTaskStats::print_header(outputStream* s, const char* title) {
-  s->print_cr("%s:", title);
+  s->print_cr("GC Task Stats %s", title);
   for (uint i = 0; i < ARRAY_SIZE(stats_hdr); ++i) {
     s->print_cr("%s", stats_hdr[i]);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.util.FileUtils;
 import jdk.test.lib.SecurityTools;
 
 import java.util.Arrays;
@@ -57,7 +58,7 @@ public class CngCipher {
         SecurityTools.keytool("-storetype Windows-MY -genkeypair -alias "
                 + PREFIX + "m -keyalg RSA -dname CN=" + PREFIX + "m");
         // This will generate a CNG key
-        ProcessBuilder pb = new ProcessBuilder("powershell", "-Command",
+        ProcessBuilder pb = new ProcessBuilder(FileUtils.powerShellPath(), "-Command",
                 "New-SelfSignedCertificate",  "-DnsName", PREFIX + "c",
                 // -KeyAlgorithm not supported on Windows Server 2012
                 //"-KeyAlgorithm", "RSA",

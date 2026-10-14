@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -511,6 +511,7 @@ public class DocFlavor implements Serializable, Cloneable {
      *         value is enclosed in quotes. A "class=" parameter is appended to
      *         the MIME type string to indicate the representation class name.
      */
+    @Override
     public String toString() {
         return getStringValue();
     }
@@ -518,6 +519,7 @@ public class DocFlavor implements Serializable, Cloneable {
     /**
      * Returns a hash code for this doc flavor object.
      */
+    @Override
     public int hashCode() {
         return getStringValue().hashCode();
     }
@@ -539,6 +541,7 @@ public class DocFlavor implements Serializable, Cloneable {
      * @return {@code true} if this doc flavor object equals {@code obj},
      *         {@code false} otherwise
      */
+    @Override
     public boolean equals(Object obj) {
         return obj instanceof DocFlavor other &&
                 getStringValue().equals(other.getStringValue());

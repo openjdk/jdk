@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -532,7 +532,6 @@ INT32 PORT_GetIntValue(void* controlIDV) {
 
 void PORT_SetIntValue(void* controlIDV, INT32 value) {
     PortControl* portControl = (PortControl*) controlIDV;
-    snd_mixer_selem_channel_id_t channel;
 
     if (portControl != NULL) {
         if (portControl->controlType == CONTROL_TYPE_MUTE) {

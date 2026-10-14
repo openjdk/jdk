@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +25,15 @@
 package compiler.loopopts.superword;
 
 import compiler.lib.ir_framework.*;
+import compiler.lib.verify.Verify;
 import jdk.test.lib.Utils;
 import jdk.test.whitebox.WhiteBox;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.lang.reflect.Array;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Random;
-import java.nio.ByteOrder;
 
 /*
  * @test
@@ -61,6 +64,8 @@ public class TestCompatibleUseDefTypeSize {
     float[] bF;
     double[] aD;
     double[] bD;
+    MemorySegment aMSF;
+    MemorySegment aMSD;
 
     // List of tests
     Map<String,TestFunction> tests = new HashMap<String,TestFunction>();
@@ -92,6 +97,8 @@ public class TestCompatibleUseDefTypeSize {
         bF = generateF();
         aD = generateD();
         bD = generateD();
+        aMSF = generateMemorySegmentF();
+        aMSD = generateMemorySegmentD();
 
         // Add all tests to list
         tests.put("test0",       () -> { return test0(aB.clone(), bC.clone()); });
@@ -122,6 +129,10 @@ public class TestCompatibleUseDefTypeSize {
         tests.put("testLongToShort", () -> { return testLongToShort(aL.clone(), bS.clone()); });
         tests.put("testLongToChar",  () -> { return testLongToChar(aL.clone(), bC.clone()); });
         tests.put("testLongToInt",   () -> { return testLongToInt(aL.clone(), bI.clone()); });
+        tests.put("testFloatToIntMemorySegment",   () -> { return testFloatToIntMemorySegment(copyF(aMSF), bF.clone()); });
+        tests.put("testDoubleToLongMemorySegment", () -> { return testDoubleToLongMemorySegment(copyD(aMSD), bD.clone()); });
+        tests.put("testIntToFloatMemorySegment",   () -> { return testIntToFloatMemorySegment(copyF(aMSF), bF.clone()); });
+        tests.put("testLongToDoubleMemorySegment", () -> { return testLongToDoubleMemorySegment(copyD(aMSD), bD.clone()); });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -160,7 +171,11 @@ public class TestCompatibleUseDefTypeSize {
                  "testLongToByte",
                  "testLongToShort",
                  "testLongToChar",
-                 "testLongToInt"})
+                 "testLongToInt",
+                 "testFloatToIntMemorySegment",
+                 "testDoubleToLongMemorySegment",
+                 "testIntToFloatMemorySegment",
+                 "testLongToDoubleMemorySegment"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -170,7 +185,7 @@ public class TestCompatibleUseDefTypeSize {
             // Compute new result
             Object[] result = test.run();
             // Compare gold and new result
-            verify(name, gold, result);
+            Verify.checkEQ(gold, result);
         }
     }
 
@@ -230,119 +245,32 @@ public class TestCompatibleUseDefTypeSize {
         return a;
     }
 
-    static void verify(String name, Object[] gold, Object[] result) {
-        if (gold.length != result.length) {
-            throw new RuntimeException("verify " + name + ": not the same number of outputs: gold.length = " +
-                                       gold.length + ", result.length = " + result.length);
+    static MemorySegment generateMemorySegmentF() {
+        MemorySegment a = MemorySegment.ofArray(new float[RANGE]);
+        for (int i = 0; i < (int) a.byteSize(); i += 8) {
+            a.set(ValueLayout.JAVA_LONG_UNALIGNED, i, RANDOM.nextLong());
         }
-        for (int i = 0; i < gold.length; i++) {
-            Object g = gold[i];
-            Object r = result[i];
-            if (g.getClass() != r.getClass() || !g.getClass().isArray() || !r.getClass().isArray()) {
-                throw new RuntimeException("verify " + name + ": must both be array of same type:" +
-                                           " gold[" + i + "].getClass() = " + g.getClass().getSimpleName() +
-                                           " result[" + i + "].getClass() = " + r.getClass().getSimpleName());
-            }
-            if (g == r) {
-                throw new RuntimeException("verify " + name + ": should be two separate arrays (with identical content):" +
-                                           " gold[" + i + "] == result[" + i + "]");
-            }
-            if (Array.getLength(g) != Array.getLength(r)) {
-                    throw new RuntimeException("verify " + name + ": arrays must have same length:" +
-                                           " gold[" + i + "].length = " + Array.getLength(g) +
-                                           " result[" + i + "].length = " + Array.getLength(r));
-            }
-            Class c = g.getClass().getComponentType();
-            if (c == byte.class) {
-                verifyB(name, i, (byte[])g, (byte[])r);
-            } else if (c == short.class) {
-                verifyS(name, i, (short[])g, (short[])r);
-            } else if (c == char.class) {
-                verifyC(name, i, (char[])g, (char[])r);
-            } else if (c == int.class) {
-                verifyI(name, i, (int[])g, (int[])r);
-            } else if (c == long.class) {
-                verifyL(name, i, (long[])g, (long[])r);
-            } else if (c == float.class) {
-                verifyF(name, i, (float[])g, (float[])r);
-            } else if (c == double.class) {
-                verifyD(name, i, (double[])g, (double[])r);
-            } else {
-                throw new RuntimeException("verify " + name + ": array type not supported for verify:" +
-                                       " gold[" + i + "].getClass() = " + g.getClass().getSimpleName() +
-                                       " result[" + i + "].getClass() = " + r.getClass().getSimpleName());
-            }
-        }
+        return a;
     }
 
-    static void verifyB(String name, int i, byte[] g, byte[] r) {
-        for (int j = 0; j < g.length; j++) {
-            if (g[j] != r[j]) {
-                throw new RuntimeException("verify " + name + ": arrays must have same content:" +
-                                           " gold[" + i + "][" + j + "] = " + g[j] +
-                                           " result[" + i + "][" + j + "] = " + r[j]);
-            }
-        }
+    MemorySegment copyF(MemorySegment src) {
+        MemorySegment dst = generateMemorySegmentF();
+        MemorySegment.copy(src, 0, dst, 0, src.byteSize());
+        return dst;
     }
 
-    static void verifyS(String name, int i, short[] g, short[] r) {
-        for (int j = 0; j < g.length; j++) {
-            if (g[j] != r[j]) {
-                throw new RuntimeException("verify " + name + ": arrays must have same content:" +
-                                           " gold[" + i + "][" + j + "] = " + g[j] +
-                                           " result[" + i + "][" + j + "] = " + r[j]);
-            }
+    static MemorySegment generateMemorySegmentD() {
+        MemorySegment a = MemorySegment.ofArray(new double[RANGE]);
+        for (int i = 0; i < (int) a.byteSize(); i += 8) {
+            a.set(ValueLayout.JAVA_LONG_UNALIGNED, i, RANDOM.nextLong());
         }
+        return a;
     }
 
-    static void verifyC(String name, int i, char[] g, char[] r) {
-        for (int j = 0; j < g.length; j++) {
-            if (g[j] != r[j]) {
-                throw new RuntimeException("verify " + name + ": arrays must have same content:" +
-                                           " gold[" + i + "][" + j + "] = " + g[j] +
-                                           " result[" + i + "][" + j + "] = " + r[j]);
-            }
-        }
-    }
-
-    static void verifyI(String name, int i, int[] g, int[] r) {
-        for (int j = 0; j < g.length; j++) {
-            if (g[j] != r[j]) {
-                throw new RuntimeException("verify " + name + ": arrays must have same content:" +
-                                           " gold[" + i + "][" + j + "] = " + g[j] +
-                                           " result[" + i + "][" + j + "] = " + r[j]);
-            }
-        }
-    }
-
-    static void verifyL(String name, int i, long[] g, long[] r) {
-        for (int j = 0; j < g.length; j++) {
-            if (g[j] != r[j]) {
-                throw new RuntimeException("verify " + name + ": arrays must have same content:" +
-                                           " gold[" + i + "][" + j + "] = " + g[j] +
-                                           " result[" + i + "][" + j + "] = " + r[j]);
-            }
-        }
-    }
-
-    static void verifyF(String name, int i, float[] g, float[] r) {
-        for (int j = 0; j < g.length; j++) {
-            if (Float.floatToIntBits(g[j]) != Float.floatToIntBits(r[j])) {
-                throw new RuntimeException("verify " + name + ": arrays must have same content:" +
-                                           " gold[" + i + "][" + j + "] = " + g[j] +
-                                           " result[" + i + "][" + j + "] = " + r[j]);
-            }
-        }
-    }
-
-    static void verifyD(String name, int i, double[] g, double[] r) {
-        for (int j = 0; j < g.length; j++) {
-            if (Double.doubleToLongBits(g[j]) != Double.doubleToLongBits(r[j])) {
-                throw new RuntimeException("verify " + name + ": arrays must have same content:" +
-                                           " gold[" + i + "][" + j + "] = " + g[j] +
-                                           " result[" + i + "][" + j + "] = " + r[j]);
-            }
-        }
+    MemorySegment copyD(MemorySegment src) {
+        MemorySegment dst = generateMemorySegmentD();
+        MemorySegment.copy(src, 0, dst, 0, src.byteSize());
+        return dst;
     }
 
     @Test
@@ -706,5 +634,65 @@ public class TestCompatibleUseDefTypeSize {
         }
 
         return new Object[] { ints, res };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_F, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  IRNode.VECTOR_REINTERPRET, "> 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    static Object[] testFloatToIntMemorySegment(MemorySegment a, float[] b) {
+        for (int i = 0; i < RANGE; i++) {
+            a.set(ValueLayout.JAVA_FLOAT_UNALIGNED, 4L * i, b[i]);
+        }
+
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_D, IRNode.VECTOR_SIZE + "min(max_long, max_double)", "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  IRNode.VECTOR_REINTERPRET, "> 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    static Object[] testDoubleToLongMemorySegment(MemorySegment a, double[] b) {
+        for (int i = 0; i < RANGE; i++) {
+            a.set(ValueLayout.JAVA_DOUBLE_UNALIGNED, 8L * i, b[i]);
+        }
+
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  IRNode.VECTOR_REINTERPRET, "> 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    static Object[] testIntToFloatMemorySegment(MemorySegment a, float[] b) {
+        for (int i = 0; i < RANGE; i++) {
+            b[i] = a.get(ValueLayout.JAVA_FLOAT_UNALIGNED, 4L * i);
+        }
+
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  IRNode.VECTOR_REINTERPRET, "> 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    static Object[] testLongToDoubleMemorySegment(MemorySegment a, double[] b) {
+        for (int i = 0; i < RANGE; i++) {
+            b[i] = a.get(ValueLayout.JAVA_DOUBLE_UNALIGNED, 8L * i);
+        }
+
+        return new Object[]{ a, b };
     }
 }

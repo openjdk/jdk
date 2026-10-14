@@ -24,9 +24,14 @@
  */
 package jdk.jpackage.internal;
 
-import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
+import jdk.jpackage.internal.cli.OptionValue;
+import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.log.Logger;
 
 public final class Globals {
 
@@ -47,16 +52,37 @@ public final class Globals {
         return objectFactory(ObjectFactory.build(objectFactory).executorFactory(v).create());
     }
 
-    Log.Logger logger() {
-        return logger;
+    @SuppressWarnings("unchecked")
+    public <T> Optional<T> findProperty(Object key) {
+        return Optional.ofNullable((T)properties.get(Objects.requireNonNull(key)));
     }
 
-    public void loggerOutputStreams(PrintWriter out, PrintWriter err) {
-        logger.setPrintWriter(out, err);
+    public Optional<Boolean> findBooleanProperty(Object key) {
+        return findProperty(key);
     }
 
-    public void loggerVerbose() {
-        logger.setVerbose();
+    public <T> Globals setProperty(Object key, T value) {
+        checkMutable();
+        properties.compute(Objects.requireNonNull(key), (_, _) -> value);
+        return this;
+    }
+
+    public EnvironmentProvider system() {
+        return this.<EnvironmentProvider>findProperty(EnvironmentProvider.class).orElse(EnvironmentProvider.DEFAULT);
+    }
+
+    public Globals system(EnvironmentProvider v) {
+        return setProperty(EnvironmentProvider.class, v);
+    }
+
+    public Globals logEnv(Options v) {
+        checkMutable();
+        logEnv = Objects.requireNonNull(v);
+        return this;
+    }
+
+    public <T extends Logger> T logger(OptionValue<T> ov) {
+        return ov.getFrom(instance().logEnv);
     }
 
     public static int main(Supplier<Integer> mainBody) {
@@ -78,7 +104,8 @@ public final class Globals {
     }
 
     private ObjectFactory objectFactory = ObjectFactory.DEFAULT;
-    private final Log.Logger logger = new Log.Logger();
+    private Options logEnv = Options.concat();
+    private final Map<Object, Object> properties = new HashMap<>();
 
     private static final ScopedValue<Globals> INSTANCE = ScopedValue.newInstance();
     private static final Globals DEFAULT = new Globals();

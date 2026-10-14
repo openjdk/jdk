@@ -55,6 +55,6 @@ JfrStackFilter::~JfrStackFilter() {
     Symbol::maybe_decrement_refcount(_method_names[i]);
     Symbol::maybe_decrement_refcount(_class_names[i]);
   }
-  FREE_C_HEAP_ARRAY(Symbol*, _method_names);
-  FREE_C_HEAP_ARRAY(Symbol*, _class_names);
+  FREE_C_HEAP_ARRAY(_method_names);
+  FREE_C_HEAP_ARRAY(_class_names);
 }

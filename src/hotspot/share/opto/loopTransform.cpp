@@ -26,6 +26,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
@@ -33,10 +34,14 @@
 #include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/loopnode.hpp"
+#include "opto/memnode.hpp"
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/phase.hpp"
+#include "opto/phasetype.hpp"
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
@@ -50,17 +55,70 @@
 // Given an IfNode, return the loop-exiting projection or null if both
 // arms remain in the loop.
 Node *IdealLoopTree::is_loop_exit(Node *iff) const {
-  if (iff->outcnt() != 2) return nullptr;  // Ignore partially dead tests
-  PhaseIdealLoop *phase = _phase;
+  assert(iff->is_If(), "not an If: %s", iff->Name());
+  assert(is_member(_phase->get_loop(iff)), "not related");
+
+  if (iff->outcnt() != 2) {
+    return nullptr;  // Ignore partially dead tests
+  }
   // Test is an IfNode, has 2 projections.  If BOTH are in the loop
   // we need loop unswitching instead of peeling.
-  if (!is_member(phase->get_loop(iff->raw_out(0))))
+  if (!is_member(_phase->get_loop(iff->raw_out(0)))) {
     return iff->raw_out(0);
-  if (!is_member(phase->get_loop(iff->raw_out(1))))
+  }
+  if (!is_member(_phase->get_loop(iff->raw_out(1)))) {
     return iff->raw_out(1);
+  }
   return nullptr;
 }
 
+//------------------------------unique_loop_exit_or_null----------------------
+// Return the loop-exit projection if loop exit is unique.
+IfFalseNode* IdealLoopTree::unique_loop_exit_proj_or_null() {
+  if (is_loop() && head()->is_BaseCountedLoop()) {
+    IfNode* loop_end = head()->as_BaseCountedLoop()->loopexit_or_null();
+    if (loop_end == nullptr) {
+      return nullptr; // malformed loop shape
+    }
+    // Look for other loop exits.
+    assert(_phase->is_dominator(head(), tail()), "sanity");
+    for (Node* ctrl = tail(); ctrl != head(); ctrl = ctrl->in(0)) {
+      assert(is_member(_phase->get_loop(ctrl)), "sanity");
+      if (ctrl->is_If()) {
+        if (!is_loop_exit(ctrl->as_If())) {
+          continue; // local branch
+        } else if (ctrl != loop_end) {
+          return nullptr; // multiple loop exits
+        }
+      } else if (ctrl->is_Region()) {
+        return nullptr; // give up on control flow merges
+      } else if (ctrl->is_ReachabilityFence() ||
+                 ctrl->is_SafePoint() ||
+                 ctrl->is_MemBar() ||
+                 ctrl->Opcode() == Op_Blackhole) {
+        continue; // skip
+      } else if (ctrl->is_Proj()) {
+        if (ctrl->is_IfProj() ||
+            ctrl->Opcode() == Op_SCMemProj ||
+            ctrl->Opcode() == Op_Proj) {
+          continue; // skip simple control projections
+        } else if (ctrl->is_CatchProj() ||
+                   ctrl->is_JumpProj()) {
+          return nullptr; // give up on control flow splits
+        } else {
+          assert(false, "unknown control projection: %s", ctrl->Name());
+          return nullptr; // stop on unknown control node
+        }
+      } else {
+        assert(false, "unknown CFG node: %s", ctrl->Name());
+        return nullptr; // stop on unknown control node
+      }
+    }
+    assert(is_loop_exit(loop_end), "not a loop exit?");
+    return loop_end->false_proj_or_null();
+  }
+  return nullptr; // not found or multiple loop exits
+}
 
 //=============================================================================
 
@@ -509,11 +567,9 @@ void IdealLoopTree::reassociate_invariants(PhaseIdealLoop *phase) {
   }
 }
 
-//------------------------------policy_peeling---------------------------------
-// Return TRUE if the loop should be peeled, otherwise return FALSE. Peeling
-// is applicable if we can make a loop-invariant test (usually a null-check)
-// execute before we enter the loop. When TRUE, the estimated node budget is
-// also requested.
+// Return TRUE if the loop should be peeled, otherwise return FALSE. Peeling should be performed if
+// it allows us to remove something in the main body (see elide_redundancies_after_peeling) and the
+// esimated increase in graph size is within the budget.
 bool IdealLoopTree::policy_peeling(PhaseIdealLoop *phase) {
   uint estimate = estimate_peeling(phase);
 
@@ -524,6 +580,9 @@ bool IdealLoopTree::policy_peeling(PhaseIdealLoop *phase) {
 // return the estimated loop size if peeling is applicable, otherwise return
 // zero. No node budget is allocated.
 uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
+  if (LoopPeeling != 1) {
+    return 0;
+  }
 
   // If nodes are depleted, some transform has miscalculated its needs.
   assert(!phase->exceeding_node_budget(), "sanity");
@@ -557,16 +616,17 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
     if (loop_head->_stress_peeling_attempts < max_peeling_opportunities) {
       loop_head->_stress_peeling_attempts++;
       // In case of stress, let's just pick randomly...
-      return ((phase->C->random() % 2) == 0) ? estimate : 0;
+      return ((phase->C->stress().random() % 2) == 0) ? estimate : 0;
     }
     return 0;
   }
   // ...otherwise, let's apply our heuristic.
 #endif
 
-  Node* test = tail();
-
-  while (test != _head) {   // Scan till run off top of loop
+  // Walk up dominators to loop _head looking for an exit test which is executed on every path
+  // through the loop. If the tested value is a loop-invariant, then the IfNode can be folded after
+  // peeling, giving us a reason to peel.
+  for (Node* test = tail(); test != _head; test = phase->idom(test)) {   // Scan till run off top of loop
     if (test->is_If()) {    // Test?
       Node *ctrl = phase->get_ctrl(test->in(1));
       if (ctrl->is_top()) {
@@ -584,18 +644,34 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
         return estimate;    // Found reason to peel!
       }
     }
-    // Walk up dominators to loop _head looking for test which is executed on
-    // every path through the loop.
-    test = phase->idom(test);
   }
+
+  // Whether peeling allows a store to be elided from the remaining iterations
+  for (uint i = 0; i < _body.size(); i++) {
+    Node* n = _body.at(i);
+    if (n->is_Store() && can_elide_store_if_peeled(n->as_Store())) {
+      return estimate;
+    }
+  }
+
   return 0;
 }
 
-//------------------------------peeled_dom_test_elim---------------------------
-// If we got the effect of peeling, either by actually peeling or by making
-// a pre-loop which must execute at least once, we can remove all
-// loop-invariant dominated tests in the main body.
-void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_new) {
+// After peeling the loop or creating a pre-loop that executes at least once, the first iteration
+// dominates the remaining iterations. This allows us to:
+// - Remove all loop-invariant dominated tests in the main body.
+// - Remove all loop-invariant dominated stores in the main body.
+void PhaseIdealLoop::elide_redundancies_after_peeling(IdealLoopTree* loop, const Node_List& old_new) {
+  elide_redundant_tests_after_peeling(loop, old_new);
+  elide_redundant_stores_after_peeling(loop, old_new);
+}
+
+// If an IfProj 'prev' dominates the tail of 'loop', its clone 'old_new[prev->_idx]' in the peeled
+// iteration or pre-loop will dominate the remaining iterations, which includes the input 'test' of
+// 'prev'. As a result, if the condition of 'test' is a loop invariant, 'test' will be dominated by
+// the IfProj of 'old_new[test->_idx]', and both 'test' and 'old_new[test->_idx]' will have the
+// same Bool input. This allows 'test' to be removed using PhaseIdealLoop::dominated_by.
+void PhaseIdealLoop::elide_redundant_tests_after_peeling(IdealLoopTree* loop, const Node_List& old_new) {
   bool progress = true;
   while (progress) {
     progress = false; // Reset for next iteration
@@ -628,6 +704,174 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
       test = idom(test);
     } // End of scan tests in loop
   } // End of while (progress)
+}
+
+// If a store 'n' dominates the tail of 'loop', its clone 'old_new[n->_idx]' will dominate the
+// remaining iterations. As a result, if the pointer and value inputs of 'n' are loop invariants,
+// we can remove 'n' if we can prove that there is no interfering store between 'n' and
+// 'old_new[n->_idx]'. This is because in those cases we know that the value that is already at
+// the memory location stored into by 'n' is the same as the value that 'n' stores, or in other
+// words, the store 'n' is useless.
+//
+// This complements try_move_store_before_loop. Eliding a store by peeling the loop is a strictly
+// more general transformation. In other words, for all stores that can be hoisted above a loop,
+// they can also be elided from the remaining iterations after peeling. The downside is that
+// peeling a loop increases the graph size much more compared to just hoisting the store. As a
+// result, we always invoke try_move_store_before_loop first, and only after it gives up, we resort
+// to this transformation.
+//
+// To be more specific, conceptually, hoisting a store above a loop can be understood as composed
+// of several steps:
+//
+// 0.
+// loop (0..n) {
+//     Store(p1, v1);
+//     Store(p, v);
+//     StoreLoadFence();
+// }
+//
+// 1. Peel the first iteration
+// Store(p1, v1);
+// Store(p, v);
+// StoreLoadFence();
+// loop (1..n) {
+//     Store(p1, v1);
+//     Store(p, v);
+//     StoreLoadFence();
+// }
+//
+// 2. Remove Store(p, v) inside the loop because there is a similar store dominating it
+// Store(p1, v1);
+// Store(p, v);
+// StoreLoadFence();
+// loop (1..n) {
+//     Store(p1, v1);
+//     StoreLoadFence();
+// }
+//
+// 3. Move Store(p, v) above the first iteration
+// Store(p, v);
+// Store(p1, v1);
+// StoreLoadFence();
+// loop (1..n) {
+//     Store(p1, v1);
+//     StoreLoadFence();
+// }
+//
+// 4. Unpeel the first iteration (fold the first iteration back into the loop)
+// Store(p, v);
+// loop (0..n) {
+//     Store(p1, v1);
+//     StoreLoadFence();
+// }
+//
+// As a result, for any store that can be hoisted above a loop, peeling the loop also allows us to
+// remove it from the main body. Note that this is only an analysis of the transformation as a
+// conceptual explanation. In practice, in try_move_store_before_loop, we don't actually peel and
+// unpeel the loop but we hoist the store directly.
+void PhaseIdealLoop::elide_redundant_stores_after_peeling(IdealLoopTree* loop, const Node_List& old_new) {
+  for (uint i = 0; i < loop->_body.size(); i++) {
+    Node* n = loop->_body.at(i);
+    if (n->is_Store() && loop->can_elide_store_after_peeling(n->as_Store(), old_new[n->_idx]->as_Store())) {
+      // This does not yet handle the case where 'n' has accompanying MemBars. We do not elide
+      // those stores yet. In the future, when the logic to walk past MemBars is implemented, we
+      // should also remove the accompanying MemBars of the elided StoreNode, if any.
+      assert(n->as_Store()->trailing_membar() == nullptr, "should not be elided");
+      loop->_body.yank(n);
+      _loop_or_ctrl.map(n->_idx, nullptr);
+      _igvn.replace_node(n, n->in(MemNode::Memory));
+      i--;
+    }
+  }
+}
+
+// Try to analyze whether peeling 'this' can help elide 'store' from the remaining iterations. This
+// is the case if 'store' writes the same value into the same location in every iteration, the
+// 'store' in the first iteration dominates itself in the remaining iterations, and there is no
+// other access in the loop that can write into the memory location written to by 'store'. In other
+// words, if the execution of 'store' is useless after the first iteration because we know the
+// value being written is the same as the value that is there, then we can elide 'store' after
+// peeling.
+bool IdealLoopTree::can_elide_store_if_peeled(StoreNode* store) {
+  return can_elide_store_after_peeling_impl(store, nullptr);
+}
+
+// After the loop has been peeled, try to see whether 'store' can be elided because it is dominated
+// by 'dominating_store', given that 'dominating_store' is the clone of 'store' in the pre-loop/
+// peeled iteration.
+bool IdealLoopTree::can_elide_store_after_peeling(StoreNode* store, StoreNode* dominating_store) {
+  assert(dominating_store != nullptr, "must have a dominating_store");
+  return can_elide_store_after_peeling_impl(store, dominating_store);
+}
+
+// Common implementation of can_elide_store_if_peeled, which calls this method with
+// dominating_store = nullptr, and can_elide_store_after_peeling, which calls this method with
+// dominating_store = old_new[store->_idx].
+bool IdealLoopTree::can_elide_store_after_peeling_impl(StoreNode* store, StoreNode* dominating_store) {
+  if (store->req() > MemNode::ValueIn + 1) {
+    // It is generally incorrect to analyze StoreVectorMasked, StoreVectorScatter, and
+    // StoreVectorScatterMasked the same as other StoreNodes because their access patterns are
+    // different. For example, they may not access a certain number of bytes starting from their
+    // pointer input.
+    return false;
+  } else if (!_phase->is_dominator(_phase->get_ctrl(store), tail())) {
+    // We can only remove the store after peeling if the store in later iterations is dominated by
+    // the one in the first iteration.
+    return false;
+  } else if (!is_invariant(store->in(MemNode::Address)) || !is_invariant(store->in(MemNode::ValueIn))) {
+    // We can only remove the store after peeling if it stores the same value at the same place
+    // in every iteration.
+    return false;
+  }
+
+  // If we are checking whether 'store' would be elided if 'this' is peeled. Otherwise, we are
+  // checking whether 'store' can be elided now.
+  bool is_profitability_check = dominating_store == nullptr;
+
+  // Walk the memory graph. The check only succeeds if we encounter no store which can interfere
+  // with 'store'. If is_profitability_check is true, walk all the relevant nodes inside 'this'.
+  // Otherwise, walk all the relevant nodes between 'store' and 'dominating_store'.
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  worklist.push(store->in(MemNode::Memory));
+  AccessAnalyzer analyzer(&_phase->_igvn, store);
+  for (uint worklist_idx = 0; worklist_idx < worklist.size(); worklist_idx++) {
+    Node* mem = worklist.at(worklist_idx);
+    assert(mem != nullptr, "cannot be a nullptr");
+    if (mem == store || mem == dominating_store) {
+      continue;
+    }
+
+    if (is_profitability_check) {
+      // We should only be able to step outside the loop from the loop phi, so this means the graph
+      // is broken
+      assert(!is_invariant(mem), "broken memory graph");
+    } else {
+      // The graph is broken, or some transformation incorrectly moves dominating_store
+      assert(mem->in(0) != _phase->C->start(), "dominating_store must dominate store");
+    }
+
+    if (mem->is_Phi()) {
+      if (is_profitability_check && mem->in(0) == _head) {
+        // Don't walk out of the loop when checking for profitability
+        worklist.push(mem->in(LoopNode::LoopBackControl));
+      } else {
+        for (uint i = 1; i < mem->req(); i++) {
+          worklist.push(mem->in(i));
+        }
+      }
+      continue;
+    }
+
+    AccessAnalyzer::AccessIndependence independence = analyzer.detect_access_independence(mem);
+    if (!independence.independent) {
+      return false;
+    }
+
+    worklist.push(independence.mem);
+  }
+
+  return true;
 }
 
 //------------------------------do_peeling-------------------------------------
@@ -775,6 +1019,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 //             exit
 //
 void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
+  assert(LoopPeeling != 0, "do_peeling called with loop peeling always disabled");
 
   C->set_major_progress();
   // Peeling a 'main' loop in a pre/main/post situation obfuscates the
@@ -875,9 +1120,7 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
     cast_incr_before_loop(init, init_ctrl, cl);
   }
 
-  // Now force out all loop-invariant dominating tests.  The optimizer
-  // finds some, but we _know_ they are all useless.
-  peeled_dom_test_elim(loop,old_new);
+  elide_redundancies_after_peeling(loop, old_new);
 
   loop->record_for_igvn();
 
@@ -1593,9 +1836,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   post_head->set_profile_trip_cnt(4.0);
   pre_head->set_profile_trip_cnt(4.0);
 
-  // Now force out all loop-invariant dominating tests.  The optimizer
-  // finds some, but we _know_ they are all useless.
-  peeled_dom_test_elim(loop,old_new);
+  elide_redundancies_after_peeling(loop, old_new);
   loop->record_for_igvn();
 
   C->print_method(PHASE_AFTER_PRE_MAIN_POST, 4, main_head);
@@ -1660,9 +1901,7 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
   // so guess that unit vector trips is a reasonable value.
   post_head->set_profile_trip_cnt(cur_unroll);
 
-  // Now force out all loop-invariant dominating tests.  The optimizer
-  // finds some, but we _know_ they are all useless.
-  peeled_dom_test_elim(loop, old_new);
+  elide_redundancies_after_peeling(loop, old_new);
   loop->record_for_igvn();
 }
 
@@ -1770,13 +2009,39 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   for (DUIterator i = main_head->outs(); main_head->has_out(i); i++) {
     Node* main_phi = main_head->out(i);
     if (main_phi->is_Phi() && main_phi->in(0) == main_head && main_phi->outcnt() > 0) {
-      Node* cur_phi = old_new[main_phi->_idx];
+      Node* post_phi = old_new[main_phi->_idx];
+      Node* loopback_input = main_phi->in(LoopNode::LoopBackControl);
       Node* fallnew = clone_up_backedge_goo(main_head->back_control(),
                                             post_head->init_control(),
-                                            main_phi->in(LoopNode::LoopBackControl),
+                                            loopback_input,
                                             visited, clones);
-      _igvn.hash_delete(cur_phi);
-      cur_phi->set_req(LoopNode::EntryControl, fallnew);
+      // Technically, the entry value of post_phi must be the loop back input of the corresponding
+      // Phi of the outer loop, not the Phi of the inner loop (i.e. main_phi). However, we have not
+      // constructed the Phis for the OuterStripMinedLoop yet, so the input must be inferred from
+      // the loop back input of main_phi.
+      // - If post_phi is a data Phi, then we can use the loop back input of main_phi.
+      // - If post_phi is a memory Phi, since Stores can be sunk below the inner loop, but still
+      //   inside the outer loop, we have 2 cases:
+      //   + If the loop back input of main_phi is on the backedge, then the entry input of
+      //     post_phi is the clone of the node on the entry of post_head, similar to when post_phi
+      //     is a data Phi.
+      //   + If the loop back input of main_phi is not on the backedge, we need to find whether
+      //     there is a sunk Store corresponding to post_phi, if there is any, the latest such
+      //     store will be the entry input of post_phi. Fortunately, the safepoint at the exit of
+      //     the outer loop captures all memory states, so we can use it as the entry input of
+      //     post_phi.
+      //   Another way to see it is that, the memory phi should capture the latest state at the
+      //   post-loop entry. If loopback_input is cloned by clone_up_backedge_goo, it is pinned at
+      //   the post-loop entry, and is surely the latest state. Otherwise, the latest memory state
+      //   corresponding to post_phi is the memory state at the exit of the outer main-loop, which
+      //   is captured by the safepoint there.
+      if (main_head->is_strip_mined() && fallnew == loopback_input && post_phi->is_memory_phi()) {
+        SafePointNode* main_safepoint = main_head->outer_safepoint();
+        assert(main_safepoint != nullptr, "outer loop must have a safepoint");
+        fallnew = main_safepoint->memory();
+      }
+      _igvn.hash_delete(post_phi);
+      post_phi->set_req(LoopNode::EntryControl, fallnew);
     }
   }
   // Store nodes that were moved to the outer loop by PhaseIdealLoop::try_move_store_after_loop
@@ -2201,6 +2466,15 @@ void PhaseIdealLoop::do_maximally_unroll(IdealLoopTree *loop, Node_List &old_new
 
   // If loop is tripping an odd number of times, peel odd iteration
   if ((cl->trip_count() & 1) == 1) {
+    if (LoopPeeling == 0) {
+#ifndef PRODUCT
+      if (TraceLoopOpts) {
+        tty->print("MaxUnroll cancelled since LoopPeeling is always disabled");
+        loop->dump_head();
+      }
+#endif
+      return;
+    }
     do_peeling(loop, old_new);
   }
 
@@ -2647,29 +2921,30 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
   }
 
   // Need to find the main-loop zero-trip guard
-  Node *ctrl = cl->skip_assertion_predicates_with_halt();
-  Node *iffm = ctrl->in(0);
-  Node *opqzm = iffm->in(1)->in(1)->in(2);
-  assert(opqzm->in(1) == main_limit, "do not understand situation");
+  Node* const zero_trip_guard_success_proj = cl->skip_assertion_predicates_with_halt();
+  DEBUG_ONLY(ensure_zero_trip_guard_proj(zero_trip_guard_success_proj, true));
+  Node* const zero_trip_guard = zero_trip_guard_success_proj->in(0);
+  Node* const opaque_zero_trip_guard = zero_trip_guard->in(1)->in(1)->in(2);
+  assert(opaque_zero_trip_guard->in(1) == main_limit, "unexpected limit node: %s", opaque_zero_trip_guard->in(1)->Name());
 
   // Find the pre-loop limit; we will expand its iterations to
   // not ever trip low tests.
-  Node *p_f = iffm->in(0);
+  Node* pre_loop_exit_proj = zero_trip_guard->in(0);
   // pre loop may have been optimized out
-  if (p_f->Opcode() != Op_IfFalse) {
+  if (!pre_loop_exit_proj->is_IfFalse()) {
     return;
   }
-  CountedLoopEndNode *pre_end = p_f->in(0)->as_CountedLoopEnd();
-  assert(pre_end->loopnode()->is_pre_loop(), "");
-  Node *pre_opaq1 = pre_end->limit();
+  CountedLoopEndNode* pre_end = pre_loop_exit_proj->in(0)->as_CountedLoopEnd();
+  assert(pre_end->loopnode()->is_pre_loop(), "not a pre loop");
+  Node* pre_loop_limit = pre_end->limit();
   // Occasionally it's possible for a pre-loop Opaque1 node to be
   // optimized away and then another round of loop opts attempted.
   // We can not optimize this particular loop in that case.
-  if (pre_opaq1->Opcode() != Op_Opaque1) {
+  if (pre_loop_limit->Opcode() != Op_Opaque1) {
     return;
   }
-  Opaque1Node *pre_opaq = (Opaque1Node*)pre_opaq1;
-  Node *pre_limit = pre_opaq->in(1);
+  Opaque1Node* pre_loop_limit_opaque = pre_loop_limit->as_Opaque1();
+  Node* pre_limit = pre_loop_limit_opaque->in(1);
   Node* pre_limit_ctrl = get_ctrl(pre_limit);
 
   // Where do we put new limit calculations
@@ -2683,7 +2958,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
 
   // Ensure the original loop limit is available from the
   // pre-loop Opaque1 node.
-  Node *orig_limit = pre_opaq->original_loop_limit();
+  Node *orig_limit = pre_loop_limit_opaque->original_loop_limit();
   if (orig_limit == nullptr || _igvn.type(orig_limit) == Type::TOP) {
     return;
   }
@@ -2752,7 +3027,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
       // 'limit' maybe pinned below the zero trip test (probably from a
       // previous round of rce), in which case, it can't be used in the
       // zero trip test expression which must occur before the zero test's if.
-      if (is_dominator(ctrl, limit_ctrl)) {
+      if (is_dominator(zero_trip_guard_success_proj, limit_ctrl)) {
         continue;  // Don't rce this check but continue looking for other candidates.
       }
 
@@ -2773,7 +3048,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
 
       // As above for the 'limit', the 'offset' maybe pinned below the
       // zero trip test.
-      if (is_dominator(ctrl, offset_ctrl)) {
+      if (is_dominator(zero_trip_guard_success_proj, offset_ctrl)) {
         continue; // Don't rce this check but continue looking for other candidates.
       }
 
@@ -2808,16 +3083,15 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
       Node* int_limit = limit;
       limit = new ConvI2LNode(limit);
       register_new_node(limit, next_limit_ctrl);
+      Node* ctrl_target_for_data_rewire = zero_trip_guard_success_proj;
 
       // Adjust pre and main loop limits to guard the correct iteration set
       if (cmp->Opcode() == Op_CmpU) { // Unsigned compare is really 2 tests
-        if (b_test._test == BoolTest::lt) { // Range checks always use lt
+        if (b_test._test == BoolTest::lt) {
+          // Range checks always use lt
           // The underflow and overflow limits: 0 <= scale*I+offset < limit
           add_constraint(stride_con, lscale_con, offset, zero, limit, next_limit_ctrl, &pre_limit, &main_limit);
-          Node* init = cl->uncasted_init_trip(true);
 
-          Node* opaque_init = new OpaqueLoopInitNode(C, init);
-          register_new_node(opaque_init, loop_entry);
 
           InitializedAssertionPredicateCreator initialized_assertion_predicate_creator(this);
           if (abs_stride_is_one) {
@@ -2844,12 +3118,15 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
           TemplateAssertionPredicateCreator template_assertion_predicate_creator(cl, scale_con , int_offset, int_limit,
                                                                                  this);
           loop_entry = template_assertion_predicate_creator.create(loop_entry);
+          // Make sure to rewire data dependencies on the removed check to the Template Assertion Predicate in order
+          // to update them correctly when further splitting the main loop later.
+          ctrl_target_for_data_rewire = loop_entry;
 
           // Initialized Assertion Predicate for the value of the initial main-loop.
+          Node* init = cl->uncasted_init_trip(true);
           loop_entry = initialized_assertion_predicate_creator.create(init, loop_entry, stride_con, scale_con,
                                                                       int_offset, int_limit,
                                                                       AssertionPredicateType::InitValue);
-
         } else {
           if (PrintOpto) {
             tty->print_cr("missed RCE opportunity");
@@ -2888,6 +3165,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
           continue;             // Unhandled case
         }
       }
+
       // Only update variable tracking control for new nodes if it's indeed a range check that can be eliminated (and
       // limits are updated)
       new_limit_ctrl = next_limit_ctrl;
@@ -2902,10 +3180,10 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
       // Find loads off the surviving projection; remove their control edge
       for (DUIterator_Fast imax, i = dp->fast_outs(imax); i < imax; i++) {
         Node* cd = dp->fast_out(i); // Control-dependent node
-        if (cd->is_Load() && cd->depends_only_on_test()) {   // Loads can now float around in the loop
-          // Allow the load to float around in the loop, or before it
-          // but NOT before the pre-loop.
-          _igvn.replace_input_of(cd, 0, ctrl); // ctrl, not null
+        if (cd->is_Load() && cd->depends_only_on_test()) {
+          // Allow a load to float around in the loop, or before it but after this loop's Template Assertion Predicates
+          // or when absent after the loop's zero trip guard.
+          _igvn.replace_input_of(cd, 0, ctrl_target_for_data_rewire);
           --i;
           --imax;
         }
@@ -2926,13 +3204,13 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
   }
   // new pre_limit can push Bool/Cmp/Opaque nodes down (when one of the eliminated condition has parameters that are not
   // loop invariant in the pre loop.
-  set_ctrl(pre_opaq, new_limit_ctrl);
+  set_ctrl(pre_loop_limit_opaque, new_limit_ctrl);
   // Can't use new_limit_ctrl for Bool/Cmp because it can be out of loop while they are loop variant. Conservatively set
   // control to latest possible one.
   set_ctrl(pre_end->cmp_node(), pre_end->in(0));
   set_ctrl(pre_end->in(1), pre_end->in(0));
 
-  _igvn.replace_input_of(pre_opaq, 1, pre_limit);
+  _igvn.replace_input_of(pre_loop_limit_opaque, 1, pre_limit);
 
   // Note:: we are making the main loop limit no longer precise;
   // need to round up based on stride.
@@ -2968,14 +3246,14 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
     _igvn.replace_node(final_iv_placeholder, final_iv);
   }
   // The OpaqueNode is unshared by design
-  assert(opqzm->outcnt() == 1, "cannot hack shared node");
-  _igvn.replace_input_of(opqzm, 1, main_limit);
+  assert(opaque_zero_trip_guard->outcnt() == 1, "cannot hack shared node");
+  _igvn.replace_input_of(opaque_zero_trip_guard, 1, main_limit);
   // new main_limit can push opaque node for zero trip guard down (when one of the eliminated condition has parameters
   // that are not loop invariant in the pre loop).
-  set_ctrl(opqzm, new_limit_ctrl);
+  set_ctrl(opaque_zero_trip_guard, new_limit_ctrl);
   // Bool/Cmp nodes for zero trip guard should have been assigned control between the main and pre loop (because zero
   // trip guard depends on induction variable value out of pre loop) so shouldn't need to be adjusted
-  assert(is_dominator(new_limit_ctrl, get_ctrl(iffm->in(1)->in(1))), "control of cmp should be below control of updated input");
+  assert(is_dominator(new_limit_ctrl, get_ctrl(zero_trip_guard->in(1)->in(1))), "control of cmp should be below control of updated input");
 
   C->print_method(PHASE_AFTER_RANGE_CHECK_ELIMINATION, 4, cl);
 }
@@ -3061,13 +3339,7 @@ void IdealLoopTree::adjust_loop_exit_prob(PhaseIdealLoop *phase) {
              (bol->in(1)->Opcode() == Op_CompareAndSwapI) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapL) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapP) ||
-             (bol->in(1)->Opcode() == Op_CompareAndSwapN) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndExchangeP) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndExchangeN) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahWeakCompareAndSwapP) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahWeakCompareAndSwapN) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndSwapP) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndSwapN)))
+             (bol->in(1)->Opcode() == Op_CompareAndSwapN)))
           return;               // Allocation loops RARELY take backedge
         // Find the OTHER exit path from the IF
         Node* ex = iff->proj_out(1-test_con);
@@ -3094,9 +3366,13 @@ static CountedLoopNode* locate_pre_from_main(CountedLoopNode* main_loop) {
   Node* ctrl = main_loop->skip_assertion_predicates_with_halt();
   assert(ctrl->Opcode() == Op_IfTrue || ctrl->Opcode() == Op_IfFalse, "");
   Node* iffm = ctrl->in(0);
-  assert(iffm->Opcode() == Op_If, "");
+  assert(iffm->Opcode() == Op_If, "%s", iffm->Name());
   Node* p_f = iffm->in(0);
-  assert(p_f->Opcode() == Op_IfFalse, "");
+  // Skip ReachabilityFences hoisted out of pre-loop.
+  while (p_f->is_ReachabilityFence()) {
+    p_f = p_f->in(0);
+  }
+  assert(p_f->Opcode() == Op_IfFalse, "%s", p_f->Name());
   CountedLoopNode* pre_loop = p_f->in(0)->as_CountedLoopEnd()->loopnode();
   assert(pre_loop->is_pre_loop(), "No pre loop found");
   return pre_loop;
@@ -3243,6 +3519,15 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
 #endif
 
   if (needs_guard) {
+    if (LoopPeeling == 0) {
+#ifndef PRODUCT
+      if (TraceLoopOpts) {
+        tty->print("Empty loop not removed since LoopPeeling is always disabled");
+        this->dump_head();
+      }
+#endif
+      return false;
+    }
     // Peel the loop to ensure there's a zero trip guard
     Node_List old_new;
     phase->do_peeling(this, old_new);
@@ -3969,15 +4254,10 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     index = new LShiftXNode(index, shift->in(2));
     _igvn.register_new_node_with_optimizer(index);
   }
-  Node* from = new AddPNode(base, base, index);
+  Node* from = AddPNode::make_with_base(base, index);
   _igvn.register_new_node_with_optimizer(from);
-  // For normal array fills, C2 uses two AddP nodes for array element
-  // addressing. But for array fills with Unsafe call, there's only one
-  // AddP node adding an absolute offset, so we do a null check here.
-  assert(offset != nullptr || C->has_unsafe_access(),
-         "Only array fills with unsafe have no extra offset");
   if (offset != nullptr) {
-    from = new AddPNode(base, from, offset);
+    from = AddPNode::make_with_base(base, from, offset);
     _igvn.register_new_node_with_optimizer(from);
   }
   // Compute the number of elements to copy
@@ -4038,7 +4318,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   call->init_req(TypeFunc::Control,   head->init_control());
   call->init_req(TypeFunc::I_O,       C->top());       // Does no I/O.
   call->init_req(TypeFunc::Memory,    mem_phi->in(LoopNode::EntryControl));
-  call->init_req(TypeFunc::ReturnAdr, C->start()->proj_out_or_null(TypeFunc::ReturnAdr));
+  call->init_req(TypeFunc::ReturnAdr, C->top());
   Node* frame = new ParmNode(C->start(), TypeFunc::FramePtr);
   _igvn.register_new_node_with_optimizer(frame);
   call->init_req(TypeFunc::FramePtr,  frame);

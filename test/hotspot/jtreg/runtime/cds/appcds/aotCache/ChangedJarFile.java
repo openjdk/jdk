@@ -59,7 +59,7 @@ public class ChangedJarFile {
             tester.productionRun(new String[] {"-XX:AOTMode=auto", "-Xlog:aot"},
                                  new String[] {"jarHasChanged"});
         out.shouldMatch("This file is not the one used while building the " +
-                        "AOT cache: '.*app.jar', timestamp has changed, size has changed");
+                        "AOT cache: '.*app.jar',.* size has changed");
     }
 
     static class Tester extends CDSAppTester {

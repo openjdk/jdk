@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/sizes.hpp"
 
@@ -60,7 +61,6 @@ class methodHandle;
 
 class ThreadShadow: public CHeapObj<mtThread> {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
  protected:
   oop  _pending_exception;                       // Thread has gc actions.
@@ -113,12 +113,16 @@ class Exceptions {
   static bool special_exception(JavaThread* thread, const char* file, int line, Handle exception, Symbol* name = nullptr, const char* message = nullptr);
 
   // Count out of memory errors that are interesting in error diagnosis
-  static volatile int _out_of_memory_error_java_heap_errors;
-  static volatile int _out_of_memory_error_metaspace_errors;
-  static volatile int _out_of_memory_error_class_metaspace_errors;
+  static Atomic<int> _out_of_memory_error_java_heap_errors;
+  static Atomic<int> _out_of_memory_error_metaspace_errors;
+  static Atomic<int> _out_of_memory_error_class_metaspace_errors;
 
   // Count linkage errors
-  static volatile int _linkage_errors;
+  static Atomic<int> _linkage_errors;
+
+  // Count stack overflow errors.
+  static Atomic<int> _stack_overflow_errors;
+
  public:
   // this enum is defined to indicate whether it is safe to
   // ignore the encoding scheme of the original message string.
@@ -177,12 +181,13 @@ class Exceptions {
 
   static void throw_stack_overflow_exception(JavaThread* thread, const char* file, int line, const methodHandle& method);
 
+  static void wrap_exception_in_internal_error(const char* message, JavaThread* thread);
+
   static void wrap_dynamic_exception(bool is_indy, JavaThread* thread);
 
-  // Exception counting for error files of interesting exceptions that may have
-  // caused a problem for the jvm
-  static volatile int _stack_overflow_errors;
-
+  // Exception counting of interesting exceptions that may have caused a
+  // problem for the JVM, for reporting in the hs_err file.
+  static void increment_stack_overflow_errors();
   static bool has_exception_counts();
   static void count_out_of_memory_exceptions(Handle exception);
   static void print_exception_counts_on_error(outputStream* st);
@@ -264,6 +269,8 @@ class Exceptions {
 // with a TRAPS argument.
 
 #define THREAD_AND_LOCATION                      THREAD, __FILE__, __LINE__
+#define THREAD_AND_LOCATION_DECL                 TRAPS, const char* file, int line
+#define THREAD_AND_LOCATION_ARGS                 THREAD, file, line
 
 #define THROW_OOP(e)                                \
   { Exceptions::_throw_oop(THREAD_AND_LOCATION, e);                             return;  }

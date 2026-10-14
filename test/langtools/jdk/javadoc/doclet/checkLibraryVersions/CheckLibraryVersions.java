@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8293177 8324774 8357458
+ * @bug 8293177 8324774 8357458 8378228
  * @summary Verify version numbers in legal files
  * @library /test/lib
  * @build jtreg.SkippedException
@@ -54,8 +54,6 @@ public class CheckLibraryVersions {
     //  %V is replaced with the version string
     //  %M is replaced twice, once with an empty string and once with ".min"
     static final Map<String, List<String>> libraries = Map.of(
-            "jquery.md", List.of("jquery/jquery-%V%M.js"),
-            "jqueryUI.md", List.of("jquery/jquery-ui%M.js", "jquery/jquery-ui%M.css"),
             "dejavufonts.md", List.of("fonts/dejavu.css"),
             "highlightjs.md", List.of("highlight.js")
     );

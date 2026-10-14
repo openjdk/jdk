@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.tools.jconsole.inspector;
 
 import java.awt.Component;
 import javax.swing.ImageIcon;
+import javax.swing.JToolTip;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
@@ -34,11 +35,23 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 @SuppressWarnings("serial")
 public class XTreeRenderer extends DefaultTreeCellRenderer {
 
+    public XTreeRenderer() {
+        putClientProperty("html.disable", Boolean.TRUE);
+    }
+
+    @Override
+    public JToolTip createToolTip() {
+        JToolTip t = super.createToolTip();
+        t.putClientProperty("html.disable", Boolean.TRUE);
+        return t;
+    }
+
     public Component getTreeCellRendererComponent(
             JTree tree, Object value, boolean selected, boolean expanded,
             boolean leaf, int row, boolean hasFocus) {
         super.getTreeCellRendererComponent(
                 tree, value, selected, expanded, leaf, row, hasFocus);
+
         Object userObject = ((DefaultMutableTreeNode) value).getUserObject();
         if (userObject instanceof XNodeInfo) {
             XNodeInfo node = (XNodeInfo) userObject;

@@ -65,7 +65,7 @@ import jdk.jpackage.test.PackageType;
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningPackageTest.test
  *  --jpt-space-subst=*
- *  --jpt-include=({--mac-signing-key-user-name:*CODESIGN},*{--mac-signing-key-user-name:*PKG},*MAC_DMG+MAC_PKG)
+ *  --jpt-include=({KEY_USER_NAME:*CODESIGN},*{KEY_USER_NAME:*PKG},*MAC_DMG+MAC_PKG)
  *  --jpt-before-run=SigningBase.verifySignTestEnvReady
  */
 

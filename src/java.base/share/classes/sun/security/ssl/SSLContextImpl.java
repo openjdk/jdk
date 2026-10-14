@@ -34,7 +34,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import javax.net.ssl.*;
 import sun.security.provider.certpath.AlgorithmChecker;
+import sun.security.ssl.CompressedCertificate.CompCertCacheKey;
 import sun.security.ssl.SSLAlgorithmConstraints.SIGNATURE_CONSTRAINTS_MODE;
+import sun.security.util.Cache;
 import sun.security.validator.Validator;
 
 /**
@@ -72,6 +74,10 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     private volatile StatusResponseManager statusResponseManager;
 
     private final ReentrantLock contextLock = new ReentrantLock();
+
+    // Avoid compressing local certificates repeatedly for every handshake.
+    private final Cache<CompCertCacheKey, byte[]> compCertCache =
+            Cache.newSoftMemoryCache(12);
 
     SSLContextImpl() {
         ephemeralKeyManager = new EphemeralKeyManager();
@@ -225,6 +231,10 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         return ephemeralKeyManager;
     }
 
+    Cache<CompCertCacheKey, byte[]> getCompCertCache() {
+        return compCertCache;
+    }
+
     // Used for DTLS in server mode only.
     HelloCookieManager getHelloCookieManager(ProtocolVersion protocolVersion) {
         if (helloCookieManagerBuilder == null) {
@@ -282,6 +292,12 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
     // Is the context for DTLS protocols?
     abstract boolean isDTLS();
+
+    // Get supported Named Groups.
+    List<NamedGroup> getSupportedNamedGroups() {
+        return NamedGroup.SupportedGroups.getSupportedGroups(
+                getSupportedProtocolVersions(), getSupportedCipherSuites());
+    }
 
     // Get default protocols.
     List<ProtocolVersion> getDefaultProtocolVersions(boolean roleIsServer) {

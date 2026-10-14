@@ -82,7 +82,7 @@ class JfrSetStorage : public AnyObj {
 
   ~JfrSetStorage() {
     if (CONFIG::alloc_type() == C_HEAP) {
-      FREE_C_HEAP_ARRAY(K, _table);
+      FREE_C_HEAP_ARRAY(_table);
     }
   }
 
@@ -119,6 +119,7 @@ class JfrSetStorage : public AnyObj {
         ::new (&_table[i]) K{};
       }
     }
+    _elements = 0;
   }
 };
 
@@ -160,7 +161,7 @@ class JfrSet : public JfrSetStorage<CONFIG> {
       }
     }
     if (CONFIG::alloc_type() == AnyObj::C_HEAP) {
-      FREE_C_HEAP_ARRAY(K, old_table);
+      FREE_C_HEAP_ARRAY(old_table);
     }
     assert(_table_mask + 1 == this->_table_size, "invariant");
     assert(_resize_threshold << 1 == this->_table_size, "invariant");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -624,28 +624,32 @@ Node* AddINode::Identity(PhaseGVN* phase) {
 // Supplied function returns the sum of the inputs.  Guaranteed never
 // to be passed a TOP or BOTTOM type, these are filtered out by
 // pre-check.
-const Type *AddINode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeInt *r0 = t0->is_int(); // Handy access
-  const TypeInt *r1 = t1->is_int();
-  int lo = java_add(r0->_lo, r1->_lo);
-  int hi = java_add(r0->_hi, r1->_hi);
-  if( !(r0->is_con() && r1->is_con()) ) {
-    // Not both constants, compute approximate result
-    if( (r0->_lo & r1->_lo) < 0 && lo >= 0 ) {
-      lo = min_jint; hi = max_jint; // Underflow on the low side
-    }
-    if( (~(r0->_hi | r1->_hi)) < 0 && hi < 0 ) {
-      lo = min_jint; hi = max_jint; // Overflow on the high side
-    }
-    if( lo > hi ) {               // Handle overflow
-      lo = min_jint; hi = max_jint;
-    }
-  } else {
-    // both constants, compute precise result using 'lo' and 'hi'
-    // Semantics define overflow and underflow for integer addition
-    // as expected.  In particular: 0x80000000 + 0x80000000 --> 0x0
+const Type* AddINode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeInt* range0 = t0->is_int();
+  const TypeInt* range1 = t1->is_int();
+
+  jlong lo_sum = (jlong)range0->_lo + (jlong)range1->_lo;
+  jlong hi_sum = (jlong)range0->_hi + (jlong)range1->_hi;
+
+  const jlong jint_wrap_offset = (jlong)max_juint + 1;
+
+  if (hi_sum < min_jint) {
+    // The entire range underflows.
+    lo_sum += jint_wrap_offset;
+    hi_sum += jint_wrap_offset;
+  } else if (lo_sum > max_jint) {
+    // The entire range overflows.
+    lo_sum -= jint_wrap_offset;
+    hi_sum -= jint_wrap_offset;
+  } else if (lo_sum < min_jint || hi_sum > max_jint) {
+    // The range crosses one or both jint boundaries.
+    lo_sum = min_jint;
+    hi_sum = max_jint;
   }
-  return TypeInt::make( lo, hi, MAX2(r0->_widen,r1->_widen) );
+
+  return TypeInt::make(checked_cast<jint>(lo_sum),
+                       checked_cast<jint>(hi_sum),
+                       MAX2(range0->_widen, range1->_widen));
 }
 
 
@@ -698,6 +702,13 @@ const Type *AddLNode::add_ring( const Type *t0, const Type *t1 ) const {
 
 
 //=============================================================================
+//------------------------------Ideal------------------------------------------
+Node* AddFPNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // Floating-point addition is commutative but not associative.
+  return commute(phase, this) ? this : nullptr;
+}
+
+//=============================================================================
 //------------------------------add_of_identity--------------------------------
 // Check for addition of the identity
 const Type *AddFNode::add_of_identity( const Type *t1, const Type *t2 ) const {
@@ -722,12 +733,6 @@ const Type *AddFNode::add_ring( const Type *t0, const Type *t1 ) const {
     return bottom_type();
   }
   return TypeF::make( t0->getf() + t1->getf() );
-}
-
-//------------------------------Ideal------------------------------------------
-Node *AddFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Floating point additions are not associative because of boundary conditions (infinity)
-  return commute(phase, this) ? this : nullptr;
 }
 
 //=============================================================================
@@ -773,12 +778,6 @@ const Type *AddDNode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeD::make( t0->getd() + t1->getd() );
 }
 
-//------------------------------Ideal------------------------------------------
-Node *AddDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Floating point additions are not associative because of boundary conditions (infinity)
-  return commute(phase, this) ? this : nullptr;
-}
-
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
@@ -816,7 +815,7 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         offset  = phase->MakeConX(t2->get_con() + t12->get_con());
       } else {
         // Else move the constant to the right.  ((A+con)+B) into ((A+B)+con)
-        address = phase->transform(new AddPNode(in(Base),addp->in(Address),in(Offset)));
+        address = phase->transform(AddPNode::make_with_base(in(Base), addp->in(Address), in(Offset)));
         offset  = addp->in(Offset);
       }
       set_req_X(Address, address, phase);
@@ -838,11 +837,11 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Convert: (ptr + (offset+con)) into (ptr+offset)+con.
   // The idea is to merge array_base+scaled_index groups together,
   // and only have different constant offsets from the same base.
-  const Node *add = in(Offset);
-  if( add->Opcode() == Op_AddX && add->in(1) != add ) {
-    const Type *t22 = phase->type( add->in(2) );
-    if( t22->singleton() && (t22 != Type::TOP) ) {  // Right input is an add of a constant?
-      set_req(Address, phase->transform(new AddPNode(in(Base),in(Address),add->in(1))));
+  const Node* add = in(Offset);
+  if (add->Opcode() == Op_AddX && add->in(1) != add) {
+    const Type* t22 = phase->type(add->in(2));
+    if (t22->singleton() && (t22 != Type::TOP)) {  // Right input is an add of a constant?
+      set_req(Address, phase->transform(AddPNode::make_with_base(in(Base), in(Address), add->in(1))));
       set_req_X(Offset, add->in(2), phase); // puts add on igvn worklist if needed
       return this;              // Made progress
     }
@@ -857,14 +856,23 @@ const Type *AddPNode::bottom_type() const {
   if (in(Address) == nullptr)  return TypePtr::BOTTOM;
   const TypePtr *tp = in(Address)->bottom_type()->isa_ptr();
   if( !tp ) return Type::TOP;   // TOP input means TOP output
-  assert( in(Offset)->Opcode() != Op_ConP, "" );
-  const Type *t = in(Offset)->bottom_type();
-  if( t == Type::TOP )
-    return tp->add_offset(Type::OffsetTop);
-  const TypeX *tx = t->is_intptr_t();
+
+  assert(in(Offset)->Opcode() != Op_ConP, "");
+  const Type* t = in(Offset)->bottom_type();
+  if (t == Type::TOP) {
+    return Type::TOP;
+  }
+
+  const TypeX* tx = t->is_intptr_t();
   intptr_t txoffset = Type::OffsetBot;
   if (tx->is_con()) {   // Left input is an add of a constant?
     txoffset = tx->get_con();
+  }
+  if (tp->isa_aryptr()) {
+    // In the case of a flat value type array, each field has its
+    // own slice so we need to extract the field being accessed from
+    // the address computation
+    return tp->is_aryptr()->add_field_offset_and_offset(txoffset);
   }
   return tp->add_offset(txoffset);
 }
@@ -885,6 +893,12 @@ const Type* AddPNode::Value(PhaseGVN* phase) const {
   intptr_t p2offset = Type::OffsetBot;
   if (p2->is_con()) {   // Left input is an add of a constant?
     p2offset = p2->get_con();
+  }
+  if (p1->isa_aryptr()) {
+    // In the case of a flat value type array, each field has its
+    // own slice so we need to extract the field being accessed from
+    // the address computation
+    return p1->is_aryptr()->add_field_offset_and_offset(p2offset);
   }
   return p1->add_offset(p2offset);
 }
@@ -947,6 +961,17 @@ uint AddPNode::match_edge(uint idx) const {
 Node* OrINode::Identity(PhaseGVN* phase) {
   // x | x => x
   if (in(1) == in(2)) {
+    return in(1);
+  }
+
+  // x | (y | x) => y | x
+  if (in(2)->Opcode() == Op_OrI &&
+      (in(2)->in(1) == in(1) || in(2)->in(2) == in(1))) {
+    return in(2);
+  }
+  // (x | y) | x => x | y
+  if (in(1)->Opcode() == Op_OrI &&
+      (in(1)->in(1) == in(2) || in(1)->in(2) == in(2))) {
     return in(1);
   }
 
@@ -1020,6 +1045,17 @@ const Type* OrINode::add_ring(const Type* t1, const Type* t2) const {
 Node* OrLNode::Identity(PhaseGVN* phase) {
   // x | x => x
   if (in(1) == in(2)) {
+    return in(1);
+  }
+
+  // x | (y | x) => y | x
+  if (in(2)->Opcode() == Op_OrL &&
+      (in(2)->in(1) == in(1) || in(2)->in(2) == in(1))) {
+    return in(2);
+  }
+  // (x | y) | x => x | y
+  if (in(1)->Opcode() == Op_OrL &&
+      (in(1)->in(1) == in(2) || in(1)->in(2) == in(2))) {
     return in(1);
   }
 

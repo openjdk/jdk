@@ -25,7 +25,7 @@
  * @test CorrectnessTest
  * @key randomness
  * @bug 8038418
- * @requires vm.flavor == "server" & !vm.emulatedClient
+ * @requires vm.flavor == "server"
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management

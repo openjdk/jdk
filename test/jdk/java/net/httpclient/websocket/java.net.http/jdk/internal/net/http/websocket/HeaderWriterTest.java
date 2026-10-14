@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 package jdk.internal.net.http.websocket;
 
-import org.testng.annotations.Test;
 import jdk.internal.net.http.websocket.Frame.HeaderWriter;
 import jdk.internal.net.http.websocket.Frame.Opcode;
 
@@ -32,9 +31,11 @@ import java.util.OptionalInt;
 
 import static java.util.OptionalInt.empty;
 import static java.util.OptionalInt.of;
-import static org.testng.Assert.assertEquals;
 import static jdk.internal.net.http.websocket.TestSupport.assertThrows;
 import static jdk.internal.net.http.websocket.TestSupport.forEachPermutation;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class HeaderWriterTest {
 
@@ -109,7 +110,7 @@ public class HeaderWriterTest {
                     ByteBuffer actual = ByteBuffer.allocate(Frame.MAX_HEADER_SIZE_BYTES + 2);
                     writer.write(actual);
                     actual.flip();
-                    assertEquals(actual, expected);
+                    assertEquals(expected, actual);
                 });
     }
 }

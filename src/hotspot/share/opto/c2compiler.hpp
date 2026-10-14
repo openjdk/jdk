@@ -58,6 +58,7 @@ public:
   static const char* retry_no_reduce_allocation_merges();
   static const char* retry_no_locks_coarsening();
   static const char* retry_no_superword();
+  static const char* retry_no_stringopts();
 
   // Print compilation timers and statistics
   void print_timers();

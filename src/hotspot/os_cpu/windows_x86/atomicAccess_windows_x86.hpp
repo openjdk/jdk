@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define OS_CPU_WINDOWS_X86_ATOMICACCESS_WINDOWS_X86_HPP
 
 #include <intrin.h>
-#include "runtime/os.hpp"
+#include <windows.h>
 
 // Note that in MSVC, volatile memory accesses are explicitly
 // guaranteed to have acquire release semantics (w.r.t. compiler
@@ -59,7 +59,7 @@ struct AtomicAccess::PlatformAdd {
   inline D AtomicAccess::PlatformAdd<sizeof(IntrinsicType)>::add_then_fetch(D volatile* dest, \
                                                                             I add_value, \
                                                                             atomic_memory_order order) const { \
-    STATIC_ASSERT(sizeof(IntrinsicType) == sizeof(D));                    \
+    static_assert(sizeof(IntrinsicType) == sizeof(D));                    \
     return PrimitiveConversions::cast<D>(                                 \
       IntrinsicName(reinterpret_cast<IntrinsicType volatile *>(dest),     \
                     PrimitiveConversions::cast<IntrinsicType>(add_value))); \
@@ -79,8 +79,8 @@ struct AtomicAccess::PlatformXchg<1> : AtomicAccess::XchgUsingCmpxchg<1> {};
   inline T AtomicAccess::PlatformXchg<sizeof(IntrinsicType)>::operator()(T volatile* dest, \
                                                                          T exchange_value, \
                                                                          atomic_memory_order order) const { \
-    STATIC_ASSERT(sizeof(IntrinsicType) == sizeof(T));                    \
-    STATIC_ASSERT(sizeof(IntrinsicType) == 4 ||                           \
+    static_assert(sizeof(IntrinsicType) == sizeof(T));                    \
+    static_assert(sizeof(IntrinsicType) == 4 ||                           \
                   sizeof(IntrinsicType) == 8);                            \
     return PrimitiveConversions::cast<T>(                                 \
       IntrinsicName(reinterpret_cast<IntrinsicType volatile *>(dest),     \
@@ -103,7 +103,7 @@ DEFINE_INTRINSIC_XCHG(InterlockedExchange64, __int64)
                                                                             T compare_value, \
                                                                             T exchange_value, \
                                                                             atomic_memory_order order) const { \
-    STATIC_ASSERT(sizeof(IntrinsicType) == sizeof(T));                    \
+    static_assert(sizeof(IntrinsicType) == sizeof(T));                    \
     return PrimitiveConversions::cast<T>(                                 \
       IntrinsicName(reinterpret_cast<IntrinsicType volatile *>(dest),     \
                     PrimitiveConversions::cast<IntrinsicType>(exchange_value), \

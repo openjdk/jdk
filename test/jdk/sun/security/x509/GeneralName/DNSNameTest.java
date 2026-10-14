@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,132 +21,126 @@
  * questions.
  */
 
-/**
- * @test
- * @summary DNSName parsing tests
- * @bug 8213952 8186143
- * @modules java.base/sun.security.x509
- * @run testng DNSNameTest
- */
+import static jdk.test.lib.Asserts.fail;
 
 import java.io.IOException;
+import java.net.IDN;
+import java.util.List;
+import java.util.stream.Stream;
 import sun.security.x509.DNSName;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.*;
+/*
+ * @test
+ * @summary DNSName parsing tests
+ * @bug 8213952 8186143 8381771
+ * @library /test/lib
+ * @modules java.base/sun.security.x509
+ * @run main DNSNameTest
+ */
 
 public class DNSNameTest {
-    @DataProvider(name = "goodNames")
-    public Object[][] goodNames() {
-        Object[][] data = {
-                {"abc.com"},
-                {"ABC.COM"},
-                {"a12.com"},
-                {"a1b2c3.com"},
-                {"1abc.com"},
-                {"123.com"},
-                {"abc.com-"}, // end with hyphen
-                {"a-b-c.com"}, // hyphens
-        };
-        return data;
+
+    private static final List<String> GOOD_NAMES = List.of(
+            "abc",
+            String.join(".", "a".repeat(63), "b".repeat(63),
+                    "c".repeat(63), "d".repeat(61)),
+            "abc.com",
+            "tesT.Abc.com",
+            "ABC.COM",
+            "a12.com",
+            "a1b2c3.com",
+            "1abc.com",
+            "123.com",
+            "a-b-c.com", // hyphens
+            IDN.toASCII("公司.江利子") // IDN punycode
+    );
+
+    private static final List<String> GOOD_SAN_NAMES = Stream.concat(
+                    Stream.of(
+                            "*.domain.com", // wildcard in 1st level subdomain
+                            "*.com"),
+                    GOOD_NAMES.stream())
+            .toList();
+
+    private static final List<String> BAD_NAMES = List.of(
+            // DNSName too long
+            String.join(".", "a".repeat(63), "b".repeat(63),
+                    "c".repeat(63), "d".repeat(62)),
+            // DNSName label too long
+            "a".repeat(64),
+            " 1abc.com", // begin with space
+            "1abc.com ", // end with space
+            "1a bc.com ", // no space allowed
+            "-abc.com", // name begins with a hyphen
+            "abc.com-", // name ends with a hyphen
+            "abc.-com", // label begins with a hyphen
+            "abc-.com", // label ends with a hyphen
+            "a..b", // ..
+            ".a", // begin with .
+            "a.", // end with .
+            "", // empty
+            "  ",  // space only
+            "*.domain.com", // wildcard not allowed
+            "a*.com" // only allow letter, digit, or hyphen
+    );
+
+    private static final List<String> BAD_SAN_NAMES = Stream.concat(
+                    Stream.of(
+                            "*", //  wildcard only
+                            "*.", //  wildcard with a period
+                            "*a.com", // partial wildcard disallowed
+                            "abc.*.com", // wildcard not allowed in 2nd level
+                            "**.domain.com", // double wildcard not allowed
+                            "*.domain.com*", // can't end with wildcard
+                            "a*.com"), // only allow letter, digit, or hyphen
+                    BAD_NAMES.stream().filter(n -> !n.contains("*")))
+            .toList();
+
+
+    public static void main(String[] args) {
+        GOOD_NAMES.forEach(DNSNameTest::testGoodDNSName);
+        GOOD_SAN_NAMES.forEach(DNSNameTest::testGoodSanDNSName);
+        BAD_NAMES.forEach(DNSNameTest::testBadDNSName);
+        BAD_SAN_NAMES.forEach(DNSNameTest::testBadSanDNSName);
     }
 
-    @DataProvider(name = "goodSanNames")
-    public Object[][] goodSanNames() {
-        Object[][] data = {
-                {"abc.com"},
-                {"ABC.COM"},
-                {"a12.com"},
-                {"a1b2c3.com"},
-                {"1abc.com"},
-                {"123.com"},
-                {"abc.com-"}, // end with hyphen
-                {"a-b-c.com"}, // hyphens
-                {"*.domain.com"}, // wildcard in 1st level subdomain
-                {"*.com"},
-        };
-        return data;
-    }
-
-    @DataProvider(name = "badNames")
-    public Object[][] badNames() {
-        Object[][] data = {
-                {" 1abc.com"}, // begin with space
-                {"1abc.com "}, // end with space
-                {"1a bc.com "}, // no space allowed
-                {"-abc.com"}, // begin with hyphen
-                {"a..b"}, // ..
-                {".a"}, // begin with .
-                {"a."}, // end with .
-                {""}, // empty
-                {"  "},  // space only
-                {"*.domain.com"}, // wildcard not allowed
-                {"a*.com"}, // only allow letter, digit, or hyphen
-        };
-        return data;
-    }
-
-    @DataProvider(name = "badSanNames")
-    public Object[][] badSanNames() {
-        Object[][] data = {
-                {" 1abc.com"}, // begin with space
-                {"1abc.com "}, // end with space
-                {"1a bc.com "}, // no space allowed
-                {"-abc.com"}, // begin with hyphen
-                {"a..b"}, // ..
-                {".a"}, // begin with .
-                {"a."}, // end with .
-                {""}, // empty
-                {"  "},  // space only
-                {"*"}, //  wildcard only
-                {"*a.com"}, // partial wildcard disallowed
-                {"abc.*.com"}, // wildcard not allowed in 2nd level
-                {"*.*.domain.com"}, // double wildcard not allowed
-                {"a*.com"}, // only allow letter, digit, or hyphen
-        };
-        return data;
-    }
-
-
-    @Test(dataProvider = "goodNames")
-    public void testGoodDNSName(String dnsNameString) {
+    private static void testGoodDNSName(String dnsNameString) {
         try {
             DNSName dn = new DNSName(dnsNameString);
         } catch (IOException e) {
-            fail("Unexpected IOException");
+            fail("Unexpected IOException with input " + dnsNameString + ": "
+                    + e.getMessage());
         }
     }
 
-    @Test(dataProvider = "goodSanNames")
-    public void testGoodSanDNSName(String dnsNameString) {
+    private static void testGoodSanDNSName(String dnsNameString) {
         try {
             DNSName dn = new DNSName(dnsNameString, true);
         } catch (IOException e) {
-            fail("Unexpected IOException");
+            fail("Unexpected IOException with input " + dnsNameString + ": "
+                    + e.getMessage());
         }
     }
 
-    @Test(dataProvider = "badNames")
-    public void testBadDNSName(String dnsNameString) {
+    private static void testBadDNSName(String dnsNameString) {
         try {
             DNSName dn = new DNSName(dnsNameString);
-            fail("IOException expected");
+            fail("IOException expected with input " + dnsNameString);
         } catch (IOException e) {
-            if (!e.getMessage().contains("DNSName"))
+            if (!e.getMessage().contains("DNSName")) {
                 fail("Unexpected message: " + e);
+            }
         }
     }
 
-    @Test(dataProvider = "badSanNames")
-    public void testBadSanDNSName(String dnsNameString) {
+    private static void testBadSanDNSName(String dnsNameString) {
         try {
             DNSName dn = new DNSName(dnsNameString, true);
-            fail("IOException expected");
+            fail("IOException expected with input " + dnsNameString);
         } catch (IOException e) {
-            if (!e.getMessage().contains("DNSName"))
+            if (!e.getMessage().contains("DNSName")) {
                 fail("Unexpected message: " + e);
+            }
         }
     }
 }

@@ -99,7 +99,7 @@
 #ifndef MAP_ANON_64K
   #define MAP_ANON_64K 0x400
 #else
-  STATIC_ASSERT(MAP_ANON_64K == 0x400);
+  static_assert(MAP_ANON_64K == 0x400);
 #endif
 #include <sys/resource.h>
 #include <sys/select.h>
@@ -126,7 +126,6 @@ int mread_real_time(timebasestruct_t *t, size_t size_of_timebasestruct_t);
 
 // for multipage initialization error analysis (in 'g_multipage_error')
 #define ERROR_MP_OS_TOO_OLD                          100
-#define ERROR_MP_EXTSHM_ACTIVE                       101
 #define ERROR_MP_VMGETINFO_FAILED                    102
 #define ERROR_MP_VMGETINFO_CLAIMS_NO_SUPPORT_FOR_64K 103
 
@@ -177,9 +176,6 @@ uint32_t  os::Aix::_os_version = 0;
 
 // -1 = uninitialized, 0 - no, 1 - yes
 int       os::Aix::_xpg_sus_mode = -1;
-
-// -1 = uninitialized, 0 - no, 1 - yes
-int       os::Aix::_extshm = -1;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local variables
@@ -454,7 +450,7 @@ static void query_multipage_support() {
         if (::shmctl(shmid, SHM_PAGESIZE, &shm_buf) != 0) {
           const int en = errno;
           ::shmctl(shmid, IPC_RMID, nullptr); // As early as possible!
-          log_warning(pagesize)("shmctl(SHM_PAGESIZE) failed with errno=%d", errno);
+          log_warning(pagesize)("shmctl(SHM_PAGESIZE) failed with errno=%d", en);
         } else {
           // Attach and double check pageisze.
           void* p = ::shmat(shmid, nullptr, 0);
@@ -582,13 +578,13 @@ void os::init_system_properties_values() {
   char *ld_library_path = NEW_C_HEAP_ARRAY(char, pathsize, mtInternal);
   os::snprintf_checked(ld_library_path, pathsize, "%s%s" DEFAULT_LIBPATH, v, v_colon);
   Arguments::set_library_path(ld_library_path);
-  FREE_C_HEAP_ARRAY(char, ld_library_path);
+  FREE_C_HEAP_ARRAY(ld_library_path);
 
   // Extensions directories.
   os::snprintf_checked(buf, bufsize, "%s" EXTENSIONS_DIR, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
-  FREE_C_HEAP_ARRAY(char, buf);
+  FREE_C_HEAP_ARRAY(buf);
 
 #undef DEFAULT_LIBPATH
 #undef EXTENSIONS_DIR
@@ -1093,8 +1089,8 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   if (result == nullptr && eno == ENOENT) {
     const char* pointer_to_dot = strrchr(filename, '.');
     if (pointer_to_dot != nullptr && strcmp(pointer_to_dot, old_extension) == 0) {
-      STATIC_ASSERT(sizeof(old_extension) >= sizeof(new_extension));
-      char* tmp_path = os::strdup(filename);
+      static_assert(sizeof(old_extension) >= sizeof(new_extension));
+      char* tmp_path = os::strdup(filename, mtInternal);
       size_t prefix_size = pointer_delta(pointer_to_dot, filename, 1);
       os::snprintf_checked(tmp_path + prefix_size, sizeof(old_extension), "%s", new_extension);
       result = dll_load_library(tmp_path, &eno, ebuf, ebuflen);
@@ -1194,13 +1190,6 @@ void os::print_memory_info(outputStream* st) {
   // print out LDR_CNTRL because it affects the default page sizes
   const char* const ldr_cntrl = ::getenv("LDR_CNTRL");
   st->print_cr("  LDR_CNTRL=%s.", ldr_cntrl ? ldr_cntrl : "<unset>");
-
-  // Print out EXTSHM because it is an unsupported setting.
-  const char* const extshm = ::getenv("EXTSHM");
-  st->print_cr("  EXTSHM=%s.", extshm ? extshm : "<unset>");
-  if ( (strcmp(extshm, "on") == 0) || (strcmp(extshm, "ON") == 0) ) {
-    st->print_cr("  *** Unsupported! Please remove EXTSHM from your environment! ***");
-  }
 
   // Print out AIXTHREAD_GUARDPAGES because it affects the size of pthread stacks.
   const char* const aixthread_guardpages = ::getenv("AIXTHREAD_GUARDPAGES");
@@ -1420,7 +1409,6 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // (In places where this matters, e.g. when reserving the heap, we take care of passing segment-aligned
   // addresses on Aix. See, e.g., ReservedHeapSpace.
   char* const addr = (char*) shmat(shmid, requested_addr, 0);
-  const int errno_shmat = errno;
 
   // (A) Right after shmat and before handing shmat errors delete the shm segment.
   if (::shmctl(shmid, IPC_RMID, nullptr) == -1) {
@@ -1908,7 +1896,11 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
     }
   }
 
-  assert(rc == true, "mprotect failed.");
+  if (!rc) {
+    // Reporting success via mprotect but failing to mprotect is a symptom of calling mprotect
+    // on SystemV-memory. It should not happen for mmap-mode.
+    assert(!g_multipage_support.can_use_64K_mmap_pages, "Should only happen in old-style shmat mode");
+  }
 
   return rc;
 }
@@ -2133,8 +2125,6 @@ void os::init(void) {
 
   // datapsize = 64k. Data segment, thread stacks are 64k paged.
   // This normally means that we can allocate 64k pages dynamically.
-  // (There is one special case where this may be false: EXTSHM=on.
-  // but we decided to not support that mode).
   assert0(g_multipage_support.can_use_64K_pages || g_multipage_support.can_use_64K_mmap_pages);
   set_page_size(64*K);
 
@@ -2543,28 +2533,13 @@ void os::Aix::initialize_os_info() {
 void os::Aix::scan_environment() {
 
   char* p;
-  int rc;
 
-  // Warn explicitly if EXTSHM=ON is used. That switch changes how
-  // System V shared memory behaves. One effect is that page size of
-  // shared memory cannot be change dynamically, effectivly preventing
-  // large pages from working.
-  // This switch was needed on AIX 32bit, but on AIX 64bit the general
-  // recommendation is (in OSS notes) to switch it off.
+  // Reject EXTSHM=ON. That switch changes how System V shared memory behaves
+  // and prevents allocation of 64k pages for the heap.
   p = ::getenv("EXTSHM");
   trcVerbose("EXTSHM=%s.", p ? p : "<unset>");
   if (p && strcasecmp(p, "ON") == 0) {
-    _extshm = 1;
-    log_warning(os)("*** Unsupported mode! Please remove EXTSHM from your environment! ***");
-    if (!AllowExtshm) {
-      // We allow under certain conditions the user to continue. However, we want this
-      // to be a fatal error by default. On certain AIX systems, leaving EXTSHM=ON means
-      // that the VM is not able to allocate 64k pages for the heap.
-      // We do not want to run with reduced performance.
-      vm_exit_during_initialization("EXTSHM is ON. Please remove EXTSHM from your environment.");
-    }
-  } else {
-    _extshm = 0;
+    vm_exit_during_initialization("EXTSHM is ON. Please remove EXTSHM from your environment.");
   }
 
   // SPEC1170 behaviour: will change the behaviour of a number of POSIX APIs.
@@ -2695,3 +2670,7 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
 void os::jfr_report_memory_info() {}
 
 #endif // INCLUDE_JFR
+
+void os::print_open_file_descriptors(outputStream* st) {
+  // File descriptor counting not implemented on AIX
+}

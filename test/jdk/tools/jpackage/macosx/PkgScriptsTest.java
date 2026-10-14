@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
 import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.MacHelper;
@@ -86,6 +87,7 @@ public class PkgScriptsTest {
                     cmd.addArgument("--mac-app-store");
                 }
                 cmd.addArguments("--resource-dir", TKit.createTempDirectory("resources"));
+                cmd.setEnabledMessageCategories(MessageCategory.RESOURCES).setDisabledMessageCategories();
                 customScripts.forEach(customScript -> {
                     customScript.createFor(cmd);
                 });

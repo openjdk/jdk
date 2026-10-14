@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,10 +25,6 @@
 
 #ifndef OS_CPU_LINUX_S390_ATOMICACCESS_LINUX_S390_HPP
 #define OS_CPU_LINUX_S390_ATOMICACCESS_LINUX_S390_HPP
-
-#include "runtime/atomicAccess.hpp"
-#include "runtime/os.hpp"
-#include "runtime/vm_version.hpp"
 
 // Note that the compare-and-swap instructions on System z perform
 // a serialization function before the storage operand is fetched
@@ -89,8 +85,8 @@ template<>
 template<typename D, typename I>
 inline D AtomicAccess::PlatformAdd<4>::add_then_fetch(D volatile* dest, I inc,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(4 == sizeof(I));
-  STATIC_ASSERT(4 == sizeof(D));
+  static_assert(4 == sizeof(I));
+  static_assert(4 == sizeof(D));
 
   D old, upd;
 
@@ -143,8 +139,8 @@ template<>
 template<typename D, typename I>
 inline D AtomicAccess::PlatformAdd<8>::add_then_fetch(D volatile* dest, I inc,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(8 == sizeof(I));
-  STATIC_ASSERT(8 == sizeof(D));
+  static_assert(8 == sizeof(I));
+  static_assert(8 == sizeof(D));
 
   D old, upd;
 
@@ -217,7 +213,7 @@ template<typename T>
 inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
                                                    T exchange_value,
                                                    atomic_memory_order unused) const {
-  STATIC_ASSERT(4 == sizeof(T));
+  static_assert(4 == sizeof(T));
   T old;
 
   __asm__ __volatile__ (
@@ -241,7 +237,7 @@ template<typename T>
 inline T AtomicAccess::PlatformXchg<8>::operator()(T volatile* dest,
                                                    T exchange_value,
                                                    atomic_memory_order unused) const {
-  STATIC_ASSERT(8 == sizeof(T));
+  static_assert(8 == sizeof(T));
   T old;
 
   __asm__ __volatile__ (
@@ -299,7 +295,7 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                       T cmp_val,
                                                       T xchg_val,
                                                       atomic_memory_order unused) const {
-  STATIC_ASSERT(4 == sizeof(T));
+  static_assert(4 == sizeof(T));
   T old;
 
   __asm__ __volatile__ (
@@ -323,7 +319,7 @@ inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                       T cmp_val,
                                                       T xchg_val,
                                                       atomic_memory_order unused) const {
-  STATIC_ASSERT(8 == sizeof(T));
+  static_assert(8 == sizeof(T));
   T old;
 
   __asm__ __volatile__ (

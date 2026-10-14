@@ -43,7 +43,6 @@
  *        nsk.jdi.ReferenceType.failedToInitialize.failedToInitialize001a
  * @run driver
  *      nsk.jdi.ReferenceType.failedToInitialize.failedToInitialize001
- *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

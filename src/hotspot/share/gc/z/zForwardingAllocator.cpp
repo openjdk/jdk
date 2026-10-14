@@ -30,11 +30,11 @@ ZForwardingAllocator::ZForwardingAllocator()
     _top(nullptr) {}
 
 ZForwardingAllocator::~ZForwardingAllocator() {
-  FREE_C_HEAP_ARRAY(char, _start);
+  FREE_C_HEAP_ARRAY(_start);
 }
 
 void ZForwardingAllocator::reset(size_t size) {
-  _start = REALLOC_C_HEAP_ARRAY(char, _start, size, mtGC);
+  _start = REALLOC_C_HEAP_ARRAY(_start, size, mtGC);
   _top.store_relaxed(_start);
   _end = _start + size;
 }

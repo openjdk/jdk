@@ -61,9 +61,21 @@ JVMFlag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
                         "at least %d \n",
                         value, min_number_of_compiler_threads);
     return JVMFlag::VIOLATES_CONSTRAINT;
-  } else {
-    return JVMFlag::SUCCESS;
   }
+
+  // Limit CICompilerCount to a reasonable value in product builds.
+#ifndef ASSERT
+  int active_processor_count = os::active_processor_count();
+  // On a single-CPU machine we still can run C1 and C2 compiler threads, so allow up to 2x for tiered.
+  int reasonable_threads_num = MAX2(2, CompilerConfig::is_tiered() ? active_processor_count * 2 : active_processor_count);
+  if (value > reasonable_threads_num) {
+    JVMFlag::printError(verbose, "CICompilerCount is too large (%" PRIdPTR ") for current active processor count %d \n",
+                        CICompilerCount, active_processor_count);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+#endif
+
+  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error AllocatePrefetchStepSizeConstraintFunc(int value, bool verbose) {
@@ -274,6 +286,17 @@ JVMFlag::Error AVX3ThresholdConstraintFunc(int value, bool verbose) {
   return JVMFlag::SUCCESS;
 }
 
+JVMFlag::Error CopyAVX3ThresholdConstraintFunc(int value, bool verbose) {
+  if (value != 0 && !is_power_of_2(value)) {
+    JVMFlag::printError(verbose,
+                        "CopyAVX3Threshold ( %d ) must be 0 or "
+                        "a power of two value between 0 and MAX_INT\n", value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  return JVMFlag::SUCCESS;
+}
+
 JVMFlag::Error ArraycopySrcPrefetchDistanceConstraintFunc(uintx value, bool verbose) {
   if (value >= 4032) {
     JVMFlag::printError(verbose,
@@ -427,6 +450,27 @@ JVMFlag::Error ControlIntrinsicConstraintFunc(ccstrlist value, bool verbose) {
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
+  return JVMFlag::SUCCESS;
+}
+
+JVMFlag::Error DisableAOTCodeConstraintFunc(uint value, bool verbose) {
+  const int max_modes = 5;
+  uint original_value = value;
+  for (int i = 0; i < max_modes; i++) {
+    if (value % 10 > 1) {
+      JVMFlag::printError(verbose,
+                          "Invalid value (" UINT32_FORMAT ") "
+                          "in DisableAOTCode at position %d\n", value, i);
+      return JVMFlag::VIOLATES_CONSTRAINT;
+    }
+    value = value / 10;
+  }
+  if (value != 0) {
+    JVMFlag::printError(verbose,
+                        "Invalid value (" UINT32_FORMAT ") "
+                        "for DisableAOTCode: maximal %d digits\n", original_value, max_modes);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
   return JVMFlag::SUCCESS;
 }
 

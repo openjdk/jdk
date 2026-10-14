@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ public:
     PRINT_METHOD_HANDLE     = 1 << 4, // extra information for invokehandle
     PRINT_CLASS_DETAILS     = 1 << 5, // print details of the C++ and Java objects that represent classes
     PRINT_METHOD_DETAILS    = 1 << 6, // print details of the C++ objects that represent methods
+    PRINT_METHOD_DATA       = 1 << 7, // print MethodData - requires MDO lock
   };
   static bool has_mode(int flags, Mode mode) {
     return (flags & static_cast<int>(mode)) != 0;

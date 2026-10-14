@@ -549,6 +549,7 @@ public class TestG1BarrierGeneration {
                  "testStoreOnNewArrayAtUnknownIndex",
                  "testStoreAllOnNewSmallArray",
                  "testStoreAllOnNewLargeArray"})
+    @Warmup(5000)
     public void runArrayStoreTests() {
         {
             Object[] a = new Object[10];
@@ -728,10 +729,10 @@ public class TestG1BarrierGeneration {
 
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-        counts = {IRNode.G1_GET_AND_SET_P_WITH_BARRIER_FLAG, PRE_AND_POST, "1"},
+        counts = {IRNode.G1_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, PRE_AND_POST, "1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIf = {"UseCompressedOops", "true"},
-        counts = {IRNode.G1_GET_AND_SET_N_WITH_BARRIER_FLAG, PRE_AND_POST, "1"},
+        counts = {IRNode.G1_COMPARE_AND_SWAP_N_WITH_BARRIER_FLAG, PRE_AND_POST, "1"},
         phase = CompilePhase.FINAL_CODE)
     static Object testGetAndSet(Outer o, Object newVal) {
         return fVarHandle.getAndSet(o, newVal);
@@ -786,16 +787,16 @@ public class TestG1BarrierGeneration {
 
     @Test
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
-        counts = {IRNode.G1_GET_AND_SET_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        counts = {IRNode.G1_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
-        counts = {IRNode.G1_GET_AND_SET_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        counts = {IRNode.G1_COMPARE_AND_SWAP_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
-        failOn = {IRNode.G1_GET_AND_SET_P_WITH_BARRIER_FLAG, ANY},
+        failOn = {IRNode.G1_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
-        failOn = {IRNode.G1_GET_AND_SET_N_WITH_BARRIER_FLAG, ANY},
+        failOn = {IRNode.G1_COMPARE_AND_SWAP_N_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
     static Object testGetAndSetOnNewObject(Object oldVal, Object newVal) {
         Outer o = new Outer();
@@ -805,16 +806,16 @@ public class TestG1BarrierGeneration {
 
     @Test
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
-        counts = {IRNode.G1_GET_AND_SET_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        counts = {IRNode.G1_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
-        counts = {IRNode.G1_GET_AND_SET_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        counts = {IRNode.G1_COMPARE_AND_SWAP_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
-        failOn = {IRNode.G1_GET_AND_SET_P_WITH_BARRIER_FLAG, ANY},
+        failOn = {IRNode.G1_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
-        failOn = {IRNode.G1_GET_AND_SET_N_WITH_BARRIER_FLAG, ANY},
+        failOn = {IRNode.G1_COMPARE_AND_SWAP_N_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
     static Object testGetAndSetConditionallyOnNewObject(Object oldVal, Object newVal, boolean c) {
         Outer o = new Outer();
@@ -827,16 +828,16 @@ public class TestG1BarrierGeneration {
 
     @Test
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
-        counts = {IRNode.G1_GET_AND_SET_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        counts = {IRNode.G1_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
-        counts = {IRNode.G1_GET_AND_SET_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        counts = {IRNode.G1_COMPARE_AND_SWAP_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
-        failOn = {IRNode.G1_GET_AND_SET_P_WITH_BARRIER_FLAG, ANY},
+        failOn = {IRNode.G1_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
-        failOn = {IRNode.G1_GET_AND_SET_N_WITH_BARRIER_FLAG, ANY},
+        failOn = {IRNode.G1_COMPARE_AND_SWAP_N_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
     static Object testGetAndSetOnNewObjectAfterException(Object oldVal, Object newVal, boolean c) throws Exception {
         Outer o = new Outer();
@@ -849,10 +850,10 @@ public class TestG1BarrierGeneration {
 
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-        counts = {IRNode.G1_GET_AND_SET_P_WITH_BARRIER_FLAG, PRE_AND_POST, "1"},
+        counts = {IRNode.G1_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, PRE_AND_POST, "1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIf = {"UseCompressedOops", "true"},
-        counts = {IRNode.G1_GET_AND_SET_N_WITH_BARRIER_FLAG, PRE_AND_POST, "1"},
+        counts = {IRNode.G1_COMPARE_AND_SWAP_N_WITH_BARRIER_FLAG, PRE_AND_POST, "1"},
         phase = CompilePhase.FINAL_CODE)
     static Object testGetAndSetOnNewObjectAfterCall(Object oldVal, Object newVal) {
         Outer o = new Outer();

@@ -94,14 +94,14 @@ final class TempDirectory implements Closeable {
                                         path, MAX_REPORTED_UNDELETED_FILE_COUNT).paths();
 
                                 if (remainingFiles.equals(List.of(path))) {
-                                    Log.info(I18N.format("warning.tempdir.cleanup-failed", path));
+                                    Log.progressWarning(I18N.format("warning.tempdir.cleanup-failed", path));
                                 } else {
                                     remainingFiles.forEach(file -> {
-                                        Log.info(I18N.format("warning.tempdir.cleanup-file-failed", file));
+                                        Log.progressWarning(I18N.format("warning.tempdir.cleanup-file-failed", file));
                                     });
                                 }
 
-                                Log.verbose(ex);
+                                Log.progressWarning(ex);
                             }
                         }
                         return null;
@@ -138,7 +138,7 @@ final class TempDirectory implements Closeable {
                                 return addPath(dir, FileVisitResult.SKIP_SUBTREE);
                             }
                         } catch (IOException ex) {
-                            Log.verbose(ex);
+                            Log.trace(ex);
                         }
                         return FileVisitResult.CONTINUE;
                     }
@@ -170,7 +170,7 @@ final class TempDirectory implements Closeable {
 
                 });
             } catch (IOException ex) {
-                Log.verbose(ex);
+                Log.trace(ex);
             }
 
             return new DirectoryListing(Collections.unmodifiableList(paths), !stopped.get());
@@ -181,5 +181,5 @@ final class TempDirectory implements Closeable {
     private final boolean deleteOnClose;
     private final RetryExecutorFactory retryExecutorFactory;
 
-    private final static int MAX_REPORTED_UNDELETED_FILE_COUNT = 100;
+    private static final int MAX_REPORTED_UNDELETED_FILE_COUNT = 100;
 }

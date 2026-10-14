@@ -36,7 +36,7 @@
 
 OS=`uname -s`
 case "$OS" in
-    Windows* | CYGWIN* | Darwin)
+    Windows* | CYGWIN* | MSYS* | MINGW* | Darwin)
         echo "Passed"; exit 0 ;;
     * ) unset DISPLAY ;;
 esac

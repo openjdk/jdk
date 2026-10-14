@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_RESIZEABLEHASHTABLE_HPP
-#define SHARE_UTILITIES_RESIZEABLEHASHTABLE_HPP
+#ifndef SHARE_UTILITIES_RESIZABLEHASHTABLE_HPP
+#define SHARE_UTILITIES_RESIZABLEHASHTABLE_HPP
 
 #include "utilities/hashTable.hpp"
 
@@ -45,7 +45,7 @@ protected:
 
   ~ResizeableHashTableStorage() {
     if (ALLOC_TYPE == C_HEAP) {
-      FREE_C_HEAP_ARRAY(Node*, _table);
+      FREE_C_HEAP_ARRAY(_table);
     }
   }
 
@@ -151,7 +151,7 @@ public:
     }
 
     if (ALLOC_TYPE == AnyObj::C_HEAP) {
-      FREE_C_HEAP_ARRAY(Node*, old_table);
+      FREE_C_HEAP_ARRAY(old_table);
     }
     BASE::_table = new_table;
     BASE::_table_size = new_size;

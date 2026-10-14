@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import sun.security.util.HexDumpEncoder;
 import sun.security.provider.certpath.X509CertificatePair;
 import sun.security.util.Cache;
 import sun.security.util.Debug;
+import sun.security.util.SecurityProperties;
 
 /**
  * Core implementation of a LDAP Cert Store.
@@ -96,12 +97,29 @@ final class LDAPCertStoreImpl {
     private static final String PROP_DISABLE_APP_RESOURCE_FILES =
         "sun.security.certpath.ldap.disable.app.resource.files";
 
+    /**
+     * Maximum size for a CRL downloaded through an LDAPCertStoreImpl
+     * in bytes. This can be controlled by the com.sun.security.crl.maxSize
+     * Security or System property. The System property, if set, overrides
+     * the Security property. The default size is 20MiB.
+     */
+    private static final long MAX_CRL_DOWNLOAD_SIZE =
+            SecurityProperties.getOverridableLongProp(
+                    "com.sun.security.crl.maxSize", 20971520, debug);
+
     static {
         String s = System.getProperty(PROP_LIFETIME);
         if (s != null) {
             LIFETIME = Integer.parseInt(s); // throws NumberFormatException
         } else {
             LIFETIME = DEFAULT_CACHE_LIFETIME;
+        }
+
+        // Add a debug message for the configured CRL download limit
+        if (debug != null) {
+            debug.println("Maximum downloadable CRL size: " +
+                    MAX_CRL_DOWNLOAD_SIZE +
+                    ((MAX_CRL_DOWNLOAD_SIZE < 0) ? " (DISABLED)" : ""));
         }
     }
 
@@ -672,12 +690,12 @@ final class LDAPCertStoreImpl {
         return certs;
     }
 
-    /*
+    /**
      * Gets CRLs from an attribute id and location in the LDAP directory.
      * Returns a Collection containing only the CRLs that match the
      * specified X509CRLSelector.
      *
-     * @param name the location holding the attribute
+     * @param request the LDAP request used for this CRL fetch operation
      * @param id the attribute identifier
      * @param sel a X509CRLSelector that the CRLs must match
      * @return a Collection of CRLs found
@@ -689,7 +707,26 @@ final class LDAPCertStoreImpl {
         /* fetch the encoded crls from storage */
         byte[][] encodedCRL;
         try {
-            encodedCRL = request.getValues(id);
+            byte[][] tmpCrls = request.getValues(id);
+            if (MAX_CRL_DOWNLOAD_SIZE > -1) {
+                int totalSize = 0;
+                for (byte[] tCrl : tmpCrls) {
+                    totalSize += tCrl.length;
+                }
+                if (totalSize <= MAX_CRL_DOWNLOAD_SIZE) {
+                    encodedCRL = tmpCrls;
+                } else {
+                    if (debug != null) {
+                        debug.println("Received " + tmpCrls.length +
+                                " CRL(s). Combined length of " + totalSize +
+                                " exceeds configured maximum.  Discarding.");
+                    }
+                    encodedCRL = new byte[0][];
+                }
+            } else {
+                // Download limits disabled
+                encodedCRL = tmpCrls;
+            }
         } catch (NamingException namingEx) {
             throw new CertStoreException(namingEx);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,8 @@ typedef struct JDKFontInfo_Struct {
     jobject font2D;
     jobject fontStrike;
     float matrix[4];
-    float ptSize;
     float xPtSize;
     float yPtSize;
-    float devScale; // How much applying the full glyph tx scales x distance.
 } JDKFontInfo;
 
 
@@ -62,8 +60,7 @@ typedef struct JDKFontInfo_Struct {
 
 hb_font_t *
 hb_jdk_font_create(hb_face_t* hbFace,
-                   JDKFontInfo*   jdkFontInfo,
-                   hb_destroy_func_t destroy);
+                   JDKFontInfo*   jdkFontInfo);
 
 
 /* Makes an hb_font_t use JDK internally to implement font functions. */

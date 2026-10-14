@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Red Hat, Inc. and/or its affiliates.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -26,6 +26,7 @@
 
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
@@ -64,7 +65,7 @@ static void card_mark_barrier(T* field, oop value) {
   assert(ShenandoahCardBarrier, "Card-mark barrier should be on");
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   assert(heap->is_in_or_null(value), "Should be in heap");
-  if (heap->is_in_old(field) && heap->is_in_young(value)) {
+  if (heap->is_old_to_young(field, value)) {
     // For Shenandoah, each generation collects all the _referents_ that belong to the
     // collected generation. We can end up with discovered lists that contain a mixture
     // of old and young _references_. These references are linked together through the
@@ -97,7 +98,7 @@ void set_oop_field<narrowOop>(narrowOop* field, oop value) {
 
 static oop lrb(oop obj) {
   if (obj != nullptr && ShenandoahHeap::heap()->marking_context()->is_marked(obj)) {
-    return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(obj);
+    return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, obj, (oop*)nullptr);
   } else {
     return obj;
   }
@@ -547,11 +548,11 @@ public:
   virtual void work(uint worker_id) {
     if (_concurrent) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::WeakRefProc, worker_id);
+      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::Work, worker_id);
       _reference_processor->work();
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
-      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::WeakRefProc, worker_id);
+      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::Work, worker_id);
       _reference_processor->work();
     }
   }

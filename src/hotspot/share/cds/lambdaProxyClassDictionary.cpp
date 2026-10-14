@@ -34,6 +34,9 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 DumpTimeLambdaProxyClassInfo::~DumpTimeLambdaProxyClassInfo() {
   if (_proxy_klasses != nullptr) {
@@ -92,6 +95,7 @@ void RunTimeLambdaProxyClassInfo::init(LambdaProxyClassKey& key, DumpTimeLambdaP
 }
 
 DumpTimeLambdaProxyClassDictionary* LambdaProxyClassDictionary::_dumptime_table = nullptr;
+LambdaProxyClassDictionary LambdaProxyClassDictionary::_runtime_table_for_dumping;
 LambdaProxyClassDictionary LambdaProxyClassDictionary::_runtime_static_table; // for static CDS archive
 LambdaProxyClassDictionary LambdaProxyClassDictionary::_runtime_dynamic_table; // for dynamic CDS archive
 
@@ -317,6 +321,9 @@ InstanceKlass* LambdaProxyClassDictionary::find_lambda_proxy_class(const RunTime
 
 InstanceKlass* LambdaProxyClassDictionary::load_and_init_lambda_proxy_class(InstanceKlass* lambda_ik,
                                                                             InstanceKlass* caller_ik, TRAPS) {
+
+  EventClassLoad class_load_event;
+
   Handle class_loader(THREAD, caller_ik->class_loader());
   Handle protection_domain;
   PackageEntry* pkg_entry = caller_ik->package();
@@ -358,19 +365,21 @@ InstanceKlass* LambdaProxyClassDictionary::load_and_init_lambda_proxy_class(Inst
   InstanceKlass* nest_host = caller_ik->nest_host(THREAD);
   assert(nest_host == shared_nest_host, "mismatched nest host");
 
-  EventClassLoad class_load_event;
+  JFR_ONLY(Jfr::on_definition(lambda_ik, THREAD);)
 
   // Add to class hierarchy, and do possible deoptimizations.
   lambda_ik->add_to_hierarchy(THREAD);
+  assert(lambda_ik->is_loaded(), "Must be in at least loaded state");
   // But, do not add to dictionary.
+
+  if (class_load_event.should_commit()) {
+    JFR_ONLY(SystemDictionary::post_class_load_event(&class_load_event, lambda_ik, ClassLoaderData::class_loader_data(class_loader()));)
+  }
 
   lambda_ik->link_class(CHECK_NULL);
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
     JvmtiExport::post_class_load(THREAD, lambda_ik);
-  }
-  if (class_load_event.should_commit()) {
-    JFR_ONLY(SystemDictionary::post_class_load_event(&class_load_event, lambda_ik, ClassLoaderData::class_loader_data(class_loader()));)
   }
 
   lambda_ik->initialize(CHECK_NULL);
@@ -425,7 +434,7 @@ public:
 };
 
 void LambdaProxyClassDictionary::write_dictionary(bool is_static_archive) {
-  LambdaProxyClassDictionary* dictionary = is_static_archive ? &_runtime_static_table : &_runtime_dynamic_table;
+  LambdaProxyClassDictionary* dictionary = &_runtime_table_for_dumping;
   CompactHashtableStats stats;
   dictionary->reset();
   CompactHashtableWriter writer(_dumptime_table->_count, &stats);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,9 +105,6 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.flightRecorder", this::vmFlightRecorder);
         map.put("vm.simpleArch", this::vmArch);
         map.put("vm.debug", this::vmDebug);
-        map.put("vm.jvmci", this::vmJvmci);
-        map.put("vm.jvmci.enabled", this::vmJvmciEnabled);
-        map.put("vm.emulatedClient", this::vmEmulatedClient);
         // vm.hasSA is "true" if the VM contains the serviceability agent
         // and jhsdb.
         map.put("vm.hasSA", this::vmHasSA);
@@ -122,6 +119,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.cds", this::vmCDS);
         map.put("vm.cds.default.archive.available", this::vmCDSDefaultArchiveAvailable);
         map.put("vm.cds.nocoops.archive.available", this::vmCDSNocoopsArchiveAvailable);
+        map.put("vm.cds.nocoh.archive.available", this::vmCDSNocohArchiveAvailable);
         map.put("vm.cds.custom.loaders", this::vmCDSForCustomLoaders);
         map.put("vm.cds.supports.aot.class.linking", this::vmCDSSupportsAOTClassLinking);
         map.put("vm.cds.supports.aot.code.caching", this::vmCDSSupportsAOTCodeCaching);
@@ -129,12 +127,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.cds.write.mapped.java.heap", this::vmCDSCanWriteMappedArchivedJavaHeap);
         map.put("vm.cds.write.streamed.java.heap", this::vmCDSCanWriteStreamedArchivedJavaHeap);
         map.put("vm.continuations", this::vmContinuations);
-        // vm.graal.enabled is true if Graal is used as JIT
-        map.put("vm.graal.enabled", this::isGraalEnabled);
-        // jdk.hasLibgraal is true if the libgraal shared library file is present
-        map.put("jdk.hasLibgraal", this::hasLibgraal);
         map.put("java.enablePreview", this::isPreviewEnabled);
-        map.put("vm.libgraal.jit", this::isLibgraalJIT);
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
         map.put("vm.compiler2.enabled", this::isCompiler2Enabled);
         map.put("container.support", this::containerSupport);
@@ -265,53 +258,6 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
-     * @return true if VM supports JVMCI and false otherwise
-     */
-    protected String vmJvmci() {
-        // builds with jvmci have this flag
-        if (WB.getBooleanVMFlag("EnableJVMCI") == null) {
-            return "false";
-        }
-
-        // Not all GCs have full JVMCI support
-        if (!WB.isJVMCISupportedByGC()) {
-          return "false";
-        }
-
-        // Interpreted mode cannot enable JVMCI
-        if (vmCompMode().equals("Xint")) {
-          return "false";
-        }
-
-        return "true";
-    }
-
-
-    /**
-     * @return true if JVMCI is enabled
-     */
-    protected String vmJvmciEnabled() {
-        // builds with jvmci have this flag
-        if ("false".equals(vmJvmci())) {
-            return "false";
-        }
-
-        return "" + Compiler.isJVMCIEnabled();
-    }
-
-
-    /**
-     * @return true if VM runs in emulated-client mode and false otherwise.
-     */
-    protected String vmEmulatedClient() {
-        String vmInfo = System.getProperty("java.vm.info");
-        if (vmInfo == null) {
-            return errorWithMessage("Can't get 'java.vm.info' property");
-        }
-        return "" + vmInfo.contains(" emulated-client");
-    }
-
-    /**
      * @return supported CPU features
      */
     protected String cpuFeatures() {
@@ -328,9 +274,7 @@ public class VMProps implements Callable<Map<String, String>> {
      * @param map - property-value pairs
      */
     protected void vmGC(SafeMap map) {
-        var isJVMCIEnabled = Compiler.isJVMCIEnabled();
         Predicate<GC> vmGCProperty = (GC gc) -> (gc.isSupported()
-                                        && (!isJVMCIEnabled || gc.isSupportedByJVMCICompiler())
                                         && (gc.isSelected() || GC.isSelectedErgonomically()));
         for (GC gc: GC.values()) {
             map.put("vm.gc." + gc.name(), () -> "" + vmGCProperty.test(gc));
@@ -383,8 +327,9 @@ public class VMProps implements Callable<Map<String, String>> {
         vmOptFinalFlag(map, "ClassUnloading");
         vmOptFinalFlag(map, "ClassUnloadingWithConcurrentMark");
         vmOptFinalFlag(map, "CriticalJNINatives");
-        vmOptFinalFlag(map, "EnableJVMCI");
         vmOptFinalFlag(map, "EliminateAllocations");
+        vmOptFinalFlag(map, "StressIncrementalInlining");
+        vmOptFinalFlag(map, "TieredCompilation");
         vmOptFinalFlag(map, "UnlockExperimentalVMOptions");
         vmOptFinalFlag(map, "UseAdaptiveSizePolicy");
         vmOptFinalFlag(map, "UseCompressedOops");
@@ -411,6 +356,8 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected void vmOptFinalIntxFlags(SafeMap map) {
         vmOptFinalIntxFlag(map, "MaxVectorSize");
+        vmOptFinalIntxFlag(map, "PerMethodSpecTrapLimit");
+        vmOptFinalIntxFlag(map, "PerMethodTrapLimit");
     }
 
     /**
@@ -456,14 +403,24 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + (noJvmtiAdded && WB.isCDSIncluded());
     }
 
+    // Returns a platform-aware path for the specified archive file.
+    private Path archivePath(String archiveName) {
+        String archiveSubdir = (Platform.isWindows() ? "bin" : "lib");
+        return Paths.get(System.getProperty("java.home"), archiveSubdir, "server", archiveName);
+    }
+
+    // Returns true if a CDS archive file with specified name exists.
+    private boolean archivePathExists(String archiveName) {
+        return  Files.exists(archivePath(archiveName));
+    }
+
     /**
      * Check for CDS default archive existence.
      *
      * @return true if CDS default archive classes.jsa exists in the JDK to be tested.
      */
     protected String vmCDSDefaultArchiveAvailable() {
-        Path archive = Paths.get(System.getProperty("java.home"), "lib", "server", "classes.jsa");
-        return "" + ("true".equals(vmCDS()) && Files.exists(archive));
+        return "" + ("true".equals(vmCDS()) && archivePathExists("classes.jsa"));
     }
 
     /**
@@ -472,8 +429,16 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if CDS archive classes_nocoops.jsa exists in the JDK to be tested.
      */
     protected String vmCDSNocoopsArchiveAvailable() {
-        Path archive = Paths.get(System.getProperty("java.home"), "lib", "server", "classes_nocoops.jsa");
-        return "" + ("true".equals(vmCDS()) && Files.exists(archive));
+        return "" + ("true".equals(vmCDS()) && archivePathExists("classes_nocoops.jsa"));
+    }
+
+    /**
+     * Check for CDS no compact object headers archive existence.
+     *
+     * @return true if CDS archive classes_nocoh.jsa exists in the JDK to be tested.
+     */
+    protected String vmCDSNocohArchiveAvailable() {
+        return "" + ("true".equals(vmCDS()) && archivePathExists("classes_nocoh.jsa"));
     }
 
     /**
@@ -487,8 +452,7 @@ public class VMProps implements Callable<Map<String, String>> {
 
     /**
      * @return true if it's possible for "java -Xshare:dump" to write Java heap objects
-     *         with the current set of jtreg VM options. For example, false will be returned
-     *         if -XX:-UseCompressedClassPointers is specified.
+     *         with the current set of jtreg VM options.
      */
     protected String vmCDSCanWriteArchivedJavaHeap() {
         return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive());
@@ -496,8 +460,7 @@ public class VMProps implements Callable<Map<String, String>> {
 
     /**
      * @return true if it's possible for "java -Xshare:dump" to write Java heap objects
-     *         with the current set of jtreg VM options. For example, false will be returned
-     *         if -XX:-UseCompressedClassPointers is specified.
+     *         with the current set of jtreg VM options.
      */
     protected String vmCDSCanWriteMappedArchivedJavaHeap() {
         return "" + ("true".equals(vmCDS()) && WB.canWriteMappedJavaHeapArchive());
@@ -505,8 +468,7 @@ public class VMProps implements Callable<Map<String, String>> {
 
     /**
      * @return true if it's possible for "java -Xshare:dump" to write Java heap objects
-     *         with the current set of jtreg VM options. For example, false will be returned
-     *         if -XX:-UseCompressedClassPointers is specified.
+     *         with the current set of jtreg VM options.
      */
     protected String vmCDSCanWriteStreamedArchivedJavaHeap() {
         return "" + ("true".equals(vmCDS()) && WB.canWriteStreamedJavaHeapArchive());
@@ -525,9 +487,9 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmCDSSupportsAOTCodeCaching() {
       if ("true".equals(vmCDSSupportsAOTClassLinking()) &&
+          !"true".equals(isPreviewEnabled()) &&
           !"zero".equals(vmFlavor()) &&
-          "false".equals(vmJvmciEnabled()) &&
-          (Platform.isX64() || Platform.isAArch64())) {
+          (Platform.isX64() || Platform.isAArch64() || Platform.isRISCV64())) {
         return "true";
       } else {
         return "false";
@@ -550,33 +512,6 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmPageSize() {
         return "" + WB.getVMPageSize();
-    }
-
-    /**
-     * Check if Graal is used as JIT compiler.
-     *
-     * @return true if Graal is used as JIT compiler.
-     */
-    protected String isGraalEnabled() {
-        return "" + Compiler.isGraalEnabled();
-    }
-
-    /**
-     * Check if the libgraal shared library file is present.
-     *
-     * @return true if the libgraal shared library file is present.
-     */
-    protected String hasLibgraal() {
-        return "" + WB.hasLibgraal();
-    }
-
-    /**
-     * Check if libgraal is used as JIT compiler.
-     *
-     * @return true if libgraal is used as JIT compiler.
-     */
-    protected String isLibgraalJIT() {
-        return "" + Compiler.isLibgraalJIT();
     }
 
     /**

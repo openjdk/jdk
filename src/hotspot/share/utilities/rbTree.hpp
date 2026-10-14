@@ -385,6 +385,15 @@ public:
 
   void free_node(RBNode<K, V>* node);
 
+  // Updates the key in the given node or node cursor.
+  // This will never trigger a tree rebalancing.
+  // The user must ensure that no tree properties are broken:
+  // There must not exist any node with the new key
+  // For all nodes with key < old_key, must also have key < new_key
+  // For all nodes with key > old_key, must also have key > new_key
+  void update_key(const Cursor& node_cursor, const K& new_key);
+  void update_key(RBNode<K, V>* node, const K& new_key);
+
   // Inserts a node with the given key/value into the tree,
   // if the key already exist, the value is updated instead.
   // Returns false if and only if allocation of a new node failed.
@@ -429,7 +438,12 @@ public:
   void free(void* ptr);
 };
 
-
+template <typename T>
+RBTreeOrdering rbtree_primitive_cmp(T a, T b) { // handy function
+  if (a < b) return RBTreeOrdering::LT;
+  if (a > b) return RBTreeOrdering::GT;
+  return RBTreeOrdering::EQ;
+}
 
 template <typename K, typename V, typename COMPARATOR, MemTag mem_tag, AllocFailType strategy = AllocFailStrategy::EXIT_OOM>
 using RBTreeCHeap = RBTree<K, V, COMPARATOR, RBTreeCHeapAllocator<mem_tag, strategy>>;

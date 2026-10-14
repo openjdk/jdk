@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,10 @@
  */
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
+import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.gc.g1.G1CollectedHeap;
 import sun.jvm.hotspot.gc.g1.G1HeapRegion;
 import sun.jvm.hotspot.HotSpotAgent;
@@ -39,11 +41,13 @@ import jdk.test.lib.Utils;
 
 /**
  * @test
+ * @bug 8194249
  * @library /test/lib
  * @requires vm.hasSA
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires vm.gc.G1
  * @modules jdk.hotspot.agent/sun.jvm.hotspot
+ *          jdk.hotspot.agent/sun.jvm.hotspot.debugger
  *          jdk.hotspot.agent/sun.jvm.hotspot.gc.g1
  *          jdk.hotspot.agent/sun.jvm.hotspot.memory
  *          jdk.hotspot.agent/sun.jvm.hotspot.runtime
@@ -59,12 +63,40 @@ public class TestG1HeapRegion {
 
         try {
             agent.attach(Integer.parseInt(pid));
-            G1CollectedHeap heap = (G1CollectedHeap)VM.getVM().getUniverse().heap();
-            G1HeapRegion hr = heap.hrm().heapRegionIterator().next();
-            G1HeapRegion hrTop = heap.hrm().getByAddress(hr.top());
 
-            Asserts.assertEquals(hr.top(), hrTop.top(),
-                                 "Address of G1HeapRegion does not match.");
+            G1CollectedHeap heap = (G1CollectedHeap)VM.getVM().getUniverse().heap();
+            heap.printOn(System.out);
+
+            // Print each region first.
+            System.out.println();
+            Iterator<G1HeapRegion> hri  = heap.hrm().heapRegionIterator();
+            G1HeapRegion hr = hri.next();
+            while (hr != null) {
+                hr.printOn(System.out);
+                hr = hri.next();
+            }
+            System.out.println();
+
+            // Iterate over each region and confirm that getByAddress(top) returns
+            // the same address as the region being looked at.
+            hri  = heap.hrm().heapRegionIterator();
+            hr = hri.next();
+            while (hr != null) {
+                hr.printOn(System.out);
+                Address top = hr.top();
+                if (top.equals(hr.end())) {
+                    // The end of the region is actually the first address after
+                    // the end, so it points to the start of the next region. We need to
+                    // subtract to avoid getByAddress(top) returning the next region.
+                    top = top.addOffsetTo(-1);
+                }
+                G1HeapRegion hrTop = heap.hrm().getByAddress(top);
+                System.out.format("hr.top():0x%x <--> hrTop.top():0x%x\n",
+                                  hr.top().asLongValue(), hrTop.top().asLongValue());
+                Asserts.assertEquals(hr.top(), hrTop.top(),
+                                     "Address of G1HeapRegion does not match.");
+                hr = hri.next();
+            }
         } finally {
             agent.detach();
         }
@@ -76,6 +108,7 @@ public class TestG1HeapRegion {
         ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(
             "--add-modules=jdk.hotspot.agent",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
+            "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.gc.g1=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.memory=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.runtime=ALL-UNNAMED",

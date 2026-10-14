@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -526,8 +526,10 @@ public class PrintJobDelegate implements Printable, Runnable {
         }
 
         PageRanges range = (PageRanges)attributes.get(PageRanges.class);
-        int[][] members = range.getMembers();
-        jobAttributes.setPageRanges(members);
+        if (range != null) {
+            int[][] members = range.getMembers();
+            jobAttributes.setPageRanges(members);
+        }
 
         SheetCollate collation =
             (SheetCollate)attributes.get(SheetCollate.class);
@@ -929,6 +931,7 @@ public class PrintJobDelegate implements Printable, Runnable {
      * @throws java.awt.print.PrinterException
      *         thrown when the print job is terminated.
      */
+    @Override
     public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
                  throws PrinterException {
 
@@ -973,6 +976,7 @@ public class PrintJobDelegate implements Printable, Runnable {
     }
 
 
+    @Override
     public void run() {
 
         try {

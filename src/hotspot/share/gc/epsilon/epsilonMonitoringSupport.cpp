@@ -70,7 +70,7 @@ public:
   }
 
   ~EpsilonSpaceCounters() {
-    FREE_C_HEAP_ARRAY(char, _name_space);
+    FREE_C_HEAP_ARRAY(_name_space);
   }
 
   inline void update_all(size_t capacity, size_t used) {

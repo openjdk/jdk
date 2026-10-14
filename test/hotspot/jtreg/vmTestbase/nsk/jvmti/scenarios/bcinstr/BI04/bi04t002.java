@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import nsk.share.Consts;
 
 import nsk.share.jvmti.ArgumentHandler;
 import nsk.share.jvmti.DebugeeClass;
+import jdk.test.lib.thread.ThreadWrapper;
 
 public class bi04t002 extends DebugeeClass {
 
@@ -118,7 +119,7 @@ public class bi04t002 extends DebugeeClass {
     }
 }
 
-class bi04t002b extends Thread {
+class bi04t002b extends ThreadWrapper {
 
     Object obj = new Object();
     static Object started = new Object();

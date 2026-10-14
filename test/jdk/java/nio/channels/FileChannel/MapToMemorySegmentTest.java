@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @bug 8281412
  * @summary Test FileChannel::map to MemorySegment with custom file channel
- * @run testng/othervm MapToMemorySegmentTest
+ * @run junit/othervm MapToMemorySegmentTest
  */
 
 import java.io.File;
@@ -39,10 +39,10 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class MapToMemorySegmentTest {
 
@@ -58,13 +58,14 @@ public class MapToMemorySegmentTest {
         }
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test
     public void testCustomFileChannel() throws IOException {
         var arena = Arena.ofConfined();
         var fc = FileChannel.open(tempPath, StandardOpenOption.WRITE, StandardOpenOption.READ);
         var fileChannel = new CustomFileChannel(fc);
-        try (arena; fileChannel){
-            fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, arena);
+        try (arena; fileChannel) {
+            assertThrows(UnsupportedOperationException.class,
+                         () -> fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, arena));
         }
     }
 

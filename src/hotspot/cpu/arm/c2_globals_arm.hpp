@@ -47,7 +47,6 @@ define_pd_global(intx, ConditionalMoveLimit,         4);
 // C2 gets to use all the float/double registers
 define_pd_global(intx, FreqInlineSize,               175);
 define_pd_global(intx, InteriorEntryAlignment,       16);  // = CodeEntryAlignment
-define_pd_global(size_t, NewSizeThreadIncrease,      ScaleForWordSize(4*K));
 // The default setting 16/16 seems to work best.
 // (For _228_jack 16/16 is 2% better than 4/4, 16/4, 32/32, 32/16, or 16/32.)
 //define_pd_global(intx, OptoLoopAlignment,            16);  // = 4*wordSize
@@ -60,7 +59,6 @@ define_pd_global(intx, MinJumpTableSize,             16);
 // scheduler sick.
 define_pd_global(bool, OptoPeephole,                 false);
 define_pd_global(bool, UseCISCSpill,                 false);
-define_pd_global(bool, OptoBundling,                 false);
 define_pd_global(bool, OptoScheduling,               true);
 define_pd_global(bool, OptoRegScheduling,            false);
 define_pd_global(bool, SuperWordLoopUnrollAnalysis,  false);
@@ -93,8 +91,5 @@ define_pd_global(size_t, CodeCacheMinBlockLength,    6);
 define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 
 define_pd_global(bool,  TrapBasedRangeChecks,        false); // Not needed
-
-// Ergonomics related flags
-define_pd_global(bool, NeverActAsServerClassMachine, false);
 
 #endif // CPU_ARM_C2_GLOBALS_ARM_HPP

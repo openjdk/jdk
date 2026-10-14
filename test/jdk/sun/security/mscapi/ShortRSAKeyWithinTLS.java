@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=separate-server-thread
  * @bug 7106773 8180570 8314148
  * @summary 512 bits RSA key cannot work with SHA384 and SHA512
  * @requires os.family == "windows"
@@ -30,23 +30,55 @@
  *          java.base/sun.security.tools.keytool
  *          java.base/sun.security.x509
  * @library /test/lib
- * @run main ShortRSAKeyWithinTLS 1024
- * @run main ShortRSAKeyWithinTLS 768
- * @run main ShortRSAKeyWithinTLS 512
+ * @run main/othervm -Djavax.net.debug=all -Dtest.separateServerThread=true ShortRSAKeyWithinTLS 1024
+ * @run main/othervm -Djavax.net.debug=all -Dtest.separateServerThread=true ShortRSAKeyWithinTLS 768
+ * @run main/othervm -Djavax.net.debug=all -Dtest.separateServerThread=true  ShortRSAKeyWithinTLS 512
  */
-import java.io.*;
-import java.net.*;
+
+/*
+ * @test id=separate-client-thread
+ * @bug 7106773 8180570 8314148
+ * @summary 512 bits RSA key cannot work with SHA384 and SHA512
+ * @requires os.family == "windows"
+ * @modules java.base/sun.security.util
+ *          java.base/sun.security.tools.keytool
+ *          java.base/sun.security.x509
+ * @library /test/lib
+ * @run main/othervm -Djavax.net.debug=all -Dtest.separateServerThread=false ShortRSAKeyWithinTLS 1024
+ * @run main/othervm -Djavax.net.debug=all -Dtest.separateServerThread=false ShortRSAKeyWithinTLS 768
+ * @run main/othervm -Djavax.net.debug=all -Dtest.separateServerThread=false  ShortRSAKeyWithinTLS 512
+ */
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.Certificate;
-import java.util.*;
-import java.security.*;
-import java.security.cert.*;
-import javax.net.*;
-import javax.net.ssl.*;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import jdk.test.lib.security.SecurityUtils;
 import sun.security.tools.keytool.CertAndKeyGen;
 import sun.security.util.KeyUtil;
 import sun.security.x509.X500Name;
+
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509ExtendedTrustManager;
+import javax.net.ssl.X509TrustManager;
 
 public class ShortRSAKeyWithinTLS {
 
@@ -61,17 +93,13 @@ public class ShortRSAKeyWithinTLS {
      * Both sides can throw exceptions, but do you have a preference
      * as to which side should be the main thread.
      */
-    static boolean separateServerThread = false;
+    static boolean separateServerThread =
+            Boolean.getBoolean("test.separateServerThread");
 
     /*
      * Is the server ready to serve?
      */
-    volatile static boolean serverReady = false;
-
-    /*
-     * Turn on SSL debugging?
-     */
-    static boolean debug = false;
+    static CountDownLatch serverReady = new CountDownLatch(1);
 
     /*
      * If the client or server is doing some kind of object creation
@@ -130,7 +158,7 @@ public class ShortRSAKeyWithinTLS {
         /*
          * Signal Client, we're ready for his connect.
          */
-        serverReady = true;
+        serverReady.countDown();
 
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
         InputStream sslIS = sslSocket.getInputStream();
@@ -154,9 +182,7 @@ public class ShortRSAKeyWithinTLS {
         /*
          * Wait for server to get started.
          */
-        while (!serverReady) {
-            Thread.sleep(50);
-        }
+        serverReady.await();
 
         // load the key store
         KeyStore ks = KeyStore.getInstance("Windows-MY", "SunMSCAPI");
@@ -238,10 +264,6 @@ public class ShortRSAKeyWithinTLS {
         // Make sure we don't block the key on algorithm constraints check.
         SecurityUtils.removeFromDisabledAlgs("jdk.certpath.disabledAlgorithms",
                 List.of("RSA keySize < 1024"));
-
-        if (debug) {
-            System.setProperty("javax.net.debug", "all");
-        }
 
         keyAlias = "7106773." + args[0];
         keySize = Integer.parseInt(args[0]);
@@ -341,24 +363,22 @@ public class ShortRSAKeyWithinTLS {
         }
     }
 
-    void startServer(boolean newThread) throws Exception {
+    void startServer(boolean newThread) {
         if (newThread) {
-            serverThread = new Thread() {
-                public void run() {
-                    try {
-                        doServerSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our server thread just died.
-                         *
-                         * Release the client, if not active already...
-                         */
-                        System.err.println("Server died...");
-                        serverReady = true;
-                        serverException = e;
-                    }
+            serverThread = new Thread(() -> {
+                try {
+                    doServerSide();
+                } catch (Exception e) {
+                    /*
+                     * Our server thread just died.
+                     *
+                     * Release the client, if not active already...
+                     */
+                    System.err.println("Server died...");
+                    serverReady.countDown();
+                    serverException = e;
                 }
-            };
+            });
             serverThread.start();
         } else {
             try {
@@ -366,26 +386,24 @@ public class ShortRSAKeyWithinTLS {
             } catch (Exception e) {
                 serverException = e;
             } finally {
-                serverReady = true;
+                serverReady.countDown();
             }
         }
     }
 
-    void startClient(boolean newThread) throws Exception {
+    void startClient(boolean newThread) {
         if (newThread) {
-            clientThread = new Thread() {
-                public void run() {
-                    try {
-                        doClientSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our client thread just died.
-                         */
-                        System.err.println("Client died...");
-                        clientException = e;
-                    }
+            clientThread = new Thread(() -> {
+                try {
+                    doClientSide();
+                } catch (Exception e) {
+                    /*
+                     * Our client thread just died.
+                     */
+                    System.err.println("Client died...");
+                    clientException = e;
                 }
-            };
+            });
             clientThread.start();
         } else {
             try {
@@ -406,12 +424,12 @@ public class ShortRSAKeyWithinTLS {
             this.tm = tm;
         }
 
-        public void checkClientTrusted(X509Certificate chain[], String authType)
+        public void checkClientTrusted(X509Certificate[] chain, String authType)
                 throws CertificateException {
             tm.checkClientTrusted(chain, authType);
         }
 
-        public void checkServerTrusted(X509Certificate chain[], String authType)
+        public void checkServerTrusted(X509Certificate[] chain, String authType)
                 throws CertificateException {
             tm.checkServerTrusted(chain, authType);
         }

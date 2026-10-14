@@ -145,6 +145,7 @@ void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassSha
       oop obj = dfs_stack.pop();
       assert(obj != nullptr, "null root");
       int* dfs_number = _dfs_order_table->get(cast_from_oop<void*>(obj));
+      assert(dfs_number != nullptr, "reachable obj not added to _source_objs");
       if (*dfs_number != -1) {
         // Already visited in the traversal
         continue;
@@ -242,30 +243,12 @@ void AOTStreamedHeapWriter::copy_roots_max_dfs_to_buffer(int roots_length) {
   }
 }
 
-static bool is_interned_string(oop obj) {
-  if (!java_lang_String::is_instance(obj)) {
-    return false;
-  }
-
-  ResourceMark rm;
-  int len;
-  jchar* name = java_lang_String::as_unicode_string_or_null(obj, len);
-  if (name == nullptr) {
-    fatal("Insufficient memory for dumping");
-  }
-  return StringTable::lookup(name, len) == obj;
-}
-
 static BitMap::idx_t bit_idx_for_buffer_offset(size_t buffer_offset) {
   if (UseCompressedOops) {
     return BitMap::idx_t(buffer_offset / sizeof(narrowOop));
   } else {
     return BitMap::idx_t(buffer_offset / sizeof(HeapWord));
   }
-}
-
-bool AOTStreamedHeapWriter::is_dumped_interned_string(oop obj) {
-  return is_interned_string(obj) && HeapShared::get_cached_oop_info(obj) != nullptr;
 }
 
 void AOTStreamedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots) {
@@ -325,7 +308,7 @@ size_t AOTStreamedHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
 
   ensure_buffer_space(new_used);
 
-  if (is_interned_string(src_obj)) {
+  if (HeapShared::is_interned_string(src_obj)) {
     java_lang_String::hash_code(src_obj);                   // Sets the hash code field(s)
     java_lang_String::set_deduplication_forbidden(src_obj); // Allows faster interning at runtime
     assert(java_lang_String::hash_is_set(src_obj), "hash must be set");
@@ -387,22 +370,21 @@ template <typename T> void AOTStreamedHeapWriter::map_oop_field_in_buffer(oop ob
 }
 
 void AOTStreamedHeapWriter::update_header_for_buffered_addr(address buffered_addr, oop src_obj,  Klass* src_klass) {
-  assert(UseCompressedClassPointers, "Archived heap only supported for compressed klasses");
   narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(src_klass);
 
-  markWord mw = markWord::prototype();
+  markWord mw = Arguments::is_valhalla_enabled() ? src_klass->prototype_header() : markWord::prototype();
   oopDesc* fake_oop = (oopDesc*)buffered_addr;
 
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap. This also has the side effect of pre-initializing the
   // identity_hash for all shared objects, so they are less likely to be written
   // into during run time, increasing the potential of memory sharing.
-  if (src_obj != nullptr) {
+  if (src_obj != nullptr && !src_klass->is_value_klass()) {
     intptr_t src_hash = src_obj->identity_hash();
     mw = mw.copy_set_hash(src_hash);
   }
 
-  if (is_interned_string(src_obj)) {
+  if (HeapShared::is_interned_string(src_obj)) {
     // Mark the mark word of interned string so the loader knows to link these to
     // the string table at runtime.
     mw = mw.set_marked();
@@ -454,7 +436,7 @@ static void log_bitmap_usage(const char* which, BitMap* bitmap, size_t total_bit
 
 // Update all oop fields embedded in the buffered objects
 void AOTStreamedHeapWriter::map_embedded_oops(AOTStreamedHeapInfo* heap_info) {
-  size_t oopmap_unit = (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop));
+  size_t oopmap_unit = heapOopSize;
   size_t heap_region_byte_size = _buffer_used;
   heap_info->oopmap()->resize(heap_region_byte_size / oopmap_unit);
 

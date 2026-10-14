@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,14 +214,6 @@ void JfrResolution::on_runtime_resolution(const CallInfo & info, TRAPS) {
   if (IS_METHOD_BLESSED(sender)) {
     return;
   }
-#if INCLUDE_JVMCI
-  // JVMCI compiler is doing linktime resolution
-  if (sender->method_holder()->name() == vmSymbols::jdk_vm_ci_hotspot_CompilerToVM()) {
-    if (sender->name()->equals("lookupMethodInPool")) {
-      return;
-    }
-  }
-#endif
   THROW_MSG(vmSymbols::java_lang_IllegalAccessError(), link_error_msg);
 }
 
@@ -277,17 +269,6 @@ void JfrResolution::on_c2_resolution(const Parse * parse, const ciKlass * holder
   }
   if (target->deprecated()) {
     on_compiler_resolve_deprecated(target, parse->bci(), sender);
-  }
-}
-#endif
-
-#if INCLUDE_JVMCI
-// JVMCI
-void JfrResolution::on_jvmci_resolution(const Method* caller, const Method* target, TRAPS) {
-  if (is_compiler_linking_event_writer(target->method_holder()->name(), target->name())) {
-    if (caller == nullptr || !IS_METHOD_BLESSED(caller)) {
-      THROW_MSG(vmSymbols::java_lang_IllegalAccessError(), link_error_msg);
-    }
   }
 }
 #endif

@@ -1,0 +1,2 @@
+TypeVarArrayInBoundTest.java:11:5: compiler.err.cant.access: TypeVarArrayInBound, (compiler.misc.bad.class.file.header: TypeVarArrayInBound.class, (compiler.misc.illegal.tvar.bound: B[]))
+1 error

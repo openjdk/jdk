@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,11 @@ import java.util.stream.Stream;
 public final class DottedVersion {
 
     private DottedVersion(String version, boolean greedy) {
-        this.value = version;
         if (version.isEmpty()) {
             if (greedy) {
                 throw new IllegalArgumentException(I18N.getString("error.version-string-empty"));
             } else {
-                this.components = new BigInteger[0];
+                this.components = new Component[0];
                 this.suffix = "";
             }
         } else {
@@ -53,12 +52,12 @@ public final class DottedVersion {
                             if (!greedy) {
                                 return null;
                             } else {
-                                ds.throwException();
+                                throw ds.createException();
                             }
                         }
 
                         try {
-                            return new BigInteger(digits);
+                            return new Component(digits);
                         } catch (NumberFormatException ex) {
                             if (!greedy) {
                                 return null;
@@ -68,17 +67,25 @@ public final class DottedVersion {
                                         digits));
                             }
                         }
-                    }).takeWhile(Objects::nonNull).toArray(BigInteger[]::new);
+                    }).takeWhile(Objects::nonNull).toArray(Component[]::new);
             suffix = ds.getUnprocessedString();
             if (!suffix.isEmpty() && greedy) {
-                ds.throwException();
+                throw ds.createException();
             }
         }
+    }
+
+    private DottedVersion(Component[] components, String suffix) {
+        this.components = components;
+        this.suffix = suffix;
     }
 
     private static class DigitsSupplier {
 
         DigitsSupplier(String input) {
+            if (input.isEmpty()) {
+                throw new IllegalArgumentException();
+            }
             this.input = input;
         }
 
@@ -95,7 +102,7 @@ public final class DottedVersion {
                 } else {
                     var curStopAtDot = (chr == '.');
                     if (!curStopAtDot) {
-                        if (lastDotPos >= 0) {
+                        if (sb.isEmpty() && lastDotPos >= 0) {
                             cursor = lastDotPos;
                         } else {
                             cursor--;
@@ -112,11 +119,7 @@ public final class DottedVersion {
             }
 
             if (sb.isEmpty()) {
-                if (lastDotPos >= 0) {
-                    cursor = lastDotPos;
-                } else {
-                    cursor--;
-                }
+                cursor = lastDotPos;
             }
 
             stoped = true;
@@ -127,7 +130,7 @@ public final class DottedVersion {
             return input.substring(cursor);
         }
 
-        void throwException() {
+        IllegalArgumentException createException() {
             final String tail;
             if (lastDotPos >= 0) {
                 tail = input.substring(lastDotPos + 1);
@@ -143,7 +146,7 @@ public final class DottedVersion {
                 errMessage = MessageFormat.format(I18N.getString(
                         "error.version-string-invalid-component"), input, tail);
             }
-            throw new IllegalArgumentException(errMessage);
+            return new IllegalArgumentException(errMessage);
         }
 
         private int cursor;
@@ -211,9 +214,31 @@ public final class DottedVersion {
         return Arrays.deepEquals(this.components, other.components);
     }
 
+    public DottedVersion trim(int limit) {
+        if (limit < 0) {
+            throw new IllegalArgumentException();
+        } else if (limit >= components.length) {
+            return this;
+        } else {
+            return new DottedVersion(Arrays.copyOf(components, limit), suffix);
+        }
+    }
+
+    public DottedVersion pad(int limit) {
+        if (limit < 0) {
+            throw new IllegalArgumentException();
+        } else if (limit <= components.length) {
+            return this;
+        } else {
+            var newComponents = Arrays.copyOf(components, limit);
+            Arrays.fill(newComponents, components.length, newComponents.length, Component.ZERO);
+            return new DottedVersion(newComponents, suffix);
+        }
+    }
+
     @Override
     public String toString() {
-        return value;
+        return Stream.of(components).map(Component::toString).collect(Collectors.joining(".")) + suffix;
     }
 
     public String getUnprocessedSuffix() {
@@ -221,14 +246,35 @@ public final class DottedVersion {
     }
 
     public String toComponentsString() {
-        return Stream.of(components).map(BigInteger::toString).collect(Collectors.joining("."));
+        return Stream.of(components).map(Component::parsedValue).map(BigInteger::toString).collect(Collectors.joining("."));
+    }
+
+    public int getComponentsCount() {
+        return components.length;
     }
 
     public BigInteger[] getComponents() {
-        return components;
+        return Stream.of(components).map(Component::parsedValue).toArray(BigInteger[]::new);
     }
 
-    private final BigInteger[] components;
-    private final String value;
+    private record Component(BigInteger parsedValue, String strValue) {
+        Component {
+            Objects.requireNonNull(parsedValue);
+            Objects.requireNonNull(strValue);
+        }
+
+        Component(String strValue) {
+            this(new BigInteger(strValue), strValue);
+        }
+
+        @Override
+        public String toString() {
+            return strValue;
+        }
+
+        static final Component ZERO = new Component(BigInteger.ZERO, "0");
+    }
+
+    private final Component[] components;
     private final String suffix;
 }

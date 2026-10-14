@@ -2233,7 +2233,7 @@ public class HyperbolicTests {
     }
 
     /**
-     * Test accuracy of {Math, StrictMath}.tanh using quad precision
+     * Test accuracy of {Math, StrictMath}.atanh using quad precision
      * tanh implementation as the reference. There are additional tests.
      * The specified accuracy is 2.5 ulps.
      *

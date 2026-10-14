@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
  *        jdk.test.lib.net.URIBuilder
- * @run junit HttpClientSNITest
+ * @run junit ${test.main.class}
  */
 public class HttpClientSNITest {
     private static final String RESP_BODY_TEXT = "hello world";

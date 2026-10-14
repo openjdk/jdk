@@ -173,15 +173,13 @@ public final class WToolkit extends SunToolkit implements Runnable {
         }
     }
 
-    private static native String getWindowsVersion();
-
     static {
         loadLibraries();
         initIDs();
 
         // Print out which version of Windows is running
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
-            log.fine("Win version: " + getWindowsVersion());
+            log.fine("Win version: " + System.getProperty("os.version"));
         }
     }
 

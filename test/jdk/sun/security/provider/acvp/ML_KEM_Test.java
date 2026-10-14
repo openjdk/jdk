@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,12 +61,12 @@ public class ML_KEM_Test {
         var f = p == null
                 ? KeyFactory.getInstance("ML-KEM")
                 : KeyFactory.getInstance("ML-KEM", p);
-        for (var t : kat.get("testGroups").asArray()) {
+        for (var t : kat.get("testGroups").elements()) {
             var pname = t.get("parameterSet").asString();
             var np = genParams(pname);
             System.out.println(">> " + pname);
-            for (var c : t.get("tests").asArray()) {
-                System.out.print(c.get("tcId").asString() + " ");
+            for (var c : t.get("tests").elements()) {
+                System.out.print(c.get("tcId").asInt() + " ");
                 var seed = toByteArray(c.get("d").asString() + c.get("z").asString());
                 g.initialize(np, new FixedSecureRandom(seed));
                 var kp = g.generateKeyPair();
@@ -84,13 +84,13 @@ public class ML_KEM_Test {
         var g = p == null
                 ? KEM.getInstance("ML-KEM")
                 : KEM.getInstance("ML-KEM", p);
-        for (var t : kat.get("testGroups").asArray()) {
+        for (var t : kat.get("testGroups").elements()) {
             var pname = t.get("parameterSet").asString();
             var function = t.get("function").asString();
             System.out.println(">> " + pname + " " + function);
             if (function.equals("encapsulation")) {
-                for (var c : t.get("tests").asArray()) {
-                    System.out.print(c.get("tcId").asString() + " ");
+                for (var c : t.get("tests").elements()) {
+                    System.out.print(c.get("tcId").asInt() + " ");
                     var ek = new PublicKey() {
                         public String getAlgorithm() { return pname; }
                         public String getFormat() { return "RAW"; }
@@ -111,8 +111,8 @@ public class ML_KEM_Test {
                     public String getFormat() { return "RAW"; }
                     public byte[] getEncoded() { return oct(toByteArray(t.get("dk").asString())); }
                 };
-                for (var c : t.get("tests").asArray()) {
-                    System.out.print(c.get("tcId").asString() + " ");
+                for (var c : t.get("tests").elements()) {
+                    System.out.print(c.get("tcId").asInt() + " ");
                     var d = g.newDecapsulator(dk);
                     var k = d.decapsulate(toByteArray(c.get("c").asString()));
                     Asserts.assertEqualsByteArray(toByteArray(c.get("k").asString()), k.getEncoded());

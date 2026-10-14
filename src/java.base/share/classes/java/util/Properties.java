@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,8 +239,8 @@ public class Properties extends Hashtable<Object,Object> {
      * Properties are processed in terms of lines. There are two
      * kinds of lines, <i>natural lines</i> and <i>logical lines</i>.
      * A natural line is defined as a line of
-     * characters that is terminated either by a set of line terminator
-     * characters ({@code \n} or {@code \r} or {@code \r\n})
+     * characters that is terminated either by a line terminator
+     * sequence ({@code \n}, {@code \r}, or {@code \r\n})
      * or by the end of the stream. A natural line may be either a blank line,
      * a comment line, or hold all or some of a key-element pair. A logical
      * line holds all the data of a key-element pair, which may be spread
@@ -266,7 +266,7 @@ public class Properties extends Hashtable<Object,Object> {
      * <p>
      * If a logical line is spread across several natural lines, the
      * backslash escaping the line terminator sequence, the line
-     * terminator sequence, and any white space at the start of the
+     * terminator sequence itself, and any white space at the start of the
      * following line have no effect on the key or element values.
      * The remainder of the discussion of key and element parsing
      * (when loading) will assume all the characters constituting

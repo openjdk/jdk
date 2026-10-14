@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,33 @@
 
 /*
  * @test
+ * @key randomness
  * @bug 8278398
  * @summary Tests the jwebserver's maximum request time
  * @modules jdk.httpserver
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run junit/othervm MaxRequestTimeTest
  */
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
+
 import jdk.test.lib.Platform;
-import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.RandomFactory;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.FileUtils;
@@ -61,16 +67,16 @@ import org.junit.jupiter.api.Test;
  *
  * The jwebserver has a maximum request time of 5 seconds, which is set with the
  * "sun.net.httpserver.maxReqTime" system property. If this threshold is
- * reached, for example in the case of an HTTPS request where the server keeps
- * waiting for a plaintext request, the server closes the connection. Subsequent
+ * reached, the server closes the connection. Subsequent
  * requests are expected to be handled as normal.
  *
  * The test checks in the following order that:
  *    1. an HTTP request is handled successfully,
- *    2. an HTTPS request fails due to the server closing the connection
+ *    2. an incomplete HTTP request fails due to the server closing the connection
  *    3. another HTTP request is handled successfully.
  */
 public class MaxRequestTimeTest {
+    private static final Random RND = RandomFactory.getRandom();
     static final Path JAVA_HOME = Path.of(System.getProperty("java.home"));
     static final String LOCALE_OPT = "-J-Duser.language=en -J-Duser.country=US";
     static final String JWEBSERVER = getJwebserver(JAVA_HOME);
@@ -78,8 +84,6 @@ public class MaxRequestTimeTest {
     static final Path TEST_DIR = CWD.resolve("MaxRequestTimeTest");
     static final String LOOPBACK_ADDR = InetAddress.getLoopbackAddress().getHostAddress();
     static final AtomicInteger PORT = new AtomicInteger();
-
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
     @BeforeAll
     public static void setup() throws IOException {
@@ -94,10 +98,10 @@ public class MaxRequestTimeTest {
         final var sb = new StringBuffer();  // stdout & stderr
         final var p = startProcess("jwebserver", sb);
         try {
-            sendHTTPSRequest();  // server expected to terminate connection
-            sendHTTPRequest();   // server expected to respond successfully
-            sendHTTPSRequest();  // server expected to terminate connection
-            sendHTTPRequest();   // server expected to respond successfully
+            sendIncompleteRequest();  // server expected to terminate connection
+            sendCompleteRequest();   // server expected to respond successfully
+            sendIncompleteRequest();  // server expected to terminate connection
+            sendCompleteRequest();   // server expected to respond successfully
         } finally {
             p.destroy();
             int exitCode = p.waitFor();
@@ -105,6 +109,12 @@ public class MaxRequestTimeTest {
         }
     }
 
+    static String requestText = """
+            GET / HTTP/1.1\r
+            Host: localhost\r
+            \r
+            """;
+    static ByteBuffer requestBuffer =  ByteBuffer.wrap(requestText.getBytes(StandardCharsets.UTF_8));
     static String expectedBody = """
                 <!DOCTYPE html>
                 <html>
@@ -119,8 +129,8 @@ public class MaxRequestTimeTest {
                 </html>
                 """;
 
-    static void sendHTTPRequest() throws IOException, InterruptedException {
-        out.println("\n--- sendHTTPRequest");
+    static void sendCompleteRequest() throws IOException, InterruptedException {
+        out.println("\n--- sendCompleteRequest");
         var client = HttpClient.newBuilder()
                 .proxy(NO_PROXY)
                 .build();
@@ -129,18 +139,21 @@ public class MaxRequestTimeTest {
         assertEquals(expectedBody, response.body());
     }
 
-    static void sendHTTPSRequest() throws IOException, InterruptedException {
-        out.println("\n--- sendHTTPSRequest");
-        var client = HttpClient.newBuilder()
-                .sslContext(sslContext)
-                .proxy(NO_PROXY)
-                .build();
-        var request = HttpRequest.newBuilder(URI.create("https://localhost:" + PORT.get() + "/")).build();
-        try {
-            client.send(request, HttpResponse.BodyHandlers.ofString());
-            throw new RuntimeException("Expected SSLException not thrown");
-        } catch (SSLException expected) {  // server closes connection when max request time is reached
-            expected.printStackTrace(System.out);
+    static void sendIncompleteRequest() throws IOException {
+        out.println("\n--- sendIncompleteRequest");
+        try (SocketChannel sc = SocketChannel.open(
+                new InetSocketAddress(LOOPBACK_ADDR, PORT.get()))) {
+            requestBuffer.clear();
+            // only send a part of the HTTP request
+            int numBytes = RND.nextInt(1, requestBuffer.limit());
+            System.out.println("Sending " + numBytes + " bytes");
+            requestBuffer.limit(numBytes);
+            while (requestBuffer.hasRemaining()) {
+                sc.write(requestBuffer);
+            }
+            ByteBuffer responseBuffer = ByteBuffer.allocate(1);
+            int result = sc.read(responseBuffer);
+            assertEquals(-1, result);
         }
     }
 

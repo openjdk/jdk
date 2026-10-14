@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,12 @@ public class TsaParam {
 
     // Indicate if request TSA server certificate
     private Boolean certReq;
+
+    // Do not create signedAttrs
+    private Boolean noSignedAttrs;
+
+    // Do not use TIMESTAMP_TOKEN_INFO_OID
+    private Boolean notTimestampOID;
 
     public static TsaParam newInstance() {
         return new TsaParam();
@@ -175,6 +181,24 @@ public class TsaParam {
 
     public TsaParam certReq(Boolean certReq) {
         this.certReq = certReq;
+        return this;
+    }
+
+    public Boolean noSignedAttrs() {
+        return noSignedAttrs;
+    }
+
+    public TsaParam noSignedAttrs(Boolean noSignedAttrs) {
+        this.noSignedAttrs = noSignedAttrs;
+        return this;
+    }
+
+    public Boolean notTimestampOID() {
+        return notTimestampOID;
+    }
+
+    public TsaParam notTimestampOID(Boolean notTimestampOID) {
+        this.notTimestampOID = notTimestampOID;
         return this;
     }
 }

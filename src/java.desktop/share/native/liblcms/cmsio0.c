@@ -106,6 +106,9 @@ cmsBool  NULLWrite(cmsIOHANDLER* iohandler, cmsUInt32Number size, const void *Pt
 {
     FILENULL* ResData = (FILENULL*) iohandler ->stream;
 
+    if (size > (cmsUInt32Number)(0xFFFFFFFFU - ResData->Pointer))
+        return FALSE;
+
     ResData ->Pointer += size;
     if (ResData ->Pointer > iohandler->UsedSpace)
         iohandler->UsedSpace = ResData ->Pointer;
@@ -159,7 +162,6 @@ Error:
 
 }
 
-
 // Memory-based stream --------------------------------------------------------------
 
 // Those functions implements an iohandler which takes a block of memory as storage medium.
@@ -179,12 +181,20 @@ cmsUInt32Number MemoryRead(struct _cms_io_handler* iohandler, void *Buffer, cmsU
     cmsUInt8Number* Ptr;
     cmsUInt32Number len = size * count;
 
-    if (ResData -> Pointer + len > ResData -> Size){
-
-        len = (ResData -> Size - ResData -> Pointer);
-        cmsSignalError(iohandler ->ContextID, cmsERROR_READ, "Read from memory error. Got %d bytes, block should be of %d bytes", len, count * size);
+    if (size == 0 || count == 0)
         return 0;
-    }
+
+    if ((len / count) != size)
+        goto ReadError;
+
+    if (Buffer == NULL)
+        goto ReadError;
+
+    if (len > ResData->Size)
+        goto ReadError;
+
+    if (ResData -> Pointer > ResData -> Size - len)
+        goto ReadError;
 
     Ptr  = ResData -> Block;
     Ptr += ResData -> Pointer;
@@ -192,18 +202,21 @@ cmsUInt32Number MemoryRead(struct _cms_io_handler* iohandler, void *Buffer, cmsU
     ResData -> Pointer += len;
 
     return count;
+
+ReadError:
+    cmsSignalError(iohandler->ContextID, cmsERROR_READ, "Read from memory error");
+    return 0;
+
 }
 
 // SEEK_CUR is assumed
 static
-cmsBool  MemorySeek(struct _cms_io_handler* iohandler, cmsUInt32Number offset)
+cmsBool MemorySeek(struct _cms_io_handler* iohandler, cmsUInt32Number offset)
 {
     FILEMEM* ResData = (FILEMEM*) iohandler ->stream;
 
-    if (offset > ResData ->Size) {
-        cmsSignalError(iohandler ->ContextID, cmsERROR_SEEK,  "Too few data; probably corrupted profile");
+    if (offset > ResData ->Size)
         return FALSE;
-    }
 
     ResData ->Pointer = offset;
     return TRUE;
@@ -226,14 +239,16 @@ cmsBool MemoryWrite(struct _cms_io_handler* iohandler, cmsUInt32Number size, con
 {
     FILEMEM* ResData = (FILEMEM*) iohandler ->stream;
 
-    if (ResData == NULL) return FALSE; // Housekeeping
-
-    // Check for available space. Clip.
-    if (ResData->Pointer + size > ResData->Size) {
-        size = ResData ->Size - ResData->Pointer;
-    }
+    if (ResData == NULL || Ptr == NULL) goto WriteError;
 
     if (size == 0) return TRUE;     // Write zero bytes is ok, but does nothing
+
+    // Check for available space.  Truncate the output in case the space
+    // is not enough instead of erroring out.  See
+    // https://github.com/hughsie/colord/issues/147.
+
+    if (size > ResData->Size - ResData->Pointer)
+        size = ResData->Size - ResData->Pointer;
 
     memmove(ResData ->Block + ResData ->Pointer, Ptr, size);
     ResData ->Pointer += size;
@@ -242,6 +257,10 @@ cmsBool MemoryWrite(struct _cms_io_handler* iohandler, cmsUInt32Number size, con
         iohandler->UsedSpace = ResData ->Pointer;
 
     return TRUE;
+
+WriteError:
+    cmsSignalError(iohandler->ContextID, cmsERROR_WRITE, "Write to memory error");
+    return FALSE;
 }
 
 
@@ -362,8 +381,15 @@ cmsUInt32Number FileRead(cmsIOHANDLER* iohandler, void *Buffer, cmsUInt32Number 
 static
 cmsBool  FileSeek(cmsIOHANDLER* iohandler, cmsUInt32Number offset)
 {
+#ifdef CMS_LARGE_FILE_SUPPORT
+#  ifdef CMS_IS_WINDOWS_
+    if (_fseeki64((FILE*) iohandler->stream, (long long int) offset, SEEK_SET) != 0) {
+#  else
+    if (fseeko((FILE*) iohandler->stream, (off_t) offset, SEEK_SET) != 0) {
+#  endif
+#else
     if (fseek((FILE*) iohandler ->stream, (long) offset, SEEK_SET) != 0) {
-
+#endif
        cmsSignalError(iohandler ->ContextID, cmsERROR_FILE, "Seek error; probably corrupted file");
        return FALSE;
     }
@@ -375,13 +401,24 @@ cmsBool  FileSeek(cmsIOHANDLER* iohandler, cmsUInt32Number offset)
 static
 cmsUInt32Number FileTell(cmsIOHANDLER* iohandler)
 {
+#ifdef CMS_LARGE_FILE_SUPPORT
+#  ifdef CMS_IS_WINDOWS_
+    long long int t = _ftelli64((FILE*) iohandler->stream);
+#  else
+    long long int t = (long long int) ftello((FILE*) iohandler->stream);
+#  endif
+    if (t < 0) {
+        cmsSignalError(iohandler->ContextID, cmsERROR_FILE, "Tell error; probably corrupted file");
+        return 0;
+    }
+#else
     long t = ftell((FILE*)iohandler ->stream);
     if (t == -1L) {
         cmsSignalError(iohandler->ContextID, cmsERROR_FILE, "Tell error; probably corrupted file");
         return 0;
     }
-
-    return (cmsUInt32Number)t;
+#endif
+    return (cmsUInt32Number) t;
 }
 
 // Writes data to stream, also keeps used space for further reference. Returns TRUE on success, FALSE on error
@@ -408,7 +445,11 @@ cmsIOHANDLER* CMSEXPORT cmsOpenIOhandlerFromFile(cmsContext ContextID, const cha
 {
     cmsIOHANDLER* iohandler = NULL;
     FILE* fm = NULL;
-    cmsInt32Number fileLen;
+#ifdef CMS_LARGE_FILE_SUPPORT
+    long long int fileLen;
+#else
+    long int fileLen;
+#endif
     char mode[4] = { 0,0,0,0 };
 
     _cmsAssert(FileName != NULL);
@@ -459,7 +500,7 @@ cmsIOHANDLER* CMSEXPORT cmsOpenIOhandlerFromFile(cmsContext ContextID, const cha
              cmsSignalError(ContextID, cmsERROR_FILE, "File '%s' not found", FileName);
             return NULL;
         }
-        fileLen = (cmsInt32Number)cmsfilelength(fm);
+        fileLen = cmsfilelength(fm);
         if (fileLen < 0)
         {
             fclose(fm);
@@ -467,6 +508,15 @@ cmsIOHANDLER* CMSEXPORT cmsOpenIOhandlerFromFile(cmsContext ContextID, const cha
             cmsSignalError(ContextID, cmsERROR_FILE, "Cannot get size of file '%s'", FileName);
             return NULL;
         }
+#ifdef CMS_LARGE_FILE_SUPPORT
+        if (fileLen > (long long int) 0xFFFFFFFFLL)
+        {
+            fclose(fm);
+            _cmsFree(ContextID, iohandler);
+            cmsSignalError(ContextID, cmsERROR_FILE, "File '%s' is too large", FileName);
+            return NULL;
+        }
+#endif
         iohandler -> ReportedSize = (cmsUInt32Number) fileLen;
         break;
 
@@ -506,14 +556,25 @@ cmsIOHANDLER* CMSEXPORT cmsOpenIOhandlerFromFile(cmsContext ContextID, const cha
 cmsIOHANDLER* CMSEXPORT cmsOpenIOhandlerFromStream(cmsContext ContextID, FILE* Stream)
 {
     cmsIOHANDLER* iohandler = NULL;
-    cmsInt32Number fileSize;
+#ifdef CMS_LARGE_FILE_SUPPORT
+    long long int fileSize;
+#else
+    long int fileSize;
+#endif
 
-    fileSize = (cmsInt32Number)cmsfilelength(Stream);
+    fileSize = cmsfilelength(Stream);
     if (fileSize < 0)
     {
         cmsSignalError(ContextID, cmsERROR_FILE, "Cannot get size of stream");
         return NULL;
     }
+#ifdef CMS_LARGE_FILE_SUPPORT
+    if (fileSize > (long long int) 0xFFFFFFFFLL)
+    {
+        cmsSignalError(ContextID, cmsERROR_FILE, "Stream is too large");
+        return NULL;
+    }
+#endif
 
     iohandler = (cmsIOHANDLER*) _cmsMallocZero(ContextID, sizeof(cmsIOHANDLER));
     if (iohandler == NULL) return NULL;
@@ -626,6 +687,18 @@ cmsTagSignature CMSEXPORT cmsGetTagSignature(cmsHPROFILE hProfile, cmsUInt32Numb
     return Icc ->TagNames[n];
 }
 
+// Return location of the tag
+cmsBool CMSEXPORT cmsGetTagOffsetAndSize(cmsHPROFILE hProfile, cmsUInt32Number n, cmsUInt32Number* offset, cmsUInt32Number* size)
+{
+    _cmsICCPROFILE* Icc = (_cmsICCPROFILE*)hProfile;
+
+    if (n > Icc->TagCount) return FALSE;
+    if (n >= MAX_TABLE_TAG) return FALSE;
+
+    if (offset != NULL) *offset = Icc->TagOffsets[n];
+    if (size != NULL) *size = Icc->TagSizes[n];
+    return TRUE;
+}
 
 static
 int SearchOneTag(_cmsICCPROFILE* Profile, cmsTagSignature sig)
@@ -791,7 +864,8 @@ cmsUInt32Number _validatedVersion(cmsUInt32Number DWord)
 static
 cmsBool validDeviceClass(cmsProfileClassSignature cl)
 {
-    if ((int)cl == 0) return TRUE; // We allow zero because older lcms versions defaulted to that.
+    if (cl == (cmsProfileClassSignature)0)
+        return TRUE; // We allow zero because older lcms versions defaulted to that.
 
     switch (cl)
     {
@@ -802,6 +876,10 @@ cmsBool validDeviceClass(cmsProfileClassSignature cl)
     case cmsSigAbstractClass:
     case cmsSigColorSpaceClass:
     case cmsSigNamedColorClass:
+    case cmsSigColorEncodingSpaceClass:
+    case cmsSigMultiplexIdentificationClass:
+    case cmsSigMultiplexLinkClass:
+    case cmsSigMultiplexVisualizationClass:
         return TRUE;
 
     default:
@@ -1010,6 +1088,17 @@ cmsBool _cmsWriteHeader(_cmsICCPROFILE* Icc, cmsUInt32Number UsedSpace)
 
 // ----------------------------------------------------------------------- Set/Get several struct members
 
+cmsUInt32Number CMSEXPORT cmsGetHeaderCMM(cmsHPROFILE hProfile)
+{
+    _cmsICCPROFILE* Icc = (_cmsICCPROFILE*)hProfile;
+    return Icc->CMM;
+}
+
+void CMSEXPORT _cmsSetHeaderCMM(cmsHPROFILE hProfile, cmsUInt32Number CMM)
+{
+    _cmsICCPROFILE* Icc = (_cmsICCPROFILE*)hProfile;
+    Icc->CMM = CMM;
+}
 
 cmsUInt32Number CMSEXPORT cmsGetHeaderRenderingIntent(cmsHPROFILE hProfile)
 {
@@ -1228,7 +1317,6 @@ Error:
     return NULL;
 }
 
-
 // Create profile from disk file
 cmsHPROFILE CMSEXPORT cmsOpenProfileFromFileTHR(cmsContext ContextID, const char *lpFileName, const char *sAccess)
 {
@@ -1295,7 +1383,6 @@ cmsHPROFILE  CMSEXPORT cmsOpenProfileFromStream(FILE* ICCProfile, const char *sA
 {
     return cmsOpenProfileFromStreamTHR(NULL, ICCProfile, sAccess);
 }
-
 
 // Open from memory block
 cmsHPROFILE CMSEXPORT cmsOpenProfileFromMemTHR(cmsContext ContextID, const void* MemPtr, cmsUInt32Number dwSize)
@@ -1445,7 +1532,6 @@ cmsBool SaveTags(_cmsICCPROFILE* Icc, _cmsICCPROFILE* FileOrig)
     return TRUE;
 }
 
-
 // Fill the offset and size fields for all linked tags
 static
 cmsBool SetLinks( _cmsICCPROFILE* Icc)
@@ -1526,7 +1612,6 @@ Error:
 
     return 0;
 }
-
 
 // Low-level save to disk.
 cmsBool  CMSEXPORT cmsSaveProfileToFile(cmsHPROFILE hProfile, const char* FileName)
@@ -1663,21 +1748,23 @@ cmsBool IsTypeSupported(cmsTagDescriptor* TagDescriptor, cmsTagTypeSignature Typ
     return FALSE;
 }
 
-
 // That's the main read function
 void* CMSEXPORT cmsReadTag(cmsHPROFILE hProfile, cmsTagSignature sig)
 {
-    _cmsICCPROFILE* Icc = (_cmsICCPROFILE*) hProfile;
+    _cmsICCPROFILE* Icc = (_cmsICCPROFILE*)hProfile;
+    cmsBool avoidCheck;
     cmsIOHANDLER* io;
     cmsTagTypeHandler* TypeHandler;
     cmsTagTypeHandler LocalTypeHandler;
-    cmsTagDescriptor*  TagDescriptor;
+    cmsTagDescriptor* TagDescriptor = NULL;
     cmsTagTypeSignature BaseType;
     cmsUInt32Number Offset, TagSize;
     cmsUInt32Number ElemCount;
     int n;
 
-    if (!_cmsLockMutex(Icc->ContextID, Icc ->UsrMutex)) return NULL;
+    if (!_cmsLockMutex(Icc->ContextID, Icc->UsrMutex)) return NULL;
+
+    avoidCheck = _cmsAvoidTypeCheckOnTags(Icc->ContextID);
 
     n = _cmsSearchTag(Icc, sig, TRUE);
     if (n < 0)
@@ -1688,7 +1775,7 @@ void* CMSEXPORT cmsReadTag(cmsHPROFILE hProfile, cmsTagSignature sig)
     }
 
     // If the element is already in memory, return the pointer
-    if (Icc -> TagPtrs[n]) {
+    if (Icc->TagPtrs[n]) {
 
         if (Icc->TagTypeHandlers[n] == NULL) goto Error;
 
@@ -1696,24 +1783,26 @@ void* CMSEXPORT cmsReadTag(cmsHPROFILE hProfile, cmsTagSignature sig)
         BaseType = Icc->TagTypeHandlers[n]->Signature;
         if (BaseType == 0) goto Error;
 
-        TagDescriptor = _cmsGetTagDescriptor(Icc->ContextID, sig);
-        if (TagDescriptor == NULL) goto Error;
+        if (!avoidCheck) {
 
-        if (!IsTypeSupported(TagDescriptor, BaseType)) goto Error;
+            TagDescriptor = _cmsGetTagDescriptor(Icc->ContextID, sig);
+            if (TagDescriptor == NULL) goto Error;
+            if (!IsTypeSupported(TagDescriptor, BaseType)) goto Error;
+        }
 
-        if (Icc ->TagSaveAsRaw[n]) goto Error;  // We don't support read raw tags as cooked
+        if (Icc->TagSaveAsRaw[n]) goto Error;  // We don't support read raw tags as cooked
 
-        _cmsUnlockMutex(Icc->ContextID, Icc ->UsrMutex);
-        return Icc -> TagPtrs[n];
+        _cmsUnlockMutex(Icc->ContextID, Icc->UsrMutex);
+        return Icc->TagPtrs[n];
     }
 
     // We need to read it. Get the offset and size to the file
-    Offset    = Icc -> TagOffsets[n];
-    TagSize   = Icc -> TagSizes[n];
+    Offset = Icc->TagOffsets[n];
+    TagSize = Icc->TagSizes[n];
 
     if (TagSize < 8) goto Error;
 
-    io = Icc ->IOhandler;
+    io = Icc->IOhandler;
 
     if (io == NULL) { // This is a built-in profile that has been manipulated, abort early
 
@@ -1722,70 +1811,75 @@ void* CMSEXPORT cmsReadTag(cmsHPROFILE hProfile, cmsTagSignature sig)
     }
 
     // Seek to its location
-    if (!io -> Seek(io, Offset))
+    if (!io->Seek(io, Offset))
         goto Error;
 
-    // Search for support on this tag
-    TagDescriptor = _cmsGetTagDescriptor(Icc-> ContextID, sig);
-    if (TagDescriptor == NULL) {
+    if (!avoidCheck) {
+        // Search for support on this tag
+        TagDescriptor = _cmsGetTagDescriptor(Icc->ContextID, sig);
+        if (TagDescriptor == NULL) {
 
-        char String[5];
+            char String[5];
 
-        _cmsTagSignature2String(String, sig);
+            _cmsTagSignature2String(String, sig);
 
-        // An unknown element was found.
-        cmsSignalError(Icc ->ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unknown tag type '%s' found.", String);
-        goto Error;     // Unsupported.
+            // An unknown element was found.
+            cmsSignalError(Icc->ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unknown tag type '%s' found.", String);
+            goto Error;     // Unsupported.
+        }
     }
 
     // if supported, get type and check if in list
     BaseType = _cmsReadTypeBase(io);
     if (BaseType == 0) goto Error;
 
-    if (!IsTypeSupported(TagDescriptor, BaseType)) goto Error;
+    if (!avoidCheck) {
+        if (!IsTypeSupported(TagDescriptor, BaseType)) goto Error;
+    }
 
-    TagSize  -= 8;       // Already read by the type base logic
+    TagSize -= 8;       // Already read by the type base logic
 
     // Get type handler
-    TypeHandler = _cmsGetTagTypeHandler(Icc ->ContextID, BaseType);
+    TypeHandler = _cmsGetTagTypeHandler(Icc->ContextID, BaseType);
     if (TypeHandler == NULL) goto Error;
     LocalTypeHandler = *TypeHandler;
 
 
     // Read the tag
-    Icc -> TagTypeHandlers[n] = TypeHandler;
+    Icc->TagTypeHandlers[n] = TypeHandler;
 
-    LocalTypeHandler.ContextID = Icc ->ContextID;
-    LocalTypeHandler.ICCVersion = Icc ->Version;
-    Icc -> TagPtrs[n] = LocalTypeHandler.ReadPtr(&LocalTypeHandler, io, &ElemCount, TagSize);
+    LocalTypeHandler.ContextID = Icc->ContextID;
+    LocalTypeHandler.ICCVersion = Icc->Version;
+    Icc->TagPtrs[n] = LocalTypeHandler.ReadPtr(&LocalTypeHandler, io, &ElemCount, TagSize);
 
     // The tag type is supported, but something wrong happened and we cannot read the tag.
     // let know the user about this (although it is just a warning)
-    if (Icc -> TagPtrs[n] == NULL) {
+    if (Icc->TagPtrs[n] == NULL) {
 
         char String[5];
 
         _cmsTagSignature2String(String, sig);
-        cmsSignalError(Icc ->ContextID, cmsERROR_CORRUPTION_DETECTED, "Corrupted tag '%s'", String);
+        cmsSignalError(Icc->ContextID, cmsERROR_CORRUPTION_DETECTED, "Corrupted tag '%s'", String);
         goto Error;
     }
 
-    // This is a weird error that may be a symptom of something more serious, the number of
-    // stored item is actually less than the number of required elements.
-    if (ElemCount < TagDescriptor ->ElemCount) {
+    if (!avoidCheck) {
+        // This is a weird error that may be a symptom of something more serious, the number of
+        // stored item is actually less than the number of required elements.
+        if (ElemCount < TagDescriptor->ElemCount) {
 
-        char String[5];
+            char String[5];
 
-        _cmsTagSignature2String(String, sig);
-        cmsSignalError(Icc ->ContextID, cmsERROR_CORRUPTION_DETECTED, "'%s' Inconsistent number of items: expected %d, got %d",
-            String, TagDescriptor ->ElemCount, ElemCount);
-        goto Error;
+            _cmsTagSignature2String(String, sig);
+            cmsSignalError(Icc->ContextID, cmsERROR_CORRUPTION_DETECTED, "'%s' Inconsistent number of items: expected %d, got %d",
+                String, TagDescriptor->ElemCount, ElemCount);
+            goto Error;
+        }
     }
-
 
     // Return the data
-    _cmsUnlockMutex(Icc->ContextID, Icc ->UsrMutex);
-    return Icc -> TagPtrs[n];
+    _cmsUnlockMutex(Icc->ContextID, Icc->UsrMutex);
+    return Icc->TagPtrs[n];
 
 
     // Return error and unlock the data
@@ -1794,7 +1888,7 @@ Error:
     freeOneTag(Icc, n);
     Icc->TagPtrs[n] = NULL;
 
-    _cmsUnlockMutex(Icc->ContextID, Icc ->UsrMutex);
+    _cmsUnlockMutex(Icc->ContextID, Icc->UsrMutex);
     return NULL;
 }
 
@@ -1812,6 +1906,8 @@ cmsTagTypeSignature _cmsGetTagTrueType(cmsHPROFILE hProfile, cmsTagSignature sig
 
     // Get the handler. The true type is there
     TypeHandler =  Icc -> TagTypeHandlers[n];
+    if (TypeHandler == NULL) return (cmsTagTypeSignature) 0;
+
     return TypeHandler ->Signature;
 }
 
@@ -2121,7 +2217,6 @@ cmsBool CMSEXPORT cmsLinkTag(cmsHPROFILE hProfile, cmsTagSignature sig, cmsTagSi
     _cmsUnlockMutex(Icc->ContextID, Icc ->UsrMutex);
     return TRUE;
 }
-
 
 // Returns the tag linked to sig, in the case two tags are sharing same resource
 cmsTagSignature  CMSEXPORT cmsTagLinkedTo(cmsHPROFILE hProfile, cmsTagSignature sig)

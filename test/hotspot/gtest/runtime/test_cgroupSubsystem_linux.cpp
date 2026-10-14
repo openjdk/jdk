@@ -479,7 +479,7 @@ TEST(cgroupTest, set_cgroupv1_subsystem_path_adjusted) {
   ccc->set_subsystem_path((char*)cpu.cgroup_path);
   EXPECT_TRUE(ccc->needs_hierarchy_adjustment());
 
-  CgroupUtil::adjust_controller(ccc);
+  CgroupUtil::adjust_controller(ccc, 1);
   ASSERT_STREQ(cpu.expected_path, ccc->subsystem_path());
   EXPECT_FALSE(ccc->needs_hierarchy_adjustment());
 
@@ -489,7 +489,7 @@ TEST(cgroupTest, set_cgroupv1_subsystem_path_adjusted) {
   cmc->set_subsystem_path((char*)memory.cgroup_path);
   EXPECT_TRUE(cmc->needs_hierarchy_adjustment());
 
-  CgroupUtil::adjust_controller(cmc);
+  CgroupUtil::adjust_controller(cmc, (physical_memory_size_type)1024);
   ASSERT_STREQ(memory.expected_path, cmc->subsystem_path());
   EXPECT_FALSE(cmc->needs_hierarchy_adjustment());
 }
@@ -512,7 +512,7 @@ TEST(cgroupTest, set_cgroupv2_subsystem_path_adjusted) {
                                                                           true /* read-only mount */));
   EXPECT_TRUE(ccc->needs_hierarchy_adjustment());
 
-  CgroupUtil::adjust_controller(ccc);
+  CgroupUtil::adjust_controller(ccc, 1);
   ASSERT_STREQ(cpu.expected_path, ccc->subsystem_path());
   EXPECT_FALSE(ccc->needs_hierarchy_adjustment());
 
@@ -521,7 +521,7 @@ TEST(cgroupTest, set_cgroupv2_subsystem_path_adjusted) {
                                                                                 true /* read-only mount */));
   EXPECT_TRUE(cmc->needs_hierarchy_adjustment());
 
-  CgroupUtil::adjust_controller(cmc);
+  CgroupUtil::adjust_controller(cmc, (physical_memory_size_type)1024);
   ASSERT_STREQ(memory.expected_path, cmc->subsystem_path());
   EXPECT_FALSE(cmc->needs_hierarchy_adjustment());
 }
