@@ -727,14 +727,13 @@ struct SizeFunc : StackObj {
   };
 };
 
-TableStatistics StringTable::get_table_statistics() {
-  TableStatistics ts;
+bool StringTable::get_table_statistics(TableStatistics& ts) {
   SizeFunc sz;
 
   Thread* jt = Thread::current();
   StringTableHash::StatisticsTask sts(_local_table);
   if (!sts.prepare(jt)) {
-    return ts;  // return old table statistics
+    return false;
   }
   {
     TraceTime timer("GetStatistics", TRACETIME_LOG(Debug, stringtable, perf));
@@ -747,11 +746,15 @@ TableStatistics StringTable::get_table_statistics() {
     }
   }
   ts = sts.done(jt);
-  return ts;
+  return true;
 }
 
 void StringTable::print_table_statistics(outputStream* st) {
-  TableStatistics ts = get_table_statistics();
+  TableStatistics ts;
+  if (!get_table_statistics(ts)) {
+    st->print_cr("Failed to take statistics");
+    return;
+  }
   ts.print(st, "StringTable");
 #if INCLUDE_CDS_JAVA_HEAP
   if (!_shared_table.empty()) {
