@@ -2188,6 +2188,7 @@ class MethodData : public Metadata {
   friend class ProfileData;
   friend class TypeEntriesAtCall;
   friend class ciMethodData;
+  friend class MutexLockerImpl;
 
   // If you add a new field that points to any metaspace object, you
   // must add this field to MethodData::metaspace_pointers_do().
@@ -2201,13 +2202,15 @@ class MethodData : public Metadata {
   // Cached hint for bci_to_dp and bci_to_data
   int _hint_di;
 
-  inline static StripedMutex* get_striped_mutex();
-  static StripedMutex* volatile _striped_mutex;
+  inline static StripedMutex* get_striped_mutex() { return _striped_mutex; }
+  static StripedMutex* _striped_mutex;
 
   MethodData(const methodHandle& method);
 public:
   MethodData();
 
+  static void initialize_striped_mutex();
+  
   static MethodData* allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS);
 
   virtual bool is_methodData() const { return true; }

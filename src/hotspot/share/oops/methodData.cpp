@@ -1794,8 +1794,6 @@ public:
   bool is_live(Method* m) { return !m->is_old(); }
 };
 
-StripedMutex* volatile MethodData::_striped_mutex = nullptr;
-
 Mutex* MethodData::extra_data_lock() {
   StripedMutex* sm = MethodData::get_striped_mutex();
   Mutex* m = sm->get(this);
@@ -1939,3 +1937,11 @@ void MethodData::check_extra_data_locked() const {
            "JavaThread must have NoSafepointVerifier inside lock scope");
 }
 #endif
+
+StripedMutex* MethodData::_striped_mutex = nullptr;
+
+void MethodData::initialize_striped_mutex() {
+  assert( _striped_mutex == nullptr, "not null");
+  _striped_mutex = new StripedMutex;
+}
+

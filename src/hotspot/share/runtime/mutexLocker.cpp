@@ -31,6 +31,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/stripedMutex.hpp"
 #include "utilities/vmError.hpp"
 
 // Mutexes used in the VM (see comment in mutexLocker.hpp):
@@ -370,6 +371,7 @@ void MutexLockerImpl::post_initialize() {
     LogStream ls(lt);
     Mutex::print_lock_ranks(&ls);
   }
+  MethodData::initialize_striped_mutex();
 }
 
 GCMutexLocker::GCMutexLocker(Mutex* mutex) {

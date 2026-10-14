@@ -32,18 +32,4 @@ inline uintptr_t StripedMutex::hash(const uintptr_t key) {
   return key ^ (key >> 20) ^ (key >> 9);
 }
 
-inline StripedMutex* MethodData::get_striped_mutex() {
-  StripedMutex* sm = AtomicAccess::load_acquire(&_striped_mutex);
-  if (sm == nullptr) {
-    sm = new StripedMutex;
-    StripedMutex* old = AtomicAccess::cmpxchg(&_striped_mutex, (StripedMutex*) nullptr, sm);
-    if (old != nullptr) {
-      // Another thread created the striped mutex before us. Use that one instead.
-      delete sm;
-      return old;
-    }
-  }
-  return sm;
-}
-
 #endif // SHARE_RUNTIME_STRIPED_MUTEX_INLINE_HPP
