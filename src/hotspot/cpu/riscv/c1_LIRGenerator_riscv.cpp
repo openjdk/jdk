@@ -596,13 +596,12 @@ LIR_Opr LIRGenerator::atomic_cmpxchg(BasicType type, LIR_Opr addr, LIRItem& cmp_
   if (is_reference_type(type)) {
     __ cas_obj(addr, cmp_value.result(), new_value.result(), new_register(T_INT), new_register(T_INT), result);
   } else if (type == T_INT) {
-    __ cas_int(addr->as_address_ptr()->base(), cmp_value.result(), new_value.result(), ill, ill);
+    __ cas_int(addr->as_address_ptr()->base(), cmp_value.result(), new_value.result(), ill, ill, result);
   } else if (type == T_LONG) {
-    __ cas_long(addr->as_address_ptr()->base(), cmp_value.result(), new_value.result(), ill, ill);
+    __ cas_long(addr->as_address_ptr()->base(), cmp_value.result(), new_value.result(), ill, ill, result);
   } else {
     ShouldNotReachHere();
   }
-  __ logical_xor(FrameMap::r5_opr, LIR_OprFact::intConst(1), result);
   return result;
 }
 

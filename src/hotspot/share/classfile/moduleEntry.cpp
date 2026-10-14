@@ -23,13 +23,13 @@
  */
 
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -319,7 +319,7 @@ ModuleEntry* ModuleEntry::create_unnamed_module(ClassLoaderData* cld) {
   oop module = java_lang_ClassLoader::unnamedModule(cld->class_loader());
 
 #if INCLUDE_CDS_JAVA_HEAP
-  ModuleEntry* archived_unnamed_module = ClassLoaderDataShared::archived_unnamed_module(cld);
+  ModuleEntry* archived_unnamed_module = AOTModules::archived_unnamed_module(cld);
   if (archived_unnamed_module != nullptr) {
     archived_unnamed_module->load_from_archive(cld);
     archived_unnamed_module->restore_archived_oops(cld);
@@ -344,7 +344,7 @@ ModuleEntry* ModuleEntry::create_unnamed_module(ClassLoaderData* cld) {
 
 ModuleEntry* ModuleEntry::create_boot_unnamed_module(ClassLoaderData* cld) {
 #if INCLUDE_CDS_JAVA_HEAP
-  ModuleEntry* archived_unnamed_module = ClassLoaderDataShared::archived_boot_unnamed_module();
+  ModuleEntry* archived_unnamed_module = AOTModules::archived_boot_unnamed_module();
   if (archived_unnamed_module != nullptr) {
     archived_unnamed_module->load_from_archive(cld);
     // It's too early to call archived_unnamed_module->restore_archived_oops(cld).

@@ -23,12 +23,12 @@
  */
 
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/stringTable.hpp"
@@ -939,7 +939,7 @@ jint universe_init() {
 #if INCLUDE_CDS
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_using_full_module_graph()) {
-    ClassLoaderDataShared::restore_archived_entries_for_null_class_loader_data();
+    AOTModules::restore_archived_entries_for_null_class_loader_data();
   }
 #endif // INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_archive()) {
