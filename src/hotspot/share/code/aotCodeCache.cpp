@@ -3261,6 +3261,15 @@ bool AOTCodeCache::write_relocations(CodeBlob& code_blob, RelocIterator& iter,
         reloc_data.at_put(idx, id);
         break;
       }
+      case relocInfo::address_stub_type: {
+        address dest = iter.address_stub_reloc()->destination();
+        int id = _table->id_for_address(dest, iter, &code_blob, true /* assert_for_unknown_address */);
+        if (id == BAD_ADDRESS_ID) {
+          return false;
+        }
+        reloc_data.at_put(idx, id);
+        break;
+      }
       case relocInfo::static_stub_type:
         break;
       case relocInfo::external_word_type: {
@@ -3425,6 +3434,11 @@ void AOTCodeReader::read_relocations(CodeBlob *code_blob, RelocIterator& iter,
           r->fix_owner_after_move();
         }
 #endif // USE_TRAMPOLINE_STUB_FIX_OWNER
+        break;
+      }
+      case relocInfo::address_stub_type: {
+        address dest = _cache->address_for_id(reloc_data[j]);
+        iter.address_stub_reloc()->set_destination(dest);
         break;
       }
       case relocInfo::static_stub_type:
