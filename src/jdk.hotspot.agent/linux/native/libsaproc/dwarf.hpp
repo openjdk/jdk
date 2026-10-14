@@ -34,6 +34,8 @@
 #include "dwarf_regs_amd64.h"
 #elif defined(__aarch64__)
 #include "dwarf_regs_aarch64.h"
+#elif defined(riscv64)
+#include "dwarf_regs_riscv64.h"
 #endif
 
 enum DWARF_Register {

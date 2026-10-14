@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc.
  * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -29,6 +29,7 @@ package sun.jvm.hotspot.debugger.linux.riscv64;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.riscv64.*;
 import sun.jvm.hotspot.debugger.linux.*;
+import sun.jvm.hotspot.runtime.VM;
 
 public class LinuxRISCV64ThreadContext extends RISCV64ThreadContext {
   private LinuxDebugger debugger;
@@ -44,5 +45,22 @@ public class LinuxRISCV64ThreadContext extends RISCV64ThreadContext {
 
   public Address getRegisterAsAddress(int index) {
     return debugger.newAddress(getRegister(index));
+  }
+
+  public static Address getRegFromSignalTrampoline(Address sp, int index) {
+    // ucontext_t locates at 2nd element of rt_sigframe.
+    // See definition of rt_sigframe in arch/riscv/kernel/signal.c in Linux Kernel.
+    Address addrUContext = sp.addOffsetTo(128); // sizeof(siginfo_t) = 128
+
+    // see arch/riscv/include/uapi/asm/ucontext.h
+    Address addrUCMContext = addrUContext.addOffsetTo(176); // offsetof(ucontext_t, uc_mcontext) = 176
+
+    // sc_regs in asm/sigcontext.h and asm/ptrace.h contains PC followed by x1-x31, not x0.
+    // RISCV64ThreadContext.PC (0) and R1-R31 (1-31) match the slot indices in uc_mcontext.sc_regs.
+    return switch(index) {
+      case RISCV64ThreadContext.PC, RISCV64ThreadContext.FP, RISCV64ThreadContext.LR, RISCV64ThreadContext.SP
+          -> addrUCMContext.getAddressAt(index * VM.getVM().getAddressSize());
+      default -> throw new IllegalArgumentException("Unsupported register index: " + index);
+    };
   }
 }
