@@ -22,11 +22,12 @@
  *
  */
 
-#ifndef SHARE_CLASSFILE_CLASSLOADERDATASHARED_HPP
-#define SHARE_CLASSFILE_CLASSLOADERDATASHARED_HPP
+#ifndef SHARE_CDS_AOTMODULES_HPP
+#define SHARE_CDS_AOTMODULES_HPP
 
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
 class ClassLoaderData;
@@ -34,7 +35,9 @@ class MetaspaceClosure;
 class ModuleEntry;
 class SerializeClosure;
 
-class ClassLoaderDataShared : AllStatic {
+// This class manages the information (such as module oops, ModuleEntry's, and ClassLoaderData's)
+// for the archived module system.
+class AOTModules : AllStatic {
   static bool _full_module_graph_loaded;
   CDS_JAVA_HEAP_ONLY(static void ensure_module_entry_table_exists(oop class_loader);)
 public:
@@ -57,4 +60,4 @@ public:
   static bool is_full_module_graph_loaded() { return _full_module_graph_loaded; }
 };
 
-#endif // SHARE_CLASSFILE_CLASSLOADERDATASHARED_HPP
+#endif // SHARE_CDS_AOTMODULES_HPP
