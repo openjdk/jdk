@@ -635,19 +635,35 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_c1_runtime_stub(StubA
 #undef __
 #define __ masm->
 
-void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler* masm, Register dst, Address src, Register tmp1, Register tmp2, bool is_narrow) {
+void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler* masm, Register dst, Address src,
+    Register tmp1, Register tmp2, bool is_narrow, bool is_acquire) {
   // Do the actual load. This load is the candidate for implicit null check, and MUST come first.
   if (is_narrow) {
-    __ lwu(dst, src);
+    if (is_acquire) {
+      assert(UseZalasr, "acquire path requires Zalasr");
+      assert(src.getMode() == Address::base_plus_offset && src.offset() == 0,
+          "acquire path requires address to be base-only");
+      __ lw_aq(dst, src.base());
+      __ zext(dst, dst, 32);
+    } else {
+      __ lwu(dst, src);
+    }
   } else {
-    __ ld(dst, src);
+    if (is_acquire) {
+      assert(UseZalasr, "acquire path requires Zalasr");
+      assert(src.getMode() == Address::base_plus_offset && src.offset() == 0,
+          "acquire path requires address to be base-only");
+      __ ld_aq(dst, src.base());
+    } else {
+      __ ld(dst, src);
+    }
   }
 
   ShenandoahBarrierStubC2::load_post(masm, node, dst, src, tmp1, tmp2, is_narrow);
 }
 
 void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssembler* masm, Address dst, bool dst_narrow,
-    Register src, bool src_narrow, Register tmp1, Register tmp2, Register tmp3) {
+    Register src, bool src_narrow, Register tmp1, Register tmp2, Register tmp3, bool is_volatile) {
 
   ShenandoahBarrierStubC2::store_pre(masm, node, dst, tmp1, tmp2, tmp3, dst_narrow);
 
@@ -663,9 +679,23 @@ void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssemble
       }
       src = tmp1;
     }
-    __ sw(src, dst);
+    if (is_volatile) {
+      assert(UseZalasr, "volatile path requires Zalasr");
+      assert(dst.getMode() == Address::base_plus_offset && dst.offset() == 0,
+          "volatile path requires address to be base-only");
+      __ sw_rl(src, dst.base());
+    } else {
+      __ sw(src, dst);
+    }
   } else {
-    __ sd(src, dst);
+    if (is_volatile) {
+      assert(UseZalasr, "volatile path requires Zalasr");
+      assert(dst.getMode() == Address::base_plus_offset && dst.offset() == 0,
+          "volatile path requires address to be base-only");
+      __ sd_rl(src, dst.base());
+    } else {
+      __ sd(src, dst);
+    }
   }
 
   ShenandoahBarrierStubC2::store_post(masm, node, dst, tmp2, tmp3);
@@ -673,14 +703,13 @@ void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssemble
 
 void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, MacroAssembler* masm, Register res, Register addr,
     Register oldval, Register newval, Register tmp1, Register tmp2, Register tmp3, bool exchange, bool narrow, bool is_acquire) {
-  const Assembler::Aqrl acquire = is_acquire ? Assembler::aq : Assembler::relaxed;
-  const Assembler::Aqrl release = Assembler::rl;
+  const atomic_memory_order order = is_acquire ? memory_order_seq_cst : memory_order_release;
   const Assembler::operand_size size = narrow ? Assembler::uint32 : Assembler::int64;
 
   ShenandoahBarrierStubC2::load_store_pre(masm, node, Address(addr), tmp1, tmp2, tmp3, narrow);
 
   // CAS!
-  __ cmpxchg(addr, oldval, newval, size, acquire, release, /* result */ res, !exchange /* result_as_bool */);
+  __ cmpxchg(addr, oldval, newval, size, order, /* result */ res, /* result_as_bool */ !exchange);
 
   ShenandoahBarrierStubC2::load_store_post(masm, node, Address(addr, 0), tmp2, tmp3);
 }
