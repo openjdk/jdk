@@ -201,7 +201,7 @@ class FieldLayout : public ResourceObj {
  public:
   FieldLayout(GrowableArray<FieldInfo>* field_info, Array<ValueFieldLayoutInfo>* value_field_layout_info_array, ConstantPool* cp);
   void initialize_static_layout();
-  void initialize_instance_layout(const InstanceKlass* ik, bool& super_ends_with_oop);
+  void initialize_instance_layout(const InstanceKlass* ik, bool& super_ends_with_oop, bool is_value_class);
 
   LayoutRawBlock* first_empty_block() {
     LayoutRawBlock* block = _start;
@@ -236,7 +236,7 @@ class FieldLayout : public ResourceObj {
   void add_contiguously(GrowableArray<LayoutRawBlock*>* list, LayoutRawBlock* start = nullptr);
   LayoutRawBlock* insert_field_block(LayoutRawBlock* slot, LayoutRawBlock* block);
   void reconstruct_layout(const InstanceKlass* ik, bool& has_nonstatic_fields, bool& ends_with_oop);
-  void fill_holes(const InstanceKlass* ik);
+  void fill_holes(const InstanceKlass* ik, bool is_value_class);
   LayoutRawBlock* insert(LayoutRawBlock* slot, LayoutRawBlock* block);
   void remove(LayoutRawBlock* block);
   void shift_fields(int shift);
