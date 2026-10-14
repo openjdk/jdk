@@ -327,7 +327,7 @@ public class LocalProxyVarsGen {
         }
 
         private boolean thisInstanceReference(JCTree t) {
-            return switch (t) {
+            return switch (TreeInfo.skipParens(t)) {
                 case JCIdent id -> names._this == id.name;
                 case JCFieldAccess acc -> names._this == acc.name;
                 default -> false;
