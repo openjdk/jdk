@@ -234,7 +234,6 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index, bool calle
       // all locks. Only post this event if a new state is not required. Creating a new state would
       // cause a safepoint and the caller of this code has a NoSafepointVerifier.
       if (JvmtiExport::should_post_dynamic_code_generated()) {
-        // FIXME: Is it needed to pass caller_is_c1? Tracked by JDK-8383384
         JvmtiExport::post_dynamic_code_generated_while_holding_locks(is_vtable_stub? "vtable stub": "itable stub",
                                                                      s->code_begin(), s->code_end());
       }
@@ -260,7 +259,7 @@ inline uint VtableStubs::unsafe_hash(address entry_point) {
   bool is_vtable_stub = *vtable_type_addr == static_cast<uint8_t>(VtableStub::Type::vtable_stub);
   bool caller_is_c1 = (*vtable_caller_type_addr == static_cast<uint8_t>(VtableStub::CallerType::c1));
   short vtable_index;
-  static_assert(sizeof(VtableStub::_index) == sizeof(vtable_index), "precondition");
+  static_assert(sizeof(VtableStub::_index) == sizeof(vtable_index));
   memcpy(&vtable_index, vtable_index_addr, sizeof(vtable_index));
   return hash(is_vtable_stub, vtable_index, caller_is_c1);
 }
