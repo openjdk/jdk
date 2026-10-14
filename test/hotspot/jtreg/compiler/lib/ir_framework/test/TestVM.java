@@ -789,10 +789,6 @@ public class TestVM {
         }
 
         checkNoneOrAllAssociatedTestsSkipped(m, tests);
-
-        if (tests.isEmpty()) {
-            return; // There was a format violation. Return.
-        }
         dontCompileAndDontInlineMethod(m);
         CustomRunTest customRunTest = new CustomRunTest(m, getAnnotation(m, Warmup.class), runAnno, tests, shouldExcludeTest);
         allTests.add(customRunTest);
