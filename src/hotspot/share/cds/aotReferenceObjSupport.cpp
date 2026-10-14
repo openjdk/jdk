@@ -32,7 +32,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/javaCalls.hpp"

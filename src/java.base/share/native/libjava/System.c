@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,6 @@ Java_jdk_internal_util_SystemProps_00024Raw_platformProperties(JNIEnv *env, jcla
     /* unicode_encoding specifies the default endianness */
     PUTPROP(propArray, _sun_io_unicode_encoding_NDX, sprops->unicode_encoding);
     PUTPROP(propArray, _sun_cpu_endian_NDX, sprops->cpu_endian);
-    PUTPROP(propArray, _sun_cpu_isalist_NDX, sprops->cpu_isalist);
 
 #ifdef MACOSX
     /* Proxy setting properties */
