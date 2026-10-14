@@ -33,7 +33,6 @@
 #if defined(__linux__)
 #include <arpa/inet.h>
 #include <net/route.h>
-#include <sys/utsname.h>
 #endif
 
 #if defined(MACOSX)
