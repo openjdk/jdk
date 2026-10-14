@@ -85,6 +85,10 @@ private:
   // True if old regions may be safely traversed by the remembered set scan.
   bool _is_parsable;
 
+  // Read by mutators, written by control thread. This is a logical id for an old generation collection.
+  // It is stable across interruptions by young GCs.
+  Atomic<size_t> _started_gc_id;
+
   bool coalesce_and_fill();
 
 public:
@@ -247,7 +251,7 @@ public:
 
   void prepare_gc() override;
   void prepare_regions_and_collection_set(bool concurrent) override;
-  void record_success_concurrent(bool abbreviated) override;
+  void record_success_concurrent(bool abbreviated, size_t gc_id) override;
   void cancel_marking() override;
 
   // Cancels old gc and transitions to the idle state
@@ -362,21 +366,8 @@ public:
     _started_gc_id.store_relaxed(gc_id);
   }
 
-private:
-  // Read by mutators, written by control thread
-  Atomic<size_t> _started_gc_id;
-  Atomic<size_t> _completed_gc_id;
-
-protected:
-  void update_completed_gc_id();
-
-public:
   size_t started_gc_id() const {
     return _started_gc_id.load_relaxed();
-  }
-
-  size_t completed_gc_id() const {
-    return _completed_gc_id.load_relaxed();
   }
 };
 

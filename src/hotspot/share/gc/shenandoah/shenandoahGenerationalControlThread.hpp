@@ -99,7 +99,7 @@ public:
   bool request_concurrent_gc(ShenandoahGeneration* generation);
 
   // Visible for white box API to start an old cycle
-  void wait_for_gc_cycle(GCCause::Cause cause, ShenandoahGeneration* generation);
+  bool wait_for_gc_cycle(GCCause::Cause cause, ShenandoahGeneration* generation, uint timeout_seconds = 10);
 
   // Returns the current state of the control thread
   GCMode gc_mode() const {
@@ -159,7 +159,7 @@ private:
   // Specialized function that waits for one complete old gc cycle. Note that this may invoke
   // young cycles in order to complete mixed evacuations of an existent old gc before starting
   // another.
-  void wait_for_old_gc_cycle(GCCause::Cause cause, ShenandoahOldGeneration* generation);
+  bool wait_for_old_gc_cycle(GCCause::Cause cause, ShenandoahOldGeneration* generation, uint timeout_seconds);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALCONTROLTHREAD_HPP

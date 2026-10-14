@@ -427,7 +427,8 @@ size_t ShenandoahGeneration::available(size_t capacity) const {
   return result;
 }
 
-void ShenandoahGeneration::record_success_concurrent(bool abbreviated) {
+void ShenandoahGeneration::record_success_concurrent(bool abbreviated, size_t gc_id) {
+  update_completed_gc_id(gc_id);
   heuristics()->record_success_concurrent();
   ShenandoahHeap::heap()->shenandoah_policy()->record_success_concurrent(is_young(), abbreviated);
 }
