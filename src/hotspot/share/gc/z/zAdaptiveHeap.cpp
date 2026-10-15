@@ -1093,8 +1093,9 @@ static uint64_t system_uncommit_delay(const ZSystemMemoryPressureMetrics& metric
     return ZAdaptiveHeap::no_uncommit_delay();
   }
 
-  const double scaled_urgent_rate =  ZAdaptiveHeap::urgent_uncommit_rate() * rate_scaling;
-  const uint64_t urgent_delay = uncommit_granule * MILLIUNITS / scaled_urgent_rate;
+  const double uncommit_granule_mb = double(uncommit_granule) / M;
+  const double scaled_urgent_rate = ZAdaptiveHeap::urgent_uncommit_rate() * rate_scaling;
+  const uint64_t urgent_delay = uncommit_granule_mb * MILLIUNITS / scaled_urgent_rate;
 
   // If we aren't using a high amount memory, uncommit memory rather slowly
   // and let the GC heuristics do most of the heavy lifting
@@ -1116,7 +1117,7 @@ static uint64_t system_uncommit_delay(const ZSystemMemoryPressureMetrics& metric
     const double lowest_rate = highest_rate / ZUncommitDelay;
     const double interpolated_rate = lowest_rate * (1.0 - progression) + highest_rate * progression;
     const double scaled_rate = interpolated_rate * rate_scaling;
-    return uncommit_granule * MILLIUNITS / scaled_rate;
+    return uncommit_granule_mb * MILLIUNITS / scaled_rate;
   }
 
   // We use a policy where the uncommit delay drops off fairly quickly
