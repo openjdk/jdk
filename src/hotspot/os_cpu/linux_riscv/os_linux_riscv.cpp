@@ -93,7 +93,7 @@ char* os::non_memory_address_word() {
   // even in its subfields (as defined by the CPU immediate fields,
   // if the CPU splits constants across multiple instructions).
 
-  return (char*) 0xffffffffffff;
+  return (char*) -1;
 }
 
 address os::Posix::ucontext_get_pc(const ucontext_t * uc) {
