@@ -74,9 +74,6 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _mixed_candidate_garbage_words(0),
   _update_watermark(start),
   _age(0),
-#ifdef SHENANDOAH_CENSUS_NOISE
-  _youth(0),
-#endif // SHENANDOAH_CENSUS_NOISE
   _needs_bitmap_reset(false)
   {
 
@@ -320,7 +317,6 @@ void ShenandoahHeapRegion::make_trash_immediate() {
 
 void ShenandoahHeapRegion::make_empty() {
   reset_age();
-  CENSUS_NOISE(clear_youth();)
   switch (state()) {
     case _trash:
       set_state(_empty_committed);
