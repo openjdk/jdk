@@ -44,7 +44,7 @@ import jdk.internal.vm.vector.VectorSupport;
 
 /*
  * @test id=Test2
- * @bug 8393680
+ * @bug 8393338
  * @summary Out-of-range constant vector slice index must throw, not crash C2.
  * @modules java.base/jdk.internal.vm.vector
  *          jdk.incubator.vector
