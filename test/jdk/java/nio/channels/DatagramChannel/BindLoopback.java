@@ -23,7 +23,8 @@
 
 /* @test
  * @bug 8394580
- * @summary Check that binding to 127.0.0.255 does not fail
+ * @summary Check that binding to 127.0.0.255 succeeds
+ * @requires (os.family == "linux")
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
  * @run main BindLoopback
