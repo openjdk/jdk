@@ -44,11 +44,17 @@ julong uniform_random<julong>() {
 }
 
 static void test_canonicalize_constraints_trivial() {
+  ASSERT_FALSE(TypeInt::NON_ZERO->contains(0));
+  ASSERT_TRUE(TypeInt::NON_ZERO->contains(1));
+  ASSERT_TRUE(TypeInt::NON_ZERO->contains(-1));
   ASSERT_TRUE(TypeInt::CC_NE->contains(-1));
   ASSERT_TRUE(TypeInt::CC_NE->contains(1));
   ASSERT_FALSE(TypeInt::CC_NE->contains(0));
   ASSERT_FALSE(TypeInt::CC_NE->contains(-2));
   ASSERT_FALSE(TypeInt::CC_NE->contains(2));
+  ASSERT_FALSE(TypeLong::NON_ZERO->contains(jlong(0)));
+  ASSERT_TRUE(TypeLong::NON_ZERO->contains(jlong(1)));
+  ASSERT_TRUE(TypeLong::NON_ZERO->contains(jlong(-1)));
 }
 
 template <class S, class U>

@@ -857,6 +857,7 @@ public:
   static const TypeInt* UBYTE;
   static const TypeInt* CHAR;
   static const TypeInt* SHORT;
+  static const TypeInt* NON_ZERO;
   static const TypeInt* POS;
   static const TypeInt* POS1;
   static const TypeInt* INT;
@@ -936,6 +937,7 @@ public:
   static const TypeLong* MINUS_1;
   static const TypeLong* ZERO;
   static const TypeLong* ONE;
+  static const TypeLong* NON_ZERO;
   static const TypeLong* POS;
   static const TypeLong* LONG;
   static const TypeLong* INT;    // 32-bit subrange [min_jint..max_jint]
