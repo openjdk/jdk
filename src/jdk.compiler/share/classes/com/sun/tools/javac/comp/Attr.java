@@ -5846,12 +5846,13 @@ public class Attr extends JCTree.Visitor {
         public void visitAnnotatedType(JCAnnotatedType tree) {
             if (!tree.underlyingType.type.isErroneous()) {
                 if (!inTypeContext) {
-                    boolean hasTypeAnnotations = tree.annotations.stream().anyMatch(a -> chk.isTypeAnnotation(a, false));
-                    if (hasTypeAnnotations) {
+                    List<Attribute.TypeCompound> usedTypeAnnotations =
+                            filterNonTypeAnnotations(tree.annotations);
+                    if (usedTypeAnnotations.nonEmpty()) {
                         log.error(tree.pos(),
-                                  Errors.TypeAnnotationInadmissibleNotTypeContext(tree.annotations.tail.isEmpty()
-                                          ? Fragments.TypeAnnotation1(tree.annotations.head.attribute)
-                                          : Fragments.TypeAnnotation(tree.annotations.map(a -> a.attribute))));
+                                  Errors.TypeAnnotationInadmissibleNotTypeContext(usedTypeAnnotations.tail.isEmpty()
+                                          ? Fragments.TypeAnnotation1(usedTypeAnnotations.head)
+                                          : Fragments.TypeAnnotation(usedTypeAnnotations)));
                     }
                     //a different error is reported for non-type annotations
                 }
@@ -6026,13 +6027,8 @@ public class Attr extends JCTree.Visitor {
                 } else if (enclTr.hasTag(ANNOTATED_TYPE)) {
                     JCAnnotatedType at = (JCTree.JCAnnotatedType) enclTr;
                     if (enclTy == null || enclTy.hasTag(NONE)) {
-                        ListBuffer<Attribute.TypeCompound> onlyTypeAnnotationsBuf = new ListBuffer<>();
-                        for (JCAnnotation an : at.getAnnotations()) {
-                            if (chk.isTypeAnnotation(an, false)) {
-                                onlyTypeAnnotationsBuf.add((Attribute.TypeCompound) an.attribute);
-                            }
-                        }
-                        List<Attribute.TypeCompound> onlyTypeAnnotations = onlyTypeAnnotationsBuf.toList();
+                        List<Attribute.TypeCompound> onlyTypeAnnotations =
+                                filterNonTypeAnnotations(at.getAnnotations());
                         if (!onlyTypeAnnotations.isEmpty()) {
                             Fragment annotationFragment = onlyTypeAnnotations.size() == 1 ?
                                     Fragments.TypeAnnotation1(onlyTypeAnnotations.head) :
@@ -6095,6 +6091,16 @@ public class Attr extends JCTree.Visitor {
                     log.error(ai.pos(), Errors.AnnotationTypeNotApplicableToType(ai.type));
                 }
             }
+        }
+
+        private List<Attribute.TypeCompound> filterNonTypeAnnotations(List<JCAnnotation> annotations) {
+            ListBuffer<Attribute.TypeCompound> onlyTypeAnnotationsBuf = new ListBuffer<>();
+            for (JCAnnotation an : annotations) {
+                if (chk.isTypeAnnotation(an, false)) {
+                    onlyTypeAnnotationsBuf.add((Attribute.TypeCompound) an.attribute);
+                }
+            }
+            return onlyTypeAnnotationsBuf.toList();
         }
     }
 

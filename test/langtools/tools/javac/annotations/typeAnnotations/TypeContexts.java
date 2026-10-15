@@ -140,6 +140,43 @@ public class TypeContexts {
         );
 
         Assertions.assertEquals(expected, log);
+
+        tb.writeJavaFiles(src,
+                """
+                package p;
+
+                import java.lang.annotation.Target;
+                import java.lang.annotation.ElementType;
+                import java.lang.annotation.Retention;
+                import java.lang.annotation.RetentionPolicy;
+
+                public class Test {
+                    @Target(ElementType.TYPE_USE)
+                    @interface Ann1 {}
+                    @Target({ElementType.FIELD, ElementType.TYPE_USE})
+                    @interface Ann2 {}
+                    @interface Ann3 {}
+                    private void test() {
+                        java.lang.System.@Ann1 @Ann2 @Ann3 out.println("");
+                    }
+                }
+                """);
+
+        log = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .outdir(classes)
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+        expected = List.of(
+            "Test.java:15:26: compiler.err.type.annotation.inadmissible.not.type.context: (compiler.misc.type.annotation: @p.Test.Ann1,@p.Test.Ann2)",
+            "Test.java:15:38: compiler.err.annotation.type.not.applicable.to.type: p.Test.Ann3",
+            "2 errors"
+        );
+
+        Assertions.assertEquals(expected, log);
     }
 
     @Test
@@ -165,9 +202,6 @@ public class TypeContexts {
                 public class Test {
                     @Target(ElementType.TYPE_USE)
                     @interface Ann1 {}
-                    @Target(ElementType.TYPE_USE)
-                    @interface Ann2 {}
-                    @interface Ann3 {}
                     private void test() {
                         Runnable r = @Ann1 out::println;
                     }
@@ -183,7 +217,56 @@ public class TypeContexts {
                 .writeAll()
                 .getOutputLines(OutputKind.DIRECT);
         expected = List.of(
-            "Test.java:16:22: compiler.err.type.annotation.inadmissible.not.type.context: (compiler.misc.type.annotation.1: @p.Test.Ann1)",
+            "Test.java:13:22: compiler.err.type.annotation.inadmissible.not.type.context: (compiler.misc.type.annotation.1: @p.Test.Ann1)",
+            "1 error"
+        );
+
+        Assertions.assertEquals(expected, log);
+    }
+
+    @Test
+    public void testInvalidMethodReference() throws Exception {
+        //static methods cannot be looked up on instances
+        //ignore the type annotation error as part of error recovery
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        List<String> log;
+        List<String> expected;
+
+        tb.writeJavaFiles(src,
+                """
+                package p;
+
+                import java.lang.annotation.Target;
+                import java.lang.annotation.ElementType;
+                import java.lang.annotation.Retention;
+                import java.lang.annotation.RetentionPolicy;
+                import static java.lang.System.out;
+
+                public class Test {
+                    @Target(ElementType.TYPE_USE)
+                    @interface Ann1 {}
+                    private void test() {
+                        Test inst = new Test();
+                        Runnable r = @Ann1 inst::staticMethod;
+                    }
+                    private static void staticMethod() {}
+                }
+                """);
+
+        log = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .outdir(classes)
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+        expected = List.of(
+            "Test.java:14:22: compiler.err.prob.found.req: (compiler.misc.invalid.mref: kindname.method, (compiler.misc.bad.static.method.in.bound.lookup: kindname.method, staticMethod()))",
             "1 error"
         );
 
