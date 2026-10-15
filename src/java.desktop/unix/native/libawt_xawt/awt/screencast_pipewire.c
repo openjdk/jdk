@@ -485,6 +485,8 @@ static bool startStream(
 }
 
 /**
+ * The caller must hold the PipeWire thread loop lock.
+ *
  * @param index of a screen
  * @return TRUE on success
  */
@@ -500,9 +502,7 @@ static gboolean connectStream(int index) {
     data->screenProps = &screenSpace.screens[index];
 
     if (!sessionClosed && data->stream) {
-        fp_pw_thread_loop_lock(pw.loop);
         int result = fp_pw_stream_set_active(data->stream, TRUE);
-        fp_pw_thread_loop_unlock(pw.loop);
 
         DEBUG_SCREEN_PREFIX(data->screenProps,
                             "stream %p: activate result |%i|\n",
@@ -527,7 +527,6 @@ static gboolean connectStream(int index) {
     if (!data->stream) {
         DEBUG_SCREEN_PREFIX(data->screenProps,
                             "!!! Could not create a pipewire stream\n", NULL);
-        fp_pw_thread_loop_unlock(pw.loop);
         return FALSE;
     }
 
@@ -543,14 +542,12 @@ static gboolean connectStream(int index) {
     if (!startStream(data->stream, screenSpace.screens[index].id)){
         DEBUG_SCREEN_PREFIX(data->screenProps,
                             "!!! Could not start a pipewire stream\n", NULL);
-        fp_pw_thread_loop_unlock(pw.loop);
         return FALSE;
     }
 
     while (!data->hasFormat) {
         fp_pw_thread_loop_wait(pw.loop);
         if (hasPipewireFailed) {
-            fp_pw_thread_loop_unlock(pw.loop);
             return FALSE;
         }
     }
@@ -687,6 +684,9 @@ static gboolean doLoop(GdkRectangle requestedArea) {
         }
 
         pw_core_add_listener(pw.core, &pw.coreListener, &coreEvents, NULL);
+    } else if (pw.loop) {
+        fp_pw_thread_loop_lock(pw.loop);
+        isLoopLockTaken = TRUE;
     }
 
     for (int i = 0; i < screenSpace.screenCount; ++i) {
