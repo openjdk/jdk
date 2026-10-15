@@ -38,6 +38,8 @@ class WorkerThreads;
 // needs them. Threads are reused and exist until the VM exits.
 class DiagnosticWorkers : public AllStatic {
 private:
+  // Written once by the VM thread at a safepoint. Also read by the error reporter,
+  // which can run outside a safepoint.
   static Atomic<WorkerThreads*> _workers;
 
 public:
