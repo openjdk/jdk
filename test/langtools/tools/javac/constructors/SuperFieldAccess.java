@@ -182,6 +182,21 @@ public class SuperFieldAccess {
                     """,
                     "NotInheritedTest.java:6:18: compiler.err.report.access: field, private, NotInheritedTest",
                     "1 error");
+        failingCase("""
+                    class NotInheritedTest {
+                        int field;
+                        class Intermediate extends NotInheritedTest {}
+                        class Nested extends Intermediate {
+                            int field;
+                            Nested() {
+                                super.field = 0;
+                                super();
+                            }
+                        }
+                    }
+                    """,
+                    "NotInheritedTest.java:7:18: compiler.err.cant.ref.before.ctor.called: field",
+                    "1 error");
     }
 
     private void failingCase(String code, String... errors) throws IOException {
