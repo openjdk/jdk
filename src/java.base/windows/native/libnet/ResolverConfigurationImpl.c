@@ -144,7 +144,7 @@ void strappend(char *s1, char *s2) {
  * Use DNS server addresses returned by GetAdaptersAddresses for currently
  * active interfaces.
  */
-static int loadConfig(JNIEnv *env, char *sl, char *ns) {
+static BOOL loadConfig(JNIEnv *env, char *sl, char *ns) {
     IP_ADAPTER_ADDRESSES *adapters, *adapter;
     IP_ADAPTER_DNS_SERVER_ADDRESS *dnsServer;
     WCHAR *suffix;
@@ -175,7 +175,7 @@ static int loadConfig(JNIEnv *env, char *sl, char *ns) {
     ret = getAdapters(env, flags, &adapters);
 
     if (ret != ERROR_SUCCESS) {
-        return STS_ERROR;
+        return FALSE;
     }
 
     adapter = adapters;
@@ -223,7 +223,7 @@ static int loadConfig(JNIEnv *env, char *sl, char *ns) {
 
     free(adapters);
 
-    return STS_SL_FOUND | STS_NS_FOUND;
+    return TRUE;
 }
 
 
@@ -256,7 +256,7 @@ Java_sun_net_dns_ResolverConfigurationImpl_loadDNSconfig0(JNIEnv *env, jclass cl
     searchlist[0] = '\0';
     nameservers[0] = '\0';
 
-    if (loadConfig(env, searchlist, nameservers) != STS_ERROR) {
+    if (loadConfig(env, searchlist, nameservers) == TRUE) {
 
         /*
          * Populate static fields in sun.net.DefaultResolverConfiguration
