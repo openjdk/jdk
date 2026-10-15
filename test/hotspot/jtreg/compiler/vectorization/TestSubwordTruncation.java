@@ -580,6 +580,32 @@ public class TestSubwordTruncation {
         return new Object[] { res };
     }
 
+    @Test
+    @IR(counts = { IRNode.COUNT_LEADING_ZEROS_L, ">0" })
+    @Arguments(setup = "setupLongArray")
+    public Object[] testCountLeadingZerosL(long[] in) {
+        byte[] res = new byte[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte) Long.numberOfLeadingZeros(in[i]);
+        }
+
+        return new Object[] { res };
+    }
+
+    @Test
+    @IR(counts = { IRNode.COUNT_TRAILING_ZEROS_L, ">0" })
+    @Arguments(setup = "setupLongArray")
+    public Object[] testCountTrailingZerosL(long[] in) {
+        byte[] res = new byte[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte) Long.numberOfTrailingZeros(in[i]);
+        }
+
+        return new Object[] { res };
+    }
+
     public static void main(String[] args) {
         TestFramework.run();
     }
