@@ -1436,7 +1436,7 @@ public:
 
     Node* incr() const {
       if (_should_speculatively_narrow_limit) {
-        assert(_raw_incr->Opcode() == Op_ConvI2L, "");
+        assert(_raw_incr->Opcode() == Op_ConvI2L, "unexpected shape");
         return _raw_incr->in(1);
       }
       return _raw_incr;
