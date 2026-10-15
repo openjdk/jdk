@@ -2721,6 +2721,7 @@ instruct vreduce_and(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}
 
+// Unmasked reductions require src2 at Mach operand index 2; see rvv_vsetvli_shape_node.
 instruct vreduce_andL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (AndReductionV src1 src2));
@@ -2796,6 +2797,7 @@ instruct vreduce_or(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}
 
+// Unmasked reductions require src2 at Mach operand index 2; see rvv_vsetvli_shape_node.
 instruct vreduce_orL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (OrReductionV src1 src2));
@@ -2871,6 +2873,7 @@ instruct vreduce_xor(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}
 
+// Unmasked reductions require src2 at Mach operand index 2; see rvv_vsetvli_shape_node.
 instruct vreduce_xorL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (XorReductionV src1 src2));
@@ -2946,6 +2949,7 @@ instruct vreduce_add(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}
 
+// Unmasked reductions require src2 at Mach operand index 2; see rvv_vsetvli_shape_node.
 instruct vreduce_addL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (AddReductionVL src1 src2));
@@ -2992,6 +2996,7 @@ instruct vreduce_addF_ordered(fRegF dst, fRegF src1, vReg src2, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}
 
+// Unmasked reductions require src2 at Mach operand index 2; see rvv_vsetvli_shape_node.
 instruct vreduce_addF_unordered(fRegF dst, fRegF src1, vReg src2, vReg tmp) %{
   predicate(!n->as_Reduction()->requires_strict_order());
   match(Set dst (AddReductionVF src1 src2));
@@ -3011,6 +3016,7 @@ instruct vreduce_addF_unordered(fRegF dst, fRegF src1, vReg src2, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}
 
+// Unmasked reductions require src2 at Mach operand index 2; see rvv_vsetvli_shape_node.
 instruct vreduce_addD_ordered(fRegD dst, fRegD src1, vReg src2, vReg tmp) %{
   predicate(n->as_Reduction()->requires_strict_order());
   match(Set dst (AddReductionVD src1 src2));
@@ -3030,6 +3036,7 @@ instruct vreduce_addD_ordered(fRegD dst, fRegD src1, vReg src2, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}
 
+// Unmasked reductions require src2 at Mach operand index 2; see rvv_vsetvli_shape_node.
 instruct vreduce_addD_unordered(fRegD dst, fRegD src1, vReg src2, vReg tmp) %{
   predicate(!n->as_Reduction()->requires_strict_order());
   match(Set dst (AddReductionVD src1 src2));
@@ -3135,6 +3142,7 @@ instruct vreduce_max(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}
 
+// Unmasked reductions require src2 at Mach operand index 2; see rvv_vsetvli_shape_node.
 instruct vreduce_maxL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (MaxReductionV src1 src2));
@@ -3214,6 +3222,7 @@ instruct vreduce_min(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}
 
+// Unmasked reductions require src2 at Mach operand index 2; see rvv_vsetvli_shape_node.
 instruct vreduce_minL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (MinReductionV src1 src2));
@@ -3454,12 +3463,12 @@ instruct vreduce_mulL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc,
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_mulF(fRegF dst, fRegF fsrc, vReg vsrc,
+instruct vreduce_mulF(fRegF dst, fRegF fsrc, vReg vsrc,
                      vReg tmp1, vReg tmp2) %{
   predicate(!n->as_Reduction()->requires_strict_order());
   match(Set dst (MulReductionVF fsrc vsrc));
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
-  format %{ "reduce_mulF $dst, $fsrc, $vsrc\t# KILL $tmp1, $tmp2" %}
+  format %{ "vreduce_mulF $dst, $fsrc, $vsrc\t# KILL $tmp1, $tmp2" %}
 
   ins_encode %{
     __ reduce_mul_fp_v($dst$$FloatRegister, $fsrc$$FloatRegister, as_VectorRegister($vsrc$$reg),
@@ -3469,12 +3478,12 @@ instruct reduce_mulF(fRegF dst, fRegF fsrc, vReg vsrc,
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_mulD(fRegD dst, fRegD dsrc, vReg vsrc,
+instruct vreduce_mulD(fRegD dst, fRegD dsrc, vReg vsrc,
                      vReg tmp1, vReg tmp2) %{
   predicate(!n->as_Reduction()->requires_strict_order());
   match(Set dst (MulReductionVD dsrc vsrc));
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
-  format %{ "reduce_mulD $dst, $dsrc, $vsrc\t# KILL $tmp1, $tmp2" %}
+  format %{ "vreduce_mulD $dst, $dsrc, $vsrc\t# KILL $tmp1, $tmp2" %}
 
   ins_encode %{
     __ reduce_mul_fp_v($dst$$FloatRegister, $dsrc$$FloatRegister, as_VectorRegister($vsrc$$reg),
