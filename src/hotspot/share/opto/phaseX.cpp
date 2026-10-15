@@ -2068,11 +2068,10 @@ void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type*
     if (n->is_Phi() || n->is_CFG() || n->outcnt() == 0) {
       continue;
     }
-    ShouldNotReachHere();
 #ifdef ASSERT
     for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
       Node* u = n->fast_out(j);
-      assert(wq.member(u), "");
+      assert(wq.member(u) || u->Opcode() == Op_DeadPath, "");
     }
 #endif
     replace_in_uses(n, C->top());
