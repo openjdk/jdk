@@ -33,6 +33,7 @@
 #include "cds/aotMapLogger.hpp"
 #include "cds/aotMappedHeapLoader.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cds_globals.hpp"
@@ -49,7 +50,6 @@
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/loaderConstraints.hpp"
@@ -493,7 +493,7 @@ void AOTMetaspace::write_method_handle_intrinsics() {
 void AOTMetaspace::early_serialize(SerializeClosure* soc) {
   int tag = 0;
   soc->do_tag(--tag);
-  CDS_JAVA_HEAP_ONLY(Modules::serialize_archived_module_info(soc);)
+  AOTModules::serialize_archived_module_info(soc);
   soc->do_tag(666);
 }
 
@@ -539,7 +539,7 @@ void AOTMetaspace::serialize(SerializeClosure* soc) {
   SystemDictionaryShared::serialize_vm_classes(soc);
   soc->do_tag(--tag);
 
-  CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
+  CDS_JAVA_HEAP_ONLY(AOTModules::serialize(soc);)
   soc->do_ptr((void**)&_archived_method_handle_intrinsics);
 
   LambdaFormInvokers::serialize(soc);
@@ -717,7 +717,7 @@ public:
     vmSymbols::metaspace_pointers_do(it);
     TrainingData::iterate_roots(it);
     if (CDSConfig::is_dumping_full_module_graph()) {
-      ClassLoaderDataShared::iterate_roots(it);
+      AOTModules::iterate_roots(it);
     }
 
     // The above code should find all the symbols that are referenced by the
@@ -740,7 +740,7 @@ public:
 char* VM_PopulateDumpSharedSpace::dump_early_read_only_tables() {
   ArchiveBuilder::OtherROAllocMark mark;
 
-  CDS_JAVA_HEAP_ONLY(Modules::dump_archived_module_info());
+  AOTModules::dump_archived_module_info();
 
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();
@@ -817,7 +817,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   AOTMetaspace::make_method_handle_intrinsics_shareable();
 
   if (CDSConfig::is_dumping_full_module_graph()) {
-    ClassLoaderDataShared::remove_unshareable_info();
+    AOTModules::remove_unshareable_info();
   }
 
   dump_java_heap_objects();
@@ -1181,8 +1181,8 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
   if (CDSConfig::is_dumping_heap()) {
     HeapShared::init_heap_writer();
     if (CDSConfig::is_dumping_full_module_graph()) {
-      ClassLoaderDataShared::ensure_module_entry_tables_exist();
-      ClassLoaderDataShared::build_tables(CHECK);
+      AOTModules::ensure_module_entry_tables_exist();
+      AOTModules::build_tables(CHECK);
       HeapShared::prepare_for_archiving(CHECK);
     }
 
