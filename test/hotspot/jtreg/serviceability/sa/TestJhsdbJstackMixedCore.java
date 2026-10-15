@@ -75,8 +75,12 @@ public class TestJhsdbJstackMixedCore {
         // Check whether the symbol of signal trampoline is available.
         var libc = SATestUtils.getLibCPath();
 
-        if (Platform.isMusl() && SATestUtils.getDebugInfo(libc) == null) {
-            throw new SkippedException("libc debug info is not available.");
+        if (Platform.isMusl()) {
+            if (Platform.isAArch64()) {
+                throw new SkippedException("musl libc on AArch64 is not supported.");
+            } else if (SATestUtils.getDebugInfo(libc) == null) {
+                throw new SkippedException("libc debug info is not available.");
+            }
         }
 
         // SA distinguishes the frame is signal trampoline if the function

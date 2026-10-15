@@ -57,6 +57,10 @@ public class ClhsdbPstack {
 
     public static void main(String[] args) throws Exception {
         if (Platform.isMusl()) {
+            if (Platform.isAArch64()) {
+                throw new SkippedException("musl libc on AArch64 is not supported.");
+            }
+
             var libc = SATestUtils.getLibCPath();
             if (SATestUtils.getDebugInfo(libc) == null) {
                 throw new SkippedException("libc debug info is not available.");
