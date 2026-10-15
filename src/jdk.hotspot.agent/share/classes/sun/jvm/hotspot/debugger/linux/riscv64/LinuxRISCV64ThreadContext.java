@@ -58,7 +58,8 @@ public class LinuxRISCV64ThreadContext extends RISCV64ThreadContext {
     // sc_regs in asm/sigcontext.h and asm/ptrace.h contains PC followed by x1-x31, not x0.
     // RISCV64ThreadContext.PC (0) and R1-R31 (1-31) match the slot indices in uc_mcontext.sc_regs.
     return switch(index) {
-      case RISCV64ThreadContext.PC, RISCV64ThreadContext.FP, RISCV64ThreadContext.LR, RISCV64ThreadContext.SP
+      case RISCV64ThreadContext.PC, RISCV64ThreadContext.FP, RISCV64ThreadContext.LR,
+           RISCV64ThreadContext.SP, RISCV64ThreadContext.R5
           -> addrUCMContext.getAddressAt(index * VM.getVM().getAddressSize());
       default -> throw new IllegalArgumentException("Unsupported register index: " + index);
     };

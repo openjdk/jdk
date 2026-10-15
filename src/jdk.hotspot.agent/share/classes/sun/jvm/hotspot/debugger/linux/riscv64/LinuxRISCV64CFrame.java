@@ -59,8 +59,15 @@ public final class LinuxRISCV64CFrame extends DwarfCFrame {
       DwarfParser dwarf = createDwarfParser(linuxDbg, pc);
 
       if (dwarf != null) { // Native frame
-        cfa = getreg.apply(dwarf.getCFARegister())
-                    .addOffsetTo(dwarf.getCFAOffset());
+        int cfaReg = dwarf.getCFARegister();
+        if (cfaReg == -1) {
+          return null;
+        }
+        cfa = getreg.apply(cfaReg).addOffsetTo(dwarf.getCFAOffset());
+
+        // Capture the fallback; the saved stack PC takes precedence because this register may have been overwritten.
+        int raReg = dwarf.getRARegister();
+        ra = raReg == -1 ? null : getreg.apply(raReg);
       }
 
       return (fp == null && cfa == null && VM.getVM().getCodeCache().findBlobUnsafe(pc) == null)
@@ -88,14 +95,9 @@ public final class LinuxRISCV64CFrame extends DwarfCFrame {
       super(linuxDbg, sp, fp, cfa, pc, dwarf, use1ByteBeforeToLookup);
 
       if (dwarf != null) {
-        var senderPCFromDwarf = getSenderPC(null);
+        var senderPCFromDwarf = getSenderPC(null); // The CIE return-address column is used internally
         if (senderPCFromDwarf != null) {
           ra = senderPCFromDwarf;
-        } else if (ra != null) {
-          var raReg = dwarf.getRARegister();
-          if (raReg != RISCV64ThreadContext.LR) {
-            throw new DebuggerException("Unexpected RA register: " + raReg);
-          }
         }
       }
 
@@ -241,6 +243,7 @@ public final class LinuxRISCV64CFrame extends DwarfCFrame {
      // generated-code anchors and signal PCs need exact lookup.
      boolean use1ByteBeforeToLookup = VM.getVM().getCodeCache().findBlobUnsafe(senderPC) == null
          && !linuxDbg().isSignalTrampoline(senderPC);
+
      // A return PC can equal the next function's entry (os::abort/os::die), selecting the wrong FDE.
      //   0x3f9818f7b6 <os::abort+56>: jalr 302(ra)       # abort@plt
      //   0x3f9818f7ba <os::die+0>:    addi sp, sp, -16
