@@ -147,7 +147,7 @@
 
   void enc_cmove_cmp_fp_zero_one(int cmpFlag,
                                  FloatRegister op1, FloatRegister op2,
-                                 Register dst, bool is_single);
+                                 Register dst);
 
   void compress_bits_v(VectorRegister dst, VectorRegister src, VectorRegister bit_mask,
                        VectorRegister src_tmp, VectorRegister mask_tmp,

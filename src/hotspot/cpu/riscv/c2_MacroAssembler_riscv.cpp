@@ -2247,28 +2247,32 @@ void C2_MacroAssembler::enc_cmove_fp_cmp_fp(int cmpFlag,
   }
 }
 
-  // Set dst to 0 if the floating-point condition is true, or 1 otherwise.
-  // Preserve CmpF/CmpD unordered-less semantics when either operand is NaN.
-void C2_MacroAssembler::enc_cmove_cmp_fp_zero_one(int cmpFlag, FloatRegister op1, FloatRegister op2, Register dst, bool is_single) {
-  switch (cmpFlag) {
-    case BoolTest::eq: // NaN ordered: eq false -> dst = 1
+// Set dst to 0 if the floating-point condition is true, or 1 otherwise.
+// CmpF/CmpD treat unordered as less: eq/gt/ge are false for NaN, while
+// ne/lt/le are true.
+void C2_MacroAssembler::enc_cmove_cmp_fp_zero_one(int cmpFlag, FloatRegister op1, FloatRegister op2, Register dst) {
+  bool is_single = (cmpFlag & double_branch_mask) == 0;
+  int op_select = cmpFlag & (~double_branch_mask);
+
+  switch (op_select) {
+    case BoolTest::eq:
       is_single ? feq_s(dst, op1, op2) : feq_d(dst, op1, op2);
       seqz(dst, dst);
       break;
-    case BoolTest::ne: // NaN unordered: ne true -> dst = 0
+    case BoolTest::ne:
       is_single ? feq_s(dst, op1, op2) : feq_d(dst, op1, op2);
       break;
-    case BoolTest::lt: // NaN unordered: lt true -> dst = 0
+    case BoolTest::lt:
       is_single ? fle_s(dst, op2, op1) : fle_d(dst, op2, op1);
       break;
-    case BoolTest::le: // NaN unordered: le true -> dst = 0
+    case BoolTest::le:
       is_single ? flt_s(dst, op2, op1) : flt_d(dst, op2, op1);
       break;
-    case BoolTest::gt: // NaN ordered: gt false -> dst = 1
+    case BoolTest::gt:
       is_single ? flt_s(dst, op2, op1) : flt_d(dst, op2, op1);
       seqz(dst, dst);
       break;
-    case BoolTest::ge: // NaN ordered: ge false -> dst = 1
+    case BoolTest::ge:
       is_single ? fle_s(dst, op2, op1) : fle_d(dst, op2, op1);
       seqz(dst, dst);
       break;

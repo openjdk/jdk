@@ -10982,7 +10982,7 @@ instruct cmovI_cmpF_zero_one(iRegINoSp dst, fRegF op1, fRegF op2,
   ins_encode %{
     __ enc_cmove_cmp_fp_zero_one($cop$$cmpcode,
                                 as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
-                                as_Register($dst$$reg), true /* is_single */);
+                                as_Register($dst$$reg));
   %}
 
   ins_pipe(pipe_class_compare);
@@ -11013,9 +11013,9 @@ instruct cmovI_cmpD_zero_one(iRegINoSp dst, fRegD op1, fRegD op2,
   format %{ "CMoveI $dst, ($op1 $cop $op2), 1, 0\t#@cmovI_cmpD_zero_one" %}
 
   ins_encode %{
-    __ enc_cmove_cmp_fp_zero_one($cop$$cmpcode,
+    __ enc_cmove_cmp_fp_zero_one($cop$$cmpcode | C2_MacroAssembler::double_branch_mask,
                                 as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
-                                as_Register($dst$$reg), false /* is_single */);
+                                as_Register($dst$$reg));
   %}
 
   ins_pipe(pipe_class_compare);
