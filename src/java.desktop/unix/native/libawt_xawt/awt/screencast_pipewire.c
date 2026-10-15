@@ -360,6 +360,10 @@ static void onStreamProcess(void *userdata) {
                                                       spaData.chunk->stride,
                                                       NULL,
                                                       NULL);
+    if (!pixbuf) {
+        ERR("Cannot create a pixbuf from stream data.\n");
+        goto fail;
+    }
 
     gboolean needsScaling = screen->bounds.width != streamWidth
                             || screen->bounds.height != streamHeight;
@@ -375,6 +379,10 @@ static void onStreamProcess(void *userdata) {
                                                          screen->bounds.height,
                                                          GDK_INTERP_BILINEAR);
 
+        if (!scaled) {
+            ERR("Cannot scale the stream pixbuf.\n");
+            goto fail;
+        }
         gtk->g_object_unref(pixbuf);
         pixbuf = scaled;
     }
@@ -390,17 +398,17 @@ static void onStreamProcess(void *userdata) {
                                       8,
                                       captureArea.width,
                                       captureArea.height);
-        if (cropped) {
-            gtk->gdk_pixbuf_copy_area(pixbuf,
+        if (!cropped) {
+            ERR("Cannot create a new pixbuf.\n");
+            goto fail;
+        }
+        gtk->gdk_pixbuf_copy_area(pixbuf,
                                       captureArea.x,
                                       captureArea.y,
                                       captureArea.width,
                                       captureArea.height,
                                       cropped,
                                       0, 0);
-        } else {
-            ERR("Cannot create a new pixbuf.\n");
-        }
 
         gtk->g_object_unref(pixbuf);
         screen->captureDataPixbuf = cropped;
@@ -412,6 +420,15 @@ static void onStreamProcess(void *userdata) {
     fp_pw_stream_queue_buffer(data->stream, pwBuffer);
 
     fp_pw_thread_loop_signal(pw.loop, FALSE);
+    return;
+
+    fail:
+        if (pixbuf) {
+            gtk->g_object_unref(pixbuf);
+        }
+        fp_pw_stream_queue_buffer(data->stream, pwBuffer);
+        hasPipewireFailed = TRUE;
+        fp_pw_thread_loop_signal(pw.loop, FALSE);
 }
 
 static void onStreamStateChanged(
