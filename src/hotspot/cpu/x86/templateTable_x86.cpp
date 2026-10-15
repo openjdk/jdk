@@ -4197,16 +4197,18 @@ void TemplateTable::monitorexit() {
   // check for null object
   __ null_check(rax);
 
-  const int is_value_type_mask = markWord::value_type_pattern;
-  Label has_identity;
-  __ movptr(rbx, Address(rax, oopDesc::mark_offset_in_bytes()));
-  __ andptr(rbx, is_value_type_mask);
-  __ cmpl(rbx, is_value_type_mask);
-  __ jcc(Assembler::notEqual, has_identity);
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                     InterpreterRuntime::throw_illegal_monitor_state_exception));
-  __ should_not_reach_here();
-  __ bind(has_identity);
+  if (Arguments::is_valhalla_enabled()) {
+    const int is_value_type_mask = markWord::value_type_pattern;
+    Label has_identity;
+    __ movptr(rbx, Address(rax, oopDesc::mark_offset_in_bytes()));
+    __ andptr(rbx, is_value_type_mask);
+    __ cmpl(rbx, is_value_type_mask);
+    __ jcc(Assembler::notEqual, has_identity);
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                       InterpreterRuntime::throw_illegal_monitor_state_exception));
+    __ should_not_reach_here();
+    __ bind(has_identity);
+  }
 
   const Address monitor_block_top(
         rbp, frame::interpreter_frame_monitor_block_top_offset * wordSize);

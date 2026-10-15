@@ -4250,17 +4250,19 @@ void TemplateTable::monitorexit()
   // check for null object
   __ null_check(r0);
 
-  const int is_value_type_mask = markWord::value_type_pattern;
-  Label has_identity;
-  __ ldr(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
-  __ mov(rscratch2, is_value_type_mask);
-  __ andr(rscratch1, rscratch1, rscratch2);
-  __ cmp(rscratch1, rscratch2);
-  __ br(Assembler::NE, has_identity);
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                     InterpreterRuntime::throw_illegal_monitor_state_exception));
-  __ should_not_reach_here();
-  __ bind(has_identity);
+  if (Arguments::is_valhalla_enabled()) {
+    const int is_value_type_mask = markWord::value_type_pattern;
+    Label has_identity;
+    __ ldr(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
+    __ mov(rscratch2, is_value_type_mask);
+    __ andr(rscratch1, rscratch1, rscratch2);
+    __ cmp(rscratch1, rscratch2);
+    __ br(Assembler::NE, has_identity);
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                       InterpreterRuntime::throw_illegal_monitor_state_exception));
+    __ should_not_reach_here();
+    __ bind(has_identity);
+  }
 
   const Address monitor_block_top(
         rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize);

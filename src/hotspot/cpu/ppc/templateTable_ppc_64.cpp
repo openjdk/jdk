@@ -4429,11 +4429,13 @@ void TemplateTable::monitorexit() {
   // Null pointer check.
   __ null_check_throw(Robj_to_lock, -1, Rscratch);
 
-  const int is_value_type_mask = markWord::value_type_pattern;
-  __ ld(Rscratch, oopDesc::mark_offset_in_bytes(), Robj_to_lock);
-  __ andi(Rscratch, Rscratch, is_value_type_mask);
-  __ cmpwi(CR0, Rscratch, is_value_type_mask);
-  __ beq(CR0, Lillegal_monitor_state);
+  if (Arguments::is_valhalla_enabled()) {
+    const int is_value_type_mask = markWord::value_type_pattern;
+    __ ld(Rscratch, oopDesc::mark_offset_in_bytes(), Robj_to_lock);
+    __ andi(Rscratch, Rscratch, is_value_type_mask);
+    __ cmpwi(CR0, Rscratch, is_value_type_mask);
+    __ beq(CR0, Lillegal_monitor_state);
+  }
 
   // Check corner case: unbalanced monitorEnter / Exit.
   __ cmpld(CR0, Rcurrent_monitor, Rbot);
