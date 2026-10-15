@@ -59,10 +59,6 @@ public:
     ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::Work, worker_id, true);
     SuspendibleThreadSetJoiner stsj;
     _cm->mark_loop(worker_id, _terminator, GENERATION, true /*cancellable*/);
-    // Concurrent marking loop flushes Java thread buffers, coordinating with a handshake.
-    // Here, a GC worker has completed marking work, so it is a good time to flush its SATB buffers too.
-    SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
-    satb_mq_set.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(Thread::current()));
   }
 };
 
@@ -216,15 +212,14 @@ void ShenandoahConcurrentMark::concurrent_mark() {
       break;
     }
 
-    size_t before = qset.completed_buffers_num();
     {
       ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_mark_satb_flush, true);
       Handshake::execute(&flush_satb);
+      workers->threads_do(&flush_satb);
     }
-    size_t after = qset.completed_buffers_num();
 
-    if (before == after) {
-      // No more retries needed, break out.
+    if (qset.completed_buffers_num() == 0) {
+      // No complete SATB buffers after the flush, break out.
       break;
     }
   }
