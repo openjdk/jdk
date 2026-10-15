@@ -66,6 +66,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _top_at_evac_start(start),
   _state(committed ? _empty_committed : _empty_uncommitted),
   _top(start),
+  _atomic_top(nullptr),
   _tlab_allocs(0),
   _gclab_allocs(0),
   _plab_allocs(0),
@@ -358,13 +359,19 @@ void ShenandoahHeapRegion::make_committed_bypass() {
 }
 
 void ShenandoahHeapRegion::reset_alloc_metadata() {
+  assert(!is_atomic_alloc_region(), "Must not reset an active alloc region");
   _tlab_allocs = 0;
   _gclab_allocs = 0;
   _plab_allocs = 0;
+  _shared_atomic_allocs.store_relaxed(0);
 }
 
 size_t ShenandoahHeapRegion::get_shared_allocs() const {
-  return used() - (_tlab_allocs + _gclab_allocs + _plab_allocs) * HeapWordSize;
+  // Saturating: lab counters lag top during active CAS allocation, so lab total
+  // can momentarily exceed used(). Clamp to avoid unsigned underflow.
+  size_t lab_allocs = (_tlab_allocs + _gclab_allocs + _plab_allocs) * HeapWordSize;
+  size_t u = used();
+  return u > lab_allocs ? u - lab_allocs : 0;
 }
 
 size_t ShenandoahHeapRegion::get_tlab_allocs() const {
@@ -570,6 +577,7 @@ ShenandoahHeapRegion* ShenandoahHeapRegion::humongous_start_region() const {
 
 void ShenandoahHeapRegion::recycle_internal() {
   assert(_recycling.is_set() && is_trash(), "Wrong state");
+  assert(!is_atomic_alloc_region(), "Must not be atomic alloc region");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   _top_at_evac_start = _bottom;

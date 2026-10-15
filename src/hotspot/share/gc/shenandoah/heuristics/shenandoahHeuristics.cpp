@@ -104,8 +104,8 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
     if (!_space_info->contains(heap->region_affiliation(i))) {
       continue;
     }
-
     ShenandoahHeapRegion* region = heap->get_region(i);
+    assert(!region->is_atomic_alloc_region(), "Must not");
     size_t garbage = region->garbage();
     total_garbage += garbage;
 

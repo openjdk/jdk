@@ -25,42 +25,93 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPARTITIONALLOCATOR_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHPARTITIONALLOCATOR_HPP
 
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/powerOfTwo.hpp"
 
-// ShenandoahPartitionAllocator is the serial (lock-based) partition allocator.
-// It uses ShenandoahFreeSet APIs to find regions and performs allocation within them
-// under the heap lock. Templated on partition ID so that partition-specific behavior
-// (overflow stealing for Collector/OldCollector) is resolved at compile time.
+// Per-partition lock-free allocator. Maintains a stripe of cached "alloc regions"; threads
+// bump-allocate via CAS on their slot's region. When a slot is exhausted the heap-locked
+// slow path replenishes it from the free set.
 template<ShenandoahFreeSetPartitionId PARTITION>
 class ShenandoahPartitionAllocator : public CHeapObj<mtGC> {
+  friend class VMStructs;
+
+public:
+  static constexpr uint32_t MAX_ALLOC_REGIONS = 32;
 
 private:
   ShenandoahFreeSet* const _free_set;
 
-  // Cached allocation region with remaining capacity from the last allocation in
-  // this partition. Checked first on the next request to skip a FreeSet scan.
-  // Cleared when retired by allocate_in or by release_alloc_region.
-  ShenandoahHeapRegion* _alloc_region;
+  // Clamp to [1, MAX_ALLOC_REGIONS] and round down to a power of 2.
+  static uint32_t clamped_alloc_region_count(uint32_t alloc_region_count) {
+    return round_down_power_of_2(MIN2(MAX2(alloc_region_count, 1u), MAX_ALLOC_REGIONS));
+  }
 
-  // Allocate within a single region; the caller must guarantee the region has enough free
-  // capacity for the request. Handles LAB sizing, updates partition accounting via
-  // ShenandoahFreeSet, and retires the region if remaining capacity drops below PLAB::min_size().
-  // boundary_changed is set to true if the region is retired or otherwise mutates the partition
-  // boundary; it is never reset to false.
-  HeapWord* allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req, bool& boundary_changed);
+  uint32_t const _alloc_region_count;       // power-of-two slot count
+  uint32_t const _alloc_region_slot_mask;   // _alloc_region_count - 1
+
+  Atomic<ShenandoahHeapRegion*> _alloc_regions[MAX_ALLOC_REGIONS];
+
+  uint32_t alloc_region_slot(Thread* thread);
+
+  // Scan sibling slots for remaining capacity (last resort before OOM or stealing).
+  template<bool HEAP_LOCKED>
+  HeapWord* try_allocate_in_alloc_regions(ShenandoahAllocRequest& req, bool& in_new_region, uint32_t start_slot, uint32_t count);
+
+  void uninstall_alloc_region(uint32_t slot, ShenandoahHeapRegion* occupant);
+  bool try_install_alloc_region(uint32_t slot, ShenandoahHeapRegion* occupant, ShenandoahHeapRegion* new_region);
+
+  HeapWord* allocate_in(ShenandoahHeapRegion* r,
+                        ShenandoahAllocRequest& req,
+                        bool& retired_after_alloc);
+
+  HeapWord* try_atomic_allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req);
+
+  void release_alloc_region(uint32_t slot);
 
 public:
-  ShenandoahPartitionAllocator(ShenandoahFreeSet* free_set);
+  ShenandoahPartitionAllocator(ShenandoahFreeSet* free_set, uint32_t alloc_region_count);
 
-  // Allocate from this partition. Returns nullptr if partition cannot satisfy the request.
+  uint32_t alloc_region_count() const { return _alloc_region_count; }
+
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 
-  // Drop the cached alloc region. Must be called before the free set is rebuilt,
-  // since rebuild can change region affiliation/membership and invalidate the cache.
-  void release_alloc_region() { _alloc_region = nullptr; }
+  // Must be called before free set rebuild (invalidates cached regions).
+  void release_alloc_regions();
+
+  // Pre-fill empty stripe slots from the partition. Caller must hold heap lock.
+  void reserve_alloc_regions();
+
+  size_t unsafe_max_tlab_alloc(Thread* thread) {
+    uint32_t slot = alloc_region_slot(thread);
+    ShenandoahHeapRegion* r = _alloc_regions[slot].load_relaxed();
+    if (r != nullptr) {
+      size_t free_bytes = r->free_relaxed();
+      if (free_bytes >= MinTLABSize) {
+        return MIN2(free_bytes, ShenandoahHeapRegion::max_tlab_size_bytes());
+      }
+    }
+    return ShenandoahHeapRegion::max_tlab_size_bytes();
+  }
+
+  // Best-effort sum of free bytes across all cached alloc regions (relaxed reads).
+  size_t remnant_bytes() const {
+    const size_t min_free_bytes = ShenandoahHeap::plab_min_size() * HeapWordSize;
+    size_t total = 0;
+    for (uint32_t i = 0; i < _alloc_region_count; i++) {
+      ShenandoahHeapRegion* r = _alloc_regions[i].load_relaxed();
+      if (r != nullptr) {
+        size_t free_bytes = r->free_relaxed();
+        if (free_bytes >= min_free_bytes) {
+          total += free_bytes;
+        }
+      }
+    }
+    return total;
+  }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHPARTITIONALLOCATOR_HPP
