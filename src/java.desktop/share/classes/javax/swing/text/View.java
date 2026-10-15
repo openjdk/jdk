@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -518,8 +518,11 @@ public abstract class View implements SwingConstants {
                     getStartOffset();
                 break;
             }
-            JTextComponent target = (JTextComponent) getContainer();
-            Caret c = (target != null) ? target.getCaret() : null;
+            Container container = getContainer();
+            if (!(container instanceof JTextComponent target)) {
+                return -1;
+            }
+            Caret c = target.getCaret();
             // YECK! Ideally, the x location from the magic caret position
             // would be passed in.
             Point mcp;

@@ -24,12 +24,12 @@
 
 #include "cds/aotLogging.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -752,20 +752,20 @@ void Modules::init_archived_modules(JavaThread* current, Handle h_platform_loade
 
   if (CDSConfig::is_using_aot_linked_classes()) {
     ClassLoaderData* boot_loader_data = ClassLoaderData::the_null_class_loader_data();
-    ClassLoaderDataShared::archived_boot_unnamed_module()->restore_archived_oops(boot_loader_data);
+    AOTModules::archived_boot_unnamed_module()->restore_archived_oops(boot_loader_data);
   }
 
-  Handle java_base_module(current, ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data());
+  Handle java_base_module(current, AOTModules::restore_archived_oops_for_null_class_loader_data());
   if (!CDSConfig::is_using_aot_linked_classes()) {
     // Patch any previously loaded class's module field with java.base's java.lang.Module.
     ModuleEntryTable::patch_javabase_entries(current, java_base_module);
   }
 
-  ClassLoaderDataShared::load_archived_platform_and_system_class_loaders();
+  AOTModules::load_archived_platform_and_system_class_loaders();
 
   ClassLoaderData* platform_loader_data = SystemDictionary::register_loader(h_platform_loader);
   SystemDictionary::set_platform_loader(platform_loader_data);
-  ClassLoaderDataShared::restore_java_platform_loader_from_archive(platform_loader_data);
+  AOTModules::restore_java_platform_loader_from_archive(platform_loader_data);
 
   ClassLoaderData* system_loader_data = SystemDictionary::register_loader(h_system_loader);
   SystemDictionary::set_system_loader(system_loader_data);
@@ -774,7 +774,7 @@ void Modules::init_archived_modules(JavaThread* current, Handle h_platform_loade
   // be an instance of a user-defined class, so make sure this never happens.
   assert(Arguments::get_property("java.system.class.loader") == nullptr,
            "archived full module should have been disabled if -Djava.system.class.loader is specified");
-  ClassLoaderDataShared::restore_java_system_loader_from_archive(system_loader_data);
+  AOTModules::restore_java_system_loader_from_archive(system_loader_data);
 }
 
 void Modules::check_cds_restrictions(TRAPS) {
@@ -819,7 +819,7 @@ void Modules::set_bootloader_unnamed_module(Handle module, TRAPS) {
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_using_full_module_graph()) {
-    precond(unnamed_module == ClassLoaderDataShared::archived_boot_unnamed_module());
+    precond(unnamed_module == AOTModules::archived_boot_unnamed_module());
     if (!CDSConfig::is_using_aot_linked_classes()) {
       unnamed_module->restore_archived_oops(boot_loader_data);
     }

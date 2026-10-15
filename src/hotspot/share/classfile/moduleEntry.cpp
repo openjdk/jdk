@@ -23,13 +23,13 @@
  */
 
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -319,7 +319,7 @@ ModuleEntry* ModuleEntry::create_unnamed_module(ClassLoaderData* cld) {
   oop module = java_lang_ClassLoader::unnamedModule(cld->class_loader());
 
 #if INCLUDE_CDS_JAVA_HEAP
-  ModuleEntry* archived_unnamed_module = ClassLoaderDataShared::archived_unnamed_module(cld);
+  ModuleEntry* archived_unnamed_module = AOTModules::archived_unnamed_module(cld);
   if (archived_unnamed_module != nullptr) {
     archived_unnamed_module->load_from_archive(cld);
     archived_unnamed_module->restore_archived_oops(cld);
@@ -344,7 +344,7 @@ ModuleEntry* ModuleEntry::create_unnamed_module(ClassLoaderData* cld) {
 
 ModuleEntry* ModuleEntry::create_boot_unnamed_module(ClassLoaderData* cld) {
 #if INCLUDE_CDS_JAVA_HEAP
-  ModuleEntry* archived_unnamed_module = ClassLoaderDataShared::archived_boot_unnamed_module();
+  ModuleEntry* archived_unnamed_module = AOTModules::archived_boot_unnamed_module();
   if (archived_unnamed_module != nullptr) {
     archived_unnamed_module->load_from_archive(cld);
     // It's too early to call archived_unnamed_module->restore_archived_oops(cld).
@@ -443,7 +443,7 @@ void ModuleEntry::remove_unshareable_info() {
 }
 
 void ModuleEntry::load_from_archive(ClassLoaderData* loader_data) {
-  assert(CDSConfig::is_using_archive(), "runtime only");
+  assert(CDSConfig::is_using_full_module_graph(), "runtime only");
   set_loader_data(loader_data);
   JFR_ONLY(INIT_ID(this);)
 }
@@ -453,7 +453,7 @@ void ModuleEntry::preload_archived_oops() {
 }
 
 void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
-  assert(CDSConfig::is_using_archive(), "runtime only");
+  assert(CDSConfig::is_using_full_module_graph(), "runtime only");
   Handle module_handle(Thread::current(), HeapShared::get_root(_archived_module_index, /*clear=*/true));
   assert(module_handle.not_null(), "huh");
   set_module_handle(loader_data->add_handle(module_handle));
@@ -474,7 +474,7 @@ void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
 }
 
 void ModuleEntry::clear_archived_oops() {
-  assert(CDSConfig::is_using_archive(), "runtime only");
+  assert(CDSConfig::is_using_archive() && !CDSConfig::is_using_full_module_graph(), "runtime only");
   HeapShared::clear_root(_archived_module_index);
 }
 
@@ -509,7 +509,7 @@ Array<ModuleEntry*>* ModuleEntryTable::build_aot_table(ClassLoaderData* loader_d
 
 void ModuleEntryTable::load_archived_entries(ClassLoaderData* loader_data,
                                              Array<ModuleEntry*>* archived_modules) {
-  assert(CDSConfig::is_using_archive(), "runtime only");
+  assert(CDSConfig::is_using_full_module_graph(), "runtime only");
 
   for (int i = 0; i < archived_modules->length(); i++) {
     ModuleEntry* archived_entry = archived_modules->at(i);
@@ -519,7 +519,7 @@ void ModuleEntryTable::load_archived_entries(ClassLoaderData* loader_data,
 }
 
 void ModuleEntryTable::restore_archived_oops(ClassLoaderData* loader_data, Array<ModuleEntry*>* archived_modules) {
-  assert(CDSConfig::is_using_archive(), "runtime only");
+  assert(CDSConfig::is_using_full_module_graph(), "runtime only");
   for (int i = 0; i < archived_modules->length(); i++) {
     ModuleEntry* archived_entry = archived_modules->at(i);
     archived_entry->restore_archived_oops(loader_data);

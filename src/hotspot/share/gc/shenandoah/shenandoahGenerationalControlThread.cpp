@@ -239,10 +239,9 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
   log_debug(gc, thread)("Starting GC (%s): %s, %s", gc_mode_name(gc_mode()), GCCause::to_string(request.cause), request.generation->name());
   assert(gc_mode() != none, "GC mode cannot be none here");
 
-  // Blow away all soft references on this cycle, if handling allocation failure,
-  // either implicit or explicit GC request, or we are requested to do so unconditionally.
   if (GCCause::should_clear_all_soft_refs(request.cause) || (request.generation->is_global() &&
       (ShenandoahCollectorPolicy::is_allocation_failure(request.cause) || ShenandoahCollectorPolicy::is_explicit_gc(request.cause) || ShenandoahAlwaysClearSoftRefs))) {
+    // Blow away all soft references on this cycle
     request.generation->ref_processor()->set_soft_reference_policy(true);
   }
 
@@ -349,13 +348,10 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     gc_mode_name(gc_mode()), GCCause::to_string(request.cause), request.generation->name(), GCCause::to_string(_heap->cancelled_cause()));
 }
 
-// Young and old concurrent cycles are initiated by the regulator. Implicit
-// and explicit GC requests are handled by the controller thread and always
-// run a global cycle (which is concurrent by default, but may be overridden
-// by command line options). Old cycles always degenerate to a global cycle.
-// Young cycles are degenerated to complete the young cycle.  Young
-// and old degen may upgrade to Full GC.  Full GC may also be
-// triggered directly by a System.gc() invocation.
+// Young and old concurrent cycles are initiated by the regulator. GC requests are handled by the controller thread and
+// always run a global cycle (which is concurrent by default, but may be overridden by command line options). Old cycles
+// always degenerate to a global cycle. Young cycles are degenerated to complete the young cycle.  Young and old degen
+// may upgrade to Full GC.  Full GC may also be triggered directly by a System.gc() invocation.
 //
 //
 //      +-----+ Idle +-----+-----------+---------------------+
@@ -787,8 +783,9 @@ void ShenandoahGenerationalControlThread::set_gc_mode(GCMode new_mode) {
 
 void ShenandoahGenerationalControlThread::set_gc_mode(MonitorLocker& ml, GCMode new_mode) {
   if (_gc_mode != new_mode) {
-    log_debug(gc, thread)("Transition from: %s to: %s", gc_mode_name(_gc_mode), gc_mode_name(new_mode));
-    EventMark event("Control thread transition from: %s, to %s", gc_mode_name(_gc_mode), gc_mode_name(new_mode));
+    FormatBuffer<> msg("Transition from: %s to: %s", gc_mode_name(_gc_mode), gc_mode_name(new_mode));
+    log_debug(gc, thread)("%s", msg.buffer());
+    Events::log(this, "%s", msg.buffer());
     _gc_mode = new_mode;
     ml.notify_all();
   }

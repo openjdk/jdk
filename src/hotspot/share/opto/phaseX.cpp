@@ -1225,6 +1225,14 @@ void PhaseIterGVN::optimize(bool deep) {
   C->print_method(PHASE_AFTER_ITER_GVN, 3);
 }
 
+static bool klass_bottom_type_invalidated(const Node* n, const Type* new_type) {
+  // Concurrent class loading can invalidate a klass bottom type.
+  const Type* bt = n->bottom_type();
+  return (bt->isa_klassptr() != nullptr ||
+          bt->isa_narrowklass() != nullptr) &&
+         !new_type->higher_equal_speculative(bt);
+}
+
 #ifdef ASSERT
 void PhaseIterGVN::verify_optimize(bool deep_revisit_converged) {
   assert(_worklist.size() == 0, "igvn worklist must be empty before verify");
@@ -1244,7 +1252,12 @@ void PhaseIterGVN::verify_optimize(bool deep_revisit_converged) {
       // in PhaseIterGVN::add_users_to_worklist to update it again or add an exception
       // in the verification methods below if that is not possible for some reason (like Load nodes).
       if (is_verify_Value()) {
-        verify_Value_for(n, deep_revisit_converged /* strict */);
+        const Type* tnew = n->Value(this);
+        if (klass_bottom_type_invalidated(n, tnew)) {
+          C->record_failure("concurrent class loading");
+          return;
+        }
+        verify_Value_for(n, tnew, deep_revisit_converged /* strict */);
       }
       if (is_verify_Ideal()) {
         verify_Ideal_for(n, false /* can_reshape */, deep_revisit_converged);
@@ -1296,11 +1309,10 @@ void PhaseIterGVN::verify_empty_worklist(Node* node) {
 // (1) Integer "widen" changes, but the range is the same.
 // (2) LoadNode performs deep traversals. Load is not notified for changes far away.
 // (3) CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
-void PhaseIterGVN::verify_Value_for(const Node* n, bool strict) {
+void PhaseIterGVN::verify_Value_for(const Node* n, const Type* tnew, bool strict) {
   // If we assert inside type(n), because the type is still a null, then maybe
   // the node never went through gvn.transform, which would be a bug.
   const Type* told = type(n);
-  const Type* tnew = n->Value(this);
   if (told == tnew) {
     return;
   }
@@ -2337,42 +2349,47 @@ void PhaseIterGVN::remove_globally_dead_node(Node* dead, NodeOrigin origin) {
         }
         bool recurse = false;
         // Remove from hash table
-        _table.hash_delete( dead );
+        _table.hash_delete(dead);
         // Smash all inputs to 'dead', isolating him completely
         for (uint i = 0; i < dead->req(); i++) {
-          Node *in = dead->in(i);
-          if (in != nullptr && in != C->top()) {  // Points to something?
-            int nrep = dead->replace_edge(in, nullptr, this);  // Kill edges
-            assert((nrep > 0), "sanity");
-            if (in->outcnt() == 0) { // Made input go dead?
-              stack.push(in, PROCESS_INPUTS); // Recursively remove
-              recurse = true;
-            } else if (in->outcnt() == 1 && in->has_special_unique_user()) {
-              add_users_to_worklist(in);
-            } else if (in->outcnt() <= 2 && dead->is_Phi()) {
-              if (in->Opcode() == Op_Region) {
-                _worklist.push(in);
-              } else if (in->is_Store()) {
-                DUIterator_Fast imax, i = in->fast_outs(imax);
+          Node* in = dead->in(i);
+          if (in == nullptr) {
+            continue;
+          }
+          int nrep = dead->replace_edge(in, nullptr, this); // Kill edges
+          assert((nrep > 0), "sanity");
+          if (in == C->top()) {
+            continue;
+          }
+          if (in->outcnt() == 0) {
+            // Made input go dead?
+            stack.push(in, PROCESS_INPUTS); // Recursively remove
+            recurse = true;
+          } else if (in->outcnt() == 1 && in->has_special_unique_user()) {
+            add_users_to_worklist(in);
+          } else if (in->outcnt() <= 2 && dead->is_Phi()) {
+            if (in->Opcode() == Op_Region) {
+              _worklist.push(in);
+            } else if (in->is_Store()) {
+              DUIterator_Fast imax, i = in->fast_outs(imax);
+              _worklist.push(in->fast_out(i));
+              i++;
+              if (in->outcnt() == 2) {
                 _worklist.push(in->fast_out(i));
                 i++;
-                if (in->outcnt() == 2) {
-                  _worklist.push(in->fast_out(i));
-                  i++;
-                }
-                assert(!(i < imax), "sanity");
               }
-            } else if (in->should_process_when_disconnect_output(dead)) {
-              _worklist.push(in);
+              assert(!(i < imax), "sanity");
             }
-            if (ReduceFieldZeroing && dead->is_Load() && i == MemNode::Memory &&
-                in->is_Proj() && in->in(0) != nullptr && in->in(0)->is_Initialize()) {
-              // A Load that directly follows an InitializeNode is
-              // going away. The Stores that follow are candidates
-              // again to be captured by the InitializeNode.
-              add_users_to_worklist_if(_worklist, in, [](Node* n) { return n->is_Store(); });
-            }
-          } // if (in != nullptr && in != C->top())
+          } else if (in->should_process_when_disconnect_output(dead)) {
+            _worklist.push(in);
+          }
+          if (ReduceFieldZeroing && dead->is_Load() && i == MemNode::Memory &&
+              in->is_Proj() && in->in(0) != nullptr && in->in(0)->is_Initialize()) {
+            // A Load that directly follows an InitializeNode is
+            // going away. The Stores that follow are candidates
+            // again to be captured by the InitializeNode.
+            add_users_to_worklist_if(_worklist, in, [](Node* n) { return n->is_Store(); });
+          }
         } // for (uint i = 0; i < dead->req(); i++)
         if (recurse) {
           continue;
@@ -2738,6 +2755,13 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
              u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
     });
   }
+  // If changed AndL inputs, check ConvL2I users for
+  // "ConvL2I(AndL(x, 0xFFFFFFFF))" => "ConvL2I(x)" optimization in ConvL2INode::Ideal.
+  if (use_op == Op_AndL) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_ConvL2I;
+    });
+  }
   // Check for redundant conversion patterns:
   // ConvD2L->ConvL2D->ConvD2L
   // ConvF2I->ConvI2F->ConvF2I
@@ -3058,7 +3082,9 @@ void PhaseCCP::analyze() {
       // not reachable from the bottom. Otherwise, infinite loops would be removed.
       _root_and_safepoints.push(n);
     }
-    analyze_step(worklist, n);
+    if (!analyze_step(worklist, n)) {
+      return;
+    }
   }
 
   // More rounds to catch updates far in the graph.
@@ -3067,19 +3093,27 @@ void PhaseCCP::analyze() {
   do {
     while (worklist.size() != 0) {
       Node* n = fetch_next_node(worklist);
-      analyze_step(worklist, n);
+      if (!analyze_step(worklist, n)) {
+        return;
+      }
     }
     for (uint t = 0; t < worklist_revisit.size(); t++) {
       Node* n = worklist_revisit.at(t);
-      analyze_step(worklist, n);
+      if (!analyze_step(worklist, n)) {
+        return;
+      }
     }
   } while (worklist.size() != 0);
 
   DEBUG_ONLY(verify_analyze(worklist_verify);)
 }
 
-void PhaseCCP::analyze_step(Unique_Node_List& worklist, Node* n) {
+bool PhaseCCP::analyze_step(Unique_Node_List& worklist, Node* n) {
   const Type* new_type = n->Value(this);
+  if (klass_bottom_type_invalidated(n, new_type)) {
+    C->record_failure("concurrent class loading");
+    return false;
+  }
   if (new_type != type(n)) {
     DEBUG_ONLY(verify_type(n, new_type, type(n));)
     dump_type_and_node(n, new_type);
@@ -3091,6 +3125,7 @@ void PhaseCCP::analyze_step(Unique_Node_List& worklist, Node* n) {
     // nodes that become dead.
     _maybe_top_type_nodes.push(n);
   }
+  return true;
 }
 
 // Some nodes can refine their types due to type change somewhere deep
@@ -3124,7 +3159,12 @@ void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
     // in PhaseCCP::push_child_nodes_to_worklist() to update their type in the same round,
     // or that they are added in PhaseCCP::needs_revisit() so that analysis revisits
     // them at the end of the round.
-    verify_Value_for(n, true);
+    const Type* tnew = n->Value(this);
+    if (klass_bottom_type_invalidated(n, tnew)) {
+      C->record_failure("concurrent class loading");
+      return;
+    }
+    verify_Value_for(n, tnew, true);
   }
 }
 #endif

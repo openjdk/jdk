@@ -66,7 +66,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/recordComponent.hpp"
 #include "oops/refArrayOop.inline.hpp"
 #include "oops/valueKlass.inline.hpp"
@@ -805,7 +804,6 @@ JVM_ENTRY(jint, JVM_IHashCode(JNIEnv* env, jobject handle))
     Handle ho(THREAD, obj);
     args.push_oop(ho);
     methodHandle method(THREAD, Universe::value_object_hash_code_method());
-    method->method_holder()->initialize(CHECK_0); // Ensure class ValueObjectMethods is initialized
     JavaCalls::call(&result, method, &args, THREAD);
     Exceptions::wrap_exception_in_internal_error("Internal error in hashCode", CHECK_0);
 
