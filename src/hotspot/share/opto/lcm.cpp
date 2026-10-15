@@ -333,7 +333,14 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
         continue;
       }
     } else {
-      // A load can be moved from any block dominated by the non-null successor.
+      // A load can be used here only if its block is dominated by the
+      // non-null successor. Check this explicitly because a candidate load
+      // may have been scheduled on the null path instead.
+      // For example, in JDK-8389578, loop opts did not recognize equivalent
+      // oop and value-type null_marker checks, leaving a redundant check.
+      // The load was protected by earlier null checks, but its only use
+      // was in the scalarized debug info of the redundant check's uncommon
+      // trap. This allowed the load to be scheduled on that check's null path.
       if (!not_null_block->dominates(cb)) {
         continue;
       }
