@@ -218,7 +218,7 @@ public:
 
 // WhiteBox testing support.
   bool supports_concurrent_gc_breakpoints() const override {
-    return true;
+    return mode()->is_concurrent();
   }
 
 // ---------- Heap counters and metrics
@@ -873,13 +873,6 @@ public:
   static inline void atomic_clear_oop(narrowOop* addr, narrowOop compare);
 
   size_t trash_humongous_region_at(ShenandoahHeapRegion *r) const;
-
-  static inline void increase_object_age(oop obj, uint additional_age);
-
-  // Return the object's age, or a sentinel value when the age can't
-  // necessarily be determined because of concurrent locking by the
-  // mutator
-  static inline uint get_object_age(oop obj);
 
   void log_heap_status(const char *msg) const;
 
