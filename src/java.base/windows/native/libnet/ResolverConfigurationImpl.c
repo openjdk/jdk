@@ -36,10 +36,6 @@
 #define BUFF_SIZE           15360
 #define MAX_TRIES           3
 
-#define STS_SL_FOUND        0x1             /* search list found */
-#define STS_NS_FOUND        0x2             /* name servers found */
-#define STS_ERROR           -1              /* error return  lodConfig failed memory allccation failure*/
-
 /* JNI ids */
 static jfieldID searchlistID;
 static jfieldID nameserversID;
