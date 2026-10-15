@@ -7442,6 +7442,7 @@ void MacroAssembler::fast_unlock(Register obj, Register tmp1, Register tmp2, Reg
   bind(unlocked);
 }
 
+#ifdef COMPILER2
 // Vectorized mismatch using RVV instructions.
 // result contains element index of first mismatch (>= 0), or -1 if all match.
 void MacroAssembler::vectorized_mismatch(Register obja, Register objb,
@@ -7453,6 +7454,7 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb,
   Label CONVERT_RESULT;
 
   assert_different_registers(obja, objb, length, log2_array_indxscale, result, tmp1, tmp2);
+  assert(MaxVectorSize == 16 || MaxVectorSize == 32, "sanity");
   VectorRegister vreg0 = v0;
   VectorRegister vreg1 = v4;
   VectorRegister vreg2 = v8;
@@ -7571,3 +7573,4 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb,
 
   bind(DONE);
 }
+#endif // COMPILER2

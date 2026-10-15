@@ -520,13 +520,13 @@ void VM_Version::c2_initialize() {
     }
   }
 
-  if (UseRVV && UseZbb
-      && (MaxVectorSize == 16 || MaxVectorSize == 32)) {
-    if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
-      FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, true);
-    }
-  } else if (UseVectorizedMismatchIntrinsic) {
-    warning("VectorizedMismatch intrinsic requires RVV and Zbb (not available on this CPU).");
+  bool supported = UseRVV && UseZbb &&
+                   (MaxVectorSize == 16 || MaxVectorSize == 32);
+  if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, supported);
+  } else if (!supported && UseVectorizedMismatchIntrinsic) {
+    warning("VectorizedMismatch intrinsic not available (requires RVV, Zbb "
+            "and MaxVectorSize 16 or 32 on this CPU).");
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 }
