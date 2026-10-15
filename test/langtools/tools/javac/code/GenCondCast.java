@@ -609,6 +609,12 @@ public class GenCondCast {
         return 0;
     }
 
+    static int testCastChainObject_anno(boolean b) {
+        int result;
+        if ((@Ann Boolean) (@Ann Object) (@Ann Boolean) (b && (result = 1) > 0)) return result;
+        return 0;
+    }
+
     static int annotated(boolean b) {
         {
             int result;
@@ -663,6 +669,7 @@ public class GenCondCast {
         doTest(GenCondCast::testLarge_anno);
         doTest(GenCondCast::testRedundant1_anno);
         doTest(GenCondCast::testRedundant2_anno);
+        doTest(GenCondCast::testCastChainObject_anno);
 
         byte[] classBytes = GenCondCast.class.getClassLoader().getResourceAsStream(GenCondCast.class.getName().replace('.', '/') + ".class").readAllBytes();
         ClassModel model = ClassFile.of().parse(classBytes);
@@ -717,6 +724,20 @@ public class GenCondCast {
                 "CAST:0:47, [], Annotation[LGenCondCast$Ann;]",
                 "CAST:0:43, [], Annotation[LGenCondCast$Ann;]",
                 "CAST:0:25, [], Annotation[LGenCondCast$Ann;]"
+            );
+
+            if (!Objects.equals(expectedTAs, actualTAs)) {
+                throw new AssertionError("expected: " + expectedTAs + ", got: " + actualTAs);
+            }
+        }
+        {
+            MethodModel testCastChainObject_anno = model.methods().stream().filter(m -> m.methodName().equalsString("testCastChainObject_anno")).findAny().orElseThrow();
+            RuntimeInvisibleTypeAnnotationsAttribute typeAnnotations = testCastChainObject_anno.code().orElseThrow().findAttribute(Attributes.runtimeInvisibleTypeAnnotations()).orElseThrow();
+            List<String> actualTAs = typeAnnotations.annotations().stream().map(ta -> toString(ta.targetInfo())  + ", " + ta.targetPath() + ", " + ta.annotation()).toList();
+            List<String> expectedTAs = List.of(
+                "CAST:0:28, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:28, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:28, [], Annotation[LGenCondCast$Ann;]"
             );
 
             if (!Objects.equals(expectedTAs, actualTAs)) {

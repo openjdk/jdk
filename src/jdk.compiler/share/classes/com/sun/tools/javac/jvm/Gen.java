@@ -838,8 +838,7 @@ public class Gen extends JCTree.Visitor {
     }
         //where:
         JCTree skipCasts(JCTree source) {
-            if (TreeInfo.skipParens(source) instanceof JCTypeCast tc &&
-                tc.type.tsym == types.boxedClass(syms.booleanType)) {
+            if (TreeInfo.skipParens(source) instanceof JCTypeCast tc) {
                 return skipCasts(tc.expr);
             } else {
                 return source;
