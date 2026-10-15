@@ -350,7 +350,6 @@ static void onStreamProcess(void *userdata) {
     );
 
     GdkRectangle captureArea = screen->captureArea;
-    GdkRectangle screenBounds = screen->bounds;
 
     GdkPixbuf *pixbuf = gtk->gdk_pixbuf_new_from_data(spaData.data,
                                                       GDK_COLORSPACE_RGB,
@@ -362,8 +361,9 @@ static void onStreamProcess(void *userdata) {
                                                       NULL,
                                                       NULL);
 
-    if (screen->bounds.width != streamWidth
-        || screen->bounds.height != streamHeight) {
+    gboolean needsScaling = screen->bounds.width != streamWidth
+                            || screen->bounds.height != streamHeight;
+    if (needsScaling) {
 
         DEBUG_SCREEN_PREFIX(screen, "scaling stream data %dx%d -> %dx%d\n",
                          streamWidth, streamHeight,
@@ -379,11 +379,13 @@ static void onStreamProcess(void *userdata) {
         pixbuf = scaled;
     }
 
-    GdkPixbuf *cropped = NULL;
-    if (captureArea.width != screenBounds.width
-        || captureArea.height != screenBounds.height) {
-
-        cropped = gtk->gdk_pixbuf_new(GDK_COLORSPACE_RGB,
+    if (needsScaling
+        && captureArea.x == 0 && captureArea.y == 0
+        && captureArea.width == screen->bounds.width
+        && captureArea.height == screen->bounds.height) {
+        screen->captureDataPixbuf = pixbuf;
+    } else {
+        GdkPixbuf *cropped = gtk->gdk_pixbuf_new(GDK_COLORSPACE_RGB,
                                       TRUE,
                                       8,
                                       captureArea.width,
@@ -401,11 +403,7 @@ static void onStreamProcess(void *userdata) {
         }
 
         gtk->g_object_unref(pixbuf);
-        pixbuf = NULL;
-
-        data->screenProps->captureDataPixbuf = cropped;
-    } else {
-        data->screenProps->captureDataPixbuf = pixbuf;
+        screen->captureDataPixbuf = cropped;
     }
 
     screen->captureDataReady = TRUE;
