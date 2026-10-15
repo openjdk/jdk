@@ -45,7 +45,10 @@ public class TestJhsdbJstackPrintVMLocks {
     final static int MAX_ATTEMPTS = 5;
     public static void main(String[] args) throws Exception {
         if (Platform.isMusl()) {
-            throw new SkippedException("This test does not work on musl libc.");
+            var libc = SATestUtils.getLibCPath();
+            if (SATestUtils.getDebugInfo(libc) == null) {
+                throw new SkippedException("libc debug info is not available.");
+            }
         }
 
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
