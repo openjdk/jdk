@@ -2372,9 +2372,9 @@ encode %{
     } else {
       relocInfo::relocType rtype = $src->constant_reloc();
       if (rtype == relocInfo::oop_type) {
-        __ movoop(dst_reg, (jobject)con, t0);
+        __ movoop(dst_reg, (jobject)con);
       } else if (rtype == relocInfo::metadata_type) {
-        __ mov_metadata(dst_reg, (Metadata*)con, t0);
+        __ mov_metadata(dst_reg, (Metadata*)con);
       } else {
         assert(rtype == relocInfo::none || rtype == relocInfo::external_word_type, "unexpected reloc type");
         // Load fake address constants as a plain immediate. They are not real
