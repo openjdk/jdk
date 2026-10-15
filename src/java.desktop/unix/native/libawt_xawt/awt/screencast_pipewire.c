@@ -76,6 +76,7 @@ int (*fp_pw_core_disconnect)(struct pw_core *core);
 struct pw_context * (*fp_pw_context_new)(struct pw_loop *main_loop,
                                    struct pw_properties *props,
                                    size_t user_data_size);
+void (*fp_pw_context_destroy)(struct pw_context *context);
 
 struct pw_thread_loop *
 (*fp_pw_thread_loop_new)(const char *name, const struct spa_dict *props);
@@ -191,6 +192,11 @@ static void doCleanup() {
     if (pw.core) {
         fp_pw_core_disconnect(pw.core);
         pw.core = NULL;
+    }
+
+    if (pw.context) {
+        fp_pw_context_destroy(pw.context);
+        pw.context = NULL;
     }
 
     if (pw.loop) {
@@ -819,6 +825,7 @@ static gboolean loadSymbols() {
     LOAD_SYMBOL(fp_pw_context_connect_fd, "pw_context_connect_fd");
     LOAD_SYMBOL(fp_pw_core_disconnect, "pw_core_disconnect");
     LOAD_SYMBOL(fp_pw_context_new, "pw_context_new");
+    LOAD_SYMBOL(fp_pw_context_destroy, "pw_context_destroy");
     LOAD_SYMBOL(fp_pw_thread_loop_new, "pw_thread_loop_new");
     LOAD_SYMBOL(fp_pw_thread_loop_get_loop, "pw_thread_loop_get_loop");
     LOAD_SYMBOL(fp_pw_thread_loop_signal, "pw_thread_loop_signal");
