@@ -197,6 +197,23 @@ public:
     return (features & BIT_MASK(flag)) != 0;
   }
 
+  // Is features_set1 a super set of features_set2?
+  static bool is_super_set(uint64_t features_set1, uint64_t features_set2) {
+    if ((features_set1 | features_set2) == features_set1) {
+      return true;
+    }
+    return false;
+  }
+
+  // Returns features present in features_set1 but not in features_set2
+  static uint64_t features_not_in(uint64_t features_set1, uint64_t features_set2) {
+    return features_set1 & (~features_set2);
+  }
+
+  static uint64_t clear_features(uint64_t features_set, uint64_t features_to_clear) {
+    return features_set & (~features_to_clear);
+  }
+
   static bool cpu_supports_aes()      { return supports_feature(_cpu_features, CPU_AES); }
 
   static int cpu_family()                     { return _cpu; }

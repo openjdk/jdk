@@ -819,21 +819,20 @@ bool AOTCodeCache::Header::verify_c2_state() const {
 
 bool AOTCodeCache::Header::verify_cpu_features(AOTCodeCache* cache) const {
   LogStreamHandle(Debug, aot, codecache, init) log;
-  if (_cpu_features_size != (uint)VM_Version::cpu_features_size()) {
+  int cpu_features_size;
+  void* cached_cpu_features_buffer = AOTCacheAccess::archived_cpu_features(cpu_features_size);
+  if (cpu_features_size != VM_Version::cpu_features_size()) {
     if (load_failure_log().is_enabled()) {
       ResourceMark rm;
       load_failure_log().print_cr("AOT Code Cache disabled: different cpu features size %d vs current %d",
-                                  _cpu_features_size, (uint)VM_Version::cpu_features_size());
+                                  cpu_features_size, (uint)VM_Version::cpu_features_size());
     }
     // Assert in debug VM
     assert(false, "different cpu features size %d vs current %d",
-           _cpu_features_size, (uint)VM_Version::cpu_features_size());
+           cpu_features_size, (uint)VM_Version::cpu_features_size());
     return false;
   }
 
-  uint offset = _cpu_features_offset;
-  assert(is_aligned(offset, DATA_ALIGNMENT), "should be");
-  void* cached_cpu_features_buffer = (void *)cache->addr(offset);
   if (log.is_enabled()) {
     ResourceMark rm; // required for stringStream::as_string()
     stringStream ss;
@@ -968,7 +967,6 @@ bool AOTCodeCache::Config::verify() const {
 // Layout of AOT code cache
 //
 // Header
-// CPU features data
 // AOT preload code entries 'AOTCodeEntry preload_entries[preload_entries_count]' array
 // AOT preload code
 // AOT entries for adapters, stubs, code 'AOTCodeEntry load_entries[entries_count]' array
@@ -1022,24 +1020,12 @@ bool AOTCodeCache::Header::verify(uint load_size) const {
     return false;
   }
 
-  // Check CPU features data
-  uint cpu_offset = cpu_features_offset();
-  uint cpu_size   = cpu_features_size();
-  size_t head_end = align_up(sizeof(Header), DATA_ALIGNMENT);
-  if ((size_t)cpu_offset != head_end) {
-    load_failure_log().print_cr("AOT Code Cache disabled: CPU features offset %u is invalid", cpu_offset);
-    return 0;
-  }
-  size_t cpu_end  = verify_section(cpu_offset, cpu_size, sizeof(char), head_end, "CPU features");
-  if (cpu_end == 0) {
-    return false;
-  }
-
   // Check preload entries
   uint preload_offset = preload_entries_offset();
   uint preload_count  = preload_entries_count();
   size_t entry_size   = sizeof(AOTCodeEntry);
-  size_t preload_end  = verify_section(preload_offset, preload_count, entry_size, cpu_end, "preload entries");
+  size_t head_end = align_up(sizeof(Header), DATA_ALIGNMENT);
+  size_t preload_end  = verify_section(preload_offset, preload_count, entry_size, head_end, "preload entries");
   if (preload_end == 0) {
     return false;
   }
@@ -1724,15 +1710,6 @@ static int preload_cmp(const void *i, const void *j) {
   return a > b ? 1 : a < b ? -1 : 0;
 }
 
-char* AOTCodeCache::store_cpu_features(char* buffer, uint buffer_size) {
-  // Align to 8 bytes - see Aarch64 version of get_cpu_features_name()
-  precond(is_aligned(buffer, DATA_ALIGNMENT));
-  VM_Version::store_cpu_features(buffer);
-  log_debug(aot, codecache, exit)("CPU features recorded in AOTCodeCache: %s", VM_Version::features_string());
-  buffer += buffer_size;
-  return align_up(buffer, DATA_ALIGNMENT);
-}
-
 bool AOTCodeCache::finish_write() {
   if (!align_write()) {
     return false;
@@ -1764,9 +1741,7 @@ bool AOTCodeCache::finish_write() {
     uint entries_size = (uint)align_up(code_count * sizeof(AOTCodeEntry), DATA_ALIGNMENT); // In bytes
     // _write_position should include code and strings
     uint code_alignment = code_count * DATA_ALIGNMENT; // We align_up code size when storing it.
-    uint cpu_features_size = VM_Version::cpu_features_size();
-    uint total_size = header_size + _write_position + code_alignment + search_size + entries_size +
-                      align_up(cpu_features_size, DATA_ALIGNMENT);
+    uint total_size = header_size + _write_position + code_alignment + search_size + entries_size;
     assert(total_size < max_aot_code_size(), "AOT Code size (" UINT32_FORMAT " bytes) is greater than AOTCodeMaxSize(" UINT32_FORMAT " bytes).", total_size, max_aot_code_size());
 
     // Allocate in AOT Cache buffer
@@ -1774,12 +1749,6 @@ bool AOTCodeCache::finish_write() {
     assert(buffer != nullptr, "CDS should already throw OOM error");
     char* start = align_up(buffer, DATA_ALIGNMENT);
     char* current = start + header_size; // Skip header
-
-    current = align_up(current, DATA_ALIGNMENT);
-    uint cpu_features_offset = current - start;
-    current = store_cpu_features(current, cpu_features_size);
-    assert(is_aligned(current, DATA_ALIGNMENT), "sanity check");
-    assert(current < start + total_size, "sanity check");
 
     // Create ordered search table for entries [id, index];
     uint* search = NEW_C_HEAP_ARRAY(uint, search_count, mtCode);
@@ -1898,7 +1867,6 @@ bool AOTCodeCache::finish_write() {
     // Finalize header
     AOTCodeCache::Header* header = (AOTCodeCache::Header*)start;
     header->init(size,
-                 cpu_features_size, cpu_features_offset,
                  preload_entries_cnt, preload_entries_offset,
                  entries_count, new_entries_offset, search_table_offset,
                  (uint)strings_count, strings_offset,
@@ -1914,7 +1882,6 @@ bool AOTCodeCache::finish_write() {
     if (log.is_enabled()) {
       log.print_cr("  AOT code cache size: %u bytes", size);
       log.print_cr("    header size:        %u", header_size);
-      log.print_cr("    CPU features data:  %u", cpu_features_size);
       log.print_cr("    total code size:    %u (max code's size: %u)", code_size, max_size);
       log.print_cr("    entries size:       %u", entries_size);
       log.print_cr("    entry search table: %u", search_size);

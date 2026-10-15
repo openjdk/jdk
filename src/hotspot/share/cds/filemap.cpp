@@ -240,9 +240,16 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
   size_t header_size;
   size_t base_archive_name_size = 0;
   size_t base_archive_name_offset = 0;
+  int cpu_features_size = 0;
+  int cpu_features_offset = -1;
   if (is_static()) {
     c_header_size = sizeof(FileMapHeader);
     header_size = c_header_size;
+    if (CDSConfig::new_aot_flags_used()) {
+      cpu_features_size += VM_Version::cpu_features_size();
+      header_size += cpu_features_size;
+      cpu_features_offset = (int)c_header_size;
+    }
   } else {
     // dynamic header including base archive name for non-default base archive
     c_header_size = sizeof(DynamicArchiveHeader);
@@ -262,12 +269,15 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
                     core_region_alignment,
                     header_size,
                     base_archive_name_size,
-                    base_archive_name_offset);
+                    base_archive_name_offset,
+                    cpu_features_size,
+                    cpu_features_offset);
 }
 
 void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
                              size_t header_size, size_t base_archive_name_size,
-                             size_t base_archive_name_offset) {
+                             size_t base_archive_name_offset, int cpu_features_size,
+                             int cpu_features_offset) {
   // 1. We require _generic_header._magic to be at the beginning of the file
   // 2. FileMapHeader also assumes that _generic_header is at the beginning of the file
   assert(offset_of(FileMapHeader, _generic_header) == 0, "must be");
@@ -333,6 +343,12 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _requested_base_address = (char*)SharedBaseAddress;
   _mapped_base_address = (char*)SharedBaseAddress;
   _must_match.init();
+  _cpu_features_size = cpu_features_size;
+  _cpu_features_offset = cpu_features_offset;
+  if (_cpu_features_offset != -1) {
+    char* buffer = ((char *)this) + _cpu_features_offset;
+    VM_Version::store_cpu_features(buffer);
+  }
 }
 
 void FileMapHeader::copy_base_archive_name(const char* archive) {
@@ -403,6 +419,9 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- has_valhalla_patched_classes              %d", _has_valhalla_patched_classes);
   _must_match.print(st);
   st->print_cr("- has_aot_linked_classes                    %d", _has_aot_linked_classes);
+  stringStream ss;
+  VM_Version::get_cpu_features_name(archived_cpu_features(), ss);
+  st->print_cr("- cpu features:                             %s", ss.as_string());
 }
 
 bool FileMapInfo::validate_class_location() {
@@ -429,6 +448,16 @@ bool FileMapInfo::validate_class_location() {
 #endif
 
   return true;
+}
+
+int FileMapInfo::cpu_features_size() const {
+  assert(CDSConfig::is_using_archive(), "runtime only");
+  return header()->cpu_features_size();
+}
+
+void* FileMapInfo::archived_cpu_features() const {
+  assert(CDSConfig::is_using_archive(), "runtime only");
+  return header()->archived_cpu_features();
 }
 
 // A utility class for reading/validating the GenericCDSFileMapHeader portion of

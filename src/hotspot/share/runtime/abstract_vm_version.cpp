@@ -22,6 +22,8 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "jvm_io.h"
@@ -386,4 +388,8 @@ const char* Abstract_VM_Version::cpu_description(void) {
   }
   strncpy(tmp, _cpu_desc, CPU_DETAILED_DESC_BUF_SIZE);
   return tmp;
+}
+
+void* Abstract_VM_Version::get_aot_cache_cpu_features() {
+  return UseAOTCacheCpuFeaturesOnly ? AOTMetaspace::get_archived_cpu_features() : nullptr;
 }

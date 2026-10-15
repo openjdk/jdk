@@ -515,6 +515,31 @@ protected:
       copy.clear_feature(CPU_HT);
       return copy;
     }
+
+    // Is this VM_Feature a super set of features_to_test?
+    bool super_set_of(VM_Features* features_to_test) {
+      for (int i = 0; i < features_bitmap_element_count(); i++) {
+        if ((_features_bitmap[i] | features_to_test->_features_bitmap[i]) != _features_bitmap[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // Returns features present in this VM_Features but not is features_to_test
+    VM_Features features_not_in(VM_Features* features_to_test) {
+      VM_Features result;
+      for (int i = 0; i < features_bitmap_element_count(); i++) {
+        result._features_bitmap[i] = _features_bitmap[i] & (~(features_to_test->_features_bitmap[i]));
+      }
+      return result;
+    }
+
+    void clear_features(VM_Features* features_to_clear) {
+      for (int i = 0; i < features_bitmap_element_count(); i++) {
+        _features_bitmap[i] &= (~(features_to_clear->_features_bitmap[i]));
+      }
+    }
   };
 
   // CPU feature flags vector, can be affected by VM settings.

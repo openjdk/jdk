@@ -909,6 +909,15 @@ void VM_Version::get_processor_features() {
     _L1_data_cache_line_size = L1_line_size();
   }
 
+  VM_Features* archived_cpu_features = (VM_Features*)get_aot_cache_cpu_features();
+  if (archived_cpu_features != nullptr) {
+    VM_Features rt_features = _features.aot_code_cache_features();
+    if (rt_features.super_set_of(archived_cpu_features)) {
+      VM_Features features_to_clear = rt_features.features_not_in(archived_cpu_features);
+      _features.clear_features(&features_to_clear);
+    }
+  }
+
   // xchg and xadd instructions
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;

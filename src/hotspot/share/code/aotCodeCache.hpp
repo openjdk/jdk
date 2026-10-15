@@ -699,8 +699,6 @@ protected:
     };
     uint   _version;         // AOT code version (should match when reading code cache)
     uint   _cache_size;      // cache size in bytes
-    uint   _cpu_features_size;
-    uint   _cpu_features_offset;   // offset in the cache where cpu features are stored
     uint   _preload_entries_count; // entries for pre-loading code
     uint   _preload_entries_offset;
     uint   _entries_count;   // number of recorded entries
@@ -724,7 +722,6 @@ protected:
 
   public:
     void init(uint cache_size,
-              uint cpu_features_size,     uint cpu_features_offset,
               uint preload_entries_count, uint preload_entries_offset,
               uint entries_count,         uint entries_offset,
               uint search_table_offset,
@@ -735,8 +732,6 @@ protected:
               uint extrs2_length,         uint final_extrs_length) {
       _version                = AOT_CODE_VERSION;
       _cache_size             = cache_size;
-      _cpu_features_size      = cpu_features_size;
-      _cpu_features_offset    = cpu_features_offset;
       _preload_entries_count  = preload_entries_count;
       _preload_entries_offset = preload_entries_offset;
       _entries_count          = entries_count;
@@ -756,8 +751,6 @@ protected:
     }
 
     uint cache_size()     const { return _cache_size; }
-    uint cpu_features_size()   const { return _cpu_features_size; }
-    uint cpu_features_offset() const { return _cpu_features_offset; }
     uint preload_entries_count()  const { return _preload_entries_count; }
     uint preload_entries_offset() const { return _preload_entries_offset; }
     uint entries_count()  const { return _entries_count; }
@@ -826,8 +819,6 @@ private:
   //
   // @0: Header (all the fixed fields that size and place objects in the ac region.
   // See AOTCodeCache::Header::verify for a detailed walk through what follows.
-  //
-  // @cpu_features_offset: uchar[cpu_features_size]  same layout as VM_Version
   //
   // @preload_entries_offset: AOTCodeEntry[preload_entries_count] "preload" AP4 code
   // Sorted by compile_id (from the training run).
@@ -946,7 +937,6 @@ public:
   AOTCodeEntry* search_entry(AOTCodeEntry::Kind kind, uint id, uint comp_level);
   void invalidate_entry(AOTCodeEntry* entry);
 
-  char* store_cpu_features(char* buffer, uint buffer_size);
   static uint get_jvmti_state();
 
   bool finish_write();

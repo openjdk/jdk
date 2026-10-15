@@ -187,6 +187,9 @@ private:
   AOTMappedHeapHeader _mapped_heap_header;
   AOTStreamedHeapHeader _streamed_heap_header;
 
+  int    _cpu_features_size;
+  int    _cpu_features_offset;
+
   // The following are parameters that affect MethodData layout.
   uint    _type_profile_level;
   int     _type_profile_args_limit;
@@ -244,6 +247,11 @@ public:
   bool has_full_module_graph()             const { return _has_full_module_graph; }
   size_t rw_ptrmap_start_pos()             const { return _rw_ptrmap_start_pos; }
   size_t ro_ptrmap_start_pos()             const { return _ro_ptrmap_start_pos; }
+  int cpu_features_size()                  const { return _cpu_features_size; }
+  void* archived_cpu_features() {
+    char* cpu_features = ((char*)this) + _cpu_features_offset;
+    return (void *)cpu_features;
+  }
 
   // Heap archiving
   const AOTMappedHeapHeader*   mapped_heap()   const { return &_mapped_heap_header; }
@@ -284,7 +292,8 @@ public:
   }
 
   void populate(FileMapInfo *info, size_t core_region_alignment, size_t header_size,
-                size_t base_archive_name_size, size_t base_archive_name_offset);
+                size_t base_archive_name_size, size_t base_archive_name_offset,
+                int cpu_features_size, int cpu_features_offset);
   static bool is_valid_region(int region) {
     return (0 <= region && region < NUM_CDS_REGIONS);
   }
@@ -374,6 +383,9 @@ public:
 
   void set_requested_base(char* b)                  { header()->set_requested_base(b); }
   char* requested_base_address()           const    { return header()->requested_base_address(); }
+
+  int cpu_features_size() const;
+  void* archived_cpu_features() const;
 
   class DynamicArchiveHeader* dynamic_header() const {
     assert(!is_static(), "must be");

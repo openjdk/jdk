@@ -118,6 +118,14 @@ void VM_Version::initialize() {
   get_os_cpu_info();
   _cpu_features = _features;
 
+  uint64_t* aot_cache_cpu_features = (uint64_t*)get_aot_cache_cpu_features();
+  if (aot_cache_cpu_features != nullptr) {
+    if (is_super_set(_features, *aot_cache_cpu_features)) {
+      uint64_t features_to_clear = features_not_in(_features, *aot_cache_cpu_features);
+      _features = clear_features(_features, features_to_clear);
+    }
+  }
+
   int dcache_line = dcache_line_size();
 
   // Limit AllocatePrefetchDistance so that it does not exceed the
