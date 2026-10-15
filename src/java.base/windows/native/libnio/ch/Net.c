@@ -38,31 +38,6 @@
 #include "sun_nio_ch_PollArrayWrapper.h"
 
 /**
- * Definitions to allow for building with older SDK include files.
- */
-
-#ifndef MCAST_BLOCK_SOURCE
-
-#define MCAST_BLOCK_SOURCE          43
-#define MCAST_UNBLOCK_SOURCE        44
-#define MCAST_JOIN_SOURCE_GROUP     45
-#define MCAST_LEAVE_SOURCE_GROUP    46
-
-#endif  /* MCAST_BLOCK_SOURCE */
-
-struct my_ip_mreq_source {
-    IN_ADDR imr_multiaddr;
-    IN_ADDR imr_sourceaddr;
-    IN_ADDR imr_interface;
-};
-
-struct my_group_source_req {
-    ULONG gsr_interface;
-    SOCKADDR_STORAGE gsr_group;
-    SOCKADDR_STORAGE gsr_source;
-};
-
-/**
  * Copy IPv6 address as jbytearray to target
  */
 #define COPY_INET6_ADDRESS(env, source, target) \
@@ -455,7 +430,7 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
                                 jint group, jint interf, jint source)
 {
     struct ip_mreq mreq;
-    struct my_ip_mreq_source mreq_source;
+    struct ip_mreq_source mreq_source;
     int opt, n, optlen;
     void* optval;
 
@@ -487,7 +462,7 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_blockOrUnblock4(JNIEnv *env, jobject this, jboolean block, jobject fdo,
                                    jint group, jint interf, jint source)
 {
-    struct my_ip_mreq_source mreq_source;
+    struct ip_mreq_source mreq_source;
     int n;
     int opt = (block) ? IP_BLOCK_SOURCE : IP_UNBLOCK_SOURCE;
 
@@ -518,7 +493,7 @@ static int setGroupSourceReqOption(JNIEnv* env,
                                    jint index,
                                    jbyteArray source)
 {
-    struct my_group_source_req req;
+    struct group_source_req req;
     struct sockaddr_in6* sin6;
 
     req.gsr_interface = (ULONG)index;
