@@ -39,14 +39,20 @@ public class GlyphVectorIOBE {
 
     public static void main(String[] args) {
         runTests(-1);
-        runTests(1);
+        runTests(gv.getNumGlyphs());
         runTests(2);
         runTests(Integer.MIN_VALUE);
+
+        // test no exception for these cases.
+        gv.getGlyphPosition(gv.getNumGlyphs());
+        gv.setGlyphPosition(gv.getNumGlyphs(), new Point2D.Float());
     }
 
     static void runTests(int ix) {
-        test(() -> gv.getGlyphPosition(ix));
-        test(() -> gv.setGlyphPosition(ix, new Point2D.Float()));
+        if (ix != gv.getNumGlyphs()) {
+            test(() -> gv.getGlyphPosition(ix));
+            test(() -> gv.setGlyphPosition(ix, new Point2D.Float()));
+        }
         test(() -> gv.getGlyphOutline(ix));
         test(() -> gv.getGlyphOutline(ix, 0f, 0f));
     }
