@@ -1175,6 +1175,9 @@ public:
       ShenandoahThreadLocalData::set_gclab_size(thread, 0);
     }
 
+    // Clear this for next evacuation phase
+    ShenandoahThreadLocalData::set_has_evac_failures(thread, false);
+
     if (ShenandoahHeap::heap()->mode()->is_generational()) {
       ShenandoahPLAB* shenandoah_plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
       assert(shenandoah_plab != nullptr, "PLAB should be initialized for %s", thread->name());
