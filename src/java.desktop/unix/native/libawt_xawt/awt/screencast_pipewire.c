@@ -1137,17 +1137,15 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
                 }
             }
 
+            fp_pw_thread_loop_lock(pw.loop);
             if (screenProps->captureDataPixbuf) {
                 gtk->g_object_unref(screenProps->captureDataPixbuf);
                 screenProps->captureDataPixbuf = NULL;
             }
             screenProps->shouldCapture = FALSE;
-
-            fp_pw_thread_loop_lock(pw.loop);
             fp_pw_stream_set_active(screenProps->data->stream, FALSE);
-            fp_pw_thread_loop_unlock(pw.loop);
-
             screenProps->captureDataReady = FALSE;
+            fp_pw_thread_loop_unlock(pw.loop);
         }
     }
 
