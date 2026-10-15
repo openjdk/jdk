@@ -6558,19 +6558,21 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
   vle8_v(vrb, objb);
   add(obja, obja, taken);
   add(objb, objb, taken);
-  sub(remaining, remaining, taken);
   vmsne_vv(vrm, vra, vrb);
   vfirst_m(idx, vrm);
   bgez(idx, MISMATCH);
+  sub(remaining, remaining, taken);
   bnez(remaining, VEC_LOOP);
 
   bind(NO_MISMATCH);
   mv(result, -1);
   j(DONE);
 
+  const Register processed = total;
+
   bind(MISMATCH);
-  sub(total, total, remaining);
-  add(idx, total, idx);
+  sub(processed, total, remaining);
+  add(idx, processed, idx);
   bind(MISMATCH_SHORTARY);
   srl(result, idx, log2_array_indxscale);
 
