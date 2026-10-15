@@ -23,11 +23,11 @@
  */
 
 #include "cds/aotLogging.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.inline.hpp"
 #include "cds/serializeClosure.hpp"
 #include "classfile/classLoaderData.inline.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/packageEntry.hpp"
@@ -39,9 +39,11 @@
 
 #if INCLUDE_CDS_JAVA_HEAP
 
-bool ClassLoaderDataShared::_full_module_graph_loaded = false;
+bool AOTModules::_full_module_graph_loaded = false;
 
-class ArchivedClassLoaderData {
+// This class is used for storing information of a ClassLoaderData into the AOT cache. In
+// the production run, information is copied from here into a live ClassLoaderData,
+class AOTClassLoaderData {
   Array<PackageEntry*>* _packages;
   Array<ModuleEntry*>* _modules;
   ModuleEntry* _unnamed_module;
@@ -55,7 +57,7 @@ class ArchivedClassLoaderData {
     }
   }
 public:
-  ArchivedClassLoaderData() : _packages(nullptr), _modules(nullptr), _unnamed_module(nullptr) {}
+  AOTClassLoaderData() : _packages(nullptr), _modules(nullptr), _unnamed_module(nullptr) {}
 
   void iterate_roots(MetaspaceClosure* closure);
   void build_tables(ClassLoaderData* loader_data, TRAPS);
@@ -74,21 +76,21 @@ public:
   void clear_archived_oops();
 };
 
-static ArchivedClassLoaderData _archived_boot_loader_data;
-static ArchivedClassLoaderData _archived_platform_loader_data;
-static ArchivedClassLoaderData _archived_system_loader_data;
+static AOTClassLoaderData _archived_boot_loader_data;
+static AOTClassLoaderData _archived_platform_loader_data;
+static AOTClassLoaderData _archived_system_loader_data;
 static ModuleEntry* _archived_javabase_moduleEntry = nullptr;
 static int _platform_loader_root_index = -1;
 static int _system_loader_root_index = -1;
 
-void ArchivedClassLoaderData::iterate_roots(MetaspaceClosure* it) {
+void AOTClassLoaderData::iterate_roots(MetaspaceClosure* it) {
   assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   it->push(&_packages);
   it->push(&_modules);
   it->push(&_unnamed_module);
 }
 
-void ArchivedClassLoaderData::build_tables(ClassLoaderData* loader_data, TRAPS) {
+void AOTClassLoaderData::build_tables(ClassLoaderData* loader_data, TRAPS) {
   assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   assert_valid(loader_data);
   if (loader_data != nullptr) {
@@ -102,7 +104,7 @@ void ArchivedClassLoaderData::build_tables(ClassLoaderData* loader_data, TRAPS) 
   }
 }
 
-void ArchivedClassLoaderData::remove_unshareable_info() {
+void AOTClassLoaderData::remove_unshareable_info() {
   if (_packages != nullptr) {
     _packages = ArchiveBuilder::current()->get_buffered_addr(_packages);
     for (int i = 0; i < _packages->length(); i++) {
@@ -121,7 +123,7 @@ void ArchivedClassLoaderData::remove_unshareable_info() {
   }
 }
 
-void ArchivedClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entries, bool do_oops) {
+void AOTClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entries, bool do_oops) {
   assert(CDSConfig::is_using_full_module_graph(), "must be");
   assert_valid(loader_data);
   if (_modules != nullptr) { // Could be null if we have archived no modules for platform/system loaders
@@ -145,7 +147,7 @@ void ArchivedClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entr
   }
 }
 
-void ArchivedClassLoaderData::clear_archived_oops() {
+void AOTClassLoaderData::clear_archived_oops() {
   assert(!CDSConfig::is_using_full_module_graph(), "must be");
   if (_modules != nullptr) {
     for (int i = 0; i < _modules->length(); i++) {
@@ -159,7 +161,7 @@ void ArchivedClassLoaderData::clear_archived_oops() {
 
 // ------------------------------
 
-void ClassLoaderDataShared::load_archived_platform_and_system_class_loaders() {
+void AOTModules::load_archived_platform_and_system_class_loaders() {
   // The streaming object loader prefers loading the class loader related objects before
   //  the CLD constructor which has a NoSafepointVerifier.
   if (!HeapShared::is_loading_streaming_mode()) {
@@ -203,33 +205,33 @@ static ClassLoaderData* java_system_loader_data_or_null() {
 // ModuleEntryTables (even if empty) are required for iterate_symbols() to scan the
 // platform/system loaders inside the CDS safepoint, but the tables can be created only
 // when outside of safepoints. Let's do that now.
-void ClassLoaderDataShared::ensure_module_entry_tables_exist() {
+void AOTModules::ensure_module_entry_tables_exist() {
   assert(!SafepointSynchronize::is_at_safepoint(), "sanity");
   ensure_module_entry_table_exists(SystemDictionary::java_platform_loader());
   ensure_module_entry_table_exists(SystemDictionary::java_system_loader());
 }
 
-void ClassLoaderDataShared::ensure_module_entry_table_exists(oop class_loader) {
+void AOTModules::ensure_module_entry_table_exists(oop class_loader) {
   Handle h_loader(JavaThread::current(), class_loader);
   ModuleEntryTable* met = Modules::get_module_entry_table(h_loader);
   assert(met != nullptr, "sanity");
 }
 
-void ClassLoaderDataShared::build_tables(TRAPS) {
+void AOTModules::build_tables(TRAPS) {
   assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   _archived_boot_loader_data.build_tables(null_class_loader_data(), CHECK);
   _archived_platform_loader_data.build_tables(java_platform_loader_data_or_null(), CHECK);
   _archived_system_loader_data.build_tables(java_system_loader_data_or_null(), CHECK);
 }
 
-void ClassLoaderDataShared::iterate_roots(MetaspaceClosure* it) {
+void AOTModules::iterate_roots(MetaspaceClosure* it) {
   assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   _archived_boot_loader_data.iterate_roots(it);
   _archived_platform_loader_data.iterate_roots(it);
   _archived_system_loader_data.iterate_roots(it);
 }
 
-void ClassLoaderDataShared::remove_unshareable_info() {
+void AOTModules::remove_unshareable_info() {
   assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   _archived_boot_loader_data.remove_unshareable_info();
   _archived_platform_loader_data.remove_unshareable_info();
@@ -241,7 +243,7 @@ void ClassLoaderDataShared::remove_unshareable_info() {
   _system_loader_root_index = HeapShared::append_root(SystemDictionary::java_system_loader());
 }
 
-void ClassLoaderDataShared::serialize(SerializeClosure* f) {
+void AOTModules::serialize(SerializeClosure* f) {
   _archived_boot_loader_data.serialize(f);
   _archived_platform_loader_data.serialize(f);
   _archived_system_loader_data.serialize(f);
@@ -250,7 +252,7 @@ void ClassLoaderDataShared::serialize(SerializeClosure* f) {
   f->do_int(&_system_loader_root_index);
 }
 
-ModuleEntry* ClassLoaderDataShared::archived_boot_unnamed_module() {
+ModuleEntry* AOTModules::archived_boot_unnamed_module() {
   if (CDSConfig::is_using_full_module_graph()) {
     return _archived_boot_loader_data.unnamed_module();
   } else {
@@ -258,7 +260,7 @@ ModuleEntry* ClassLoaderDataShared::archived_boot_unnamed_module() {
   }
 }
 
-ModuleEntry* ClassLoaderDataShared::archived_unnamed_module(ClassLoaderData* loader_data) {
+ModuleEntry* AOTModules::archived_unnamed_module(ClassLoaderData* loader_data) {
   ModuleEntry* archived_module = nullptr;
 
   if (!Universe::is_module_initialized() && CDSConfig::is_using_full_module_graph()) {
@@ -275,7 +277,7 @@ ModuleEntry* ClassLoaderDataShared::archived_unnamed_module(ClassLoaderData* loa
   return archived_module;
 }
 
-void ClassLoaderDataShared::clear_archived_oops() {
+void AOTModules::clear_archived_oops() {
   assert(!CDSConfig::is_using_full_module_graph(), "must be");
   _archived_boot_loader_data.clear_archived_oops();
   _archived_platform_loader_data.clear_archived_oops();
@@ -287,7 +289,7 @@ void ClassLoaderDataShared::clear_archived_oops() {
 }
 
 // Must be done before ClassLoader::create_javabase()
-void ClassLoaderDataShared::restore_archived_entries_for_null_class_loader_data() {
+void AOTModules::restore_archived_entries_for_null_class_loader_data() {
   precond(CDSConfig::is_using_full_module_graph());
   _archived_boot_loader_data.restore(null_class_loader_data(), true, false);
   ModuleEntryTable::set_javabase_moduleEntry(_archived_javabase_moduleEntry);
@@ -295,18 +297,18 @@ void ClassLoaderDataShared::restore_archived_entries_for_null_class_loader_data(
                     p2i(_archived_javabase_moduleEntry));
 }
 
-oop ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data() {
+oop AOTModules::restore_archived_oops_for_null_class_loader_data() {
   assert(CDSConfig::is_using_full_module_graph(), "must be");
   _archived_boot_loader_data.restore(null_class_loader_data(), false, true);
   return _archived_javabase_moduleEntry->module_oop();
 }
 
-void ClassLoaderDataShared::restore_java_platform_loader_from_archive(ClassLoaderData* loader_data) {
+void AOTModules::restore_java_platform_loader_from_archive(ClassLoaderData* loader_data) {
   assert(CDSConfig::is_using_full_module_graph(), "must be");
   _archived_platform_loader_data.restore(loader_data, true, true);
 }
 
-void ClassLoaderDataShared::restore_java_system_loader_from_archive(ClassLoaderData* loader_data) {
+void AOTModules::restore_java_system_loader_from_archive(ClassLoaderData* loader_data) {
   assert(CDSConfig::is_using_full_module_graph(), "must be");
   _archived_system_loader_data.restore(loader_data, true, true);
   _full_module_graph_loaded = true;
@@ -314,7 +316,7 @@ void ClassLoaderDataShared::restore_java_system_loader_from_archive(ClassLoaderD
 
 // This is called before AOTLinkedClassBulkLoader starts preloading classes. It makes sure that
 // when we preload any class, its module is already valid.
-void ClassLoaderDataShared::restore_archived_modules_for_preloading_classes(JavaThread* current) {
+void AOTModules::restore_archived_modules_for_preloading_classes(JavaThread* current) {
   precond(CDSConfig::is_using_aot_linked_classes());
 
   precond(_platform_loader_root_index >= 0);

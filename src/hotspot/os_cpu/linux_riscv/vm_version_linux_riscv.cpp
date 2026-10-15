@@ -366,6 +366,8 @@ void VM_Version::xuantie_features() {
   ext_v.enable_feature();
   ext_Zabha.enable_feature();
   ext_Zacas.enable_feature();
+  // Zalasr will always be available. Note that hwprobe won't report Ztso on C925-C950 CPUs.
+  ext_Zalasr.enable_feature();
   ext_Zawrs.enable_feature();
   ext_Zba.enable_feature();
   ext_Zbb.enable_feature();
