@@ -863,13 +863,11 @@ public final class WindowsIconFactory implements Serializable
                     return lafIcon.getIconWidth();
                 }
                 Icon icon = getIcon();
-                int width = 0;
                 if (icon != null) {
-                    width = icon.getIconWidth() + 2 * OFFSET;
-                } else {
-                    width = VistaMenuItemCheckIconFactory.getIconWidth();
+                    int imageOffset = getImageOffset();
+                    return imageOffset + icon.getIconWidth() + OFFSET;
                 }
-                return width;
+                return VistaMenuItemCheckIconFactory.getIconWidth();
             }
 
             @Override
@@ -882,7 +880,7 @@ public final class WindowsIconFactory implements Serializable
                 assert menuItem == null || c == menuItem;
                 Icon icon = getIcon();
 
-                boolean isCheckBulletAndIconPresent = WindowsMenuItemUI.isCheckBulletAndIconPresent(menuItem);
+                boolean leftToRight = WindowsGraphicsUtils.isLeftToRight(c);
 
                 if (type == JCheckBoxMenuItem.class
                       || type == JRadioButtonMenuItem.class) {
@@ -908,72 +906,32 @@ public final class WindowsIconFactory implements Serializable
                         XPStyle xp = XPStyle.getXP();
                         if (xp != null) {
                             Skin skin =  xp.getSkin(c, backgroundPart);
-                            skin.paintSkin(g, x, y, backgroundState);
+                            skin.paintSkin(g, x, y, getIconWidth(), getIconHeight(), backgroundState);
                             skin = xp.getSkin(c, part);
-                            if (WindowsGraphicsUtils.isLeftToRight(c)) {
-                                if (icon == null || icon.getIconHeight() <= 16) {
-                                    skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
-                                } else {
-                                    skin.paintSkin(g, x + OFFSET, y + icon.getIconHeight() / 2, state);
-                                }
-                            } else {
-                                if (icon == null) {
-                                    if (isCheckBulletAndIconPresent) {
-                                        skin.paintSkin(g, x + 4 * OFFSET, y + OFFSET, state);
-                                    } else {
-                                        skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
-                                    }
-                                } else {
-                                    int ycoord = (icon.getIconHeight() <= 16)
-                                                  ? y + OFFSET
-                                                  : (y + icon.getIconHeight() / 2);
-                                    if (icon.getIconWidth() <= 8) {
-                                        skin.paintSkin(g, x + OFFSET, ycoord, state);
-                                    } else if (icon.getIconWidth() <= 16) {
-                                        if (menuItem.getText().isEmpty()) {
-                                            skin.paintSkin(g,
-                                                (menuItem.getAccelerator() != null)
-                                                 ? (x + 2 * OFFSET) : (x + 3 * OFFSET),
-                                                ycoord, state);
-                                        } else {
-                                            skin.paintSkin(g,
-                                                (type == JRadioButtonMenuItem.class)
-                                                 ? (x + 4 * OFFSET) : (x + 3 * OFFSET),
-                                                ycoord, state);
-                                        }
-                                    } else {
-                                        if (menuItem.getText().isEmpty()
-                                            || menuItem.getAccelerator() != null) {
-                                            skin.paintSkin(g,
-                                                (type == JRadioButtonMenuItem.class)
-                                                 ? (x + 3 * OFFSET) : (x + 4 * OFFSET),
-                                                ycoord, state);
-                                        } else {
-                                            skin.paintSkin(g, x + 7 * OFFSET,
-                                                           ycoord, state);
-                                        }
-                                    }
-                                }
-                            }
+                            int markX = leftToRight
+                                    ? x + OFFSET
+                                    : x + getIconWidth() - OFFSET - skin.getWidth();
+                            int markY = icon == null || icon.getIconHeight() <= 16
+                                    ? y + OFFSET
+                                    : y + icon.getIconHeight() / 2;
+                            skin.paintSkin(g, markX, markY, state);
                         }
                     }
                 }
                 if (icon != null) {
-                    if (isCheckBulletAndIconPresent) {
-                        if (WindowsGraphicsUtils.isLeftToRight(c)) {
-                            icon.paintIcon(c, g,
-                                    x + VistaMenuItemCheckIconFactory.getIconWidth(),
-                                    y + OFFSET);
-                        } else {
-                            icon.paintIcon(c, g,
-                                    x - VistaMenuItemCheckIconFactory.getIconWidth() + 2 * OFFSET,
-                                    y + OFFSET);
-                        }
-                    } else {
-                        icon.paintIcon(c, g, x + OFFSET, y + OFFSET);
-                    }
+                    int imageOffset = getImageOffset();
+                    int imageX = leftToRight
+                            ? x + imageOffset
+                            : x + getIconWidth() - imageOffset - icon.getIconWidth();
+                    icon.paintIcon(c, g, imageX, y + OFFSET);
                 }
             }
+            private int getImageOffset() {
+                return WindowsMenuItemUI.isCheckBulletAndIconPresent(menuItem)
+                        ? VistaMenuItemCheckIconFactory.getIconWidth()
+                        : OFFSET;
+            }
+
             private static WindowsMenuItemUIAccessor getAccessor(
                     JMenuItem menuItem) {
                 WindowsMenuItemUIAccessor rv = null;

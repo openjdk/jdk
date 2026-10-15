@@ -26,14 +26,15 @@
 package com.sun.java.swing.plaf.windows;
 
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Window;
 
+import javax.swing.BoxLayout;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
-import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButtonMenuItem;
@@ -47,15 +48,17 @@ import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicPopupMenuUI;
+import javax.swing.plaf.basic.DefaultMenuLayout;
 
-import com.sun.java.swing.SwingUtilities3;
 import com.sun.java.swing.plaf.windows.TMSchema.Part;
 import com.sun.java.swing.plaf.windows.TMSchema.State;
 import com.sun.java.swing.plaf.windows.XPStyle.Skin;
 import sun.swing.MnemonicHandler;
 import sun.swing.StringUIClientPropertyKey;
 
+import static com.sun.java.swing.plaf.windows.WindowsMenuItemUI.CHECK_BULLET_AND_ICON_PRESENT;
 import static sun.swing.SwingUtilities2.BASICMENUITEMUI_MAX_TEXT_OFFSET;
 
 /**
@@ -71,6 +74,21 @@ public class WindowsPopupMenuUI extends BasicPopupMenuUI {
 
     public static ComponentUI createUI(JComponent c) {
         return new WindowsPopupMenuUI();
+    }
+
+    @Override
+    public void installDefaults() {
+        super.installDefaults();
+        if (popupMenu.getLayout() == null
+                || popupMenu.getLayout() instanceof UIResource) {
+            popupMenu.setLayout(new WindowsMenuLayout(popupMenu));
+        }
+    }
+
+    @Override
+    protected void uninstallDefaults() {
+        popupMenu.putClientProperty(CHECK_BULLET_AND_ICON_PRESENT, null);
+        super.uninstallDefaults();
     }
 
     @Override
@@ -203,43 +221,38 @@ public class WindowsPopupMenuUI extends BasicPopupMenuUI {
         return leftToRight;
     }
 
-    @Override
-    public Dimension getPreferredSize(JComponent c) {
-        Dimension size = null;
-
-        if (c.getLayout() != null) {
-            size = c.getLayout().preferredLayoutSize(c);
+    @SuppressWarnings("serial") // Same-version serialization only
+    private static final class WindowsMenuLayout extends DefaultMenuLayout {
+        WindowsMenuLayout(JPopupMenu popup) {
+            super(popup, BoxLayout.Y_AXIS);
         }
 
-        if (size == null) {
-            size = super.getPreferredSize(c);
+        @Override
+        public Dimension preferredLayoutSize(Container target) {
+            JPopupMenu popup = (JPopupMenu) target;
+            // Each popup owns its columns. Scan before measuring children,
+            // without including the contents of any nested popup.
+            popup.putClientProperty(CHECK_BULLET_AND_ICON_PRESENT,
+                    hasCheckBulletAndIcon(popup));
+            return super.preferredLayoutSize(target);
         }
 
-        if (size != null) {
-
-            if (hasCheckBulletAndIconPresent((JPopupMenu) c)) {
-                int afterCheckIconGap = UIManager.getInt("MenuItem" + ".afterCheckIconGap");
-                int gap = 2 * afterCheckIconGap;
-                size.width += gap;
-            }
+        @Override
+        public void layoutContainer(Container target) {
+            // Also refresh when layout is requested without a size query.
+            preferredLayoutSize(target);
+            super.layoutContainer(target);
         }
-
-        return size;
     }
 
-    private static boolean hasCheckBulletAndIconPresent(JPopupMenu popupMenu) {
-        for (Component child : popupMenu.getComponents()) {
-            if (child instanceof JRadioButtonMenuItem ||
-                    child instanceof JCheckBoxMenuItem) {
-                JMenuItem item = (JMenuItem) child;
-                if (item.getIcon() != null) {
-                    return true;
-                }
-            }
-            if (child instanceof JMenu) {
-                if (hasCheckBulletAndIconPresent(((JMenu) child).getPopupMenu())) {
-                    return true;
-                }
+    private static boolean hasCheckBulletAndIcon(JPopupMenu popup) {
+        for (Component child : popup.getComponents()) {
+            if (child.isVisible()
+                    && child instanceof JMenuItem item
+                    && (item instanceof JCheckBoxMenuItem
+                        || item instanceof JRadioButtonMenuItem)
+                    && item.getIcon() != null) {
+                return true;
             }
         }
         return false;
