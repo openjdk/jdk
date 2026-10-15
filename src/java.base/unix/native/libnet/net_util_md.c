@@ -594,9 +594,6 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
 /*
  * Wrapper for bind system call - performs any necessary pre/post
  * processing to deal with OS specific issues :-
- *
- * Linux allows a socket to bind to 127.0.0.255 which must be
- * caught.
  */
 int
 NET_Bind(int fd, SOCKETADDRESS *sa, int len)
