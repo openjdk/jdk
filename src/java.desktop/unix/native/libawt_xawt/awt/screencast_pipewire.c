@@ -28,6 +28,7 @@
 #endif
 
 #include <dlfcn.h>
+#include <time.h>
 #include "jni_util.h"
 #include "awt.h"
 
@@ -81,8 +82,10 @@ struct pw_thread_loop *
 struct pw_loop * (*fp_pw_thread_loop_get_loop)(struct pw_thread_loop *loop);
 void (*fp_pw_thread_loop_signal)(struct pw_thread_loop *loop,
                                  bool wait_for_accept);
-void (*fp_pw_thread_loop_wait)(struct pw_thread_loop *loop);
-void (*fp_pw_thread_loop_accept)(struct pw_thread_loop *loop);
+int (*fp_pw_thread_loop_timed_wait_full)(struct pw_thread_loop *loop,
+                                        const struct timespec *abstime);
+int (*fp_pw_thread_loop_get_time)(struct pw_thread_loop *loop,
+                                  struct timespec *abstime, int64_t timeout);
 int (*fp_pw_thread_loop_start)(struct pw_thread_loop *loop);
 void (*fp_pw_thread_loop_stop)(struct pw_thread_loop *loop);
 void (*fp_pw_thread_loop_destroy)(struct pw_thread_loop *loop);
@@ -102,6 +105,9 @@ int DEBUG_SCREENCAST_ENABLED = FALSE;
 #define EXCEPTION_CHECK_DESCRIBE() if ((*env)->ExceptionCheck(env)) { \
                                       (*env)->ExceptionDescribe(env); \
                                    }
+
+// 10 s timeout for format negotiation and frames from all requested screens.
+static const int64_t PIPEWIRE_TIMEOUT_NS = 10LL * 1000 * 1000 * 1000;
 
 static gboolean hasPipewireFailed = FALSE;
 static gboolean sessionClosed = TRUE;
@@ -488,9 +494,10 @@ static bool startStream(
  * The caller must hold the PipeWire thread loop lock.
  *
  * @param index of a screen
+ * @param captureDeadline shared deadline for format negotiation and screen capture
  * @return TRUE on success
  */
-static gboolean connectStream(int index) {
+static gboolean connectStream(int index, const struct timespec *captureDeadline) {
     DEBUG_SCREENCAST("@@@ using screen %i\n", index);
     if (index >= screenSpace.screenCount) {
         DEBUG_SCREENCAST("!!! Wrong index for screen\n", NULL);
@@ -545,11 +552,16 @@ static gboolean connectStream(int index) {
         return FALSE;
     }
 
-    while (!data->hasFormat) {
-        fp_pw_thread_loop_wait(pw.loop);
-        if (hasPipewireFailed) {
+    while (!hasPipewireFailed && !data->hasFormat) {
+        int result = fp_pw_thread_loop_timed_wait_full(pw.loop, captureDeadline);
+        if (result < 0) {
+            DEBUG_SCREEN_PREFIX(data->screenProps,
+                                "Format wait failed: %d\n", result);
             return FALSE;
         }
+    }
+    if (hasPipewireFailed) {
+        return FALSE;
     }
 
     DEBUG_SCREEN_PREFIX(data->screenProps,
@@ -632,7 +644,7 @@ static const struct pw_core_events coreEvents = {
  * @param requestedArea requested screenshot area
  * @return TRUE on success
  */
-static gboolean doLoop(GdkRectangle requestedArea) {
+static gboolean doLoop(GdkRectangle requestedArea, struct timespec *captureDeadline) {
     gboolean isLoopLockTaken = FALSE;
     if (!pw.loop && !sessionClosed) {
         pw.loop = fp_pw_thread_loop_new("AWT Pipewire Thread", NULL);
@@ -689,6 +701,10 @@ static gboolean doLoop(GdkRectangle requestedArea) {
         isLoopLockTaken = TRUE;
     }
 
+    if (fp_pw_thread_loop_get_time(pw.loop, captureDeadline, PIPEWIRE_TIMEOUT_NS) < 0) {
+        goto fail;
+    }
+
     for (int i = 0; i < screenSpace.screenCount; ++i) {
         struct ScreenProps *screen = &screenSpace.screens[i];
         if (!screen->data && !sessionClosed) {
@@ -706,7 +722,7 @@ static gboolean doLoop(GdkRectangle requestedArea) {
 
         DEBUG_SCREEN_PREFIX(screen, "@@@ adding screen %i\n", i);
         if (checkScreen(i, requestedArea)) {
-            if (!connectStream(i)){
+            if (!connectStream(i, captureDeadline)){
                 goto fail;
             }
         }
@@ -783,8 +799,8 @@ static gboolean loadSymbols() {
     LOAD_SYMBOL(fp_pw_thread_loop_new, "pw_thread_loop_new");
     LOAD_SYMBOL(fp_pw_thread_loop_get_loop, "pw_thread_loop_get_loop");
     LOAD_SYMBOL(fp_pw_thread_loop_signal, "pw_thread_loop_signal");
-    LOAD_SYMBOL(fp_pw_thread_loop_wait, "pw_thread_loop_wait");
-    LOAD_SYMBOL(fp_pw_thread_loop_accept, "pw_thread_loop_accept");
+    LOAD_SYMBOL(fp_pw_thread_loop_timed_wait_full, "pw_thread_loop_timed_wait_full");
+    LOAD_SYMBOL(fp_pw_thread_loop_get_time, "pw_thread_loop_get_time");
     LOAD_SYMBOL(fp_pw_thread_loop_start, "pw_thread_loop_start");
     LOAD_SYMBOL(fp_pw_thread_loop_stop, "pw_thread_loop_stop");
     LOAD_SYMBOL(fp_pw_thread_loop_destroy, "pw_thread_loop_destroy");
@@ -951,15 +967,21 @@ static int makeScreencast(
         return pw.pwFd;
     }
 
-    if (!doLoop(*requestedArea)) {
+    struct timespec captureDeadline;
+    if (!doLoop(*requestedArea, &captureDeadline)) {
         return RESULT_ERROR;
     }
 
     fp_pw_thread_loop_lock(pw.loop);
+    int waitResult = 0;
     while (!hasPipewireFailed && !isAllDataReady()) {
-        fp_pw_thread_loop_wait(pw.loop);
+        waitResult = fp_pw_thread_loop_timed_wait_full(pw.loop, &captureDeadline);
+        if (waitResult < 0) {
+            DEBUG_SCREENCAST("Frame wait failed: %d\n", waitResult);
+            break;
+        }
     }
-    gboolean failed = hasPipewireFailed;
+    gboolean failed = hasPipewireFailed || waitResult < 0;
     fp_pw_thread_loop_unlock(pw.loop);
 
     if (failed) {
