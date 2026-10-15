@@ -28,7 +28,6 @@ import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.BindingInterpreter.LoadFunc;
 import jdk.internal.foreign.abi.BindingInterpreter.StoreFunc;
-import jdk.internal.foreign.layout.ValueLayouts;
 
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
@@ -37,9 +36,10 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
 
 import static java.lang.foreign.ValueLayout.*;
-import static jdk.internal.foreign.abi.Binding.ExtendBehavior.*;
+import static java.lang.foreign.ValueLayout.IntegralExtension.ZERO_EXTEND;
 
 /**
  * The binding operators defined in the Binding class can be combined into argument and return value processing 'recipes'.
@@ -301,21 +301,12 @@ public sealed interface Binding {
         return new ShiftRight(shiftAmount);
     }
 
-    enum ExtendBehavior {
-        ZERO_EXTEND,
-        SIGN_EXTEND,
-        UNSPECIFIED;
-
-        public static ExtendBehavior forLayout(ValueLayout layout) {
-            return ValueLayouts.isSigned(layout) ? SIGN_EXTEND : ZERO_EXTEND;
-        }
-    }
-
     static Binding cast(Class<?> fromType, Class<?> toType) {
-        return cast(fromType, toType, UNSPECIFIED);
+        return cast(fromType, toType, Optional.empty());
     }
 
-    static Binding cast(Class<?> fromType, Class<?> toType, ExtendBehavior extendBehavior) {
+    static Binding cast(Class<?> fromType, Class<?> toType, Optional<IntegralExtension> extendBehaviorOpt) {
+        IntegralExtension extendBehavior = extendBehaviorOpt.orElse(null);
         if (fromType == int.class) {
             if (toType == boolean.class) {
                 return Cast.INT_TO_BOOLEAN;
@@ -384,10 +375,10 @@ public sealed interface Binding {
         }
 
         public Binding.Builder vmStore(VMStorage storage, Class<?> type) {
-            return vmStore(storage, type, UNSPECIFIED);
+            return vmStore(storage, type, Optional.empty());
         }
 
-        public Binding.Builder vmStore(VMStorage storage, Class<?> type, ExtendBehavior extendBehavior) {
+        public Binding.Builder vmStore(VMStorage storage, Class<?> type, Optional<IntegralExtension> extendBehavior) {
             if (isSubIntType(type)) {
                 bindings.add(Binding.cast(type, int.class, extendBehavior));
                 type = int.class;
@@ -405,6 +396,15 @@ public sealed interface Binding {
             if (isSubIntType(type)) {
                 bindings.add(Binding.cast(int.class, type));
             }
+            return this;
+        }
+
+        public Binding.Builder cast(Class<?> fromType, Class<?> toType) {
+            return cast(fromType, toType, Optional.empty());
+        }
+
+        public Binding.Builder cast(Class<?> fromType, Class<?> toType, Optional<IntegralExtension> extendBehavior) {
+            bindings.add(Binding.cast(fromType, toType, extendBehavior));
             return this;
         }
 

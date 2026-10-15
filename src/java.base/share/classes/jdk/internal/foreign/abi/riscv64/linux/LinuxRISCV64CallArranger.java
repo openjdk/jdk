@@ -40,7 +40,6 @@ import java.lang.foreign.*;
 import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.Binding;
-import jdk.internal.foreign.abi.Binding.ExtendBehavior;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
 import jdk.internal.foreign.abi.DowncallLinker;
@@ -280,7 +279,7 @@ public class LinuxRISCV64CallArranger {
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER);
                     // RISC-V ABI mandates zero extension for unsigned char/short, so specify it here based on layout
-                    bindings.vmStore(storage, carrier, ExtendBehavior.forLayout((ValueLayout) layout));
+                    bindings.vmStore(storage, carrier, ((ValueLayout) layout).integralExtension());
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.FLOAT);

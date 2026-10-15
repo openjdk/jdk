@@ -38,6 +38,7 @@ import jdk.internal.foreign.abi.s390.linux.LinuxS390Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import jdk.internal.foreign.layout.AbstractLayout;
+import jdk.internal.foreign.layout.ValueLayouts;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
@@ -55,10 +56,7 @@ import java.lang.foreign.UnionLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 public abstract sealed class AbstractLinker implements Linker permits LinuxAArch64Linker, MacOsAArch64Linker,
                                                                       SysVx64Linker, WindowsAArch64Linker,
@@ -108,7 +106,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         Objects.requireNonNull(function);
         Objects.requireNonNull(options);
         checkLayouts(function);
-        function = stripNames(function);
+        function = stripLayout(function);
         LinkerOptions optionSet = LinkerOptions.forDowncall(function, options);
         validateVariadicLayouts(function, optionSet);
 
@@ -133,7 +131,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         Objects.requireNonNull(function);
         checkLayouts(function);
         SharedUtils.checkExceptions(target);
-        function = stripNames(function);
+        function = stripLayout(function);
         LinkerOptions optionSet = LinkerOptions.forUpcall(function, options);
 
         MethodType type = function.toMethodType();
@@ -311,38 +309,46 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
+    // overridden by sub classes
+    protected ValueLayout maybeDropExtension(ValueLayout valueLayout) {
+        return ValueLayouts.dropIntegralExtension(valueLayout);
+    }
+
+    // Strip info from the layout that's not needed by the linker, such as name.
+    // This helps to improve caching efficiency.
     @SuppressWarnings("restricted")
-    private static MemoryLayout stripNames(MemoryLayout ml) {
+    private MemoryLayout stripLayout(MemoryLayout ml) {
         // we don't care about transferring alignment and byte order here
         // since the linker already restricts those such that they will always be the same
         return switch (ml) {
-            case StructLayout sl -> MemoryLayout.structLayout(stripNames(sl.memberLayouts()));
-            case UnionLayout ul -> MemoryLayout.unionLayout(stripNames(ul.memberLayouts()));
-            case SequenceLayout sl -> MemoryLayout.sequenceLayout(sl.elementCount(), stripNames(sl.elementLayout()));
+            case StructLayout sl -> MemoryLayout.structLayout(stripLayout(sl.memberLayouts()));
+            case UnionLayout ul -> MemoryLayout.unionLayout(stripLayout(ul.memberLayouts()));
+            case SequenceLayout sl -> MemoryLayout.sequenceLayout(sl.elementCount(), stripLayout(sl.elementLayout()));
             case AddressLayout al -> {
                 var stripped = al.withoutName();
                 var target = al.targetLayout();
                 if (target.isPresent())
-                    stripped = stripped.withTargetLayout(stripNames(target.get()));
+                    stripped = stripped.withTargetLayout(stripLayout(target.get()));
                 yield stripped;
             }
-            default -> ml.withoutName(); // ValueLayout and PaddingLayout
+            case ValueLayout vl -> maybeDropExtension(vl.withoutName());
+            default -> ml.withoutName(); // PaddingLayout
         };
     }
 
-    private static MemoryLayout[] stripNames(List<MemoryLayout> layouts) {
+    private MemoryLayout[] stripLayout(List<MemoryLayout> layouts) {
         var ret = new MemoryLayout[layouts.size()];
         for (int i = 0; i < ret.length; i++) {
-            ret[i] = stripNames(layouts.get(i));
+            ret[i] = stripLayout(layouts.get(i));
         }
         return ret;
     }
 
-    private static FunctionDescriptor stripNames(FunctionDescriptor function) {
+    private FunctionDescriptor stripLayout(FunctionDescriptor function) {
         var retLayout = function.returnLayout();
         if (retLayout.isEmpty()) {
-            return FunctionDescriptor.ofVoid(stripNames(function.argumentLayouts()));
+            return FunctionDescriptor.ofVoid(stripLayout(function.argumentLayouts()));
         }
-        return FunctionDescriptor.of(stripNames(retLayout.get()), stripNames(function.argumentLayouts()));
+        return FunctionDescriptor.of(stripLayout(retLayout.get()), stripLayout(function.argumentLayouts()));
     }
 }

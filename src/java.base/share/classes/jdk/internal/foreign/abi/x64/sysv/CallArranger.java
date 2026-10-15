@@ -30,7 +30,6 @@ import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.Binding;
-import jdk.internal.foreign.abi.Binding.ExtendBehavior;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
 import jdk.internal.foreign.abi.DowncallLinker;
@@ -299,7 +298,7 @@ public class CallArranger {
                     // we specify the sign-extension behavior here so that we get zero-extension for
                     // unsigned types. This is not required by the ABI, but there's a bug in clang
                     // where callee's might be assuming the upper bits of a register are sign/zero-extended
-                    bindings.vmStore(storage, carrier, ExtendBehavior.forLayout((ValueLayout) layout));
+                    bindings.vmStore(storage, carrier, ((ValueLayout) layout).integralExtension());
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.VECTOR);

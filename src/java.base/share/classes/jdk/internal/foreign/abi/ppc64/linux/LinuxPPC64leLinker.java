@@ -38,13 +38,14 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.Map;
 
-import static jdk.internal.foreign.layout.ValueLayouts.asUnsigned;
+import static java.lang.foreign.ValueLayout.IntegralExtension.ZERO_EXTEND;
+import static jdk.internal.foreign.layout.ValueLayouts.withSignInfo;
 
 public final class LinuxPPC64leLinker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
             SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG,
-                    asUnsigned(ValueLayout.JAVA_BYTE), asUnsigned(ValueLayout.JAVA_INT));
+                    withSignInfo(ValueLayout.JAVA_BYTE, ZERO_EXTEND), withSignInfo(ValueLayout.JAVA_INT, ZERO_EXTEND));
 
     public static LinuxPPC64leLinker getInstance() {
         final class Holder {
@@ -56,6 +57,13 @@ public final class LinuxPPC64leLinker extends AbstractLinker {
 
     private LinuxPPC64leLinker() {
         // Ensure there is only one instance
+    }
+
+    @Override
+    protected ValueLayout maybeDropExtension(ValueLayout valueLayout) {
+        return valueLayout.byteSize() < 8 // smaller than long
+                ? valueLayout // keep, if any
+                : super.maybeDropExtension(valueLayout);
     }
 
     @Override

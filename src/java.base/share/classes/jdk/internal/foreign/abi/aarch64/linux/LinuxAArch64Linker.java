@@ -30,7 +30,6 @@ import jdk.internal.foreign.abi.AbstractLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.aarch64.CallArranger;
-import jdk.internal.foreign.layout.ValueLayouts;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
@@ -39,7 +38,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.Map;
 
-import static jdk.internal.foreign.layout.ValueLayouts.asUnsigned;
+import static java.lang.foreign.ValueLayout.IntegralExtension.ZERO_EXTEND;
+import static jdk.internal.foreign.layout.ValueLayouts.withSignInfo;
 
 /**
  * ABI implementation based on ARM document "Procedure Call Standard for
@@ -49,7 +49,7 @@ public final class LinuxAArch64Linker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
             SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG,
-                    asUnsigned(ValueLayout.JAVA_BYTE), asUnsigned(ValueLayout.JAVA_INT));
+                    withSignInfo(ValueLayout.JAVA_BYTE, ZERO_EXTEND), withSignInfo(ValueLayout.JAVA_INT, ZERO_EXTEND));
 
     public static LinuxAArch64Linker getInstance() {
         final class Holder {

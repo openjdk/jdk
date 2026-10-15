@@ -38,13 +38,14 @@ import java.lang.invoke.MethodType;
 import java.nio.ByteOrder;
 import java.util.Map;
 
-import static jdk.internal.foreign.layout.ValueLayouts.asUnsigned;
+import static java.lang.foreign.ValueLayout.IntegralExtension.ZERO_EXTEND;
+import static jdk.internal.foreign.layout.ValueLayouts.withSignInfo;
 
 public final class AixPPC64Linker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
             SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG,
-                    asUnsigned(ValueLayout.JAVA_BYTE), asUnsigned(ValueLayout.JAVA_INT));
+                    withSignInfo(ValueLayout.JAVA_BYTE, ZERO_EXTEND), withSignInfo(ValueLayout.JAVA_INT, ZERO_EXTEND));
 
     public static AixPPC64Linker getInstance() {
         final class Holder {

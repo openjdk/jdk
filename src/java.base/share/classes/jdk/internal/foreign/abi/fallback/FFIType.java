@@ -32,15 +32,16 @@ import java.lang.invoke.VarHandle;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Predicate;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
+import static java.lang.foreign.ValueLayout.IntegralExtension.SIGN_EXTEND;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
-import static jdk.internal.foreign.layout.ValueLayouts.asUnsigned;
+import static java.lang.foreign.ValueLayout.IntegralExtension.ZERO_EXTEND;
+import static jdk.internal.foreign.layout.ValueLayouts.withSignInfo;
 
 /**
  * typedef struct _ffi_type
@@ -53,8 +54,8 @@ import static jdk.internal.foreign.layout.ValueLayouts.asUnsigned;
  */
 class FFIType {
 
-    static final ValueLayout SIZE_T = asUnsigned(layoutFor((int)ADDRESS.byteSize()));
-    private static final ValueLayout UNSIGNED_SHORT = asUnsigned(JAVA_SHORT);
+    static final ValueLayout SIZE_T = withSignInfo(layoutFor((int)ADDRESS.byteSize()), ZERO_EXTEND);
+    private static final ValueLayout UNSIGNED_SHORT = withSignInfo(JAVA_SHORT, ZERO_EXTEND);
     private static final StructLayout LAYOUT = Utils.computePaddedStructLayout(
             SIZE_T, UNSIGNED_SHORT, UNSIGNED_SHORT.withName("type"), ADDRESS.withName("elements"));
 
@@ -117,7 +118,7 @@ class FFIType {
             return LibFallback.pointerType();
         } else {
             // infer based on size and sign
-            return ValueLayouts.isSigned((ValueLayout)layout) ?
+            return ((ValueLayout)layout).integralExtension().map(SIGN_EXTEND::equals).orElseThrow() ?
                     SIGNED_INTEGRAL_TYPES.get(layout.byteSize()) :
                     UNSIGNED_INTEGRAL_TYPES.get(layout.byteSize());
         }

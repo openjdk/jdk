@@ -29,6 +29,7 @@ import jdk.internal.foreign.layout.ValueLayouts;
 
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
+import java.util.Optional;
 
 /**
  * A layout that models values of basic data types. Examples of values modeled by
@@ -98,6 +99,29 @@ public sealed interface ValueLayout extends MemoryLayout
     ValueLayout withByteAlignment(long byteAlignment);
 
     /**
+     * Indicates whether values represented by this layout should
+     * be {@linkplain #SIGN_EXTEND sign extended}, or
+     * {@linkplain #ZERO_EXTEND zero extended}, when being widened.
+     */
+    enum IntegralExtension {
+        /**
+         * Indicates that values represented by this layout
+         * should be zero extended when widened.
+         */
+        ZERO_EXTEND,
+        /**
+         * Indicates that values represented by this layout
+         * should be sign extended when widened.
+         */
+        SIGN_EXTEND
+    }
+
+    /**
+     * {@return the integral extension attached to this layout, if any}
+     */
+    Optional<IntegralExtension> integralExtension();
+
+    /**
      * {@return a var handle which can be used to access values described by this value
      *          layout, in a given memory segment}
      * <p>
@@ -129,7 +153,7 @@ public sealed interface ValueLayout extends MemoryLayout
      * @see #JAVA_BOOLEAN
      * @since 22
      */
-        sealed interface OfBoolean extends ValueLayout permits ValueLayouts.OfBooleanImpl {
+    sealed interface OfBoolean extends ValueLayout permits ValueLayouts.OfBooleanImpl {
 
         /**
          * {@inheritDoc}
@@ -164,7 +188,7 @@ public sealed interface ValueLayout extends MemoryLayout
      * @see #JAVA_BYTE
      * @since 22
      */
-        sealed interface OfByte extends ValueLayout permits ValueLayouts.OfByteImpl {
+    sealed interface OfByte extends ValueLayout permits ValueLayouts.OfByteImpl {
 
         /**
          * {@inheritDoc}
@@ -200,7 +224,7 @@ public sealed interface ValueLayout extends MemoryLayout
      * @see #JAVA_CHAR_UNALIGNED
      * @since 22
      */
-        sealed interface OfChar extends ValueLayout permits ValueLayouts.OfCharImpl {
+    sealed interface OfChar extends ValueLayout permits ValueLayouts.OfCharImpl {
 
         /**
          * {@inheritDoc}
@@ -236,7 +260,7 @@ public sealed interface ValueLayout extends MemoryLayout
      * @see #JAVA_SHORT_UNALIGNED
      * @since 22
      */
-        sealed interface OfShort extends ValueLayout permits ValueLayouts.OfShortImpl {
+    sealed interface OfShort extends ValueLayout permits ValueLayouts.OfShortImpl {
 
         /**
          * {@inheritDoc}
@@ -272,7 +296,7 @@ public sealed interface ValueLayout extends MemoryLayout
      * @see #JAVA_INT_UNALIGNED
      * @since 22
      */
-        sealed interface OfInt extends ValueLayout permits ValueLayouts.OfIntImpl {
+    sealed interface OfInt extends ValueLayout permits ValueLayouts.OfIntImpl {
 
         /**
          * {@inheritDoc}
@@ -308,7 +332,7 @@ public sealed interface ValueLayout extends MemoryLayout
      * @see #JAVA_FLOAT_UNALIGNED
      * @since 22
      */
-        sealed interface OfFloat extends ValueLayout permits ValueLayouts.OfFloatImpl {
+    sealed interface OfFloat extends ValueLayout permits ValueLayouts.OfFloatImpl {
 
         /**
          * {@inheritDoc}
@@ -343,7 +367,7 @@ public sealed interface ValueLayout extends MemoryLayout
      * @see #JAVA_LONG_UNALIGNED
      * @since 22
      */
-        sealed interface OfLong extends ValueLayout permits ValueLayouts.OfLongImpl {
+    sealed interface OfLong extends ValueLayout permits ValueLayouts.OfLongImpl {
 
         /**
          * {@inheritDoc}
@@ -379,7 +403,7 @@ public sealed interface ValueLayout extends MemoryLayout
      * @see #JAVA_DOUBLE_UNALIGNED
      * @since 22
      */
-        sealed interface OfDouble extends ValueLayout permits ValueLayouts.OfDoubleImpl {
+    sealed interface OfDouble extends ValueLayout permits ValueLayouts.OfDoubleImpl {
 
         /**
          * {@inheritDoc}
@@ -413,55 +437,60 @@ public sealed interface ValueLayout extends MemoryLayout
      * machine address ({@code size_t}), byte alignment set to {@code sizeof(size_t)},
      * byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    AddressLayout ADDRESS = ValueLayouts.OfAddressImpl.of(ByteOrder.nativeOrder(), false);
+    AddressLayout ADDRESS = ValueLayouts.OfAddressImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code byte},
      * byte alignment set to 1, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfByte JAVA_BYTE = ValueLayouts.OfByteImpl.of(ByteOrder.nativeOrder(), true);
+    OfByte JAVA_BYTE = ValueLayouts.OfByteImpl.of(ByteOrder.nativeOrder(),
+            Optional.of(IntegralExtension.SIGN_EXTEND));
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code boolean},
      * byte alignment set to 1, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfBoolean JAVA_BOOLEAN = ValueLayouts.OfBooleanImpl.of(ByteOrder.nativeOrder(), false);
+    OfBoolean JAVA_BOOLEAN = ValueLayouts.OfBooleanImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code char},
      * byte alignment set to 2, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfChar JAVA_CHAR = ValueLayouts.OfCharImpl.of(ByteOrder.nativeOrder(), false);
+    OfChar JAVA_CHAR = ValueLayouts.OfCharImpl.of(ByteOrder.nativeOrder(),
+            Optional.of(IntegralExtension.ZERO_EXTEND));
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code short},
      * byte alignment set to 2, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfShort JAVA_SHORT = ValueLayouts.OfShortImpl.of(ByteOrder.nativeOrder(), true);
+    OfShort JAVA_SHORT = ValueLayouts.OfShortImpl.of(ByteOrder.nativeOrder(),
+            Optional.of(IntegralExtension.SIGN_EXTEND));
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code int},
      * byte alignment set to 4, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfInt JAVA_INT = ValueLayouts.OfIntImpl.of(ByteOrder.nativeOrder(), true);
+    OfInt JAVA_INT = ValueLayouts.OfIntImpl.of(ByteOrder.nativeOrder(),
+            Optional.of(IntegralExtension.SIGN_EXTEND));
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code long},
      * byte alignment set to 8, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfLong JAVA_LONG = ValueLayouts.OfLongImpl.of(ByteOrder.nativeOrder(), true);
+    OfLong JAVA_LONG = ValueLayouts.OfLongImpl.of(ByteOrder.nativeOrder(),
+            Optional.of(IntegralExtension.SIGN_EXTEND));
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code float},
      * byte alignment set to 4, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfFloat JAVA_FLOAT = ValueLayouts.OfFloatImpl.of(ByteOrder.nativeOrder(), true);
+    OfFloat JAVA_FLOAT = ValueLayouts.OfFloatImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code double},
      * byte alignment set to 8, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfDouble JAVA_DOUBLE = ValueLayouts.OfDoubleImpl.of(ByteOrder.nativeOrder(), true);
+    OfDouble JAVA_DOUBLE = ValueLayouts.OfDoubleImpl.of(ByteOrder.nativeOrder());
 
     /**
      * An unaligned address layout constant whose size is the same as that of a
