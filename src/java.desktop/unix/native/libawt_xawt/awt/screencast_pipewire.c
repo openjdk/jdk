@@ -281,7 +281,7 @@ static void onStreamParamChanged(
                      data->rawFormat.size.height);
 
     data->hasFormat = TRUE;
-    fp_pw_thread_loop_signal(pw.loop, TRUE);
+    fp_pw_thread_loop_signal(pw.loop, FALSE);
 }
 
 static void onStreamProcess(void *userdata) {
@@ -549,7 +549,6 @@ static gboolean connectStream(int index) {
 
     while (!data->hasFormat) {
         fp_pw_thread_loop_wait(pw.loop);
-        fp_pw_thread_loop_accept(pw.loop);
         if (hasPipewireFailed) {
             fp_pw_thread_loop_unlock(pw.loop);
             return FALSE;
@@ -956,14 +955,16 @@ static int makeScreencast(
         return RESULT_ERROR;
     }
 
-    while (!isAllDataReady()) {
-        fp_pw_thread_loop_lock(pw.loop);
+    fp_pw_thread_loop_lock(pw.loop);
+    while (!hasPipewireFailed && !isAllDataReady()) {
         fp_pw_thread_loop_wait(pw.loop);
-        fp_pw_thread_loop_unlock(pw.loop);
-        if (hasPipewireFailed) {
-            doCleanup();
-            return RESULT_ERROR;
-        }
+    }
+    gboolean failed = hasPipewireFailed;
+    fp_pw_thread_loop_unlock(pw.loop);
+
+    if (failed) {
+        doCleanup();
+        return RESULT_ERROR;
     }
 
     return RESULT_OK;
