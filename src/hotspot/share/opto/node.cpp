@@ -45,6 +45,7 @@
 #include "opto/valuetypenode.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
 #include "utilities/vmError.hpp"
@@ -1160,7 +1161,32 @@ const TypePtr* Node::out_adr_type() const {
     return res;
   }
 
+  // Load must have no out_adr_type
+  if (is_Load() && res != nullptr) {
+    stringStream ss;
+    res->dump_on(&ss);
+    assert(false, "Node %s must have no out_adr_type, out: %s", Name(), ss.as_string());
+  }
+
   const TypePtr* in_type = in_adr_type_impl();
+  // Store, LoadStore, and Phi must have the same out_adr_type and in_adr_type
+  if ((is_Store() || is_LoadStore() || is_Phi()) && res != in_type) {
+    stringStream ss;
+    ss.print(", out: ");
+    if (res == nullptr) {
+      ss.print("nullptr");
+    } else {
+      res->dump_on(&ss);
+    }
+    ss.print(", in: ");
+    if (in_type == nullptr) {
+      ss.print("nullptr");
+    } else {
+      in_type->dump_on(&ss);
+    }
+    assert(false, "Node %s must have the same out_adr_type and in_adr_type%s", Name(), ss.as_string());
+  }
+
   // For some reasons, Raw can be used as Bot (see GraphKit::set_output_for_allocation for
   // example), so be lenient here
   if (res != nullptr && in_type != TypePtr::BOTTOM && in_type != TypeRawPtr::BOTTOM && res != in_type) {
