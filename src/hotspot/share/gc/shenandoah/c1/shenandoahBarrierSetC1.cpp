@@ -173,9 +173,11 @@ void ShenandoahBarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value)
   LIRGenerator* gen = access.gen();
 
   if (ShenandoahSATBBarrier && access.is_oop()) {
-    keepalive_barrier(gen, /* obj = */ LIR_OprFact::illegalOpr, /* addr = */ access.resolved_addr(),
-                      access.access_emit_info() != nullptr ? new CodeEmitInfo(access.access_emit_info()) : nullptr,
-                      decorators);
+    CodeEmitInfo* info = access.access_emit_info();
+    if (info != nullptr) {
+      info = new CodeEmitInfo(info);
+    }
+    keepalive_barrier(gen, /* obj = */ LIR_OprFact::illegalOpr, /* addr = */ access.resolved_addr(), info, decorators);
   }
   BarrierSetC1::store_at_resolved(access, value);
 
