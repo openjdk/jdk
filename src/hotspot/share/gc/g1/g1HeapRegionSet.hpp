@@ -198,10 +198,10 @@ public:
   // Same restrictions as above, but adds the region last in the list.
   inline void add_to_tail(G1HeapRegion* region_to_add);
 
-  // Finds the next region from the free list from head or tail. If NUMA support is enabled,
-  // initially tries to match the result to be on the requested node. This search is
-  // limited by G1NUMA's maximum search depth; if no matching region is found, just takes
-  // the first.
+  // Finds and removes the next fitting region from the free list from head or tail.
+  // If NUMA support is enabled, initially tries to match the result to be on the
+  // requested node. This search is limited by G1NUMA's maximum search depth; if no
+  // matching region is found or not using NUMA, just takes the first.
   G1HeapRegion* remove_region(bool from_head, uint requested_node_index);
 
   // Merge two ordered lists. The result is also ordered. The order is
