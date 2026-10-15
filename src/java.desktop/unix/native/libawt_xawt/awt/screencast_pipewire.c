@@ -164,6 +164,10 @@ static void doCleanup() {
 
     for (int i = 0; i < screenSpace.screenCount; ++i) {
         struct ScreenProps *screenProps = &screenSpace.screens[i];
+        if (screenProps->captureDataPixbuf) {
+            gtk->g_object_unref(screenProps->captureDataPixbuf);
+            screenProps->captureDataPixbuf = NULL;
+        }
         if (screenProps->data) {
             if (screenProps->data->stream) {
                 fp_pw_thread_loop_lock(pw.loop);
