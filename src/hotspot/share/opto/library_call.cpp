@@ -2816,6 +2816,7 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
           if (new_base->is_top()) {
             uncommon_trap(Deoptimization::Reason_intrinsic,
                           Deoptimization::Action_none);
+            return true;
           }
           replace_in_map(base, new_base);
           base = new_base;
