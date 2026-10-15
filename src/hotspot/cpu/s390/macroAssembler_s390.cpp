@@ -5002,8 +5002,11 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value, Reg
   assert_different_registers(base, cnt, value, tmp);
   BLOCK_COMMENT("fill_words {");
 
+  Label vec_loop, done;
   if (!is_large) {
     NearLabel loop, loop_end;
+
+    compare64_and_branch(cnt, 0x8, Assembler::bcondHigh, vec_loop);
 
     // 2x unrolled loop; cnt == 0 is handled correctly (both branches skip, falls to done)
     z_srag(tmp, cnt, 1);     // tmp = cnt / 2, sets CC
@@ -5020,11 +5023,12 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value, Reg
     z_tmll(cnt, 1);
     z_stocg(value, 0, base, bcondNotAllZero);
 
-    BLOCK_COMMENT("} fill_words");
+    branch_optimized(Assembler::bcondAlways, done);
 
-    return;
+    BLOCK_COMMENT("} fill_words");
   }
 
+  bind(vec_loop);
 #ifdef ASSERT
   // Sanity, This implementation will fail only if cnt < 4
   NearLabel correct_cnt;
@@ -5052,6 +5056,8 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value, Reg
 
   z_tmll(cnt, 0x1);
   z_stocg(value, 0, base, bcondNotAllZero);
+
+  bind(done);
 
   BLOCK_COMMENT("} fill_words");
 }
