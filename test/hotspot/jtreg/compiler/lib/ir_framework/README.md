@@ -173,8 +173,8 @@ testFramework
 The framework provides various stress and debug flags. They should mainly be used as JTreg VM and/or Javaoptions (apart from `VerifyIR`). The following (property) flags are supported:
 
 - `-DVerifyIR=false`: Explicitly disable IR verification. This is useful, for example, if some scenarios use VM flags that let `@IR` annotation rules fail and the user does not want to provide separate IR rules or add flag preconditions to the already existing IR rules.
-- `-DTest=test1,test2`: Provide a list of `@Test` method names which should be executed. Case-insensitive, plural is allowed (`-DTests`, `-Dtest`, `Dtests` are all fine).
-- `-DExclude=test3`: Provide a list of `@Test` method names which should be excluded from execution. Case-insensitive, plural is allowed.
+- `-DTest=test1,test2`: Provide a list of `@Test` method names which should be executed. When one of these `@Test`-methods is called from a `@Run`-method that specifies multiple `@Test`-methods, then all of these methods will be run. Case-insensitive, plural is allowed (`-DTests`, `-Dtest`, `Dtests` are all fine).
+- `-DExclude=test3`: Provide a list of `@Test` method names which should be excluded from execution. When one of these `@Test`-methods is called from a `@Run`-method that specifies multiple `@Test`-methods, then the entire `@Run`-method is excluded which excludes all its `@Test`-methods as well. Case-insensitive, plural is allowed.
 - `-DScenario=1,2`: Provide a list of scenario indexes to specify which scenarios should be executed. Case-insensitive, plural is allowed.
 - `-DWarmup=200`: Provide a new default value of the number of warm-up iterations (framework default is 2000). This might have an influence on the resulting IR and could lead to matching failures (the user can also set a fixed default warm-up value in a test with `testFrameworkObject.setDefaultWarmup(200)`).
 - `-DReportStdout=true`: Print the standard output of the Test VM.

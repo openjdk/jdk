@@ -58,8 +58,9 @@ public class TestDTestAndExclude {
             run("bad2", "runBadSingle", "runBadSingle");
             run("badMulti1,badMulti2", "", "runBadMulti");
             run("badMulti1", "", "runBadMulti");
-            run("badMulti1", "badMulti2", "runBadMulti");
-            run("badMulti2", "badMulti1", "runBadMulti");
+            run("badMulti1,good1", "badMulti2", "good");
+            run("badMulti1", "badMulti2", "empty");
+            run("badMulti2", "badMulti1", "empty");
             run("runBadSingle", "", "empty");
             run("runBadMulti", "", "empty");
             run("asdf", "", "empty");

@@ -25,6 +25,7 @@ package ir_framework.tests;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
+import compiler.lib.ir_framework.shared.NoTestsRunException;
 import compiler.lib.ir_framework.shared.TestRunException;
 import jdk.test.lib.Asserts;
 
@@ -64,9 +65,17 @@ public class TestRunTests {
         new TestFramework(SkipC2Compilation.class).addFlags("-XX:TieredStopAtLevel=1").start();
         new TestFramework(SkipC2Compilation.class).addFlags("-XX:TieredStopAtLevel=2").start();
         new TestFramework(SkipC2Compilation.class).addFlags("-XX:TieredStopAtLevel=3").start();
-        new TestFramework(FilteredIRRun.class).addFlags("-DTest=test1").start();
+        new TestFramework(FilteredIRRun.class).addFlags("-DTest=testGood").start();
         new TestFramework(FilteredIRRun.class).addFlags("-DExclude=test2").start();
-        new TestFramework(FilteredIRRun.class).addFlags("-DTest=test1,test2", "-DExclude=test2").start();
+        new TestFramework(FilteredIRRun.class).addFlags("-DTest=testGood,test1", "-DExclude=test2").start();
+        for (String[] flags : new String[][] { { "-DTest=testNotExist" }, { "-DTest=test1", "-DExclude=test2" } }) {
+            try {
+                new TestFramework(FilteredIRRun.class).addFlags(flags).start();
+                Asserts.fail("expected NoTestsRunException");
+            } catch (NoTestsRunException e) {
+                // Expected
+            }
+        }
         for (String[] flags : new String[][] { {}, { "-DTest=test2" } }) {
             try {
                 new TestFramework(FilteredIRRun.class).addFlags(flags).start();
@@ -303,6 +312,17 @@ class FilteredIRRun {
             TestFramework.assertCompiledByC2(info.getTest("test1"));
             TestFramework.assertCompiledByC2(info.getTest("test2"));
         }
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_I, "1"})
+    public void testGood(int x) {
+        iFld = x;
+    }
+
+    @Run(test = {"testGood"})
+    public void runGood() {
+        testGood(34);
     }
 }
 
