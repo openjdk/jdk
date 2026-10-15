@@ -5816,10 +5816,11 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
-    // generate load for the i'th register
-    void gen_load(uint i, Register base) {
-      assert(i < L, "invalid i: %u", i);
-      __ ld(_regs[i], Address(base, 8 * i));
+    // Generate loads for all cached registers.
+    void gen_loads(Register base) {
+      for (uint i = 0; i < L; i++) {
+        __ ld(_regs[i], Address(base, 8 * i));
+      }
     }
 
     // add i'th 32-bit integer to dest
@@ -5861,7 +5862,7 @@ class StubGenerator: public StubCodeGenerator {
     // rtmp1 = d ^ (b & (c ^ d)) = d ^ rtmp1
     __ xorr(rtmp1, d, rtmp1);
 
-    // a += rtmp1
+    // a += d ^ (b & (c ^ d))
     __ addw(a, a, rtmp1);
 
     // a = Integer.rotateLeft(a, s) + b
@@ -5912,7 +5913,7 @@ class StubGenerator: public StubCodeGenerator {
     // rtmp1 = b ^ (c ^ d)
     __ xorr(rtmp1, b, rtmp1);
 
-    // a += rtmp1
+    // a += b ^ (c ^ d)
     __ addw(a, a, rtmp1);
 
     // a = Integer.rotateLeft(a, s) + b
@@ -5934,7 +5935,7 @@ class StubGenerator: public StubCodeGenerator {
     __ orn(rtmp2, b, d);
     __ xorr(rtmp1, c, rtmp2);
 
-    // a += rtmp1
+    // a += c ^ (b | (~d))
     __ addw(a, a, rtmp1);
 
     // a = Integer.rotateLeft(a, s) + b
@@ -6098,29 +6099,23 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(c, state2);
     __ mv(d, state3);
 
+    reg_cache.gen_loads(buf);
+
     // Round 1
-    reg_cache.gen_load(0, buf);
     md5_FF(reg_cache, a, b, c, d,  0, S11, 0xd76aa478, rtmp1);
     md5_FF(reg_cache, d, a, b, c,  1, S12, 0xe8c7b756, rtmp1);
-    reg_cache.gen_load(1, buf);
     md5_FF(reg_cache, c, d, a, b,  2, S13, 0x242070db, rtmp1);
     md5_FF(reg_cache, b, c, d, a,  3, S14, 0xc1bdceee, rtmp1);
-    reg_cache.gen_load(2, buf);
     md5_FF(reg_cache, a, b, c, d,  4, S11, 0xf57c0faf, rtmp1);
     md5_FF(reg_cache, d, a, b, c,  5, S12, 0x4787c62a, rtmp1);
-    reg_cache.gen_load(3, buf);
     md5_FF(reg_cache, c, d, a, b,  6, S13, 0xa8304613, rtmp1);
     md5_FF(reg_cache, b, c, d, a,  7, S14, 0xfd469501, rtmp1);
-    reg_cache.gen_load(4, buf);
     md5_FF(reg_cache, a, b, c, d,  8, S11, 0x698098d8, rtmp1);
     md5_FF(reg_cache, d, a, b, c,  9, S12, 0x8b44f7af, rtmp1);
-    reg_cache.gen_load(5, buf);
     md5_FF(reg_cache, c, d, a, b, 10, S13, 0xffff5bb1, rtmp1);
     md5_FF(reg_cache, b, c, d, a, 11, S14, 0x895cd7be, rtmp1);
-    reg_cache.gen_load(6, buf);
     md5_FF(reg_cache, a, b, c, d, 12, S11, 0x6b901122, rtmp1);
     md5_FF(reg_cache, d, a, b, c, 13, S12, 0xfd987193, rtmp1);
-    reg_cache.gen_load(7, buf);
     md5_FF(reg_cache, c, d, a, b, 14, S13, 0xa679438e, rtmp1);
     md5_FF(reg_cache, b, c, d, a, 15, S14, 0x49b40821, rtmp1);
 
