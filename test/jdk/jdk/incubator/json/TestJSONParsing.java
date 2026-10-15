@@ -49,8 +49,7 @@ public class TestJSONParsing {
     private static final String TEST_DIR_PARSING = "JSONTestSuite/test_parsing";
     private static final String TEST_DIR_TRANSFORM = "JSONTestSuite/test_transform";
 
-    // These fail lists are dependent on our implementation
-    // and may or may not be changed in the future
+    // Excluding these test cases, as our implementation does not parse in bytes
     private static final List<String> PARSING_I_FAIL = Arrays.asList(
             "i_string_UTF-16LE_with_BOM.json",
             "i_string_utf16BE_no_BOM.json",
