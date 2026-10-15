@@ -24,7 +24,9 @@
 /*
  * @test
  * @requires jdk.foreign.linker != "FALLBACK"
- * @requires (os.name == "Mac OS X") | (os.name == "Linux" & os.arch == "amd64")
+ * @requires (os.name == "Mac OS X")
+ *               | (os.name == "Linux"
+ *                   & (os.arch == "amd64" | os.arch == "ppc64" | os.arch == "ppc64le" | os.arch == "riscv64"))
  * @library ../
  * @run junit/othervm/native
  *   --enable-native-access=ALL-UNNAMED
