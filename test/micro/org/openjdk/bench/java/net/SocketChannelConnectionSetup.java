@@ -94,14 +94,5 @@ public class SocketChannelConnectionSetup {
                 .build();
 
         new Runner(opt).run();
-
-        opt = new OptionsBuilder()
-                .include(org.openjdk.bench.java.net.SocketChannelConnectionSetup.class.getSimpleName())
-                .jvmArgs("-Djdk.net.useFastTcpLoopback=true")
-                .warmupForks(1)
-                .forks(2)
-                .build();
-
-        new Runner(opt).run();
     }
 }
