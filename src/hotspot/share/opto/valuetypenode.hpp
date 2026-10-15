@@ -59,8 +59,8 @@ private:
   // Get the klass defining the field layout of the value type
   ciValueKlass* value_klass() const { return type()->value_klass(); }
 
-  void make_scalar_in_safepoint(PhaseIterGVN* igvn, Unique_Node_List& worklist, SafePointNode* sfpt) const;
-  uint add_fields_to_safepoint(Unique_Node_List& worklist, SafePointNode* sfpt) const;
+  void make_scalar_in_safepoint(PhaseIterGVN* igvn, Unique_Node_List<ValueTypeNode>& worklist, SafePointNode* sfpt) const;
+  uint add_fields_to_safepoint(Unique_Node_List<ValueTypeNode>& worklist, SafePointNode* sfpt) const;
 
   // Checks if the value type is loaded from memory and if so returns the oop
   Node* is_loaded(PhaseGVN* phase, ciValueKlass* vk = nullptr, Node* base = nullptr, int holder_offset = 0) const;

@@ -82,7 +82,7 @@ private:
   ResourceArea _states_arena;
 
   // Map old nodes to new nodes
-  Node_List   _new_nodes;
+  Node_List<Node> _new_nodes;
 
   VectorSet   _visited;         // Visit bits
 
@@ -133,13 +133,13 @@ private:
 
   Node *transform( Node *dummy );
 
-  Node_List _projection_list;        // For Machine nodes killing many values
+  Node_List<MachProjNode> _projection_list;        // For Machine nodes killing many values
 
-  Node_Array _shared_nodes;
+  Node_Array<MachNode> _shared_nodes;
 
 #ifndef PRODUCT
-  Node_Array _old2new_map;    // Map roots of ideal-trees to machine-roots
-  Node_Array _new2old_map;    // Maps machine nodes back to ideal
+  Node_Array<const Node> _old2new_map;    // Map roots of ideal-trees to machine-roots
+  Node_Array<Node> _new2old_map;    // Maps machine nodes back to ideal
   VectorSet _reused;          // Ideal IGV identifiers reused by machine nodes
 #endif // !PRODUCT
 
@@ -160,7 +160,7 @@ private:
 
 #ifdef ASSERT
   // Make sure only new nodes are reachable from this node
-  void verify_new_nodes_only(Node* root);
+  void verify_new_nodes_only(const Node* root);
 
   Node* _mem_node;   // Ideal memory node consumed by mach node
 #endif
@@ -233,24 +233,20 @@ public:
 
   // List of IfFalse or IfTrue Nodes that indicate a taken null test.
   // List is valid in the post-matching space.
-  Node_List _null_check_tests;
+  Node_List<Node> _null_check_tests;
   void collect_null_checks( Node *proj, Node *orig_proj );
   void validate_null_checks( );
 
   Matcher();
 
   // Get a projection node at position pos
-  Node* get_projection(uint pos) {
+  MachProjNode* get_projection(uint pos) {
     return _projection_list[pos];
   }
 
   // Push a projection node onto the projection list
-  void push_projection(Node* node) {
+  void push_projection(MachProjNode* node) {
     _projection_list.push(node);
-  }
-
-  Node* pop_projection() {
-    return _projection_list.pop();
   }
 
   // Number of nodes in the projection list

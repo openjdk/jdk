@@ -374,11 +374,11 @@ bool RegionNode::is_possible_unsafe_loop() const {
 
 bool RegionNode::is_unreachable_from_root(const PhaseGVN* phase) const {
   ResourceMark rm;
-  Node_List nstack;
+  Node_List<const Node> nstack;
   VectorSet visited;
 
   // Mark all control nodes reachable from root outputs
-  Node* n = (Node*)phase->C->root();
+  const Node* n = (Node*)phase->C->root();
   nstack.push(n);
   visited.set(n->_idx);
   while (nstack.size() != 0) {
@@ -403,7 +403,7 @@ bool RegionNode::is_unreachable_from_root(const PhaseGVN* phase) const {
 // (no path to root except through false NeverBranch exit)
 bool RegionNode::is_in_infinite_subgraph() {
   ResourceMark rm;
-  Unique_Node_List worklist;
+  Unique_Node_List<const Node> worklist;
   worklist.push(this);
   return RegionNode::are_all_nodes_in_infinite_subgraph(worklist);
 }
@@ -411,10 +411,10 @@ bool RegionNode::is_in_infinite_subgraph() {
 // Are all nodes in worklist in infinite subgraph?
 // (no path to root except through false NeverBranch exit)
 // worklist is directly used for the traversal
-bool RegionNode::are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist) {
+bool RegionNode::are_all_nodes_in_infinite_subgraph(Unique_Node_List<const Node>& worklist) {
   // BFS traversal down the CFG, except through NeverBranch exits
   for (uint i = 0; i < worklist.size(); ++i) {
-    Node* n = worklist.at(i);
+    const Node* n = worklist.at(i);
     assert(n->is_CFG(), "only traverse CFG");
     if (n->is_Root()) {
       // Found root -> there was an exit!
@@ -834,7 +834,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 void RegionNode::remove_unreachable_subgraph(PhaseIterGVN* igvn) {
   Node* top = igvn->C->top();
   ResourceMark rm;
-  Unique_Node_List unreachable; // visit each only once
+  Unique_Node_List<Node> unreachable; // visit each only once
   unreachable.push(this);
   // Recursively find all control inputs.
   for (uint i = 0; i < unreachable.size(); i++) {
@@ -1169,7 +1169,7 @@ PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) cons
   }
   Compile *C = igvn->C;
   ResourceMark rm;
-  Node_Array node_map;
+  Node_Array<PhiNode> node_map;
   Node_Stack stack(C->live_nodes() >> 4);
   PhiNode *nphi = slice_memory(at);
   igvn->register_new_node_with_optimizer( nphi );
@@ -1180,7 +1180,7 @@ PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) cons
     uint i = stack.index();
     assert(i >= 1, "not control edge");
     stack.pop();
-    nphi = node_map[ophi->_idx]->as_Phi();
+    nphi = node_map[ophi->_idx];
     for (; i < ophi->req(); i++) {
       Node *in = ophi->in(i);
       if (in == nullptr || igvn->type(in) == Type::TOP)
@@ -1691,11 +1691,11 @@ Node* PhiNode::unique_constant_input_recursive(PhaseGVN* phase) {
 
   ResourceMark rm;
   Node* unique = nullptr;
-  Unique_Node_List visited;
+  Unique_Node_List<const PhiNode> visited;
   visited.push(this);
 
   for (uint visited_idx = 0; visited_idx < visited.size(); visited_idx++) {
-    Node* current = visited.at(visited_idx);
+    const PhiNode* current = visited.at(visited_idx);
     for (uint i = 1; i < current->req(); i++) {
       Node* phi_in = current->in(i);
       if (phi_in == nullptr) {
@@ -1703,7 +1703,7 @@ Node* PhiNode::unique_constant_input_recursive(PhaseGVN* phase) {
       }
 
       if (phi_in->is_Phi()) {
-        visited.push(phi_in);
+        visited.push(phi_in->as_Phi());
       } else {
         if (unique == nullptr) {
           if (!phi_in->is_Con()) {
@@ -2121,13 +2121,13 @@ bool PhiNode::is_unsafe_data_reference(Node *in) const {
 
   ResourceMark rm;
 
-  Node_List nstack;
+  Node_List<const Node> nstack;
   VectorSet visited;
 
   nstack.push(in); // Start with unique input.
   visited.set(in->_idx);
   while (nstack.size() != 0) {
-    Node* n = nstack.pop();
+    const Node* n = nstack.pop();
     uint cnt = n->req();
     uint i = (n->is_Proj() && !n->is_CFG()) ? 0 : 1;
     for (; i < cnt; i++) {
@@ -2155,10 +2155,10 @@ bool PhiNode::is_dead_phi() {
   }
 
   ResourceMark rm;
-  Unique_Node_List worklist;
+  Unique_Node_List<const Node> worklist;
   worklist.push(this);
   for (uint wl_idx = 0; wl_idx < worklist.size(); wl_idx++) {
-    Node* n = worklist.at(wl_idx);
+    const Node* n = worklist.at(wl_idx);
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* out = n->fast_out(i);
       if (out->is_Phi()) {
@@ -2176,7 +2176,7 @@ bool PhiNode::is_dead_phi() {
 // and so could cause the region to be optimized out?
 bool PhiNode::wait_for_region_igvn(PhaseGVN* phase) {
   PhaseIterGVN* igvn = phase->is_IterGVN();
-  Unique_Node_List& worklist = igvn->_worklist;
+  Unique_Node_List<Node>& worklist = igvn->_worklist;
   bool delay = false;
   Node* r = in(0);
   for (uint j = 1; j < req(); j++) {
@@ -3049,7 +3049,7 @@ private:
       }
     }
 
-    Unique_Node_List after;
+    Unique_Node_List<Node> after;
     after.push(_root_phi);
     for (uint i = 0; i < after.size(); ++i) {
       Node* n = after.at(i);
@@ -3125,7 +3125,7 @@ private:
     // Record that vt was created to replace phi to be able to use the value type node when reaching the phi again
     // through data loops.
     _clones.map(phi->_idx, vt);
-    Node_List casts;
+    Node_List<ConstraintCastNode> casts;
     for (uint i = 1; i < phi->req(); ++i) {
       assert(casts.size() == 0, "must be cleared");
       Node* n = phi->in(i);
@@ -3134,7 +3134,7 @@ private:
       }
       while (should_skip_over(n)) {
         if (n->is_ConstraintCast()) {
-          casts.push(n);
+          casts.push(n->as_ConstraintCast());
         }
         n = n->in(1);
       }
@@ -3181,9 +3181,9 @@ private:
   PhaseGVN* _phase;
   bool _can_reshape;
   ciValueKlass* _value_klass;
-  Unique_Node_List _nodes_from_phi;
-  Unique_Node_List _subgraph_to_clone;
-  Node_List _clones;
+  Unique_Node_List<Node> _nodes_from_phi;
+  Unique_Node_List<Node> _subgraph_to_clone;
+  Node_List<Node> _clones;
   DEBUG_ONLY(uint _init_nodes);
 
 public:
@@ -3350,12 +3350,12 @@ bool PhiNode::can_be_replaced_by(PhaseGVN* phase, const PhiNode* other) const {
 Node* PhiNode::clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIterGVN* igvn) {
   Node_Stack stack(1);
   VectorSet  visited;
-  Node_List  node_map;
+  Node_List<PhiNode>  node_map;
 
   stack.push(root_phi, 1); // ignore control
   visited.set(root_phi->_idx);
 
-  Node* new_phi = new PhiNode(root_phi->in(0), t);
+  PhiNode* new_phi = new PhiNode(root_phi->in(0), t);
   node_map.map(root_phi->_idx, new_phi);
 
   while (stack.is_nonempty()) {

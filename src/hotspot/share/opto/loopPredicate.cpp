@@ -230,8 +230,8 @@ void PhaseIdealLoop::set_ctrl_of_nodes_with_same_ctrl(Node* start_node, ProjNode
 }
 
 // Recursively find all input nodes with the same ctrl.
-Unique_Node_List PhaseIdealLoop::find_nodes_with_same_ctrl(Node* node, const ProjNode* ctrl) {
-  Unique_Node_List nodes_with_same_ctrl;
+Unique_Node_List<Node> PhaseIdealLoop::find_nodes_with_same_ctrl(Node* node, const ProjNode* ctrl) {
+  Unique_Node_List<Node> nodes_with_same_ctrl;
   nodes_with_same_ctrl.push(node);
   for (uint j = 0; j < nodes_with_same_ctrl.size(); j++) {
     Node* next = nodes_with_same_ctrl[j];
@@ -250,7 +250,7 @@ Unique_Node_List PhaseIdealLoop::find_nodes_with_same_ctrl(Node* node, const Pro
 Node* PhaseIdealLoop::clone_nodes_with_same_ctrl(Node* start_node, ProjNode* old_uncommon_proj, Node* new_uncommon_proj) {
   ResourceMark rm;
   DEBUG_ONLY(uint last_idx = C->unique();)
-  const Unique_Node_List nodes_with_same_ctrl = find_nodes_with_same_ctrl(start_node, old_uncommon_proj);
+  const Unique_Node_List<Node> nodes_with_same_ctrl = find_nodes_with_same_ctrl(start_node, old_uncommon_proj);
   DataNodeGraph data_node_graph(nodes_with_same_ctrl, this);
   const OrigToNewHashtable& orig_to_clone = data_node_graph.clone(new_uncommon_proj);
   fix_cloned_data_node_controls(old_uncommon_proj, new_uncommon_proj, orig_to_clone);
@@ -274,7 +274,7 @@ void PhaseIdealLoop::fix_cloned_data_node_controls(const ProjNode* old_uncommon_
 
 // Put all OpaqueTemplateAssertionPredicate nodes on a list, starting at 'predicate' and going up in the tree.
 void PhaseIdealLoop::get_opaque_template_assertion_predicate_nodes(ParsePredicateSuccessProj* parse_predicate_proj,
-                                                                   Unique_Node_List& list) {
+                                                                   Unique_Node_List<OpaqueTemplateAssertionPredicateNode>& list) {
   Deoptimization::DeoptReason deopt_reason = parse_predicate_proj->in(0)->as_ParsePredicate()->deopt_reason();
   PredicateBlockIterator predicate_iterator(parse_predicate_proj, deopt_reason);
   OpaqueTemplateAssertionPredicateCollector opaque_template_assertion_predicate_collector(list);
@@ -288,7 +288,7 @@ class Invariance : public StackObj {
   VectorSet _visited, _invariant;
   Node_Stack _stack;
   VectorSet _clone_visited;
-  Node_List _old_new; // map of old to new (clone)
+  Node_List<Node> _old_new; // map of old to new (clone)
   IdealLoopTree* _lpt;
   PhaseIdealLoop* _phase;
   Node* _data_dependency_on; // The projection into the loop on which data nodes are dependent or null otherwise
@@ -408,7 +408,7 @@ class Invariance : public StackObj {
       // later check again if a node needs to be treated as non-loop-
       // invariant as well.
       _data_dependency_on = entry;
-      Unique_Node_List wq;
+      Unique_Node_List<Node> wq;
       wq.push(entry);
       for (uint next = 0; next < wq.size(); ++next) {
         Node *n = wq.at(next);
@@ -940,10 +940,9 @@ float PathFrequency::to(Node* n) {
   return -1;
 }
 
-void PhaseIdealLoop::loop_predication_follow_branches(Node *n, IdealLoopTree *loop, float loop_trip_cnt,
+void PhaseIdealLoop::loop_predication_follow_branches(RegionNode* n, IdealLoopTree* loop, float loop_trip_cnt,
                                                       PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
-                                                      Node_List_<const IfProjNode>& if_proj_list) {
-  assert(n->is_Region(), "start from a region");
+                                                      Node_List<const IfProjNode>& if_proj_list) {
   Node* tail = loop->tail();
   stack.push(n, 1);
   do {
@@ -1210,12 +1209,12 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
 
   // Create list of if-projs such that a newer proj dominates all older
   // projs in the list, and they all dominate loop->tail()
-  Node_List_<IfProjNode> if_proj_list;
-  Node_List regions;
+  Node_List<IfProjNode> if_proj_list;
+  Node_List<RegionNode> regions;
   Node* current_proj = loop->tail(); // start from tail
 
 
-  Node_List controls;
+  Node_List<Node> controls;
   while (current_proj != head) {
     if (loop == get_loop(current_proj) && // still in the loop ?
         current_proj->is_IfProj()        && // is a projection  ?
@@ -1226,7 +1225,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
     if (follow_branches &&
         current_proj->Opcode() == Op_Region &&
         loop == get_loop(current_proj)) {
-      regions.push(current_proj);
+      regions.push(current_proj->as_Region());
     }
     current_proj = idom(current_proj);
   }
@@ -1274,13 +1273,13 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
 
     // Some projections were skipped due to an early loop exit. Try them with profile data.
     while (if_proj_list.size() > 0) {
-      Node* if_proj = if_proj_list.pop();
+      IfProjNode* if_proj = if_proj_list.pop();
       float f = pf.to(if_proj);
-      if (if_proj->as_Proj()->is_uncommon_trap_if_pattern() &&
+      if (if_proj->is_uncommon_trap_if_pattern() &&
           f * loop_trip_cnt >= 1) {
         ParsePredicateSuccessProj* profiled_loop_parse_predicate_proj =
             profiled_loop_predicate_block->parse_predicate_success_proj();
-        hoisted = loop_predication_impl_helper(loop, if_proj->as_IfProj(), profiled_loop_parse_predicate_proj,
+        hoisted = loop_predication_impl_helper(loop, if_proj, profiled_loop_parse_predicate_proj,
                                                cl, zero, invar, Deoptimization::Reason_profile_predicate) | hoisted;
       }
     }
@@ -1288,9 +1287,9 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
     // And look into all branches
     Node_Stack stack(0);
     VectorSet seen;
-    Node_List_<const IfProjNode> if_proj_list_freq(area);
+    Node_List<const IfProjNode> if_proj_list_freq(area);
     while (regions.size() > 0) {
-      Node* c = regions.pop();
+      RegionNode* c = regions.pop();
       loop_predication_follow_branches(c, loop, loop_trip_cnt, pf, stack, seen, if_proj_list_freq);
     }
 

@@ -80,20 +80,20 @@ private:
   uint _node_bundling_limit;
 
   // List of scheduled nodes. Generated in reverse order
-  Node_List _scheduled;
+  Node_List<Node> _scheduled;
 
   // List of nodes currently available for choosing for scheduling
-  Node_List _available;
+  Node_List<Node> _available;
 
   // For each instruction beginning a bundle, the number of following
   // nodes to be bundled with it.
   Bundle *_node_bundling_base;
 
   // Mapping from register to Node
-  Node_List _reg_node;
+  Node_List<Node> _reg_node;
 
   // Free list for pinch nodes.
-  Node_List _pinch_free_list;
+  Node_List<Node> _pinch_free_list;
 
   // Number of uses of this node within the containing basic block.
   short *_uses;

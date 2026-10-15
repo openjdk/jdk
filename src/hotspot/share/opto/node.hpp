@@ -79,6 +79,7 @@ class CompareAndSwapNode;
 class CompareAndExchangeNode;
 class CountedLoopNode;
 class CountedLoopEndNode;
+class CreateExNode;
 class DecodeNarrowPtrNode;
 class DecodeNNode;
 class DecodeNKlassNode;
@@ -145,15 +146,16 @@ class NeverBranchNode;
 class Opaque1Node;
 class OpaqueLoopInitNode;
 class OpaqueLoopStrideNode;
-class OpaqueMultiversioningNode;
 class OpaqueConstantBoolNode;
 class OpaqueInitializedAssertionPredicateNode;
+class OpaqueMultiversioningNode;
 class OpaqueTemplateAssertionPredicateNode;
+class OpaqueZeroTripGuardNode;
 class OuterStripMinedLoopNode;
 class OuterStripMinedLoopEndNode;
 class Node;
-template <typename T> class Node_Array_;
-template <typename T> class Node_List_;
+template <typename T> class Node_Array;
+template <typename T> class Node_List;
 class Node_Stack;
 class OopMap;
 class ParmNode;
@@ -779,6 +781,7 @@ public:
           DEFINE_CLASS_ID(ConI, Con, 0)
       DEFINE_CLASS_ID(SafePointScalarMerge, Type, 10)
       DEFINE_CLASS_ID(Convert, Type, 11)
+      DEFINE_CLASS_ID(CreateEx, Type, 12)
 
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
@@ -835,6 +838,7 @@ public:
       DEFINE_CLASS_ID(OpaqueLoopInit, Opaque1, 0)
       DEFINE_CLASS_ID(OpaqueLoopStride, Opaque1, 1)
       DEFINE_CLASS_ID(OpaqueMultiversioning, Opaque1, 2)
+      DEFINE_CLASS_ID(OpaqueZeroTripGuard, Opaque1, 3)
     DEFINE_CLASS_ID(OpaqueConstantBool,  Node, 17)
     DEFINE_CLASS_ID(OpaqueInitializedAssertionPredicate,  Node, 18)
     DEFINE_CLASS_ID(OpaqueTemplateAssertionPredicate,  Node, 19)
@@ -958,6 +962,7 @@ public:
   DEFINE_CLASS_QUERY(Convert)
   DEFINE_CLASS_QUERY(CountedLoop)
   DEFINE_CLASS_QUERY(CountedLoopEnd)
+  DEFINE_CLASS_QUERY(CreateEx)
   DEFINE_CLASS_QUERY(DecodeNarrowPtr)
   DEFINE_CLASS_QUERY(DecodeN)
   DEFINE_CLASS_QUERY(DecodeNKlass)
@@ -1028,6 +1033,7 @@ public:
   DEFINE_CLASS_QUERY(OpaqueLoopInit)
   DEFINE_CLASS_QUERY(OpaqueLoopStride)
   DEFINE_CLASS_QUERY(OpaqueMultiversioning)
+  DEFINE_CLASS_QUERY(OpaqueZeroTripGuard)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
   DEFINE_CLASS_QUERY(OuterStripMinedLoopEnd)
   DEFINE_CLASS_QUERY(Parm)
@@ -1311,7 +1317,7 @@ public:
     EncounteredDeadCode  // Result is undefined due to encountering dead code.
   };
   // Check if 'this' node dominates or equal to 'sub'.
-  DomResult dominates(Node* sub, Node_List_<Node> &nlist);
+  DomResult dominates(Node* sub, Node_List<Node>& nlist);
 
   bool remove_dead_region(PhaseGVN *phase, bool can_reshape);
 public:
@@ -1499,7 +1505,7 @@ public:
   // Print compact per-node info
   virtual void dump_compact_spec(outputStream *st) const { dump_spec(st); }
 
-  static void verify(int verify_depth, VectorSet& visited, Node_List_<Node>& worklist);
+  static void verify(int verify_depth, VectorSet& visited, Node_List<Node>& worklist);
 
   // This call defines a class-unique string used to identify class instances
   virtual const char *Name() const;
@@ -1556,7 +1562,7 @@ class DUIterator_Common {
   Node*        _last;               // last value produced by the iterator
 
   void sample(const Node* node);    // used by c'tor to set up for verifies
-  void verify(const Node* node, bool at_end_ok = false);
+  void verify(const Node* node, bool at_end_ok = false) const;
   void verify_resync();
   void reset(const DUIterator_Common& that);
 
@@ -1661,8 +1667,8 @@ class DUIterator_Fast : public DUIterator_Common {
   Node**       _outp;
 
   #ifdef ASSERT
-  void verify(const Node* node, bool at_end_ok = false);
-  void verify_limit();
+  void verify(const Node* node, bool at_end_ok = false) const;
+  void verify_limit() const;
   void verify_resync();
   void verify_relimit(uint n);
   void reset(const DUIterator_Fast& that);
@@ -1689,7 +1695,7 @@ class DUIterator_Fast : public DUIterator_Common {
   void operator-=(uint n)   // applied to the limit only
     { _outp -= n;           VDUI_ONLY(verify_relimit(n));  }
 
-  bool operator<(DUIterator_Fast& limit) {
+  bool operator<(const DUIterator_Fast& limit) const {
     I_VDUI_ONLY(*this, this->verify(_node, true));
     I_VDUI_ONLY(limit, limit.verify_limit());
     return _outp < limit._outp;
@@ -1781,12 +1787,12 @@ Node* Node::last_out(DUIterator_Last& i) const {
 //
 class SimpleDUIterator : public StackObj {
  private:
-  Node* node;
+  const Node* node;
   DUIterator_Fast imax;
   DUIterator_Fast i;
  public:
-  SimpleDUIterator(Node* n): node(n), i(n->fast_outs(imax)) {}
-  bool has_next() { return i < imax; }
+  SimpleDUIterator(const Node* n): node(n), i(n->fast_outs(imax)) {}
+  bool has_next() const { return i < imax; }
   void next() { i++; }
   Node* get() { return node->fast_out(i); }
 };
@@ -1798,7 +1804,7 @@ class SimpleDUIterator : public StackObj {
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
 template <typename T>
-class Node_Array_ : public AnyObj {
+class Node_Array : public AnyObj {
 protected:
   Arena* _a;                    // Arena to allocate in
   uint   _max;
@@ -1815,16 +1821,16 @@ protected:
   void grow(uint i);
 
 public:
-  Node_Array_(Arena* a, uint max = OptoNodeListSize) : _a(a), _max(max) {
+  Node_Array(Arena* a, uint max = OptoNodeListSize) : _a(a), _max(max) {
     _nodes = NEW_ARENA_ARRAY(a, T*, max);
     clear();
   }
-  Node_Array_() : Node_Array_(Thread::current()->resource_area()) {}
+  Node_Array() : Node_Array(Thread::current()->resource_area()) {}
 
-  NONCOPYABLE(Node_Array_);
-  Node_Array_& operator=(Node_Array_&&) = delete;
+  NONCOPYABLE(Node_Array);
+  Node_Array& operator=(Node_Array&&) = delete;
   // Allow move constructor for && (eg. capture return of function)
-  Node_Array_(Node_Array_&&) = default;
+  Node_Array(Node_Array&&) = default;
 
   T* operator[] (uint i) const // Lookup, or null for not mapped
   { return (i<_max) ? _nodes[i] : (T*)nullptr; }
@@ -1843,20 +1849,18 @@ public:
   void dump() const;
 };
 
-typedef Node_Array_<Node> Node_Array;
-
 template <typename T>
-class Node_List_ : public Node_Array_<T> {
-  typedef Node_Array_<T> Base;
+class Node_List : public Node_Array<T> {
+  typedef Node_Array<T> Base;
   uint _cnt;
 public:
-  Node_List_(uint max = OptoNodeListSize) : Base(Thread::current()->resource_area(), max), _cnt(0) {}
-  Node_List_(Arena* a, uint max = OptoNodeListSize) : Base(a, max), _cnt(0) {}
+  Node_List(uint max = OptoNodeListSize) : Base(Thread::current()->resource_area(), max), _cnt(0) {}
+  Node_List(Arena* a, uint max = OptoNodeListSize) : Base(a, max), _cnt(0) {}
 
-  NONCOPYABLE(Node_List_);
-  Node_List_& operator=(Node_List_&&) = delete;
+  NONCOPYABLE(Node_List);
+  Node_List& operator=(Node_List&&) = delete;
   // Allow move constructor for && (eg. capture return of function)
-  Node_List_(Node_List_&&) = default;
+  Node_List(Node_List&&) = default;
 
   bool contains(const T* n) const {
     for (uint e = 0; e < size(); e++) {
@@ -1867,10 +1871,10 @@ public:
   void insert(uint i, T* n) { Base::insert(i,n); _cnt++; }
   void remove(uint i) { Base::remove(i); _cnt--; }
   void push(T* b) { Base::map(_cnt++,b); }
-  void yank(T* n);         // Find and remove
+  void yank(const T* n); // Find and remove
   T* pop() { return Base::_nodes[--_cnt]; }
   void clear() { _cnt = 0; Base::clear(); } // retain storage
-  void copy(const Node_List_<T>& from) {
+  void copy(const Node_List<T>& from) {
     if (from._max > Base::_max) {
       Base::grow(from._max);
     }
@@ -1883,14 +1887,12 @@ public:
   void dump_simple() const;
 };
 
-typedef Node_List_<Node> Node_List;
-
 // Definition must appear after complete type definition of Node_List
 template <typename Callback, typename Check>
 void Node::visit_uses(Callback callback, Check is_boundary, bool always_callback) const {
   ResourceMark rm;
   VectorSet visited;
-  Node_List worklist;
+  Node_List<Node> worklist;
 
   // The initial worklist consists of the direct uses
   for (DUIterator_Fast kmax, k = fast_outs(kmax); k < kmax; k++) {
@@ -1917,8 +1919,8 @@ void Node::visit_uses(Callback callback, Check is_boundary, bool always_callback
 
 //------------------------------Unique_Node_List-------------------------------
 template <typename T>
-class Unique_Node_List_impl : public Node_List_<T> {
-  typedef Node_List_<T> Base;
+class Unique_Node_List_impl : public Node_List<T> {
+  typedef Node_List<T> Base;
   VectorSet _in_worklist;
   uint _clock_index;            // Index in list where to pop from next
 public:
@@ -1930,9 +1932,9 @@ public:
   // Allow move constructor for && (eg. capture return of function)
   Unique_Node_List_impl(Unique_Node_List_impl&&) = default;
 
-  void remove(T* n);
+  void remove(const T* n);
   bool member(const T* n) const { return _in_worklist.test(n->_idx) != 0; }
-  VectorSet& member_set(){ return _in_worklist; }
+  const VectorSet& member_set() const { return _in_worklist; }
 
   void push(T* b) {
     if (!_in_worklist.test_set(b->_idx))
@@ -1953,7 +1955,7 @@ public:
     Base::map(i,Base::pop());
     return b;
   }
-  void yank(T* n) {
+  void yank(const T* n) {
     _in_worklist.remove(n->_idx);
     Base::yank(n);
   }
@@ -1980,7 +1982,7 @@ public:
   }
 
 #ifdef ASSERT
-  bool is_subset_of(Unique_Node_List_<T>& other) {
+  bool is_subset_of(const Unique_Node_List<T>& other) const {
     for (uint i = 0; i < Base::size(); i++) {
       T* n = Base::at(i);
       if (!other.member(n)) {
@@ -2002,19 +2004,19 @@ public:
 };
 
 template <typename T>
-class Unique_Node_List_ : public Unique_Node_List_impl<T> {
+class Unique_Node_List : public Unique_Node_List_impl<T> {
   typedef Unique_Node_List_impl<T> Base;
 public:
-  Unique_Node_List_() : Base() {}
-  Unique_Node_List_(Arena* a) : Base(a) {}
+  Unique_Node_List() : Base() {}
+  Unique_Node_List(Arena* a) : Base(a) {}
 };
 
 template <>
-class Unique_Node_List_<Node> : public Unique_Node_List_impl<Node> {
+class Unique_Node_List<Node> : public Unique_Node_List_impl<Node> {
   typedef Unique_Node_List_impl<Node> Base;
 public:
-  Unique_Node_List_() : Base() {}
-  Unique_Node_List_(Arena* a) : Base(a) {}
+  Unique_Node_List() : Base() {}
+  Unique_Node_List(Arena* a) : Base(a) {}
 
   void push_non_cfg_inputs_of(const Node* node) {
     for (uint i = 1; i < node->req(); i++) {
@@ -2032,8 +2034,6 @@ public:
     }
   }
 };
-
-typedef Unique_Node_List_<Node> Unique_Node_List;
 
 // Unique_Mixed_Node_List
 // unique: nodes are added only once
@@ -2062,7 +2062,7 @@ public:
 
 private:
   Dict _visited_set;
-  Node_List _worklist;
+  Node_List<Node> _worklist;
 };
 
 // Inline definition of Compile::record_for_igvn must be deferred to this point.
@@ -2384,7 +2384,7 @@ class DataNodeBFS : public StackObj {
   // Run the BFS starting from 'start_node' and apply the actions provided to this class.
   void run(Node* start_node) {
     ResourceMark rm;
-    Unique_Node_List _nodes_to_visit;
+    Unique_Node_List<Node> _nodes_to_visit;
     _nodes_to_visit.push(start_node);
     for (uint i = 0; i < _nodes_to_visit.size(); i++) {
       Node* next = _nodes_to_visit[i];

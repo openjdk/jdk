@@ -178,11 +178,7 @@ void PhaseIdealLoop::insert_rf(Node* ctrl, Node* referent) {
   }
 }
 
-void PhaseIdealLoop::replace_rf(Node* old_node, Node* new_node) {
-  assert(old_node->is_ReachabilityFence() ||
-         (old_node->is_Proj() && old_node->in(0)->is_ReachabilityFence()),
-         "%s", NodeClassNames[old_node->Opcode()]);
-
+void PhaseIdealLoop::replace_rf(ReachabilityFenceNode* old_node, Node* new_node) {
   IdealLoopTree* lpt = get_loop(old_node);
   lpt->_body.yank(old_node);
   assert(lpt->_reachability_fences != nullptr, "missing");
@@ -210,7 +206,7 @@ bool PhaseIdealLoop::optimize_reachability_fences() {
   assert(OptimizeReachabilityFences, "required");
 
   // ResourceMark rm; // NB! not safe because insert_rf may trigger _idom reallocation
-  Unique_Node_List_<ReachabilityFenceNode> redundant_rfs;
+  Unique_Node_List<ReachabilityFenceNode> redundant_rfs;
   typedef Pair<Node*,Node*> LoopExit;
   GrowableArray<LoopExit> worklist;
 
@@ -282,7 +278,7 @@ bool PhaseIdealLoop::optimize_reachability_fences() {
 // All encountered safepoints are recorded in safepoints list, except
 // the ones filtered out by is_interfering_sfpt_candidate().
 static void enumerate_interfering_sfpts_linear_traversal(Node* ctrl_start, Node_Stack& stack, VectorSet& visited,
-                                                         Node_List_<SafePointNode>& interfering_sfpts) {
+                                                         Node_List<SafePointNode>& interfering_sfpts) {
   for (Node* ctrl = ctrl_start; ctrl != nullptr; ctrl = ctrl->in(0)) {
     assert(ctrl->is_CFG(), "");
     if (visited.test_set(ctrl->_idx)) {
@@ -304,7 +300,7 @@ static void enumerate_interfering_sfpts_linear_traversal(Node* ctrl_start, Node_
 // Start at RF node and traverse CFG upwards until referent's control node is reached.
 static void enumerate_interfering_sfpts(ReachabilityFenceNode* rf, PhaseIdealLoop* phase,
                                         Node_Stack& stack, VectorSet& visited,
-                                        Node_List_<SafePointNode>& interfering_sfpts) {
+                                        Node_List<SafePointNode>& interfering_sfpts) {
   assert(stack.is_empty(), "required");
   assert(visited.is_empty(), "required");
 
@@ -365,12 +361,12 @@ bool PhaseIdealLoop::expand_reachability_fences() {
   DEBUG_ONLY( int no_of_constant_rfs = 0; )
 
   ResourceMark rm;
-  Unique_Node_List_<ReachabilityFenceNode> for_removal;
+  Unique_Node_List<ReachabilityFenceNode> for_removal;
   typedef Pair<SafePointNode*,Node*> ReachabilityEdge;
   GrowableArray<ReachabilityEdge> reachability_edges;
   {
     // Reuse temporary structures to avoid allocating them for every single RF node.
-    Node_List_<SafePointNode> sfpt_worklist;
+    Node_List<SafePointNode> sfpt_worklist;
     Node_Stack stack(0);
     VectorSet visited;
 
@@ -470,7 +466,7 @@ static Node* sfpt_ctrl_out(SafePointNode* sfpt) {
 // after macro expansion where runtime calls during array allocation are annotated with
 // valid_length_test_input as an extra edges. Until there's a mechanism to distinguish between
 // different types of non-debug edges, unrelated cases are filtered out explicitly and in ad-hoc manner.
-void Compile::expand_reachability_edges(Unique_Node_List_<SafePointNode>& safepoints) {
+void Compile::expand_reachability_edges(Unique_Node_List<SafePointNode>& safepoints) {
   for (uint i = 0; i < safepoints.size(); i++) {
     SafePointNode* sfpt = safepoints.at(i);
 

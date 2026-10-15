@@ -53,7 +53,7 @@ class ReplacedNodes {
     Node* initial() const  { return _initial; }
     Node* improved() const { return _improved; }
 
-    bool operator==(const ReplacedNode& other) {
+    bool operator==(const ReplacedNode& other) const {
       return _initial == other._initial && _improved == other._improved;
     }
   };
@@ -61,7 +61,7 @@ class ReplacedNodes {
 
   void allocate_if_necessary();
   bool has_node(const ReplacedNode& r) const;
-  bool has_target_node(Node* n) const;
+  bool has_target_node(const Node* n) const;
 
  public:
   ReplacedNodes()
@@ -79,7 +79,7 @@ class ReplacedNodes {
 
   bool is_dominator(const Node* ctl, Node* n) const;
 
-  void collect_nodes_to_clone(const Node_Stack& stack, Unique_Node_List& to_fix);
+  void collect_nodes_to_clone(const Node_Stack& stack, Unique_Node_List<Node>& to_fix);
 };
 
 #endif // SHARE_OPTO_REPLACEDNODES_HPP

@@ -612,8 +612,8 @@ Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub, Phase
     // Check all control edges of 'dom'.
 
     ResourceMark rm;
-    Node_List nlist;
-    Unique_Node_List dom_list;
+    Node_List<Node> nlist;
+    Unique_Node_List<Node> dom_list;
 
     dom_list.push(dom);
     bool only_dominating_controls = false;
@@ -3279,9 +3279,9 @@ private:
   Status find_use_store_unidirectional(const StoreNode* def_store) const;
   Status find_def_store_unidirectional(const StoreNode* use_store) const;
 
-  void collect_merge_list(Node_List& merge_list) const;
-  Node* make_merged_input_value(const Node_List& merge_list);
-  StoreNode* make_merged_store(const Node_List& merge_list, Node* merged_input_value);
+  void collect_merge_list(Node_List<const StoreNode>& merge_list) const;
+  Node* make_merged_input_value(const Node_List<const StoreNode>& merge_list);
+  StoreNode* make_merged_store(const Node_List<const StoreNode>& merge_list, Node* merged_input_value);
 
 #ifndef PRODUCT
   // Access to TraceMergeStores tags
@@ -3310,7 +3310,7 @@ private:
   }
 #endif
 
-  NOT_PRODUCT( void trace(const Node_List& merge_list, const Node* merged_input_value, const StoreNode* merged_store) const; )
+  NOT_PRODUCT( void trace(const Node_List<const StoreNode>& merge_list, const Node* merged_input_value, const StoreNode* merged_store) const; )
 };
 
 StoreNode* MergePrimitiveStores::run() {
@@ -3345,7 +3345,7 @@ StoreNode* MergePrimitiveStores::run() {
   assert(_value_order != ValueOrder::NotAdjacent && _value_order != ValueOrder::Unknown, "Order should be checked");
 
   ResourceMark rm;
-  Node_List merge_list;
+  Node_List<const StoreNode> merge_list;
   collect_merge_list(merge_list);
 
   Node* merged_input_value = make_merged_input_value(merge_list);
@@ -3608,7 +3608,7 @@ MergePrimitiveStores::Status MergePrimitiveStores::find_def_store_unidirectional
   return Status::make(def_store, cfg_status_for_pair(use_store, def_store));
 }
 
-void MergePrimitiveStores::collect_merge_list(Node_List& merge_list) const {
+void MergePrimitiveStores::collect_merge_list(Node_List<const StoreNode>& merge_list) const {
   // The merged store can be at most 8 bytes.
   const uint merge_list_max_size = 8 / _store->memory_size();
   assert(merge_list_max_size >= 2 &&
@@ -3646,9 +3646,9 @@ void MergePrimitiveStores::collect_merge_list(Node_List& merge_list) const {
 }
 
 // Merge the input values of the smaller stores to a single larger input value.
-Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list) {
+Node* MergePrimitiveStores::make_merged_input_value(const Node_List<const StoreNode>& merge_list) {
   int new_memory_size = _store->memory_size() * merge_list.size();
-  Node* first = merge_list.at(merge_list.size()-1);
+  const StoreNode* first = merge_list.at(merge_list.size()-1);
   Node* merged_input_value = nullptr;
   if (_store->in(MemNode::ValueIn)->Opcode() == Op_ConI) {
     assert(_value_order == ValueOrder::Const, "must match");
@@ -3748,8 +3748,8 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list)
 //                 | | |  |                                           | | |  |                              //
 //                last_store (= _store)                              merged_store                           //
 //                                                                                                          //
-StoreNode* MergePrimitiveStores::make_merged_store(const Node_List& merge_list, Node* merged_input_value) {
-  Node* first_store = merge_list.at(merge_list.size()-1);
+StoreNode* MergePrimitiveStores::make_merged_store(const Node_List<const StoreNode>& merge_list, Node* merged_input_value) {
+  const StoreNode* first_store = merge_list.at(merge_list.size()-1);
   Node* last_ctrl   = _store->in(MemNode::Control); // after (optional) RangeCheck
   Node* first_mem   = first_store->in(MemNode::Memory);
   Node* first_adr   = first_store->in(MemNode::Address);
@@ -3778,7 +3778,7 @@ StoreNode* MergePrimitiveStores::make_merged_store(const Node_List& merge_list, 
 }
 
 #ifndef PRODUCT
-void MergePrimitiveStores::trace(const Node_List& merge_list, const Node* merged_input_value, const StoreNode* merged_store) const {
+void MergePrimitiveStores::trace(const Node_List<const StoreNode>& merge_list, const Node* merged_input_value, const StoreNode* merged_store) const {
   stringStream ss;
   ss.print_cr("[TraceMergeStores]: Replace");
   for (int i = (int)merge_list.size() - 1; i >= 0; i--) {
@@ -4951,11 +4951,11 @@ MemBarNode* MemBarNode::leading_membar() const {
     }
   }
 #ifdef ASSERT
-  Unique_Node_List wq;
-  wq.push((Node*)this);
+  Unique_Node_List<const Node> wq;
+  wq.push(this);
   uint found = 0;
   for (uint i = 0; i < wq.size(); i++) {
-    Node* n = wq.at(i);
+    const Node* n = wq.at(i);
     if (n->is_Region()) {
       for (uint j = 1; j < n->req(); j++) {
         Node* in = n->in(j);
@@ -5179,7 +5179,7 @@ intptr_t InitializeNode::get_store_offset(Node* st, PhaseValues* phase) {
 // True for constants and parameters and small combinations thereof.
 bool InitializeNode::detect_init_independence(Node* value, PhaseGVN* phase) {
   ResourceMark rm;
-  Unique_Node_List worklist;
+  Unique_Node_List<Node> worklist;
   worklist.push(value);
 
   uint complexity_limit = 20;
@@ -5277,7 +5277,7 @@ intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseGVN* phase, bool 
     const TypePtr* t_adr = phase->type(adr)->isa_ptr();
     int alias_idx = phase->C->get_alias_index(t_adr);
     ResourceMark rm;
-    Unique_Node_List mems;
+    Unique_Node_List<Node> mems;
     mems.push(mem);
     Node* unique_merge = nullptr;
     for (uint next = 0; next < mems.size(); ++next) {

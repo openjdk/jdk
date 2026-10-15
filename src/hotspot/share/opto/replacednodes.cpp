@@ -41,7 +41,7 @@ bool ReplacedNodes::has_node(const ReplacedNode& r) const {
   return _replaced_nodes->find(r) != -1;
 }
 
-bool ReplacedNodes::has_target_node(Node* n) const {
+bool ReplacedNodes::has_target_node(const Node* n) const {
   for (int i = 0; i < _replaced_nodes->length(); i++) {
     if (_replaced_nodes->at(i).improved() == n) {
       return true;
@@ -113,7 +113,7 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
   }
   ResourceMark rm;
   Node_Stack stack(0);
-  Unique_Node_List to_fix; // nodes to clone + uses at the end of the chain that need to updated
+  Unique_Node_List<Node> to_fix; // nodes to clone + uses at the end of the chain that need to updated
   VectorSet seen;
   VectorSet valid_control;
 
@@ -315,7 +315,7 @@ void ReplacedNodes::merge_with(const ReplacedNodes& other) {
   }
 }
 
-void ReplacedNodes::collect_nodes_to_clone(const Node_Stack& stack, Unique_Node_List& to_fix) {
+void ReplacedNodes::collect_nodes_to_clone(const Node_Stack& stack, Unique_Node_List<Node>& to_fix) {
   for (uint i = stack.size() - 1; i >= 1; i--) {
     Node* n = stack.node_at(i);
     to_fix.push(n);

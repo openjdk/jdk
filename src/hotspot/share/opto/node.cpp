@@ -29,6 +29,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/ad.hpp"
+#include "opto/addnode.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
@@ -102,7 +103,7 @@ void DUIterator_Common::sample(const Node* node) {
   _last     = nullptr;
 }
 
-void DUIterator_Common::verify(const Node* node, bool at_end_ok) {
+void DUIterator_Common::verify(const Node* node, bool at_end_ok) const {
   assert(_node     == node, "consistent iterator source");
   assert(_del_tick == node->_del_tick, "no unexpected deletions allowed");
 }
@@ -198,7 +199,7 @@ void DUIterator::verify_finish() {
 }
 
 
-void DUIterator_Fast::verify(const Node* node, bool at_end_ok) {
+void DUIterator_Fast::verify(const Node* node, bool at_end_ok) const {
   DUIterator_Common::verify(node, at_end_ok);
   Node** out    = node->_out;
   uint   cnt    = node->_outcnt;
@@ -207,7 +208,7 @@ void DUIterator_Fast::verify(const Node* node, bool at_end_ok) {
   // This last check is carefully designed to work for NO_OUT_ARRAY.
 }
 
-void DUIterator_Fast::verify_limit() {
+void DUIterator_Fast::verify_limit() const {
   const Node* node = _node;
   verify(node, true);
   assert(_outp == node->_out + node->_outcnt, "limit still correct");
@@ -754,11 +755,11 @@ bool Node::is_not_dead(const Node* n) {
 
 bool Node::is_reachable_from_root() const {
   ResourceMark rm;
-  Unique_Node_List wq;
-  wq.push((Node*)this);
+  Unique_Node_List<const Node> wq;
+  wq.push(this);
   RootNode* root = Compile::current()->root();
   for (uint i = 0; i < wq.size(); i++) {
-    Node* m = wq.at(i);
+    const Node* m = wq.at(i);
     if (m == root) {
       return true;
     }
@@ -1292,7 +1293,7 @@ Node* Node::find_exact_control(Node* ctrl) {
 // We already know that if any path back to Root or Start reaches 'this',
 // then all paths so, so this is a simple search for one example,
 // not an exhaustive search for a counterexample.
-Node::DomResult Node::dominates(Node* sub, Node_List &nlist) {
+Node::DomResult Node::dominates(Node* sub, Node_List<Node>& nlist) {
   assert(this->is_CFG(), "expecting control");
   assert(sub != nullptr && sub->is_CFG(), "expecting control");
 
@@ -1421,7 +1422,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
   if( dead->is_Con() ) return;
 
   ResourceMark rm;
-  Node_List nstack;
+  Node_List<Node> nstack;
   VectorSet dead_set; // notify uses only once
 
   Node *top = igvn->C->top();
@@ -2750,7 +2751,7 @@ void Node::dump_comp(const char* suffix, outputStream *st) const {
 
 // VERIFICATION CODE
 // Verify all nodes if verify_depth is negative
-void Node::verify(int verify_depth, VectorSet& visited, Node_List& worklist) {
+void Node::verify(int verify_depth, VectorSet& visited, Node_List<Node>& worklist) {
   assert(verify_depth != 0, "depth should not be 0");
   Compile* C = Compile::current();
   uint last_index_on_current_depth = worklist.size() - 1;
@@ -2841,7 +2842,7 @@ const RegMask &Node::in_RegMask(uint) const {
 }
 
 template <typename T>
-void Node_Array_<T>::grow(uint i) {
+void Node_Array<T>::grow(uint i) {
   assert(i >= _max, "Should have been checked before, use maybe_grow?");
   assert(_max > 0, "invariant");
   uint old = _max;
@@ -2851,7 +2852,7 @@ void Node_Array_<T>::grow(uint i) {
 }
 
 template <typename T>
-void Node_Array_<T>::insert(uint i, T* n) {
+void Node_Array<T>::insert(uint i, T* n) {
   if (_nodes[_max - 1]) {
     grow(_max);
   }
@@ -2860,13 +2861,13 @@ void Node_Array_<T>::insert(uint i, T* n) {
 }
 
 template <typename T>
-void Node_Array_<T>::remove(uint i) {
+void Node_Array<T>::remove(uint i) {
   Copy::conjoint_words_to_lower((HeapWord*)&_nodes[i + 1], (HeapWord*)&_nodes[i], ((_max - i - 1) * sizeof(T*)));
   _nodes[_max - 1] = nullptr;
 }
 
 template <typename T>
-void Node_Array_<T>::dump() const {
+void Node_Array<T>::dump() const {
 #ifndef PRODUCT
   for (uint i = 0; i < _max; i++) {
     T* nn = _nodes[i];
@@ -3092,7 +3093,7 @@ bool Node::has_non_debug_uses() const {
 //------------------------------yank-------------------------------------------
 // Find and remove
 template <typename T>
-void Node_List_<T>::yank(T* n) {
+void Node_List<T>::yank(const T* n) {
   uint i;
   for (i = 0; i < _cnt; i++) {
     if (Base::_nodes[i] == n) {
@@ -3107,7 +3108,7 @@ void Node_List_<T>::yank(T* n) {
 
 //------------------------------dump-------------------------------------------
 template <typename T>
-void Node_List_<T>::dump() const {
+void Node_List<T>::dump() const {
 #ifndef PRODUCT
   for (uint i = 0; i < _cnt; i++) {
     if (Base::_nodes[i]) {
@@ -3119,7 +3120,7 @@ void Node_List_<T>::dump() const {
 }
 
 template <typename T>
-void Node_List_<T>::dump_simple() const {
+void Node_List<T>::dump_simple() const {
 #ifndef PRODUCT
   for (uint i = 0; i < _cnt; i++) {
     if (Base::_nodes[i]) {
@@ -3134,7 +3135,7 @@ void Node_List_<T>::dump_simple() const {
 //=============================================================================
 //------------------------------remove-----------------------------------------
 template <typename T>
-void Unique_Node_List_impl<T>::remove(T* n) {
+void Unique_Node_List_impl<T>::remove(const T* n) {
   if (_in_worklist.test(n->_idx)) {
     for (uint i = 0; i < Base::size(); i++) {
       if (Base::_nodes[i] == n) {
@@ -3229,7 +3230,7 @@ void TypeNode::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ct
 // doesn't happen, however. They are handled here by following uses of the Type node until a CFG or a Phi to find dead
 // paths. The dead paths are then replaced by a Halt node.
 void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str) {
-  Unique_Node_List wq;
+  Unique_Node_List<Node> wq;
   wq.push(this);
   for (uint i = 0; i < wq.size(); ++i) {
     Node* n = wq.at(i);
@@ -3288,28 +3289,42 @@ Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 #define INSTANCIATE_NODE_CONTAINERS(node)         \
-template class Node_Array_<node>;                 \
-template class Node_Array_<const node>;           \
-template class Node_List_<node>;                  \
-template class Node_List_<const node>;            \
+template class Node_Array<node>;                  \
+template class Node_Array<const node>;            \
+template class Node_List<node>;                   \
+template class Node_List<const node>;             \
 template class Unique_Node_List_impl<node>;       \
 template class Unique_Node_List_impl<const node>; \
-template class Unique_Node_List_<node>;           \
-template class Unique_Node_List_<const node>;     \
+template class Unique_Node_List<node>;            \
+template class Unique_Node_List<const node>;      \
 
-template class Node_Array_<Node>;
-template class Node_Array_<const Node>;
-template class Node_List_<Node>;
-template class Node_List_<const Node>;
-template class Unique_Node_List_impl<Node>;
-template class Unique_Node_List_impl<const Node>;
-template class Unique_Node_List_<const Node>;
+INSTANCIATE_NODE_CONTAINERS(Node)
 
+INSTANCIATE_NODE_CONTAINERS(AbstractLockNode)
+INSTANCIATE_NODE_CONTAINERS(AddPNode)
+INSTANCIATE_NODE_CONTAINERS(BoolNode)
 INSTANCIATE_NODE_CONTAINERS(CallJavaNode)
 INSTANCIATE_NODE_CONTAINERS(CallStaticJavaNode)
+INSTANCIATE_NODE_CONTAINERS(CastPPNode)
+INSTANCIATE_NODE_CONTAINERS(ConstraintCastNode)
+INSTANCIATE_NODE_CONTAINERS(CountedLoopNode)
+INSTANCIATE_NODE_CONTAINERS(CreateExNode)
+INSTANCIATE_NODE_CONTAINERS(IfNode)
 INSTANCIATE_NODE_CONTAINERS(IfProjNode)
+INSTANCIATE_NODE_CONTAINERS(MachNode)
+INSTANCIATE_NODE_CONTAINERS(MachProjNode)
+INSTANCIATE_NODE_CONTAINERS(MergeMemNode)
+INSTANCIATE_NODE_CONTAINERS(MemNode)
+INSTANCIATE_NODE_CONTAINERS(MultiBranchNode)
 INSTANCIATE_NODE_CONTAINERS(PhiNode)
+INSTANCIATE_NODE_CONTAINERS(OpaqueMultiversioningNode)
+INSTANCIATE_NODE_CONTAINERS(OpaqueTemplateAssertionPredicateNode)
+INSTANCIATE_NODE_CONTAINERS(OpaqueZeroTripGuardNode)
 INSTANCIATE_NODE_CONTAINERS(ReachabilityFenceNode)
+INSTANCIATE_NODE_CONTAINERS(RegionNode)
 INSTANCIATE_NODE_CONTAINERS(SafePointNode)
 INSTANCIATE_NODE_CONTAINERS(SafePointScalarObjectNode)
+INSTANCIATE_NODE_CONTAINERS(StoreNode)
+INSTANCIATE_NODE_CONTAINERS(TypeNode)
+INSTANCIATE_NODE_CONTAINERS(ValueTypeNode)
 #undef INSTANCIATE_NODE_CONTAINERS

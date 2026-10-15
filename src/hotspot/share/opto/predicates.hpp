@@ -598,7 +598,7 @@ class TemplateAssertionExpressionNode : public StackObj {
   template <class Callback>
   void for_each_template_assertion_predicate(Callback callback) {
     ResourceMark rm;
-    Unique_Node_List list;
+    Unique_Node_List<Node> list;
     list.push(_node);
     DEBUG_ONLY(int template_counter = 0;)
     for (uint i = 0; i < list.size(); i++) {
@@ -1077,10 +1077,10 @@ class Predicates : public StackObj {
 // This class checks whether a node is in the original loop body and not the cloned one.
 class NodeInOriginalLoopBody : public NodeInLoopBody {
   const uint _first_node_index_in_cloned_loop_body;
-  const Node_List& _old_new;
+  const Node_List<Node>& _old_new;
 
  public:
-  NodeInOriginalLoopBody(const uint first_node_index_in_cloned_loop_body, const Node_List& old_new)
+  NodeInOriginalLoopBody(const uint first_node_index_in_cloned_loop_body, const Node_List<Node>& old_new)
       : _first_node_index_in_cloned_loop_body(first_node_index_in_cloned_loop_body),
         _old_new(old_new) {}
   NONCOPYABLE(NodeInOriginalLoopBody);
@@ -1104,11 +1104,11 @@ class NodeInMainLoopBody : public NodeInLoopBody {
   const uint _first_node_index_in_pre_loop_body;
   const uint _last_node_index_in_pre_loop_body;
   DEBUG_ONLY(const uint _last_node_index_from_backedge_goo;)
-  const Node_List& _old_new;
+  const Node_List<Node>& _old_new;
 
   public:
   NodeInMainLoopBody(const uint first_node_index_in_pre_loop_body, const uint last_node_index_in_pre_loop_body,
-                     DEBUG_ONLY(const uint last_node_index_from_backedge_goo COMMA) const Node_List& old_new)
+                     DEBUG_ONLY(const uint last_node_index_from_backedge_goo COMMA) const Node_List<Node>& old_new)
       : _first_node_index_in_pre_loop_body(first_node_index_in_pre_loop_body),
         _last_node_index_in_pre_loop_body(last_node_index_in_pre_loop_body),
         DEBUG_ONLY(_last_node_index_from_backedge_goo(last_node_index_from_backedge_goo) COMMA)
@@ -1283,10 +1283,10 @@ class CloneUnswitchedLoopPredicatesVisitor : public PredicateVisitor {
 // This visitor collects all OpaqueTemplateAssertionNodes of Template Assertion Predicates. This is used for cleaning
 // up unused Template Assertion Predicates.
 class OpaqueTemplateAssertionPredicateCollector : public PredicateVisitor {
-  Unique_Node_List& _list;
+  Unique_Node_List<OpaqueTemplateAssertionPredicateNode>& _list;
 
  public:
-  explicit OpaqueTemplateAssertionPredicateCollector(Unique_Node_List& list) : _list(list) {}
+  explicit OpaqueTemplateAssertionPredicateCollector(Unique_Node_List<OpaqueTemplateAssertionPredicateNode>& list) : _list(list) {}
 
   using PredicateVisitor::visit;
 
@@ -1364,8 +1364,8 @@ class EliminateUselessPredicates : public StackObj {
 
 #ifdef ASSERT
   void verify_loop_nodes_of_useless_templates_assertion_predicates_are_dead() const;
-  Unique_Node_List collect_loop_nodes_of_useless_template_assertion_predicates() const;
-  void verify_associated_loop_nodes_are_dead(const Unique_Node_List& loop_nodes_of_useless_template_assertion_predicates) const;
+  Unique_Node_List<const CountedLoopNode> collect_loop_nodes_of_useless_template_assertion_predicates() const;
+  void verify_associated_loop_nodes_are_dead(const Unique_Node_List<const CountedLoopNode>& loop_nodes_of_useless_template_assertion_predicates) const;
 #endif // ASSERT
  public:
   EliminateUselessPredicates(PhaseIterGVN& igvn, IdealLoopTree* ltree_root)
