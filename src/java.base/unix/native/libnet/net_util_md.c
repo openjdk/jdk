@@ -234,11 +234,6 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
     }
 }
 
-JNIEXPORT jint JNICALL
-NET_EnableFastTcpLoopback(int fd) {
-    return 0;
-}
-
 /**
  * See net_util.h for documentation
  */
