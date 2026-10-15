@@ -130,12 +130,35 @@ public class OpensslArtifactFetcher {
 
     // retrieve the provider directory path from <OPENSSL_HOME>/bin/openssl
     public static Path getProviderPath(String opensslPath) {
-        Path openSslRootPath = Path.of(opensslPath).getParent().getParent();
-        String libDir = "lib";
-        if (Platform.isX64() && (Platform.isLinux() || Platform.isWindows())) {
-            libDir = "lib64";
+        // This test uses -legacy (RC4/SHA1 PBE). Skip if the legacy provider
+        // is not available instead of failing later.
+        if (!opensslHasProvider(opensslPath, "legacy")) {
+            throw new SkippedException("OpenSSL legacy provider not available");
         }
-        return openSslRootPath.resolve(libDir, "ossl-modules");
+        // Ask openssl for its modules directory. This works for both the
+        // downloaded bundle and system installs, and avoids assuming
+        // <openssl>/bin/../lib/ossl-modules (which NPEs on a bare "openssl"
+        // command name and is wrong for distro multiarch layouts).
+        String dir;
+        try {
+            dir = ProcessTools.executeCommand(opensslPath, "info", "-modulesdir")
+                    .shouldHaveExitValue(0)
+                    .getStdout().trim();
+        } catch (Exception e) {
+            throw new SkippedException("OpenSSL legacy provider not available", e);
+        }
+        return Path.of(dir);
+    }
+
+    private static boolean opensslHasProvider(String opensslPath, String provider) {
+        try {
+            return ProcessTools.executeCommand(opensslPath, "list", "-providers")
+                    .shouldHaveExitValue(0)
+                    .getStdout()
+                    .contains(provider);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public static String getTestOpensslBundleVersion() {
