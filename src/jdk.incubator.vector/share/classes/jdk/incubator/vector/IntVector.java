@@ -3861,7 +3861,7 @@ public abstract sealed class IntVector extends AbstractVector<Integer>
      */
     /*package-private*/
     static final class IntSpecies extends AbstractSpecies<Integer> {
-        private IntSpecies(VectorShape shape,
+        private IntSpecies(VectorShapeImpl shape,
                 Class<? extends IntVector> vectorType,
                 Class<? extends AbstractMask<Integer>> maskType,
                 Class<? extends AbstractShuffle<Integer>> shuffleType,
@@ -4138,19 +4138,19 @@ public abstract sealed class IntVector extends AbstractVector<Integer>
      */
     static IntSpecies species(VectorShape s) {
         Objects.requireNonNull(s);
-        switch (s.switchKey) {
-            case VectorShape.SK_64_BIT: return (IntSpecies) SPECIES_64;
-            case VectorShape.SK_128_BIT: return (IntSpecies) SPECIES_128;
-            case VectorShape.SK_256_BIT: return (IntSpecies) SPECIES_256;
-            case VectorShape.SK_512_BIT: return (IntSpecies) SPECIES_512;
-            case VectorShape.SK_Max_BIT: return (IntSpecies) SPECIES_MAX;
+        switch (((VectorShapeImpl) s).switchKey) {
+            case VectorShapeImpl.SK_64_BIT: return (IntSpecies) SPECIES_64;
+            case VectorShapeImpl.SK_128_BIT: return (IntSpecies) SPECIES_128;
+            case VectorShapeImpl.SK_256_BIT: return (IntSpecies) SPECIES_256;
+            case VectorShapeImpl.SK_512_BIT: return (IntSpecies) SPECIES_512;
+            case VectorShapeImpl.SK_Max_BIT: return (IntSpecies) SPECIES_MAX;
             default: throw new IllegalArgumentException("Bad shape: " + s);
         }
     }
 
     /** Species representing {@link IntVector}s of {@link VectorShape#S_64_BIT VectorShape.S_64_BIT}. */
     public static final VectorSpecies<Integer> SPECIES_64
-        = new IntSpecies(VectorShape.S_64_BIT,
+        = new IntSpecies(VectorShapeImpl.S_64_BIT,
                             IntVector64.class,
                             IntVector64.IntMask64.class,
                             IntVector64.IntShuffle64.class,
@@ -4158,7 +4158,7 @@ public abstract sealed class IntVector extends AbstractVector<Integer>
 
     /** Species representing {@link IntVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
     public static final VectorSpecies<Integer> SPECIES_128
-        = new IntSpecies(VectorShape.S_128_BIT,
+        = new IntSpecies(VectorShapeImpl.S_128_BIT,
                             IntVector128.class,
                             IntVector128.IntMask128.class,
                             IntVector128.IntShuffle128.class,
@@ -4166,7 +4166,7 @@ public abstract sealed class IntVector extends AbstractVector<Integer>
 
     /** Species representing {@link IntVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
     public static final VectorSpecies<Integer> SPECIES_256
-        = new IntSpecies(VectorShape.S_256_BIT,
+        = new IntSpecies(VectorShapeImpl.S_256_BIT,
                             IntVector256.class,
                             IntVector256.IntMask256.class,
                             IntVector256.IntShuffle256.class,
@@ -4174,7 +4174,7 @@ public abstract sealed class IntVector extends AbstractVector<Integer>
 
     /** Species representing {@link IntVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
     public static final VectorSpecies<Integer> SPECIES_512
-        = new IntSpecies(VectorShape.S_512_BIT,
+        = new IntSpecies(VectorShapeImpl.S_512_BIT,
                             IntVector512.class,
                             IntVector512.IntMask512.class,
                             IntVector512.IntShuffle512.class,
@@ -4182,7 +4182,7 @@ public abstract sealed class IntVector extends AbstractVector<Integer>
 
     /** Species representing {@link IntVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<Integer> SPECIES_MAX
-        = new IntSpecies(VectorShape.S_Max_BIT,
+        = new IntSpecies(VectorShapeImpl.S_Max_BIT,
                             IntVectorMax.class,
                             IntVectorMax.IntMaskMax.class,
                             IntVectorMax.IntShuffleMax.class,

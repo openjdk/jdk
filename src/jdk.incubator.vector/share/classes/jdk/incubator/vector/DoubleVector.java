@@ -3747,7 +3747,7 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
      */
     /*package-private*/
     static final class DoubleSpecies extends AbstractSpecies<Double> {
-        private DoubleSpecies(VectorShape shape,
+        private DoubleSpecies(VectorShapeImpl shape,
                 Class<? extends DoubleVector> vectorType,
                 Class<? extends AbstractMask<Double>> maskType,
                 Class<? extends AbstractShuffle<Double>> shuffleType,
@@ -4024,19 +4024,19 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
      */
     static DoubleSpecies species(VectorShape s) {
         Objects.requireNonNull(s);
-        switch (s.switchKey) {
-            case VectorShape.SK_64_BIT: return (DoubleSpecies) SPECIES_64;
-            case VectorShape.SK_128_BIT: return (DoubleSpecies) SPECIES_128;
-            case VectorShape.SK_256_BIT: return (DoubleSpecies) SPECIES_256;
-            case VectorShape.SK_512_BIT: return (DoubleSpecies) SPECIES_512;
-            case VectorShape.SK_Max_BIT: return (DoubleSpecies) SPECIES_MAX;
+        switch (((VectorShapeImpl) s).switchKey) {
+            case VectorShapeImpl.SK_64_BIT: return (DoubleSpecies) SPECIES_64;
+            case VectorShapeImpl.SK_128_BIT: return (DoubleSpecies) SPECIES_128;
+            case VectorShapeImpl.SK_256_BIT: return (DoubleSpecies) SPECIES_256;
+            case VectorShapeImpl.SK_512_BIT: return (DoubleSpecies) SPECIES_512;
+            case VectorShapeImpl.SK_Max_BIT: return (DoubleSpecies) SPECIES_MAX;
             default: throw new IllegalArgumentException("Bad shape: " + s);
         }
     }
 
     /** Species representing {@link DoubleVector}s of {@link VectorShape#S_64_BIT VectorShape.S_64_BIT}. */
     public static final VectorSpecies<Double> SPECIES_64
-        = new DoubleSpecies(VectorShape.S_64_BIT,
+        = new DoubleSpecies(VectorShapeImpl.S_64_BIT,
                             DoubleVector64.class,
                             DoubleVector64.DoubleMask64.class,
                             DoubleVector64.DoubleShuffle64.class,
@@ -4044,7 +4044,7 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
 
     /** Species representing {@link DoubleVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
     public static final VectorSpecies<Double> SPECIES_128
-        = new DoubleSpecies(VectorShape.S_128_BIT,
+        = new DoubleSpecies(VectorShapeImpl.S_128_BIT,
                             DoubleVector128.class,
                             DoubleVector128.DoubleMask128.class,
                             DoubleVector128.DoubleShuffle128.class,
@@ -4052,7 +4052,7 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
 
     /** Species representing {@link DoubleVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
     public static final VectorSpecies<Double> SPECIES_256
-        = new DoubleSpecies(VectorShape.S_256_BIT,
+        = new DoubleSpecies(VectorShapeImpl.S_256_BIT,
                             DoubleVector256.class,
                             DoubleVector256.DoubleMask256.class,
                             DoubleVector256.DoubleShuffle256.class,
@@ -4060,7 +4060,7 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
 
     /** Species representing {@link DoubleVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
     public static final VectorSpecies<Double> SPECIES_512
-        = new DoubleSpecies(VectorShape.S_512_BIT,
+        = new DoubleSpecies(VectorShapeImpl.S_512_BIT,
                             DoubleVector512.class,
                             DoubleVector512.DoubleMask512.class,
                             DoubleVector512.DoubleShuffle512.class,
@@ -4068,7 +4068,7 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
 
     /** Species representing {@link DoubleVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<Double> SPECIES_MAX
-        = new DoubleSpecies(VectorShape.S_Max_BIT,
+        = new DoubleSpecies(VectorShapeImpl.S_Max_BIT,
                             DoubleVectorMax.class,
                             DoubleVectorMax.DoubleMaskMax.class,
                             DoubleVectorMax.DoubleShuffleMax.class,

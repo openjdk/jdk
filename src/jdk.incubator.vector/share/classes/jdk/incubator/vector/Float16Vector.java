@@ -3757,7 +3757,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
      */
     /*package-private*/
     static final class Float16Species extends AbstractSpecies<Float16> {
-        private Float16Species(VectorShape shape,
+        private Float16Species(VectorShapeImpl shape,
                 Class<? extends Float16Vector> vectorType,
                 Class<? extends AbstractMask<Float16>> maskType,
                 Class<? extends AbstractShuffle<Float16>> shuffleType,
@@ -4035,19 +4035,19 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
      */
     static Float16Species species(VectorShape s) {
         Objects.requireNonNull(s);
-        switch (s.switchKey) {
-            case VectorShape.SK_64_BIT: return (Float16Species) SPECIES_64;
-            case VectorShape.SK_128_BIT: return (Float16Species) SPECIES_128;
-            case VectorShape.SK_256_BIT: return (Float16Species) SPECIES_256;
-            case VectorShape.SK_512_BIT: return (Float16Species) SPECIES_512;
-            case VectorShape.SK_Max_BIT: return (Float16Species) SPECIES_MAX;
+        switch (((VectorShapeImpl) s).switchKey) {
+            case VectorShapeImpl.SK_64_BIT: return (Float16Species) SPECIES_64;
+            case VectorShapeImpl.SK_128_BIT: return (Float16Species) SPECIES_128;
+            case VectorShapeImpl.SK_256_BIT: return (Float16Species) SPECIES_256;
+            case VectorShapeImpl.SK_512_BIT: return (Float16Species) SPECIES_512;
+            case VectorShapeImpl.SK_Max_BIT: return (Float16Species) SPECIES_MAX;
             default: throw new IllegalArgumentException("Bad shape: " + s);
         }
     }
 
     /** Species representing {@link Float16Vector}s of {@link VectorShape#S_64_BIT VectorShape.S_64_BIT}. */
     public static final VectorSpecies<Float16> SPECIES_64
-        = new Float16Species(VectorShape.S_64_BIT,
+        = new Float16Species(VectorShapeImpl.S_64_BIT,
                             Float16Vector64.class,
                             Float16Vector64.Float16Mask64.class,
                             Float16Vector64.Float16Shuffle64.class,
@@ -4055,7 +4055,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
 
     /** Species representing {@link Float16Vector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
     public static final VectorSpecies<Float16> SPECIES_128
-        = new Float16Species(VectorShape.S_128_BIT,
+        = new Float16Species(VectorShapeImpl.S_128_BIT,
                             Float16Vector128.class,
                             Float16Vector128.Float16Mask128.class,
                             Float16Vector128.Float16Shuffle128.class,
@@ -4063,7 +4063,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
 
     /** Species representing {@link Float16Vector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
     public static final VectorSpecies<Float16> SPECIES_256
-        = new Float16Species(VectorShape.S_256_BIT,
+        = new Float16Species(VectorShapeImpl.S_256_BIT,
                             Float16Vector256.class,
                             Float16Vector256.Float16Mask256.class,
                             Float16Vector256.Float16Shuffle256.class,
@@ -4071,7 +4071,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
 
     /** Species representing {@link Float16Vector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
     public static final VectorSpecies<Float16> SPECIES_512
-        = new Float16Species(VectorShape.S_512_BIT,
+        = new Float16Species(VectorShapeImpl.S_512_BIT,
                             Float16Vector512.class,
                             Float16Vector512.Float16Mask512.class,
                             Float16Vector512.Float16Shuffle512.class,
@@ -4079,7 +4079,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
 
     /** Species representing {@link Float16Vector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<Float16> SPECIES_MAX
-        = new Float16Species(VectorShape.S_Max_BIT,
+        = new Float16Species(VectorShapeImpl.S_Max_BIT,
                             Float16VectorMax.class,
                             Float16VectorMax.Float16MaskMax.class,
                             Float16VectorMax.Float16ShuffleMax.class,

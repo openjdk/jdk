@@ -3796,7 +3796,7 @@ public abstract sealed class LongVector extends AbstractVector<Long>
      */
     /*package-private*/
     static final class LongSpecies extends AbstractSpecies<Long> {
-        private LongSpecies(VectorShape shape,
+        private LongSpecies(VectorShapeImpl shape,
                 Class<? extends LongVector> vectorType,
                 Class<? extends AbstractMask<Long>> maskType,
                 Class<? extends AbstractShuffle<Long>> shuffleType,
@@ -4064,19 +4064,19 @@ public abstract sealed class LongVector extends AbstractVector<Long>
      */
     static LongSpecies species(VectorShape s) {
         Objects.requireNonNull(s);
-        switch (s.switchKey) {
-            case VectorShape.SK_64_BIT: return (LongSpecies) SPECIES_64;
-            case VectorShape.SK_128_BIT: return (LongSpecies) SPECIES_128;
-            case VectorShape.SK_256_BIT: return (LongSpecies) SPECIES_256;
-            case VectorShape.SK_512_BIT: return (LongSpecies) SPECIES_512;
-            case VectorShape.SK_Max_BIT: return (LongSpecies) SPECIES_MAX;
+        switch (((VectorShapeImpl) s).switchKey) {
+            case VectorShapeImpl.SK_64_BIT: return (LongSpecies) SPECIES_64;
+            case VectorShapeImpl.SK_128_BIT: return (LongSpecies) SPECIES_128;
+            case VectorShapeImpl.SK_256_BIT: return (LongSpecies) SPECIES_256;
+            case VectorShapeImpl.SK_512_BIT: return (LongSpecies) SPECIES_512;
+            case VectorShapeImpl.SK_Max_BIT: return (LongSpecies) SPECIES_MAX;
             default: throw new IllegalArgumentException("Bad shape: " + s);
         }
     }
 
     /** Species representing {@link LongVector}s of {@link VectorShape#S_64_BIT VectorShape.S_64_BIT}. */
     public static final VectorSpecies<Long> SPECIES_64
-        = new LongSpecies(VectorShape.S_64_BIT,
+        = new LongSpecies(VectorShapeImpl.S_64_BIT,
                             LongVector64.class,
                             LongVector64.LongMask64.class,
                             LongVector64.LongShuffle64.class,
@@ -4084,7 +4084,7 @@ public abstract sealed class LongVector extends AbstractVector<Long>
 
     /** Species representing {@link LongVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
     public static final VectorSpecies<Long> SPECIES_128
-        = new LongSpecies(VectorShape.S_128_BIT,
+        = new LongSpecies(VectorShapeImpl.S_128_BIT,
                             LongVector128.class,
                             LongVector128.LongMask128.class,
                             LongVector128.LongShuffle128.class,
@@ -4092,7 +4092,7 @@ public abstract sealed class LongVector extends AbstractVector<Long>
 
     /** Species representing {@link LongVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
     public static final VectorSpecies<Long> SPECIES_256
-        = new LongSpecies(VectorShape.S_256_BIT,
+        = new LongSpecies(VectorShapeImpl.S_256_BIT,
                             LongVector256.class,
                             LongVector256.LongMask256.class,
                             LongVector256.LongShuffle256.class,
@@ -4100,7 +4100,7 @@ public abstract sealed class LongVector extends AbstractVector<Long>
 
     /** Species representing {@link LongVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
     public static final VectorSpecies<Long> SPECIES_512
-        = new LongSpecies(VectorShape.S_512_BIT,
+        = new LongSpecies(VectorShapeImpl.S_512_BIT,
                             LongVector512.class,
                             LongVector512.LongMask512.class,
                             LongVector512.LongShuffle512.class,
@@ -4108,7 +4108,7 @@ public abstract sealed class LongVector extends AbstractVector<Long>
 
     /** Species representing {@link LongVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<Long> SPECIES_MAX
-        = new LongSpecies(VectorShape.S_Max_BIT,
+        = new LongSpecies(VectorShapeImpl.S_Max_BIT,
                             LongVectorMax.class,
                             LongVectorMax.LongMaskMax.class,
                             LongVectorMax.LongShuffleMax.class,

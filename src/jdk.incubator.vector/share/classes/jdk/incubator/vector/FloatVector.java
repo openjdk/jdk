@@ -3697,7 +3697,7 @@ public abstract sealed class FloatVector extends AbstractVector<Float>
      */
     /*package-private*/
     static final class FloatSpecies extends AbstractSpecies<Float> {
-        private FloatSpecies(VectorShape shape,
+        private FloatSpecies(VectorShapeImpl shape,
                 Class<? extends FloatVector> vectorType,
                 Class<? extends AbstractMask<Float>> maskType,
                 Class<? extends AbstractShuffle<Float>> shuffleType,
@@ -3974,19 +3974,19 @@ public abstract sealed class FloatVector extends AbstractVector<Float>
      */
     static FloatSpecies species(VectorShape s) {
         Objects.requireNonNull(s);
-        switch (s.switchKey) {
-            case VectorShape.SK_64_BIT: return (FloatSpecies) SPECIES_64;
-            case VectorShape.SK_128_BIT: return (FloatSpecies) SPECIES_128;
-            case VectorShape.SK_256_BIT: return (FloatSpecies) SPECIES_256;
-            case VectorShape.SK_512_BIT: return (FloatSpecies) SPECIES_512;
-            case VectorShape.SK_Max_BIT: return (FloatSpecies) SPECIES_MAX;
+        switch (((VectorShapeImpl) s).switchKey) {
+            case VectorShapeImpl.SK_64_BIT: return (FloatSpecies) SPECIES_64;
+            case VectorShapeImpl.SK_128_BIT: return (FloatSpecies) SPECIES_128;
+            case VectorShapeImpl.SK_256_BIT: return (FloatSpecies) SPECIES_256;
+            case VectorShapeImpl.SK_512_BIT: return (FloatSpecies) SPECIES_512;
+            case VectorShapeImpl.SK_Max_BIT: return (FloatSpecies) SPECIES_MAX;
             default: throw new IllegalArgumentException("Bad shape: " + s);
         }
     }
 
     /** Species representing {@link FloatVector}s of {@link VectorShape#S_64_BIT VectorShape.S_64_BIT}. */
     public static final VectorSpecies<Float> SPECIES_64
-        = new FloatSpecies(VectorShape.S_64_BIT,
+        = new FloatSpecies(VectorShapeImpl.S_64_BIT,
                             FloatVector64.class,
                             FloatVector64.FloatMask64.class,
                             FloatVector64.FloatShuffle64.class,
@@ -3994,7 +3994,7 @@ public abstract sealed class FloatVector extends AbstractVector<Float>
 
     /** Species representing {@link FloatVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
     public static final VectorSpecies<Float> SPECIES_128
-        = new FloatSpecies(VectorShape.S_128_BIT,
+        = new FloatSpecies(VectorShapeImpl.S_128_BIT,
                             FloatVector128.class,
                             FloatVector128.FloatMask128.class,
                             FloatVector128.FloatShuffle128.class,
@@ -4002,7 +4002,7 @@ public abstract sealed class FloatVector extends AbstractVector<Float>
 
     /** Species representing {@link FloatVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
     public static final VectorSpecies<Float> SPECIES_256
-        = new FloatSpecies(VectorShape.S_256_BIT,
+        = new FloatSpecies(VectorShapeImpl.S_256_BIT,
                             FloatVector256.class,
                             FloatVector256.FloatMask256.class,
                             FloatVector256.FloatShuffle256.class,
@@ -4010,7 +4010,7 @@ public abstract sealed class FloatVector extends AbstractVector<Float>
 
     /** Species representing {@link FloatVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
     public static final VectorSpecies<Float> SPECIES_512
-        = new FloatSpecies(VectorShape.S_512_BIT,
+        = new FloatSpecies(VectorShapeImpl.S_512_BIT,
                             FloatVector512.class,
                             FloatVector512.FloatMask512.class,
                             FloatVector512.FloatShuffle512.class,
@@ -4018,7 +4018,7 @@ public abstract sealed class FloatVector extends AbstractVector<Float>
 
     /** Species representing {@link FloatVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<Float> SPECIES_MAX
-        = new FloatSpecies(VectorShape.S_Max_BIT,
+        = new FloatSpecies(VectorShapeImpl.S_Max_BIT,
                             FloatVectorMax.class,
                             FloatVectorMax.FloatMaskMax.class,
                             FloatVectorMax.FloatShuffleMax.class,

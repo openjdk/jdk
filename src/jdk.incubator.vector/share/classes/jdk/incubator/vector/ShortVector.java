@@ -4224,7 +4224,7 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
      */
     /*package-private*/
     static final class ShortSpecies extends AbstractSpecies<Short> {
-        private ShortSpecies(VectorShape shape,
+        private ShortSpecies(VectorShapeImpl shape,
                 Class<? extends ShortVector> vectorType,
                 Class<? extends AbstractMask<Short>> maskType,
                 Class<? extends AbstractShuffle<Short>> shuffleType,
@@ -4501,19 +4501,19 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
      */
     static ShortSpecies species(VectorShape s) {
         Objects.requireNonNull(s);
-        switch (s.switchKey) {
-            case VectorShape.SK_64_BIT: return (ShortSpecies) SPECIES_64;
-            case VectorShape.SK_128_BIT: return (ShortSpecies) SPECIES_128;
-            case VectorShape.SK_256_BIT: return (ShortSpecies) SPECIES_256;
-            case VectorShape.SK_512_BIT: return (ShortSpecies) SPECIES_512;
-            case VectorShape.SK_Max_BIT: return (ShortSpecies) SPECIES_MAX;
+        switch (((VectorShapeImpl) s).switchKey) {
+            case VectorShapeImpl.SK_64_BIT: return (ShortSpecies) SPECIES_64;
+            case VectorShapeImpl.SK_128_BIT: return (ShortSpecies) SPECIES_128;
+            case VectorShapeImpl.SK_256_BIT: return (ShortSpecies) SPECIES_256;
+            case VectorShapeImpl.SK_512_BIT: return (ShortSpecies) SPECIES_512;
+            case VectorShapeImpl.SK_Max_BIT: return (ShortSpecies) SPECIES_MAX;
             default: throw new IllegalArgumentException("Bad shape: " + s);
         }
     }
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_64_BIT VectorShape.S_64_BIT}. */
     public static final VectorSpecies<Short> SPECIES_64
-        = new ShortSpecies(VectorShape.S_64_BIT,
+        = new ShortSpecies(VectorShapeImpl.S_64_BIT,
                             ShortVector64.class,
                             ShortVector64.ShortMask64.class,
                             ShortVector64.ShortShuffle64.class,
@@ -4521,7 +4521,7 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
     public static final VectorSpecies<Short> SPECIES_128
-        = new ShortSpecies(VectorShape.S_128_BIT,
+        = new ShortSpecies(VectorShapeImpl.S_128_BIT,
                             ShortVector128.class,
                             ShortVector128.ShortMask128.class,
                             ShortVector128.ShortShuffle128.class,
@@ -4529,7 +4529,7 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
     public static final VectorSpecies<Short> SPECIES_256
-        = new ShortSpecies(VectorShape.S_256_BIT,
+        = new ShortSpecies(VectorShapeImpl.S_256_BIT,
                             ShortVector256.class,
                             ShortVector256.ShortMask256.class,
                             ShortVector256.ShortShuffle256.class,
@@ -4537,7 +4537,7 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
     public static final VectorSpecies<Short> SPECIES_512
-        = new ShortSpecies(VectorShape.S_512_BIT,
+        = new ShortSpecies(VectorShapeImpl.S_512_BIT,
                             ShortVector512.class,
                             ShortVector512.ShortMask512.class,
                             ShortVector512.ShortShuffle512.class,
@@ -4545,7 +4545,7 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<Short> SPECIES_MAX
-        = new ShortSpecies(VectorShape.S_Max_BIT,
+        = new ShortSpecies(VectorShapeImpl.S_Max_BIT,
                             ShortVectorMax.class,
                             ShortVectorMax.ShortMaskMax.class,
                             ShortVectorMax.ShortShuffleMax.class,

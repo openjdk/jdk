@@ -5789,7 +5789,7 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
      */
     /*package-private*/
     static final class $Type$Species extends AbstractSpecies<$Boxtype$> {
-        private $Type$Species(VectorShape shape,
+        private $Type$Species(VectorShapeImpl shape,
                 Class<? extends $abstractvectortype$> vectorType,
                 Class<? extends AbstractMask<$Boxtype$>> maskType,
                 Class<? extends AbstractShuffle<$Boxtype$>> shuffleType,
@@ -6096,19 +6096,19 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
      */
     static $Type$Species species(VectorShape s) {
         Objects.requireNonNull(s);
-        switch (s.switchKey) {
-            case VectorShape.SK_64_BIT: return ($Type$Species) SPECIES_64;
-            case VectorShape.SK_128_BIT: return ($Type$Species) SPECIES_128;
-            case VectorShape.SK_256_BIT: return ($Type$Species) SPECIES_256;
-            case VectorShape.SK_512_BIT: return ($Type$Species) SPECIES_512;
-            case VectorShape.SK_Max_BIT: return ($Type$Species) SPECIES_MAX;
+        switch (((VectorShapeImpl) s).switchKey) {
+            case VectorShapeImpl.SK_64_BIT: return ($Type$Species) SPECIES_64;
+            case VectorShapeImpl.SK_128_BIT: return ($Type$Species) SPECIES_128;
+            case VectorShapeImpl.SK_256_BIT: return ($Type$Species) SPECIES_256;
+            case VectorShapeImpl.SK_512_BIT: return ($Type$Species) SPECIES_512;
+            case VectorShapeImpl.SK_Max_BIT: return ($Type$Species) SPECIES_MAX;
             default: throw new IllegalArgumentException("Bad shape: " + s);
         }
     }
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_64_BIT VectorShape.S_64_BIT}. */
     public static final VectorSpecies<$Boxtype$> SPECIES_64
-        = new $Type$Species(VectorShape.S_64_BIT,
+        = new $Type$Species(VectorShapeImpl.S_64_BIT,
                             $Type$Vector64.class,
                             $Type$Vector64.$Type$Mask64.class,
                             $Type$Vector64.$Type$Shuffle64.class,
@@ -6116,7 +6116,7 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
     public static final VectorSpecies<$Boxtype$> SPECIES_128
-        = new $Type$Species(VectorShape.S_128_BIT,
+        = new $Type$Species(VectorShapeImpl.S_128_BIT,
                             $Type$Vector128.class,
                             $Type$Vector128.$Type$Mask128.class,
                             $Type$Vector128.$Type$Shuffle128.class,
@@ -6124,7 +6124,7 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
     public static final VectorSpecies<$Boxtype$> SPECIES_256
-        = new $Type$Species(VectorShape.S_256_BIT,
+        = new $Type$Species(VectorShapeImpl.S_256_BIT,
                             $Type$Vector256.class,
                             $Type$Vector256.$Type$Mask256.class,
                             $Type$Vector256.$Type$Shuffle256.class,
@@ -6132,7 +6132,7 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
     public static final VectorSpecies<$Boxtype$> SPECIES_512
-        = new $Type$Species(VectorShape.S_512_BIT,
+        = new $Type$Species(VectorShapeImpl.S_512_BIT,
                             $Type$Vector512.class,
                             $Type$Vector512.$Type$Mask512.class,
                             $Type$Vector512.$Type$Shuffle512.class,
@@ -6140,7 +6140,7 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<$Boxtype$> SPECIES_MAX
-        = new $Type$Species(VectorShape.S_Max_BIT,
+        = new $Type$Species(VectorShapeImpl.S_Max_BIT,
                             $Type$VectorMax.class,
                             $Type$VectorMax.$Type$MaskMax.class,
                             $Type$VectorMax.$Type$ShuffleMax.class,

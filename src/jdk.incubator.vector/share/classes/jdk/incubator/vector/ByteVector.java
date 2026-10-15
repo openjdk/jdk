@@ -4256,7 +4256,7 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
      */
     /*package-private*/
     static final class ByteSpecies extends AbstractSpecies<Byte> {
-        private ByteSpecies(VectorShape shape,
+        private ByteSpecies(VectorShapeImpl shape,
                 Class<? extends ByteVector> vectorType,
                 Class<? extends AbstractMask<Byte>> maskType,
                 Class<? extends AbstractShuffle<Byte>> shuffleType,
@@ -4533,19 +4533,19 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
      */
     static ByteSpecies species(VectorShape s) {
         Objects.requireNonNull(s);
-        switch (s.switchKey) {
-            case VectorShape.SK_64_BIT: return (ByteSpecies) SPECIES_64;
-            case VectorShape.SK_128_BIT: return (ByteSpecies) SPECIES_128;
-            case VectorShape.SK_256_BIT: return (ByteSpecies) SPECIES_256;
-            case VectorShape.SK_512_BIT: return (ByteSpecies) SPECIES_512;
-            case VectorShape.SK_Max_BIT: return (ByteSpecies) SPECIES_MAX;
+        switch (((VectorShapeImpl) s).switchKey) {
+            case VectorShapeImpl.SK_64_BIT: return (ByteSpecies) SPECIES_64;
+            case VectorShapeImpl.SK_128_BIT: return (ByteSpecies) SPECIES_128;
+            case VectorShapeImpl.SK_256_BIT: return (ByteSpecies) SPECIES_256;
+            case VectorShapeImpl.SK_512_BIT: return (ByteSpecies) SPECIES_512;
+            case VectorShapeImpl.SK_Max_BIT: return (ByteSpecies) SPECIES_MAX;
             default: throw new IllegalArgumentException("Bad shape: " + s);
         }
     }
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_64_BIT VectorShape.S_64_BIT}. */
     public static final VectorSpecies<Byte> SPECIES_64
-        = new ByteSpecies(VectorShape.S_64_BIT,
+        = new ByteSpecies(VectorShapeImpl.S_64_BIT,
                             ByteVector64.class,
                             ByteVector64.ByteMask64.class,
                             ByteVector64.ByteShuffle64.class,
@@ -4553,7 +4553,7 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
     public static final VectorSpecies<Byte> SPECIES_128
-        = new ByteSpecies(VectorShape.S_128_BIT,
+        = new ByteSpecies(VectorShapeImpl.S_128_BIT,
                             ByteVector128.class,
                             ByteVector128.ByteMask128.class,
                             ByteVector128.ByteShuffle128.class,
@@ -4561,7 +4561,7 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
     public static final VectorSpecies<Byte> SPECIES_256
-        = new ByteSpecies(VectorShape.S_256_BIT,
+        = new ByteSpecies(VectorShapeImpl.S_256_BIT,
                             ByteVector256.class,
                             ByteVector256.ByteMask256.class,
                             ByteVector256.ByteShuffle256.class,
@@ -4569,7 +4569,7 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
     public static final VectorSpecies<Byte> SPECIES_512
-        = new ByteSpecies(VectorShape.S_512_BIT,
+        = new ByteSpecies(VectorShapeImpl.S_512_BIT,
                             ByteVector512.class,
                             ByteVector512.ByteMask512.class,
                             ByteVector512.ByteShuffle512.class,
@@ -4577,7 +4577,7 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<Byte> SPECIES_MAX
-        = new ByteSpecies(VectorShape.S_Max_BIT,
+        = new ByteSpecies(VectorShapeImpl.S_Max_BIT,
                             ByteVectorMax.class,
                             ByteVectorMax.ByteMaskMax.class,
                             ByteVectorMax.ByteShuffleMax.class,

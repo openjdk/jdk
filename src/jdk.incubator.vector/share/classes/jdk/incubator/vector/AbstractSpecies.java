@@ -39,7 +39,7 @@ abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSu
         implements VectorSpecies<E>
         permits ByteVector.ByteSpecies, DoubleVector.DoubleSpecies, FloatVector.FloatSpecies,
         IntVector.IntSpecies, LongVector.LongSpecies, ShortVector.ShortSpecies, Float16Vector.Float16Species {
-    final VectorShape vectorShape;
+    final VectorShapeImpl vectorShape;
     final LaneType laneType;
     final int laneCount;
     final int laneCountLog2P1;
@@ -48,11 +48,11 @@ abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSu
     final Class<? extends AbstractShuffle<E>> shuffleType;
     final Function<Object, ? extends AbstractVector<E>> vectorFactory;
 
-    final VectorShape indexShape;
+    final VectorShapeImpl indexShape;
     final int maxScale, minScale;
     final int vectorBitSize, vectorByteSize;
 
-    AbstractSpecies(VectorShape vectorShape,
+    AbstractSpecies(VectorShapeImpl vectorShape,
                     LaneType laneType,
                     Class<? extends AbstractVector<E>> vectorType,
                     Class<? extends AbstractMask<E>> maskType,
@@ -79,7 +79,7 @@ abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSu
         // Note:  The shape might be the max-shape,
         // if there is no vector this large.
         int indexBitSize = Integer.SIZE * laneCount;
-        this.indexShape = VectorShape.forIndexBitSize(indexBitSize, elementSize);
+        this.indexShape = (VectorShapeImpl) VectorShape.forIndexBitSize(indexBitSize, elementSize);
 
         // What are the largest and smallest scale factors that,
         // when multiplied times the elements in [0..VLENGTH],
@@ -192,7 +192,7 @@ abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSu
 
     @Override
     @ForceInline
-    public final VectorShape vectorShape() {
+    public final VectorShapeImpl vectorShape() {
         return vectorShape;
     }
 
@@ -269,7 +269,7 @@ abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSu
     @SuppressWarnings("unchecked")
     public final VectorSpecies<E> withShape(VectorShape newShape) {
         if (newShape == vectorShape)  return this;
-        return (VectorSpecies<E>) findSpecies(laneType, newShape);
+        return (VectorSpecies<E>) findSpecies(laneType, (VectorShapeImpl) newShape);
     }
 
     @ForceInline
@@ -636,7 +636,7 @@ abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSu
     }
 
     private static final @Stable AbstractSpecies<?>[][] CACHES
-        = new AbstractSpecies<?>[LaneType.SK_LIMIT][VectorShape.SK_LIMIT];
+        = new AbstractSpecies<?>[LaneType.SK_LIMIT][VectorShapeImpl.SK_LIMIT];
 
     // Helper functions for finding species:
 
@@ -647,14 +647,14 @@ abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSu
                                    LaneType laneType,
                                    VectorShape shape) {
         assert(elementType == laneType.elementType);
-        return findSpecies(laneType, shape).check0(elementType);
+        return findSpecies(laneType, (VectorShapeImpl) shape).check0(elementType);
     }
 
     /*package-private*/
     @ForceInline
     static
     AbstractSpecies<?> findSpecies(LaneType laneType,
-                                   VectorShape shape) {
+                                   VectorShapeImpl shape) {
         // The JIT can see into this cache.
         // Therefore it is useful to arrange for constant
         // arguments to this method.  If the cache
@@ -668,7 +668,7 @@ abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSu
 
     private static
     AbstractSpecies<?> computeSpecies(LaneType laneType,
-                                      VectorShape shape) {
+                                      VectorShapeImpl shape) {
         AbstractSpecies<?> s = null;
         // enum-switches don't optimize properly JDK-8161245
         switch (laneType.switchKey) {
@@ -728,7 +728,7 @@ abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSu
      */
     @Override
     public final int hashCode() {
-        int[] a = { laneType.ordinal(), laneCount, vectorShape.ordinal() };
+        int[] a = { laneType.ordinal(), laneCount, vectorShape.switchKey };
         return Arrays.hashCode(a);
     }
 }
