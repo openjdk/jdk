@@ -571,8 +571,8 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
       }
     }
   } else {
-    assert(generation->is_global(), "If not young, must be GLOBAL");
-    assert(!do_old_gc_bootstrap, "Do not bootstrap with GLOBAL GC");
+    assert(generation->is_global(), "If not young, must be Global");
+    assert(!do_old_gc_bootstrap, "Do not bootstrap with Global GC");
     if (_heap->cancelled_gc()) {
       msg = "At end of Interrupted Concurrent Global GC";
     } else {
