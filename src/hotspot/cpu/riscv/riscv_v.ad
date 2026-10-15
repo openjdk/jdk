@@ -3126,7 +3126,6 @@ instruct vreduce_max(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (MaxReductionV src1 src2));
-  match(Set dst (UMaxReductionV src1 src2));
   flag(PD::Flag_rvv_simple);
   effect(TEMP tmp);
   format %{ $$template
@@ -3146,11 +3145,50 @@ instruct vreduce_max(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
 instruct vreduce_maxL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (MaxReductionV src1 src2));
-  match(Set dst (UMaxReductionV src1 src2));
   flag(PD::Flag_rvv_simple);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_maxL $dst, $src1, $src2\t# KILL $tmp"
+    st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
+  %}
+  ins_encode %{
+    vsetvli_if_needed(masm, this);
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode());
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Unmasked reductions require src2 at Mach operand index 2; see rvv_vsetvli_shape_node.
+instruct vreduce_umax(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE ||
+            Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
+            Matcher::vector_element_basic_type(n->in(2)) == T_INT);
+  match(Set dst (UMaxReductionV src1 src2));
+  flag(PD::Flag_rvv_simple);
+  effect(TEMP tmp);
+  format %{ $$template
+    $$emit$$"vreduce_umax $dst, $src1, $src2\t# KILL $tmp"
+    st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
+  %}
+  ins_encode %{
+    vsetvli_if_needed(masm, this);
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode());
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Unmasked reductions require src2 at Mach operand index 2; see rvv_vsetvli_shape_node.
+instruct vreduce_umaxL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
+  match(Set dst (UMaxReductionV src1 src2));
+  flag(PD::Flag_rvv_simple);
+  effect(TEMP tmp);
+  format %{ $$template
+    $$emit$$"vreduce_umaxL $dst, $src1, $src2\t# KILL $tmp"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
   %}
   ins_encode %{
@@ -3206,7 +3244,6 @@ instruct vreduce_min(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (MinReductionV src1 src2));
-  match(Set dst (UMinReductionV src1 src2));
   flag(PD::Flag_rvv_simple);
   effect(TEMP tmp);
   format %{ $$template
@@ -3226,11 +3263,50 @@ instruct vreduce_min(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
 instruct vreduce_minL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (MinReductionV src1 src2));
-  match(Set dst (UMinReductionV src1 src2));
   flag(PD::Flag_rvv_simple);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_minL $dst, $src1, $src2\t# KILL $tmp"
+    st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
+  %}
+  ins_encode %{
+    vsetvli_if_needed(masm, this);
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode());
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Unmasked reductions require src2 at Mach operand index 2; see rvv_vsetvli_shape_node.
+instruct vreduce_umin(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE ||
+            Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
+            Matcher::vector_element_basic_type(n->in(2)) == T_INT);
+  match(Set dst (UMinReductionV src1 src2));
+  flag(PD::Flag_rvv_simple);
+  effect(TEMP tmp);
+  format %{ $$template
+    $$emit$$"vreduce_umin $dst, $src1, $src2\t# KILL $tmp"
+    st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
+  %}
+  ins_encode %{
+    vsetvli_if_needed(masm, this);
+    __ reduce_integral_v($dst$$Register, $src1$$Register,
+                         as_VectorRegister($src2$$reg), as_VectorRegister($tmp$$reg),
+                         this->ideal_Opcode());
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Unmasked reductions require src2 at Mach operand index 2; see rvv_vsetvli_shape_node.
+instruct vreduce_uminL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
+  match(Set dst (UMinReductionV src1 src2));
+  flag(PD::Flag_rvv_simple);
+  effect(TEMP tmp);
+  format %{ $$template
+    $$emit$$"vreduce_uminL $dst, $src1, $src2\t# KILL $tmp"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
   %}
   ins_encode %{

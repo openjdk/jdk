@@ -1161,13 +1161,13 @@ static const Node* rvv_vsetvli_shape_node(const MachNode* node) {
     case vreduce_addD_ordered_rule:
     case vreduce_addD_unordered_rule:
     case vreduce_max_rule:
-    case vreduce_max_0_rule:
+    case vreduce_umax_rule:
     case vreduce_maxL_rule:
-    case vreduce_maxL_0_rule:
+    case vreduce_umaxL_rule:
     case vreduce_min_rule:
-    case vreduce_min_0_rule:
+    case vreduce_umin_rule:
     case vreduce_minL_rule:
-    case vreduce_minL_0_rule: {
+    case vreduce_uminL_rule: {
       // Keep vector sources at Mach operand index 2; operand_index skips storeV's address edges.
       assert(node->num_opnds() >= 3 && node->operand_num_edges(2) == 1, "unexpected vector source operand");
       const Node* src = node->in(node->operand_index(2));
