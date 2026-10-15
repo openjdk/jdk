@@ -191,6 +191,49 @@ public class TypeContexts {
     }
 
     @Test
+    public void testRecordPattern() throws Exception {
+        //record pattern is not a type context:
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        List<String> log;
+        List<String> expected;
+
+        tb.writeJavaFiles(src,
+                """
+                package p;
+
+                import java.lang.annotation.Target;
+                import java.lang.annotation.ElementType;
+
+                public record Test() {
+                    @Target(ElementType.TYPE_USE)
+                    @interface Ann1 {}
+                    private void test(Object o) {
+                        boolean b = o instanceof @Ann1 Test();
+                    }
+                }
+                """);
+
+        log = new JavacTask(tb)
+                .options("-XDrawDiagnostics", "-XDshould-stop.at=FLOW")
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .outdir(classes)
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+        expected = List.of(
+            "Test.java:10:34: compiler.err.record.patterns.annotations.not.allowed",
+            "1 error"
+        );
+
+        Assertions.assertEquals(expected, log);
+    }
+
+    @Test
     public void testAllTypeContexts() throws Exception {
         Path src = base.resolve("src");
         Path classes = base.resolve("classes");
