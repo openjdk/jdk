@@ -24,6 +24,7 @@
 
 #include "cds/aotMappedHeap.hpp"
 #include "cds/aotMappedHeapWriter.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
@@ -98,7 +99,7 @@ void AOTMappedHeapWriter::init() {
     _native_pointers = new GrowableArrayCHeap<NativePointerInfo, mtClassShared>(2048);
     _source_objs = new GrowableArrayCHeap<oop, mtClassShared>(10000);
 
-    guarantee(MIN_GC_REGION_ALIGNMENT <= G1HeapRegion::min_region_size_in_words() * HeapWordSize, "must be");
+    G1GC_ONLY(guarantee(MIN_GC_REGION_ALIGNMENT <= G1HeapRegion::min_region_size_in_words() * HeapWordSize, "must be");)
 
     if (CDSConfig::old_cds_flags_used()) {
       // With the old CDS workflow, we can guatantee determninistic output: given
@@ -419,7 +420,7 @@ void AOTMappedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtC
     _buffer_offset_to_source_obj_table->maybe_grow();
 
     if (java_lang_Module::is_instance(src_obj)) {
-      Modules::check_archived_module_oop(src_obj);
+      AOTModules::check_archived_module_oop(src_obj);
     }
   }
 
@@ -624,6 +625,7 @@ void AOTMappedHeapWriter::set_requested_address_range(AOTMappedHeapInfo* info) {
         AOTMetaspace::unrecoverable_writing_error();
       }
       _requested_bottom = align_down(heap_end - heap_region_byte_size, alignment);
+#if INCLUDE_G1GC
     } else if (UseG1GC) {
       // For G1, pick the range at the top of the current heap. If the exact same heap sizes
       // are used in the production run, it's likely that we can map the archived objects
@@ -633,6 +635,7 @@ void AOTMappedHeapWriter::set_requested_address_range(AOTMappedHeapInfo* info) {
       _requested_bottom = align_down(heap_end - heap_region_byte_size, G1HeapRegion::GrainBytes);
       _requested_bottom = align_down(_requested_bottom, MIN_GC_REGION_ALIGNMENT);
       assert(is_aligned(_requested_bottom, G1HeapRegion::GrainBytes), "sanity");
+#endif
     } else {
       _requested_bottom = align_up(CompressedOops::begin(), MIN_GC_REGION_ALIGNMENT);
     }

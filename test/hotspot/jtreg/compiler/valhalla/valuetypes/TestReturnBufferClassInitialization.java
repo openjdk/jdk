@@ -22,14 +22,23 @@
  */
 
 /**
- * @test
+ * @test id=vanilla
+ * @bug 8389391
+ * @summary Return buffer allocation for late-inlined MH calls should not initialize the class.
+ * @requires vm.compiler2.enabled
+ * @library /test/lib
+ * @enablePreview
+ * @run main ${test.main.class}
+ */
+
+/**
+ * @test id=stress
  * @bug 8389391
  * @key stress randomness
  * @summary Return buffer allocation for late-inlined MH calls should not initialize the class.
  * @requires vm.compiler2.enabled
  * @library /test/lib
  * @enablePreview
- * @run main ${test.main.class}
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+StressIncrementalInlining -XX:StressSeed=1
  *                   -XX:CompileCommand=exclude,${test.main.class}::target

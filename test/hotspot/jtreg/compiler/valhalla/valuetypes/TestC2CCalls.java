@@ -26,6 +26,7 @@
  * @key randomness
  * @summary Test value class calling convention with compiled to compiled calls.
  * @library /test/lib /compiler/whitebox /
+ * @requires (vm.opt.StressCallingConvention == null | !vm.opt.StressCallingConvention)
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -38,6 +39,7 @@
  * @key randomness
  * @summary Test value class calling convention with compiled to compiled calls.
  * @library /test/lib /compiler/whitebox /
+ * @requires (vm.opt.StressCallingConvention == null | !vm.opt.StressCallingConvention)
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -53,6 +55,7 @@
  * @key randomness
  * @summary Test value class calling convention with compiled to compiled calls.
  * @library /test/lib /compiler/whitebox /
+ * @requires (vm.opt.StressCallingConvention == null | !vm.opt.StressCallingConvention)
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -68,6 +71,7 @@
  * @key randomness
  * @summary Test value class calling convention with compiled to compiled calls.
  * @library /test/lib /compiler/whitebox /
+ * @requires (vm.opt.StressCallingConvention == null | !vm.opt.StressCallingConvention)
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -83,6 +87,7 @@
  * @key randomness
  * @summary Test value class calling convention with compiled to compiled calls.
  * @library /test/lib /compiler/whitebox /
+ * @requires (vm.opt.StressCallingConvention == null | !vm.opt.StressCallingConvention)
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

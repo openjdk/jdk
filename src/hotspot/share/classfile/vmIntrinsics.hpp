@@ -1026,6 +1026,17 @@ class methodHandle;
    do_name(     getAndSetReference_name,                                "getAndSetReference")                                         \
    do_signature(getAndSetReference_signature,                           "(Ljava/lang/Object;JLjava/lang/Object;)Ljava/lang/Object;" ) \
                                                                                                                              \
+  do_class(jdk_internal_math_Int128Math,                                "jdk/internal/math/Int128Math")                      \
+  do_signature(int128t_addsub_signature,                                "(JJJJ)J")                                           \
+  do_intrinsic(_addInt128TLo,             jdk_internal_math_Int128Math, addInt128TLo_name, int128t_addsub_signature, F_S)    \
+   do_name(     addInt128TLo_name,                                      "addLo")                                             \
+  do_intrinsic(_addInt128THi,             jdk_internal_math_Int128Math, addInt128THi_name, int128t_addsub_signature, F_S)    \
+   do_name(     addInt128THi_name,                                      "addHi")                                             \
+  do_intrinsic(_subInt128TLo,             jdk_internal_math_Int128Math, subInt128TLo_name, int128t_addsub_signature, F_S)    \
+   do_name(     subInt128TLo_name,                                      "subLo")                                             \
+  do_intrinsic(_subInt128THi,             jdk_internal_math_Int128Math, subInt128THi_name, int128t_addsub_signature, F_S)    \
+   do_name(     subInt128THi_name,                                      "subHi")                                             \
+                                                                                                                             \
   /* Float16Math API intrinsification support */                                                                             \
   /* Float16 signatures */                                                                                                   \
   do_signature(float16_unary_math_op_sig, "(Ljava/lang/Class;"                                                               \
@@ -1210,6 +1221,18 @@ class methodHandle;
                                   "Ljava/util/function/BiFunction;)"                                                                           \
                                   "Z")                                                                                                         \
    do_name(vector_test_name, "test")                                                                                                           \
+                                                                                                                                               \
+  do_intrinsic(_VectorSlice, jdk_internal_vm_vector_VectorSupport, vector_slice_name, vector_slice_sig, F_S)                                   \
+   do_signature(vector_slice_sig, "(I"                                                                                                         \
+                                   "Ljava/lang/Class;"                                                                                         \
+                                   "I"                                                                                                         \
+                                   "I"                                                                                                         \
+                                   "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                             \
+                                   "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                             \
+                                   "Ljdk/internal/vm/vector/VectorSupport$VectorSliceOp;)"                                                     \
+                                   "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                            \
+   do_name(vector_slice_name, "sliceOp")                                                                                                       \
+                                                                                                                                               \
                                                                                                                                                \
   do_intrinsic(_VectorBlend, jdk_internal_vm_vector_VectorSupport, vector_blend_name, vector_blend_sig, F_S)                                   \
    do_signature(vector_blend_sig, "(Ljava/lang/Class;"                                                                                         \

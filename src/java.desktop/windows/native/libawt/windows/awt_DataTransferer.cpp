@@ -270,6 +270,9 @@ Java_sun_awt_windows_WDataTransferer_dragQueryFile
     try {
 
         bBytes = (jbyte*)::GlobalLock(hglobal);
+        if (bBytes == NULL) {
+            throw std::bad_alloc();
+        }
         env->GetByteArrayRegion(bytes, 0, size, bBytes);
 
         hdrop = (HDROP)bBytes;

@@ -33,7 +33,7 @@
 using bm_word_t = BitMap::bm_word_t;
 using idx_t = BitMap::idx_t;
 
-STATIC_ASSERT(sizeof(bm_word_t) == BytesPerWord); // "Implementation assumption."
+static_assert(sizeof(bm_word_t) == BytesPerWord); // "Implementation assumption."
 
 // For the BitMaps with allocators that don't support reallocate
 template <class BitMapWithAllocator>
@@ -306,7 +306,7 @@ bool BitMap::is_small_range_of_words(idx_t beg_full_word, idx_t end_full_word) {
   // because beg_full_word > end_full_word can occur when beg and end are in
   // the same word.
   // The threshold should be at least one word.
-  STATIC_ASSERT(small_range_words >= 1);
+  static_assert(small_range_words >= 1);
   return beg_full_word + small_range_words >= end_full_word;
 }
 

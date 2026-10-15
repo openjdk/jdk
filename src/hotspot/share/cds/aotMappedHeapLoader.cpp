@@ -27,9 +27,9 @@
 #include "cds/aotMappedHeapLoader.inline.hpp"
 #include "cds/aotMappedHeapWriter.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.inline.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -41,7 +41,6 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "sanitizers/ub.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
@@ -579,6 +578,7 @@ address AOTMappedHeapLoader::heap_region_requested_address(FileMapInfo* info) {
   }
 }
 
+#if INCLUDE_G1GC
 bool AOTMappedHeapLoader::map_heap_region(FileMapInfo* info) {
   if (map_heap_region_impl(info)) {
 #ifdef ASSERT
@@ -694,6 +694,8 @@ bool AOTMappedHeapLoader::map_heap_region_impl(FileMapInfo* info) {
   return true;
 }
 
+#endif // INCLUDE_G1GC
+
 narrowOop AOTMappedHeapLoader::encoded_heap_region_dumptime_address(FileMapInfo* info) {
   assert(CDSConfig::is_using_archive(), "runtime only");
   assert(UseCompressedOops, "sanity");
@@ -716,6 +718,7 @@ void AOTMappedHeapLoader::patch_heap_embedded_pointers(FileMapInfo* info) {
       r->oopmap_size_in_bits());
 }
 
+#if INCLUDE_G1GC
 void AOTMappedHeapLoader::fixup_mapped_heap_region(FileMapInfo* info) {
   if (is_mapped()) {
     assert(!_mapped_heap_memregion.is_empty(), "sanity");
@@ -732,6 +735,7 @@ void AOTMappedHeapLoader::fixup_mapped_heap_region(FileMapInfo* info) {
 void AOTMappedHeapLoader::dealloc_heap_region(FileMapInfo* info) {
   G1CollectedHeap::heap()->dealloc_archive_regions(_mapped_heap_memregion);
 }
+#endif // INCLUDE_G1GC
 
 AOTMapLogger::OopDataIterator* AOTMappedHeapLoader::oop_iterator(FileMapInfo* info, address buffer_start, address buffer_end) {
   class MappedLoaderOopIterator : public AOTMappedHeapOopIterator {
