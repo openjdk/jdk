@@ -305,7 +305,6 @@ static void onStreamProcess(void *userdata) {
     if (
             !data->hasFormat
             || !screen->shouldCapture
-            || screen->captureDataReady
     ) {
         return;
     }
@@ -316,6 +315,11 @@ static void onStreamProcess(void *userdata) {
     if (!data->stream
         || (pwBuffer = fp_pw_stream_dequeue_buffer(data->stream)) == NULL) {
         DEBUG_SCREEN_PREFIX(screen, "!!! out of buffers\n", NULL);
+        return;
+    }
+
+    if (screen->captureDataReady) {
+        fp_pw_stream_queue_buffer(data->stream, pwBuffer);
         return;
     }
 
