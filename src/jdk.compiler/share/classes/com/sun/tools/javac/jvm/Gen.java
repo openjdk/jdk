@@ -805,31 +805,19 @@ public class Gen extends JCTree.Visitor {
             //expanded to:
             //((Boolean)Boolean.valueOf((b && (result = 1) > 0))).booleanValue()
             //it is impossible to correctly track variable DA across the method calls,
-            //so call the boxing and unboxing (so that we can preserve the location of
-            //the annotations), but keep the true and false branches separate:
+            //so skip the boxing and unboxing and any intermediate casts:
             JCExpression boxedValue = boxing.args.head;
-            CondItem value = genCond(boxedValue, markBranches);
+            CondItem res = genCond(boxedValue, markBranches);
 
-            Chain secondJumps = value.jumpFalse();
-            code.resolve(value.trueJumps);
-            make.at(boxing.args.head);
-            boxing.args.head = makeLit(syms.booleanType, 1);
-            genExpr(mi, syms.booleanType).drop();
-            Chain trueJumps = code.branch(goto_);
+            //set positions for type annotations:
+            JCTree pendingCastCandidates = ((JCFieldAccess) mi.meth).selected;
 
-            code.resolve(secondJumps);
-            make.at(boxing.args.head);
-            boxing.args.head = makeLit(syms.booleanType, 0);
-            genExpr(mi, syms.booleanType).drop();
-            Chain falseJumps = code.branch(goto_);
-            CondItem result = items.makeCondItem(goto_,
-                                      trueJumps,
-                                      falseJumps);
-            if (markBranches) result.tree = _tree;
+            while (TreeInfo.skipParens(pendingCastCandidates) instanceof JCTypeCast tc) {
+                setTypeAnnotationPositions(tc.pos);
+                pendingCastCandidates = tc.expr;
+            }
 
-            boxing.args.head = boxedValue;
-
-            return result;
+            return res;
         } else {
             CondItem result = genExpr(_tree, syms.booleanType).mkCond();
             if (markBranches) result.tree = _tree;

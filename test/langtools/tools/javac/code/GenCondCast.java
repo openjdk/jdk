@@ -680,10 +680,10 @@ public class GenCondCast {
             List<String> expectedTAs = List.of(
                 "CAST:0:7, [], Annotation[LGenCondCast$Ann;]",
                 "CAST:0:15, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:31, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:39, [], Annotation[LGenCondCast$Ann;]",
                 "CAST:0:49, [], Annotation[LGenCondCast$Ann;]",
-                "CAST:0:79, [], Annotation[LGenCondCast$Ann;]",
-                "CAST:0:93, [], Annotation[LGenCondCast$Ann;]",
-                "CAST:0:98, [], Annotation[LGenCondCast$Ann;]"
+                "CAST:0:54, [], Annotation[LGenCondCast$Ann;]"
             );
 
             if (!Objects.equals(expectedTAs, actualTAs)) {
@@ -695,7 +695,7 @@ public class GenCondCast {
             RuntimeInvisibleTypeAnnotationsAttribute typeAnnotations = testLarge_anno.code().orElseThrow().findAttribute(Attributes.runtimeInvisibleTypeAnnotations()).orElseThrow();
             List<String> actualTAs = typeAnnotations.annotations().stream().map(ta -> toString(ta.targetInfo())  + ", " + ta.targetPath() + ", " + ta.annotation()).toList();
             List<String> expectedTAs = List.of(
-                "CAST:0:37, [], Annotation[LGenCondCast$Ann;]"
+                "CAST:0:12, [], Annotation[LGenCondCast$Ann;]"
             );
 
             if (!Objects.equals(expectedTAs, actualTAs)) {
@@ -707,9 +707,9 @@ public class GenCondCast {
             RuntimeInvisibleTypeAnnotationsAttribute typeAnnotations = testRedundant1_anno.code().orElseThrow().findAttribute(Attributes.runtimeInvisibleTypeAnnotations()).orElseThrow();
             List<String> actualTAs = typeAnnotations.annotations().stream().map(ta -> toString(ta.targetInfo())  + ", " + ta.targetPath() + ", " + ta.annotation()).toList();
             List<String> expectedTAs = List.of(
-                "CAST:0:25, [], Annotation[LGenCondCast$Ann;]",
-                "CAST:0:25, [], Annotation[LGenCondCast$Ann;]",
-                "CAST:0:25, [], Annotation[LGenCondCast$Ann;]"
+                "CAST:0:7, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:7, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:7, [], Annotation[LGenCondCast$Ann;]"
             );
 
             if (!Objects.equals(expectedTAs, actualTAs)) {
@@ -721,9 +721,9 @@ public class GenCondCast {
             RuntimeInvisibleTypeAnnotationsAttribute typeAnnotations = testRedundant2_anno.code().orElseThrow().findAttribute(Attributes.runtimeInvisibleTypeAnnotations()).orElseThrow();
             List<String> actualTAs = typeAnnotations.annotations().stream().map(ta -> toString(ta.targetInfo())  + ", " + ta.targetPath() + ", " + ta.annotation()).toList();
             List<String> expectedTAs = List.of(
-                "CAST:0:47, [], Annotation[LGenCondCast$Ann;]",
-                "CAST:0:43, [], Annotation[LGenCondCast$Ann;]",
-                "CAST:0:25, [], Annotation[LGenCondCast$Ann;]"
+                "CAST:0:7, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:7, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:7, [], Annotation[LGenCondCast$Ann;]"
             );
 
             if (!Objects.equals(expectedTAs, actualTAs)) {
@@ -735,9 +735,9 @@ public class GenCondCast {
             RuntimeInvisibleTypeAnnotationsAttribute typeAnnotations = testCastChainObject_anno.code().orElseThrow().findAttribute(Attributes.runtimeInvisibleTypeAnnotations()).orElseThrow();
             List<String> actualTAs = typeAnnotations.annotations().stream().map(ta -> toString(ta.targetInfo())  + ", " + ta.targetPath() + ", " + ta.annotation()).toList();
             List<String> expectedTAs = List.of(
-                "CAST:0:28, [], Annotation[LGenCondCast$Ann;]",
-                "CAST:0:28, [], Annotation[LGenCondCast$Ann;]",
-                "CAST:0:28, [], Annotation[LGenCondCast$Ann;]"
+                "CAST:0:7, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:7, [], Annotation[LGenCondCast$Ann;]",
+                "CAST:0:7, [], Annotation[LGenCondCast$Ann;]"
             );
 
             if (!Objects.equals(expectedTAs, actualTAs)) {
