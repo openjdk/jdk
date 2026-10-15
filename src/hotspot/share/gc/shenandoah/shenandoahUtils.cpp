@@ -195,10 +195,10 @@ ShenandoahParallelWorkerSession::~ShenandoahParallelWorkerSession() {
 ShenandoahAllocationStallLogger::ShenandoahAllocationStallLogger(const size_t request_size_bytes)
   : _request_size_bytes(request_size_bytes)
   , _stall_start_seconds(os::elapsedTime()) {
-  if (log_is_enabled(Debug, gc)) {
+  if (log_is_enabled(Info, gc, start)) {
     ResourceMark rm; // for Thread::name()
-    log_debug(gc)("Allocation Stall: " PROPERFMT ", Thread \"%s\"",
-                  PROPERFMTARGS(_request_size_bytes), Thread::current()->name());
+    log_info(gc, start)("Allocation Stall: " PROPERFMT ", Thread \"%s\"",
+                        PROPERFMTARGS(_request_size_bytes), Thread::current()->name());
   }
 }
 
