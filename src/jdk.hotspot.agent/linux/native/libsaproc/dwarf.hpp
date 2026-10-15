@@ -26,6 +26,7 @@
 #ifndef _DWARF_HPP_
 #define _DWARF_HPP_
 
+#include <climits>
 #include <map>
 
 #include "libproc_impl.h"
@@ -103,7 +104,11 @@ class DwarfParser {
     enum DWARF_Register get_cfa_register() { return _state.cfa_reg; }
     int get_cfa_offset() { return _state.cfa_offset; }
     enum DWARF_Register get_ra_register() { return _state.return_address_reg; }
-    int get_offset_from_cfa(enum DWARF_Register reg) { return _state.offset_from_cfa[reg]; }
+    int get_offset_from_cfa(enum DWARF_Register reg) {
+      // Malformed DWARF can supply a register number outside the map
+      auto offset = _state.offset_from_cfa.find(reg);
+      return offset == _state.offset_from_cfa.end() ? INT_MAX : offset->second;
+    }
 
     bool is_in(long pc) {
       return (_lib->exec_start <= pc) && (pc < _lib->exec_end);
