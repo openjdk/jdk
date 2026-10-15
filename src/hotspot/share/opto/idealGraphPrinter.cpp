@@ -124,6 +124,14 @@ void PrintProperties::print_node_details(Node* node) {
 
   print_escape_properties(node);
 
+  if (node->is_Allocate()) {
+    ciKlass* alloc_klass = node->as_Allocate()->allocation_klass();
+    if (alloc_klass != nullptr) {
+      stringStream stream;
+      alloc_klass->print_name_on(&stream);
+      print_property(true, "allocation_class", stream.freeze());
+    }
+  }
   print_property(node->is_block_proj() != nullptr, "is_block_proj");
   print_property(node->is_block_start(), "is_block_start");
 }

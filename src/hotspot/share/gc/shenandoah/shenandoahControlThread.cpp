@@ -118,9 +118,8 @@ void ShenandoahControlThread::run_service() {
       heap->set_unload_classes(heuristics->should_unload_classes());
     }
 
-    // Blow all soft references on this cycle, if handling allocation failure,
-    // either implicit or explicit GC request,  or we are requested to do so unconditionally.
     if (alloc_failure_pending || is_gc_requested || ShenandoahAlwaysClearSoftRefs) {
+      // Blow away all soft references on this cycle
       heap->global_generation()->ref_processor()->set_soft_reference_policy(true);
     }
 
@@ -242,6 +241,9 @@ void ShenandoahControlThread::run_service() {
       }
     }
   }
+
+  // We're done writing GC stats, so print them here.
+  heap->print_gc_stats_at_exit();
 }
 
 void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause) {

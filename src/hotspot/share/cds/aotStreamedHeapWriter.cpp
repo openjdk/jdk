@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotModules.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/aotStreamedHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
@@ -145,6 +146,7 @@ void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassSha
       oop obj = dfs_stack.pop();
       assert(obj != nullptr, "null root");
       int* dfs_number = _dfs_order_table->get(cast_from_oop<void*>(obj));
+      assert(dfs_number != nullptr, "reachable obj not added to _source_objs");
       if (*dfs_number != -1) {
         // Already visited in the traversal
         continue;
@@ -321,7 +323,7 @@ size_t AOTStreamedHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
 
   if (java_lang_Module::is_instance(src_obj)) {
     // These native pointers will be restored explicitly at run time.
-    Modules::check_archived_module_oop(src_obj);
+    AOTModules::check_archived_module_oop(src_obj);
     update_buffered_object_field<ModuleEntry*>(to, java_lang_Module::module_entry_offset(), nullptr);
   } else if (java_lang_ClassLoader::is_instance(src_obj)) {
 #ifdef ASSERT

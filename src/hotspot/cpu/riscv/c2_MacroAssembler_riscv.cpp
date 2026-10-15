@@ -126,7 +126,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     ori(tmp1_mark, tmp1_mark, markWord::lock_neutral_value);
     xori(tmp3_t, tmp1_mark, markWord::lock_neutral_value);
     cmpxchg(/*addr*/ obj, /*expected*/ tmp1_mark, /*new*/ tmp3_t, Assembler::int64,
-            /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_t);
+            memory_order_acquire, /*result*/ tmp3_t);
     bne(tmp1_mark, tmp3_t, slow_path);
 
     bind(push);
@@ -148,7 +148,6 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     const ByteSize omc_obj_offset     = OMCache::obj_offset();
 
     const Register tmp2_hash = tmp2;
-    const Register tmp3_bucket = tmp3;
     Label monitor_found;
 
     // Save the mark, we might need it to extract the hash.
@@ -173,8 +172,8 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     ld(tmp3_t, Address(tmp3_t, ObjectMonitorTable::table_buckets_offset()));
 
     // Read the monitor from the bucket.
-    shadd(tmp3_bucket, tmp2_hash, tmp3_t, tmp4, LogBytesPerWord);
-    ld(tmp1_monitor, Address(tmp3_bucket));
+    shift_left_add(tmp4, tmp2_hash, tmp3_t, LogBytesPerWord);
+    ld(tmp1_monitor, Address(tmp4));
 
     // Check if the monitor in the bucket is special (empty, tombstone or removed).
     mv(tmp2, ObjectMonitorTable::SpecialPointerValues::below_is_special);
@@ -207,11 +206,36 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     Register tid = tmp4;
     ld(tid, Address(xthread, JavaThread::monitor_owner_id_offset()));
     cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ tid, Assembler::int64,
-            /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
+            memory_order_acquire, /*result*/ tmp3_owner);
     beqz(tmp3_owner, monitor_locked);
 
-    // Check if recursive.
-    bne(tmp3_owner, tid, slow_path);
+    // Normally, a contended monitor enters the runtime slow path here.
+    // If `Zawrs` is enabled, wait briefly for the current owner to release
+    // the monitor and retry the fast-path acquisition once, which can
+    // potentially avoid a runtime call if the owner releases the monitor soon.
+    if (UseZawrs) {
+      Label recursive;
+      beq(tmp3_owner, tid, recursive);
+      // Defer non-thread owner markers to the runtime rather than waiting on them.
+      mv(t0, (uint64_t)ThreadIdentifier::initial());
+      bltu(tmp3_owner, t0, slow_path);
+
+      Label retry;
+      // Reload the owner to establish a reservation, so WRS.STO can
+      // observe an update to it.
+      lr_d(tmp3_owner, tmp2_owner_addr, Assembler::relaxed);
+      beqz(tmp3_owner, retry);
+      bltu(tmp3_owner, t0, slow_path);
+      wrs_sto();
+      bind(retry);
+      cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ tid, Assembler::int64,
+              memory_order_acquire, /*result*/ tmp3_owner);
+      beqz(tmp3_owner, monitor_locked);
+      bne(tmp3_owner, tid, slow_path);
+      bind(recursive);
+    } else {
+      bne(tmp3_owner, tid, slow_path);
+    }
 
     // Recursive.
     increment(recursions_address, 1, tmp2, tmp3);
@@ -297,7 +321,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
     ori(tmp3_t, tmp1_mark, markWord::lock_neutral_value);
     cmpxchg(/*addr*/ obj, /*expected*/ tmp1_mark, /*new*/ tmp3_t, Assembler::int64,
-            /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, /*result*/ tmp3_t);
+            memory_order_release, /*result*/ tmp3_t);
     beq(tmp1_mark, tmp3_t, unlocked);
 
     bind(push_and_slow_path);
@@ -354,10 +378,14 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
 
     bind(not_recursive);
 
+    const Register tmp2_owner_addr = tmp2;
+
+    // Compute owner address.
+    la(tmp2_owner_addr, Address(tmp1_monitor, ObjectMonitor::owner_offset()));
+
     // Set owner to null.
     // Release to satisfy the JMM
-    membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-    sd(zr, Address(tmp1_monitor, ObjectMonitor::owner_offset()));
+    sd_release(zr, tmp2_owner_addr);
     // We need a full fence after clearing owner to avoid stranding.
     // StoreLoad achieves this.
     membar(StoreLoad);
@@ -788,7 +816,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   Register orig_haystack = tmp5;
   mv(orig_haystack, haystack);
   // result_tmp = tmp4
-  shadd(haystack_end, result_tmp, haystack, haystack_end, haystack_chr_shift);
+  shift_left_add(haystack_end, result_tmp, haystack, haystack_chr_shift);
   subi(ch2, needle_len, 1); // bc offset init value, ch2 is t1
   mv(tmp3, needle);
 
@@ -818,7 +846,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   bgtz(ch2, BCLOOP);
 
   // tmp6: pattern end, address after needle
-  shadd(tmp6, needle_len, needle, tmp6, needle_chr_shift);
+  shift_left_add(tmp6, needle_len, needle, needle_chr_shift);
   if (needle_isL == haystack_isL) {
     // load last 8 bytes (8LL/4UU symbols)
     ld(tmp6, Address(tmp6, -wordSize));
@@ -849,7 +877,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   //   move j with bad char offset table
   bind(BMLOOPSTR2);
   // compare pattern to source string backward
-  shadd(result, nlen_tmp, haystack, result, haystack_chr_shift);
+  shift_left_add(result, nlen_tmp, haystack, haystack_chr_shift);
   (this->*haystack_load_1chr)(skipch, Address(result), noreg);
   subi(nlen_tmp, nlen_tmp, firstStep); // nlen_tmp is positive here, because needle_len >= 8
   if (needle_isL == haystack_isL) {
@@ -875,9 +903,9 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   }
 
   bind(BMLOOPSTR1);
-  shadd(ch1, nlen_tmp, needle, ch1, needle_chr_shift);
+  shift_left_add(ch1, nlen_tmp, needle, needle_chr_shift);
   (this->*needle_load_1chr)(ch1, Address(ch1), noreg);
-  shadd(ch2, nlen_tmp, haystack, ch2, haystack_chr_shift);
+  shift_left_add(ch2, nlen_tmp, haystack, haystack_chr_shift);
   (this->*haystack_load_1chr)(ch2, Address(ch2), noreg);
 
   bind(BMLOOPSTR1_AFTER_LOAD);
@@ -905,7 +933,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   bind(BMADV);
   subi(nlen_tmp, needle_len, 1);
   // move haystack after bad char skip offset
-  shadd(haystack, result_tmp, haystack, result, haystack_chr_shift);
+  shift_left_add(haystack, result_tmp, haystack, haystack_chr_shift, result);
   ble(haystack, haystack_end, BMLOOPSTR2);
   addi(sp, sp, ASIZE);
   j(NOMATCH);
@@ -1760,7 +1788,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
   mv(pow31_3,  29791);           // [31^^3]
   mv(pow31_2,    961);           // [31^^2]
 
-  shadd(chunks_end, chunks, ary, t0, chunks_end_shift);
+  shift_left_add(chunks_end, chunks, ary, chunks_end_shift);
   andi(cnt, cnt, stride - 1);    // don't forget about tail!
 
   bind(WIDE_LOOP);
@@ -1783,7 +1811,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
   beqz(cnt, DONE);
 
   bind(TAIL);
-  shadd(chunks_end, cnt, ary, t0, chunks_end_shift);
+  shift_left_add(chunks_end, cnt, ary, chunks_end_shift);
 
   bind(TAIL_LOOP);
   arrays_hashcode_elload(t0, Address(ary), eltype);
@@ -1833,8 +1861,7 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   const VectorRegister v_coeffs = v6;
   const VectorRegister v_tmp    = v8;
 
-  const address adr_pows31 = StubRoutines::riscv::arrays_hashcode_powers_of_31()
-                           + sizeof(jint);
+  const address adr_pows31 = StubRoutines::riscv::arrays_hashcode_powers_of_31();
   Label VEC_LOOP, DONE, SCALAR_TAIL, SCALAR_TAIL_LOOP;
 
   // NB: at this point (a) 'result' already has some value,
@@ -1844,6 +1871,9 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   beqz(t0, SCALAR_TAIL);
 
   la(t1, ExternalAddress(adr_pows31));
+  // Keep the relocation target at the registered stub entry, then skip the
+  // first element when loading the vector coefficients.
+  addi(t1, t1, sizeof(jint));
   lw(pow31_highest, Address(t1, -1 * sizeof(jint)));
 
   vsetvli(consumed, cnt, Assembler::e32, Assembler::m2);
@@ -1855,7 +1885,7 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   vmul_vv(v_src, v_src, v_coeffs);
   vmadd_vx(v_sum, pow31_highest, v_src);
   mulw(result, result, pow31_highest);
-  shadd(ary, consumed, ary, t0, elsize_shift);
+  shift_left_add(ary, consumed, ary, elsize_shift, t0);
   subw(cnt, cnt, consumed);
   andi(t1, cnt, ~(stride - 1));
   bnez(t1, VEC_LOOP);
@@ -1867,7 +1897,7 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   beqz(cnt, DONE);
 
   bind(SCALAR_TAIL);
-  shadd(ary_end, cnt, ary, t0, elsize_shift);
+  shift_left_add(ary_end, cnt, ary, elsize_shift);
 
   bind(SCALAR_TAIL_LOOP);
   arrays_hashcode_elload(t0, Address(ary), eltype);
@@ -2183,6 +2213,125 @@ void C2_MacroAssembler::enc_cmove_fp_cmp_fp(int cmpFlag,
   }
 }
 
+static void vshift_left(C2_MacroAssembler* masm, VectorRegister dst, VectorRegister src, int shift) {
+  assert(shift >= 0 && shift <= BitsPerInt, "unexpected shift amount");
+  if (shift < BitsPerInt) {
+    masm->vsll_vi(dst, src, shift);
+  } else {
+    masm->mv(t0, shift);
+    masm->vsll_vx(dst, src, t0);
+  }
+}
+
+static void vshift_right(C2_MacroAssembler* masm, VectorRegister dst, VectorRegister src, int shift) {
+  assert(shift >= 0 && shift <= BitsPerInt, "unexpected shift amount");
+  if (shift < BitsPerInt) {
+    masm->vsrl_vi(dst, src, shift);
+  } else {
+    masm->mv(t0, shift);
+    masm->vsrl_vx(dst, src, t0);
+  }
+}
+
+// Compute the parallel suffix XOR used to construct the movement masks in
+// Integer.compress, Long.compress, Integer.expand, and Long.expand. Within each
+// vector element, dst bit k is src[k] ^ src[k-1] ^ ... ^ src[0]. Each round
+// doubles the number of source bits covered.
+static void parallel_suffix_v(C2_MacroAssembler* masm, VectorRegister dst,
+                              VectorRegister src, VectorRegister tmp, bool is_int) {
+  const int bits = is_int ? BitsPerInt : BitsPerLong;
+  const int rounds = exact_log2(bits);
+
+  masm->vmv_v_v(dst, src);
+  for (int i = 0; i < rounds; i++) {
+    vshift_left(masm, tmp, dst, 1 << i);
+    masm->vxor_vv(dst, dst, tmp);
+  }
+}
+
+// Compress the bits selected by mask toward the least-significant bit of each
+// vector element while preserving their order. This is the vector equivalent
+// of Integer.compress and Long.compress and uses the same movement-mask algorithm.
+void C2_MacroAssembler::compress_bits_v(VectorRegister dst, VectorRegister src, VectorRegister bit_mask,
+                                        VectorRegister src_tmp, VectorRegister mask_tmp,
+                                        VectorRegister tmp1, VectorRegister tmp2,
+                                        BasicType bt, uint vector_length, VectorMask vm) {
+  assert(bt == T_INT || bt == T_LONG, "unsupported element type");
+  const bool is_int = bt == T_INT;
+  const int bits = is_int ? BitsPerInt : BitsPerLong;
+  const int rounds = exact_log2(bits);
+
+  vsetvli_helper(bt, vector_length);
+  vand_vv(dst, src, bit_mask, vm);
+  vmv_v_v(mask_tmp, bit_mask);
+  vnot_v(tmp1, mask_tmp);
+  vshift_left(this, tmp1, tmp1, 1);
+
+  for (int i = 0; i < rounds; i++) {
+    const int shift = 1 << i;
+    parallel_suffix_v(this, tmp2, tmp1, src_tmp, is_int);
+    vand_vv(src_tmp, tmp2, mask_tmp);
+    vnot_v(tmp2, tmp2);
+    vand_vv(tmp1, tmp1, tmp2);
+
+    vxor_vv(mask_tmp, mask_tmp, src_tmp);
+    vshift_right(this, tmp2, src_tmp, shift);
+    vor_vv(mask_tmp, mask_tmp, tmp2);
+
+    vand_vv(tmp2, dst, src_tmp);
+    vxor_vv(dst, dst, tmp2, vm);
+    vshift_right(this, tmp2, tmp2, shift);
+    vor_vv(dst, dst, tmp2, vm);
+  }
+}
+
+// Expand the low-order bits of src into the positions selected by mask in each
+// vector element. First record the movement masks used by compression, then
+// apply them in reverse order to implement Integer.expand and Long.expand.
+void C2_MacroAssembler::expand_bits_v(VectorRegister dst, VectorRegister src, VectorRegister bit_mask,
+                                      VectorRegister src_tmp, VectorRegister mask_tmp,
+                                      VectorRegister mask_move1, VectorRegister mask_move2,
+                                      VectorRegister mask_move3, VectorRegister mask_move4,
+                                      VectorRegister mask_move5, VectorRegister mask_move6,
+                                      VectorRegister tmp1, VectorRegister tmp2,
+                                      BasicType bt, uint vector_length, VectorMask vm) {
+  assert(bt == T_INT || bt == T_LONG, "unsupported element type");
+  const bool is_int = bt == T_INT;
+  const int bits = is_int ? BitsPerInt : BitsPerLong;
+  const int rounds = exact_log2(bits);
+  VectorRegister mask_moves[LogBitsPerLong] = {
+    mask_move1, mask_move2, mask_move3, mask_move4, mask_move5, mask_move6
+  };
+
+  vsetvli_helper(bt, vector_length);
+  vmv_v_v(src_tmp, src);
+  vmv_v_v(mask_tmp, bit_mask);
+  vor_vv(dst, mask_tmp, mask_tmp, vm);
+  vnot_v(tmp1, mask_tmp);
+  vshift_left(this, tmp1, tmp1, 1);
+
+  for (int i = 0; i < rounds; i++) {
+    const int shift = 1 << i;
+    parallel_suffix_v(this, tmp2, tmp1, mask_moves[i], is_int);
+    vand_vv(mask_moves[i], tmp2, mask_tmp);
+    vnot_v(tmp2, tmp2);
+    vand_vv(tmp1, tmp1, tmp2);
+
+    vxor_vv(mask_tmp, mask_tmp, mask_moves[i]);
+    vshift_right(this, tmp2, mask_moves[i], shift);
+    vor_vv(mask_tmp, mask_tmp, tmp2);
+  }
+
+  for (int i = rounds - 1; i >= 0; i--) {
+    const int shift = 1 << i;
+    vshift_left(this, tmp2, src_tmp, shift);
+    vxor_vv(tmp2, tmp2, src_tmp);
+    vand_vv(tmp2, tmp2, mask_moves[i]);
+    vxor_vv(src_tmp, src_tmp, tmp2);
+  }
+  vand_vv(dst, src_tmp, dst, vm);
+}
+
 // Set dst to NaN if any NaN input.
 void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRegister src2,
                                   FLOAT_TYPE ft, bool is_min) {
@@ -2352,8 +2501,11 @@ static void float16_to_float_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Fl
   // construct a NaN in 32 bits from the NaN in 16 bits,
   // we need the payloads of non-canonical NaNs to be preserved.
   __ mv(tmp, 0x7f800000);
-  // sign-bit was already set via sign-extension if necessary.
-  __ slli(t0, src, 13);
+  // The upper 16 bits of a short argument are unspecified. Sign-extend the
+  // low 16 bits before shifting so that the float sign bit comes from the
+  // float16 sign bit.
+  __ sext(t0, src, 16);
+  __ slli(t0, t0, 13);
   __ orr(tmp, t0, tmp);
   __ fmv_w_x(dst, tmp);
 
@@ -2363,7 +2515,7 @@ static void float16_to_float_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Fl
 
 // j.l.Float.float16ToFloat
 void C2_MacroAssembler::float16_to_float(FloatRegister dst, Register src, Register tmp) {
-  auto stub = C2CodeStub::make<FloatRegister, Register, Register>(dst, src, tmp, 20, float16_to_float_slow_path);
+  auto stub = C2CodeStub::make<FloatRegister, Register, Register>(dst, src, tmp, 28, float16_to_float_slow_path);
 
   // On riscv, NaN needs a special process as fcvt does not work in that case.
   // On riscv, Inf does not need a special process as fcvt can handle it correctly.
@@ -2703,7 +2855,7 @@ void C2_MacroAssembler::clear_array_v(Register base, Register cnt) {
   vsetvli(t0, cnt, Assembler::e64, Assembler::m4);
   vse64_v(v4, base);
   sub(cnt, cnt, t0);
-  shadd(base, t0, base, t0, 3);
+  shift_left_add(base, t0, base, 3, t0);
   bnez(cnt, loop);
 }
 
@@ -2804,7 +2956,7 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
     bgez(tmp2, DIFFERENCE);
     sub(cnt2, cnt2, tmp1);
     add(strL, strL, tmp1);
-    shadd(strU, tmp1, strU, tmp1, 1);
+    shift_left_add(strU, tmp1, strU, 1, tmp1);
     bnez(cnt2, loop);
     j(DONE);
   }
@@ -2835,7 +2987,7 @@ void C2_MacroAssembler::byte_array_inflate_v(Register src, Register dst, Registe
   vse16_v(v4, dst);
   sub(len, len, tmp);
   add(src, src, tmp);
-  shadd(dst, tmp, dst, tmp, 1);
+  shift_left_add(dst, tmp, dst, 1, tmp);
   bnez(len, loop);
   BLOCK_COMMENT("} byte_array_inflate_v");
 }
@@ -2890,7 +3042,7 @@ void C2_MacroAssembler::encode_iso_array_v(Register src, Register dst, Register 
   add(result, result, t0);
   add(dst, dst, t0);
   sub(len, len, t0);
-  shadd(src, t0, src, t0, 1);
+  shift_left_add(src, t0, src, 1, t0);
   bnez(len, loop);
   j(done);
 
@@ -3038,6 +3190,34 @@ void C2_MacroAssembler::reduce_minmax_fp_v(FloatRegister dst,
   bind(L_done);
 }
 
+void C2_MacroAssembler::reduce_mul_fp_v(FloatRegister dst, FloatRegister src1, VectorRegister src2,
+                                        VectorRegister vtmp1, VectorRegister vtmp2,
+                                        bool is_double, uint vector_length) {
+  assert(vector_length >= 2, "unsupported vector length");
+  assert(is_power_of_2(vector_length), "vector length must be a power of two");
+  assert_different_registers(dst, src1);
+  assert_different_registers(src2, vtmp1, vtmp2);
+
+  BasicType bt = is_double ? T_DOUBLE : T_FLOAT;
+  vsetvli_helper(bt, vector_length);
+
+  vector_length /= 2;
+  slidedown_v(vtmp1, src2, vector_length);
+  vsetvli_helper(bt, vector_length);
+  vfmul_vv(vtmp1, vtmp1, src2);
+
+  while (vector_length > 1) {
+    vector_length /= 2;
+    slidedown_v(vtmp2, vtmp1, vector_length);
+    vsetvli_helper(bt, vector_length);
+    vfmul_vv(vtmp1, vtmp1, vtmp2);
+  }
+
+  vfmv_f_s(dst, vtmp1);
+  is_double ? fmul_d(dst, dst, src1)
+            : fmul_s(dst, dst, src1);
+}
+
 bool C2_MacroAssembler::in_scratch_emit_size() {
   if (ciEnv::current()->task() != nullptr) {
     PhaseOutput* phase_output = Compile::current()->output();
@@ -3071,8 +3251,14 @@ void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
     case Op_MaxReductionV:
       vredmax_vs(tmp, src2, tmp, vm);
       break;
+    case Op_UMaxReductionV:
+      vredmaxu_vs(tmp, src2, tmp, vm);
+      break;
     case Op_MinReductionV:
       vredmin_vs(tmp, src2, tmp, vm);
+      break;
+    case Op_UMinReductionV:
+      vredminu_vs(tmp, src2, tmp, vm);
       break;
     default:
       ShouldNotReachHere();
@@ -3317,6 +3503,9 @@ void C2_MacroAssembler::extract_v(Register dst, VectorRegister src,
     slidedown_v(vtmp, src, idx);
     vmv_x_s(dst, vtmp);
   }
+  if (is_unsigned_subword_type(bt)) {
+    narrow_subword_type(dst, bt);
+  }
 }
 
 // Extract a scalar element from a vector at position 'idx'.
@@ -3328,6 +3517,9 @@ void C2_MacroAssembler::extract_v(Register dst, VectorRegister src,
   vsetvli_helper(bt, 1);
   vslidedown_vx(vtmp, src, idx);
   vmv_x_s(dst, vtmp);
+  if (is_unsigned_subword_type(bt)) {
+    narrow_subword_type(dst, bt);
+  }
 }
 
 // Extract a scalar element from an vector at position 'idx'.
