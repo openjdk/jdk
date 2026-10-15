@@ -4067,12 +4067,18 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
                             DoubleVector512::new);
 
     /** Species representing {@link DoubleVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
-    public static final VectorSpecies<Double> SPECIES_MAX
-        = new DoubleSpecies(VectorShapeImpl.S_Max_BIT,
-                            DoubleVectorMax.class,
-                            DoubleVectorMax.DoubleMaskMax.class,
-                            DoubleVectorMax.DoubleShuffleMax.class,
-                            DoubleVectorMax::new);
+    public static final VectorSpecies<Double> SPECIES_MAX = switch (VectorShapeImpl.S_Max_BIT.switchKey) {
+            case VectorShapeImpl.SK_64_BIT -> SPECIES_64;
+            case VectorShapeImpl.SK_128_BIT -> SPECIES_128;
+            case VectorShapeImpl.SK_256_BIT -> SPECIES_256;
+            case VectorShapeImpl.SK_512_BIT -> SPECIES_512;
+            default -> new DoubleSpecies(VectorShapeImpl.S_Max_BIT,
+                    DoubleVectorMax.class,
+                    DoubleVectorMax.DoubleMaskMax.class,
+                    DoubleVectorMax.DoubleShuffleMax.class,
+                    DoubleVectorMax::new);
+    };
+
 
     /**
      * Preferred species for {@link DoubleVector}s.

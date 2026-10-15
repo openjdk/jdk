@@ -4544,12 +4544,18 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
                             ShortVector512::new);
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
-    public static final VectorSpecies<Short> SPECIES_MAX
-        = new ShortSpecies(VectorShapeImpl.S_Max_BIT,
-                            ShortVectorMax.class,
-                            ShortVectorMax.ShortMaskMax.class,
-                            ShortVectorMax.ShortShuffleMax.class,
-                            ShortVectorMax::new);
+    public static final VectorSpecies<Short> SPECIES_MAX = switch (VectorShapeImpl.S_Max_BIT.switchKey) {
+            case VectorShapeImpl.SK_64_BIT -> SPECIES_64;
+            case VectorShapeImpl.SK_128_BIT -> SPECIES_128;
+            case VectorShapeImpl.SK_256_BIT -> SPECIES_256;
+            case VectorShapeImpl.SK_512_BIT -> SPECIES_512;
+            default -> new ShortSpecies(VectorShapeImpl.S_Max_BIT,
+                    ShortVectorMax.class,
+                    ShortVectorMax.ShortMaskMax.class,
+                    ShortVectorMax.ShortShuffleMax.class,
+                    ShortVectorMax::new);
+    };
+
 
     /**
      * Preferred species for {@link ShortVector}s.

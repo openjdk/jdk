@@ -4576,12 +4576,18 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
                             ByteVector512::new);
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
-    public static final VectorSpecies<Byte> SPECIES_MAX
-        = new ByteSpecies(VectorShapeImpl.S_Max_BIT,
-                            ByteVectorMax.class,
-                            ByteVectorMax.ByteMaskMax.class,
-                            ByteVectorMax.ByteShuffleMax.class,
-                            ByteVectorMax::new);
+    public static final VectorSpecies<Byte> SPECIES_MAX = switch (VectorShapeImpl.S_Max_BIT.switchKey) {
+            case VectorShapeImpl.SK_64_BIT -> SPECIES_64;
+            case VectorShapeImpl.SK_128_BIT -> SPECIES_128;
+            case VectorShapeImpl.SK_256_BIT -> SPECIES_256;
+            case VectorShapeImpl.SK_512_BIT -> SPECIES_512;
+            default -> new ByteSpecies(VectorShapeImpl.S_Max_BIT,
+                    ByteVectorMax.class,
+                    ByteVectorMax.ByteMaskMax.class,
+                    ByteVectorMax.ByteShuffleMax.class,
+                    ByteVectorMax::new);
+    };
+
 
     /**
      * Preferred species for {@link ByteVector}s.

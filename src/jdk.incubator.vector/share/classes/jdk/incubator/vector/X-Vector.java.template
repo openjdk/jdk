@@ -6139,12 +6139,18 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
                             $Type$Vector512::new);
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
-    public static final VectorSpecies<$Boxtype$> SPECIES_MAX
-        = new $Type$Species(VectorShapeImpl.S_Max_BIT,
-                            $Type$VectorMax.class,
-                            $Type$VectorMax.$Type$MaskMax.class,
-                            $Type$VectorMax.$Type$ShuffleMax.class,
-                            $Type$VectorMax::new);
+    public static final VectorSpecies<$Boxtype$> SPECIES_MAX = switch (VectorShapeImpl.S_Max_BIT.switchKey) {
+            case VectorShapeImpl.SK_64_BIT -> SPECIES_64;
+            case VectorShapeImpl.SK_128_BIT -> SPECIES_128;
+            case VectorShapeImpl.SK_256_BIT -> SPECIES_256;
+            case VectorShapeImpl.SK_512_BIT -> SPECIES_512;
+            default -> new $Type$Species(VectorShapeImpl.S_Max_BIT,
+                    $Type$VectorMax.class,
+                    $Type$VectorMax.$Type$MaskMax.class,
+                    $Type$VectorMax.$Type$ShuffleMax.class,
+                    $Type$VectorMax::new);
+    };
+
 
     /**
      * Preferred species for {@link $Type$Vector}s.

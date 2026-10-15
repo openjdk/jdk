@@ -59,13 +59,20 @@ final class VectorShapeImpl implements VectorShape {
     }
 
     @ForceInline
+    @Override
     public int vectorBitSize() {
         return vectorBitSize;
     }
 
-    public <E>
-    VectorSpecies<E> withLanes(Class<E> elementType) {
+    @Override
+    public <E> VectorSpecies<E> withLanes(Class<E> elementType) {
         return VectorSpecies.of(elementType, this);
+    }
+
+    @Override
+    public String toString() {
+        // Currently a test dependency; might change to be more descriptive later.
+        return "S_" + vectorBitSize + "_BIT";
     }
 
     // Max vector size and increments for local use.

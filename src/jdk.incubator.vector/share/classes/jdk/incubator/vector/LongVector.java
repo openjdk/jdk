@@ -4107,12 +4107,18 @@ public abstract sealed class LongVector extends AbstractVector<Long>
                             LongVector512::new);
 
     /** Species representing {@link LongVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
-    public static final VectorSpecies<Long> SPECIES_MAX
-        = new LongSpecies(VectorShapeImpl.S_Max_BIT,
-                            LongVectorMax.class,
-                            LongVectorMax.LongMaskMax.class,
-                            LongVectorMax.LongShuffleMax.class,
-                            LongVectorMax::new);
+    public static final VectorSpecies<Long> SPECIES_MAX = switch (VectorShapeImpl.S_Max_BIT.switchKey) {
+            case VectorShapeImpl.SK_64_BIT -> SPECIES_64;
+            case VectorShapeImpl.SK_128_BIT -> SPECIES_128;
+            case VectorShapeImpl.SK_256_BIT -> SPECIES_256;
+            case VectorShapeImpl.SK_512_BIT -> SPECIES_512;
+            default -> new LongSpecies(VectorShapeImpl.S_Max_BIT,
+                    LongVectorMax.class,
+                    LongVectorMax.LongMaskMax.class,
+                    LongVectorMax.LongShuffleMax.class,
+                    LongVectorMax::new);
+    };
+
 
     /**
      * Preferred species for {@link LongVector}s.
