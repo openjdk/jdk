@@ -26,7 +26,7 @@
  * @summary Check that binding to 127.0.0.255 succeeds
  * @requires (os.family == "linux")
  * @library /test/lib
- * @build jdk.test.lib.net.IPSupport
+ * @build jdk.test.lib.net.IPSupport jtreg.SkippedException
  * @run main BindLoopback
  */
 
