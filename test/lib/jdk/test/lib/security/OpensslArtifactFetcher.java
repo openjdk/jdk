@@ -130,9 +130,11 @@ public class OpensslArtifactFetcher {
 
     // retrieve the provider directory path from <OPENSSL_HOME>/bin/openssl
     public static Path getProviderPath(String opensslPath) {
-        // This test uses -legacy (RC4/SHA1 PBE). Skip if the legacy provider
-        // is not available instead of failing later.
-        if (!opensslHasProvider(opensslPath, "legacy")) {
+        // This test uses -legacy (RC4/SHA1 PBE). On Linux the system OpenSSL
+        // may be built without the legacy provider (observed on loongarch64,
+        // aarch64 and x64), so skip instead of failing later. Other platforms
+        // use the downloaded bundle and must not be skipped here.
+        if (Platform.isLinux() && !opensslHasProvider(opensslPath, "legacy")) {
             throw new SkippedException("OpenSSL legacy provider not available");
         }
         // Ask openssl for its modules directory. This works for both the
