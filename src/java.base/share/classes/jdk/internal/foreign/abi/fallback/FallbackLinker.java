@@ -82,6 +82,12 @@ public final class FallbackLinker extends AbstractLinker {
     }
 
     @Override
+    protected ValueLayout maybeDropExtension(ValueLayout valueLayout) {
+        // never drop, we don't know when the native ABI needs it
+        return valueLayout;
+    }
+
+    @Override
     protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options) {
         assertNotEmpty(function);
         MemorySegment cif = makeCif(inferredMethodType, function, options, Arena.ofAuto());
@@ -323,6 +329,15 @@ public final class FallbackLinker extends AbstractLinker {
                     Map.entry("long", FFIType.layoutFor(LibFallback.longSize())),
                     Map.entry("unsigned long", withSignInfo(FFIType.layoutFor(LibFallback.longSize()), ZERO_EXTEND)),
                     Map.entry("wchar_t", wchartLayout),
+                    // unspecified size dependent layouts
+                    Map.entry("int8_t", ValueLayout.JAVA_BYTE),
+                    Map.entry("int16_t", ValueLayout.JAVA_SHORT),
+                    Map.entry("int32_t", ValueLayout.JAVA_INT),
+                    Map.entry("int64_t", ValueLayout.JAVA_LONG),
+                    Map.entry("uint8_t", withSignInfo(ValueLayout.JAVA_BYTE, IntegralExtension.ZERO_EXTEND)),
+                    Map.entry("uint16_t", withSignInfo(ValueLayout.JAVA_SHORT, IntegralExtension.ZERO_EXTEND)),
+                    Map.entry("uint32_t", withSignInfo(ValueLayout.JAVA_INT, IntegralExtension.ZERO_EXTEND)),
+                    Map.entry("uint64_t", withSignInfo(ValueLayout.JAVA_LONG, IntegralExtension.ZERO_EXTEND)),
                     // JNI types
                     Map.entry("jboolean", JAVA_BOOLEAN),
                     Map.entry("jchar", JAVA_CHAR),

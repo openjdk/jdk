@@ -116,6 +116,9 @@ class FFIType {
             return LibFallback.doubleType();
         } else if (layout instanceof AddressLayout) {
             return LibFallback.pointerType();
+        } else if (layout instanceof ValueLayout.OfBoolean) {
+            // boolean doesn't have sign info
+            return LibFallback.uint8Type();
         } else {
             // infer based on size and sign
             return ((ValueLayout)layout).integralExtension().map(SIGN_EXTEND::equals).orElseThrow() ?
