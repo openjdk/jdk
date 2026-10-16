@@ -64,6 +64,13 @@ public final class MacOsAArch64Linker extends AbstractLinker {
     }
 
     @Override
+    protected ValueLayout maybeDropExtension(ValueLayout valueLayout) {
+        return valueLayout.byteSize() < 4 // smaller than int
+                ? valueLayout // keep, if any
+                : super.maybeDropExtension(valueLayout);
+    }
+
+    @Override
     protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options) {
         return CallArranger.MACOS.arrangeDowncall(inferredMethodType, function, options);
     }
