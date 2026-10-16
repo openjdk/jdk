@@ -40,7 +40,11 @@ public final class LinuxRISCV64CFrame extends DwarfCFrame {
    private static final int C_FRAME_LINK_OFFSET        = -2;
    private static final int C_FRAME_RETURN_ADDR_OFFSET = -1;
 
+   // Value of the CIE return-address register.
    private Address ra;
+
+   // Captured x1 for recovering the caller's return address when a save helper returns through x5.
+   private final Address lr;
 
    private static LinuxRISCV64CFrame getFrameFromReg(LinuxDebugger linuxDbg, Function<Integer, Address> getreg) {
       Address pc = getreg.apply(RISCV64ThreadContext.PC);
@@ -50,9 +54,11 @@ public final class LinuxRISCV64CFrame extends DwarfCFrame {
       }
 
       Address fp = getreg.apply(RISCV64ThreadContext.FP);
-      Address ra = getreg.apply(RISCV64ThreadContext.LR);
+      Address lr = getreg.apply(RISCV64ThreadContext.LR);
+      Address ra = null;
+
       if (linuxDbg.isSignalTrampoline(pc)) {
-        return new LinuxRISCV64CFrame(linuxDbg, sp, fp, null, pc, ra, null);
+        return new LinuxRISCV64CFrame(linuxDbg, sp, fp, null, pc, null, null);
       }
 
       Address cfa = null;
@@ -72,26 +78,35 @@ public final class LinuxRISCV64CFrame extends DwarfCFrame {
 
       return (fp == null && cfa == null && VM.getVM().getCodeCache().findBlobUnsafe(pc) == null)
         ? null
-        : new LinuxRISCV64CFrame(linuxDbg, sp, fp, cfa, pc, ra, dwarf);
+        : new LinuxRISCV64CFrame(linuxDbg, sp, fp, cfa, pc, ra, lr, dwarf, false);
    }
 
    public static LinuxRISCV64CFrame getTopFrame(LinuxDebugger linuxDbg, ThreadContext context) {
       return getFrameFromReg(linuxDbg, context::getRegisterAsAddress);
    }
 
-   private LinuxRISCV64CFrame(LinuxDebugger linuxDbg, Address sp, Address fp, Address cfa, Address pc, Address ra, DwarfParser dwarf) {
+   private LinuxRISCV64CFrame(LinuxDebugger linuxDbg, Address sp, Address fp, Address cfa, Address pc,
+                              Address ra, DwarfParser dwarf) {
       this(linuxDbg, sp, fp, cfa, pc, ra, dwarf, false);
    }
 
-   private LinuxRISCV64CFrame(LinuxDebugger linuxDbg, Address sp, Address fp, Address cfa, Address pc, DwarfParser dwarf) {
+   private LinuxRISCV64CFrame(LinuxDebugger linuxDbg, Address sp, Address fp, Address cfa, Address pc,
+                              DwarfParser dwarf) {
       this(linuxDbg, sp, fp, cfa, pc, null, dwarf, false);
    }
 
-   private LinuxRISCV64CFrame(LinuxDebugger linuxDbg, Address sp, Address fp, Address cfa, Address pc, DwarfParser dwarf, boolean use1ByteBeforeToLookup) {
+   private LinuxRISCV64CFrame(LinuxDebugger linuxDbg, Address sp, Address fp, Address cfa, Address pc,
+                              DwarfParser dwarf, boolean use1ByteBeforeToLookup) {
       this(linuxDbg, sp, fp, cfa, pc, null, dwarf, use1ByteBeforeToLookup);
    }
 
-   private LinuxRISCV64CFrame(LinuxDebugger linuxDbg, Address sp, Address fp, Address cfa, Address pc, Address ra, DwarfParser dwarf, boolean use1ByteBeforeToLookup) {
+   private LinuxRISCV64CFrame(LinuxDebugger linuxDbg, Address sp, Address fp, Address cfa, Address pc,
+                              Address ra, DwarfParser dwarf, boolean use1ByteBeforeToLookup) {
+      this(linuxDbg, sp, fp, cfa, pc, ra, null, dwarf, use1ByteBeforeToLookup);
+   }
+
+   private LinuxRISCV64CFrame(LinuxDebugger linuxDbg, Address sp, Address fp, Address cfa, Address pc,
+                              Address ra, Address lr, DwarfParser dwarf, boolean use1ByteBeforeToLookup) {
       super(linuxDbg, sp, fp, cfa, pc, dwarf, use1ByteBeforeToLookup);
 
       if (dwarf != null) {
@@ -102,6 +117,7 @@ public final class LinuxRISCV64CFrame extends DwarfCFrame {
       }
 
       this.ra = ra;
+      this.lr = lr;
    }
 
    private Address getSenderCFA(DwarfParser senderDwarf, Address senderSP, Address senderFP) {
@@ -269,9 +285,40 @@ public final class LinuxRISCV64CFrame extends DwarfCFrame {
 
      try {
        Address senderCFA = getSenderCFA(senderDwarf, senderSP, senderFP);
-       return isValidFrame(senderCFA, senderFP, senderPC)
-         ? new LinuxRISCV64CFrame(linuxDbg(), senderSP, senderFP, senderCFA, senderPC, senderDwarf, use1ByteBeforeToLookup)
-         : null;
+       if (!isValidFrame(senderCFA, senderFP, senderPC)) {
+         return null;
+       }
+
+       Address senderRA = null;
+
+       // Assume this call chain: A → F → save helper
+       // F uses x1 as CIE return-address column, while save helper uses t0/x5
+       // Conceptually, F’s entry looks like:
+       // F:
+       //   call t0, __riscv_save_0 // F's saved-x1 rule is not active here, so its RA offset is MAX_VALUE.
+       //   next instruction ...
+       if (dwarf() != null && senderDwarf != null &&
+           senderDwarf.getReturnAddressOffsetFromCFA() == Integer.MAX_VALUE &&
+           dwarf().getRARegister() != senderDwarf.getRARegister()) {
+         int offset = dwarf().getOffsetFromCFA(senderDwarf.getRARegister());
+         if (offset != Integer.MAX_VALUE) {
+           // Example after sd ra, offset = -8:
+           //   high  helper CFA (= F's call-site SP)
+           //         [saved x1 -> A] at CFA - 8
+           //   low   ... helper stack ...
+           //   x5 -> F
+           senderRA = getSenderSP(null).getAddressAt(offset);
+         } else if (senderDwarf.getRARegister() == RISCV64ThreadContext.LR) {
+           // Before sd ra:
+           //   stack: x1 not saved yet
+           //   x5 -> F
+           //   captured x1 (lr) -> A
+           senderRA = lr;
+         }
+       }
+
+       return new LinuxRISCV64CFrame(linuxDbg(), senderSP, senderFP, senderCFA,
+                                     senderPC, senderRA, senderDwarf, use1ByteBeforeToLookup);
      } catch (DebuggerException e) {
        if (linuxDbg().isSignalTrampoline(senderPC)) {
          return new LinuxRISCV64CFrame(linuxDbg(), senderSP, senderFP, null, senderPC, null);
