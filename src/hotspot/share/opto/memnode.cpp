@@ -1308,12 +1308,28 @@ static Node* see_through_value_type(PhaseValues* phase, const LoadNode* load, No
 // of aliasing.
 // This method may find an unencoded node instead of the corresponding encoded one.
 Node* LoadNode::can_see_stored_value_through_membars(Node* st, PhaseValues* phase) const {
+  auto verify_type = [&](Node* res) {
+    if (res == nullptr || res->bottom_type() == Type::TOP) {
+      return true;
+    }
+
+    // We can return an uncompressed oop when this is a LoadN
+    if (const TypePtr* this_ptr_type = type()->make_ptr(); this_ptr_type != nullptr) {
+      const TypePtr* res_ptr_type = res->bottom_type()->make_ptr();
+      return res_ptr_type != nullptr && res_ptr_type->higher_equal(this_ptr_type);
+    }
+
+    return is_java_primitive(value_basic_type()) || res->bottom_type()->higher_equal(type());
+  };
+
   Node* ld_adr = in(MemNode::Address);
   intptr_t ld_off = 0;
   Node* ld_base = AddPNode::Ideal_base_and_offset(ld_adr, phase, ld_off);
   // Try to see through an ValueTypeNode
   Node* value = see_through_value_type(phase, this, ld_base, ld_off);
   if (value != nullptr) {
+    // TODO 8390080
+    // assert(verify_type(value), "the fold is unsafe");
     return value;
   }
 
@@ -1369,7 +1385,7 @@ Node* LoadNode::can_see_stored_value_through_membars(Node* st, PhaseValues* phas
 
   Node* res = can_see_stored_value(st, phase);
   // TODO: reimplement assert, see: JDK-8386157
-  //assert(res == nullptr || is_java_primitive(value_basic_type()) || res->bottom_type()->higher_equal(type()), "the fold is unsafe");
+  assert(verify_type(res), "the fold is unsafe");
   return res;
 }
 

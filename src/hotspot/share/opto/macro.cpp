@@ -879,8 +879,12 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
         for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++) {
           Node* u = use->fast_out(k);
           if (u->is_ValueType()) {
-            // Use in flat field can be eliminated
             ValueTypeNode* vt = u->as_ValueType();
+            if (vt->get_oop() == use) {
+              worklist.push(use);
+            }
+
+            // Use in flat field can be eliminated
             for (uint i = 0; i < vt->field_count(); ++i) {
               if (vt->field_value(i) == use && !vt->field(i)->is_flat()) {
                 can_eliminate = false; // Use in non-flat field
