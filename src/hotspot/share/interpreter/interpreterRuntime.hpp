@@ -96,6 +96,7 @@ class InterpreterRuntime: AllStatic {
 #if INCLUDE_JVMTI
   static void    member_name_arg_or_null(JavaThread* current, address dmh, Method* m, address bcp);
 #endif
+  static oop     popframe_member_name_arg_or_null(address member_name, Method* m, address bcp);
   static void    throw_pending_exception(JavaThread* current);
 
   static void resolve_from_cache(JavaThread* current, Bytecodes::Code bytecode);

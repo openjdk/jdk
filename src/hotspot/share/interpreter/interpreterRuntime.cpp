@@ -1563,19 +1563,16 @@ JRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* curre
 JRT_END
 #endif
 
-#if INCLUDE_JVMTI
 // This is a support of the JVMTI PopFrame interface.
 // Make sure it is an invokestatic of a polymorphic intrinsic that has a member_name argument
-// and return it as a vm_result_oop so that it can be reloaded in the list of invokestatic parameters.
+// and return it so that it can be reloaded in the list of invokestatic parameters.
 // The member_name argument is a saved reference (in local#0) to the member_name.
 // For backward compatibility with some JDK versions (7, 8) it can also be a direct method handle.
 // FIXME: remove DMH case after j.l.i.InvokerBytecodeGenerator code shape is updated.
-JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current, address member_name,
-                                                            Method* method, address bcp))
+oop InterpreterRuntime::popframe_member_name_arg_or_null(address member_name, Method* method, address bcp) {
   Bytecodes::Code code = Bytecodes::code_at(method, bcp);
   if (code != Bytecodes::_invokestatic) {
-    current->set_vm_result_oop(nullptr);
-    return;
+    return nullptr;
   }
 
   ConstantPool* cpool = method->constants();
@@ -1584,8 +1581,7 @@ JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current,
   Symbol* mname = cpool->name_ref_at(cp_index, code);
 
   if (!MethodHandles::has_member_arg(cname, mname)) {
-    current->set_vm_result_oop(nullptr);
-    return;
+    return nullptr;
   }
 
   oop member_name_oop = cast_to_oop(member_name);
@@ -1599,7 +1595,13 @@ JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current,
   if (java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop)) {
     member_name_oop = java_lang_invoke_DirectMethodHandle::member(member_name_oop);
   }
-  current->set_vm_result_oop(member_name_oop);
+  return member_name_oop;
+}
+
+#if INCLUDE_JVMTI
+JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current, address member_name,
+                                                            Method* method, address bcp))
+  current->set_vm_result_oop(popframe_member_name_arg_or_null(member_name, method, bcp));
 JRT_END
 #endif // INCLUDE_JVMTI
 
