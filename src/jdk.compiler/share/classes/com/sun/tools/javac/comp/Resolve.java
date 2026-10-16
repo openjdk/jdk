@@ -4028,12 +4028,12 @@ public class Resolve {
             // If unqualified static field, ignore
             return true;
         }
-        boolean declaredInRelatedClass =
+        boolean declaredInSuper =
                 types.closure(context.owner().type)
                      .stream()
                      .map(t -> t.tsym)
                      .anyMatch(ts -> field.owner == ts);
-        if (!declaredInRelatedClass) {
+        if (!declaredInSuper) {
             // If unrelated instance field, ignore
             return true;
         }
