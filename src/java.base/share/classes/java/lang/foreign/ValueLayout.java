@@ -117,7 +117,7 @@ public sealed interface ValueLayout extends MemoryLayout
     }
 
     /**
-     * {@return the integral extension attached to this layout, if any}
+     * {@return the integral extension policy attached to this layout, if any}
      */
     Optional<IntegralExtension> integralExtension();
 
