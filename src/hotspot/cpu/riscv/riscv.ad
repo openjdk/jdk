@@ -1258,13 +1258,15 @@ static bool rvv_preserves_vsetvli(const Node* node, const PhaseRegAlloc* ra) {
 //
 // Tracks the (sew, vl) most recently established by a Flag_rvv_simple node in
 // each block. Every simple setup uses m1/tu/mu with vl equal to the shape's
-// element count, so a matching tracked (sew, vl) means the hardware already
-// holds exactly the configuration the node would program, and its vsetvli can
-// be omitted. The tracked state is dropped at block boundaries and whenever
+// element count. Assuming vstart is zero, a matching tracked (sew, vl) means
+// the hardware holds the required configuration, and its vsetvli can be omitted.
+// The tracked state is dropped at control-flow joins and whenever
 // an intervening node might clobber VL/VTYPE (see rvv_preserves_vsetvli), so
 // the first simple node after either always re-establishes the configuration.
+// Unsafe-marked nmethods are excluded: SIGBUS recovery may skip a faulting
+// RVV instruction without resetting vstart, violating this assumption.
 void PhaseOutput::pd_perform_mach_node_analysis() {
-  if (!VSETVLIElimination || C->max_vector_size() == 0) {
+  if (!VSETVLIElimination || C->max_vector_size() == 0 || C->has_unsafe_access()) {
     return;
   }
   ResourceMark rm;

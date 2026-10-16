@@ -27,7 +27,8 @@
  * @summary Test RVV vector configuration propagation through extended basic blocks
  * @library /test/lib /
  * @requires vm.compiler2.enabled & os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*"
- * @modules jdk.incubator.vector
+ * @modules java.base/jdk.internal.misc
+ *          jdk.incubator.vector
  * @run driver compiler.c2.riscv64.TestVSETVLIElimination
  */
 
@@ -47,12 +48,14 @@ import jdk.incubator.vector.DoubleVector;
 import jdk.incubator.vector.FloatVector;
 import jdk.incubator.vector.IntVector;
 import jdk.incubator.vector.VectorOperators;
+import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 
 import java.util.Arrays;
 
 public class TestVSETVLIElimination {
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final String KEPT = "rvv_vsetvli=kept";
     private static final String ELIDED = "rvv_vsetvli=elided";
     private static final String PREDECESSOR = "B\\d+(?: \\(B\\d+\\))? ";
@@ -96,6 +99,7 @@ public class TestVSETVLIElimination {
         TestFramework framework = new TestFramework()
                 .addFlags("-XX:-TieredCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+VSETVLIElimination",
                           "--add-modules=jdk.incubator.vector", "-XX:LoopMaxUnroll=0",
+                          "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                           "-XX:+UnlockExperimentalVMOptions",
                           "-XX:CompileCommand=blackhole,compiler.c2.riscv64.TestVSETVLIElimination::blackhole")
                 .addScenarios(new Scenario(0, "-XX:+BlockLayoutByFrequency"),
@@ -120,6 +124,25 @@ public class TestVSETVLIElimination {
         testInt();
         for (int i = 0; i < IR.length; i++) {
             Asserts.assertEQ(IR[i], (((((IA[i] + IB[i]) * IB[i]) ^ IA[i]) - IB[i]) & IA[i]) | IB[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = {"storeV [^\\r\\n]*" + KEPT, ">= 1"}, failOn = {ELIDED},
+        phase = CompilePhase.PRINT_OPTO_ASSEMBLY)
+    public static int testUnsafeAccess() {
+        int scalar = UNSAFE.getInt(IA, Unsafe.ARRAY_INT_BASE_OFFSET);
+        IntVector a = IntVector.fromArray(IntVector.SPECIES_128, IA, 0);
+        IntVector b = IntVector.fromArray(IntVector.SPECIES_128, IB, 0);
+        a.add(b).mul(b).intoArray(IR, 0);
+        return scalar;
+    }
+
+    @Run(test = "testUnsafeAccess")
+    public static void runUnsafeAccess() {
+        Asserts.assertEQ(testUnsafeAccess(), IA[0]);
+        for (int i = 0; i < IR.length; i++) {
+            Asserts.assertEQ(IR[i], (IA[i] + IB[i]) * IB[i]);
         }
     }
 
