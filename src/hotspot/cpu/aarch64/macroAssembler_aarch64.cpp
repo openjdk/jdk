@@ -5887,7 +5887,11 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
   code_section()->relocate(inst_mark(), dest.rspec());
   // 8143067: Ensure that the adrp can reach the dest from anywhere within
   // the code cache so that if it is relocated we know it will still reach
-  if (offset_high >= -(1<<20) && offset_low < (1<<20)) {
+  // For AOT code force far distance for external_word relocation.
+  const bool force_far = AOTCodeCache::is_on_for_dump() &&
+                         (dest.rspec().type() == relocInfo::external_word_type) &&
+                         !CodeCache::contains(dest.target());
+  if (!force_far && offset_high >= -(1<<20) && offset_low < (1<<20)) {
     _adrp(reg1, dest.target());
   } else {
     uint64_t target = (uint64_t)dest.target();
