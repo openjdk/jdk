@@ -38,6 +38,8 @@ import java.text.DecimalFormatSymbols;
 import java.util.List;
 import java.util.Locale;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
 public class PluralProcessingTest {
 
     // Plural rules that are excessively long
@@ -53,7 +55,8 @@ public class PluralProcessingTest {
     @FieldSource("LONG_PLURAL_RULES")
     @ParameterizedTest
     void longPluralRulesTest(String rule) {
-        new CompactNumberFormat("#", DecimalFormatSymbols.getInstance(Locale.ROOT),
-                new String[]{""}, rule);
+        assertDoesNotThrow(() ->
+                new CompactNumberFormat("#", DecimalFormatSymbols.getInstance(Locale.ROOT),
+                        new String[]{""}, rule));
     }
 }
