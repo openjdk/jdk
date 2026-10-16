@@ -23,11 +23,11 @@
  */
 
 #include "cds.h"
+#include "cds/aotHeap.inline.hpp"
 #include "cds/aotMappedHeapLoader.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/cdsConstants.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderStats.hpp"

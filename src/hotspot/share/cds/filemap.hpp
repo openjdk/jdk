@@ -26,11 +26,11 @@
 #define SHARE_CDS_FILEMAP_HPP
 
 #include "cds/aotCompressedPointers.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotMappedHeap.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotStreamedHeap.hpp"
 #include "cds/archiveUtils.hpp"
-#include "cds/heapShared.hpp"
 #include "include/cds.h"
 #include "logging/logLevel.hpp"
 #include "memory/allocation.hpp"

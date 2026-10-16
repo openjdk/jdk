@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotHeap.inline.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMappedHeap.hpp"
 #include "cds/aotMappedHeapLoader.inline.hpp"
@@ -29,7 +30,6 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "gc/shared/collectedHeap.hpp"
