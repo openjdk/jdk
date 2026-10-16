@@ -57,4 +57,4 @@ public:
   static uint try_and_set_active_workers(uint num_workers);
 };
 
-#endif // SHARE_GC_SHARED_DIAGNOSTICWORKERS_HPP
+#endif // SHARE_SERVICES_DIAGNOSTICWORKERS_HPP

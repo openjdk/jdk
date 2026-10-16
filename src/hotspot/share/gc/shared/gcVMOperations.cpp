@@ -204,11 +204,7 @@ void VM_GC_HeapInspection::doit() {
     }
   }
   HeapInspection inspect;
-  if (Universe::heap()->supports_parallel_heap_iteration() && _parallel_thread_num > 1) {
-    inspect.heap_inspection(_out, _parallel_thread_num);
-  } else {
-    inspect.heap_inspection(_out, 1);
-  }
+  inspect.heap_inspection(_out, _parallel_thread_num);
 }
 
 VM_CollectForMetadataAllocation::VM_CollectForMetadataAllocation(ClassLoaderData* loader_data,

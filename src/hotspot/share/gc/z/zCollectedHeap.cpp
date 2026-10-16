@@ -306,7 +306,7 @@ void ZCollectedHeap::verify_nmethod(nmethod* nm) {
   // Does nothing
 }
 
-bool ZCollectedHeap::supports_parallel_heap_iteration() const {
+bool ZCollectedHeap::supports_parallel_object_iteration() const {
   return true;
 }
 

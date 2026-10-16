@@ -402,6 +402,10 @@ protected:
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl) = 0;
 
+  // Returns true if the collector implements parallel_object_iterator(), so
+  // heap dump and heap inspection may iterate the heap with multiple worker threads.
+  virtual bool supports_parallel_object_iteration() const { return false; }
+
   virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint thread_num) {
     return nullptr;
   }
@@ -474,10 +478,6 @@ protected:
   // Return true if concurrent gc control via WhiteBox is supported by
   // this collector.  The default implementation returns false.
   virtual bool supports_concurrent_gc_breakpoints() const;
-
-  // Returns true if the collector implements parallel_object_iterator(), so
-  // heap dump and heap inspection may iterate the heap with multiple worker threads.
-  virtual bool supports_parallel_heap_iteration() const { return false; }
 
   // Support for object pinning. This is used by JNI Get*Critical()
   // and Release*Critical() family of functions. The GC must guarantee

@@ -2558,7 +2558,8 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public Unmounte
   }
   int dump_seq()           { return _dump_seq; }
   bool is_parallel_dump()  { return _num_dumper_threads > 1; }
-  void prepare_parallel_dump(WorkerThreads* workers);
+  // Returns the worker pool for a parallel dump or nullptr for a serial dump.
+  WorkerThreads* prepare_parallel_dump();
 
   VMOp_Type type() const { return VMOp_HeapDumper; }
   virtual bool doit_prologue();
@@ -2601,14 +2602,22 @@ bool VM_HeapDumper::doit_prologue() {
   return VM_GC_Operation::doit_prologue();
 }
 
-void VM_HeapDumper::prepare_parallel_dump(WorkerThreads* workers) {
-  uint num_active_workers = workers != nullptr ? workers->active_workers() : 0;
-  uint num_requested_dump_threads = _num_dumper_threads;
-  // check if we can dump in parallel based on requested and active threads
-  if (num_active_workers <= 1 || num_requested_dump_threads <= 1) {
+WorkerThreads* VM_HeapDumper::prepare_parallel_dump() {
+  const uint num_requested_dump_threads = _num_dumper_threads;
+  uint num_active_workers = 0;
+  WorkerThreads* workers = nullptr;
+
+  if (Universe::heap()->supports_parallel_object_iteration() && _num_dumper_threads > 1) {
+    workers = DiagnosticWorkers::workers();
+    num_active_workers = DiagnosticWorkers::try_and_set_active_workers(_num_dumper_threads);
+  }
+
+  // check if we can dump in parallel based on active threads
+  if (num_active_workers <= 1) {
     _num_dumper_threads = 1;
+    workers = nullptr;
   } else {
-    _num_dumper_threads = clamp(num_requested_dump_threads, 2U, num_active_workers);
+    _num_dumper_threads = num_active_workers;
   }
   _dumper_controller = new (std::nothrow) DumperController(_num_dumper_threads);
   bool can_parallel = _num_dumper_threads > 1;
@@ -2616,6 +2625,7 @@ void VM_HeapDumper::prepare_parallel_dump(WorkerThreads* workers) {
                      "actual dump threads %u, parallelism %s",
                      num_requested_dump_threads, num_active_workers,
                      _num_dumper_threads, can_parallel ? "true" : "false");
+  return workers;
 }
 
 // The VM operation that dumps the heap. The dump consists of the following
@@ -2657,13 +2667,7 @@ void VM_HeapDumper::doit() {
     }
   }
 
-  WorkerThreads* workers = nullptr;
-  if (ch->supports_parallel_heap_iteration() && _num_dumper_threads > 1) {
-    workers = DiagnosticWorkers::workers();
-    DiagnosticWorkers::try_and_set_active_workers(_num_dumper_threads);
-  }
-
-  prepare_parallel_dump(workers);
+  WorkerThreads* workers = prepare_parallel_dump();
 
   if (!is_parallel_dump()) {
     work(VMDumperId);

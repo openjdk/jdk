@@ -718,7 +718,7 @@ void HeapInspection::heap_inspection(outputStream* st, uint num_workers) {
   ResourceMark rm;
 
   WorkerThreads* workers = nullptr;
-  if (num_workers > 1) {
+  if (Universe::heap()->supports_parallel_object_iteration() && num_workers > 1) {
     workers = DiagnosticWorkers::workers();
     const uint active_workers = DiagnosticWorkers::try_and_set_active_workers(num_workers);
     // Fall back to serial inspection if fewer than two workers were created.

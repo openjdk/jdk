@@ -99,7 +99,7 @@ public:
   void unregister_nmethod(nmethod* nm) override;
   void verify_nmethod(nmethod* nmethod) override;
 
-  bool supports_parallel_heap_iteration() const override;
+  bool supports_parallel_object_iteration() const override;
 
   void gc_threads_do(ThreadClosure* tc) const override;
 
