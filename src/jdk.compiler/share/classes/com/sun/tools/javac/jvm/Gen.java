@@ -54,7 +54,6 @@ import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.jvm.CRTFlags.*;
 import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
-import java.util.function.Consumer;
 
 /** This pass maps flat Java (i.e. without inner classes) to bytecodes.
  *
@@ -272,6 +271,16 @@ public class Gen extends JCTree.Visitor {
      */
     int makeRef(DiagnosticPosition pos, Type type) {
         return poolWriter.putClass(checkDimension(pos, type));
+    }
+
+    /** Make an attributed tree representing a literal. This will be an
+     *  Ident node in the case of boolean literals, a Literal node in all
+     *  other cases.
+     *  @param type       The literal's type.
+     *  @param value      The literal's value.
+     */
+    JCExpression makeLit(Type type, Object value) {
+        return make.Literal(type.getTag(), value).setType(type.constType(value));
     }
 
     /** Check if the given type is an array with too many dimensions.
@@ -783,26 +792,58 @@ public class Gen extends JCTree.Visitor {
             code.undefineVariablesInChain(result.trueJumps, limit);
             return result;
         } else if (inner_tree instanceof JCTypeCast cast) {
-            Assert.check(types.unboxedTypeOrType(cast.type).hasTag(BOOLEAN));
+            //as part of condition, the cast must always be (boolean), assert that holds:
+            Assert.check(cast.type.hasTag(BOOLEAN));
             CondItem result = genCond(cast.expr, markBranches);
             setTypeAnnotationPositions(cast.pos);
             return result;
         } else if (inner_tree instanceof JCMethodInvocation mi &&
                    mi.boxingKind == JCMethodInvocation.BoxingKind.UNBOX &&
                    ((JCFieldAccess) mi.meth).selected instanceof JCTree unboxedValue &&
-                   traverseCasts(unboxedValue, _ -> {}) instanceof JCMethodInvocation boxing &&
+                   findDeepestCast(unboxedValue) instanceof JCTypeCast deepestCast &&
+                   deepestCast.expr instanceof JCMethodInvocation boxing &&
                    boxing.boxingKind == JCMethodInvocation.BoxingKind.BOX) {
             //case like:
             //(Boolean) (b && (result = 1) > 0)
-            //are expanded to by Lower:
+            //expanded to:
             //((Boolean)Boolean.valueOf((b && (result = 1) > 0))).booleanValue()
             //it is impossible to correctly track variable DA across the method calls,
-            //so skip the boxing and unboxing and any intermediate casts:
-            JCExpression boxedValue = boxing.args.head;
-            CondItem result = genCond(boxedValue, markBranches);
+            //so call after evaluating the actual condition,
+            //keep the true and false branches separate
+            //note that in place of (Boolean), there may be multiple casts,
+            //to different types, including (Boolean) (Object) (String) (Object) (Boolean)
 
-            //set positions for type annotations:
-            traverseCasts(unboxedValue, tc -> setTypeAnnotationPositions(tc.pos));
+            //generate the actual condition:
+            JCExpression boxedValue = boxing.args.head;
+            CondItem value = genCond(boxedValue, markBranches);
+
+            //now generate the cast cascade, once for true and once for false,
+            //ignoring the resulting value, but preserving the codepath:
+            ClassSymbol jlBoolean = types.boxedClass(syms.booleanType);
+
+            Chain secondJumps = value.jumpFalse();
+            code.resolve(value.trueJumps);
+            make.at(boxing.args.head);
+            VarSymbol _true =
+                    rs.resolveInternalField(_tree, attrEnv, jlBoolean.type, names.TRUE);
+            deepestCast.expr = make.QualIdent(_true);
+            genExpr(unboxedValue, unboxedValue.type).drop();
+            Chain trueJumps = code.branch(goto_);
+
+            code.resolve(secondJumps);
+            make.at(boxing.args.head);
+            VarSymbol _false =
+                    rs.resolveInternalField(_tree, attrEnv, jlBoolean.type, names.FALSE);
+            deepestCast.expr = make.QualIdent(_false);
+            genExpr(unboxedValue, unboxedValue.type).drop();
+            Chain falseJumps = code.branch(goto_);
+
+            CondItem result = items.makeCondItem(goto_,
+                                      trueJumps,
+                                      falseJumps);
+            if (markBranches) result.tree = _tree;
+
+            deepestCast.expr = boxing;
 
             return result;
         } else {
@@ -812,12 +853,15 @@ public class Gen extends JCTree.Visitor {
         }
     }
         //where:
-        JCTree traverseCasts(JCTree source, Consumer<JCTypeCast> castCallback) {
+        JCTree findDeepestCast(JCTree source) {
+            JCTree lastTypeCast = null;
+
             while (TreeInfo.skipParens(source) instanceof JCTypeCast tc) {
-                castCallback.accept(tc);
+                lastTypeCast = tc;
                 source = tc.expr;
             }
-            return source;
+
+            return lastTypeCast;
         }
 
     public Code getCode() {
