@@ -1214,22 +1214,22 @@ OptoReg::Name Matcher::warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out
 // Helper function to match call instructions.  Calls match special.
 // They match alone with no children.  Their children, the incoming
 // arguments, match normally.
-MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
-  MachSafePointNode *msfpt = nullptr;
-  MachCallNode      *mcall = nullptr;
-  JVMState          *sfpt_jvms = nullptr;
+MachNode* Matcher::match_sfpt(SafePointNode* sfpt) {
+  MachSafePointNode* msfpt = nullptr;
+  MachCallNode*      mcall = nullptr;
+  JVMState*          sfpt_jvms = nullptr;
   int                jvms_pos_adj = 0;
   uint               cnt;
   // Split out case for SafePoint vs Call
-  CallNode *call = nullptr;
-  const TypeTuple *domain = nullptr;
+  CallNode* call = nullptr;
+  const TypeTuple* domain = nullptr;
   ciMethod*        method = nullptr;
   if (Matcher::use_mach_uncommon_trap_node &&
       !PreferCallBasedUncommonTraps &&
       sfpt->is_CallStaticJava() &&
       sfpt->as_CallStaticJava()->is_uncommon_trap()) {
     const address entry_point = OptoRuntime::uncommon_trap_blob()->entry_point();
-    const CallStaticJavaNode *static_java_call = sfpt->as_CallStaticJava();
+    const CallStaticJavaNode* static_java_call = sfpt->as_CallStaticJava();
     const int trap_request = static_java_call->uncommon_trap_request();
 
     assert(trap_request != 0, "malformed uncommon trap");
@@ -1239,7 +1239,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     assert(static_java_call->req() > TypeFunc::Parms, "does not have the trap request input");
     assert(static_java_call->in(TypeFunc::Parms) != nullptr, "missing trap request input edge");
 
-    MachUncommonTrapNode *mn = new MachUncommonTrapNode(trap_request);
+    MachUncommonTrapNode* mn = new MachUncommonTrapNode(trap_request);
     for (uint i = 0; i < static_java_call->req(); i++) {
       if (i == TypeFunc::Parms) {
         // Remove the trap request input edge.

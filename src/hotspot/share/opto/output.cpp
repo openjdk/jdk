@@ -510,13 +510,21 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
         MachNode* mach = nj->as_Mach();
         blk_size += (mach->alignment_required() - 1) * relocInfo::addr_unit(); // assume worst case padding
         reloc_size += mach->reloc();
-        if (mach->is_MachCall() || mach->is_MachUncommonTrap()) {
+        if (mach->is_MachUncommonTrap()) {
           // add size information for trampoline stub
           // class CallStubImpl is platform-specific and defined in the *.ad files.
           stub_size  += CallStubImpl::size_call_trampoline();
           reloc_size += CallStubImpl::reloc_call_trampoline();
-        }
-        if (mach->is_MachCall()) {
+
+          // No nop is needed to disambiguate from another safepoint.
+          assert(mach->as_MachUncommonTrap()->ret_addr_offset() > 0,
+                 "Safepoint address should be offset from the first instruction");
+        } else if (mach->is_MachCall()) {
+          // add size information for trampoline stub
+          // class CallStubImpl is platform-specific and defined in the *.ad files.
+          stub_size  += CallStubImpl::size_call_trampoline();
+          reloc_size += CallStubImpl::reloc_call_trampoline();
+
           MachCallNode *mcall = mach->as_MachCall();
           // This destination address is NOT PC-relative
 
@@ -533,13 +541,8 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
           // nop to disambiguate the two safepoints.
           // ScheduleAndBundle() can rearrange nodes in a block,
           // check for all offsets inside this block.
-          if (!mach->is_MachUncommonTrap()) {
-            if (last_call_adr >= blk_starts[i]) {
-              blk_size += nop_size;
-            }
-          } else {
-            assert(mach->as_MachUncommonTrap()->ret_addr_offset() > 0,
-                   "Safepoint address should be offset from the first instruction");
+          if (last_call_adr >= blk_starts[i]) {
+            blk_size += nop_size;
           }
         }
         if (mach->avoid_back_to_back(MachNode::AVOID_BEFORE)) {
@@ -1064,7 +1067,6 @@ bool PhaseOutput::contains_as_scalarized_obj(JVMState* jvms, MachSafePointNode* 
 void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
   // Handle special safepoint nodes for synchronization
   MachSafePointNode *sfn   = mach->as_MachSafePoint();
-  MachCallNode      *mcall;
 
   int safepoint_pc_offset = current_offset;
   bool return_oop = false;
@@ -1073,15 +1075,10 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
   bool arg_escape = false;
 
   // Add the safepoint in the DebugInfoRecorder
-  if( !mach->is_MachCall() ) {
-    if (mach->is_MachUncommonTrap()) {
-      safepoint_pc_offset += mach->as_MachUncommonTrap()->ret_addr_offset();
-    }
-
-    mcall = nullptr;
-    C->debug_info()->add_safepoint(safepoint_pc_offset, sfn->_oop_map);
-  } else {
-    mcall = mach->as_MachCall();
+  if (mach->is_MachUncommonTrap()) {
+    safepoint_pc_offset += mach->as_MachUncommonTrap()->ret_addr_offset();
+  } else if (mach->is_MachCall()) {
+    MachCallNode* mcall = mach->as_MachCall();
 
     if (mcall->is_MachCallJava()) {
       arg_escape = mcall->as_MachCallJava()->_arg_escape;
@@ -1095,8 +1092,8 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
       return_scalarized = true;
     }
     safepoint_pc_offset += mcall->ret_addr_offset();
-    C->debug_info()->add_safepoint(safepoint_pc_offset, mcall->_oop_map);
   }
+  C->debug_info()->add_safepoint(safepoint_pc_offset, sfn->_oop_map);
 
   // Loop over the JVMState list to add scope information
   // Do not skip safepoints with a null method, they need monitor info
@@ -1606,12 +1603,15 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
         int padding = mach->compute_padding(current_offset);
         // Make sure safepoint node for polling is distinct from a call's
         // return by adding a nop if needed.
-        if (is_sfn && !is_mcall && padding == 0 && current_offset == last_call_offset) {
-          if (!mach->is_MachUncommonTrap()) {
-            padding = nop_size;
-          } else {
+        if (padding == 0 && current_offset == last_call_offset) {
+          if (is_mcall) {
+            assert(mach->as_MachCall()->ret_addr_offset() > 0,
+                   "Safepoint address should be offset from the first instruction");
+          } else if (mach->is_MachUncommonTrap()) {
             assert(mach->as_MachUncommonTrap()->ret_addr_offset() > 0,
                    "Safepoint address should be offset from the first instruction");
+          } else if (is_sfn) {
+            padding = nop_size;
           }
         }
         if (padding == 0 && mach->avoid_back_to_back(MachNode::AVOID_BEFORE) &&

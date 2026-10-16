@@ -1701,7 +1701,7 @@ int MachCallRuntimeNode::ret_addr_offset() const {
 
 //=============================================================================
 
-void MachUncommonTrapNode::emit_impl(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
+void MachUncommonTrapNode::emit_impl(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {
   address entry_point = OptoRuntime::uncommon_trap_blob()->entry_point();
   address runtime_call = __ trampoline_call(Address(entry_point, relocInfo::runtime_call_type));
   if (runtime_call == nullptr) {
@@ -1712,7 +1712,7 @@ void MachUncommonTrapNode::emit_impl(C2_MacroAssembler *masm, PhaseRegAlloc *ra_
   __ emit_int32(trap_request());
 }
 
-uint MachUncommonTrapNode::size_impl(PhaseRegAlloc *ra_) const {
+uint MachUncommonTrapNode::size_impl(PhaseRegAlloc* ra_) const {
   // BL followed by 32-bit integer constant.
   //
   // If target address cannot be directly encoded into the BL,

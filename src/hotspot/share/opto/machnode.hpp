@@ -936,9 +936,9 @@ public:
 
   // Returns true if this is an uncommon trap. In that case, the request
   // value is stored back to *out_trap_request unless the pointer is null.
-  bool is_uncommon_trap(int32_t *out_trap_request = nullptr) const;
+  bool is_uncommon_trap(int32_t* out_trap_request = nullptr) const;
 #ifndef PRODUCT
-  void dump_trap_args(outputStream *st) const;
+  void dump_trap_args(outputStream* st) const;
 
 protected:
   void format_jvms_and_oopmap(PhaseRegAlloc* ra, outputStream* st) const;
@@ -948,8 +948,8 @@ protected:
 //------------------------------MachUncommonTrapNode----------------------------------
 class MachUncommonTrapNode : public MachSafePointNode {
 private:
-  void emit_impl(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
-  uint size_impl(PhaseRegAlloc *ra_) const;
+  void emit_impl(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const;
+  uint size_impl(PhaseRegAlloc* ra_) const;
   int ret_addr_offset_impl() const;
 
   int _trap_request;
@@ -964,14 +964,11 @@ public:
 
   int trap_request() const { return _trap_request; }
 
-  virtual int ideal_Opcode() const { return Op_SafePoint; }
+  virtual int ideal_Opcode() const { return Op_CallStaticJava; }
   virtual uint size_of() const { return sizeof(MachUncommonTrapNode); }
   virtual uint rule() const { return 9999999; /* This node is constructed by match_sfpt. */ }
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual int reloc() const { return 1; /* The relocInfo::runtime_call_type relocation */ }
-  virtual const RegMask &in_RegMask(uint) const;
-  virtual const RegMask& out_RegMask() const { return RegMask::EMPTY; }
-  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual const RegMask& in_RegMask(uint) const;
   virtual const RegMask& out_RegMask() const { return RegMask::EMPTY; }
   virtual void emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const;
@@ -980,7 +977,7 @@ public:
 
 #ifndef PRODUCT
   virtual const char* Name() const { return "UncommonTrap"; }
-  virtual void format(PhaseRegAlloc *ra, outputStream *st) const;
+  virtual void format(PhaseRegAlloc* ra, outputStream* st) const;
 #endif
 };
 

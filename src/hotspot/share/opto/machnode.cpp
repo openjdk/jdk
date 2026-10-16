@@ -758,7 +758,7 @@ void MachSafePointNode::format_jvms_and_oopmap(PhaseRegAlloc* ra, outputStream* 
 }
 
 // Helper for summarizing uncommon_trap arguments.
-void MachSafePointNode::dump_trap_args(outputStream *st) const {
+void MachSafePointNode::dump_trap_args(outputStream* st) const {
   int trap_req;
   if (is_uncommon_trap(&trap_req)) {
     char buf[100];
@@ -781,7 +781,7 @@ const RegMask& MachUncommonTrapNode::in_RegMask(uint idx) const {
   return *Compile::current()->matcher()->idealreg2spillmask[in(idx)->ideal_reg()];
 }
 
-void MachUncommonTrapNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
+void MachUncommonTrapNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {
   if constexpr (Matcher::use_mach_uncommon_trap_node) {
     emit_impl(masm, ra_);
   } else {
@@ -789,7 +789,7 @@ void MachUncommonTrapNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) con
   }
 }
 
-uint MachUncommonTrapNode::size(PhaseRegAlloc *ra_) const {
+uint MachUncommonTrapNode::size(PhaseRegAlloc* ra_) const {
   if constexpr (Matcher::use_mach_uncommon_trap_node) {
     return size_impl(ra_);
   } else {
