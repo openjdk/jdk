@@ -57,7 +57,9 @@ final class LibFallback {
     static MemorySegment uint16Type() { return NativeConstants.UINT16_TYPE; }
     static MemorySegment sint16Type() { return NativeConstants.SINT16_TYPE; }
     static MemorySegment sint32Type() { return NativeConstants.SINT32_TYPE; }
+    static MemorySegment uint32Type() { return NativeConstants.UINT32_TYPE; }
     static MemorySegment sint64Type() { return NativeConstants.SINT64_TYPE; }
+    static MemorySegment uint64Type() { return NativeConstants.UINT64_TYPE; }
     static MemorySegment floatType() { return NativeConstants.FLOAT_TYPE; }
     static MemorySegment doubleType() { return NativeConstants.DOUBLE_TYPE; }
     static MemorySegment pointerType() { return NativeConstants.POINTER_TYPE; }
@@ -68,6 +70,8 @@ final class LibFallback {
     static int intSize() { return NativeConstants.SIZEOF_INT; }
     static int longSize() {return NativeConstants.SIZEOF_LONG; }
     static int wcharSize() {return NativeConstants.SIZEOF_WCHAR; }
+    static boolean wcharIsUnsigned() {return NativeConstants.WCHAR_IS_UNSIGNED; }
+    static boolean charIsUnsigned() {return NativeConstants.CHAR_IS_UNSIGNED; }
     static int longLongAlign() { return NativeConstants.ALIGNOF_LONG_LONG; }
     static int doubleAlign() { return NativeConstants.ALIGNOF_DOUBLE; }
 
@@ -239,6 +243,8 @@ final class LibFallback {
     private static native int ffi_sizeof_int();
     private static native int ffi_sizeof_long();
     private static native int ffi_sizeof_wchar();
+    private static native boolean ffi_wchar_is_unsigned();
+    private static native boolean ffi_char_is_unsigned();
 
     private static native int alignof_long_long();
     private static native int alignof_double();
@@ -255,7 +261,9 @@ final class LibFallback {
         static final MemorySegment UINT16_TYPE = MemorySegment.ofAddress(ffi_type_uint16());
         static final MemorySegment SINT16_TYPE = MemorySegment.ofAddress(ffi_type_sint16());
         static final MemorySegment SINT32_TYPE = MemorySegment.ofAddress(ffi_type_sint32());
+        static final MemorySegment UINT32_TYPE = MemorySegment.ofAddress(ffi_type_uint32());
         static final MemorySegment SINT64_TYPE = MemorySegment.ofAddress(ffi_type_sint64());
+        static final MemorySegment UINT64_TYPE = MemorySegment.ofAddress(ffi_type_uint64());
         static final MemorySegment FLOAT_TYPE = MemorySegment.ofAddress(ffi_type_float());
         static final MemorySegment DOUBLE_TYPE = MemorySegment.ofAddress(ffi_type_double());
         static final MemorySegment POINTER_TYPE = MemorySegment.ofAddress(ffi_type_pointer());
@@ -263,6 +271,8 @@ final class LibFallback {
         static final int SIZEOF_INT = ffi_sizeof_int();
         static final int SIZEOF_LONG = ffi_sizeof_long();
         static final int SIZEOF_WCHAR = ffi_sizeof_wchar();
+        static final boolean WCHAR_IS_UNSIGNED = ffi_wchar_is_unsigned();
+        static final boolean CHAR_IS_UNSIGNED = ffi_char_is_unsigned();
 
         static final int ALIGNOF_LONG_LONG = alignof_long_long();
         static final int ALIGNOF_DOUBLE = alignof_double();

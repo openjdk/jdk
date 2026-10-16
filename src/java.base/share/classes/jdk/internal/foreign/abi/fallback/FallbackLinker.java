@@ -28,7 +28,6 @@ package jdk.internal.foreign.abi.fallback;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.abi.AbstractLinker;
-import jdk.internal.foreign.abi.CapturableState;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
 
@@ -43,6 +42,7 @@ import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+
 import java.lang.invoke.MethodType;
 import java.lang.ref.Reference;
 import java.util.ArrayList;
@@ -50,7 +50,9 @@ import java.util.List;
 import java.util.Map;
 
 import static java.lang.foreign.ValueLayout.*;
+import static java.lang.foreign.ValueLayout.IntegralExtension.ZERO_EXTEND;
 import static java.lang.invoke.MethodHandles.foldArguments;
+import static jdk.internal.foreign.layout.ValueLayouts.withIntegralExtension;
 
 public final class FallbackLinker extends AbstractLinker {
 
@@ -77,6 +79,12 @@ public final class FallbackLinker extends AbstractLinker {
 
     public static boolean isSupported() {
         return LibFallback.SUPPORTED;
+    }
+
+    @Override
+    protected ValueLayout maybeDropExtension(ValueLayout valueLayout) {
+        // never drop, we don't know when the native ABI needs it
+        return valueLayout;
     }
 
     @Override
@@ -294,25 +302,42 @@ public final class FallbackLinker extends AbstractLinker {
 
             static {
                 int wchar_size = LibFallback.wcharSize();
-                MemoryLayout wchartLayout = switch(wchar_size) {
+                ValueLayout wchartLayout = switch(wchar_size) {
                     case 2 -> JAVA_CHAR; // prefer JAVA_CHAR
                     default -> FFIType.layoutFor(wchar_size);
                 };
+                if (LibFallback.wcharIsUnsigned()) {
+                    wchartLayout = withIntegralExtension(wchartLayout, ZERO_EXTEND);
+                }
 
                 CANONICAL_LAYOUTS = Map.ofEntries(
                     // specified canonical layouts
                     Map.entry("bool", JAVA_BOOLEAN),
-                    Map.entry("char", JAVA_BYTE),
+                    Map.entry("char", LibFallback.charIsUnsigned() ? withIntegralExtension(JAVA_BYTE, ZERO_EXTEND) : JAVA_BYTE),
+                    Map.entry("unsigned char", withIntegralExtension(JAVA_BYTE, ZERO_EXTEND)),
                     Map.entry("float", JAVA_FLOAT),
                     Map.entry("long long", JAVA_LONG.withByteAlignment(LibFallback.longLongAlign())),
+                    Map.entry("unsigned long long", withIntegralExtension(JAVA_LONG.withByteAlignment(LibFallback.longLongAlign()), ZERO_EXTEND)),
                     Map.entry("double", JAVA_DOUBLE.withByteAlignment(LibFallback.doubleAlign())),
                     Map.entry("void*", ADDRESS),
                     // platform-dependent sizes
                     Map.entry("size_t", FFIType.SIZE_T),
                     Map.entry("short", FFIType.layoutFor(LibFallback.shortSize())),
+                    Map.entry("unsigned short", withIntegralExtension(FFIType.layoutFor(LibFallback.shortSize()), ZERO_EXTEND)),
                     Map.entry("int", FFIType.layoutFor(LibFallback.intSize())),
+                    Map.entry("unsigned int", withIntegralExtension(FFIType.layoutFor(LibFallback.intSize()), ZERO_EXTEND)),
                     Map.entry("long", FFIType.layoutFor(LibFallback.longSize())),
+                    Map.entry("unsigned long", withIntegralExtension(FFIType.layoutFor(LibFallback.longSize()), ZERO_EXTEND)),
                     Map.entry("wchar_t", wchartLayout),
+                    // unspecified size dependent layouts
+                    Map.entry("int8_t", ValueLayout.JAVA_BYTE),
+                    Map.entry("int16_t", ValueLayout.JAVA_SHORT),
+                    Map.entry("int32_t", ValueLayout.JAVA_INT),
+                    Map.entry("int64_t", ValueLayout.JAVA_LONG),
+                    Map.entry("uint8_t", withIntegralExtension(ValueLayout.JAVA_BYTE, IntegralExtension.ZERO_EXTEND)),
+                    Map.entry("uint16_t", withIntegralExtension(ValueLayout.JAVA_SHORT, IntegralExtension.ZERO_EXTEND)),
+                    Map.entry("uint32_t", withIntegralExtension(ValueLayout.JAVA_INT, IntegralExtension.ZERO_EXTEND)),
+                    Map.entry("uint64_t", withIntegralExtension(ValueLayout.JAVA_LONG, IntegralExtension.ZERO_EXTEND)),
                     // JNI types
                     Map.entry("jboolean", JAVA_BOOLEAN),
                     Map.entry("jchar", JAVA_CHAR),
