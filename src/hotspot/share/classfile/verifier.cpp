@@ -818,11 +818,11 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
     bool this_uninit = false;  // Set to true when invokespecial <init> initialized 'this'
     bool verified_exc_handlers = false;
-    VerificationType type;
 
     // Merge with the next instruction
     {
-      VerificationType type2, atype;
+      VerificationType type, type2;
+      VerificationType atype;
 
       LogTarget(Debug, verification) lt;
       if (lt.is_enabled()) {
@@ -857,7 +857,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
       if (Bytecodes::is_store_into_local(opcode) && bci >= ex_min && bci < ex_max) {
         if (was_recursively_verified()) return;
         verify_exception_handler_targets(
-          bci, this_uninit, false, type, &current_frame, &stackmap_table, CHECK_VERIFY(this));
+          bci, this_uninit, false, VerificationType::top_type(), &current_frame, &stackmap_table, CHECK_VERIFY(this));
         verified_exc_handlers = true;
       }
 
@@ -1855,7 +1855,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
     if (!verified_exc_handlers && bci >= ex_min && bci < ex_max) {
       if (was_recursively_verified()) return;
       verify_exception_handler_targets(
-        bci, this_uninit, false, type, &current_frame, &stackmap_table, CHECK_VERIFY(this));
+        bci, this_uninit, false, VerificationType::top_type(), &current_frame, &stackmap_table, CHECK_VERIFY(this));
     }
   } // end while
 

@@ -25,12 +25,17 @@
  * @test
  * @bug 8391419
  * @summary Ensure uninitializedThis and uninitialized(Offset) are substituted with top in the exception handlers
- * @compile UninitThisTop.jasm UninitializedTop.jasm
+ * @compile UninitThisTop.jasm UninitializedTop.jasm UninitializedTopControl.jasm
  * @run main UninitThisTopTest
  */
 
 public class UninitThisTopTest {
    public static void main(String[] args) {
+
+        // Positive test
+        UninitializedTopControl c0 = new UninitializedTopControl();
+
+        // Negative tests
         try {
             UninitThisTop c = new UninitThisTop();
             throw new RuntimeException("Should fail with VerifyError");

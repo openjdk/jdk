@@ -36,6 +36,7 @@ identity class UninitializedTop version 72:0
          astore_1;
          try               T0;
          invokespecial     Method java/lang/Object."<init>":"()V";
+         aload_1;
          putfield          Field o:"Ljava/lang/Object;";
          endtry            T0;
          return;

@@ -79,19 +79,32 @@ void StackMapFrame::print_strict_fields(AssertUnsetFieldTable* table) {
   }
 }
 
-StackMapFrame* StackMapFrame::frame_in_exception_handler(bool is_init, VerificationType type, u1 flags) {
+StackMapFrame* StackMapFrame::frame_in_exception_handler(bool is_init, VerificationType broken_type, u1 flags) {
   Thread* thr = _verifier->thread();
   VerificationType* stack = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, 1);
   VerificationType* locals = _locals;
+  guarantee(is_init ? broken_type.is_uninitialized() : broken_type.is_bogus(), "no random types here");
 
-  // JVMS §4.10.1.9 invokespecial <init>: Swap uninitializedThis and uninitialized(Offset) in locals array with top
-  // There is no need to copy the locals array if uninitialized/uninitializedThis are not present, share the old locals
-  // array.
+  // Return a StackMapFrame with a potentially modified local variable
+  // array and an empty operand stack with one unused slot.  The caller
+  // will push the exception type for each handler into this slot.
+  //
+  // JVMS 4.10.1.9 says, "The rule for invokespecial of an <init> method
+  // is the sole motivation for passing back a distinct exception stack
+  // frame."  In that case, the so-called "broken object" must be replaced
+  // by top (in the locals only, since the operand stack gets reset).
+  // In the JVMS Prolog code, the adjusted locals are called ExceptionLocals.
+  // If this routine is called for any other bytecode in a handler range,
+  // not invokespecial <init>, the passed "broken object" must be top.
+  // The frame flags are unchanged, including possibly flagThisUninit.
+  //
+  // If the local array is not changed, the original input array is
+  // shared as part of the returned frame.
   if (is_init) {
     bool found = false;
     VerificationType* new_locals = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, _max_locals);
     for (int32_t i = 0; i < _max_locals; i++) {
-      if (type.is_uninitialized() && local_at(i) == type) {
+      if (local_at(i) == broken_type) {
         found = true;
         new_locals[i] = VerificationType::top_type();
       } else {
