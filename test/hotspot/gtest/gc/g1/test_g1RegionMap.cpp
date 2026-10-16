@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,12 @@ public:
 
   void verify_counts() {
     verify_num_active_regions(0, TestRegions, num_active_regions());
-    verify_num_inactive_regions(0, TestRegions, num_inactive_regions());
+    verify_num_pending_uncommit_regions(0, TestRegions, num_pending_uncommit_regions());
   }
 
 protected:
   void guarantee_mt_safety_active() const { }
-  void guarantee_mt_safety_inactive() const { }
+  void guarantee_mt_safety_pending_uncommit() const { }
 };
 
 static bool mutate() {
@@ -78,7 +78,7 @@ static void random_deactivate(G1CommittedRegionMap* map) {
 static void random_uncommit_or_reactive(G1CommittedRegionMap* map) {
   uint current_offset = 0;
   do {
-    G1HeapRegionRange current = map->next_inactive_range(current_offset);
+    G1HeapRegionRange current = map->next_pending_uncommit_range(current_offset);
     // Randomly either reactivate or uncommit
     if (mutate()) {
       map->reactivate(current.start(), current.end());
@@ -124,6 +124,6 @@ TEST(G1CommittedRegionMapTest, serial) {
     serial_map.verify_counts();
     random_activate_free(&serial_map);
     serial_map.verify_counts();
-    ASSERT_EQ(serial_map.num_inactive_regions(), 0u);
+    ASSERT_EQ(serial_map.num_pending_uncommit_regions(), 0u);
   }
 }

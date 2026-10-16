@@ -771,7 +771,8 @@ void Parse::array_store(BasicType bt) {
 
           if (vk != nullptr) {
             // Element type is known, cast and store to flat array layout.
-            Node* flat_array = cast_to_flat_array(array, vk);
+            ciObjArrayKlass* array_klass = get_flat_array_klass(vk);
+            Node* flat_array = cast_to_flat_array(array, array_klass, false);
 
             // It may be the case that array is only known to be not flat when we try to cast it to
             // a flat array. For example, array is a not-null-free array and vk does not have a

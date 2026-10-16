@@ -1705,6 +1705,16 @@ public class IRNode {
         superWordNodes(UMAX_REDUCTION_V, "UMaxReductionV");
     }
 
+    public static final String NEG_F = PREFIX + "NEG_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(NEG_F, "NegF");
+    }
+
+    public static final String NEG_D = PREFIX + "NEG_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(NEG_D, "NegD");
+    }
+
     public static final String NEG_VF = VECTOR_PREFIX + "NEG_VF" + POSTFIX;
     static {
         vectorNode(NEG_VF, "NegVF", TYPE_FLOAT);
@@ -2495,6 +2505,16 @@ public class IRNode {
     public static final String RISCV_VAND_NOTL_VX_MASKED = PREFIX + "RISCV_VAND_NOTL_VX_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(RISCV_VAND_NOTL_VX_MASKED, "vand_notL_vx_masked");
+    }
+
+    public static final String RISCV_VCOMPRESS_BITS_MASKED = PREFIX + "RISCV_VCOMPRESS_BITS_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VCOMPRESS_BITS_MASKED, "vcompressBits_masked");
+    }
+
+    public static final String RISCV_VEXPAND_BITS_MASKED = PREFIX + "RISCV_VEXPAND_BITS_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VEXPAND_BITS_MASKED, "vexpandBits_masked");
     }
 
     public static final String VECTOR_SLICE_B = VECTOR_PREFIX + "VECTOR_SLICE_B" + POSTFIX;
