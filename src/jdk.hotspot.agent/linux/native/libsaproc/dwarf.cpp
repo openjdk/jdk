@@ -33,6 +33,7 @@
 
 DwarfParser::DwarfParser(lib_info *lib) : _lib(lib),
                                           _buf(NULL),
+                                          _dwarf_version(0),
                                           _has_augmentation(false),
                                           _fde_ptr_encoding(0),
                                           _code_factor(0),
@@ -100,13 +101,29 @@ bool DwarfParser::process_cie(unsigned char *start_of_entry, uint32_t id) {
   unsigned char *end = _buf + length;
 
   _buf += 4; // Skip ID (This value of CIE would be always 0 in .eh_frame / 0xffffffff in .debug_frame)
-  _buf++;    // Skip version
+  _dwarf_version = *_buf;
+  _buf++; // Skip version
 
   char *augmentation_string = reinterpret_cast<char *>(_buf);
   bool has_ehdata = (strcmp("eh", augmentation_string) == 0);
   _buf += strlen(augmentation_string) + 1; // includes '\0'
   if (has_ehdata) {
     _buf += sizeof(void *); // Skip EH data
+  }
+
+  // address_size and segment_size are located in DWARF 4 or later,
+  // but they are not available in .eh_frame defined by Linux LSB Core Generic 5.0.
+  if (!_lib->frame.is_debug_frame && _dwarf_version >= 4) {
+    if (*_buf != sizeof(void*)) {
+      print_warning("DWARF: address size in CIE does not match pointer size (%u).\n", *_buf);
+      return false;
+    }
+    _buf++; // Skip address size
+    if (*_buf != 0) {
+      print_warning("DWARF: segmented addressing is not supported.\n");
+      return false;
+    }
+    _buf++; // Skip segment size
   }
 
   _code_factor = read_leb(false);

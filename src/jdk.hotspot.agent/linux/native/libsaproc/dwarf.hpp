@@ -63,6 +63,7 @@ class DwarfParser {
   private:
     lib_info *_lib;
     unsigned char *_buf;
+    unsigned char _dwarf_version;
     bool _has_augmentation;
     unsigned char _fde_ptr_encoding;
     unsigned int _code_factor;
