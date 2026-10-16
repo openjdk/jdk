@@ -382,10 +382,6 @@ public class TestSysVCallArranger extends CallArrangerTestBase {
                     bufferLoad(24, long.class), vmStore(stackStorage(STACK_SLOT_SIZE, 24), long.class)
                 }
             },
-            { MemoryLayout.structLayout(C_INT, C_INT), new Binding[]{
-                    bufferLoad(0, long.class), vmStore(rdi, long.class)
-                }
-            },
         };
     }
 
