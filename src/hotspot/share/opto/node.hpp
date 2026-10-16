@@ -920,18 +920,11 @@ public:
   bool is_##type() const {                                   \
     return ((_class_id & ClassMask_##type) == Class_##type); \
   }                                                          \
-  type##Node *as_##type() {                            \
+  type##Node *as_##type() const {                            \
     assert(is_##type(), "invalid node class: %s", Name());   \
     return (type##Node*)this;                                \
   }                                                          \
-  type##Node* isa_##type() {                           \
-    return (is_##type()) ? as_##type() : nullptr;            \
-  }                                                          \
-  const type##Node *as_##type() const {                            \
-    assert(is_##type(), "invalid node class: %s", Name());   \
-    return (type##Node*)this;                                \
-  }                                                          \
-  const type##Node* isa_##type() const {                           \
+  type##Node* isa_##type() const {                           \
     return (is_##type()) ? as_##type() : nullptr;            \
   }
 
