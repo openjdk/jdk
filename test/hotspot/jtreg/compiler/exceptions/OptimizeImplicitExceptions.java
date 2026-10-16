@@ -28,6 +28,7 @@
  *
  * @requires vm.compiler2.enabled & vm.compMode != "Xcomp"
  * @requires vm.opt.DeoptimizeALot != true
+ * @requires vm.opt.CompileThresholdScaling == null
  *
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
