@@ -572,9 +572,8 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      */
     interface Joiner<T, R, R_X extends Throwable> {
         /**
-         * Invoked by {@link #fork(Callable) fork(Callable)} and {@link #fork(Runnable)
-         * fork(Runnable)} when forking a subtask. The method is invoked before a thread
-         * is created to execute the subtask.
+         * Invoked by the scope owner thread when {@linkplain #fork(Callable) forking} a
+         * subtask. The method is invoked before a thread is created to execute the subtask.
          *
          * @implSpec The default implementation throws {@code NullPointerException} if the
          * subtask is {@code null}. It throws {@code IllegalArgumentException} if the
@@ -596,7 +595,8 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
 
         /**
          * Invoked by the thread that executed a subtask after the subtask completes, or
-         * by a {@code fork} method when unable to create a thread to execute the subtask.
+         * by the scope owner thread when {@linkplain #fork(Callable) forking} is unable
+         * to create a thread to execute the subtask.
          *
          * <p> This method is not invoked for subtasks that are forked or complete after
          * the scope is {@linkplain StructuredTaskScope##Cancellation cancelled}.

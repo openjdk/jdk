@@ -51,6 +51,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.StructuredTaskScope;
 import java.util.concurrent.StructuredTaskScope.Configuration;
 import java.util.concurrent.StructuredTaskScope.Joiner;
@@ -511,17 +512,14 @@ class StructuredTaskScopeTest {
     void testInterruptJoin(ThreadFactory factory, Runnable interrupter) throws Exception {
         try (var scope = StructuredTaskScope.open(cf -> cf.withThreadFactory(factory))) {
             // subtask1 completes
-            var ref = new AtomicReference<Thread>();
+            var queue = new SynchronousQueue<Thread>();
             Subtask<String> subtask1 = scope.fork(() -> {
-                ref.set(Thread.currentThread());
+                queue.put(Thread.currentThread());
                 return "foo";
             });
 
             // wait for thread executing subtask to terminate
-            Thread thread;
-            while ((thread = ref.get()) == null) {
-                Thread.sleep(10);
-            }
+            Thread thread = queue.take();
             thread.join();
 
             // subtask2 does not complete, causes join to wait
@@ -797,12 +795,12 @@ class StructuredTaskScopeTest {
             // subsequent calls to close should not throw
             for (int i = 0; i < 3; i++) {
                 scope.close();
-            }
 
-            // subtask result not available after additional calls to close
-            assertEquals(Subtask.State.UNAVAILABLE, subtask.state());
-            assertThrows(IllegalStateException.class, subtask::get);
-            assertThrows(IllegalStateException.class, subtask::exception);
+                // subtask result not available after additional calls to close
+                assertEquals(Subtask.State.UNAVAILABLE, subtask.state());
+                assertThrows(IllegalStateException.class, subtask::get);
+                assertThrows(IllegalStateException.class, subtask::exception);
+            }
         }
     }
 
@@ -813,17 +811,14 @@ class StructuredTaskScopeTest {
     @MethodSource("factories")
     void testCloseWithoutJoin3(ThreadFactory factory) throws Exception {
         try (var scope = StructuredTaskScope.open(cf -> cf.withThreadFactory(factory))) {
-            var ref = new AtomicReference<Thread>();
+            var queue = new SynchronousQueue<Thread>();
             Subtask<String> subtask = scope.fork(() -> {
-                ref.set(Thread.currentThread());
+                queue.put(Thread.currentThread());
                 return "foo";
             });
 
             // wait for thread executing subtask to terminate
-            Thread thread;
-            while ((thread = ref.get()) == null) {
-                Thread.sleep(10);
-            }
+            Thread thread = queue.take();
             thread.join();
 
             // subtask result not available before close
@@ -842,12 +837,12 @@ class StructuredTaskScopeTest {
             // subsequent calls to close should not throw
             for (int i = 0; i < 3; i++) {
                 scope.close();
-            }
 
-            // subtask result not available after additional calls to close
-            assertEquals(Subtask.State.SUCCESS, subtask.state());
-            assertThrows(IllegalStateException.class, subtask::get);
-            assertThrows(IllegalStateException.class, subtask::exception);
+                // subtask result not available after additional calls to close
+                assertEquals(Subtask.State.SUCCESS, subtask.state());
+                assertThrows(IllegalStateException.class, subtask::get);
+                assertThrows(IllegalStateException.class, subtask::exception);
+            }
         }
     }
 
