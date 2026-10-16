@@ -433,10 +433,12 @@ public abstract class CallArranger {
                     }
                 }
                 case INTEGER -> {
-                    // ABI requires all int types to get extended to 64 bit.
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, false);
-                    bindings.cast(carrier, long.class, ((ValueLayout) layout).integralExtension())
-                        .vmStore(storage, long.class);
+                    if (carrier != long.class) {
+                        // ABI requires all int types to get extended to 64 bit.
+                        bindings.cast(carrier, long.class, ((ValueLayout) layout).integralExtension());
+                    }
+                    bindings.vmStore(storage, long.class);
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.FLOAT, carrier == float.class);

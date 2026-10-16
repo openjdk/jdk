@@ -41,7 +41,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static java.lang.foreign.ValueLayout.IntegralExtension.ZERO_EXTEND;
-import static jdk.internal.foreign.layout.ValueLayouts.withSignInfo;
+import static jdk.internal.foreign.layout.ValueLayouts.withIntegralExtension;
 
 /**
  * typedef struct _ffi_type
@@ -54,8 +54,8 @@ import static jdk.internal.foreign.layout.ValueLayouts.withSignInfo;
  */
 class FFIType {
 
-    static final ValueLayout SIZE_T = withSignInfo(layoutFor((int)ADDRESS.byteSize()), ZERO_EXTEND);
-    private static final ValueLayout UNSIGNED_SHORT = withSignInfo(JAVA_SHORT, ZERO_EXTEND);
+    static final ValueLayout SIZE_T = withIntegralExtension(layoutFor((int)ADDRESS.byteSize()), ZERO_EXTEND);
+    private static final ValueLayout UNSIGNED_SHORT = withIntegralExtension(JAVA_SHORT, ZERO_EXTEND);
     private static final StructLayout LAYOUT = Utils.computePaddedStructLayout(
             SIZE_T, UNSIGNED_SHORT, UNSIGNED_SHORT.withName("type"), ADDRESS.withName("elements"));
 

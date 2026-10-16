@@ -39,13 +39,13 @@ import java.lang.invoke.MethodType;
 import java.util.Map;
 
 import static java.lang.foreign.ValueLayout.IntegralExtension.ZERO_EXTEND;
-import static jdk.internal.foreign.layout.ValueLayouts.withSignInfo;
+import static jdk.internal.foreign.layout.ValueLayouts.withIntegralExtension;
 
 public final class LinuxPPC64Linker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
         SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG,
-                withSignInfo(ValueLayout.JAVA_BYTE, ZERO_EXTEND), withSignInfo(ValueLayout.JAVA_INT, ZERO_EXTEND));
+                withIntegralExtension(ValueLayout.JAVA_BYTE, ZERO_EXTEND), withIntegralExtension(ValueLayout.JAVA_INT, ZERO_EXTEND));
 
     public static LinuxPPC64Linker getInstance() {
         final class Holder {

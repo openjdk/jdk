@@ -39,9 +39,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.Map;
 
-import static java.lang.foreign.ValueLayout.IntegralExtension.ZERO_EXTEND;
-import static jdk.internal.foreign.layout.ValueLayouts.withSignInfo;
-
 /**
  * ABI implementation for Windows/AArch64. Based on AAPCS with
  * changes to va_list.
@@ -50,7 +47,7 @@ public final class WindowsAArch64Linker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
             SharedUtils.canonicalLayouts(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG,
-                    withSignInfo(ValueLayout.JAVA_BYTE, ZERO_EXTEND), ValueLayout.JAVA_CHAR);
+                    ValueLayout.JAVA_BYTE, ValueLayout.JAVA_CHAR);
 
     public static WindowsAArch64Linker getInstance() {
         class Holder {

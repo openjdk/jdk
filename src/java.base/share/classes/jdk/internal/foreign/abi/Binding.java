@@ -927,8 +927,8 @@ public sealed interface Binding {
                         MethodType.methodType(int.class, byte.class));
                 SHORT_TO_INT_UNSIGNED = lookup.findStatic(Short.class, "toUnsignedInt",
                         MethodType.methodType(int.class, short.class));
-                BYTE_TO_LONG_UNSIGNED = lookup.findStatic(Short.class, "toUnsignedLong",
-                        MethodType.methodType(long.class, short.class));
+                BYTE_TO_LONG_UNSIGNED = lookup.findStatic(Byte.class, "toUnsignedLong",
+                        MethodType.methodType(long.class, byte.class));
                 SHORT_TO_LONG_UNSIGNED = lookup.findStatic(Short.class, "toUnsignedLong",
                         MethodType.methodType(long.class, short.class));
             } catch (ReflectiveOperationException e) {

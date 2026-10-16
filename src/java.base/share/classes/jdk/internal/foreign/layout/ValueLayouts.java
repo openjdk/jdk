@@ -457,7 +457,7 @@ public final class ValueLayouts {
         }
     }
 
-    public static ValueLayout withSignInfo(ValueLayout layout, IntegralExtension info) {
+    public static ValueLayout withIntegralExtension(ValueLayout layout, IntegralExtension info) {
         return ((AbstractValueLayout<?>)layout).withIntegralExtension(info);
     }
 

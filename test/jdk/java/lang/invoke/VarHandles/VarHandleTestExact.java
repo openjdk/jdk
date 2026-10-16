@@ -23,8 +23,6 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.access.foreign
- * @modules java.base/jdk.internal.foreign.layout
  *
  * @run junit/othervm -Xverify:all
  *   -Djdk.internal.foreign.SHOULD_ADAPT_HANDLES=false
@@ -49,8 +47,7 @@
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-import jdk.internal.foreign.layout.ValueLayouts;
-
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.invoke.WrongMethodTypeException;
@@ -61,6 +58,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static java.lang.foreign.ValueLayout.*;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.TestInstance;
@@ -178,14 +176,13 @@ public class VarHandleTestExact {
 
     @ParameterizedTest
     @MethodSource("dataSetMemorySegment")
-    public void testExactSegmentSet(Class<?> carrier, Object testValue, SetSegmentX setter) {
-        VarHandle vh = ValueLayouts.valueLayout(carrier, ByteOrder.nativeOrder()).varHandle();
+    public void testExactSegmentSet(ValueLayout layout, Object testValue, SetSegmentX setter) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment seg = arena.allocate(8);
-            doTest(vh,
+            doTest(layout.varHandle(),
                 tvh -> tvh.set(seg, 0L, testValue),
                 tvh -> setter.set(tvh, seg, 0L, testValue),
-                ".*\\Qhandle's method type (MemorySegment,long," + carrier.getSimpleName() + ")void \\E.*");
+                ".*\\Qhandle's method type (MemorySegment,long," + layout.carrier().getSimpleName() + ")void \\E.*");
         }
     }
 
@@ -270,8 +267,8 @@ public class VarHandleTestExact {
         cases.add(new Object[] { arrayType, testValue, setter });
     }
 
-    private static void testCaseSegmentSet(List<Object[]> cases, Class<?> carrier, Object testValue, SetSegmentX setter) {
-        cases.add(new Object[] { carrier, testValue, setter });
+    private static void testCaseSegmentSet(List<Object[]> cases, ValueLayout layout, Object testValue, SetSegmentX setter) {
+        cases.add(new Object[] { layout, testValue, setter });
     }
 
     public static Object[][] dataObjectAccess() {
@@ -383,11 +380,11 @@ public class VarHandleTestExact {
         List<Object[]> cases = new ArrayList<>();
 
         // create a bunch of different sig-poly call sites
-        testCaseSegmentSet(cases, long.class, 1234,         (vh, seg, off, tv) -> vh.set((MemorySegment) seg, off, (int) tv));
-        testCaseSegmentSet(cases, long.class, (char) 1234,  (vh, seg, off, tv) -> vh.set((MemorySegment) seg, off, (char) tv));
-        testCaseSegmentSet(cases, long.class, (short) 1234, (vh, seg, off, tv) -> vh.set((MemorySegment) seg, off, (short) tv));
-        testCaseSegmentSet(cases, long.class, (byte) 1234,  (vh, seg, off, tv) -> vh.set((MemorySegment) seg, off, (byte) tv));
-        testCaseSegmentSet(cases, double.class, 1234F,      (vh, seg, off, tv) -> vh.set((MemorySegment) seg, off, (float) tv));
+        testCaseSegmentSet(cases, JAVA_LONG, 1234,         (vh, seg, off, tv) -> vh.set((MemorySegment) seg, off, (int) tv));
+        testCaseSegmentSet(cases, JAVA_LONG, (char) 1234,  (vh, seg, off, tv) -> vh.set((MemorySegment) seg, off, (char) tv));
+        testCaseSegmentSet(cases, JAVA_LONG, (short) 1234, (vh, seg, off, tv) -> vh.set((MemorySegment) seg, off, (short) tv));
+        testCaseSegmentSet(cases, JAVA_LONG, (byte) 1234,  (vh, seg, off, tv) -> vh.set((MemorySegment) seg, off, (byte) tv));
+        testCaseSegmentSet(cases, JAVA_DOUBLE, 1234F,      (vh, seg, off, tv) -> vh.set((MemorySegment) seg, off, (float) tv));
 
         return cases.toArray(Object[][]::new);
     }
