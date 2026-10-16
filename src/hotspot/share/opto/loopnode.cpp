@@ -77,7 +77,7 @@ void LoopNode::dump_spec(outputStream *st) const {
 //------------------------------is_valid_counted_loop-------------------------
 bool LoopNode::is_valid_counted_loop(BasicType bt) const {
   if (is_BaseCountedLoop() && as_BaseCountedLoop()->bt() == bt) {
-    BaseCountedLoopNode* l  = as_BaseCountedLoop();
+    BaseCountedLoopNode*    l  = as_BaseCountedLoop();
     BaseCountedLoopEndNode* le = l->loopexit_or_null();
     if (le != nullptr &&
         le->true_proj_or_null() == l->in(LoopNode::LoopBackControl)) {
