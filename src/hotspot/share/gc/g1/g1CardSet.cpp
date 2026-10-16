@@ -686,7 +686,10 @@ void G1CardSet::transfer_cards(G1CardSetHashTableValue* table_entry, ContainerPt
     assert(container_type(source_container) == ContainerHowl, "must be");
     // Need to correct for that the Full remembered set occupies more cards than the
     // AoCS before.
-    _num_occupied.add_then_fetch((size_t)_config->max_cards_in_region() - table_entry->_num_occupied.load_relaxed(), memory_order_relaxed);
+    // Use int64_t to represent the difference because due to races this difference can be negative.
+    const int64_t diff = (int64_t)_config->max_cards_in_region() - table_entry->_num_occupied.load_relaxed();
+
+    _num_occupied.add_then_fetch((size_t)diff, memory_order_relaxed);
   }
 }
 
@@ -702,7 +705,8 @@ void G1CardSet::transfer_cards_in_howl(ContainerPtr parent_container,
     G1TransferCard iter(this, card_region);
     iterate_cards_during_transfer(source_container, iter);
   } else {
-    size_t diff = (size_t)_config->max_cards_in_howl_bitmap() - container_ptr<G1CardSetBitMap>(source_container)->num_bits_set();
+    // Use int64_t to represent the difference because due to races this difference can be negative.
+    int64_t diff = (int64_t)_config->max_cards_in_howl_bitmap() - container_ptr<G1CardSetBitMap>(source_container)->num_bits_set();
 
     // Need to correct for that the Full remembered set occupies more cards than the
     // bitmap before.
@@ -719,7 +723,7 @@ void G1CardSet::transfer_cards_in_howl(ContainerPtr parent_container,
 
     table_entry->_num_occupied.add_then_fetch((uint)diff, memory_order_relaxed);
 
-    _num_occupied.add_then_fetch(diff, memory_order_relaxed);
+    _num_occupied.add_then_fetch((size_t)diff, memory_order_relaxed);
   }
 }
 
