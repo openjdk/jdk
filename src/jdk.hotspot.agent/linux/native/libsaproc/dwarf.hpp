@@ -35,7 +35,7 @@
 #include "dwarf_regs_amd64.h"
 #elif defined(__aarch64__)
 #include "dwarf_regs_aarch64.h"
-#elif defined(riscv64)
+#elif defined(__riscv) && __riscv_xlen == 64
 #include "dwarf_regs_riscv64.h"
 #endif
 
