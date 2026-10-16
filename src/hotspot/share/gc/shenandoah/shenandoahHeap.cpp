@@ -974,8 +974,8 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       // a full GC to run, other threads will not request another full GC.
 
       const size_t req_byte = req.size() * HeapWordSize;
-      ShenandoahAllocationStallLogger stall_logger(req_byte);
       AllocTracer::send_allocation_requiring_gc_event(req_byte, checked_cast<uint>(control_thread()->get_gc_id()));
+      ShenandoahAllocationStallLogger stall_logger;
 
       const size_t original_full_count = shenandoah_policy()->full_gc_count();
       const size_t original_count = shenandoah_policy()->reclaiming_gc_count();

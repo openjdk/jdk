@@ -274,10 +274,9 @@ public:
 // Emit log messages for the beginning and end of an allocation stall.
 class ShenandoahAllocationStallLogger : public StackObj {
 public:
-  ShenandoahAllocationStallLogger(size_t request_size_bytes);
+  ShenandoahAllocationStallLogger();
   ~ShenandoahAllocationStallLogger();
 private:
-  const size_t _request_size_bytes;
   const double _stall_start_seconds;
 };
 
