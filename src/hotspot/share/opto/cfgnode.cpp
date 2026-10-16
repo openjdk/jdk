@@ -2943,10 +2943,8 @@ private:
       } else if (n->is_ValueType()) {
         ValueTypeNode* value_type = n->as_ValueType();
         Node* buf = value_type->get_oop();
-        if (buf != nullptr) {
-          _nodes_from_phi.push(buf);
-          _subgraph_to_clone.push(n);
-        }
+        _nodes_from_phi.push(buf);
+        _subgraph_to_clone.push(n);
         // We may have a cycle through one the ValueType's field so follow those inputs
         for (uint j = 0; j < value_type->field_count(); ++j) {
           Node* field = value_type->field_value(j);
@@ -3062,7 +3060,7 @@ private:
         before_encode_decode++;
       } else if (n->is_ValueType()) {
         Node* buf = n->as_ValueType()->get_oop();
-        if (buf != nullptr && i >= _init_nodes) {
+        if (i >= _init_nodes) {
           vts_to_skip++;
         }
       }
@@ -3122,9 +3120,7 @@ private:
         assert(i < init_nodes, "");
         ValueTypeNode* value_type = n->as_ValueType();
         Node* buf = value_type->get_oop();
-        if (buf != nullptr) {
-          after.push(buf);
-        }
+        after.push(buf);
         for (uint j = 0; j < value_type->field_count(); ++j) {
           Node* field = value_type->field_value(j);
           const Type* field_type = _phase->type(field);
