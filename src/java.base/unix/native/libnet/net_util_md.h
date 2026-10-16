@@ -54,17 +54,6 @@
 #endif
 #endif
 
-/*
- * On 64-bit JDKs we use a much larger stack and heap buffer.
- */
-#ifdef _LP64
-#define MAX_BUFFER_LEN 65536
-#define MAX_HEAP_BUFFER_LEN 131072
-#else
-#define MAX_BUFFER_LEN 8192
-#define MAX_HEAP_BUFFER_LEN 65536
-#endif
-
 typedef union {
     struct sockaddr     sa;
     struct sockaddr_in  sa4;

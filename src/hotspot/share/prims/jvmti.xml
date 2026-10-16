@@ -14177,7 +14177,7 @@ myInit() {
       every 512KB).
       <p/>
       If another sampling interval is required, the user can call
-      <functionlink id="SetHeapSamplingInterval"></functionlink> with a strictly positive integer value,
+      <functionlink id="SetHeapSamplingInterval"></functionlink> with a non-negative integer value,
       representing the new sampling interval.
       <p/>
       This event is sent once the sampled allocation has been performed.  It provides the object, stack trace

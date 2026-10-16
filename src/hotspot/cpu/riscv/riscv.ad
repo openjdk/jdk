@@ -1068,8 +1068,6 @@ public:
 
 bool is_CAS(int opcode, bool maybe_volatile);
 
-// predicates controlling emission of fences around volatile accesses and CAS
-bool cas_membar_elidable(int opcode);
 bool unnecessary_acquire(const Node *barrier);
 bool unnecessary_release(const Node *barrier);
 bool unnecessary_volatile(const Node *barrier);
@@ -1188,83 +1186,6 @@ bool is_CAS(int opcode, bool maybe_volatile)
   }
 }
 
-// predicates controlling emit of fence before and after CAS
-
-// Return true if the leading MemBarRelease and trailing MemBarAcquire around a
-// CAS-like LoadStore node may be elided, that is if the node is matched to a
-// single AMO instruction carrying both the aq and rl annotations:
-// amoswap/amoadd/amocas with .aqrl.
-//
-// Such an AMO is fully-ordered under RVWMO: PPO rule 5 orders it, including
-// its store, before every subsequent memory access, and PPO rule 6 orders
-// every preceding access before it. That subsumes both membars.
-//
-// An LR/SC based CAS is weaker. lr.aq + sc.rl only provides release-acquire,
-// not a sequentially consistent read-modify-write: the aq annotation sits on
-// the LR, so PPO rule 5 orders the *load* before later accesses, while the rl
-// annotation sits on the SC, so PPO rule 6 only orders earlier accesses before
-// the *store*. Nothing orders the SC's store before a subsequent load, so that
-// store may still be buffered when a load of an unrelated address is
-// satisfied.
-//
-// Emitting the membars does not supply that missing StoreLoad edge either,
-// since MemBarAcquire lowers to `fence r,rw`, whose predecessor set holds only
-// reads. Java code that needs the edge has to request it explicitly, and code
-// which fails to do so can lose a wakeup; see JDK-8387644. Elision is
-// nevertheless restricted here to the fully-ordered AMO forms, so that the
-// LR/SC path keeps the strength it had before the membars started being
-// elided. The leading MemBarRelease on its own would be safe to elide for
-// LR/SC too, since the rl annotation on the SC covers it by PPO rule 6, but
-// both are gated together to keep the two predicates symmetric.
-//
-// Whether the aq annotation is actually set is decided per node by
-// needs_acquiring_load_reserved(), which selects the *Acq instruct variants.
-// It holds for every opcode listed below on the paths reaching the two callers,
-// which assert as much.
-bool cas_membar_elidable(int opcode)
-{
-  assert(is_CAS(opcode, true), "expecting a compare and swap");
-
-  switch (opcode) {
-    // Always matched to the acquiring variant, hence amoswap/amoadd.aqrl.
-    case Op_GetAndSetI:
-    case Op_GetAndSetL:
-    case Op_GetAndSetP:
-    case Op_GetAndSetN:
-    case Op_GetAndAddI:
-    case Op_GetAndAddL:
-      return true;
-    // Matched to amocas.{w|d}.aqrl only when Zacas is available.
-    case Op_CompareAndSwapI:
-    case Op_CompareAndSwapL:
-    case Op_CompareAndSwapP:
-    case Op_CompareAndSwapN:
-    case Op_CompareAndExchangeI:
-    case Op_CompareAndExchangeL:
-    case Op_CompareAndExchangeP:
-    case Op_CompareAndExchangeN:
-    case Op_WeakCompareAndSwapI:
-    case Op_WeakCompareAndSwapL:
-    case Op_WeakCompareAndSwapP:
-    case Op_WeakCompareAndSwapN:
-      return UseZacas;
-    // Sub-word forms additionally require Zabha for amocas.{b|h}. Without it
-    // they are open coded around a narrow lr.w/sc.w or amocas.w, see
-    // cmpxchg_narrow_value(). The Zacas variant of that sequence can leave
-    // through its failure path having executed nothing but a plain lw, so it
-    // carries no ordering at all and its membars must be kept.
-    case Op_CompareAndSwapB:
-    case Op_CompareAndSwapS:
-    case Op_CompareAndExchangeB:
-    case Op_CompareAndExchangeS:
-    case Op_WeakCompareAndSwapB:
-    case Op_WeakCompareAndSwapS:
-      return UseZacas && UseZabha;
-    default:
-      return false;
-  }
-}
-
 bool unnecessary_acquire(const Node *barrier)
 {
   assert(barrier->is_MemBar(), "expecting a membar");
@@ -1278,7 +1199,7 @@ bool unnecessary_acquire(const Node *barrier)
   if (mb->trailing_load_store()) {
     Node* load_store = mb->in(MemBarNode::Precedent);
     assert(load_store->is_LoadStore(), "unexpected graph shape");
-    return cas_membar_elidable(load_store->Opcode());
+    return is_CAS(load_store->Opcode(), true);
   }
 
   return false;
@@ -1318,7 +1239,7 @@ bool unnecessary_release(const Node *barrier)
     } else {
       assert(mem->is_LoadStore(), "");
       assert(trailing_mb->Opcode() == Op_MemBarAcquire, "");
-      return cas_membar_elidable(mem->Opcode());
+      return is_CAS(mem->Opcode(), true);
     }
   }
   return false;
@@ -2451,12 +2372,25 @@ encode %{
     } else {
       relocInfo::relocType rtype = $src->constant_reloc();
       if (rtype == relocInfo::oop_type) {
-        __ movoop(dst_reg, (jobject)con, t0);
+        __ movoop(dst_reg, (jobject)con);
       } else if (rtype == relocInfo::metadata_type) {
-        __ mov_metadata(dst_reg, (Metadata*)con, t0);
+        __ mov_metadata(dst_reg, (Metadata*)con);
       } else {
         assert(rtype == relocInfo::none || rtype == relocInfo::external_word_type, "unexpected reloc type");
-        __ mv(dst_reg, $src$$constant);
+        // Load fake address constants as a plain immediate. They are not real
+        // addresses (a bci may be used as a jsr return address, and compiling
+        // an unreachable unsafe access can produce a bad base) so they are of
+        // no interest to the AOT code cache, and movptr() only materializes
+        // the low 48 bits.
+        if (rtype == relocInfo::none ||
+            (uint64_t)con >= (1ull << 48) ||
+            con < (address)(uintptr_t)os::vm_page_size()) {
+          __ mv(dst_reg, $src$$constant);
+        } else {
+          // Use a relocation so that the address can be fixed up when this code
+          // is loaded from the AOT code cache in a new JVM instance.
+          __ la(dst_reg, Address(con, rtype));
+        }
       }
     }
   %}
@@ -5988,8 +5922,8 @@ instruct compareAndSwapBAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval
 
   ins_encode %{
     __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-                            Assembler::aq /* acquire */, Assembler::rl /* release */, $res$$Register,
-                            true /* result as bool */, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+                            memory_order_seq_cst, $res$$Register, /* result as bool */ true,
+                            $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6010,8 +5944,7 @@ instruct compareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI new
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-               Assembler::aq /* acquire */, Assembler::rl /* release */, $res$$Register,
-               true /* result as bool */);
+               memory_order_seq_cst, $res$$Register, /* result as bool */ true);
   %}
 
   ins_pipe(pipe_slow);
@@ -6035,8 +5968,8 @@ instruct compareAndSwapSAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval
 
   ins_encode %{
     __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-                            Assembler::aq /* acquire */, Assembler::rl /* release */, $res$$Register,
-                            true /* result as bool */, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+                            memory_order_seq_cst, $res$$Register, /* result as bool */ true,
+                            $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6057,8 +5990,7 @@ instruct compareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI new
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-               Assembler::aq /* acquire */, Assembler::rl /* release */, $res$$Register,
-               true /* result as bool */);
+               memory_order_seq_cst, $res$$Register, /* result as bool */ true);
   %}
 
   ins_pipe(pipe_slow);
@@ -6079,8 +6011,7 @@ instruct compareAndSwapIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI new
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
-               /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
-               /*result as bool*/ true);
+               memory_order_seq_cst, $res$$Register, /* result as bool */ true);
   %}
 
   ins_pipe(pipe_slow);
@@ -6101,8 +6032,7 @@ instruct compareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL new
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
-               /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
-               /*result as bool*/ true);
+               memory_order_seq_cst, $res$$Register, /* result as bool */ true);
   %}
 
   ins_pipe(pipe_slow);
@@ -6123,8 +6053,7 @@ instruct compareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP new
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
-               /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
-               /*result as bool*/ true);
+               memory_order_seq_cst, $res$$Register, /* result as bool */ true);
   %}
 
   ins_pipe(pipe_slow);
@@ -6145,8 +6074,7 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN new
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
-               /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
-               /*result as bool*/ true);
+               memory_order_seq_cst, $res$$Register, /* result as bool */ true);
   %}
 
   ins_pipe(pipe_slow);
@@ -6175,8 +6103,8 @@ instruct compareAndExchangeB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
   ins_encode %{
     __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-                            /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
-                            /*result_as_bool*/ false, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+                            memory_order_release, $res$$Register, /* result as bool */ false,
+                            $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6196,7 +6124,7 @@ instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
+               memory_order_release, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6219,8 +6147,8 @@ instruct compareAndExchangeS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
   ins_encode %{
     __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-                            /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
-                            /*result_as_bool*/ false, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+                            memory_order_release, $res$$Register, /* result as bool */ false,
+                            $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6240,7 +6168,7 @@ instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
+               memory_order_release, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6260,7 +6188,7 @@ instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
-               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
+               memory_order_release, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6280,7 +6208,7 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
-               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
+               memory_order_release, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6300,7 +6228,7 @@ instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN ne
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
-               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
+               memory_order_release, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6320,7 +6248,7 @@ instruct compareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP ne
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
-               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
+               memory_order_release, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6343,8 +6271,8 @@ instruct compareAndExchangeBAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 ol
 
   ins_encode %{
     __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-                            /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
-                            /*result_as_bool*/ false, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+                            memory_order_seq_cst, $res$$Register, /* result as bool */ false,
+                            $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6364,7 +6292,7 @@ instruct compareAndExchangeBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-               /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
+               memory_order_seq_cst, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6387,8 +6315,8 @@ instruct compareAndExchangeSAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 ol
 
   ins_encode %{
     __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-                            /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
-                            /*result_as_bool*/ false, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+                            memory_order_seq_cst, $res$$Register, /* result as bool */ false,
+                            $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6408,7 +6336,7 @@ instruct compareAndExchangeSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-               /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
+               memory_order_seq_cst, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6428,7 +6356,7 @@ instruct compareAndExchangeIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
-               /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
+               memory_order_seq_cst, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6448,7 +6376,7 @@ instruct compareAndExchangeLAcq(iRegLNoSp res, indirect mem, iRegL oldval, iRegL
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
-               /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
+               memory_order_seq_cst, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6468,7 +6396,7 @@ instruct compareAndExchangeNAcq(iRegNNoSp res, indirect mem, iRegN oldval, iRegN
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
-               /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
+               memory_order_seq_cst, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6488,7 +6416,7 @@ instruct compareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
-               /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
+               memory_order_seq_cst, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6512,7 +6440,7 @@ instruct weakCompareAndSwapB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
   ins_encode %{
     __ weak_cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-                                 /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
+                                 memory_order_release, $res$$Register,
                                  $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
@@ -6534,7 +6462,7 @@ instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
   ins_encode %{
     __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-                    /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
+                    memory_order_release, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6558,7 +6486,7 @@ instruct weakCompareAndSwapS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
   ins_encode %{
     __ weak_cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-                                 /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
+                                 memory_order_release, $res$$Register,
                                  $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
@@ -6580,7 +6508,7 @@ instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
   ins_encode %{
     __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-                    /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
+                    memory_order_release, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6601,7 +6529,7 @@ instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
   ins_encode %{
     __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
-                    /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
+                    memory_order_release, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6622,7 +6550,7 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
 
   ins_encode %{
     __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
-                    /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
+                    memory_order_release, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6643,7 +6571,7 @@ instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN ne
 
   ins_encode %{
     __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
-                    /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
+                    memory_order_release, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6664,7 +6592,7 @@ instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
 
   ins_encode %{
     __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
-                    /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
+                    memory_order_release, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6688,7 +6616,7 @@ instruct weakCompareAndSwapBAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 ol
 
   ins_encode %{
     __ weak_cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-                                 /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
+                                 memory_order_seq_cst, $res$$Register,
                                  $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
@@ -6710,7 +6638,7 @@ instruct weakCompareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
 
   ins_encode %{
     __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-                    /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
+                    memory_order_seq_cst, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6734,7 +6662,7 @@ instruct weakCompareAndSwapSAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 ol
 
   ins_encode %{
     __ weak_cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-                                 /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
+                                 memory_order_seq_cst, $res$$Register,
                                  $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
@@ -6756,7 +6684,7 @@ instruct weakCompareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
 
   ins_encode %{
     __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-                    /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
+                    memory_order_seq_cst, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6777,7 +6705,7 @@ instruct weakCompareAndSwapIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
 
   ins_encode %{
     __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
-                    /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
+                    memory_order_seq_cst, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6798,7 +6726,7 @@ instruct weakCompareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL
 
   ins_encode %{
     __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
-                    /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
+                    memory_order_seq_cst, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6819,7 +6747,7 @@ instruct weakCompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN
 
   ins_encode %{
     __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
-                    /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
+                    memory_order_seq_cst, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6840,7 +6768,7 @@ instruct weakCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP
 
   ins_encode %{
     __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
-                    /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
+                    memory_order_seq_cst, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -7791,7 +7719,6 @@ instruct regL_not_reg(iRegLNoSp dst, iRegL src1, immL_M1 m1) %{
   ins_pipe(ialu_reg_imm);
 %}
 
-
 // ============================================================================
 // Floating Point Arithmetic Instructions
 
@@ -8679,20 +8606,6 @@ instruct membar_volatile_rvtso() %{
   ins_pipe(pipe_slow);
 %}
 
-instruct unnecessary_membar_volatile_rvtso() %{
-  predicate(UseZtso && Matcher::post_store_load_barrier(n));
-  match(MemBarVolatile);
-  ins_cost(0);
-
-  size(0);
-
-  format %{ "#@unnecessary_membar_volatile_rvtso (unnecessary so empty encoding)" %}
-  ins_encode %{
-    __ block_comment("unnecessary_membar_volatile_rvtso");
-  %}
-  ins_pipe(real_empty);
-%}
-
 instruct membar_full_rvtso() %{
   predicate(UseZtso);
   match(MemBarFull);
@@ -8860,8 +8773,7 @@ instruct membar_lock_rvwmo() %{
 %}
 
 instruct unnecessary_membar_volatile_rvwmo() %{
-  predicate(!UseZtso &&
-            (unnecessary_volatile(n) || Matcher::post_store_load_barrier(n)));
+  predicate(!UseZtso && unnecessary_volatile(n));
   match(MemBarVolatile);
   ins_cost(0);
 
@@ -10011,16 +9923,13 @@ instruct cmpL3_reg_reg(iRegINoSp dst, iRegL op1, iRegL op2)
 %{
   match(Set dst (CmpL3 op1 op2));
 
-  ins_cost(ALU_COST * 3 + BRANCH_COST);
-  format %{ "slt   $dst, $op2, $op1\t#@cmpL3_reg_reg\n\t"
-            "bnez  $dst, done\n\t"
+  ins_cost(ALU_COST * 3);
+  format %{ "slt   t0, $op2, $op1\t#@cmpL3_reg_reg\n\t"
             "slt   $dst, $op1, $op2\n\t"
-            "neg   $dst, $dst\n\t"
-            "done:"
+            "sub   $dst, t0, $dst"
   %}
   ins_encode %{
-    __ cmp_l2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
-    __ mv(as_Register($dst$$reg), t0);
+    __ cmp_l2i(as_Register($dst$$reg), as_Register($op1$$reg), as_Register($op2$$reg));
   %}
 
   ins_pipe(pipe_class_default);
@@ -10030,16 +9939,13 @@ instruct cmpUL3_reg_reg(iRegINoSp dst, iRegL op1, iRegL op2)
 %{
   match(Set dst (CmpUL3 op1 op2));
 
-  ins_cost(ALU_COST * 3 + BRANCH_COST);
-  format %{ "sltu  $dst, $op2, $op1\t#@cmpUL3_reg_reg\n\t"
-            "bnez  $dst, done\n\t"
+  ins_cost(ALU_COST * 3);
+  format %{ "sltu  t0, $op2, $op1\t#@cmpUL3_reg_reg\n\t"
             "sltu  $dst, $op1, $op2\n\t"
-            "neg   $dst, $dst\n\t"
-            "done:"
+            "sub   $dst, t0, $dst"
   %}
   ins_encode %{
-    __ cmp_ul2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
-    __ mv(as_Register($dst$$reg), t0);
+    __ cmp_ul2i(as_Register($dst$$reg), as_Register($op1$$reg), as_Register($op2$$reg));
   %}
 
   ins_pipe(pipe_class_default);
@@ -10049,16 +9955,13 @@ instruct cmpU3_reg_reg(iRegINoSp dst, iRegI op1, iRegI op2)
 %{
   match(Set dst (CmpU3 op1 op2));
 
-  ins_cost(ALU_COST * 3 + BRANCH_COST);
-  format %{ "sltu  $dst, $op2, $op1\t#@cmpU3_reg_reg\n\t"
-            "bnez  $dst, done\n\t"
+  ins_cost(ALU_COST * 3);
+  format %{ "sltu  t0, $op2, $op1\t#@cmpU3_reg_reg\n\t"
             "sltu  $dst, $op1, $op2\n\t"
-            "neg   $dst, $dst\n\t"
-            "done:"
+            "sub   $dst, t0, $dst"
   %}
   ins_encode %{
-    __ cmp_uw2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
-    __ mv(as_Register($dst$$reg), t0);
+    __ cmp_uw2i(as_Register($dst$$reg), as_Register($op1$$reg), as_Register($op2$$reg));
   %}
 
   ins_pipe(pipe_class_default);
@@ -10967,6 +10870,23 @@ instruct far_cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN op1, immP0 zero, la
 
 // --------- CMoveI ---------
 
+instruct cmovI_cmpI_cmpL_zero_one(iRegINoSp dst, iRegIorL op1, iRegIorL op2,
+                                   cmpOp cop, immI_1 one, immI0 zero) %{
+  match(Set dst (CMoveI (Binary cop (CmpI op1 op2)) (Binary one zero)));
+  match(Set dst (CMoveI (Binary cop (CmpL op1 op2)) (Binary one zero)));
+
+  ins_cost(ALU_COST * 2);
+  format %{ "CMoveI $dst, ($op1 $cop $op2), 1, 0\t#@cmovI_cmpI_cmpL_zero_one" %}
+
+  ins_encode %{
+    __ enc_cmove_zero_one($cop$$cmpcode,
+                         as_Register($op1$$reg), as_Register($op2$$reg),
+                         as_Register($dst$$reg));
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
 instruct cmovI_cmpI(iRegINoSp dst, iRegI src, iRegI op1, iRegI op2, cmpOp cop) %{
   match(Set dst (CMoveI (Binary cop (CmpI op1 op2)) (Binary dst src)));
   ins_cost(ALU_COST + BRANCH_COST);
@@ -10979,6 +10899,23 @@ instruct cmovI_cmpI(iRegINoSp dst, iRegI src, iRegI op1, iRegI op2, cmpOp cop) %
     __ enc_cmove($cop$$cmpcode,
                  as_Register($op1$$reg), as_Register($op2$$reg),
                  as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovI_cmpU_cmpUL_zero_one(iRegINoSp dst, iRegIorL op1, iRegIorL op2,
+                                    cmpOpU cop, immI_1 one, immI0 zero) %{
+  match(Set dst (CMoveI (Binary cop (CmpU op1 op2)) (Binary one zero)));
+  match(Set dst (CMoveI (Binary cop (CmpUL op1 op2)) (Binary one zero)));
+
+  ins_cost(ALU_COST * 2);
+  format %{ "CMoveI $dst, ($op1 $cop $op2), 1, 0\t#@cmovI_cmpU_cmpUL_zero_one" %}
+
+  ins_encode %{
+    __ enc_cmove_zero_one($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                         as_Register($op1$$reg), as_Register($op2$$reg),
+                         as_Register($dst$$reg));
   %}
 
   ins_pipe(pipe_class_compare);
@@ -11035,6 +10972,22 @@ instruct cmovI_cmpUL(iRegINoSp dst, iRegI src, iRegL op1, iRegL op2, cmpOpU cop)
   ins_pipe(pipe_class_compare);
 %}
 
+instruct cmovI_cmpF_zero_one(iRegINoSp dst, fRegF op1, fRegF op2,
+                              cmpOp cop, immI_1 one, immI0 zero) %{
+  match(Set dst (CMoveI (Binary cop (CmpF op1 op2)) (Binary one zero)));
+
+  ins_cost(ALU_COST * 2);
+  format %{ "CMoveI $dst, ($op1 $cop $op2), 1, 0\t#@cmovI_cmpF_zero_one" %}
+
+  ins_encode %{
+    __ enc_cmove_cmp_fp_zero_one($cop$$cmpcode,
+                                as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
+                                as_Register($dst$$reg));
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
 instruct cmovI_cmpF(iRegINoSp dst, iRegI src, fRegF op1, fRegF op2, cmpOp cop) %{
   match(Set dst (CMoveI (Binary cop (CmpF op1 op2)) (Binary dst src)));
   ins_cost(ALU_COST + BRANCH_COST);
@@ -11047,6 +11000,22 @@ instruct cmovI_cmpF(iRegINoSp dst, iRegI src, fRegF op1, fRegF op2, cmpOp cop) %
     __ enc_cmove_cmp_fp($cop$$cmpcode,
                         as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
                         as_Register($dst$$reg), as_Register($src$$reg), true /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovI_cmpD_zero_one(iRegINoSp dst, fRegD op1, fRegD op2,
+                              cmpOp cop, immI_1 one, immI0 zero) %{
+  match(Set dst (CMoveI (Binary cop (CmpD op1 op2)) (Binary one zero)));
+
+  ins_cost(ALU_COST * 2);
+  format %{ "CMoveI $dst, ($op1 $cop $op2), 1, 0\t#@cmovI_cmpD_zero_one" %}
+
+  ins_encode %{
+    __ enc_cmove_cmp_fp_zero_one($cop$$cmpcode | C2_MacroAssembler::double_branch_mask,
+                                as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
+                                as_Register($dst$$reg));
   %}
 
   ins_pipe(pipe_class_compare);

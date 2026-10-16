@@ -1278,7 +1278,7 @@ void MacroAssembler::post_call_nop() {
   relocate(post_call_nop_Relocation::spec());
   InlineSkippedInstructionsCounter skipCounter(this);
   Assembler::emit_int32(Assembler::CMPLI_OPCODE | Assembler::opp_u_field(1, 9, 9));
-  assert(is_post_call_nop(*(int*)(pc() - 4)), "post call not not found");
+  assert(is_post_call_nop(*(int*)(pc() - 4)), "post call nop not found");
 }
 
 int MacroAssembler::ic_check_size() {
@@ -1603,27 +1603,22 @@ void MacroAssembler::getandaddd(Register dest_current_value, Register inc_value,
 
 // Word/sub-word atomic helper functions
 
-// Temps and addr_base are killed if size < 4 and processor does not support respective instructions.
 // Only signed types are supported with size < 4.
-// Atomic add always kills tmp1.
+// Only atomic add kills tmp.
 void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, Register exchange_value,
-                                                   Register addr_base, Register tmp1, Register tmp2, Register tmp3,
+                                                   Register addr_base, Register tmp,
                                                    bool cmpxchgx_hint, bool is_add, int size) {
-  // Sub-word instructions are available since Power 8.
 
   Label retry;
-  Register shift_amount = noreg,
-           val32 = dest_current_value,
-           modval = is_add ? tmp1 : exchange_value;
-
+  Register modval = is_add ? tmp : exchange_value;
 
   // atomic emulation loop
   bind(retry);
 
   switch (size) {
-    case 4: lwarx(val32, addr_base, cmpxchgx_hint); break;
-    case 2: lharx(val32, addr_base, cmpxchgx_hint); break;
-    case 1: lbarx(val32, addr_base, cmpxchgx_hint); break;
+    case 4: lwarx(dest_current_value, addr_base, cmpxchgx_hint); break;
+    case 2: lharx(dest_current_value, addr_base, cmpxchgx_hint); break;
+    case 1: lbarx(dest_current_value, addr_base, cmpxchgx_hint); break;
     default: ShouldNotReachHere();
   }
 
@@ -1651,23 +1646,18 @@ void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, 
   };
 }
 
-// Temps, addr_base and exchange_value are killed if size < 4 and processor does not support respective instructions.
 // Only signed types are supported with size < 4.
 void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_current_value,
                                        RegisterOrConstant compare_value, Register exchange_value,
                                        Register addr_base, Label &retry, Label &failed, bool cmpxchgx_hint, int size) {
-  // Sub-word instructions are available since Power 8.
-  Register shift_amount = noreg,
-           val32 = dest_current_value,
-           modval = exchange_value;
 
   // atomic emulation loop
   bind(retry);
 
   switch (size) {
-    case 4: lwarx(val32, addr_base, cmpxchgx_hint); break;
-    case 2: lharx(val32, addr_base, cmpxchgx_hint); break;
-    case 1: lbarx(val32, addr_base, cmpxchgx_hint); break;
+    case 4: lwarx(dest_current_value, addr_base, cmpxchgx_hint); break;
+    case 2: lharx(dest_current_value, addr_base, cmpxchgx_hint); break;
+    case 1: lbarx(dest_current_value, addr_base, cmpxchgx_hint); break;
     default: ShouldNotReachHere();
   }
 
@@ -1687,9 +1677,9 @@ void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_cur
   // fall through    => (flag == eq), (dest_current_value == compare_value)
 
   switch (size) {
-    case 4: stwcx_(modval, addr_base); break;
-    case 2: sthcx_(modval, addr_base); break;
-    case 1: stbcx_(modval, addr_base); break;
+    case 4: stwcx_(exchange_value, addr_base); break;
+    case 2: sthcx_(exchange_value, addr_base); break;
+    case 1: stbcx_(exchange_value, addr_base); break;
     default: ShouldNotReachHere();
   }
 }
@@ -3374,11 +3364,6 @@ void MacroAssembler::load_metadata(Register dst, Register src) {
   }
 }
 
-void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register value_field_info) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->flat_field_copy(this, decorators, src, dst, value_field_info);
-}
-
 void MacroAssembler::payload_offset(Register value_klass, Register offset) {
   ld(offset, in_bytes(ValueKlass::adr_members_offset()), value_klass);
   lwz(offset, in_bytes(ValueKlass::payload_offset_offset()), offset);
@@ -3389,21 +3374,6 @@ void MacroAssembler::payload_address(Register oop, Register data, Register value
   payload_offset(value_klass, t1);
   add(data, oop, t1);
 }
-
-void MacroAssembler::value_field_info(Register holder_klass, Register index, Register vfi) {
-  assert_different_registers(holder_klass, index, vfi);
-  ValueFieldInfo array[2];
-  int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
-  if (is_power_of_2(size)) {
-    sldi(index, index, log2i_exact(size)); // Scale index by power of 2
-  } else {
-    mulld(index, index, size); // Scale the index to be the entry index * array_element_size
-  }
-  ld(vfi, InstanceKlass::value_field_info_array_offset(), holder_klass);
-  addi(vfi, vfi, Array<ValueFieldInfo>::base_offset_in_bytes());
-  add(vfi, vfi, index);
-}
-
 
 // Clear Array
 // For very short arrays. tmp == R0 is allowed.

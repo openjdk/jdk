@@ -605,10 +605,15 @@ void Compile::print_compile_messages() {
 
   if( PrintOpto ) {
     if (is_osr_compilation()) {
-      tty->print("[OSR]%3d", _compile_id);
-    } else {
-      tty->print("%3d", _compile_id);
+      tty->print("[OSR]");
+    } else if (env()->task()->is_aot_compile()) {
+      if (for_aot_preload()) {
+        tty->print("[PRE]");
+      } else {
+        tty->print("[AOT]");
+      }
     }
+    tty->print("%3d", _compile_id);
   }
 #endif
 }
@@ -644,9 +649,13 @@ void Compile::print_ideal_ir(const char* compile_phase_name) const {
   NoSafepointVerifier nsv;
   ttyLocker ttyl;
   if (xtty != nullptr) {
+    CompileTask* task = env()->task();
+    bool aot_comp = task->is_aot_load_or_compile();
+    bool aot_preload_comp = task->is_aot_preload_or_compile();
     xtty->head("ideal compile_id='%d'%s compile_phase='%s'",
                compile_id(),
-               is_osr_compilation() ? " compile_kind='osr'" : "",
+               is_osr_compilation() ? " compile_kind='osr'" :
+               (aot_preload_comp ? " compile_kind='AP'" : (aot_comp ? " compile_kind='A'" : "")),
                compile_phase_name);
   }
 
@@ -693,6 +702,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
       _clinit_barrier_on_entry(false),
+      _has_clinit_barriers(false),
       _comp_arena(mtCompiler, Arena::Tag::tag_comp),
       _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
       _env(ci_env),
@@ -776,9 +786,14 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   set_print_intrinsics(directive->PrintIntrinsicsOption);
   set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
 
-  if (ProfileTraps) {
+  if ((ProfileTraps && !ci_env->is_aot_compile()) ||
+      AOTCodeCache::is_using_code()) {
     // Make sure the method being compiled gets its own MDO,
     // so we can at least track the decompile_count().
+    // Load recorded MDO from training run when AOT code
+    // is used - MDO may not be created yet in such case.
+    // No need for AOT compilation - it is not
+    // executed during assembly phase.
     method()->ensure_method_data();
   }
 
@@ -1003,6 +1018,7 @@ Compile::Compile(ciEnv* ci_env,
       _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
       _clinit_barrier_on_entry(false),
+      _has_clinit_barriers(false),
       _comp_arena(mtCompiler, Arena::Tag::tag_comp),
       _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
       _env(ci_env),
@@ -1181,8 +1197,12 @@ void Compile::Init(bool aliasing) {
 
   _max_node_limit = _directive->MaxNodeLimitOption;
 
-  if (VM_Version::supports_fast_class_init_checks() && has_method() && !is_osr_compilation() && method()->needs_clinit_barrier()) {
+  if (VM_Version::supports_fast_class_init_checks() && has_method() && !is_osr_compilation() &&
+      (method()->needs_clinit_barrier() || (do_clinit_barriers() && method()->is_static()))) {
     set_clinit_barrier_on_entry(true);
+    if (do_clinit_barriers()) {
+      set_has_clinit_barriers(true); // Entry clinit barrier is in prolog code.
+    }
   }
   if (debug_info()->recording_non_safepoints()) {
     set_node_note_array(new(comp_arena()) GrowableArray<Node_Notes*>
@@ -1556,9 +1576,13 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       if (xk && ik->equals(canonical_holder)) {
         assert(tj == TypeInstPtr::make(to->ptr(), canonical_holder, is_known_inst, nullptr, Type::Offset(offset), instance_id,
                                        TypePtr::MaybeFlat), "exact type should be canonical type");
+      } else if (is_known_inst) {
+        assert(xk, "Known instance should be exact type");
+        // Keep the type for known instances
+        tj = to = TypeInstPtr::make(to->ptr(), to->instance_klass(), true, nullptr, Type::Offset(offset), instance_id,
+                                    TypePtr::MaybeFlat);
       } else {
-        assert(xk || !is_known_inst, "Known instance should be exact type");
-        tj = to = TypeInstPtr::make(to->ptr(), canonical_holder, is_known_inst, nullptr, Type::Offset(offset), instance_id,
+        tj = to = TypeInstPtr::make(to->ptr(), canonical_holder, false, nullptr, Type::Offset(offset), instance_id,
                                     TypePtr::MaybeFlat);
       }
     }
@@ -1622,7 +1646,6 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
           (offset == arrayOopDesc::length_offset_in_bytes() && tj->base() == Type::AryPtr),
           "For oops, klasses, raw offset must be constant; for arrays the offset is never known" );
   assert( tj->ptr() != TypePtr::TopPTR &&
-          tj->ptr() != TypePtr::AnyNull &&
           tj->ptr() != TypePtr::Null, "No imprecise addresses" );
 //    assert( tj->ptr() != TypePtr::Constant ||
 //            tj->base() == Type::RawPtr ||
@@ -1742,13 +1765,15 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
            Type::str(adr_type), Type::str(flat), Type::str(flatten_alias_type(flat)));
     assert(flat != TypePtr::BOTTOM, "cannot alias-analyze an untyped ptr: adr_type = %s",
            Type::str(adr_type));
-    if (flat->isa_instptr()) {
-      const TypeOopPtr* foop = flat->is_oopptr();
-      // Scalarizable allocations have exact klass always.
-      bool exact = !foop->klass_is_exact() || foop->is_known_instance();
-      const TypePtr* xoop = foop->cast_to_exactness(exact)->is_ptr();
-      assert(foop == flatten_alias_type(xoop), "exactness must not affect alias type: foop = %s; xoop = %s",
-             Type::str(foop), Type::str(xoop));
+    if (const TypeInstPtr* finst = flat->isa_instptr(); finst != nullptr) {
+      bool check_exact = !finst->klass_is_exact();
+      // Try casting the type to the other exactness if possible
+      if ((check_exact && finst->instance_klass()->is_loaded() && !finst->instance_klass()->is_abstract()) ||
+          (!check_exact && !finst->is_known_instance())) {
+        const TypePtr* xinst = finst->cast_to_exactness(check_exact)->is_ptr();
+        assert(finst == flatten_alias_type(xinst), "exactness must not affect alias type: finst = %s; xinst = %s",
+               Type::str(finst), Type::str(xinst));
+      }
     }
   }
 #endif
@@ -2311,7 +2336,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
     Node* n = wq.at(i);
     if (n->is_Mem()) {
       const TypePtr* adr_type = nullptr;
-      adr_type = get_adr_type(get_alias_index(n->adr_type()));
+      adr_type = get_adr_type(get_alias_index(n->in_adr_type()));
       if (adr_type == TypeAryPtr::INLINES) {
         memnodes.push(n);
       }
@@ -2346,7 +2371,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
   int start_alias = num_alias_types(); // Start of new aliases
   for (uint i = 0; i < memnodes.size(); i++) {
     Node* m = memnodes.at(i);
-    const TypePtr* adr_type = m->adr_type();
+    const TypePtr* adr_type = m->in_adr_type();
 #ifdef ASSERT
     m->as_Mem()->set_adr_type(adr_type);
 #endif // ASSERT
@@ -2376,8 +2401,8 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
       // bottom memory, we pop element off the stack one at a
       // time, in reverse order, and move them to the right slice
       // by changing their memory edges.
-      if ((n->is_Phi() && n->adr_type() != TypePtr::BOTTOM) || n->is_Mem() ||
-          (n->adr_type() == TypeAryPtr::INLINES && !n->is_NarrowMemProj())) {
+      if ((n->is_Phi() && n->out_adr_type() != TypePtr::BOTTOM) || n->is_Mem() ||
+          (n->out_adr_type() == TypeAryPtr::INLINES && !n->is_NarrowMemProj())) {
         assert(!seen.test_set(n->_idx), "");
         // Uses (a load for instance) will need to be moved to the
         // right slice as well and will get a new memory state
@@ -2427,7 +2452,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
           n = n->in(0)->in(TypeFunc::Memory);
         }
       } else {
-        assert(n->adr_type() == TypePtr::BOTTOM || (n->Opcode() == Op_Node && n->_idx >= last) || n->is_NarrowMemProj(), "");
+        assert(n->out_adr_type() == TypePtr::BOTTOM || (n->Opcode() == Op_Node && n->_idx >= last) || n->is_NarrowMemProj(), "");
         // Build a new MergeMem node to carry the new memory state
         // as we build it. IGVN should fold extraneous MergeMem
         // nodes.
@@ -2447,7 +2472,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
 
           Node* base = alloc->in(TypeFunc::Memory);
           assert(base->bottom_type() == Type::MEMORY, "the memory input of AllocateNode must be a memory");
-          assert(base->adr_type() == TypePtr::BOTTOM, "the memory input of AllocateNode must be a bottom memory");
+          assert(base->out_adr_type() == TypePtr::BOTTOM, "the memory input of AllocateNode must be a bottom memory");
           // Must create a MergeMem with base as the base memory, do not clone if base is a
           // MergeMem because it may not be processed yet
           mm = MergeMemNode::make(nullptr);
@@ -2488,7 +2513,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
           uint idx = stack.index();
           if (m->is_Mem()) {
             // Move memory node to its new slice
-            const TypePtr* adr_type = m->adr_type();
+            const TypePtr* adr_type = m->in_adr_type();
             int alias = get_alias_index(adr_type);
             Node* prev = mm->memory_at(alias);
             igvn.replace_input_of(m, MemNode::Memory, prev);
@@ -2535,7 +2560,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
               if (!adr_type->isa_aryptr() || !adr_type->is_flat()) {
                 continue;
               }
-              MemBarNode* mb = new MemBarCPUOrderNode(this, j, nullptr);
+              MemBarNode* mb = new MemBarCPUOrderNode(this, adr_type, adr_type, nullptr);
               igvn.register_new_node_with_optimizer(mb);
               Node* mem = mm->memory_at(j);
               mb->init_req(TypeFunc::Control, ctrl);
@@ -2583,13 +2608,16 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
     current->set_memory_at(index, current->base_memory());
   }
   igvn.optimize();
+  if (failing()) {
+    return;
+  }
 
 #ifdef ASSERT
   wq.clear();
   wq.push(root());
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
-    assert(n->adr_type() != TypeAryPtr::INLINES, "should have been removed from the graph");
+    assert(n->out_adr_type() != TypeAryPtr::INLINES && n->in_adr_type() != TypeAryPtr::INLINES, "should have been removed from the graph");
     for (uint j = 0; j < n->req(); j++) {
       Node* m = n->in(j);
       if (m != nullptr) {
@@ -3019,6 +3047,9 @@ void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
     if (failing())  return;
 
     inline_incrementally_cleanup(igvn);
+    if (failing()) {
+      return;
+    }
   }
   DEBUG_ONLY( _modified_nodes = modified_nodes; )
   set_strength_reduction(false);
@@ -3166,6 +3197,9 @@ void Compile::Optimize() {
   // Now that all inlining is over and no PhaseRemoveUseless will run, cut edge from root to loop
   // safepoints
   remove_root_to_sfpts_edges(igvn);
+  if (failing()) {
+    return;
+  }
 
   // Process value type nodes now that all inlining is over
   process_value_types(igvn);
@@ -3225,9 +3259,9 @@ void Compile::Optimize() {
 
       // Optimize out fields loads from scalar replaceable allocations.
       igvn.optimize(true);
-      print_method(PHASE_ITER_GVN_AFTER_EA, 2);
-
       if (failing()) return;
+
+      print_method(PHASE_ITER_GVN_AFTER_EA, 2);
 
       if (congraph() != nullptr && macro_count() > 0) {
         TracePhase tp(_t_macroEliminate);
@@ -3295,6 +3329,9 @@ void Compile::Optimize() {
   // Conditional Constant Propagation;
   print_method(PHASE_BEFORE_CCP1, 2);
   PhaseCCP ccp( &igvn );
+  if (failing()) {
+    return;
+  }
   assert( true, "Break here to ccp.dump_nodes_and_types(_root,999,1)");
   {
     TracePhase tp(_t_ccp);
@@ -3310,9 +3347,9 @@ void Compile::Optimize() {
     igvn.reset_from_igvn(&ccp);
     igvn.optimize(true);
   }
-  print_method(PHASE_ITER_GVN2, 2);
-
   if (failing())  return;
+
+  print_method(PHASE_ITER_GVN2, 2);
 
   // Loop transforms on the ideal graph.  Range Check Elimination,
   // peeling, unrolling, etc.
@@ -4036,7 +4073,7 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
 
 #ifdef ASSERT
   if( n->is_Mem() ) {
-    int alias_idx = get_alias_index(n->as_Mem()->adr_type());
+    int alias_idx = get_alias_index(n->as_Mem()->in_adr_type());
     assert( n->in(0) != nullptr || alias_idx != Compile::AliasIdxRaw ||
             // oop will be recorded in oop map if load crosses safepoint
             (n->is_Load() && (n->as_Load()->bottom_type()->isa_oopptr() ||
@@ -4128,7 +4165,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     if (!Matcher::match_rule_supported(Op_CallLeafPure)) {
       CallNode* call = n->as_Call();
       CallNode* new_call = new CallLeafNode(call->tf(), call->entry_point(),
-                                            call->_name, TypeRawPtr::BOTTOM);
+                                            call->_name, nullptr, nullptr);
       new_call->init_req(TypeFunc::Control, call->in(TypeFunc::Control));
       new_call->init_req(TypeFunc::I_O, C->top());
       new_call->init_req(TypeFunc::Memory, C->top());
@@ -4994,6 +5031,10 @@ bool Compile::final_graph_reshaping() {
 bool Compile::too_many_traps(ciMethod* method,
                              int bci,
                              Deoptimization::DeoptReason reason) {
+  if (PreloadReduceTraps && for_aot_preload()) {
+    // Preload code should not have traps, if possible.
+    return true;
+  }
   assert(reason > Deoptimization::Reason_none && reason <= Deoptimization::Reason_LIMIT, "invalid reason");
   ciMethodData* md = method->method_data();
   if (md->is_empty()) {
@@ -5020,6 +5061,10 @@ bool Compile::too_many_traps(ciMethod* method,
 // Less-accurate variant which does not require a method and bci.
 bool Compile::too_many_traps(Deoptimization::DeoptReason reason,
                              ciMethodData* logmd) {
+  if (PreloadReduceTraps && for_aot_preload()) {
+    // Preload code should not have traps, if possible.
+    return true;
+  }
   assert(reason > Deoptimization::Reason_none && reason <= Deoptimization::Reason_LIMIT, "invalid reason");
   if (trap_count(reason) >= Deoptimization::per_method_trap_limit(reason)) {
     // Too many traps globally.
@@ -5111,10 +5156,10 @@ bool Compile::needs_clinit_barrier(ciField* field, ciMethod* accessing_method) {
 }
 
 bool Compile::needs_clinit_barrier(ciInstanceKlass* holder, ciMethod* accessing_method) {
-  if (holder->is_initialized()) {
+  if (holder->is_initialized() && !do_clinit_barriers()) {
     return false;
   }
-  if (holder->is_being_initialized()) {
+  if (holder->is_being_initialized() || do_clinit_barriers()) {
     if (accessing_method->holder() == holder) {
       // Access inside a class. The barrier can be elided when access happens in <clinit>,
       // <init>, or a static method. In all those cases, there was an initialization
@@ -6248,7 +6293,7 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
                               Node* parm6) const {
   Node* str_node = gvn->transform(new ConPNode(TypeRawPtr::make(((address) str))));
   const TypeFunc* type = OptoRuntime::debug_print_Type(parm0, parm1, parm2, parm3, parm4, parm5, parm6);
-  Node* call = new CallLeafNode(type, call_addr, "debug_print", TypeRawPtr::BOTTOM);
+  Node* call = new CallLeafNode(type, call_addr, "debug_print", nullptr, nullptr);
 
   // find the most suitable control input
   Unique_Node_List worklist, candidates;

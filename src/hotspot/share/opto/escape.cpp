@@ -2915,6 +2915,26 @@ bool ConnectionGraph::find_non_escaped_objects(GrowableArray<PointsToNode*>& ptn
         // New edge was added
         add_field_uses_to_worklist(ptn->as_Field());
       }
+    } else if (ptn->is_JavaObject() && ptn->ideal_node()->is_AllocateArray()) {
+      // Manually propagate the fields escape state of array allocations to
+      // their initialization values, if present. This is needed because there
+      // may not exist an explicit connection in the connection graph between
+      // these two (as there is no explicit initialization store in the IR).
+      // Note that, for flat arrays, marking the initialization value as
+      // escaping is a conservative over-approximation and may result in an
+      // unnecessary constructor barrier. If necessary, this could be addressed
+      // by propagating the escape state directly to the fields of the
+      // initialization value.
+      AllocateArrayNode* alloc = ptn->ideal_node()->as_AllocateArray();
+      Node* init = alloc->in(AllocateNode::InitValue);
+      if (init != nullptr) {
+        PointsToNode* init_val = ptnode_adr(init->_idx);
+        assert(init_val != nullptr, "init value should be registered");
+        if (init_val->escape_state() < field_es) {
+          set_escape_state(init_val, field_es NOT_PRODUCT(COMMA trace_propagate_message(ptn)));
+          escape_worklist.push(init_val);
+        }
+      }
     }
     for (EdgeIterator i(ptn); i.has_next(); i.next()) {
       PointsToNode* e = i.get();
@@ -4417,14 +4437,14 @@ PhiNode* ConnectionGraph::create_split_phi(PhiNode* orig_phi, int alias_idx, Uni
   Compile *C = _compile;
   PhaseGVN* igvn = _igvn;
   new_created = false;
-  int phi_alias_idx = C->get_alias_index(orig_phi->adr_type());
+  int phi_alias_idx = C->get_alias_index(orig_phi->out_adr_type());
   // nothing to do if orig_phi is bottom memory or matches alias_idx
   if (phi_alias_idx == alias_idx) {
     return orig_phi;
   }
   // Have we recently created a Phi for this alias index?
   PhiNode *result = get_map_phi(orig_phi->_idx);
-  if (result != nullptr && C->get_alias_index(result->adr_type()) == alias_idx) {
+  if (result != nullptr && C->get_alias_index(result->out_adr_type()) == alias_idx) {
     return result;
   }
   // Previous check may fail when the same wide memory Phi was split into Phis
@@ -4434,7 +4454,7 @@ PhiNode* ConnectionGraph::create_split_phi(PhiNode* orig_phi, int alias_idx, Uni
     for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
       Node* phi = region->fast_out(i);
       if (phi->is_Phi() &&
-          C->get_alias_index(phi->as_Phi()->adr_type()) == alias_idx) {
+          C->get_alias_index(phi->as_Phi()->out_adr_type()) == alias_idx) {
         assert(phi->_idx >= nodes_size(), "only new Phi per instance memory slice");
         return phi->as_Phi();
       }
@@ -4576,7 +4596,7 @@ void ConnectionGraph::move_inst_mem(Node* n, Unique_Node_List& orig_phis) {
         record_for_optimizer(use);
         continue;
       }
-      tp = use->as_MemBar()->adr_type()->isa_ptr();
+      tp = use->as_MemBar()->in_adr_type()->isa_ptr();
       if ((tp != nullptr && C->get_alias_index(tp) == alias_idx) ||
           alias_idx == general_idx) {
         continue; // Nothing to do
@@ -4611,7 +4631,7 @@ void ConnectionGraph::move_inst_mem(Node* n, Unique_Node_List& orig_phis) {
              "Following memory nodes should have new memory input or be on the same memory slice");
     } else if (use->is_Phi()) {
       // Phi nodes should be split and moved already.
-      tp = use->as_Phi()->adr_type()->isa_ptr();
+      tp = use->as_Phi()->in_adr_type()->isa_ptr();
       assert(tp != nullptr, "ptr type");
       int idx = C->get_alias_index(tp);
       assert(idx == alias_idx, "Following Phi nodes should be on the same memory slice");
@@ -4722,8 +4742,8 @@ Node* ConnectionGraph::find_inst_mem(Node* orig_mem, int alias_idx, Unique_Node_
         // which contains this memory slice, otherwise skip over it.
         if (alloc == nullptr || alloc->_idx != (uint)toop->instance_id()) {
           result = proj_in->in(TypeFunc::Memory);
-        } else if (C->get_alias_index(result->adr_type()) != alias_idx) {
-          assert(C->get_general_index(alias_idx) == C->get_alias_index(result->adr_type()), "should be projection for the same field/array element");
+        } else if (C->get_alias_index(result->out_adr_type()) != alias_idx) {
+          assert(C->get_general_index(alias_idx) == C->get_alias_index(result->out_adr_type()), "should be projection for the same field/array element");
           result = get_map(result->_idx);
           assert(result != nullptr, "new projection should have been allocated");
           break;
@@ -4774,7 +4794,7 @@ Node* ConnectionGraph::find_inst_mem(Node* orig_mem, int alias_idx, Unique_Node_
         mmem->set_memory_at(alias_idx, result);
       }
     } else if (result->is_Phi() &&
-               C->get_alias_index(result->as_Phi()->adr_type()) != alias_idx) {
+               C->get_alias_index(result->as_Phi()->out_adr_type()) != alias_idx) {
       Node *un = result->as_Phi()->unique_input(igvn);
       if (un != nullptr) {
         orig_phis.push(result);
@@ -4828,7 +4848,7 @@ Node* ConnectionGraph::find_inst_mem(Node* orig_mem, int alias_idx, Unique_Node_
   if (result->is_Phi()) {
     PhiNode *mphi = result->as_Phi();
     assert(mphi->bottom_type() == Type::MEMORY, "memory phi required");
-    const TypePtr *t = mphi->adr_type();
+    const TypePtr* t = mphi->out_adr_type();
     if (!is_instance) {
       // Push all non-instance Phis on the orig_phis worklist to update inputs
       // during Phase 4 if needed.
@@ -5119,7 +5139,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         InitializeNode* init = alloc->as_Allocate()->initialization();
         assert(init != nullptr, "can't find Initialization node for this Allocate node");
         auto process_narrow_proj = [&](NarrowMemProjNode* proj) {
-          const TypePtr* adr_type = proj->adr_type();
+          const TypePtr* adr_type = proj->out_adr_type();
           const TypePtr* new_adr_type = tinst->with_offset(adr_type->offset());
           if (adr_type->isa_aryptr()) {
             // In the case of a flat value type array, each field has its own slice so we need a
@@ -5591,7 +5611,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   // also be processed here.
   for (uint j = 0; j < orig_phis.size(); j++) {
     PhiNode* phi = orig_phis.at(j)->as_Phi();
-    int alias_idx = _compile->get_alias_index(phi->adr_type());
+    int alias_idx = _compile->get_alias_index(phi->out_adr_type());
     igvn->hash_delete(phi);
     for (uint i = 1; i < phi->req(); i++) {
       Node *mem = phi->in(i);
