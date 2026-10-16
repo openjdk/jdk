@@ -829,7 +829,7 @@ void PhaseIdealLoop::trace_loop_multiversioning_result(const LoopSelector& loop_
 
 // When unswitching a counted loop, we need to convert it back to a normal loop since it's not a proper pre, main or,
 // post loop anymore after loop unswitching. We also lose the multiversion structure, with access to the multiversion_if.
-void PhaseIdealLoop::revert_to_normal_loop(const LoopNode* loop_head) {
+void PhaseIdealLoop::revert_to_normal_loop(LoopNode* loop_head) {
   CountedLoopNode* cl = loop_head->isa_CountedLoop();
   if (cl == nullptr) { return; }
   if (!cl->is_normal_loop()) { cl->set_normal_loop(); }

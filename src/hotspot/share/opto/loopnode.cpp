@@ -77,7 +77,7 @@ void LoopNode::dump_spec(outputStream *st) const {
 //------------------------------is_valid_counted_loop-------------------------
 bool LoopNode::is_valid_counted_loop(BasicType bt) const {
   if (is_BaseCountedLoop() && as_BaseCountedLoop()->bt() == bt) {
-    BaseCountedLoopNode*    l  = as_BaseCountedLoop();
+    const BaseCountedLoopNode* l  = as_BaseCountedLoop();
     BaseCountedLoopEndNode* le = l->loopexit_or_null();
     if (le != nullptr &&
         le->true_proj_or_null() == l->in(LoopNode::LoopBackControl)) {
@@ -466,14 +466,14 @@ Node* PhaseIdealLoop::loop_exit_control(const IdealLoopTree* loop) const {
   return iftrue;
 }
 
-PhiNode* PhaseIdealLoop::loop_iv_phi(const Node* xphi, const Node* phi_incr, const Node* head) {
+PhiNode* PhaseIdealLoop::loop_iv_phi(Node* xphi, const Node* phi_incr, const Node* head) {
   if (!xphi->is_Phi()) {
     return nullptr; // Too much math on the trip counter
   }
   if (phi_incr != nullptr && phi_incr != xphi) {
     return nullptr;
   }
-  PhiNode *phi = xphi->as_Phi();
+  PhiNode* phi = xphi->as_Phi();
 
   // Phi must be of loop header; backedge must wrap to increment
   if (phi->region() != head) {
@@ -1721,7 +1721,7 @@ void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* head, B
   stride.build(iv_incr.incr());
   assert(stride.is_valid(), "no stride");
 
-  PhiNode* phi = loop_iv_phi(stride.xphi(), iv_incr.phi_incr(), head);
+  const PhiNode* phi = loop_iv_phi(stride.xphi(), iv_incr.phi_incr(), head);
   assert(phi != nullptr && phi->in(LoopNode::LoopBackControl) == iv_incr.incr(), "No phi");
 
   assert(stride.compute_non_zero_stride_con(exit_test.mask(), bt) != 0, "illegal condition");
@@ -5378,7 +5378,7 @@ void PhaseIdealLoop::build_and_optimize() {
 
   // Allocate stack with enough space to avoid frequent realloc
   int stack_size = (C->live_nodes() >> 1) + 16; // (live_nodes>>1)+16 from Java2D stats
-  Node_Stack nstack(stack_size);
+  Node_Stack<Node> nstack(stack_size);
 
   visited.clear();
   Node_List<Node> worklist;
@@ -6447,7 +6447,7 @@ bool PhaseIdealLoop::is_in_irreducible_loop(RegionNode* region) {
 // Put Data nodes into some loop nest, by setting the _loop_or_ctrl[]->loop mapping.
 // First pass computes the earliest controlling node possible.  This is the
 // controlling input with the deepest dominating depth.
-void PhaseIdealLoop::build_loop_early(VectorSet& visited, Node_List<Node>& worklist, Node_Stack& nstack) {
+void PhaseIdealLoop::build_loop_early(VectorSet& visited, Node_List<Node>& worklist, Node_Stack<Node>& nstack) {
   while (worklist.size() != 0) {
     // Use local variables nstack_top_n & nstack_top_i to cache values
     // on nstack's top.
@@ -6771,7 +6771,7 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
 // input of this load are examined.  Any use which is not a load and is
 // dominated by early is considered a potentially interfering store.
 // This can produce false positives.
-Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node* LCA) {
+Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(const LoadNode* n, Node* early, Node* LCA) {
   int load_alias_idx = C->get_alias_index(n->adr_type());
   if (C->alias_type(load_alias_idx)->is_rewritable()) {
     Unique_Node_List<const Node> worklist;
@@ -6874,7 +6874,7 @@ bool PhaseIdealLoop::is_strict_dominator(Node* dominator, Node* n) {
 // does not need to be cleared between calls to get_late_ctrl().
 // Algorithm trades a larger constant factor for better asymptotic behavior
 //
-Node *PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal(Node *n1, Node *n2, Node *tag_node) {
+Node* PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal(Node* n1, Node* n2, const Node* tag_node) {
   uint d1 = dom_depth(n1);
   uint d2 = dom_depth(n2);
   jlong tag = tag_node->_idx | (((jlong)_dom_lca_tags_round) << 32);
@@ -6943,7 +6943,7 @@ void PhaseIdealLoop::init_dom_lca_tags() {
 //------------------------------build_loop_late--------------------------------
 // Put Data nodes into some loop nest, by setting the _loop_or_ctrl[]->loop mapping.
 // Second pass finds latest legal placement, and ideal loop placement.
-void PhaseIdealLoop::build_loop_late(VectorSet& visited, Node_List<Node>& worklist, Node_Stack& nstack) {
+void PhaseIdealLoop::build_loop_late(VectorSet& visited, Node_List<Node>& worklist, Node_Stack<Node>& nstack) {
   while (worklist.size() != 0) {
     Node *n = worklist.pop();
     // Only visit once
@@ -7406,7 +7406,7 @@ void PhaseIdealLoop::dump_idoms(Node* early, Node* wrong_lca) {
 //------------------------------dump-------------------------------------------
 void PhaseIdealLoop::dump() const {
   ResourceMark rm;
-  Node_Stack stack(C->live_nodes() >> 2);
+  Node_Stack<Node> stack(C->live_nodes() >> 2);
   Node_List<Node> rpo_list;
   VectorSet visited;
   visited.set(C->top()->_idx);
@@ -7508,7 +7508,7 @@ void PhaseIdealLoop::dump_idoms_in_reverse(const Node* n, const Node_List<Node>&
 
 // Collect a R-P-O for the whole CFG.
 // Result list is in post-order (scan backwards for RPO)
-void PhaseIdealLoop::rpo(Node* start, Node_Stack& stk, VectorSet& visited, Node_List<Node>& rpo_list) const {
+void PhaseIdealLoop::rpo(Node* start, Node_Stack<Node>& stk, VectorSet& visited, Node_List<Node>& rpo_list) const {
   stk.push(start, 0);
   visited.set(start->_idx);
 

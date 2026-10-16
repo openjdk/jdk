@@ -1559,7 +1559,7 @@ bool IdealLoopTree::policy_peel_only(PhaseIdealLoop *phase) const {
 //------------------------------clone_up_backedge_goo--------------------------
 // If Node n lives in the back_ctrl block and cannot float, we clone a private
 // version of n in preheader_ctrl block and return that, otherwise return n.
-Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctrl, Node *n, VectorSet &visited, Node_Stack &clones) {
+Node* PhaseIdealLoop::clone_up_backedge_goo(Node* back_ctrl, Node* preheader_ctrl, Node* n, VectorSet& visited, Node_Stack<Node>& clones) {
   if (get_ctrl(n) != back_ctrl) return n;
 
   // Only visit once
@@ -1747,7 +1747,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree* loop, Node_List<Node>&
   assert(post_head->in(1)->is_IfProj(), "must be zero-trip guard If node projection of the post loop");
 
   VectorSet visited;
-  Node_Stack clones(main_head->back_control()->outcnt());
+  Node_Stack<Node> clones(main_head->back_control()->outcnt());
   // Step B3: Make the fall-in values to the main-loop come from the
   // fall-out values of the pre-loop.
   const uint last_node_index_in_pre_loop_body = Compile::current()->unique() - 1;
@@ -2003,7 +2003,7 @@ Node* PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List<Node>& old
   set_idom(post_head, zer_taken, dd_main_exit);
 
   VectorSet visited;
-  Node_Stack clones(main_head->back_control()->outcnt());
+  Node_Stack<Node> clones(main_head->back_control()->outcnt());
   // Step A3: Make the fall-in values to the post-loop come from the
   // fall-out values of the main-loop.
   for (DUIterator i = main_head->outs(); main_head->has_out(i); i++) {
@@ -2203,7 +2203,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree* loop, Node_List<Node>& old_new, bo
   }
 
   if (C->do_vector_loop() && (PrintOpto && (VerifyLoopOptimizations || TraceLoopOpts))) {
-    Node_Stack stack(C->live_nodes() >> 2);
+    Node_Stack<Node> stack(C->live_nodes() >> 2);
     Node_List<Node> rpo_list;
     VectorSet visited;
     visited.set(loop_head->_idx);

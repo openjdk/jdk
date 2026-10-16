@@ -539,8 +539,8 @@ Node *Node::clone() const {
   // MachNode clone
   uint nopnds;
   if (this->is_Mach() && (nopnds = this->as_Mach()->num_opnds()) > 0) {
-    MachNode *mach  = n->as_Mach();
-    MachNode *mthis = this->as_Mach();
+    MachNode* mach  = n->as_Mach();
+    const MachNode* mthis = this->as_Mach();
     // Get address of _opnd_array.
     // It should be the same offset since it is the clone of this node.
     MachOper **from = mthis->_opnds;
@@ -557,7 +557,7 @@ Node *Node::clone() const {
     // externally allocated memory. Make sure to use a proper constructor
     // instead of just shallowly copying.
     MachProjNode* mach = n->as_MachProj();
-    MachProjNode* mthis = this->as_MachProj();
+    const MachProjNode* mthis = this->as_MachProj();
     new (&mach->_rout) RegMask(mthis->_rout);
   }
   if (n->is_Call()) {
@@ -3135,7 +3135,7 @@ void Node_List<T>::dump_simple() const {
 //=============================================================================
 //------------------------------remove-----------------------------------------
 template <typename T>
-void Unique_Node_List_impl<T>::remove(const T* n) {
+void Unique_Node_List<T>::remove(const T* n) {
   if (_in_worklist.test(n->_idx)) {
     for (uint i = 0; i < Base::size(); i++) {
       if (Base::_nodes[i] == n) {
@@ -3148,10 +3148,9 @@ void Unique_Node_List_impl<T>::remove(const T* n) {
   }
 }
 
-//-----------------------remove_useless_nodes----------------------------------
 // Remove useless nodes from worklist
 template <typename T>
-void Unique_Node_List_impl<T>::remove_useless_nodes(const VectorSet& useful) {
+void Unique_Node_List<T>::remove_useless_nodes(const VectorSet& useful) {
   for (uint i = 0; i < Base::size(); ++i) {
     T* n = Base::at(i);
     assert( n != nullptr, "Did not expect null entries in worklist");
@@ -3164,8 +3163,8 @@ void Unique_Node_List_impl<T>::remove_useless_nodes(const VectorSet& useful) {
   }
 }
 
-//=============================================================================
-void Node_Stack::grow() {
+template <typename T>
+void Node_Stack<T>::grow() {
   size_t old_top = pointer_delta(_inode_top,_inodes,sizeof(INode)); // save _top
   size_t old_max = pointer_delta(_inode_max,_inodes,sizeof(INode));
   size_t max = old_max << 1;             // max * 2
@@ -3175,7 +3174,8 @@ void Node_Stack::grow() {
 }
 
 // Node_Stack is used to map nodes.
-Node* Node_Stack::find(uint idx) const {
+template <typename T>
+T* Node_Stack<T>::find(uint idx) const {
   uint sz = size();
   for (uint i = 0; i < sz; i++) {
     if (idx == index_at(i)) {
@@ -3288,15 +3288,15 @@ Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return Node::Ideal(phase, can_reshape);
 }
 
-#define INSTANCIATE_NODE_CONTAINERS(node)         \
-template class Node_Array<node>;                  \
-template class Node_Array<const node>;            \
-template class Node_List<node>;                   \
-template class Node_List<const node>;             \
-template class Unique_Node_List_impl<node>;       \
-template class Unique_Node_List_impl<const node>; \
-template class Unique_Node_List<node>;            \
-template class Unique_Node_List<const node>;      \
+#define INSTANCIATE_NODE_CONTAINERS(node)    \
+template class Node_Array<node>;             \
+template class Node_Array<const node>;       \
+template class Node_List<node>;              \
+template class Node_List<const node>;        \
+template class Unique_Node_List<node>;       \
+template class Unique_Node_List<const node>; \
+template class Node_Stack<node>;             \
+template class Node_Stack<const node>;       \
 
 INSTANCIATE_NODE_CONTAINERS(Node)
 

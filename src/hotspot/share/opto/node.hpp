@@ -156,7 +156,7 @@ class OuterStripMinedLoopEndNode;
 class Node;
 template <typename T> class Node_Array;
 template <typename T> class Node_List;
-class Node_Stack;
+template <typename T> class Node_Stack;
 class OopMap;
 class ParmNode;
 class ParsePredicateNode;
@@ -920,11 +920,18 @@ public:
   bool is_##type() const {                                   \
     return ((_class_id & ClassMask_##type) == Class_##type); \
   }                                                          \
-  type##Node *as_##type() const {                            \
+  type##Node *as_##type() {                            \
     assert(is_##type(), "invalid node class: %s", Name());   \
     return (type##Node*)this;                                \
   }                                                          \
-  type##Node* isa_##type() const {                           \
+  type##Node* isa_##type() {                           \
+    return (is_##type()) ? as_##type() : nullptr;            \
+  }                                                          \
+  const type##Node *as_##type() const {                            \
+    assert(is_##type(), "invalid node class: %s", Name());   \
+    return (type##Node*)this;                                \
+  }                                                          \
+  const type##Node* isa_##type() const {                           \
     return (is_##type()) ? as_##type() : nullptr;            \
   }
 
@@ -1916,21 +1923,19 @@ void Node::visit_uses(Callback callback, Check is_boundary, bool always_callback
   }
 }
 
-
-//------------------------------Unique_Node_List-------------------------------
 template <typename T>
-class Unique_Node_List_impl : public Node_List<T> {
+class Unique_Node_List : public Node_List<T> {
   typedef Node_List<T> Base;
   VectorSet _in_worklist;
   uint _clock_index;            // Index in list where to pop from next
 public:
-  Unique_Node_List_impl() : Base(), _clock_index(0) {}
-  Unique_Node_List_impl(Arena* a) : Base(a), _in_worklist(a), _clock_index(0) {}
+  Unique_Node_List() : Base(), _clock_index(0) {}
+  Unique_Node_List(Arena* a) : Base(a), _in_worklist(a), _clock_index(0) {}
 
-  NONCOPYABLE(Unique_Node_List_impl);
-  Unique_Node_List_impl& operator=(Unique_Node_List_impl&&) = delete;
+  NONCOPYABLE(Unique_Node_List);
+  Unique_Node_List& operator=(Unique_Node_List&&) = delete;
   // Allow move constructor for && (eg. capture return of function)
-  Unique_Node_List_impl(Unique_Node_List_impl&&) = default;
+  Unique_Node_List(Unique_Node_List&&) = default;
 
   void remove(const T* n);
   bool member(const T* n) const { return _in_worklist.test(n->_idx) != 0; }
@@ -1959,7 +1964,7 @@ public:
     _in_worklist.remove(n->_idx);
     Base::yank(n);
   }
-  void  clear() {
+  void clear() {
     _in_worklist.clear();        // Discards storage but grows automatically
     Base::clear();
     _clock_index = 0;
@@ -2003,38 +2008,6 @@ public:
 #endif
 };
 
-template <typename T>
-class Unique_Node_List : public Unique_Node_List_impl<T> {
-  typedef Unique_Node_List_impl<T> Base;
-public:
-  Unique_Node_List() : Base() {}
-  Unique_Node_List(Arena* a) : Base(a) {}
-};
-
-template <>
-class Unique_Node_List<Node> : public Unique_Node_List_impl<Node> {
-  typedef Unique_Node_List_impl<Node> Base;
-public:
-  Unique_Node_List() : Base() {}
-  Unique_Node_List(Arena* a) : Base(a) {}
-
-  void push_non_cfg_inputs_of(const Node* node) {
-    for (uint i = 1; i < node->req(); i++) {
-      Node* input = node->in(i);
-      if (input != nullptr && !input->is_CFG()) {
-        push(input);
-      }
-    }
-  }
-
-  void push_outputs_of(const Node* node) {
-    for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
-      Node* output = node->fast_out(i);
-      push(output);
-    }
-  }
-};
-
 // Unique_Mixed_Node_List
 // unique: nodes are added only once
 // mixed: allow new and old nodes
@@ -2075,17 +2048,17 @@ inline void Compile::remove_for_igvn(Node* n) {
   _igvn_worklist->remove(n);
 }
 
-//------------------------------Node_Stack-------------------------------------
+template <typename T>
 class Node_Stack {
 protected:
   struct INode {
-    Node *node; // Processed node
+    T* node; // Processed node
     uint  indx; // Index of next node's child
   };
-  INode *_inode_top; // tos, stack grows up
-  INode *_inode_max; // End of _inodes == _inodes + _max
-  INode *_inodes;    // Array storage for the stack
-  Arena *_a;         // Arena to allocate in
+  INode* _inode_top; // tos, stack grows up
+  INode* _inode_max; // End of _inodes == _inodes + _max
+  INode* _inodes;    // Array storage for the stack
+  Arena* _a;         // Arena to allocate in
   ReallocMark _nesting; // Safety checks for arena reallocation
 
   void maybe_grow() {
@@ -2116,17 +2089,17 @@ public:
     assert(_inode_top >= _inodes, "node stack underflow");
     --_inode_top;
   }
-  void push(Node *n, uint i) {
+  void push(T* n, uint i) {
     ++_inode_top;
     maybe_grow();
     INode *top = _inode_top; // optimization
     top->node = n;
     top->indx = i;
   }
-  Node *node() const {
+  T* node() const {
     return _inode_top->node;
   }
-  Node* node_at(uint i) const {
+  T* node_at(uint i) const {
     assert(_inodes + i <= _inode_top, "in range");
     return _inodes[i].node;
   }
@@ -2137,7 +2110,7 @@ public:
     assert(_inodes + i <= _inode_top, "in range");
     return _inodes[i].indx;
   }
-  void set_node(Node *n) {
+  void set_node(T* n) {
     _inode_top->node = n;
   }
   void set_index(uint i) {
@@ -2150,7 +2123,7 @@ public:
   void clear() { _inode_top = _inodes - 1; } // retain storage
 
   // Node_Stack is used to map nodes.
-  Node* find(uint idx) const;
+  T* find(uint idx) const;
 
   NONCOPYABLE(Node_Stack);
 };

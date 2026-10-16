@@ -219,7 +219,7 @@ public:
 
   // Return uncommon trap call node if proj is for "proj->[region->..]call_uct"
   // null otherwise
-  CallStaticJavaNode* is_uncommon_trap_proj(Deoptimization::DeoptReason reason = Deoptimization::Reason_none) const;
+  CallStaticJavaNode* is_uncommon_trap_proj(Deoptimization::DeoptReason reason = Deoptimization::Reason_none);
   // Return uncommon trap call node for    "if(test)-> proj -> ...
   //                                                 |
   //                                                 V

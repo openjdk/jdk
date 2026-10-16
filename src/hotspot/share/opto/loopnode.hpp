@@ -988,17 +988,17 @@ private:
   // Inline wrapper for frequent cases:
   // 1) only one use
   // 2) a use is the same as the current LCA passed as 'n1'
-  Node *dom_lca_for_get_late_ctrl( Node *lca, Node *n, Node *tag ) {
+  Node* dom_lca_for_get_late_ctrl(Node* lca, Node* n, const Node* tag) {
     assert( n->is_CFG(), "" );
     // Fast-path null lca
     if( lca != nullptr && lca != n ) {
       assert( lca->is_CFG(), "" );
       // find LCA of all uses
-      n = dom_lca_for_get_late_ctrl_internal( lca, n, tag );
+      n = dom_lca_for_get_late_ctrl_internal(lca, n, tag);
     }
     return find_non_split_ctrl(n);
   }
-  Node *dom_lca_for_get_late_ctrl_internal( Node *lca, Node *n, Node *tag );
+  Node* dom_lca_for_get_late_ctrl_internal(Node* lca, Node* n, const Node* tag);
 
   // Helper function for directing control inputs away from CFG split points.
   Node *find_non_split_ctrl( Node *ctrl ) const {
@@ -1210,8 +1210,8 @@ private:
 #endif
 
   // Place Data nodes in some loop nest
-  void build_loop_early(VectorSet& visited, Node_List<Node>& worklist, Node_Stack& nstack);
-  void build_loop_late(VectorSet& visited, Node_List<Node>& worklist, Node_Stack& nstack);
+  void build_loop_early(VectorSet& visited, Node_List<Node>& worklist, Node_Stack<Node>& nstack);
+  void build_loop_late(VectorSet& visited, Node_List<Node>& worklist, Node_Stack<Node>& nstack);
   void build_loop_late_post_work(Node* n, bool pinned);
   void build_loop_late_post(Node* n);
   void verify_strip_mined_scheduling(Node *n, Node* least);
@@ -1462,7 +1462,7 @@ public:
     jlong compute_non_zero_stride_con(BoolTest::mask mask, BasicType iv_bt) const;
   };
 
-  static PhiNode* loop_iv_phi(const Node* xphi, const Node* phi_incr, const Node* head);
+  static PhiNode* loop_iv_phi(Node* xphi, const Node* phi_incr, const Node* head);
 
   bool try_convert_to_counted_loop(Node* head, IdealLoopTree*& loop, BasicType iv_bt);
 
@@ -1557,7 +1557,7 @@ public:
   void insert_vector_post_loop(IdealLoopTree* loop, Node_List<Node>& old_new);
   // If Node n lives in the back_ctrl block, we clone a private version of n
   // in preheader_ctrl block and return that, otherwise return n.
-  Node *clone_up_backedge_goo( Node *back_ctrl, Node *preheader_ctrl, Node *n, VectorSet &visited, Node_Stack &clones );
+  Node* clone_up_backedge_goo(Node* back_ctrl, Node* preheader_ctrl, Node* n, VectorSet& visited, Node_Stack<Node>& clones);
 
   // Take steps to maximally unroll the loop.  Peel any odd iterations, then
   // unroll to do double iterations.  The next round of major loop transforms
@@ -1642,11 +1642,11 @@ public:
   bool can_create_loop_predicates(const PredicateBlock* profiled_loop_predicate_block) const;
   bool loop_predication_should_follow_branches(IdealLoopTree* loop, float& loop_trip_cnt);
   void loop_predication_follow_branches(RegionNode* c, IdealLoopTree* loop, float loop_trip_cnt,
-                                        PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
+                                        PathFrequency& pf, Node_Stack<const Node>& stack, VectorSet& seen,
                                         Node_List<const IfProjNode>& if_proj_list);
   IfTrueNode* create_template_assertion_predicate(CountedLoopNode* loop_head, ParsePredicateNode* parse_predicate,
                                                   IfProjNode* new_control, int scale, Node* offset, Node* range);
-  void eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
+  void eliminate_hoisted_range_check(const IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
 
   // Helper function to collect predicate for eliminating the useless ones
   void eliminate_useless_predicates() const;
@@ -1678,7 +1678,7 @@ public:
 
  private:
   static bool has_control_dependencies_from_predicates(LoopNode* head);
-  static void revert_to_normal_loop(const LoopNode* loop_head);
+  static void revert_to_normal_loop(LoopNode* loop_head);
 
   void hoist_invariant_check_casts(const IdealLoopTree* loop, const Node_List<Node>& old_new,
                                    const UnswitchCandidate& unswitch_candidate, const IfNode* loop_selector);
@@ -1787,14 +1787,14 @@ public:
 
   // Check for aggressive application of 'split-if' optimization,
   // using basic block level info.
-  void  split_if_with_blocks     ( VectorSet &visited, Node_Stack &nstack);
-  Node *split_if_with_blocks_pre ( Node *n );
-  void  split_if_with_blocks_post( Node *n );
-  Node *has_local_phi_input( Node *n );
+  void split_if_with_blocks(VectorSet& visited, Node_Stack<Node>& nstack);
+  Node* split_if_with_blocks_pre(Node* n);
+  void split_if_with_blocks_post(Node* n);
+  Node* has_local_phi_input(Node* n);
   // Mark an IfNode as being dominated by a prior test,
   // without actually altering the CFG (and hence IDOM info).
   void dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip = false, bool prev_dom_not_imply_this = false);
-  void rewire_safe_outputs_to_dominator(Node* source, Node* dominator, bool dominator_not_imply_source);
+  void rewire_safe_outputs_to_dominator(const Node* source, Node* dominator, bool dominator_not_imply_source);
 
   // Split Node 'n' through merge point
   RegionNode* split_thru_region(Node* n, RegionNode* region);
@@ -2014,7 +2014,7 @@ public:
   bool verify_loop_ctrl(Node* n, const PhaseIdealLoop* phase_verify) const;
 #endif
 
-  void rpo(Node* start, Node_Stack& stk, VectorSet& visited, Node_List<Node>& rpo_list) const;
+  void rpo(Node* start, Node_Stack<Node>& stk, VectorSet& visited, Node_List<Node>& rpo_list) const;
 
   void check_counted_loop_shape(IdealLoopTree* loop, Node* head, BasicType bt) NOT_DEBUG_RETURN;
 
@@ -2028,7 +2028,7 @@ public:
                                    Node* inner_iters_actual_int, Node* inner_phi,
                                    Node* iv_add, LoopNode* inner_head);
 
-  Node* get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node* LCA);
+  Node* get_late_ctrl_with_anti_dep(const LoadNode* n, Node* early, Node* LCA);
 
   bool ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop, Node* ctrl);
 
@@ -2324,7 +2324,7 @@ public:
 class PathFrequency {
 private:
   Node* _dom; // frequencies are computed relative to this node
-  Node_Stack _stack;
+  Node_Stack<const Node> _stack;
   GrowableArray<float> _freqs_stack; // keep track of intermediate result at regions
   GrowableArray<float> _freqs; // cache frequencies
   PhaseIdealLoop* _phase;

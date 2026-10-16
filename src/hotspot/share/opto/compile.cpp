@@ -2379,7 +2379,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
     get_alias_index(adr_type);
   }
 
-  Node_Stack stack(0);
+  Node_Stack<Node> stack(0);
 #ifdef ASSERT
   VectorSet seen(Thread::current()->resource_area());
 #endif
@@ -4797,7 +4797,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 //------------------------------final_graph_reshaping_walk---------------------
 // Replacing Opaque nodes with their input in final_graph_reshaping_impl(),
 // requires that the walk visits a node's inputs before visiting the node.
-void Compile::final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List<Node>& dead_nodes) {
+void Compile::final_graph_reshaping_walk(Node_Stack<Node>& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List<Node>& dead_nodes) {
   Unique_Node_List<SafePointNode> sfpt;
 
   frc._visited.set(root->_idx); // first, mark node as visited
@@ -4921,7 +4921,7 @@ bool Compile::final_graph_reshaping() {
 
   // Visit everybody reachable!
   // Allocate stack of size C->live_nodes()/2 to avoid frequent realloc
-  Node_Stack nstack(live_nodes() >> 1);
+  Node_Stack<Node> nstack(live_nodes() >> 1);
   Unique_Node_List<Node> dead_nodes;
   final_graph_reshaping_walk(nstack, root(), frc, dead_nodes);
 

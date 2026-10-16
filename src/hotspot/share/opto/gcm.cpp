@@ -305,9 +305,9 @@ static Block* find_deepest_input(Node* n, const PhaseCFG* cfg) {
 // Find the earliest Block any instruction can be placed in.  Some instructions
 // are pinned into Blocks.  Unpinned instructions can appear in last block in
 // which all their inputs occur.
-bool PhaseCFG::schedule_early(VectorSet &visited, Node_Stack &roots) {
+bool PhaseCFG::schedule_early(VectorSet& visited, Node_Stack<Node>& roots) {
   // Allocate stack with enough space to avoid frequent realloc
-  Node_Stack nstack(roots.size() + 8);
+  Node_Stack<Node> nstack(roots.size() + 8);
   // _root will be processed among C->top() inputs
   roots.push(C->top(), 0);
   visited.set(C->top()->_idx);
@@ -1133,19 +1133,19 @@ private:
 
 public:
   // Constructor for the iterator
-  Node_Backward_Iterator(Node *root, VectorSet &visited, Node_Stack &stack, PhaseCFG &cfg);
+  Node_Backward_Iterator(Node* root, VectorSet& visited, Node_Stack<Node>& stack, PhaseCFG& cfg);
 
   // Postincrement operator to iterate over the nodes
   Node *next();
 
 private:
-  VectorSet   &_visited;
-  Node_Stack  &_stack;
-  PhaseCFG &_cfg;
+  VectorSet& _visited;
+  Node_Stack<Node>& _stack;
+  PhaseCFG& _cfg;
 };
 
 // Constructor for the Node_Backward_Iterator
-Node_Backward_Iterator::Node_Backward_Iterator( Node *root, VectorSet &visited, Node_Stack &stack, PhaseCFG &cfg)
+Node_Backward_Iterator::Node_Backward_Iterator(Node* root, VectorSet& visited, Node_Stack<Node>& stack, PhaseCFG& cfg)
   : _visited(visited), _stack(stack), _cfg(cfg) {
   // The stack should contain exactly the root
   stack.clear();
@@ -1239,7 +1239,7 @@ Node *Node_Backward_Iterator::next() {
 
 //------------------------------ComputeLatenciesBackwards----------------------
 // Compute the latency of all the instructions.
-void PhaseCFG::compute_latencies_backwards(VectorSet &visited, Node_Stack &stack) {
+void PhaseCFG::compute_latencies_backwards(VectorSet& visited, Node_Stack<Node>& stack) {
 #ifndef PRODUCT
   if (trace_opto_pipelining())
     tty->print("\n#---- ComputeLatenciesBackwards ----\n");
@@ -1547,7 +1547,7 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
 // dominator tree of all USES of a value.  Pick the block with the least
 // loop nesting depth that is lowest in the dominator tree.
 extern const char must_clone[];
-void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
+void PhaseCFG::schedule_late(VectorSet& visited, Node_Stack<Node>& stack) {
 #ifndef PRODUCT
   if (trace_opto_pipelining())
     tty->print("\n#---- schedule_late ----\n");
@@ -1780,7 +1780,7 @@ void PhaseCFG::global_code_motion() {
   // instructions are pinned into Blocks.  Unpinned instructions can
   // appear in last block in which all their inputs occur.
   visited.clear();
-  Node_Stack stack((C->live_nodes() >> 2) + 16); // pre-grow
+  Node_Stack<Node> stack((C->live_nodes() >> 2) + 16); // pre-grow
   if (!schedule_early(visited, stack)) {
     // Bailout without retry
     assert(C->failure_is_artificial(), "early schedule failed");

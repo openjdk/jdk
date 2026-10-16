@@ -2094,7 +2094,7 @@ void PhaseIterGVN::remove_globally_dead_node(Node* dead, NodeOrigin origin) {
     PROCESS_OUTPUTS
   };
   ResourceMark rm;
-  Node_Stack stack(32);
+  Node_Stack<Node> stack(32);
   stack.push(dead, PROCESS_INPUTS);
 
   while (stack.is_nonempty()) {
@@ -2261,7 +2261,7 @@ void PhaseIterGVN::add_users_to_worklist0(Node* n, Unique_Node_List<Node>& workl
 
 // Return counted loop Phi if as a counted loop exit condition, cmp
 // compares the induction variable with n
-static PhiNode* countedloop_phi_from_cmp(CmpNode* cmp, Node* n) {
+static PhiNode* countedloop_phi_from_cmp(const CmpNode* cmp, Node* n) {
   for (DUIterator_Fast imax, i = cmp->fast_outs(imax); i < imax; i++) {
     Node* bol = cmp->fast_out(i);
     for (DUIterator_Fast i2max, i2 = bol->fast_outs(i2max); i2 < i2max; i2++) {

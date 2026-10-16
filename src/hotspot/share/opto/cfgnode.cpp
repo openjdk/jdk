@@ -1170,13 +1170,13 @@ PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) cons
   Compile *C = igvn->C;
   ResourceMark rm;
   Node_Array<PhiNode> node_map;
-  Node_Stack stack(C->live_nodes() >> 4);
+  Node_Stack<const PhiNode> stack(C->live_nodes() >> 4);
   PhiNode *nphi = slice_memory(at);
   igvn->register_new_node_with_optimizer( nphi );
   node_map.map(_idx, nphi);
-  stack.push((Node *)this, 1);
+  stack.push(this, 1);
   while(!stack.is_empty()) {
-    PhiNode *ophi = stack.node()->as_Phi();
+    const PhiNode* ophi = stack.node();
     uint i = stack.index();
     assert(i >= 1, "not control edge");
     stack.pop();
@@ -2146,7 +2146,7 @@ bool PhiNode::is_unsafe_data_reference(Node *in) const {
 
 // A Phi may only have other Phis as its transitive outputs, it is dead then. We may not be able to
 // remove it normally because a Phi can be a transitive output of itself.
-bool PhiNode::is_dead_phi() {
+bool PhiNode::is_dead_phi() const {
   // Early return before we create the worklist
   for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
     if (!fast_out(i)->is_Phi()) {
@@ -3348,8 +3348,8 @@ bool PhiNode::can_be_replaced_by(PhaseGVN* phase, const PhiNode* other) const {
 }
 
 Node* PhiNode::clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIterGVN* igvn) {
-  Node_Stack stack(1);
-  VectorSet  visited;
+  Node_Stack<Node> stack(1);
+  VectorSet visited;
   Node_List<PhiNode>  node_map;
 
   stack.push(root_phi, 1); // ignore control
@@ -3393,15 +3393,15 @@ Node* PhiNode::clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIte
 }
 
 Node* PhiNode::merge_through_phi(Node* root_phi, PhaseIterGVN* igvn) {
-  Node_Stack stack(1);
-  VectorSet  visited;
+  Node_Stack<const Node> stack(1);
+  VectorSet visited;
 
   stack.push(root_phi, 1); // ignore control
   visited.set(root_phi->_idx);
 
   VectorBoxNode* cached_vbox = nullptr;
   while (stack.is_nonempty()) {
-    Node* n   = stack.node();
+    const Node* n   = stack.node();
     uint  idx = stack.index();
     if (idx < n->req()) {
       stack.set_index(idx + 1);

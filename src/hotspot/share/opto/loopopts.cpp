@@ -396,7 +396,7 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
   rewire_safe_outputs_to_dominator(dp, prevdom, prevdom_not_imply_this);
 }
 
-void PhaseIdealLoop::rewire_safe_outputs_to_dominator(Node* source, Node* dominator, const bool dominator_not_imply_source) {
+void PhaseIdealLoop::rewire_safe_outputs_to_dominator(const Node* source, Node* dominator, const bool dominator_not_imply_source) {
   IdealLoopTree* old_loop = get_loop(source);
 
   for (DUIterator_Fast imax, i = source->fast_outs(imax); i < imax; i++) {
@@ -1865,7 +1865,7 @@ bool PhaseIdealLoop::safe_for_if_replacement(const Node* dom) const {
   if (!dom->is_CountedLoopEnd()) {
     return true;
   }
-  CountedLoopEndNode* le = dom->as_CountedLoopEnd();
+  const CountedLoopEndNode* le = dom->as_CountedLoopEnd();
   CountedLoopNode* cl = le->loopnode();
   if (cl == nullptr) {
     return true;
@@ -2169,7 +2169,7 @@ bool PhaseIdealLoop::ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealL
 //------------------------------split_if_with_blocks---------------------------
 // Check for aggressive application of 'split-if' optimization,
 // using basic block level info.
-void PhaseIdealLoop::split_if_with_blocks(VectorSet &visited, Node_Stack &nstack) {
+void PhaseIdealLoop::split_if_with_blocks(VectorSet &visited, Node_Stack<Node>& nstack) {
   Node* root = C->root();
   visited.set(root->_idx); // first, mark root as visited
   // Do pre-visit work for root
@@ -2642,7 +2642,7 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
     // loop: they are kept in the outer loop by the safepoint so start
     // from the safepoint node's inputs.
     IdealLoopTree* outer_loop = get_loop(l);
-    Node_Stack stack(2);
+    Node_Stack<Node> stack(2);
     stack.push(sfpt, 1);
     uint new_counter = C->unique();
     while (stack.size() > 0) {
@@ -3478,7 +3478,7 @@ void PhaseIdealLoop::scheduled_nodelist(IdealLoopTree* loop, VectorSet& member, 
 
   assert(member.test(loop->_head->_idx), "loop head must be in member set");
   VectorSet visited;
-  Node_Stack nstack(loop->_body.size());
+  Node_Stack<Node> nstack(loop->_body.size());
 
   Node* n  = loop->_head;  // top of stack is cached in "n"
   uint idx = 0;
@@ -4532,7 +4532,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree* loop, Node_List<Node
         continue;
       }
 
-      PhiNode* phi = loop_iv_phi(stride.xphi(), nullptr, head);
+      const PhiNode* phi = loop_iv_phi(stride.xphi(), nullptr, head);
       if (phi == nullptr ||
           (increment.outer_trunc() == nullptr && phi->in(LoopNode::LoopBackControl) != loop_exit.incr()) ||
           (increment.outer_trunc() != nullptr && phi->in(LoopNode::LoopBackControl) != increment.outer_trunc())) {

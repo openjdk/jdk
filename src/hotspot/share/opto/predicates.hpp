@@ -323,7 +323,7 @@ class ParsePredicate : public Predicate {
   ParsePredicateNode* _parse_predicate_node;
   Node* _entry;
 
-  static IfTrueNode* init_success_proj(const Node* parse_predicate_proj) {
+  static IfTrueNode* init_success_proj(Node* parse_predicate_proj) {
     assert(parse_predicate_proj != nullptr, "must not be null");
     return parse_predicate_proj->isa_IfTrue();
   }
@@ -593,6 +593,13 @@ class TemplateAssertionExpressionNode : public StackObj {
             opcode == Op_CastII);
   }
 
+  void push_outputs_of(Unique_Node_List<Node>& list, const Node* node) {
+    for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
+      Node* output = node->fast_out(i);
+      list.push(output);
+    }
+  }
+
   // Apply the given function to all Template Assertion Predicates (if any) to which this Template Assertion Predicate
   // Expression Node belongs to.
   template <class Callback>
@@ -608,7 +615,7 @@ class TemplateAssertionExpressionNode : public StackObj {
         DEBUG_ONLY(template_counter++;)
       } else {
         assert(!next->is_CFG(), "no CFG expected in Template Assertion Expression");
-        list.push_outputs_of(next);
+        push_outputs_of(list, next);
       }
     }
 

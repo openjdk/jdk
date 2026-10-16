@@ -4879,9 +4879,9 @@ MemBarNode* MemBarNode::trailing_membar() const {
   ResourceMark rm;
   Node* trailing = (Node*)this;
   VectorSet seen;
-  Node_Stack multis(0);
+  Node_Stack<const MultiBranchNode> multis(0);
   do {
-    Node* c = trailing;
+    const Node* c = trailing;
     uint i = 0;
     do {
       trailing = nullptr;
@@ -4892,7 +4892,7 @@ MemBarNode* MemBarNode::trailing_membar() const {
             if (multis.node() == c) {
               multis.set_index(i+1);
             } else {
-              multis.push(c, i+1);
+              multis.push(c->as_MultiBranch(), i+1);
             }
           }
           trailing = next;
@@ -4923,13 +4923,13 @@ MemBarNode* MemBarNode::trailing_membar() const {
 MemBarNode* MemBarNode::leading_membar() const {
   ResourceMark rm;
   VectorSet seen;
-  Node_Stack regions(0);
+  Node_Stack<const RegionNode> regions(0);
   Node* leading = in(0);
   while (leading != nullptr && (!leading->is_MemBar() || !leading->as_MemBar()->leading())) {
     while (leading == nullptr || leading->is_top() || seen.test_set(leading->_idx)) {
       leading = nullptr;
       while (regions.size() > 0 && leading == nullptr) {
-        Node* r = regions.node();
+        const RegionNode* r = regions.node();
         uint i = regions.index();
         if (i < r->req()) {
           leading = r->in(i);
@@ -4944,7 +4944,7 @@ MemBarNode* MemBarNode::leading_membar() const {
       }
     }
     if (leading->is_Region()) {
-      regions.push(leading, 2);
+      regions.push(leading->as_Region(), 2);
       leading = leading->in(1);
     } else {
       leading = leading->in(0);

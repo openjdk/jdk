@@ -174,7 +174,7 @@ public:
   int               scratch_buffer_code_size()  { return (address)scratch_locs_memory() - _scratch_buffer_blob->content_begin(); }
 
   // emit to scratch blob, report resulting size
-  uint              scratch_emit_size(const Node* n);
+  uint              scratch_emit_size(Node* n);
   void       set_in_scratch_emit_size(bool x)   {        _in_scratch_emit_size = x; }
   bool           in_scratch_emit_size() const   { return _in_scratch_emit_size;     }
 

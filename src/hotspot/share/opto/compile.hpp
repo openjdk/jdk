@@ -102,7 +102,7 @@ template <typename T> class Unique_Node_List;
 class UnstableIfTrap;
 class ValueTypeNode;
 class nmethod;
-class Node_Stack;
+template <typename T> class Node_Stack;
 struct Final_Reshape_Counts;
 class VerifyMeetJoinResult;
 
@@ -1330,7 +1330,7 @@ public:
   // No need to be made public as they are not called elsewhere.
   void final_graph_reshaping_impl(Node* n, Final_Reshape_Counts& frc, Unique_Node_List<Node>& dead_nodes);
   void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List<Node>& dead_nodes);
-  void final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List<Node>& dead_nodes);
+  void final_graph_reshaping_walk(Node_Stack<Node>& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List<Node>& dead_nodes);
   void handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned);
   void handle_mulhi_mul_op(Node* n, bool is_unsigned);
 

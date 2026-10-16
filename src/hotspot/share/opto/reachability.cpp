@@ -277,7 +277,7 @@ bool PhaseIdealLoop::optimize_reachability_fences() {
 // Linearly traverse CFG upwards starting at ctrl_start until first merge point.
 // All encountered safepoints are recorded in safepoints list, except
 // the ones filtered out by is_interfering_sfpt_candidate().
-static void enumerate_interfering_sfpts_linear_traversal(Node* ctrl_start, Node_Stack& stack, VectorSet& visited,
+static void enumerate_interfering_sfpts_linear_traversal(Node* ctrl_start, Node_Stack<RegionNode>& stack, VectorSet& visited,
                                                          Node_List<SafePointNode>& interfering_sfpts) {
   for (Node* ctrl = ctrl_start; ctrl != nullptr; ctrl = ctrl->in(0)) {
     assert(ctrl->is_CFG(), "");
@@ -285,7 +285,7 @@ static void enumerate_interfering_sfpts_linear_traversal(Node* ctrl_start, Node_
       return;
     } else {
       if (ctrl->is_Region()) {
-        stack.push(ctrl, 1);
+        stack.push(ctrl->as_Region(), 1);
         return; // stop at merge points
       } else if (ctrl->is_SafePoint() && is_interfering_sfpt_candidate(ctrl->as_SafePoint())) {
         assert(!ctrl->is_CallStaticJava() || !ctrl->as_CallStaticJava()->is_uncommon_trap(),
@@ -299,7 +299,7 @@ static void enumerate_interfering_sfpts_linear_traversal(Node* ctrl_start, Node_
 // Enumerate all safepoints which are reachable from the RF to its referent through CFG.
 // Start at RF node and traverse CFG upwards until referent's control node is reached.
 static void enumerate_interfering_sfpts(ReachabilityFenceNode* rf, PhaseIdealLoop* phase,
-                                        Node_Stack& stack, VectorSet& visited,
+                                        Node_Stack<RegionNode>& stack, VectorSet& visited,
                                         Node_List<SafePointNode>& interfering_sfpts) {
   assert(stack.is_empty(), "required");
   assert(visited.is_empty(), "required");
@@ -311,11 +311,10 @@ static void enumerate_interfering_sfpts(ReachabilityFenceNode* rf, PhaseIdealLoo
   visited.set(referent_ctrl->_idx); // end point
   enumerate_interfering_sfpts_linear_traversal(rf, stack, visited, interfering_sfpts); // starting point in CFG
   while (stack.is_nonempty()) {
-    Node* cur = stack.node();
-    uint  idx = stack.index();
+    RegionNode* cur = stack.node();
+    uint idx = stack.index();
 
     assert(cur != nullptr, "");
-    assert(cur->is_Region(), "%s", NodeClassNames[cur->Opcode()]);
     assert(phase->is_dominator(referent_ctrl, cur), "");
     assert(idx > 0 && idx <= cur->req(), "%d %d", idx, cur->req());
 
@@ -367,7 +366,7 @@ bool PhaseIdealLoop::expand_reachability_fences() {
   {
     // Reuse temporary structures to avoid allocating them for every single RF node.
     Node_List<SafePointNode> sfpt_worklist;
-    Node_Stack stack(0);
+    Node_Stack<RegionNode> stack(0);
     VectorSet visited;
 
     for (int i = 0; i < C->reachability_fences_count(); i++) {

@@ -54,7 +54,7 @@ public:
                     Alt_Post_Visit   // alternative post-visit path
   };
 
-  class MStack: public Node_Stack {
+  class MStack: public Node_Stack<Node> {
   public:
     MStack(int size) : Node_Stack(size) { }
 

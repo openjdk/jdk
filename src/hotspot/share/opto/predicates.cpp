@@ -659,6 +659,15 @@ TemplateAssertionExpression::clone_and_fold_opaque_loop_nodes(Node* new_control)
   return opaque_initialized_opaque;
 }
 
+static void push_non_cfg_inputs_of(Unique_Node_List<Node>& list, const Node* node) {
+  for (uint i = 1; i < node->req(); i++) {
+    Node* input = node->in(i);
+    if (input != nullptr && !input->is_CFG()) {
+      list.push(input);
+    }
+  }
+}
+
 // Check if this node belongs a Template Assertion Expression (including OpaqueLoop* nodes).
 bool TemplateAssertionExpressionNode::is_in_expression(Node* node) {
   if (is_maybe_in_expression(node)) {
@@ -670,7 +679,7 @@ bool TemplateAssertionExpressionNode::is_in_expression(Node* node) {
       if (next->is_OpaqueLoopInit() || next->is_OpaqueLoopStride()) {
         return true;
       } else if (is_maybe_in_expression(next)) {
-        list.push_non_cfg_inputs_of(next);
+        push_non_cfg_inputs_of(list, next);
       }
     }
   }

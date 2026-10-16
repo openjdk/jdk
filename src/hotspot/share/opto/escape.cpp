@@ -1523,7 +1523,7 @@ void ConnectionGraph::verify_ram_nodes(Compile* C, Node* root) {
     const Node* n = ideal_nodes.at(next);
 
     if (n->is_SafePointScalarMerge()) {
-      SafePointScalarMergeNode* merge = n->as_SafePointScalarMerge();
+      const SafePointScalarMergeNode* merge = n->as_SafePointScalarMerge();
 
       // Validate inputs of merge
       for (uint i = 1; i < merge->req(); i++) {
@@ -2461,7 +2461,7 @@ void ConnectionGraph::add_call_node(CallNode* call) {
 
 // Check that the return type is compatible with the type of the argument being returned i.e. that there's no cast that
 // fails in the method
-bool ConnectionGraph::compatible_return(CallJavaNode* call, uint k) {
+bool ConnectionGraph::compatible_return(const CallJavaNode* call, uint k) {
   return call->tf()->domain_sig()->field_at(k)->is_instptr()->instance_klass() == call->tf()->range_sig()->field_at(TypeFunc::Parms)->is_instptr()->instance_klass();
 }
 
