@@ -61,43 +61,56 @@ public class JpegQTableTest {
         for (int i = 0; i < kids.getLength(); i++) {
             if (kids.item(i).getNodeName().equals("markerSequence")) {
                 markerSeq = kids.item(i);
+                break;
             }
         }
-        if (markerSeq == null) throw new RuntimeException("no markerSequence");
+        if (markerSeq == null) {
+            throw new RuntimeException("no markerSequence");
+        }
 
-        // Replace existing dqt tables
+        // Replace existing dqt node
         for (int i = 0; i < markerSeq.getChildNodes().getLength(); i++) {
-            int id = 0;
             Node c = markerSeq.getChildNodes().item(i);
             if (c.getNodeName().equals("dqt")) {
-                markerSeq.removeChild(c);
-                int[] qTableData = new int[64];
-                qTableData[1] = -1;
-                qTableData[2] = 256;
-                JPEGQTable qTable = new JPEGQTable(qTableData);
                 IIOMetadataNode dqt = new IIOMetadataNode("dqt");
-                IIOMetadataNode qt = new IIOMetadataNode("dqtable");
-                qt.setAttribute("elementPrecision", "0");
-                qt.setAttribute("qtableId", String.valueOf(id));
-                qt.setUserObject(qTable);
-                dqt.appendChild(qt);
+                int id = 0;
+                //  BGR image should have two quantization tables.
+                for (int qi = 0; qi < 2; qi++ ) {
+                    int[] qTableData = new int[64];
+                    qTableData[0] = 0;
+                    qTableData[1] = -1;
+                    qTableData[2] = 256;
+                    JPEGQTable qTable = new JPEGQTable(qTableData);
+                    IIOMetadataNode qt = new IIOMetadataNode("dqtable");
+                    qt.setAttribute("elementPrecision", "0");
+                    qt.setAttribute("qtableId", String.valueOf(id++));
+                    qt.setUserObject(qTable);
+                    dqt.appendChild(qt);
+                }
+                markerSeq.removeChild(c);
                 markerSeq.appendChild(dqt);
-                id++;
+                break;
             }
         }
         meta.setFromTree(fmt, root);
+        System.out.println("Metadata updated");
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ImageOutputStream ios = ImageIO.createImageOutputStream(baos);
         w.setOutput(ios);
         w.write(null, new IIOImage(img, null, meta), p);
         ios.flush();
+        System.out.println("Image written");
 
         ImageReader r = ImageIO.getImageReadersByFormatName("JPEG").next();
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
         ImageInputStream iis = ImageIO.createImageInputStream(bais);
         r.setInput(iis);
+        System.out.println("Image reader created");
         meta = r.getImageMetadata(0); // exception here if not validated during write.
+        System.out.println("Metadata read");
+        r.read(0);
+        System.out.println("Image read");
 
         // The rest is just to view the corrected data.
         root = meta.getAsTree(fmt);
