@@ -7924,6 +7924,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
+#ifdef COMPILER2
   // Generate vectorizedMismatch stub using RVV instructions.
   //
   // Arguments (C calling convention):
@@ -7968,6 +7969,7 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     return start;
   }
+#endif
 #undef __
 
   // Initialization
