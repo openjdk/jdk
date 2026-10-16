@@ -1577,14 +1577,13 @@ bool PhaseIdealLoop::flat_array_element_type_check(Node *n) {
 // in the post-order, so it can dirty the I-DOM info and not use the dirtied
 // info.
 void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
-
   if (flat_array_element_type_check(n)) {
     return;
   }
 
   // Cloning Cmp through Phi's involves the split-if transform.
-  // FastLock is not used by an If
-  if (n->is_Cmp() && !n->is_FastLock()) {
+  if (n->is_Cmp()) {
+    assert(!n->is_FastLock(), "should not be materialized, yet");
     Node *n_ctrl = get_ctrl(n);
     // Determine if the Node has inputs from some local Phi.
     // Returns the block to clone thru.
@@ -2992,18 +2991,18 @@ void PhaseIdealLoop::fix_body_edges(const Node_List &body, IdealLoopTree* loop, 
     }
     // Correct edges to the new node
     for (uint j = 0; j < nnn->req(); j++) {
-        Node *n = nnn->in(j);
-        if (n != nullptr) {
-          IdealLoopTree *old_in_loop = get_loop(has_ctrl(n) ? get_ctrl(n) : n);
-          if (loop->is_member(old_in_loop)) {
-            if (old_new[n->_idx] != nullptr) {
-              nnn->set_req(j, old_new[n->_idx]);
-            } else {
-              assert(!body.contains(n), "");
-              assert(partial, "node not cloned");
-            }
+      Node* n = nnn->in(j);
+      if (n != nullptr) {
+        IdealLoopTree* old_in_loop = get_loop(ctrl_or_self(n));
+        if (loop->is_member(old_in_loop)) {
+          if (old_new[n->_idx] != nullptr) {
+            nnn->set_req(j, old_new[n->_idx]);
+          } else {
+            assert(!body.contains(n), "");
+            assert(partial, "node not cloned");
           }
         }
+      }
     }
     _igvn.hash_find_insert(nnn);
   }

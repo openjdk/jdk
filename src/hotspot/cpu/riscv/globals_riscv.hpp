@@ -113,11 +113,14 @@ define_pd_global(bool, ValueTypeReturnedAsFields, false);
   product(bool, UseZacas, false, EXPERIMENTAL, "Use Zacas instructions")         \
   product(bool, UseZabha, false, EXPERIMENTAL, "Use Zabha instructions")         \
   product(bool, UseZalasr, false, EXPERIMENTAL, "Use Zalasr instructions")       \
+  product(bool, UseZawrs, false, EXPERIMENTAL, "Use Zawrs instructions")         \
   product(bool, UseZcb, false, DIAGNOSTIC, "Use Zcb instructions")               \
   product(bool, UseZic64b, false, EXPERIMENTAL, "Use Zic64b instructions")       \
   product(bool, UseZicbom, false, EXPERIMENTAL, "Use Zicbom instructions")       \
   product(bool, UseZicbop, false, EXPERIMENTAL, "Use Zicbop instructions")       \
   product(bool, UseZicboz, false, EXPERIMENTAL, "Use Zicboz instructions")       \
+  product(bool, UseZiccid, false, EXPERIMENTAL,                                  \
+          "Use Ziccid to omit icache flushes for atomic call patching")          \
   product(bool, UseZicond, false, DIAGNOSTIC, "Use Zicond instructions")         \
   product(bool, UseZihintpause, false, EXPERIMENTAL,                             \
           "Use Zihintpause instructions")                                        \
