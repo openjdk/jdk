@@ -706,7 +706,7 @@ void G1CardSet::transfer_cards_in_howl(ContainerPtr parent_container,
     iterate_cards_during_transfer(source_container, iter);
   } else {
     // Use int64_t to represent the difference because due to races this difference can be negative.
-    const int64_t diff = (int64_t)_config->max_cards_in_howl_bitmap() - container_ptr<G1CardSetBitMap>(source_container)->num_bits_set();
+    int64_t diff = (int64_t)_config->max_cards_in_howl_bitmap() - container_ptr<G1CardSetBitMap>(source_container)->num_bits_set();
 
     // Need to correct for that the Full remembered set occupies more cards than the
     // bitmap before.
