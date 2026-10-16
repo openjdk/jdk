@@ -3028,7 +3028,7 @@ they're used.
     application. Since JDK 8u40 this option has not been required to use JFR.
 
 [`-XX:AOTMode=on`]{#-XX__AOTModeOn}
-:   Requires the AOTCache to be loaded. Use `-XX:AOTMode=require` instead.
+:   Requires the AOTCache to be loaded. Use `-XX:AOTMode=required` instead.
 
 ## Obsolete Java Options
 
