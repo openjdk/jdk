@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8046085
+ * @bug 8046085 8384611
  * @summary Ensure that when trees are being used for collisions that null key
  * insertion still works.
  * @library /test/lib

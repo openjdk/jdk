@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4190323
+ * @bug 4190323 8384611
  * @summary EMPTY_SET, EMPTY_LIST, and the collections returned by
  *          nCopies and singleton were spec'd to be serializable, but weren't.
  * @library /test/lib
