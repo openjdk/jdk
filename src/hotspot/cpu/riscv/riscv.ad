@@ -1061,13 +1061,13 @@ class HandlerImpl {
 
 class Node::PD {
 public:
-  enum NodeFlags {
+  enum NodeFlags : uint64_t {
     // The instruct's encoding is exactly one vsetvli_helper setup of the
     // required shape -- always m1/tu/mu, with vl taken from the shape's
     // element count -- followed by plain RVV instructions that alter neither
     // VL nor VTYPE and depend on no other vector configuration. Only instructs
     // satisfying this contract may carry this flag.
-    Flag_rvv_simple = Node::_last_flag << 1,
+    Flag_rvv_vsetvli = Node::_last_flag << 1,
     // Set by late analysis; subsequent sizing and emission omit the redundant setup.
     Flag_rvv_vsetvli_elided = Node::_last_flag << 2,
     _last_flag = Flag_rvv_vsetvli_elided
@@ -1256,7 +1256,7 @@ static bool rvv_preserves_vsetvli(const Node* node, const PhaseRegAlloc* ra) {
 
 // Extended-basic-block elimination of redundant RVV vector configuration.
 //
-// Tracks the (sew, vl) most recently established by a Flag_rvv_simple node in
+// Tracks the (sew, vl) most recently established by a Flag_rvv_vsetvli node in
 // each block. Every simple setup uses m1/tu/mu with vl equal to the shape's
 // element count. Assuming vstart is zero, a matching tracked (sew, vl) means
 // the hardware holds the required configuration, and its vsetvli can be omitted.
@@ -1292,7 +1292,7 @@ void PhaseOutput::pd_perform_mach_node_analysis() {
         // Structural nodes preserve VL/VTYPE even when their values are vectors.
         continue;
       }
-      if ((node->flags() & Node::PD::Flag_rvv_simple) == 0) {
+      if ((node->flags() & Node::PD::Flag_rvv_vsetvli) == 0) {
         if (previous_vl != 0 && !rvv_preserves_vsetvli(node, C->regalloc())) {
           previous_vl = 0;
         }

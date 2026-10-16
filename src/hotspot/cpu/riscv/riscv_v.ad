@@ -32,7 +32,7 @@ opclass vmemA(indirect);
 source %{
 
   static void vsetvli_if_needed(C2_MacroAssembler* masm, const MachNode* node) {
-    assert((node->flags() & Node::PD::Flag_rvv_simple) != 0, "only simple vector instructions");
+    assert((node->flags() & Node::PD::Flag_rvv_vsetvli) != 0, "only simple vector instructions");
     if ((node->flags() & Node::PD::Flag_rvv_vsetvli_elided) == 0) {
       const Node* shape = rvv_vsetvli_shape_node(node);
       __ vsetvli_helper(Matcher::vector_element_basic_type(shape), Matcher::vector_length(shape));
@@ -220,7 +220,7 @@ source %{
 // vector load/store
 instruct loadV(vReg dst, vmemA mem) %{
   match(Set dst (LoadVector mem));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"loadV $dst, $mem\t# vector (rvv)"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -236,7 +236,7 @@ instruct loadV(vReg dst, vmemA mem) %{
 // Keep src at Mach operand index 2; see rvv_vsetvli_shape_node.
 instruct storeV(vReg src, vmemA mem) %{
   match(Set mem (StoreVector mem src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"storeV $mem, $src\t# vector (rvv)"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -361,7 +361,7 @@ instruct vabs(vReg dst, vReg src, vReg tmp) %{
   match(Set dst (AbsVS src));
   match(Set dst (AbsVI src));
   match(Set dst (AbsVL src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vabs $dst, $src\t# KILL $tmp"
@@ -378,7 +378,7 @@ instruct vabs(vReg dst, vReg src, vReg tmp) %{
 instruct vabs_fp(vReg dst, vReg src) %{
   match(Set dst (AbsVF src));
   match(Set dst (AbsVD src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vabs_fp $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -429,7 +429,7 @@ instruct vadd(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (AddVS src1 src2));
   match(Set dst (AddVI src1 src2));
   match(Set dst (AddVL src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vadd $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -445,7 +445,7 @@ instruct vadd(vReg dst, vReg src1, vReg src2) %{
 
 instruct vadd_hfp(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (AddVHF src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vadd_hfp $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -464,7 +464,7 @@ instruct vadd_hfp(vReg dst, vReg src1, vReg src2) %{
 instruct vadd_fp(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (AddVF src1 src2));
   match(Set dst (AddVD src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vadd_fp $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -516,7 +516,7 @@ instruct vadd_vi(vReg dst, vReg src1, immI5 con) %{
   match(Set dst (AddVB src1 (Replicate con)));
   match(Set dst (AddVS src1 (Replicate con)));
   match(Set dst (AddVI src1 (Replicate con)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vadd_vi $dst, $src1, $con"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -532,7 +532,7 @@ instruct vadd_vi(vReg dst, vReg src1, immI5 con) %{
 
 instruct vaddL_vi(vReg dst, vReg src1, immL5 con) %{
   match(Set dst (AddVL src1 (Replicate con)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vaddL_vi $dst, $src1, $con"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -552,7 +552,7 @@ instruct vadd_vx(vReg dst, vReg src1, iRegIorL2I src2) %{
   match(Set dst (AddVB src1 (Replicate src2)));
   match(Set dst (AddVS src1 (Replicate src2)));
   match(Set dst (AddVI src1 (Replicate src2)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vadd_vx $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -568,7 +568,7 @@ instruct vadd_vx(vReg dst, vReg src1, iRegIorL2I src2) %{
 
 instruct vaddL_vx(vReg dst, vReg src1, iRegL src2) %{
   match(Set dst (AddVL src1 (Replicate src2)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vaddL_vx $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -647,7 +647,7 @@ instruct vsub(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (SubVS src1 src2));
   match(Set dst (SubVI src1 src2));
   match(Set dst (SubVL src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vsub $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -662,7 +662,7 @@ instruct vsub(vReg dst, vReg src1, vReg src2) %{
 
 instruct vsub_hfp(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (SubVHF src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vsub_hfp $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -680,7 +680,7 @@ instruct vsub_hfp(vReg dst, vReg src1, vReg src2) %{
 instruct vsub_fp(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (SubVF src1 src2));
   match(Set dst (SubVD src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vsub_fp $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -729,7 +729,7 @@ instruct vsub_vx(vReg dst, vReg src1, iRegIorL2I src2) %{
   match(Set dst (SubVB src1 (Replicate src2)));
   match(Set dst (SubVS src1 (Replicate src2)));
   match(Set dst (SubVI src1 (Replicate src2)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vsub_vx $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -745,7 +745,7 @@ instruct vsub_vx(vReg dst, vReg src1, iRegIorL2I src2) %{
 
 instruct vsubL_vx(vReg dst, vReg src1, iRegL src2) %{
   match(Set dst (SubVL src1 (Replicate src2)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vsubL_vx $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -795,7 +795,7 @@ instruct vsubL_vx_masked(vReg dst_src, iRegL src2, vRegMask_V0 v0) %{
 instruct vsadd(vReg dst, vReg src1, vReg src2) %{
   predicate(n->is_SaturatingVector() && !n->as_SaturatingVector()->is_unsigned());
   match(Set dst (SaturatingAddV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vsadd $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -814,7 +814,7 @@ instruct vsadd(vReg dst, vReg src1, vReg src2) %{
 instruct vsaddu(vReg dst, vReg src1, vReg src2) %{
   predicate(n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned());
   match(Set dst (SaturatingAddV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vsaddu $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -865,7 +865,7 @@ instruct vsaddu_masked(vReg dst_src, vReg src1, vRegMask_V0 v0) %{
 instruct vssub(vReg dst, vReg src1, vReg src2) %{
   predicate(n->is_SaturatingVector() && !n->as_SaturatingVector()->is_unsigned());
   match(Set dst (SaturatingSubV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vssub $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -884,7 +884,7 @@ instruct vssub(vReg dst, vReg src1, vReg src2) %{
 instruct vssubu(vReg dst, vReg src1, vReg src2) %{
   predicate(n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned());
   match(Set dst (SaturatingSubV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vssubu $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -934,7 +934,7 @@ instruct vssubu_masked(vReg dst_src, vReg src1, vRegMask_V0 v0) %{
 
 instruct vand(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (AndV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vand $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -970,7 +970,7 @@ instruct vand_vi(vReg dst, vReg src1, immI5 con) %{
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
   match(Set dst (AndV src1 (Replicate con)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vand_vi $dst, $src1, $con"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -987,7 +987,7 @@ instruct vand_vi(vReg dst, vReg src1, immI5 con) %{
 instruct vandL_vi(vReg dst, vReg src1, immL5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (AndV src1 (Replicate con)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vandL_vi $dst, $src1, $con"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1008,7 +1008,7 @@ instruct vand_vx(vReg dst, vReg src1, iRegIorL2I src2) %{
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
   match(Set dst (AndV src1 (Replicate src2)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vand_vx $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1025,7 +1025,7 @@ instruct vand_vx(vReg dst, vReg src1, iRegIorL2I src2) %{
 instruct vandL_vx(vReg dst, vReg src1, iRegL src2) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (AndV src1 (Replicate src2)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vandL_vx $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1105,7 +1105,7 @@ instruct vandL_vx_masked(vReg dst_src, iRegL src, vRegMask_V0 v0) %{
 
 instruct vor(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (OrV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vor $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1141,7 +1141,7 @@ instruct vor_vi(vReg dst, vReg src1, immI5 con) %{
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
   match(Set dst (OrV src1 (Replicate con)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vor_vi $dst, $src1, $con"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1158,7 +1158,7 @@ instruct vor_vi(vReg dst, vReg src1, immI5 con) %{
 instruct vorL_vi(vReg dst, vReg src1, immL5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (OrV src1 (Replicate con)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vorL_vi $dst, $src1, $con"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1179,7 +1179,7 @@ instruct vor_vx(vReg dst, vReg src1, iRegIorL2I src2) %{
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
   match(Set dst (OrV src1 (Replicate src2)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vor_vx $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1196,7 +1196,7 @@ instruct vor_vx(vReg dst, vReg src1, iRegIorL2I src2) %{
 instruct vorL_vx(vReg dst, vReg src1, iRegL src2) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (OrV src1 (Replicate src2)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vorL_vx $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1276,7 +1276,7 @@ instruct vorL_vx_masked(vReg dst_src, iRegL src, vRegMask_V0 v0) %{
 
 instruct vxor(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (XorV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vxor $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1312,7 +1312,7 @@ instruct vxor_vi(vReg dst, vReg src1, immI5 con) %{
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
   match(Set dst (XorV src1 (Replicate con)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vxor_vi $dst, $src1, $con"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1329,7 +1329,7 @@ instruct vxor_vi(vReg dst, vReg src1, immI5 con) %{
 instruct vxorL_vi(vReg dst, vReg src1, immL5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (XorV src1 (Replicate con)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vxorL_vi $dst, $src1, $con"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1350,7 +1350,7 @@ instruct vxor_vx(vReg dst, vReg src1, iRegIorL2I src2) %{
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
   match(Set dst (XorV src1 (Replicate src2)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vxor_vx $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1367,7 +1367,7 @@ instruct vxor_vx(vReg dst, vReg src1, iRegIorL2I src2) %{
 instruct vxorL_vx(vReg dst, vReg src1, iRegL src2) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (XorV src1 (Replicate src2)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vxorL_vx $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1450,7 +1450,7 @@ instruct vxorL_vx_masked(vReg dst_src, iRegL src, vRegMask_V0 v0) %{
 instruct vand_notB(vReg dst, vReg src1, vReg src2, immI_M1 m1) %{
   predicate(UseZvbb && Matcher::vector_element_basic_type(n) == T_BYTE);
   match(Set dst (AndV src1 (XorV src2 (Replicate m1))));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vand_notB $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1467,7 +1467,7 @@ instruct vand_notB(vReg dst, vReg src1, vReg src2, immI_M1 m1) %{
 instruct vand_notS(vReg dst, vReg src1, vReg src2, immI_M1 m1) %{
   predicate(UseZvbb && Matcher::vector_element_basic_type(n) == T_SHORT);
   match(Set dst (AndV src1 (XorV src2 (Replicate m1))));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vand_notS $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1484,7 +1484,7 @@ instruct vand_notS(vReg dst, vReg src1, vReg src2, immI_M1 m1) %{
 instruct vand_notI(vReg dst, vReg src1, vReg src2, immI_M1 m1) %{
   predicate(UseZvbb && Matcher::vector_element_basic_type(n) == T_INT);
   match(Set dst (AndV src1 (XorV src2 (Replicate m1))));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vand_notI $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1501,7 +1501,7 @@ instruct vand_notI(vReg dst, vReg src1, vReg src2, immI_M1 m1) %{
 instruct vand_notL(vReg dst, vReg src1, vReg src2, immL_M1 m1) %{
   predicate(UseZvbb && Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (AndV src1 (XorV src2 (Replicate m1))));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vand_notL $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1574,7 +1574,7 @@ instruct vand_notL_masked(vReg dst_src1, vReg src2, immL_M1 m1, vRegMask_V0 v0) 
 instruct vand_notB_vx(vReg dst, vReg src1, iRegIorL2I src2, immI_M1 m1) %{
   predicate(UseZvbb && Matcher::vector_element_basic_type(n) == T_BYTE);
   match(Set dst (AndV src1 (Replicate (XorI src2 m1))));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vand_notB_vx $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1591,7 +1591,7 @@ instruct vand_notB_vx(vReg dst, vReg src1, iRegIorL2I src2, immI_M1 m1) %{
 instruct vand_notS_vx(vReg dst, vReg src1, iRegIorL2I src2, immI_M1 m1) %{
   predicate(UseZvbb && Matcher::vector_element_basic_type(n) == T_SHORT);
   match(Set dst (AndV src1 (Replicate (XorI src2 m1))));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vand_notS_vx $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1608,7 +1608,7 @@ instruct vand_notS_vx(vReg dst, vReg src1, iRegIorL2I src2, immI_M1 m1) %{
 instruct vand_notI_vx(vReg dst, vReg src1, iRegIorL2I src2, immI_M1 m1) %{
   predicate(UseZvbb && Matcher::vector_element_basic_type(n) == T_INT);
   match(Set dst (AndV src1 (Replicate (XorI src2 m1))));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vand_notI_vx $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1625,7 +1625,7 @@ instruct vand_notI_vx(vReg dst, vReg src1, iRegIorL2I src2, immI_M1 m1) %{
 instruct vand_notL_vx(vReg dst, vReg src1, iRegL src2, immL_M1 m1) %{
   predicate(UseZvbb && Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (AndV src1 (Replicate (XorL src2 m1))));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vand_notL_vx $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1704,7 +1704,7 @@ instruct vnot(vReg dst, vReg src, immI_M1 m1) %{
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
   match(Set dst (XorV src (Replicate m1)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vnot $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1721,7 +1721,7 @@ instruct vnot(vReg dst, vReg src, immI_M1 m1) %{
 instruct vnotL(vReg dst, vReg src, immL_M1 m1) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (XorV src (Replicate m1)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vnotL $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1773,7 +1773,7 @@ instruct vdiv(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (DivVS src1 src2));
   match(Set dst (DivVI src1 src2));
   match(Set dst (DivVL src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vdiv $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1918,7 +1918,7 @@ instruct vexpandBits_masked(vReg dst_src, vReg bit_mask,
 
 instruct vdiv_hfp(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (DivVHF src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vdiv_hfp $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1937,7 +1937,7 @@ instruct vdiv_hfp(vReg dst, vReg src1, vReg src2) %{
 instruct vdiv_fp(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (DivVF src1 src2));
   match(Set dst (DivVD src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vdiv_fp $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1973,7 +1973,7 @@ instruct vmax(vReg dst, vReg src1, vReg src2) %{
   predicate(Matcher::vector_element_basic_type(n) != T_FLOAT &&
             Matcher::vector_element_basic_type(n) != T_DOUBLE);
   match(Set dst (MaxV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vmax $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -1990,7 +1990,7 @@ instruct vmin(vReg dst, vReg src1, vReg src2) %{
   predicate(Matcher::vector_element_basic_type(n) != T_FLOAT &&
             Matcher::vector_element_basic_type(n) != T_DOUBLE);
   match(Set dst (MinV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vmin $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2037,7 +2037,7 @@ instruct vmin_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 
 instruct vmaxu(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (UMaxV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vmaxu $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2053,7 +2053,7 @@ instruct vmaxu(vReg dst, vReg src1, vReg src2) %{
 
 instruct vminu(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (UMinV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vminu $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2196,7 +2196,7 @@ instruct vmin_fp_masked(vReg dst_src1, vReg src2, vRegMask vmask, vReg tmp1, vRe
 // dst_src1 = src2 * src3 + dst_src1 (half precision)
 instruct vhfmla(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (FmaVHF dst_src1 (Binary src2 src3)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vhfmla $dst_src1, $dst_src1, $src2, $src3"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2216,7 +2216,7 @@ instruct vhfmla(vReg dst_src1, vReg src2, vReg src3) %{
 instruct vfmla(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (FmaVF dst_src1 (Binary src2 src3)));
   match(Set dst_src1 (FmaVD dst_src1 (Binary src2 src3)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vfmla $dst_src1, $dst_src1, $src2, $src3"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2253,7 +2253,7 @@ instruct vfmadd_masked(vReg dst_src1, vReg src2, vReg src3, vRegMask_V0 v0) %{
 // "(-src2) * src3 + dst_src1" has been idealized to "src3 * (-src2) + dst_src1"
 instruct vfmlsF(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (FmaVF dst_src1 (Binary src2 (NegVF src3))));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vfmlsF $dst_src1, $dst_src1, $src2, $src3"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2271,7 +2271,7 @@ instruct vfmlsF(vReg dst_src1, vReg src2, vReg src3) %{
 // "(-src2) * src3 + dst_src1" has been idealized to "src3 * (-src2) + dst_src1"
 instruct vfmlsD(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (FmaVD dst_src1 (Binary src2 (NegVD src3))));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vfmlsD $dst_src1, $dst_src1, $src2, $src3"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2308,7 +2308,7 @@ instruct vfnmsub_masked(vReg dst_src1, vReg src2, vReg src3, vRegMask_V0 v0) %{
 // "(-src2) * src3 - dst_src1" has been idealized to "src3 * (-src2) - dst_src1"
 instruct vfnmlaF(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (FmaVF (NegVF dst_src1) (Binary src2 (NegVF src3))));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vfnmlaF $dst_src1, $dst_src1, $src2, $src3"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2326,7 +2326,7 @@ instruct vfnmlaF(vReg dst_src1, vReg src2, vReg src3) %{
 // "(-src2) * src3 - dst_src1" has been idealized to "src3 * (-src2) - dst_src1"
 instruct vfnmlaD(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (FmaVD (NegVD dst_src1) (Binary src2 (NegVD src3))));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vfnmlaD $dst_src1, $dst_src1, $src2, $src3"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2362,7 +2362,7 @@ instruct vfnmadd_masked(vReg dst_src1, vReg src2, vReg src3, vRegMask_V0 v0) %{
 // dst_src1 = src2 * src3 - dst_src1
 instruct vfnmlsF(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (FmaVF (NegVF dst_src1) (Binary src2 src3)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vfnmlsF $dst_src1, $dst_src1, $src2, $src3"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2379,7 +2379,7 @@ instruct vfnmlsF(vReg dst_src1, vReg src2, vReg src3) %{
 // dst_src1 = -dst_src1 + src2 * src3
 instruct vfnmlsD(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (FmaVD (NegVD dst_src1) (Binary src2 src3)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vfnmlsD $dst_src1, $dst_src1, $src2, $src3"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2418,7 +2418,7 @@ instruct vmla(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (AddVS dst_src1 (MulVS src2 src3)));
   match(Set dst_src1 (AddVI dst_src1 (MulVI src2 src3)));
   match(Set dst_src1 (AddVL dst_src1 (MulVL src2 src3)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vmla $dst_src1, $dst_src1, $src2, $src3"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2456,7 +2456,7 @@ instruct vmls(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (SubVS dst_src1 (MulVS src2 src3)));
   match(Set dst_src1 (SubVI dst_src1 (MulVI src2 src3)));
   match(Set dst_src1 (SubVL dst_src1 (MulVL src2 src3)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vmls $dst_src1, $dst_src1, $src2, $src3"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2493,7 +2493,7 @@ instruct vmul(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (MulVS src1 src2));
   match(Set dst (MulVI src1 src2));
   match(Set dst (MulVL src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vmul $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2508,7 +2508,7 @@ instruct vmul(vReg dst, vReg src1, vReg src2) %{
 
 instruct vmul_hfp(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (MulVHF src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vmul_hfp $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2526,7 +2526,7 @@ instruct vmul_hfp(vReg dst, vReg src1, vReg src2) %{
 instruct vmul_fp(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (MulVF src1 src2));
   match(Set dst (MulVD src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vmul_fp $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2575,7 +2575,7 @@ instruct vmul_vx(vReg dst, vReg src1, iRegIorL2I src2) %{
   match(Set dst (MulVB src1 (Replicate src2)));
   match(Set dst (MulVS src1 (Replicate src2)));
   match(Set dst (MulVI src1 (Replicate src2)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vmul_vx $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2591,7 +2591,7 @@ instruct vmul_vx(vReg dst, vReg src1, iRegIorL2I src2) %{
 
 instruct vmulL_vx(vReg dst, vReg src1, iRegL src2) %{
   match(Set dst (MulVL src1 (Replicate src2)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vmulL_vx $dst, $src1, $src2"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2639,7 +2639,7 @@ instruct vmulL_vx_masked(vReg dst_src, iRegL src2, vRegMask_V0 v0) %{
 instruct vneg(vReg dst, vReg src) %{
   match(Set dst (NegVI src));
   match(Set dst (NegVL src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vneg $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2671,7 +2671,7 @@ instruct vneg_masked(vReg dst_src, vRegMask_V0 v0) %{
 instruct vfneg(vReg dst, vReg src) %{
   match(Set dst (NegVF src));
   match(Set dst (NegVD src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vfneg $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -2706,7 +2706,7 @@ instruct vreduce_and(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (AndReductionV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_and $dst, $src1, $src2\t# KILL $tmp"
@@ -2725,7 +2725,7 @@ instruct vreduce_and(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
 instruct vreduce_andL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (AndReductionV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_andL $dst, $src1, $src2\t# KILL $tmp"
@@ -2782,7 +2782,7 @@ instruct vreduce_or(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (OrReductionV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_or $dst, $src1, $src2\t# KILL $tmp"
@@ -2801,7 +2801,7 @@ instruct vreduce_or(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
 instruct vreduce_orL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (OrReductionV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_orL $dst, $src1, $src2\t# KILL $tmp"
@@ -2858,7 +2858,7 @@ instruct vreduce_xor(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (XorReductionV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_xor $dst, $src1, $src2\t# KILL $tmp"
@@ -2877,7 +2877,7 @@ instruct vreduce_xor(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
 instruct vreduce_xorL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (XorReductionV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_xorL $dst, $src1, $src2\t# KILL $tmp"
@@ -2934,7 +2934,7 @@ instruct vreduce_add(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (AddReductionVI src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_add $dst, $src1, $src2\t# KILL $tmp"
@@ -2953,7 +2953,7 @@ instruct vreduce_add(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
 instruct vreduce_addL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (AddReductionVL src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_addL $dst, $src1, $src2\t# KILL $tmp"
@@ -2980,7 +2980,7 @@ instruct vreduce_addL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
 instruct vreduce_addF_ordered(fRegF dst, fRegF src1, vReg src2, vReg tmp) %{
   predicate(n->as_Reduction()->requires_strict_order());
   match(Set dst (AddReductionVF src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_addF_ordered $dst, $src1, $src2\t# KILL $tmp"
@@ -3000,7 +3000,7 @@ instruct vreduce_addF_ordered(fRegF dst, fRegF src1, vReg src2, vReg tmp) %{
 instruct vreduce_addF_unordered(fRegF dst, fRegF src1, vReg src2, vReg tmp) %{
   predicate(!n->as_Reduction()->requires_strict_order());
   match(Set dst (AddReductionVF src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_addF_unordered $dst, $src1, $src2\t# KILL $tmp"
@@ -3020,7 +3020,7 @@ instruct vreduce_addF_unordered(fRegF dst, fRegF src1, vReg src2, vReg tmp) %{
 instruct vreduce_addD_ordered(fRegD dst, fRegD src1, vReg src2, vReg tmp) %{
   predicate(n->as_Reduction()->requires_strict_order());
   match(Set dst (AddReductionVD src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_addD_ordered $dst, $src1, $src2\t# KILL $tmp"
@@ -3040,7 +3040,7 @@ instruct vreduce_addD_ordered(fRegD dst, fRegD src1, vReg src2, vReg tmp) %{
 instruct vreduce_addD_unordered(fRegD dst, fRegD src1, vReg src2, vReg tmp) %{
   predicate(!n->as_Reduction()->requires_strict_order());
   match(Set dst (AddReductionVD src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_addD_unordered $dst, $src1, $src2\t# KILL $tmp"
@@ -3126,7 +3126,7 @@ instruct vreduce_max(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (MaxReductionV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_max $dst, $src1, $src2\t# KILL $tmp"
@@ -3145,7 +3145,7 @@ instruct vreduce_max(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
 instruct vreduce_maxL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (MaxReductionV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_maxL $dst, $src1, $src2\t# KILL $tmp"
@@ -3166,7 +3166,7 @@ instruct vreduce_umax(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (UMaxReductionV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_umax $dst, $src1, $src2\t# KILL $tmp"
@@ -3185,7 +3185,7 @@ instruct vreduce_umax(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
 instruct vreduce_umaxL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (UMaxReductionV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_umaxL $dst, $src1, $src2\t# KILL $tmp"
@@ -3244,7 +3244,7 @@ instruct vreduce_min(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (MinReductionV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_min $dst, $src1, $src2\t# KILL $tmp"
@@ -3263,7 +3263,7 @@ instruct vreduce_min(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
 instruct vreduce_minL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (MinReductionV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_minL $dst, $src1, $src2\t# KILL $tmp"
@@ -3284,7 +3284,7 @@ instruct vreduce_umin(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (UMinReductionV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_umin $dst, $src1, $src2\t# KILL $tmp"
@@ -3303,7 +3303,7 @@ instruct vreduce_umin(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
 instruct vreduce_uminL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (UMinReductionV src1 src2));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   effect(TEMP tmp);
   format %{ $$template
     $$emit$$"vreduce_uminL $dst, $src1, $src2\t# KILL $tmp"
@@ -3574,7 +3574,7 @@ instruct vreduce_mulD(fRegD dst, fRegD dsrc, vReg vsrc,
 instruct replicate(vReg dst, iRegIorL2I src) %{
   predicate(Matcher::is_non_long_integral_vector(n));
   match(Set dst (Replicate src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"replicate $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -3589,7 +3589,7 @@ instruct replicate(vReg dst, iRegIorL2I src) %{
 instruct replicateL(vReg dst, iRegL src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (Replicate src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"replicateL $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -3604,7 +3604,7 @@ instruct replicateL(vReg dst, iRegL src) %{
 instruct replicate_imm5(vReg dst, immI5 con) %{
   predicate(Matcher::is_non_long_integral_vector(n));
   match(Set dst (Replicate con));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"replicate_imm5 $dst, $con"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -3619,7 +3619,7 @@ instruct replicate_imm5(vReg dst, immI5 con) %{
 instruct replicateL_imm5(vReg dst, immL5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (Replicate con));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"replicateL_imm5 $dst, $con"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -3634,7 +3634,7 @@ instruct replicateL_imm5(vReg dst, immL5 con) %{
 instruct replicateHF(vReg dst, fRegF src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_SHORT);
   match(Set dst (Replicate src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"replicateHF $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -3650,7 +3650,7 @@ instruct replicateHF(vReg dst, fRegF src) %{
 instruct replicateF(vReg dst, fRegF src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_FLOAT);
   match(Set dst (Replicate src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"replicateF $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -3665,7 +3665,7 @@ instruct replicateF(vReg dst, fRegF src) %{
 instruct replicateD(vReg dst, fRegD src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE);
   match(Set dst (Replicate src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"replicateD $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -3743,7 +3743,7 @@ instruct vasrS(vReg dst, vReg src, vReg shift, vRegMask_V0 v0) %{
 
 instruct vasrI(vReg dst, vReg src, vReg shift) %{
   match(Set dst (RShiftVI src shift));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vasrI $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -3758,7 +3758,7 @@ instruct vasrI(vReg dst, vReg src, vReg shift) %{
 
 instruct vasrL(vReg dst, vReg src, vReg shift) %{
   match(Set dst (RShiftVL src shift));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vasrL $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -3867,7 +3867,7 @@ instruct vlslS(vReg dst, vReg src, vReg shift, vRegMask_V0 v0) %{
 
 instruct vlslI(vReg dst, vReg src, vReg shift) %{
   match(Set dst (LShiftVI src shift));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vlslI $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -3882,7 +3882,7 @@ instruct vlslI(vReg dst, vReg src, vReg shift) %{
 
 instruct vlslL(vReg dst, vReg src, vReg shift) %{
   match(Set dst (LShiftVL src shift));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vlslL $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -3997,7 +3997,7 @@ instruct vlsrS(vReg dst, vReg src, vReg shift, vRegMask_V0 v0) %{
 
 instruct vlsrI(vReg dst, vReg src, vReg shift) %{
   match(Set dst (URShiftVI src shift));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vlsrI $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4012,7 +4012,7 @@ instruct vlsrI(vReg dst, vReg src, vReg shift) %{
 
 instruct vlsrL(vReg dst, vReg src, vReg shift) %{
   match(Set dst (URShiftVL src shift));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vlsrL $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4091,7 +4091,7 @@ instruct vlsrL_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
 
 instruct vasrB_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (RShiftVB src (RShiftCntV shift)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vasrB_vi $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4112,7 +4112,7 @@ instruct vasrB_vi(vReg dst, vReg src, immI shift) %{
 
 instruct vasrS_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (RShiftVS src (RShiftCntV shift)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vasrS_vi $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4133,7 +4133,7 @@ instruct vasrS_vi(vReg dst, vReg src, immI shift) %{
 
 instruct vasrI_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (RShiftVI src (RShiftCntV shift)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vasrI_vi $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4154,7 +4154,7 @@ instruct vasrI_vi(vReg dst, vReg src, immI shift) %{
 instruct vasrL_vi(vReg dst, vReg src, immI shift) %{
   predicate((n->in(2)->in(1)->get_int() & 0x3f) < 32);
   match(Set dst (RShiftVL src (RShiftCntV shift)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vasrL_vi $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4237,7 +4237,7 @@ instruct vasrL_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
 
 instruct vlsrB_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (URShiftVB src (RShiftCntV shift)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vlsrB_vi $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4262,7 +4262,7 @@ instruct vlsrB_vi(vReg dst, vReg src, immI shift) %{
 
 instruct vlsrS_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (URShiftVS src (RShiftCntV shift)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vlsrS_vi $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4287,7 +4287,7 @@ instruct vlsrS_vi(vReg dst, vReg src, immI shift) %{
 
 instruct vlsrI_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (URShiftVI src (RShiftCntV shift)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vlsrI_vi $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4308,7 +4308,7 @@ instruct vlsrI_vi(vReg dst, vReg src, immI shift) %{
 instruct vlsrL_vi(vReg dst, vReg src, immI shift) %{
   predicate((n->in(2)->in(1)->get_int() & 0x3f) < 32);
   match(Set dst (URShiftVL src (RShiftCntV shift)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vlsrL_vi $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4399,7 +4399,7 @@ instruct vlsrL_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
 
 instruct vlslB_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (LShiftVB src (LShiftCntV shift)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vlslB_vi $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4419,7 +4419,7 @@ instruct vlslB_vi(vReg dst, vReg src, immI shift) %{
 
 instruct vlslS_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (LShiftVS src (LShiftCntV shift)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vlslS_vi $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4439,7 +4439,7 @@ instruct vlslS_vi(vReg dst, vReg src, immI shift) %{
 
 instruct vlslI_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (LShiftVI src (LShiftCntV shift)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vlslI_vi $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4455,7 +4455,7 @@ instruct vlslI_vi(vReg dst, vReg src, immI shift) %{
 instruct vlslL_vi(vReg dst, vReg src, immI shift) %{
   predicate((n->in(2)->in(1)->get_int() & 0x3f) < 32);
   match(Set dst (LShiftVL src (LShiftCntV shift)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vlslL_vi $dst, $src, $shift"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4532,7 +4532,7 @@ instruct vlslL_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
 instruct vshiftcnt(vReg dst, iRegIorL2I cnt) %{
   match(Set dst (LShiftCntV cnt));
   match(Set dst (RShiftCntV cnt));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vshiftcnt $dst, $cnt"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4549,7 +4549,7 @@ instruct vshiftcnt(vReg dst, iRegIorL2I cnt) %{
 
 instruct vrotate_right(vReg dst, vReg src, vReg shift) %{
   match(Set dst (RotateRightV src shift));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vrotate_right $dst, $src, $shift\t"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4565,7 +4565,7 @@ instruct vrotate_right(vReg dst, vReg src, vReg shift) %{
 // Only the low log2(SEW) bits of shift value are used, all other bits are ignored.
 instruct vrotate_right_vx(vReg dst, vReg src, iRegIorL2I shift) %{
   match(Set dst (RotateRightV src (Replicate shift)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vrotate_right_vx $dst, $src, $shift\t"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4642,7 +4642,7 @@ instruct vrotate_right_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
 
 instruct vrotate_left(vReg dst, vReg src, vReg shift) %{
   match(Set dst (RotateLeftV src shift));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vrotate_left $dst, $src, $shift\t"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4658,7 +4658,7 @@ instruct vrotate_left(vReg dst, vReg src, vReg shift) %{
 // Only the low log2(SEW) bits of shift value are used, all other bits are ignored.
 instruct vrotate_left_vx(vReg dst, vReg src, iRegIorL2I shift) %{
   match(Set dst (RotateLeftV src (Replicate shift)));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vrotate_left_vx $dst, $src, $shift\t"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4737,7 +4737,7 @@ instruct vrotate_left_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
 
 instruct vsqrt_hfp(vReg dst, vReg src) %{
   match(Set dst (SqrtVHF src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vsqrt_hfp $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -4754,7 +4754,7 @@ instruct vsqrt_hfp(vReg dst, vReg src) %{
 instruct vsqrt_fp(vReg dst, vReg src) %{
   match(Set dst (SqrtVF src));
   match(Set dst (SqrtVD src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vsqrt_fp $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -5092,7 +5092,7 @@ instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, immL0 zero,
 // Vector Load Const
 instruct vloadcon(vReg dst, immI0 src) %{
   match(Set dst (VectorLoadConst src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vloadcon $dst\t# generate iota indices"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -5601,7 +5601,7 @@ instruct vcvtUItoL(vReg dst, vReg src) %{
 instruct vcvtItoF(vReg dst, vReg src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_FLOAT);
   match(Set dst (VectorCastI2X src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vcvtItoF $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -5655,7 +5655,7 @@ instruct vcvtLtoF(vReg dst, vReg src) %{
 instruct vcvtLtoD(vReg dst, vReg src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE);
   match(Set dst (VectorCastL2X src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vcvtLtoD $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -5868,7 +5868,7 @@ instruct select_from_two_vectors(vReg dst, vReg src1, vReg src2, vReg index, vRe
 instruct rearrange(vReg dst, vReg src, vReg shuffle) %{
   match(Set dst (VectorRearrange src shuffle));
   effect(TEMP_DEF dst);
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"rearrange $dst, $src, $shuffle"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -6085,7 +6085,7 @@ instruct vreverse_masked(vReg dst_src, vRegMask_V0 v0) %{
 
 instruct vreverse(vReg dst, vReg src) %{
   match(Set dst (ReverseV src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vreverse $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -6113,7 +6113,7 @@ instruct vreverse_bytes_masked(vReg dst_src, vRegMask_V0 v0) %{
 
 instruct vreverse_bytes(vReg dst, vReg src) %{
   match(Set dst (ReverseBytesV src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vreverse_bytes $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -6175,7 +6175,7 @@ instruct vpopcount_masked(vReg dst_src, vRegMask_V0 v0) %{
 instruct vpopcount(vReg dst, vReg src) %{
   match(Set dst (PopCountVI src));
   match(Set dst (PopCountVL src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vcpop_v $dst, $src\t# vcpop_v without mask"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -6203,7 +6203,7 @@ instruct vcountLeadingZeros_masked(vReg dst_src, vRegMask_V0 v0) %{
 
 instruct vcountLeadingZeros(vReg dst, vReg src) %{
   match(Set dst (CountLeadingZerosV src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vcount_leading_zeros $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -6231,7 +6231,7 @@ instruct vcountTrailingZeros_masked(vReg dst_src, vRegMask_V0 v0) %{
 
 instruct vcountTrailingZeros(vReg dst, vReg src) %{
   match(Set dst (CountTrailingZerosV src));
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"vcount_trailing_zeros $dst, $src"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -6249,7 +6249,7 @@ instruct gather_loadS(vReg dst, indirect mem, vReg idx) %{
   predicate(type2aelembytes(Matcher::vector_element_basic_type(n)) == 4);
   match(Set dst (LoadVectorGather mem idx));
   effect(TEMP_DEF dst);
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"gather_loadS $dst, $mem, $idx"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -6269,7 +6269,7 @@ instruct gather_loadD(vReg dst, indirect mem, vReg idx) %{
   predicate(type2aelembytes(Matcher::vector_element_basic_type(n)) == 8);
   match(Set dst (LoadVectorGather mem idx));
   effect(TEMP_DEF dst);
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"gather_loadD $dst, $mem, $idx"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
@@ -6394,7 +6394,7 @@ instruct scatter_storeD_masked(indirect mem, vReg src, vReg idx, vRegMask_V0 v0,
 instruct populateindex(vReg dst, iRegIorL2I src1, iRegIorL2I src2, vReg tmp) %{
   match(Set dst (PopulateIndex src1 src2));
   effect(TEMP_DEF dst, TEMP tmp);
-  flag(PD::Flag_rvv_simple);
+  flag(PD::Flag_rvv_vsetvli);
   format %{ $$template
     $$emit$$"populateindex $dst, $src1, $src2\t# KILL $tmp"
     st->print(" # rvv_vsetvli=%s", (flags() & PD::Flag_rvv_vsetvli_elided) != 0 ? "elided" : "kept");
