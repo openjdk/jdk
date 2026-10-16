@@ -358,15 +358,8 @@ public class FileInputStream extends InputStream
             if (n > 0) {
                 nread += n;
                 remaining -= n;
-            } else if (n == 0) {
-                // Block until a byte is read or EOF is detected
-                byte b = (byte)read();
-                if (b == -1 )
-                    break;
-                buf[nread++] = b;
-                remaining--;
             }
-        } while (n >= 0 && remaining > 0);
+        } while (n > 0 && remaining > 0);
         return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
     }
 
