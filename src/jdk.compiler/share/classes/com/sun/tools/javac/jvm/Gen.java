@@ -273,16 +273,6 @@ public class Gen extends JCTree.Visitor {
         return poolWriter.putClass(checkDimension(pos, type));
     }
 
-    /** Make an attributed tree representing a literal. This will be an
-     *  Ident node in the case of boolean literals, a Literal node in all
-     *  other cases.
-     *  @param type       The literal's type.
-     *  @param value      The literal's value.
-     */
-    JCExpression makeLit(Type type, Object value) {
-        return make.Literal(type.getTag(), value).setType(type.constType(value));
-    }
-
     /** Check if the given type is an array with too many dimensions.
      */
     private Type checkDimension(DiagnosticPosition pos, Type t) {
