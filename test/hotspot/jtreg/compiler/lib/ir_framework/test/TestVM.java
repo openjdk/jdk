@@ -806,8 +806,6 @@ public class TestVM {
         CustomRunTest customRunTest = new CustomRunTest(m, getAnnotation(m, Warmup.class), runAnno, tests);
         allTests.add(customRunTest);
         if (PRINT_VALID_IR_RULES) {
-            // Even though we cannot exclude a @Test method from being run when invoked from a @Run method for multiple
-            // tests, we can disable its IR verification.
             tests.forEach(test -> irMatchRulePrinter.emitApplicableIRRules(test.getTestMethod()));
         }
     }

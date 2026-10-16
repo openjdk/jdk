@@ -76,7 +76,7 @@ public class TestRunTests {
                 // Expected
             }
         }
-        for (String[] flags : new String[][] { {}, { "-DTest=test2" } }) {
+        for (String[] flags : new String[][] { {}, { "-DTest=test1" }, { "-DTest=test2" } }) {
             try {
                 new TestFramework(FilteredIRRun.class).addFlags(flags).start();
                 Asserts.fail("Expected test2 to fail IR verification");
