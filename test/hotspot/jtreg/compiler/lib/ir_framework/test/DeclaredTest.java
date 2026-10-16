@@ -37,16 +37,18 @@ public class DeclaredTest {
     private final CompLevel compLevel;
     private final int warmupIterations;
     private final boolean allowNotCompilable;
+    private final boolean hasSkipAnno;
     private Method attachedMethod;
 
     public DeclaredTest(Method testMethod, ArgumentsProvider argumentsProvider, CompLevel compLevel, int warmupIterations,
-                        boolean allowNotCompilable) {
+                        boolean hasSkipAnno, boolean allowNotCompilable) {
         // Make sure we can also call non-public or public methods in package private classes
         testMethod.setAccessible(true);
         this.testMethod = testMethod;
         this.argumentsProvider = argumentsProvider;
         this.compLevel = compLevel;
         this.warmupIterations = warmupIterations;
+        this.hasSkipAnno = hasSkipAnno;
         this.allowNotCompilable = allowNotCompilable;
         this.attachedMethod = null;
     }
@@ -69,6 +71,10 @@ public class DeclaredTest {
 
     public Object[] getArguments(Object invocationTarget, int invocationCounter) {
         return argumentsProvider.getArguments(invocationTarget, invocationCounter);
+    }
+
+    public boolean hasSkipAnno() {
+        return hasSkipAnno;
     }
 
     public void setAttachedMethod(Method m) {
