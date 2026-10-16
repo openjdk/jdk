@@ -54,6 +54,7 @@ import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.jvm.CRTFlags.*;
 import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import java.util.function.Consumer;
 
 /** This pass maps flat Java (i.e. without inner classes) to bytecodes.
  *
@@ -271,16 +272,6 @@ public class Gen extends JCTree.Visitor {
      */
     int makeRef(DiagnosticPosition pos, Type type) {
         return poolWriter.putClass(checkDimension(pos, type));
-    }
-
-    /** Make an attributed tree representing a literal. This will be an
-     *  Ident node in the case of boolean literals, a Literal node in all
-     *  other cases.
-     *  @param type       The literal's type.
-     *  @param value      The literal's value.
-     */
-    JCExpression makeLit(Type type, Object value) {
-        return make.Literal(type.getTag(), value).setType(type.constType(value));
     }
 
     /** Check if the given type is an array with too many dimensions.
@@ -793,31 +784,27 @@ public class Gen extends JCTree.Visitor {
             return result;
         } else if (inner_tree instanceof JCTypeCast cast) {
             Assert.check(types.unboxedTypeOrType(cast.type).hasTag(BOOLEAN));
-            CondItem res = genCond(cast.expr, markBranches);
+            CondItem result = genCond(cast.expr, markBranches);
             setTypeAnnotationPositions(cast.pos);
-            return res;
+            return result;
         } else if (inner_tree instanceof JCMethodInvocation mi &&
                    mi.boxingKind == JCMethodInvocation.BoxingKind.UNBOX &&
-                   skipCasts(((JCFieldAccess) mi.meth).selected) instanceof JCMethodInvocation boxing &&
+                   ((JCFieldAccess) mi.meth).selected instanceof JCTree unboxedValue &&
+                   traverseCasts(unboxedValue, _ -> {}) instanceof JCMethodInvocation boxing &&
                    boxing.boxingKind == JCMethodInvocation.BoxingKind.BOX) {
             //case like:
             //(Boolean) (b && (result = 1) > 0)
-            //expanded to:
+            //are expanded to by Lower:
             //((Boolean)Boolean.valueOf((b && (result = 1) > 0))).booleanValue()
             //it is impossible to correctly track variable DA across the method calls,
             //so skip the boxing and unboxing and any intermediate casts:
             JCExpression boxedValue = boxing.args.head;
-            CondItem res = genCond(boxedValue, markBranches);
+            CondItem result = genCond(boxedValue, markBranches);
 
             //set positions for type annotations:
-            JCTree pendingCastCandidates = ((JCFieldAccess) mi.meth).selected;
+            traverseCasts(unboxedValue, tc -> setTypeAnnotationPositions(tc.pos));
 
-            while (TreeInfo.skipParens(pendingCastCandidates) instanceof JCTypeCast tc) {
-                setTypeAnnotationPositions(tc.pos);
-                pendingCastCandidates = tc.expr;
-            }
-
-            return res;
+            return result;
         } else {
             CondItem result = genExpr(_tree, syms.booleanType).mkCond();
             if (markBranches) result.tree = _tree;
@@ -825,12 +812,12 @@ public class Gen extends JCTree.Visitor {
         }
     }
         //where:
-        JCTree skipCasts(JCTree source) {
-            if (TreeInfo.skipParens(source) instanceof JCTypeCast tc) {
-                return skipCasts(tc.expr);
-            } else {
-                return source;
+        JCTree traverseCasts(JCTree source, Consumer<JCTypeCast> castCallback) {
+            while (TreeInfo.skipParens(source) instanceof JCTypeCast tc) {
+                castCallback.accept(tc);
+                source = tc.expr;
             }
+            return source;
         }
 
     public Code getCode() {
