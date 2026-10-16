@@ -3245,7 +3245,7 @@ void PhaseOutput::init_scratch_buffer_blob(int const_size) {
 
 //-----------------------scratch_emit_size-------------------------------------
 // Helper function that computes size by emitting code
-uint PhaseOutput::scratch_emit_size(Node* n) {
+uint PhaseOutput::scratch_emit_size(const Node* n) {
   // Start scratch_emit_size section.
   set_in_scratch_emit_size(true);
 

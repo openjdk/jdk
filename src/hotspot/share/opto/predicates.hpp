@@ -323,7 +323,7 @@ class ParsePredicate : public Predicate {
   ParsePredicateNode* _parse_predicate_node;
   Node* _entry;
 
-  static IfTrueNode* init_success_proj(Node* parse_predicate_proj) {
+  static IfTrueNode* init_success_proj(const Node* parse_predicate_proj) {
     assert(parse_predicate_proj != nullptr, "must not be null");
     return parse_predicate_proj->isa_IfTrue();
   }

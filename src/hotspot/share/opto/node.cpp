@@ -540,7 +540,7 @@ Node *Node::clone() const {
   uint nopnds;
   if (this->is_Mach() && (nopnds = this->as_Mach()->num_opnds()) > 0) {
     MachNode* mach  = n->as_Mach();
-    const MachNode* mthis = this->as_Mach();
+    MachNode* mthis = this->as_Mach();
     // Get address of _opnd_array.
     // It should be the same offset since it is the clone of this node.
     MachOper **from = mthis->_opnds;
@@ -557,7 +557,7 @@ Node *Node::clone() const {
     // externally allocated memory. Make sure to use a proper constructor
     // instead of just shallowly copying.
     MachProjNode* mach = n->as_MachProj();
-    const MachProjNode* mthis = this->as_MachProj();
+    MachProjNode* mthis = this->as_MachProj();
     new (&mach->_rout) RegMask(mthis->_rout);
   }
   if (n->is_Call()) {

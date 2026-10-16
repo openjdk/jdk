@@ -434,7 +434,7 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
   }
   if (n->is_MachSafePoint()) {
     GrowableArray<SafePointScalarObjectNode*> scobjs;
-    const MachSafePointNode* mcall = n->as_MachSafePoint();
+    MachSafePointNode* mcall = n->as_MachSafePoint();
     uint i;
     // Print locals
     for (i = 0; i < (uint)loc_size(); i++)
@@ -2335,7 +2335,7 @@ static Node *next_control(Node *ctrl) {
 //
 bool AbstractLockNode::find_matching_unlock(const Node* ctrl, LockNode* lock,
                                             GrowableArray<AbstractLockNode*> &lock_ops) {
-  const ProjNode* ctrl_proj = (ctrl->is_Proj()) ? ctrl->as_Proj() : nullptr;
+  ProjNode* ctrl_proj = (ctrl->is_Proj()) ? ctrl->as_Proj() : nullptr;
   if (ctrl_proj != nullptr && ctrl_proj->_con == TypeFunc::Control) {
     Node *n = ctrl_proj->in(0);
     if (n != nullptr && n->is_Unlock()) {

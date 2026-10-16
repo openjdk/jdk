@@ -705,7 +705,7 @@ public:
   void add_to_congraph_unsafe_access(Node* n, uint opcode, Unique_Node_List<Node>* delayed_worklist);
   bool add_final_edges_unsafe_access(Node* n, uint opcode);
 
-  static bool compatible_return(const CallJavaNode* call, uint k);
+  static bool compatible_return(CallJavaNode* call, uint k);
 
 #ifndef PRODUCT
   static int _no_escape_counter;

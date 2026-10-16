@@ -146,12 +146,12 @@ void MachNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra
 uint MachNode::size(PhaseRegAlloc *ra_) const {
   // If a virtual was not defined for this specific instruction,
   // Call the helper which finds the size by emitting the bits.
-  return const_cast<MachNode*>(this)->MachNode::emit_size(ra_);
+  return MachNode::emit_size(ra_);
 }
 
 //------------------------------size-------------------------------------------
 // Helper function that computes size by emitting code
-uint MachNode::emit_size(PhaseRegAlloc *ra_) {
+uint MachNode::emit_size(PhaseRegAlloc *ra_) const {
   // Emit into a trash buffer and count bytes emitted.
   assert(ra_ == ra_->C->regalloc(), "sanity");
   return ra_->C->output()->scratch_emit_size(this);

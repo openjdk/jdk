@@ -396,7 +396,7 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
   rewire_safe_outputs_to_dominator(dp, prevdom, prevdom_not_imply_this);
 }
 
-void PhaseIdealLoop::rewire_safe_outputs_to_dominator(const Node* source, Node* dominator, const bool dominator_not_imply_source) {
+void PhaseIdealLoop::rewire_safe_outputs_to_dominator(Node* source, Node* dominator, const bool dominator_not_imply_source) {
   IdealLoopTree* old_loop = get_loop(source);
 
   for (DUIterator_Fast imax, i = source->fast_outs(imax); i < imax; i++) {
@@ -1865,7 +1865,7 @@ bool PhaseIdealLoop::safe_for_if_replacement(const Node* dom) const {
   if (!dom->is_CountedLoopEnd()) {
     return true;
   }
-  const CountedLoopEndNode* le = dom->as_CountedLoopEnd();
+  CountedLoopEndNode* le = dom->as_CountedLoopEnd();
   CountedLoopNode* cl = le->loopnode();
   if (cl == nullptr) {
     return true;
@@ -4532,7 +4532,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree* loop, Node_List<Node
         continue;
       }
 
-      const PhiNode* phi = loop_iv_phi(stride.xphi(), nullptr, head);
+      PhiNode* phi = loop_iv_phi(stride.xphi(), nullptr, head);
       if (phi == nullptr ||
           (increment.outer_trunc() == nullptr && phi->in(LoopNode::LoopBackControl) != loop_exit.incr()) ||
           (increment.outer_trunc() != nullptr && phi->in(LoopNode::LoopBackControl) != increment.outer_trunc())) {

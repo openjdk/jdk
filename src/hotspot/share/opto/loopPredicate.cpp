@@ -1034,7 +1034,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, const IfP
     C->print_method(PHASE_BEFORE_LOOP_PREDICATION_RC, 4, iff);
     // Range check for counted loops
     assert(if_success_proj->is_IfTrue(), "trap must be on false projection for a range check");
-    const IfTrueNode* hoisted_check_proj = if_success_proj->as_IfTrue();
+    IfTrueNode* hoisted_check_proj = if_success_proj->as_IfTrue();
     const Node*    cmp    = bol->in(1)->as_Cmp();
     Node*          idx    = cmp->in(1);
     assert(!invar.is_invariant(idx), "index is variant");
@@ -1132,7 +1132,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, const IfP
   return true;
 }
 
-void PhaseIdealLoop::eliminate_hoisted_range_check(const IfTrueNode* hoisted_check_proj,
+void PhaseIdealLoop::eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj,
                                                    IfTrueNode* template_assertion_predicate_proj) {
   _igvn.replace_input_of(hoisted_check_proj->in(0), 1, _igvn.intcon(1));
   rewire_safe_outputs_to_dominator(hoisted_check_proj, template_assertion_predicate_proj, true);

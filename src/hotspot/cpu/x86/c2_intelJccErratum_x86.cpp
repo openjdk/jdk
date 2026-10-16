@@ -63,7 +63,7 @@ int IntelJccErratum::tag_affected_machnodes(Compile* C, PhaseCFG* cfg, PhaseRegA
   for (uint i = 0; i < cfg->number_of_blocks(); ++i) {
     const Block* const block = cfg->get_block(i);
     for (uint j = 0; j < block->number_of_nodes(); ++j) {
-      Node* const node = block->get_node(j);
+      const Node* const node = block->get_node(j);
       if (!node->is_Mach()) {
         continue;
       }

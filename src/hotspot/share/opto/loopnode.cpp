@@ -77,7 +77,7 @@ void LoopNode::dump_spec(outputStream *st) const {
 //------------------------------is_valid_counted_loop-------------------------
 bool LoopNode::is_valid_counted_loop(BasicType bt) const {
   if (is_BaseCountedLoop() && as_BaseCountedLoop()->bt() == bt) {
-    const BaseCountedLoopNode* l  = as_BaseCountedLoop();
+    BaseCountedLoopNode* l  = as_BaseCountedLoop();
     BaseCountedLoopEndNode* le = l->loopexit_or_null();
     if (le != nullptr &&
         le->true_proj_or_null() == l->in(LoopNode::LoopBackControl)) {
@@ -466,7 +466,7 @@ Node* PhaseIdealLoop::loop_exit_control(const IdealLoopTree* loop) const {
   return iftrue;
 }
 
-PhiNode* PhaseIdealLoop::loop_iv_phi(Node* xphi, const Node* phi_incr, const Node* head) {
+PhiNode* PhaseIdealLoop::loop_iv_phi(const Node* xphi, const Node* phi_incr, const Node* head) {
   if (!xphi->is_Phi()) {
     return nullptr; // Too much math on the trip counter
   }
@@ -1721,7 +1721,7 @@ void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* head, B
   stride.build(iv_incr.incr());
   assert(stride.is_valid(), "no stride");
 
-  const PhiNode* phi = loop_iv_phi(stride.xphi(), iv_incr.phi_incr(), head);
+  PhiNode* phi = loop_iv_phi(stride.xphi(), iv_incr.phi_incr(), head);
   assert(phi != nullptr && phi->in(LoopNode::LoopBackControl) == iv_incr.incr(), "No phi");
 
   assert(stride.compute_non_zero_stride_con(exit_test.mask(), bt) != 0, "illegal condition");
@@ -6771,7 +6771,7 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
 // input of this load are examined.  Any use which is not a load and is
 // dominated by early is considered a potentially interfering store.
 // This can produce false positives.
-Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(const LoadNode* n, Node* early, Node* LCA) {
+Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node* LCA) {
   int load_alias_idx = C->get_alias_index(n->adr_type());
   if (C->alias_type(load_alias_idx)->is_rewritable()) {
     Unique_Node_List<const Node> worklist;
@@ -6874,7 +6874,7 @@ bool PhaseIdealLoop::is_strict_dominator(Node* dominator, Node* n) {
 // does not need to be cleared between calls to get_late_ctrl().
 // Algorithm trades a larger constant factor for better asymptotic behavior
 //
-Node* PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal(Node* n1, Node* n2, const Node* tag_node) {
+Node* PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal(Node* n1, Node* n2, Node* tag_node) {
   uint d1 = dom_depth(n1);
   uint d2 = dom_depth(n2);
   jlong tag = tag_node->_idx | (((jlong)_dom_lca_tags_round) << 32);

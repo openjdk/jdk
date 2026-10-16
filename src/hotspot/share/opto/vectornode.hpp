@@ -242,7 +242,7 @@ class SaturatingVectorNode : public VectorNode {
 #endif
   virtual uint hash() const { return Node::hash() + _is_unsigned; }
 
-  bool is_unsigned() const { return _is_unsigned; }
+  bool is_unsigned() { return _is_unsigned; }
 };
 
 // Vector add byte
@@ -952,7 +952,7 @@ class ShiftVNode : public VectorNode {
   virtual bool cmp(const Node& n) const {
     return VectorNode::cmp(n) && _is_var_shift == ((ShiftVNode&)n)._is_var_shift;
   }
-  bool is_var_shift() const { return _is_var_shift;}
+  bool is_var_shift() { return _is_var_shift;}
   virtual uint size_of() const { return sizeof(ShiftVNode); }
 };
 

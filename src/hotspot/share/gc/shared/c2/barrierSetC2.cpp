@@ -1080,7 +1080,7 @@ void BarrierSetC2::elide_dominated_barriers(const Node_List<MachNode>& accesses,
     }
 
     for (uint j = 0; j < access_dominators.size(); j++) {
-     Node* const mem = access_dominators.at(j);
+     const Node* const mem = access_dominators.at(j);
       if (mem->is_Phi()) {
         assert(is_allocation(mem), "expected allocation phi node");
         if (mem != access_obj) {

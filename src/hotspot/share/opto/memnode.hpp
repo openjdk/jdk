@@ -154,7 +154,7 @@ public:
 #endif
   }
 
-  uint8_t barrier_data() const { return _barrier_data; }
+  uint8_t barrier_data() { return _barrier_data; }
   void set_barrier_data(uint8_t barrier_data) { _barrier_data = barrier_data; }
 
   // Search through memory states which precede this node (load or store).
@@ -905,7 +905,7 @@ public:
   bool result_not_used() const;
   MemBarNode* trailing_membar() const;
 
-  uint8_t barrier_data() const { return _barrier_data; }
+  uint8_t barrier_data() { return _barrier_data; }
   void set_barrier_data(uint8_t barrier_data) { _barrier_data = barrier_data; }
 
 #ifndef PRODUCT

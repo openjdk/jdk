@@ -988,7 +988,7 @@ private:
   // Inline wrapper for frequent cases:
   // 1) only one use
   // 2) a use is the same as the current LCA passed as 'n1'
-  Node* dom_lca_for_get_late_ctrl(Node* lca, Node* n, const Node* tag) {
+  Node* dom_lca_for_get_late_ctrl(Node* lca, Node* n, Node* tag) {
     assert( n->is_CFG(), "" );
     // Fast-path null lca
     if( lca != nullptr && lca != n ) {
@@ -998,7 +998,7 @@ private:
     }
     return find_non_split_ctrl(n);
   }
-  Node* dom_lca_for_get_late_ctrl_internal(Node* lca, Node* n, const Node* tag);
+  Node* dom_lca_for_get_late_ctrl_internal(Node* lca, Node* n, Node* tag);
 
   // Helper function for directing control inputs away from CFG split points.
   Node *find_non_split_ctrl( Node *ctrl ) const {
@@ -1462,7 +1462,7 @@ public:
     jlong compute_non_zero_stride_con(BoolTest::mask mask, BasicType iv_bt) const;
   };
 
-  static PhiNode* loop_iv_phi(Node* xphi, const Node* phi_incr, const Node* head);
+  static PhiNode* loop_iv_phi(const Node* xphi, const Node* phi_incr, const Node* head);
 
   bool try_convert_to_counted_loop(Node* head, IdealLoopTree*& loop, BasicType iv_bt);
 
@@ -1646,7 +1646,7 @@ public:
                                         Node_List<const IfProjNode>& if_proj_list);
   IfTrueNode* create_template_assertion_predicate(CountedLoopNode* loop_head, ParsePredicateNode* parse_predicate,
                                                   IfProjNode* new_control, int scale, Node* offset, Node* range);
-  void eliminate_hoisted_range_check(const IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
+  void eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
 
   // Helper function to collect predicate for eliminating the useless ones
   void eliminate_useless_predicates() const;
@@ -1678,7 +1678,7 @@ public:
 
  private:
   static bool has_control_dependencies_from_predicates(LoopNode* head);
-  static void revert_to_normal_loop(LoopNode* loop_head);
+  static void revert_to_normal_loop(const LoopNode* loop_head);
 
   void hoist_invariant_check_casts(const IdealLoopTree* loop, const Node_List<Node>& old_new,
                                    const UnswitchCandidate& unswitch_candidate, const IfNode* loop_selector);
@@ -1794,7 +1794,7 @@ public:
   // Mark an IfNode as being dominated by a prior test,
   // without actually altering the CFG (and hence IDOM info).
   void dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip = false, bool prev_dom_not_imply_this = false);
-  void rewire_safe_outputs_to_dominator(const Node* source, Node* dominator, bool dominator_not_imply_source);
+  void rewire_safe_outputs_to_dominator(Node* source, Node* dominator, bool dominator_not_imply_source);
 
   // Split Node 'n' through merge point
   RegionNode* split_thru_region(Node* n, RegionNode* region);
@@ -2028,7 +2028,7 @@ public:
                                    Node* inner_iters_actual_int, Node* inner_phi,
                                    Node* iv_add, LoopNode* inner_head);
 
-  Node* get_late_ctrl_with_anti_dep(const LoadNode* n, Node* early, Node* LCA);
+  Node* get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node* LCA);
 
   bool ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop, Node* ctrl);
 

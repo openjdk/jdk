@@ -308,7 +308,7 @@ public:
   // Size of instruction in bytes
   virtual uint  size(PhaseRegAlloc *ra_) const;
   // Helper function that computes size by emitting code
-  virtual uint emit_size(PhaseRegAlloc *ra_);
+  virtual uint emit_size(PhaseRegAlloc *ra_) const;
 
   // Return the alignment required (in units of relocInfo::addr_unit())
   // for this instruction (must be a power of 2)
