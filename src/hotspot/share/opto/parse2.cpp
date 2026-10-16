@@ -211,7 +211,7 @@ public:
           }
           return _parse.C->top();
         }
-        const TypeAryPtr* array_type = _gvn.type(array)->is_aryptr()->cast_to_null_free(true);
+        const TypeAryPtr* array_type = _gvn.type(array)->is_aryptr()->cast_to_null_free();
         array = _gvn.transform(new CheckCastPPNode(_parse.control(), array, array_type));
         if (_parse.needs_range_check(array_type->size(), _array_index)) {
           decorator_set |= C2_UNKNOWN_CONTROL_LOAD;
@@ -338,7 +338,8 @@ public:
       }
 
       ciValueKlass* vk = element_ptr->value_klass();
-      Node* flat_array = _parse.cast_to_flat_array(array, vk);
+      ciObjArrayKlass* array_klass = _parse.get_flat_array_klass(vk);
+      Node* flat_array = _parse.cast_to_flat_array(array, array_klass, false);
 
       // It may be the case that array is only known to be not flat when we try to cast it to a
       // flat array. For example, array is a not-null-free array and vk does not have a

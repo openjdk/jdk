@@ -1686,7 +1686,6 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
       IfNode *iff_atomic = kit->create_and_map_if(kit->control(), bol_atomic,
                                                   clamp(null_free_atomic_prob, PROB_MIN, PROB_MAX), COUNT_UNKNOWN);
 
-<<<<<<< HEAD
       // Atomic
       kit->set_control(kit->IfTrue(iff_atomic));
       if (!kit->stopped()) {
