@@ -32,6 +32,7 @@
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "runtime/signature.hpp"
@@ -1209,6 +1210,15 @@ INSN(lwu_acquire, lwu, lw_aq, 32);
 
 #undef INSN
 
+  void lw_acquire(Register Rd, Register Rs1) {
+    if (UseZalasr) {
+      Assembler::lw_aq(Rd, Rs1);
+    } else {
+      Assembler::lw(Rd, Rs1, 0);
+      membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+    }
+  }
+
   void ld_acquire(Register Rd, Register Rs1) {
     if (UseZalasr) {
       Assembler::ld_aq(Rd, Rs1);
@@ -1282,12 +1292,12 @@ INSN(sd_release, sd, sd_rl);
   void cmpxchg(Register addr, Register expected,
                Register new_val,
                Assembler::operand_size size,
-               Assembler::Aqrl acquire, Assembler::Aqrl release,
+               enum atomic_memory_order order,
                Register result, bool result_as_bool = false);
   void weak_cmpxchg(Register addr, Register expected,
                     Register new_val,
                     Assembler::operand_size size,
-                    Assembler::Aqrl acquire, Assembler::Aqrl release,
+                    enum atomic_memory_order order,
                     Register result);
   void cmpxchg_narrow_value_helper(Register addr, Register expected, Register new_val,
                                    Assembler::operand_size size,
@@ -1295,13 +1305,13 @@ INSN(sd_release, sd, sd_rl);
   void cmpxchg_narrow_value(Register addr, Register expected,
                             Register new_val,
                             Assembler::operand_size size,
-                            Assembler::Aqrl acquire, Assembler::Aqrl release,
+                            enum atomic_memory_order order,
                             Register result, bool result_as_bool,
                             Register tmp1, Register tmp2, Register tmp3);
   void weak_cmpxchg_narrow_value(Register addr, Register expected,
                                  Register new_val,
                                  Assembler::operand_size size,
-                                 Assembler::Aqrl acquire, Assembler::Aqrl release,
+                                 enum atomic_memory_order order,
                                  Register result,
                                  Register tmp1, Register tmp2, Register tmp3);
 

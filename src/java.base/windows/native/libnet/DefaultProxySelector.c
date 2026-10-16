@@ -332,20 +332,24 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxies(JNIEnv *env,
                     jhost = (*env)->NewString(env, current->host, (jsize)wcslen(current->host));
                     if (jhost == NULL || (*env)->ExceptionCheck(env)) {
                         proxy_array = NULL;
+                        goto noproxy;
                     }
                     isa = (*env)->CallStaticObjectMethod(env, isaddr_class,
                                                          isaddr_createUnresolvedID, jhost,
                                                          current->port);
                     if (isa == NULL || (*env)->ExceptionCheck(env)) {
                         proxy_array = NULL;
+                        goto noproxy;
                     }
                     proxy = (*env)->NewObject(env, proxy_class, proxy_ctrID, type_proxy, isa);
                     if (proxy == NULL || (*env)->ExceptionCheck(env)) {
                         proxy_array = NULL;
+                        goto noproxy;
                     }
                     (*env)->SetObjectArrayElement(env, proxy_array, index, proxy);
                     if ((*env)->ExceptionCheck(env)) {
                         proxy_array = NULL;
+                        goto noproxy;
                     }
                     index++;
                 }

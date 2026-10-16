@@ -1576,9 +1576,13 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       if (xk && ik->equals(canonical_holder)) {
         assert(tj == TypeInstPtr::make(to->ptr(), canonical_holder, is_known_inst, nullptr, Type::Offset(offset), instance_id,
                                        TypePtr::MaybeFlat), "exact type should be canonical type");
+      } else if (is_known_inst) {
+        assert(xk, "Known instance should be exact type");
+        // Keep the type for known instances
+        tj = to = TypeInstPtr::make(to->ptr(), to->instance_klass(), true, nullptr, Type::Offset(offset), instance_id,
+                                    TypePtr::MaybeFlat);
       } else {
-        assert(xk || !is_known_inst, "Known instance should be exact type");
-        tj = to = TypeInstPtr::make(to->ptr(), canonical_holder, is_known_inst, nullptr, Type::Offset(offset), instance_id,
+        tj = to = TypeInstPtr::make(to->ptr(), canonical_holder, false, nullptr, Type::Offset(offset), instance_id,
                                     TypePtr::MaybeFlat);
       }
     }
@@ -1642,7 +1646,6 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
           (offset == arrayOopDesc::length_offset_in_bytes() && tj->base() == Type::AryPtr),
           "For oops, klasses, raw offset must be constant; for arrays the offset is never known" );
   assert( tj->ptr() != TypePtr::TopPTR &&
-          tj->ptr() != TypePtr::AnyNull &&
           tj->ptr() != TypePtr::Null, "No imprecise addresses" );
 //    assert( tj->ptr() != TypePtr::Constant ||
 //            tj->base() == Type::RawPtr ||
@@ -1762,13 +1765,15 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
            Type::str(adr_type), Type::str(flat), Type::str(flatten_alias_type(flat)));
     assert(flat != TypePtr::BOTTOM, "cannot alias-analyze an untyped ptr: adr_type = %s",
            Type::str(adr_type));
-    if (flat->isa_instptr()) {
-      const TypeOopPtr* foop = flat->is_oopptr();
-      // Scalarizable allocations have exact klass always.
-      bool exact = !foop->klass_is_exact() || foop->is_known_instance();
-      const TypePtr* xoop = foop->cast_to_exactness(exact)->is_ptr();
-      assert(foop == flatten_alias_type(xoop), "exactness must not affect alias type: foop = %s; xoop = %s",
-             Type::str(foop), Type::str(xoop));
+    if (const TypeInstPtr* finst = flat->isa_instptr(); finst != nullptr) {
+      bool check_exact = !finst->klass_is_exact();
+      // Try casting the type to the other exactness if possible
+      if ((check_exact && finst->instance_klass()->is_loaded() && !finst->instance_klass()->is_abstract()) ||
+          (!check_exact && !finst->is_known_instance())) {
+        const TypePtr* xinst = finst->cast_to_exactness(check_exact)->is_ptr();
+        assert(finst == flatten_alias_type(xinst), "exactness must not affect alias type: finst = %s; xinst = %s",
+               Type::str(finst), Type::str(xinst));
+      }
     }
   }
 #endif
@@ -2603,6 +2608,9 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
     current->set_memory_at(index, current->base_memory());
   }
   igvn.optimize();
+  if (failing()) {
+    return;
+  }
 
 #ifdef ASSERT
   wq.clear();
@@ -3039,6 +3047,9 @@ void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
     if (failing())  return;
 
     inline_incrementally_cleanup(igvn);
+    if (failing()) {
+      return;
+    }
   }
   DEBUG_ONLY( _modified_nodes = modified_nodes; )
   set_strength_reduction(false);
@@ -3186,6 +3197,9 @@ void Compile::Optimize() {
   // Now that all inlining is over and no PhaseRemoveUseless will run, cut edge from root to loop
   // safepoints
   remove_root_to_sfpts_edges(igvn);
+  if (failing()) {
+    return;
+  }
 
   // Process value type nodes now that all inlining is over
   process_value_types(igvn);
@@ -3245,9 +3259,9 @@ void Compile::Optimize() {
 
       // Optimize out fields loads from scalar replaceable allocations.
       igvn.optimize(true);
-      print_method(PHASE_ITER_GVN_AFTER_EA, 2);
-
       if (failing()) return;
+
+      print_method(PHASE_ITER_GVN_AFTER_EA, 2);
 
       if (congraph() != nullptr && macro_count() > 0) {
         TracePhase tp(_t_macroEliminate);
@@ -3315,6 +3329,9 @@ void Compile::Optimize() {
   // Conditional Constant Propagation;
   print_method(PHASE_BEFORE_CCP1, 2);
   PhaseCCP ccp( &igvn );
+  if (failing()) {
+    return;
+  }
   assert( true, "Break here to ccp.dump_nodes_and_types(_root,999,1)");
   {
     TracePhase tp(_t_ccp);
@@ -3330,9 +3347,9 @@ void Compile::Optimize() {
     igvn.reset_from_igvn(&ccp);
     igvn.optimize(true);
   }
-  print_method(PHASE_ITER_GVN2, 2);
-
   if (failing())  return;
+
+  print_method(PHASE_ITER_GVN2, 2);
 
   // Loop transforms on the ideal graph.  Range Check Elimination,
   // peeling, unrolling, etc.

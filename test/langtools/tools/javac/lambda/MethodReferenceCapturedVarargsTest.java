@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,24 @@
  * questions.
  */
 
-#include "export.h"
+/*
+ * @test
+ * @bug 8392555
+ * @summary Error when compiling method reference with captured self-type and varargs.
+ * @compile MethodReferenceCapturedVarargsTest.java
+ */
+import java.util.function.Consumer;
 
-typedef struct { double x, y, z; } HVAPoint3D;
+public class MethodReferenceCapturedVarargsTest {
 
-EXPORT HVAPoint3D recurse(int depth, HVAPoint3D (*cb)(int)) {
-  if (depth == 0) {
-    HVAPoint3D result = { 2, 1, 0};
-    return result;
-  }
+    interface Builder<B extends Builder<B>> {
+        void consume(String... values);
+        void update(Consumer<B> consumer);
+    }
 
-  HVAPoint3D result = cb(depth - 1);
-  result.x += 1;
-  result.y += 1;
-  result.z += 1;
-  return result;
+    static void test(Builder<?> builder) {
+        builder.update(it -> {
+            Consumer<String> c = it::consume;
+        });
+    }
 }
