@@ -278,12 +278,7 @@ public class LinuxRISCV64CallArranger {
             switch (argumentClass) {
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER);
-                    if (layout.byteSize() < 4) {
-                        // RISC-V ABI mandates extension according to sign up to 32 bits
-                        bindings.cast(carrier, int.class, ((ValueLayout) layout).integralExtension());
-                    }
-                    bindings.cast(int.class, long.class) // then sign-extend to XLEN
-                            .vmStore(storage, long.class);
+                    bindings.vmStore(storage, carrier, ((ValueLayout) layout).integralExtension());
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.FLOAT);
