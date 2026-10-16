@@ -65,8 +65,6 @@ Matcher::Matcher()
   _dontcare(&_states_arena),
   _reduceOp(reduceOp), _leftOp(leftOp), _rightOp(rightOp),
   _swallowed(swallowed),
-  _begin_inst_chain_rule(_BEGIN_INST_CHAIN_RULE),
-  _end_inst_chain_rule(_END_INST_CHAIN_RULE),
   _must_clone(must_clone),
   _shared_nodes(C->comp_arena()),
 #ifndef PRODUCT
@@ -1292,7 +1290,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     else if( mcall->is_MachCallRuntime() ) {
       MachCallRuntimeNode* mach_call_rt = mcall->as_MachCallRuntime();
       mach_call_rt->_name = call->as_CallRuntime()->_name;
-      mach_call_rt->_leaf_no_fp = call->is_CallLeafNoFP();
     }
     msfpt = mcall;
     sfpt_jvms = sfpt->jvms();

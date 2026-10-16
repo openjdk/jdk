@@ -26,10 +26,10 @@
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLinkedClassTable.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -68,7 +68,7 @@ void AOTLinkedClassBulkLoader::preload_classes(JavaThread* current) {
 void AOTLinkedClassBulkLoader::preload_classes_impl(TRAPS) {
   precond(CDSConfig::is_using_aot_linked_classes());
 
-  ClassLoaderDataShared::restore_archived_modules_for_preloading_classes(THREAD);
+  AOTModules::restore_archived_modules_for_preloading_classes(THREAD);
   Handle h_platform_loader(THREAD, SystemDictionary::java_platform_loader());
   Handle h_system_loader(THREAD, SystemDictionary::java_system_loader());
 

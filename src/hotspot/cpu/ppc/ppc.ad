@@ -7384,7 +7384,7 @@ instruct getAndAddB(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src, flagsRegCR0 
   format %{ "GetAndAddB $res, $mem_ptr, $src" %}
   ins_encode %{
     __ getandaddb($res$$Register, $src$$Register, $mem_ptr$$Register,
-                  R0, noreg, noreg, MacroAssembler::cmpxchgx_hint_atomic_update());
+                  R0, MacroAssembler::cmpxchgx_hint_atomic_update());
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       __ isync();
     } else {
@@ -7400,7 +7400,7 @@ instruct getAndAddS(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src, flagsRegCR0 
   format %{ "GetAndAddS $res, $mem_ptr, $src" %}
   ins_encode %{
     __ getandaddh($res$$Register, $src$$Register, $mem_ptr$$Register,
-                  R0, noreg, noreg, MacroAssembler::cmpxchgx_hint_atomic_update());
+                  R0, MacroAssembler::cmpxchgx_hint_atomic_update());
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       __ isync();
     } else {
@@ -7449,7 +7449,7 @@ instruct getAndSetB(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src, flagsRegCR0 
   format %{ "GetAndSetB $res, $mem_ptr, $src" %}
   ins_encode %{
     __ getandsetb($res$$Register, $src$$Register, $mem_ptr$$Register,
-                  noreg, noreg, noreg, MacroAssembler::cmpxchgx_hint_atomic_update());
+                  MacroAssembler::cmpxchgx_hint_atomic_update());
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       __ isync();
     } else {
@@ -7465,7 +7465,7 @@ instruct getAndSetS(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src, flagsRegCR0 
   format %{ "GetAndSetS $res, $mem_ptr, $src" %}
   ins_encode %{
     __ getandseth($res$$Register, $src$$Register, $mem_ptr$$Register,
-                  noreg, noreg, noreg, MacroAssembler::cmpxchgx_hint_atomic_update());
+                  MacroAssembler::cmpxchgx_hint_atomic_update());
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       __ isync();
     } else {
@@ -8323,9 +8323,11 @@ instruct lShiftL_regI_immGE32(iRegLdst dst, iRegIorL2I src1, uimmI6_ge32 src2) %
   ins_pipe(pipe_class_default);
 %}
 
-// Shift a postivie int to the left.
+// Shift a positive int to the left.
 // Clrlsldi clears the upper 32 bits and shifts.
-instruct scaledPositiveI2L_lShiftL_convI2L_reg_imm6(iRegLdst dst, iRegIorL2I src1, uimmI6 src2) %{
+// Only valid for shift amounts < 32.
+// Shift amounts >= 32 are handled by lShiftL_regI_immGE32.
+instruct scaledPositiveI2L_lShiftL_convI2L_reg_imm6(iRegLdst dst, iRegIorL2I src1, uimmI5 src2) %{
   match(Set dst (LShiftL (ConvI2L src1) src2));
   predicate(((ConvI2LNode*)(_kids[0]->_leaf))->type()->is_long()->is_positive_int());
 
@@ -9735,7 +9737,7 @@ instruct convD2IRaw_regD(regD dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Double to Int conversion, NaN is mapped to 0. Special version for Power8.
+// Double to Int conversion, NaN is mapped to 0.
 instruct convD2I_reg_mffprd_ExEx(iRegIdst dst, regD src) %{
   match(Set dst (ConvD2I src));
   ins_cost(DEFAULT_COST);
@@ -9763,7 +9765,7 @@ instruct convF2IRaw_regF(regF dst, regF src) %{
 %}
 
 
-// Float to Int conversion, NaN is mapped to 0. Special version for Power8.
+// Float to Int conversion, NaN is mapped to 0.
 instruct convF2I_regF_mffprd_ExEx(iRegIdst dst, regF src) %{
   match(Set dst (ConvF2I src));
   ins_cost(DEFAULT_COST);
@@ -9856,7 +9858,7 @@ instruct convF2LRaw_regF(regF dst, regF src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Float to Long conversion, NaN is mapped to 0. Special version for Power8.
+// Float to Long conversion, NaN is mapped to 0.
 instruct convF2L_reg_mffprd_ExEx(iRegLdst dst, regF src) %{
   match(Set dst (ConvF2L src));
   ins_cost(DEFAULT_COST);
@@ -9883,7 +9885,7 @@ instruct convD2LRaw_regD(regD dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Double to Long conversion, NaN is mapped to 0. Special version for Power8.
+// Double to Long conversion, NaN is mapped to 0.
 instruct convD2L_reg_mffprd_ExEx(iRegLdst dst, regD src) %{
   match(Set dst (ConvD2L src));
   ins_cost(DEFAULT_COST);
@@ -9938,7 +9940,7 @@ instruct convL2FRaw_regF(regF dst, regD src) %{
 %}
 
 
-// Integer to Float conversion. Special version for Power8.
+// Integer to Float conversion.
 instruct convI2F_ireg_mtfprd_Ex(regF dst, iRegIorL2I src) %{
   match(Set dst (ConvI2F src));
   ins_cost(DEFAULT_COST);
@@ -9951,7 +9953,7 @@ instruct convI2F_ireg_mtfprd_Ex(regF dst, iRegIorL2I src) %{
 %}
 
 
-// L2F to avoid runtime call.  Special version for Power8.
+// L2F to avoid runtime call.
 instruct convL2F_ireg_mtfprd_Ex(regF dst, iRegLsrc src) %{
   match(Set dst (ConvL2F src));
   ins_cost(DEFAULT_COST);
@@ -9969,7 +9971,7 @@ instruct convL2F_ireg_mtfprd_Ex(regF dst, iRegLsrc src) %{
 // Convert to Double
 
 
-// Integer to Double conversion. Special version for Power8.
+// Integer to Double conversion.
 instruct convI2D_reg_mtfprd_Ex(regD dst, iRegIorL2I src) %{
   match(Set dst (ConvI2D src));
   ins_cost(DEFAULT_COST);
@@ -9982,7 +9984,7 @@ instruct convI2D_reg_mtfprd_Ex(regD dst, iRegIorL2I src) %{
 %}
 
 
-// Long to Double conversion. Special version for Power8.
+// Long to Double conversion.
 instruct convL2D_reg_mtfprd_Ex(regD dst, iRegLsrc src) %{
   match(Set dst (ConvL2D src));
   ins_cost(DEFAULT_COST);
