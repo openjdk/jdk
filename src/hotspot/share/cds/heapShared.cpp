@@ -51,6 +51,7 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
@@ -62,9 +63,9 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/flatArrayOop.inline.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -517,13 +518,22 @@ int HeapShared::append_root(oop obj) {
       return obj_info->root_index();
     } else {
       assert(obj_info->root_index() < 0, "must not be zero");
-      int i = _pending_roots->append(obj);
+      int i = add_to_pending_roots(obj);
       obj_info->set_root_index(i);
       return i;
     }
   } else {
-    return _pending_roots->append(obj);
+    return add_to_pending_roots(obj);
   }
+}
+
+int HeapShared::add_to_pending_roots(oop obj) {
+  if (_pending_roots->length() == (int)max_jint) {
+    // This should never happen, but just in case we have HUGE caches ...
+    AOTMetaspace::unrecoverable_writing_error("too many pending roots");
+    ShouldNotReachHere();
+  }
+  return _pending_roots->append(obj);
 }
 
 int HeapShared::get_root_index(oop obj) {
@@ -625,7 +635,6 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
   OopHandle oh(Universe::vm_global(), obj);
   CachedOopInfo info = make_cached_oop_info(obj, referrer);
   archived_object_cache()->put_when_absent(oh, info);
-  archived_object_cache()->maybe_grow();
 
   Klass* k = obj->klass();
   if (k->is_instance_klass()) {
@@ -662,6 +671,10 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
         AOTArtifactFinder::add_cached_class(method_holder);
         _dumptime_resolved_methods->append(HeapShared::append_root(obj));
       }
+    } else if (AOTCodeCache::is_dumping_code() &&
+               (java_lang_invoke_MethodHandle::is_instance(obj) || is_interned_string(obj))) {
+      // Needed by AOT compiler.
+      append_root(obj);
     }
   }
 
@@ -735,7 +748,7 @@ void HeapShared::init_dumping() {
   _scratch_objects_table = new (mtClass)MetaspaceObjToOopHandleTable();
   _dumptime_resolved_methods = new (mtClassShared) GrowableArray<int>(100, mtClassShared);
   _pending_roots = new GrowableArrayCHeap<oop, mtClassShared>(500);
-  _pending_roots->append(nullptr); // root index 0 represents a null oop
+  add_to_pending_roots(nullptr); // root index 0 represents a null oop
   DEBUG_ONLY(_dumptime_classes_with_cached_oops = new (mtClassShared)ArchivableKlassTable());
 }
 
@@ -808,11 +821,7 @@ void HeapShared::remove_scratch_objects(Klass* k) {
 //changes the names in the JDK code.  See discussion in JDK-8342481 for
 //related ideas about marking AOT-related classes.
 bool HeapShared::is_lambda_form_klass(InstanceKlass* ik) {
-  return ik->is_hidden() &&
-    (ik->name()->starts_with("java/lang/invoke/LambdaForm$MH+") ||
-     ik->name()->starts_with("java/lang/invoke/LambdaForm$DMH+") ||
-     ik->name()->starts_with("java/lang/invoke/LambdaForm$BMH+") ||
-     ik->name()->starts_with("java/lang/invoke/LambdaForm$VH+"));
+  return ik->is_hidden() && ik->name()->starts_with("java/lang/invoke/LambdaForm$");
 }
 
 bool HeapShared::is_lambda_proxy_klass(InstanceKlass* ik) {
@@ -1111,7 +1120,11 @@ void KlassSubGraphInfo::add_subgraph_entry_field(int static_field_offset, oop v)
       new (mtClass) GrowableArray<int>(10, mtClass);
   }
   _subgraph_entry_fields->append(static_field_offset);
-  _subgraph_entry_fields->append(HeapShared::append_root(v));
+  if (v == nullptr) {
+    _subgraph_entry_fields->append(-1);
+  } else {
+    _subgraph_entry_fields->append(HeapShared::append_root(v));
+  }
 }
 
 // Add the Klass* for an object in the current KlassSubGraphInfo's subgraphs.
@@ -1413,16 +1426,35 @@ void HeapShared::resolve_classes_for_subgraph_of(JavaThread* current, Klass* k) 
   }
 }
 
+static const char* java_lang_invoke_core_klasses[] = {
+  "java/lang/invoke/Invokers$Holder",
+  "java/lang/invoke/MethodHandle",
+  "java/lang/invoke/MethodHandleNatives",
+  "java/lang/invoke/DirectMethodHandle$Holder",
+  "java/lang/invoke/DelegatingMethodHandle$Holder",
+  "java/lang/invoke/LambdaForm$Holder",
+  "java/lang/invoke/BoundMethodHandle$Species_L",
+};
+
 void HeapShared::initialize_java_lang_invoke(TRAPS) {
   if (CDSConfig::is_using_aot_linked_classes() || CDSConfig::is_dumping_method_handles()) {
-    resolve_or_init("java/lang/invoke/Invokers$Holder", true, CHECK);
-    resolve_or_init("java/lang/invoke/MethodHandle", true, CHECK);
-    resolve_or_init("java/lang/invoke/MethodHandleNatives", true, CHECK);
-    resolve_or_init("java/lang/invoke/DirectMethodHandle$Holder", true, CHECK);
-    resolve_or_init("java/lang/invoke/DelegatingMethodHandle$Holder", true, CHECK);
-    resolve_or_init("java/lang/invoke/LambdaForm$Holder", true, CHECK);
-    resolve_or_init("java/lang/invoke/BoundMethodHandle$Species_L", true, CHECK);
+    int len = sizeof(java_lang_invoke_core_klasses)/sizeof(char*);
+    for (int i = 0; i < len; i++) {
+      resolve_or_init(java_lang_invoke_core_klasses[i], true, CHECK);
+    }
   }
+}
+
+bool HeapShared::is_core_java_lang_invoke_klass(InstanceKlass* klass) {
+  ResourceMark rm;
+  char* s2 = klass->name()->as_C_string();
+  int len = sizeof(java_lang_invoke_core_klasses)/sizeof(char*);
+  for (int i = 0; i < len; i++) {
+    if (strcmp(java_lang_invoke_core_klasses[i], s2) == 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Initialize the InstanceKlasses of objects that are reachable from the following roots:
@@ -1611,7 +1643,12 @@ void HeapShared::init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphI
       int root_index = entry_field_records->at(i+1);
       // Load the subgraph entry fields from the record and store them back to
       // the corresponding fields within the mirror.
-      oop v = get_root(root_index, /*clear=*/true);
+      oop v;
+      if (root_index < 0) {
+        v = nullptr;
+      } else {
+        v = get_root(root_index, /*clear=*/true);
+      }
       oop m = k->java_mirror();
       if (k->has_aot_initialized_mirror()) {
         assert(v == m->obj_field(field_offset), "must be aot-initialized");
@@ -1753,54 +1790,38 @@ void HeapShared::init_box_classes(TRAPS) {
   }
 }
 
-// Used by HeapShared::find_value_classes().
-class HeapShared::ValueKlassFinder : public FieldClosure {
+// Used by HeapShared::find_flat_field_klasses().
+class HeapShared::FlatFieldKlassFinder : public FieldClosure {
   KlassSubGraphInfo* _subgraph_info;
-  InstanceKlass* _ik;
-  address _obj;
+  oop _obj;
+  const ValuePayloadContext* _vpc;
 public:
-  // obj points to the "logical address" of:
-  //     (a) a regular heap object, or
-  //     (b) an element of a flattened array, or
-  //     (c) a flattened field embedded inside a heap object.
-  // For (a), obj is the same as the address of the heap object.
-  // For (b) and (c), obj points to ValueKlass::cast(_ik)->payload_offset() bytes below
-  // the payload.
-  ValueKlassFinder(KlassSubGraphInfo* subgraph_info, InstanceKlass* ik, address obj)
-    : _subgraph_info(subgraph_info), _ik(ik), _obj(obj) {
+  FlatFieldKlassFinder(KlassSubGraphInfo* subgraph_info, oop obj, const ValuePayloadContext* vpc = nullptr)
+    : FieldClosure(), _subgraph_info(subgraph_info), _obj(obj), _vpc(vpc) {
     precond(obj != nullptr);
-    precond(ik->has_flat_fields());
+    assert(vpc == nullptr || obj->klass() != vpc->klass(), "a value object cannot be flattened into itself");
   }
 
-  // This function is called on every field of _ik.
   void do_field(fieldDescriptor* fd) override {
     if (fd->is_flat()) {
       precond(fd->field_type() == T_OBJECT);
-      precond(_ik == fd->field_holder());
 
-      // The type of this flattened field
-      ValueKlass* vk = _ik->get_value_type_field_klass(fd->index());
-
-      // The "logical address" of this flattened field
-      address field_addr = _obj + fd->offset() - vk->payload_offset();
-
-      if (fd->is_null_free_value_type() || !vk->is_payload_marked_as_null(field_addr)) {
-        // Found a non-null flattened instance of vk. Let's record vk.
-        add_value_class(_subgraph_info, vk);
+      if (!fd->is_flat_field_marked_as_null(_obj, _vpc)) {
+        // Found a non-null flat field of type vk. Let's record vk.
+        ValueKlass* vk = fd->flat_field_klass();
+        add_flat_field_klass(_subgraph_info, vk);
         if (vk->has_flat_fields()) {
-          ValueKlassFinder finder(_subgraph_info, vk, field_addr);
-          finder.find();
+          // Scan the fields inside the flat field of type vk whose payload is at field_offset_in_obj.
+          ValuePayloadContext field_vpc{vk, fd->field_offset_in_obj(_vpc)};
+          FlatFieldKlassFinder finder(_subgraph_info, _obj, &field_vpc);
+          vk->do_nonstatic_fields(&finder);
         }
       }
     }
   }
-
-  void find() {
-    _ik->do_nonstatic_fields(this);
-  }
 };
 
-void HeapShared::add_value_class(KlassSubGraphInfo* subgraph_info, ValueKlass* k) {
+void HeapShared::add_flat_field_klass(KlassSubGraphInfo* subgraph_info, ValueKlass* k) {
   subgraph_info->add_subgraph_object_klass(k);
   if (InstanceKlass::cast(k)->is_enum_subclass()
       || (subgraph_info == _dump_time_special_subgraph)) {
@@ -1808,8 +1829,8 @@ void HeapShared::add_value_class(KlassSubGraphInfo* subgraph_info, ValueKlass* k
   }
 }
 
-// Recursively scan for any ValueKlass K that has least one non-null flattened instance
-// inside orig_obj. K should be recorded with add_value_class().
+// Recursively scan for any ValueKlass K that has least one non-null flat field
+// inside orig_obj. K should be recorded with add_flat_field_klass().
 //
 // Reason for doing this:
 //
@@ -1818,12 +1839,12 @@ void HeapShared::add_value_class(KlassSubGraphInfo* subgraph_info, ValueKlass* k
 //         @NullRestricted Point p1;
 //         @NullRestricted Point p2; ... }
 //
-// Klasses of non-flattened instances are already recorded by HeapShared::archive_object().
+// Klasses of non-flat fields are already recorded by HeapShared::archive_object().
 //
 // If only a single instance of Line is archived, HeapShared::archive_object() would
-// have never visited a (non-flattened) instance of Point, but we must store Point in
+// have never visited a heap oop instance of Point, but we must store Point in
 // AOT-initialized state. This function finds Point.
-void HeapShared::find_value_classes(KlassSubGraphInfo* subgraph_info, oop orig_obj) {
+void HeapShared::find_flat_field_klasses(KlassSubGraphInfo* subgraph_info, oop orig_obj) {
   Klass* klass = orig_obj->klass();
 
   if (klass->is_flatArray_klass()) {
@@ -1835,21 +1856,25 @@ void HeapShared::find_value_classes(KlassSubGraphInfo* subgraph_info, oop orig_o
     for (int i = 0; i < fa->length(); i++) {
       if (fak->is_null_free_array_klass() || !fa->obj_at_is_null(i)) {
         if (!added) {
-          add_value_class(subgraph_info, elem_k);
+          // add elem_k for the first non-null element that we found.
+          add_flat_field_klass(subgraph_info, elem_k);
+          added = true;
         }
+
+        // Each element in fa may have different null flat fields, so we must scan
+        // all elements to ensure discovery of all non-null flat fields.
         if (elem_k->has_flat_fields()) {
-          // "logical address" of the i-th array element.
-          address elem = static_cast<address>(fa->value_at_addr(i, fak->layout_helper())) - elem_k->payload_offset();
-          ValueKlassFinder finder(subgraph_info, elem_k, elem);
-          finder.find();
+          ValuePayloadContext vpc{elem_k, fa->value_offset_as_int(i, fak->layout_helper())};
+          FlatFieldKlassFinder finder(subgraph_info, orig_obj, &vpc);
+          elem_k->do_nonstatic_fields(&finder);
         }
       }
     }
   } else if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     if (ik->has_flat_fields()) {
-      ValueKlassFinder finder(subgraph_info, ik, cast_from_oop<address>(orig_obj));
-      finder.find();
+      FlatFieldKlassFinder finder(subgraph_info, orig_obj);
+      ik->do_nonstatic_fields(&finder);
     }
   }
 }
@@ -1989,7 +2014,7 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
     orig_obj->oop_iterate(&pusher);
   }
 
-  find_value_classes(subgraph_info, orig_obj);
+  find_flat_field_klasses(subgraph_info, orig_obj);
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
     // The enum klasses are archived with aot-initialized mirror.
@@ -2185,7 +2210,6 @@ bool HeapShared::has_been_seen_during_subgraph_recording(oop obj) {
 void HeapShared::set_has_been_seen_during_subgraph_recording(oop obj) {
   assert(!has_been_seen_during_subgraph_recording(obj), "sanity");
   _seen_objects_table->put_when_absent(obj, true);
-  _seen_objects_table->maybe_grow();
   ++ _num_new_walked_objs;
 }
 

@@ -816,6 +816,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_index_vector();
   case vmIntrinsics::_IndexPartiallyInUpperRange:
     return inline_index_partially_in_upper_range();
+  case vmIntrinsics::_VectorSlice:
+    return inline_vector_slice();
 
   case vmIntrinsics::_getObjectSize:
     return inline_getObjectSize();
@@ -2505,6 +2507,25 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   // Save state and restore on bailout
   SavedState old_state(this);
 
+  if (const TypeAryPtr* base_ary_type = _gvn.type(base)->isa_aryptr(); type == T_OBJECT && base_ary_type != nullptr) {
+    // Read an object from a primitive array, or a Phi some of whose inputs are primitive arrays
+    if (base_ary_type->elem()->make_ptr() == nullptr) {
+      return false;
+    }
+
+    // Must not be a flat array
+    if (base_ary_type->is_flat()) {
+      return false;
+    }
+
+    // Refine the base so alias analysis can work properly
+    Node* refined_base = must_be_not_null(base, false);
+    base_ary_type = base_ary_type->cast_to_not_flat();
+    refined_base = _gvn.transform(new CheckCastPPNode(control(), base, base_ary_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+    replace_in_map(base, refined_base);
+    base = refined_base;
+  }
+
   Node* adr = make_unsafe_address(base, offset, type, kind == Relaxed);
   assert(!stopped(), "Inlining of unsafe access failed: address construction stopped unexpectedly");
 
@@ -2784,14 +2805,27 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
         // Flat array must have an exact type
         bool is_null_free = !LayoutKindHelper::is_nullable_flat(layout);
         bool is_atomic = LayoutKindHelper::is_atomic_flat(layout);
-        Node* new_base = cast_to_flat_array_exact(base, value_klass, is_null_free, is_atomic);
-        replace_in_map(base, new_base);
-        base = new_base;
-        ptr = basic_plus_adr(base, ConvL2X(offset));
-        const TypeAryPtr* ptr_type = _gvn.type(ptr)->is_aryptr();
-        if (ptr_type->field_offset().get() != 0) {
-          // TODO 8388444 This should be a CheckCastPP, can we add a test?
-          ptr = _gvn.transform(new CastPPNode(control(), ptr, ptr_type->with_field_offset(0), ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+        ciObjArrayKlass* array_klass = get_flat_array_klass_exact(value_klass, is_null_free, is_atomic);
+        if (!array_klass->is_loaded()) {
+          uncommon_trap(Deoptimization::Reason_unloaded,
+                        Deoptimization::Action_reinterpret,
+                        array_klass, "Flat array class meta-data unavailable");
+          return true;
+        } else {
+          Node* new_base = cast_to_flat_array(base, array_klass, true);
+          if (new_base->is_top()) {
+            uncommon_trap(Deoptimization::Reason_intrinsic,
+                          Deoptimization::Action_none);
+            return true;
+          }
+          replace_in_map(base, new_base);
+          base = new_base;
+          ptr = basic_plus_adr(base, ConvL2X(offset));
+          const TypeAryPtr* ptr_type = _gvn.type(ptr)->is_aryptr();
+          if (ptr_type->field_offset().get() != 0) {
+            // TODO 8388444 This should be a CheckCastPP, can we add a test?
+            ptr = _gvn.transform(new CastPPNode(control(), ptr, ptr_type->with_field_offset(0), ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+          }
         }
       } else {
         uncommon_trap(Deoptimization::Reason_intrinsic,
@@ -3235,7 +3269,10 @@ bool LibraryCallKit::inline_onspinwait() {
   return true;
 }
 
-bool LibraryCallKit::klass_needs_init_guard(Node* kls) {
+bool LibraryCallKit::klass_needs_init_guard(Node* kls) const {
+  if (C->do_clinit_barriers()) {
+    return true; // Generate guard in AOT preload code
+  }
   if (!kls->is_Con()) {
     return true;
   }
@@ -5548,8 +5585,8 @@ Node* LibraryCallKit::get_hashcode_from_header(Node* header, RegionNode* unset_r
   Node* hash_val = _gvn.transform(new AndINode(hshifted_header, hash_mask));
 
   Node* no_hash_val = _gvn.intcon(markWord::no_hash);
-  Node* chk_assigned = _gvn.transform(new CmpINode( hash_val, no_hash_val));
-  Node* test_assigned = _gvn.transform(new BoolNode( chk_assigned, BoolTest::eq));
+  Node* chk_assigned = _gvn.transform(new CmpINode(hash_val, no_hash_val));
+  Node* test_assigned = _gvn.transform(new BoolNode(chk_assigned, BoolTest::eq));
 
   generate_slow_guard(test_assigned, unset_region);
 
@@ -5699,6 +5736,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
             unmasked_region->init_req(1, IfTrue(iff_is_empty_object));
             unmasked_result->init_req(1, result_empty);
 
+            // There is a segment (case 2. or 3.)
             set_control(IfFalse(iff_is_empty_object));
 
             Node* obj_payload_addr = basic_plus_adr(obj, ConvI2L(offset));
@@ -5727,9 +5765,28 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
             unmasked_region->init_req(3, IfTrue(iff_is_long_payload));
             unmasked_result->init_req(3, result_long);
 
-            Node* fast_path_result = AndI(_gvn.transform(unmasked_result), intcon(markWord::hash_mask));
-            result_reg->init_req(_value_fast_path, _gvn.transform(unmasked_region));
-            result_val->init_req(_value_fast_path, fast_path_result);
+            set_control(_gvn.transform(unmasked_region));
+            Node* hash_mask_con = intcon(markWord::hash_mask);
+            Node* masked_result = AndI(_gvn.transform(unmasked_result), hash_mask_con);
+
+            // Now, we have computed the hash. But we don't want it to be markWord::no_hash.
+            // If it is, let's just take the hash of the Class, and since this Class is an identity object,
+            // it must be different from markWord::no_hash. Let's do a little diamond since it's easy enough
+            // and cmove experimentally failed to be as efficient.
+            RegionNode* avoid_no_hash_region = new RegionNode(3);
+            Node* no_hash_avoided_result = new PhiNode(avoid_no_hash_region, TypeInt::INT);
+
+            Node* no_hash_con = intcon(checked_cast<int>(markWord::no_hash));
+            Node* bol_hash_would_be_no_hash = BoolCmpI(masked_result, BoolTest::eq, no_hash_con);
+            IfNode* iff_hash_would_be_no_hash = create_and_map_if(control(), bol_hash_would_be_no_hash, PROB_FAIR, COUNT_UNKNOWN);
+            avoid_no_hash_region->init_req(1, IfTrue(iff_hash_would_be_no_hash));
+            no_hash_avoided_result->init_req(1, result_empty);
+
+            avoid_no_hash_region->init_req(2, IfFalse(iff_hash_would_be_no_hash));
+            no_hash_avoided_result->init_req(2, masked_result);
+
+            result_reg->init_req(_value_fast_path, _gvn.transform(avoid_no_hash_region));
+            result_val->init_req(_value_fast_path, _gvn.transform(no_hash_avoided_result));
           }
         }
       }
