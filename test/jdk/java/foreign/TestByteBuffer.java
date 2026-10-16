@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @modules java.base/sun.nio.ch java.base/jdk.internal.foreign
+ * @modules java.base/sun.nio.ch java.base/jdk.internal.foreign java.base/jdk.internal.util
  * @run junit/othervm/timeout=600 --enable-native-access=ALL-UNNAMED TestByteBuffer
  */
 
@@ -67,6 +67,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import jdk.internal.util.ArraysSupport;
 import sun.nio.ch.DirectBuffer;
 
 import static java.lang.foreign.ValueLayout.*;
@@ -531,7 +532,7 @@ public class TestByteBuffer {
 
     @Test
     public void testMaxSizeByteBuffer() {
-        for (int size : new int[] { Integer.MAX_VALUE - 7, Integer.MAX_VALUE }) {
+        for (int size : new int[] { ArraysSupport.SOFT_MAX_ARRAY_LENGTH - 7, ArraysSupport.SOFT_MAX_ARRAY_LENGTH }) {
             ByteBuffer buffer = MemorySegment.NULL.reinterpret(size).asByteBuffer();
             assertEquals(size, buffer.capacity());
             assertEquals(size, buffer.limit());
