@@ -545,7 +545,7 @@ void FieldLayout::fill_holes(const InstanceKlass* super_klass, bool is_value_cla
     if (b->next_block()->offset() > (b->offset() + b->size())) {
       int size = b->next_block()->offset() - (b->offset() + b->size());
 
-      const bool is_initial_value_padding = b == _blocks && is_value_class;
+      const bool is_initial_value_padding = (b == _blocks) && is_value_class;
       LayoutRawBlock::Kind filling_type = super_is_contended || is_initial_value_padding
                                               ? LayoutRawBlock::PADDING : LayoutRawBlock::EMPTY;
 
