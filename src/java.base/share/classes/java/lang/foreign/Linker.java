@@ -152,6 +152,14 @@ import java.util.function.Consumer;
  *     <li>{@code size_t}</li>
  *     <li>{@code wchar_t}</li>
  *     <li>{@code void*}</li>
+ *     <li>{@code int8_t}</li>
+ *     <li>{@code int16_t}</li>
+ *     <li>{@code int32_t}</li>
+ *     <li>{@code int64_t}</li>
+ *     <li>{@code uint8_t}</li>
+ *     <li>{@code uint16_t}</li>
+ *     <li>{@code uint32_t}</li>
+ *     <li>{@code uint64_t}</li>
  * </ul>
  * As noted above, the specific canonical layout associated with each type can vary,
  * depending on the data model supported by a given ABI. For instance, the canonical
