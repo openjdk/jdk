@@ -7924,7 +7924,6 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
-#ifdef COMPILER2
   // Generate vectorizedMismatch stub using RVV instructions.
   //
   // Arguments (C calling convention):
@@ -7969,7 +7968,6 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     return start;
   }
-#endif
 #undef __
 
   // Initialization
@@ -8039,11 +8037,11 @@ static const int64_t right_3_bits = right_n_bits(3);
         generate_lookup_secondary_supers_table_stub();
       }
     }
+#endif // COMPILER2
 
     if (UseVectorizedMismatchIntrinsic) {
       StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch();
     }
-#endif // COMPILER2
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
     StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();

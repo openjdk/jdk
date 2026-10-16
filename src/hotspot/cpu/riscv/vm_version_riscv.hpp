@@ -559,6 +559,11 @@ private:
   static bool supports_fast_class_init_checks() { return true; }
   static bool supports_fencei_barrier() { return ext_Zifencei.enabled(); }
 
+  static uint vector_length() {
+    assert(UseRVV && _initial_vector_length > 0, "sanity");
+    return _initial_vector_length;
+  }
+
   static bool supports_float16_float_conversion() {
     return UseZfh || UseZfhmin;
   }

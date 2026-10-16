@@ -261,6 +261,16 @@ void VM_Version::common_initialize() {
     }
   }
 
+  bool supported = UseRVV && UseZbb &&
+                   (_initial_vector_length == 16 || _initial_vector_length == 32);
+  if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, supported);
+  } else if (!supported && UseVectorizedMismatchIntrinsic) {
+    warning("VectorizedMismatch intrinsic not available (requires RVV, Zbb "
+            "and vector length is 16 or 32 on this CPU).");
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+
   if (ValueTypePassFieldsAsArgs) {
     warning("ValueTypePassFieldsAsArgs is not supported on this CPU");
     FLAG_SET_DEFAULT(ValueTypePassFieldsAsArgs, false);
@@ -520,15 +530,6 @@ void VM_Version::c2_initialize() {
     }
   }
 
-  bool supported = UseRVV && UseZbb &&
-                   (MaxVectorSize == 16 || MaxVectorSize == 32);
-  if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
-    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, supported);
-  } else if (!supported && UseVectorizedMismatchIntrinsic) {
-    warning("VectorizedMismatch intrinsic not available (requires RVV, Zbb "
-            "and MaxVectorSize 16 or 32 on this CPU).");
-    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
-  }
 }
 
 #endif // COMPILER2
