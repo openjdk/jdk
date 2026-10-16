@@ -45,10 +45,8 @@ import jdk.internal.value.ValueClass;
  */
 public class ClassHistogramFlattenedArrayTest {
 
-    @jdk.internal.vm.annotation.LooselyConsistentValue
     public static value record TestClassNA(short s1, short s2) {}
 
-    @jdk.internal.vm.annotation.LooselyConsistentValue
     public static value record TestClassNRA(short s1, short s2) {}
 
     @jdk.internal.vm.annotation.LooselyConsistentValue
