@@ -170,7 +170,7 @@ import java.util.function.Consumer;
  * <thead>
  * <tr>
  *     <th scope="col">C type</th>
- *     <th scope="col">Layout</th>
+ *     <th scope="col">Layout type</th>
  *     <th scope="col">Java type</th>
  *     <th scope="col">Canonical layout name</th>
  *     <th scope="col">Alias in examples</th>
