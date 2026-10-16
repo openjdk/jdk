@@ -347,6 +347,9 @@ bool DwarfParser::process_dwarf(const uintptr_t pc) {
     uint64_t length = get_entry_length();
     if (length == 0L) {
       break; // it means "terminator" in .eh_frame, so go through to .debug_frame
+    } else if (_buf + length > end) {
+      // unexpected: DWARF is broken?
+      return false;
     }
     unsigned char *next_entry = _buf + length;
     unsigned char *start_of_entry = _buf;
