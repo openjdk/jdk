@@ -81,8 +81,6 @@ GraphKit::GraphKit(JVMState* jvms, PhaseGVN* gvn)
 #ifdef ASSERT
   if (_gvn.is_IterGVN() != nullptr) {
     assert(_gvn.is_IterGVN()->delay_transform(), "Transformation must be delayed if IterGVN is used");
-    // Save the initial size of _for_igvn worklist for verification (see ~GraphKit)
-    _worklist_size = _gvn.C->igvn_worklist()->size();
   }
 #endif
 }
