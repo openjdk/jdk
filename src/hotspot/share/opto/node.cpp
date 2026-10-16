@@ -539,8 +539,8 @@ Node *Node::clone() const {
   // MachNode clone
   uint nopnds;
   if (this->is_Mach() && (nopnds = this->as_Mach()->num_opnds()) > 0) {
-    MachNode* mach  = n->as_Mach();
-    MachNode* mthis = this->as_Mach();
+    MachNode *mach  = n->as_Mach();
+    MachNode *mthis = this->as_Mach();
     // Get address of _opnd_array.
     // It should be the same offset since it is the clone of this node.
     MachOper **from = mthis->_opnds;
@@ -3288,7 +3288,7 @@ Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return Node::Ideal(phase, can_reshape);
 }
 
-#define INSTANCIATE_NODE_CONTAINERS(node)    \
+#define INSTANTIATE_NODE_CONTAINERS(node)    \
 template class Node_Array<node>;             \
 template class Node_Array<const node>;       \
 template class Node_List<node>;              \
@@ -3298,33 +3298,33 @@ template class Unique_Node_List<const node>; \
 template class Node_Stack<node>;             \
 template class Node_Stack<const node>;       \
 
-INSTANCIATE_NODE_CONTAINERS(Node)
+INSTANTIATE_NODE_CONTAINERS(Node)
 
-INSTANCIATE_NODE_CONTAINERS(AbstractLockNode)
-INSTANCIATE_NODE_CONTAINERS(AddPNode)
-INSTANCIATE_NODE_CONTAINERS(BoolNode)
-INSTANCIATE_NODE_CONTAINERS(CallJavaNode)
-INSTANCIATE_NODE_CONTAINERS(CallStaticJavaNode)
-INSTANCIATE_NODE_CONTAINERS(CastPPNode)
-INSTANCIATE_NODE_CONTAINERS(ConstraintCastNode)
-INSTANCIATE_NODE_CONTAINERS(CountedLoopNode)
-INSTANCIATE_NODE_CONTAINERS(CreateExNode)
-INSTANCIATE_NODE_CONTAINERS(IfNode)
-INSTANCIATE_NODE_CONTAINERS(IfProjNode)
-INSTANCIATE_NODE_CONTAINERS(MachNode)
-INSTANCIATE_NODE_CONTAINERS(MachProjNode)
-INSTANCIATE_NODE_CONTAINERS(MergeMemNode)
-INSTANCIATE_NODE_CONTAINERS(MemNode)
-INSTANCIATE_NODE_CONTAINERS(MultiBranchNode)
-INSTANCIATE_NODE_CONTAINERS(PhiNode)
-INSTANCIATE_NODE_CONTAINERS(OpaqueMultiversioningNode)
-INSTANCIATE_NODE_CONTAINERS(OpaqueTemplateAssertionPredicateNode)
-INSTANCIATE_NODE_CONTAINERS(OpaqueZeroTripGuardNode)
-INSTANCIATE_NODE_CONTAINERS(ReachabilityFenceNode)
-INSTANCIATE_NODE_CONTAINERS(RegionNode)
-INSTANCIATE_NODE_CONTAINERS(SafePointNode)
-INSTANCIATE_NODE_CONTAINERS(SafePointScalarObjectNode)
-INSTANCIATE_NODE_CONTAINERS(StoreNode)
-INSTANCIATE_NODE_CONTAINERS(TypeNode)
-INSTANCIATE_NODE_CONTAINERS(ValueTypeNode)
-#undef INSTANCIATE_NODE_CONTAINERS
+INSTANTIATE_NODE_CONTAINERS(AbstractLockNode)
+INSTANTIATE_NODE_CONTAINERS(AddPNode)
+INSTANTIATE_NODE_CONTAINERS(BoolNode)
+INSTANTIATE_NODE_CONTAINERS(CallJavaNode)
+INSTANTIATE_NODE_CONTAINERS(CallStaticJavaNode)
+INSTANTIATE_NODE_CONTAINERS(CastPPNode)
+INSTANTIATE_NODE_CONTAINERS(ConstraintCastNode)
+INSTANTIATE_NODE_CONTAINERS(CountedLoopNode)
+INSTANTIATE_NODE_CONTAINERS(CreateExNode)
+INSTANTIATE_NODE_CONTAINERS(IfNode)
+INSTANTIATE_NODE_CONTAINERS(IfProjNode)
+INSTANTIATE_NODE_CONTAINERS(MachNode)
+INSTANTIATE_NODE_CONTAINERS(MachProjNode)
+INSTANTIATE_NODE_CONTAINERS(MergeMemNode)
+INSTANTIATE_NODE_CONTAINERS(MemNode)
+INSTANTIATE_NODE_CONTAINERS(MultiBranchNode)
+INSTANTIATE_NODE_CONTAINERS(PhiNode)
+INSTANTIATE_NODE_CONTAINERS(OpaqueMultiversioningNode)
+INSTANTIATE_NODE_CONTAINERS(OpaqueTemplateAssertionPredicateNode)
+INSTANTIATE_NODE_CONTAINERS(OpaqueZeroTripGuardNode)
+INSTANTIATE_NODE_CONTAINERS(ReachabilityFenceNode)
+INSTANTIATE_NODE_CONTAINERS(RegionNode)
+INSTANTIATE_NODE_CONTAINERS(SafePointNode)
+INSTANTIATE_NODE_CONTAINERS(SafePointScalarObjectNode)
+INSTANTIATE_NODE_CONTAINERS(StoreNode)
+INSTANTIATE_NODE_CONTAINERS(TypeNode)
+INSTANTIATE_NODE_CONTAINERS(ValueTypeNode)
+#undef INSTANTIATE_NODE_CONTAINERS

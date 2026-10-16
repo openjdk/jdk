@@ -2889,7 +2889,7 @@ bool Matcher::branches_to_uncommon_trap(const Node *n) {
   if (!C->is_method_compilation()) return false;
 
   assert(n->is_If(), "You should only call this on if nodes.");
-  IfNode* ifn = n->as_If();
+  IfNode *ifn = n->as_If();
 
   Node *ifFalse = nullptr;
   for (DUIterator_Fast imax, i = ifn->fast_outs(imax); i < imax; i++) {

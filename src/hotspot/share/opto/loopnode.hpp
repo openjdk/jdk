@@ -988,17 +988,17 @@ private:
   // Inline wrapper for frequent cases:
   // 1) only one use
   // 2) a use is the same as the current LCA passed as 'n1'
-  Node* dom_lca_for_get_late_ctrl(Node* lca, Node* n, Node* tag) {
+  Node *dom_lca_for_get_late_ctrl( Node *lca, Node *n, Node *tag ) {
     assert( n->is_CFG(), "" );
     // Fast-path null lca
     if( lca != nullptr && lca != n ) {
       assert( lca->is_CFG(), "" );
       // find LCA of all uses
-      n = dom_lca_for_get_late_ctrl_internal(lca, n, tag);
+      n = dom_lca_for_get_late_ctrl_internal( lca, n, tag );
     }
     return find_non_split_ctrl(n);
   }
-  Node* dom_lca_for_get_late_ctrl_internal(Node* lca, Node* n, Node* tag);
+  Node *dom_lca_for_get_late_ctrl_internal( Node *lca, Node *n, Node *tag );
 
   // Helper function for directing control inputs away from CFG split points.
   Node *find_non_split_ctrl( Node *ctrl ) const {

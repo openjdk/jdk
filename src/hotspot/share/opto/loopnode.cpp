@@ -473,7 +473,7 @@ PhiNode* PhaseIdealLoop::loop_iv_phi(const Node* xphi, const Node* phi_incr, con
   if (phi_incr != nullptr && phi_incr != xphi) {
     return nullptr;
   }
-  PhiNode* phi = xphi->as_Phi();
+  PhiNode *phi = xphi->as_Phi();
 
   // Phi must be of loop header; backedge must wrap to increment
   if (phi->region() != head) {
@@ -6874,7 +6874,7 @@ bool PhaseIdealLoop::is_strict_dominator(Node* dominator, Node* n) {
 // does not need to be cleared between calls to get_late_ctrl().
 // Algorithm trades a larger constant factor for better asymptotic behavior
 //
-Node* PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal(Node* n1, Node* n2, Node* tag_node) {
+Node *PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal(Node *n1, Node *n2, Node *tag_node) {
   uint d1 = dom_depth(n1);
   uint d2 = dom_depth(n2);
   jlong tag = tag_node->_idx | (((jlong)_dom_lca_tags_round) << 32);
