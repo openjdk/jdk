@@ -36,7 +36,7 @@ public class TestNativeMismatch {
         int x;
 
         public MyValue(int x) {
-            this.x = x;        
+            this.x = x;
         }
     }
 
@@ -80,4 +80,3 @@ public class TestNativeMismatch {
         }
     }
 }
-
