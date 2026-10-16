@@ -784,6 +784,11 @@ public class BindingSpecializer {
             case INT_TO_BYTE -> cb.i2b();
             case INT_TO_CHAR -> cb.i2c();
             case INT_TO_SHORT -> cb.i2s();
+            case UINT_TO_LONG -> {
+                cb.i2l();
+                cb.loadConstant(0xFFFFFFFFL);
+                cb.land();
+            }
             case BYTE_TO_LONG, CHAR_TO_LONG, SHORT_TO_LONG, INT_TO_LONG -> cb.i2l();
             case UBYTE_TO_LONG -> {
                 cb.i2l();

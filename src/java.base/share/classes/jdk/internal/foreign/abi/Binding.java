@@ -317,7 +317,9 @@ public sealed interface Binding {
             } else if (toType == char.class) {
                 return Cast.INT_TO_CHAR;
             } else if (toType == long.class) {
-                return Cast.INT_TO_LONG;
+                return extendBehavior == ZERO_EXTEND
+                        ? Cast.UINT_TO_LONG
+                        : Cast.INT_TO_LONG;
             }
         } else if (toType == int.class) {
             if (fromType == boolean.class) {
@@ -873,6 +875,7 @@ public sealed interface Binding {
         INT_TO_CHAR(int.class, char.class),
         INT_TO_SHORT(int.class, short.class),
         INT_TO_LONG(int.class, long.class),
+        UINT_TO_LONG(int.class, long.class),
 
         BOOLEAN_TO_INT(boolean.class, int.class),
         BYTE_TO_INT(byte.class, int.class),
@@ -919,6 +922,7 @@ public sealed interface Binding {
         private static final MethodHandle BYTE_TO_LONG_UNSIGNED;
         private static final MethodHandle SHORT_TO_INT_UNSIGNED;
         private static final MethodHandle SHORT_TO_LONG_UNSIGNED;
+        private static final MethodHandle INT_TO_LONG_UNSIGNED;
 
         static {
             MethodHandles.Lookup lookup = MethodHandles.publicLookup();
@@ -931,6 +935,8 @@ public sealed interface Binding {
                         MethodType.methodType(long.class, byte.class));
                 SHORT_TO_LONG_UNSIGNED = lookup.findStatic(Short.class, "toUnsignedLong",
                         MethodType.methodType(long.class, short.class));
+                INT_TO_LONG_UNSIGNED = lookup.findStatic(Integer.class, "toUnsignedLong",
+                        MethodType.methodType(long.class, int.class));
             } catch (ReflectiveOperationException e) {
                 throw new ExceptionInInitializerError(e);
             }
@@ -945,6 +951,7 @@ public sealed interface Binding {
                 case USHORT_TO_INT -> SHORT_TO_INT_UNSIGNED;
                 case UBYTE_TO_LONG -> BYTE_TO_LONG_UNSIGNED;
                 case USHORT_TO_LONG -> SHORT_TO_LONG_UNSIGNED;
+                case UINT_TO_LONG -> INT_TO_LONG_UNSIGNED;
                 default -> MethodHandles.explicitCastArguments(MethodHandles.identity(toType),
                         MethodType.methodType(toType, fromType));
             };

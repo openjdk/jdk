@@ -78,6 +78,13 @@ public final class AixPPC64Linker extends AbstractLinker {
     }
 
     @Override
+    protected ValueLayout maybeDropExtension(ValueLayout valueLayout) {
+        return valueLayout.byteSize() < 8 // smaller than long
+                ? valueLayout // keep, if any
+                : super.maybeDropExtension(valueLayout);
+    }
+
+    @Override
     protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options) {
         return CallArranger.AIX.arrangeDowncall(inferredMethodType, function, options);
     }
