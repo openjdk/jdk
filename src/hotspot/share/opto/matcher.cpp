@@ -139,7 +139,7 @@ OptoReg::Name Compile::compute_old_SP() {
 
 
 #ifdef ASSERT
-void Matcher::verify_new_nodes_only(const Node* xroot) {
+void Matcher::verify_new_nodes_only(Node* xroot) {
   // Make sure that the new graph only references new nodes
   ResourceMark rm;
   Unique_Node_List<const Node> worklist;

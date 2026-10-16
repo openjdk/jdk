@@ -402,7 +402,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
 // on the input paths.
 // Note: this function is recursive, its depth is limited by the "level" argument
 // Returns the computed Phi, or null if it cannot compute it.
-PhiNode* PhaseMacroExpand::value_from_mem_phi(Node* mem, BasicType ft, const Type* phi_type, const TypeOopPtr* adr_t, AllocateNode* alloc, Node_Stack<PhiNode>* value_phis, int level) {
+Node* PhaseMacroExpand::value_from_mem_phi(Node* mem, BasicType ft, const Type* phi_type, const TypeOopPtr* adr_t, AllocateNode* alloc, Node_Stack<PhiNode>* value_phis, int level) {
   assert(mem->is_Phi(), "sanity");
   int alias_idx = C->get_alias_index(adr_t);
   int offset = adr_t->flat_offset();
@@ -414,7 +414,7 @@ PhiNode* PhaseMacroExpand::value_from_mem_phi(Node* mem, BasicType ft, const Typ
     Node* phi = region->fast_out(k);
     if (phi->is_Phi() && phi != mem &&
         phi->as_Phi()->is_same_inst_field(phi_type, (int)mem->_idx, instance_id, alias_idx, offset)) {
-      return phi->as_Phi();
+      return phi;
     }
   }
   // Check if an appropriate new value phi already exists.

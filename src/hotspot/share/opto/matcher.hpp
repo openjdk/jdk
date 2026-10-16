@@ -160,7 +160,7 @@ private:
 
 #ifdef ASSERT
   // Make sure only new nodes are reachable from this node
-  void verify_new_nodes_only(const Node* root);
+  void verify_new_nodes_only(Node* root);
 
   Node* _mem_node;   // Ideal memory node consumed by mach node
 #endif
