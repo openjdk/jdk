@@ -726,7 +726,7 @@ const RegMask &MachSafePointNode::in_RegMask( uint idx ) const {
   return *Compile::current()->matcher()->idealreg2spillmask[in(idx)->ideal_reg()];
 }
 
-bool MachSafePointNode::is_uncommon_trap(int32_t *out_trap_request) const {
+bool MachSafePointNode::is_uncommon_trap(int32_t* out_trap_request) const {
   int32_t trap_request = 0;
   bool is_trap_request = false;
   if (is_MachCallStaticJava()) {
@@ -772,7 +772,7 @@ void MachSafePointNode::dump_trap_args(outputStream *st) const {
 
 //=============================================================================
 
-const RegMask &MachUncommonTrapNode::in_RegMask(uint idx) const {
+const RegMask& MachUncommonTrapNode::in_RegMask(uint idx) const {
   // Control, I_O, Memory, FramePtr, ReturnAdr
   if (idx < TypeFunc::Parms) return _in_rms[idx];
 

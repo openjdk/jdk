@@ -972,11 +972,14 @@ public:
   virtual const RegMask &in_RegMask(uint) const;
   virtual const RegMask& out_RegMask() const { return RegMask::EMPTY; }
   virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
-  virtual uint size(PhaseRegAlloc *ra_) const;
+  virtual const RegMask& in_RegMask(uint) const;
+  virtual const RegMask& out_RegMask() const { return RegMask::EMPTY; }
+  virtual void emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const;
+  virtual uint size(PhaseRegAlloc* ra_) const;
   virtual int ret_addr_offset() const;
 
 #ifndef PRODUCT
-  virtual const char *Name() const { return "UncommonTrap"; }
+  virtual const char* Name() const { return "UncommonTrap"; }
   virtual void format(PhaseRegAlloc *ra, outputStream *st) const;
 #endif
 };
