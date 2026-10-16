@@ -178,9 +178,9 @@ public:
   void make_affiliated_maybe();
   void make_regular_bypass();
   void make_humongous_start();
-  void make_humongous_cont();
+  void make_humongous_cont(ShenandoahHeapRegion* humongous_start);
   void make_humongous_start_bypass(ShenandoahAffiliation affiliation);
-  void make_humongous_cont_bypass(ShenandoahAffiliation affiliation);
+  void make_humongous_cont_bypass(ShenandoahAffiliation affiliation, ShenandoahHeapRegion* humongous_start);
   void make_pinned();
   void make_unpinned();
   void make_cset();
@@ -280,6 +280,9 @@ private:
 
   // This is only read/written by a gc worker to avoid unnecessary bitmap resets
   bool _needs_bitmap_reset;
+
+  // If this is a humongous region, points to the corresponding humongous start region
+  ShenandoahHeapRegion* _humongous_start_region;
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
@@ -466,7 +469,11 @@ public:
   bool block_is_obj(const HeapWord* p) const { return p < top(); }
 
   // Find humongous start region that this region belongs to
-  ShenandoahHeapRegion* humongous_start_region() const;
+  ShenandoahHeapRegion* humongous_start_region() const {
+    assert(is_humongous(), "Must be part of a humongous object");
+    return _humongous_start_region;
+  }
+
 
   HeapWord* top() const         { return _top;     }
   void set_top(HeapWord* v)     { _top = v;        }
