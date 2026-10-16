@@ -1366,6 +1366,7 @@ methodHandle SharedRuntime::find_callee_method(bool& caller_does_not_scalarize, 
 
     // Calls via mismatching methods are always non-scalarized
     if (!caller_does_not_scalarize) {
+      // check if the call is an optimized virtual call
       RegisterMap reg_map(current,
                     RegisterMap::UpdateMap::skip,
                     RegisterMap::ProcessFrames::include,
