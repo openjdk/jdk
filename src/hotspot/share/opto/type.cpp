@@ -115,66 +115,66 @@ void Type::Offset::dump2(outputStream *st) const {
 
 // Array which maps compiler types to Basic Types
 const Type::TypeInfo Type::_type_info[Type::lastype] = {
-  { Bad,             T_ILLEGAL,    "bad",           false, Node::NotAMachineReg},  // Bad
-  { Control,         T_ILLEGAL,    "control",       false, 0                   },  // Control
-  { Bottom,          T_VOID,       "top",           false, 0                   },  // Top
-  { Bad,             T_INT,        "int:",          false, Op_RegI             },  // Int
-  { Bad,             T_LONG,       "long:",         false, Op_RegL             },  // Long
-  { Half,            T_VOID,       "half",          false, 0                   },  // Half
-  { Bad,             T_NARROWOOP,  "narrowoop:",    false, Op_RegN             },  // NarrowOop
-  { Bad,             T_NARROWKLASS,"narrowklass:",  false, Op_RegN             },  // NarrowKlass
-  { Bad,             T_ILLEGAL,    "tuple:",        false, Node::NotAMachineReg},  // Tuple
-  { Bad,             T_ARRAY,      "array:",        false, Node::NotAMachineReg},  // Array
-  { Bad,             T_ARRAY,      "interfaces:",   false, Node::NotAMachineReg},  // Interfaces
+  { T_ILLEGAL,    "bad",           false, Node::NotAMachineReg},  // Bad
+  { T_ILLEGAL,    "control",       false, 0                   },  // Control
+  { T_VOID,       "top",           false, 0                   },  // Top
+  { T_INT,        "int:",          false, Op_RegI             },  // Int
+  { T_LONG,       "long:",         false, Op_RegL             },  // Long
+  { T_VOID,       "half",          false, 0                   },  // Half
+  { T_NARROWOOP,  "narrowoop:",    false, Op_RegN             },  // NarrowOop
+  { T_NARROWKLASS,"narrowklass:",  false, Op_RegN             },  // NarrowKlass
+  { T_ILLEGAL,    "tuple:",        false, Node::NotAMachineReg},  // Tuple
+  { T_ARRAY,      "array:",        false, Node::NotAMachineReg},  // Array
+  { T_ARRAY,      "interfaces:",   false, Node::NotAMachineReg},  // Interfaces
 
 #if defined(PPC64)
-  { Bad,             T_ILLEGAL,    "vectormask:",   false, Op_RegVectMask      },  // VectorMask.
-  { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA             },  // VectorA.
-  { Bad,             T_ILLEGAL,    "vectors:",      false, 0                   },  // VectorS
-  { Bad,             T_ILLEGAL,    "vectord:",      false, Op_RegL             },  // VectorD
-  { Bad,             T_ILLEGAL,    "vectorx:",      false, Op_VecX             },  // VectorX
-  { Bad,             T_ILLEGAL,    "vectory:",      false, 0                   },  // VectorY
-  { Bad,             T_ILLEGAL,    "vectorz:",      false, 0                   },  // VectorZ
+  { T_ILLEGAL,    "vectormask:",   false, Op_RegVectMask      },  // VectorMask.
+  { T_ILLEGAL,    "vectora:",      false, Op_VecA             },  // VectorA.
+  { T_ILLEGAL,    "vectors:",      false, 0                   },  // VectorS
+  { T_ILLEGAL,    "vectord:",      false, Op_RegL             },  // VectorD
+  { T_ILLEGAL,    "vectorx:",      false, Op_VecX             },  // VectorX
+  { T_ILLEGAL,    "vectory:",      false, 0                   },  // VectorY
+  { T_ILLEGAL,    "vectorz:",      false, 0                   },  // VectorZ
 #elif defined(S390)
-  { Bad,             T_ILLEGAL,    "vectormask:",   false, Op_RegVectMask      },  // VectorMask.
-  { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA             },  // VectorA.
-  { Bad,             T_ILLEGAL,    "vectors:",      false, 0                   },  // VectorS
-  { Bad,             T_ILLEGAL,    "vectord:",      false, Op_RegL             },  // VectorD
-  { Bad,             T_ILLEGAL,    "vectorx:",      false, Op_VecX             },  // VectorX
-  { Bad,             T_ILLEGAL,    "vectory:",      false, 0                   },  // VectorY
-  { Bad,             T_ILLEGAL,    "vectorz:",      false, 0                   },  // VectorZ
+  { T_ILLEGAL,    "vectormask:",   false, Op_RegVectMask      },  // VectorMask.
+  { T_ILLEGAL,    "vectora:",      false, Op_VecA             },  // VectorA.
+  { T_ILLEGAL,    "vectors:",      false, 0                   },  // VectorS
+  { T_ILLEGAL,    "vectord:",      false, Op_RegL             },  // VectorD
+  { T_ILLEGAL,    "vectorx:",      false, Op_VecX             },  // VectorX
+  { T_ILLEGAL,    "vectory:",      false, 0                   },  // VectorY
+  { T_ILLEGAL,    "vectorz:",      false, 0                   },  // VectorZ
 #else // all other
-  { Bad,             T_ILLEGAL,    "vectormask:",   false, Op_RegVectMask      },  // VectorMask.
-  { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA             },  // VectorA.
-  { Bad,             T_ILLEGAL,    "vectors:",      false, Op_VecS             },  // VectorS
-  { Bad,             T_ILLEGAL,    "vectord:",      false, Op_VecD             },  // VectorD
-  { Bad,             T_ILLEGAL,    "vectorx:",      false, Op_VecX             },  // VectorX
-  { Bad,             T_ILLEGAL,    "vectory:",      false, Op_VecY             },  // VectorY
-  { Bad,             T_ILLEGAL,    "vectorz:",      false, Op_VecZ             },  // VectorZ
+  { T_ILLEGAL,    "vectormask:",   false, Op_RegVectMask      },  // VectorMask.
+  { T_ILLEGAL,    "vectora:",      false, Op_VecA             },  // VectorA.
+  { T_ILLEGAL,    "vectors:",      false, Op_VecS             },  // VectorS
+  { T_ILLEGAL,    "vectord:",      false, Op_VecD             },  // VectorD
+  { T_ILLEGAL,    "vectorx:",      false, Op_VecX             },  // VectorX
+  { T_ILLEGAL,    "vectory:",      false, Op_VecY             },  // VectorY
+  { T_ILLEGAL,    "vectorz:",      false, Op_VecZ             },  // VectorZ
 #endif
-  { Bad,             T_ADDRESS,    "anyptr:",       false, Op_RegP             },  // AnyPtr
-  { Bad,             T_ADDRESS,    "rawptr:",       false, Op_RegP             },  // RawPtr
-  { Bad,             T_OBJECT,     "oop:",          true,  Op_RegP             },  // OopPtr
-  { Bad,             T_OBJECT,     "inst:",         true,  Op_RegP             },  // InstPtr
-  { Bad,             T_OBJECT,     "ary:",          true,  Op_RegP             },  // AryPtr
-  { Bad,             T_METADATA,   "metadata:",     false, Op_RegP             },  // MetadataPtr
-  { Bad,             T_METADATA,   "klass:",        false, Op_RegP             },  // KlassPtr
-  { Bad,             T_METADATA,   "instklass:",    false, Op_RegP             },  // InstKlassPtr
-  { Bad,             T_METADATA,   "aryklass:",     false, Op_RegP             },  // AryKlassPtr
-  { Bad,             T_OBJECT,     "func",          false, 0                   },  // Function
-  { Abio,            T_ILLEGAL,    "abIO",          false, 0                   },  // Abio
-  { Return_Address,  T_ADDRESS,    "return_address",false, Op_RegP             },  // Return_Address
-  { Memory,          T_ILLEGAL,    "memory",        false, 0                   },  // Memory
-  { HalfFloatBot,    T_SHORT,      "halffloat_top", false, Op_RegF             },  // HalfFloatTop
-  { HalfFloatCon,    T_SHORT,      "hfcon:",        false, Op_RegF             },  // HalfFloatCon
-  { HalfFloatTop,    T_SHORT,      "short",         false, Op_RegF             },  // HalfFloatBot
-  { FloatBot,        T_FLOAT,      "float_top",     false, Op_RegF             },  // FloatTop
-  { FloatCon,        T_FLOAT,      "ftcon:",        false, Op_RegF             },  // FloatCon
-  { FloatTop,        T_FLOAT,      "float",         false, Op_RegF             },  // FloatBot
-  { DoubleBot,       T_DOUBLE,     "double_top",    false, Op_RegD             },  // DoubleTop
-  { DoubleCon,       T_DOUBLE,     "dblcon:",       false, Op_RegD             },  // DoubleCon
-  { DoubleTop,       T_DOUBLE,     "double",        false, Op_RegD             },  // DoubleBot
-  { Top,             T_ILLEGAL,    "bottom",        false, 0                   }   // Bottom
+  { T_ADDRESS,    "anyptr:",       false, Op_RegP             },  // AnyPtr
+  { T_ADDRESS,    "rawptr:",       false, Op_RegP             },  // RawPtr
+  { T_OBJECT,     "oop:",          true,  Op_RegP             },  // OopPtr
+  { T_OBJECT,     "inst:",         true,  Op_RegP             },  // InstPtr
+  { T_OBJECT,     "ary:",          true,  Op_RegP             },  // AryPtr
+  { T_METADATA,   "metadata:",     false, Op_RegP             },  // MetadataPtr
+  { T_METADATA,   "klass:",        false, Op_RegP             },  // KlassPtr
+  { T_METADATA,   "instklass:",    false, Op_RegP             },  // InstKlassPtr
+  { T_METADATA,   "aryklass:",     false, Op_RegP             },  // AryKlassPtr
+  { T_OBJECT,     "func",          false, 0                   },  // Function
+  { T_ILLEGAL,    "abIO",          false, 0                   },  // Abio
+  { T_ADDRESS,    "return_address",false, Op_RegP             },  // Return_Address
+  { T_ILLEGAL,    "memory",        false, 0                   },  // Memory
+  { T_SHORT,      "halffloat_top", false, Op_RegF             },  // HalfFloatTop
+  { T_SHORT,      "hfcon:",        false, Op_RegF             },  // HalfFloatCon
+  { T_SHORT,      "short",         false, Op_RegF             },  // HalfFloatBot
+  { T_FLOAT,      "float_top",     false, Op_RegF             },  // FloatTop
+  { T_FLOAT,      "ftcon:",        false, Op_RegF             },  // FloatCon
+  { T_FLOAT,      "float",         false, Op_RegF             },  // FloatBot
+  { T_DOUBLE,     "double_top",    false, Op_RegD             },  // DoubleTop
+  { T_DOUBLE,     "dblcon:",       false, Op_RegD             },  // DoubleCon
+  { T_DOUBLE,     "double",        false, Op_RegD             },  // DoubleBot
+  { T_ILLEGAL,    "bottom",        false, 0                   }   // Bottom
 };
 
 // Map ideal registers (machine types) to ideal types
@@ -716,7 +716,10 @@ void Type::Initialize_shared(Compile* current) {
   TypeAryPtr::LONGS   = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeLong::LONG     ,TypeInt::POS, false, false, true, false, true, true), ciTypeArrayKlass::make(T_LONG),   true,  Offset::bottom);
   TypeAryPtr::FLOATS  = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(Type::FLOAT        ,TypeInt::POS, false, false, true, false, true, true), ciTypeArrayKlass::make(T_FLOAT),  true,  Offset::bottom);
   TypeAryPtr::DOUBLES = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(Type::DOUBLE       ,TypeInt::POS, false, false, true, false, true, true), ciTypeArrayKlass::make(T_DOUBLE), true,  Offset::bottom);
-  TypeAryPtr::INLINES = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeInstPtr::BOTTOM,TypeInt::POS, /* stable= */ false, /* flat= */ true, false, false, false, false), nullptr, false, Offset::bottom);
+  TypeAryPtr::INLINES    = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeInstPtr::BOTTOM,  TypeInt::POS, false, true, false, false, false, false), nullptr, false, Offset::bottom);
+  TypeAryPtr::REFERENCES = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeInstPtr::BOTTOM,  TypeInt::POS, false, false, true, false, false, true),  nullptr, false, Offset::bottom);
+  TypeAryPtr::NULL_FREES = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeInstPtr::NOTNULL, TypeInt::POS, false, false, false, true, false, false), nullptr, false, Offset::bottom);
+  TypeAryPtr::NULLABLES  = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeInstPtr::BOTTOM,  TypeInt::POS, false, false, false, false, true, true),  nullptr, false, Offset::bottom);
 
   // Nobody should ask _array_body_type[T_NARROWOOP]. Use null as assert.
   TypeAryPtr::_array_body_type[T_NARROWOOP] = nullptr;
@@ -2765,20 +2768,27 @@ const TypePVectMask* TypePVectMask::make(const BasicType elem_bt, uint length) {
 
 //=============================================================================
 // Convenience common pre-built types.
-const TypePtr *TypePtr::NULL_PTR;
-const TypePtr *TypePtr::NOTNULL;
-const TypePtr *TypePtr::BOTTOM;
+const TypePtr* TypePtr::NULL_PTR;
+const TypePtr* TypePtr::NOTNULL;
+const TypePtr* TypePtr::BOTTOM;
 
-//------------------------------meet-------------------------------------------
 // Meet over the PTR enum
 const TypePtr::PTR TypePtr::ptr_meet[TypePtr::lastPTR][TypePtr::lastPTR] = {
-  //              TopPTR,    AnyNull,   Constant, Null,   NotNull, BotPTR,
-  { /* Top     */ TopPTR,    AnyNull,   Constant, Null,   NotNull, BotPTR,},
-  { /* AnyNull */ AnyNull,   AnyNull,   Constant, BotPTR, NotNull, BotPTR,},
-  { /* Constant*/ Constant,  Constant,  Constant, BotPTR, NotNull, BotPTR,},
-  { /* Null    */ Null,      BotPTR,    BotPTR,   Null,   BotPTR,  BotPTR,},
-  { /* NotNull */ NotNull,   NotNull,   NotNull,  BotPTR, NotNull, BotPTR,},
-  { /* BotPTR  */ BotPTR,    BotPTR,    BotPTR,   BotPTR, BotPTR,  BotPTR,}
+  //              TopPTR,    Constant, Null,   NotNull, BotPTR,
+  { /* TopPTR  */ TopPTR,    Constant, Null,   NotNull, BotPTR,},
+  { /* Constant*/ Constant,  Constant, BotPTR, NotNull, BotPTR,},
+  { /* Null    */ Null,      BotPTR,   Null,   BotPTR,  BotPTR,},
+  { /* NotNull */ NotNull,   NotNull,  BotPTR, NotNull, BotPTR,},
+  { /* BotPTR  */ BotPTR,    BotPTR,   BotPTR, BotPTR,  BotPTR,},
+};
+// Join over the PTR enum
+const TypePtr::PTR TypePtr::ptr_join[TypePtr::lastPTR][TypePtr::lastPTR] = {
+  //              TopPTR,    Constant, Null,   NotNull,  BotPTR,
+  { /* TopPTR  */ TopPTR,    TopPTR,   TopPTR, TopPTR,   TopPTR,  },
+  { /* Constant*/ TopPTR,    Constant, TopPTR, Constant, Constant,},
+  { /* Null    */ TopPTR,    TopPTR,   Null,   TopPTR,   Null,    },
+  { /* NotNull */ TopPTR,    Constant, TopPTR, NotNull,  NotNull, },
+  { /* BotPTR  */ TopPTR,    Constant, Null,   NotNull,  BotPTR,  },
 };
 
 //------------------------------make-------------------------------------------
@@ -2916,12 +2926,6 @@ const char* const TypePtr::flat_in_array_msg[Uninitialized] = {
   "TOP flat in array", "flat in array", "not flat in array", "maybe flat in array"
 };
 
-//------------------------------xdual------------------------------------------
-// Dual: compute field-by-field dual
-const TypePtr::PTR TypePtr::ptr_dual[TypePtr::lastPTR] = {
-  BotPTR, NotNull, Constant, Null, AnyNull, TopPTR
-};
-
 //------------------------------xadd_offset------------------------------------
 Type::Offset TypePtr::xadd_offset(intptr_t offset) const {
   return _offset.add(offset);
@@ -2976,7 +2980,7 @@ const Type* TypePtr::cleanup_speculative() const {
   if (no_spec == NULL_PTR->with_inline_depth(inline_depth())) {
     return no_spec;
   }
-  if (above_centerline(speculative()->ptr())) {
+  if (is_top(speculative()->ptr())) {
     return no_spec;
   }
   const TypeOopPtr* spec_oopptr = speculative()->isa_oopptr();
@@ -3240,8 +3244,8 @@ TypePtr::FlatInArray TypePtr::compute_flat_in_array_if_unknown(ciInstanceKlass* 
 }
 
 //------------------------------dump2------------------------------------------
-const char *const TypePtr::ptr_msg[TypePtr::lastPTR] = {
-  "TopPTR","AnyNull","Constant","null","NotNull","BotPTR"
+const char* const TypePtr::ptr_msg[TypePtr::lastPTR] = {
+  "TopPTR", "Constant", "null", "NotNull", "BotPTR"
 };
 
 #ifndef PRODUCT
@@ -3301,12 +3305,12 @@ void TypePtr::dump_flat_in_array(FlatInArray flat_in_array, outputStream* st) {
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants
 bool TypePtr::singleton(void) const {
-  // TopPTR, Null, AnyNull, Constant are all singletons
-  return (_offset != Offset::bottom) && !below_centerline(_ptr);
+  // TopPTR, Null, Constant are all singletons
+  return (_offset != Offset::bottom) && is_at_most_uniquely_inhabited(_ptr);
 }
 
 bool TypePtr::empty(void) const {
-  return (_offset == Offset::top) || above_centerline(_ptr);
+  return (_offset == Offset::top) || is_top(_ptr);
 }
 
 //=============================================================================
@@ -3376,9 +3380,6 @@ const Type* TypeRawPtr::xmeet(const Type* t) const {
     if( _ptr == TypePtr::TopPTR ) return t;
     return TypeRawPtr::BOTTOM;
   case TypePtr::NotNull: return TypePtr::make(AnyPtr, meet_ptr(TypePtr::NotNull), tp->meet_offset(0), tp->speculative(), tp->inline_depth());
-  case TypePtr::AnyNull:
-    if( _ptr == TypePtr::Constant) return this;
-    return make( meet_ptr(TypePtr::AnyNull) );
   default: ShouldNotReachHere();
   }
   return this;
@@ -3915,8 +3916,7 @@ const Type* TypeOopPtr::xmeet_helper(const Type *t) const {
     case Null:
       if (ptr == Null)  return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
       // else fall through:
-    case TopPTR:
-    case AnyNull: {
+    case TopPTR: {
       int instance_id = meet_instance_id(InstanceTop);
       return make(ptr, offset, instance_id, speculative, depth);
     }
@@ -4227,8 +4227,8 @@ void TypeOopPtr::dump_instance_id(outputStream* st) const {
 // constants
 bool TypeOopPtr::singleton(void) const {
   // detune optimizer to not generate constant oop + constant offset as a constant!
-  // TopPTR, Null, AnyNull, Constant are all singletons
-  return (offset() == 0) && !below_centerline(_ptr);
+  // TopPTR, Null, Constant are all singletons
+  return (offset() == 0) && is_at_most_uniquely_inhabited(_ptr);
 }
 
 //------------------------------add_offset-------------------------------------
@@ -4306,14 +4306,14 @@ int TypeOopPtr::join_instance_id(int uid) const {
 }
 
 const TypeInterfaces* TypeOopPtr::meet_interfaces(const TypeOopPtr* other) const {
-  if (above_centerline(ptr()) || above_centerline(other->ptr())) {
+  if (is_top(ptr()) || is_top(other->ptr())) {
     typerr(other);
   }
   return interfaces()->intersection_with(other->interfaces());
 }
 
 const TypeInterfaces* TypeOopPtr::join_interfaces(const TypeOopPtr* other) const {
-  if (above_centerline(ptr()) || above_centerline(other->ptr())) {
+  if (is_top(ptr()) || is_top(other->ptr())) {
     typerr(other);
   }
   return interfaces()->union_with(other->interfaces());
@@ -4509,10 +4509,11 @@ const Type* TypeInstPtr::xmeet_helper(const Type* t) const {
     int depth = meet_inline_depth(tp->inline_depth());
     switch (tp->ptr()) {
     case Null:
-      if( ptr == Null ) return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
-      // else fall through to AnyNull
-    case TopPTR:
-    case AnyNull: {
+      if (ptr == Null) {
+        return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
+      }
+      // else fall through to TopPTR
+    case TopPTR: {
       return make(ptr, klass(), _interfaces, klass_is_exact(),
                   (ptr == Constant ? const_oop() : nullptr), offset, flat_in_array(), instance_id, speculative, depth);
     }
@@ -4714,17 +4715,20 @@ const TypeKlassPtr* TypeInstPtr::as_klass_type(bool try_for_exact) const {
 //=============================================================================
 // Convenience common pre-built types.
 const TypeAryPtr* TypeAryPtr::BOTTOM;
-const TypeAryPtr *TypeAryPtr::RANGE;
-const TypeAryPtr *TypeAryPtr::OOPS;
-const TypeAryPtr *TypeAryPtr::NARROWOOPS;
-const TypeAryPtr *TypeAryPtr::BYTES;
-const TypeAryPtr *TypeAryPtr::SHORTS;
-const TypeAryPtr *TypeAryPtr::CHARS;
-const TypeAryPtr *TypeAryPtr::INTS;
-const TypeAryPtr *TypeAryPtr::LONGS;
-const TypeAryPtr *TypeAryPtr::FLOATS;
-const TypeAryPtr *TypeAryPtr::DOUBLES;
-const TypeAryPtr *TypeAryPtr::INLINES;
+const TypeAryPtr* TypeAryPtr::RANGE;
+const TypeAryPtr* TypeAryPtr::OOPS;
+const TypeAryPtr* TypeAryPtr::NARROWOOPS;
+const TypeAryPtr* TypeAryPtr::BYTES;
+const TypeAryPtr* TypeAryPtr::SHORTS;
+const TypeAryPtr* TypeAryPtr::CHARS;
+const TypeAryPtr* TypeAryPtr::INTS;
+const TypeAryPtr* TypeAryPtr::LONGS;
+const TypeAryPtr* TypeAryPtr::FLOATS;
+const TypeAryPtr* TypeAryPtr::DOUBLES;
+const TypeAryPtr* TypeAryPtr::INLINES;
+const TypeAryPtr* TypeAryPtr::REFERENCES;
+const TypeAryPtr* TypeAryPtr::NULL_FREES;
+const TypeAryPtr* TypeAryPtr::NULLABLES;
 
 //------------------------------make-------------------------------------------
 const TypeAryPtr* TypeAryPtr::make(PTR ptr, const TypeAry *ary, ciKlass* k, bool xk, Offset offset, Offset field_offset,
@@ -4842,80 +4846,41 @@ const TypeAryPtr* TypeAryPtr::cast_to_size(const TypeInt* new_size) const {
   return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _field_offset, _instance_id, _speculative, _inline_depth, _is_autobox_cache);
 }
 
-const TypeAryPtr* TypeAryPtr::cast_to_flat(bool flat) const {
-  if (flat == is_flat()) {
+const TypeAryPtr* TypeAryPtr::cast_to_flat() const {
+  if (is_flat()) {
     return this;
   }
-  assert(!flat || !is_not_flat(), "inconsistency");
-  const TypeAry* new_ary = TypeAry::make(elem(), size(), is_stable(), flat, is_not_flat(), is_null_free(), is_not_null_free(), is_atomic());
-  const TypeAryPtr* res = make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _field_offset, _instance_id, _speculative, _inline_depth, _is_autobox_cache);
-  if (res->speculative() == res->remove_speculative()) {
-    return res->remove_speculative();
-  }
-  return res;
+
+  assert(!is_not_flat(), "inconsistency");
+  return join_speculative(TypeAryPtr::INLINES)->is_aryptr();
 }
 
-//-------------------------------cast_to_not_flat------------------------------
-const TypeAryPtr* TypeAryPtr::cast_to_not_flat(bool not_flat) const {
-  if (not_flat == is_not_flat()) {
+const TypeAryPtr* TypeAryPtr::cast_to_not_flat() const {
+  if (is_not_flat()) {
     return this;
   }
-  assert(!not_flat || !is_flat(), "inconsistency");
-  const TypeAry* new_ary = TypeAry::make(elem(), size(), is_stable(), is_flat(), not_flat, is_null_free(), is_not_null_free(), is_atomic());
-  const TypeAryPtr* res = make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _field_offset, _instance_id, _speculative, _inline_depth, _is_autobox_cache);
-  // We keep the speculative part if it contains information about flat-/nullability.
-  // Make sure it's removed if it's not better than the non-speculative type anymore.
-  if (res->speculative() == res->remove_speculative()) {
-    return res->remove_speculative();
-  }
-  return res;
+
+  assert(!is_flat(), "inconsistency");
+  return join_speculative(TypeAryPtr::REFERENCES)->is_aryptr();
 }
 
-const TypeAryPtr* TypeAryPtr::cast_to_null_free(bool null_free) const {
-  if (null_free == is_null_free()) {
+const TypeAryPtr* TypeAryPtr::cast_to_null_free() const {
+  if (is_null_free()) {
     return this;
   }
-  assert(!null_free || !is_not_null_free(), "inconsistency");
-  const Type* elem = this->elem();
-  const Type* new_elem = elem->make_ptr();
-  if (null_free) {
-    new_elem = new_elem->join_speculative(TypePtr::NOTNULL);
-  } else {
-    new_elem = new_elem->meet_speculative(TypePtr::NULL_PTR);
-  }
-  new_elem = elem->isa_narrowoop() ? new_elem->make_narrowoop() : new_elem;
-  const TypeAry* new_ary = TypeAry::make(new_elem, size(), is_stable(), is_flat(), is_not_flat(), null_free, is_not_null_free(), is_atomic());
-  const TypeAryPtr* res = make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _field_offset, _instance_id, _speculative, _inline_depth, _is_autobox_cache);
-  if (res->speculative() == res->remove_speculative()) {
-    return res->remove_speculative();
-  }
-  assert(res->speculative() == nullptr || res->speculative()->with_inline_depth(res->inline_depth())->higher_equal(res->remove_speculative()),
-           "speculative type must not be narrower than non-speculative type");
-  return res;
+
+  assert(!is_not_null_free(), "inconsistency");
+  return join_speculative(TypeAryPtr::NULL_FREES)->is_aryptr();
 }
 
 //-------------------------------cast_to_not_null_free-------------------------
-const TypeAryPtr* TypeAryPtr::cast_to_not_null_free(bool not_null_free) const {
-  if (not_null_free == is_not_null_free()) {
+const TypeAryPtr* TypeAryPtr::cast_to_not_null_free() const {
+  if (is_not_null_free()) {
     return this;
   }
-  assert(!not_null_free || !is_null_free(), "inconsistency");
-  const TypeAry* new_ary = TypeAry::make(elem(), size(), is_stable(), is_flat(), is_not_flat(), is_null_free(), not_null_free, is_atomic());
-  const TypePtr* new_spec = _speculative;
-  if (new_spec != nullptr) {
-    // Could be 'null free' from profiling, which would contradict the cast.
-    new_spec = new_spec->is_aryptr()->cast_to_null_free(false)->cast_to_not_null_free();
-  }
-  const TypeAryPtr* res = make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _field_offset,
-                               _instance_id, new_spec, _inline_depth, _is_autobox_cache);
-  // We keep the speculative part if it contains information about flat-/nullability.
-  // Make sure it's removed if it's not better than the non-speculative type anymore.
-  if (res->speculative() == res->remove_speculative()) {
-    return res->remove_speculative();
-  }
-  assert(res->speculative() == nullptr || res->speculative()->with_inline_depth(res->inline_depth())->higher_equal(res->remove_speculative()),
-           "speculative type must not be narrower than non-speculative type");
-  return res;
+
+  assert(!is_null_free(), "inconsistency");
+  return join_speculative(TypeAryPtr::NULLABLES)->is_aryptr();
 }
 
 //---------------------------------update_properties---------------------------
@@ -5060,10 +5025,10 @@ const Type* TypeAryPtr::xmeet_helper(const Type* t) const {
     case BotPTR:
     case NotNull:
       return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
-    case Null:
-      if( ptr == Null ) return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
-      // else fall through to AnyNull
-    case AnyNull: {
+    case Null: {
+      if (ptr == Null) {
+        return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
+      }
       int instance_id = meet_instance_id(InstanceTop);
       return make(ptr, (ptr == Constant ? const_oop() : nullptr),
                   _ary, _klass, _klass_is_exact, offset, _field_offset, instance_id, speculative, depth);
@@ -5254,7 +5219,7 @@ const Type* TypeAryPtr::cleanup_speculative() const {
   }
   // Keep speculative part if it contains information about flat-/nullability
   const TypeAryPtr* spec_aryptr = speculative()->isa_aryptr();
-  if (spec_aryptr != nullptr && !above_centerline(spec_aryptr->ptr()) &&
+  if (spec_aryptr != nullptr && !is_top(spec_aryptr->ptr()) &&
       (spec_aryptr->is_not_flat() || spec_aryptr->is_not_null_free())) {
     return this;
   }
@@ -5439,8 +5404,8 @@ uint TypeMetadataPtr::hash(void) const {
 // constants
 bool TypeMetadataPtr::singleton(void) const {
   // detune optimizer to not generate constant metadata + constant offset as a constant!
-  // TopPTR, Null, AnyNull, Constant are all singletons
-  return (offset() == 0) && !below_centerline(_ptr);
+  // TopPTR, Null, Constant are all singletons
+  return (offset() == 0) && is_at_most_uniquely_inhabited(_ptr);
 }
 
 //------------------------------add_offset-------------------------------------
@@ -5503,8 +5468,7 @@ const Type *TypeMetadataPtr::xmeet( const Type *t ) const {
     case Null:
       if (ptr == Null)  return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
       // else fall through:
-    case TopPTR:
-    case AnyNull: {
+    case TopPTR: {
       return make(ptr, _metadata, offset);
     }
     case BotPTR:
@@ -5690,8 +5654,8 @@ uint TypeKlassPtr::hash(void) const {
 // constants
 bool TypeKlassPtr::singleton(void) const {
   // detune optimizer to not generate constant klass + constant offset as a constant!
-  // TopPTR, Null, AnyNull, Constant are all singletons
-  return (offset() == 0) && !below_centerline(_ptr);
+  // TopPTR, Null, Constant are all singletons
+  return (offset() == 0) && is_at_most_uniquely_inhabited(_ptr);
 }
 
 // Do not allow interface-vs.-noninterface joins to collapse to top.
@@ -5708,14 +5672,14 @@ const Type *TypeKlassPtr::filter_helper(const Type *kills, bool include_speculat
 }
 
 const TypeInterfaces* TypeKlassPtr::meet_interfaces(const TypeKlassPtr* other) const {
-  if (above_centerline(ptr()) || above_centerline(other->ptr())) {
+  if (is_top(ptr()) || is_top(other->ptr())) {
     typerr(other);
   }
   return interfaces()->intersection_with(other->interfaces());
 }
 
 const TypeInterfaces* TypeKlassPtr::join_interfaces(const TypeKlassPtr* other) const {
-  if (above_centerline(ptr()) || above_centerline(other->ptr())) {
+  if (is_top(ptr()) || is_top(other->ptr())) {
     typerr(other);
   }
   return interfaces()->union_with(other->interfaces());
@@ -5872,8 +5836,9 @@ const Type* TypeInstKlassPtr::xmeet(const Type* t) const {
     case TopPTR:
       return make(ptr, instance_klass(), interfaces(), offset, flat_in_array());
     case Null:
-      if( ptr == Null ) return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
-    case AnyNull:
+      if (ptr == Null) {
+        return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
+      }
       return make(ptr, klass(), _interfaces, offset, _flat_in_array);
     case BotPTR:
     case NotNull:
@@ -6362,8 +6327,9 @@ const Type* TypeAryKlassPtr::xmeet(const Type* t) const {
     case TopPTR:
       return make(ptr, elem(), klass(), offset, is_not_flat(), is_not_null_free(), is_flat(), is_null_free(), is_atomic(), is_refined_type());
     case Null:
-      if( ptr == Null ) return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
-    case AnyNull:
+      if (ptr == Null) {
+        return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
+      }
       return make(ptr, _elem, klass(), offset, is_not_flat(), is_not_null_free(), is_flat(), is_null_free(), is_atomic(), is_refined_type());
     case BotPTR:
     case NotNull:

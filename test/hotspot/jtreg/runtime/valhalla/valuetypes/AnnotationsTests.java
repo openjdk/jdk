@@ -41,13 +41,15 @@ import jdk.test.whitebox.WhiteBox;
  *          java.base/jdk.internal.vm.annotation
  * @library /test/lib
  * @enablePreview
+ * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI runtime.valhalla.valuetypes.AnnotationsTests
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ${test.main.class}
  */
 
  public class AnnotationsTests {
     private static final WhiteBox WHITEBOX = WhiteBox.getWhiteBox();
+    private static final boolean UseFieldFlattening = WHITEBOX.getBooleanVMFlag("UseFieldFlattening");
     private static final boolean UseNullableAtomicValueFlattening = WHITEBOX.getBooleanVMFlag("UseNullableAtomicValueFlattening");
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
@@ -110,13 +112,9 @@ import jdk.test.whitebox.WhiteBox;
         try {
             GoodClass5 vc = new GoodClass5();
             Field f0 = vc.getClass().getDeclaredField("f0");
-            if (UseNullableAtomicValueFlattening) {
-                Asserts.assertTrue(UNSAFE.isFlatField(f0), "Flat field expected, but field is not flat");
-            } else {
-                Asserts.assertFalse(UNSAFE.isFlatField(f0), "Unexpected flat field");
-            }
+            Asserts.assertEquals(UNSAFE.isFlatField(f0), UseFieldFlattening && UseNullableAtomicValueFlattening, "Unexpected flatness");
             Field f1 = vc.getClass().getDeclaredField("f1");
-            Asserts.assertTrue(UNSAFE.isFlatField(f1), "Flat field expected, but field is not flat");
+            Asserts.assertEquals(UNSAFE.isFlatField(f1), UseFieldFlattening, "Unexpected flatness");
         } catch (IncompatibleClassChangeError e) {
             exception = e;
             System.out.println("Received " + e);
@@ -289,4 +287,3 @@ import jdk.test.whitebox.WhiteBox;
     }
 
  }
-

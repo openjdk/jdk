@@ -28,9 +28,9 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1CardSet.hpp"
-#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
+#include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1EvacStats.hpp"
@@ -395,8 +395,6 @@ private:
   G1Policy* _policy;
   G1HeapSizingPolicy* _heap_sizing_policy;
 
-  G1CollectionSet _collection_set;
-
   // Try to allocate a single non-humongous G1HeapRegion sufficient for
   // an allocation of the given word_size. If do_expand is true,
   // attempt to expand the heap if necessary to satisfy the allocation
@@ -585,9 +583,10 @@ public:
 
   // Check if there is memory to uncommit and if so schedule a task to do it.
   void uncommit_regions_if_necessary();
-  // Immediately uncommit uncommittable regions.
-  uint uncommit_regions(uint region_limit);
-  bool has_uncommittable_regions();
+  // Immediately uncommit regions, at most the given number of regions. Returns
+  // the number of regions actually uncommitted.
+  uint uncommit_regions(uint max_num_regions_to_uncommit);
+  bool has_pending_uncommit_regions();
 
   G1NUMA* numa() const { return _numa; }
 
@@ -794,13 +793,16 @@ private:
 
   G1MonotonicArenaFreePool _card_set_freelist_pool;
 
-  // Young-region card set group
-  G1CardSetGroup _young_regions_card_set_group;
+  G1CollectionSet _collection_set;
+
+  // All old gen collection set candidate regions.
+  G1CollectionSetCandidates _collection_set_candidates;
 
 public:
   G1CardSetConfiguration* card_set_config() { return &_card_set_config; }
 
-  G1CardSetGroup* young_regions_card_set_group() { return &_young_regions_card_set_group; }
+  G1CollectionSetCandidates* collection_set_candidates() { return &_collection_set_candidates; }
+  const G1CollectionSetCandidates* collection_set_candidates() const { return &_collection_set_candidates; }
 
   // After a collection pause, reset eden and the collection set.
   void clear_eden();
@@ -987,11 +989,11 @@ public:
     return num_available_regions() == 0;
   }
 
-  // The number of inactive regions.
-  uint num_inactive_regions() const { return _hrm.num_inactive_regions(); }
+  // The number of not-active regions.
+  uint num_non_active_regions() const { return _hrm.num_non_active_regions(); }
 
-  // The current number of regions in the heap.
-  uint num_committed_regions() const { return _hrm.num_committed_regions(); }
+  // The current number of active regions in the heap.
+  uint num_active_regions() const { return _hrm.num_active_regions(); }
 
   // The max number of regions reserved for the heap.
   uint max_num_regions() const { return _hrm.max_num_regions(); }
@@ -1003,7 +1005,7 @@ public:
   uint num_used_regions() const { return _hrm.num_used_regions(); }
 
   // The number of regions that can be allocated into.
-  uint num_available_regions() const { return num_free_regions() + num_inactive_regions(); }
+  uint num_available_regions() const { return num_free_regions() + num_non_active_regions(); }
 
   MemoryUsage get_auxiliary_data_memory_usage() const {
     return _hrm.get_auxiliary_data_memory_usage();
@@ -1160,8 +1162,8 @@ public:
   // Returns the G1HeapRegion that contains addr. addr must not be null.
   inline G1HeapRegion* heap_region_containing(const void* addr) const;
 
-  // Returns the G1HeapRegion that contains addr, or null if that is an uncommitted
-  // region. addr must not be null.
+  // Returns the G1HeapRegion that contains addr, or null if the region is not active.
+  // addr must not be null.
   inline G1HeapRegion* heap_region_containing_or_null(const void* addr) const;
 
   // A CollectedHeap is divided into a dense sequence of "blocks"; that is,

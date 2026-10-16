@@ -87,10 +87,10 @@ public class MetricsMemoryTester {
 
         System.out.println("Initial memory fail count: " + initialFailCount);
 
-        // Allocate 512M of data in 1M chunks per iteration
-        byte[][] bytes = new byte[512][];
+        // Allocate up to 256M of data in 1M chunks, two G1 regions per chunk at this heap size
+        byte[][] bytes = new byte[256][];
 
-        for (int i = 0; i < 512; i++) {
+        for (int i = 0; i < bytes.length; i++) {
             if (i % 8 == 0) {
                 System.out.printf("Allocated: %3dM, Memory usage: %3dM, Memory and swap: %3dM\n",
                         i,
@@ -113,6 +113,13 @@ public class MetricsMemoryTester {
         System.out.println("Final memory fail count: " + newCount);
 
         if (newCount <= initialFailCount) {
+            // A limiting ancestor may account for events not visible in this cgroup.
+            if (initialFailCount >= 0 && newCount == initialFailCount
+                    && memLimit > 0 && metrics.getMemoryAndSwapUsage() > memLimit) {
+                System.out.println("Memory and swap usage exceeds the memory limit, "
+                        + "but the fail count is unchanged. Ignoring test!");
+                return;
+            }
             throw new RuntimeException("Memory fail count did not increase: initial="
                     + initialFailCount + ", final=" + newCount);
         }
