@@ -22,7 +22,7 @@
  *
  */
 
-#include "cds/aotHeap.inline.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"

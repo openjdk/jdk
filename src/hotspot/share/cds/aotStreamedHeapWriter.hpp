@@ -25,7 +25,6 @@
 #ifndef SHARE_CDS_AOTSTREAMEDHEAPWRITER_HPP
 #define SHARE_CDS_AOTSTREAMEDHEAPWRITER_HPP
 
-#include "cds/aotHeap.hpp"
 #include "cds/aotMapLogger.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"

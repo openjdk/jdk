@@ -22,7 +22,6 @@
  *
  */
 
-#include "cds/aotHeap.hpp"
 #include "cds/aotStreamedHeapLoader.hpp"
 #include "cds/aotThread.hpp"
 #include "classfile/javaClasses.hpp"

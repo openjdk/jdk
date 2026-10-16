@@ -22,7 +22,7 @@
  *
  */
 
-#include "cds/aotHeap.inline.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/cdsEnumKlass.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "cds/aotHeap.inline.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMappedHeap.hpp"
 #include "cds/aotMappedHeapLoader.inline.hpp"

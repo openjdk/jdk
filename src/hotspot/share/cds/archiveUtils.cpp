@@ -23,7 +23,6 @@
  */
 
 #include "cds/aotCompressedPointers.hpp"
-#include "cds/aotHeap.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"

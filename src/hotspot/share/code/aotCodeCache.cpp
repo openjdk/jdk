@@ -26,7 +26,6 @@
 #include "asm/macroAssembler.hpp"
 #include "cds/aotCacheAccess.hpp"
 #include "cds/aotCompressedPointers.hpp"
-#include "cds/aotHeap.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"

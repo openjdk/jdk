@@ -23,7 +23,6 @@
  */
 
 #include "cds/aotClassInitializer.hpp"
-#include "cds/aotHeap.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"

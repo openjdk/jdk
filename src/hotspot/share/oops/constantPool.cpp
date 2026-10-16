@@ -23,7 +23,7 @@
  */
 
 #include "cds/aotConstantPoolResolver.hpp"
-#include "cds/aotHeap.inline.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classLoader.hpp"

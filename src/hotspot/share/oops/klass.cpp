@@ -22,7 +22,7 @@
  *
  */
 
-#include "cds/aotHeap.inline.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
 #include "classfile/classLoader.hpp"

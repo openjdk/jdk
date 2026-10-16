@@ -23,7 +23,7 @@
  *
  */
 
-#include "cds/aotHeap.inline.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
