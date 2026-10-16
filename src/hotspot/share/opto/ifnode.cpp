@@ -982,7 +982,7 @@ bool IfNode::has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfP
 //      // transformed to:
 //      if (n >=u arr.length) { throw ArrayOutOfBoundsException }
 //
-// Note1: we assume that the comparsion nodes are canonicalized to the
+// Note1: we assume that the comparison nodes are canonicalized to the
 // point where n is always on the lhs. This is a limitation,
 // but as long as v1 and v2 are constants they will eventually
 // be canonicalized to the rhs. For variables, this may not always
