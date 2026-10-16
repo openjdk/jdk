@@ -490,7 +490,7 @@ public final class Float16
             || Math.abs(trialResult) > (65504.0 + 32.0) || // MAX_VALUE + ulp(MAX_VALUE),
                                                            // handles infinities too
             Double.isNaN(trialResult) ||
-            (Math.abs(trialResult) > (0x1.0p-14) && // Float16.MIN_VALUE, avoid subnormal range
+            (Math.abs(trialResult) > 0x1.0p-14 && // Float16.MIN_NORMAL, avoid subnormal range
              noDoubleRoundingToFloat16(trialResult))) {
             return valueOf(trialResult);
         } else {
