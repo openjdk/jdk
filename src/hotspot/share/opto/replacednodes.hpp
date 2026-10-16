@@ -53,7 +53,7 @@ class ReplacedNodes {
     Node* initial() const  { return _initial; }
     Node* improved() const { return _improved; }
 
-    bool operator==(const ReplacedNode& other) const {
+    bool operator==(const ReplacedNode& other) {
       return _initial == other._initial && _improved == other._improved;
     }
   };
@@ -61,7 +61,7 @@ class ReplacedNodes {
 
   void allocate_if_necessary();
   bool has_node(const ReplacedNode& r) const;
-  bool has_target_node(const Node* n) const;
+  bool has_target_node(Node* n) const;
 
  public:
   ReplacedNodes()

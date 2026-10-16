@@ -1562,7 +1562,7 @@ class DUIterator_Common {
   Node*        _last;               // last value produced by the iterator
 
   void sample(const Node* node);    // used by c'tor to set up for verifies
-  void verify(const Node* node, bool at_end_ok = false) const;
+  void verify(const Node* node, bool at_end_ok = false);
   void verify_resync();
   void reset(const DUIterator_Common& that);
 
@@ -1667,8 +1667,8 @@ class DUIterator_Fast : public DUIterator_Common {
   Node**       _outp;
 
   #ifdef ASSERT
-  void verify(const Node* node, bool at_end_ok = false) const;
-  void verify_limit() const;
+  void verify(const Node* node, bool at_end_ok = false);
+  void verify_limit();
   void verify_resync();
   void verify_relimit(uint n);
   void reset(const DUIterator_Fast& that);
@@ -1695,7 +1695,7 @@ class DUIterator_Fast : public DUIterator_Common {
   void operator-=(uint n)   // applied to the limit only
     { _outp -= n;           VDUI_ONLY(verify_relimit(n));  }
 
-  bool operator<(const DUIterator_Fast& limit) const {
+  bool operator<(DUIterator_Fast& limit) {
     I_VDUI_ONLY(*this, this->verify(_node, true));
     I_VDUI_ONLY(limit, limit.verify_limit());
     return _outp < limit._outp;
@@ -1787,12 +1787,12 @@ Node* Node::last_out(DUIterator_Last& i) const {
 //
 class SimpleDUIterator : public StackObj {
  private:
-  const Node* node;
+  Node* node;
   DUIterator_Fast imax;
   DUIterator_Fast i;
  public:
-  SimpleDUIterator(const Node* n): node(n), i(n->fast_outs(imax)) {}
-  bool has_next() const { return i < imax; }
+  SimpleDUIterator(Node* n): node(n), i(n->fast_outs(imax)) {}
+  bool has_next() { return i < imax; }
   void next() { i++; }
   Node* get() { return node->fast_out(i); }
 };

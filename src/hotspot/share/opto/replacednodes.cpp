@@ -41,7 +41,7 @@ bool ReplacedNodes::has_node(const ReplacedNode& r) const {
   return _replaced_nodes->find(r) != -1;
 }
 
-bool ReplacedNodes::has_target_node(const Node* n) const {
+bool ReplacedNodes::has_target_node(Node* n) const {
   for (int i = 0; i < _replaced_nodes->length(); i++) {
     if (_replaced_nodes->at(i).improved() == n) {
       return true;

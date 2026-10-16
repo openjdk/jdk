@@ -103,7 +103,7 @@ void DUIterator_Common::sample(const Node* node) {
   _last     = nullptr;
 }
 
-void DUIterator_Common::verify(const Node* node, bool at_end_ok) const {
+void DUIterator_Common::verify(const Node* node, bool at_end_ok) {
   assert(_node     == node, "consistent iterator source");
   assert(_del_tick == node->_del_tick, "no unexpected deletions allowed");
 }
@@ -199,7 +199,7 @@ void DUIterator::verify_finish() {
 }
 
 
-void DUIterator_Fast::verify(const Node* node, bool at_end_ok) const {
+void DUIterator_Fast::verify(const Node* node, bool at_end_ok) {
   DUIterator_Common::verify(node, at_end_ok);
   Node** out    = node->_out;
   uint   cnt    = node->_outcnt;
@@ -208,7 +208,7 @@ void DUIterator_Fast::verify(const Node* node, bool at_end_ok) const {
   // This last check is carefully designed to work for NO_OUT_ARRAY.
 }
 
-void DUIterator_Fast::verify_limit() const {
+void DUIterator_Fast::verify_limit() {
   const Node* node = _node;
   verify(node, true);
   assert(_outp == node->_out + node->_outcnt, "limit still correct");
