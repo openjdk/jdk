@@ -34,6 +34,7 @@
 DwarfParser::DwarfParser(lib_info *lib) : _lib(lib),
                                           _buf(NULL),
                                           _dwarf_version(0),
+                                          _is_64bit_dwarf(false),
                                           _has_augmentation(false),
                                           _fde_ptr_encoding(0),
                                           _code_factor(0),
@@ -77,16 +78,18 @@ uintptr_t DwarfParser::read_leb(bool sign) {
 }
 
 uint64_t DwarfParser::get_entry_length() {
+  _is_64bit_dwarf = false;
   uint64_t length = *(reinterpret_cast<uint32_t *>(_buf));
   _buf += 4;
-  if (!_lib->frame.is_debug_frame && length == 0xffffffff) {
+  if (length == 0xffffffff) {
     length = *(reinterpret_cast<uint64_t *>(_buf));
     _buf += 8;
+    _is_64bit_dwarf = true;
   }
   return length;
 }
 
-bool DwarfParser::process_cie(unsigned char *start_of_entry, uint32_t id) {
+bool DwarfParser::process_cie(unsigned char *start_of_entry, uint64_t id) {
   unsigned char *orig_pos = _buf;
 
   // CIE pointer means the offset from FDE in .eh_frame.
@@ -100,7 +103,11 @@ bool DwarfParser::process_cie(unsigned char *start_of_entry, uint32_t id) {
   }
   unsigned char *end = _buf + length;
 
-  _buf += 4; // Skip ID (This value of CIE would be always 0 in .eh_frame / 0xffffffff in .debug_frame)
+  // Skip ID
+  // Linux LSB Core defines 4byte unsigned value for CIE ID,
+  // thus need to check whether it is .debug_frame or not.
+  _buf += _is_64bit_dwarf && _lib->frame.is_debug_frame ? 8 : 4;
+
   _dwarf_version = *_buf;
   _buf++; // Skip version
 
@@ -370,10 +377,21 @@ bool DwarfParser::process_dwarf(const uintptr_t pc) {
     }
     unsigned char *next_entry = _buf + length;
     unsigned char *start_of_entry = _buf;
-    uint32_t id = *(reinterpret_cast<uint32_t *>(_buf));
-    _buf += 4;
-    // ID for CIE is 0 in .eh_frame, 0xffffffff in .debug_frame
-    bool is_fde = (_lib->frame.is_debug_frame ? 0xffffffff : 0) != id;
+
+    // Linux LSB Core defines 4byte unsigned value for CIE ID,
+    // thus need to check whether it is .debug_frame or not.
+    uint64_t id;
+    bool is_fde;
+    if (_is_64bit_dwarf && _lib->frame.is_debug_frame) {
+      id = *(reinterpret_cast<uint64_t *>(_buf));
+      _buf += 8;
+      is_fde = id != 0xffffffffffffffff;
+    } else {
+      id = *(reinterpret_cast<uint32_t *>(_buf));
+      _buf += 4;
+      is_fde = (_lib->frame.is_debug_frame ? 0xffffffff : 0) != id;
+    }
+
     if (is_fde) {
       uintptr_t begin_ofs = 0L;
       uintptr_t inst_sz = 0L;
