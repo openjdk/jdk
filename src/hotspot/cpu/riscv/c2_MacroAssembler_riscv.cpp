@@ -2248,6 +2248,7 @@ void C2_MacroAssembler::enc_cmove_fp_cmp_fp(int cmpFlag,
 }
 
 // Set dst to 0 if the floating-point condition is true, or 1 otherwise.
+// cmpFlag may include double_branch_mask for a double comparison.
 // CmpF/CmpD treat unordered as less: eq/gt/ge are false for NaN, while
 // ne/lt/le are true.
 void C2_MacroAssembler::enc_cmove_cmp_fp_zero_one(int cmpFlag, FloatRegister op1, FloatRegister op2, Register dst) {
