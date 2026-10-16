@@ -354,7 +354,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   void arithmetic_call_op (Bytecodes::Code code, LIR_Opr result, LIR_OprList* args);
 
-  void increment_counter(address counter, BasicType type, int step = 1);
   void increment_counter(LIR_Address* addr, int step = 1);
 
   void arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr tmp, CodeEmitInfo* info = nullptr);

@@ -46,7 +46,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomicAccess.hpp"

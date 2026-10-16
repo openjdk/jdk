@@ -109,6 +109,8 @@ class LayoutKindHelper : AllStatic {
 // This class puts an abstraction around flat layouts and provides convenience
 // methods that can be used instead of explicit calls to LayoutKindHelper.
 class FlatLayout {
+  friend class VMStructs;
+
   LayoutKind _layout_kind;
 
 public:
@@ -156,6 +158,8 @@ public:
 // FlatLayoutSlot users typically don't gain much from differentiating between
 // the two states of _initialized_non_flat.
 class FlatLayoutSlot {
+  friend class VMStructs;
+
   // Note that the union makes sure that a FlatLayout object is only
   // created (in the C++ sense) when we have a proper FlatLayout.
   // Otherwise the bool object is created.
@@ -196,6 +200,8 @@ public:
 // discriminator. This also means that it can assert that the current instance
 // has been initialized.
 class OptionalFlatLayout {
+  friend class VMStructs;
+
   bool           _is_flat;
   FlatLayoutSlot _flat_layout;
 
