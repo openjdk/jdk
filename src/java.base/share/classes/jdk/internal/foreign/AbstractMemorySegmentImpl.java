@@ -218,7 +218,9 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public final ByteBuffer asByteBuffer() {
-        checkArraySize("ByteBuffer", 1);
+        if (length > Integer.MAX_VALUE) {
+            throw new UnsupportedOperationException(String.format("Segment is too large to wrap as ByteBuffer. Size: %d", length));
+        }
         ByteBuffer _bb = makeByteBuffer();
         if (readOnly) {
             //session is IMMUTABLE - obtain a RO byte buffer
