@@ -24,6 +24,7 @@
 /* @test
  * @bug 4842706 8024695 8361587 8362429
  * @summary Test some file operations with empty path
+ * @library /test/lib
  * @run junit EmptyPath
  */
 
@@ -46,9 +47,12 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
 
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+
+import jdk.test.lib.Platform;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -322,6 +326,7 @@ public class EmptyPath {
 
     @Test
     @DisabledOnOs({OS.WINDOWS})
+    @DisabledIf("jdk.test.lib.Platform#isRoot")
     public void setReadable() {
         assertTrue(f.canRead());
         try {
@@ -336,6 +341,7 @@ public class EmptyPath {
 
     @Test
     @DisabledOnOs({OS.WINDOWS})
+    @DisabledIf("jdk.test.lib.Platform#isRoot")
     public void setReadOnly() {
         assertTrue(f.canExecute());
         assertTrue(f.canRead());
@@ -353,6 +359,7 @@ public class EmptyPath {
 
     @Test
     @DisabledOnOs({OS.WINDOWS})
+    @DisabledIf("jdk.test.lib.Platform#isRoot")
     public void setWritable() {
         assertTrue(f.canWrite());
         try {
