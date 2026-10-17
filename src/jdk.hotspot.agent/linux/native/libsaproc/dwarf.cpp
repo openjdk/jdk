@@ -436,7 +436,8 @@ bool DwarfParser::process_dwarf(const uintptr_t pc) {
     if (!read_frame(".debug_frame", _lib->fd, &frame)) {
       // attempts again to load .debug_frame from debuginfo if it could not be loaded from executables.
       int debug_fd = open_debuginfo(_lib->name, _lib->fd);
-      if (debug_fd != -1 && read_frame(".debug_frame", debug_fd, &frame)) {
+      if (debug_fd != -1) {
+        read_frame(".debug_frame", debug_fd, &frame);
         close(debug_fd);
       }
     }
