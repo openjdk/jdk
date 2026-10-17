@@ -47,7 +47,6 @@
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
-#include "utilities/stripedMutex.inline.hpp"
 
 // ==================================================================
 // DataLayout
@@ -1795,8 +1794,7 @@ public:
 };
 
 Mutex* MethodData::extra_data_lock() {
-  StripedMutex* sm = MethodData::get_striped_mutex();
-  Mutex* m = sm->get(this);
+  Mutex* m = MethodDataExtra_lock->get(this);
   return m;
 }
 
@@ -1938,10 +1936,4 @@ void MethodData::check_extra_data_locked() const {
 }
 #endif
 
-StripedMutex* MethodData::_striped_mutex = nullptr;
-
-void MethodData::initialize_striped_mutex() {
-  assert( _striped_mutex == nullptr, "not null");
-  _striped_mutex = new StripedMutex;
-}
 

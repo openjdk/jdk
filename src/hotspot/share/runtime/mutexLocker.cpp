@@ -163,6 +163,9 @@ Mutex*   Bootclasspath_lock           = nullptr;
 // Only one RecursiveMutex
 RecursiveMutex* MultiArray_lock       = nullptr;
 
+// StripedMutex for MethodDataExtra
+StripedMutex*   MethodDataExtra_lock  = nullptr;
+
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Mutex* lock) {
   if (DebuggingContext::is_enabled() || VMError::is_error_reported()) return;
@@ -355,6 +358,9 @@ void mutex_init() {
 
   // Allocate RecursiveMutex
   MultiArray_lock = new RecursiveMutex();
+
+  // Allocate StripedMutex
+  MethodDataExtra_lock = new StripedMutex();
 }
 
 #undef MUTEX_DEFL
@@ -371,7 +377,7 @@ void MutexLockerImpl::post_initialize() {
     LogStream ls(lt);
     Mutex::print_lock_ranks(&ls);
   }
-  MethodData::initialize_striped_mutex();
+  //  MethodData::initialize_striped_mutex();
 }
 
 GCMutexLocker::GCMutexLocker(Mutex* mutex) {

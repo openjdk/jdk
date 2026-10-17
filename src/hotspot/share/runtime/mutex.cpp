@@ -637,3 +637,28 @@ void RecursiveMutex::unlock(Thread* current) {
     _sem.signal();
   }
 }
+
+StripedMutex::StripedMutex()
+  : _num_stripes(round_down_power_of_2((uint32_t) MAX2(os::processor_count(), 1))),
+    _stripe_mask(_num_stripes - 1),
+    _stripes_base(AllocateHeap((_num_stripes * sizeof(PaddedMutex)) + DEFAULT_PADDING_SIZE, mtSynchronizer)),
+    _stripes(reinterpret_cast<PaddedMutex*> (_stripes_base)) {
+  // To create an array of cache aligned PaddedMutexes, we allocate one more cache line than needed and align the base address.
+  if (!is_aligned(_stripes, DEFAULT_PADDING_SIZE)) {
+    _stripes = align_up(_stripes, DEFAULT_PADDING_SIZE);
+  }
+  assert(is_aligned(_stripes, DEFAULT_PADDING_SIZE), "unaligned");
+
+  // Use placement new to construct our Mutexes.
+  for (size_t i = 0; i < _num_stripes; i++) {
+    // These locks could be acquired while we are holding DumpTimeTable_lock/nosafepoint
+    ::new(&_stripes[i]) PaddedMutex(Mutex::nosafepoint-1, "MDOExtraData_lock");
+  }
+}
+
+StripedMutex::~StripedMutex() {
+  for (size_t i = 0; i < _num_stripes; i++) {
+    _stripes[i].~PaddedMutex();
+  }
+  FreeHeap(_stripes_base);
+}

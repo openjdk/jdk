@@ -2202,14 +2202,9 @@ class MethodData : public Metadata {
   // Cached hint for bci_to_dp and bci_to_data
   int _hint_di;
 
-  inline static StripedMutex* get_striped_mutex() { return _striped_mutex; }
-  static StripedMutex* _striped_mutex;
-
   MethodData(const methodHandle& method);
 public:
   MethodData();
-
-  static void initialize_striped_mutex();
 
   static MethodData* allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS);
 
