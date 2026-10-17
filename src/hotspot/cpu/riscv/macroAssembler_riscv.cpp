@@ -6517,6 +6517,68 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
 }
 #endif
 
+void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register length,
+                                         Register log2_array_indxscale, Register result,
+                                         Register tmp1, Register tmp2) {
+  assert(UseVectorizedMismatchIntrinsic, "sanity");
+  assert_different_registers(obja, objb, length, log2_array_indxscale, tmp1, tmp2, t0, t1);
+
+  const Register total = t1;
+  const Register remaining = tmp1;
+  const Register taken = tmp2;
+  const Register idx = t0;
+  const VectorRegister vrm = v0;
+  const VectorRegister vra = v8;
+  const VectorRegister vrb = v16;
+  Label NO_MISMATCH, MISMATCH, MISMATCH_SHORTARY, VEC_START, VEC_LOOP, DONE;
+
+  Assembler::LMUL short_ary_lmul = Assembler::m1;
+  const int short_ary_mask = ~((MaxVectorSize << short_ary_lmul) - 1);
+
+  // read arrays as bytes since no guarantees w.r.t. their alignment
+  sll(total, length, log2_array_indxscale);
+  andi(t0, total, short_ary_mask);
+  bnez(t0, VEC_START);
+
+  vsetvli(x0, total, Assembler::e8, short_ary_lmul, Assembler::ma, Assembler::ta);
+  vle8_v(vra, obja);
+  vle8_v(vrb, objb);
+  vmsne_vv(vrm, vra, vrb);
+  vfirst_m(idx, vrm);
+  bgez(idx, MISMATCH_SHORTARY);
+  j(NO_MISMATCH);
+
+  bind(VEC_START);
+  mv(remaining, total);
+
+  align(OptoLoopAlignment);
+  bind(VEC_LOOP);
+  vsetvli(taken, remaining, Assembler::e8, Assembler::m8, Assembler::ma, Assembler::ta);
+  vle8_v(vra, obja);
+  vle8_v(vrb, objb);
+  add(obja, obja, taken);
+  add(objb, objb, taken);
+  vmsne_vv(vrm, vra, vrb);
+  vfirst_m(idx, vrm);
+  bgez(idx, MISMATCH);
+  sub(remaining, remaining, taken);
+  bnez(remaining, VEC_LOOP);
+
+  bind(NO_MISMATCH);
+  mv(result, -1);
+  j(DONE);
+
+  const Register processed = total;
+
+  bind(MISMATCH);
+  sub(processed, total, remaining);
+  add(idx, processed, idx);
+  bind(MISMATCH_SHORTARY);
+  srl(result, idx, log2_array_indxscale);
+
+  bind(DONE);
+}
+
 // Count bits of trailing zero chars from lsb to msb until first non-zero
 // char seen. For the LL case, shift 8 bits once as there is only one byte
 // per each char. For other cases, shift 16 bits once.
