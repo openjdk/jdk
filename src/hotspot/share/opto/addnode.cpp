@@ -127,11 +127,12 @@ static bool commute(PhaseGVN* phase, Node* add) {
   return false;
 }
 
-//------------------------------Idealize---------------------------------------
-// If we get here, we assume we are associative!
-Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  const Type *t1 = phase->type(in(1));
-  const Type *t2 = phase->type(in(2));
+// If we get here, we assume '+' is
+// - associative: (a + b) + c = a + (b + c)
+// - commutative: a + b = b + a
+Node* AddNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
   bool con_left  = t1->singleton();
   bool con_right = t2->singleton();
 
@@ -294,30 +295,29 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     // Convert "(a-b)+(c-d)" into "(a+c)-(b+d)"
     if (op2 == Op_Sub(bt)) {
       // Check for dead cycle: d = (a-b)+(c-d)
-      assert( in1->in(2) != this && in2->in(2) != this,
-              "dead loop in AddINode::Ideal" );
-      Node* sub = SubNode::make(nullptr, nullptr, bt);
-      Node* sub_in1;
+      assert(in1->in(2) != this && in2->in(2) != this, "dead loop in AddINode::Ideal");
+
+      // This transformation can create 3 nodes out of the current one. It also lays a good structure
+      // for the same rule to apply again. Even if termination is guaranteed, in some cases, we can
+      // create an exponential amount of nodes before simplifying them. To avoid that, let's leave this
+      // job to IGVN, where we delay the recursive transformations, hoping we can common the new nodes
+      // with existing ones, containing the explosion. This is likely if leaves of the expression tree
+      // is actually a quite narrow expression DAG.
+      if (can_reshape == false) {
+        phase->record_for_igvn(this);
+        return nullptr;
+      }
       PhaseIterGVN* igvn = phase->is_IterGVN();
-      // During IGVN, if both inputs of the new AddNode are a tree of SubNodes, this same transformation will be applied
-      // to every node of the tree. Calling transform() causes the transformation to be applied recursively, once per
-      // tree node whether some subtrees are identical or not. Pushing to the IGVN worklist instead, causes the transform
-      // to be applied once per unique subtrees (because all uses of a subtree are updated with the result of the
-      // transformation). In case of a large tree, this can make a difference in compilation time.
-      if (igvn != nullptr) {
-        sub_in1 = igvn->register_new_node_with_optimizer(AddNode::make(in1->in(1), in2->in(1), bt));
-      } else {
-        sub_in1 = phase->transform(AddNode::make(in1->in(1), in2->in(1), bt));
-      }
-      Node* sub_in2;
-      if (igvn != nullptr) {
-        sub_in2 = igvn->register_new_node_with_optimizer(AddNode::make(in1->in(2), in2->in(2), bt));
-      } else {
-        sub_in2 = phase->transform(AddNode::make(in1->in(2), in2->in(2), bt));
-      }
-      sub->init_req(1, sub_in1);
-      sub->init_req(2, sub_in2);
-      return sub;
+      assert(igvn != nullptr, "should be IGVN now");
+
+      // sub_in1 and sub_in2 can be transformed again into an explosive amount of nodes. To avoid that,
+      // we make them available for eager commoning with sub_in1 and sub_in2 created by the AddNode::IdealIL
+      // of other Add nodes, similar enough to `this`.
+      Node* sub_in1 = AddNode::make(in1->in(1), in2->in(1), bt);
+      sub_in1 = igvn->register_and_hash_new_node_with_optimizer(sub_in1);
+      Node* sub_in2 = AddNode::make(in1->in(2), in2->in(2), bt);
+      sub_in2 = igvn->register_and_hash_new_node_with_optimizer(sub_in2);
+      return SubNode::make(sub_in1, sub_in2, bt);
     }
     // Convert "(a-b)+(b+c)" into "(a+c)"
     if (op2 == Op_Add(bt) && in1->in(2) == in2->in(1)) {
@@ -343,7 +343,7 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     return AddNode::make(phase->transform(SubNode::make(in1, in2->in(2), bt)), in2->in(1), bt);
   }
 
-  // Associative
+  // Distributivity of * over + (also uses commutativity of *)
   if (op1 == Op_Mul(bt) && op2 == Op_Mul(bt)) {
     Node* add_in1 = nullptr;
     Node* add_in2 = nullptr;

@@ -1538,27 +1538,25 @@ bool PhaseIdealLoop::flat_array_element_type_check(Node *n) {
       cast_clone->set_req(0, ctrl);
       cast_clone->set_req(1, in);
       register_new_node(cast_clone, ctrl);
-      const Type* tcast = cast_clone->Value(&_igvn);
-      _igvn.set_type(cast_clone, tcast);
-      cast_clone->as_Type()->set_type(tcast);
+      _igvn.set_type_and_raise_bottom_type(cast_clone, cast_clone->Value(&_igvn));
       in = cast_clone;
     }
     Node* addr_clone = addr->clone();
     addr_clone->set_req(AddPNode::Base, in);
     addr_clone->set_req(AddPNode::Address, in);
     register_new_node(addr_clone, ctrl);
-    _igvn.set_type(addr_clone, addr_clone->Value(&_igvn));
+    _igvn.set_type_and_raise_bottom_type(addr_clone, addr_clone->Value(&_igvn));
     Node* klassptr_clone = klassptr->clone();
     klassptr_clone->set_req(2, addr_clone);
     register_new_node(klassptr_clone, ctrl);
-    _igvn.set_type(klassptr_clone, klassptr_clone->Value(&_igvn));
+    _igvn.set_type_and_raise_bottom_type(klassptr_clone, klassptr_clone->Value(&_igvn));
     if (klassptr != n->in(1)) {
       Node* decode = n->in(1);
       assert(decode->is_DecodeNarrowPtr(), "inconsistent subgraph");
       Node* decode_clone = decode->clone();
       decode_clone->set_req(1, klassptr_clone);
       register_new_node(decode_clone, ctrl);
-      _igvn.set_type(decode_clone, decode_clone->Value(&_igvn));
+      _igvn.set_type_and_raise_bottom_type(decode_clone, decode_clone->Value(&_igvn));
       klassptr_clone = decode_clone;
     }
     phi->set_req(i, klassptr_clone);
