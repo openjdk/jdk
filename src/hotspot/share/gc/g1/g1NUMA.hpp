@@ -94,6 +94,8 @@ public:
   // Returns node index of current calling thread.
   uint index_of_current_thread() const;
 
+  uint index_for_numa_id(int numa_id) const;
+
   // Returns the preferred index for the given G1HeapRegion index.
   // This assumes that heap regions are evenly spit, so we can decide preferred index
   // with the given G1HeapRegion index.
