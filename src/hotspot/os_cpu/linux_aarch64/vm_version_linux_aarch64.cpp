@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -65,6 +65,10 @@ extern "C" int ic_ivau_probe(void);
 
 #ifndef HWCAP_SHA3
 #define HWCAP_SHA3 (1 << 17)
+#endif
+
+#ifndef HWCAP_ASIMDDP
+#define HWCAP_ASIMDDP (1 << 20)
 #endif
 
 #ifndef HWCAP_SHA512
@@ -148,6 +152,7 @@ void VM_Version::get_os_cpu_info() {
       check_feature(auxv,  BIT_MASK(CPU_LSE),        HWCAP_ATOMICS) |
       check_feature(auxv,  BIT_MASK(CPU_DCPOP),      HWCAP_DCPOP) |
       check_feature(auxv,  BIT_MASK(CPU_SHA3),       HWCAP_SHA3) |
+      check_feature(auxv,  BIT_MASK(CPU_ASIMDDP),    HWCAP_ASIMDDP) |
       check_feature(auxv,  BIT_MASK(CPU_SHA512),     HWCAP_SHA512) |
       check_feature(auxv,  BIT_MASK(CPU_SVE),        HWCAP_SVE) |
       check_feature(auxv,  BIT_MASK(CPU_PACA),       HWCAP_PACA) |

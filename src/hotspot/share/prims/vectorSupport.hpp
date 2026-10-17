@@ -126,6 +126,9 @@ class VectorSupport : AllStatic {
     VECTOR_OP_SUSUB = 122,
     VECTOR_OP_UMIN  = 123,
     VECTOR_OP_UMAX  = 124,
+
+    VECTOR_OP_DOT   = 125,
+    VECTOR_OP_UDOT  = 126,
   };
 
   enum {

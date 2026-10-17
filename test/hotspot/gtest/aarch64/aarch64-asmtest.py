@@ -1487,6 +1487,10 @@ class AddWideNEONOp(WideningNEONInstruction):
     numWiderRegs = 2
     numNarrowerRegs = 1
 
+class DotOp(WideningNEONInstruction):
+    numWiderRegs = 1
+    numNarrowerRegs = 2
+
 class NEONFloatCompareWithZero(TwoRegNEONOp):
     def __init__(self, args):
         self._name = 'fcm'
@@ -2161,6 +2165,10 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["splice",   "__ sve_splice(z0, __ H, p0, z1);",                   "splice\tz0.h, p0, z0.h, z1.h"],
                         ["splice",   "__ sve_splice(z0, __ S, p0, z1);",                   "splice\tz0.s, p0, z0.s, z1.s"],
                         ["splice",   "__ sve_splice(z0, __ D, p0, z1);",                   "splice\tz0.d, p0, z0.d, z1.d"],
+                        ["sdot",     "__ sve_sdot(z0, __ S, z1, z2);",                     "sdot\tz0.s, z1.b, z2.b"],
+                        ["sdot",     "__ sve_sdot(z3, __ D, z4, z5);",                     "sdot\tz3.d, z4.h, z5.h"],
+                        ["udot",     "__ sve_udot(z6, __ S, z7, z8);",                     "udot\tz6.s, z7.b, z8.b"],
+                        ["udot",     "__ sve_udot(z9, __ D, z10, z11);",                   "udot\tz9.d, z10.h, z11.h"],
                         # SVE2 instructions
                         ["histcnt",  "__ sve_histcnt(z16, __ S, p0, z16, z16);",           "histcnt\tz16.s, p0/z, z16.s, z16.s"],
                         ["histcnt",  "__ sve_histcnt(z17, __ D, p0, z17, z17);",           "histcnt\tz17.d, p0/z, z17.d, z17.d"],
@@ -2283,6 +2291,11 @@ generate(AddWideNEONOp,
           ["uaddwv", "uaddw", "8H", "8B"], ["uaddwv2", "uaddw2", "8H", "16B"],
           ["uaddwv", "uaddw", "4S", "4H"], ["uaddwv2", "uaddw2", "4S", "8H"],
           ["uaddwv", "uaddw", "2D", "2S"], ["uaddwv2", "uaddw2", "2D", "4S"],
+          ])
+
+generate(DotOp,
+         [["sdot", "sdot", "2S", "8B"], ["sdot", "sdot", "4S", "16B"],
+          ["udot", "udot", "2S", "8B"], ["udot", "udot", "4S", "16B"],
           ])
 
 print "\n    __ bind(forth);"
