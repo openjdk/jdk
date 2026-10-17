@@ -141,6 +141,9 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeature = { "avx", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", ">0" })
+    @IR(applyIfCPUFeature = { "sve", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.AARCH64_STORE_V_NARROW_I2S, ">0" })
     public short[] narrowToSigned() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -165,6 +168,9 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeature = { "avx", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", ">0" })
+    @IR(applyIfCPUFeature = { "sve", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.AARCH64_STORE_V_NARROW_I2B, ">0" })
     public byte[] narrowToByte() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
