@@ -8449,7 +8449,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
 
   // Fold total 512 bits of polynomial on each iteration,
   // 128 bits per each of 4 parallel streams.
-  movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 32), rscratch1);
+  movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 48), rscratch1); // [K_544_480_low, K_544_480_high]
 
   align32();
   BIND(L_fold_512b_loop);
@@ -8463,7 +8463,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
 
   // Fold 512 bits to 128 bits.
   BIND(L_fold_512b);
-  movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 16), rscratch1);
+  movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 32), rscratch1); // [K_160_96_low, K_160_96_high]
   fold_128bit_crc32(xmm1, xmm0, xmm5, xmm2);
   fold_128bit_crc32(xmm1, xmm0, xmm5, xmm3);
   fold_128bit_crc32(xmm1, xmm0, xmm5, xmm4);
@@ -8472,7 +8472,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   BIND(L_fold_tail);
   addl(len, 3);
   jccb(Assembler::lessEqual, L_fold_128b);
-  movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 16), rscratch1);
+  movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 32), rscratch1); // [K_160_96_low, K_160_96_high]
 
   BIND(L_fold_tail_loop);
   fold_128bit_crc32(xmm1, xmm0, xmm5, buf,  0);
@@ -8482,30 +8482,82 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
 
   // Fold 128 bits in xmm1 down into 32 bits in crc register.
   BIND(L_fold_128b);
-  movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr()), rscratch1);
-  if (UseAVX > 0) {
-    vpclmulqdq(xmm2, xmm0, xmm1, 0x1);
-    vpand(xmm3, xmm0, xmm2, 0 /* vector_len */);
-    vpclmulqdq(xmm0, xmm0, xmm3, 0x1);
-  } else {
-    movdqa(xmm2, xmm0);
-    pclmulqdq(xmm2, xmm1, 0x1);
-    movdqa(xmm3, xmm0);
-    pand(xmm3, xmm2);
-    pclmulqdq(xmm0, xmm3, 0x1);
-  }
-  psrldq(xmm1, 8);
-  psrldq(xmm2, 4);
-  pxor(xmm0, xmm1);
-  pxor(xmm0, xmm2);
+  // Mask keeping the high 96 bits of the vector.
+  pxor(xmm5, xmm5);
+  pcmpeqd(xmm5, xmm5);
+  pslldq(xmm5, 4);
 
-  // 8 8-bit folds to compute 32-bit CRC.
-  for (int j = 0; j < 4; j++) {
-    fold_8bit_crc32(xmm0, table, xmm1, rax);
-  }
-  movdl(crc, xmm0); // mov 32 bits to general register
-  for (int j = 0; j < 4; j++) {
-    fold_8bit_crc32(crc, table, rax);
+  if (UseAVX > 0) {
+    // Fold 128 -> 96 -> 64 bits with K_128_64.
+    movdqu(xmm2, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 16), rscratch1); // [K_128_64_low, K_128_64_high]
+    movdqu(xmm0, xmm1);
+    vpclmulqdq(xmm1, xmm1, xmm2, 0x00);
+    vpsrldq(xmm0, xmm0, 8, Assembler::AVX_128bit);
+    vpxor(xmm1, xmm1, xmm0, Assembler::AVX_128bit);
+
+    movdqu(xmm0, xmm1);
+    vpslldq(xmm1, xmm1, 4, Assembler::AVX_128bit);
+    vpclmulqdq(xmm1, xmm1, xmm2, 0x10);
+    vpxor(xmm1, xmm1, xmm0, Assembler::AVX_128bit);
+
+    pand(xmm1, xmm5);
+
+    // Barrett reduction with K_64_32.
+    movdqu(xmm0, xmm1);
+    movdqu(xmm2, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr()), rscratch1); // [K_64_32_low, K_64_32_high]
+    vpclmulqdq(xmm1, xmm1, xmm2, 0x00);
+    vpxor(xmm1, xmm1, xmm0, Assembler::AVX_128bit);
+
+    // Reuse the mask to keep the low 64 bits only.
+    vpsrldq(xmm5, xmm5, 8, Assembler::AVX_128bit);
+    pand(xmm1, xmm5);
+
+    movdqu(xmm3, xmm1);
+    vpclmulqdq(xmm1, xmm1, xmm2, 0x10);
+    vpxor(xmm1, xmm1, xmm3, Assembler::AVX_128bit);
+    vpxor(xmm1, xmm1, xmm0, Assembler::AVX_128bit);
+    if (VM_Version::supports_sse4_1()) {
+      pextrd(crc, xmm1, 2);
+    } else {
+      vpsrldq(xmm0, xmm1, 8, Assembler::AVX_128bit);
+      movdl(crc, xmm0);
+    }
+  } else {
+    // Fold 128 -> 96 -> 64 bits with K_128_64.
+    movdqu(xmm2, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 16), rscratch1); // [K_128_64_low, K_128_64_high]
+    movdqa(xmm0, xmm1);
+    pclmulqdq(xmm1, xmm2, 0x00);
+    psrldq(xmm0, 8);
+    pxor(xmm1, xmm0);
+
+    movdqa(xmm0, xmm1);
+    pslldq(xmm1, 4);
+    pclmulqdq(xmm1, xmm2, 0x10);
+    pxor(xmm1, xmm0);
+
+    pand(xmm1, xmm5);
+
+    // Barrett reduction with K_64_32.
+    movdqa(xmm0, xmm1);
+    movdqu(xmm2, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr()), rscratch1); // [K_64_32_low, K_64_32_high]
+    pclmulqdq(xmm1, xmm2, 0x00);
+    pxor(xmm1, xmm0);
+
+    // Reuse the mask to keep the low 64 bits only.
+    psrldq(xmm5, 8);
+    pand(xmm1, xmm5);
+
+    movdqa(xmm3, xmm1);
+    pclmulqdq(xmm1, xmm2, 0x10);
+    pxor(xmm1, xmm3);
+    pxor(xmm1, xmm0);
+    if (VM_Version::supports_sse4_1()) {
+      pextrd(crc, xmm1, 2);
+    } else {
+      movdqa(xmm0, xmm1);
+      psrldq(xmm0, 8);
+      movdl(crc, xmm0);
+    }
   }
 
   BIND(L_tail_restore);
