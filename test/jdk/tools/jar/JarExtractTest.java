@@ -223,7 +223,7 @@ public class JarExtractTest {
         final String output = outStream.toString();
         // this message is expected to be the one from the jar --help output which is sourced from
         // jar.properties
-        final String expectedMsg = "--dir                    Directory into which the jar will be extracted";
+        final String expectedMsg = "--dir                    Directory into which the JAR file will be extracted";
         assertTrue(output.contains(expectedMsg), "jar --help didn't contain --dir option");
     }
 
