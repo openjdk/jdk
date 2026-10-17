@@ -1065,6 +1065,9 @@ public:
   static bool is_caching_enabled() NOT_CDS_RETURN_(false);
   static bool verify_jvmti_state(ciEnv* env) NOT_CDS_RETURN_(true);
 
+  //Helper for logging
+  static const char *get_kind_name(AOTCodeEntry::Kind kind);
+
   // It is used before AOTCodeCache is initialized.
   static bool maybe_dumping_code() NOT_CDS_RETURN_(false);
 

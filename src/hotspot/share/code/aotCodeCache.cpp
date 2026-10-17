@@ -118,6 +118,11 @@ const char* aot_code_entry_kind_name[] = {
 #undef DECL_KIND_STRING
 };
 
+// Used when logging, we need the human-readable name
+const char* AOTCodeCache::get_kind_name(const AOTCodeEntry::Kind kind) {
+  return aot_code_entry_kind_name[kind];
+}
+
 // Stream to printing AOTCodeCache loading failure.
 // Print to error channel when -XX:AOTMode is set to "on"
 static LogStream& load_failure_log() {
