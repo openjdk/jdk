@@ -389,4 +389,129 @@ bool Peephole::lea_coalesce_imm(Block* block, int block_index, PhaseCFG* cfg_, P
   return lea_coalesce_helper(block, block_index, cfg_, ra_, new_root, inst0_rule, true);
 }
 
+bool Peephole::stackload_apxndd_op_coalesce(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
+                                               MachNode* (*new_root)(), uint inst0_rule) {
+  // inst0 is APX 3-operand NDD instruction (e.g., addI_rReg_ndd)                                                 
+  MachNode* inst0 = block->get_node(block_index)->as_Mach();
+  assert(inst0->rule() == inst0_rule, "sanity");
+
+  Node* src1 = inst0->in(1);
+  Node* src2 = inst0->in(2);
+
+  if (src1 == nullptr || src2  == nullptr) {
+    return false;
+  }
+
+  // Type-check: only commutative int/long ALU operations are considered for coalescing.
+  bool is_int;
+  switch (inst0->ideal_Opcode()) {
+    case Op_AddI:
+    case Op_AndI:
+    case Op_OrI:
+    case Op_XorI:
+      is_int = true;
+      break;
+    case Op_AddL:
+    case Op_AndL:
+    case Op_OrL:
+    case Op_XorL:
+      is_int = false;
+      break;
+    default:
+      return false;
+  }
+
+  OptoReg::Name dst_reg = ra_->get_reg_first(inst0);
+  OptoReg::Name src1_reg = ra_->get_reg_first(src1);
+  OptoReg::Name src2_reg = ra_->get_reg_first(src2);
+
+  // Checks if a given node matches the pattern of a spill copy from a register to the stack.
+  auto is_candidate = [&](Node* n) -> bool {
+    if (n == nullptr || !n->is_Mach() || n->outcnt() != 1) {
+      return false;
+    }
+    if (!n->is_MachSpillCopy() || n->req() < 2 || n->in(1) == nullptr) {
+      return false;
+    }
+    OptoReg::Name copy_dst = ra_->get_reg_first(n);
+    OptoReg::Name copy_src = ra_->get_reg_first(n->in(1));
+    return OptoReg::is_reg(copy_dst) && OptoReg::is_stack(copy_src);
+  };
+
+  MachNode* mem_src = nullptr;
+  Node* dst_src = nullptr;
+
+  if (dst_reg == src1_reg && is_candidate(src2)) {
+    mem_src = src2->as_Mach();
+    dst_src = src1;
+  } else if (dst_reg == src2_reg && is_candidate(src1)) {
+    mem_src = src1->as_Mach();
+    dst_src = src2;
+  } else {
+    return false;
+  }
+
+  if (block_index < 1 || block->get_node(block_index - 1) != mem_src) {
+    return false;
+  }
+  int mem_src_index = block_index - 1;
+
+  // Find the falg MachProj that inst0 produces. Both the source and target instructions KILL cr.
+  // Rewire this proj to root instead of removing it.
+
+  bool has_flag_proj = false;
+  for (DUIterator_Fast imax, i = inst0->fast_outs(imax); i < imax; i++) {
+    if (inst0->fast_out(i)->is_MachProj()) {
+      has_flag_proj = true;
+      break;
+    }
+  }
+
+  if (!has_flag_proj) {
+    return false;
+  }
+
+#ifndef PRODUCT
+  if (PrintOptoPeephole) {
+    tty->print_cr("stackload_apxndd_op_coalescing: coalescing %s in B%d idx %d"
+                  "(dst reg=%d, mem to reg copy at idx %d)",
+                  inst0->Name(), block->_pre_order, block_index, dst_reg, mem_src_index);
+  }
+#endif
+
+  // Build the coalesced node.
+  MachNode* coalesced_node = new_root();
+
+  ra_->set_oop(coalesced_node, ra_->is_oop(inst0));
+  ra_->set_pair(coalesced_node->_idx, ra_->get_reg_second(inst0), dst_reg);
+
+  coalesced_node->add_req(inst0->in(0));
+  coalesced_node->add_req(dst_src);
+  coalesced_node->add_req(mem_src->in(1));
+
+  coalesced_node->_opnds[0] = inst0->_opnds[0]->clone();
+  coalesced_node->_opnds[1] = inst0->_opnds[0]->clone();
+  coalesced_node->_opnds[2] = is_int ? (MachOper*) new stackSlotIOper() : (MachOper*) new stackSlotLOper();
+
+  inst0->replace_by(coalesced_node);
+  inst0->set_removed();
+  mem_src->set_removed();
+
+  block->remove_node(block_index);
+  block->remove_node(mem_src_index);
+  block->insert_node(coalesced_node, block_index - 1);
+
+  cfg_->map_node_to_block(inst0, nullptr);
+  cfg_->map_node_to_block(mem_src, nullptr);
+  cfg_->map_node_to_block(coalesced_node, block);
+
+#ifndef PRODUCT
+  if (PrintOptoPeephole) {
+    tty->print_cr("stackload_apxndd_op_coalescing: done %s", coalesced_node->Name());
+  }
+#endif
+
+  return true;
+}     
+
 #endif // COMPILER2
