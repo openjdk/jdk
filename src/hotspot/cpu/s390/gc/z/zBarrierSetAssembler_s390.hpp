@@ -92,33 +92,16 @@ public:
                         Register temp2,
                         Register temp3);
 
-  void copy_load_at_fast(MacroAssembler* masm,
-                         Register zpointer,
-                         Register addr,
-                         Register load_bad_mask,
-                         Label& slow_path,
-                         Label& continuation) const;
+  void copy_load_at(MacroAssembler* masm, Register zpointer, Address src);
 
-  void copy_load_at_slow(MacroAssembler* masm,
-                         Register zpointer,
-                         Register addr,
-                         Label& slow_path,
-                         Label& continuation) const;
+  void copy_store_at(MacroAssembler* masm, Register zpointer, Address dst,
+                     bool dest_uninitialized);
 
-  void copy_store_at_fast(MacroAssembler* masm,
-                          Register zpointer,
-                          Register addr,
-                          Register store_bad_mask,
-                          Register store_good_mask,
-                          Label& medium_path,
-                          Label& continuation,
-                          bool dest_uninitialized) const;
+  void copy_load_at(MacroAssembler* masm, VectorRegister Vdata, Register zpointer,
+                    Register src);
 
-  void copy_store_at_slow(MacroAssembler* masm,
-                          Register addr,
-                          Label& medium_path,
-                          Label& continuation,
-                          bool dest_uninitialized) const;
+  void copy_store_at(MacroAssembler* masm, VectorRegister Vdata, Register zpointer,
+                     Register dst, bool dest_uninitialized);
 
   void generate_disjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized);
 
