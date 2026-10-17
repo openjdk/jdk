@@ -360,7 +360,7 @@ void mutex_init() {
   MultiArray_lock = new RecursiveMutex();
 
   // Allocate StripedMutex
-  MethodDataExtra_lock = new StripedMutex();
+  MethodDataExtra_lock = new StripedMutex("MDOExtraData_lock");
 }
 
 #undef MUTEX_DEFL
@@ -377,7 +377,6 @@ void MutexLockerImpl::post_initialize() {
     LogStream ls(lt);
     Mutex::print_lock_ranks(&ls);
   }
-  //  MethodData::initialize_striped_mutex();
 }
 
 GCMutexLocker::GCMutexLocker(Mutex* mutex) {

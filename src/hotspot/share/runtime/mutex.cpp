@@ -638,7 +638,7 @@ void RecursiveMutex::unlock(Thread* current) {
   }
 }
 
-StripedMutex::StripedMutex()
+StripedMutex::StripedMutex(const char* name)
   : _num_stripes(round_down_power_of_2((uint32_t) MAX2(os::processor_count(), 1))),
     _stripe_mask(_num_stripes - 1),
     _stripes_base(AllocateHeap((_num_stripes * sizeof(PaddedMutex)) + DEFAULT_PADDING_SIZE, mtSynchronizer)),
@@ -652,7 +652,7 @@ StripedMutex::StripedMutex()
   // Use placement new to construct our Mutexes.
   for (size_t i = 0; i < _num_stripes; i++) {
     // These locks could be acquired while we are holding DumpTimeTable_lock/nosafepoint
-    ::new(&_stripes[i]) PaddedMutex(Mutex::nosafepoint-1, "MDOExtraData_lock");
+    ::new(&_stripes[i]) PaddedMutex(Mutex::nosafepoint-1, name);
   }
 }
 

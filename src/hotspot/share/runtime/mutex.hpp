@@ -296,7 +296,8 @@ class StripedMutex : public CHeapObj<mtSynchronizer> {
   }
 
 public:
-  StripedMutex();
+  StripedMutex(const char* name);
+  StripedMutex() : StripedMutex("StripedMutex") {}
   ~StripedMutex();
 
   template <typename T>
