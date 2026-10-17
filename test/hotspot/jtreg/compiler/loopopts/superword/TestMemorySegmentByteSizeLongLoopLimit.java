@@ -65,7 +65,7 @@ public class TestMemorySegmentByteSizeLongLoopLimit {
                   IRNode.ADD_VI, IRNode.VECTOR_SIZE + "min(max_int, max_long)",        "> 0",
                   IRNode.STORE_VECTOR,                          "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIf = {"AlignVector", "false"},
+        applyIfAnd = {"AlignVector", "false", "UseUnalignedAccesses", "true"},
         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     public static void test() {
         for (long i = 0; i < msA.byteSize() / 8L; i++) {
