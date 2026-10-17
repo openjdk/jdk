@@ -41,7 +41,7 @@ import static jdk.internal.vm.vector.VectorSupport.*;
 
 @SuppressWarnings("cast")  // warning: redundant cast
 @ValueBased
-final class FloatVector128 extends FloatVector {
+final /*value*/ class FloatVector128 extends FloatVector {
     static final FloatSpecies VSPECIES =
         (FloatSpecies) FloatVector.SPECIES_128;
 
@@ -564,7 +564,7 @@ final class FloatVector128 extends FloatVector {
 
     // Mask
     @ValueBased
-    static final class FloatMask128 extends AbstractMask<Float> {
+    static final /*value*/ class FloatMask128 extends AbstractMask<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
         static final Class<Float> CTYPE = float.class; // used by the JVM
@@ -797,7 +797,7 @@ final class FloatVector128 extends FloatVector {
 
     // Shuffle
     @ValueBased
-    static final class FloatShuffle128 extends AbstractShuffle<Float> {
+    static final /*value*/ class FloatShuffle128 extends AbstractShuffle<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
         static final Class<Integer> CTYPE = int.class; // used by the JVM

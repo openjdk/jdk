@@ -44,7 +44,7 @@ import static jdk.internal.vm.vector.VectorSupport.*;
 
 @SuppressWarnings("cast")  // warning: redundant cast
 @ValueBased
-final class $vectortype$ extends $abstractvectortype$ {
+final /*value*/ class $vectortype$ extends $abstractvectortype$ {
     static final $Type$Species VSPECIES =
         ($Type$Species) $Type$Vector.SPECIES_$BITS$;
 
@@ -909,7 +909,7 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     // Mask
     @ValueBased
-    static final class $masktype$ extends AbstractMask<$Boxtype$> {
+    static final /*value*/ class $masktype$ extends AbstractMask<$Boxtype$> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
         static final Class<$Carriertype$> CTYPE = $carriertype$.class; // used by the JVM
@@ -1157,7 +1157,7 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     // Shuffle
     @ValueBased
-    static final class $shuffletype$ extends AbstractShuffle<$Boxtype$> {
+    static final /*value*/ class $shuffletype$ extends AbstractShuffle<$Boxtype$> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
         static final Class<$Boxbitstype$> CTYPE = $bitstype$.class; // used by the JVM

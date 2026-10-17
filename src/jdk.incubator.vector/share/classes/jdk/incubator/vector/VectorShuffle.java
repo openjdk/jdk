@@ -136,7 +136,7 @@ import java.util.function.IntUnaryOperator;
  *           the element type of a vector
  */
 @SuppressWarnings("exports")
-public abstract sealed class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupport.VectorShuffle<E> permits AbstractShuffle {
+public abstract sealed /*value*/ class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupport.VectorShuffle<E> permits AbstractShuffle {
     VectorShuffle(Object indices) {
         super(indices);
     }
