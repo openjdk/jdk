@@ -652,7 +652,7 @@ Node* IfNode::up_one_dom(Node *curr, bool linear_only) {
 }
 
 
-//------------------------------filtered_int_type--------------------------------
+//------------------------------filtered_integer_type--------------------------------
 // Return a possibly more restrictive type for val based on condition control flow for an if
 //
 // Important: we only parse if val is on the lhs. This is a limitation, but it makes
@@ -660,7 +660,10 @@ Node* IfNode::up_one_dom(Node *curr, bool linear_only) {
 //            shape, which works well for comparisions with constants, as they are
 //            canonicalized to the rhs. This may not happen with variables, and so
 //            the optimization may not work for those cases, when val stays on the rhs.
-const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj) {
+const TypeInteger* IfNode::filtered_integer_type(PhaseGVN* gvn, Node* val, Node* if_proj, BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "expected int or long");
+  const jlong min_value = bt == T_INT ? min_jint : min_jlong;
+  const jlong max_value = bt == T_INT ? max_jint : max_jlong;
   assert(if_proj &&
          (if_proj->Opcode() == Op_IfTrue || if_proj->Opcode() == Op_IfFalse), "expecting an if projection");
   if (if_proj->in(0) && if_proj->in(0)->is_If()) {
@@ -669,30 +672,30 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
       BoolNode* bol = iff->in(1)->as_Bool();
       if (bol->in(1) && bol->in(1)->is_Cmp()) {
         const CmpNode* cmp  = bol->in(1)->as_Cmp();
-        // Val is always the lhs of the comparision: val CmpI cmp2
-        if (cmp->Opcode() == Op_CmpI && cmp->in(1) == val) {
-          // Only CmpI allowed, assumed by signed logic below.
-          // We could extend to CmpU in the future, and would
+        // Val is always the lhs of the comparison: val CmpI/CmpL cmp2
+        if (cmp->Opcode() == (bt == T_INT ? Op_CmpI : Op_CmpL) && cmp->in(1) == val) {
+          // Only CmpI/CmpL allowed, assumed by signed logic below.
+          // We could extend to CmpU/CmpUL in the future, and would
           // have to implement unsigned range logic below.
-          const TypeInt* cmp2_t = gvn->type(cmp->in(2))->isa_int();
+          const TypeInteger* cmp2_t = gvn->type(cmp->in(2))->isa_integer(bt);
           if (cmp2_t != nullptr) {
-            jint lo = cmp2_t->_lo;
-            jint hi = cmp2_t->_hi;
+            jlong lo = cmp2_t->lo_as_long();
+            jlong hi = cmp2_t->hi_as_long();
             // Negate the test if we are on the false branch.
             BoolTest::mask msk = if_proj->Opcode() == Op_IfTrue ? bol->_test._test : bol->_test.negate();
             switch (msk) {
             case BoolTest::ne: {
               // If val is compared to its lower or upper bound, we can narrow the type
-              const TypeInt* val_t = gvn->type(val)->isa_int();
+              const TypeInteger* val_t = gvn->type(val)->isa_integer(bt);
               if (val_t != nullptr && !val_t->singleton() && cmp2_t->is_con()) {
-                if (val_t->_lo == lo) {
+                if (val_t->lo_as_long() == lo) {
                   // Condition leading to if_proj: val != val->lo
                   //   val in [val->lo + 1, val->hi]
-                  return TypeInt::make(val_t->_lo + 1, val_t->_hi, val_t->_widen);
-                } else if (val_t->_hi == hi) {
+                  return TypeInteger::make(lo + 1, val_t->hi_as_long(), val_t->_widen, bt);
+                } else if (val_t->hi_as_long() == hi) {
                   // Condition leading to if_proj: val != val->hi
                   //   val in [val->lo, val->hi - 1]
-                  return TypeInt::make(val_t->_lo, val_t->_hi - 1, val_t->_widen);
+                  return TypeInteger::make(val_t->lo_as_long(), hi - 1, val_t->_widen, bt);
                 }
               }
               // Can't refine type
@@ -704,35 +707,35 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
               return cmp2_t;
             case BoolTest::lt:
               // Condition leading to if_proj: val < cmp2
-              //   val in [min_int .. max(min_int, cmp2->_hi - 1)]
-              lo = min_jint;
-              if (hi != min_jint) {
+              //   val in [min_value .. max(min_value, cmp2->_hi - 1)]
+              lo = min_value;
+              if (hi != min_value) {
                 hi = hi - 1;
               }
               break;
             case BoolTest::le:
               // Condition leading to if_proj: val <= cmp2
-              //   val in [min_int .. cmp2->_hi]
-              lo = min_jint;
+              //   val in [min_value .. cmp2->_hi]
+              lo = min_value;
               break;
             case BoolTest::gt:
               // Condition leading to if_proj: val > cmp2
-              //   val in [min(cmp2->_lo + 1, max_int) .. max_int]
-              if (lo != max_jint) {
+              //   val in [min(cmp2->_lo + 1, max_value) .. max_value]
+              if (lo != max_value) {
                 lo = lo + 1;
               }
-              hi = max_jint;
+              hi = max_value;
               break;
             case BoolTest::ge:
               // Condition leading to if_proj: val >= cmp2
-              //   val in [cmp2->_lo .. max_int]
-              hi = max_jint;
+              //   val in [cmp2->_lo .. max_value]
+              hi = max_value;
               break;
             default:
               assert(false, "impossible case");
               return nullptr;
             }
-            const TypeInt* rtn_t = TypeInt::make(lo, hi, cmp2_t->_widen);
+            const TypeInteger* rtn_t = TypeInteger::make(lo, hi, cmp2_t->_widen, bt);
             return rtn_t;
           }
         }
@@ -742,10 +745,15 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
   return nullptr;
 }
 
+const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj) {
+  const TypeInteger* t = filtered_integer_type(gvn, val, if_proj, T_INT);
+  return t == nullptr ? nullptr : t->is_int();
+}
+
 //------------------------------fold_compares----------------------------
-// See if a pair of CmpIs can be converted into a CmpU.  In some cases
-// the direction of this if is determined by the preceding if so it
-// can be eliminate entirely.
+// See if a pair of CmpIs/CmpLs can be converted into a CmpU/CmpUL.
+// In some cases the direction of this if is determined by the preceding
+// if so it can be eliminate entirely.
 //
 // Given an if testing (CmpI n v) check for an immediately control
 // dependent if that is testing (CmpI n v2) and has one projection
@@ -781,11 +789,11 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
 //
 
 // Is the comparison for this If suitable for folding?
-bool IfNode::cmpi_folds(PhaseIterGVN* igvn, bool fold_ne) {
+bool IfNode::cmp_folds(PhaseIterGVN* igvn, bool fold_ne) {
   return in(1) != nullptr &&
     in(1)->is_Bool() &&
     in(1)->in(1) != nullptr &&
-    in(1)->in(1)->Opcode() == Op_CmpI &&
+    (in(1)->in(1)->Opcode() == Op_CmpI || in(1)->in(1)->Opcode() == Op_CmpL) &&
     in(1)->in(1)->in(2) != nullptr &&
     in(1)->in(1)->in(2) != igvn->C->top() &&
     (in(1)->as_Bool()->_test.is_less() ||
@@ -801,8 +809,9 @@ bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
     ctrl->in(0) != nullptr &&
     ctrl->in(0)->Opcode() == Op_If &&
     ctrl->in(0)->outcnt() == 2 &&
-    ctrl->in(0)->as_If()->cmpi_folds(igvn, true) &&
-    // Must compare same value
+    ctrl->in(0)->as_If()->cmp_folds(igvn, true) &&
+    // Must compare the same type and value.
+    ctrl->in(0)->in(1)->in(1)->Opcode() == in(1)->in(1)->Opcode() &&
     ctrl->in(0)->in(1)->in(1)->in(1) != nullptr &&
     ctrl->in(0)->in(1)->in(1)->in(1) != igvn->C->top() &&
     ctrl->in(0)->in(1)->in(1)->in(1) == in(1)->in(1)->in(1);
@@ -927,7 +936,7 @@ bool IfNode::has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfP
   return false;
 }
 
-// We are given the following code shape with two CmpI:
+// We are given the following code shape with two CmpIs or two CmpLs:
 //
 //               n  v1
 //               |  |
@@ -961,8 +970,8 @@ bool IfNode::has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfP
 //      // Equivalent, if we flip everything:
 //      if (n >= -1 || n <= 1) { fail } else { succ }
 //
-// 2. In other cases, we can replace the two CmpI with
-//    a single CmpU. We fold iff1 towards middle, and
+// 2. In other cases, we can replace the two CmpIs/CmpLs with
+//    a single CmpU/CmpUL. We fold iff1 towards middle, and
 //    replace the iff2 condition with the CmpU. Example:
 //
 //      if (n >= 0 && n < 10) { succ } else { fail }
@@ -973,7 +982,7 @@ bool IfNode::has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfP
 //      // transformed to:
 //      if (n >=u arr.length) { throw ArrayOutOfBoundsException }
 //
-// Note1: we assume that the CmpI nodes are canonicalized to the
+// Note1: we assume that the comparison nodes are canonicalized to the
 // point where n is always on the lhs. This is a limitation,
 // but as long as v1 and v2 are constants they will eventually
 // be canonicalized to the rhs. For variables, this may not always
@@ -1001,21 +1010,24 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
   BoolNode* bool2 = iff2->in(1)->as_Bool();
   CmpNode* cmp1 = bool1->in(1)->as_Cmp();
   CmpNode* cmp2 = bool2->in(1)->as_Cmp();
-  assert(cmp1->Opcode() == Op_CmpI, "comparisons must be CmpI");
-  assert(cmp2->Opcode() == Op_CmpI, "comparisons must be CmpI");
+  assert(cmp1->Opcode() == Op_CmpI || cmp1->Opcode() == Op_CmpL, "expected signed integer comparison");
+  assert(cmp2->Opcode() == cmp1->Opcode(), "comparisons must have the same type");
+  const BasicType bt = cmp1->Opcode() == Op_CmpI ? T_INT : T_LONG;
+  const jlong min_value = bt == T_INT ? min_jint : min_jlong;
+  const jlong max_value = bt == T_INT ? max_jint : max_jlong;
 
   IfProjNode* fail1 = middle->other_if_proj();
 
   Node* v1 = cmp1->in(2);
   Node* v2 = cmp2->in(2);
   Node* n = cmp1->in(1);
-  assert(cmp2->in(1) == n, "n must be lhs in both CmpI");
+  assert(cmp2->in(1) == n, "n must be lhs in both comparisons");
 
   // Optimization 1: try to prove that succ is not reachable.
   // Which values of n can pass iff1 to middle AND iff2 to succ?
-  const TypeInt* type_middle = filtered_int_type(igvn, n, middle);
+  const TypeInteger* type_middle = filtered_integer_type(igvn, n, middle, bt);
   if (type_middle != nullptr) {
-    const TypeInt* type_succ = filtered_int_type(igvn, n, succ);
+    const TypeInteger* type_succ = filtered_integer_type(igvn, n, succ, bt);
     if (type_succ != nullptr) {
       if (type_middle->filter(type_succ) == Type::TOP) {
         // The intersection is empty -> succ is not reachable.
@@ -1026,24 +1038,24 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     }
   }
 
-  // Optimization 2: try to replace the two CmpI with one CmpU
+  // Optimization 2: try to replace two CmpIs/CmpLs with one CmpU/CmpUL
   // We can handle the following 4 cases:
-  //     Input: two CmpI            Output: one CmpU           Assumption
-  //     --------------------       -------------------------  -------------------
-  // a)  (n >  lo && n <  hi)  ->   n - lo - 1 <u  hi - lo - 1  (assuming lo <  hi)
-  //     (n >  2  && n <  5 )       n - 3      <u  2
+  //     In: two signed compares         Out: one unsigned compare   Assumption
+  //     -------------------------       -------------------------  -------------------
+  // a)  (n >  lo && n <  hi)       ->   n - lo - 1 <u  hi - lo - 1  (assuming lo <  hi)
+  //     (n >  2  && n <  5 )            n - 3      <u  2
   //     range: [3, 4]
   //
-  // b)  (n >  lo && n <= hi)  ->   n - lo - 1 <u  hi - lo      (assuming lo <= hi)
-  //     (n >  2  && n <= 5 )       n - 3      <u  3
+  // b)  (n >  lo && n <= hi)       ->   n - lo - 1 <u  hi - lo      (assuming lo <= hi)
+  //     (n >  2  && n <= 5 )            n - 3      <u  3
   //     range: [3, 4, 5]
   //
-  // c)  (n >= lo && n <  hi)  ->   n - lo     <u  hi - lo      (assuming lo <= hi)
-  //     (n >= 2  && n <  5 )       n - 2      <u  3
+  // c)  (n >= lo && n <  hi)       ->   n - lo     <u  hi - lo      (assuming lo <= hi)
+  //     (n >= 2  && n <  5 )            n - 2      <u  3
   //     range: [2, 3, 4]
   //
-  // d)  (n >= lo && n <= hi)  ->   n - lo     <=u hi - lo      (assuming lo <= hi)
-  //     (n >= 2  && n <= 5 )       n - 2      <=u 3
+  // d)  (n >= lo && n <= hi)       ->   n - lo     <=u hi - lo      (assuming lo <= hi)
+  //     (n >= 2  && n <= 5 )            n - 2      <=u 3
   //     range: [2, 3, 4, 5]
   //
   // Note1: the rhs of the CmpU indicates the cardinality of the range,
@@ -1059,16 +1071,16 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
   // middle and succ, and extract which one is the lower bound (lo) and
   // which one the upper bound (hi).
   //
-  // <---- lower bound -----> <----------- succ -------------> <---- upper bound ----->
-  // [min_int .. lo_type->hi] [lo_type->hi+1 .. hi_type->lo-1] [hi_type->lo .. max_int]
-  //                         ^                                ^
-  //                     n {>/>=} lo                      n {</<=} hi
+  // <----- lower bound ------> <----------- succ -------------> <----- upper bound ------>
+  // [min_value .. lo_type->hi] [lo_type->hi+1 .. hi_type->lo-1] [hi_type->lo .. max_value]
+  //                           ^                                ^
+  //                       n {>/>=} lo                      n {</<=} hi
   //
   // The trick is then to "shift down" the succ range, to create only
   // a single transition point.
   //
-  // <----------- succ -------------> <------------ unsigned upper bound ------------->
-  // [0           ..                ] [                      ..               max_uint]
+  // <----------- succ -------------> <--------------- unsigned upper bound ---------------->
+  // [0           ..                ] [                        ..         max_unsigned_value]
   //                                 ^
   //                               CmpU
 
@@ -1079,22 +1091,22 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
 
   Node* lo = nullptr;
   Node* hi = nullptr;
-  const TypeInt* lo_type = nullptr;
-  const TypeInt* hi_type = nullptr;
+  const TypeInteger* lo_type = nullptr;
+  const TypeInteger* hi_type = nullptr;
   BoolTest::mask lo_test = BoolTest::illegal;
   BoolTest::mask hi_test = BoolTest::illegal;
   if (BoolTest::is_greater(test1) && BoolTest::is_less(test2)) {
     lo = v1;
     hi = v2;
-    lo_type = IfNode::filtered_int_type(igvn, n, fail1);
-    hi_type = IfNode::filtered_int_type(igvn, n, fail2);
+    lo_type = IfNode::filtered_integer_type(igvn, n, fail1, bt);
+    hi_type = IfNode::filtered_integer_type(igvn, n, fail2, bt);
     lo_test = test1;
     hi_test = test2;
   } else if (BoolTest::is_less(test1) && BoolTest::is_greater(test2)) {
     lo = v2;
     hi = v1;
-    lo_type = IfNode::filtered_int_type(igvn, n, fail2);
-    hi_type = IfNode::filtered_int_type(igvn, n, fail1);
+    lo_type = IfNode::filtered_integer_type(igvn, n, fail2, bt);
+    hi_type = IfNode::filtered_integer_type(igvn, n, fail1, bt);
     lo_test = test2;
     hi_test = test1;
   } else {
@@ -1102,23 +1114,24 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     return false;
   }
   assert(BoolTest::is_greater(lo_test), "lower bound: n {>/>=} lo");
-  assert(BoolTest::is_less(hi_test),    "upper bound: n {</<=} lo");
+  assert(BoolTest::is_less(hi_test),    "upper bound: n {</<=} hi");
 
   // Check that we got lower and upper bounds as expected.
   if (lo_type == nullptr ||
       hi_type == nullptr ||
-      hi_type->_hi != max_jint ||
-      lo_type->_lo != min_jint) {
+      hi_type->hi_as_long() != max_value ||
+      lo_type->lo_as_long() != min_value) {
     // Upper and lower bounds could not be established.
     return false;
   }
 
   // -------------------------------------------------------------------
-  // In the proofs below, we need some basic Lemmas to deal with integer
-  // signed and unsigned arithmetic.
+  // In the proofs below, N is the bit width (32 or 64), and min_value and
+  // max_value are the signed bounds for that width. The same lemmas apply
+  // to both int and long signed and unsigned arithmetic.
   //
   // Lemma1:
-  //   Let a and b be in [min_int .. max_int].
+  //   Let a and b be in [min_value .. max_value].
   //   If a >=s b, then:
   //     U(a - b) = a - b
   //
@@ -1126,41 +1139,41 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
   //     a >= b
   //     -> a - b >= 0
   //
-  //     a <= max_int
-  //     b >= min_int
-  //     -> a - b <= max_int - min_int = 2^32-1
+  //     a <= max_value
+  //     b >= min_value
+  //     -> a - b <= max_value - min_value = 2^N-1
   //
-  //     0 <= a - b <= 2^32-1
+  //     0 <= a - b <= 2^N-1
   //     -> cast to unsigned has no overflow
   //     -> U(a - b) = a - b
   //
   // Lemma2:
-  //   Let a and b be in [min_int .. max_int].
+  //   Let a and b be in [min_value .. max_value].
   //   If a <s b, then:
-  //     U(a - b) = a - b + 2^32
+  //     U(a - b) = a - b + 2^N
   //
   //   Proof:
   //     a < b
   //     -> a - b < 0
   //
-  //     a >= min_int
-  //     b <= max_int
-  //     -> a - b >= min_int - max_int = 2^32-1
+  //     a >= min_value
+  //     b <= max_value
+  //     -> a - b >= min_value - max_value = 2^N-1
   //
-  //     2^32-1 <= a - b < 0
+  //     2^N-1 <= a - b < 0
   //     -> cast to unsigned leads to exactly one overflow
-  //     -> U(a - b) = a - b + 2^32
+  //     -> U(a - b) = a - b + 2^N
   //
   // Lemma3:
-  //   Let a and b be in [min_int .. max_int].
-  //     a + 2^32 > b
+  //   Let a and b be in [min_value .. max_value].
+  //     a + 2^N > b
   //
   //   Proof:
-  //     Using a >= min_int, and b <= max_int:
-  //     a + 2^32 >= min_int + 2^32
-  //               = max_int + 1
-  //              >= b       + 1
-  //              >  b
+  //     Using a >= min_value, and b <= max_value:
+  //     a + 2^N >= min_value + 2^N
+  //              = max_value + 1
+  //             >= b         + 1
+  //             >  b
   // -------------------------------------------------------------------
 
   // Handle the 4 cases.
@@ -1171,17 +1184,17 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
   if (lo_test == BoolTest::gt && hi_test == BoolTest::lt) {
     // We perform the the (CHECK) below, which implies (LO-HI),
     // as we will show below.
-    if (lo_type->_hi >= hi_type->_lo) {
+    if (lo_type->hi_as_long() >= hi_type->lo_as_long()) {
       return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
     }
     // a)  (n >  lo && n <  hi)  ->   n - lo - 1 <u  hi - lo - 1  (assuming lo <  hi)
     //     (BEFORE)                   (AFTER)                     (LO-HI)
     //
     // Proof:
-    //   From IfNode::filtered_int_type, we get:
-    //     lo_type = [min_int .. lo->_hi]    for n <= lo
+    //   From IfNode::filtered_integer_type, we get:
+    //     lo_type = [min_value .. lo->_hi]    for n <= lo
     //     -> lo_type->_hi = lo->_hi
-    //     hi_type = [hi->_lo .. max_int]    for n >= lo
+    //     hi_type = [hi->_lo .. max_value]    for n >= lo
     //     -> hi_type->_lo = hi->_lo
     //   We will need the assumption (LO-HI) below, which we can
     //   establish with the following (CHECK):
@@ -1196,8 +1209,8 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //     -> n < lo+1
     //     U(n - (lo + 1))           <  U(hi - (lo + 1))
     //     -- Lemma2 (n < lo+1) --     -- Lemma1 (lo+1 <= hi) --
-    //       n - (lo + 1) + 2^32     <    hi - (lo + 1)
-    //       n            + 2^32     <    hi
+    //       n - (lo + 1) + 2^N     <    hi - (lo + 1)
+    //       n            + 2^N     <    hi
     //     Always false by Lemma3.
     //
     //   Case lo < n < hi:
@@ -1227,23 +1240,23 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //
     // Produce form: n - lo + x1 <cond> hi - lo + x2
     //               n - lo -  1   <u   hi - lo - 1
-    x1 = igvn->intcon(-1);
-    x2 = igvn->intcon(-1);
+    x1 = igvn->integercon(-1, bt);
+    x2 = igvn->integercon(-1, bt);
     cond = BoolTest::lt;
   } else if (lo_test == BoolTest::gt && hi_test == BoolTest::le) {
     // We perform the the (CHECK) below, which implies (LO-HI),
     // as we will show below.
-    if (lo_type->_hi >= hi_type->_lo) {
+    if (lo_type->hi_as_long() >= hi_type->lo_as_long()) {
       return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
     }
     // b)  (n >  lo && n <= hi)  ->   n - lo - 1 <u  hi - lo      (assuming lo <= hi)
     //     (BEFORE)                   (AFTER)                     (LO-HI)
     //
     // Proof:
-    //   From IfNode::filtered_int_type, we get:
-    //     lo_type = [min_int .. lo->_hi]                  for n <= lo
+    //   From IfNode::filtered_integer_type, we get:
+    //     lo_type = [min_value .. lo->_hi]                    for n <= lo
     //     -> lo_type->_hi = lo->_hi
-    //     hi_type = [min(hi->_lo+1, max_int) .. max_int]  for n > hi
+    //     hi_type = [min(hi->_lo+1, max_value) .. max_value]  for n > hi
     //     -> hi_type->_lo <= lo->_lo + 1
     //   We will need the assumption (LO-HI) below, which we can
     //   establish with the following (CHECK):
@@ -1266,9 +1279,9 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //       -> n < lo+1
     //       U(n - (lo + 1))         <  U(hi - lo)
     //       -- Lemma2 (n < lo+1) --    -- Lemma1 (lo <= hi, LO-HI) --
-    //         n - (lo + 1) + 2^32   <    hi - lo
-    //         n -       1  + 2^32   <    hi
-    //         n            + 2^32   <=   hi
+    //         n - (lo + 1) + 2^N   <    hi - lo
+    //         n -       1  + 2^N   <    hi
+    //         n            + 2^N   <=   hi
     //       Always false by Lemma3.
     //       Note: To apply Lemma2 above, we must use (Case B), we
     //             could not have done it with (LO-HI) alone.
@@ -1302,23 +1315,23 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //
     // Produce form: n - lo + x1 <cond> hi - lo + x2
     //               n - lo -  1   <u   hi - lo
-    x1 = igvn->intcon(-1);
-    x2 = igvn->intcon(0);
+    x1 = igvn->integercon(-1, bt);
+    x2 = igvn->integercon(0, bt);
     cond = BoolTest::lt;
   } else if (lo_test == BoolTest::ge && hi_test == BoolTest::lt) {
     // We perform the the (CHECK) below, which implies (LO-HI),
     // as we will show below.
-    if (lo_type->_hi >= hi_type->_lo) {
+    if (lo_type->hi_as_long() >= hi_type->lo_as_long()) {
       return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
     }
     // c)  (n >= lo && n <  hi)  ->   n - lo     <u  hi - lo      (assuming lo <= hi)
     //     (BEFORE)                   (AFTER)                     (LO-HI)
     //
     // Proof:
-    //   From IfNode::filtered_int_type, we get:
-    //     lo_type = [min_int .. max(min_int, lo->_hi - 1)]  for n < lo
+    //   From IfNode::filtered_integer_type, we get:
+    //     lo_type = [min_value .. max(min_value, lo->_hi - 1)]  for n < lo
     //     -> lo_type->_hi >= lo->_hi - 1
-    //     hi_type = [b->_lo .. max_int]                     for n >= hi
+    //     hi_type = [b->_lo .. max_value]                       for n >= hi
     //     -> hi_type->_lo = hi->_lo
     //   We will need the assumption (LO-HI) below, which we can
     //   establish with the following (CHECK):
@@ -1331,8 +1344,8 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //     (BEFORE) is always false, show (AFTER) is always false.
     //     U(n - lo)              < U(hi - lo)
     //     -- Lemma2 (n < lo) --    -- Lemma1 (lo <= hi, LO-HI) --
-    //       n - lo + 2^32        <   hi - lo
-    //       n      + 2^32        <   hi
+    //       n - lo + 2^N        <   hi - lo
+    //       n      + 2^N        <   hi
     //     Always false by Lemma3.
     //
     //   Case lo <=s n <s hi:
@@ -1357,15 +1370,17 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //
     // Produce form: n - lo + x1 <cond> hi - lo + x2
     //               n - lo        <u   hi - lo
-    x1 = igvn->intcon(0);
-    x2 = igvn->intcon(0);
+    x1 = igvn->integercon(0, bt);
+    x2 = igvn->integercon(0, bt);
     cond = BoolTest::lt;
   } else {
     assert (lo_test == BoolTest::ge && hi_test == BoolTest::le, "");
     // We perform the the (CHECK) below, which implies (LO-HI),
     // as we will show below.
-    jlong lo_type_hi = lo_type->_hi;
-    jlong hi_type_lo = hi_type->_lo;
+    jlong lo_type_hi = lo_type->hi_as_long();
+    jlong hi_type_lo = hi_type->lo_as_long();
+    // hi_type_lo = min(hi->_lo+1, max_value)
+    assert(hi_type_lo > min_value, "bad underflow");
     if (lo_type_hi >= hi_type_lo - 1) {
       return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
     }
@@ -1373,14 +1388,14 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //     (BEFORE)                   (AFTER)                     (LO-HI)
     //
     // Proof:
-    //   From IfNode::filtered_int_type, we get:
-    //     lo_type = [min_int .. max(min_int, lo->_hi-1)]   for n < lo
+    //   From IfNode::filtered_integer_type, we get:
+    //     lo_type = [min_value .. max(min_value, lo->_hi-1)]   for n < lo
     //     -> lo_type->_hi >= lo->_hi - 1
-    //     hi_type = [min(hi->_lo+1, max_int) .. max_int]   for n > hi
+    //     hi_type = [min(hi->_lo+1, max_value) .. max_value]   for n > hi
     //     -> hi_type->_lo <= hi->_lo + 1
     //   We will need the assumption (LO-HI) below, which we can
-    //   establish with the following (CHECK), which we must compute in
-    //   long to avoid underflow:
+    //   establish with the following (CHECK), guarding the subtraction
+    //   when hi_type->_lo == min_value to avoid underflow:
     //        lo_type->_hi     <  hi_type->_lo - 1      (CHECK)
     //     -> lo_type->_hi + 1 <= hi_type->_lo - 1
     //     -> lo->_hi          <= hi->_lo
@@ -1390,8 +1405,8 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //     (BEFORE) is always false, show (AFTER) is always false.
     //     U(n - lo)              <= U(hi - lo)
     //     -- Lemma2 (n < lo) --     -- Lemma1 (hi >= lo, LO-HI) --
-    //       n - lo + 2^32        <=  hi - lo
-    //       n      + 2^32        <=  hi
+    //       n - lo + 2^N        <=  hi - lo
+    //       n      + 2^N        <=  hi
     //     Always false by Lemma3.
     //
     //   Case lo <=s n <=s hi:
@@ -1421,21 +1436,21 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //            we now check: lo_type->_hi <  hi_type->_lo - 1
     //            which implies lo <= hi and excludes this bad case.
     //       - Before JDK-8346420: transform into: n - lo <u hi - lo + 1
-    //         leads to rhs overflow  with lo=min_int and hi=max_int
+    //         leads to rhs overflow  with lo=min_value and hi=max_value
     //
     // Produce form: n - lo + x1 <cond> hi - lo + x2
     //               n - lo        <=u  hi - lo
-    x1 = igvn->intcon(0);
-    x2 = igvn->intcon(0);
+    x1 = igvn->integercon(0, bt);
+    x2 = igvn->integercon(0, bt);
     cond = BoolTest::le;
   }
 
   // Construct the new check: n - lo + x1 <cond> hi - lo + x2
-  Node* lhs = igvn->transform(new SubINode(n,  lo));
-  lhs = igvn->transform(new AddINode(lhs, x1));
-  Node* rhs = igvn->transform(new SubINode(hi, lo));
-  rhs = igvn->transform(new AddINode(rhs, x2));
-  Node* newcmp = igvn->transform(new CmpUNode(lhs, rhs));
+  Node* lhs = igvn->transform(SubNode::make(n, lo, bt));
+  lhs = igvn->transform(AddNode::make(lhs, x1, bt));
+  Node* rhs = igvn->transform(SubNode::make(hi, lo, bt));
+  rhs = igvn->transform(AddNode::make(rhs, x2, bt));
+  Node* newcmp = igvn->transform(CmpNode::make(lhs, rhs, bt, true));
   if (succ->Opcode() == Op_IfFalse) { cond = BoolTest::negate_mask(cond); }
   Node* newbool = igvn->transform(new BoolNode(newcmp, cond));
 
@@ -1443,7 +1458,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
   igvn->replace_input_of(iff1, 1, igvn->intcon(middle->_con));
   igvn->replace_input_of(iff2, 1, newbool);
 
-  return true; // Success with CmpU
+  return true; // Success with CmpU/CmpUL
 }
 
 // Merge the branches that trap for this If and the dominating If into
@@ -1701,7 +1716,7 @@ void IfNode::reroute_side_effect_free_unc(IfProjNode* proj, IfProjNode* dom_proj
 Node* IfNode::fold_compares(PhaseIterGVN* igvn) {
   if (Opcode() != Op_If) return nullptr;
 
-  if (cmpi_folds(igvn)) {
+  if (cmp_folds(igvn)) {
     Node* ctrl = in(0);
     if (is_ctrl_folds(ctrl, igvn)) {
       // A integer comparison immediately dominated by another integer
