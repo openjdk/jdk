@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,6 +243,7 @@ public class TextComponentPrintable implements CountingPrintable {
     private static void createFrames(final JEditorPane editor) {
         Runnable doCreateFrames =
             new Runnable() {
+                @Override
                 public void run() {
                     final int WIDTH = 500;
                     final int HEIGHT = 500;
@@ -310,6 +311,7 @@ public class TextComponentPrintable implements CountingPrintable {
             FutureTask<JTextComponent> futureCreateShell =
                 new FutureTask<JTextComponent>(
                     new Callable<JTextComponent>() {
+                        @Override
                         public JTextComponent call() throws Exception {
                             return createPrintShellOnEDT(textComponent);
                         }
@@ -459,6 +461,7 @@ public class TextComponentPrintable implements CountingPrintable {
      *
      * @return the number of pages.
      */
+    @Override
     public int getNumberOfPages() {
         return pagesMetrics.size();
     }
@@ -472,6 +475,7 @@ public class TextComponentPrintable implements CountingPrintable {
      *
      * print triggers printOnEDT
      */
+    @Override
     public int print(final Graphics graphics,
             final PageFormat pf,
             final int pageIndex) throws PrinterException {
@@ -485,6 +489,7 @@ public class TextComponentPrintable implements CountingPrintable {
         int ret;
         if (!SwingUtilities.isEventDispatchThread()) {
             Callable<Integer> doPrintOnEDT = new Callable<Integer>() {
+                @Override
                 public Integer call() throws Exception {
                     return printOnEDT(graphics, pf, pageIndex);
                 }
@@ -619,6 +624,7 @@ public class TextComponentPrintable implements CountingPrintable {
                  */
                 SwingUtilities.invokeAndWait(
                     new Runnable() {
+                        @Override
                         public void run() {
                         }
                     });
@@ -649,6 +655,7 @@ public class TextComponentPrintable implements CountingPrintable {
     private void layout(final int width) {
         if (!SwingUtilities.isEventDispatchThread()) {
             Callable<Object> doLayoutOnEDT = new Callable<Object>() {
+                @Override
                 public Object call() throws Exception {
                     layoutOnEDT(width);
                     return null;
@@ -828,6 +835,7 @@ public class TextComponentPrintable implements CountingPrintable {
             this.end = end;
         }
 
+        @Override
         public int compareTo(IntegerSegment object) {
             int startsDelta = start - object.start;
             return (startsDelta != 0) ? startsDelta : end - object.end;

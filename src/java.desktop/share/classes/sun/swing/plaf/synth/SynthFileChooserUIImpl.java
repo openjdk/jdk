@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
 
     private AlignedLabel fileNameLabel;
     private final PropertyChangeListener modeListener = new PropertyChangeListener() {
+        @Override
         public void propertyChange(PropertyChangeEvent event) {
             if (fileNameLabel != null) {
                 populateFileNameLabel();
@@ -137,57 +138,70 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
 
 
     private class SynthFileChooserUIAccessor implements FilePane.FileChooserUIAccessor {
+        @Override
         public JFileChooser getFileChooser() {
             return SynthFileChooserUIImpl.this.getFileChooser();
         }
 
+        @Override
         public BasicDirectoryModel getModel() {
             return SynthFileChooserUIImpl.this.getModel();
         }
 
+        @Override
         public JPanel createList() {
             return null;
         }
 
+        @Override
         public JPanel createDetailsView() {
             return null;
         }
 
+        @Override
         public boolean isDirectorySelected() {
             return SynthFileChooserUIImpl.this.isDirectorySelected();
         }
 
+        @Override
         public File getDirectory() {
             return SynthFileChooserUIImpl.this.getDirectory();
         }
 
+        @Override
         public Action getChangeToParentDirectoryAction() {
             return SynthFileChooserUIImpl.this.getChangeToParentDirectoryAction();
         }
 
+        @Override
         public Action getApproveSelectionAction() {
             return SynthFileChooserUIImpl.this.getApproveSelectionAction();
         }
 
+        @Override
         public Action getNewFolderAction() {
             return SynthFileChooserUIImpl.this.getNewFolderAction();
         }
 
+        @Override
         public MouseListener createDoubleClickListener(JList<?> list) {
             return SynthFileChooserUIImpl.this.createDoubleClickListener(getFileChooser(),
                                                                      list);
         }
 
+        @Override
         public ListSelectionListener createListSelectionListener() {
             return SynthFileChooserUIImpl.this.createListSelectionListener(getFileChooser());
         }
     }
 
+    @Override
     protected void installDefaults(JFileChooser fc) {
         super.installDefaults(fc);
         readOnly = UIManager.getBoolean("FileChooser.readOnly");
     }
 
+    @Override
     public void installComponents(JFileChooser fc) {
         super.installComponents(fc);
 
@@ -310,6 +324,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     viewButtonGroup.add(detailsViewButton);
 
     filePane.addPropertyChangeListener(new PropertyChangeListener() {
+        @Override
         public void propertyChange(PropertyChangeEvent e) {
             if ("viewType".equals(e.getPropertyName())) {
                 int viewType = filePane.getViewType();
@@ -355,6 +370,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         fileNamePanel.add(fileNameLabel);
 
         fileNameTextField = new JTextField(35) {
+            @Override
             public Dimension getMaximumSize() {
                 return new Dimension(Short.MAX_VALUE, super.getPreferredSize().height);
             }
@@ -363,6 +379,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         fileNameLabel.setLabelFor(fileNameTextField);
         fileNameTextField.addFocusListener(
             new FocusAdapter() {
+                @Override
                 public void focusGained(FocusEvent e) {
                     if (!getFileChooser().isMultiSelectionEnabled()) {
                         filePane.clearSelection();
@@ -409,11 +426,13 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         groupLabels(new AlignedLabel[] { fileNameLabel, filesOfTypeLabel });
     }
 
+    @Override
     protected void installListeners(JFileChooser fc) {
         super.installListeners(fc);
         fc.addPropertyChangeListener(JFileChooser.FILE_SELECTION_MODE_CHANGED_PROPERTY, modeListener);
     }
 
+    @Override
     protected void uninstallListeners(JFileChooser fc) {
         fc.removePropertyChangeListener(JFileChooser.FILE_SELECTION_MODE_CHANGED_PROPERTY, modeListener);
         super.uninstallListeners(fc);
@@ -449,6 +468,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         return sb.toString();
     }
 
+    @Override
     public void uninstallUI(JComponent c) {
         // Remove listeners
         c.removePropertyChangeListener(filterComboBoxModel);
@@ -462,6 +482,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         super.uninstallUI(c);
     }
 
+    @Override
     protected void installStrings(JFileChooser fc) {
         super.installStrings(fc);
 
@@ -500,6 +521,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     }
 
 
+    @Override
     public String getFileName() {
         if (fileNameTextField != null) {
             return fileNameTextField.getText();
@@ -508,6 +530,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         }
     }
 
+    @Override
     public void setFileName(String fileName) {
         if (fileNameTextField != null) {
             fileNameTextField.setText(fileName);
@@ -518,6 +541,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         filePane.rescanCurrentDirectory();
     }
 
+    @Override
     protected void doSelectedFileChanged(PropertyChangeEvent e) {
         super.doSelectedFileChanged(e);
 
@@ -531,6 +555,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         }
     }
 
+    @Override
     protected void doSelectedFilesChanged(PropertyChangeEvent e) {
         super.doSelectedFilesChanged(e);
 
@@ -543,6 +568,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         }
     }
 
+    @Override
     protected void doDirectoryChanged(PropertyChangeEvent e) {
         super.doDirectoryChanged(e);
 
@@ -574,6 +600,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     }
 
 
+    @Override
     protected void doFileSelectionModeChanged(PropertyChangeEvent e) {
         super.doFileSelectionModeChanged(e);
 
@@ -590,6 +617,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         }
     }
 
+    @Override
     protected void doAccessoryChanged(PropertyChangeEvent e) {
         if (getAccessoryPanel() != null) {
             if (e.getOldValue() != null) {
@@ -602,6 +630,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         }
     }
 
+    @Override
     protected void doControlButtonsChanged(PropertyChangeEvent e) {
         super.doControlButtonsChanged(e);
 
@@ -631,6 +660,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     // ************ FileChooser UI PLAF methods **************
     // *******************************************************
 
+    @Override
     protected ActionMap createActionMap() {
         ActionMap map = new ActionMapUIResource();
         // add standard actions
@@ -701,6 +731,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         Icon icon = null;
         int depth = 0;
 
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             if (icon != null) {
                 if (c.getComponentOrientation().isLeftToRight()) {
@@ -711,10 +742,12 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             }
         }
 
+        @Override
         public int getIconWidth() {
             return ((icon != null) ? icon.getIconWidth() : 0) + depth*space;
         }
 
+        @Override
         public int getIconHeight() {
             return (icon != null) ? icon.getIconHeight() : 0;
         }
@@ -833,19 +866,23 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             return (depths != null && i >= 0 && i < depths.length) ? depths[i] : 0;
         }
 
+        @Override
         public void setSelectedItem(Object selectedDirectory) {
             this.selectedDirectory = (File)selectedDirectory;
             fireContentsChanged(this, -1, -1);
         }
 
+        @Override
         public Object getSelectedItem() {
             return selectedDirectory;
         }
 
+        @Override
         public int getSize() {
             return directories.size();
         }
 
+        @Override
         public File getElementAt(int index) {
             return directories.elementAt(index);
         }
@@ -860,6 +897,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             super("DirectoryComboBoxAction");
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             directoryComboBox.hidePopup();
             JComponent cb = getDirectoryComboBox();
@@ -886,6 +924,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             this.delegate = delegate;
         }
 
+        @Override
         public Component getListCellRendererComponent(JList<? extends FileFilter> list, FileFilter value, int index,
                                                       boolean isSelected, boolean cellHasFocus) {
             Component c = delegate.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
@@ -924,6 +963,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             filters = getFileChooser().getChoosableFileFilters();
         }
 
+        @Override
         public void propertyChange(PropertyChangeEvent e) {
             String prop = e.getPropertyName();
             if(prop == JFileChooser.CHOOSABLE_FILE_FILTER_CHANGED_PROPERTY) {
@@ -934,6 +974,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             }
         }
 
+        @Override
         public void setSelectedItem(Object filter) {
             if(filter != null) {
                 getFileChooser().setFileFilter((FileFilter) filter);
@@ -941,6 +982,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             }
         }
 
+        @Override
         public Object getSelectedItem() {
             // Ensure that the current filter is in the list.
             // NOTE: we shouldn't have to do this, since JFileChooser adds
@@ -962,6 +1004,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             return getFileChooser().getFileFilter();
         }
 
+        @Override
         public int getSize() {
             if(filters != null) {
                 return filters.length;
@@ -970,6 +1013,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             }
         }
 
+        @Override
         public FileFilter getElementAt(int index) {
             if(index > getSize() - 1) {
                 // This shouldn't happen. Try to recover gracefully.
@@ -995,9 +1039,11 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         private int hGap = 5;
         private int topMargin = 17;
 
+        @Override
         public void addLayoutComponent(String string, Component comp) {
         }
 
+        @Override
         public void layoutContainer(Container container) {
             Component[] children = container.getComponents();
 
@@ -1028,6 +1074,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             }
         }
 
+        @Override
         public Dimension minimumLayoutSize(Container c) {
             if (c != null) {
                 Component[] children = c.getComponents();
@@ -1053,10 +1100,12 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             return new Dimension(0, 0);
         }
 
+        @Override
         public Dimension preferredLayoutSize(Container c) {
             return minimumLayoutSize(c);
         }
 
+        @Override
         public void removeLayoutComponent(Component c) { }
     }
 
@@ -1081,6 +1130,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             setAlignmentX(JComponent.LEFT_ALIGNMENT);
         }
 
+        @Override
         public Dimension getPreferredSize() {
             Dimension d = super.getPreferredSize();
             // Align the width with all other labels in group.
