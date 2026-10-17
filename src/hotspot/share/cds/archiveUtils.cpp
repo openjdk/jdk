@@ -449,15 +449,15 @@ void DumpRegion::report_gaps(DumpAllocStats* stats) {
   }
 }
 
-void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
+void DumpRegion::append_intptr_t(intptr_t n) {
+  if (AOTWriteClosureDisabler::is_disabled()) {
+    n = 0;
+  }
   assert(is_aligned(_top, sizeof(intptr_t)), "bad alignment");
   intptr_t *p = (intptr_t*)_top;
   char* newtop = _top + sizeof(intptr_t);
   expand_top_to(newtop);
   *p = n;
-  if (need_to_mark) {
-    ArchivePtrMarker::mark_pointer(p);
-  }
 }
 
 void DumpRegion::print(size_t total_bytes) const {
@@ -499,10 +499,33 @@ void DumpRegion::pack(DumpRegion* next) {
   }
 }
 
+int AOTWriteClosureDisabler::_disable_count = 0;
+
+AOTWriteClosureDisabler::AOTWriteClosureDisabler(bool should_disable)
+  : _should_disable(should_disable)
+{
+  if (_should_disable) {
+    _disable_count ++;
+  }
+}
+
+AOTWriteClosureDisabler::~AOTWriteClosureDisabler() {
+  if (_should_disable) {
+    _disable_count --;
+  }
+  assert(_disable_count >= 0, "must be");
+}
+
 void WriteClosure::do_ptr(void** p) {
-  address ptr = *(address*)p;
-  AOTCompressedPointers::narrowPtr narrowp = AOTCompressedPointers::encode(ptr);
-  _dump_region->append_intptr_t(checked_cast<intptr_t>(narrowp), false);
+  if (AOTWriteClosureDisabler::is_disabled()) {
+    // Note: a null pointer is represented with the value 0 in AOTCompressedPointers.
+    assert(checked_cast<intptr_t>(AOTCompressedPointers::null()) == 0, "must be");
+    _dump_region->append_intptr_t(0);
+  } else {
+    address ptr = *(address*)p;
+    AOTCompressedPointers::narrowPtr narrowp = AOTCompressedPointers::encode(ptr);
+    _dump_region->append_intptr_t(checked_cast<intptr_t>(narrowp));
+  }
 }
 
 void ReadClosure::do_ptr(void** p) {

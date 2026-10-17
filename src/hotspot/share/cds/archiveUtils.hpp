@@ -191,7 +191,7 @@ public:
   char* allocate(size_t num_bytes, size_t alignment = 0);
   char* allocate_metaspace_obj(size_t num_bytes, address src, MetaspaceClosureType type, bool read_only, DumpAllocStats* stats);
 
-  void append_intptr_t(intptr_t n, bool need_to_mark = false) NOT_CDS_RETURN;
+  void append_intptr_t(intptr_t n) NOT_CDS_RETURN;
 
   char* base()      const { return _base;        }
   char* top()       const { return _top;         }
@@ -216,6 +216,21 @@ public:
   }
 
   static void report_gaps(DumpAllocStats* stats);
+};
+
+// RAII helper for demarcating data structures that are loaded from the input archive in
+// AOT retraining, but should not be written into the output AOT configuration file.
+// E.g., AOTLinkedClassTable.
+class AOTWriteClosureDisabler {
+  static int _disable_count;
+  bool _should_disable;
+public:
+  AOTWriteClosureDisabler(bool should_disable);
+  ~AOTWriteClosureDisabler();
+
+  static bool is_disabled() {
+    return _disable_count > 0;
+  }
 };
 
 // Closure for serializing initialization data out to a data area to be

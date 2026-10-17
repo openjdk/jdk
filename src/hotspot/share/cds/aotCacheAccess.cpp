@@ -128,14 +128,14 @@ void AOTCacheAccess::set_aot_code_region_size(size_t sz) {
 }
 
 bool AOTCacheAccess::map_aot_code_region(ReservedSpace rs) {
-  FileMapInfo* static_mapinfo = FileMapInfo::current_info();
+  FileMapInfo* static_mapinfo = FileMapInfo::static_input_archive();
   assert(UseSharedSpaces && static_mapinfo != nullptr, "must be");
   verify_narrow_ptr = VerifyAOTCode;
   return static_mapinfo->map_aot_code_region(rs);
 }
 
 void AOTCacheAccess::unmap_aot_code_region() {
-  FileMapInfo* static_mapinfo = FileMapInfo::current_info();
+  FileMapInfo* static_mapinfo = FileMapInfo::static_input_archive();
   assert(UseSharedSpaces && static_mapinfo != nullptr, "must be");
   return static_mapinfo->unmap_aot_code_region();
 }

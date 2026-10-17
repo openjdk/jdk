@@ -412,9 +412,9 @@ bool SystemDictionaryShared::check_self_exclusion(InstanceKlass* k) {
 
 const char* SystemDictionaryShared::check_self_exclusion_helper(InstanceKlass* k, bool& log_warning) {
   assert_lock_strong(DumpTimeTable_lock);
-  if (CDSConfig::is_dumping_final_static_archive() && k->defined_by_other_loaders()
+  if (CDSConfig::is_dumping_with_input_archive() && k->defined_by_other_loaders()
       && k->in_aot_cache()) {
-    return nullptr; // Do not exclude: unregistered classes are passed from preimage to final image.
+    return nullptr; // Do not exclude: unregistered classes are passed from input archive to output archive..
   }
 
   if (k->is_in_error_state()) {
@@ -513,7 +513,7 @@ bool SystemDictionaryShared::check_dependencies_exclusion(InstanceKlass* k, Dump
     return true;
   }
 
-  if (CDSConfig::is_preserving_verification_constraints()) {
+  if (CDSConfig::is_preserving_verification_constraints() && !k->defined_by_other_loaders()) {
     bool excluded = false;
 
     iterate_verification_constraint_names(k, info, [&] (Symbol* constraint_class_name) {
@@ -608,11 +608,11 @@ bool SystemDictionaryShared::is_builtin_loader(ClassLoaderData* loader_data) {
 }
 
 bool SystemDictionaryShared::has_platform_or_app_classes() {
-  if (FileMapInfo::current_info()->has_platform_or_app_classes()) {
+  if (FileMapInfo::static_input_archive()->has_platform_or_app_classes()) {
     return true;
   }
   if (DynamicArchive::is_mapped() &&
-      FileMapInfo::dynamic_info()->has_platform_or_app_classes()) {
+      FileMapInfo::dynamic_input_archive()->has_platform_or_app_classes()) {
     return true;
   }
   return false;
@@ -725,7 +725,7 @@ InstanceKlass* SystemDictionaryShared::get_unregistered_class(Symbol* name) {
 }
 
 void SystemDictionaryShared::copy_unregistered_class_size_and_crc32(InstanceKlass* klass) {
-  precond(CDSConfig::is_dumping_final_static_archive());
+  precond(CDSConfig::is_dumping_with_input_archive());
   precond(klass->in_aot_cache());
 
   // A shared class must have a RunTimeClassInfo record
@@ -737,6 +737,33 @@ void SystemDictionaryShared::copy_unregistered_class_size_and_crc32(InstanceKlas
   DumpTimeClassInfo* info = get_info(klass);
   info->_clsfile_size = record->crc()->_clsfile_size;
   info->_clsfile_crc32 = record->crc()->_clsfile_crc32;
+}
+
+void SystemDictionaryShared::copy_unregistered_classes_for_retraining(JavaThread* current) {
+  precond(CDSConfig::is_redumping_aot_configuration());
+
+  // This function is called before any Java code is executed, so we must have not yet added
+  // any unregistered. As a result, we must be able to install all unregistered classes
+  // from the AOT cache into _unregistered_classes_table.
+  precond(_unregistered_classes_table == nullptr);
+  _info_for_static_archive._unregistered_dictionary.iterate_all([&](const RunTimeClassInfo* info) {
+    copy_unregistered_class(current, info->klass());
+  });
+}
+
+// This function is called early in VM bootstrap to copy unregistered classes
+// (a) from the AOT config file (in assembly phase), or
+// (b) from the AOT cache file (in retraining run)
+// In both cases, we should never see two classes with the same name.
+void SystemDictionaryShared::copy_unregistered_class(JavaThread* current, InstanceKlass* k) {
+  precond(k->in_aot_cache());
+  precond(CDSConfig::is_dumping_with_input_archive());
+  init_dumptime_info(k);
+  bool added = add_unregistered_class(current, k);
+  assert(added, "must not have duplicates");
+  copy_unregistered_class_size_and_crc32(k);
+  copy_verification_info_from_input_archive(k);
+  copy_linking_constraints_from_input_archive(k);
 }
 
 void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs) {
@@ -797,10 +824,18 @@ void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
   }
 }
 
-void SystemDictionaryShared::init_dumptime_info_from_preimage(InstanceKlass* k) {
+void SystemDictionaryShared::init_dumptime_info_from_input_archive(InstanceKlass* k) {
+  if (CDSConfig::is_dumping_preimage_static_archive() && k->defined_by_other_loaders()) {
+    DEBUG_ONLY({
+        DumpTimeClassInfo* info = _dumptime_table->get(k);
+        guarantee(info != nullptr, "Already added in SystemDictionaryShared::copy_unregistered_classes_for_retraining()");
+      });
+    return; // Already inited
+  }
+
   init_dumptime_info(k);
-  copy_verification_info_from_preimage(k);
-  copy_linking_constraints_from_preimage(k);
+  copy_verification_info_from_input_archive(k);
+  copy_linking_constraints_from_input_archive(k);
 
   if (SystemDictionary::is_platform_class_loader(k->class_loader())) {
     AOTClassLocationConfig::dumptime_set_has_platform_classes();
@@ -951,9 +986,9 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
       DumpTimeClassInfo* p = get_info_locked(ik);
       return should_be_excluded_impl(ik, p);
     } else {
-      // When called within the CDS safepoint, the correctness of this function
+      // When called within the AOT safepoint, the correctness of this function
       // relies on the call to AOTMetaspace::link_all_loaded_classes()
-      // that happened right before we enter the CDS safepoint.
+      // that happened right before we enter the AOT safepoint.
       //
       // Do not call this function in other types of safepoints. For example, if this
       // is called in a GC safepoint, a klass may be improperly excluded because some
@@ -1032,13 +1067,17 @@ void SystemDictionaryShared::set_from_class_file_load_hook(InstanceKlass* ik) {
 }
 
 void SystemDictionaryShared::dumptime_classes_do(MetaspaceClosure* it) {
-  assert_lock_strong(DumpTimeTable_lock);
+  assert(CDSConfig::in_aot_safepoint(), "exclusion check is complete in AOT safepoint");
+  assert_lock_strong(DumpTimeTable_lock); // Prevent concurrent class unloading
 
   auto do_klass = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
-    if (CDSConfig::is_dumping_final_static_archive() && !k->is_loaded()) {
+    if (info.is_excluded()) {
+      return;
+    }
+    if ((CDSConfig::is_dumping_with_input_archive()) && !k->is_loaded()) {
       assert(k->defined_by_other_loaders(), "must be");
       info.metaspace_pointers_do(it);
-    } else if (k->is_loader_alive() && !info.is_excluded()) {
+    } else if (k->is_loader_alive()) {
       info.metaspace_pointers_do(it);
     }
   };
@@ -1147,10 +1186,10 @@ void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass
   }
 }
 
-void SystemDictionaryShared::copy_verification_info_from_preimage(InstanceKlass* klass) {
+void SystemDictionaryShared::copy_verification_info_from_input_archive(InstanceKlass* klass) {
   assert(CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   DumpTimeClassInfo* dt_info = get_info(klass);
-  RunTimeClassInfo* rt_info = RunTimeClassInfo::get_for(klass); // from preimage
+  RunTimeClassInfo* rt_info = RunTimeClassInfo::get_for(klass); // from input_archive
 
   int length = rt_info->num_verifier_constraints();
   if (length > 0) {
@@ -1282,11 +1321,11 @@ bool SystemDictionaryShared::check_linking_constraints(Thread* current, Instance
   return false;
 }
 
-void SystemDictionaryShared::copy_linking_constraints_from_preimage(InstanceKlass* klass) {
+void SystemDictionaryShared::copy_linking_constraints_from_input_archive(InstanceKlass* klass) {
   assert(CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   JavaThread* current = JavaThread::current();
   if (klass->defined_by_platform_loader() || klass->defined_by_app_loader()) {
-    RunTimeClassInfo* rt_info = RunTimeClassInfo::get_for(klass); // from preimage
+    RunTimeClassInfo* rt_info = RunTimeClassInfo::get_for(klass); // from input_archive
 
     if (rt_info->num_loader_constraints() > 0) {
       for (int i = 0; i < rt_info->num_loader_constraints(); i++) {

@@ -372,8 +372,14 @@ public:
 // loaded. Later, we will check if any archived objects reference one of
 // these fields.
 void CDSHeapVerifier::do_klass(Klass* k) {
+  precond(CDSConfig::in_aot_safepoint());
   if (k->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(k);
+
+    if (!ik->is_loaded() || !ik->is_loader_alive()) {
+      // In the training run, we may see some classes that are being loaded or unloaded. Ignore them
+      return;
+    }
 
     if (HeapShared::is_subgraph_root_class(ik)) {
       // ik is inside one of the ArchivableStaticFieldInfo tables
