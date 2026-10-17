@@ -21,29 +21,32 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8390002
- * @summary Verifies that on Windows, there is are three yellow stack pages,
- *          since Windows requires an additional yellow stack page for the
- *          OS-managed stack-growth guard page
- * @requires os.family == "windows"
- * @library /test/lib
- * @run driver TestWindowsStackYellowPages
- */
+#include <jni.h>
+#include <windows.h>
 
-import jdk.test.lib.process.ProcessTools;
+JNIEXPORT jlong JNICALL
+Java_TestWindowsStackPages_getStackGuardPages(JNIEnv* env, jclass cls) {
+    MEMORY_BASIC_INFORMATION stack_info;
+    MEMORY_BASIC_INFORMATION guard_info;
+    SYSTEM_INFO system_info;
+    char stack_address;
 
-public class TestWindowsStackYellowPages {
-    private static final String FLAG = "StackYellowPages";
-
-    public static void main(String[] args) throws Exception {
-        ProcessTools.executeTestJava("-XX:+PrintFlagsFinal", "-version")
-                    .shouldMatch(FLAG + "[ ]+=[ ]+3")
-                    .shouldHaveExitValue(0);
-
-        ProcessTools.executeTestJava("-XX:" + FLAG + "=2", "-version")
-                    .shouldContain(FLAG + "=2 is outside the allowed range")
-                    .shouldNotHaveExitValue(0);
+    if (VirtualQuery(&stack_address, &stack_info, sizeof(stack_info)) == 0 ||
+        VirtualQuery(stack_info.AllocationBase, &guard_info, sizeof(guard_info)) == 0) {
+        jclass exception = (*env)->FindClass(env, "java/lang/RuntimeException");
+        if (exception != NULL) {
+            (*env)->ThrowNew(env, exception, "VirtualQuery failed");
+        }
+        return 0;
     }
+
+    // Return the count of committed pages that are marked with `PAGE_NOACCESS`.
+    // We expect this count to match the number of Red and Yellow pages.
+    if (guard_info.State == MEM_COMMIT && guard_info.Protect == PAGE_NOACCESS) {
+        // We need the page count, not bytes.
+        GetSystemInfo(&system_info);
+        return (jlong)(guard_info.RegionSize / system_info.dwPageSize);
+    }
+
+    return -1;
 }
