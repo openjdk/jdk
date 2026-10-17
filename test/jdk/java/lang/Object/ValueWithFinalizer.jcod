@@ -1,0 +1,123 @@
+/* Javac reports an error when a value class declares a method overriding
+ * Object::finalize. The VM must still handle such class files correctly, so
+ * this class is supplied as jcod. It corresponds to the following source:
+ *
+ * value class ValueWithFinalizer {
+ *     CountDownLatch latch;
+ *     ValueWithFinalizer(CountDownLatch latch) {
+ *         this.latch = latch;
+ *     }
+ *     @Override
+ *     protected void finalize() {
+ *         latch.countDown();
+ *     }
+ * }
+ */
+class ValueWithFinalizer {
+  0xCAFEBABE;
+  65535; // minor version
+  72; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Field #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "ValueWithFinalizer"; // #4
+    Utf8 "latch"; // #5
+    Utf8 "Ljava/util/concurrent/CountDownLatch;"; // #6
+    Method #8 #9; // #7
+    class #10; // #8
+    NameAndType #11 #12; // #9
+    Utf8 "java/lang/Object"; // #10
+    Utf8 "<init>"; // #11
+    Utf8 "()V"; // #12
+    Method #14 #15; // #13
+    class #16; // #14
+    NameAndType #17 #12; // #15
+    Utf8 "java/util/concurrent/CountDownLatch"; // #16
+    Utf8 "countDown"; // #17
+    Utf8 "(Ljava/util/concurrent/CountDownLatch;)V"; // #18
+    Utf8 "Code"; // #19
+    Utf8 "LineNumberTable"; // #20
+    Utf8 "finalize"; // #21
+    Utf8 "SourceFile"; // #22
+    Utf8 "ValueWithFinalizer.java"; // #23
+  } // Constant Pool
+
+  0x0010; // access
+  #2;// this_cpx
+  #8;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+    {  // field
+      0x0810; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+      } // Attributes
+    }
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0000; // access
+      #11; // name_index
+      #18; // descriptor_index
+      [] { // Attributes
+        Attr(#19) { // Code
+          2; // max_stack
+          2; // max_locals
+          Bytes[]{
+            0x2A2BB500012AB700;
+            0x07B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#20) { // LineNumberTable
+              [] { // line_number_table
+                0  6;
+                5  5;
+                9  7;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+    ;
+    {  // method
+      0x0004; // access
+      #21; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#19) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB40001B6000DB1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#20) { // LineNumberTable
+              [] { // line_number_table
+                0  10;
+                7  11;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#22) { // SourceFile
+      #23;
+    } // end SourceFile
+  } // Attributes
+} // end class ValueWithFinalizer
