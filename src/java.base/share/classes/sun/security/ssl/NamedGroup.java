@@ -219,17 +219,17 @@ enum NamedGroup {
     ML_KEM_512(0x0200, "MLKEM512",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
-            null),
+            NamedParameterSpec.ML_KEM_512),
 
     ML_KEM_768(0x0201, "MLKEM768",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
-            null),
+            NamedParameterSpec.ML_KEM_768),
 
     ML_KEM_1024(0x0202, "MLKEM1024",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
-            null),
+            NamedParameterSpec.ML_KEM_1024),
 
     X25519MLKEM768(0x11ec, "X25519MLKEM768",
             NamedGroupSpec.NAMED_GROUP_KEM,
@@ -315,10 +315,19 @@ enum NamedGroup {
                 // Skip AlgorithmParameters for KEMs (not supported)
                 // Check KEM's availability via KeyFactory
                 if (namedGroupSpec == NamedGroupSpec.NAMED_GROUP_KEM) {
-                    if (defaultProvider == null) {
-                        KeyFactory.getInstance(name);
+                    if (keAlgParamSpec instanceof NamedParameterSpec nps) {
+                        if (defaultProvider == null) {
+                            KeyFactory.getInstance(nps.getName());
+                        } else {
+                            KeyFactory.getInstance(nps.getName(), defaultProvider);
+                        }
                     } else {
-                        KeyFactory.getInstance(name, defaultProvider);
+                        mediator = false;
+                        if (SSLLogger.isOn() &&
+                                SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
+                            SSLLogger.warning("Params for " + name
+                                    + " must be NamedParameterSpec");
+                        }
                     }
                 } else {
                     // ECDHE or others: use AlgorithmParameters as before

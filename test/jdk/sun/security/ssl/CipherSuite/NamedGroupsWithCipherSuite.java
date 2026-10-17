@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.util.Arrays;
 import java.util.List;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
@@ -31,7 +30,7 @@ import jdk.test.lib.security.SecurityUtils;
 
 /*
   * @test
-  * @bug 8224650 8242929 8314323
+  * @bug 8224650 8242929 8314323 8371736
   * @library /javax/net/ssl/templates
   *          /javax/net/ssl/TLSCommon
   *          /test/lib
@@ -49,6 +48,9 @@ import jdk.test.lib.security.SecurityUtils;
   * @run main/othervm NamedGroupsWithCipherSuite X25519MLKEM768
   * @run main/othervm NamedGroupsWithCipherSuite SecP256r1MLKEM768
   * @run main/othervm NamedGroupsWithCipherSuite SecP384r1MLKEM1024
+  * @run main/othervm NamedGroupsWithCipherSuite MLKEM512
+  * @run main/othervm NamedGroupsWithCipherSuite MLKEM768
+  * @run main/othervm NamedGroupsWithCipherSuite MLKEM1024
  */
 public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
 
@@ -82,17 +84,20 @@ public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
             CipherSuite.TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256
     );
 
-    private static final List<String> HYBRID_NAMEDGROUPS = List.of(
+    private static final List<String> PQC_NAMEDGROUPS = List.of(
             "X25519MLKEM768",
             "SecP256r1MLKEM768",
-            "SecP384r1MLKEM1024"
+            "SecP384r1MLKEM1024",
+            "MLKEM512",
+            "MLKEM768",
+            "MLKEM1024"
     );
 
-    private static final List<Protocol> HYBRID_PROTOCOL = List.of(
+    private static final List<Protocol> PQC_PROTOCOL = List.of(
             Protocol.TLSV1_3
     );
 
-    private static final List<CipherSuite> HYBRID_CIPHER_SUITES = List.of(
+    private static final List<CipherSuite> PQC_CIPHER_SUITES = List.of(
             CipherSuite.TLS_AES_128_GCM_SHA256,
             CipherSuite.TLS_AES_256_GCM_SHA384,
             CipherSuite.TLS_CHACHA20_POLY1305_SHA256
@@ -172,15 +177,15 @@ public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
         // Re-enable TLSv1 and TLSv1.1 since test depends on it.
         SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
 
-        boolean hybridGroup = HYBRID_NAMEDGROUPS.contains(namedGroup);
-        List<Protocol> protocolList = hybridGroup ?
-                HYBRID_PROTOCOL : PROTOCOLS;
-        List<CipherSuite> cipherList = hybridGroup ?
-                HYBRID_CIPHER_SUITES : CIPHER_SUITES;
+        boolean pqcGroup = PQC_NAMEDGROUPS.contains(namedGroup);
+        List<Protocol> protocolList = pqcGroup ?
+                PQC_PROTOCOL : PROTOCOLS;
+        List<CipherSuite> cipherList = pqcGroup ?
+                PQC_CIPHER_SUITES : CIPHER_SUITES;
 
         // non-Hybrid named group converted to lower case just
         // to satisfy Test condition
-        String normalizedGroup = hybridGroup ?
+        String normalizedGroup = pqcGroup ?
                 namedGroup : namedGroup.toLowerCase();
 
         for (Protocol protocol : protocolList) {
@@ -199,7 +204,7 @@ public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
 
     private static boolean groupSupportedByCipher(String group,
             CipherSuite cipherSuite) {
-        if (HYBRID_NAMEDGROUPS.contains(group)) {
+        if (PQC_NAMEDGROUPS.contains(group)) {
             return cipherSuite.keyExAlgorithm == null;
         }
 
