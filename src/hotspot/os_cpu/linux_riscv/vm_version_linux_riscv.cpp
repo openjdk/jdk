@@ -139,6 +139,15 @@ void VM_Version::setup_cpu_available_features() {
   char* uarch = os_uarch_additional_features();
   vendor_features();
 
+  RVExtFeatures* archived_cpu_features = (RVExtFeatures*)get_aot_cache_cpu_features();
+  if (archived_cpu_features != nullptr) {
+    RVExtFeatures* rt_features = RVExtFeatures::current();
+    if (rt_features->super_set_of(archived_cpu_features)) {
+      RVExtFeatures features_to_clear = rt_features->features_not_in(archived_cpu_features);
+      rt_features->clear_features(&features_to_clear);
+    }
+  }
+
   char buf[1024] = {};
   if (uarch != nullptr && strcmp(uarch, "") != 0) {
     // Use at max half the buffer.

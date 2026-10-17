@@ -421,6 +421,31 @@ private:
       }
       return true;
     }
+
+    // Is this a super set of features_to_test?
+    bool super_set_of(RVExtFeatures* features_to_test) {
+      for (int i = 0; i < features_bitmap_element_count(); i++) {
+        if ((_features_bitmap[i] | features_to_test->_features_bitmap[i]) != _features_bitmap[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // Returns features present in this but not is features_to_test
+    RVExtFeatures features_not_in(RVExtFeatures* features_to_test) {
+      RVExtFeatures result;
+      for (int i = 0; i < features_bitmap_element_count(); i++) {
+        result._features_bitmap[i] = _features_bitmap[i] & (~(features_to_test->_features_bitmap[i]));
+      }
+      return result;
+    }
+
+    void clear_features(RVExtFeatures* features_to_clear) {
+      for (int i = 0; i < features_bitmap_element_count(); i++) {
+        _features_bitmap[i] &= (~(features_to_clear->_features_bitmap[i]));
+      }
+    }
   };
 
   // enable extensions based on profile, current supported profiles:
