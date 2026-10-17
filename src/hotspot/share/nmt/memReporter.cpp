@@ -63,6 +63,10 @@ size_t MemReporterBase::committed_total(const MallocMemory* malloc, const Virtua
   return malloc->malloc_size() + malloc->arena_size() + vm->committed();
 }
 
+void MemReporterBase::report_detail_failure(outputStream* out, const char* action) {
+  out->print_cr("Detailed collection failed. %s", action);
+}
+
 void MemReporterBase::print_total(size_t reserved, size_t committed, size_t peak) const {
   const char* scale = current_scale();
   output()->print("reserved=%zu%s, committed=%zu%s",
