@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -406,6 +406,28 @@ public:
   }
   static const char* impact() {
     return "Medium: Depends on the number of threads.";
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class SystemLoggingLevelDCmd: public DCmdWithParser {
+private:
+  void setLevel(const char* logger, const char* level, const char* log_output, TRAPS);
+protected:
+  DCmdArgument<char*> _loggername;
+  DCmdArgument<char*> _levelvalue;
+  DCmdArgument<char*> _outputvalue;
+public:
+  static int num_arguments() { return 3; }
+  SystemLoggingLevelDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "System.logging_level";
+  }
+  static const char* description() {
+    return "Adjust the logging level for internal JDK System Loggers";
+  }
+  static const char* impact() {
+    return "Medium: Depends on the data output from logger level";
   }
   virtual void execute(DCmdSource source, TRAPS);
 };
