@@ -2798,6 +2798,9 @@ void os::print_memory_info(outputStream* st) {
   st->print("Page Sizes: ");
   _page_sizes.print_on(st);
   st->cr();
+  st->print_cr("User Address Space: [" PTR_FORMAT "-" PTR_FORMAT "] (%u bits)",
+               os::vm_min_address(), os::vm_max_address(),
+               log2i_ceil(os::vm_max_address()));
 }
 
 // Print the first "model name" line and the first "flags" line
@@ -4415,7 +4418,7 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   return nullptr;
 }
 
-size_t os::vm_min_address() {
+uintptr_t os::vm_min_address() {
   // Determined by sysctl vm.mmap_min_addr. It exists as a safety zone to prevent
   // null pointer dereferences.
   // Most distros set this value to 64 KB. It *can* be zero, but rarely is. Here,
@@ -4434,6 +4437,67 @@ size_t os::vm_min_address() {
   }
   return value;
 }
+
+#if !defined(S390) && !defined(ARM32)
+
+// Returns true if user address space covers at least bits bits (checks if address space
+// between [2^(bits-1), 2^bits) is user-addressable). Assumption here is that user address space
+// is limited by a power-of-2 boundary, which is the case for all our 64-bit platforms.
+static bool mmap_probe_at(int bits) {
+  assert(bits > 0 && bits < 64, "invalid bit size");
+  const uintptr_t f = nth_bit<uintptr_t>(bits);
+  const uintptr_t h = f / 2;
+
+  void* const hint = (void*)h;
+  void* const result = ::mmap(hint, os::vm_page_size(), PROT_NONE,
+      MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_FIXED_NOREPLACE, -1, 0);
+  log_trace(os)("mmap_probe_at: " PTR_FORMAT "->" PTR_FORMAT " (%d)", p2i(hint), p2i(result), errno);
+  if (result != MAP_FAILED) {
+    ::munmap(result, os::vm_page_size());
+    return true;
+  }
+  switch (errno) {
+  case EEXIST:
+    // MAP_FIXED_NOREPLACE refused to replace an existing mapping, so it must be inside user address space
+    return true;
+  case EINVAL:
+  case ENOMEM:
+    // Both EINVAL and ENOMEM indicate that the hint address is not in user-addressable memory.
+    return false;
+  break;
+  default:
+    fatal("Failed to probe memory (mmap errno=%d)", errno);
+  }
+  return false;
+}
+
+uintptr_t os::vm_max_address() {
+
+  static uintptr_t value = 0;
+
+  if (value != 0) {
+    return value;
+  }
+
+  // 4PB: e.g. RiscV with Sv57, x64 with LVA57
+  // (note: 57 bits, but 50/50 split with kernel)
+  constexpr int maxbits = 56;
+  // 256GB: Arm64 small SBCs, e.g. Raspbian OS
+  constexpr int minbits = 38;
+  bool success = false;
+  int bits = maxbits;
+  while (!success && bits >= minbits) {
+    success = mmap_probe_at(bits);
+    bits--;
+  }
+  assert(success, "mmap probing failed?");
+  value = (success) ? nth_bit<uintptr_t>(bits + 1) : nth_bit<uintptr_t>(48);
+
+  return value;
+}
+
+#endif // _LP64
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // thread priority support
