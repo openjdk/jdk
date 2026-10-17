@@ -115,8 +115,8 @@ public class TestJhsdbJstackMixedWithXComp {
 
     public static void main(String... args) throws Exception {
         if (Platform.isMusl()) {
-            if (Platform.isAArch64()) {
-                throw new SkippedException("musl libc on AArch64 is not supported.");
+            if (!Platform.isX64()) {
+                throw new SkippedException("This platform is not supported.");
             }
 
             var libc = SATestUtils.getLibCPath();

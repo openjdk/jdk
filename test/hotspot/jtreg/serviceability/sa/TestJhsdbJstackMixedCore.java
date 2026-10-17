@@ -76,8 +76,8 @@ public class TestJhsdbJstackMixedCore {
         var libc = SATestUtils.getLibCPath();
 
         if (Platform.isMusl()) {
-            if (Platform.isAArch64()) {
-                throw new SkippedException("musl libc on AArch64 is not supported.");
+            if (!Platform.isX64()) {
+                throw new SkippedException("This platform is not supported.");
             } else if (SATestUtils.getDebugInfo(libc) == null) {
                 throw new SkippedException("libc debug info is not available.");
             }
