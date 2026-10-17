@@ -84,7 +84,7 @@ private:
 
  public:
   static size_t table_size();
-  static TableStatistics get_table_statistics();
+  static bool get_table_statistics(TableStatistics& ts);
 
   static void create_table();
 
