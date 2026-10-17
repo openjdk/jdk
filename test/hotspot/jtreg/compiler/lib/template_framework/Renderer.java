@@ -92,7 +92,7 @@ final class Renderer {
      * <p>
      * The {@link Renderer} instance exists during the whole rendering process. Should the user ever
      * attempt to render a nested {@link Template} to a {@link String}, we would detect that there is
-     * already a {@link Renderer} instance for the outer {@link Template}, and throw a {@link RendererException}.
+     * already a {@link Renderer} instance for the outer {@link Template}, and throw a {@link TemplateFrameworkException}.
      */
     private static Renderer renderer = null;
 
@@ -113,7 +113,7 @@ final class Renderer {
 
     static Renderer getCurrent() {
         if (renderer == null) {
-            throw new RendererException("A Template method such as '$', 'fuel', etc. was called outside a template rendering call.");
+            throw new TemplateFrameworkException("A Template method such as '$', 'fuel', etc. was called outside a template rendering call.");
         }
         return renderer;
     }
@@ -125,7 +125,7 @@ final class Renderer {
     static String render(TemplateToken templateToken, float fuel) {
         // Check nobody else is using the Renderer.
         if (renderer != null) {
-            throw new RendererException("Nested render not allowed. Please only use 'asToken' inside Templates, and call 'render' only once at the end.");
+            throw new TemplateFrameworkException("Nested render not allowed. Please only use 'asToken' inside Templates, and call 'render' only once at the end.");
         }
         try {
             renderer = new Renderer(fuel);
@@ -141,11 +141,11 @@ final class Renderer {
     private void checkFrameConsistencyAfterRendering() {
         // Ensure CodeFrame consistency.
         if (baseCodeFrame != currentCodeFrame) {
-            throw new RuntimeException("Internal error: Renderer did not end up at base CodeFrame.");
+            throw new InternalTemplateFrameworkException("Renderer did not end up at base CodeFrame.");
         }
         // Ensure TemplateFrame consistency.
         if (baseTemplateFrame != currentTemplateFrame) {
-            throw new RuntimeException("Internal error: Renderer did not end up at base TemplateFrame.");
+            throw new InternalTemplateFrameworkException("Renderer did not end up at base TemplateFrame.");
         }
     }
 
@@ -202,7 +202,7 @@ final class Renderer {
                 return "Float.NEGATIVE_INFINITY";
             }
         } else {
-            throw new RuntimeException("Not handled: " + f);
+            throw new InternalTemplateFrameworkException("Not handled: " + f);
         }
     }
 
@@ -218,7 +218,7 @@ final class Renderer {
                 return "Double.NEGATIVE_INFINITY";
             }
         } else {
-            throw new RuntimeException("Not handled: " + d);
+            throw new InternalTemplateFrameworkException("Not handled: " + d);
         }
     }
 
@@ -235,7 +235,7 @@ final class Renderer {
         renderScopeToken(templateToken.instantiate());
 
         if (currentTemplateFrame != templateFrame) {
-            throw new RuntimeException("Internal error: TemplateFrame mismatch!");
+            throw new InternalTemplateFrameworkException("TemplateFrame mismatch!");
         }
         currentTemplateFrame = currentTemplateFrame.parent;
     }
@@ -249,7 +249,7 @@ final class Renderer {
                                            boolean isTransparentForNames,
                                            boolean isTransparentForHashtags,
                                            boolean isTransparentForSetFuelCost))) {
-            throw new RuntimeException("Internal error: could not unpack ScopeTokenImpl.");
+            throw new InternalTemplateFrameworkException("Could not unpack ScopeTokenImpl.");
         }
 
         // We need the CodeFrame for local names.
@@ -278,7 +278,7 @@ final class Renderer {
 
         if (!isTransparentForHashtags || !isTransparentForSetFuelCost) {
             if (currentTemplateFrame != innerTemplateFrame) {
-                throw new RuntimeException("Internal error: TemplateFrame mismatch!");
+                throw new InternalTemplateFrameworkException("TemplateFrame mismatch!");
             }
             currentTemplateFrame = currentTemplateFrame.parent;
         }
@@ -349,7 +349,7 @@ final class Renderer {
             case NameSampleToken<?> nameScopeToken -> {
                 Name name = currentCodeFrame.sampleName(nameScopeToken.predicate());
                 if (name == null) {
-                    throw new RendererException("No Name found for " + nameScopeToken.predicate().toString());
+                    throw new TemplateFrameworkException("No Name found for " + nameScopeToken.predicate().toString());
                 }
                 ScopeToken scopeToken = nameScopeToken.getScopeToken(name);
                 renderScopeToken(scopeToken, () -> {
@@ -409,7 +409,7 @@ final class Renderer {
             renderToken(t);
         }
         if (codeFrame != currentCodeFrame) {
-            throw new RuntimeException("Internal error: CodeFrame mismatch.");
+            throw new InternalTemplateFrameworkException("CodeFrame mismatch.");
         }
     }
 
@@ -465,7 +465,7 @@ final class Renderer {
             if (next < s.length() - 2 && ((s.charAt(next) == '$' && s.charAt(next + 1) == '#') ||
                 (s.charAt(next) == '#' && s.charAt(next + 1) == '$'))) {
                 String pattern = s.substring(next, next + 2);
-                throw new RendererException("Found zero sized replacement pattern '" + pattern + "'.");
+                throw new TemplateFrameworkException("Found zero sized replacement pattern '" + pattern + "'.");
             }
 
             String part = s.substring(start, next);
@@ -520,7 +520,7 @@ final class Renderer {
         //   "anything#" -> a hashtag at the end of the string leads to an empty name.
         if (!matcher.find()) {
             String replacement = isDollar ? "$" : "#";
-            throw new RendererException("Is not a valid '" + replacement + "' replacement pattern: '" +
+            throw new TemplateFrameworkException("Is not a valid '" + replacement + "' replacement pattern: '" +
                                         replacement + part + "' in '" + s + "'.");
         }
         // We know that there is a correct pattern, and now we replace it.
@@ -541,7 +541,7 @@ final class Renderer {
     private CodeFrame codeFrameForHook(Hook hook) {
         CodeFrame codeFrame = currentCodeFrame.codeFrameForHook(hook);
         if (codeFrame == null) {
-            throw new RendererException("Hook '" + hook.name() + "' was referenced but not found!");
+            throw new TemplateFrameworkException("Hook '" + hook.name() + "' was referenced but not found!");
         }
         return codeFrame;
     }
