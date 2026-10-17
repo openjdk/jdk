@@ -26,6 +26,7 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTimer.hpp"
+#include "gc/shared/numberSeq.hpp"
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zLock.hpp"
 #include "gc/z/zMetronome.hpp"
@@ -35,7 +36,6 @@
 #include "logging/logHandle.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/numberSeq.hpp"
 #include "utilities/ticks.hpp"
 
 class GCTracer;

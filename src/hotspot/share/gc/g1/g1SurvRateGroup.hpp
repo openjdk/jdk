@@ -26,7 +26,7 @@
 #define SHARE_GC_G1_G1SURVRATEGROUP_HPP
 
 #include "gc/g1/g1Predictions.hpp"
-#include "utilities/numberSeq.hpp"
+#include "gc/shared/numberSeq.hpp"
 
 // A survivor rate group tracks survival ratios of objects allocated in the
 // heap regions associated to a set of regions (a "space", i.e. eden or survivor)

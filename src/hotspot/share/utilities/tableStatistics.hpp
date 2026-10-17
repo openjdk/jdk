@@ -25,11 +25,11 @@
 #ifndef SHARE_UTILITIES_TABLESTATISTICS_HPP
 #define SHARE_UTILITIES_TABLESTATISTICS_HPP
 
+#include "gc/shared/numberSeq.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/numberSeq.hpp"
 
 class TableRateStatistics : public CHeapObj<mtStatistics> {
 

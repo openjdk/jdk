@@ -27,13 +27,13 @@
 #include "cds/cdsConfig.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
+#include "gc/shared/numberSeq.hpp"
 #include "jvm.h"
 #include "logging/logMessage.hpp"
 #include "memory/metadataFactory.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
-#include "utilities/numberSeq.hpp"
 
 #include <sys/stat.h>
 

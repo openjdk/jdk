@@ -26,9 +26,9 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHNUMBERSEQ_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHNUMBERSEQ_HPP
 
+#include "gc/shared/numberSeq.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/numberSeq.hpp"
 
 // HDR sequence stores the low-resolution high-dynamic-range values.
 // It does so by maintaining the double array, where first array defines

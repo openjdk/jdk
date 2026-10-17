@@ -24,9 +24,9 @@
 #ifndef SHARE_GC_Z_ZTLABUSAGE_HPP
 #define SHARE_GC_Z_ZTLABUSAGE_HPP
 
+#include "gc/shared/numberSeq.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/numberSeq.hpp"
 
 // ZGC is retiring TLABs concurrently with the application running when
 // processing the stack watermarks. For the common TLAB heuristic to work we

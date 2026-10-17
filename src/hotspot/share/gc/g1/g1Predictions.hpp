@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1PREDICTIONS_HPP
 #define SHARE_GC_G1_G1PREDICTIONS_HPP
 
-#include "utilities/numberSeq.hpp"
+#include "gc/shared/numberSeq.hpp"
 
 // Utility class containing various helper methods for prediction.
 class G1Predictions {

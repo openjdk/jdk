@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_G1_G1ANALYTICSSEQUENCES_HPP
 #define SHARE_GC_G1_G1ANALYTICSSEQUENCES_HPP
 
+#include "gc/shared/numberSeq.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/numberSeq.hpp"
 
 #include <float.h>
 

@@ -28,9 +28,9 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcUtil.hpp"
+#include "gc/shared/numberSeq.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
-#include "utilities/numberSeq.hpp"
 
 // This class keeps statistical information and computes the
 // size of the heap.
