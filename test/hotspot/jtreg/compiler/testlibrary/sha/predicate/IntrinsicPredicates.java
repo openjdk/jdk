@@ -104,16 +104,17 @@ public class IntrinsicPredicates {
                               new CPUSpecificPredicate("x86_64",    new String[] { "avx2", "bmi2" }, null))))))))));
 
     public static final BooleanSupplier SHA3_INSTRUCTION_AVAILABLE
-            // sha3 is only implemented on aarch64 and avx512 for now
             = new OrPredicate(new CPUSpecificPredicate("aarch64.*", new String[] {"sha3"               }, null),
+              new OrPredicate(new CPUSpecificPredicate("riscv64.*", new String[] {"zbb"                }, null),
               new OrPredicate(new CPUSpecificPredicate("amd64.*",   new String[] {"avx512f", "avx512bw"}, null),
-                              new CPUSpecificPredicate("x86_64",    new String[] {"avx512f", "avx512bw"}, null)));
+                              new CPUSpecificPredicate("x86_64",    new String[] {"avx512f", "avx512bw"}, null))));
 
     public static final BooleanSupplier SHA3_INTRINSIC_AVAILABLE
-            // AArch64 has both SHA3-based and GPR-based implementations of the SHA3 intrinsic. No need for the SHA3 capability.
+            // AArch64 also has a GPR path; the RISC-V GPR path requires Zbb.
             = new OrPredicate(new CPUSpecificPredicate("aarch64.*", null, null),
+              new OrPredicate(new CPUSpecificPredicate("riscv64.*", new String[] {"zbb"                }, null),
               new OrPredicate(new CPUSpecificPredicate("amd64.*",   new String[] {"avx512f", "avx512bw"}, null),
-                              new CPUSpecificPredicate("x86_64",    new String[] {"avx512f", "avx512bw"}, null)));
+                              new CPUSpecificPredicate("x86_64",    new String[] {"avx512f", "avx512bw"}, null))));
 
     public static final BooleanSupplier ANY_SHA_INSTRUCTION_AVAILABLE
             = new OrPredicate(IntrinsicPredicates.SHA1_INSTRUCTION_AVAILABLE,
