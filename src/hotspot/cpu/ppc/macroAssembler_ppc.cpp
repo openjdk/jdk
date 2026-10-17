@@ -36,6 +36,7 @@
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/flatArrayKlass.hpp"
 #include "oops/methodData.hpp"
 #include "prims/methodHandles.hpp"
 #include "register_ppc.hpp"
@@ -4417,52 +4418,31 @@ void MacroAssembler::increment_mem64(Register base, RegisterOrConstant ind_or_of
   std(tmp, ind_or_offs, base);
 }
 
-// Handle the receiver type profile update given the "recv" klass.
-//
-// Normally updates the ReceiverData (RD) that starts at "mdp" + "mdp_offset".
-// If there are no matching or claimable receiver entries in RD, updates
-// the polymorphic counter.
-//
-// This code expected to run by either the interpreter or JIT-ed code, without
-// extra synchronization. For safety, receiver cells are claimed atomically, which
-// avoids grossly misrepresenting the profiles under concurrent updates. For speed,
-// counter updates are not atomic.
-//
-void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset, Register tmp1, Register tmp2) {
+void MacroAssembler::profile_receiver_type_helper(Register recv, Register mdp, Label& L_found_recv, int mdp_offset, int base, uint row_limit, Register tmp1, Register tmp2) {
   assert_different_registers(recv, mdp, tmp1, tmp2);
 
-  int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
-  int poly_count_offset      = in_bytes(CounterData::count_offset());
-  int receiver_step          = in_bytes(ReceiverTypeData::receiver_offset(1)) - base_receiver_offset;
-  int receiver_to_count_step = in_bytes(ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
+  int base_receiver_offset   = in_bytes(MegamorphicTypeData::receiver_offset(base, 0));
+  int receiver_step          = in_bytes(MegamorphicTypeData::receiver_offset(base, 1)) - base_receiver_offset;
+  int receiver_to_count_step = in_bytes(MegamorphicTypeData::receiver_count_offset(base, 0)) - base_receiver_offset;
 
   // Adjust for MDP offsets.
   base_receiver_offset += mdp_offset;
-  poly_count_offset    += mdp_offset;
 
 #ifdef ASSERT
   // We are about to walk the MDO slots without asking for offsets.
   // Check that our math hits all the right spots.
-  for (uint c = 0; c < ReceiverTypeData::row_limit(); c++) {
-    int real_recv_offset  = mdp_offset + in_bytes(ReceiverTypeData::receiver_offset(c));
-    int real_count_offset = mdp_offset + in_bytes(ReceiverTypeData::receiver_count_offset(c));
+  for (uint c = 0; c < row_limit; c++) {
+    int real_recv_offset  = mdp_offset + in_bytes(MegamorphicTypeData::receiver_offset(base, c));
+    int real_count_offset = mdp_offset + in_bytes(MegamorphicTypeData::receiver_count_offset(base, c));
     int offset = base_receiver_offset + receiver_step*c;
     int count_offset = offset + receiver_to_count_step;
     assert(offset == real_recv_offset, "receiver slot math");
     assert(count_offset == real_count_offset, "receiver count math");
   }
-  int real_poly_count_offset = mdp_offset + in_bytes(CounterData::count_offset());
-  assert(poly_count_offset == real_poly_count_offset, "poly counter math");
 #endif
 
-  // Corner case: no profile table. Increment poly counter and exit.
-  if (ReceiverTypeData::row_limit() == 0) {
-    increment_mem64(mdp, poly_count_offset, DataLayout::counter_increment, tmp1);
-    return;
-  }
-
   Label L_loop_search_receiver, L_loop_search_empty;
-  Label L_restart, L_found_recv, L_found_empty, L_count_update;
+  Label L_restart, L_found_empty, L_polymorphic;
   Register offset = tmp1, count = tmp2;
 
   // The code here recognizes three major cases:
@@ -4489,30 +4469,30 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   //
   // restart:
   //   // Fastest: receiver is already installed
-  //   for (i = 0; i < receiver_count(); i++) {
-  //     if (receiver(i) == recv) goto found_recv(i);
+  //   for (i = 0; i < row_limit; i++) {
+  //     if (receiver(i) == null) goto found_recv(i);
   //   }
   //
   //   // Fast: no receiver, but profile is not full
-  //   for (i = 0; i < receiver_count(); i++) {
+  //   for (i = 0; i < row_limit; i++) {
   //     if (receiver(i) == null) goto found_null(i);
   //   }
+  //   goto polymorphic
   //
-  //   // Slow: profile is full, polymorphic case
-  //   count++;
-  //   return
-  //
-  //   // Slow: try to install receiver
-  // found_null(i):
+  //   Slow: try to install receiver
+  // found_null(i);
   //   CAS(&receiver(i), null, recv);
   //   goto restart
+  //
+  // polymorphic:
+  //   (caller handles counter update)
   //
   // found_recv(i):
   //   *receiver_count(i)++
   //
 
   if (count != noreg) {
-    li(count, ReceiverTypeData::row_limit());
+    li(count, row_limit);
   }
 
   bind(L_restart);
@@ -4521,36 +4501,34 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   if (count != noreg) {
     mtctr(count);
   } else {
-    li(R0, ReceiverTypeData::row_limit());
+    li(R0, row_limit);
     mtctr(R0);
   }
   li(offset, base_receiver_offset);
   bind(L_loop_search_receiver);
-    ldx(R0, offset, mdp);
-    cmpd(CR0, R0, recv);
-    beq(CR0, L_found_recv);
-    addi(offset, offset, receiver_step);
+  ldx(R0, offset, mdp);
+  cmpd(CR0, R0, recv);
+  beq(CR0, L_found_recv);
+  addi(offset, offset, receiver_step);
   bdnz(L_loop_search_receiver);
 
   // Fast: no receiver, but profile is not full
   if (count != noreg) {
     mtctr(count);
   } else {
-    li(R0, ReceiverTypeData::row_limit());
+    li(R0, row_limit);
     mtctr(R0);
   }
   li(offset, base_receiver_offset);
   bind(L_loop_search_empty);
-    ldx(R0, offset, mdp);
-    cmpdi(CR0, R0, 0);
-    beq(CR0, L_found_empty);
-    addi(offset, offset, receiver_step);
+  ldx(R0, offset, mdp);
+  cmpdi(CR0, R0, 0);
+  beq(CR0, L_found_empty);
+  addi(offset, offset, receiver_step);
   bdnz(L_loop_search_empty);
 
-  // Slow: Receiver is not found and table is full.
-  // Increment polymorphic counter instead of receiver slot.
-  li(offset, poly_count_offset);
-  b(L_count_update);
+  // Table is full. Caller will increment the polymorphic counter.
+  b(L_polymorphic);
 
   // Slowest: try to install receiver
   bind(L_found_empty);
@@ -4569,13 +4547,118 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // and just restart the search from the beginning.
   b(L_restart);
 
+  // Increment polymorphic counter instead of receiver slot.
+  bind(L_polymorphic);
+}
+
+// Handle the receiver type profile update given the "recv" klass.
+//
+// Normally updates the ReceiverData (RD) that starts at "mdp" + "mdp_offset".
+// If there are no matching or claimable receiver entries in RD, updates
+// the polymorphic counter.
+//
+// This code expected to run by either the interpreter or JIT-ed code, without
+// extra synchronization. For safety, receiver cells are claimed atomically, which
+// avoids grossly misrepresenting the profiles under concurrent updates. For speed,
+// counter updates are not atomic.
+//
+void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset, Register tmp1, Register tmp2) {
+  assert_different_registers(recv, mdp, tmp1, tmp2);
+
+  int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
+  int poly_count_offset      = in_bytes(CounterData::count_offset());
+  int receiver_to_count_step = in_bytes(ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
+
+  // Adjust for MDP offsets.
+  poly_count_offset += mdp_offset;
+
+#ifdef ASSERT
+  int real_poly_count_offset = mdp_offset + in_bytes(CounterData::count_offset());
+  assert(poly_count_offset == real_poly_count_offset, "poly counter math");
+#endif
+
+  // Corner case: no profile table. Increment poly counter and exit.
+  if (ReceiverTypeData::row_limit() == 0) {
+    increment_mem64(mdp, poly_count_offset, DataLayout::counter_increment, tmp1);
+    return;
+  }
+
+  Label L_found_recv, L_count_update;
+  Register offset = tmp1;
+
+  profile_receiver_type_helper(recv, mdp, L_found_recv, mdp_offset,
+                               ReceiverTypeData::base_of_megamorphic_type_data(),
+                               ReceiverTypeData::row_limit(), tmp1, tmp2);
+  // Polymorphic path: increment polymorphic counter.
+  li(offset, poly_count_offset);
+  b(L_count_update);
+
   // Found a receiver, convert its slot offset to corresponding count offset.
   bind(L_found_recv);
   addi(offset, offset, receiver_to_count_step);
 
-  // Finally, update the counter
   bind(L_count_update);
-  increment_mem64(mdp, offset, DataLayout::counter_increment, /* temp */ (count != noreg) ? count : recv);
+  increment_mem64(mdp, offset, DataLayout::counter_increment, /* temp */ (tmp2 != noreg) ? tmp2 : recv);
+}
+
+void MacroAssembler::profile_array_type_at_load(Register recv, Register mdp, int mdp_offset, Register scratch) {
+  assert_different_registers(recv, mdp, scratch, R0);
+
+  int base_receiver_offset                  = in_bytes(ArrayLoadData::receiver_offset(0));
+  int receiver_to_count_step                = in_bytes(ArrayLoadData::receiver_count_offset(0)) - base_receiver_offset;
+  int flat_nullable_count_offset            = in_bytes(ArrayLoadData::flat_nullable_count_offset());
+  int flat_nullfree_atomic_count_offset     = in_bytes(ArrayLoadData::flat_nullfree_atomic_count_offset());
+  int flat_nullfree_not_atomic_count_offset = in_bytes(ArrayLoadData::flat_nullfree_not_atomic_count_offset());
+
+  // Adjust for MDP offsets.
+  flat_nullable_count_offset            += mdp_offset;
+  flat_nullfree_atomic_count_offset     += mdp_offset;
+  flat_nullfree_not_atomic_count_offset += mdp_offset;
+
+#ifdef ASSERT
+  int real_flat_nullable_count_offset = mdp_offset + in_bytes(ArrayLoadData::flat_nullable_count_offset());
+  assert(flat_nullable_count_offset == real_flat_nullable_count_offset, "poly counter math");
+  int real_flat_nullfree_atomic_count_offset = mdp_offset + in_bytes(ArrayLoadData::flat_nullfree_atomic_count_offset());
+  assert(flat_nullfree_atomic_count_offset == real_flat_nullfree_atomic_count_offset, "poly counter math");
+  int real_flat_nullfree_not_atomic_count_offset = mdp_offset + in_bytes(ArrayLoadData::flat_nullfree_not_atomic_count_offset());
+  assert(flat_nullfree_not_atomic_count_offset == real_flat_nullfree_not_atomic_count_offset, "poly counter math");
+#endif
+
+  Label L_found_recv, L_count_update;
+  Register offset = scratch;
+
+  // Corner case: no profile table. Skip klass receiver loop.
+  if (ReceiverTypeData::row_limit() != 0) {
+    profile_receiver_type_helper(recv, mdp, L_found_recv, mdp_offset, ArrayLoadData::base_of_megamorphic_type_data(),
+                                 ArrayLoadData::row_limit(), scratch, noreg);
+  }
+
+  // Polymorphic path: select the right flat-variant counter based on LayoutKind.
+  int layout_kind_offset = in_bytes(FlatArrayKlass::layout_kind_offset());
+
+  lwz(R0, layout_kind_offset, recv);
+  li(offset, flat_nullfree_atomic_count_offset);
+  cmpwi(CR0, R0, (int)LayoutKind::NULL_FREE_ATOMIC_FLAT);
+  beq(CR0, L_count_update);
+
+  li(offset, flat_nullfree_not_atomic_count_offset);
+  cmpwi(CR0, R0, (int)LayoutKind::NULL_FREE_NON_ATOMIC_FLAT);
+  beq(CR0,L_count_update);
+
+  li(offset, flat_nullable_count_offset);
+  cmpwi(CR0, R0, (int)LayoutKind::NULLABLE_ATOMIC_FLAT);
+  beq(CR0, L_count_update);
+
+#ifdef ASSERT
+  stop("unexpected flat array");
+#endif
+
+  // Found a receiver: convert its slot offset to the corresponding count offset.
+  bind(L_found_recv);
+  addi(offset, offset, receiver_to_count_step);
+
+  bind(L_count_update);
+  increment_mem64(mdp, offset, DataLayout::counter_increment, recv);
 }
 
 #ifdef ASSERT

@@ -265,7 +265,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_switch_case(Register index, Register scratch1,Register scratch2, Register scratch3);
   void profile_null_seen(Register Rscratch1, Register Rscratch2);
 
-  template <class ArrayData> void profile_array_type(Register array, Register tmp1, Register tmp2);
+  void profile_array_type(Register array, Register tmp1, Register tmp2);
+  void profile_multiple_array_types(Register array, Register tmp1, Register tmp2);
 
   void profile_multiple_element_types(Register element, Register tmp1, Register tmp2, Register tmp3);
   void profile_element_type(Register element, Register tmp1, Register tmp2);

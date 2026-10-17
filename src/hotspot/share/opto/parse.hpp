@@ -146,6 +146,7 @@ public:
 //------------------------------Parse------------------------------------------
 // Parse bytecodes, build a Graph
 class Parse : public GraphKit {
+  friend class ArrayLoad;
  public:
   // Per-block information needed by the parser:
   class Block {

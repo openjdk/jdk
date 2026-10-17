@@ -685,7 +685,7 @@ void TemplateTable::aaload() {
                  Rtemp      = R5_ARG3,
                  Rtemp2     = R31;
   __ index_check(Rarray, R17_tos /* index */, UseCompressedOops ? 2 : LogBytesPerWord, Rtemp, Rload_addr);
-  __ profile_array_type<ArrayLoadData>(Rarray, R11_scratch1, R12_scratch2);
+  __ profile_multiple_array_types(Rarray, R11_scratch1, R12_scratch2);
   if (UseArrayFlattening) {
     Label is_flat_array, cont;
 
@@ -1008,7 +1008,7 @@ void TemplateTable::aastore() {
   __ verify_oop(R17_tos);
   __ index_check_without_pop(Rarray, Rindex, UseCompressedOops ? 2 : LogBytesPerWord, Rscratch, Rstore_addr);
 
-  __ profile_array_type<ArrayStoreData>(Rarray, Rscratch, Rscratch2);
+  __ profile_array_type(Rarray, Rscratch, Rscratch2);
   __ profile_multiple_element_types(R17_tos, Rscratch, Rscratch2, /* temp */ Rarray_klass);
 
   if (UseArrayFlattening) {
