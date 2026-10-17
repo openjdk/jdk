@@ -278,9 +278,7 @@ void VM_Version::common_initialize() {
 
 #ifdef COMPILER2
 void VM_Version::c2_initialize() {
-  if (!UseRVV) {
-    FLAG_SET_DEFAULT(MaxVectorSize, 0);
-  } else {
+  if (UseRVV) {
     if (!FLAG_IS_DEFAULT(MaxVectorSize) && MaxVectorSize != _initial_vector_length) {
       warning("Current system does not support RVV vector length for MaxVectorSize %d. Set MaxVectorSize to %d",
                (int)MaxVectorSize, _initial_vector_length);
@@ -289,8 +287,14 @@ void VM_Version::c2_initialize() {
     if (MaxVectorSize < 16) {
       warning("RVV does not support vector length less than 16 bytes. Disabling RVV.");
       UseRVV = false;
-      FLAG_SET_DEFAULT(MaxVectorSize, 0);
     }
+  }
+  if (!UseRVV) {
+    FLAG_SET_DEFAULT(MaxVectorSize, 0);
+    if (VSETVLIElimination && !FLAG_IS_DEFAULT(VSETVLIElimination)) {
+      warning("VSETVLIElimination requires UseRVV. Disabling VSETVLIElimination.");
+    }
+    FLAG_SET_DEFAULT(VSETVLIElimination, false);
   }
 
   if (FLAG_IS_DEFAULT(AlignVector)) {
