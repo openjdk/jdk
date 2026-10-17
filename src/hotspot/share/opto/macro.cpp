@@ -3088,6 +3088,7 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
 //   ...
 // }
 void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
+  assert(UseArrayFlattening, "Should not be called if flat arrays are not enabled");
   bool use_mark_word = _igvn.type(check->in(FlatArrayCheckNode::ArrayOrKlass))->isa_oopptr() != nullptr;
   Node* bol = check->unique_out();
   for (DUIterator_Fast imax, i = bol->fast_outs(imax); i < imax; i++) {
