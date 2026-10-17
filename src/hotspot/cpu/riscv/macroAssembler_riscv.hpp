@@ -1522,8 +1522,12 @@ INSN(sd_release, sd, sd_rl);
                        Register z, Register tmp0,
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4,
                        Register tmp5, Register tmp6, Register product_hi);
-
 #endif // COMPILER2
+  // Vectorized mismatch using RVV instructions.
+  // Compares two arrays byte-by-byte using vector loads and comparisons.
+  // Returns the element index of the first mismatch, or -1 if all elements match.
+  void vectorized_mismatch(Register obja, Register objb, Register length, Register log2_array_indxscale,
+                           Register result, Register tmp1, Register tmp2);
 
   void inflate_lo32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
   void inflate_hi32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
