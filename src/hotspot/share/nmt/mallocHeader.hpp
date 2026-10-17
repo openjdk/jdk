@@ -99,8 +99,8 @@ class MallocHeader {
   NONCOPYABLE(MallocHeader);
   NOT_LP64(uint32_t _alt_canary);
   const size_t _size;
-  const uint32_t _mst_marker;
-  const MemTag _mem_tag;
+  uint32_t _mst_marker;
+  MemTag _mem_tag;
   const uint8_t _unused;
   uint16_t _canary;
 
@@ -140,7 +140,9 @@ public:
   inline static void revive_block(void* memblock);
   inline size_t size()  const { return _size; }
   inline MemTag mem_tag() const { return _mem_tag; }
+  inline void set_mem_tag(MemTag new_tag) { _mem_tag = new_tag; }
   inline uint32_t mst_marker() const { return _mst_marker; }
+  inline void set_mst_marker(uint32_t new_marker) { _mst_marker = new_marker; }
 
   // Return the necessary data to deaccount the block with NMT.
   FreeInfo free_info() {
