@@ -128,7 +128,7 @@ Java_sun_nio_ch_Net_canUseIPv6OptionsWithIPv4LocalAddress0(JNIEnv* env, jclass c
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
-                            jboolean stream, jboolean reuse, jboolean fastLoopback)
+                            jboolean stream, jboolean reuse)
 {
     SOCKET s;
     int domain = (preferIPv6) ? AF_INET6 : AF_INET;
@@ -144,23 +144,6 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
     if (domain == AF_INET6 && ipv4_available()) {
         int opt = 0;
         setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, (const char *)&opt, sizeof(opt));
-    }
-
-    /* Enable SIO_LOOPBACK_FAST_PATH on TCP sockets if possible */
-    if (stream && fastLoopback) {
-        static int loopback_available = 1;
-        if (loopback_available) {
-            int rv = NET_EnableFastTcpLoopback((jint)s);
-            if (rv) {
-                if (rv == WSAEOPNOTSUPP) {
-                    loopback_available = 0;
-                } else {
-                    NET_ThrowNew(env, rv, "fastLoopback");
-                    closesocket(s);
-                    return IOS_THROWN;
-                }
-            }
-        }
     }
 
     /* Disable WSAECONNRESET errors for initially unconnected UDP sockets */
