@@ -373,6 +373,7 @@ bool DwarfParser::process_dwarf(const uintptr_t pc) {
       break; // it means "terminator" in .eh_frame, so go through to .debug_frame
     } else if (_buf + length > end) {
       // unexpected: DWARF is broken?
+      print_warning("DWARF: hitted end of buffer even though DwarfParser does not reach the pc (0x%lx).\n", pc);
       return false;
     }
     unsigned char *next_entry = _buf + length;
