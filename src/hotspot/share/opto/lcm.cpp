@@ -281,11 +281,10 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       continue;
     }
 
-    // Check that node's control edge is not-null block's head or dominates it,
+    // Check that node's control edge dominates the not-null block,
     // otherwise we can't hoist it because there are other control dependencies.
     Node* ctrl = mach->in(0);
-    if (ctrl != nullptr && !(ctrl == not_null_block->head() ||
-        get_block_for_node(ctrl)->dominates(not_null_block))) {
+    if (ctrl != nullptr && !get_block_for_node(ctrl)->dominates(not_null_block)) {
       continue;
     }
 
