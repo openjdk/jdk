@@ -882,10 +882,10 @@ enum NamedGroup {
         // Default named groups.
         private static final PreferredGroup[] defaultGroups = new PreferredGroup[]{
                 // Hybrid key agreement
-                new PreferredGroup(true, X25519MLKEM768),
+                new PreferredGroup(false, X25519MLKEM768),
 
                 // Primary XDH (RFC 7748) curves
-                new PreferredGroup(true, X25519),
+                new PreferredGroup(false, X25519),
 
                 // Primary NIST Suite B curves
                 new PreferredGroup(false, SECP256_R1),
