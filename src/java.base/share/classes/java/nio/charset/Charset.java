@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.nio.charset;
 import jdk.internal.misc.VM;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.TrustFinalFields;
 import sun.nio.cs.ThreadLocalCoders;
 
 import java.nio.ByteBuffer;
@@ -292,7 +293,7 @@ import java.util.function.Supplier;
  * @see java.nio.charset.spi.CharsetProvider
  * @see java.lang.Character
  */
-
+@TrustFinalFields
 public abstract class Charset
     implements Comparable<Charset>
 {
@@ -651,11 +652,9 @@ public abstract class Charset
 
     /* -- Instance fields and methods -- */
 
-    @Stable
     private final String name;
     @Stable
     private final String[] aliases;
-    @Stable
     private final LazyConstant<Set<String>> aliasSet = LazyConstant.of(
             new Supplier<>() { public Set<String> get() { return Set.of(aliases); }});
 
