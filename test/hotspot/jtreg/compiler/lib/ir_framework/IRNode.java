@@ -742,6 +742,11 @@ public class IRNode {
         beforeMatchingNameRegex(CONV_HF2F, "ConvHF2F");
     }
 
+    public static final String CON_H = PREFIX + "CON_H" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CON_H, "ConH");
+    }
+
     public static final String CON_I = PREFIX + "CON_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(CON_I, "ConI");
