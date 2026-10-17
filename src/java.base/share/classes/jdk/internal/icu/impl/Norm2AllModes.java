@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,6 +263,10 @@ public final class Norm2AllModes {
         return getInstanceFromSingleton(NFKCSingleton.INSTANCE);
     }
 
+    public static Norm2AllModes getUTS46Instance() {
+        return getInstanceFromSingleton(UTS46Singleton.INSTANCE);
+    }
+
     public static final NoopNormalizer2 NOOP_NORMALIZER2=new NoopNormalizer2();
 
     private static final class Norm2AllModesSingleton {
@@ -288,5 +292,9 @@ public final class Norm2AllModes {
 
     private static final class NFKCSingleton {
         private static final Norm2AllModesSingleton INSTANCE=new Norm2AllModesSingleton("nfkc");
+    }
+
+    private static final class UTS46Singleton {
+        private static final Norm2AllModesSingleton INSTANCE=new Norm2AllModesSingleton("uts46");
     }
 }
