@@ -22,6 +22,9 @@
  * questions.
  */
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.SymbolLookup;
+
 import jtreg.SkippedException;
 
 import jdk.test.lib.JDKToolFinder;
@@ -37,13 +40,13 @@ import jtreg.SkippedException;
 
 /**
  * @test
- * @bug 8374482 8376264 8376284 8377395
+ * @bug 8374482 8376264 8376284 8377395 8391637
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
- * @requires os.arch == "amd64"
+ * @requires (os.arch == "amd64") | (os.arch == "riscv64")
  * @library /test/lib
- * @run driver TestJhsdbJstackMixedCore
+ * @run main/othervm --enable-native-access=ALL-UNNAMED TestJhsdbJstackMixedCore
  */
 public class TestJhsdbJstackMixedCore {
 
@@ -66,24 +69,37 @@ public class TestJhsdbJstackMixedCore {
         System.out.println(out.getStdout());
         System.err.println(out.getStderr());
 
-        out.shouldContain("__restore_rt <signal trampoline>");
+        out.shouldHaveExitValue(0);
+        out.shouldNotMatch("(Dwarf|Debugger|UnmappedAddress|UnalignedAddress|IndexOutOfBounds|NullPointer)Exception");
+        String signalTrampoline = Platform.isRISCV64() ? "__vdso_rt_sigreturn" : "__restore_rt";
+        out.shouldContain(signalTrampoline + " <signal trampoline>");
         out.shouldContain("Java_jdk_test_lib_apps_LingeredApp_crash");
         out.shouldContain("jdk.test.lib.apps.LingeredApp.crash()");
     }
 
+    @SuppressWarnings("restricted")
     public static void main(String... args) throws Throwable {
         if (Platform.isMusl()) {
             throw new SkippedException("This test does not work on musl libc.");
         }
 
         // Check whether the symbol of signal trampoline is available.
-        var libc = SATestUtils.getLibCPath();
-
-        // SA distinguishes the frame is signal trampoline if the function
-        // is named "__restore_rt".
-        // SA cannot unwind problematic frame from it if the symbol not found.
-        if (!SATestUtils.isSymbolAvailable(libc, "__restore_rt")) {
-            throw new SkippedException("Signal trampoline (__restore_rt) not found in libc.");
+        // AMD64 needs libc symbols; RISC-V exports its trampoline from the vDSO.
+        if (Platform.isX64()) {
+            // SA distinguishes the frame is signal trampoline if the function
+            // is named "__restore_rt".
+            // SA cannot unwind problematic frame from it if the symbol not found.
+            var libc = SATestUtils.getLibCPath();
+            if (!SATestUtils.isSymbolAvailable(libc, "__restore_rt")) {
+                throw new SkippedException("Signal trampoline (__restore_rt) not found in libc.");
+            }
+        } else if (Platform.isRISCV64()) {
+            try (var arena = Arena.ofConfined()) {
+                var vdso = SymbolLookup.libraryLookup("linux-vdso.so.1", arena);
+                if (vdso.find("__vdso_rt_sigreturn").isEmpty()) {
+                    throw new SkippedException("Signal trampoline (__vdso_rt_sigreturn) not found in vDSO.");
+                }
+            }
         }
 
         LingeredApp app = new LingeredApp();
