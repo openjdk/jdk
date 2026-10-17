@@ -2181,14 +2181,12 @@ public:
 };
 
 class ciMethodData;
-class StripedMutex;
 
 class MethodData : public Metadata {
   friend class VMStructs;
   friend class ProfileData;
   friend class TypeEntriesAtCall;
   friend class ciMethodData;
-  friend class MutexLockerImpl;
 
   // If you add a new field that points to any metaspace object, you
   // must add this field to MethodData::metaspace_pointers_do().
