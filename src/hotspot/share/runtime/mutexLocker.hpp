@@ -350,4 +350,7 @@ class RecursiveLocker {
   }
 };
 
+// A StripedMutex containing shared Mutex instances for all extra MethodData
+extern StripedMutex*   MethodDataExtra_lock;
+
 #endif // SHARE_RUNTIME_MUTEXLOCKER_HPP

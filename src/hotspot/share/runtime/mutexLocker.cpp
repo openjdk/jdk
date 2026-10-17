@@ -27,6 +27,7 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/methodData.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
@@ -161,6 +162,9 @@ Mutex*   Bootclasspath_lock           = nullptr;
 
 // Only one RecursiveMutex
 RecursiveMutex* MultiArray_lock       = nullptr;
+
+// StripedMutex for MethodDataExtra
+StripedMutex*   MethodDataExtra_lock  = nullptr;
 
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Mutex* lock) {
@@ -354,6 +358,9 @@ void mutex_init() {
 
   // Allocate RecursiveMutex
   MultiArray_lock = new RecursiveMutex();
+
+  // Allocate StripedMutex
+  MethodDataExtra_lock = new StripedMutex("MDOExtraData_lock");
 }
 
 #undef MUTEX_DEFL
