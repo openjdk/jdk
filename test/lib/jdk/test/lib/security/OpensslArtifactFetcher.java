@@ -130,12 +130,37 @@ public class OpensslArtifactFetcher {
 
     // retrieve the provider directory path from <OPENSSL_HOME>/bin/openssl
     public static Path getProviderPath(String opensslPath) {
-        Path openSslRootPath = Path.of(opensslPath).getParent().getParent();
-        String libDir = "lib";
-        if (Platform.isX64() && (Platform.isLinux() || Platform.isWindows())) {
-            libDir = "lib64";
+        // This test uses -legacy (RC4/SHA1 PBE). On Linux the system OpenSSL
+        // may be built without the legacy provider (observed on loongarch64,
+        // aarch64 and x64), so skip instead of failing later. Other platforms
+        // use the downloaded bundle and must not be skipped here.
+        if (Platform.isLinux() && !opensslHasProvider(opensslPath, "legacy")) {
+            throw new SkippedException("OpenSSL legacy provider not available");
         }
-        return openSslRootPath.resolve(libDir, "ossl-modules");
+        // Ask openssl for its modules directory. This works for both the
+        // downloaded bundle and system installs, and avoids assuming
+        // <openssl>/bin/../lib/ossl-modules (which NPEs on a bare "openssl"
+        // command name and is wrong for distro multiarch layouts).
+        String dir;
+        try {
+            dir = ProcessTools.executeCommand(opensslPath, "info", "-modulesdir")
+                    .shouldHaveExitValue(0)
+                    .getStdout().trim();
+        } catch (Exception e) {
+            throw new SkippedException("OpenSSL legacy provider not available", e);
+        }
+        return Path.of(dir);
+    }
+
+    private static boolean opensslHasProvider(String opensslPath, String provider) {
+        try {
+            return ProcessTools.executeCommand(opensslPath, "list", "-providers")
+                    .shouldHaveExitValue(0)
+                    .getStdout()
+                    .contains(provider);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public static String getTestOpensslBundleVersion() {
