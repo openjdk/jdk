@@ -96,6 +96,7 @@ void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
 void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affiliation) {
   shenandoah_assert_heaplocked();
   reset_age();
+  _humongous_start_region = nullptr;
   switch (state()) {
     case _empty_uncommitted:
       do_commit();
@@ -116,6 +117,7 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
 void ShenandoahHeapRegion::make_affiliated_maybe() {
   shenandoah_assert_heaplocked();
   assert(!ShenandoahHeap::heap()->mode()->is_generational(), "Only call if non-generational");
+  _humongous_start_region = nullptr;
   switch (state()) {
    case _empty_uncommitted:
    case _empty_committed:
@@ -141,6 +143,7 @@ void ShenandoahHeapRegion::make_regular_bypass() {
           ShenandoahHeap::heap()->is_degenerated_gc_in_progress(),
           "Only for STW GC");
   reset_age();
+  _humongous_start_region = nullptr;
   switch (state()) {
     case _empty_uncommitted:
       do_commit();
@@ -164,6 +167,7 @@ void ShenandoahHeapRegion::make_regular_bypass() {
 void ShenandoahHeapRegion::make_humongous_start() {
   shenandoah_assert_heaplocked();
   reset_age();
+  _humongous_start_region = this;
   switch (state()) {
     case _empty_uncommitted:
       do_commit();
@@ -181,6 +185,7 @@ void ShenandoahHeapRegion::make_humongous_start_bypass(ShenandoahAffiliation aff
   // Don't bother to account for affiliated regions during Full GC.  We recompute totals at end.
   set_affiliation(affiliation);
   reset_age();
+  _humongous_start_region = this;
   switch (state()) {
     case _empty_committed:
     case _regular:
@@ -193,9 +198,10 @@ void ShenandoahHeapRegion::make_humongous_start_bypass(ShenandoahAffiliation aff
   }
 }
 
-void ShenandoahHeapRegion::make_humongous_cont() {
+void ShenandoahHeapRegion::make_humongous_cont(ShenandoahHeapRegion* humongous_start) {
   shenandoah_assert_heaplocked();
   reset_age();
+  _humongous_start_region = humongous_start;
   switch (state()) {
     case _empty_uncommitted:
       do_commit();
@@ -207,12 +213,13 @@ void ShenandoahHeapRegion::make_humongous_cont() {
   }
 }
 
-void ShenandoahHeapRegion::make_humongous_cont_bypass(ShenandoahAffiliation affiliation) {
+void ShenandoahHeapRegion::make_humongous_cont_bypass(ShenandoahAffiliation affiliation, ShenandoahHeapRegion* humongous_start) {
   shenandoah_assert_heaplocked();
   assert (ShenandoahHeap::heap()->is_full_gc_in_progress(), "only for full GC");
   set_affiliation(affiliation);
   // Don't bother to account for affiliated regions during Full GC.  We recompute totals at end.
   reset_age();
+  _humongous_start_region = humongous_start;
   switch (state()) {
     case _empty_committed:
     case _regular:
@@ -547,22 +554,6 @@ void ShenandoahHeapRegion::oop_iterate_humongous_slice_all(OopIterateClosure* cl
   // Scan all data, regardless of whether cards are dirty
   obj->oop_iterate(cl, MemRegion(start, start + words));
 }
-
-ShenandoahHeapRegion* ShenandoahHeapRegion::humongous_start_region() const {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  assert(is_humongous(), "Must be a part of the humongous region");
-  size_t i = index();
-  ShenandoahHeapRegion* r = const_cast<ShenandoahHeapRegion*>(this);
-  while (!r->is_humongous_start()) {
-    assert(i > 0, "Sanity");
-    i--;
-    r = heap->get_region(i);
-    assert(r->is_humongous(), "Must be a part of the humongous region");
-  }
-  assert(r->is_humongous_start(), "Must be");
-  return r;
-}
-
 
 void ShenandoahHeapRegion::recycle_internal() {
   assert(_recycling.is_set() && is_trash(), "Wrong state");
