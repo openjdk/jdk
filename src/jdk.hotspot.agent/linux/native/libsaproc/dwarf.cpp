@@ -120,7 +120,7 @@ bool DwarfParser::process_cie(unsigned char *start_of_entry, uint64_t id) {
 
   // address_size and segment_size are located in DWARF 4 or later,
   // but they are not available in .eh_frame defined by Linux LSB Core Generic 5.0.
-  if (!_lib->frame.is_debug_frame && _dwarf_version >= 4) {
+  if (_lib->frame.is_debug_frame && _dwarf_version >= 4) {
     if (*_buf != sizeof(void*)) {
       print_warning("DWARF: address size in CIE does not match pointer size (%u).\n", *_buf);
       return false;
@@ -367,7 +367,7 @@ bool DwarfParser::process_dwarf(const uintptr_t pc) {
   // https://refspecs.linuxfoundation.org/LSB_3.0.0/LSB-PDA/LSB-PDA/ehframechpt.html
   _buf = _lib->frame.data;
   unsigned char *end = _lib->frame.data + _lib->frame.size;
-  while (_buf <= end) {
+  while (_buf < end) {
     uint64_t length = get_entry_length();
     if (length == 0L) {
       break; // it means "terminator" in .eh_frame, so go through to .debug_frame
