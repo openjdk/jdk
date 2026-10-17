@@ -269,6 +269,7 @@ class relocInfo {
     post_call_nop_type      = 16, // A tag for post call nop relocations
     barrier_type            = 17, // GC barrier data
     patchable_barrier_type  = 18, // Patchable GC barrier
+    address_stub_type       = 19, // Call destination stored in an address-only stub
     type_mask               = 31  // A mask which selects only the above values
   };
 
@@ -308,6 +309,7 @@ class relocInfo {
     visitor(poll_return) \
     visitor(section_word) \
     visitor(trampoline_stub) \
+    visitor(address_stub) \
     visitor(post_call_nop) \
     visitor(barrier) \
     visitor(patchable_barrier) \
@@ -1310,9 +1312,7 @@ class trampoline_stub_Relocation : public Relocation {
 
   void pack_data_to(CodeSection * dest) override;
   void unpack_data() override;
-// Platforms that keep the call destination in a trampoline stub read and write it
-// through these. A platform needing USE_TRAMPOLINE_STUB_FIX_OWNER also needs them.
-#if defined(USE_TRAMPOLINE_STUB_DESTINATION) || defined(USE_TRAMPOLINE_STUB_FIX_OWNER)
+#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
   address pd_destination     ();
   void    pd_set_destination (address x);
 #else
@@ -1338,6 +1338,35 @@ class trampoline_stub_Relocation : public Relocation {
 
   // Find the trampoline stub for a call.
   static address get_trampoline_for(address call, nmethod* code);
+};
+
+class address_stub_Relocation : public Relocation {
+ public:
+  static RelocationHolder spec(address owner) {
+    return RelocationHolder::construct<address_stub_Relocation>(owner);
+  }
+
+  void copy_into(RelocationHolder& holder) const override;
+
+ private:
+  address _owner;
+
+  address_stub_Relocation(address owner)
+    : Relocation(relocInfo::address_stub_type), _owner(owner) { }
+
+  friend class RelocationHolder;
+  address_stub_Relocation() : Relocation(relocInfo::address_stub_type) { }
+
+ public:
+  address owner() { return _owner; }
+
+  void pack_data_to(CodeSection* dest) override;
+  void unpack_data() override;
+
+  address destination();
+  void set_destination(address x);
+
+  static address get_stub_for(address call, nmethod* code);
 };
 
 class external_word_Relocation : public DataRelocation {
