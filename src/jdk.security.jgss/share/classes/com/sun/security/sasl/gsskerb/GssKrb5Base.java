@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,17 @@
 
 package com.sun.security.sasl.gsskerb;
 
+import java.lang.ref.Cleaner;
+import java.lang.ref.Reference;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import javax.security.sasl.*;
-import com.sun.security.sasl.util.AbstractSaslImpl;
-import org.ietf.jgss.*;
+import jdk.internal.ref.CleanerFactory;
 import com.sun.security.jgss.ExtendedGSSContext;
 import com.sun.security.jgss.InquireType;
+import com.sun.security.sasl.util.AbstractSaslImpl;
+import org.ietf.jgss.*;
 
 abstract class GssKrb5Base extends AbstractSaslImpl {
 
@@ -47,12 +50,42 @@ abstract class GssKrb5Base extends AbstractSaslImpl {
         } catch (GSSException ignore) {}
     }
 
+    private static Cleaner.Cleanable registerCleaner(Object obj,
+            GSSContext ctx) {
+        return CleanerFactory.cleaner().register(obj,
+                ()->{
+                    try {
+                        ctx.dispose();
+                    } catch (GSSException e) {
+                        // Cleaner cleanup is best-effort; checked
+                        // exceptions cannot be thrown
+                        // To preserve the behavior for dispose(), we
+                        // wrap it with a RuntimeException
+                        throw new RuntimeException
+                                ("Problem disposing GSS context", e);
+                    }});
+    }
+
+    private Cleaner.Cleanable cleanable = null;
+
+    // must be set through updateSecCtx(...) method so the private 'cleanable'
+    // field is set for cleanup
     protected GSSContext secCtx = null;
+
     protected static final int JGSS_QOP = 0;    // unrelated to SASL QOP mask
 
     protected GssKrb5Base(Map<String, ?> props, String className)
         throws SaslException {
         super(props, className);
+    }
+
+    protected void updateSecCtx(GSSContext secCtx) throws SaslException {
+        if (this.secCtx == null) {
+            this.secCtx = secCtx;
+            this.cleanable = registerCleaner(this, secCtx);
+        } else {
+            throw new SaslException("GSS Context already exists!");
+        }
     }
 
     /**
@@ -154,17 +187,14 @@ abstract class GssKrb5Base extends AbstractSaslImpl {
     public void dispose() throws SaslException {
         if (secCtx != null) {
             try {
-                secCtx.dispose();
-            } catch (GSSException e) {
-                throw new SaslException("Problem disposing GSS context", e);
+                cleanable.clean();
+            } catch (RuntimeException re) {
+                throw new SaslException("Problem disposing GSS context",
+                        re.getCause());
+            } finally {
+                secCtx = null;
             }
-            secCtx = null;
         }
-    }
-
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        dispose();
     }
 
     void checkMessageProp(String label, MessageProp msgProp)
