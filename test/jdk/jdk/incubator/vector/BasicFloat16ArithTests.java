@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8329817 8334432 8339076 8341260 8362207
+ * @bug 8329817 8334432 8339076 8341260 8362207 8394644
  * @modules jdk.incubator.vector
  * @summary Basic tests of Float16 arithmetic and similar operations
  */
@@ -529,6 +529,16 @@ public class BasicFloat16ArithTests {
             new String2Float16Case( "0.0",  0.0f),
             new String2Float16Case("+0.0",  0.0f),
             new String2Float16Case("-0.0", -0.0f),
+
+            // Subnormal range
+            new String2Float16Case( "0x1.00000000000001p-25", MIN_VAL_FP16),
+
+            new String2Float16Case( "2.9802322387695313e-8",  MIN_VAL_FP16),
+            new String2Float16Case("-2.9802322387695313e-8", -MIN_VAL_FP16),
+
+            new String2Float16Case( "8.9406967163085937e-8",  MIN_VAL_FP16),
+
+            new String2Float16Case( "6.1005353927612304e-5",  0x0.ffcp-14f), // Float16 max subnormal
 
             // Decimal signed integers are accepted as input; hex
             // signed integers are not, see negative test cases below.
