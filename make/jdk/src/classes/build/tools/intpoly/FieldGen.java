@@ -34,42 +34,6 @@ import java.util.*;
 
 public class FieldGen {
 
-    static FieldParams Curve448 = new FieldParams(
-            "IntegerPolynomial448", 28, 16, 1, 448,
-            Arrays.asList(
-                    new Term(224, -1),
-                    new Term(0, -1)
-            ),
-            Curve448CrSequence(), simpleSmallCrSequence(16)
-    );
-
-    private static List<CarryReduce> Curve448CrSequence() {
-        List<CarryReduce> result = new ArrayList<CarryReduce>();
-
-        // reduce(8, 7)
-        for (int i = 24; i < 31; i++) {
-            result.add(new Reduce(i));
-        }
-        // reduce(4, 4)
-        for (int i = 20; i < 24; i++) {
-            result.add(new Reduce(i));
-        }
-
-        //carry(14, 2)
-        result.add(new Carry(14));
-        result.add(new Carry(15));
-
-        // reduce(0, 4)
-        for (int i = 16; i < 20; i++) {
-            result.add(new Reduce(i));
-        }
-
-        // carry(0, 15)
-        result.addAll(fullCarry(16));
-
-        return result;
-    }
-
     static FieldParams P256 = new FieldParams(
             "IntegerPolynomialP256", 26, 10, 2, 256,
             Arrays.asList(
@@ -194,7 +158,7 @@ public class FieldGen {
     }
 
     static final FieldParams[] ALL_FIELDS = {
-            Curve448, P256, P384, P521, O256, O384, O521, O25519, O448
+            P256, P384, P521, O256, O384, O521, O25519, O448
     };
 
     public static class Term {
