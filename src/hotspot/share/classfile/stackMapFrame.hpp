@@ -247,9 +247,8 @@ class StackMapFrame : public ResourceObj {
     }
   }
 
-  // Return a StackMapFrame with the same local variable array and empty stack.
-  // Stack array is allocate with unused one element.
-  StackMapFrame* frame_in_exception_handler(u1 flags);
+  // Return a StackMapFrame with a potentially modified local variable array and empty stack.
+  StackMapFrame* frame_in_exception_handler(bool is_init, VerificationType broken_type, u1 flags);
 
   // Set local variable type array based on m's signature.
   VerificationType set_locals_from_arg(
