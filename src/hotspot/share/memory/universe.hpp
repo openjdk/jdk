@@ -248,7 +248,6 @@ class Universe: AllStatic {
   static uintx        the_array_interfaces_bitmap()   { return _the_array_interfaces_bitmap; }
 
   static Method*      finalizer_register_method();
-  static Method*      loader_addClass_method();
   static Method*      throw_illegal_access_error();
   static Method*      throw_no_such_method_error();
   static Method*      do_stack_walk_method();
