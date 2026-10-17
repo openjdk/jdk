@@ -86,7 +86,7 @@ ciConstant ciInstance::field_value_impl(ciField* field) {
       if (field->is_flat()) {
         assert(field->is_atomic(), "do not query atomically a non-atomic flat field");
         ValueKlass* vk = field->type()->as_value_klass()->get_ValueKlass();
-        FlatValuePayload payload = FlatValuePayload::construct_from_parts(obj, offset, vk, field->layout_kind());
+        FlatValuePayload payload = FlatValuePayload::construct_from_parts(obj, offset, vk, field->flat_layout());
         oop res = payload.read(THREAD);
         if (HAS_PENDING_EXCEPTION) {
           CLEAR_PENDING_EXCEPTION;

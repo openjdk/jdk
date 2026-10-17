@@ -72,7 +72,7 @@ class LayoutRawBlock : public ResourceObj {
   LayoutRawBlock* _prev_block;
   ValueKlass* _value_klass;
   Kind _block_kind;
-  LayoutKind _layout_kind;
+  FlatLayoutSlot _flat_layout_slot;
   int _offset;
   int _alignment;
   int _size;
@@ -82,6 +82,7 @@ class LayoutRawBlock : public ResourceObj {
   LayoutRawBlock(Kind kind, int size);
 
   LayoutRawBlock(int index, Kind kind, int size, int alignment);
+  LayoutRawBlock(int index, Kind kind, int size, int alignment, ValueKlass* vk, FlatLayout flat_layout);
   LayoutRawBlock* next_block() const { return _next_block; }
   void set_next_block(LayoutRawBlock* next) { _next_block = next; }
   LayoutRawBlock* prev_block() const { return _prev_block; }
@@ -108,10 +109,10 @@ class LayoutRawBlock : public ResourceObj {
     assert(_value_klass != nullptr, "Must be initialized");
     return _value_klass;
   }
-  void set_value_klass(ValueKlass* value_klass) { _value_klass = value_klass; }
 
-  LayoutKind layout_kind() const { return _layout_kind; }
-  void set_layout_kind(LayoutKind kind) { _layout_kind = kind; }
+  FlatLayout flat_layout() const {
+    return _flat_layout_slot.get_if(_block_kind == FLAT);
+  }
 
   bool fit(int size, int alignment);
 
@@ -158,7 +159,7 @@ class FieldGroup : public ResourceObj {
 
   void add_primitive_field(int idx, BasicType type);
   void add_oop_field(int idx);
-  void add_flat_field(int idx, ValueKlass* vk, LayoutKind lk);
+  void add_flat_field(int idx, ValueKlass* vk, FlatLayout flat_layout);
   void add_block(LayoutRawBlock** list, LayoutRawBlock* block);
   void sort_by_size();
  private:

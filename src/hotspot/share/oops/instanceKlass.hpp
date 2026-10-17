@@ -34,6 +34,7 @@
 #include "oops/fieldInfo.hpp"
 #include "oops/instanceKlassFlags.hpp"
 #include "oops/instanceOop.hpp"
+#include "oops/layoutKind.hpp"
 #include "oops/refArrayKlass.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/javaThread.hpp"
@@ -127,23 +128,23 @@ class OopMapBlock {
 
 struct JvmtiCachedClassFileData;
 
+// This class is used to hold information about Value class fields.
 class ValueFieldInfo : public MetaspaceObj {
   friend class VMStructs;
 
   ValueKlass* _klass;
-  LayoutKind _kind;
+  OptionalFlatLayout _optional_flat_layout;
 
  public:
-  ValueFieldInfo(): _klass(nullptr), _kind(LayoutKind::UNKNOWN)  {}
+  ValueFieldInfo(): _klass(nullptr), _optional_flat_layout()  {}
 
   ValueKlass* klass() const { return _klass; }
   void set_klass(ValueKlass* k) { _klass = k; }
 
-  LayoutKind kind() const {
-    assert(_kind != LayoutKind::UNKNOWN, "Not set");
-    return _kind;
-  }
-  void set_kind(LayoutKind lk) { _kind = lk; }
+  FlatLayout flat_layout() const { return _optional_flat_layout.get(); }
+  void set_flat_layout(FlatLayout flat_layout) { _optional_flat_layout = flat_layout; }
+
+  LayoutKind flat_layout_kind() const { return _optional_flat_layout.get().layout_kind(); }
 
   void metaspace_pointers_do(MetaspaceClosure* it);
   MetaspaceObj::Type type() const { return ValueFieldInfoType; }
