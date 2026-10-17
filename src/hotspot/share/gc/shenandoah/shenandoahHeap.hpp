@@ -233,7 +233,10 @@ private:
   shenandoah_padding(1);
 
   ShenandoahAllocationRate _alloc_rate;
+  ShenandoahAllocationRate _humongous_alloc_rate;
+  Atomic<size_t> _max_humongous_regions_since_gc;
   ShenandoahDecayAllocRate _alloc_rate_decay;
+  ShenandoahDecayAllocRate _humongous_alloc_rate_decay;
 
 public:
   void increase_committed(size_t bytes);
@@ -251,6 +254,14 @@ public:
 
   ShenandoahAllocationRate& alloc_rate() {
     return _alloc_rate;
+  }
+
+  ShenandoahAllocationRate& humongous_alloc_rate() {
+    return _humongous_alloc_rate;
+  }
+
+  size_t max_humongous_regions_since_gc() const {
+    return _max_humongous_regions_since_gc.load_relaxed();
   }
 
 // ---------- Periodic Tasks
