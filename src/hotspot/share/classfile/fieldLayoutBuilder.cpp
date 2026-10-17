@@ -279,7 +279,7 @@ void FieldLayout::initialize_static_layout() {
   }
 }
 
-void FieldLayout::initialize_instance_layout(const InstanceKlass* super_klass, bool& super_ends_with_oop) {
+void FieldLayout::initialize_instance_layout(const InstanceKlass* super_klass, bool& super_ends_with_oop, bool is_value_class) {
   if (super_klass == nullptr) {
     super_ends_with_oop = false;
     _blocks = new LayoutRawBlock(LayoutRawBlock::EMPTY, INT_MAX);
@@ -289,7 +289,7 @@ void FieldLayout::initialize_instance_layout(const InstanceKlass* super_klass, b
     insert(first_empty_block(), new LayoutRawBlock(LayoutRawBlock::RESERVED, instanceOopDesc::base_offset_in_bytes()));
   } else {
     reconstruct_layout(super_klass, _super_has_nonstatic_fields, super_ends_with_oop);
-    fill_holes(super_klass);
+    fill_holes(super_klass, is_value_class);
     if ((!super_klass->has_contended_annotations()) || !_super_has_nonstatic_fields) {
       _start = _blocks;  // start allocating fields from the first empty block
     } else {
@@ -535,16 +535,19 @@ void FieldLayout::reconstruct_layout(const InstanceKlass* ik, bool& has_nonstati
 // This method handles classes with @Contended annotations differently
 // by inserting PADDING blocks instead of EMPTY block to prevent subclasses'
 // fields to interfere with contended fields/classes.
-void FieldLayout::fill_holes(const InstanceKlass* super_klass) {
+void FieldLayout::fill_holes(const InstanceKlass* super_klass, bool is_value_class) {
   assert(_blocks != nullptr, "Sanity check");
   assert(_blocks->offset() == 0, "first block must be at offset zero");
-  LayoutRawBlock::Kind filling_type = super_klass->has_contended_annotations() ? LayoutRawBlock::PADDING: LayoutRawBlock::EMPTY;
+  const bool super_is_contended = super_klass->has_contended_annotations();
   LayoutRawBlock* b = _blocks;
   while (b->next_block() != nullptr) {
     if (b->next_block()->offset() > (b->offset() + b->size())) {
       int size = b->next_block()->offset() - (b->offset() + b->size());
-      // FIXME it would be better if initial empty blocks were tagged as PADDING for value classes
-      // Tracked by JDK-8383383
+
+      const bool is_initial_value_padding = (b == _blocks) && is_value_class;
+      LayoutRawBlock::Kind filling_type = super_is_contended || is_initial_value_padding
+                                              ? LayoutRawBlock::PADDING : LayoutRawBlock::EMPTY;
+
       LayoutRawBlock* empty = new LayoutRawBlock(filling_type, size);
       empty->set_offset(b->offset() + b->size());
       empty->set_next_block(b->next_block());
@@ -828,7 +831,8 @@ FieldGroup* FieldLayoutBuilder::get_or_create_contended_group(int g) {
 void FieldLayoutBuilder::prologue() {
   _layout = new FieldLayout(_field_info, _value_field_info_array, _constant_pool);
   const InstanceKlass* super_klass = _super_klass;
-  _layout->initialize_instance_layout(super_klass, _super_ends_with_oop);
+  bool is_value_class = _is_abstract_value || _is_concrete_value;
+  _layout->initialize_instance_layout(super_klass, _super_ends_with_oop, is_value_class);
   _nonstatic_oopmap_count = super_klass == nullptr ? 0 : super_klass->nonstatic_oop_map_count();
   if (super_klass != nullptr) {
     _has_nonstatic_fields = super_klass->has_nonstatic_fields();
