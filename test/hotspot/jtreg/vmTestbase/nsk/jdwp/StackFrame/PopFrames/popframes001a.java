@@ -25,6 +25,9 @@
 
 package nsk.jdwp.StackFrame.PopFrames;
 
+import java.lang.reflect.Method;
+import jdk.test.whitebox.WhiteBox;
+
 import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jpda.*;
@@ -41,7 +44,7 @@ public class popframes001a {
     public static final String THREAD_NAME = "testedThread";
 
     // line nunber for breakpoint
-    public static final int BREAKPOINT_LINE_NUMBER = 114;
+    public static final int BREAKPOINT_LINE_NUMBER = 156;
 
     // scaffold objects
     private static volatile ArgumentHandler argumentHandler = null;
@@ -78,6 +81,11 @@ public class popframes001a {
             return popframes001.FAILED;
         }
 
+        if (TestedThreadClass.notCompiled) {
+            log.display("Debugee FAILED");
+            return popframes001.FAILED;
+        }
+
         log.display("Debugee PASSED");
         return popframes001.PASSED;
     }
@@ -87,6 +95,13 @@ public class popframes001a {
 
         // number of invokations of tested method
         public static volatile int invokations = 0;
+
+        // popframes002 and popframes003 run this debuggee with these set
+        private static final boolean UNMOUNT = Boolean.getBoolean("popframes001.unmount");
+        private static final boolean COMPILED_CALLER = Boolean.getBoolean("popframes001.compiledCaller");
+
+        // set when run() turns out not to be compiled
+        public static volatile boolean notCompiled = false;
 
         public TestedThreadClass(String name) {
             super(name);
@@ -110,6 +125,33 @@ public class popframes001a {
             int boo = 0;
 
             log.display("Breakpoint line reached");
+            if (COMPILED_CALLER) {
+                // the frozen caller has to be a compiled frame in that test
+                try {
+                    Method run = TestedThreadClass.class.getDeclaredMethod("run");
+                    if (WhiteBox.getWhiteBox().getMethodCompilationLevel(run) == 0) {
+                        log.complain("run() is not compiled");
+                        notCompiled = true;
+                    }
+                } catch (NoSuchMethodException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            if (UNMOUNT) {
+                // joining a virtual thread unmounts a virtual tested thread, so the frame below is frozen when popped
+                Thread parker = Thread.ofVirtual().start(() -> {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+                try {
+                    parker.join();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
             // next line is for breakpoint
             boo = arg * 2; // BREAKPOINT_LINE_NUMBER
             log.display("Breakpoint line passed");
