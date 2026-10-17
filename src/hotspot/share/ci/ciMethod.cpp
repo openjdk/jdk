@@ -1431,6 +1431,39 @@ bool ciMethod::is_vector_method() const {
          (intrinsic_id() != vmIntrinsics::_none);
 }
 
+// A Vector API value that crosses a method boundary C2 does not inline is
+// materialized on the heap: the callee is compiled separately, so the value
+// cannot stay in a SIMD register across the boundary. This applies both to a
+// vector passed as an argument and to a vector returned by the callee. Inlining
+// lets the existing vector scalar-replacement machinery eliminate that
+// materialization. The inliner uses this predicate to avoid rejecting such
+// methods on bytecode size, which would otherwise box the vector.
+bool ciMethod::has_vector_payload_in_signature() const {
+  ciEnv* env = ciEnv::current();
+  ciInstanceKlass* payload = env->vector_VectorPayload_klass();
+  if (payload == nullptr) {
+    return false; // Vector API not present/loaded
+  }
+  // Return type.
+  ciType* ret = signature()->return_type();
+  if (ret->is_loaded() && ret->is_klass() && ret->as_klass()->is_subclass_of(payload)) {
+    return true;
+  }
+  // Parameter types.
+  ciSignature* sig = signature();
+  int n = sig->count();
+  for (int i = 0; i < n; i++) {
+    ciType* t = sig->type_at(i);
+    if (t->is_loaded() && t->is_klass()) {
+      ciKlass* k = t->as_klass();
+      if (k->is_subclass_of(payload)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 BCEscapeAnalyzer  *ciMethod::get_bcea() {
 #ifdef COMPILER2
   if (_bcea == nullptr) {
