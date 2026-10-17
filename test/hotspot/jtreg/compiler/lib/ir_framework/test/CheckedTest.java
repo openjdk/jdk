@@ -44,8 +44,8 @@ class CheckedTest extends BaseTest {
         NONE, RETURN_ONLY, TEST_INFO_ONLY, BOTH
     }
 
-    public CheckedTest(DeclaredTest test, Method checkMethod, Check checkSpecification, Parameter parameter, boolean excludedByUser) {
-        super(test, excludedByUser);
+    public CheckedTest(DeclaredTest test, Method checkMethod, Check checkSpecification, Parameter parameter) {
+        super(test);
         // Make sure we can also call non-public or public methods in package private classes
         checkMethod.setAccessible(true);
         this.checkMethod = checkMethod;

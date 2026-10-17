@@ -298,10 +298,14 @@ public class TestVM {
                 try {
                     Arguments argumentsAnno = getAnnotation(m, Arguments.class);
                     TestFormat.check(argumentsAnno != null || m.getParameterCount() == 0, "Missing @Arguments annotation to define arguments of " + m);
-                    BaseTest baseTest = new BaseTest(test, shouldExcludeTest(m));
+                    if (shouldExcludeTest(m)) {
+                        return;
+                    }
+
+                    BaseTest baseTest = new BaseTest(test);
                     allTests.add(baseTest);
                     if (PRINT_VALID_IR_RULES) {
-                        irMatchRulePrinter.emitApplicableIRRules(m, baseTest.isSkipped());
+                        irMatchRulePrinter.emitApplicableIRRules(m);
                     }
                 } catch (TestFormatException e) {
                     // Failure logged. Continue and report later.
@@ -324,7 +328,11 @@ public class TestVM {
     }
 
     private boolean isNotOnTestList(String testName) {
-        return !testList.isEmpty() && !testList.contains(testName);
+        return isDTestSet() && !testList.contains(testName);
+    }
+
+    private boolean isDTestSet() {
+        return !testList.isEmpty();
     }
 
     private boolean isOnExcludeList(String testName) {
@@ -716,12 +724,16 @@ public class TestVM {
                          "Missing @Arguments annotation to define arguments of " + testMethod + " required by "
                          + "checked test " + m);
         CheckedTest.Parameter parameter = getCheckedTestParameter(m, testMethod);
+        if (shouldExcludeTest(testMethod)) {
+            return;
+        }
+
         dontCompileAndDontInlineMethod(m);
-        CheckedTest checkedTest = new CheckedTest(test, m, checkAnno, parameter, shouldExcludeTest(testMethod));
+        CheckedTest checkedTest = new CheckedTest(test, m, checkAnno, parameter);
         allTests.add(checkedTest);
         if (PRINT_VALID_IR_RULES) {
             // Only need to emit IR verification information if IR verification is actually performed.
-            irMatchRulePrinter.emitApplicableIRRules(testMethod, checkedTest.isSkipped());
+            irMatchRulePrinter.emitApplicableIRRules(testMethod);
         }
     }
 
@@ -768,7 +780,6 @@ public class TestVM {
     private void addCustomRunTest(Method m, Run runAnno) {
         checkRunMethod(m, runAnno);
         List<DeclaredTest> tests = new ArrayList<>();
-        boolean shouldExcludeTest = true;
         for (String testName : runAnno.test()) {
             try {
                 Method testMethod = testMethodMap.get(testName);
@@ -776,8 +787,6 @@ public class TestVM {
                 checkCustomRunTest(m, testName, testMethod, test, runAnno.mode());
                 test.setAttachedMethod(m);
                 tests.add(test);
-                // Only exclude custom run test if all its associated test methods are excluded
-                shouldExcludeTest &= shouldExcludeTest(testMethod);
             } catch (TestFormatException e) {
                 // Logged, continue.
             }
@@ -789,13 +798,15 @@ public class TestVM {
         }
 
         checkNoneOrAllAssociatedTestsSkipped(m, tests);
+        if (shouldExcludeCustomRunTest(tests)) {
+            return;
+        }
+
         dontCompileAndDontInlineMethod(m);
-        CustomRunTest customRunTest = new CustomRunTest(m, getAnnotation(m, Warmup.class), runAnno, tests, shouldExcludeTest);
+        CustomRunTest customRunTest = new CustomRunTest(m, getAnnotation(m, Warmup.class), runAnno, tests);
         allTests.add(customRunTest);
         if (PRINT_VALID_IR_RULES) {
-            // Even though we cannot exclude a @Test method from being run when invoked from a @Run method for multiple
-            // tests, we can disable its IR verification.
-            tests.forEach(test -> irMatchRulePrinter.emitApplicableIRRules(test.getTestMethod(), shouldExcludeTest(test.getTestMethod())));
+            tests.forEach(test -> irMatchRulePrinter.emitApplicableIRRules(test.getTestMethod()));
         }
     }
 
@@ -831,6 +842,37 @@ public class TestVM {
         Warmup warmupAnno = getAnnotation(m, Warmup.class);
         TestFormat.checkNoThrow(warmupAnno == null || runAnno.mode() != RunMode.STANDALONE,
                                 "Cannot set @Warmup at @Run method " + m + " when used with RunMode.STANDALONE. The @Run method is only invoked once.");
+    }
+
+
+    /**
+     * A custom run test is excluded from execution if:
+     * - -DExclude lists at least one associated test method
+     * - -DTest does not list any associated test method
+     * - At least one associated test method has a (temporary) @Skip annotation.
+     */
+    private boolean shouldExcludeCustomRunTest(List<DeclaredTest> tests) {
+        boolean isNotOnTestList = true;
+        for (DeclaredTest test : tests) {
+            Method testMethod = test.getTestMethod();
+            String testName = testMethod.getName();
+            if (shouldSkip(testMethod) || isOnExcludeList(testName)) {
+                // Skip the custom run test if at least one associated test method should be skipped or excluded.
+                return true;
+            }
+            if (isOnTestList(testName)) {
+                // Enable the custom run test if at least one associated test method is on the test list and there is
+                // no other reason to skip the custom run test.
+                isNotOnTestList = false;
+            }
+        }
+
+        // -DTest set? Skip this @Run method because no associated test is on the list.
+        return isDTestSet() && isNotOnTestList;
+    }
+
+    private boolean isOnTestList(String testName) {
+        return testList.contains(testName);
     }
 
     private void checkNoneOrAllAssociatedTestsSkipped(Method runMethod, List<DeclaredTest> tests) {
@@ -897,29 +939,22 @@ public class TestVM {
      */
     private void runTests() {
         long startTime = System.nanoTime();
-        List<AbstractTest> testList;
         boolean testFilterPresent = testFilterPresent();
-        if (testFilterPresent) {
-            // Only run the specified tests by the user filters -DTest and/or -DExclude.
-            testList = allTests.stream().filter(test -> !test.isSkipped()).collect(Collectors.toList());
-            if (testList.isEmpty()) {
-                // Throw an exception to inform the user about an empty specified test set with -DTest and/or -DExclude
-                throw new NoTestsRunException();
-            }
-        } else {
-            testList = allTests;
+        if (testFilterPresent && allTests.isEmpty()) {
+            // Throw an exception to inform the user about an empty specified test set with -DTest and/or -DExclude
+            throw new NoTestsRunException();
         }
 
         if (SHUFFLE_TESTS) {
             // Execute tests in random order (execution sequence affects profiling). This is done by default.
-            Collections.shuffle(testList, Utils.getRandomInstance());
+            Collections.shuffle(allTests, Utils.getRandomInstance());
         }
         StringBuilder builder = new StringBuilder();
         int failures = 0;
 
         // Execute all tests and keep track of each exception that is thrown. These are then reported once all tests
         // are executing. This prevents a premature exit without running all tests.
-        for (AbstractTest test : testList) {
+        for (AbstractTest test : allTests) {
             String testName = test.getName();
             if (VERBOSE) {
                 System.out.println("Run \"" + testName + "\"");
@@ -961,7 +996,7 @@ public class TestVM {
     }
 
     private boolean testFilterPresent() {
-        return !testList.isEmpty() || !excludeList.isEmpty();
+        return isDTestSet() || !excludeList.isEmpty();
     }
 
     enum TriState {
