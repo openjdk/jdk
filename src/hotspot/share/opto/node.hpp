@@ -126,6 +126,7 @@ class MachReturnNode;
 class MachSafePointNode;
 class MachSpillCopyNode;
 class MachTempNode;
+class MachUncommonTrapNode;
 class MachMergeNode;
 class MachMemBarNode;
 class MachVEPNode;
@@ -730,6 +731,7 @@ public:
               DEFINE_CLASS_ID(MachCallDynamicJava,  MachCallJava, 1)
             DEFINE_CLASS_ID(MachCallRuntime,      MachCall, 1)
               DEFINE_CLASS_ID(MachCallLeaf,         MachCallRuntime, 0)
+          DEFINE_CLASS_ID(MachUncommonTrap, MachSafePoint, 1)
       DEFINE_CLASS_ID(MachBranch, Mach, 1)
         DEFINE_CLASS_ID(MachIf,         MachBranch, 0)
         DEFINE_CLASS_ID(MachGoto,       MachBranch, 1)
@@ -1003,6 +1005,7 @@ public:
   DEFINE_CLASS_QUERY(MachProlog)
   DEFINE_CLASS_QUERY(MachReturn)
   DEFINE_CLASS_QUERY(MachSafePoint)
+  DEFINE_CLASS_QUERY(MachUncommonTrap)
   DEFINE_CLASS_QUERY(MachSpillCopy)
   DEFINE_CLASS_QUERY(MachTemp)
   DEFINE_CLASS_QUERY(MachMemBar)
