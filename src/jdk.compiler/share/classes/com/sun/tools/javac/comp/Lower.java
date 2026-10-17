@@ -2845,7 +2845,7 @@ public class Lower extends TreeTranslator {
             JCExpression exactnessCheck;
             JCExpression instanceOfExpr = translate(tree.expr);
 
-            if (types.isUnconditionallyExactTypeBased(tree.expr.type, tree.pattern.type)) {
+            if (types.isUnconditionallyExactCombined(tree.expr.type, tree.pattern.type)) {
                 // instanceOfExpr; true
                 prefixStatement = make.Exec(instanceOfExpr);
                 exactnessCheck = make.Literal(BOOLEAN, 1).setType(syms.booleanType.constType(1));
