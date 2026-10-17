@@ -220,8 +220,6 @@ void LIRItem::set_result(LIR_Opr opr) {
 }
 
 void LIRItem::load_item() {
-  assert(!_gen->in_conditional_code(), "LIRItem cannot be loaded in conditional code");
-
   if (result()->is_illegal()) {
     // update the items result
     _result = value()->operand();
@@ -309,9 +307,151 @@ jlong LIRItem::get_jlong_constant() const {
 }
 
 
+static BlockBegin* make_late_block(int bci, ValueStack* state_before) {
+  BlockBegin* block = new BlockBegin(bci);
+  block->set_state_before(state_before);
+  block->set(BlockBegin::late_block_flag);
+  return block;
+}
 
 //--------------------------------------------------------------
 
+// Create a control flow diamond during LIR generation. This RAII object takes
+// care of adding new basic blocks and inserting them into the control flow graph.
+// Use the (Not)TakenBlock RAII objects to enter the LIR generation context of the
+// respective branches.
+// The last argument, branching_condition, is a lambda that gets called after all
+// blocks are set up to emit the LIR instruction that branches. The lambda must
+// take two BlockBegin* arguments to the taken and not_taken branches that serve
+// as destinations for the branches, e.g.
+//   [&](BlockBegin* taken, BlockBegin* not_taken) -> { do_some_branch(taken, not_taken); }
+template <typename EmitBranch>
+LateControlFlowDiamond::LateControlFlowDiamond(LIRGenerator* lir_gen, Instruction* instr, int bci, ValueStack* state_before, EmitBranch&& branching_condition)
+: _gen(lir_gen)
+, _instr(instr)
+, _bci(bci)
+, _state_before(state_before)
+, _info(lir_gen->state_for(instr, state_before))
+, _origin(lir_gen->block())
+, _not_taken(nullptr)
+, _taken(nullptr)
+, _continuation(nullptr) {
+  assert(!_gen->compilation()->bailed_out(), "must check for bailiout before LateControlFlowDiamond");
+  assert(_instr->is_pinned(), "LateControlFlowDiamond can only insert blocks for pinned instructions");
+
+  _gen->compilation()->set_has_late_control_flow(true);
+
+  // First, create the new blocks and make sure to preserve the block invariants.
+  _not_taken = make_late_block(bci, state_before);
+  _taken = make_late_block(bci, state_before);
+  _continuation = make_late_block(bci, state_before);
+
+  // Move the remaining instructions in origin to continuation.
+  // Instruction::set_next also sets the block of this for the argument.
+  _continuation->set_next(_instr->next());
+  for (Instruction* i = _instr->next(); i->next() != nullptr; i = i->next()) {
+    i->set_next(i->next());
+  }
+  _continuation->set_end(_origin->end());
+
+  // Because we moved some instructions from origin to continuation some
+  // exceptional edges may not belong to origin anymore. Leaving them will
+  // lead to unexpected live vregs during register allocation. To fix this
+  // we remove all excepional edges from origin and add them back by scanning
+  // all emitted LIR instructions for the needed exception handlers and add
+  // those back in block_do_epilog() as for all late blocks.
+  _origin->set(BlockBegin::late_block_flag);
+  if (_gen->compilation()->has_exception_handlers()) {
+    for (int i = 0; i < _origin->number_of_exception_handlers(); i++) {
+      if (BlockBegin* handler = _origin->exception_handler_at(i); handler != nullptr) {
+        handler->remove_predecessor(_origin);
+      }
+    }
+    _origin->clear_exception_handlers();
+  }
+
+  // Now, we set up the BlockEnds to connect the new late blocks.
+  // These get the same value stack, but no exception headers.
+  _origin->set_end(new LateBlockEnd(_state_before, _not_taken, _taken, _continuation));
+  _instr->set_next(_origin->end(), _bci);
+  _not_taken->set_end(new LateBlockEnd(_state_before, _continuation, _continuation));
+  _not_taken->set_next(_not_taken->end(), _bci);
+  _taken->set_end(new LateBlockEnd(_state_before, _continuation, _continuation));
+  _taken->set_next(_taken->end(), _bci);
+
+  // LIR generation is still in origin. Before switching we need to emit the branching condition.
+  branching_condition(_taken, _not_taken);
+
+  // Now, we conclude LIR generation for the origin block.
+  _gen->set_block(nullptr);
+  _gen->block_do_epilog(_origin);
+}
+
+LateControlFlowDiamond::~LateControlFlowDiamond() {
+  _gen->block_do_prolog(_continuation);
+  _gen->set_block(_continuation);
+  // Now, LIR generation continues normally in the continuation block.
+}
+
+// The (Not)TakenBlock constructors and destructors perform the equivalent of LIRGenerator::block_do() and then some.
+LateControlFlowDiamond::NotTakenBlock::NotTakenBlock(LateControlFlowDiamond& lcfd) : _lcfd(lcfd) {
+  _lcfd._gen->block_do_prolog(_lcfd._not_taken);
+  _lcfd._gen->set_block(_lcfd._not_taken);
+}
+
+LateControlFlowDiamond::NotTakenBlock::~NotTakenBlock() {
+  // Emit jump to continuation.
+  _lcfd._gen->lir()->jump(_lcfd.continuation());
+
+  _lcfd._gen->set_block(nullptr);
+  _lcfd._gen->block_do_epilog(_lcfd._not_taken);
+}
+
+LateControlFlowDiamond::TakenBlock::TakenBlock(LateControlFlowDiamond& lcfd) : _lcfd(lcfd) {
+  _lcfd._gen->block_do_prolog(_lcfd._taken);
+  _lcfd._gen->set_block(_lcfd._taken);
+}
+
+LateControlFlowDiamond::TakenBlock::~TakenBlock() {
+  // Emit jump to continuation.
+  _lcfd._gen->lir()->jump(_lcfd.continuation());
+
+  _lcfd._gen->set_block(nullptr);
+  _lcfd._gen->block_do_epilog(_lcfd._taken);
+}
+
+static void add_handler_edges(BlockBegin* block, const XHandlers* handlers) {
+  precond(handlers != nullptr);
+
+  for (int k = 0; k < handlers->length(); k++) {
+    BlockBegin* handler = handlers->handler_at(k)->entry_block();
+    block->add_exception_handler(handler);
+    if (!handler->is_predecessor(block)) {
+      handler->add_predecessor(block);
+    }
+  }
+}
+
+// Visit all HIR and LIR operations in a block and add all exception handler edges for that block.
+static void add_exceptional_edges_from_insns(BlockBegin* block) {
+  precond(block != nullptr);
+  for (Instruction* insn = block->next(); insn != nullptr; insn = insn->next()) {
+    if (XHandlers* handlers = insn->exception_handlers(); handlers != nullptr) {
+      add_handler_edges(block, handlers);
+    }
+  }
+
+  LIR_OpVisitState visitor;
+  LIR_OpList* lir_ops = block->lir()->instructions_list();
+  for (int i = 0; i < lir_ops->length(); i++) {
+    visitor.visit(lir_ops->at(i));
+    for (int j = 0; j < visitor.info_count(); j++) {
+      if (XHandlers* handlers = visitor.info_at(j)->exception_handlers(); handlers != nullptr) {
+        add_handler_edges(block, handlers);
+      }
+    }
+  }
+}
 
 void LIRGenerator::block_do_prolog(BlockBegin* block) {
 #ifndef PRODUCT
@@ -343,6 +483,11 @@ void LIRGenerator::block_do_epilog(BlockBegin* block) {
   }
 #endif
 
+  // Late blocks need their exceptional edges added.
+  if (compilation()->has_exception_handlers() && block->is_set(BlockBegin::late_block_flag)) {
+    add_exceptional_edges_from_insns(block);
+  }
+
   // LIR_Opr for unpinned constants shouldn't be referenced by other
   // blocks so clear them out after processing the block.
   for (int i = 0; i < _unpinned_constants.length(); i++) {
@@ -359,11 +504,27 @@ void LIRGenerator::block_do_epilog(BlockBegin* block) {
 void LIRGenerator::block_do(BlockBegin* block) {
   CHECK_BAILOUT();
 
+  assert(!block->is_set(BlockBegin::late_block_flag), "must not visit late blocks");
+
   block_do_prolog(block);
   set_block(block);
 
   for (Instruction* instr = block; instr != nullptr; instr = instr->next()) {
-    if (instr->is_pinned()) do_root(instr);
+    if (instr->is_pinned()) {
+      do_root(instr);
+      if (compilation()->has_late_control_flow() && instr->next() != nullptr) {
+        // When we have late control flow, we need to check that we do not continue at a LateBlockEnd.
+        if (LateBlockEnd* pot_next = instr->next()->as_LateBlockEnd(); pot_next != nullptr) {
+          // We are looking at a late block end so we set instr to the block begin for
+          // then continuation. Then instr->next() is the expected instruction.
+          // This skips all inserted late blocks.
+          instr = pot_next->continuation();
+          assert(instr->as_BlockBegin() != nullptr && instr->as_BlockBegin()->is_set(BlockBegin::late_block_flag),
+                 "must be late block");
+          block = instr->as_BlockBegin();
+        }
+      }
+    }
   }
 
   set_block(nullptr);
@@ -1491,19 +1652,6 @@ LIR_Opr LIRGenerator::load_constant(Constant* x) {
 
 LIR_Opr LIRGenerator::load_constant(LIR_Const* c) {
   BasicType t = c->type();
-  if (in_conditional_code()) {
-    // TODO 8353851: Control flow introduced by check_flat_array() is currently opaque to the register allocator.
-    // Do not use or update the constant -> register cache in such conditional code because the register allocator could
-    // spill a constant and only rematerialize it into a register in one branch of check_flat_array() but not the other.
-    // Since the control flow is opaque to the register allocator, it assumes the rematerialized constant in the register
-    // dominates all subsequent uses in the block and does not insert another rematerialization. When taking the
-    // non-rematerialized branch of check_flat_array() at runtime, the register contains garbage potentially causing
-    // a crash.
-    LIR_Opr result = new_register(t);
-    __ move(c, result);
-    return result;
-  }
-
   for (int i = 0; i < _constants.length(); i++) {
     LIR_Const* other = _constants.at(i);
     if (t == other->type()) {
@@ -1532,11 +1680,6 @@ LIR_Opr LIRGenerator::load_constant(LIR_Const* c) {
   _constants.append(c);
   _reg_for_constants.append(result);
   return result;
-}
-
-void LIRGenerator::set_in_conditional_code(bool v) {
-  assert(v != _in_conditional_code, "must change state");
-  _in_conditional_code = v;
 }
 
 
@@ -1883,6 +2026,12 @@ void LIRGenerator::check_flat_array(LIR_Opr array, CodeStub* slow_path) {
   __ check_flat_array(array, tmp, slow_path);
 }
 
+void LIRGenerator::check_flat_array_new(LIR_Opr array, BlockBegin* taken, BlockBegin* not_taken) {
+  LIR_Opr tmp = new_register(T_METADATA);
+  __ check_flat_array_new(array, tmp, *taken->label()); // Takes care of the conditional jump to the slow path.
+  __ jump(not_taken);
+}
+
 void LIRGenerator::check_null_free_array(LIRItem& array, LIRItem& value, CodeEmitInfo* info) {
   LabelObj* L_end = new LabelObj();
   LIR_Opr tmp = new_register(T_METADATA);
@@ -2009,32 +2158,72 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
       access_flat_array(false, array, index, value);
     }
   } else {
-    StoreFlattenedArrayStub* slow_path = nullptr;
+    if (UseNewCode) {
+      if (needs_flat_array_store_check(x)) {
+        LateControlFlowDiamond lcfd(this, x, x->printable_bci(), x->state_before(),
+                                    [&](BlockBegin* taken, BlockBegin* not_taken) { check_flat_array_new(array.result(), taken, not_taken); });
+        {
+          LateControlFlowDiamond::NotTakenBlock not_taken(lcfd);
 
-    if (needs_flat_array_store_check(x)) {
-      // Check if we indeed have a flat array
-      index.load_item();
-      slow_path = new StoreFlattenedArrayStub(array.result(), index.result(), value.result(), state_for(x, x->state_before()));
-      check_flat_array(array.result(), slow_path);
-      set_in_conditional_code(true);
-    }
+          LIRItem array(x->array(), this);
+          LIRItem value(x->value(), this);
+          LIRItem index(x->index(), this);
 
-    if (needs_null_free_array_store_check(x)) {
-      CodeEmitInfo* info = new CodeEmitInfo(range_check_info);
-      check_null_free_array(array, value, info);
-    }
+          store_array_helper(x, array, value, index, range_check_info, null_check_info);
+        } {
+          LateControlFlowDiamond::TakenBlock taken(lcfd);
 
-    DecoratorSet decorators = IN_HEAP | IS_ARRAY;
-    if (x->check_boolean()) {
-      decorators |= C1_MASK_BOOLEAN;
-    }
+          LIRItem array(x->array(), this);
+          LIRItem value(x->value(), this);
+          LIRItem index(x->index(), this);
+          array.load_item();
+          value.load_item();
+          index.load_item();
 
-    access_store_at(decorators, x->elt_type(), array, index.result(), value.result(), nullptr, null_check_info);
-    if (slow_path != nullptr) {
-      __ branch_destination(slow_path->continuation());
-      set_in_conditional_code(false);
+          StoreFlattenedArrayStub* slow_path = new StoreFlattenedArrayStub(array.result(), index.result(), value.result(), state_for(x, lcfd.state_before()));
+          __ jump(slow_path);
+          __ branch_destination(slow_path->continuation());
+        }
+      } else {
+        store_array_helper(x, array, value, index, range_check_info, null_check_info);
+      }
+    } else {
+      // Old implementation
+      StoreFlattenedArrayStub* slow_path = nullptr;
+      if (needs_flat_array_store_check(x)) {
+        // Check if we indeed have a flat array
+        index.load_item();
+        slow_path = new StoreFlattenedArrayStub(array.result(), index.result(), value.result(), state_for(x, x->state_before()));
+        check_flat_array(array.result(), slow_path);
+      }
+
+      store_array_helper(x, array, value, index, range_check_info, null_check_info);
+      if (slow_path != nullptr) {
+        __ branch_destination(slow_path->continuation());
+      }
     }
   }
+}
+
+void LIRGenerator::store_array_helper(StoreIndexed* x, LIRItem& array, LIRItem& value, LIRItem& index,
+                                      CodeEmitInfo* range_check_info, CodeEmitInfo* null_check_info) {
+  array.load_item();
+
+  if (needs_null_free_array_store_check(x)) {
+    CodeEmitInfo* info = new CodeEmitInfo(range_check_info);
+    value.load_item();
+    check_null_free_array(array, value, info);
+  } else {
+    value.load_for_store(x->elt_type());
+  }
+
+  DecoratorSet decorators = IN_HEAP | IS_ARRAY;
+  if (x->check_boolean()) {
+    decorators |= C1_MASK_BOOLEAN;
+  }
+
+  index.load_item();
+  access_store_at(decorators, x->elt_type(), array, index.result(), value.result(), nullptr, null_check_info);
 }
 
 void LIRGenerator::access_load_at(DecoratorSet decorators, BasicType type,
@@ -2453,7 +2642,6 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
       // if we are loading from a flat array, load it using a runtime call
       slow_path = new LoadFlattenedArrayStub(array.result(), index.result(), result, state_for(x, x->state_before()));
       check_flat_array(array.result(), slow_path);
-      set_in_conditional_code(true);
     }
 
     DecoratorSet decorators = IN_HEAP | IS_ARRAY;
@@ -2463,7 +2651,6 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
 
     if (slow_path != nullptr) {
       __ branch_destination(slow_path->continuation());
-      set_in_conditional_code(false);
     }
 
     element = x;

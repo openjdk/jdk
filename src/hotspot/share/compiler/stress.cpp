@@ -31,6 +31,9 @@
 #include "runtime/os.hpp"
 #include "utilities/ticks.hpp"
 
+#ifdef COMPILER1
+#include "c1/c1_globals.hpp"
+#endif // COMPILER1
 #ifdef COMPILER2
 #include "opto/c2_globals.hpp"
 #endif // COMPILER
@@ -39,7 +42,7 @@ static bool should_initialize_stress_seed(CompilerType comp) {
   switch (comp) {
 #ifdef COMPILER1
     case compiler_c1:
-      return false;
+      return StressC1RegAlloc;
 #endif // COMPILER1
 #ifdef COMPILER2
     case compiler_c2:

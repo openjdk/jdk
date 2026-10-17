@@ -5760,8 +5760,17 @@ void LinearScanWalker::init_vars_for_alloc(Interval* cur) {
     _last_reg = FrameMap::last_cpu_reg();
   }
 
+  if (StressC1RegAlloc) {
+    int random = static_cast<int>(compilation()->stress().random() & 31);
+    // Restrict a random sample of registers to induce additional spilling.
+    int window_count = random % (_last_reg - _first_reg);
+    _first_reg = random % (_last_reg - window_count - 1);
+    _last_reg = _first_reg + window_count;
+  }
+
   assert(0 <= _first_reg && _first_reg < LinearScan::nof_regs, "out of range");
   assert(0 <= _last_reg && _last_reg < LinearScan::nof_regs, "out of range");
+  assert(_first_reg < _last_reg, "first_reg must be smaller than last_reg");
 }
 
 
