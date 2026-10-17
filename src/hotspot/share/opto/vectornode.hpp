@@ -177,10 +177,17 @@ class VectorNode : public TypeNode {
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
   static bool is_vector_integral_negate_supported(int opc, uint vlen, BasicType bt, bool use_predicate);
   static bool is_populate_index_supported(BasicType bt);
+  static bool is_hf_vector_opcode(int opc);
+  static bool is_floating_point_node(const Node* n);
+  static bool is_integral_node(const Node* n);
   // Return true if every bit in this vector is 1.
   static bool is_all_ones_vector(Node* n);
   // Return true if every bit in this vector is 0.
   static bool is_all_zeros_vector(Node* n);
+  // Return true if n is Replicate with a zero scalar (works for integral and FP).
+  static bool is_vector_zero(Node* n, PhaseGVN* phase);
+  // Return true if n is Replicate with a one scalar (works for integral and FP).
+  static bool is_vector_one(Node* n, PhaseGVN* phase);
   static bool is_vector_bitwise_not_pattern(Node* n);
   static bool is_vectormask_bitwise_not_pattern(Node* n);
   static Node* degenerate_vector_rotate(Node* n1, Node* n2, bool is_rotate_left, int vlen,
@@ -245,52 +252,59 @@ class SaturatingVectorNode : public VectorNode {
   bool is_unsigned() { return _is_unsigned; }
 };
 
+// Vector add - abstract base for all AddV* nodes.
+class AddVNode : public VectorNode {
+public:
+  AddVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual Node* Identity(PhaseGVN* phase);
+};
+
 // Vector add byte
-class AddVBNode : public VectorNode {
+class AddVBNode : public AddVNode {
  public:
-  AddVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  AddVBNode(Node* in1, Node* in2, const TypeVect* vt) : AddVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 // Vector add char/short
-class AddVSNode : public VectorNode {
+class AddVSNode : public AddVNode {
  public:
-  AddVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  AddVSNode(Node* in1, Node* in2, const TypeVect* vt) : AddVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 // Vector add int
-class AddVINode : public VectorNode {
+class AddVINode : public AddVNode {
  public:
-  AddVINode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  AddVINode(Node* in1, Node* in2, const TypeVect* vt) : AddVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 // Vector add long
-class AddVLNode : public VectorNode {
+class AddVLNode : public AddVNode {
 public:
-  AddVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  AddVLNode(Node* in1, Node* in2, const TypeVect* vt) : AddVNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+// Vector add half float
+class AddVHFNode : public AddVNode {
+public:
+  AddVHFNode(Node* in1, Node* in2, const TypeVect* vt) : AddVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
 // Vector add float
-class AddVHFNode : public VectorNode {
+class AddVFNode : public AddVNode {
 public:
-  AddVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
-  virtual int Opcode() const;
-};
-
-// Vector add float
-class AddVFNode : public VectorNode {
-public:
-  AddVFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  AddVFNode(Node* in1, Node* in2, const TypeVect* vt) : AddVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
 // Vector add double
-class AddVDNode : public VectorNode {
+class AddVDNode : public AddVNode {
 public:
-  AddVDNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  AddVDNode(Node* in1, Node* in2, const TypeVect* vt) : AddVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
@@ -450,31 +464,39 @@ public:
   virtual uint size_of() const { return sizeof(*this); }
 };
 
+// Vector subtract - abstract base for all SubV* nodes.
+class SubVNode : public VectorNode {
+public:
+  SubVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
 // Vector subtract byte
-class SubVBNode : public VectorNode {
+class SubVBNode : public SubVNode {
  public:
-  SubVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  SubVBNode(Node* in1, Node* in2, const TypeVect* vt) : SubVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 // Vector subtract short
-class SubVSNode : public VectorNode {
+class SubVSNode : public SubVNode {
  public:
-  SubVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  SubVSNode(Node* in1, Node* in2, const TypeVect* vt) : SubVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 // Vector subtract int
-class SubVINode : public VectorNode {
+class SubVINode : public SubVNode {
  public:
-  SubVINode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  SubVINode(Node* in1, Node* in2, const TypeVect* vt) : SubVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 // Vector subtract long
-class SubVLNode : public VectorNode {
+class SubVLNode : public SubVNode {
  public:
-  SubVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  SubVLNode(Node* in1, Node* in2, const TypeVect* vt) : SubVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
@@ -493,51 +515,58 @@ class SaturatingSubVNode : public SaturatingVectorNode {
 };
 
 // Vector subtract half float
-class SubVHFNode : public VectorNode {
+class SubVHFNode : public SubVNode {
 public:
-  SubVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  SubVHFNode(Node* in1, Node* in2, const TypeVect* vt) : SubVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
 // Vector subtract float
-class SubVFNode : public VectorNode {
+class SubVFNode : public SubVNode {
  public:
-  SubVFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  SubVFNode(Node* in1, Node* in2, const TypeVect* vt) : SubVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 // Vector subtract double
-class SubVDNode : public VectorNode {
+class SubVDNode : public SubVNode {
  public:
-  SubVDNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  SubVDNode(Node* in1, Node* in2, const TypeVect* vt) : SubVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
+// Vector multiply - abstract base for all MulV* nodes.
+class MulVNode : public VectorNode {
+public:
+  MulVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual Node* Identity(PhaseGVN* phase);
+};
+
 // Vector multiply byte
-class MulVBNode : public VectorNode {
+class MulVBNode : public MulVNode {
  public:
-  MulVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  MulVBNode(Node* in1, Node* in2, const TypeVect* vt) : MulVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
 // Vector multiply short
-class MulVSNode : public VectorNode {
+class MulVSNode : public MulVNode {
  public:
-  MulVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  MulVSNode(Node* in1, Node* in2, const TypeVect* vt) : MulVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 // Vector multiply int
-class MulVINode : public VectorNode {
+class MulVINode : public MulVNode {
  public:
-  MulVINode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  MulVINode(Node* in1, Node* in2, const TypeVect* vt) : MulVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 // Vector multiply long
-class MulVLNode : public VectorNode {
+class MulVLNode : public MulVNode {
 public:
-  MulVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
+  MulVLNode(Node* in1, Node* in2, const TypeVect* vt) : MulVNode(in1, in2, vt) {
     init_class_id(Class_MulVL);
   }
   virtual int Opcode() const;
@@ -546,23 +575,23 @@ public:
 };
 
 // Vector multiply half float
-class MulVHFNode : public VectorNode {
+class MulVHFNode : public MulVNode {
 public:
-  MulVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  MulVHFNode(Node* in1, Node* in2, const TypeVect* vt) : MulVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
 // Vector multiply float
-class MulVFNode : public VectorNode {
+class MulVFNode : public MulVNode {
 public:
-  MulVFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  MulVFNode(Node* in1, Node* in2, const TypeVect* vt) : MulVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
 // Vector multiply double
-class MulVDNode : public VectorNode {
+class MulVDNode : public MulVNode {
 public:
-  MulVDNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  MulVDNode(Node* in1, Node* in2, const TypeVect* vt) : MulVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
