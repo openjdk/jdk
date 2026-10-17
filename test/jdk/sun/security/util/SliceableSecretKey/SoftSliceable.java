@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.valueclass.AsValueClass;
 import sun.security.util.SliceableSecretKey;
 
 import javax.crypto.KDF;
@@ -81,6 +82,7 @@ public class SoftSliceable {
     }
 
     // A trivial SliceableSecretKey that is non-extractable with getBytes()
+    @AsValueClass
     public static class KeyImpl implements SecretKey, SliceableSecretKey {
 
         private final byte[] bytes;

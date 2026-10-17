@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @library /test/lib
  * @bug 8261502
  * @summary Check that ECPrivateKey's that are not ECPrivateKeyImpl can use
  * ECDHKeyAgreement
@@ -35,6 +36,8 @@ import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
+
+import jdk.test.lib.valueclass.AsValueClass;
 
 public class ECKeyCheck {
 
@@ -58,6 +61,7 @@ public class ECKeyCheck {
     }
 
     // Test ECPrivateKey class
+    @AsValueClass
     private static class newPrivateKeyImpl implements ECPrivateKey {
         private ECPrivateKey p;
 
