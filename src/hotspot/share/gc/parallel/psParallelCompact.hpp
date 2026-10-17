@@ -107,7 +107,7 @@ public:
     // in this region (words).  This does not include the partial object
     // extending onto the region (if any), or the part of an object that extends
     // onto the next region (if any).
-    size_t live_obj_size() const { return dc_and_los() & los_mask; }
+    size_t live_obj_size() const { return _live_obj_size.load_relaxed(); }
 
     // Total live data that lies within the region (words).
     size_t data_size() const { return partial_obj_size() + live_obj_size(); }
@@ -117,31 +117,19 @@ public:
     // values of destination_count are
     //
     // 0 - data from the region will be compacted completely into itself, or the
-    //     region is empty.  The region can be claimed and then filled.
+    //     region is empty. The region can be filled immediately.
     // 1 - data from the region will be compacted into 1 other region; some
     //     data from the region may also be compacted into the region itself.
     // 2 - data from the region will be copied to 2 other regions.
     //
     // During compaction as regions are emptied, the destination_count is
-    // decremented (atomically) and when it reaches 0, it can be claimed and
-    // then filled.
-    //
-    // A region is claimed for processing by atomically changing the
-    // destination_count to the claimed value (dc_claimed).  After a region has
-    // been filled, the destination_count should be set to the completed value
-    // (dc_completed).
-    inline uint destination_count() const;
-    inline uint destination_count_raw() const;
+    // decremented atomically. When it reaches 0, the region has no remaining
+    // destination dependencies.
+    uint destination_count() const { return state_dest_count(state()); }
 
-    // Whether this region is available to be claimed, has been claimed, or has
-    // been completed.
-    //
-    // Minor subtlety:  claimed() returns true if the region is marked
-    // completed(), which is desirable since a region must be claimed before it
-    // can be completed.
-    bool available() const { return dc_and_los() < dc_one; }
-    bool claimed()   const { return dc_and_los() >= dc_claimed; }
-    bool completed() const { return dc_and_los() >= dc_completed; }
+    // Whether this region has no remaining destination dependencies or has been completed.
+    bool available() const { return destination_count() == 0; }
+    bool completed() const { return state_status(state()) == status_completed; }
 
     // These are not atomic.
     void set_destination(HeapWord* addr)       { _destination = addr; }
@@ -155,37 +143,26 @@ public:
     inline void set_destination_count(uint count);
 
     inline void set_completed();
-    inline bool claim_unsafe();
+    inline bool available_to_normal();
 
     // These are atomic.
-    inline void add_live_obj(size_t words);
+    void add_live_obj(size_t words) {
+      assert(words <= RegionSize - live_obj_size(), "overflow");
+      _live_obj_size.add_then_fetch(static_cast<region_sz_t>(words));
+    }
     inline void decrement_destination_count();
-    inline bool claim();
+    inline bool try_mark_normal();
+    inline bool try_complete_filled_shadow();
 
-    // Possible values of _shadow_state, and transition is as follows
-    // Normal Path:
-    // UnusedRegion -> mark_normal() -> NormalRegion
-    // Shadow Path:
-    // UnusedRegion -> mark_shadow() -> ShadowRegion ->
-    // mark_filled() -> FilledShadow -> mark_copied() -> CopiedShadow
-    static const int UnusedRegion = 0; // The region is not collected yet
-    static const int ShadowRegion = 1; // Stolen by an idle thread, and a shadow region is created for it
-    static const int FilledShadow = 2; // Its shadow region has been filled and ready to be copied back
-    static const int CopiedShadow = 3; // The data of the shadow region has been copied back
-    static const int NormalRegion = 4; // The region will be collected by the original parallel algorithm
-
-    // Mark the current region as normal or shadow to enter different processing paths
-    inline bool mark_normal();
-    inline bool mark_shadow();
-    // Mark the shadow region as filled and ready to be copied back
-    inline void mark_filled();
-    // Mark the shadow region as copied back to avoid double copying.
-    inline bool mark_copied();
-    // Special case: see the comment in PSParallelCompact::fill_and_update_shadow_region.
-    // Return to the normal path here
+    // Mark the current region as shadow to enter the shadow processing path.
+    inline bool try_mark_shadow();
+    // Mark the shadow region as filled. Returns true if it can be copied back immediately.
+    inline bool mark_shadow_filled();
+    // Special case: see PSParallelCompact::fill_and_update_shadow_region.
     inline void shadow_to_normal();
-
-    int shadow_state() { return _shadow_state.load_relaxed(); }
+    bool is_init() const { return state_status(state()) == status_init; }
+    bool is_normal() const { return state_status(state()) == status_normal; }
+    bool is_shadow() const { return state_status(state()) == status_shadow; }
 
     bool is_clear();
 
@@ -194,25 +171,76 @@ public:
   private:
     // The type used to represent object sizes within a region.
     typedef uint region_sz_t;
+    // The type used to represent destination count and compaction state.
+    typedef uint state_t;
 
-    // Constants for manipulating the _dc_and_los field, which holds both the
-    // destination count and live obj size.  The live obj size lives at the
-    // least significant end so no masking is necessary when adding.
-    static const region_sz_t dc_shift;           // Shift amount.
-    static const region_sz_t dc_mask;            // Mask for destination count.
-    static const region_sz_t dc_one;             // 1, shifted appropriately.
-    static const region_sz_t dc_claimed;         // Region has been claimed.
-    static const region_sz_t dc_completed;       // Region has been completed.
-    static const region_sz_t los_mask;           // Mask for live obj size.
+    // Layout of _state:
+    //
+    //    31-5      4-2       1-0
+    // +--------+---------+----------+
+    //   unused   status   dest_count
+    // +--------+---------+----------+
+    // |        |         |          |
+    // |        |         |* 1-0 dest_count: destination regions still to be copied
+    // |        |         |                  from this source region (0-2)
+    // |        |* 2-4 status: compaction path progress, see StateBits
+    // |* 5-31 unused
+    //
+    // Complete status routes:
+    //   1. Normal fill, initially or later available:
+    //     status_init -> status_normal -> status_completed
+    //     The first transition happens during initial task setup or when dest_count reaches 0.
+    //
+    //   2. Shadow selected, but no shadow region is available when dest_count reaches 0:
+    //     status_init -> status_shadow -> status_normal -> status_completed
+    //     status_shadow with dest_count 0 can fall back to normal filling.
+    //
+    //   3. Shadow fill completes before dest_count reaches 0:
+    //     status_init -> status_shadow -> status_filled_shadow -> status_completed
+    //     The last transition happens when dest_count reaches 0 and the filled shadow is copied back.
+    //
+    //   4. Dest_count reaches 0 before shadow fill completes:
+    //     status_init -> status_shadow -> status_completed
+    //     The last transition happens when shadow fill completes and is copied back immediately.
+    enum StateBits : state_t {
+      max_destination_count = 2,
+      dest_count_mask = 0x3,
+      status_shift = 2,
+      status_mask = 0x7 << status_shift,
+
+      status_init = 0 << status_shift,
+      status_normal = 1 << status_shift,
+      status_shadow = 2 << status_shift,
+      status_filled_shadow = 3 << status_shift,
+      status_completed = 4 << status_shift
+    };
+
+    // The destination count occupies the low status_shift bits, so decrementing the whole
+    // word in decrement_destination_count() decrements the count alone.
+    static_assert(dest_count_mask == ((1U << status_shift) - 1),
+                  "dest_count field width must equal status_shift");
+    static_assert(max_destination_count <= dest_count_mask,
+                  "max_destination_count must fit in the dest_count field");
 
     HeapWord*            _destination;
     size_t               _source_region;
     HeapWord*            _partial_obj_addr;
     region_sz_t          _partial_obj_size;
-    Atomic<region_sz_t>  _dc_and_los;
-    Atomic<int>          _shadow_state;
+    Atomic<region_sz_t>  _live_obj_size;
+    Atomic<state_t>      _state;
 
-    region_sz_t dc_and_los() const { return _dc_and_los.load_relaxed(); }
+    state_t state() const { return _state.load_relaxed(); }
+    static state_t make_state(state_t dest_count, state_t status) {
+      return dest_count | status;
+    }
+    static state_t state_dest_count(state_t state) { return state & dest_count_mask; }
+    static state_t state_status(state_t state) { return state & status_mask; }
+    static state_t with_dest_count(state_t state, state_t dest_count) {
+      return (state & ~dest_count_mask) | dest_count;
+    }
+    static state_t with_status(state_t state, state_t status) {
+      return (state & ~status_mask) | status;
+    }
 #ifdef ASSERT
    public:
     uint                 _pushed;   // 0 until region is pushed onto a stack
@@ -269,83 +297,91 @@ private:
   size_t          _region_count;
 };
 
-inline uint
-ParallelCompactData::RegionData::destination_count_raw() const
-{
-  return dc_and_los() & dc_mask;
-}
-
-inline uint
-ParallelCompactData::RegionData::destination_count() const
-{
-  return destination_count_raw() >> dc_shift;
-}
-
 inline void
 ParallelCompactData::RegionData::set_destination_count(uint count)
 {
-  assert(count <= (dc_completed >> dc_shift), "count too large");
-  const region_sz_t live_sz = (region_sz_t) live_obj_size();
-  _dc_and_los.store_relaxed((count << dc_shift) | live_sz);
+  assert(count <= max_destination_count, "count too large");
+  const state_t old_state = state();
+  assert(state_status(old_state) == status_init, "cannot reset processed region");
+  _state.store_relaxed(with_dest_count(old_state, static_cast<state_t>(count)));
 }
 
 inline void ParallelCompactData::RegionData::decrement_destination_count()
 {
-  assert(dc_and_los() < dc_claimed, "already claimed");
-  assert(dc_and_los() >= dc_one, "count would go negative");
-  _dc_and_los.add_then_fetch(dc_mask);
+  state_t old_state = _state.fetch_then_sub(static_cast<state_t>(1));
+  assert(state_dest_count(old_state) > 0, "count would go negative");
 }
 
 inline void ParallelCompactData::RegionData::set_completed()
 {
-  assert(claimed(), "must be claimed first");
-  _dc_and_los.store_relaxed(dc_completed | (region_sz_t) live_obj_size());
+  const state_t old_state = state();
+  assert(state_status(old_state) == status_normal, "can only complete normal regions");
+  _state.store_relaxed(with_status(old_state, status_completed));
 }
 
-// MT-unsafe claiming of a region.  Should only be used during single threaded
-// execution.
-inline bool ParallelCompactData::RegionData::claim_unsafe()
+inline bool ParallelCompactData::RegionData::available_to_normal()
 {
-  if (available()) {
-    _dc_and_los.store_relaxed(dc_and_los() | dc_claimed);
+  const state_t old_state = state();
+  assert(state_status(old_state) == status_init, "initial regions must be unprocessed");
+  if (state_dest_count(old_state) == 0) {
+    _state.store_relaxed(make_state(0, status_normal));
     return true;
   }
   return false;
 }
 
-inline void ParallelCompactData::RegionData::add_live_obj(size_t words)
+inline bool ParallelCompactData::RegionData::try_mark_normal()
 {
-  assert(words <= (size_t)los_mask - live_obj_size(), "overflow");
-  _dc_and_los.add_then_fetch(static_cast<region_sz_t>(words));
+  assert(available(), "region must have no remaining destination dependencies");
+  return _state.compare_set(make_state(0, status_init), make_state(0, status_normal));
 }
 
-inline bool ParallelCompactData::RegionData::claim()
+inline bool ParallelCompactData::RegionData::try_complete_filled_shadow()
 {
-  const region_sz_t los = static_cast<region_sz_t>(live_obj_size());
-  return _dc_and_los.compare_set(los, dc_claimed | los);
+  assert(available(), "region must have no remaining destination dependencies");
+  return _state.compare_set(make_state(0, status_filled_shadow), make_state(0, status_completed));
 }
 
-inline bool ParallelCompactData::RegionData::mark_normal() {
-  return _shadow_state.compare_set(UnusedRegion, NormalRegion);
+inline bool ParallelCompactData::RegionData::try_mark_shadow() {
+  state_t old_state = state();
+  while (true) {
+    if (state_dest_count(old_state) == 0 ||
+        state_status(old_state) != status_init) {
+      return false;
+    }
+    const state_t new_state = with_status(old_state, status_shadow);
+    if (_state.compare_set(old_state, new_state)) {
+      return true;
+    }
+    old_state = state();
+  }
 }
 
-inline bool ParallelCompactData::RegionData::mark_shadow() {
-  if (shadow_state() != UnusedRegion) return false;
-  return _shadow_state.compare_set(UnusedRegion, ShadowRegion);
-}
-
-inline void ParallelCompactData::RegionData::mark_filled() {
-  int old = _shadow_state.compare_exchange(ShadowRegion, FilledShadow);
-  assert(old == ShadowRegion, "Fail to mark the region as filled");
-}
-
-inline bool ParallelCompactData::RegionData::mark_copied() {
-  return _shadow_state.compare_set(FilledShadow, CopiedShadow);
+inline bool ParallelCompactData::RegionData::mark_shadow_filled() {
+  state_t old_state = state();
+  while (true) {
+    state_t new_state;
+    bool copy_now = false;
+    assert(state_status(old_state) == status_shadow, "must be shadow");
+    if (state_dest_count(old_state) == 0) {
+      new_state = with_status(old_state, status_completed);
+      copy_now = true;
+    } else {
+      new_state = with_status(old_state, status_filled_shadow);
+    }
+    if (_state.compare_set(old_state, new_state)) {
+      return copy_now;
+    }
+    old_state = state();
+  }
 }
 
 void ParallelCompactData::RegionData::shadow_to_normal() {
-  int old = _shadow_state.compare_exchange(ShadowRegion, NormalRegion);
-  assert(old == ShadowRegion, "Fail to mark the region as finish");
+  assert(available(), "region must have no remaining destination dependencies");
+  const state_t old_state = make_state(0, status_shadow);
+  const state_t new_state = make_state(0, status_normal);
+  bool result = _state.compare_set(old_state, new_state);
+  assert(result, "Fail to mark the region as normal");
 }
 
 inline ParallelCompactData::RegionData*
