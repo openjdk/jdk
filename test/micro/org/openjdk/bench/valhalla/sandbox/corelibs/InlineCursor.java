@@ -2,7 +2,7 @@
  * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 
-package org.openjdk.bench.valhalla.sandbox.corelibs.corelibs;
+package org.openjdk.bench.valhalla.sandbox.corelibs;
 
 import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
