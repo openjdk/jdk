@@ -21148,7 +21148,7 @@ instruct vshiftB(vec dst, vec src, vec shift, vec tmp) %{
 
 instruct vshift16B(vec dst, vec src, vec shift, vec tmp1, vec tmp2) %{
   predicate(Matcher::vector_length(n) == 16 && !n->as_ShiftV()->is_var_shift() &&
-            UseAVX <= 1);
+            UseAVX <= 1 && !(VM_Version::supports_gfni() && UseAVX > 0));
   match(Set dst ( LShiftVB src shift));
   match(Set dst ( RShiftVB src shift));
   match(Set dst (URShiftVB src shift));
@@ -21173,7 +21173,7 @@ instruct vshift16B(vec dst, vec src, vec shift, vec tmp1, vec tmp2) %{
 
 instruct vshift16B_avx(vec dst, vec src, vec shift, vec tmp) %{
   predicate(Matcher::vector_length(n) == 16 && !n->as_ShiftV()->is_var_shift() &&
-            UseAVX > 1);
+            UseAVX > 1 && !VM_Version::supports_gfni());
   match(Set dst ( LShiftVB src shift));
   match(Set dst ( RShiftVB src shift));
   match(Set dst (URShiftVB src shift));
@@ -21193,7 +21193,8 @@ instruct vshift16B_avx(vec dst, vec src, vec shift, vec tmp) %{
 %}
 
 instruct vshift32B_avx(vec dst, vec src, vec shift, vec tmp) %{
-  predicate(Matcher::vector_length(n) == 32 && !n->as_ShiftV()->is_var_shift());
+  predicate(Matcher::vector_length(n) == 32 && !n->as_ShiftV()->is_var_shift() &&
+            !VM_Version::supports_gfni());
   match(Set dst ( LShiftVB src shift));
   match(Set dst ( RShiftVB src shift));
   match(Set dst (URShiftVB src shift));
@@ -21218,7 +21219,8 @@ instruct vshift32B_avx(vec dst, vec src, vec shift, vec tmp) %{
 %}
 
 instruct vshift64B_avx(vec dst, vec src, vec shift, vec tmp1, vec tmp2) %{
-  predicate(Matcher::vector_length(n) == 64 && !n->as_ShiftV()->is_var_shift());
+  predicate(Matcher::vector_length(n) == 64 && !n->as_ShiftV()->is_var_shift() &&
+            !VM_Version::supports_gfni());
   match(Set dst ( LShiftVB src shift));
   match(Set dst  (RShiftVB src shift));
   match(Set dst (URShiftVB src shift));
@@ -21241,6 +21243,24 @@ instruct vshift64B_avx(vec dst, vec src, vec shift, vec tmp1, vec tmp2) %{
     __ vpackuswb($dst$$XMMRegister, $tmp1$$XMMRegister, $tmp2$$XMMRegister, vlen_enc);
     __ evmovdquq($tmp2$$XMMRegister, ExternalAddress(vector_byte_perm_mask()), vlen_enc, noreg);
     __ vpermq($dst$$XMMRegister, $tmp2$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vshiftB_gfni(vec dst, vec src, vec shift, rRegL rtmp, rRegL rbase) %{
+  predicate(!n->as_ShiftV()->is_var_shift() &&
+            VM_Version::supports_gfni() &&
+            Matcher::vector_length(n) >= 16);
+  match(Set dst ( LShiftVB src shift));
+  match(Set dst ( RShiftVB src shift));
+  match(Set dst (URShiftVB src shift));
+  effect(TEMP dst, TEMP rtmp, TEMP rbase);
+  format %{ "vector_byte_shift_gfni $dst,$src,$shift\t! using $rtmp and $rbase as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ vshiftb_gfni(this->ideal_Opcode(),
+                    $dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister,
+                    $rtmp$$Register, $rbase$$Register, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
