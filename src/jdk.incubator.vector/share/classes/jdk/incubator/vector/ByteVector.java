@@ -3811,7 +3811,6 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
      *
      * @param string the string
      * @param charset the charset representing the 8-bit character encoding
-     * @throws NullPointerException if {@code string} or {@code charset} is {@code null}
      * @see ByteVector#fromString(VectorSpecies, String, Charset, int)
      * @since 28
      */
@@ -3846,7 +3845,6 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
      *         {@linkplain #compatibleWith(String, Charset) compatible}
      * @throws IndexOutOfBoundsException
      *         if {@code offset < 0} or {@code offset > string.length() - species.length()}
-     * @throws NullPointerException if {@code species}, {@code string}, or {@code charset} is {@code null}
      * @see #compatibleWith(String, Charset)
      * @since 28
      */
@@ -3872,7 +3870,6 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
      * @throws IndexOutOfBoundsException
      *         if {@code offset+N < 0} or {@code offset+N >= string.length()}
      *         for any lane {@code N} in the vector where the mask is set
-     * @throws NullPointerException if {@code species}, {@code string}, {@code charset}, or {@code m} is {@code null}
      * @see #compatibleWith(String, Charset)
      * @since 28
      */
