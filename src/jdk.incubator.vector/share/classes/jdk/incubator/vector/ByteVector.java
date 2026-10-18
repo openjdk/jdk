@@ -3804,13 +3804,28 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
 
     /**
      * {@return {@code true} if the given {@link String} can be loaded into a {@link ByteVector} as 8-bit
-     * code units in the specified {@link Charset}}
+     * code units in the specified {@link Charset} without copying or transcoding}
      *
-     * <p>This method runs in constant time, and is intended to be used as a guard for
-     * {@link ByteVector#fromString(VectorSpecies, String, Charset, int)}.
+     * <p>This method does not load or inspect the string's contents.
      *
-     * @param string the string
-     * @param charset the charset representing the 8-bit character encoding
+     * <p>The result depends on the string's internal representation, not its contents. A {@code false}
+     * result does not guarantee the string cannot be represented in the given charset, and the result may
+     * change between implementations and releases.
+     *
+     * @apiNote This method is intended to be used as a guard for
+     * {@link ByteVector#fromString(VectorSpecies, String, Charset, int)}. For example:
+     * {@snippet lang=java :
+     * if (ByteVector.compatibleWith(s, StandardCharsets.ISO_8859_1)) {
+     *     // vector loop over ByteVector.fromString
+     * } else if (ShortVector.compatibleWith(s, StandardCharsets.UTF_16)) {
+     *     // vector loop over ShortVector.fromString
+     * } else {
+     *     // scalar loop over String.charAt
+     * }
+     * }
+     *
+     * @param string the string to test
+     * @param charset the charset specifying the 8-bit code units
      * @see ByteVector#fromString(VectorSpecies, String, Charset, int)
      * @since 28
      */
@@ -3839,8 +3854,8 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
      *
      * @param species the species of the desired vector
      * @param string the string to load from
-     * @param charset the 8-bit charset
-     * @param offset the character index in the string to begin loading from
+     * @param charset the charset specifying the 8-bit code units
+     * @param offset the index of the first code unit to load
      * @throws IllegalArgumentException if the string and charset are not
      *         {@linkplain #compatibleWith(String, Charset) compatible}
      * @throws IndexOutOfBoundsException
@@ -3862,8 +3877,8 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
      *
      * @param species the species of the desired vector
      * @param string the string to load from
-     * @param charset the 8-bit charset
-     * @param offset the character index in the string to begin loading from
+     * @param charset the charset specifying the 8-bit code units
+     * @param offset the index of the first code unit to load
      * @param m the mask controlling lane selection
      * @throws IllegalArgumentException if the string and charset are not
      *         {@linkplain #compatibleWith(String, Charset) compatible}
