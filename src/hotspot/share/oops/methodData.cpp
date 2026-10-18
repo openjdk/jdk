@@ -1794,8 +1794,7 @@ public:
 };
 
 Mutex* MethodData::extra_data_lock() {
-  Mutex* m = MethodDataExtra_lock->get(this);
-  return m;
+  return MethodDataExtra_lock->get(this);
 }
 
 // Remove SpeculativeTrapData entries that reference an unloaded or
@@ -1935,5 +1934,4 @@ void MethodData::check_extra_data_locked() const {
            "JavaThread must have NoSafepointVerifier inside lock scope");
 }
 #endif
-
 

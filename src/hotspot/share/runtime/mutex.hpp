@@ -296,9 +296,12 @@ class StripedMutex : public CHeapObj<mtSynchronizer> {
   }
 
 public:
-  StripedMutex(const char* name);
-  StripedMutex() : StripedMutex("StripedMutex") {}
+  explicit StripedMutex(const Mutex::Rank rank, const char* name);
   ~StripedMutex();
+
+  StripedMutex()                               = delete;
+  StripedMutex(const StripedMutex&)            = delete;
+  StripedMutex& operator=(const StripedMutex&) = delete;
 
   template <typename T>
   Mutex* get(T* key) {

@@ -360,7 +360,8 @@ void mutex_init() {
   MultiArray_lock = new RecursiveMutex();
 
   // Allocate StripedMutex
-  MethodDataExtra_lock = new StripedMutex("MDOExtraData_lock");
+  // These locks could be acquired while we are holding DumpTimeTable_lock/nosafepoint, thus the rank.
+  MethodDataExtra_lock = new StripedMutex(Mutex::nosafepoint-1, "MDOExtraData_lock");
 }
 
 #undef MUTEX_DEFL
