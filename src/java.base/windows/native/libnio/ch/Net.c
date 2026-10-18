@@ -365,9 +365,9 @@ Java_sun_nio_ch_Net_getIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
     }
 
     /**
-     * HACK: IP_TOS is deprecated on Windows and querying the option
+     * IP_TOS is deprecated on Windows and querying the option
      * returns a protocol error. NET_GetSockOpt handles this and uses
-     * a fallback mechanism. Same applies to IPV6_TCLASS
+     * a fallback mechanism. Same applies to IPV6_TCLASS.
      */
     if ((level == IPPROTO_IP && opt == IP_TOS) || (level == IPPROTO_IPV6 && opt == IPV6_TCLASS)) {
         mayNeedConversion = JNI_TRUE;
@@ -417,13 +417,22 @@ Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
         return;
     }
 
+    /**
+     * On some Windows editions, IP_TOS requires clearing certain bits in the value being set
+     * and on some other editions IP_TOS cannot be set. NET_SetSockOpt handles
+     * the value conversion as well as a fallback mechanism if the value cannot be set.
+     */
+    if (level == IPPROTO_IP && opt == IP_TOS) {
+        mayNeedConversion = JNI_TRUE;
+    }
+
     if (mayNeedConversion) {
         n = NET_SetSockOpt(fdval(env, fdo), level, opt, parg, arglen);
     } else {
         n = setsockopt(fdval(env, fdo), level, opt, parg, arglen);
     }
     if (n == SOCKET_ERROR)
-        NET_ThrowNew(env, WSAGetLastError(), "setsocketopt");
+        NET_ThrowNew(env, WSAGetLastError(), "setsockopt");
 }
 
 JNIEXPORT jint JNICALL
@@ -454,7 +463,7 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
     if (n == SOCKET_ERROR) {
         if (join && (WSAGetLastError() == WSAENOPROTOOPT))
             return IOS_UNAVAILABLE;
-        NET_ThrowNew(env, WSAGetLastError(), "setsocketopt");
+        NET_ThrowNew(env, WSAGetLastError(), "setsockopt");
     }
     return 0;
 }
@@ -541,7 +550,7 @@ Java_sun_nio_ch_Net_blockOrUnblock6(JNIEnv *env, jobject this, jboolean block, j
     int opt = (block) ? MCAST_BLOCK_SOURCE : MCAST_UNBLOCK_SOURCE;
     int n = setGroupSourceReqOption(env, fdo, opt, group, index, source);
     if (n == SOCKET_ERROR) {
-        NET_ThrowNew(env, WSAGetLastError(), "setsocketopt to block or unblock source");
+        NET_ThrowNew(env, WSAGetLastError(), "setsockopt to block or unblock source");
     }
     return 0;
 }
