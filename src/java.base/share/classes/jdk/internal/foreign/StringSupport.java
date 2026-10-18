@@ -370,12 +370,4 @@ public final class StringSupport {
     public static void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int srcLength) {
         JAVA_LANG_ACCESS.copyToSegmentRaw(string, segment, offset, srcIndex, srcLength);
     }
-
-    public static MemorySegment asReadOnlyMemorySegment(String string) {
-        return JAVA_LANG_ACCESS.asReadOnlyMemorySegment(string);
-    }
-
-    public static byte stringCoder(String string) {
-        return JAVA_LANG_ACCESS.stringCoder(string);
-    }
 }

@@ -27,18 +27,15 @@ package jdk.incubator.vector;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.StringSupport;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.vector.StringVectorSupport;
 import jdk.internal.vm.vector.VectorSupport;
 
 import static jdk.internal.vm.vector.VectorSupport.*;
@@ -3803,100 +3800,6 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
     }
 
     /**
-     * {@return {@code true} if the given {@link String} can be loaded into a {@link ByteVector} as 8-bit
-     * code units in the specified {@link Charset} without copying or transcoding}
-     *
-     * <p>This method does not load or inspect the string's contents.
-     *
-     * <p>The result depends on the string's internal representation, not its contents. A {@code false}
-     * result does not guarantee the string cannot be represented in the given charset, and the result may
-     * change between implementations and releases.
-     *
-     * @apiNote This method is intended to be used as a guard for
-     * {@link ByteVector#fromString(VectorSpecies, String, Charset, int)}. For example:
-     * {@snippet lang=java :
-     * if (ByteVector.compatibleWith(s, StandardCharsets.ISO_8859_1)) {
-     *     // vector loop over ByteVector.fromString
-     * } else if (ShortVector.compatibleWith(s, StandardCharsets.UTF_16)) {
-     *     // vector loop over ShortVector.fromString
-     * } else {
-     *     // scalar loop over String.charAt
-     * }
-     * }
-     *
-     * @param string the string to test
-     * @param charset the charset specifying the 8-bit code units
-     * @see ByteVector#fromString(VectorSpecies, String, Charset, int)
-     * @since 28
-     */
-    @ForceInline
-    public static boolean compatibleWith(String string, Charset charset) {
-        Objects.requireNonNull(string);
-        Objects.requireNonNull(charset);
-        return StringSupport.stringCoder(string) == 0 && charset == StandardCharsets.ISO_8859_1;
-    }
-
-    @DontInline
-    private static void throwNotCompatible(Charset charset) {
-        throw new IllegalArgumentException("String is not compatible with: " + charset);
-    }
-
-    @ForceInline
-    private static void checkCompatibleWith(String string, Charset charset) {
-        if (!compatibleWith(string, charset)) {
-            throwNotCompatible(charset);
-        }
-    }
-
-    /**
-     * {@return a {@link ByteVector} loaded with 8-bit code units from the given {@link String},
-     * interpreted using the specified {@link Charset}}
-     *
-     * @param species the species of the desired vector
-     * @param string the string to load from
-     * @param charset the charset specifying the 8-bit code units
-     * @param offset the index of the first code unit to load
-     * @throws IllegalArgumentException if the string and charset are not
-     *         {@linkplain #compatibleWith(String, Charset) compatible}
-     * @throws IndexOutOfBoundsException
-     *         if {@code offset < 0} or {@code offset > string.length() - species.length()}
-     * @see #compatibleWith(String, Charset)
-     * @since 28
-     */
-    @ForceInline
-    public static ByteVector fromString(VectorSpecies<Byte> species, String string, Charset charset, int offset) {
-        Objects.requireNonNull(species);
-        checkCompatibleWith(string, charset);
-        offset = checkFromIndexSize(offset, species.length(), string.length());
-        return fromMemorySegment(species, StringSupport.asReadOnlyMemorySegment(string), offset, ByteOrder.nativeOrder());
-    }
-
-    /**
-     * {@return a {@link ByteVector} loaded with 8-bit code units from the given {@link String},
-     * interpreted using the specified {@link Charset}}
-     *
-     * @param species the species of the desired vector
-     * @param string the string to load from
-     * @param charset the charset specifying the 8-bit code units
-     * @param offset the index of the first code unit to load
-     * @param m the mask controlling lane selection
-     * @throws IllegalArgumentException if the string and charset are not
-     *         {@linkplain #compatibleWith(String, Charset) compatible}
-     * @throws IndexOutOfBoundsException
-     *         if {@code offset+N < 0} or {@code offset+N >= string.length()}
-     *         for any lane {@code N} in the vector where the mask is set
-     * @see #compatibleWith(String, Charset)
-     * @since 28
-     */
-    @ForceInline
-    public static ByteVector fromString(VectorSpecies<Byte> species, String string, Charset charset, int offset, VectorMask<Byte> m) {
-        Objects.requireNonNull(species);
-        Objects.requireNonNull(m);
-        checkCompatibleWith(string, charset);
-        return fromMemorySegment(species, StringSupport.asReadOnlyMemorySegment(string), offset, ByteOrder.nativeOrder(), m);
-    }
-
-    /**
      * {@inheritDoc} <!--workaround-->
      * @since 19
      */
@@ -4077,6 +3980,17 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                         (arr_, off_, i) -> (byte) (arr_[off_ + i] ? 1 : 0)));
+    }
+
+    /*package-private*/ abstract
+    ByteVector fromString0(String s, int offset);
+    @ForceInline
+    final
+    ByteVector fromString0Template(String s, int offset) {
+        ByteSpecies vsp = vspecies();
+        return StringVectorSupport.loadStringCodeUnits(
+                s, 1, vsp.vectorType(), vsp.laneCount(), offset, vsp,
+                (str, idx, sp) -> sp.ldOp(str, (int) idx, (s_, off_, i) -> (byte) s_.charAt(off_ + i)));
     }
 
     abstract

@@ -1453,6 +1453,20 @@ final class $vectortype$ extends $abstractvectortype$ {
     $abstractvectortype$ fromCharArray0(char[] a, int offset, VectorMask<$Boxtype$> m, int offsetInRange) {
         return super.fromCharArray0Template($masktype$.class, a, offset, ($masktype$) m, offsetInRange);  // specialize
     }
+
+    @ForceInline
+    @Override
+    final
+    $abstractvectortype$ fromString0(String s, int offset) {
+        return super.fromString0Template($bytevectortype$.VSPECIES, s, offset); // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    $abstractvectortype$ fromStringLatin1_0(String s, int offset) {
+        return super.fromStringLatin1Template($halfbytevectortype$.VSPECIES, s, offset); // specialize
+    }
 #end[strictShort]
 
 #if[byte]
@@ -1468,6 +1482,13 @@ final class $vectortype$ extends $abstractvectortype$ {
     final
     $abstractvectortype$ fromBooleanArray0(boolean[] a, int offset, VectorMask<$Boxtype$> m, int offsetInRange) {
         return super.fromBooleanArray0Template($masktype$.class, a, offset, ($masktype$) m, offsetInRange);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    $abstractvectortype$ fromString0(String s, int offset) {
+        return super.fromString0Template(s, offset); // specialize
     }
 #end[byte]
 

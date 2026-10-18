@@ -24,16 +24,13 @@
 
 package org.openjdk.bench.jdk.incubator.vector;
 
-import static jdk.incubator.vector.VectorOperators.*;
 import static jdk.incubator.vector.VectorOperators.EQ;
 
-import jdk.incubator.vector.ByteVector;
+import jdk.incubator.vector.ShortVector;
 import jdk.incubator.vector.VectorSpecies;
 
-import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
@@ -44,15 +41,10 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
-import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-/** Compares vector and scalar loops over a Latin-1 String. */
+/** Compares vector and scalar loops over a String. */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
@@ -62,127 +54,90 @@ import java.util.concurrent.TimeUnit;
         value = 3,
         jvmArgs = {"--add-modules=jdk.incubator.vector"})
 public class StringLoadBenchmark {
-    static final VectorSpecies<Byte> SPECIES = ByteVector.SPECIES_PREFERRED;
+    static final VectorSpecies<Short> SPECIES = ShortVector.SPECIES_PREFERRED;
 
-    static final byte NEEDLE = (byte) 'a';
+    static final char NEEDLE = 'a';
 
-    @Param({"16", "32", "64", "128", "1024"})
+    @Param({"16", "64", "1024"})
     private int size;
 
+    @Param({"latin1", "utf16"})
+    private String charset;
+
     private String text;
-    private byte[] textBytes;
-    private MemorySegment heapSegment;
-    private MemorySegment nativeSegment;
+    private char[] textChars;
 
     @Setup
     public void setup() {
-        System.out.println("# SPECIES: " + SPECIES + " (" + SPECIES.length() + " lanes)");
         Random random = new Random(42);
         StringBuilder sb = new StringBuilder(size);
         for (int i = 0; i < size; i++) {
             sb.append((char) random.nextInt(256));
         }
+        if (charset.equals("utf16")) {
+            sb.setCharAt(0, '\u0100');
+        }
         text = sb.toString();
-        textBytes = text.getBytes(StandardCharsets.ISO_8859_1);
-        heapSegment = MemorySegment.ofArray(textBytes).asReadOnly();
-        nativeSegment = Arena.ofAuto().allocate(size, 1);
-        MemorySegment.copy(textBytes, 0, nativeSegment, ValueLayout.JAVA_BYTE, 0, size);
+        textChars = text.toCharArray();
+        int expected = scalar();
+        check("toCharArray", expected, toCharArray());
+        check("fromCharArray", expected, fromCharArray());
+        check("fromString", expected, fromString());
+    }
+
+    private static void check(String name, int expected, int actual) {
+        if (actual != expected) {
+            throw new AssertionError(name + ": expected " + expected + ", got " + actual);
+        }
     }
 
     @Benchmark
     public int scalar() {
-        return countScalar(text, (char) (NEEDLE & 0xFF), size);
+        int count = 0;
+        for (int i = 0; i < size; i++) {
+            if (text.charAt(i) == NEEDLE) {
+                count++;
+            }
+        }
+        return count;
     }
 
     @Benchmark
-    public int getBytesFromArray() {
-        return countArray(text.getBytes(StandardCharsets.ISO_8859_1), NEEDLE, size);
+    public int toCharArray() {
+        return countChars(text.toCharArray(), size);
+    }
+
+    @Benchmark
+    public int fromCharArray() {
+        return countChars(textChars, size);
     }
 
     @Benchmark
     public int fromString() {
-        return countString(text, NEEDLE, size);
-    }
-
-    @Benchmark
-    public int segment() {
-        return countSegment(heapSegment, NEEDLE, size);
-    }
-
-    @Benchmark
-    public int fromArray() {
-        return countArray(textBytes, NEEDLE, size);
-    }
-
-    @Benchmark
-    public int monomorphic() {
-        return countSegmentNotInlined(heapSegment, NEEDLE, size)
-                + countSegmentNotInlined(heapSegment, NEEDLE, size);
-    }
-
-    @Benchmark
-    public int polluted() {
-        return countSegmentNotInlined(heapSegment, NEEDLE, size)
-                + countSegmentNotInlined(nativeSegment, NEEDLE, size);
-    }
-
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private int countSegmentNotInlined(MemorySegment segment, byte needle, int len) {
-        return countSegment(segment, needle, len);
-    }
-
-    private static int countScalar(String s, char needle, int len) {
-        int count = 0;
-        for (int i = 0; i < len; i++) {
-            if (s.charAt(i) == needle) {
-                count++;
-            }
-        }
-        return count;
-    }
-
-    private static int countArray(byte[] bytes, byte needle, int len) {
         int count = 0;
         int i = 0;
-        for (; i < SPECIES.loopBound(len); i += SPECIES.length()) {
-            count += ByteVector.fromArray(SPECIES, bytes, i).compare(EQ, needle).trueCount();
-        }
-        for (; i < len; i++) {
-            if (bytes[i] == needle) {
-                count++;
-            }
-        }
-        return count;
-    }
-
-    private static int countString(String s, byte needle, int len) {
-        int count = 0;
-        int i = 0;
-        for (; i < SPECIES.loopBound(len); i += SPECIES.length()) {
+        for (; i < SPECIES.loopBound(size); i += SPECIES.length()) {
             count +=
-                    ByteVector.fromString(SPECIES, s, StandardCharsets.ISO_8859_1, i)
-                            .compare(EQ, needle)
+                    ShortVector.fromString(SPECIES, text, i)
+                            .compare(EQ, (short) NEEDLE)
                             .trueCount();
         }
-        for (; i < len; i++) {
-            if ((byte) s.charAt(i) == needle) {
+        for (; i < size; i++) {
+            if (text.charAt(i) == NEEDLE) {
                 count++;
             }
         }
         return count;
     }
 
-    private static int countSegment(MemorySegment segment, byte needle, int len) {
+    private static int countChars(char[] chars, int size) {
         int count = 0;
         int i = 0;
-        for (; i < SPECIES.loopBound(len); i += SPECIES.length()) {
-            count +=
-                    ByteVector.fromMemorySegment(SPECIES, segment, i, ByteOrder.nativeOrder())
-                            .compare(EQ, needle)
-                            .trueCount();
+        for (; i < SPECIES.loopBound(size); i += SPECIES.length()) {
+            count += ShortVector.fromCharArray(SPECIES, chars, i).compare(EQ, (short) NEEDLE).trueCount();
         }
-        for (; i < len; i++) {
-            if (segment.get(ValueLayout.JAVA_BYTE, i) == needle) {
+        for (; i < size; i++) {
+            if (chars[i] == NEEDLE) {
                 count++;
             }
         }

@@ -988,6 +988,20 @@ final class ShortVectorMax extends ShortVector {
         return super.fromCharArray0Template(ShortMaskMax.class, a, offset, (ShortMaskMax) m, offsetInRange);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    ShortVector fromString0(String s, int offset) {
+        return super.fromString0Template(ByteVectorMax.VSPECIES, s, offset); // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    ShortVector fromStringLatin1_0(String s, int offset) {
+        return super.fromStringLatin1Template(ByteVectorMax.VSPECIES, s, offset); // specialize
+    }
+
 
     @ForceInline
     @Override

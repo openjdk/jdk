@@ -55,6 +55,7 @@ import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
 import jdk.internal.vm.StackableScope;
 import jdk.internal.vm.ThreadContainer;
+import jdk.internal.vm.vector.VectorSupport;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
 
@@ -492,9 +493,16 @@ public interface JavaLangAccess {
     byte stringCoder(String str);
 
     /**
-     * {@return a {@linkplain MemorySegment#isReadOnly() read-only} {@link MemorySegment} of the given {@link String}}
+     * The code unit size of the String, in bytes.
      */
-    MemorySegment asReadOnlyMemorySegment(String str);
+    int stringCodeUnitSize(String s);
+
+    /**
+     * Loads the string's code units into a vector.
+     */
+    <VM extends VectorSupport.VectorPayload, E, S extends VectorSupport.VectorSpecies<E>>
+    VM loadStringCodeUnits(String s, int unitSize, Class<? extends VM> vmClass, int byteLanes, int index,
+                           S species, VectorSupport.LoadOperation<String, VM, S> fallback);
 
     /**
      * Join strings

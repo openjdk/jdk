@@ -27,18 +27,15 @@ package jdk.incubator.vector;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.StringSupport;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.vector.StringVectorSupport;
 import jdk.internal.vm.vector.VectorSupport;
 
 import static jdk.internal.vm.vector.VectorSupport.*;
@@ -3372,121 +3369,56 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
     }
 
     /**
-     * {@return {@code true} if the given {@link String} can be loaded into a {@link ShortVector} as 16-bit
-     * code units in the specified {@link Charset} without copying or transcoding}
+     * {@return a {@link ShortVector} loaded with the {@code char} values of a given {@link String}.}
      *
-     * <p>This method does not load or inspect the string's contents.
-     *
-     * <p>The result depends on the string's internal representation, not its contents. A {@code false}
-     * result does not guarantee the string cannot be represented in the given charset, and the result may
-     * change between implementations and releases.
-     *
-     * @apiNote This method is intended to be used as a guard for
-     * {@link ShortVector#fromString(VectorSpecies, String, Charset, int)}. For example:
-     * {@snippet lang=java :
-     * if (ByteVector.compatibleWith(s, StandardCharsets.ISO_8859_1)) {
-     *     // vector loop over ByteVector.fromString
-     * } else if (ShortVector.compatibleWith(s, StandardCharsets.UTF_16)) {
-     *     // vector loop over ShortVector.fromString
-     * } else {
-     *     // scalar loop over String.charAt
-     * }
-     * }
-     *
-     * @param string the string to test
-     * @param charset the charset specifying the 16-bit code units
-     * @see ShortVector#fromString(VectorSpecies, String, Charset, int)
-     * @since 28
-     */
-    @ForceInline
-    public static boolean compatibleWith(String string, Charset charset) {
-        Objects.requireNonNull(string);
-        Objects.requireNonNull(charset);
-        return charset == StandardCharsets.UTF_16;
-    }
-
-    @DontInline
-    private static void throwNotCompatible(Charset charset) {
-        throw new IllegalArgumentException("String is not compatible with: " + charset);
-    }
-
-    @ForceInline
-    private static void checkCompatibleWith(String string, Charset charset) {
-        if (!compatibleWith(string, charset)) {
-            throwNotCompatible(charset);
-        }
-    }
-
-    /**
-     * {@return a {@link ShortVector} loaded with 16-bit code units from the given {@link String},
-     * interpreted using the specified {@link Charset}}
+     * <p>Lane {@code N} is {@code (short) string.charAt(offset + N)}.
      *
      * @param species the species of the desired vector
-     * @param string the string to load from
-     * @param charset the charset specifying the 16-bit code units
-     * @param offset the index of the first code unit to load
-     * @throws IllegalArgumentException if the string and charset are not
-     *         {@linkplain #compatibleWith(String, Charset) compatible}
+     * @param string the string to load {@code char} values from
+     * @param offset the index of the first {@code char} to load
      * @throws IndexOutOfBoundsException
      *         if {@code offset < 0} or {@code offset > string.length() - species.length()}
-     * @see #compatibleWith(String, Charset)
      * @since 28
      */
     @ForceInline
-    public static ShortVector fromString(VectorSpecies<Short> species, String string, Charset charset, int offset) {
+    public static ShortVector fromString(VectorSpecies<Short> species, String string, int offset) {
         Objects.requireNonNull(species);
-        checkCompatibleWith(string, charset);
-        offset = checkFromIndexSize(offset, species.length(), string.length());
-        byte coder = StringSupport.stringCoder(string);
-        MemorySegment segment = StringSupport.asReadOnlyMemorySegment(string);
-        if (coder == 0) {
-            VectorSpecies<Byte> byteSpecies = species.withLanes(byte.class);
-            ByteVector byteVector;
-            if (VectorIntrinsics.indexInRange(offset, byteSpecies.vectorByteSize(), string.length())) {
-                byteVector = ByteVector.fromMemorySegment(byteSpecies, segment, offset, ByteOrder.nativeOrder());
-            } else {
-                VectorMask<Byte> byteMask = byteSpecies.indexInRange(0, species.length());
-                byteVector = ByteVector.fromMemorySegment(byteSpecies, segment, offset, ByteOrder.nativeOrder(), byteMask);
-            }
-            return (ShortVector) byteVector.convertShape(ZERO_EXTEND_B2S, species, 0);
-        } else {
-            return fromMemorySegment(species, segment, (long) offset << 1, ByteOrder.nativeOrder());
+        ShortSpecies vsp = (ShortSpecies) species;
+        offset = checkFromIndexSize(offset, vsp.length(), string.length());
+        if (StringVectorSupport.stringCodeUnitSize(string) == 2) {
+            return vsp.dummyVector().fromString0(string, offset);
         }
+        return vsp.dummyVector().fromStringLatin1_0(string, offset);
     }
 
     /**
-     * {@return a {@link ShortVector} loaded with 16-bit code units from the given {@link String},
-     * interpreted using the specified {@link Charset}}
+     * {@return a {@link ShortVector} loaded with the {@code char} values of a given {@link String}.}
+     *
+     * <p>Lane {@code N} is {@code (short) string.charAt(offset + N)}.
      *
      * @param species the species of the desired vector
-     * @param string the string to load from
-     * @param charset the charset specifying the 16-bit code units
-     * @param offset the index of the first code unit to load
+     * @param string the string to load {@code char} values from
+     * @param offset the index of the first {@code char} to load
      * @param m the mask controlling lane selection
-     * @throws IllegalArgumentException if the string and charset are not
-     *         {@linkplain #compatibleWith(String, Charset) compatible}
      * @throws IndexOutOfBoundsException
      *         if {@code offset+N < 0} or {@code offset+N >= string.length()}
      *         for any lane {@code N} in the vector where the mask is set
-     * @see #compatibleWith(String, Charset)
      * @since 28
      */
     @ForceInline
-    public static ShortVector fromString(VectorSpecies<Short> species, String string, Charset charset, int offset, VectorMask<Short> m) {
+    public static ShortVector fromString(VectorSpecies<Short> species, String string, int offset, VectorMask<Short> m) {
         Objects.requireNonNull(species);
         Objects.requireNonNull(m);
-        checkCompatibleWith(string, charset);
-        byte coder = StringSupport.stringCoder(string);
-        MemorySegment segment = StringSupport.asReadOnlyMemorySegment(string);
-        if (coder == 0) {
-            VectorSpecies<Byte> byteSpecies = species.withLanes(byte.class);
-            VectorMask<Byte> byteMask = VectorMask.fromLong(byteSpecies, m.toLong());
-            ByteVector byteVector =
-                    ByteVector.fromMemorySegment(byteSpecies, segment, offset, ByteOrder.nativeOrder(), byteMask);
-            return (ShortVector) byteVector.convertShape(ZERO_EXTEND_B2S, species, 0);
-        } else {
-            return fromMemorySegment(species, segment, (long) offset << 1, ByteOrder.nativeOrder(), m);
+        ShortSpecies vsp = (ShortSpecies) species;
+        m.check(vsp);
+        if (indexInRange(offset, vsp.length(), string.length())) {
+            ShortVector v = StringVectorSupport.stringCodeUnitSize(string) == 2
+                    ? vsp.dummyVector().fromString0(string, offset)
+                    : vsp.dummyVector().fromStringLatin1_0(string, offset);
+            return v.blend((short) 0, m.not());
         }
+        ((AbstractMask<Short>) m).checkIndexByLane(offset, string.length(), vsp.iota(), 1);
+        return vsp.ldOp(string, offset, m, (s_, o_, i) -> (short) s_.charAt(o_ + i));
     }
 
 
@@ -4068,6 +4000,37 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
                 a, offset, vsp,
                 (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                             (arr_, off_, i) -> (short) arr_[off_ + i]));
+    }
+
+    private static final boolean NATIVE_BIG_ENDIAN = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
+
+    /*package-private*/ abstract
+    ShortVector fromString0(String s, int offset);
+    @ForceInline
+    final
+    ShortVector fromString0Template(ByteVector.ByteSpecies bsp, String s, int offset) {
+        ByteVector bv = StringVectorSupport.loadStringCodeUnits(
+                s, 2, bsp.vectorType(), bsp.laneCount(), offset, bsp,
+                (str, idx, sp) -> sp.ldOp(str, (int) idx, (s_, off_, i) -> {
+                    char c = s_.charAt(off_ + (i >> 1));
+                    boolean lowByte = ((i & 1) == 0) != NATIVE_BIG_ENDIAN;
+                    return (byte) (lowByte ? c : c >> 8);
+                }));
+        ShortVector v = bv.reinterpretAsShorts();
+        return NATIVE_BIG_ENDIAN ? v.lanewise(VectorOperators.REVERSE_BYTES) : v;
+    }
+
+    /*package-private*/ abstract
+    ShortVector fromStringLatin1_0(String s, int offset);
+    @ForceInline
+    final
+    ShortVector fromStringLatin1Template(ByteVector.ByteSpecies bsp, String s, int offset) {
+        ShortSpecies vsp = vspecies();
+        if (bsp.length() == vsp.length() || offset <= s.length() - bsp.length()) {
+            return (ShortVector) bsp.dummyVector().fromString0(s, offset)
+                    .convertShape(VectorOperators.ZERO_EXTEND_B2S, vsp, 0);
+        }
+        return vsp.ldOp(s, offset, (s_, o_, i) -> (short) s_.charAt(o_ + i));
     }
 
 

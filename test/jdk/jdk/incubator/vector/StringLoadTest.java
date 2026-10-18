@@ -26,6 +26,7 @@
  * @bug 8390049
  * @modules jdk.incubator.vector
  * @run junit/othervm -XX:+CompactStrings StringLoadTest
+ * @run junit/othervm -XX:-CompactStrings StringLoadTest
  */
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,19 +37,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class StringLoadTest {
 
-    private static final List<VectorSpecies<Byte>> BYTE_SPECIES =
-            List.of(
-                    ByteVector.SPECIES_64,
-                    ByteVector.SPECIES_128,
-                    ByteVector.SPECIES_256,
-                    ByteVector.SPECIES_512,
-                    ByteVector.SPECIES_MAX);
     private static final List<VectorSpecies<Short>> SHORT_SPECIES =
             List.of(
                     ShortVector.SPECIES_64,
@@ -61,10 +53,8 @@ public class StringLoadTest {
     @MethodSource("strings")
     public void testShortVector(String string) {
         for (VectorSpecies<Short> species : SHORT_SPECIES) {
-            assertTrue(ShortVector.compatibleWith(string, StandardCharsets.UTF_16));
             for (int i = 0; i <= string.length() - species.length(); i++) {
-                ShortVector vec =
-                        ShortVector.fromString(species, string, StandardCharsets.UTF_16, i);
+                ShortVector vec = ShortVector.fromString(species, string, i);
                 for (int lane = 0; lane < species.length(); lane++) {
                     assertEquals(
                             (short) string.charAt(i + lane),
@@ -80,66 +70,12 @@ public class StringLoadTest {
     @MethodSource("strings")
     public void testShortVectorMask(String string) {
         for (VectorSpecies<Short> species : SHORT_SPECIES) {
-            assertTrue(ShortVector.compatibleWith(string, StandardCharsets.UTF_16));
             for (int i = 0; i <= string.length(); i++) {
                 VectorMask<Short> mask = species.indexInRange(i, string.length());
-                ShortVector vec =
-                        ShortVector.fromString(species, string, StandardCharsets.UTF_16, i, mask);
+                ShortVector vec = ShortVector.fromString(species, string, i, mask);
                 for (int lane = 0; lane < species.length(); lane++) {
                     short expected =
                             (i + lane < string.length()) ? (short) string.charAt(i + lane) : 0;
-                    assertEquals(
-                            expected,
-                            vec.lane(lane),
-                            String.format(
-                                    "mismatch at offset %d for lane %d in %s", i, lane, string));
-                }
-            }
-        }
-    }
-
-    @ParameterizedTest
-    @MethodSource("strings")
-    public void testByteVector(String string) {
-        boolean isLatin1 = string.chars().allMatch(c -> c <= 0xFF);
-        if (!isLatin1) {
-            assertFalse(ByteVector.compatibleWith(string, StandardCharsets.ISO_8859_1));
-            return;
-        }
-        for (VectorSpecies<Byte> species : BYTE_SPECIES) {
-            assertTrue(ByteVector.compatibleWith(string, StandardCharsets.ISO_8859_1));
-            for (int i = 0; i <= string.length() - species.length(); i++) {
-                ByteVector vec =
-                        ByteVector.fromString(species, string, StandardCharsets.ISO_8859_1, i);
-                for (int lane = 0; lane < species.length(); lane++) {
-                    assertEquals(
-                            (byte) string.charAt(i + lane),
-                            vec.lane(lane),
-                            String.format(
-                                    "mismatch at offset %d for lane %d in %s", i, lane, string));
-                }
-            }
-        }
-    }
-
-    @ParameterizedTest
-    @MethodSource("strings")
-    public void testByteVectorMask(String string) {
-        boolean isLatin1 = string.chars().allMatch(c -> c <= 0xFF);
-        if (!isLatin1) {
-            assertFalse(ByteVector.compatibleWith(string, StandardCharsets.ISO_8859_1));
-            return;
-        }
-        for (VectorSpecies<Byte> species : BYTE_SPECIES) {
-            assertTrue(ByteVector.compatibleWith(string, StandardCharsets.ISO_8859_1));
-            for (int i = 0; i <= string.length(); i++) {
-                VectorMask<Byte> mask = species.indexInRange(i, string.length());
-                ByteVector vec =
-                        ByteVector.fromString(
-                                species, string, StandardCharsets.ISO_8859_1, i, mask);
-                for (int lane = 0; lane < species.length(); lane++) {
-                    byte expected =
-                            (i + lane < string.length()) ? (byte) string.charAt(i + lane) : 0;
                     assertEquals(
                             expected,
                             vec.lane(lane),
@@ -156,175 +92,40 @@ public class StringLoadTest {
         String string = "a".repeat(species.length());
         VectorMask<Short> mask = species.indexInRange(0, string.length());
 
-        assertTrue(ShortVector.compatibleWith(string, StandardCharsets.UTF_16));
-        assertThrows(
-                NullPointerException.class,
-                () -> ShortVector.compatibleWith(null, StandardCharsets.UTF_16));
-        assertThrows(NullPointerException.class, () -> ShortVector.compatibleWith(string, null));
+        assertNotNull(ShortVector.fromString(species, string, 0));
+        assertThrows(NullPointerException.class, () -> ShortVector.fromString(null, string, 0));
+        assertThrows(NullPointerException.class, () -> ShortVector.fromString(species, null, 0));
 
-        assertNotNull(ShortVector.fromString(species, string, StandardCharsets.UTF_16, 0));
+        assertNotNull(ShortVector.fromString(species, string, 0, mask));
         assertThrows(
-                NullPointerException.class,
-                () -> ShortVector.fromString(null, string, StandardCharsets.UTF_16, 0));
+                NullPointerException.class, () -> ShortVector.fromString(null, string, 0, mask));
         assertThrows(
-                NullPointerException.class,
-                () -> ShortVector.fromString(species, null, StandardCharsets.UTF_16, 0));
+                NullPointerException.class, () -> ShortVector.fromString(species, null, 0, mask));
         assertThrows(
-                NullPointerException.class, () -> ShortVector.fromString(species, string, null, 0));
-
-        assertNotNull(ShortVector.fromString(species, string, StandardCharsets.UTF_16, 0, mask));
-        assertThrows(
-                NullPointerException.class,
-                () -> ShortVector.fromString(null, string, StandardCharsets.UTF_16, 0, mask));
-        assertThrows(
-                NullPointerException.class,
-                () -> ShortVector.fromString(species, null, StandardCharsets.UTF_16, 0, mask));
-        assertThrows(
-                NullPointerException.class,
-                () -> ShortVector.fromString(species, string, null, 0, mask));
-        assertThrows(
-                NullPointerException.class,
-                () -> ShortVector.fromString(species, string, StandardCharsets.UTF_16, 0, null));
+                NullPointerException.class, () -> ShortVector.fromString(species, string, 0, null));
 
         assertThrows(
-                IllegalArgumentException.class,
-                () -> ShortVector.fromString(species, string, StandardCharsets.UTF_8, 0));
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> ShortVector.fromString(species, string, StandardCharsets.UTF_8, 0, mask));
-
+                IndexOutOfBoundsException.class, () -> ShortVector.fromString(species, string, -1));
         assertThrows(
                 IndexOutOfBoundsException.class,
-                () -> ShortVector.fromString(species, string, StandardCharsets.UTF_16, -1));
+                () -> ShortVector.fromString(species, string, string.length()));
         assertThrows(
                 IndexOutOfBoundsException.class,
                 () ->
                         ShortVector.fromString(
-                                species, string, StandardCharsets.UTF_16, string.length()));
+                                species, string, string.length() - species.length() + 1));
+
+        assertThrows(
+                IndexOutOfBoundsException.class,
+                () -> ShortVector.fromString(species, string, -1, mask));
+        assertThrows(
+                IndexOutOfBoundsException.class,
+                () -> ShortVector.fromString(species, string, string.length(), mask));
         assertThrows(
                 IndexOutOfBoundsException.class,
                 () ->
                         ShortVector.fromString(
-                                species,
-                                string,
-                                StandardCharsets.UTF_16,
-                                string.length() - species.length() + 1));
-
-        assertThrows(
-                IndexOutOfBoundsException.class,
-                () -> ShortVector.fromString(species, string, StandardCharsets.UTF_16, -1, mask));
-        assertThrows(
-                IndexOutOfBoundsException.class,
-                () ->
-                        ShortVector.fromString(
-                                species, string, StandardCharsets.UTF_16, string.length(), mask));
-        assertThrows(
-                IndexOutOfBoundsException.class,
-                () ->
-                        ShortVector.fromString(
-                                species,
-                                string,
-                                StandardCharsets.UTF_16,
-                                string.length() - species.length() + 1,
-                                mask));
-    }
-
-    @Test
-    public void testByteExceptions() {
-        VectorSpecies<Byte> species = ByteVector.SPECIES_PREFERRED;
-        String string = "a".repeat(species.length());
-        VectorMask<Byte> mask = species.indexInRange(0, string.length());
-
-        assertTrue(ByteVector.compatibleWith(string, StandardCharsets.ISO_8859_1));
-        assertThrows(
-                NullPointerException.class,
-                () -> ByteVector.compatibleWith(null, StandardCharsets.ISO_8859_1));
-        assertThrows(NullPointerException.class, () -> ByteVector.compatibleWith(string, null));
-
-        assertNotNull(ByteVector.fromString(species, string, StandardCharsets.ISO_8859_1, 0));
-        assertThrows(
-                NullPointerException.class,
-                () -> ByteVector.fromString(null, string, StandardCharsets.ISO_8859_1, 0));
-        assertThrows(
-                NullPointerException.class,
-                () -> ByteVector.fromString(species, null, StandardCharsets.ISO_8859_1, 0));
-        assertThrows(
-                NullPointerException.class, () -> ByteVector.fromString(species, string, null, 0));
-
-        assertNotNull(ByteVector.fromString(species, string, StandardCharsets.ISO_8859_1, 0, mask));
-        assertThrows(
-                NullPointerException.class,
-                () -> ByteVector.fromString(null, string, StandardCharsets.ISO_8859_1, 0, mask));
-        assertThrows(
-                NullPointerException.class,
-                () -> ByteVector.fromString(species, null, StandardCharsets.ISO_8859_1, 0, mask));
-        assertThrows(
-                NullPointerException.class,
-                () -> ByteVector.fromString(species, string, null, 0, mask));
-        assertThrows(
-                NullPointerException.class,
-                () -> ByteVector.fromString(species, string, StandardCharsets.ISO_8859_1, 0, null));
-
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> ByteVector.fromString(species, string, StandardCharsets.UTF_8, 0));
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> ByteVector.fromString(species, string, StandardCharsets.UTF_8, 0, mask));
-
-        assertThrows(
-                IndexOutOfBoundsException.class,
-                () -> ByteVector.fromString(species, string, StandardCharsets.ISO_8859_1, -1));
-        assertThrows(
-                IndexOutOfBoundsException.class,
-                () ->
-                        ByteVector.fromString(
-                                species, string, StandardCharsets.ISO_8859_1, string.length()));
-        assertThrows(
-                IndexOutOfBoundsException.class,
-                () ->
-                        ByteVector.fromString(
-                                species,
-                                string,
-                                StandardCharsets.ISO_8859_1,
-                                string.length() - species.length() + 1));
-
-        assertThrows(
-                IndexOutOfBoundsException.class,
-                () ->
-                        ByteVector.fromString(
-                                species, string, StandardCharsets.ISO_8859_1, -1, mask));
-        assertThrows(
-                IndexOutOfBoundsException.class,
-                () ->
-                        ByteVector.fromString(
-                                species,
-                                string,
-                                StandardCharsets.ISO_8859_1,
-                                string.length(),
-                                mask));
-        assertThrows(
-                IndexOutOfBoundsException.class,
-                () ->
-                        ByteVector.fromString(
-                                species,
-                                string,
-                                StandardCharsets.ISO_8859_1,
-                                string.length() - species.length() + 1,
-                                mask));
-    }
-
-    @ParameterizedTest
-    @MethodSource("strings")
-    public void compatibleWith(String string) {
-        for (Charset charset : Charset.availableCharsets().values()) {
-            boolean isLatin1 = string.chars().allMatch(c -> c <= 0xFF);
-            boolean byteCompatible = isLatin1 && charset == StandardCharsets.ISO_8859_1;
-            assertEquals(byteCompatible, ByteVector.compatibleWith(string, charset));
-
-            boolean shortCompatible = charset == StandardCharsets.UTF_16;
-            assertEquals(shortCompatible, ShortVector.compatibleWith(string, charset));
-        }
+                                species, string, string.length() - species.length() + 1, mask));
     }
 
     private static String repeat(String string) {
