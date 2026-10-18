@@ -182,13 +182,17 @@ public final class LinuxRISCV64CFrame extends DwarfCFrame {
 
    @Override
    protected Address getSenderFP(Address senderFP) {
-     if (senderFP != null || dwarf() != null) {
-       return super.getSenderFP(senderFP);
+     try {
+       if (senderFP != null || dwarf() != null) {
+         return super.getSenderFP(senderFP);
+       }
+       // frame::link() in frame_riscv.inline.hpp reads the saved FP register at FP + link_offset (-2 words).
+       return fp() == null
+         ? null
+         : fp().getAddressAt(C_FRAME_LINK_OFFSET * VM.getVM().getAddressSize());
+     } catch (UnmappedAddressException | UnalignedAddressException _) {
+       return null;
      }
-     // frame::link() in frame_riscv.inline.hpp reads the saved FP register at FP + link_offset (-2 words).
-     return fp() == null
-       ? null
-       : fp().getAddressAt(C_FRAME_LINK_OFFSET * VM.getVM().getAddressSize());
    }
 
    @Override
