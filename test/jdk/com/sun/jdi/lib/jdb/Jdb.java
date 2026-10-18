@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,15 +35,17 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.StreamPumper;
 
 public class Jdb implements AutoCloseable {
     public Jdb(String... args) {
-        ProcessBuilder pb = new ProcessBuilder(JDKToolFinder.getTestJDKTool("jdb"));
-        pb.command().add("-J-Duser.language=en");
-        pb.command().add("-J-Duser.country=US");
+        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jdb")
+                .addVMArgs(Utils.getTestJavaOpts())
+                .addVMArg("-Duser.language=en")
+                .addVMArg("-Duser.country=US");
+        ProcessBuilder pb = new ProcessBuilder(launcher.getCommand());
         pb.command().addAll(Arrays.asList(args));
         try {
             jdb = pb.start();
