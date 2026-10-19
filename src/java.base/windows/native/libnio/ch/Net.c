@@ -418,9 +418,11 @@ Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
     }
 
     /**
-     * Setting IP_TOS option requires clearing the lowest bit (representing the "unused" bit)
-     * of the value. NET_SetSockOpt handles the value conversion as well as a fallback mechanism
-     * if the value cannot be set.
+     * Setting IP_TOS option requires clearing the
+     * lowest bit (representing the "unused" bit)
+     * of the value. NET_SetSockOpt handles the
+     * value conversion as well as a fallback
+     * mechanism if the value cannot be set.
      */
     if (level == IPPROTO_IP && opt == IP_TOS) {
         mayNeedConversion = JNI_TRUE;
