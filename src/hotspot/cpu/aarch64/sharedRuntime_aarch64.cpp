@@ -645,7 +645,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
       // compiled code so we may not have buffers to back the value
       // objects. Allocate the buffers here with a runtime call for
       // the value arguments that needs a buffer.
-      RegisterSaver reg_save(true /* save_vectors */);
+      RegisterSaver reg_save(false /* save_vectors */);
       OopMap* map = reg_save.save_live_registers(masm, 0, &frame_size_in_words);
 
       frame_complete = __ offset();

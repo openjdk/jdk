@@ -28,6 +28,7 @@
 #include "cds/aotLogging.hpp"
 #include "cds/aotMapLogger.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
@@ -37,12 +38,10 @@
 #include "cds/heapShared.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoader.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
-#include "code/aotCodeCache.hpp"
 #include "interpreter/abstractInterpreter.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
@@ -183,6 +182,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _ptrmap(mtClassShared),
   _rw_ptrmap(mtClassShared),
   _ro_ptrmap(mtClassShared),
+  _ac_ptrmap(mtClassShared),
   _rw_src_objs(),
   _ro_src_objs(),
   _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
@@ -322,9 +322,9 @@ void ArchiveBuilder::sort_klasses() {
 
 address ArchiveBuilder::reserve_buffer() {
   // On 64-bit: reserve address space for archives up to the max encoded offset limit.
-  // On 32-bit: use 256MB + AOT code size due to limited virtual address space.
+  // On 32-bit: use 256MB due to limited virtual address space.
   size_t buffer_size = LP64_ONLY(AOTCompressedPointers::MaxMetadataOffsetBytes)
-                       NOT_LP64(256 * M + AOTCodeCache::max_aot_code_size());
+                       NOT_LP64(256 * M);
   ReservedSpace rs = MemoryReserver::reserve(buffer_size,
                                              AOTMetaspace::core_region_alignment(),
                                              os::vm_page_size(),
@@ -437,11 +437,6 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
   SourceObjInfo src_info(ref, read_only, follow_mode);
   bool created;
   SourceObjInfo* p = _src_obj_table.put_if_absent(src_obj, src_info, &created);
-  if (created) {
-    if (_src_obj_table.maybe_grow()) {
-      log_info(aot, hashtables)("Expanded _src_obj_table table to %d", _src_obj_table.table_size());
-    }
-  }
 
 #ifdef ASSERT
   if (ref->type() == MetaspaceClosureType::MethodType) {
@@ -659,9 +654,6 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
     bool created;
     _buffered_to_src_table.put_if_absent((address)dest, src, &created);
     assert(created, "must be");
-    if (_buffered_to_src_table.maybe_grow()) {
-      log_info(aot, hashtables)("Expanded _buffered_to_src_table table to %d", _buffered_to_src_table.table_size());
-    }
   }
 
   intptr_t* archived_vtable = CppVtables::get_archived_vtable(src_info->type(), (address)dest);
@@ -1023,7 +1015,7 @@ narrowKlass ArchiveBuilder::get_requested_narrow_klass(Klass* k) {
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
-// RelocateBufferToRequested --- Relocate all the pointers in rw/ro,
+// RelocateBufferToRequested --- Relocate all the pointers in rw/ro/ac,
 // so that the archive can be mapped to the "requested" location without runtime relocation.
 //
 // - See ArchiveBuilder header for the definition of "buffer", "mapped" and "requested"
@@ -1145,11 +1137,12 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, AOTMappedHeapInfo* mapp
   write_region(mapinfo, AOTMetaspace::ac, &_ac_region, /*read_only=*/false,/*allow_exec=*/false);
 
   // Split pointer map into read-write and read-only bitmaps
-  ArchivePtrMarker::initialize_rw_ro_maps(&_rw_ptrmap, &_ro_ptrmap);
+  ArchivePtrMarker::initialize_rw_ro_ac_maps(&_rw_ptrmap, &_ro_ptrmap, &_ac_ptrmap);
 
   size_t bitmap_size_in_bytes;
   char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::rw_ptrmap(),
                                               ArchivePtrMarker::ro_ptrmap(),
+                                              ArchivePtrMarker::ac_ptrmap(),
                                               mapped_heap_info,
                                               streamed_heap_info,
                                               bitmap_size_in_bytes);
@@ -1169,8 +1162,8 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, AOTMappedHeapInfo* mapp
   mapinfo->write_header();
   mapinfo->close();
 
+  aot_log_info(aot)("Full module graph = %s", CDSConfig::is_dumping_full_module_graph() ? "enabled" : "disabled");
   if (log_is_enabled(Info, aot)) {
-    log_info(aot)("Full module graph = %s", CDSConfig::is_dumping_full_module_graph() ? "enabled" : "disabled");
     print_stats();
   }
 

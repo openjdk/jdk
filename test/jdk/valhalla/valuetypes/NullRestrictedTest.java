@@ -27,6 +27,7 @@
  * @summary Test reflection and method handle on accessing a field of a null-restricted value class
  *          that may be flattened or non-flattened
  * @enablePreview
+ * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @run junit/othervm NullRestrictedTest
  * @run junit/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseFieldFlattening NullRestrictedTest
  */
