@@ -71,19 +71,6 @@ void shenandoah_elastic_loop(ShenandoahHeap* heap, TaskTerminator* terminator, W
   }
 }
 
-template<typename Adapter>
-ShenandoahElasticTask<Adapter>::ShenandoahElasticTask(ShenandoahHeap* heap, const Adapter &adapter, const char* name): WorkerTask(name)
-  , _heap(heap)
-  , _adapter(adapter)
-  , _terminator(_heap->workers()->active_workers(), &_adapter) {
-}
-
-template<typename Adapter>
-template<bool Cancellable, typename WorkFn>
-void ShenandoahElasticTask<Adapter>::elastic_loop(WorkFn work) {
-  shenandoah_elastic_loop<Cancellable>(_heap, &_terminator, work);
-}
-
 template<bool Cancellable, typename WorkFn>
 void ShenandoahElasticMonotonicTask::elastic_loop(WorkFn work) {
   if (!_coordinator->wait_for_work()) {
@@ -95,8 +82,7 @@ void ShenandoahElasticMonotonicTask::elastic_loop(WorkFn work) {
   SuspendibleThreadSetJoiner stsj(Cancellable);
   while (true) {
     if (Cancellable && heap->check_cancelled_gc_and_yield()) {
-      // The termination offer is withdrawn when a cycle cancellation is
-      // observed. The thread returns to the top of the loop here and exits.
+      // The work is cancelled
       break;
     }
 

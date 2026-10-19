@@ -54,29 +54,9 @@ enum class ShenandoahWorkResult {
   DidWork, NoWork, Retire
 };
 
+// Runs WorkFn on a variable number of threads. Only used for marking.
 template<bool Cancellable, typename WorkFn>
 void shenandoah_elastic_loop(ShenandoahHeap* heap, TaskTerminator* terminator, WorkFn work);
-
-
-// A small helper class to set up the required components for the elastic loop.
-// The adapter should be an implementation of the TaskQueueSetSuper interface.
-template <typename Adapter>
-class ShenandoahElasticTask : public WorkerTask {
-protected:
-  ShenandoahHeap* _heap;
-
-private:
-  Adapter _adapter;
-  TaskTerminator _terminator;
-
-public:
-  ShenandoahElasticTask(ShenandoahHeap* heap, const Adapter& adapter, const char* name);
-
-protected:
-  template<bool Cancellable, typename WorkFn>
-  void elastic_loop(WorkFn work);
-};
-
 
 // Holds fields to be shared by elastic tasks, needs to be
 // reachable by shController so that _admitted can be increased.

@@ -332,7 +332,7 @@ public:
 
   void retire();
   bool can_work() const override;
-  bool should_exit_termination(size_t tasks) override;
+  bool should_exit_termination() override;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
