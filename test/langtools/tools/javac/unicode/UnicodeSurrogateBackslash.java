@@ -27,11 +27,55 @@
  * @bug 8394548
  * @summary Incomplete Unicode escape surrogate pair causes incorrect backslash handling
  * @compile UnicodeSurrogateBackslash.java
+ * @run main UnicodeSurrogateBackslash
  */
-class UnicodeSurrogateBackslash {
 
-    // Both of these Strings should compile as: Escaped Unicode character, backslash character, then "u1234".
-    // The fact that in the second example the escaped Unicode character is a high surrogate shouldn't matter.
-    String a = "\u1234\\u1234";
-    String b = "\ud800\\u1234";
+import java.util.Arrays;
+
+public class UnicodeSurrogateBackslash {
+
+    record TestCase(String string, int value1, int value2) {
+        void check() {
+            final String expected = new String(new char[] {
+                (char)value1,
+                '\\',
+                'u',
+                Character.forDigit((value2 >> 12) & 0x0f, 16),
+                Character.forDigit((value2 >>  8) & 0x0f, 16),
+                Character.forDigit((value2 >>  4) & 0x0f, 16),
+                Character.forDigit((value2 >>  0) & 0x0f, 16)
+            });
+            if (!string.equals(expected))
+                throw new AssertionError(String.format("%s: expected \"%s\"", this, expected));
+        }
+
+        @Override
+        public String toString() {
+            return String.format("TestCase[string=\"%s\",value1=0x%04x,value2=0x%04x]", string, value1, value2);
+        }
+    }
+
+    // All of these Strings should compile as: Escaped Unicode character, backslash character, then "uXXXX" (for some X's).
+    // The value of the first escaped Unicode character should have no effect on how the rest of the string is parsed.
+    public static final TestCase[] TEST_CASES = new TestCase[] {
+
+        // These are the test cases from the original bug report
+        new TestCase("\u1234\\u1234", 0x1234, 0x1234),
+        new TestCase("\ud800\\u1234", 0xd800, 0x1234),
+
+        // Some other test cases
+        new TestCase("\u0000\\u0000", 0x0000, 0x0000),
+        new TestCase("\ud7ff\\u0000", 0xd7ff, 0x0000),
+        new TestCase("\uaaaa\\ud7ff", 0xaaaa, 0xd7ff),
+        new TestCase("\ud8ff\\ud8ff", 0xd8ff, 0xd8ff),
+        new TestCase("\udbff\\u1234", 0xdbff, 0x1234),
+        new TestCase("\udc01\\u1234", 0xdc01, 0x1234),
+        new TestCase("\ud888\\udccc", 0xd888, 0xdccc),
+        new TestCase("\ue123\\u1234", 0xe123, 0x1234),
+        new TestCase("\ueeee\\ueabc", 0xeeee, 0xeabc)
+    };
+
+    public static void main(String[] args) {
+        Arrays.asList(TEST_CASES).forEach(TestCase::check);
+    }
 }
