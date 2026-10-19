@@ -250,6 +250,14 @@ define CreateCompiledNativeFileBody
 	    $(ECHO) > $$($1_DEPS_TARGETS_FILE)
           endif
         endif
+
+    # Drop the variables that are only needed while parsing. There is one set
+    # per source file, and make walks all global variables every time it
+    # starts a recipe. The variables used by the recipes above must be kept.
+    $$(call UndefineVariables, $$(addprefix $1_, FILE CFLAGS CXXFLAGS \
+        EXTRA_CXXFLAGS OPT_CFLAGS OPT_CXXFLAGS USE_PCH_FLAGS WARNINGS_FLAGS \
+        BASE_CFLAGS BASE_CXXFLAGS BASE_ASFLAGS REL_ASM_SRC OBJ_DEPS VARDEPS \
+        VARDEPS_FILE VARDEPS_filename VARDEPS_old))
   endif
 endef
 
