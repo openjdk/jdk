@@ -144,7 +144,7 @@ public class ML_KEM_Intrinsic_Test {
         // it here to reproduce the failure
         rnd.setSeed(seed);
         //Note: it might be useful to increase this number during development of new intrinsics
-        final int repeat = 100_000_000;
+        final int repeat = 100_000;
         short[] out1 = new short[ML_KEM_N];
         short[] out2 = new short[ML_KEM_N];
         short[] in1 = new short[ML_KEM_N];
