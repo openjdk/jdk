@@ -436,6 +436,18 @@ void ConstantPoolCache::iterate_resolved_field_entries_with_archivability_check(
 
     bool archivable = (resolved && !CDSConfig::is_dumping_preimage_static_archive() &&
                        AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index));
+
+    // The state of strict static field accesses is reset in InstanceKlass::remove_unshareable_info
+    // when the class does not have an AOT initialized mirror. Since <clinit> will be called in
+    // the subsequent runtime, the resolved field entries associated with strict static fields are
+    // not archiveable.
+    if (rfi->is_resolved(Bytecodes::_getstatic) || rfi->is_resolved(Bytecodes::_putstatic)) {
+      InstanceKlass* holder = rfi->field_holder();
+      if (!holder->has_aot_initialized_mirror() && holder->field_is_strict(rfi->field_index())) {
+        archivable = false;
+      }
+    }
+
     f(cp, src_cp, cp_index, rfi, resolved, archivable);
   }
 }

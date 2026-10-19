@@ -1126,13 +1126,13 @@ PhiNode* PhiNode::make(Node* r, Node* x, const Type *t, const TypePtr* at) {
 PhiNode* PhiNode::make(Node* r, Node* x) {
   const Type*    t  = x->bottom_type();
   const TypePtr* at = nullptr;
-  if (t == Type::MEMORY)  at = flatten_phi_adr_type(x->adr_type());
+  if (t == Type::MEMORY)  at = flatten_phi_adr_type(x->out_adr_type());
   return make(r, x, t, at);
 }
 PhiNode* PhiNode::make_blank(Node* r, Node* x) {
   const Type*    t  = x->bottom_type();
   const TypePtr* at = nullptr;
-  if (t == Type::MEMORY)  at = flatten_phi_adr_type(x->adr_type());
+  if (t == Type::MEMORY)  at = flatten_phi_adr_type(x->out_adr_type());
   return new PhiNode(r, t, at);
 }
 
@@ -1162,7 +1162,7 @@ PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) cons
     Node* use = region->fast_out(k);
     if( use->is_Phi()) {
       PhiNode *phi2 = use->as_Phi();
-      if (phi2->type() == Type::MEMORY && phi2->adr_type() == at) {
+      if (phi2->type() == Type::MEMORY && phi2->out_adr_type() == at) {
         return phi2;
       }
     }
@@ -1187,7 +1187,7 @@ PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) cons
         continue;
       Node *opt = MemNode::optimize_simple_memory_chain(in, t_oop, nullptr, igvn);
       PhiNode *optphi = opt->is_Phi() ? opt->as_Phi() : nullptr;
-      if (optphi != nullptr && optphi->adr_type() == TypePtr::BOTTOM) {
+      if (optphi != nullptr && optphi->out_adr_type() == TypePtr::BOTTOM) {
         opt = node_map[optphi->_idx];
         if (opt == nullptr) {
           stack.push(ophi, i);
@@ -1228,7 +1228,7 @@ void PhiNode::verify_adr_type(VectorSet& visited, const TypePtr* at) const {
                || (n->is_Mem() && n->in(MemNode::Address)->bottom_type() == Type::TOP)) {
       // ignore top inputs
     } else {
-      const TypePtr* nat = flatten_phi_adr_type(n->adr_type());
+      const TypePtr* nat = flatten_phi_adr_type(n->out_adr_type());
       // recheck phi/non-phi consistency at leaves:
       assert((nat != nullptr) == (at != nullptr), "");
       assert(nat == at || nat == TypePtr::BOTTOM,
@@ -1411,7 +1411,7 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
 #endif //ASSERT
 
   // In rare cases, during an IGVN call to `PhiNode::Value`, `_type` and `t` have incompatible opinion on speculative type,
-  // resulting into a too small intersection (such as AnyNull), which is removed in cleanup_speculative.
+  // resulting into a too small intersection (such as TopPTR), which is removed in cleanup_speculative.
   // From that `ft` has no speculative type (ft->speculative() == nullptr).
   // After the end of the current `PhiNode::Value` call, `ft` (that is returned) is being store into `_type`
   // (see PhaseIterGVN::transform_old -> raise_bottom_type -> set_type).
@@ -1605,8 +1605,8 @@ Node* PhiNode::Identity(PhaseGVN* phase) {
 
   // Looking for phis with identical inputs.  If we find one that has
   // type TypePtr::BOTTOM, replace the current phi with the bottom phi.
-  if (phase->is_IterGVN() && type() == Type::MEMORY && adr_type() !=
-      TypePtr::BOTTOM && !adr_type()->is_known_instance()) {
+  if (phase->is_IterGVN() && type() == Type::MEMORY &&
+      out_adr_type() != TypePtr::BOTTOM && !out_adr_type()->is_known_instance()) {
     uint phi_len = req();
     Node* phi_reg = region();
     for (DUIterator_Fast imax, i = phi_reg->fast_outs(imax); i < imax; i++) {
@@ -2251,7 +2251,7 @@ bool PhiNode::must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const {
 // helps simplify the memory graph.
 Node* PhiNode::split_through_mergemem(PhaseIterGVN& igvn) {
   assert(type() == Type::MEMORY, "must be a memory Phi");
-  assert(adr_type() == TypePtr::BOTTOM, "must be a bottom memory Phi");
+  assert(out_adr_type() == TypePtr::BOTTOM, "must be a bottom memory Phi");
 
   bool need_splitting = false;
   bool need_process = false;
@@ -2702,7 +2702,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     PhaseIterGVN* igvn = phase->is_IterGVN();
     assert(igvn != nullptr, "must be during IGVN");
 
-    if (const TypePtr* at = adr_type(); at == TypePtr::BOTTOM) {
+    if (const TypePtr* at = out_adr_type(); at == TypePtr::BOTTOM) {
       progress = split_through_mergemem(*igvn);
       if (progress != nullptr && progress != this) {
         return progress;
@@ -2728,7 +2728,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     //
     // Other optimizations on the memory chain
     //
-    const TypePtr* at = adr_type();
+    const TypePtr* at = out_adr_type();
     for( uint i=1; i<req(); ++i ) {// For all paths in
       Node *ii = in(i);
       Node *new_in = MemNode::optimize_memory_chain(ii, at, nullptr, phase);
@@ -2856,7 +2856,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // doesn't happen.
   // Look for non-bottom Phis that should be transformed and enqueue them for igvn so that PhiNode::Identity executes for
   // them.
-  if (can_reshape && type() == Type::MEMORY && adr_type() == TypePtr::BOTTOM) {
+  if (can_reshape && type() == Type::MEMORY && out_adr_type() == TypePtr::BOTTOM) {
     PhaseIterGVN* igvn = phase->is_IterGVN();
     uint phi_len = req();
     Node* phi_reg = region();
@@ -2941,10 +2941,17 @@ private:
           _nodes_from_phi.push(in);
         }
       } else if (n->is_ValueType()) {
-        Node* buf = n->as_ValueType()->get_oop();
-        if (buf != nullptr) {
-          _nodes_from_phi.push(buf);
-          _subgraph_to_clone.push(n);
+        ValueTypeNode* value_type = n->as_ValueType();
+        Node* buf = value_type->get_oop();
+        _nodes_from_phi.push(buf);
+        _subgraph_to_clone.push(n);
+        // We may have a cycle through one the ValueType's field so follow those inputs
+        for (uint j = 0; j < value_type->field_count(); ++j) {
+          Node* field = value_type->field_value(j);
+          const Type* field_type = _phase->type(field);
+          if (field_type->isa_instptr() && !field_type->is_valueklassptr() && field_type->is_instptr()->can_be_value_type()) {
+            _nodes_from_phi.push(field);
+          }
         }
       }
     }
@@ -3012,11 +3019,21 @@ private:
         assert(in_clone != nullptr, "must be cloned");
         n_clone->set_req(1, in_clone);
       } else if (n->is_ValueType()) {
-        Node* in = n->as_ValueType()->get_oop();
+        ValueTypeNode* value_type = n->as_ValueType();
+        Node* in = value_type->get_oop();
         Node* in_clone = get_clone(in);
         if (in_clone != nullptr) {
           _phase->is_IterGVN()->rehash_node_delayed(n);
-          n->as_ValueType()->set_oop(*_phase, in_clone);
+          value_type->set_oop(*_phase, in_clone);
+        }
+        // If the ValueType is reached from one of its field's input, make sure we update that input to not have a cycle
+        for (uint j = 0; j < value_type->field_count(); ++j) {
+          Node* field = value_type->field_value(j);
+          Node* field_clone = get_clone(field);
+          if (field_clone != nullptr) {
+            _phase->is_IterGVN()->rehash_node_delayed(n);
+            value_type->set_field_value(j, field_clone);
+          }
         }
       }
     }
@@ -3043,7 +3060,7 @@ private:
         before_encode_decode++;
       } else if (n->is_ValueType()) {
         Node* buf = n->as_ValueType()->get_oop();
-        if (buf != nullptr && i >= _init_nodes) {
+        if (i >= _init_nodes) {
           vts_to_skip++;
         }
       }
@@ -3101,9 +3118,15 @@ private:
         }
       } else if (n->is_ValueType()) {
         assert(i < init_nodes, "");
-        Node* buf = n->as_ValueType()->get_oop();
-        if (buf != nullptr) {
-          after.push(buf);
+        ValueTypeNode* value_type = n->as_ValueType();
+        Node* buf = value_type->get_oop();
+        after.push(buf);
+        for (uint j = 0; j < value_type->field_count(); ++j) {
+          Node* field = value_type->field_value(j);
+          const Type* field_type = _phase->type(field);
+          if (field_type->isa_instptr() && !field_type->is_valueklassptr() && field_type->is_instptr()->can_be_value_type()) {
+            after.push(field);
+          }
         }
       }
     }
@@ -3337,9 +3360,9 @@ const TypeTuple* PhiNode::collect_types(PhaseGVN* phase) const {
 }
 
 bool PhiNode::can_be_replaced_by(PhaseGVN* phase, const PhiNode* other) const {
-  const TypePtr* at = adr_type();
+  const TypePtr* at = out_adr_type();
   return type() == Type::MEMORY && other->type() == Type::MEMORY && at != TypePtr::BOTTOM &&
-         other->adr_type() == TypePtr::BOTTOM && has_same_inputs_as(other) &&
+         other->out_adr_type() == TypePtr::BOTTOM && has_same_inputs_as(other) &&
          // Normally, the alias class corresponding to 'at' not being in '_excluded_idx' does not
          // imply that it is contained in the bottom memory Phi 'other'. However, since 'this' and
          // 'other' have the same inputs, either both represent the memory state of 'at', or
@@ -3487,7 +3510,7 @@ void PhiNode::dump_spec(outputStream *st) const {
   if (is_tripcount(T_INT) || is_tripcount(T_LONG)) {
     st->print(" #tripcount");
   }
-  if (type() == Type::MEMORY && adr_type() == TypePtr::BOTTOM && _excluded_idx != nullptr) {
+  if (type() == Type::MEMORY && out_adr_type() == TypePtr::BOTTOM && _excluded_idx != nullptr) {
     st->print(" #excluded_alias_idx:{");
     bool first = true;
     for (int alias_idx = Compile::AliasIdxRaw; alias_idx < Compile::current()->num_alias_types(); alias_idx++) {

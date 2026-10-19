@@ -154,6 +154,8 @@ class DebugInformationRecorder: public ResourceObj {
 
   DebugInfoWriteStream* stream() const { return _stream; }
 
+  bool has_vectors() const { return _has_vectors; }
+  void set_has_vectors()   { _has_vectors = true; }
 
  private:
   friend class ScopeDesc;
@@ -202,6 +204,8 @@ class DebugInformationRecorder: public ResourceObj {
   int  serialize_monitor_values(GrowableArray<MonitorValue*>* monitors);
   int  serialize_scope_values(GrowableArray<ScopeValue*>* values);
   int  find_sharable_decode_offset(int stream_offset);
+
+  bool _has_vectors;
 
 #ifndef PRODUCT
   bool recorders_frozen();

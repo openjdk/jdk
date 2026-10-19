@@ -38,7 +38,7 @@
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-static LayoutKind field_layout_selection(FieldInfo field_info, Array<ValueFieldLayoutInfo>* value_field_layout_info_array,
+static LayoutKind field_layout_selection(FieldInfo field_info, Array<ValueFieldInfo>* value_field_info_array,
                                          bool can_use_atomic_flat) {
 
   // The can_use_atomic_flat argument indicates if an atomic flat layout can be used for this field.
@@ -65,13 +65,13 @@ static LayoutKind field_layout_selection(FieldInfo field_info, Array<ValueFieldL
     return LayoutKind::REFERENCE;
   }
 
-  if (value_field_layout_info_array == nullptr || value_field_layout_info_array->adr_at(field_info.index())->klass() == nullptr) {
+  if (value_field_info_array == nullptr || value_field_info_array->adr_at(field_info.index())->klass() == nullptr) {
     // field's type is not a known value class, using a reference
     return LayoutKind::REFERENCE;
   }
 
-  ValueFieldLayoutInfo* value_field_layout_info = value_field_layout_info_array->adr_at(field_info.index());
-  ValueKlass* vk = value_field_layout_info->klass();
+  ValueFieldInfo* value_field_info = value_field_info_array->adr_at(field_info.index());
+  ValueKlass* vk = value_field_info->klass();
 
   if (field_info.field_flags().is_null_free_value_type()) {
     assert(field_info.access_flags().is_strict(), "null-free fields must be strict");
@@ -104,12 +104,12 @@ static LayoutKind field_layout_selection(FieldInfo field_info, Array<ValueFieldL
   }
 }
 
-static LayoutKind adjust_with_budget(FieldInfo field_info, Array<ValueFieldLayoutInfo>* value_field_layout_info_array,
+static LayoutKind adjust_with_budget(FieldInfo field_info, Array<ValueFieldInfo>* value_field_info_array,
                                      LayoutKind lk, int& budget) {
   if (lk == LayoutKind::REFERENCE) return lk;
   assert(LayoutKindHelper::is_flat((lk)), "Must be");
-  ValueFieldLayoutInfo* value_field_layout_info = value_field_layout_info_array->adr_at(field_info.index());
-  ValueKlass* vk = value_field_layout_info->klass();
+  ValueFieldInfo* value_field_info = value_field_info_array->adr_at(field_info.index());
+  ValueKlass* vk = value_field_info->klass();
   int size = vk->layout_size_in_bytes(lk);
   if (size > budget) {
     return LayoutKind::REFERENCE;
@@ -119,7 +119,7 @@ static LayoutKind adjust_with_budget(FieldInfo field_info, Array<ValueFieldLayou
   }
 }
 
-static bool field_is_flattenable(FieldInfo fieldinfo, LayoutKind lk, Array<ValueFieldLayoutInfo>* li) {
+static bool field_is_flattenable(FieldInfo fieldinfo, LayoutKind lk, Array<ValueFieldInfo>* vfi) {
   if (fieldinfo.field_flags().is_null_free_value_type()) {
     // A null-free value type is always flattenable
     return true;
@@ -134,10 +134,10 @@ static bool field_is_flattenable(FieldInfo fieldinfo, LayoutKind lk, Array<Value
 
   const int field_index = (int)fieldinfo.index();
   if (!fieldinfo.field_flags().is_injected() &&
-      li != nullptr &&
-      li->adr_at(field_index)->klass() != nullptr &&
-      !li->adr_at(field_index)->klass()->is_identity_class() &&
-      !li->adr_at(field_index)->klass()->is_abstract()) {
+      vfi != nullptr &&
+      vfi->adr_at(field_index)->klass() != nullptr &&
+      !vfi->adr_at(field_index)->klass()->is_identity_class() &&
+      !vfi->adr_at(field_index)->klass()->is_abstract()) {
     // The field's klass is not an identity class or abstract
     return true;
   }
@@ -249,9 +249,9 @@ void FieldGroup::add_to_big_primitive_list(LayoutRawBlock* block) {
   _big_primitive_fields->append(block);
 }
 
-FieldLayout::FieldLayout(GrowableArray<FieldInfo>* field_info, Array<ValueFieldLayoutInfo>* value_field_layout_info_array, ConstantPool* cp) :
+FieldLayout::FieldLayout(GrowableArray<FieldInfo>* field_info, Array<ValueFieldInfo>* value_field_info_array, ConstantPool* cp) :
   _field_info(field_info),
-  _value_field_layout_info_array(value_field_layout_info_array),
+  _value_field_info_array(value_field_info_array),
   _cp(cp),
   _blocks(nullptr),
   _start(_blocks),
@@ -486,11 +486,11 @@ void FieldLayout::reconstruct_layout(const InstanceKlass* ik, bool& has_nonstati
       }
       LayoutRawBlock* block;
       if (fs.is_flat()) {
-        ValueFieldLayoutInfo layout_info = ik->value_field_layout_info(fs.index());
-        ValueKlass* vk = layout_info.klass();
+        ValueFieldInfo value_field_info = ik->value_field_info(fs.index());
+        ValueKlass* vk = value_field_info.klass();
         block = new LayoutRawBlock(fs.index(), LayoutRawBlock::INHERITED,
-                                   vk->layout_size_in_bytes(layout_info.kind()),
-                                   vk->layout_alignment(layout_info.kind()));
+                                   vk->layout_size_in_bytes(value_field_info.kind()),
+                                   vk->layout_alignment(value_field_info.kind()));
         assert(_super_alignment == -1 || _super_alignment >=  vk->payload_alignment(), "Invalid value alignment");
         _super_min_align_required = _super_min_align_required > vk->payload_alignment() ? _super_min_align_required : vk->payload_alignment();
       } else {
@@ -675,7 +675,7 @@ void FieldLayout::remove_null_marker() {
   ShouldNotReachHere(); // if we reach this point, the null marker was not found!
 }
 
-void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlass* super, Array<ValueFieldLayoutInfo>* value_fields, bool dummy_field_is_reused_as_null_marker) {
+void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlass* super, Array<ValueFieldInfo>* value_fields, bool dummy_field_is_reused_as_null_marker) {
   ResourceMark rm;
   LayoutRawBlock* b = _blocks;
   while(b != _last) {
@@ -775,14 +775,14 @@ void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlas
 
 FieldLayoutBuilder::FieldLayoutBuilder(const Symbol* classname, ClassLoaderData* loader_data, const InstanceKlass* super_klass, ConstantPool* constant_pool,
                                        GrowableArray<FieldInfo>* field_info, bool is_contended, bool is_concrete_value, bool is_abstract_value,
-                                       bool must_be_atomic, FieldLayoutInfo* info, Array<ValueFieldLayoutInfo>* value_field_layout_info_array) :
+                                       bool must_be_atomic, FieldLayoutInfo* info, Array<ValueFieldInfo>* value_field_info_array) :
   _classname(classname),
   _loader_data(loader_data),
   _super_klass(super_klass),
   _constant_pool(constant_pool),
   _field_info(field_info),
   _info(info),
-  _value_field_layout_info_array(value_field_layout_info_array),
+  _value_field_info_array(value_field_info_array),
   _root_group(nullptr),
   _contended_groups(GrowableArray<FieldGroup*>(8)),
   _static_fields(nullptr),
@@ -826,14 +826,14 @@ FieldGroup* FieldLayoutBuilder::get_or_create_contended_group(int g) {
 }
 
 void FieldLayoutBuilder::prologue() {
-  _layout = new FieldLayout(_field_info, _value_field_layout_info_array, _constant_pool);
+  _layout = new FieldLayout(_field_info, _value_field_info_array, _constant_pool);
   const InstanceKlass* super_klass = _super_klass;
   _layout->initialize_instance_layout(super_klass, _super_ends_with_oop);
   _nonstatic_oopmap_count = super_klass == nullptr ? 0 : super_klass->nonstatic_oop_map_count();
   if (super_klass != nullptr) {
     _has_nonstatic_fields = super_klass->has_nonstatic_fields();
   }
-  _static_layout = new FieldLayout(_field_info, _value_field_layout_info_array, _constant_pool);
+  _static_layout = new FieldLayout(_field_info, _value_field_info_array, _constant_pool);
   _static_layout->initialize_static_layout();
   _static_fields = new FieldGroup();
   _root_group = new FieldGroup();
@@ -859,9 +859,9 @@ int FieldLayoutBuilder::add_field_to_group(FieldInfo fieldinfo, int idx, FieldGr
     // Atomic flat fields can always be used in identity classes.
     // Use them only for value classes if the container is itself atomic.
     const bool use_atomic_flat = !is_value_compatible_class || _must_be_atomic;
-    LayoutKind lk = field_layout_selection(fieldinfo, _value_field_layout_info_array, use_atomic_flat);
-    lk = adjust_with_budget(fieldinfo, _value_field_layout_info_array, lk, _flattening_budget);
-    if (field_is_flattenable(fieldinfo, lk, _value_field_layout_info_array)) {
+    LayoutKind lk = field_layout_selection(fieldinfo, _value_field_info_array, use_atomic_flat);
+    lk = adjust_with_budget(fieldinfo, _value_field_info_array, lk, _flattening_budget);
+    if (field_is_flattenable(fieldinfo, lk, _value_field_info_array)) {
       _has_flattenable_fields = true;
     }
 
@@ -878,15 +878,15 @@ int FieldLayoutBuilder::add_field_to_group(FieldInfo fieldinfo, int idx, FieldGr
            "Invalid layout kind for flat field: %s", LayoutKindHelper::layout_kind_as_string(lk));
 
     const int field_index = (int)fieldinfo.index();
-    assert(_value_field_layout_info_array != nullptr, "Array must have been created");
-    assert(_value_field_layout_info_array->adr_at(field_index)->klass() != nullptr, "Klass must have been set");
+    assert(_value_field_info_array != nullptr, "Array must have been created");
+    assert(_value_field_info_array->adr_at(field_index)->klass() != nullptr, "Klass must have been set");
     _has_flat_fields = true;
-    ValueKlass* vk = _value_field_layout_info_array->adr_at(field_index)->klass();
+    ValueKlass* vk = _value_field_info_array->adr_at(field_index)->klass();
     if (is_value_compatible_class && !vk->is_naturally_atomic(LayoutKindHelper::is_null_free_flat(lk))) {
       _has_non_naturally_atomic_fields = true;
     }
     group->add_flat_field(idx, vk, lk);
-    _value_field_layout_info_array->adr_at(field_index)->set_kind(lk);
+    _value_field_info_array->adr_at(field_index)->set_kind(lk);
     _nonstatic_oopmap_count += vk->nonstatic_oop_map_count();
     _field_info->adr_at(idx)->field_flags_addr()->update_flat(true);
     _field_info->adr_at(idx)->set_layout_kind(lk);
@@ -1603,9 +1603,9 @@ void FieldLayoutBuilder::epilogue() {
     }
     st.print_cr("Instance fields:");
     const bool dummy_field_is_reused_as_null_marker = _is_empty_value_class && _null_marker_offset != -1;
-    _layout->print(&st, false, _super_klass, _value_field_layout_info_array, dummy_field_is_reused_as_null_marker);
+    _layout->print(&st, false, _super_klass, _value_field_info_array, dummy_field_is_reused_as_null_marker);
     st.print_cr("Static fields:");
-    _static_layout->print(&st, true, nullptr, _value_field_layout_info_array, false);
+    _static_layout->print(&st, true, nullptr, _value_field_info_array, false);
     st.print_cr("Instance size = %d bytes", _info->_instance_size * wordSize);
     if (_is_concrete_value) {
       st.print_cr("First field offset = %d", _payload_offset);
