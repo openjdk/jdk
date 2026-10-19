@@ -11726,6 +11726,7 @@ instruct vabsB_reg(vecX dst, vecX src) %{
 %}
 
 // TODO : check the placement for this
+// TODO: Add predicates
 instruct vabsS_reg(vecX dst, vecX src) %{
   match(Set dst (AbsVS src));
   ins_encode %{
@@ -11912,6 +11913,50 @@ instruct vxor(vecX dst, vecX src1, vecX src2) %{
   format %{ "VXOR   $dst,$src1,$src2\t// xor vectors" %}
   ins_encode %{
     __ z_vx($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vfma4F(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVF dst (Binary src1 src2)));
+  predicate(n->as_Vector()->length() == 4);
+  size(6);
+  ins_encode %{
+    __ z_vfmasb($dst$$VectorRegister,  $src1$$VectorRegister,
+                $src2$$VectorRegister, $dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vfnms4F(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVF dst (Binary src1 (NegVF src2))));
+  predicate(n->as_Vector()->length() == 4);
+  size(6);
+  ins_encode %{
+    __ z_vfnmssb($dst$$VectorRegister,  $src1$$VectorRegister,
+                 $src2$$VectorRegister, $dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vfms4F(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVF (NegVF dst) (Binary src1 src2)));
+  predicate(n->as_Vector()->length() == 4);
+  size(6);
+  ins_encode %{
+    __ z_vfmssb($dst$$VectorRegister,  $src1$$VectorRegister,
+                $src2$$VectorRegister, $dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vfnma4F(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVF (NegVF dst) (Binary src1 (NegVF src2))));
+  predicate(n->as_Vector()->length() == 4);
+  size(6);
+  ins_encode %{
+    __ z_vfnmasb($dst$$VectorRegister,  $src1$$VectorRegister,
+                 $src2$$VectorRegister, $dst$$VectorRegister);
   %}
   ins_pipe(pipe_class_dummy);
 %}

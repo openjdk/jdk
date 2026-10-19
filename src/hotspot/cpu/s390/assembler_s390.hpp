@@ -1208,13 +1208,17 @@ class Assembler : public AbstractAssembler {
 #define VMLO_ZOPC   (unsigned long)(0xe7L << 40 | 0xa5L << 0)   // V1 := V2 * V3, element size = 2**m, unsigned
 
 // MUL & ADD
-#define VMAL_ZOPC   (unsigned long)(0xe7L << 40 | 0xaaL << 0)   // V1 := V2 * V3 + V4, element size = 2**m
-#define VMAH_ZOPC   (unsigned long)(0xe7L << 40 | 0xabL << 0)   // V1 := V2 * V3 + V4, element size = 2**m
-#define VMALH_ZOPC  (unsigned long)(0xe7L << 40 | 0xa9L << 0)   // V1 := V2 * V3 + V4, element size = 2**m, unsigned
-#define VMAE_ZOPC   (unsigned long)(0xe7L << 40 | 0xaeL << 0)   // V1 := V2 * V3 + V4, element size = 2**m
-#define VMALE_ZOPC  (unsigned long)(0xe7L << 40 | 0xacL << 0)   // V1 := V2 * V3 + V4, element size = 2**m, unsigned
-#define VMAO_ZOPC   (unsigned long)(0xe7L << 40 | 0xafL << 0)   // V1 := V2 * V3 + V4, element size = 2**m
-#define VMALO_ZOPC  (unsigned long)(0xe7L << 40 | 0xadL << 0)   // V1 := V2 * V3 + V4, element size = 2**m, unsigned
+#define VMAL_ZOPC   (unsigned long)(0xe7L << 40 | 0xaaL << 0)   // V1 := V2 *   V3  + V4, element size = 2**m
+#define VMAH_ZOPC   (unsigned long)(0xe7L << 40 | 0xabL << 0)   // V1 := V2 *   V3  + V4, element size = 2**m
+#define VMALH_ZOPC  (unsigned long)(0xe7L << 40 | 0xa9L << 0)   // V1 := V2 *   V3  + V4, element size = 2**m, unsigned
+#define VMAE_ZOPC   (unsigned long)(0xe7L << 40 | 0xaeL << 0)   // V1 := V2 *   V3  + V4, element size = 2**m
+#define VMALE_ZOPC  (unsigned long)(0xe7L << 40 | 0xacL << 0)   // V1 := V2 *   V3  + V4, element size = 2**m, unsigned
+#define VMAO_ZOPC   (unsigned long)(0xe7L << 40 | 0xafL << 0)   // V1 := V2 *   V3  + V4, element size = 2**m
+#define VMALO_ZOPC  (unsigned long)(0xe7L << 40 | 0xadL << 0)   // V1 := V2 *   V3  + V4, element size = 2**m, unsigned
+#define VFMA_ZOPC   (unsigned long)(0xe7L << 40 | 0x8fL << 0)   // V1 := V2 *   V3  + V4, element size = 2**m, floating point
+#define VFNMA_ZOPC  (unsigned long)(0xe7L << 40 | 0x9fL << 0)   // V1 := V2 * (-V3) + V4, element size = 2**m, floating point
+#define VFMS_ZOPC   (unsigned long)(0xe7L << 40 | 0x8eL << 0)   // V1 := V2 *   V3  - V4, element size = 2**m, floating point
+#define VFNMS_ZOPC  (unsigned long)(0xe7L << 40 | 0x9eL << 0)   // V1 := V2 * (-V3) - V4, element size = 2**m, floating point
 
 // Vector SUM
 #define VSUM_ZOPC   (unsigned long)(0xe7L << 40 | 0x64L << 0)   // V1[j] := toFW(sum(V2[i]) + V3[j]), subelements: byte or HW
@@ -2727,6 +2731,18 @@ class Assembler : public AbstractAssembler {
   inline void z_vmale(  VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m5);
   inline void z_vmao(   VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m5);
   inline void z_vmalo(  VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m5);
+  inline void z_vfma(   VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m6);
+  inline void z_vfmasb( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4);
+  inline void z_vfmadb( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4);
+  inline void z_vfnma(  VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m6);
+  inline void z_vfnmasb(VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4);
+  inline void z_vfnmadb(VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4);
+  inline void z_vfms(   VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m6);
+  inline void z_vfmssb( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4);
+  inline void z_vfmsdb( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4);
+  inline void z_vfnms(  VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m6);
+  inline void z_vfnmssb(VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4);
+  inline void z_vfnmsdb(VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4);
 
   // VECTOR SUM
   inline void z_vsum(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
