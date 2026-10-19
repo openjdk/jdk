@@ -48,6 +48,7 @@
 #include "opto/subnode.hpp"
 #include "opto/valuetypenode.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -179,7 +180,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         cg_intrinsic = cg;
         cg = nullptr;
       } else if (IncrementalInline && should_delay_vector_inlining(callee, jvms)) {
-        if (IncrementalInlineVector && allow_inline && should_inline_vector_fallback(callee)) {
+        if (allow_inline && should_inline_vector_fallback(callee)) {
           // Try to incrementally inline fallback implementation if intrinsification attempt fails.
           CallGenerator* fallback_cg;
           {
@@ -529,6 +530,12 @@ bool Compile::should_delay_vector_reboxing_inlining(ciMethod* call_method, JVMSt
 }
 
 bool Compile::should_inline_vector_fallback(ciMethod* call_method) {
+  if (!FLAG_IS_DEFAULT(IncrementalInlineVector)) {
+    // Set explicitly, so it applies to every vector intrinsic.
+    return IncrementalInlineVector;
+  }
+  // Left at its default value, so only the operations which need their fallback
+  // inlined to generate good code are selected.
   switch (call_method->intrinsic_id()) {
   case vmIntrinsics::_VectorSlice:
     return true;

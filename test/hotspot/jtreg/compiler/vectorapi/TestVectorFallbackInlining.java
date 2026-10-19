@@ -32,8 +32,10 @@ import jdk.incubator.vector.VectorSpecies;
  * @test
  * @bug 8382713 8394272
  * @summary Verify that the fallback implementation of a failed vector intrinsic is
- *          inlined (rather than left as a static call) when IncrementalInlineVector
- *          is enabled, and only for the selected set of operations.
+ *          inlined (rather than left as a static call) for the selected set of
+ *          operations when IncrementalInlineVector is left at its default value,
+ *          for every operation when it is explicitly enabled, and for none when
+ *          it is explicitly disabled.
  * @modules jdk.incubator.vector
  * @library /test/lib /
  * @requires vm.compiler2.enabled
@@ -48,10 +50,10 @@ import jdk.incubator.vector.VectorSpecies;
  * intrinsics reliably fail to expand and the fallback implementations
  * are exercised on every configuration.
  *
- * For slice, with IncrementalInlineVector enabled (the default) the fallback is late-inlined
- * into the caller, so no static call to the intrinsic entry point survives; with the flag
- * disabled, the static call to the fallback remains. For insert, which is not a selected
- * operation, the static call remains either way.
+ * Slice is a selected operation, so its fallback is late-inlined into the caller and no
+ * static call to the intrinsic entry point survives, unless the flag is explicitly disabled.
+ * Insert is not selected, so its static call survives unless the flag is explicitly enabled,
+ * which selects every operation.
  */
 public class TestVectorFallbackInlining {
     private static final VectorSpecies<Float> SPECIES = FloatVector.SPECIES_MAX;
@@ -81,24 +83,31 @@ public class TestVectorFallbackInlining {
 
     public static void main(String[] args) {
         // Note: Some platforms don't activate EnableVectorSupport by default. Required here.
+        // Left at its default value, only slice is selected.
+        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
+                                   FORCE_INLINE_FALLBACK,
+                                   "-XX:+UnlockExperimentalVMOptions",
+                                   "-XX:+EnableVectorSupport");
+        // Explicitly enabled, so every operation is selected.
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
                                    FORCE_INLINE_FALLBACK,
                                    "-XX:+IncrementalInlineVector",
                                    "-XX:+UnlockExperimentalVMOptions",
                                    "-XX:+EnableVectorSupport");
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
-                                   FORCE_INLINE_FALLBACK,
-                                   "-XX:-IncrementalInlineVector",
-                                   "-XX:+UnlockExperimentalVMOptions",
-                                   "-XX:+EnableVectorSupport");
+        // Explicitly disabled, so no operation is selected. Only slice needs a separate
+        // class, see TestSliceFallbackNotInlined.
+        new TestFramework(TestSliceFallbackNotInlined.class)
+                .addFlags("--add-modules=jdk.incubator.vector",
+                          FORCE_INLINE_FALLBACK,
+                          "-XX:-IncrementalInlineVector",
+                          "-XX:+UnlockExperimentalVMOptions",
+                          "-XX:+EnableVectorSupport")
+                .start();
     }
 
-    // slice is a selected operation, so its fallback is late-inlined when the flag is enabled.
+    // slice is a selected operation, so its fallback is late-inlined in both runs below.
     @Test
-    @IR(counts = {IRNode.VECTORAPI_SLICE_OP, ">= 1"},
-        applyIf = {"IncrementalInlineVector", "false"})
-    @IR(failOn = {IRNode.VECTORAPI_SLICE_OP},
-        applyIf = {"IncrementalInlineVector", "true"})
+    @IR(failOn = {IRNode.VECTORAPI_SLICE_OP})
     public static void testSlice() {
         for (int i = 0; i < LENGTH; i += SPECIES.length()) {
             FloatVector va = FloatVector.fromArray(SPECIES, a, i);
@@ -120,10 +129,12 @@ public class TestVectorFallbackInlining {
         Verify.checkEQ(expected, c);
     }
 
-    // insert is not a selected operation, so the static call to the fallback survives
-    // regardless of the flag.
+    // insert is only selected when the flag is set explicitly.
     @Test
-    @IR(counts = {IRNode.VECTORAPI_INSERT_OP, ">= 1"})
+    @IR(counts = {IRNode.VECTORAPI_INSERT_OP, ">= 1"},
+        applyIf = {"IncrementalInlineVector", "false"})
+    @IR(failOn = {IRNode.VECTORAPI_INSERT_OP},
+        applyIf = {"IncrementalInlineVector", "true"})
     public static void testInsert() {
         for (int i = 0; i < LENGTH; i += SPECIES.length()) {
             FloatVector va = FloatVector.fromArray(SPECIES, a, i);
@@ -141,6 +152,49 @@ public class TestVectorFallbackInlining {
         }
         for (int i = 0; i < LENGTH; i += SPECIES.length()) {
             expected[i + INDEX] = 0.0f;
+        }
+        Verify.checkEQ(expected, c);
+    }
+}
+
+/**
+ * Covers slice with IncrementalInlineVector explicitly disabled, where its fallback is no
+ * longer selected and the static call survives.
+ */
+class TestSliceFallbackNotInlined {
+    private static final VectorSpecies<Float> SPECIES = FloatVector.SPECIES_MAX;
+    private static final int LENGTH = 1024;
+
+    private static int INDEX = SPECIES.length() - 1;
+
+    private static final float[] a = new float[LENGTH];
+    private static final float[] c = new float[LENGTH];
+
+    static {
+        for (int i = 0; i < LENGTH; i++) {
+            a[i] = i;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTORAPI_SLICE_OP, ">= 1"})
+    public static void testSlice() {
+        for (int i = 0; i < LENGTH; i += SPECIES.length()) {
+            FloatVector va = FloatVector.fromArray(SPECIES, a, i);
+            va.slice(INDEX).intoArray(c, i);
+        }
+    }
+
+    @Run(test = "testSlice")
+    @Warmup(10000)
+    public static void runSlice() {
+        testSlice();
+        float[] expected = new float[LENGTH];
+        for (int i = 0; i < LENGTH; i += SPECIES.length()) {
+            for (int j = 0; j < SPECIES.length(); j++) {
+                int src = i + INDEX + j;
+                expected[i + j] = (INDEX + j < SPECIES.length()) ? a[src] : 0.0f;
+            }
         }
         Verify.checkEQ(expected, c);
     }
