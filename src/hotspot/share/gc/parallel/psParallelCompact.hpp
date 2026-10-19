@@ -127,7 +127,7 @@ public:
     // destination dependencies.
     uint destination_count() const { return state_dest_count(state()); }
 
-    // Whether this region has no remaining destination dependencies or has been completed.
+    // Whether this region has no remaining destination dependencies.
     bool available() const { return destination_count() == 0; }
     bool completed() const { return state_status(state()) == status_completed; }
     const char* status_name() const {
