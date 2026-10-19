@@ -65,9 +65,6 @@ class GraphKit : public Phase {
   int               _bci;       // JVM Bytecode Pointer
   ciMethod*         _method;    // JVM Current Method
   BarrierSetC2*     _barrier_set;
-#ifdef ASSERT
-  uint              _worklist_size;
-#endif
 
  private:
   int               _sp;        // JVM Expression Stack Pointer; don't modify directly!
@@ -663,8 +660,10 @@ class GraphKit : public Phase {
                               const TypeInt* sizetype = nullptr,
                               // Optional control dependency (for example, on range check)
                               Node* ctrl = nullptr);
-  Node* cast_to_flat_array(Node* array, ciValueKlass* elem_vk);
-  Node* cast_to_flat_array_exact(Node* array, ciValueKlass* elem_vk, bool is_null_free, bool is_atomic);
+
+  ciObjArrayKlass* get_flat_array_klass(ciValueKlass* elem_vk);
+  ciObjArrayKlass* get_flat_array_klass_exact(ciValueKlass* elem_vk, bool is_null_free, bool is_atomic);
+  Node* cast_to_flat_array(Node* array, ciObjArrayKlass* array_klass, bool exact);
 
   // Return a load of array element at idx.
   Node* load_array_element(Node* ary, Node* idx, const TypeAryPtr* arytype, bool set_ctrl);

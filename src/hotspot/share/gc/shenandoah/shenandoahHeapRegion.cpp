@@ -74,9 +74,6 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _mixed_candidate_garbage_words(0),
   _update_watermark(start),
   _age(0),
-#ifdef SHENANDOAH_CENSUS_NOISE
-  _youth(0),
-#endif // SHENANDOAH_CENSUS_NOISE
   _needs_bitmap_reset(false)
   {
 
@@ -320,7 +317,6 @@ void ShenandoahHeapRegion::make_trash_immediate() {
 
 void ShenandoahHeapRegion::make_empty() {
   reset_age();
-  CENSUS_NOISE(clear_youth();)
   switch (state()) {
     case _trash:
       set_state(_empty_committed);
@@ -518,7 +514,6 @@ size_t get_card_count(size_t words) {
 void ShenandoahHeapRegion::oop_iterate_humongous_slice_dirty(OopIterateClosure* blk,
                                                              HeapWord* start, size_t words, bool write_table) const {
   assert(is_humongous(), "only humongous region here");
-
   ShenandoahHeapRegion* r = humongous_start_region();
   oop obj = cast_to_oop(r->bottom());
   size_t num_cards = get_card_count(words);
