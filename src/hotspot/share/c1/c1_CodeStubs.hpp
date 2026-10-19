@@ -148,6 +148,7 @@ class ProfileStub: public CodeStub {
 private:
   AbstractLambdaWrapper *_action = nullptr;
   const char* _name;
+  Label _alt_entry;
 
 public:
   ProfileStub() {
@@ -163,6 +164,7 @@ public:
   virtual void print_name(outputStream* out) const { out->print("%s", _name); }
 #endif // PRODUCT
   virtual void visit(LIR_OpVisitState* visitor) { }
+  Label *alt_entry() { return &_alt_entry; }
 };
 
 

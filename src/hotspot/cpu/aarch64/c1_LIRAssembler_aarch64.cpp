@@ -2829,17 +2829,40 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
 
   // AggressiveProfileReduction controls what we do when a profile
   // counter's value is unknown at code generation time. With
-  // AggressiveProfileReduction true we insert a runtime check 
+  // AggressiveProfileReduction true we insert a runtime check
   const bool do_decimate = ProfileCaptureRatio > 1
     && (AggressiveProfileReduction || counter_contents > 0);
   ProfileStub *counter_stub = do_decimate ? new ProfileStub() : nullptr;
 
   auto lambda = [counter_stub, overflow_stub, freq_opr, dest_opr, dest, ratio_shift, step,
-                 md_reg, md_opr, md_offset_opr, counter_address_opr, do_decimate]
+                 md_reg, md_opr, md_offset_opr, counter_address_opr, do_decimate, counter_contents]
     (LIR_Assembler* ce, LIR_Op* op) {
 
     auto masm = [ce]() { return ce->masm(); };
     LIR_Opr counter_address = counter_address_opr;
+
+#ifndef __APPLE__
+    if (counter_contents == 0 && counter_stub != nullptr) {
+      __ block_comment("optimize zero counters 2");
+      auto nop_insn = __ pc();
+      __ nop();
+      __ bind(*counter_stub->alt_entry());
+      __ ldrw(rscratch1, nop_insn);
+      __ strw(rscratch1, Address(lr, -4));
+
+      ce->const2reg(md_opr, md_reg, lir_patch_none, nullptr);
+      ce->mem2reg(counter_address, dest_opr,
+                  dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
+      if (step->is_constant()) {
+        __ add(dest, dest, step->as_constant_ptr()->as_jint_bits());
+      } else {
+        __ add(dest, dest, step->as_register());
+      }
+      ce->reg2mem(dest_opr, counter_address,
+                  dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
+      __ ret(lr);
+    }
+#endif//  __APPLE__
 
     if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
 
@@ -2933,6 +2956,11 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
       reg2mem(dest_opr, counter_address_opr,
               dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
       __ bind(nope);
+    } else if (counter_contents == 0) {
+#ifndef __APPLE__
+      __ block_comment("optimize zero counters 1");
+      __ bl(*counter_stub->alt_entry());
+#endif // __APPLE__
     }
 
     __ ubfx(rscratch1, r_profile_rng, 32 - ratio_shift, ratio_shift);
