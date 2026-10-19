@@ -967,6 +967,9 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads, JavaThread* thread_to_de
       return;
     }
   }
+  // Since the thresholds only control the intervals between reclamation
+  // attempts, we reset the bookkeeping here, even if some ThreadsList
+  // instances remain after the reclamation attempt.
   _retired_since_reclaim_cnt = 0;
   _retired_since_reclaim_mem = 0;
 
@@ -1004,7 +1007,10 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads, JavaThread* thread_to_de
         _to_delete_list_cnt--;
       }
     } else {
-      if (thread_is_safe_to_delete && current->includes(thread_to_delete)) {
+      // This ThreadsList is referenced by a hazard ptr, or a nested
+      // handle. When a thread is removed, the 'threads' argument will
+      // be the old list and it will therefore contain thread_to_delete.
+      if (thread_is_safe_to_delete && (current == threads || current->includes(thread_to_delete))) {
         // Since we found thread_to_delete in the current ThreadsList, it is
         // still protected, and therefore not yet safe to delete.
         thread_is_safe_to_delete = false;
