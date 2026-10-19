@@ -31,6 +31,7 @@
  *          & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *          & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  *          & vm.opt.CompileThresholdScaling == null
+ *          & vm.opt.CompileThreshold == null
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
