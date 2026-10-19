@@ -298,6 +298,10 @@ void Parse::array_store(BasicType bt) {
             // Element type is known, cast and store to flat array layout.
             Node* flat_array = cast_to_flat_array(array, vk);
 
+            if (!stored_value_casted->is_ValueType()) {
+              stored_value_casted = ValueTypeNode::make_from_oop(this, stored_value_casted, vk);
+            }
+
             // It may be the case that array is only known to be not flat when we try to cast it to
             // a flat array. For example, array is a not-null-free array and vk does not have a
             // nullable layout.
