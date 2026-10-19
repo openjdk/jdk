@@ -461,17 +461,16 @@ public:
   }
 
   // Convenience common pre-built types.
-  static const Type *ABIO;
-  static const Type *BOTTOM;
-  static const Type *CONTROL;
-  static const Type *DOUBLE;
-  static const Type *FLOAT;
-  static const Type *HALF_FLOAT;
-  static const Type *HALF;
-  static const Type *MEMORY;
-  static const Type *MULTI;
-  static const Type *RETURN_ADDRESS;
-  static const Type *TOP;
+  static const Type* ABIO;
+  static const Type* BOTTOM;
+  static const Type* CONTROL;
+  static const Type* DOUBLE;
+  static const Type* FLOAT;
+  static const Type* HALF_FLOAT;
+  static const Type* HALF;
+  static const Type* MEMORY;
+  static const Type* RETURN_ADDRESS;
+  static const Type* TOP;
 
   // Mapping from compiler type to VM BasicType
   BasicType basic_type() const       { return _type_info[_base].basic_type; }
@@ -549,12 +548,10 @@ public:
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
   // Convenience common pre-built types.
-  static const TypeF *MAX;
-  static const TypeF *MIN;
-  static const TypeF *ZERO; // positive zero only
-  static const TypeF *ONE;
-  static const TypeF *POS_INF;
-  static const TypeF *NEG_INF;
+  static const TypeF* ZERO; // positive zero only
+  static const TypeF* ONE;
+  static const TypeF* POS_INF;
+  static const TypeF* NEG_INF;
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
 #endif
@@ -581,8 +578,6 @@ public:
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
   // Convenience common pre-built types.
-  static const TypeH* MAX;
-  static const TypeH* MIN;
   static const TypeH* ZERO; // positive zero only
   static const TypeH* ONE;
   static const TypeH* POS_INF;
@@ -612,12 +607,10 @@ public:
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
   // Convenience common pre-built types.
-  static const TypeD *MAX;
-  static const TypeD *MIN;
-  static const TypeD *ZERO; // positive zero only
-  static const TypeD *ONE;
-  static const TypeD *POS_INF;
-  static const TypeD *NEG_INF;
+  static const TypeD* ZERO; // positive zero only
+  static const TypeD* ONE;
+  static const TypeD* POS_INF;
+  static const TypeD* NEG_INF;
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
 #endif
@@ -946,10 +939,8 @@ public:
   static const TypeLong* ONE;
   static const TypeLong* NON_ZERO;
   static const TypeLong* POS;
-  static const TypeLong* NEG;
   static const TypeLong* LONG;
   static const TypeLong* INT;    // 32-bit subrange [min_jint..max_jint]
-  static const TypeLong* UINT;   // 32-bit unsigned [0..max_juint]
   static const TypeLong* TYPE_DOMAIN; // alias for TypeLong::LONG
 
   // static convenience methods.

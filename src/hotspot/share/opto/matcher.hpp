@@ -108,10 +108,6 @@ private:
   // Map dense opcode number to info on when rule is swallowed constant.
   const bool *_swallowed;
 
-  // Map dense rule number to determine if this is an instruction chain rule
-  const uint _begin_inst_chain_rule;
-  const uint _end_inst_chain_rule;
-
   // We want to clone constants and possible CmpI-variants.
   // If we do not clone CmpI, then we can have many instances of
   // condition codes alive at once.  This is OK on some chips and
@@ -169,6 +165,7 @@ private:
   MachNode* _mach_null;
 
   void handle_precedence_edges(Node* n, MachNode *mach);
+  void combine_adr_type(const Node* n, MachNode* mach) const;
 
 public:
   int LabelRootDepth;
@@ -178,7 +175,6 @@ public:
   RegMask *idealreg2debugmask  [_last_machine_leaf];
   void init_spill_mask( Node *ret );
   // Convert machine register number to register mask
-  static uint mreg2regmask_max;
   static RegMask mreg2regmask[];
   static RegMask STACK_ONLY_mask;
   static RegMask caller_save_regmask;

@@ -391,7 +391,6 @@ public:
   bool try_clean_memory_phi(PhaseIterGVN* igvn);
   virtual int Opcode() const;
   virtual bool pinned() const { return in(0) != nullptr; }
-  virtual const TypePtr *adr_type() const { verify_adr_type(true); return _adr_type; }
 
   void  set_inst_mem_id(int inst_mem_id) { _inst_mem_id = inst_mem_id; }
   int inst_mem_id() const { return _inst_mem_id; }
@@ -432,6 +431,12 @@ public:
 
   const TypeTuple* collect_types(PhaseGVN* phase) const;
   bool can_be_replaced_by(PhaseGVN* phase, const PhiNode* other) const;
+
+private:
+  const TypePtr* out_adr_type_impl() const final {
+    verify_adr_type(true);
+    return _adr_type;
+  }
 };
 
 //------------------------------GotoNode---------------------------------------

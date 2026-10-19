@@ -3279,7 +3279,6 @@ void ArchDesc::defineClasses(FILE *fp) {
 
     if ( memory_operand != InstructForm::NO_MEMORY_OPERAND ) {
       if( memory_operand == InstructForm::MANY_MEMORY_OPERANDS ) {
-        fprintf(fp,"const TypePtr *%sNode::adr_type() const { return TypePtr::BOTTOM; }\n", instr->_ident);
         fprintf(fp,"const MachOper* %sNode::memory_operand() const { return (MachOper*)-1; }\n", instr->_ident);
       } else {
         fprintf(fp,"const MachOper* %sNode::memory_operand() const { return _opnds[%d]; }\n", instr->_ident, memory_operand);
