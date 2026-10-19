@@ -11961,6 +11961,51 @@ instruct vfnma4F(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_dummy);
 %}
 
+instruct vfma2D(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVD  dst (Binary src1 src2)));
+  predicate(n->as_Vector()->length() == 2);
+  size(6);
+  ins_encode %{
+    __ z_vfmadb($dst$$VectorRegister,  $src1$$VectorRegister,
+                $src2$$VectorRegister, $dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vfnms2D(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVD dst (Binary src1 (NegVD src2))));
+  predicate(n->as_Vector()->length() == 2);
+  size(6);
+  ins_encode %{
+    __ z_vfnmsdb($dst$$VectorRegister,  $src1$$VectorRegister,
+                 $src2$$VectorRegister, $dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vfms2D(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVD (NegVD dst) (Binary src1 src2)));
+  predicate(n->as_Vector()->length() == 2);
+  size(6);
+  ins_encode %{
+    __ z_vfmsdb($dst$$VectorRegister,  $src1$$VectorRegister,
+                $src2$$VectorRegister, $dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vfnma2D(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVD (NegVD dst) (Binary src1 (NegVD src2))));
+  predicate(n->as_Vector()->length() == 2);
+  size(6);
+  ins_encode %{
+    __ z_vfnmadb($dst$$VectorRegister,  $src1$$VectorRegister,
+                 $src2$$VectorRegister, $dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+
 // Vector Population Count Instructions
 
 instruct vpopcnt_reg(vecX dst, vecX src) %{
