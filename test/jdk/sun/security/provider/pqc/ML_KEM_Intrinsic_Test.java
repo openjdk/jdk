@@ -230,8 +230,8 @@ public class ML_KEM_Intrinsic_Test {
         }
     }
 
-    public static void testMult(short[] prod1, short[] prod2, short[] ntta, 
-        short[] nttb, MethodHandle mult, MethodHandle multJava, short[] zetas, 
+    public static void testMult(short[] prod1, short[] prod2, short[] ntta,
+        short[] nttb, MethodHandle mult, MethodHandle multJava, short[] zetas,
         Random rnd, long seed, int i) throws Throwable {
 
         for (int j = 0; j < ML_KEM_N; j++) {
@@ -262,7 +262,7 @@ public class ML_KEM_Intrinsic_Test {
         }
     }
 
-    public static void testAddPoly2(short[] sum1, short[] sum2, short[] a, 
+    public static void testAddPoly2(short[] sum1, short[] sum2, short[] a,
         short[] b, MethodHandle addPoly, MethodHandle addPolyJava, Random rnd,
         long seed, int i) throws Throwable {
 
