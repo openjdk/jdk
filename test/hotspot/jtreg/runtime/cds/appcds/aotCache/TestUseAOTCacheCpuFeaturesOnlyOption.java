@@ -37,7 +37,6 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestUseAOTCacheCpuFeaturesOnlyOption {
-
     public static void main(String... args) throws Exception {
         Tester tester = new Tester();
         tester.runAOTTrainingAndAssemblyWorkflow();
@@ -54,7 +53,7 @@ public class TestUseAOTCacheCpuFeaturesOnlyOption {
 
     static class Tester extends CDSAppTester {
         static final String appJar = ClassFileInstaller.getJarPath("app.jar");
-        static final String mainClass = "TestApp";
+        static final String mainClass = "HelloWorld";
         private boolean useAOTCacheCpuFeaturesOnlyOption = false;
 
         public Tester() {
@@ -89,7 +88,7 @@ public class TestUseAOTCacheCpuFeaturesOnlyOption {
         @Override
         public String[] appCommandLine(RunMode runMode) {
             return new String[] {
-                "HelloWorld"
+                mainClass
             };
         }
 

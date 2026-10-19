@@ -249,6 +249,9 @@ public:
   size_t ro_ptrmap_start_pos()             const { return _ro_ptrmap_start_pos; }
   int cpu_features_size()                  const { return _cpu_features_size; }
   void* archived_cpu_features() {
+    if (_cpu_features_offset == -1) {
+      return nullptr;
+    }
     char* cpu_features = ((char*)this) + _cpu_features_offset;
     return (void *)cpu_features;
   }

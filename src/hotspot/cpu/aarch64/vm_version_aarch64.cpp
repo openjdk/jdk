@@ -118,14 +118,20 @@ void VM_Version::initialize() {
   get_os_cpu_info();
   _cpu_features = _features;
 
-  uint64_t* aot_cache_cpu_features = (uint64_t*)get_aot_cache_cpu_features();
-  if (aot_cache_cpu_features != nullptr) {
-    if (is_super_set(_features, *aot_cache_cpu_features)) {
-      uint64_t features_to_clear = features_not_in(_features, *aot_cache_cpu_features);
-      _features = clear_features(_features, features_to_clear);
+  if (UseAOTCacheCpuFeaturesOnly) {
+    uint64_t* aot_cache_cpu_features = (uint64_t*)get_aot_cache_cpu_features();
+    if (aot_cache_cpu_features != nullptr) {
+      if (is_super_set(_features, *aot_cache_cpu_features)) {
+        uint64_t features_to_clear = features_not_in(_features, *aot_cache_cpu_features);
+        _features = clear_features(_features, features_to_clear);
+      } else {
+        if (!FLAG_IS_DEFAULT(UseAOTCacheCpuFeaturesOnly)) {
+          warning("UseAOTCacheCpuFeaturesOnly is ignored: one or more cpu features recorded in AOT cache are not supported by this CPU");
+        }
+        FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+      }
     }
   }
-
   int dcache_line = dcache_line_size();
 
   // Limit AllocatePrefetchDistance so that it does not exceed the

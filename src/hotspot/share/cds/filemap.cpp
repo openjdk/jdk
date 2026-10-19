@@ -420,8 +420,11 @@ void FileMapHeader::print(outputStream* st) {
   _must_match.print(st);
   st->print_cr("- has_aot_linked_classes                    %d", _has_aot_linked_classes);
   stringStream ss;
-  VM_Version::get_cpu_features_name(archived_cpu_features(), ss);
-  st->print_cr("- cpu features:                             %s", ss.as_string());
+  void* cpu_features = archived_cpu_features();
+  if (cpu_features != nullptr) {
+    VM_Version::get_cpu_features_name(cpu_features, ss);
+    st->print_cr("- cpu features:                             %s", ss.as_string());
+  }
 }
 
 bool FileMapInfo::validate_class_location() {

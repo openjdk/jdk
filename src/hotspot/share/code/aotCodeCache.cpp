@@ -821,6 +821,10 @@ bool AOTCodeCache::Header::verify_cpu_features(AOTCodeCache* cache) const {
   LogStreamHandle(Debug, aot, codecache, init) log;
   int cpu_features_size;
   void* cached_cpu_features_buffer = AOTCacheAccess::archived_cpu_features(cpu_features_size);
+  if (cached_cpu_features_buffer == nullptr) {
+    load_failure_log().print_cr("AOT Code Cache disabled: no cpu features found in AOT cache");
+    return false;
+  }
   if (cpu_features_size != VM_Version::cpu_features_size()) {
     if (load_failure_log().is_enabled()) {
       ResourceMark rm;

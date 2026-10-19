@@ -391,5 +391,5 @@ const char* Abstract_VM_Version::cpu_description(void) {
 }
 
 void* Abstract_VM_Version::get_aot_cache_cpu_features() {
-  return UseAOTCacheCpuFeaturesOnly ? AOTMetaspace::get_archived_cpu_features() : nullptr;
+  return AOTMetaspace::get_archived_cpu_features();
 }
