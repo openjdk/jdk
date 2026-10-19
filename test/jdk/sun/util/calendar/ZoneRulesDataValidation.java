@@ -45,11 +45,11 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class ZoneRulesDataValidation {
-    private static List<Arguments> maxValue() {
+    private static List<Arguments> testOffsets() {
         return List.of(
-            Arguments.of(1, 1_024, true), // stdOffsets
-            Arguments.of(6, 1_024, true), // savOffsets
-            Arguments.of(11, 16, false) // ruleSize
+            Arguments.of(1, true, 1_024), // stdOffsets
+            Arguments.of(6, true, 1_024), // savOffsets
+            Arguments.of(11, false, 16) // ruleSize
         );
     }
 
@@ -73,9 +73,8 @@ public class ZoneRulesDataValidation {
     }
 
     @ParameterizedTest
-    @MethodSource("maxValue")
-    void invalidDataSizeTest(int offset, int max, boolean isInt) throws IOException {
-        // size too large
+    @MethodSource("testOffsets")
+    void tooLargeDataSizeTest(int offset, boolean isInt, int max) throws IOException {
         var data = validData();
         if (isInt) {
             data.putInt(offset, max + 1);
@@ -85,17 +84,21 @@ public class ZoneRulesDataValidation {
         final var in = new DataInputStream(new ByteArrayInputStream(data.array()));
         assertThrows(StreamCorruptedException.class, () -> ZoneInfoFile.getZoneInfo(in, "Test"));
         in.close();
+    }
 
-        // negative size
+    @ParameterizedTest
+    @MethodSource("testOffsets")
+    void negativeDataSizeTest(int offset, boolean isInt) throws IOException {
+        var data = validData();
         if (isInt) {
             data.putInt(offset, -1);
         } else {
             data.put(offset, (byte)(-1));
         }
         data.position(0);
-        final var in2 = new DataInputStream(new ByteArrayInputStream(data.array()));
-        assertThrows(StreamCorruptedException.class, () -> ZoneInfoFile.getZoneInfo(in2, "Test"));
-        in2.close();
+        final var in = new DataInputStream(new ByteArrayInputStream(data.array()));
+        assertThrows(StreamCorruptedException.class, () -> ZoneInfoFile.getZoneInfo(in, "Test"));
+        in.close();
     }
 
     @Test

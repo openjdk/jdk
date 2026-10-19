@@ -66,7 +66,7 @@ public final class UBiDiProps {
         // read indexes[]
         int i, count;
         count=bytes.getInt();
-        if(count < IX_TOP || count - 1 > bytes.remaining() / 4) {
+        if(count < IX_TOP || count - 1 > bytes.remaining() / Integer.BYTES) {
             throw new IOException("Invalid index count in " + DATA_FILE_NAME);
         }
         indexes=new int[count];
