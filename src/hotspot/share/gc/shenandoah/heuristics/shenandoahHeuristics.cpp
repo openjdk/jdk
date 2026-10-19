@@ -257,13 +257,12 @@ void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
   }
 }
 
-void ShenandoahHeuristics::record_success_concurrent() {
+void ShenandoahHeuristics::record_success_concurrent(bool abbreviated) {
   _gc_times_learned++;
-
   adjust_penalty(Concurrent_Adjust);
 }
 
-void ShenandoahHeuristics::record_degenerated(bool is_generational_global) {
+void ShenandoahHeuristics::record_degenerated(bool abbreviated, bool is_generational_global) {
 
   if (!is_generational_global) {
     // We don't penalize generational GC heuristics for global GC because heuristics predict based on assumption of young GC.
