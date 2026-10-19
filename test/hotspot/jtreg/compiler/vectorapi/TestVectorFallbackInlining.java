@@ -61,7 +61,7 @@ public class TestVectorFallbackInlining {
         // SPECIES = FloatVector.SPECIES_DISTINCT_MAX;
         try {
             var lookup = MethodHandles.privateLookupIn(FloatVector.class, MethodHandles.lookup());
-            var speciesGetter = lookup.findStaticGetter(FloatVector.class, "SPECIES_DISTINCT_MAX", VectorSpecies.class)
+            var speciesGetter = lookup.findStaticGetter(FloatVector.class, "SPECIES_DISTINCT_MAX", VectorSpecies.class);
             @SuppressWarnings("unchecked")
             var _ = SPECIES = (VectorSpecies<Float>) speciesGetter.invokeExact();
         } catch (Throwable e) {
