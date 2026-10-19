@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Fold two CmpL nodes into one CmpUL node
+ * @summary C2's fold_compares may fold two CmpL nodes into one CmpUL node
  * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.rangechecks.TestFoldLongCompares
@@ -35,14 +35,13 @@ import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
 
 public class TestFoldLongCompares {
-    private static final long LO = -(1L << 40);
-    private static final long HI = 1L << 40;
+    private static final long LO = Integer.MIN_VALUE - 1L;
+    private static final long HI = Integer.MAX_VALUE + 1L;
 
     public static void main(String[] args) {
         TestFramework.run();
     }
 
-    // Use bounds outside the int range to keep the comparisons as CmpL.
     @Test
     @IR(counts = {IRNode.CMP_L, "= 2", IRNode.CMP_UL, "= 0"}, phase = CompilePhase.AFTER_PARSING)
     @IR(counts = {IRNode.CMP_L, "= 0", IRNode.CMP_UL, "= 1"})
@@ -118,6 +117,8 @@ public class TestFoldLongCompares {
 
     // hi - lo + 1 would overflow when the interval covers all long values.
     @Test
+    @IR(counts = {IRNode.CMP_L, "= 2", IRNode.CMP_UL, "= 0"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.CMP_L, "= 0", IRNode.CMP_UL, "= 1"})
     public static boolean testFullRange(long x, long a, long b) {
         long lo = Long.MIN_VALUE + (a & 1);
         long hi = Long.MAX_VALUE - (b & 1);
