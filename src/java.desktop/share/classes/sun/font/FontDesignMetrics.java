@@ -68,7 +68,7 @@ import sun.java2d.DisposerRecord;
  * The FontDesignMetrics class expresses font metrics in terms of arbitrary
  * <i>typographic units</i> (not points) chosen by the font supplier
  * and used in the underlying platform font representations.  These units are
- * defined by dividing the em-square into a grid.  The em-sqaure is the
+ * defined by dividing the em-square into a grid.  The em-square is the
  * theoretical square whose dimensions are the full body height of the
  * font.  A typographic unit is the smallest measurable unit in the
  * em-square.  The number of units-per-em is determined by the font

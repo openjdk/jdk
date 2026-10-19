@@ -174,7 +174,7 @@ public:
     MAX_CPU_FEATURES
   };
 
-  STATIC_ASSERT(sizeof(_features) * BitsPerByte >= MAX_CPU_FEATURES);
+  static_assert(sizeof(_features) * BitsPerByte >= MAX_CPU_FEATURES);
 
   static const char* _features_names[];
 

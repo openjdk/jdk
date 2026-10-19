@@ -60,7 +60,7 @@ class RefArrayKlass : public ObjArrayKlass {
                                                 int n, Klass* element_klass,
                                                 ArrayProperties props, TRAPS);
 
-  refArrayOop allocate_instance(int length, TRAPS);
+  objArrayOop allocate_instance(int length, TRAPS) override final;
 
   // Copying
   void copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS) override;

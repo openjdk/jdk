@@ -74,7 +74,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.RandomFactory jdk.test.lib.net.URIBuilder
  * @comment An arbitrary high value for idle connection timeout to prevent idle
  *          connection management from closing the HTTP/2 connection
- * @run junit/othervm -Djdk.httpclient.keepalive.timeout.h2=36000 ${test.main.class}
+ * @run junit/othervm -Djdk.httpclient.keepalive.timeout.h2=36000
+ *                    -Djdk.internal.httpclient.debug=true
+ *                    ${test.main.class}
  */
 class H2GoAwayPromptConnectionClose {
 

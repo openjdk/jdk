@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package nsk.monitoring.share.thread;
 
 import nsk.share.log.Log;
+import java.util.Arrays;
 import java.lang.management.ThreadInfo;
 import java.lang.management.MonitorInfo;
 import java.lang.management.LockInfo;
@@ -36,16 +37,6 @@ public class SleepingThread extends RecursiveMonitoringThread {
         private Object readyLock = new Object();
         private static final String[] expectedMethods = {
                 "java.lang.Thread.sleep",
-                "java.lang.Thread.sleepNanos",
-                "java.lang.Thread.sleepNanos0",
-                "java.lang.Thread.beforeSleep",
-                "java.lang.Thread.afterSleep",
-                "java.util.concurrent.TimeUnit.toNanos",
-                "java.lang.Object.<init>",
-                "jdk.internal.event.Event.<init>",
-                "jdk.internal.event.ThreadSleepEvent.<init>",
-                "jdk.internal.event.ThreadSleepEvent.<clinit>",
-                "jdk.internal.event.ThreadSleepEvent.isEnabled",
                 "nsk.monitoring.share.thread.SleepingThread.runInside"
         };
 
@@ -97,6 +88,26 @@ public class SleepingThread extends RecursiveMonitoringThread {
                         } catch (InterruptedException e) {
                         }
                 }
+        }
+
+        protected boolean checkStackTrace(StackTraceElement[] elements) {
+                if (elements.length == 0) {
+                    // ThreadMXBean.getThreadInfo(long) and getThreadInfo(long[]) return
+                    // ThreadInfo without a stack trace, so there is nothing to check.
+                    return true;
+                }
+                // Only the java.lang.Thread.sleep entry frame is required here.
+                // Frames above it are implementation details of sleep that change
+                // between releases, so they are not checked.
+                for (int i = elements.length - 1; i >= 0; i--) {
+                        if (elements[i].getClassName().equals("java.lang.Thread")
+                                        && elements[i].getMethodName().equals("sleep")) {
+                                // The frames below the sleep entry are the test's own stack and still get checked.
+                                return super.checkStackTrace(Arrays.copyOfRange(elements, i, elements.length));
+                        }
+                }
+                log.info("No java.lang.Thread.sleep frame in stack trace for: " + this);
+                return false;
         }
 
         protected boolean isStackTraceElementExpected(StackTraceElement element) {

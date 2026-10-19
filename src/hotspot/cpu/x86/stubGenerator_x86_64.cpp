@@ -32,7 +32,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/universe.hpp"
-#include "oops/inlineKlass.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/upcallLinker.hpp"
 #include "runtime/arguments.hpp"
@@ -311,7 +311,7 @@ address StubGenerator::generate_call_stub(address& return_address) {
   return_address = __ pc();
   entries.append(return_address);
 
-  // All of j_rargN + rax may be used to return inline type fields so be careful
+  // All of j_rargN + rax may be used to return value type fields so be careful
   // not to clobber those.  See SharedRuntime::java_return_convention().
 
   // store result depending on type (everything that is not
@@ -398,14 +398,14 @@ address StubGenerator::generate_call_stub(address& return_address) {
 
   // handle return types different from T_INT
   __ BIND(check_prim);
-  if (InlineTypeReturnedAsFields) {
+  if (ValueTypeReturnedAsFields) {
     // Check for scalarized return value
     __ testptr(rax, 1);
     __ jcc(Assembler::zero, is_long);
     // Load pack handler address
     __ andptr(rax, -2);
-    __ movptr(rax, Address(rax, InlineKlass::adr_members_offset()));
-    __ movptr(rbx, Address(rax, InlineKlass::pack_handler_jobject_offset()));
+    __ movptr(rax, Address(rax, ValueKlass::adr_members_offset()));
+    __ movptr(rbx, Address(rax, ValueKlass::pack_handler_jobject_offset()));
     // Call pack handler to initialize the buffer
     __ call(rbx);
     __ jmp(exit);
@@ -638,6 +638,101 @@ address StubGenerator::generate_verify_mxcsr() {
     __ addptr(rsp, wordSize);
     __ pop_ppx(rax);
   }
+
+  __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
+  return start;
+}
+
+address StubGenerator::generate_hf2i_fixup() {
+  StubId stub_id = StubId::stubgen_hf2i_fixup_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  StubCodeMark mark(this, stub_id);
+  Address inout(rsp, 5 * wordSize); // return address + 4 saves
+
+  start = __ pc();
+
+  Label L;
+
+  __ push_ppx(rax);
+  __ push_ppx(c_rarg3);
+  __ push_ppx(c_rarg2);
+  __ push_ppx(c_rarg1);
+
+  __ movl(rax, 0x7c00);
+  __ xorl(c_rarg3, c_rarg3);
+  __ movl(c_rarg2, inout);
+  __ movl(c_rarg1, c_rarg2);
+  __ andl(c_rarg1, 0x7fff);
+  __ cmpl(rax, c_rarg1); // NaN? -> 0
+  __ jcc(Assembler::negative, L);
+  __ testl(c_rarg2, c_rarg2); // signed ? min_jint : max_jint
+  __ movl(c_rarg3, 0x80000000);
+  __ movl(rax, 0x7fffffff);
+  __ cmovl(Assembler::positive, c_rarg3, rax);
+
+  __ bind(L);
+  __ movptr(inout, c_rarg3);
+
+  __ pop_ppx(c_rarg1);
+  __ pop_ppx(c_rarg2);
+  __ pop_ppx(c_rarg3);
+  __ pop_ppx(rax);
+
+  __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
+  return start;
+}
+
+address StubGenerator::generate_hf2l_fixup() {
+  StubId stub_id = StubId::stubgen_hf2l_fixup_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  StubCodeMark mark(this, stub_id);
+  Address inout(rsp, 5 * wordSize); // return address + 4 saves
+  start = __ pc();
+
+  Label L;
+
+  __ push_ppx(rax);
+  __ push_ppx(c_rarg3);
+  __ push_ppx(c_rarg2);
+  __ push_ppx(c_rarg1);
+
+  __ movl(rax, 0x7c00);
+  __ xorq(c_rarg3, c_rarg3);
+  __ movl(c_rarg2, inout);
+  __ movl(c_rarg1, c_rarg2);
+  __ andl(c_rarg1, 0x7fff);
+  __ cmpl(rax, c_rarg1); // NaN? -> 0
+  __ jcc(Assembler::negative, L);
+  __ testl(c_rarg2, c_rarg2); // signed ? min_jlong : max_jlong
+  __ mov64(c_rarg3, 0x8000000000000000);
+  __ mov64(rax, 0x7fffffffffffffff);
+  __ cmov(Assembler::positive, c_rarg3, rax);
+
+  __ bind(L);
+  __ movptr(inout, c_rarg3);
+
+  __ pop_ppx(c_rarg1);
+  __ pop_ppx(c_rarg2);
+  __ pop_ppx(c_rarg3);
+  __ pop_ppx(rax);
 
   __ ret(0);
 
@@ -4392,7 +4487,7 @@ address StubGenerator::generate_floatToFloat16() {
 
 static void save_return_registers(MacroAssembler* masm) {
   masm->push_ppx(rax);
-  if (InlineTypeReturnedAsFields) {
+  if (ValueTypeReturnedAsFields) {
     masm->push(rdi);
     masm->push(rsi);
     masm->push(rdx);
@@ -4401,7 +4496,7 @@ static void save_return_registers(MacroAssembler* masm) {
     masm->push(r9);
   }
   masm->push_d(xmm0);
-  if (InlineTypeReturnedAsFields) {
+  if (ValueTypeReturnedAsFields) {
     masm->push_d(xmm1);
     masm->push_d(xmm2);
     masm->push_d(xmm3);
@@ -4430,7 +4525,7 @@ static void save_return_registers(MacroAssembler* masm) {
 }
 
 static void restore_return_registers(MacroAssembler* masm) {
-  if (InlineTypeReturnedAsFields) {
+  if (ValueTypeReturnedAsFields) {
     masm->pop_d(xmm7);
     masm->pop_d(xmm6);
     masm->pop_d(xmm5);
@@ -4440,7 +4535,7 @@ static void restore_return_registers(MacroAssembler* masm) {
     masm->pop_d(xmm1);
   }
   masm->pop_d(xmm0);
-  if (InlineTypeReturnedAsFields) {
+  if (ValueTypeReturnedAsFields) {
     masm->pop(r9);
     masm->pop(r8);
     masm->pop(rcx);
@@ -4833,6 +4928,8 @@ void StubGenerator::generate_initial_stubs() {
   // platform dependent
   StubRoutines::x86::_verify_mxcsr_entry    = generate_verify_mxcsr();
 
+  StubRoutines::x86::_hf2i_fixup            = generate_hf2i_fixup();
+  StubRoutines::x86::_hf2l_fixup            = generate_hf2l_fixup();
   StubRoutines::x86::_f2i_fixup             = generate_f2i_fixup();
   StubRoutines::x86::_f2l_fixup             = generate_f2l_fixup();
   StubRoutines::x86::_d2i_fixup             = generate_d2i_fixup();

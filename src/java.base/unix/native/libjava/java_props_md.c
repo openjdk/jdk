@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -383,21 +383,6 @@ GetJavaProperties(JNIEnv *env)
 
     /* patches/service packs installed */
     sprops.patch_level = NULL;      // leave it undefined
-
-#ifdef SI_ISALIST
-    /* supported instruction sets */
-    {
-        char list[258];
-        int ret = sysinfo(SI_ISALIST, list, sizeof(list));
-        if (ret == 0) {
-            sprops.cpu_isalist = strdup(list);
-        } else {
-            sprops.cpu_isalist = NULL;
-        }
-    }
-#else
-    sprops.cpu_isalist = NULL;
-#endif
 
     /* endianness of platform */
     {

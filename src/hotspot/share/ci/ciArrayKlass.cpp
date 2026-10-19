@@ -60,7 +60,7 @@ ciType* ciArrayKlass::element_type() {
   if (is_type_array_klass()) {
     return ciType::make(as_type_array_klass()->element_type());
   } else {
-    return element_klass()->as_klass();
+    return as_obj_array_klass()->element_klass()->as_klass();
   }
 }
 

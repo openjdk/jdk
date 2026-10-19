@@ -72,6 +72,7 @@ abstract sealed /*value*/ class AbstractMask<E> extends VectorMask<E>
     }
 
     @Override
+    @ForceInline
     public void intoArray(boolean[] bits, int i) {
         AbstractSpecies<E> vsp = (AbstractSpecies<E>) vectorSpecies();
         int laneCount = vsp.laneCount();

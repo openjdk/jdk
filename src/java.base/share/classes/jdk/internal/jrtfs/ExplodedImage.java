@@ -122,7 +122,7 @@ class ExplodedImage extends SystemImage {
         private PathNode(String name, PathNode link) {
             super(name, link.getFileAttributes());
             this.file = null;
-            this.link = Objects.requireNonNull(link);
+            this.link = link;
             this.directories = null;
             this.childNames = null;
         }

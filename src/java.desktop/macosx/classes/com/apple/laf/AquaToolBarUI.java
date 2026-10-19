@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,8 +120,11 @@ public final class AquaToolBarUI extends BasicToolBarUI implements SwingConstant
 
             if (((JToolBar)c).isFloatable()) {
                 if (((JToolBar)c).getOrientation() == HORIZONTAL) {
-                    borderInsets.left = 12;
-                    // We don't have to adjust for right-to-left
+                    if (((JToolBar)c).getComponentOrientation().isLeftToRight()) {
+                        borderInsets.left = 12;
+                    } else {
+                        borderInsets.right = 12;
+                    }
                 } else { // vertical
                     borderInsets.top = 12;
                 }

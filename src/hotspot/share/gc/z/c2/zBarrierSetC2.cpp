@@ -320,7 +320,7 @@ void ZBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
     stubs->at(i)->emit_code(masm);
   }
 
-  masm.flush();
+  // Code will be copied. No ICache sync required.
 }
 
 int ZBarrierSetC2::estimate_stub_size() const {
@@ -444,7 +444,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
       if (offset != arrayOopDesc::base_offset_in_bytes(T_OBJECT)) {
         assert(UseCompactObjectHeaders, "should only happen with COH");
         assert((arrayOopDesc::base_offset_in_bytes(T_OBJECT) - offset) == BytesPerLong, "unexpected offset");
-        length = phase->transform_later(new SubXNode(length, phase->longcon(1))); // Size is in longs
+        length = phase->transform_later(new SubXNode(length, phase->MakeConX(1))); // Size is in longs
         src_offset = phase->longcon(arrayOopDesc::base_offset_in_bytes(T_OBJECT));
         dest_offset = src_offset;
       }

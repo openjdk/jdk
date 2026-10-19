@@ -216,7 +216,9 @@ void AOTArtifactFinder::add_aot_inited_class(InstanceKlass* ik) {
         add_aot_inited_class(s);
       }
 
-      Array<InstanceKlass*>* interfaces = ik->local_interfaces();
+      // An uninitialized direct interface may have initialized superinterfaces
+      // that declare default methods. Preserve their initialization state too.
+      Array<InstanceKlass*>* interfaces = ik->transitive_interfaces();
       int len = interfaces->length();
       for (int i = 0; i < len; i++) {
         InstanceKlass* intf = interfaces->at(i);
@@ -267,6 +269,13 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
     if (CDSConfig::is_dumping_final_static_archive() && ik->defined_by_other_loaders()) {
       // The following are not appliable to unregistered classes
       return;
+    }
+    ConstantPoolCache* cpCache = ik->constants()->cache();
+    if (cpCache != nullptr) {
+      // Resolved{Field,Indy,Method}Entries in cpCache are not walked by MetaspaceClosure,
+      // because only some of the resolved entries are archivable. The following call will
+      // discover the anonymous classes that are reachable only from the archivable entries.
+      cpCache->record_classes_in_archivable_entries();
     }
     scan_oops_in_instance_class(ik);
     if (ik->is_hidden() && CDSConfig::is_dumping_aot_linked_classes()) {

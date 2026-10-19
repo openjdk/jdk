@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package nsk.jdwp.Event.METHOD_EXIT;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdwp.*;
@@ -36,8 +37,8 @@ import java.io.*;
  */
 public class methexit001a {
 
-    static final int BREAKPOINT_LINE = 91;
-    static final int METHOD_EXIT_LINE = 105;
+    static final int BREAKPOINT_LINE = 92;
+    static final int METHOD_EXIT_LINE = 106;
 
     static ArgumentHandler argumentHandler = null;
     static Log log = null;
@@ -78,7 +79,7 @@ public class methexit001a {
     }
 
     // tested class
-    public static class TestedClass extends Thread {
+    public static class TestedClass extends ThreadWrapper {
         public TestedClass(String name) {
             super(name);
         }

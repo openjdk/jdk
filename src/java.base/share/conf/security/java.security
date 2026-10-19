@@ -845,7 +845,7 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 #   jdk.crypto.disabledAlgorithms=Cipher.RSA/ECB/PKCS1Padding, MessageDigest.MD2
 #   jdk.crypto.legacyAlgorithms=Cipher.RSA/ECB/PKCS1Padding, MessageDigest.MD2
 #
-#jdk.crypto.legacyAlgorithms=
+jdk.crypto.legacyAlgorithms=Cipher.RSA/ECB/PKCS1Padding
 #jdk.crypto.disabledAlgorithms=
 
 #
@@ -1373,8 +1373,8 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # file. This can be any HmacPBE<digest> or PBEWith<mac> algorithm defined in
 # the Mac section of the Java Security Standard Algorithm Names Specification,
 # for example, HmacPBESHA256 or PBEWithHmacSHA256. When set to "NONE",
-# no Mac is generated. The default value is "HmacPBESHA256".
-#keystore.pkcs12.macAlgorithm = HmacPBESHA256
+# no Mac is generated. The default value is "PBEWithHmacSHA256".
+#keystore.pkcs12.macAlgorithm = PBEWithHmacSHA256
 
 # The iteration count used by the MacData algorithm. This value must be a
 # positive integer. The default value is 10000.

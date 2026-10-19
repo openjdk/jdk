@@ -225,8 +225,8 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1
 
   const Register arr_size = tmp2; // okay to be the same
   // align object end
-  mv(arr_size, (int32_t)base_offset_in_bytes + MinObjAlignmentInBytesMask);
-  shadd(arr_size, len, arr_size, t0, f);
+  mv(t0, (int32_t)base_offset_in_bytes + MinObjAlignmentInBytesMask);
+  shift_left_add(arr_size, len, t0, f);
   andi(arr_size, arr_size, ~MinObjAlignmentInBytesMask);
 
   try_allocate(obj, arr_size, 0, tmp1, tmp2, slow_case);
@@ -255,11 +255,11 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1
 
 void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes,
                                     int sp_offset_for_orig_pc,
-                                    bool needs_stack_repair, bool has_scalarized_args,
-                                    Label* verified_inline_entry_label) {
+                                    bool has_scalarized_args,
+                                    Label* verified_value_entry_label) {
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
 
-  assert(!needs_stack_repair && !has_scalarized_args, "");
+  assert(!has_scalarized_args, "");
 
   // Make sure there is enough stack space for this method's activation.
   // Note that we do this before creating a frame.
@@ -270,9 +270,9 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->nmethod_entry_barrier(this, nullptr /* slow_path */, nullptr /* continuation */, nullptr /* guard */);
 
-  if (verified_inline_entry_label != nullptr) {
+  if (verified_value_entry_label != nullptr) {
     // Jump here from the scalarized entry points that already created the frame.
-    bind(*verified_inline_entry_label);
+    bind(*verified_value_entry_label);
   }
 }
 
@@ -287,7 +287,7 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
 }
 
 int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes,
-                                        int sp_offset_for_orig_pc, Label& verified_inline_entry_label, bool is_inline_ro_entry) {
+                                        int sp_offset_for_orig_pc, Label& verified_value_entry_label, bool is_value_ro_entry) {
   Unimplemented();
   return 0;
 }

@@ -25,6 +25,7 @@
 
 #include <windows.h>
 #include <winsock2.h>
+#include <Mswsock.h>
 
 #include "jni.h"
 #include "jni_util.h"
@@ -36,31 +37,6 @@
 
 #include "sun_nio_ch_Net.h"
 #include "sun_nio_ch_PollArrayWrapper.h"
-
-/**
- * Definitions to allow for building with older SDK include files.
- */
-
-#ifndef MCAST_BLOCK_SOURCE
-
-#define MCAST_BLOCK_SOURCE          43
-#define MCAST_UNBLOCK_SOURCE        44
-#define MCAST_JOIN_SOURCE_GROUP     45
-#define MCAST_LEAVE_SOURCE_GROUP    46
-
-#endif  /* MCAST_BLOCK_SOURCE */
-
-struct my_ip_mreq_source {
-    IN_ADDR imr_multiaddr;
-    IN_ADDR imr_sourceaddr;
-    IN_ADDR imr_interface;
-};
-
-struct my_group_source_req {
-    ULONG gsr_interface;
-    SOCKADDR_STORAGE gsr_group;
-    SOCKADDR_STORAGE gsr_source;
-};
 
 /**
  * Copy IPv6 address as jbytearray to target
@@ -158,25 +134,19 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
     int domain = (preferIPv6) ? AF_INET6 : AF_INET;
 
     s = socket(domain, (stream ? SOCK_STREAM : SOCK_DGRAM), 0);
-    if (s != INVALID_SOCKET) {
-        SetHandleInformation((HANDLE)s, HANDLE_FLAG_INHERIT, 0);
-
-        /* Attempt to disable IPV6_V6ONLY to ensure dual-socket support; ignore errors */
-        if (domain == AF_INET6) {
-            int opt = 0;
-            setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY,
-                       (const char *)&opt, sizeof(opt));
-        }
-
-        /* Disable WSAECONNRESET errors for initially unconnected UDP sockets */
-        if (!stream) {
-            setConnectionReset(s, FALSE);
-        }
-
-    } else {
+    if (s == INVALID_SOCKET) {
         NET_ThrowNew(env, WSAGetLastError(), "socket");
+        return IOS_THROWN;
+    }
+    SetHandleInformation((HANDLE)s, HANDLE_FLAG_INHERIT, 0);
+
+    /* Attempt to disable IPV6_V6ONLY to ensure dual-socket support; ignore errors */
+    if (domain == AF_INET6 && ipv4_available()) {
+        int opt = 0;
+        setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, (const char *)&opt, sizeof(opt));
     }
 
+    /* Enable SIO_LOOPBACK_FAST_PATH on TCP sockets if possible */
     if (stream && fastLoopback) {
         static int loopback_available = 1;
         if (loopback_available) {
@@ -186,9 +156,16 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
                     loopback_available = 0;
                 } else {
                     NET_ThrowNew(env, rv, "fastLoopback");
+                    closesocket(s);
+                    return IOS_THROWN;
                 }
             }
         }
+    }
+
+    /* Disable WSAECONNRESET errors for initially unconnected UDP sockets */
+    if (!stream) {
+        setConnectionReset(s, FALSE);
     }
 
     return (jint)s;
@@ -290,15 +267,19 @@ Java_sun_nio_ch_Net_accept(JNIEnv *env, jclass clazz, jobject fdo, jobject newfd
         JNU_ThrowIOExceptionWithLastError(env, "Accept failed");
         return IOS_THROWN;
     }
-
     SetHandleInformation((HANDLE)(UINT_PTR)newfd, HANDLE_FLAG_INHERIT, 0);
     setfdval(env, newfdo, newfd);
 
     remote_ia = NET_SockaddrToInetAddress(env, &sa, (int *)&remote_port);
-    CHECK_NULL_RETURN(remote_ia, IOS_THROWN);
-
+    if (remote_ia == NULL) {
+        closesocket(newfd);
+        return IOS_THROWN;
+    }
     isa = (*env)->NewObject(env, isa_class, isa_ctorID, remote_ia, remote_port);
-    CHECK_NULL_RETURN(isa, IOS_THROWN);
+    if (isa == NULL) {
+        closesocket(newfd);
+        return IOS_THROWN;
+    }
     (*env)->SetObjectArrayElement(env, isaa, 0, isa);
 
     return 1;
@@ -450,7 +431,7 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
                                 jint group, jint interf, jint source)
 {
     struct ip_mreq mreq;
-    struct my_ip_mreq_source mreq_source;
+    struct ip_mreq_source mreq_source;
     int opt, n, optlen;
     void* optval;
 
@@ -482,7 +463,7 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_blockOrUnblock4(JNIEnv *env, jobject this, jboolean block, jobject fdo,
                                    jint group, jint interf, jint source)
 {
-    struct my_ip_mreq_source mreq_source;
+    struct ip_mreq_source mreq_source;
     int n;
     int opt = (block) ? IP_BLOCK_SOURCE : IP_UNBLOCK_SOURCE;
 
@@ -513,7 +494,7 @@ static int setGroupSourceReqOption(JNIEnv* env,
                                    jint index,
                                    jbyteArray source)
 {
-    struct my_group_source_req req;
+    struct group_source_req req;
     struct sockaddr_in6* sin6;
 
     req.gsr_interface = (ULONG)index;
