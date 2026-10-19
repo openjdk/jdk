@@ -25,12 +25,12 @@
 #include "cds/aotLogging.hpp"
 #include "cds/aotMapLogger.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.inline.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "code/aotCodeCache.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -88,8 +88,8 @@ void CDSConfig::ergo_initialize() {
 
   if (is_dumping_static_archive() && !is_dumping_final_static_archive()) {
     // Note: -Xshare and -XX:AOTMode flags are mutually exclusive.
-    // - Classic workflow: -Xshare:on and -Xshare:dump cannot take effect at the same time.
-    // - JEP 483 workflow: -XX:AOTMode:record and -XX:AOTMode=on cannot take effect at the same time.
+    // - Classic CDS workflow: -Xshare:on and -Xshare:dump cannot take effect at the same time.
+    // - AOT workflow: -XX:AOTMode:record and -XX:AOTMode=required cannot take effect at the same time.
     // So we can never come to here with RequireSharedSpaces==true.
     assert(!RequireSharedSpaces, "sanity");
 
@@ -515,6 +515,11 @@ void CDSConfig::check_aotmode_off() {
 }
 
 void CDSConfig::check_aotmode_auto_or_on() {
+  if (AOTMode != nullptr && strcmp(AOTMode, "on") == 0) {
+    warning("Option -XX:AOTMode-on was deprecated in version 28 and will likely be "
+            "removed in a future release. Use option -XX:AOTMode=required instead.");
+  }
+
   if (!FLAG_IS_DEFAULT(AOTConfiguration)) {
     vm_exit_during_initialization(err_msg("AOTConfiguration can only be used with when AOTMode is record or create (selected AOTMode = %s)",
                                           FLAG_IS_DEFAULT(AOTMode) ? "auto" : AOTMode));
@@ -1060,7 +1065,7 @@ void CDSConfig::disable_full_module_graph() {
 }
 
 bool CDSConfig::is_using_full_module_graph() {
-  if (ClassLoaderDataShared::is_full_module_graph_loaded()) {
+  if (AOTModules::is_full_module_graph_loaded()) {
     return true;
   }
 
@@ -1089,7 +1094,7 @@ void CDSConfig::stop_dumping_full_module_graph(const char* reason) {
 }
 
 void CDSConfig::stop_using_full_module_graph(const char* reason) {
-  assert(!ClassLoaderDataShared::is_full_module_graph_loaded(), "you call this function too late!");
+  assert(!AOTModules::is_full_module_graph_loaded(), "you call this function too late!");
   if (_is_using_full_module_graph) {
     _is_using_full_module_graph = false;
     if (reason != nullptr) {

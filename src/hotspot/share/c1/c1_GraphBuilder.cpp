@@ -1389,7 +1389,7 @@ void GraphBuilder::if_node(Value x, If::Condition cond, Value y, ValueStack* sta
       }
     }
   }
-  if ((stream()->cur_bc() == Bytecodes::_if_acmpeq || stream()->cur_bc() == Bytecodes::_if_acmpne) &&
+  if (Arguments::is_valhalla_enabled() && (stream()->cur_bc() == Bytecodes::_if_acmpeq || stream()->cur_bc() == Bytecodes::_if_acmpne) &&
       profile_acmp()) {
     compilation()->set_would_profile(true);
     append(new ProfileACmpTypes(method(), bci(), x, y));

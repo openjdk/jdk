@@ -10316,10 +10316,10 @@ myInit() {
         <synopsis>Set Extension Event Callback</synopsis>
 
         <description>
-          Sets the callback function for an extension event and
-          enables the event. Or, if the callback is null, disables
-          the event.  Note that unlike standard events, setting
-          the callback and enabling the event are a single operation.
+          Sets the callback function for an extension event.
+          If <paramlink id="callback"/> is null the callback is removed.
+          Use <functionlink id="SetEventNotificationMode"/> with <paramlink id="extension_event_index"/>
+          to enable or disable notification.
         </description>
         <origin>new</origin>
         <capabilities>
@@ -10338,12 +10338,12 @@ myInit() {
           <param id="callback">
             <ptrtype>
               <struct>jvmtiExtensionEvent</struct>
-              <nullok>disable the event</nullok>
+              <nullok>remove the callback</nullok>
             </ptrtype>
             <description>
+              If <paramlink id="callback"/> is null the callback is removed.
               If <code>callback</code> is non-null,
-              set <code>callback</code> to be the event callback function
-              and enable the event.
+              set <code>callback</code> to be the event callback function.
             </description>
           </param>
         </parameters>
@@ -14177,7 +14177,7 @@ myInit() {
       every 512KB).
       <p/>
       If another sampling interval is required, the user can call
-      <functionlink id="SetHeapSamplingInterval"></functionlink> with a strictly positive integer value,
+      <functionlink id="SetHeapSamplingInterval"></functionlink> with a non-negative integer value,
       representing the new sampling interval.
       <p/>
       This event is sent once the sampled allocation has been performed.  It provides the object, stack trace
