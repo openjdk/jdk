@@ -270,14 +270,20 @@ public class DHasKEM implements KEMSpi {
             // X25519/X448 shared secret.
             if (this == X25519 || this == X448) {
                 byte[] s = secret.getEncoded();
-                byte data = 0;
-                for (byte b : s) {
-                    data |= b;
-                }
-                if (data == 0) {
-                    // Trigger ILLEGAL_PARAMETER alert
-                    throw new IllegalArgumentException(
-                            "All-zero shared secret");
+                try {
+                    byte data = 0;
+                    for (byte b : s) {
+                        data |= b;
+                    }
+                    if (data == 0) {
+                        // Trigger ILLEGAL_PARAMETER alert
+                        throw new IllegalArgumentException(
+                                "All-zero shared secret");
+                    }
+                } finally {
+                    // getEncoded() returns a temporary copy of the
+                    // shared secret.
+                    Arrays.fill(s, (byte) 0);
                 }
             }
 

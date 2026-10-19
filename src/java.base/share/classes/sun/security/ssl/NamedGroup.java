@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Set;
 import javax.crypto.KeyAgreement;
+import javax.crypto.KEM;
 import javax.crypto.spec.DHParameterSpec;
 import sun.security.ssl.ECDHKeyExchange.ECDHEPossession;
 import sun.security.util.CurveDB;
@@ -234,20 +235,17 @@ enum NamedGroup {
     X25519MLKEM768(0x11ec, "X25519MLKEM768",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
-            Hybrid.X25519_MLKEM768,
-            HybridProvider.PROVIDER),
+            Hybrid.X25519_MLKEM768),
 
     SECP256R1MLKEM768(0x11eb, "SecP256r1MLKEM768",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
-            Hybrid.SECP256R1_MLKEM768,
-            HybridProvider.PROVIDER),
+            Hybrid.SECP256R1_MLKEM768),
 
     SECP384R1MLKEM1024(0x11ed, "SecP384r1MLKEM1024",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
-            Hybrid.SECP384R1_MLKEM1024,
-            HybridProvider.PROVIDER),
+            Hybrid.SECP384R1_MLKEM1024),
 
     // Elliptic Curves (RFC 4492)
     //
@@ -269,8 +267,6 @@ enum NamedGroup {
     final AlgorithmParameterSpec keAlgParamSpec;
     final AlgorithmParameters keAlgParams;
     final boolean isAvailable;
-    final Provider defaultProvider;
-
     // performance optimization
     private static final Set<CryptoPrimitive> KEY_AGREEMENT_PRIMITIVE_SET =
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
@@ -279,23 +275,12 @@ enum NamedGroup {
             NamedGroupSpec namedGroupSpec,
             ProtocolVersion[] supportedProtocols,
             AlgorithmParameterSpec keAlgParamSpec) {
-        this(id, name, namedGroupSpec, supportedProtocols, keAlgParamSpec,
-                null);
-    }
-
-    // Constructor used for all NamedGroup types
-    NamedGroup(int id, String name,
-            NamedGroupSpec namedGroupSpec,
-            ProtocolVersion[] supportedProtocols,
-            AlgorithmParameterSpec keAlgParamSpec,
-            Provider defaultProvider) {
         this.id = id;
         this.name = name;
         this.spec = namedGroupSpec;
         this.algorithm = namedGroupSpec.algorithm;
         this.supportedProtocols = supportedProtocols;
         this.keAlgParamSpec = keAlgParamSpec;
-        this.defaultProvider = defaultProvider;
 
         // Check if it is a supported named group.
         AlgorithmParameters algParams = null;
@@ -312,13 +297,19 @@ enum NamedGroup {
         // Check the specific algorithm parameters.
         if (mediator) {
             try {
-                // Skip AlgorithmParameters for KEMs (not supported)
-                // Check KEM's availability via KeyFactory
+                // Skip AlgorithmParameters for KEMs (not supported).
+                // A direct hybrid KEM must provide both KeyPairGenerator
+                // and KEM. It does not require a KeyFactory because TLS
+                // passes a RAW key_share directly to the KEM encapsulator.
                 if (namedGroupSpec == NamedGroupSpec.NAMED_GROUP_KEM) {
-                    if (defaultProvider == null) {
-                        KeyFactory.getInstance(name);
+                    Provider provider = getKEMProvider();
+                    if (provider == null) {
+                        throw new NoSuchAlgorithmException(
+                                "No KeyPairGenerator and KEM provider for " +
+                                name);
                     } else {
-                        KeyFactory.getInstance(name, defaultProvider);
+                        KeyPairGenerator.getInstance(name, provider);
+                        KEM.getInstance(name, provider);
                     }
                 } else {
                     // ECDHE or others: use AlgorithmParameters as before
@@ -333,8 +324,8 @@ enum NamedGroup {
                     if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.warning(
-                            "No AlgorithmParameters or KeyFactory for " + name,
-                                exp);
+                                "No AlgorithmParameters, KeyPairGenerator, " +
+                                "or KEM for " + name, exp);
                     }
                 } else {
                     // Please remove the following code if the XDH/X25519/X448
@@ -367,8 +358,34 @@ enum NamedGroup {
         this.keAlgParams = mediator ? algParams : null;
     }
 
-    Provider getProvider() {
-        return defaultProvider;
+    private Provider getConfiguredProvider(String service) {
+        Provider[] providers = Security.getProviders(service + "." + name);
+        if (providers != null && providers.length > 0) {
+            return providers[0];
+        }
+
+        return null;
+    }
+
+    Provider getKPGProvider() {
+        return (spec == NamedGroupSpec.NAMED_GROUP_KEM) ?
+                getKEMProvider() : getConfiguredProvider("KeyPairGenerator");
+    }
+
+    Provider getKEMProvider() {
+        if (spec != NamedGroupSpec.NAMED_GROUP_KEM) {
+            return getConfiguredProvider("KEM");
+        }
+
+        Provider[] providers = Security.getProviders("KEM." + name);
+        if (providers != null) {
+            for (Provider provider : providers) {
+                if (provider.getService("KeyPairGenerator", name) != null) {
+                    return provider;
+                }
+            }
+        }
+        return null;
     }
 
     //
