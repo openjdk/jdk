@@ -4066,17 +4066,21 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
                             DoubleVector512.DoubleShuffle512.class,
                             DoubleVector512::new);
 
+    // Allows tests to access VectorMax/ShuffleMax for compilation behaviors
+    static final VectorSpecies<Double> SPECIES_DISTINCT_MAX
+        = new DoubleSpecies(VectorShapeImpl.S_Max_BIT,
+                            DoubleVectorMax.class,
+                            DoubleVectorMax.DoubleMaskMax.class,
+                            DoubleVectorMax.DoubleShuffleMax.class,
+                            DoubleVectorMax::new);
+
     /** Species representing {@link DoubleVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<Double> SPECIES_MAX = switch (VectorShapeImpl.S_Max_BIT.switchKey) {
             case VectorShapeImpl.SK_64_BIT -> SPECIES_64;
             case VectorShapeImpl.SK_128_BIT -> SPECIES_128;
             case VectorShapeImpl.SK_256_BIT -> SPECIES_256;
             case VectorShapeImpl.SK_512_BIT -> SPECIES_512;
-            default -> new DoubleSpecies(VectorShapeImpl.S_Max_BIT,
-                    DoubleVectorMax.class,
-                    DoubleVectorMax.DoubleMaskMax.class,
-                    DoubleVectorMax.DoubleShuffleMax.class,
-                    DoubleVectorMax::new);
+            default -> SPECIES_DISTINCT_MAX;
     };
 
 

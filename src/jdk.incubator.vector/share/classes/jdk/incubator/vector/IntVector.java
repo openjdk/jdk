@@ -4180,17 +4180,21 @@ public abstract sealed class IntVector extends AbstractVector<Integer>
                             IntVector512.IntShuffle512.class,
                             IntVector512::new);
 
+    // Allows tests to access VectorMax/ShuffleMax for compilation behaviors
+    static final VectorSpecies<Integer> SPECIES_DISTINCT_MAX
+        = new IntSpecies(VectorShapeImpl.S_Max_BIT,
+                            IntVectorMax.class,
+                            IntVectorMax.IntMaskMax.class,
+                            IntVectorMax.IntShuffleMax.class,
+                            IntVectorMax::new);
+
     /** Species representing {@link IntVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<Integer> SPECIES_MAX = switch (VectorShapeImpl.S_Max_BIT.switchKey) {
             case VectorShapeImpl.SK_64_BIT -> SPECIES_64;
             case VectorShapeImpl.SK_128_BIT -> SPECIES_128;
             case VectorShapeImpl.SK_256_BIT -> SPECIES_256;
             case VectorShapeImpl.SK_512_BIT -> SPECIES_512;
-            default -> new IntSpecies(VectorShapeImpl.S_Max_BIT,
-                    IntVectorMax.class,
-                    IntVectorMax.IntMaskMax.class,
-                    IntVectorMax.IntShuffleMax.class,
-                    IntVectorMax::new);
+            default -> SPECIES_DISTINCT_MAX;
     };
 
 

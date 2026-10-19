@@ -44,7 +44,7 @@ import static jdk.internal.vm.vector.VectorSupport.*;
 @ValueBased
 final class DoubleVectorMax extends DoubleVector {
     static final DoubleSpecies VSPECIES =
-        (DoubleSpecies) DoubleVector.SPECIES_MAX;
+        (DoubleSpecies) DoubleVector.SPECIES_DISTINCT_MAX;
 
     static final VectorShape VSHAPE =
         VSPECIES.vectorShape();

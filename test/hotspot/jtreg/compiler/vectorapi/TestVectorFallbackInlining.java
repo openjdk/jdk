@@ -25,8 +25,12 @@ package compiler.vectorapi;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.verify.Verify;
-import jdk.incubator.vector.FloatVector;
-import jdk.incubator.vector.VectorSpecies;
+import jdk.incubator.vector.*;
+
+import java.lang.invoke.MethodHandleProxies;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.util.function.Function;
 
 /*
  * @test
@@ -34,7 +38,7 @@ import jdk.incubator.vector.VectorSpecies;
  * @summary Verify that the fallback implementation of a failed vector intrinsic is
  *          inlined (rather than left as a static call) when IncrementalInlineVector
  *          is enabled.
- * @modules jdk.incubator.vector
+ * @modules jdk.incubator.vector/jdk.incubator.vector:+open
  * @library /test/lib /
  * @requires vm.compiler2.enabled
  * @run driver ${test.main.class}
@@ -53,7 +57,21 @@ import jdk.incubator.vector.VectorSpecies;
  * static call to the fallback remains.
  */
 public class TestVectorFallbackInlining {
-    private static final VectorSpecies<Float> SPECIES = FloatVector.SPECIES_MAX;
+    static {
+        // SPECIES = FloatVector.SPECIES_DISTINCT_MAX;
+        try {
+            var lookup = MethodHandles.privateLookupIn(FloatVector.class, MethodHandles.lookup());
+            var speciesGetter = lookup.findStaticGetter(FloatVector.class, "SPECIES_DISTINCT_MAX", VectorSpecies.class)
+            @SuppressWarnings("unchecked")
+            var _ = SPECIES = (VectorSpecies<Float>) speciesGetter.invokeExact();
+        } catch (Throwable e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
+    // We use the species that uses X-VectorMax implementation class whose
+    // withLane method cannot be inlined in any way (no switch)
+    private static final VectorSpecies<Float> SPECIES;
     private static final int LENGTH = 1024;
 
     // Non-final so the JIT cannot treat the lane index as a compile-time constant, which
@@ -80,11 +98,13 @@ public class TestVectorFallbackInlining {
     public static void main(String[] args) {
         // Note: Some platforms don't activate EnableVectorSupport by default. Required here.
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
+                                   "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED",
                                    FORCE_INLINE_FALLBACK,
                                    "-XX:+IncrementalInlineVector",
                                    "-XX:+UnlockExperimentalVMOptions",
                                    "-XX:+EnableVectorSupport");
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
+                                   "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED",
                                    FORCE_INLINE_FALLBACK,
                                    "-XX:-IncrementalInlineVector",
                                    "-XX:+UnlockExperimentalVMOptions",

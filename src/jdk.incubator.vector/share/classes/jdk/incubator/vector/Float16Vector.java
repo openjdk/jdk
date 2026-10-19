@@ -4077,17 +4077,21 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
                             Float16Vector512.Float16Shuffle512.class,
                             Float16Vector512::new);
 
+    // Allows tests to access VectorMax/ShuffleMax for compilation behaviors
+    static final VectorSpecies<Float16> SPECIES_DISTINCT_MAX
+        = new Float16Species(VectorShapeImpl.S_Max_BIT,
+                            Float16VectorMax.class,
+                            Float16VectorMax.Float16MaskMax.class,
+                            Float16VectorMax.Float16ShuffleMax.class,
+                            Float16VectorMax::new);
+
     /** Species representing {@link Float16Vector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<Float16> SPECIES_MAX = switch (VectorShapeImpl.S_Max_BIT.switchKey) {
             case VectorShapeImpl.SK_64_BIT -> SPECIES_64;
             case VectorShapeImpl.SK_128_BIT -> SPECIES_128;
             case VectorShapeImpl.SK_256_BIT -> SPECIES_256;
             case VectorShapeImpl.SK_512_BIT -> SPECIES_512;
-            default -> new Float16Species(VectorShapeImpl.S_Max_BIT,
-                    Float16VectorMax.class,
-                    Float16VectorMax.Float16MaskMax.class,
-                    Float16VectorMax.Float16ShuffleMax.class,
-                    Float16VectorMax::new);
+            default -> SPECIES_DISTINCT_MAX;
     };
 
 
