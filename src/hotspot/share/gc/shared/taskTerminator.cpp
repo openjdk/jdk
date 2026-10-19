@@ -108,10 +108,7 @@ void TaskTerminator::notify_all() {
 }
 
 bool TaskTerminator::exit_termination(size_t tasks, TerminatorTerminator* terminator) {
-  if (terminator != nullptr) {
-    return terminator->should_exit_termination(tasks);
-  }
-  return tasks > 0;
+  return tasks > 0 || (terminator != nullptr && terminator->should_exit_termination());
 }
 
 size_t TaskTerminator::tasks_in_queue_set() const {
