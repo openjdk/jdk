@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/threads.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 // A closure that takes an oop in the old generation and, if it's pointing
 // into the young generation, dirties the corresponding remembered set entry.
@@ -106,12 +107,6 @@ bool ShenandoahDirectCardMarkRememberedSet::is_write_card_dirty(HeapWord* p) con
   size_t index = card_index_for_addr(p);
   CardValue* bp = &(_card_table->write_byte_map())[index];
   return (bp[0] == CardTable::dirty_card_val());
-}
-
-void ShenandoahDirectCardMarkRememberedSet::mark_card_as_dirty(HeapWord* p) {
-  size_t index = card_index_for_addr(p);
-  CardValue* bp = &(_card_table->write_byte_map())[index];
-  bp[0] = CardTable::dirty_card_val();
 }
 
 void ShenandoahDirectCardMarkRememberedSet::mark_range_as_dirty(HeapWord* p, size_t num_heap_words) {
@@ -232,7 +227,7 @@ void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
     previous_address = address;
 
     const oop obj = cast_to_oop(address);
-    address += obj->size();
+    address += ShenandoahForwarding::size(obj);
   }
 
   // Register the last object seen in this range.
@@ -351,7 +346,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
       if (prev < left) {
         oop obj = cast_to_oop(prev);
         assert(oopDesc::is_oop(obj), "Should be an object");
-        HeapWord* obj_end = prev + obj->size();
+        HeapWord* obj_end = prev + ShenandoahForwarding::size(obj);
         if (obj_end > left) {
           return prev;
         }
@@ -403,7 +398,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
     if (ctx->is_marked(p)) {
       oop obj = cast_to_oop(p);
       assert(oopDesc::is_oop(obj), "Should be an object");
-      assert(p + obj->size() > left, "This object should span start of card");
+      assert(p + ShenandoahForwarding::size(obj) > left, "This object should span start of card");
       assert(p < right, "Result must precede right");
       return p;
     } else {
@@ -449,7 +444,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
 #ifdef ASSERT
   oop obj = cast_to_oop(p);
   assert(oopDesc::is_oop(obj), "Should be an object");
-  assert(p + obj->size() > left, "obj should end after left end of card");
+  assert(p + ShenandoahForwarding::size(obj) > left, "obj should end after left end of card");
 #endif // ASSERT
   return p;
 }
@@ -472,10 +467,6 @@ bool ShenandoahScanRemembered::is_write_card_dirty(size_t card_index) {
 
 bool ShenandoahScanRemembered::is_card_dirty(HeapWord* p) {
   return _rs->is_card_dirty(p);
-}
-
-void ShenandoahScanRemembered::mark_card_as_dirty(HeapWord* p) {
-  _rs->mark_card_as_dirty(p);
 }
 
 bool ShenandoahScanRemembered::is_write_card_dirty(HeapWord* p) {
@@ -524,7 +515,7 @@ bool ShenandoahScanRemembered::verify_registration(HeapWord* address, Shenandoah
   while (base_addr + offset < address) {
     oop obj = cast_to_oop(base_addr + offset);
     if (!ctx || ctx->is_marked(obj)) {
-      offset += obj->size();
+      offset += ShenandoahForwarding::size(obj);
     } else {
       // If this object is not live, don't trust its size(); all objects above tams are live.
       ShenandoahHeapRegion* r = heap->heap_region_containing(obj);
@@ -553,7 +544,7 @@ bool ShenandoahScanRemembered::verify_registration(HeapWord* address, Shenandoah
     do {
       oop obj = cast_to_oop(base_addr + offset);
       prev_offset = offset;
-      offset += obj->size();
+      offset += ShenandoahForwarding::size(obj);
     } while (offset < max_offset);
     if (_scc->get_last_start(index) != prev_offset) {
       return false;
@@ -582,7 +573,7 @@ bool ShenandoahScanRemembered::verify_registration(HeapWord* address, Shenandoah
     }
   } else {
     // This is a mixed evacuation or a global collect: rely on mark bits to identify which objects need to be properly registered
-    assert(!ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress(), "Cannot rely on mark context here.");
+    assert(!heap->is_concurrent_old_mark_in_progress(), "Cannot rely on mark context here.");
     // If the object reaching or spanning the end of this card's memory is marked, then last_offset for this card
     // should represent this object.  Otherwise, last_offset is a don't care.
     ShenandoahHeapRegion* region = heap->heap_region_containing(base_addr + offset);
@@ -592,7 +583,7 @@ bool ShenandoahScanRemembered::verify_registration(HeapWord* address, Shenandoah
       oop obj = cast_to_oop(base_addr + offset);
       if (ctx->is_marked(obj)) {
         prev_offset = offset;
-        offset += obj->size();
+        offset += ShenandoahForwarding::size(obj);
         last_obj = obj;
       } else {
         offset = ctx->get_next_marked_addr(base_addr + offset, tams) - base_addr;
@@ -602,7 +593,7 @@ bool ShenandoahScanRemembered::verify_registration(HeapWord* address, Shenandoah
         // by consulting the size() fields of each.
       }
     } while (offset < max_offset);
-    if (last_obj != nullptr && prev_offset + last_obj->size() >= max_offset) {
+    if (last_obj != nullptr && prev_offset + ShenandoahForwarding::size(last_obj) >= max_offset) {
       // last marked object extends beyond end of card
       if (_scc->get_last_start(index) != prev_offset) {
         return false;
@@ -640,8 +631,12 @@ void ShenandoahScanRemembered::roots_do(OopIterateClosure* cl) {
   bool old_bitmap_stable = heap->old_generation()->is_mark_complete();
   log_debug(gc, remset)("Scan remembered set using bitmap: %s", BOOL_TO_STR(old_bitmap_stable));
   for (size_t i = 0, n = heap->num_regions(); i < n; ++i) {
+    if (!heap->is_region_old(i)) {
+      continue;
+    }
+
     ShenandoahHeapRegion* region = heap->get_region(i);
-    if (region->is_old() && region->is_active() && !region->is_cset()) {
+    if (region->is_active() && !region->is_cset()) {
       HeapWord* start_of_range = region->bottom();
       HeapWord* end_of_range = region->top();
       size_t start_cluster_no = cluster_for_addr(start_of_range);
@@ -812,7 +807,7 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
 
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
   ShenandoahObjToScanQueue* old = _old_queue_set == nullptr ? nullptr : _old_queue_set->queue(worker_id);
-  ShenandoahMarkRefsClosure<YOUNG> cl(q, _rp, old);
+  ShenandoahRedirtyCardsMarkClosure cl(q, _rp, old);
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
 
@@ -850,221 +845,17 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
   }
 }
 
-size_t ShenandoahRegionChunkIterator::calc_regular_group_size() {
-  // The group size is calculated from the number of regions.  Suppose the heap has N regions.  The first group processes
-  // N/2 regions.  The second group processes N/4 regions, the third group N/8 regions and so on.
-  // Note that infinite series N/2 + N/4 + N/8 + N/16 + ...  sums to N.
-  //
-  // The normal group size is the number of regions / 2.
-  //
-  // In the case that the region_size_words is greater than _maximum_chunk_size_words, the first group_size is
-  // larger than the normal group size because each chunk in the group will be smaller than the region size.
-  //
-  // The last group also has more than the normal entries because it finishes the total scanning effort.  The chunk sizes are
-  // different for each group.  The intention is that the first group processes roughly half of the heap, the second processes
-  // half of the remaining heap, the third processes half of what remains and so on.  The smallest chunk size
-  // is represented by _smallest_chunk_size_words.  We do not divide work any smaller than this.
-  //
-  size_t group_size = _heap->num_regions() / 2;
-  return group_size;
-}
-
-size_t ShenandoahRegionChunkIterator::calc_first_group_chunk_size_b4_rebalance() {
-  size_t words_in_first_chunk = ShenandoahHeapRegion::region_size_words();
-  return words_in_first_chunk;
-}
-
-size_t ShenandoahRegionChunkIterator::calc_num_groups() {
-  size_t total_heap_size = _heap->num_regions() * ShenandoahHeapRegion::region_size_words();
-  size_t num_groups = 0;
-  size_t cumulative_group_span = 0;
-  size_t current_group_span = _first_group_chunk_size_b4_rebalance * _regular_group_size;
-  size_t smallest_group_span = smallest_chunk_size_words() * _regular_group_size;
-  while ((num_groups < _maximum_groups) && (cumulative_group_span + current_group_span <= total_heap_size)) {
-    num_groups++;
-    cumulative_group_span += current_group_span;
-    if (current_group_span <= smallest_group_span) {
-      break;
-    } else {
-      current_group_span /= 2;    // Each group spans half of what the preceding group spanned.
-    }
-  }
-  // Loop post condition:
-  //   num_groups <= _maximum_groups
-  //   cumulative_group_span is the memory spanned by num_groups
-  //   current_group_span is the span of the last fully populated group (assuming loop iterates at least once)
-  //   each of num_groups is fully populated with _regular_group_size chunks in each
-  // Non post conditions:
-  //   cumulative_group_span may be less than total_heap size for one or more of the folowing reasons
-  //   a) The number of regions remaining to be spanned is smaller than a complete group, or
-  //   b) We have filled up all groups through _maximum_groups and still have not spanned all regions
-
-  if (cumulative_group_span < total_heap_size) {
-    // We've got more regions to span
-    if ((num_groups < _maximum_groups) && (current_group_span > smallest_group_span)) {
-      num_groups++;             // Place all remaining regions into a new not-full group (chunk_size half that of previous group)
-    }
-    // Else we are unable to create a new group because we've exceed the number of allowed groups or have reached the
-    // minimum chunk size.
-
-    // Any remaining regions will be treated as if they are part of the most recently created group.  This group will
-    // have more than _regular_group_size chunks within it.
-  }
-  assert (num_groups <= _maximum_groups, "Cannot have more than %zu groups", _maximum_groups);
-  return num_groups;
-}
-
 size_t ShenandoahRegionChunkIterator::calc_total_chunks() {
-  size_t region_size_words = ShenandoahHeapRegion::region_size_words();
-  size_t unspanned_heap_size = _heap->num_regions() * region_size_words;
-  size_t num_chunks = 0;
-  size_t cumulative_group_span = 0;
-  size_t current_group_span = _first_group_chunk_size_b4_rebalance * _regular_group_size;
-  size_t smallest_group_span = smallest_chunk_size_words() * _regular_group_size;
-
-  // The first group gets special handling because the first chunk size can be no larger than _maximum_chunk_size_words
-  if (region_size_words > _maximum_chunk_size_words) {
-    // In the case that we shrink the first group's chunk size, certain other groups will also be subsumed within the first group
-    size_t effective_chunk_size = _first_group_chunk_size_b4_rebalance;
-    uint coalesced_groups = 0;
-    while (effective_chunk_size >= _maximum_chunk_size_words) {
-      // Each iteration of this loop subsumes one original group into a new rebalanced initial group.
-      num_chunks += current_group_span / _maximum_chunk_size_words;
-      unspanned_heap_size -= current_group_span;
-      effective_chunk_size /= 2;
-      current_group_span /= 2;
-      coalesced_groups++;
-    }
-    assert(effective_chunk_size * 2 == _maximum_chunk_size_words,
-           "We assume _first_group_chunk_size_b4_rebalance is _maximum_chunk_size_words * a power of two");
-    _largest_chunk_size_words = _maximum_chunk_size_words;
-    _adjusted_num_groups = _num_groups - (coalesced_groups - 1);
-  } else {
-    num_chunks = _regular_group_size;
-    unspanned_heap_size -= current_group_span;
-    _largest_chunk_size_words = current_group_span / num_chunks;
-    _adjusted_num_groups = _num_groups;
-    current_group_span /= 2;
-  }
-
-  size_t spanned_groups = 1;
-  while (unspanned_heap_size > 0) {
-    if (current_group_span <= unspanned_heap_size) {
-      unspanned_heap_size -= current_group_span;
-      num_chunks += _regular_group_size;
-      spanned_groups++;
-
-      // _num_groups is the number of groups required to span the configured heap size.  We are not allowed
-      // to change the number of groups.  The last group is responsible for spanning all chunks not spanned
-      // by previously processed groups.
-      if (spanned_groups >= _num_groups) {
-        // The last group has more than _regular_group_size entries.
-        size_t chunk_span = current_group_span / _regular_group_size;
-        size_t extra_chunks = unspanned_heap_size / chunk_span;
-        assert (extra_chunks * chunk_span == unspanned_heap_size, "Chunks must precisely span regions");
-        num_chunks += extra_chunks;
-        return num_chunks;
-      } else if (current_group_span <= smallest_group_span) {
-        // We cannot introduce new groups because we've reached the lower bound on group size.  So this last
-        // group may hold extra chunks.
-        size_t chunk_span = smallest_chunk_size_words();
-        size_t extra_chunks = unspanned_heap_size / chunk_span;
-        assert (extra_chunks * chunk_span == unspanned_heap_size, "Chunks must precisely span regions");
-        num_chunks += extra_chunks;
-        return num_chunks;
-      } else {
-        current_group_span /= 2;
-      }
-    } else {
-      // This last group has fewer than _regular_group_size entries.
-      size_t chunk_span = current_group_span / _regular_group_size;
-      size_t last_group_size = unspanned_heap_size / chunk_span;
-      assert (last_group_size * chunk_span == unspanned_heap_size, "Chunks must precisely span regions");
-      num_chunks += last_group_size;
-      return num_chunks;
-    }
-  }
-  return num_chunks;
+  return (_heap->num_regions() * ShenandoahHeapRegion::region_size_words()) / _chunk_size;
 }
 
-ShenandoahRegionChunkIterator::ShenandoahRegionChunkIterator(size_t worker_count) :
-    ShenandoahRegionChunkIterator(ShenandoahHeap::heap(), worker_count)
-{
-}
-
-ShenandoahRegionChunkIterator::ShenandoahRegionChunkIterator(ShenandoahHeap* heap, size_t worker_count) :
+// Configure with a single group that spans the entire heap with equal-sized chunks of work.
+ShenandoahRegionChunkIterator::ShenandoahRegionChunkIterator(ShenandoahHeap* heap) :
     _heap(heap),
-    _regular_group_size(calc_regular_group_size()),
-    _first_group_chunk_size_b4_rebalance(calc_first_group_chunk_size_b4_rebalance()),
-    _num_groups(calc_num_groups()),
+    _chunk_size(chunk_size_words()),
+    _chunk_shift(log2i_exact(_chunk_size)),
     _total_chunks(calc_total_chunks()),
-    _index(0)
-{
-#ifdef ASSERT
-  size_t expected_chunk_size_words = _clusters_in_smallest_chunk * CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
-  assert(smallest_chunk_size_words() == expected_chunk_size_words, "_smallest_chunk_size (%zu) is not valid because it does not equal (%zu)",
-         smallest_chunk_size_words(), expected_chunk_size_words);
-  assert(_num_groups <= _maximum_groups,
-         "The number of remembered set scanning groups must be less than or equal to maximum groups");
-  assert(smallest_chunk_size_words() << (_adjusted_num_groups - 1) == _largest_chunk_size_words,
-         "The number of groups (%zu) needs to span smallest chunk size (%zu) to largest chunk size (%zu)",
-         _adjusted_num_groups, smallest_chunk_size_words(), _largest_chunk_size_words);
-#endif
-
-  size_t words_in_region = ShenandoahHeapRegion::region_size_words();
-  _region_index[0] = 0;
-  _group_offset[0] = 0;
-  if (words_in_region > _maximum_chunk_size_words) {
-    // In the case that we shrink the first group's chunk size, certain other groups will also be subsumed within the first group
-    size_t num_chunks = 0;
-    size_t effective_chunk_size = _first_group_chunk_size_b4_rebalance;
-    size_t  current_group_span = effective_chunk_size * _regular_group_size;
-    while (effective_chunk_size >= _maximum_chunk_size_words) {
-      num_chunks += current_group_span / _maximum_chunk_size_words;
-      effective_chunk_size /= 2;
-      current_group_span /= 2;
-    }
-    _group_entries[0] = num_chunks;
-    _group_chunk_size[0] = _maximum_chunk_size_words;
-  } else {
-    _group_entries[0] = _regular_group_size;
-    _group_chunk_size[0] = _first_group_chunk_size_b4_rebalance;
-  }
-
-  size_t previous_group_span = _group_entries[0] * _group_chunk_size[0];
-  for (size_t i = 1; i < _adjusted_num_groups; i++) {
-    _group_chunk_size[i] = _group_chunk_size[i-1] / 2;
-    size_t chunks_in_group = _regular_group_size;
-    size_t this_group_span = _group_chunk_size[i] * chunks_in_group;
-    size_t total_span_of_groups = previous_group_span + this_group_span;
-    _region_index[i] = previous_group_span / words_in_region;
-    _group_offset[i] = previous_group_span % words_in_region;
-    _group_entries[i] = _group_entries[i-1] + _regular_group_size;
-    previous_group_span = total_span_of_groups;
-  }
-  if (_group_entries[_adjusted_num_groups-1] < _total_chunks) {
-    assert((_total_chunks - _group_entries[_adjusted_num_groups-1]) * _group_chunk_size[_adjusted_num_groups-1] + previous_group_span ==
-           heap->num_regions() * words_in_region, "Total region chunks (%zu"
-           ") do not span total heap regions (%zu)", _total_chunks, _heap->num_regions());
-    previous_group_span += (_total_chunks - _group_entries[_adjusted_num_groups-1]) * _group_chunk_size[_adjusted_num_groups-1];
-    _group_entries[_adjusted_num_groups-1] = _total_chunks;
-  }
-  assert(previous_group_span == heap->num_regions() * words_in_region, "Total region chunks (%zu"
-         ") do not span total heap regions (%zu): %zu does not equal %zu",
-         _total_chunks, _heap->num_regions(), previous_group_span, heap->num_regions() * words_in_region);
-
-  // Not necessary, but keeps things tidy
-  for (size_t i = _adjusted_num_groups; i < _maximum_groups; i++) {
-    _region_index[i] = 0;
-    _group_offset[i] = 0;
-    _group_entries[i] = _group_entries[i-1];
-    _group_chunk_size[i] = 0;
-  }
-}
-
-void ShenandoahRegionChunkIterator::reset() {
-  _index.store_relaxed(0);
-}
+    _index(0) {}
 
 ShenandoahReconstructRememberedSetTask::ShenandoahReconstructRememberedSetTask(ShenandoahRegionIterator* regions)
   : WorkerTask("Shenandoah Reset Bitmap")
@@ -1084,7 +875,7 @@ void ShenandoahReconstructRememberedSetTask::work(uint worker_id) {
         if (r->is_humongous_start()) {
           // First, clear the remembered set
           oop obj = cast_to_oop(obj_addr);
-          size_t size = obj->size();
+          size_t size = ShenandoahForwarding::size(obj);
 
           size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
           size_t region_index = r->index();

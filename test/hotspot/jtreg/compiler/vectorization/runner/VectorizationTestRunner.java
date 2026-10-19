@@ -141,17 +141,20 @@ public class VectorizationTestRunner {
         Object expected = null;
         Object actual = null;
 
-        // Temporarily disable the compiler and invoke the method to get reference
-        // result from the interpreter
-        Flags.WHITEBOX.setBooleanVMFlag("UseCompiler", false);
+        // Temporarily make the test method not compilable and invoke it to get the
+        // reference result from the interpreter.
+        Flags.WHITEBOX.makeMethodNotCompilable(method, CompLevel.ANY.getValue(), true);
+        Flags.WHITEBOX.makeMethodNotCompilable(method, CompLevel.ANY.getValue(), false);
         try {
             expected = method.invoke(this);
+            assert(Flags.WHITEBOX.getMethodCompilationLevel(method) == COMP_LEVEL_INTP);
         } catch (Exception e) {
             e.printStackTrace();
             fail("Exception is thrown in test method invocation (interpreter).");
+        } finally {
+            // Make the test method compilable again
+            Flags.WHITEBOX.clearMethodState(method);
         }
-        assert(Flags.WHITEBOX.getMethodCompilationLevel(method) == COMP_LEVEL_INTP);
-        Flags.WHITEBOX.setBooleanVMFlag("UseCompiler", true);
 
         // Compile the method and invoke it again
         long enqueueTime = System.currentTimeMillis();

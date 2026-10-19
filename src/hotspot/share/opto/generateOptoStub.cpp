@@ -47,8 +47,8 @@ void GraphKit::gen_stub(address C_function,
                         bool return_pc) {
   ResourceMark rm;
 
-  const TypeTuple *jdomain = C->tf()->domain();
-  const TypeTuple *jrange  = C->tf()->range();
+  const TypeTuple *jdomain = C->tf()->domain_sig();
+  const TypeTuple *jrange  = C->tf()->range_sig();
 
   // The procedure start
   StartNode* start = new StartNode(root(), jdomain);
@@ -163,7 +163,7 @@ void GraphKit::gen_stub(address C_function,
 
   //-----------------------------
   // Make the call node.
-  CallRuntimeNode* call = new CallRuntimeNode(c_sig, C_function, name, TypePtr::BOTTOM, new (C) JVMState(0));
+  CallRuntimeNode* call = new CallRuntimeNode(c_sig, C_function, name, TypePtr::BOTTOM, TypePtr::BOTTOM, new (C) JVMState(0));
   //-----------------------------
 
   // Fix-up the debug info for the call.
@@ -268,7 +268,7 @@ void GraphKit::gen_stub(address C_function,
                          exit_memory,
                          frameptr(),
                          returnadr());
-    if (C->tf()->range()->cnt() > TypeFunc::Parms)
+    if (C->tf()->range_sig()->cnt() > TypeFunc::Parms)
       ret->add_req( map()->in(TypeFunc::Parms) );
     break;
   case 1:    // This is a fancy tail-call jump.  Jump to computed address.

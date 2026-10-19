@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public final class JdpPacketReader {
             short len = pkt.readShort();
             // Artificial setting the "len" field to Short.MAX_VALUE may cause a reader to allocate
             // to much memory. Prevent this possible DOS attack.
-            if (len < 1 && len > pkt.available()) {
+            if (len < 1 || len > pkt.available()) {
                 throw new JdpException("Broken JDP packet. Invalid entry length field.");
             }
 

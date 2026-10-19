@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +23,32 @@
 
 /*
  * @test
+ * @bug 8388374
  * @summary Testing ClassFile building module.
  * @run junit ModuleBuilderTest
  */
-import java.lang.classfile.*;
 
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
 import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.classfile.attribute.ModuleExportInfo;
+import java.lang.classfile.attribute.ModuleHashInfo;
 import java.lang.classfile.attribute.ModuleMainClassAttribute;
 import java.lang.classfile.attribute.ModuleOpenInfo;
 import java.lang.classfile.attribute.ModulePackagesAttribute;
 import java.lang.classfile.attribute.ModuleProvideInfo;
 import java.lang.classfile.attribute.ModuleRequireInfo;
-import java.lang.classfile.Attributes;
+import java.lang.constant.ClassDesc;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
-import org.junit.jupiter.api.Test;
-
-import java.lang.constant.ClassDesc;
 import java.net.URI;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -197,5 +201,84 @@ class ModuleBuilderTest {
 
         ClassModel m = ClassFile.of().parse(Paths.get(URI.create(ModuleBuilderTest.class.getResource("ModuleBuilderTest.class").toString())));
         assertFalse(m.isModuleInfo());
+    }
+
+    @Test
+    void unnamedPackageAndModuleChecks() {
+        var goodPackage = PackageDesc.of("java.lang");
+        var goodModule = ModuleDesc.of("java.desktop");
+        var unnamedPackage = PackageDesc.of("");
+        var unnamedModule = ModuleDesc.of("");
+        PackageDesc[] goodPackageArray = {goodPackage};
+        ModuleDesc[] goodModuleArray = {goodModule};
+        PackageDesc[] containsUnnamedPackageArray = {goodPackage, unnamedPackage};
+        ModuleDesc[] containsUnnamedModuleArray = {unnamedModule, goodModule};
+        var goodPackageList = List.of(goodPackageArray);
+        var goodModuleList = List.of(goodModuleArray);
+        var containsUnnamedPackageList = List.of(containsUnnamedPackageArray);
+        var containsUnnamedModuleList = List.of(containsUnnamedModuleArray);
+        assertThrows(IllegalArgumentException.class, () -> ModuleAttribute.of(unnamedModule, _ -> {}));
+        AtomicBoolean reached = new AtomicBoolean(false);
+        ModuleAttribute.of(goodModule, b -> {
+            assertDoesNotThrow(() -> b.moduleName(goodModule));
+            assertThrows(IllegalArgumentException.class, () -> b.moduleName(unnamedModule));
+            assertDoesNotThrow(() -> b.requires(goodModule, 0, null));
+            assertThrows(IllegalArgumentException.class, () -> b.requires(unnamedModule, 0, null));
+            assertDoesNotThrow(() -> b.requires(goodModule, Set.of(), null));
+            assertThrows(IllegalArgumentException.class, () -> b.requires(unnamedModule, Set.of(), null));
+            assertDoesNotThrow(() -> b.exports(goodPackage, 0, goodModuleArray));
+            assertThrows(IllegalArgumentException.class, () -> b.exports(unnamedPackage, 0, goodModuleArray));
+            assertThrows(IllegalArgumentException.class, () -> b.exports(goodPackage, 0, containsUnnamedModuleArray));
+            assertDoesNotThrow(() -> b.exports(goodPackage, Set.of(), goodModuleArray));
+            assertThrows(IllegalArgumentException.class, () -> b.exports(unnamedPackage, Set.of(), goodModuleArray));
+            assertThrows(IllegalArgumentException.class, () -> b.exports(goodPackage, Set.of(), containsUnnamedModuleArray));
+            assertDoesNotThrow(() -> b.opens(goodPackage, 0, goodModuleArray));
+            assertThrows(IllegalArgumentException.class, () -> b.opens(unnamedPackage, 0, goodModuleArray));
+            assertThrows(IllegalArgumentException.class, () -> b.opens(goodPackage, 0, containsUnnamedModuleArray));
+            assertDoesNotThrow(() -> b.opens(goodPackage, Set.of(), goodModuleArray));
+            assertThrows(IllegalArgumentException.class, () -> b.opens(unnamedPackage, Set.of(), goodModuleArray));
+            assertThrows(IllegalArgumentException.class, () -> b.opens(goodPackage, Set.of(), containsUnnamedModuleArray));
+            reached.set(true);
+        });
+        assertTrue(reached.get());
+
+        assertDoesNotThrow(() -> ModuleExportInfo.of(goodPackage, 0, goodModuleArray));
+        assertThrows(IllegalArgumentException.class, () -> ModuleExportInfo.of(unnamedPackage, 0, goodModuleArray));
+        assertThrows(IllegalArgumentException.class, () -> ModuleExportInfo.of(goodPackage, 0, containsUnnamedModuleArray));
+        assertDoesNotThrow(() -> ModuleExportInfo.of(goodPackage, Set.of(), goodModuleArray));
+        assertThrows(IllegalArgumentException.class, () -> ModuleExportInfo.of(unnamedPackage, Set.of(), goodModuleArray));
+        assertThrows(IllegalArgumentException.class, () -> ModuleExportInfo.of(goodPackage, Set.of(), containsUnnamedModuleArray));
+        assertDoesNotThrow(() -> ModuleExportInfo.of(goodPackage, 0, goodModuleList));
+        assertThrows(IllegalArgumentException.class, () -> ModuleExportInfo.of(unnamedPackage, 0, goodModuleList));
+        assertThrows(IllegalArgumentException.class, () -> ModuleExportInfo.of(goodPackage, 0, containsUnnamedModuleList));
+        assertDoesNotThrow(() -> ModuleExportInfo.of(goodPackage, Set.of(), goodModuleList));
+        assertThrows(IllegalArgumentException.class, () -> ModuleExportInfo.of(unnamedPackage, Set.of(), goodModuleList));
+        assertThrows(IllegalArgumentException.class, () -> ModuleExportInfo.of(goodPackage, Set.of(), containsUnnamedModuleList));
+
+        assertDoesNotThrow(() -> ModuleOpenInfo.of(goodPackage, 0, goodModuleArray));
+        assertThrows(IllegalArgumentException.class, () -> ModuleOpenInfo.of(unnamedPackage, 0, goodModuleArray));
+        assertThrows(IllegalArgumentException.class, () -> ModuleOpenInfo.of(goodPackage, 0, containsUnnamedModuleArray));
+        assertDoesNotThrow(() -> ModuleOpenInfo.of(goodPackage, Set.of(), goodModuleArray));
+        assertThrows(IllegalArgumentException.class, () -> ModuleOpenInfo.of(unnamedPackage, Set.of(), goodModuleArray));
+        assertThrows(IllegalArgumentException.class, () -> ModuleOpenInfo.of(goodPackage, Set.of(), containsUnnamedModuleArray));
+        assertDoesNotThrow(() -> ModuleOpenInfo.of(goodPackage, 0, goodModuleList));
+        assertThrows(IllegalArgumentException.class, () -> ModuleOpenInfo.of(unnamedPackage, 0, goodModuleList));
+        assertThrows(IllegalArgumentException.class, () -> ModuleOpenInfo.of(goodPackage, 0, containsUnnamedModuleList));
+        assertDoesNotThrow(() -> ModuleOpenInfo.of(goodPackage, Set.of(), goodModuleList));
+        assertThrows(IllegalArgumentException.class, () -> ModuleOpenInfo.of(unnamedPackage, Set.of(), goodModuleList));
+        assertThrows(IllegalArgumentException.class, () -> ModuleOpenInfo.of(goodPackage, Set.of(), containsUnnamedModuleList));
+
+        assertDoesNotThrow(() -> ModuleRequireInfo.of(goodModule, 0, null));
+        assertThrows(IllegalArgumentException.class, () -> ModuleRequireInfo.of(unnamedModule, 0, null));
+        assertDoesNotThrow(() -> ModuleRequireInfo.of(goodModule, Set.of(), null));
+        assertThrows(IllegalArgumentException.class, () -> ModuleRequireInfo.of(unnamedModule, Set.of(), null));
+
+        assertDoesNotThrow(() -> ModuleHashInfo.of(goodModule, new byte[0]));
+        assertThrows(IllegalArgumentException.class, () -> ModuleHashInfo.of(unnamedModule, new byte[0]));
+
+        assertDoesNotThrow(() -> ModulePackagesAttribute.ofNames(goodPackageArray));
+        assertDoesNotThrow(() -> ModulePackagesAttribute.ofNames(goodPackageList));
+        assertThrows(IllegalArgumentException.class, () -> ModulePackagesAttribute.ofNames(containsUnnamedPackageArray));
+        assertThrows(IllegalArgumentException.class, () -> ModulePackagesAttribute.ofNames(containsUnnamedPackageList));
     }
 }

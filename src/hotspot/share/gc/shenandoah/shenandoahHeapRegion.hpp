@@ -29,7 +29,6 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
-#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -224,8 +223,8 @@ public:
   RegionState state()              const { return _state.load_acquire(); }
   int  state_ordinal()             const { return region_state_to_ordinal(state()); }
 
-  void record_pin();
-  void record_unpin();
+  inline void record_pin(size_t value = 1);
+  inline void record_unpin(size_t value = 1);
   size_t pin_count() const;
 
 private:
@@ -271,7 +270,6 @@ private:
 
   uint _age;
   bool _promoted_in_place;
-  CENSUS_NOISE(uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
 
   ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
 
@@ -368,6 +366,10 @@ public:
 
   inline size_t index() const {
     return _index;
+  }
+
+  static bool is_in_same_region(const void* p, oop obj) {
+    return (((uintptr_t) p ^ cast_from_oop<uintptr_t>(obj)) >> region_size_bytes_shift()) == 0;
   }
 
   inline void save_top_before_promote();
@@ -501,9 +503,8 @@ public:
 
   void set_affiliation(ShenandoahAffiliation new_affiliation);
 
-  // Region ageing and rejuvenation
+  // Region ageing
   uint age() const { return _age; }
-  CENSUS_NOISE(uint youth() const { return _youth; })
 
   void increment_age() {
     const uint max_age = markWord::max_age;
@@ -514,11 +515,9 @@ public:
   }
 
   void reset_age() {
-    CENSUS_NOISE(_youth += _age;)
+    assert(get_top_before_promote() == nullptr, "Cannot reset age on region (%zu) scheduled for promotion", index());
     _age = 0;
   }
-
-  CENSUS_NOISE(void clear_youth() { _youth = 0; })
 
   inline bool need_bitmap_reset() const {
     return _needs_bitmap_reset;
@@ -536,7 +535,7 @@ public:
   // installs a self-forward mark on an object in this region. Tested and cleared
   // at the drain phase (degen/full GC entry) and again on region recycle.
   bool has_self_forwards() const { return _has_self_forwards.is_set(); }
-  void set_has_self_forwards()   { _has_self_forwards.set(); }
+  void set_has_self_forwards()   { _has_self_forwards.try_set(); }
   void clear_has_self_forwards() { _has_self_forwards.unset(); }
 
 private:

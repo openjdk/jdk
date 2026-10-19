@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -532,6 +532,11 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         tty->print_cr("Warning, 2nd spill of L%d",bidx);
       }
     }
+  }
+
+  if (static_cast<uint64_t>(spill_cnt) * _cfg.number_of_blocks() > RegSplitLimit) {
+    C->record_method_not_compilable("PhaseChaitin::Split requires too much memory");
+    return 0;
   }
 
   // Create side arrays for propagating reaching defs info.

@@ -22,6 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+#include <winsock2.h>
+#include <mstcpip.h>
 #include "net_util.h"
 
 #include "java_net_InetAddress.h"
@@ -36,9 +38,6 @@
 #ifndef IPTOS_PREC_MASK
 #define IPTOS_PREC_MASK 0xe0
 #endif
-
-/* true if SO_RCVTIMEO is supported */
-jboolean isRcvTimeoutSupported = JNI_TRUE;
 
 /*
  * Table of Windows Sockets errors, the specific exception we

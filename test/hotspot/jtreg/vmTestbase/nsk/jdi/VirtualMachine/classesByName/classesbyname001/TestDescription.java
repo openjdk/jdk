@@ -63,7 +63,6 @@
  *        nsk.jdi.VirtualMachine.classesByName.classesbyname001a
  * @run driver
  *      nsk.jdi.VirtualMachine.classesByName.classesbyname001
- *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

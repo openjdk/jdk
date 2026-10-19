@@ -22,6 +22,7 @@
  *
  */
 
+#include "code/codeCache.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
@@ -66,7 +67,7 @@ VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(size_t allocation_word_size,
   _transient_failure(false),
   _mark_in_progress(false),
   _cycle_already_in_progress(false),
-  _whitebox_attached(false),
+  _whitebox_controlled(false),
   _gc_succeeded(false)
 {}
 
@@ -88,28 +89,37 @@ void VM_G1TryInitiateConcMark::doit() {
   G1CollectorState* state = g1h->collector_state();
   _mark_in_progress = state->is_in_marking();
   _cycle_already_in_progress =  state->is_in_concurrent_cycle();
+  _whitebox_controlled = (_gc_cause != GCCause::_wb_breakpoint) && ConcurrentGCBreakpoints::is_controlled();
 
-  if (!g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause)) {
+  // Notify the code cache that we deferred clearing the unloading GC request if we are WhiteBox controlled
+  // and we are going to suppress it. If marking is active, we do not need to suppress because that will satisfy the
+  // request already.
+  // This needs to be atomic wrt. to all code-cache allocation threads to allow setting the request
+  // after WhiteBox releases control again.
+  bool defer_codecache_request = whitebox_controlled() &&
+                                 GCCause::is_codecache_requested_gc(_gc_cause) &&
+                                 !mark_in_progress();
+  if (defer_codecache_request) {
+    CodeCache::defer_unloading_gc_request();
+    return;
+  } else if (!g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause)) {
     // Failure to force the next GC pause to be a concurrent start indicates
     // there is already a concurrent marking cycle in progress. Flags to indicate
     // that were already set, so return immediately.
-  } else if ((_gc_cause != GCCause::_wb_breakpoint) &&
-             ConcurrentGCBreakpoints::is_controlled()) {
-    // WhiteBox wants to be in control of concurrent cycles, so don't try to
-    // start one.  This check is after the force_concurrent_start_xxx so that a
-    // request will be remembered for a later partial collection, even though
-    // we've rejected this request.
-    _whitebox_attached = true;
-  } else {
+    return;
+  } else if (!whitebox_controlled()) {
+    // Only run a concurrent marking if not controlled by WhiteBox.
     g1h->do_collection_pause_at_safepoint(_word_size);
     _gc_succeeded = true;
   }
 }
 
-VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t word_size,
+VM_G1CollectForAllocation::VM_G1CollectForAllocation(uint node_index,
+                                                     size_t word_size,
                                                      uint gc_count_before,
                                                      GCCause::Cause gc_cause) :
-  VM_CollectForAllocation(word_size, gc_count_before, gc_cause) {}
+  VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
+  _node_index(node_index) {}
 
 void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -120,7 +130,7 @@ void VM_G1CollectForAllocation::doit() {
   if (_word_size > 0) {
     // An allocation had been requested. Do it, eventually trying a stronger
     // kind of GC.
-    _result = g1h->satisfy_failed_allocation(_word_size);
+    _result = g1h->satisfy_failed_allocation(_node_index, _word_size);
   } else if (g1h->should_upgrade_to_full_gc()) {
     // There has been a request to perform a GC to free some space. We have no
     // information on how much memory has been asked for. In case there are

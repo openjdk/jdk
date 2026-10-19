@@ -76,10 +76,10 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
         _mark_context(ShenandoahHeap::heap()->marking_context()),
         _weak(false) {}
 
-template<class T, ShenandoahGenerationType GENERATION>
+template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY>
 ALWAYSINLINE
 void ShenandoahMarkRefsSuperClosure::work(T* p) {
-  ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, _old_queue, _mark_context, _weak);
+  ShenandoahMark::mark_through_ref<T, GENERATION, REDIRTY>(p, _queue, _old_queue, _mark_context, _weak);
 }
 
 ShenandoahForwardedIsAliveClosure::ShenandoahForwardedIsAliveClosure() :
@@ -89,9 +89,12 @@ bool ShenandoahForwardedIsAliveClosure::do_object_b(oop obj) {
   if (CompressedOops::is_null(obj)) {
     return false;
   }
-  obj = ShenandoahForwarding::get_forwardee(obj);
-  shenandoah_assert_not_forwarded_if(nullptr, obj, ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
-  return _mark_context->is_marked_or_old(obj);
+  oop resolved = ShenandoahForwarding::forwardee_or_null(obj);
+  if (resolved == nullptr) {
+    resolved = obj;
+  }
+  shenandoah_assert_not_forwarded_if(nullptr, resolved, ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
+  return _mark_context->is_marked_or_old(resolved);
 }
 
 ShenandoahIsAliveClosure::ShenandoahIsAliveClosure() :
@@ -118,12 +121,7 @@ template <typename T>
 void ShenandoahKeepAliveClosure::do_oop_work(T* p) {
   assert(ShenandoahHeap::heap()->is_concurrent_mark_in_progress(), "Only for concurrent marking phase");
   assert(ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress() || !ShenandoahHeap::heap()->has_forwarded_objects(), "Not expected");
-
-  T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
-    _bs->enqueue(obj);
-  }
+  _bs->keepalive_barrier(ON_STRONG_OOP_REF, p, nullptr, ShenandoahBarrierSet::FILTER_MARKED);
 }
 
 
@@ -154,17 +152,18 @@ void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop_
     if (_heap->in_collection_set(obj)) {
       assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
       shenandoah_assert_marked(p, obj);
-      oop resolved = ShenandoahForwarding::get_forwardee(obj);
-      if (resolved == obj) {
+      oop resolved = ShenandoahForwarding::forwardee_or_null(obj);
+      if (resolved == nullptr) {
         Thread* thr = STABLE_THREAD ? _thread : Thread::current();
         assert(thr == Thread::current(), "Wrong thread");
-
         resolved = _heap->evacuate_object(obj, thr);
       }
-      if (CONCURRENT) {
-        ShenandoahHeap::atomic_update_oop(resolved, p, o);
-      } else {
-        RawAccess<IS_NOT_NULL | MO_UNORDERED>::oop_store(p, resolved);
+      if (resolved != obj) {
+        if (CONCURRENT) {
+          ShenandoahHeap::atomic_update_oop(resolved, p, o);
+        } else {
+          RawAccess<IS_NOT_NULL | MO_UNORDERED>::oop_store(p, resolved);
+        }
       }
     }
   }
@@ -199,17 +198,6 @@ void ShenandoahCleanUpdateWeakOopsClosure<CONCURRENT, IsAlive, KeepAlive>::do_oo
   ShouldNotReachHere();
 }
 
-ShenandoahNMethodAndDisarmClosure::ShenandoahNMethodAndDisarmClosure(OopClosure* cl) :
-  NMethodToOopClosure(cl, true /* fix_relocations */) {}
-
-void ShenandoahNMethodAndDisarmClosure::do_nmethod(nmethod* nm) {
-  assert(nm != nullptr, "Sanity");
-  assert(!ShenandoahNMethod::gc_data(nm)->is_unregistered(), "Should not be here");
-  NMethodToOopClosure::do_nmethod(nm);
-  ShenandoahNMethod::disarm_nmethod(nm);
-}
-
-
 //
 // ========= Update References
 //
@@ -229,7 +217,7 @@ inline void ShenandoahMarkUpdateRefsClosure<GENERATION>::work(T* p) {
   _heap->non_conc_update_with_forwarded(p);
 
   // ...then do the usual thing
-  ShenandoahMarkRefsSuperClosure::work<T, GENERATION>(p);
+  ShenandoahMarkRefsSuperClosure::work<T, GENERATION, false>(p);
 }
 
 template<class T>

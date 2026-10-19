@@ -58,6 +58,7 @@ requires.extraPropDefns.vmOpts = \
     --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
 requires.properties= \
     sun.arch.data.model \
+    java.enablePreview \
     vm.simpleArch \
     vm.bits \
     vm.flightRecorder \
@@ -79,6 +80,7 @@ requires.properties= \
     vm.cds.default.archive.available \
     vm.cds.nocoops.archive.available \
     vm.cds.nocoh.archive.available \
+    vm.cds.nocoops.nocoh.archive.available \
     vm.cds.custom.loaders \
     vm.cds.supports.aot.class.linking \
     vm.cds.supports.aot.code.caching \

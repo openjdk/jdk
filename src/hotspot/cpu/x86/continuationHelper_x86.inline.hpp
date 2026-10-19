@@ -103,7 +103,8 @@ inline intptr_t** ContinuationHelper::Frame::callee_link_address(const frame& f)
 }
 
 inline address* ContinuationHelper::Frame::return_pc_address(const frame& f) {
-  return (address*)(f.real_fp() - 1);
+  frame::CompiledFramePointers cfp = f.compiled_frame_details();
+  return cfp.sender_pc_addr;
 }
 
 inline address* ContinuationHelper::InterpretedFrame::return_pc_address(const frame& f) {

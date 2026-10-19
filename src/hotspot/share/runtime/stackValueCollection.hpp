@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,8 @@ class StackValueCollection : public ResourceObj {
   void set_float_at(int slot, jfloat value);
   void set_double_at(int slot, jdouble value);
 
-  void print();
+  void print_on(outputStream* st) const;
+  void print() const;
 };
 
 #endif // SHARE_RUNTIME_STACKVALUECOLLECTION_HPP

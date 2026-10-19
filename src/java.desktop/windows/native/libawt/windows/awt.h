@@ -154,12 +154,8 @@ typedef AwtObject* PDATA;
                                                      JNI_TRUE)
 /*  /NEW JNI */
 
-/*
- * IS_WINVISTA returns TRUE on Vista
- */
-#define IS_WINVISTA (LOBYTE(LOWORD(::GetVersion())) >= 6)
 #define IS_WIN8 (                                                              \
-    (IS_WINVISTA && (HIBYTE(LOWORD(::GetVersion())) >= 2)) ||                  \
+    (LOBYTE(LOWORD(::GetVersion())) == 6 && (HIBYTE(LOWORD(::GetVersion())) >= 2)) ||  \
     (LOBYTE(LOWORD(::GetVersion())) > 6))
 
 #define IS_WINVER_ATLEAST(maj, min) \

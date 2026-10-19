@@ -206,7 +206,6 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
        )
   , _live(nullptr)
   , _lo_degree(0), _lo_stk_degree(0), _hi_degree(0), _simplified(0)
-  , _oldphi(unique)
 #ifndef PRODUCT
   , _trace_spilling(C->directive()->TraceSpillingOption)
 #endif
@@ -256,7 +255,7 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
   }
 
   // Squash the partially filled buckets together into the first one.
-  static_assert(NUMBUCKS >= 2, "must"); // If this isn't true then it'll mess up the squashing.
+  static_assert(NUMBUCKS >= 2); // If this isn't true then it'll mess up the squashing.
   Block** offset = &buckets[0][buckcnt[0]];
   for (int i = 1; i < NUMBUCKS; i++) {
     ::memmove(offset, buckets[i], buckcnt[i]*sizeof(Block*));
@@ -1941,10 +1940,10 @@ Node* PhaseChaitin::find_base_for_derived(Node** derived_base_map, Node* derived
   // can't happen at run-time but the optimizer cannot deduce it so
   // we have to handle it gracefully.
   assert(!derived->bottom_type()->isa_narrowoop() ||
-          derived->bottom_type()->make_ptr()->is_ptr()->_offset == 0, "sanity");
+         derived->bottom_type()->make_ptr()->is_ptr()->offset() == 0, "sanity");
   const TypePtr *tj = derived->bottom_type()->isa_ptr();
   // If its an OOP with a non-zero offset, then it is derived.
-  if( tj == nullptr || tj->_offset == 0 ) {
+  if (tj == nullptr || tj->offset() == 0) {
     derived_base_map[derived->_idx] = derived;
     return derived;
   }
@@ -2110,9 +2109,9 @@ bool PhaseChaitin::stretch_base_pointer_live_ranges(ResourceArea *a) {
           Node *derived = lrgs(neighbor)._def;
           const TypePtr *tj = derived->bottom_type()->isa_ptr();
           assert(!derived->bottom_type()->isa_narrowoop() ||
-                  derived->bottom_type()->make_ptr()->is_ptr()->_offset == 0, "sanity");
+                 derived->bottom_type()->make_ptr()->is_ptr()->offset() == 0, "sanity");
           // If its an OOP with a non-zero offset, then it is derived.
-          if( tj && tj->_offset != 0 && tj->isa_oop_ptr() ) {
+          if (tj && tj->offset() != 0 && tj->isa_oop_ptr()) {
             Node *base = find_base_for_derived(derived_base_map, derived, maxlrg);
             assert(base->_idx < _lrg_map.size(), "");
             // Add reaching DEFs of derived pointer and base pointer as a
@@ -2402,7 +2401,7 @@ void PhaseChaitin::dump_for_spill_split_recycle() const {
 
 void PhaseChaitin::dump_frame() const {
   const char *fp = OptoReg::regname(OptoReg::c_frame_pointer);
-  const TypeTuple *domain = C->tf()->domain();
+  const TypeTuple *domain = C->tf()->domain_cc();
   const int        argcnt = domain->cnt() - TypeFunc::Parms;
 
   // Incoming arguments in registers dump
@@ -2463,21 +2462,48 @@ void PhaseChaitin::dump_frame() const {
   OptoReg::Name return_addr = _matcher.return_addr();
 
   reg = OptoReg::add(reg, -1);
+
+  // Special fixed slots
+  int current_slot = fixed_slots;
+  int stack_increment_slot = -1;
+  int nm_slot = -1;
+
+  auto next_slot = [&]() {
+    current_slot -= VMRegImpl::slots_per_word;
+    return current_slot;
+  };
+
+  if (C->needs_stack_repair()) {
+    stack_increment_slot = next_slot();
+  }
+  if (C->needs_nm_slot()) {
+    nm_slot = next_slot();
+  }
+  int orig_pc_slot = next_slot();
+
   while (OptoReg::is_stack(reg)) {
+    int stack_slot = (int)OptoReg::reg2stack(reg);
     tty->print("#r%3.3d %s+%2d: ",reg,fp,reg2offset_unchecked(reg));
     if (return_addr == reg) {
       tty->print_cr("return address");
     } else if (reg >= begin_in_preserve) {
       // Preserved slots are present on x86
-      if (return_addr == OptoReg::add(reg, VMRegImpl::slots_per_word))
+      if (return_addr == OptoReg::add(reg, VMRegImpl::slots_per_word)) {
         tty->print_cr("saved fp register");
-      else if (return_addr == OptoReg::add(reg, 2*VMRegImpl::slots_per_word) &&
-               VerifyStackAtCalls)
-        tty->print_cr("<Majik cookie>   +VerifyStackAtCalls");
-      else
+      } else {
         tty->print_cr("in_preserve");
-    } else if ((int)OptoReg::reg2stack(reg) < fixed_slots) {
-      tty->print_cr("Fixed slot %d", OptoReg::reg2stack(reg));
+      }
+    } else if (stack_slot < fixed_slots) {
+      tty->print("Fixed slot %d", OptoReg::reg2stack(reg));
+      if (stack_slot == stack_increment_slot) {
+        tty->print_cr(" (stack increment)");
+      } else if (stack_slot == nm_slot) {
+        tty->print_cr(" (null marker)");
+      } else if (stack_slot == orig_pc_slot) {
+        tty->print_cr(" (original deopt pc)");
+      } else {
+        tty->cr();
+      }
     } else {
       tty->print_cr("pad2, stack alignment");
     }
@@ -2611,11 +2637,11 @@ void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
                     worklist.push(check->in(m));
                   }
                 } else if (check->is_Con()) {
-                  if (is_derived && check->bottom_type()->is_ptr()->_offset != 0) {
+                  if (is_derived && check->bottom_type()->is_ptr()->offset() != 0) {
                     // Derived is null+non-zero offset, base must be null.
                     assert(check->bottom_type()->is_ptr()->ptr() == TypePtr::Null, "Bad derived pointer");
                   } else {
-                    assert(check->bottom_type()->is_ptr()->_offset == 0, "Bad base pointer");
+                    assert(check->bottom_type()->is_ptr()->offset() == 0, "Bad base pointer");
                     // Base either ConP(nullptr) or loadConP
                     if (check->is_Mach()) {
                       assert(check->as_Mach()->ideal_Opcode() == Op_ConP, "Bad base pointer");
@@ -2624,7 +2650,7 @@ void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
                              check->bottom_type()->is_ptr()->ptr() == TypePtr::Null, "Bad base pointer");
                     }
                   }
-                } else if (check->bottom_type()->is_ptr()->_offset == 0) {
+                } else if (check->bottom_type()->is_ptr()->offset() == 0) {
                   if (check->is_Proj() || (check->is_Mach() &&
                      (check->as_Mach()->ideal_Opcode() == Op_CreateEx ||
                       check->as_Mach()->ideal_Opcode() == Op_ThreadLocal ||
@@ -2672,20 +2698,8 @@ void PhaseChaitin::verify(ResourceArea* a, bool verify_ifg) const {
 }
 #endif // ASSERT
 
-int PhaseChaitin::_final_loads  = 0;
-int PhaseChaitin::_final_stores = 0;
-int PhaseChaitin::_final_memoves= 0;
-int PhaseChaitin::_final_copies = 0;
-double PhaseChaitin::_final_load_cost  = 0;
-double PhaseChaitin::_final_store_cost = 0;
-double PhaseChaitin::_final_memove_cost= 0;
-double PhaseChaitin::_final_copy_cost  = 0;
 int PhaseChaitin::_conserv_coalesce = 0;
-int PhaseChaitin::_conserv_coalesce_pair = 0;
-int PhaseChaitin::_conserv_coalesce_trie = 0;
-int PhaseChaitin::_conserv_coalesce_quad = 0;
 int PhaseChaitin::_post_alloc = 0;
-int PhaseChaitin::_lost_opp_pp_coalesce = 0;
 int PhaseChaitin::_lost_opp_cflow_coalesce = 0;
 int PhaseChaitin::_used_cisc_instructions   = 0;
 int PhaseChaitin::_unused_cisc_instructions = 0;
@@ -2697,19 +2711,11 @@ uint PhaseChaitin::_high_pressure           = 0;
 uint PhaseChaitin::_low_pressure            = 0;
 
 void PhaseChaitin::print_chaitin_statistics() {
-  tty->print_cr("Inserted %d spill loads, %d spill stores, %d mem-mem moves and %d copies.", _final_loads, _final_stores, _final_memoves, _final_copies);
-  tty->print_cr("Total load cost= %6.0f, store cost = %6.0f, mem-mem cost = %5.2f, copy cost = %5.0f.", _final_load_cost, _final_store_cost, _final_memove_cost, _final_copy_cost);
-  tty->print_cr("Adjusted spill cost = %7.0f.",
-                _final_load_cost*4.0 + _final_store_cost  * 2.0 +
-                _final_copy_cost*1.0 + _final_memove_cost*12.0);
-  tty->print("Conservatively coalesced %d copies, %d pairs",
-                _conserv_coalesce, _conserv_coalesce_pair);
-  if( _conserv_coalesce_trie || _conserv_coalesce_quad )
-    tty->print(", %d tries, %d quads", _conserv_coalesce_trie, _conserv_coalesce_quad);
+  tty->print("Conservatively coalesced %d copies",
+                _conserv_coalesce);
   tty->print_cr(", %d post alloc.", _post_alloc);
-  if( _lost_opp_pp_coalesce || _lost_opp_cflow_coalesce )
-    tty->print_cr("Lost coalesce opportunity, %d private-private, and %d cflow interfered.",
-                  _lost_opp_pp_coalesce, _lost_opp_cflow_coalesce );
+  if (_lost_opp_cflow_coalesce)
+    tty->print_cr("Lost coalesce opportunity, %d cflow interfered.", _lost_opp_cflow_coalesce);
   if( _used_cisc_instructions || _unused_cisc_instructions )
     tty->print_cr("Used cisc instruction  %d,  remained in register %d",
                    _used_cisc_instructions, _unused_cisc_instructions);
