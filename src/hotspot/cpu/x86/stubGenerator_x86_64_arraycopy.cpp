@@ -264,6 +264,64 @@ void StubGenerator::copy_bytes_forward(Register end_from, Register end_to,
                                        BasicType type) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   DEBUG_ONLY(__ stop("enter at entry label, not here"));
+  const bool use_nt_store = !is_reference_type(type) && UseUnalignedLoadStores &&
+                            UseAVX >= 2 && ArrayCopyNonTemporalThreshold > 0;
+  Label L_cached, L_done;
+  if (use_nt_store) {
+    // The caller supplies inclusive end pointers and a negative qword count.
+    // Keep the pointers intact for the caller's sub-qword tail.
+    const Register temp = r8; // r10 can hold a saved non-volatile register on Windows.
+    const int element_size = type2aelembytes(type);
+    Label L_align, L_aligned, L_nt_loop, L_tail, L_scalar;
+    __ BIND(L_copy_bytes);
+    const uintx threshold = MAX2(ArrayCopyNonTemporalThreshold / 8 +
+                                 (ArrayCopyNonTemporalThreshold % 8 != 0), (uintx)8);
+    if (Assembler::is_simm32(-(int64_t)threshold)) {
+      __ cmpptr(qword_count, (int32_t)(-(int64_t)threshold));
+    } else {
+      __ movptr(temp, -(intptr_t)threshold);
+      __ cmpptr(qword_count, temp);
+    }
+    __ jcc(Assembler::greater, L_cached);
+    __ movptr(tmp1, qword_count);
+    __ shlptr(tmp1, 3);
+
+    // Use element-sized stores until the destination is 32-byte aligned.
+    __ BIND(L_align);
+    __ lea(temp, Address(end_to, tmp1, Address::times_1, 8));
+    __ testl(temp, 31);
+    __ jcc(Assembler::zero, L_aligned);
+    __ load_sized_value(temp, Address(end_from, tmp1, Address::times_1, 8), element_size, false);
+    __ store_sized_value(Address(end_to, tmp1, Address::times_1, 8), temp, element_size);
+    __ addptr(tmp1, element_size);
+    __ jmp(L_align);
+
+    __ BIND(L_aligned);
+    __ cmpptr(tmp1, -64);
+    __ jcc(Assembler::greater, L_tail);
+    __ align(OptoLoopAlignment);
+    __ BIND(L_nt_loop);
+    __ vmovdqu(xmm0, Address(end_from, tmp1, Address::times_1, 8));
+    __ vmovdqu(xmm1, Address(end_from, tmp1, Address::times_1, 40));
+    __ vmovntdq(Address(end_to, tmp1, Address::times_1, 8), xmm0);
+    __ vmovntdq(Address(end_to, tmp1, Address::times_1, 40), xmm1);
+    __ addptr(tmp1, 64);
+    __ cmpptr(tmp1, -64);
+    __ jcc(Assembler::lessEqual, L_nt_loop);
+    __ sfence();
+
+    // Do not reread an overlapping vector: a forward overlapping copy may
+    // already have overwritten its source. Copy the remaining elements once.
+    __ BIND(L_tail);
+    __ testptr(tmp1, tmp1);
+    __ jcc(Assembler::zero, L_done);
+    __ BIND(L_scalar);
+    __ load_sized_value(temp, Address(end_from, tmp1, Address::times_1, 8), element_size, false);
+    __ store_sized_value(Address(end_to, tmp1, Address::times_1, 8), temp, element_size);
+    __ addptr(tmp1, element_size);
+    __ jcc(Assembler::notZero, L_scalar);
+    __ jmp(L_done);
+  }
   Label L_loop;
   __ align(OptoLoopAlignment);
   if (UseUnalignedLoadStores) {
@@ -310,7 +368,7 @@ void StubGenerator::copy_bytes_forward(Register end_from, Register end_to,
                         tmp1, tmp2, xmm1);
     }
 
-    __ BIND(L_copy_bytes);
+    __ BIND(use_nt_store ? L_cached : L_copy_bytes);
     __ addptr(qword_count, 8);
     __ jcc(Assembler::lessEqual, L_loop);
     __ subptr(qword_count, 4);  // sub(8) and add(4)
@@ -373,6 +431,10 @@ void StubGenerator::copy_bytes_forward(Register end_from, Register end_to,
   }
   __ subptr(qword_count, 4);
   __ jcc(Assembler::less, L_copy_8_bytes); // Copy trailing qwords
+  if (use_nt_store) {
+    __ BIND(L_done);
+    __ xorptr(qword_count, qword_count);
+  }
 }
 
 
