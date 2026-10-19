@@ -3792,7 +3792,7 @@ void MacroAssembler::cmp_klass_bne(Register obj, Register klass,
 }
 
 // Move an oop into a register.
-void MacroAssembler::movoop(Register dst, jobject obj, Register tmp) {
+void MacroAssembler::movoop(Register dst, jobject obj) {
   int oop_index;
   if (obj == nullptr) {
     oop_index = oop_recorder()->allocate_oop_index(obj);
@@ -3808,7 +3808,7 @@ void MacroAssembler::movoop(Register dst, jobject obj, Register tmp) {
   RelocationHolder rspec = oop_Relocation::spec(oop_index);
 
   if (BarrierSet::barrier_set()->barrier_set_assembler()->supports_instruction_patching()) {
-    movptr(dst, Address((address)obj, rspec), tmp);
+    movptr(dst, Address((address)obj, rspec));
   } else {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
     ld(dst, Address(dummy, rspec));
@@ -3816,7 +3816,7 @@ void MacroAssembler::movoop(Register dst, jobject obj, Register tmp) {
 }
 
 // Move a metadata address into a register.
-void MacroAssembler::mov_metadata(Register dst, Metadata* obj, Register tmp) {
+void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
   assert((uintptr_t)obj < (1ull << 48), "48-bit overflow in metadata");
   int oop_index;
   if (obj == nullptr) {
@@ -3825,7 +3825,7 @@ void MacroAssembler::mov_metadata(Register dst, Metadata* obj, Register tmp) {
     oop_index = oop_recorder()->find_index(obj);
   }
   RelocationHolder rspec = metadata_Relocation::spec(oop_index);
-  movptr(dst, Address((address)obj, rspec), tmp);
+  movptr(dst, Address((address)obj, rspec));
 }
 
 void MacroAssembler::payload_offset(Register value_klass, Register offset) {

@@ -560,7 +560,7 @@ void ShenandoahHeap::initialize_heuristics() {
 #pragma warning( disable:4355 ) // 'this' : used in base member initializer list
 #endif
 
-ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
+ShenandoahHeap::ShenandoahHeap() :
   CollectedHeap(),
   _active_generation(nullptr),
   _initial_size(0),
@@ -582,7 +582,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _uncommit_thread(nullptr),
   _young_generation(nullptr),
   _old_generation(nullptr),
-  _shenandoah_policy(policy),
   _gc_mode(nullptr),
   _free_set(nullptr),
   _allocator(nullptr),
@@ -608,6 +607,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   // Initialize GC mode early, many subsequent initialization procedures depend on it
   initialize_mode();
   _cancelled_gc.unset();
+  _shenandoah_policy = new ShenandoahCollectorPolicy(mode());
 }
 
 #ifdef _MSC_VER
@@ -974,11 +974,9 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       // yet run, it will request one and retry the allocation one more time. If another thread has caused
       // a full GC to run, other threads will not request another full GC.
 
-      ResourceMark rm; // for Thread::name()
       const size_t req_byte = req.size() * HeapWordSize;
-      const double start = os::elapsedTime();
-      log_debug(gc)("Allocation Stall: " PROPERFMT ", Thread \"%s\"", PROPERFMTARGS(req_byte), Thread::current()->name());
       AllocTracer::send_allocation_requiring_gc_event(req_byte, checked_cast<uint>(control_thread()->get_gc_id()));
+      ShenandoahAllocationStallLogger stall_logger;
 
       const size_t original_full_count = shenandoah_policy()->full_gc_count();
       const size_t original_count = shenandoah_policy()->reclaiming_gc_count();
@@ -999,9 +997,6 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
           }
         }
       }
-
-      log_info(gc)("Allocation Stall: " PROPERFMT ", Thread \"%s\", %.3fms, Succeeded: %s",
-                   PROPERFMTARGS(req_byte), Thread::current()->name(), (os::elapsedTime() - start) * MILLIUNITS, BOOL_TO_STR(result != nullptr));
 
       if (result != nullptr) {
         // If our allocation request has been satisfied after it initially failed, we count this as good gc progress
@@ -1178,6 +1173,9 @@ public:
     if (_resize && ShenandoahThreadLocalData::gclab_size(thread) > 0) {
       ShenandoahThreadLocalData::set_gclab_size(thread, 0);
     }
+
+    // Clear this for next evacuation phase
+    ShenandoahThreadLocalData::set_has_evac_failures(thread, false);
 
     if (ShenandoahHeap::heap()->mode()->is_generational()) {
       ShenandoahPLAB* shenandoah_plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
@@ -1412,6 +1410,10 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
       set_has_self_forwarded_objects();
       from_region->set_has_self_forwards();
     }
+
+    // It does not matter if this thread did the self forwarding or not.
+    // This thread failed to allocate an evacuation copy.
+    ShenandoahThreadLocalData::set_has_evac_failures(thread, true);
     return fwd;
   }
 

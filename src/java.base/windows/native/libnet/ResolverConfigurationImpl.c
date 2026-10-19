@@ -28,6 +28,8 @@
 #include <stddef.h>
 #include <time.h>
 #include <assert.h>
+#include <winsock2.h>
+#include <iphlpapi.h>
 
 #include "net_util.h"
 #include "jni_util.h"

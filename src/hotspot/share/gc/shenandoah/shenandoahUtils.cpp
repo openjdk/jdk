@@ -191,3 +191,20 @@ ShenandoahConcurrentWorkerSession::~ShenandoahConcurrentWorkerSession() {
 ShenandoahParallelWorkerSession::~ShenandoahParallelWorkerSession() {
   _event.commit(GCId::current(), WorkerThread::worker_id(), ShenandoahPhaseTimings::phase_desc(ShenandoahGCPhase::current_phase()));
 }
+
+ShenandoahAllocationStallLogger::ShenandoahAllocationStallLogger()
+  : _stall_start_seconds(os::elapsedTime()) {
+  if (log_is_enabled(Info, gc, start)) {
+    ResourceMark rm; // for Thread::name()
+    log_info(gc, start)("Allocation Stall (%s)", Thread::current()->name());
+  }
+}
+
+ShenandoahAllocationStallLogger::~ShenandoahAllocationStallLogger() {
+  if (log_is_enabled(Info, gc)) {
+    ResourceMark rm;
+    log_info(gc)("Allocation Stall (%s) %.3fms",
+                 Thread::current()->name(),
+                 (os::elapsedTime() - _stall_start_seconds) * MILLIUNITS);
+  }
+}

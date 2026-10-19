@@ -79,8 +79,7 @@ size_t ShenandoahGenerationalHeap::unsafe_max_tlab_alloc() const {
   return MIN2(ShenandoahHeapRegion::max_tlab_size_bytes(), young_generation()->available());
 }
 
-ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy) :
-  ShenandoahHeap(policy),
+ShenandoahGenerationalHeap::ShenandoahGenerationalHeap() :
   _age_census(nullptr),
   _min_plab_size(calculate_min_plab()),
   _max_plab_size(calculate_max_plab()),
@@ -325,6 +324,10 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       set_has_self_forwarded_objects();
       from_region->set_has_self_forwards();
     }
+
+    // It does not matter if this thread did the self forwarding or not.
+    // This thread failed to allocate an evacuation copy.
+    ShenandoahThreadLocalData::set_has_evac_failures(thread, true);
     return fwd;
   }
 
@@ -936,14 +939,14 @@ private:
 
 void ShenandoahGenerationalHeap::update_heap_references(ShenandoahGeneration* generation) {
   assert(!is_full_gc_in_progress(), "Only for concurrent GC");
-  const uint nworkers = workers()->active_workers();
-  ShenandoahRegionChunkIterator work_list(nworkers);
+  ShenandoahRegionChunkIterator work_list(this);
   ShenandoahElasticTaskCoordinator* coordinator = control_thread()->reset_task_coordinator();
   ShenandoahGenerationalUpdateHeapRefsTask task(this, generation, coordinator, &work_list);
   workers()->run_task(&task);
 
   if (ShenandoahEnableCardStats) {
     // Only do this if we are collecting card stats
+    const uint nworkers = workers()->active_workers();
     ShenandoahScanRemembered* card_scan = old_generation()->card_scan();
     assert(card_scan != nullptr, "Card table must exist when card stats are enabled");
     card_scan->log_card_stats(nworkers, CARD_STAT_UPDATE_REFS);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4093292 8280511
+ * @bug 4093292 8280511 8394343
  * @summary Test for correct code generation by the JIT
  * @library /test/lib
  * @run main compiler.codegen.ShiftTest
@@ -171,6 +171,50 @@ public class ShiftTest {
         return -(input >> 66);
     }
 
+    private static int[] posInt = {
+        0, 1, 2, 3, (1<<16) - 1, 1<<16, Integer.MAX_VALUE
+    };
+
+    private static long[] posInt_LeftShift20_expected = {
+        0, 1048576, 2097152, 3145728, 68718428160L, 68719476736L, 2251799812636672L
+    };
+
+    private static long[] posInt_LeftShift31_expected = {
+        0, 2147483648L, 4294967296L, 6442450944L, 140735340871680L, 140737488355328L, 4611686016279904256L
+    };
+
+    private static long[] posInt_LeftShift32_expected = {
+        0, 4294967296L, 8589934592L, 12884901888L, 281470681743360L, 281474976710656L, 9223372032559808512L
+    };
+
+    private static long[] posInt_LeftShift33_expected = {
+        0, 8589934592L, 17179869184L, 25769803776L, 562941363486720L, 562949953421312L, -8589934592L
+    };
+
+    private static long[] posInt_LeftShift63_expected = {
+        0, -9223372036854775808L, 0, -9223372036854775808L, -9223372036854775808L, 0, -9223372036854775808L
+    };
+
+    private static long leftShiftPosI2L_20(int input) {
+        return (long)(input & Integer.MAX_VALUE) << 20;
+    }
+
+    private static long leftShiftPosI2L_31(int input) {
+        return (long)(input & Integer.MAX_VALUE) << 31;
+    }
+
+    private static long leftShiftPosI2L_32(int input) {
+        return (long)(input & Integer.MAX_VALUE) << 32;
+    }
+
+    private static long leftShiftPosI2L_33(int input) {
+        return (long)(input & Integer.MAX_VALUE) << 33;
+    }
+
+    private static long leftShiftPosI2L_63(int input) {
+        return (long)(input & Integer.MAX_VALUE) << 63;
+    }
+
     private static void testNegShift() {
         for (int i = 0; i < 20_000; i++) {
             for (int j = 0; j < ispecial.length; j++) {
@@ -188,6 +232,13 @@ public class ShiftTest {
                 Asserts.assertEquals(negLeftShiftLCorner(lspecial[j]), lspecial_LeftShiftCorner_expected[j]);
                 Asserts.assertEquals(negUnsignedRightShiftLCorner(lspecial[j]), lspecial_UnsignedRightShiftCorner_expected[j]);
                 Asserts.assertEquals(negSignedRightShiftLCorner(lspecial[j]), lspecial_SignedRightShiftCorner_expected[j]);
+            }
+            for (int j = 0; j < posInt.length; j++) {
+                Asserts.assertEquals(leftShiftPosI2L_20(posInt[j]), posInt_LeftShift20_expected[j]);
+                Asserts.assertEquals(leftShiftPosI2L_31(posInt[j]), posInt_LeftShift31_expected[j]);
+                Asserts.assertEquals(leftShiftPosI2L_32(posInt[j]), posInt_LeftShift32_expected[j]);
+                Asserts.assertEquals(leftShiftPosI2L_33(posInt[j]), posInt_LeftShift33_expected[j]);
+                Asserts.assertEquals(leftShiftPosI2L_63(posInt[j]), posInt_LeftShift63_expected[j]);
             }
         }
     }

@@ -560,9 +560,11 @@ inline void ShenandoahHeap::marked_object_oop_iterate(ShenandoahHeapRegion* regi
     }
   } else {
     if (region->has_self_forwards()) {
+      assert(region->is_cset(), "Self forwards only allowed in cset region: %zu", region->index());
       ShenandoahNonForwardedObjectToOopClosure<T> objs(cl);
       marked_object_iterate(region, &objs, top);
     } else {
+      assert(!region->is_cset(), "Should not be iterating objects in cset region: %zu", region->index());
       ShenandoahObjectToOopClosure<T> objs(cl);
       marked_object_iterate(region, &objs, top);
     }

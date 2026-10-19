@@ -419,7 +419,9 @@ void ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
   // is allowed to cancel a GC.
   ShenandoahOldGC gc(generation, _allow_old_preemption);
   if (gc.collect(cause)) {
-    _heap->notify_gc_progress();
+    if (alloc_stall_count() == 0) {
+      _heap->notify_gc_progress();
+    }
     generation->heuristics()->record_concurrent_completion();
     _heap->shenandoah_policy()->record_success_old();
 
