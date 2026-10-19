@@ -1168,8 +1168,10 @@ void PhaseIdealLoop::move_flat_array_check_out_of_loop(Node* n) {
     // Replace memory input and re-compute ctrl to move the check out of the loop
     _igvn.replace_input_of(n, 1, mem);
     set_ctrl_and_loop(n, get_early_ctrl(n));
-    Node* bol = n->unique_out();
-    set_ctrl_and_loop(bol, get_early_ctrl(bol));
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* bol = n->fast_out(i);
+      set_ctrl_and_loop(bol, get_early_ctrl(bol));
+    }
   }
 }
 
