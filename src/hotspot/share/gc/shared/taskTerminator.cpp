@@ -225,28 +225,25 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
       // Give up spin master before sleeping.
       _spin_master = nullptr;
     }
-
-    const bool timed_out = x.wait(WorkStealingSleepMillis);
+    bool timed_out = x.wait(WorkStealingSleepMillis);
 
     // Immediately check exit conditions after re-acquiring the lock.
     if (_offered_termination == _n_threads) {
       prepare_for_return(the_thread);
       assert_queue_set_empty();
       return true;
-    }
-
-    if (!timed_out) {
+    } else if (!timed_out) {
       // We were woken up. Don't bother waking up more tasks.
       prepare_for_return(the_thread, 0);
       _offered_termination--;
       return false;
-    }
-
-    const size_t tasks = tasks_in_queue_set();
-    if (exit_termination(tasks, terminator)) {
-      prepare_for_return(the_thread, tasks);
-      _offered_termination--;
-      return false;
+    } else {
+      size_t tasks = tasks_in_queue_set();
+      if (exit_termination(tasks, terminator)) {
+        prepare_for_return(the_thread, tasks);
+        _offered_termination--;
+        return false;
+      }
     }
   }
 }
