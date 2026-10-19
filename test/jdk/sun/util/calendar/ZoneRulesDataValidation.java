@@ -55,12 +55,21 @@ public class ZoneRulesDataValidation {
 
     private static ByteBuffer validData() {
         return ByteBuffer.allocate(12)
-                .put((byte) 1) // ZoneRules format
+                .put((byte)1) // ZoneRules format
                 .putInt(0)    // stdSize
-                .put((byte) 0) // stdOffsets[0]: UTC
+                .put((byte)0) // stdOffsets[0]: UTC
                 .putInt(0)    // savSize
-                .put((byte) 0) // savOffsets[0]: UTC
-                .put((byte) 0); // ruleSize
+                .put((byte)0) // savOffsets[0]: UTC
+                .put((byte)0); // ruleSize
+    }
+
+    @Test
+    void invalidTypeTest() throws IOException {
+        var data = validData();
+        data.put(0, (byte)0);
+        final var in = new DataInputStream(new ByteArrayInputStream(data.array()));
+        assertThrows(StreamCorruptedException.class, () -> ZoneInfoFile.getZoneInfo(in, "Test"));
+        in.close();
     }
 
     @ParameterizedTest

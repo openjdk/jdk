@@ -312,7 +312,10 @@ public final class ZoneInfoFile {
     /////////////////////////Ser/////////////////////////////////
     public static ZoneInfo getZoneInfo(DataInput in, String zoneId) throws Exception {
         byte type = in.readByte();
-        // TBD: assert ZRULES:
+        if (type != (byte)1) {
+            throw new StreamCorruptedException(
+                    "Not a ZoneRules object: " + type);
+        }
         int stdSize = in.readInt();
         if (stdSize < 0 || stdSize > 1024) {
             throw new StreamCorruptedException(

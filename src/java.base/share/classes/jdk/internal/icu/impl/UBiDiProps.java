@@ -66,8 +66,8 @@ public final class UBiDiProps {
         // read indexes[]
         int i, count;
         count=bytes.getInt();
-        if(count<IX_TOP || count - 1 > bytes.remaining() / 4) {
-            throw new IOException("Invalid index count in "+DATA_FILE_NAME);
+        if(count < IX_TOP || count - 1 > bytes.remaining() / 4) {
+            throw new IOException("Invalid index count in " + DATA_FILE_NAME);
         }
         indexes=new int[count];
 
@@ -89,7 +89,7 @@ public final class UBiDiProps {
         // read mirrors[]
         count=indexes[IX_MIRROR_LENGTH];
         if(count < 0 || count > bytes.remaining() / Integer.BYTES) {
-            throw new IOException("Invalid mirrors length in "+DATA_FILE_NAME);
+            throw new IOException("Invalid mirrors length in " + DATA_FILE_NAME);
         }
         mirrors=new int[count];
         for(i=0; i<count; ++i) {
@@ -97,9 +97,9 @@ public final class UBiDiProps {
         }
 
         // read jgArray[]
-        long jgArrayLength = (long)indexes[IX_JG_LIMIT]-indexes[IX_JG_START];
+        long jgArrayLength = (long)indexes[IX_JG_LIMIT] - indexes[IX_JG_START];
         if(jgArrayLength < 0 || jgArrayLength > bytes.remaining()) {
-            throw new IOException("Invalid joining-group length in "+DATA_FILE_NAME);
+            throw new IOException("Invalid joining-group length in " + DATA_FILE_NAME);
         }
         count = (int)jgArrayLength;
         jgArray=new byte[count];
@@ -108,9 +108,9 @@ public final class UBiDiProps {
         }
 
         // read jgArray2[]
-        jgArrayLength = (long)indexes[IX_JG_LIMIT2]-indexes[IX_JG_START2];
+        jgArrayLength = (long)indexes[IX_JG_LIMIT2] - indexes[IX_JG_START2];
         if(jgArrayLength < 0 || jgArrayLength > bytes.remaining()) {
-            throw new IOException("Invalid joining-group 2 length in "+DATA_FILE_NAME);
+            throw new IOException("Invalid joining-group 2 length in " + DATA_FILE_NAME);
         }
         count = (int)jgArrayLength;
         jgArray2=new byte[count];
