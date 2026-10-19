@@ -593,8 +593,6 @@ public:
   const TypeTable* analyze(int rounds, Analyzer::DominatorTree &dominator_tree);
   void do_transform(const TypeTable* type_table);
 
-  static const int load_factor = 8;
-
   VectorSet _divisor_candidates;
 
 public:

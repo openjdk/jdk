@@ -308,7 +308,6 @@ void PhaseConditionalPropagation::Analyzer::WriteableTypeTable::set_current_cont
     _current_node_types_list = _dom_node_types_list;
     if (_current_node_types_list != nullptr) {
       _node_types_list_table->put(c, _current_node_types_list);
-      _node_types_list_table->maybe_grow(load_factor);
     }
     return;
   }
@@ -323,7 +322,6 @@ void PhaseConditionalPropagation::Analyzer::WriteableTypeTable::set_current_cont
     assert(_dom_node_types_list != nullptr, "control have types if dominator doesn't");
     _current_node_types_list = _dom_node_types_list;
     _node_types_list_table->put(c, _current_node_types_list);
-    _node_types_list_table->maybe_grow(load_factor);
     return;
   }
   // On a previous iteration, we recorded some types at this control. Make a copy. The algorithm then possibly makes
@@ -347,7 +345,6 @@ bool PhaseConditionalPropagation::Analyzer::WriteableTypeTable::record_type(Node
   if (_current_node_types_list == _dom_node_types_list) {
     _current_node_types_list = new NodeTypesList(_dom_node_types_list, c, iterations);
     _node_types_list_table->put(c, _current_node_types_list);
-    _node_types_list_table->maybe_grow(load_factor);
   }
   assert(_current_node_types_list->control() == c, "");
   int i = _current_node_types_list->find(n);
@@ -442,7 +439,6 @@ bool PhaseConditionalPropagation::Analyzer::WorkQueue::enqueue_for_delayed_proce
   } else {
     wq = new GrowableArray<Node*>();
     _work_queues->put(c, wq);
-    _work_queues->maybe_grow(load_factor);
   }
   assert(!wq->contains(n), "should be enqueued only once");
   wq->push(n);
@@ -1798,7 +1794,6 @@ Node* PhaseConditionalPropagation::Analyzer::EarlyCtrls::compute_early_ctrl(Node
       assert(early_c == _phase->compute_early_ctrl(n, _phase->get_ctrl(n)) || (early_c->is_Proj() && early_c->in(0) == _phase->compute_early_ctrl(n, _phase->get_ctrl(n))), "incorrect result");
       assert(_node_to_ctrl_table->get(n) == nullptr, "shouldn't have been cached already");
       _node_to_ctrl_table->put(n, early_c);
-      _node_to_ctrl_table->maybe_grow(load_factor);
       _nstack.pop();
       Node* in_c = early_c;
       // pop intermediate result for early ctrl and compute updated one
@@ -1908,7 +1903,6 @@ PhaseConditionalPropagation::Analyzer::DominatorTree::DominatorTree(const Node_L
     Node* n = rpo_list.at(i);
     DomTreeNode* dt_n = new DomTreeNode(n);
     _nodes->put(n, dt_n);
-    _nodes->maybe_grow(load_factor);
     if (n->is_Root()) {
       continue;
     }

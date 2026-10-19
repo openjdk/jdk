@@ -2259,27 +2259,6 @@ void PhaseIterGVN::add_users_to_worklist0(Node* n, Unique_Node_List& worklist) {
   }
 }
 
-// Return counted loop Phi if as a counted loop exit condition, cmp
-// compares the induction variable with n
-static PhiNode* countedloop_phi_from_cmp(CmpNode* cmp, Node* n) {
-  for (DUIterator_Fast imax, i = cmp->fast_outs(imax); i < imax; i++) {
-    Node* bol = cmp->fast_out(i);
-    for (DUIterator_Fast i2max, i2 = bol->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* iff = bol->fast_out(i2);
-      if (iff->is_BaseCountedLoopEnd()) {
-        BaseCountedLoopEndNode* cle = iff->as_BaseCountedLoopEnd();
-        if (cle->limit() == n) {
-          PhiNode* phi = cle->phi();
-          if (phi != nullptr) {
-            return phi;
-          }
-        }
-      }
-    }
-  }
-  return nullptr;
-}
-
 void PhaseIterGVN::add_users_to_worklist(Node* n) const {
   add_users_to_worklist(n, _worklist);
 }
