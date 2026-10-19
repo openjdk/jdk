@@ -1826,6 +1826,12 @@ bool LibraryCallKit::inline_vector_slice() {
   int num_elem = vlen->get_con();
   BasicType elem_bt = get_vector_primitive_lane_type(vltype);
 
+  jint origin_con = origin->get_con();
+  if (origin_con < 0 || origin_con > num_elem) {
+    log_if_needed("  ** vector slice origin %d out of range [0, %d]", origin_con, num_elem);
+    return false;
+  }
+
   if (!arch_supports_vector(Op_VectorSlice, num_elem, elem_bt, VecMaskNotUsed)) {
     log_if_needed("  ** not supported: arity=2 op=slice vlen=%d etype=%s",
                     num_elem, type2name(elem_bt));
@@ -1842,7 +1848,7 @@ bool LibraryCallKit::inline_vector_slice() {
   }
 
   // Defining origin in terms of number of bytes to make it type agnostic value.
-  Node* origin_node = gvn().intcon(origin->get_con() * type2aelembytes(elem_bt));
+  Node* origin_node = gvn().intcon(origin_con * type2aelembytes(elem_bt));
   const TypeVect* vector_type = TypeVect::make(elem_bt, num_elem);
   Node* operation = gvn().transform(trace_vector(new VectorSliceNode(v1, v2, origin_node, vector_type)));
   Node* box = box_vector(operation, vbox_type, elem_bt, num_elem);

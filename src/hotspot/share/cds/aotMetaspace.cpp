@@ -195,9 +195,6 @@ class DumpClassListCLDClosure : public CLDClosure {
     if (!created) {
       return;
     }
-    if (_dumped_classes.maybe_grow()) {
-      log_info(aot, hashtables)("Expanded _dumped_classes table to %d", _dumped_classes.table_size());
-    }
     if (ik->super()) {
       dump(ik->super());
     }
@@ -493,7 +490,7 @@ void AOTMetaspace::write_method_handle_intrinsics() {
 void AOTMetaspace::early_serialize(SerializeClosure* soc) {
   int tag = 0;
   soc->do_tag(--tag);
-  CDS_JAVA_HEAP_ONLY(Modules::serialize_archived_module_info(soc);)
+  AOTModules::serialize_archived_module_info(soc);
   soc->do_tag(666);
 }
 
@@ -740,7 +737,7 @@ public:
 char* VM_PopulateDumpSharedSpace::dump_early_read_only_tables() {
   ArchiveBuilder::OtherROAllocMark mark;
 
-  CDS_JAVA_HEAP_ONLY(Modules::dump_archived_module_info());
+  AOTModules::dump_archived_module_info();
 
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();
