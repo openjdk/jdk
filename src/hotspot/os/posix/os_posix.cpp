@@ -322,7 +322,7 @@ int os::create_file_for_heap(const char* dir) {
   int fd;
 
 #if defined(LINUX) && defined(O_TMPFILE)
-  char* native_dir = os::strdup(dir);
+  char* native_dir = os::strdup(dir, mtInternal);
   if (native_dir == nullptr) {
     vm_exit_during_initialization(err_msg("strdup failed during creation of backing file for heap (%s)", os::strerror(errno)));
     return -1;
@@ -854,7 +854,7 @@ void os::dll_unload(void *lib) {
   char* l_pathdup = nullptr;
   l_path = os::Linux::dll_path(lib);
   if (l_path != nullptr) {
-    l_path = l_pathdup = os::strdup(l_path);
+    l_path = l_pathdup = os::strdup(l_path, mtInternal);
   }
 #endif  // LINUX
 
@@ -1654,15 +1654,15 @@ jlong os::elapsed_frequency() {
   return NANOSECS_PER_SEC; // nanosecond resolution
 }
 
-double os::elapsed_process_cpu_time() {
+bool os::elapsed_process_cpu_time(double& value) {
   struct rusage usage;
   int retval = getrusage(RUSAGE_SELF, &usage);
   if (retval == 0) {
-    return usage.ru_utime.tv_sec + usage.ru_stime.tv_sec +
+    value = usage.ru_utime.tv_sec + usage.ru_stime.tv_sec +
          (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / (1000.0 * 1000.0);
-  } else {
-    return -1;
+    return true;
   }
+  return false;
 }
 
 // Return the real, user, and system times in seconds from an

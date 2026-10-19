@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotModules.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/aotStreamedHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
@@ -126,7 +127,6 @@ void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassSha
   for (int i = 0; i < _source_objs->length(); ++i) {
     oop obj = _source_objs->at(i);
     _dfs_order_table->put(cast_from_oop<void*>(obj), -1);
-    _dfs_order_table->maybe_grow();
   }
 
   int dfs_order = 0;
@@ -145,12 +145,12 @@ void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassSha
       oop obj = dfs_stack.pop();
       assert(obj != nullptr, "null root");
       int* dfs_number = _dfs_order_table->get(cast_from_oop<void*>(obj));
+      assert(dfs_number != nullptr, "reachable obj not added to _source_objs");
       if (*dfs_number != -1) {
         // Already visited in the traversal
         continue;
       }
       _dfs_order_table->put(cast_from_oop<void*>(obj), ++dfs_order);
-      _dfs_order_table->maybe_grow();
 
       FollowOopIterateClosure cl(&dfs_stack, obj, AOTReferenceObjSupport::check_if_ref_obj(obj));
       obj->oop_iterate(&cl);
@@ -260,7 +260,6 @@ void AOTStreamedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, m
 
     OopHandle handle(Universe::vm_global(), src_obj);
     _buffer_offset_to_source_obj_table->put_when_absent(buffer_offset, handle);
-    _buffer_offset_to_source_obj_table->maybe_grow();
 
     int dfs_order = i + 1;
     _dfs_to_archive_object_table[dfs_order] = buffer_offset;
@@ -321,7 +320,7 @@ size_t AOTStreamedHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
 
   if (java_lang_Module::is_instance(src_obj)) {
     // These native pointers will be restored explicitly at run time.
-    Modules::check_archived_module_oop(src_obj);
+    AOTModules::check_archived_module_oop(src_obj);
     update_buffered_object_field<ModuleEntry*>(to, java_lang_Module::module_entry_offset(), nullptr);
   } else if (java_lang_ClassLoader::is_instance(src_obj)) {
 #ifdef ASSERT
@@ -378,7 +377,7 @@ void AOTStreamedHeapWriter::update_header_for_buffered_addr(address buffered_add
   // in the shared heap. This also has the side effect of pre-initializing the
   // identity_hash for all shared objects, so they are less likely to be written
   // into during run time, increasing the potential of memory sharing.
-  if (src_obj != nullptr && !src_klass->is_inline_klass()) {
+  if (src_obj != nullptr && !src_klass->is_value_klass()) {
     intptr_t src_hash = src_obj->identity_hash();
     mw = mw.copy_set_hash(src_hash);
   }

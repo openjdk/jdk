@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ class jfieldIDWorkaround: AllStatic {
  public:
   static bool is_valid_jfieldID(Klass* k, jfieldID id);
 
-  static bool is_instance_jfieldID(Klass* k, jfieldID id) {
+  static bool is_instance_jfieldID(jfieldID id) {
     uintptr_t as_uint = (uintptr_t) id;
     return ((as_uint & instance_mask_in_place) != 0);
   }

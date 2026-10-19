@@ -331,7 +331,7 @@ protected:
 
   static bool add_loader_constraint(Symbol* name, Klass* klass_being_linked,  Handle loader1,
                                     Handle loader2);
-  static bool preload_from_required_inline_field(InstanceKlass* ik, Handle class_loader, Symbol* sig, int field_index, TRAPS);
+  static bool preload_from_required_value_field(InstanceKlass* ik, Handle class_loader, Symbol* sig, int field_index, TRAPS);
   static void try_preload_from_loadable_descriptors(InstanceKlass* ik, Handle class_loader, Symbol* sig, int field_index, TRAPS);
   static InstanceKlass* load_shared_class(InstanceKlass* ik,
                                           Handle class_loader,

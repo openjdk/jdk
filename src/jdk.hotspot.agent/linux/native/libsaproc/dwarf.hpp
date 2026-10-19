@@ -75,7 +75,7 @@ class DwarfParser {
     void init_state(struct DwarfState& st);
     uint64_t get_entry_length();
     bool process_cie(unsigned char *start_of_entry, uint32_t id);
-    void parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const unsigned char *end);
+    bool parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const unsigned char *end);
     uint32_t get_decoded_value(unsigned char enc);
     unsigned int get_pc_range();
 

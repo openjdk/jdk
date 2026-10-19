@@ -73,7 +73,7 @@ static int make_flat_array_layout_helper(int payload_size_bytes, bool null_free)
 TEST_VM(objArrayOop, osize_flatarray) {
   struct FlatArraySizeCase {
     int objal;        // Object alignment in bytes
-    int payload_size; // Raw inline payload size
+    int payload_size; // Raw value payload size
     bool null_free;   // Null free
     int result;       // Expected size in heap words
   };

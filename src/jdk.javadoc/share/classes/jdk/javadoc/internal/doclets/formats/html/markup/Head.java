@@ -373,8 +373,7 @@ public class Head extends Content {
                 mainBodyScript.append("const pathtoroot = ")
                         .appendStringLiteral(ptrPath + "/")
                         .append(";\n")
-                        .append("loadScripts();\n")
-                        .append("initTheme();\n");
+                        .append("loadScripts();\n");
             }
         }
         for (HtmlConfiguration.JavaScriptFile javaScriptFile : additionalScripts) {
