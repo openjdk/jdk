@@ -5000,17 +5000,34 @@ bool LibraryCallKit::inline_newArray(bool null_free, bool atomic) {
 // public static native boolean ValueClass::isNullRestrictedArray(Object array);
 // public static native boolean ValueClass::isAtomicArray(Object array);
 bool LibraryCallKit::inline_getArrayProperties(ArrayPropertiesCheck check) {
+  if (!Arguments::is_valhalla_enabled()) {
+    Node* res = gvn().transform(check == ArrayPropertiesCheck::IsAtomic ? intcon(1) : intcon(0));
+    set_result(res);
+    return true;
+  }
   Node* array = argument(0);
 
   Node* bol;
-  switch(check) {
+  switch (check) {
     case IsFlat:
-      bol = flat_array_test(array);
+      if (UseArrayFlattening) {
+        bol = flat_array_test(array);
+      } else {
+        Node* res = gvn().transform(intcon(0));
+        set_result(res);
+        return true;
+      }
       break;
     case IsNullRestricted:
       bol = null_free_array_test(array);
       break;
     case IsAtomic: {
+      if (!UseArrayFlattening) {
+        // Non-flat arrays are always atomic
+        Node* res = gvn().transform(intcon(1));
+        set_result(res);
+        return true;
+      }
       // See conditions in JVM_IsAtomicArray
       // 1. If not flat, then atomic, or else...
       RegionNode* atomic_region = new RegionNode(1);
@@ -5331,8 +5348,10 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
     if (Arguments::is_valhalla_enabled()) {
       // Handle value type arrays
       // TODO 8251971 This is too strong
-      generate_fair_guard(flat_array_test(original), bailout);
-      generate_fair_guard(flat_array_test(refined_klass_node), bailout);
+      if (UseArrayFlattening) {
+        generate_fair_guard(flat_array_test(original), bailout);
+        generate_fair_guard(flat_array_test(refined_klass_node), bailout);
+      }
       generate_fair_guard(null_free_array_test(original), bailout);
     }
 
@@ -7167,8 +7186,10 @@ bool LibraryCallKit::inline_arraycopy() {
       generate_fair_guard(tst, slow_region);
 
       // TODO 8251971 This is too strong
-      generate_fair_guard(flat_array_test(src), slow_region);
-      generate_fair_guard(flat_array_test(dest), slow_region);
+      if (UseArrayFlattening) {
+        generate_fair_guard(flat_array_test(src), slow_region);
+        generate_fair_guard(flat_array_test(dest), slow_region);
+      }
     }
 
     {
