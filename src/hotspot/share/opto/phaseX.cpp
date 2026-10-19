@@ -2063,6 +2063,7 @@ void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type*
       remove_dead_node(n, NodeOrigin::Graph);
     }
   }
+  // make sure all visit nodes are indeed dead
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
     if (n->is_Phi() || n->is_CFG() || n->outcnt() == 0) {
