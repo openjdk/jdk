@@ -218,7 +218,7 @@ public:
 
 // WhiteBox testing support.
   bool supports_concurrent_gc_breakpoints() const override {
-    return true;
+    return mode()->is_concurrent();
   }
 
 // ---------- Heap counters and metrics

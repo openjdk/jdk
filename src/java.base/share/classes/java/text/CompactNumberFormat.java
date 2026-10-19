@@ -1300,17 +1300,17 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     // Patterns for plurals syntax validation
-    private static final String EXPR = "([niftvwe])\\s*(([/%])\\s*(\\d+))*";
+    private static final String EXPR = "([niftvwe])\\s*(([/%])\\s*(\\d+))*+";
     private static final String RELATION = "(!?=)";
     private static final String VALUE_RANGE = "((\\d+)\\.\\.(\\d+)|\\d+)";
     private static final String CONDITION = EXPR + "\\s*" +
                                              RELATION + "\\s*" +
                                              VALUE_RANGE + "\\s*" +
-                                             "(,\\s*" + VALUE_RANGE + ")*";
+                                             "(,\\s*" + VALUE_RANGE + ")*+";
     private static final Pattern PLURALRULES_PATTERN =
             Pattern.compile("(zero|one|two|few|many):\\s*" +
                             CONDITION +
-                            "(\\s*(and|or)\\s*" + CONDITION + ")*");
+                            "(\\s*(and|or)\\s*" + CONDITION + ")*+");
 
     /**
      * Validates a plural rule.

@@ -45,8 +45,10 @@
 #include "opto/valuetypenode.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
+#include "utilities/vmError.hpp"
 
 class RegMask;
 // #include "phase.hpp"
@@ -1146,6 +1148,80 @@ void Node::raise_bottom_type(const Type* new_type) {
   }
 }
 
+const TypePtr* Node::out_adr_type() const {
+  const TypePtr* res = out_adr_type_impl();
+
+#ifdef ASSERT
+  if (Node::in_dump() || VMError::is_error_reported()) {
+    return res;
+  }
+
+  // Verify that in_adr_type contains out_adr_type, except for Start, obviously it consumes nothing
+  if (is_Start()) {
+    return res;
+  }
+
+  // Load must have no out_adr_type
+  if (is_Load() && res != nullptr) {
+    stringStream ss;
+    res->dump_on(&ss);
+    assert(false, "Node %s must have no out_adr_type, out: %s", Name(), ss.as_string());
+  }
+
+  const TypePtr* in_type = in_adr_type_impl();
+  // Store, LoadStore, and Phi must have the same out_adr_type and in_adr_type
+  if ((is_Store() || is_LoadStore() || is_Phi()) && res != in_type) {
+    stringStream ss;
+    ss.print(", out: ");
+    if (res == nullptr) {
+      ss.print("nullptr");
+    } else {
+      res->dump_on(&ss);
+    }
+    ss.print(", in: ");
+    if (in_type == nullptr) {
+      ss.print("nullptr");
+    } else {
+      in_type->dump_on(&ss);
+    }
+    assert(false, "Node %s must have the same out_adr_type and in_adr_type%s", Name(), ss.as_string());
+  }
+
+  // For some reasons, Raw can be used as Bot (see GraphKit::set_output_for_allocation for
+  // example), so be lenient here
+  if (res != nullptr && in_type != TypePtr::BOTTOM && in_type != TypeRawPtr::BOTTOM && res != in_type) {
+    stringStream ss;
+    ss.print(", out: ");
+    res->dump_on(&ss);
+    ss.print(", in: ");
+    if (in_type == nullptr) {
+      ss.print("nullptr");
+    } else {
+      in_type->dump_on(&ss);
+    }
+    assert(false, "Node %s: in_adr_type must contain out_adr_type%s", Name(), ss.as_string());
+  }
+
+  // Unless this node is pinned, we must either have no out_adr_type or have the same out_adr_type
+  // and in_adr_type. This is because we DO NOT know how to compute the anti-dependence of any
+  // other node. The exceptions are the intrinsic nodes which are constructed specially to
+  // materialize anti-dependencies as def-use dependencies.
+  bool has_special_anti_dependence_construction = Opcode() == Op_StrCompressedCopy ||
+                                                  Opcode() == Op_StrInflatedCopy ||
+                                                  Opcode() == Op_EncodeISOArray;
+  if (!is_Mach() && !is_CFG() && !pinned() && res != nullptr && res != in_type && !has_special_anti_dependence_construction) {
+    stringStream ss;
+    ss.print(", out: ");
+    res->dump_on(&ss);
+    ss.print(", in: ");
+    in_type->dump_on(&ss);
+    assert(false, "Node %s: cannot compute anti-dependencies%s", Name(), ss.as_string());
+  }
+#endif // ASSERT
+
+  return res;
+}
+
 //------------------------------Identity---------------------------------------
 // Return a node that the given node is equivalent to.
 Node* Node::Identity(PhaseGVN* phase) {
@@ -1237,6 +1313,10 @@ bool Node::has_special_unique_user() const {
     return true;
   } else if (op == Op_LoadUS && n->Opcode() == Op_LShiftI) {
     // Condition for RShiftI(LShiftI(LoadUS(...), 16), 16) => LoadS(...), see RShiftINode::Ideal
+    return true;
+  } else if ((op == Op_LoadB || op == Op_LoadS) && n->Opcode() == Op_AndI) {
+    // AndINode::Ideal turns AndI(LoadB/S) into AndI(LoadUB/US), if the LoadB
+    // only has a single use.
     return true;
   } else if (op == Op_AddL) {
     // Condition for convL2I(addL(x,y)) ==> addI(convL2I(x),convL2I(y))
@@ -2630,7 +2710,7 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
     t->dump_on(st);
   } else if (t == Type::MEMORY) {
     st->print("  Memory:");
-    MemNode::dump_adr_type(adr_type(), st);
+    MemNode::dump_adr_type(out_adr_type(), st);
   } else if (Verbose || WizardMode) {
     st->print("  Type:");
     if (t) {
