@@ -639,7 +639,7 @@ void RecursiveMutex::unlock(Thread* current) {
 }
 
 StripedMutex::StripedMutex(const Mutex::Rank rank, const char* name)
-  : _num_stripes(round_down_power_of_2(MAX2<uint32_t>(os::processor_count(), 1))),
+  : _num_stripes(round_up_power_of_2(os::active_processor_count())),
     _stripe_mask(_num_stripes - 1),
     _stripes_base(AllocateHeap((_num_stripes * sizeof(PaddedMutex)) + DEFAULT_PADDING_SIZE, mtSynchronizer)),
     _stripes(reinterpret_cast<PaddedMutex*> (_stripes_base)) {

@@ -295,13 +295,11 @@ class StripedMutex : public CHeapObj<mtSynchronizer> {
     return key ^ (key >> 20) ^ (key >> 9);
   }
 
+  NONCOPYABLE(StripedMutex);
+
 public:
   explicit StripedMutex(const Mutex::Rank rank, const char* name);
   ~StripedMutex();
-
-  StripedMutex()                               = delete;
-  StripedMutex(const StripedMutex&)            = delete;
-  StripedMutex& operator=(const StripedMutex&) = delete;
 
   template <typename T>
   Mutex* get(T* key) {
