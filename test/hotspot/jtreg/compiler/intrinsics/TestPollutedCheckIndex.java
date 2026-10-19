@@ -32,8 +32,8 @@ import java.util.Objects;
 /*
  * @test
  * @bug 8394736
- * @summary When a call to Objects::checkIndex fails and hits the uncommon trap, the compiler will
- *          reject the intrinsification of Preconditions::checkIndex at all other calls to
+ * @summary When a call to Objects::checkIndex fails and hits the uncommon trap, the compiler
+ *          should still intrinsify Preconditions::checkIndex at all other calls to
  *          Objects::checkIndex.
  * @library /test/lib /
  * @run driver ${test.main.class}
