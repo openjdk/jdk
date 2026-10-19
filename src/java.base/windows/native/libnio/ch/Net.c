@@ -351,6 +351,12 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_getIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
                                   jboolean mayNeedConversion, jint level, jint opt)
 {
+
+    if (level == IPPROTO_IPV6 && opt == IPV6_TCLASS) {
+        /* No op */
+        return 0;
+    }
+
     int result = 0;
     struct linger linger;
     char *arg;
@@ -367,9 +373,9 @@ Java_sun_nio_ch_Net_getIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
     /**
      * IP_TOS is deprecated on Windows and querying the option
      * returns a protocol error. NET_GetSockOpt handles this and uses
-     * a fallback mechanism. Same applies to IPV6_TCLASS.
+     * a fallback mechanism.
      */
-    if ((level == IPPROTO_IP && opt == IP_TOS) || (level == IPPROTO_IPV6 && opt == IPV6_TCLASS)) {
+    if (level == IPPROTO_IP && opt == IP_TOS) {
         mayNeedConversion = JNI_TRUE;
     }
 
@@ -393,6 +399,12 @@ JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
                                   jboolean mayNeedConversion, jint level, jint opt, jint arg, jboolean ipv6)
 {
+
+    if (level == IPPROTO_IPV6 && opt == IPV6_TCLASS) {
+     /* No op */
+     return;
+    }
+
     struct linger linger;
     char *parg;
     int arglen, n;
@@ -410,11 +422,6 @@ Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
     } else {
         parg = (char *)&arg;
         arglen = sizeof(arg);
-    }
-
-    if (level == IPPROTO_IPV6 && opt == IPV6_TCLASS) {
-        /* No op */
-        return;
     }
 
     /**
