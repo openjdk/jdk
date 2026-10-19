@@ -202,7 +202,8 @@ address MacroAssembler::get_address_of_calculate_address_from_global_toc_at(addr
 }
 
 #ifdef _LP64
-bool MacroAssembler::compressed_oop_constants_fit_in_31_bits() {
+static bool compute_compressed_oop_constants_fit_in_31_bits() {
+  // This is the encoding base and points before the noaccess prefix.
   const uintptr_t heap_base = (uintptr_t)CompressedOops::base();
   const uintptr_t heap_end = (uintptr_t)CompressedOops::end();
   assert(heap_end > heap_base, "compressed oop range must not be empty");
@@ -211,18 +212,9 @@ bool MacroAssembler::compressed_oop_constants_fit_in_31_bits() {
   return Assembler::is_uimm(max_encoded_oop, 31);
 }
 
-static address narrow_oop_lis_addr(address ori_addr, address lower_bound) {
-  const int ori = *(int *)ori_addr;
-  const int dst_reg_num = Assembler::inv_rta_field(ori);
-  assert(Assembler::is_ori(ori) && Assembler::inv_rs_field(ori) == dst_reg_num,
-         "must be ori reading and writing dst");
-
-  const address lis_addr = ori_addr - BytesPerInstWord;
-  assert(lis_addr >= lower_bound, "lis instruction must be in code blob");
-  const int lis = *(int *)lis_addr;
-  assert(Assembler::is_lis(lis) && Assembler::inv_rs_field(lis) == dst_reg_num,
-         "must be lis writing dst");
-  return lis_addr;
+bool MacroAssembler::compressed_oop_constants_fit_in_31_bits() {
+  static const bool constants_fit = compute_compressed_oop_constants_fit_in_31_bits();
+  return constants_fit;
 }
 
 // Patch compressed oop constants.
@@ -230,11 +222,12 @@ static address narrow_oop_lis_addr(address ori_addr, address lower_bound) {
 //
 //   lis  rx = const.hi
 //   ori  rx = rx | const.lo
-address MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop data) {
+address MacroAssembler::patch_set_narrow_oop(address a, address lower_bound, narrowOop data) {
   assert(UseCompressedOops, "Should only patch compressed oops");
 
   const address inst2_addr = a;
-  const address inst1_addr = narrow_oop_lis_addr(inst2_addr, bound);
+  assert(is_set_narrow_oop(inst2_addr, lower_bound), "must be lis/ori narrow oop constant");
+  const address inst1_addr = inst2_addr - BytesPerInstWord;
 
   uint32_t data_value = CompressedOops::narrow_oop_value(data);
   int xc = (data_value >> 16) & 0xffff;
@@ -246,11 +239,12 @@ address MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop
 }
 
 // Get compressed oop constant.
-narrowOop MacroAssembler::get_narrow_oop(address a, address bound) {
+narrowOop MacroAssembler::get_narrow_oop(address a, address lower_bound) {
   assert(UseCompressedOops, "Should only patch compressed oops");
 
   const address inst2_addr = a;
-  const address inst1_addr = narrow_oop_lis_addr(inst2_addr, bound);
+  assert(is_set_narrow_oop(inst2_addr, lower_bound), "must be lis/ori narrow oop constant");
+  const address inst1_addr = inst2_addr - BytesPerInstWord;
 
   uint xl = ((unsigned int) (get_imm(inst2_addr, 0) & 0xffff));
   uint xh = (((get_imm(inst1_addr, 0)) & 0xffff) << 16);
