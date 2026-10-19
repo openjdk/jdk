@@ -876,165 +876,18 @@ TEST_VM(os_windows, SafeFetch32_with_page_guard_protection) {
 }
 
 #define SKIP_IF_PLACEHOLDER_NOT_SUPPORTED \
-  if (os::win32::VirtualAlloc2 == nullptr)  GTEST_SKIP() << "VirtualAlloc2 not available";
-
-TEST_VM(os, placeholder_reserve_and_convert) {
-  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
-
-  const size_t size = 4 * os::vm_allocation_granularity();
-
-  os::win32::PlaceholderRegion region = os::win32::reserve_placeholder_memory(size, nullptr);
-  ASSERT_FALSE(region.is_empty());
-  ASSERT_EQ(region.size(), size);
-  ASSERT_NE(region.base(), (char*)nullptr);
-
-  char* reserved = os::win32::convert_to_reserved(region);
-  ASSERT_EQ(reserved, region.base());
-
-  // Commit, but bypass NMT
-  ASSERT_NE(::VirtualAlloc(reserved, size, MEM_COMMIT, PAGE_READWRITE), nullptr);
-  // Touch the memory to confirm it's usable.
-  memset(reserved, 0xAB, size);
-  EXPECT_EQ((unsigned char)reserved[0], 0xAB);
-  EXPECT_EQ((unsigned char)reserved[size - 1], 0xAB);
-
-  ASSERT_TRUE(::VirtualFree(reserved, 0, MEM_RELEASE));
-}
-
-TEST_VM(os, placeholder_split_two_way) {
-  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
-
-  const size_t granularity = os::vm_allocation_granularity();
-  const size_t total = 4 * granularity;
-  const size_t split_offset = 3 * granularity;
-
-  os::win32::PlaceholderRegion region = os::win32::reserve_placeholder_memory(total, nullptr);
-  ASSERT_FALSE(region.is_empty());
-
-  char* original_base = region.base();
-  os::win32::PlaceholderRegionPair split = os::win32::split_memory(region, split_offset);
-
-  // Leading piece: [base, base+split_offset)
-  ASSERT_EQ(split.left.base(), original_base);
-  ASSERT_EQ(split.left.size(), split_offset);
-
-  // Trailing piece: [base+split_offset, base+total)
-  ASSERT_EQ(split.right.base(), original_base + split_offset);
-  ASSERT_EQ(split.right.size(), total - split_offset);
-
-  // Convert both and commit.
-  char* addr1 = os::win32::convert_to_reserved(split.left);
-  char* addr2 = os::win32::convert_to_reserved(split.right);
-  ASSERT_EQ(addr1, original_base);
-  ASSERT_EQ(addr2, original_base + split_offset);
-
-  // Commit, but bypass NMT
-  ASSERT_NE(::VirtualAlloc(addr1, split_offset, MEM_COMMIT, PAGE_READWRITE), nullptr);
-  ASSERT_NE(::VirtualAlloc(addr2, total - split_offset, MEM_COMMIT, PAGE_READWRITE), nullptr);
-
-  // Touch the memory to confirm it's usable.
-  memset(addr1, 0x11, split_offset);
-  memset(addr2, 0x22, total - split_offset);
-  EXPECT_EQ((unsigned char)addr1[0], 0x11);
-  EXPECT_EQ((unsigned char)addr2[0], 0x22);
-
-  // Verify we can release the parts separately.
-  ASSERT_TRUE(::VirtualFree(addr1, 0, MEM_RELEASE));
-  ASSERT_TRUE(::VirtualFree(addr2, 0, MEM_RELEASE));
-}
-
-TEST_VM(os, placeholder_split_consumes_full_range) {
-  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
-
-  const size_t region_size = os::vm_allocation_granularity();
-  os::win32::PlaceholderRegion region = os::win32::reserve_placeholder_memory(region_size, nullptr);
-  ASSERT_FALSE(region.is_empty());
-
-  char* original_base = region.base();
-  os::win32::PlaceholderRegionPair split = os::win32::split_memory(region, region_size);
-
-  // Leading piece
-  ASSERT_EQ(split.left.base(), original_base);
-  ASSERT_EQ(split.left.size(), region_size);
-
-  // Trailing piece
-  ASSERT_TRUE(split.right.is_empty());
-
-  // Commit and touch to confirm it's usable.
-  char* addr = os::win32::convert_to_reserved(split.left);
-  ASSERT_NE(::VirtualAlloc(addr, region_size, MEM_COMMIT, PAGE_READWRITE), nullptr);
-  memset(addr, 0x11, region_size);
-  EXPECT_EQ((unsigned char)addr[0], 0x11);
-
-  ASSERT_TRUE(::VirtualFree(addr, 0, MEM_RELEASE));
-}
-
-TEST_VM(os, placeholder_split_consumes_nothing) {
-  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
-
-  const size_t region_size = os::vm_allocation_granularity();
-  os::win32::PlaceholderRegion region = os::win32::reserve_placeholder_memory(region_size, nullptr);
-  ASSERT_FALSE(region.is_empty());
-
-  char* original_base = region.base();
-  os::win32::PlaceholderRegionPair split = os::win32::split_memory(region, 0);
-
-  // Leading piece
-  ASSERT_TRUE(split.left.is_empty());
-
-  // Trailing piece
-  ASSERT_EQ(split.right.base(), original_base);
-  ASSERT_EQ(split.right.size(), region_size);
-
-  // Commit and touch to confirm it's usable.
-  char* addr = os::win32::convert_to_reserved(split.right);
-  ASSERT_NE(::VirtualAlloc(addr, region_size, MEM_COMMIT, PAGE_READWRITE), nullptr);
-  memset(addr, 0x11, region_size);
-  EXPECT_EQ((unsigned char)addr[0], 0x11);
-
-  ASSERT_TRUE(::VirtualFree(addr, 0, MEM_RELEASE));
-}
-
-TEST_VM_FATAL_ERROR_MSG(os, placeholder_double_convert, ".*Failed to convert placeholder.*") {
-  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
-  const size_t size = 4 * os::vm_allocation_granularity();
-
-  os::win32::PlaceholderRegion region = os::win32::reserve_placeholder_memory(size, nullptr);
-  ASSERT_FALSE(region.is_empty());
-  ASSERT_EQ(region.size(), size);
-  ASSERT_NE(region.base(), (char*)nullptr);
-
-  // Double convert
-  char* reserved = os::win32::convert_to_reserved(region);
-  ASSERT_EQ(reserved, region.base());
-  // This second conversion attempt should crash producing the error "...Failed to convert placeholder..."
-  reserved = os::win32::convert_to_reserved(region);
-}
+  if (!os::placeholders_supported())  GTEST_SKIP() << "placeholders are not available";
 
 TEST_VM(os, placeholder_commit_before_convert) {
   SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
   const size_t size = 4 * os::vm_allocation_granularity();
 
-  os::win32::PlaceholderRegion region = os::win32::reserve_placeholder_memory(size, nullptr);
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(size, mtTest, nullptr);
   ASSERT_FALSE(region.is_empty());
   ASSERT_EQ(region.size(), size);
-  ASSERT_NE(region.base(), (char*)nullptr);
 
   // Committing should fail here, but not crash.
   ASSERT_FALSE(::VirtualAlloc(region.base(), size, MEM_COMMIT, PAGE_READWRITE));
-  ASSERT_TRUE(::VirtualFree(region.base(), 0, MEM_RELEASE));
-}
-
-TEST_VM(os, placeholder_release_before_convert) {
-  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
-
-  const size_t size = 4 * os::vm_allocation_granularity();
-
-  os::win32::PlaceholderRegion region = os::win32::reserve_placeholder_memory(size, nullptr);
-  ASSERT_FALSE(region.is_empty());
-  ASSERT_EQ(region.size(), size);
-  ASSERT_NE(region.base(), (char*)nullptr);
-
   ASSERT_TRUE(::VirtualFree(region.base(), 0, MEM_RELEASE));
 }
 

@@ -1254,7 +1254,7 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
 // Memory map a region in the address space.
 static const char* shared_region_name[] = { "ReadWrite", "ReadOnly", "Bitmap", "Heap", "Code" };
 
-MapArchiveResult FileMapInfo::map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs) {
+MapArchiveResult FileMapInfo::map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs, os::PlaceholderRegion& archive_placeholder) {
   DEBUG_ONLY(FileMapRegion* last_region = nullptr);
   intx addr_delta = mapped_base_address - header()->requested_base_address();
 
@@ -1264,7 +1264,7 @@ MapArchiveResult FileMapInfo::map_regions(int regions[], int num_regions, char* 
 
   for (int i = 0; i < num_regions; i++) {
     int idx = regions[i];
-    MapArchiveResult result = map_region(idx, addr_delta, mapped_base_address, rs);
+    MapArchiveResult result = map_region(idx, addr_delta, mapped_base_address, rs, archive_placeholder);
     if (result != MAP_ARCHIVE_SUCCESS) {
       return result;
     }
@@ -1319,7 +1319,7 @@ bool FileMapInfo::read_region(int i, char* base, size_t size, bool do_commit) {
   return true;
 }
 
-MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs) {
+MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs, os::PlaceholderRegion& archive_placeholder) {
   assert(!HeapShared::is_heap_region(i), "sanity");
   FileMapRegion* r = region_at(i);
   size_t size = r->used_aligned();
@@ -1344,8 +1344,8 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
 
   if (AOTMetaspace::use_windows_memory_mapping() && rs.is_reserved()) {
     // This is the second time we try to map the archive(s). We have already created a ReservedSpace
-    // that covers all the FileMapRegions to ensure all regions can be mapped. However, Windows
-    // can't mmap into a ReservedSpace, so we just ::read() the data. We're going to patch all the
+    // that covers all the FileMapRegions to ensure all regions can be mapped.
+    // We just ::read() the data. We're going to patch all the
     // regions anyway, so there's no benefit for mmap anyway.
     if (!read_region(i, requested_addr, size, /* do_commit = */ true)) {
       AOTMetaspace::report_loading_error("Failed to read %s shared space into reserved space at " INTPTR_FORMAT,
@@ -1354,9 +1354,32 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
     } else {
       assert(r->mapped_base() != nullptr, "must be initialized");
     }
+  } else if (!archive_placeholder.is_empty()) {
+    // archive_placeholder covers [next_region_start, ccs_begin_offset).
+    // Split off a section from the left and map into it.
+    assert(requested_addr == archive_placeholder.base(), "archive_placeholder does not match the next expected region to map.");
+    os::PlaceholderRegionPair split = os::split_memory(archive_placeholder, size);
+    archive_placeholder = split.right;
+    char* base = os::map_memory(_fd, _full_path, r->file_offset(), split.left, r->read_only(), mtClassShared, r->allow_exec());
+
+    if (base != requested_addr) {
+      os::release_memory(split.left); // Don't leak it. Won't get cleaned up with archive_placeholder
+      AOTMetaspace::report_loading_error("Unable to map %s shared space at " INTPTR_FORMAT,
+                                         shared_region_name[i], p2i(requested_addr));
+      _memory_mapping_failed = true;
+      return MAP_ARCHIVE_MMAP_FAILURE;
+    }
+
+    if (VerifySharedSpaces && !r->check_region_crc(requested_addr)) {
+      return MAP_ARCHIVE_OTHER_FAILURE;
+    }
+
+    r->set_mapped_from_file(true);
+    r->set_mapped_base(requested_addr);
+
   } else {
     // Note that this may either be a "fresh" mapping into unreserved address
-    // space (Windows, first mapping attempt), or a mapping into pre-reserved
+    // space (legacy Windows, first mapping attempt), or a mapping into pre-reserved
     // space (Posix). See also comment in AOTMetaspace::map_archives().
     bool read_only = r->read_only() && !CDSConfig::is_dumping_final_static_archive();
 

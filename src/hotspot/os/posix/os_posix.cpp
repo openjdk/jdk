@@ -542,6 +542,39 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
   return aligned_base;
 }
 
+#ifndef AIX
+
+bool os::pd_placeholders_supported() {
+  return true;
+}
+
+os::PlaceholderRegion os::pd_reserve_placeholder_memory(size_t bytes, char* addr) {
+  // mmap returns memory that is splittable by default.
+  char* base;
+  if (addr != nullptr) {
+    base = pd_attempt_reserve_memory_at(addr, bytes, false);
+  } else {
+    base = pd_reserve_memory(bytes, false);
+  }
+  return PlaceholderRegion(base, base != nullptr ? bytes : 0);
+}
+
+os::PlaceholderRegionPair os::pd_split_memory(const PlaceholderRegion& orig, size_t offset) {
+  // On POSIX, mmap regions are inherently splittable.
+  return {PlaceholderRegion(orig.base(), offset), PlaceholderRegion(orig.base() + offset, orig.size() - offset)};
+}
+
+#endif // !AIX
+
+char* os::pd_convert_to_reserved(PlaceholderRegion region) {
+  return region.base();
+}
+
+char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
+                           PlaceholderRegion region, bool read_only, bool allow_exec) {
+  return pd_map_memory(fd, file_name, file_offset, region.base(), region.size(), read_only, allow_exec);
+}
+
 int os::get_fileno(FILE* fp) {
   return NOT_AIX(::)fileno(fp);
 }
