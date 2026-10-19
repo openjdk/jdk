@@ -113,19 +113,6 @@ public:
   inline size_t remaining() const;
 };
 
-class ShenandoahRegionIteratorTaskAdapter : public TaskQueueSetSuperImpl<mtGC> {
-  ShenandoahRegionIterator* _regions;
-public:
-  explicit ShenandoahRegionIteratorTaskAdapter(ShenandoahRegionIterator* regions)
-    : _regions(regions) {}
-
-#ifdef ASSERT
-  void assert_empty() const override;
-#endif
-
-  uint tasks() const override;
-};
-
 class ShenandoahHeapRegionClosure : public StackObj {
 public:
   virtual void heap_region_do(ShenandoahHeapRegion* r) = 0;

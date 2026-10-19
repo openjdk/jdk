@@ -685,35 +685,6 @@ void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) 
   old_generation()->set_parsable(true);
 }
 
-
-class ShenandoahUpdateRefsTaskAdapter : public TaskQueueSetSuperImpl<mtGC> {
-  ShenandoahRegionIterator* _regions;
-  ShenandoahRegionChunkIterator* _chunks;
-  bool _do_chunks;
-public:
-  explicit ShenandoahUpdateRefsTaskAdapter(ShenandoahRegionIterator* regions,
-                                           ShenandoahRegionChunkIterator* chunks, bool do_chunks)
-    : _regions(regions), _chunks(chunks), _do_chunks(do_chunks) {}
-
-#ifdef ASSERT
-  void assert_empty() const override {
-    assert(_regions->remaining() == 0, "All regions should be processed here");
-    if (_do_chunks) {
-      assert(_chunks->remaining() == 0, "All chunks should be processed here");
-    }
-  }
-#endif
-
-  uint tasks() const override {
-    size_t total = _regions->remaining();
-    if (_do_chunks) {
-      total += _chunks->remaining();
-    }
-    return checked_cast<uint>(total);
-  }
-};
-
-
 class ShenandoahGenerationalUpdateHeapRefsTask : public ShenandoahElasticMonotonicTask {
 private:
   // For update refs, _generation will be young or global. Mixed collections use the young generation.

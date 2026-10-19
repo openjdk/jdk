@@ -249,14 +249,3 @@ void ShenandoahCollectionSet::summarize(size_t total_garbage, size_t immediate_g
     }
   }
 }
-
-
-#ifdef ASSERT
-void ShenandoahCsetTaskAdapter::assert_empty() const {
-  // Okay for some regions to not be evacuated when there are evacuation failures
-}
-#endif
-
-uint ShenandoahCsetTaskAdapter::tasks() const {
-  return checked_cast<uint>(_collection_set->remaining());
-}

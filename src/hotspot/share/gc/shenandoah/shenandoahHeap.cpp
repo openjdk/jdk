@@ -2788,17 +2788,6 @@ void ShenandoahRegionIterator::reset() {
   _index.store_relaxed(0);
 }
 
-#ifdef ASSERT
-void ShenandoahRegionIteratorTaskAdapter::assert_empty() const {
-  assert(_regions->remaining() == 0, "All regions should be visited");
-}
-#endif
-
-uint ShenandoahRegionIteratorTaskAdapter::tasks() const {
-  return checked_cast<uint>(_regions->remaining());
-}
-
-
 ShenandoahLiveData* ShenandoahHeap::get_liveness_cache(uint worker_id) {
 #ifdef ASSERT
   assert(_liveness_cache != nullptr, "sanity");

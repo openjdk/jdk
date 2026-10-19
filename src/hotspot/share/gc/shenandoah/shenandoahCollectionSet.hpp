@@ -148,17 +148,4 @@ private:
   }
 };
 
-class ShenandoahCsetTaskAdapter : public TaskQueueSetSuperImpl<mtGC> {
-  ShenandoahCollectionSet* _collection_set;
-public:
-  explicit ShenandoahCsetTaskAdapter(ShenandoahCollectionSet* collection_set)
-    : _collection_set(collection_set) {}
-
-#ifdef ASSERT
-  void assert_empty() const override;
-#endif
-
-  uint tasks() const override;
-};
-
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTIONSET_HPP
