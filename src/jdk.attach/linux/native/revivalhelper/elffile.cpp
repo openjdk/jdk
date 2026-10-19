@@ -144,7 +144,7 @@ ELFFile::ELFFile(const char* filename, const char* libdirs, bool write) {
     int oflags = write ? O_RDWR : O_RDONLY;
     fd = open(filename, oflags);
     if (fd < 0) {
-        warn("Cannot open '%s': %s", filename, strerror(errno));
+        warn("ELFFile: cannot open '%s': %s", filename, strerror(errno));
         return;
     }
     length = file_size(filename);
@@ -504,7 +504,7 @@ void ELFFile::read_file_mappings() {
     if (note_nt_file == nullptr) {
         error("read_file_mappings: Cannot locate NOTE NT_FILE in %s", filename);
     }
-    logv("NT_FILE note data at %p", note_nt_file);
+    logd("NT_FILE note data at %p", note_nt_file);
 
     // Read NT_FILE content:
     int nt_file_count;
@@ -694,7 +694,7 @@ void ELFFile::write_mem_mappings(int mappings_fd) {
             for (iter = file_mappings.begin(); iter != file_mappings.end(); iter++) {
                 Segment lib = *iter;
                 if (is_inside(phdr, lib.start(), lib.end())) {
-                    logv("Skipping core PH 0x%lx - 0x%lx due to overlap with %s", phdr->p_vaddr, phdr->p_vaddr + phdr->p_memsz, lib.name);
+                    logd("Skipping core PH 0x%lx - 0x%lx due to overlap with %s", phdr->p_vaddr, phdr->p_vaddr + phdr->p_memsz, lib.name);
                     skip = true;
                     break;
                 }

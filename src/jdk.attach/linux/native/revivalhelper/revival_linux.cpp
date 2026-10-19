@@ -39,6 +39,7 @@
 #include <unistd.h>
 
 #include <sys/mman.h>
+#include <sys/personality.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -58,7 +59,6 @@
 long vaddr_align;
 uint64_t bin_addr;
 uint64_t bin_end;
-#define LIBC_NAME "libc.so.6"
 uint64_t libc_addr;
 uint64_t libc_end;
 uint64_t heap_end;
@@ -137,43 +137,60 @@ void init_pd() {
     if (env == nullptr || strncmp(env, "1", 1) != 0) {
         error("Error: LD_USE_LOAD_BIAS not set.");
     }
+    // Warn if ASLR disabled: address clashes are caused and fixed by ASLR.
+    int p = personality(0xffffffff);
+    logd("revival: init_pd: personality 0x%x", p);
+    if (p != -1) {
+        if (p & ADDR_NO_RANDOMIZE) {
+            warn("revival: Linux personality: ADDR_NO_RANDOMIZE disables ASLR. This can make core file usage unreliable.");
+        }
+    } else {
+        warn("revival: personality() failed: %d: %s", errno, strerror(errno));
+    }
 
     long value = sysconf(_SC_PAGESIZE); // Expect 0x1000
     if (value < 1) {
-        warn("init_pd: sysconf retuns 0x%lx: %s", value, strerror(errno));
+        warn("revival: init_pd: sysconf retuns 0x%lx: %s", value, strerror(errno));
         value = 0x1000;
     }
     vaddr_align = value;
-    logv("revival: init_pd: vaddr_alignment (pagesize) = 0x%llx", (unsigned long long) vaddr_alignment_pd());
+    logd("revival: init_pd: vaddr_alignment (pagesize) = 0x%llx", (unsigned long long) vaddr_alignment_pd());
 
     // Addresses for later conflict checking.
     void* h = dlopen(nullptr, RTLD_NOW | RTLD_LOCAL);
     if (h == nullptr) {
-        warn("init_pd: dlopen failed");
+        warn("init_pd: dlopen(nullptr) failed");
         bin_addr = 0;
     } else {
         // Main binary has dynamic load address.
         bin_addr = (uint64_t) base_address_for_sharedobject_live(h);
-        logv("revivalhelper: binary address: 0x%lx", bin_addr);
+        logv("revival: binary address: 0x%lx", bin_addr);
         bin_end = (uint64_t) end_address_for_sharedobject_live(h);
-        logv("revivalhelper: binary end: 0x%lx", bin_end);
+        logv("revival: binary end: 0x%lx", bin_end);
     }
-    h = dlopen(LIBC_NAME, RTLD_NOW | RTLD_LOCAL);
-    if (h == nullptr) {
-        warn("init_pd: dlopen " LIBC_NAME " failed");
-        libc_addr = 0;
-    } else {
-        libc_addr = (uint64_t) base_address_for_sharedobject_live(h);
-        logv("revivalhelper: libc address: 0x%lx", libc_addr);
-        libc_end = (uint64_t) end_address_for_sharedobject_live(h);
-        // libc data area will be fairly predictable but add a generous margin.
-        libc_end += 0x200000;
-        logv("revivalhelper: libc end: 0x%lx", libc_end);
+    // Find "libc" without hard-coding its name:
+    void* sym = dlsym(RTLD_DEFAULT, "printf"); // representative "libc" function
+    Dl_info di;
+    libc_addr = 0;
+    if (sym != nullptr && dladdr(sym, &di)) {
+        if (di.dli_saddr != nullptr) {
+            h = dlopen(di.dli_fname, RTLD_NOW);
+            if (h == nullptr) {
+                warn("revival: init_pd: dlopen libc failed");
+            } else {
+                libc_addr = (uint64_t) base_address_for_sharedobject_live(h);
+                logv("revival: libc address: 0x%lx", libc_addr);
+                libc_end = (uint64_t) end_address_for_sharedobject_live(h);
+                // libc data area will be fairly predictable but add a generous margin.
+                libc_end += 0x200000;
+                logv("revival: libc end: 0x%lx", libc_end);
+            }
+        }
     }
     // Here in the throwaway revivalhelper launcher app, we expect low native heap usage,
     // no large/mmap allocations. Traditional program break is adequate.
     heap_end = (uint64_t) sbrk(0) + 0x100000;
-    logv("revivalhelper: heap end: 0x%lx", heap_end);
+    logv("revival: heap end: 0x%lx", heap_end);
 }
 
 const char* conflict_check_pd(void* vaddr, size_t length) {
@@ -199,7 +216,7 @@ bool dir_exists_pd(const char* dirname) {
     int fd = open(dirname, O_DIRECTORY);
     if (fd < 0) {
         if (errno != ENOENT) {
-            warn("Checking directory exists: '%s': %d: %s", dirname, errno, strerror(errno));
+            warn("revival: Checking directory exists: '%s': %d: %s", dirname, errno, strerror(errno));
         }
     } else {
         close(fd);
@@ -229,7 +246,7 @@ bool dir_isempty_pd(const char* dirname) {
 bool file_exists_pd(const char* filename) {
     int fd = open(filename, O_RDONLY);
     if (fd < 0) {
-        logv("%s: error %d: %s", filename, errno, strerror(errno));
+        logd("%s: error %d: %s", filename, errno, strerror(errno));
         if (errno != ENOENT) {
             return true; // Exists, but e.g. no permission.
         } else {
@@ -260,12 +277,12 @@ bool file_exists_indir_pd(const char* dirname, const char* filename) {
 char* readstring_at_offset_pd(const char* filename, uint64_t offset) {
     int fd = open(filename, O_RDONLY);
     if (fd < 0) {
-        warn("cannot open %s", filename);
+        warn("revival: cannot open %s", filename);
         return (char*) -1;
     }
     off_t pos = lseek(fd, offset, SEEK_SET);
     if (pos < 0) {
-        warn("readstring_at_offset_pd: %s: lseek(%ld) fails %d : %s", filename, offset, errno, strerror(errno));
+        warn("revival: readstring_at_offset_pd: %s: lseek(%ld) fails %d : %s", filename, offset, errno, strerror(errno));
         close(fd);
         return (char*) -1;
     }
@@ -277,7 +294,7 @@ char* readstring_at_offset_pd(const char* filename, uint64_t offset) {
 char* readstring_from_core_at_vaddr_pd(const char* filename, uint64_t addr) {
     ELFFile elf(filename);
     if (!elf.is_valid()) {
-        error("readstring_from_core_at_vaddr_pd: %s invalid", filename);
+        error("revival: readstring_from_core_at_vaddr_pd: %s invalid", filename);
         return nullptr;
     } else {
         return elf.readstring_at_address(addr);
@@ -292,7 +309,7 @@ bool can_lazycopy_pd(void* addr) {
     return true;
 }
 
-void* do_mmap_pd(void* addr, size_t length, char* filename, int fd, size_t offset) {
+void* do_mmap_pd(void* addr, size_t length, const char* filename, int fd, size_t offset) {
     int flags = MAP_PRIVATE | MAP_FIXED;
     int prot = PROT_READ | PROT_WRITE | PROT_EXEC;
     // Values given should simply work for a regular Linux core file.
@@ -313,7 +330,7 @@ void* do_map_allocate_pd(void* vaddr, size_t length, int prot) {
     }
     int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_FIXED | MAP_NORESERVE;
     void* h = mmap(vaddr, length, prot, flags, -1, 0);
-    logv("do_map_allocate: mmap(%p, %zu, %d, %d, -1, 0) returns: %p", vaddr, length, prot, flags, h);
+    logd("do_map_allocate: mmap(%p, %zu, %d, %d, -1, 0) returns: %p", vaddr, length, prot, flags, h);
     if (h == (void*) -1) {
         warn("do_map_allocate: mmap(%p, %zu, %d, %d, -1, 0) failed: returns: %p: errno = %d: %s",
              vaddr, length, prot, flags, h, errno, strerror(errno));
@@ -323,7 +340,7 @@ void* do_map_allocate_pd(void* vaddr, size_t length, int prot) {
 
 void* symbol_dynamiclookup_pd(void* h, const char* str) {
     void* s = dlsym(RTLD_NEXT, str);
-    logv("symbol_dynamiclookup: %s = %p", str, s);
+    logd("symbol_dynamiclookup: %s = %p", str, s);
     if (s == 0) {
         if (logLevel >= LOG_VERBOSE) {
             warn("dlsym: %s", dlerror());
@@ -331,29 +348,6 @@ void* symbol_dynamiclookup_pd(void* h, const char* str) {
         return (void*) -1;
     }
     return s;
-}
-
-/**
- * Open a named file and append data for a Segment from the core.
- * Return the offset at which we wrote, or negative on error.
- */
-size_t writeTempFileBytes(const char* tempName, Segment seg) {
-    int fdTemp = open(tempName, O_WRONLY | O_APPEND);
-    if (fdTemp < 0) {
-        return fdTemp;
-    }
-    off_t pos = lseek(fdTemp, 0, SEEK_END);
-    if (pos < 0) {
-        warn("writeTempFileBytes: lseek fails %d : %s", errno, strerror(errno));
-        close(fdTemp);
-    }
-    // Write bytes
-    size_t s = write(fdTemp, seg.vaddr, seg.length);
-    if (s != seg.length) {
-        warn("writeTempFileBytes: written %d of %d", (int) s, (int) seg.length);
-    }
-    close (fdTemp);
-    return (size_t) pos;
 }
 
 /**
@@ -372,13 +366,13 @@ void handler(int sig, siginfo_t* info, void* ucontext) {
     std::list<Segment>::iterator iter;
     for (iter = delayedCopySegments.begin(); iter != delayedCopySegments.end(); iter++) {
         if (iter->contains((uint64_t) addr)) {
-            logv("Delayed Copy Segment: si_addr = %p found in segment %p", addr, iter->vaddr);
+            logv("revival: Delayed Copy Segment: si_addr = %p found in segment %p", addr, iter->vaddr);
             // Set mapping permissions and copy data now:
             int e = mprotect(iter->vaddr, iter->length, PROT_READ | PROT_WRITE | PROT_EXEC);
             if (e < 0) {
                 error("revival: mprotect failed: %d", e);
             }
-            revival_mapping_docopy(iter->vaddr, iter->length, iter->file_offset);
+            revival_mapping_docopy(core_filename, iter->vaddr, iter->length, iter->file_offset);
             return;
         }
     }
@@ -542,14 +536,14 @@ bool create_directory_pd(char* dirname) {
     return mkdir(dirname, S_IRUSR | S_IWUSR | S_IXUSR) == 0;
 }
 
-void write_sharedlib_mapping(int mappings_fd, char* filename, void* address) {
+void write_sharedlib_mapping(int mappings_fd, const char* filename, void* address) {
         ELFFile elf(filename);
         if (!elf.is_sharedlib()) {
             return;
         }
         char buf[BUFLEN];
         const char* checksum = "0";
-        snprintf(buf, BUFLEN - 1, "L %s %llx %s\n", basename(filename), (unsigned long long) address, checksum);
+        snprintf(buf, BUFLEN - 1, "L %s %llx %s\n", basename((char*) filename), (unsigned long long) address, checksum);
         write0(mappings_fd, buf);
 }
 
@@ -573,7 +567,7 @@ void copy_and_relocate(const char* srcfile, const char* destdir, uint64_t addres
 
     ELFFile elf(srcfile);
     if (!elf.is_sharedlib()) {
-        logv("copy_and_relocate: not an ELF sharedlib: %s", srcfile);
+        warn("copy_and_relocate: not an ELF sharedlib: %s", srcfile);
         return;
     }
     memset(copy_path, 0, PATH_MAX);

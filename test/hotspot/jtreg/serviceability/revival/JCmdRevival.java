@@ -361,7 +361,7 @@ public class JCmdRevival {
                         }
                         break;
                     } else {
-                        throw new RuntimeException("Could not find dump file '" + heapDumpName + "'");
+                        throw new RuntimeException("Could not find heap dump file '" + heapDumpName + "'");
                     }
                 }
                 case "GC.heap_info": {

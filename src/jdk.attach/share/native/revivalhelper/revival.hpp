@@ -164,8 +164,11 @@ int revived_dcmd(const char* command);
  */
 void revived_exit(int e);
 
-// Exit code signalling caller should retry, e.g. address space clash.
-#define EXIT_SUGGEST_RETRY 7
+// Exit codes:
+// General error.  Not 1 to be distinct from an Exception in jcmd.
+#define EXIT_ERROR 2
+// Exit signalling caller should retry, e.g. address space clash.
+#define EXIT_RETRY 7
 
 //
 // Revival internals:
@@ -176,8 +179,8 @@ extern int logLevel;            // set from env: REVIVAL_LOG
 
 extern int versionCheckEnabled; // set from env: REVIVAL_SKIPVERSIONCHECK
 
-// Revival prep state:
-extern char* core_filename;
+// Revival state:
+extern char* core_filename; // for delayed copy
 extern int core_fd;
 extern const char* revivaldir;
 extern unsigned long long core_timestamp;
@@ -265,7 +268,7 @@ void init_pd();
  * Create a memory mapping at some vaddr, of some length in bytes, from a file at some offset.
  * Return address of allocation, or -1 for failure.
 */
-void* do_mmap_pd(void* addr, size_t length, char* filename, int fd, size_t offset);
+void* do_mmap_pd(void* addr, size_t length, const char* filename, int fd, size_t offset);
 
 /**
  * Create a memory mapped allocation at a given address, length.
@@ -291,13 +294,13 @@ char* find_filename_in_libdirs(const char* libdirs, const char* filename);
 unsigned long long file_size(const char* filename);
 
 /**
- * Copy dump file bytes to memory.
+ * Copy file bytes to memory.
  * Called directly when mapping core file memory, or later to implement lazy copying
  * in response to a fault.
  */
-int revival_mapping_docopy(void* vaddr, size_t length, size_t offset);
+int revival_mapping_docopy(const char* filename, void* vaddr, size_t length, size_t offset);
 
-int revival_mapping_copy(void* vaddr, size_t length, size_t offset, bool allocate, char* filename, int fd);
+int revival_mapping_copy(void* vaddr, size_t length, size_t offset, bool allocate, const char* filename, int fd);
 
 int relocate_sharedlib_pd(const char* filename, const void* addr);
 

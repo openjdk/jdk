@@ -119,6 +119,7 @@ public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachin
     }
 
     private static final int HELPER_TRIES = 100; // Default attempts to run helper
+    private static final int HELPER_ERROR = 2;   // revivalhelper exit value for error
     private static final int HELPER_RETRY = 7;   // revivalhelper exit value hint to retry due to e.g. address space clash
 
     /**
@@ -179,7 +180,7 @@ public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachin
         String out = null;
         boolean ok = false;
         int i;
-        for (i = 1; i < maxTries; i++) {
+        for (i = 1; i <= maxTries; i++) {
             Process p = pb.start();
             long pid = p.pid();
             if (verbose) System.err.println("Run revivalhelper: " + i + "  pid = " + pid);
@@ -188,36 +189,36 @@ public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachin
                 ExecutorService executor = Executors.newFixedThreadPool(2);
                 Future<String> stdout = executor.submit(() -> drain(p.getInputStream()));
                 int e = p.waitFor();
-                out = stdout.get(10, TimeUnit.SECONDS);
+                out = stdout.get(30, TimeUnit.SECONDS);
 
-                if (e == HELPER_RETRY) {
-                    if (verbose) {
+                if (e == 0) {
+                    ok = true; // Success, will leave loop.
+                } else if (e == 1 || e == HELPER_ERROR) {
+                    // Error from JCmd, e.g. Exception thrown by command implementation,
+                    // or non-retryable error from helper, e.g. file not found.
+                    // Will leave loop, print and throw because !ok
+                } else {
+                    // Other errors: we expect occasional requests to retry the helper.
+                    // Always show other errors, or show if we are repeating ourself, or verbose is set:
+                    if (e != HELPER_RETRY || i > 1 || verbose) {
                         System.out.println(out);
+                        System.err.println("jcmd: revivalhelper pid " + pid + " failed, exit with: " + e + ". tries=" + i);
                         System.out.println("(Retrying process revival.)");
                     }
-                    continue; // ...and retry.
-                } else if (e != 0) {
-                    // e=1: Actual error from JCmd, e.g. Exception thrown by command implementation.
-                    // Other non-zero values possible for other failures.
-                    System.out.println(out);
-                    if (i > 1 || verbose) {
-                        System.err.println("jcmd via revival: failed, exit with: " + e + ". tries=" + i);
-                    }
-                    throw new AttachOperationFailedException("jcmd returned an error");  // JCmd caller will call System.exit(1)
-                } else {
-                    // Success.
-                    ok = true;
+                    continue; // retry
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException ex) {
                 System.err.println("HotSpotVirtualMachineCoreDump.execute: " + ex);
                 if (verbose) {
                     ex.printStackTrace();
                 }
+                throw new AttachOperationFailedException(ex.getMessage());
             }
             break; // No retry except for explicit continue above.
         }
-        if (i > 1 || verbose) {
-            System.err.println("jcmd via revival " + (ok ? "OK" : "failed") + ": tries=" + i);
+        if (!ok) {
+            System.out.println(out);
+            throw new AttachOperationFailedException("jcmd returned an error");  // JCmd caller will call System.exit(1)
         }
         return new StringBufferInputStream(out);
     }

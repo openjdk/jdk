@@ -26,7 +26,7 @@
 #include "minidump.hpp"
 
 /**
- * Read a MINIDUMP_STRING.
+ * Read a MINIDUMP_STRING from the current read position in a file.
  * Return a malloc'd pointer which the caller should free.
  */
 char* readstring_minidump(int fd) {
@@ -99,7 +99,7 @@ MiniDump::MiniDump(const char* filename, const char* libdirs) {
     this->teb = 0;
     fd = ::open(filename, O_RDONLY | O_BINARY);
     if (fd < 0) {
-        warn("MiniDump::open '%s' failed: %d: %s", core_filename, errno, strerror(errno));
+        warn("MiniDump::open '%s' failed: %d: %s", filename, errno, strerror(errno));
         return;
     }
     int e = read(fd, &hdr, sizeof(_MINIDUMP_HEADER));

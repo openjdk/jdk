@@ -120,7 +120,7 @@ bool PEFile::remove_dynamicbase(const char* filename) {
     logd("DllCharacteristics = 0x%llx", optional->DllCharacteristics);
     WORD dllCharacteristics = optional->DllCharacteristics;
     dllCharacteristics = dllCharacteristics & ~IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE; // Remove bit value of flag.
-    logv("remove_dynamicbase: New DllCharacteristics = 0x%llx", dllCharacteristics);
+    logd("remove_dynamicbase: New DllCharacteristics = 0x%llx", dllCharacteristics);
     logd("&optional.DllCharacteristics =  0x%llx", &(optional->DllCharacteristics));
     *(WORD*)(&(optional->DllCharacteristics)) = dllCharacteristics;
 
@@ -136,7 +136,7 @@ bool PEFile::find_data_segs(void* address, Segment** _data, Segment** _rdata) {
     logv("PEFile::find_data_segs");
     imageLoad();
 
-    logv("find_data_segs image: base address 0x%llx", address);
+    logd("find_data_segs image: base address 0x%llx", address);
     if (address == nullptr) {
         error("find_data_segs: null base address");
     }
@@ -145,7 +145,7 @@ bool PEFile::find_data_segs(void* address, Segment** _data, Segment** _rdata) {
     // Create a Segment from a Section, and use the next Section to set its end address.
     for (unsigned int i = 0; i < image->NumberOfSections; i++) {
         IMAGE_SECTION_HEADER section = image->Sections[i];
-        logv("find_data_segs: image: %s vaddr 0x%llx size 0x%llx Misc.PhysicalAddress 0x%llx PointerToRawData 0x%llx",
+        logd("find_data_segs: image: %s vaddr 0x%llx size 0x%llx Misc.PhysicalAddress 0x%llx PointerToRawData 0x%llx",
             image->Sections[i].Name, image->Sections[i].VirtualAddress, image->Sections[i].SizeOfRawData,
             section.Misc.PhysicalAddress, section.PointerToRawData);
 
@@ -192,7 +192,7 @@ Segment* PEFile::get_rdata_section() {
     // Create a Segment from .data, and use the next Section to set its end address.
     Segment* seg = nullptr;
     for (unsigned int i = 0; i < image->NumberOfSections; i++) {
-        logv("get_rdata_section: Name: %s vaddr 0x%llx size 0x%llx PointerToRawData 0x%llx",
+        logd("get_rdata_section: Name: %s vaddr 0x%llx size 0x%llx PointerToRawData 0x%llx",
               image->Sections[i].Name, image->Sections[i].VirtualAddress, image->Sections[i].SizeOfRawData, image->Sections[i].PointerToRawData);
 
         if (strncmp((char*) image->Sections[i].Name, ".rdata", 8) == 0) {

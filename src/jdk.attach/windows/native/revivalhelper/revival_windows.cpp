@@ -197,7 +197,7 @@ void init_pd() {
     _SYSTEM_INFO systemInfo;
     GetSystemInfo(&systemInfo);
     vaddr_align = systemInfo.dwAllocationGranularity - 1;
-    logv("revival: init_pd: dwAllocationGranularity = %d  vaddr_alignment_pd() = 0x%lx", systemInfo.dwAllocationGranularity, vaddr_alignment_pd());
+    logd("revival: init_pd: dwAllocationGranularity = %d  vaddr_alignment_pd() = 0x%lx", systemInfo.dwAllocationGranularity, vaddr_alignment_pd());
     if (vaddr_align != 0xffff) {
         warn("Note: dwAllocationGranularity not 64k, vaddr_align = %lld", vaddr_align);
     }
@@ -262,9 +262,9 @@ LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* excepti
     std::list<Segment>::iterator iter;
     for (iter = delayedCopySegments.begin(); iter != delayedCopySegments.end(); iter++) {
         if (iter->contains((uint64_t) addr)) {
-            logv("Delayed Copy Segment: si_addr = %p in segment %p", addr, iter->vaddr);
+            logv("revival:revival:  Delayed Copy Segment: si_addr = %p in segment %p", addr, iter->vaddr);
             set_prot(iter->vaddr, iter->length, stdProt);
-            revival_mapping_docopy(iter->vaddr, iter->length, iter->file_offset);
+            revival_mapping_docopy(core_filename, iter->vaddr, iter->length, iter->file_offset);
             return EXCEPTION_CONTINUE_EXECUTION;
         }
     }
@@ -283,7 +283,7 @@ void install_handler_pd() {
 
 void* symbol_dynamiclookup_pd(void* h, const char* str) {
     FARPROC s = GetProcAddress((HMODULE) h, str);
-    logv("symbol_dynamiclookup: %s = %p", str, s);
+    logd("symbol_dynamiclookup: %s = %p", str, s);
     if (s == 0) {
         logv("GetProcAddress failed: 0x%x", GetLastError());
         return (void*) -1;
@@ -343,11 +343,11 @@ bool can_lazycopy_pd(void* addr) {
     }
 }
 
-void* do_mmap_pd(void* addr, size_t length, char* filename, int fd, size_t offset) {
+void* do_mmap_pd(void* addr, size_t length, const char* filename, int fd, size_t offset) {
     // Fail quickly if unaligned (MiniDump contents not usually aligned):
     uint64_t offsetAligned = align_down(offset, vaddr_alignment_pd());
     if (offsetAligned != offset) {
-        logv("do_mmap_pd: address 0x%llx file offset 0x%llx not aligned, do not try mapping directly, return", addr, offset);
+        logd("do_mmap_pd: address 0x%llx file offset 0x%llx not aligned, do not try mapping directly, return", addr, offset);
         return (void*) -1;
     }
     LPVOID p = nullptr;
@@ -403,26 +403,26 @@ void* do_map_allocate_pd_VirtualAlloc2(void* addr, size_t length, int protReques
         if (e == 0) {
             // No error, but requested address was changed, or re-aligned.
             // Not likely as caller function do_map_allocate_pd aligns first.
-            logv("do_map_allocate_VirtualAlloc2: requested 0x%llx got 0x%llx (no error)", addr, p);
+            logd("do_map_allocate_VirtualAlloc2: requested 0x%llx got 0x%llx (no error)", addr, p);
             // If all already mapped, just return as if alloc worked.
             if (p <= addr && requested_end <= existing_end) {
-                logv("do_map_allocate_VirtualAlloc2: requested 0x%llx got 0x%lx contains all needed", addr, p);
+                logd("do_map_allocate_VirtualAlloc2: requested 0x%llx got 0x%lx contains all needed", addr, p);
                 return addr;
             } else {
-                logv("do_map_allocate_VirtualAlloc2: requested 0x%llx got 0x%lx existing does not contain required mapping", addr, p);
+                logd("do_map_allocate_VirtualAlloc2: requested 0x%llx got 0x%lx existing does not contain required mapping", addr, p);
                 // Could consider expanding allocation, but not observed in practice.
                 return (void*) -1;
             }
         } else if (e  == ERROR_INVALID_ADDRESS /* 0x1e7 */) {
             // Already mapped, conflict? e.g. jvm data.  Is more allocation needed?  This is seen in practice.
-            logv("do_map_allocate_pd__VirtualAlloc2: requested 0x%llx got 0x%lx not valid, already mapped?", addr, p);
+            logd("do_map_allocate_pd__VirtualAlloc2: requested 0x%llx got 0x%lx not valid, already mapped?", addr, p);
             uint64_t wanted_end = (uint64_t) addr + (uint64_t) length;
             if (wanted_end <= existing_end) {
-                logv("do_map_allocate_pd_VirtualAlloc2: mapping covered by existing_end at 0x%llx", existing_end);
+                logd("do_map_allocate_pd_VirtualAlloc2: mapping covered by existing_end at 0x%llx", existing_end);
                 return addr;
             } else {
                 size_t remaining = (uint64_t) wanted_end - existing_end;
-                logv("do_map_allocate_pd_VirtualAlloc2: existing. remaining = 0x%llx protRequested = 0x%x", remaining, protRequested);
+                logd("do_map_allocate_pd_VirtualAlloc2: existing. remaining = 0x%llx protRequested = 0x%x", remaining, protRequested);
                 void* r = do_map_allocate_pd_VirtualAlloc2((void*) existing_end, remaining, protRequested);
                 logd("do_map_allocate_pd_VirtualAlloc2: done recurse");
                 // Return original requested address on success:

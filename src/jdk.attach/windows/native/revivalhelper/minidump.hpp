@@ -47,7 +47,7 @@
 
 /**
  * Windows MiniDump.
- * Operations as required by the process revival mechanism, to enable jcmd to operate on a MiniDump.
+ * Operations required by the process revival mechanism, to enable jcmd to operate on a MiniDump.
  */
 class MiniDump {
   public:
