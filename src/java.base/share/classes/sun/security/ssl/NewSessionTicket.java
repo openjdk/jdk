@@ -487,9 +487,6 @@ final class NewSessionTicket {
                 }
 
                 // create and cache the new session
-                // The new session must be a child of the existing session so
-                // they will be invalidated together, etc.
-                hc.handshakeSession.addChild(sessionCopy);
                 sessionCopy.setTicketAgeAdd(nstm.getTicketAgeAdd());
                 sessionCache.put(sessionCopy);
                 return nstm;
@@ -642,7 +639,6 @@ final class NewSessionTicket {
                     new SessionId(true, hc.sslContext.getSecureRandom());
             SSLSessionImpl sessionCopy = new SSLSessionImpl(sessionToSave,
                     newId);
-            sessionToSave.addChild(sessionCopy);
             sessionCopy.setPreSharedKey(psk);
             sessionCopy.setTicketAgeAdd(nstm.getTicketAgeAdd());
             sessionCopy.setPskIdentity(nstm.ticket);

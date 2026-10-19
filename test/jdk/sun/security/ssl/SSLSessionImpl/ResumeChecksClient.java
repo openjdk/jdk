@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8206929 8212885 8333857
+ * @bug 8206929 8212885 8333857 8394261
  * @summary ensure that client only resumes a session if certain properties
  *    of the session are compatible with the new connection
  * @library /javax/net/ssl/templates
@@ -38,12 +38,14 @@
  * @run main/othervm -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true ResumeChecksClient VERSION_3_TO_2
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true ResumeChecksClient CIPHER_SUITE
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true ResumeChecksClient SIGNATURE_SCHEME
+ * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 ResumeChecksClient FAMILY_DEPTH
  *
  */
 
 import javax.net.*;
 import javax.net.ssl.*;
 import java.io.*;
+import java.lang.ref.WeakReference;
 import java.security.*;
 import java.net.*;
 import java.util.*;
@@ -51,13 +53,16 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import jdk.test.lib.util.ForceGC;
+
 public class ResumeChecksClient extends SSLContextTemplate {
     enum TestMode {
         BASIC,
         VERSION_2_TO_3,
         VERSION_3_TO_2,
         CIPHER_SUITE,
-        SIGNATURE_SCHEME
+        SIGNATURE_SCHEME,
+        FAMILY_DEPTH
     }
     static TestMode testMode;
 
@@ -111,8 +116,31 @@ public class ResumeChecksClient extends SSLContextTemplate {
                 System.out.println("secondSession didn't use resumption: PASS");
             }
             break;
+        case FAMILY_DEPTH:
+            checkFamilyDepth(sslContext, server.port, firstSession, secondSession);
+            break;
         default:
             throw new AssertionError("unknown mode: " + testMode);
+        }
+    }
+
+    private static void checkFamilyDepth(SSLContext sslContext, int port,
+        SSLSession first, SSLSession second) throws Exception {
+        List<WeakReference<SSLSession>> refs = new ArrayList<>();
+        for (int i = 0; i < 50; i++) {
+            refs.add(new WeakReference<>(connect(sslContext, port, false)));
+        }
+        if (!ForceGC.wait(() -> refs.stream()
+                .filter(w -> w.get() != null).count() <= 5)) {
+            throw new AssertionError("Session garbage collection failed");
+        }
+
+        SSLSession descendant = connect(sslContext, port, false);
+        second.invalidate();
+        if (!first.isValid() || descendant.isValid() ||
+                connect(sslContext, port, false).getCreationTime() ==
+                        first.getCreationTime()) {
+            throw new AssertionError("Session invalidation failed");
         }
     }
 
