@@ -159,15 +159,17 @@ public:
 
 class ShenandoahGlobalHeuristics : public ShenandoahGenerationalHeuristics {
 public:
-  ShenandoahGlobalHeuristics(ShenandoahGlobalGeneration* generation);
+  explicit ShenandoahGlobalHeuristics(ShenandoahGlobalGeneration* generation);
 
+
+protected:
   void select_collection_set_regions(ShenandoahCollectionSet* cset,
                                      RegionData* data, size_t size,
                                      size_t actual_free) override;
 
 private:
   void choose_global_collection_set(ShenandoahCollectionSet* cset,
-                                    const ShenandoahHeuristics::RegionData* data,
+                                    const RegionData* data,
                                     size_t size, size_t actual_free,
                                     size_t cur_young_garbage) const;
 };

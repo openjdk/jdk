@@ -109,11 +109,8 @@ public:
   template <bool FOR_CURRENT_CYCLE, bool FULL_GC = false>
   void reset_mark_bitmap();
 
-  // Used by concurrent and degenerated GC to reset remembered set.
+  // Used by concurrent GC to reset remembered set.
   void swap_card_tables();
-
-  // Update the read cards with the state of the write table (write table is not cleared).
-  void merge_write_table();
 
   // Called before init mark, expected to prepare regions for marking.
   virtual void prepare_gc();
@@ -135,7 +132,7 @@ public:
   //  been set aside to hold objects evacuated from the young-gen collection set.  Conservatively, this value
   //  equals the entire amount of live young-gen memory within the collection set, even though some of this memory
   //  will likely be promoted.
-  virtual void prepare_regions_and_collection_set(bool concurrent);
+  virtual void prepare_regions_and_collection_set();
 
   // Cancel marking (used by Full collect and when cancelling cycle).
   virtual void cancel_marking();
@@ -179,8 +176,6 @@ public:
 
   virtual bool is_concurrent_mark_in_progress() = 0;
   void confirm_heuristics_mode();
-
-  virtual void record_success_concurrent(bool abbreviated);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
