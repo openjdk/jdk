@@ -4382,20 +4382,23 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
 class MoveAssertionPredicatesVisitor : public PredicateVisitor {
   ClonePredicateToTargetLoop _clone_predicate_to_loop;
   PhaseIdealLoop* const _phase;
+  Node* const _new_init;
 
 public:
   MoveAssertionPredicatesVisitor(LoopNode* target_loop_head,
+                                 Node* new_init,
                                  const NodeInSingleLoopBody &node_in_loop_body,
                                  PhaseIdealLoop* phase)
     : _clone_predicate_to_loop(target_loop_head, node_in_loop_body, phase),
-      _phase(phase) {
+      _phase(phase),
+      _new_init(new_init) {
   }
   NONCOPYABLE(MoveAssertionPredicatesVisitor);
 
   using PredicateVisitor::visit;
 
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override {
-    _clone_predicate_to_loop.clone_template_assertion_predicate(template_assertion_predicate);
+    _clone_predicate_to_loop.clone_template_assertion_predicate_and_replace_init(template_assertion_predicate, _new_init);
     template_assertion_predicate.kill(_phase->igvn());
   }
 };
@@ -4502,7 +4505,9 @@ public:
       }
       PredicateIterator predicate_iterator(loop_entry);
       NodeInSingleLoopBody node_in_body(_phase, _loop);
-      MoveAssertionPredicatesVisitor move_assertion_predicates_visitor(head, node_in_body, _phase);
+      Node* new_init = new OpaqueLoopInitNode(_phase->C, head->as_CountedLoop()->phi()->in(LoopNode::EntryControl));
+      _phase->register_new_node(new_init, head->in(LoopNode::EntryControl));
+      MoveAssertionPredicatesVisitor move_assertion_predicates_visitor(head, new_init, node_in_body, _phase);
       predicate_iterator.for_each(move_assertion_predicates_visitor);
     }
 #endif // ASSERT
