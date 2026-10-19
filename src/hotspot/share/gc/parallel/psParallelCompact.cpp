@@ -1704,15 +1704,15 @@ void PSParallelCompact::verify_regions_after_compaction() {
     // [beg_region, new_top_region) must be completed (as compaction targets)
     for (cur_region = beg_region; cur_region < new_top_region; ++cur_region) {
       const RegionData* const c = sd.region(cur_region);
-      assert(c->completed(), "region %zu not filled: destination_count=%u",
-             cur_region, c->destination_count());
+      assert(c->completed(), "region %zu not filled: destination_count=%u status=%s",
+             cur_region, c->destination_count(), c->status_name());
     }
 
     // [new_top_region, old_top_region) must be empty.
     for (cur_region = new_top_region; cur_region < old_top_region; ++cur_region) {
       const RegionData* const c = sd.region(cur_region);
-      assert(c->available() && c->is_init(), "region %zu not empty: destination_count=%u",
-             cur_region, c->destination_count());
+      assert(c->available() && c->is_init(), "region %zu not empty: destination_count=%u status=%s",
+             cur_region, c->destination_count(), c->status_name());
     }
   }
   {
@@ -1728,8 +1728,8 @@ void PSParallelCompact::verify_regions_after_compaction() {
 
     for (size_t cur_region = beg_region; cur_region < end_region; ++cur_region) {
       const RegionData* const c = sd.region(cur_region);
-      assert(c->available() && c->is_init(), "region %zu not empty: destination_count=%u",
-             cur_region, c->destination_count());
+      assert(c->available() && c->is_init(), "region %zu not empty: destination_count=%u status=%s",
+             cur_region, c->destination_count(), c->status_name());
     }
   }
 }
@@ -2217,9 +2217,8 @@ void MoveAndUpdateShadowClosure::complete_region(HeapWord* dest_addr, PSParallel
   assert(region_ptr->is_shadow(), "Region should be shadow");
   // Record the shadow region index
   region_ptr->set_shadow_region(_shadow);
-  // Mark the shadow region as filled to indicate the data is ready to be
-  // copied back
-  bool copy_now = region_ptr->mark_shadow_filled();
+  // Finish shadow filling and determine whether this worker must copy back immediately.
+  bool copy_now = region_ptr->finish_shadow_fill();
   // Try to copy the content of the shadow region back to its corresponding
   // heap region if available; the GC thread that decreases the destination
   // count to zero will do the copying otherwise (see

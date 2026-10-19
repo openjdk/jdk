@@ -172,12 +172,12 @@ void ParCompactionManager::drain_region_stacks() {
 size_t ParCompactionManager::pop_shadow_region_mt_safe(PSParallelCompact::RegionData* region_ptr) {
   MonitorLocker ml(_shadow_region_monitor, Mutex::_no_safepoint_check_flag);
   while (true) {
-    if (!_shadow_region_array->is_empty()) {
-      return _shadow_region_array->pop();
-    }
     // If the heap region has no remaining destination dependencies, use it directly.
     if (region_ptr->available()) {
       return InvalidShadow;
+    }
+    if (!_shadow_region_array->is_empty()) {
+      return _shadow_region_array->pop();
     }
     ml.wait(1);
   }

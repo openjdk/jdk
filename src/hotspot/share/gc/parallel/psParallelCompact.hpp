@@ -130,6 +130,16 @@ public:
     // Whether this region has no remaining destination dependencies or has been completed.
     bool available() const { return destination_count() == 0; }
     bool completed() const { return state_status(state()) == status_completed; }
+    const char* status_name() const {
+      switch (state_status(state())) {
+        case status_init:          return "init";
+        case status_normal:        return "normal";
+        case status_shadow:        return "shadow";
+        case status_filled_shadow: return "filled_shadow";
+        case status_completed:     return "completed";
+        default:                   return "unknown";
+      }
+    }
 
     // These are not atomic.
     void set_destination(HeapWord* addr)       { _destination = addr; }
@@ -156,8 +166,8 @@ public:
 
     // Mark the current region as shadow to enter the shadow processing path.
     inline bool try_mark_shadow();
-    // Mark the shadow region as filled. Returns true if it can be copied back immediately.
-    inline bool mark_shadow_filled();
+    // Finish shadow filling. Returns true if the caller must copy back immediately.
+    inline bool finish_shadow_fill();
     // Special case: see PSParallelCompact::fill_and_update_shadow_region.
     inline void shadow_to_normal();
     bool is_init() const { return state_status(state()) == status_init; }
@@ -197,22 +207,22 @@ public:
     //
     //   3. Shadow fill completes before dest_count reaches 0:
     //     status_init -> status_shadow -> status_filled_shadow -> status_completed
-    //     The last transition happens when dest_count reaches 0 and the filled shadow is copied back.
+    //     The last transition claims copy-back when dest_count reaches 0.
     //
     //   4. Dest_count reaches 0 before shadow fill completes:
     //     status_init -> status_shadow -> status_completed
-    //     The last transition happens when shadow fill completes and is copied back immediately.
+    //     The last transition claims immediate copy-back when shadow fill completes.
     enum StateBits : state_t {
       max_destination_count = 2,
       dest_count_mask = 0x3,
       status_shift = 2,
       status_mask = 0x7 << status_shift,
 
-      status_init = 0 << status_shift,
-      status_normal = 1 << status_shift,
-      status_shadow = 2 << status_shift,
-      status_filled_shadow = 3 << status_shift,
-      status_completed = 4 << status_shift
+      status_init = 0 << status_shift,          // Not yet selected for filling.
+      status_normal = 1 << status_shift,        // Selected for direct filling.
+      status_shadow = 2 << status_shift,        // Selected for filling via a shadow region.
+      status_filled_shadow = 3 << status_shift, // Shadow filled, waiting for destination dependencies.
+      status_completed = 4 << status_shift      // Direct fill done, or shadow copy-back exclusively claimed.
     };
 
     // The destination count occupies the low status_shift bits, so decrementing the whole
@@ -357,7 +367,7 @@ inline bool ParallelCompactData::RegionData::try_mark_shadow() {
   }
 }
 
-inline bool ParallelCompactData::RegionData::mark_shadow_filled() {
+inline bool ParallelCompactData::RegionData::finish_shadow_fill() {
   state_t old_state = state();
   while (true) {
     state_t new_state;
