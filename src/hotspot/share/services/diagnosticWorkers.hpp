@@ -42,17 +42,17 @@ private:
   static Atomic<WorkerThreads*> _workers;
 
 public:
-  // Returns the diagnostic worker pool, creating it on the first call. Returns
-  // nullptr if the active processor count is 1. Can only be called by the VM thread
-  // at a safepoint.
+  // Returns the diagnostic worker pool, creating it on first use and sizing it to the
+  // active processor count at that time. Returns nullptr if the pool hasn't been created
+  // and the active processor count is 1. Can only be called by the VM thread at a safepoint.
   static WorkerThreads* workers();
 
   // Applies the closure to each diagnostic worker if the worker pool has been created.
   static void diagnostic_threads_do(ThreadClosure* tc);
 
   // Sets the number of active worker threads (capped at max_workers()) and returns the
-  // active thread count. Returns 0 if the worker pool hasn't been created or num_workers
-  // is 0. Can only be called by the VM thread at a safepoint.
+  // active thread count. Creates the worker pool on first use. Returns 0 if the pool
+  // wasn't created or num_workers is 0. Can only be called by the VM thread at a safepoint.
   static uint try_and_set_active_workers(uint num_workers);
 };
 

@@ -717,13 +717,12 @@ uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fil
 void HeapInspection::heap_inspection(outputStream* st, uint num_workers) {
   ResourceMark rm;
 
+  // Use parallel workers if we have enough active workers and parallel heap iteration is supported.
   WorkerThreads* workers = nullptr;
   if (Universe::heap()->supports_parallel_object_iteration() && num_workers > 1) {
-    workers = DiagnosticWorkers::workers();
     const uint active_workers = DiagnosticWorkers::try_and_set_active_workers(num_workers);
-    // Fall back to serial inspection if fewer than two workers were created.
-    if (active_workers <= 1) {
-      workers = nullptr;
+    if (active_workers > 1) {
+      workers = DiagnosticWorkers::workers();
     }
   }
 

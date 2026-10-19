@@ -2608,15 +2608,14 @@ WorkerThreads* VM_HeapDumper::prepare_parallel_dump() {
   WorkerThreads* workers = nullptr;
 
   if (Universe::heap()->supports_parallel_object_iteration() && _num_dumper_threads > 1) {
-    workers = DiagnosticWorkers::workers();
     num_active_workers = DiagnosticWorkers::try_and_set_active_workers(_num_dumper_threads);
   }
 
   // check if we can dump in parallel based on active threads
   if (num_active_workers <= 1) {
     _num_dumper_threads = 1;
-    workers = nullptr;
   } else {
+    workers = DiagnosticWorkers::workers();
     _num_dumper_threads = num_active_workers;
   }
   _dumper_controller = new (std::nothrow) DumperController(_num_dumper_threads);

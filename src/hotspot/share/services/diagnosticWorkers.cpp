@@ -24,7 +24,6 @@
 
 #include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
-#include "memory/iterator.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
@@ -35,13 +34,15 @@ Atomic<WorkerThreads*> DiagnosticWorkers::_workers{};
 WorkerThreads* DiagnosticWorkers::workers() {
   assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
   assert_at_safepoint();
-  const uint max_workers = (uint)os::initial_active_processor_count();
-  if (_workers.load_relaxed() == nullptr && max_workers > 1) {
-    WorkerThreads* pool = new WorkerThreads("DiagWorker", max_workers);
-    // Use release_store() because the error reporter can read _workers while
-    // the pool is being created.
-    _workers.release_store(pool);
-    log_info(gc, task)("Created diagnostic worker pool (max %u workers)", pool->max_workers());
+  if (_workers.load_relaxed() == nullptr) {
+    const uint max_workers = (uint)os::active_processor_count();
+    if (max_workers > 1) {
+      WorkerThreads* pool = new WorkerThreads("DiagWorker", max_workers);
+      // Use release_store() because the error reporter can read _workers while
+      // the pool is being created.
+      _workers.release_store(pool);
+      log_info(gc, task)("Created diagnostic worker pool (max %u workers)", pool->max_workers());
+    }
   }
   return _workers.load_relaxed();
 }
@@ -57,10 +58,13 @@ void DiagnosticWorkers::diagnostic_threads_do(ThreadClosure* tc) {
 uint DiagnosticWorkers::try_and_set_active_workers(uint num_workers) {
   assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
   assert_at_safepoint();
-  WorkerThreads* workers = _workers.load_relaxed();
-  if (workers == nullptr || num_workers == 0) {
+  if (num_workers == 0) {
     return 0;
   }
 
-  return workers->set_active_workers(MIN2(num_workers, workers->max_workers()));
+  WorkerThreads* pool = workers();
+  if (pool == nullptr) {
+    return 0;
+  }
+  return pool->set_active_workers(MIN2(num_workers, pool->max_workers()));
 }
