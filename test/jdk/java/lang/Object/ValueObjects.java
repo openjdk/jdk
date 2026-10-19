@@ -26,7 +26,7 @@
  * @summary Basic test of Object methods on value objects
  * @enablePreview
  * @library /test/lib
- * @compile ValueWithFinalizer.jcod AbstractValueWithFinalizer.jcod ValueObjects.java
+ * @compile ValueWithFinalizer.jasm AbstractValueWithFinalizer.jasm ValueObjects.java
  * @run junit ${test.main.class}
  */
 
@@ -104,10 +104,10 @@ class ValueObjects {
     /**
      * Test that the finalize method on a value class is not invoked by the GC.
      *
-     * ValueWithFinalizer is supplied as ValueWithFinalizer.jcod rather than a local value
+     * ValueWithFinalizer is supplied as ValueWithFinalizer.jasm rather than a local value
      * class here, since javac no longer allows a value class to declare a method that
-     * overrides Object::finalize (JDK-8339188). See the jcod file for the source it was
-     * generated from.
+     * overrides Object::finalize (JDK-8339188). See the jasm file for the corresponding
+     * source.
      */
     @Test
     void testValueClassFinalize() throws Exception {
@@ -124,10 +124,10 @@ class ValueObjects {
     /**
      * Test that the finalize method on an abstract value value is not invoked by the GC.
      *
-     * AbstractValueWithFinalizer is supplied as AbstractValueWithFinalizer.jcod rather than
+     * AbstractValueWithFinalizer is supplied as AbstractValueWithFinalizer.jasm rather than
      * a local abstract value class here, since javac no longer allows a value class to
-     * declare a method that overrides Object::finalize (JDK-8339188). See the jcod file for
-     * the source it was generated from.
+     * declare a method that overrides Object::finalize (JDK-8339188). See the jasm file for
+     * the corresponding source.
      */
     @Test
     void testAbstractValueClassFinalize() throws Exception {

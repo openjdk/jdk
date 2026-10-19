@@ -25,7 +25,7 @@
  * @test TestFinalizableValues
  * @library /test/lib
  * @enablePreview
- * @compile MyVal.jcod MyAbstractVal.jcod TestFinalizableValues.java
+ * @compile MyVal.jasm MyAbstractVal.jasm TestFinalizableValues.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestFinalizableValues
  */
@@ -44,10 +44,10 @@ public class TestFinalizableValues {
     static WhiteBox WB = WhiteBox.getWhiteBox();
 
     /*
-     * MyVal and MyAbstractVal are supplied as MyVal.jcod and MyAbstractVal.jcod: both are
+     * MyVal and MyAbstractVal are supplied as MyVal.jasm and MyAbstractVal.jasm: both are
      * classes that javac can no longer produce from source since JDK-8339188 forbids a
      * value class from declaring a method that overrides Object::finalize. See the
-     * jcod files for the source they were generated from.
+     * jasm files for the corresponding source.
      */
     public static class TestHelper {
         static value class MyVal2 extends MyAbstractVal {}
