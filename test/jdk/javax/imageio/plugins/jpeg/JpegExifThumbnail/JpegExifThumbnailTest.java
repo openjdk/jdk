@@ -139,7 +139,7 @@ public class JpegExifThumbnailTest {
         // This includes a JFIF thumbnail and an EXIF thumbnail.
         new JpegExifThumbnailTest("jfif-and-exif.jpg",
                 2025,2,21,1,14,51,
-                new Dimension(150, 200),
+                new Dimension(126, 168),
                 new Dimension(120, 160)).run();
 
         // this includes Exif data, but the `compression` tag is 0x60000 instead of 0x6,
