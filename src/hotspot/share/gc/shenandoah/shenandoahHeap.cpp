@@ -564,6 +564,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _initial_size(0),
   _committed(0),
   _alloc_rate_decay(&_alloc_rate),
+  _humongous_alloc_rate_decay(&_humongous_alloc_rate),
   _max_workers(MAX3(ConcGCThreads, ParallelGCThreads, 1U)),
   _workers(nullptr),
   _safepoint_workers(nullptr),
@@ -715,6 +716,7 @@ void ShenandoahHeap::post_initialize() {
   // is low. Heuristics are evaluated unconditionally from a dedicated thread so it will continue
   // to see the last (possibly stale) allocation rate if the allocation rate is low.
   _alloc_rate_decay.enroll();
+  _humongous_alloc_rate_decay.enroll();
 
   MutexLocker ml(Threads_lock);
 
@@ -1040,9 +1042,20 @@ HeapWord* ShenandoahHeap::allocate_memory_work(ShenandoahAllocRequest& req, bool
 
   HeapWord* result = _allocator->allocate(req, in_new_region);
 
+  if (req.is_mutator_alloc() && ShenandoahHeapRegion::requires_humongous(req.size())) {
+    const size_t curr_region_count = ShenandoahHeapRegion::required_regions(req.size() * HeapWordSize);
+    if (curr_region_count > _max_humongous_regions_since_gc.load_relaxed()) {
+      _max_humongous_regions_since_gc.store_relaxed(curr_region_count);
+    }
+  }
+
   if (result != nullptr) {
     if (req.is_mutator_alloc()) {
-      _alloc_rate.allocated((req.actual_size() + req.waste()) * HeapWordSize);
+      size_t total_words = req.actual_size() + req.waste();
+      _alloc_rate.allocated(total_words * HeapWordSize);
+      if (ShenandoahHeapRegion::requires_humongous(req.actual_size())) {
+        _humongous_alloc_rate.allocated(total_words * HeapWordSize);
+      }
     }
 
     if (req.is_old()) {
@@ -1753,6 +1766,7 @@ void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
     old_generation()->heuristics()->record_cycle_end();
   }
 
+  _max_humongous_regions_since_gc.store_relaxed(0);
   set_gc_cause(GCCause::_no_gc);
 }
 
@@ -2320,8 +2334,9 @@ void ShenandoahHeap::stop() {
   // Step 1. Stop reporting on gc thread cpu utilization
   mmu_tracker()->stop();
 
-  // Step 2. Stop decaying allocation rate.
+  // Step 2. Stop decaying allocation rate and humongous allocation rate.
   _alloc_rate_decay.disenroll();
+  _humongous_alloc_rate_decay.disenroll();
 
   // Step 3. Wait until GC worker exits normally (this will cancel any ongoing GC).
   control_thread()->stop();
