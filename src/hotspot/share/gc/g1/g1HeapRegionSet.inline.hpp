@@ -157,25 +157,28 @@ inline G1HeapRegion* G1FreeRegionList::find_region_to_remove(bool from_head, uin
   if (G1NUMA::numa()->is_enabled() && requested_node_index != G1NUMA::AnyNodeIndex) {
     const uint max_search_depth = G1NUMA::numa()->max_search_depth();
     // Find the region to use, searching from _head or _tail as requested.
-    size_t cur_depth = 0;
+    uint cur = 0;
     if (from_head) {
       for (r = _head;
-          r != nullptr && cur_depth < max_search_depth;
-          r = r->next(), ++cur_depth) {
+          r != nullptr && cur < max_search_depth;
+          r = r->next(), ++cur) {
         if (requested_node_index == r->node_index()) {
           return r;
         }
       }
     } else {
       for (r = _tail;
-          r != nullptr && cur_depth < max_search_depth;
-          r = r->prev(), ++cur_depth) {
+          r != nullptr && cur < max_search_depth;
+          r = r->prev(), ++cur) {
         if (requested_node_index == r->node_index()) {
           return r;
         }
       }
     }
   }
+  // Either we could not find a region on the correct NUMA node within the search depth, or
+  // we do not care about the node placement. In either case take the next region from the
+  // requested end of the list.
   r = from_head ? _head : _tail;
   return r;
 }
