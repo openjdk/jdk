@@ -29,7 +29,6 @@
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class Thread;
 class ThreadClosure;
 class WorkerThreads;
 
