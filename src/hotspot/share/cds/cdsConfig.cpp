@@ -88,8 +88,8 @@ void CDSConfig::ergo_initialize() {
 
   if (is_dumping_static_archive() && !is_dumping_final_static_archive()) {
     // Note: -Xshare and -XX:AOTMode flags are mutually exclusive.
-    // - Classic workflow: -Xshare:on and -Xshare:dump cannot take effect at the same time.
-    // - JEP 483 workflow: -XX:AOTMode:record and -XX:AOTMode=on cannot take effect at the same time.
+    // - Classic CDS workflow: -Xshare:on and -Xshare:dump cannot take effect at the same time.
+    // - AOT workflow: -XX:AOTMode:record and -XX:AOTMode=required cannot take effect at the same time.
     // So we can never come to here with RequireSharedSpaces==true.
     assert(!RequireSharedSpaces, "sanity");
 
@@ -515,6 +515,11 @@ void CDSConfig::check_aotmode_off() {
 }
 
 void CDSConfig::check_aotmode_auto_or_on() {
+  if (AOTMode != nullptr && strcmp(AOTMode, "on") == 0) {
+    warning("Option -XX:AOTMode-on was deprecated in version 28 and will likely be "
+            "removed in a future release. Use option -XX:AOTMode=required instead.");
+  }
+
   if (!FLAG_IS_DEFAULT(AOTConfiguration)) {
     vm_exit_during_initialization(err_msg("AOTConfiguration can only be used with when AOTMode is record or create (selected AOTMode = %s)",
                                           FLAG_IS_DEFAULT(AOTMode) ? "auto" : AOTMode));
