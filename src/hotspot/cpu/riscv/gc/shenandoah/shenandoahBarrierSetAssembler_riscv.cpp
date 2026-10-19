@@ -568,7 +568,7 @@ void ShenandoahBarrierSetAssembler::keepalive_barrier_c1_stub(LIR_Assembler* ce,
   Register obj = stub->obj()->as_register();
 
   if (stub->do_load()) {
-    ce->mem2reg(stub->addr(), stub->obj(), T_OBJECT, lir_patch_none, nullptr, false /* wide */);
+    ce->mem2reg(stub->addr(), stub->obj(), T_OBJECT, lir_patch_none, stub->info(), false /* wide */);
   }
   __ beqz(obj, *stub->continuation(), /* is_far */ true);
 
@@ -703,14 +703,13 @@ void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssemble
 
 void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, MacroAssembler* masm, Register res, Register addr,
     Register oldval, Register newval, Register tmp1, Register tmp2, Register tmp3, bool exchange, bool narrow, bool is_acquire) {
-  const Assembler::Aqrl acquire = is_acquire ? Assembler::aq : Assembler::relaxed;
-  const Assembler::Aqrl release = Assembler::rl;
+  const atomic_memory_order order = is_acquire ? memory_order_seq_cst : memory_order_release;
   const Assembler::operand_size size = narrow ? Assembler::uint32 : Assembler::int64;
 
   ShenandoahBarrierStubC2::load_store_pre(masm, node, Address(addr), tmp1, tmp2, tmp3, narrow);
 
   // CAS!
-  __ cmpxchg(addr, oldval, newval, size, acquire, release, /* result */ res, !exchange /* result_as_bool */);
+  __ cmpxchg(addr, oldval, newval, size, order, /* result */ res, /* result_as_bool */ !exchange);
 
   ShenandoahBarrierStubC2::load_store_post(masm, node, Address(addr, 0), tmp2, tmp3);
 }

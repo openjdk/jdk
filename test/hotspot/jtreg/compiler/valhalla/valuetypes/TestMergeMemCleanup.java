@@ -22,13 +22,21 @@
  */
 
 /*
- * @test
+ * @test id=vanilla
+ * @bug 8391658
+ * @summary Test cleanup of nested MergeMems after incremental inlining.
+ * @requires vm.compiler2.enabled
+ * @enablePreview
+ * @run main ${test.main.class}
+ */
+
+/*
+ * @test id=stress
  * @bug 8391658
  * @summary Test cleanup of nested MergeMems after incremental inlining.
  * @key stress randomness
  * @requires vm.compiler2.enabled
  * @enablePreview
- * @run main ${test.main.class}
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+StressIGVN -XX:+StressIncrementalInlining -XX:StressSeed=3860063970
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test
