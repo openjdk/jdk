@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,12 +98,17 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "script":
         case "territory":
         case "variant":
-            // for LocaleNames
-            // copy string
-            pushStringEntry(qName, attributes,
-                CLDRConverter.LOCALE_NAME_PREFIX +
-                (qName.equals("variant") ? "%%" : "") +
-                attributes.getValue("type"));
+            // Ignore territories "XA" and "XB" which are given pseudo testing names since CLDR v36.
+            // See https://unicode-org.atlassian.net/browse/CLDR-13100.
+            type = attributes.getValue("type");
+            if (qName.equals("territory") && (type.equals("XA") || type.equals("XB"))) {
+                pushIgnoredContainer(qName);
+            } else {
+                // for LocaleNames
+                // copy string
+                pushStringEntry(qName, attributes, CLDRConverter.LOCALE_NAME_PREFIX +
+                        (qName.equals("variant") ? "%%" : "") + type);
+            }
             break;
 
         case "key":
