@@ -2455,12 +2455,13 @@ size_t G1CMTask::start_partial_array_processing(objArrayOop obj) {
 
   process_array_chunk(chunk._array, chunk._start, chunk._end);
 
+  const size_t chunk_len = chunk._end - chunk._start;
   // Include object header size
   if (obj->is_refArray()) {
-    return refArrayOopDesc::object_size(checked_cast<int>(chunk._end));
+    return refArrayOopDesc::object_size(checked_cast<int>(chunk_len));
   } else {
     FlatArrayKlass* fak = FlatArrayKlass::cast(obj->klass());
-    return flatArrayOopDesc::object_size(fak->layout_helper(), checked_cast<int>(chunk._end));
+    return flatArrayOopDesc::object_size(fak->layout_helper(), checked_cast<int>(chunk_len));
   }
 }
 
