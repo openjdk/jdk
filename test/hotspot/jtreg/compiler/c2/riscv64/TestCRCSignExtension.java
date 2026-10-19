@@ -24,6 +24,7 @@
 
 /*
  * @test id=c1
+ * @bug 8394822
  * @summary Verify sign extension of RISC-V CRC32 and CRC32C intrinsic results
  * @requires os.arch == "riscv64" & vm.compiler1.enabled
  * @library /test/lib
@@ -36,6 +37,7 @@
 
 /*
  * @test id=c2
+ * @bug 8394822
  * @summary Verify sign extension of RISC-V CRC32 and CRC32C intrinsic results
  * @requires os.arch == "riscv64" & vm.compiler2.enabled
  * @library /test/lib
