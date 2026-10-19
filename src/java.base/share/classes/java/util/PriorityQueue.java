@@ -295,6 +295,13 @@ public class PriorityQueue<E> extends AbstractQueue<E>
             for (Object e : es)
                 if (e == null)
                     throw new NullPointerException();
+        if (len == 1 && this.comparator == null) {
+            // heapify() performs no comparisons on a singleton, so explicitly
+            // validate that the lone element is Comparable, mirroring the
+            // self-comparison TreeMap performs (see JDK-5045147).
+            Comparable<? super E> e = (Comparable<? super E>) es[0];
+            e.compareTo((E) es[0]);
+        }
         this.queue = ensureNonEmpty(es);
         this.size = len;
     }
@@ -306,13 +313,6 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      */
     private void initFromCollection(Collection<? extends E> c) {
         initElementsFromCollection(c);
-        if (size == 1 && comparator == null) {
-            // heapify() performs no comparisons on a singleton, so explicitly
-            // validate that the lone element is Comparable, mirroring the
-            // self-comparison TreeMap performs (see JDK-5045147).
-            Comparable<? super E> e = (Comparable<? super E>) queue[0];
-            e.compareTo((E) queue[0]);
-        }
         heapify();
     }
 
