@@ -22,9 +22,9 @@
  *
  */
 
+#include "gc/shared/numberSeq.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/numberSeq.hpp"
 
 AbsSeq::AbsSeq(double alpha) :
   _num(0), _sum(0.0), _sum_of_squares(0.0),

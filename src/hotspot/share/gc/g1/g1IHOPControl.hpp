@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_G1_G1IHOPCONTROL_HPP
 #define SHARE_GC_G1_G1IHOPCONTROL_HPP
 
+#include "gc/shared/numberSeq.hpp"
 #include "memory/allocation.hpp"
-#include "utilities/numberSeq.hpp"
 
 class G1Predictions;
 class G1NewTracer;

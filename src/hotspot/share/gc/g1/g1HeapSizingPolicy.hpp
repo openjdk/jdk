@@ -26,8 +26,8 @@
 #define SHARE_GC_G1_G1HEAPSIZINGPOLICY_HPP
 
 #include "gc/g1/g1Analytics.hpp"
+#include "gc/shared/numberSeq.hpp"
 #include "memory/allocation.hpp"
-#include "utilities/numberSeq.hpp"
 
 class G1CollectedHeap;
 
