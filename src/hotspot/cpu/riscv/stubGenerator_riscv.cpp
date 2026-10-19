@@ -1054,6 +1054,9 @@ class StubGenerator: public StubCodeGenerator {
     const Register src = x30, dst = x31, vl = x14, cnt = x15, tmp1 = x16, tmp2 = x17;
     assert_different_registers(s, d, cnt, vl, tmp1, tmp2);
     Assembler::SEW sew = Assembler::elembytes_to_sew(granularity);
+    // Use m8 for 128-bit VLEN to retain a 128-byte vector group, and m4 for
+    // wider vector implementations.
+    const Assembler::LMUL lmul = MaxVectorSize == 16 ? Assembler::m8 : Assembler::m4;
     Label loop_forward, loop_backward, done;
 
     __ mv(dst, d);
@@ -1061,7 +1064,7 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(cnt, count);
 
     __ bind(loop_forward);
-    __ vsetvli(vl, cnt, sew, Assembler::m8);
+    __ vsetvli(vl, cnt, sew, lmul);
     if (is_backward) {
       __ bne(vl, cnt, loop_backward);
     }
