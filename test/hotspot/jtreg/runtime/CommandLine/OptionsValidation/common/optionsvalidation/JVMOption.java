@@ -116,7 +116,7 @@ public abstract class JVMOption {
             default:
                 throw new Error("Expected only \"int\", \"intx\", \"size_t\", "
                         + "\"uint\", \"uintx\", \"uint64_t\", or \"double\" "
-                        + "option types! Got " + type + " type!");
+                        + "option types! Got " + type + " type for option " + name + "!");
         }
 
         return parameter;

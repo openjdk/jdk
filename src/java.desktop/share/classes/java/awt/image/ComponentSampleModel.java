@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -395,6 +395,11 @@ public class ComponentSampleModel extends SampleModel
      *              {@code ComponentSampleModel}
      * @return a {@code ComponentSampleModel} created with a subset
      *          of bands from this {@code ComponentSampleModel}.
+     * @throws NullPointerException if {@code bands} is {@code null}
+     * @throws IllegalArgumentException if the number of bands is not greater than 0
+     * @throws RasterFormatException if the number of bands is greater than
+     *                               the number of banks in this sample model.
+     * @throws ArrayIndexOutOfBoundsException if any of the band indices is out of bounds
      */
     public SampleModel createSubsetSampleModel(int[] bands) {
        if (bands.length > bankIndices.length)
@@ -503,7 +508,11 @@ public class ComponentSampleModel extends SampleModel
     }
 
     /** Returns the number of bits per sample for the specified band.
-     *  @param band the specified band
+     * <p>
+     * Since all bands of a {@code ComponentSampleModel} are the same
+     * size, this method ignores the {@code band} parameter and returns
+     * the size of the first (0th) band.
+     *  @param band the specified band (ignored)
      *  @return the number of bits per sample for the specified band.
      */
     public final int getSampleSize(int band) {
@@ -749,6 +758,11 @@ public class ComponentSampleModel extends SampleModel
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
+
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int[] pixels;
         if (iArray != null) {
            pixels = iArray;
@@ -841,6 +855,10 @@ public class ComponentSampleModel extends SampleModel
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int[] samples;
         if (iArray != null) {
            samples = iArray;
@@ -1005,6 +1023,13 @@ public class ComponentSampleModel extends SampleModel
                 ("Coordinate out of bounds!");
         }
 
+        if (iArray == null) {
+            throw new NullPointerException("Array must not be null");
+        }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int lineOffset = y*scanlineStride + x*pixelStride;
         int srcOffset = 0;
 
@@ -1090,6 +1115,14 @@ public class ComponentSampleModel extends SampleModel
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
+
+        if (iArray == null) {
+            throw new NullPointerException("Array must not be null");
+        }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int lineOffset = y*scanlineStride + x*pixelStride + bandOffsets[b];
         int srcOffset = 0;
 

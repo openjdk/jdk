@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2023 SAP SE. All rights reserved.
  * Copyright (c) 2023, 2024, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,7 +322,7 @@ public class TestTrimNative {
                 checkExpectedLogMessages(output, false, 0);
                 parseOutputAndLookForNegativeTrim(output, 0, 0, strictTesting);
                 // The following output is expected to be printed with warning level, so it should not need -Xlog
-                output.shouldContain("[warning][trimnative] Native heap trim is not supported on this platform");
+                output.shouldMatch("\\[warning\\]\\[trimnative *\\] Native heap trim is not supported on this platform");
             } break;
 
             case "testOffExplicit": {

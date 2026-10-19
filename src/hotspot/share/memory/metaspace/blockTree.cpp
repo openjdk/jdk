@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,18 +39,14 @@ const size_t BlockTree::MinWordSize;
 #define NODE_FORMAT \
   "@" PTR_FORMAT \
   ": canary " INTPTR_FORMAT \
-  ", parent " PTR_FORMAT \
-  ", left " PTR_FORMAT \
-  ", right " PTR_FORMAT \
+  ", tree " PTR_FORMAT \
   ", next " PTR_FORMAT \
   ", size %zu"
 
 #define NODE_FORMAT_ARGS(n) \
   p2i(n), \
   (n)->_canary, \
-  p2i((n)->_parent), \
-  p2i((n)->_left), \
-  p2i((n)->_right), \
+  p2i(&(n)->_tree_node), \
   p2i((n)->_next), \
   (n)->_word_size
 
@@ -74,15 +70,6 @@ const size_t BlockTree::MinWordSize;
 #define tree_assert_invalid_node(cond, failure_node) \
   tree_assert(cond, "Invalid node: " NODE_FORMAT, NODE_FORMAT_ARGS(failure_node))
 
-// walkinfo keeps a node plus the size corridor it and its children
-//  are supposed to be in.
-struct BlockTree::walkinfo {
-  BlockTree::Node* n;
-  int depth;
-  size_t lim1; // (
-  size_t lim2; // )
-};
-
 // Helper for verify()
 void BlockTree::verify_node_pointer(const Node* n) const {
   tree_assert(os::is_readable_pointer(n),
@@ -98,80 +85,32 @@ void BlockTree::verify_node_pointer(const Node* n) const {
 
 void BlockTree::verify() const {
   // Traverse the tree and test that all nodes are in the correct order.
-
   MemRangeCounter counter;
-  if (_root != nullptr) {
 
-    ResourceMark rm;
-    GrowableArray<walkinfo> stack;
+  // Verifies node ordering (n1 < n2 => word_size1 < word_size2),
+  // node validity, and that the tree is balanced and not ill-formed.
+  _tree.verify_self([&](const TreeNode* tree_node) {
+    const Node* n = Node::cast_to_node(tree_node);
 
-    walkinfo info;
-    info.n = _root;
-    info.lim1 = 0;
-    info.lim2 = SIZE_MAX;
-    info.depth = 0;
+    verify_node_pointer(n);
 
-    stack.push(info);
+    counter.add(n->_word_size);
 
-    while (stack.length() > 0) {
-      info = stack.pop();
-      const Node* n = info.n;
+    tree_assert_invalid_node(n->_word_size >= MinWordSize, n);
+    tree_assert_invalid_node(n->_word_size <= chunklevel::MAX_CHUNK_WORD_SIZE, n);
 
-      verify_node_pointer(n);
-
-      // Assume a (ridiculously large) edge limit to catch cases
-      //  of badly degenerated or circular trees.
-      tree_assert(info.depth < 10000, "too deep (%d)", info.depth);
-      counter.add(n->_word_size);
-
-      if (n == _root) {
-        tree_assert_invalid_node(n->_parent == nullptr, n);
-      } else {
-        tree_assert_invalid_node(n->_parent != nullptr, n);
-      }
-
-      // check size and ordering
-      tree_assert_invalid_node(n->_word_size >= MinWordSize, n);
-      tree_assert_invalid_node(n->_word_size <= chunklevel::MAX_CHUNK_WORD_SIZE, n);
-      tree_assert_invalid_node(n->_word_size > info.lim1, n);
-      tree_assert_invalid_node(n->_word_size < info.lim2, n);
-
-      // Check children
-      if (n->_left != nullptr) {
-        tree_assert_invalid_node(n->_left != n, n);
-        tree_assert_invalid_node(n->_left->_parent == n, n);
-
-        walkinfo info2;
-        info2.n = n->_left;
-        info2.lim1 = info.lim1;
-        info2.lim2 = n->_word_size;
-        info2.depth = info.depth + 1;
-        stack.push(info2);
-      }
-
-      if (n->_right != nullptr) {
-        tree_assert_invalid_node(n->_right != n, n);
-        tree_assert_invalid_node(n->_right->_parent == n, n);
-
-        walkinfo info2;
-        info2.n = n->_right;
-        info2.lim1 = n->_word_size;
-        info2.lim2 = info.lim2;
-        info2.depth = info.depth + 1;
-        stack.push(info2);
-      }
-
-      // If node has same-sized siblings check those too.
-      const Node* n2 = n->_next;
-      while (n2 != nullptr) {
-        verify_node_pointer(n2);
-        tree_assert_invalid_node(n2 != n, n2); // catch simple circles
-        tree_assert_invalid_node(n2->_word_size == n->_word_size, n2);
-        counter.add(n2->_word_size);
-        n2 = n2->_next;
-      }
+    // If node has same-sized siblings check those too.
+    const Node* n2 = n->_next;
+    while (n2 != nullptr) {
+      verify_node_pointer(n2);
+      tree_assert_invalid_node(n2 != n, n2); // catch simple circles
+      tree_assert_invalid_node(n2->_word_size == n->_word_size, n2);
+      counter.add(n2->_word_size);
+      n2 = n2->_next;
     }
-  }
+
+    return true;
+  });
 
   // At the end, check that counters match
   // (which also verifies that we visited every node, or at least
@@ -189,64 +128,34 @@ void BlockTree::print_tree(outputStream* st) const {
   //  as a quasi list is much clearer to the eye.
   // We print the tree depth-first, with stacked nodes below normal ones
   //  (normal "real" nodes are marked with a leading '+')
-  if (_root != nullptr) {
+  if (is_empty()) {
+    st->print_cr("<no nodes>");
+    return;
+  }
 
-    ResourceMark rm;
-    GrowableArray<walkinfo> stack;
+  _tree.print_on(st, [&](outputStream *st, const TreeNode *tree_node, int depth) {
+    const Node* n = Node::cast_to_node(tree_node);
 
-    walkinfo info;
-    info.n = _root;
-    info.depth = 0;
-
-    stack.push(info);
-    while (stack.length() > 0) {
-      info = stack.pop();
-      const Node* n = info.n;
-
-      // Print node.
-      st->print("%4d + ", info.depth);
-      if (os::is_readable_pointer(n)) {
-        st->print_cr(NODE_FORMAT, NODE_FORMAT_ARGS(n));
-      } else {
-        st->print_cr("@" PTR_FORMAT ": unreadable (skipping subtree)", p2i(n));
-        continue; // don't print this subtree
-      }
-
-      // Print same-sized-nodes stacked under this node
-      for (Node* n2 = n->_next; n2 != nullptr; n2 = n2->_next) {
-        st->print_raw("       ");
-        if (os::is_readable_pointer(n2)) {
-          st->print_cr(NODE_FORMAT, NODE_FORMAT_ARGS(n2));
-        } else {
-          st->print_cr("@" PTR_FORMAT ": unreadable (skipping rest of chain).", p2i(n2));
-          break; // stop printing this chain.
-        }
-      }
-
-      // Handle simple circularities
-      if (n == n->_right || n == n->_left || n == n->_next) {
-        st->print_cr("@" PTR_FORMAT ": circularity detected.", p2i(n));
-        return; // stop printing
-      }
-
-      // Handle children.
-      if (n->_right != nullptr) {
-        walkinfo info2;
-        info2.n = n->_right;
-        info2.depth = info.depth + 1;
-        stack.push(info2);
-      }
-      if (n->_left != nullptr) {
-        walkinfo info2;
-        info2.n = n->_left;
-        info2.depth = info.depth + 1;
-        stack.push(info2);
-      }
+    // Print node.
+    st->print("%4d + ", depth);
+    if (os::is_readable_pointer(n)) {
+      st->print_cr(NODE_FORMAT, NODE_FORMAT_ARGS(n));
+    } else {
+      st->print_cr("@" PTR_FORMAT ": unreadable", p2i(n));
+      return;
     }
 
-  } else {
-    st->print_cr("<no nodes>");
-  }
+    // Print same-sized-nodes stacked under this node
+    for (Node* n2 = n->_next; n2 != nullptr; n2 = n2->_next) {
+      st->print_raw("       ");
+      if (os::is_readable_pointer(n2)) {
+        st->print_cr(NODE_FORMAT, NODE_FORMAT_ARGS(n2));
+      } else {
+        st->print_cr("@" PTR_FORMAT ": unreadable (skipping rest of chain).", p2i(n2));
+        break; // stop printing this chain.
+      }
+    }
+  });
 }
 
 #endif // ASSERT

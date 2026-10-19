@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SERIAL_DEFNEWGENERATION_HPP
 #define SHARE_GC_SERIAL_DEFNEWGENERATION_HPP
 
-#include "gc/serial/cSpaceCounters.hpp"
 #include "gc/serial/generation.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/ageTable.hpp"
@@ -38,7 +37,7 @@
 #include "utilities/stack.hpp"
 
 class ContiguousSpace;
-class CSpaceCounters;
+class HSpaceCounters;
 class OldGenScanClosure;
 class YoungGenScanClosure;
 class DefNewTracer;
@@ -102,9 +101,9 @@ class DefNewGeneration: public Generation {
 
   // Performance Counters
   GenerationCounters*  _gen_counters;
-  CSpaceCounters*      _eden_counters;
-  CSpaceCounters*      _from_counters;
-  CSpaceCounters*      _to_counters;
+  HSpaceCounters*      _eden_counters;
+  HSpaceCounters*      _from_counters;
+  HSpaceCounters*      _to_counters;
 
   // sizing information
   size_t               _max_eden_size;
@@ -229,15 +228,6 @@ class DefNewGeneration: public Generation {
  private:
   // Initialize eden/from/to spaces.
   void init_spaces();
-
-  // Return adjusted new size for NewSizeThreadIncrease.
-  // If any overflow happens, revert to previous new size.
-  size_t adjust_for_thread_increase(size_t new_size_candidate,
-                                    size_t new_size_before,
-                                    size_t alignment,
-                                    size_t thread_increase_size) const;
-
-  size_t calculate_thread_increase_size(int threads_count) const;
 
 
   // Scavenge support

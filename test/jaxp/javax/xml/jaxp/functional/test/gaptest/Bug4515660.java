@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,15 @@
 
 package test.gaptest;
 
-import static jaxp.library.JAXPTestUtilities.setSystemProperty;
-import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
-
-import static org.testng.Assert.assertTrue;
-
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.XMLFilterImpl;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
@@ -41,32 +42,31 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.stream.StreamResult;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.XMLFilterImpl;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @bug 4515660
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm test.gaptest.Bug4515660
+ * @run junit/othervm test.gaptest.Bug4515660
  * @summary verify property org.xml.sax.driver is used by SAXTransformerFactory
  */
-@Test(singleThreaded = true)
+@Execution(ExecutionMode.SAME_THREAD)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class Bug4515660 {
 
-    @BeforeClass
+    @BeforeAll
     public void setSaxDrier() {
-        setSystemProperty("org.xml.sax.driver", ReaderStub.class.getName());
+        System.setProperty("org.xml.sax.driver", ReaderStub.class.getName());
     }
 
-    @AfterClass
+    @AfterAll
     public void clearSaxDrier() {
-        clearSystemProperty("org.xml.sax.driver");
+        System.clearProperty("org.xml.sax.driver");
     }
 
     @Test
@@ -88,9 +88,13 @@ public class Bug4515660 {
 
     @Test
     public void testSAXTransformerFactory() throws TransformerConfigurationException {
-        final String xsl = "<?xml version='1.0'?>\n" + "<xsl:stylesheet" + " xmlns:xsl='http://www.w3.org/1999/XSL/Transform'" + " version='1.0'>\n"
-                + "   <xsl:template match='/'>Hello World!</xsl:template>\n" + "</xsl:stylesheet>\n";
-
+        final String xsl =
+                """
+                <?xml version='1.0'?>
+                <xsl:stylesheet xmlns:xsl='http://www.w3.org/1999/XSL/Transform' version='1.0'>
+                   <xsl:template match='/'>Hello World!</xsl:template>
+                </xsl:stylesheet>
+                """;
         ReaderStub.used = false;
 
         TransformerFactory transFactory = TransformerFactory.newInstance();

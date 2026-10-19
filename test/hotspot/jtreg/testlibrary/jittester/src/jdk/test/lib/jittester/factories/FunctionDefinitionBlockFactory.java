@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,13 @@ class FunctionDefinitionBlockFactory extends Factory<FunctionDefinitionBlock> {
     private final int memberFunctionsLimit;
     private final int memberFunctionsArgLimit;
     private final int initialFlags;
+    private final boolean isSynchronizedAllowed;
     private final int level;
     private final TypeKlass ownerClass;
 
     FunctionDefinitionBlockFactory(TypeKlass ownerClass, int memberFunctionsLimit,
             int memberFunctionsArgLimit, long complexityLimit, int statementLimit,
-            int operatorLimit, int level, int initialFlags) {
+            int operatorLimit, int level, int initialFlags, boolean isSynchronizedAllowed) {
         this.ownerClass = ownerClass;
         this.memberFunctionsLimit = memberFunctionsLimit;
         this.memberFunctionsArgLimit = memberFunctionsArgLimit;
@@ -56,6 +57,7 @@ class FunctionDefinitionBlockFactory extends Factory<FunctionDefinitionBlock> {
         this.operatorLimit = operatorLimit;
         this.level = level;
         this.initialFlags = initialFlags;
+        this.isSynchronizedAllowed = isSynchronizedAllowed;
     }
 
     @Override
@@ -81,7 +83,7 @@ class FunctionDefinitionBlockFactory extends Factory<FunctionDefinitionBlock> {
                 if (PseudoRandom.randomBoolean()) {
                     flags |= FunctionInfo.NONRECURSIVE;
                 }
-                if (PseudoRandom.randomBoolean()) {
+                if (isSynchronizedAllowed && PseudoRandom.randomBoolean()) {
                     flags |= FunctionInfo.SYNCHRONIZED;
                 }
                 switch ((int) (PseudoRandom.random() * 4)) {

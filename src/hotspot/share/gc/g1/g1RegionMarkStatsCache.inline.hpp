@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@
 
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 
-#include "runtime/atomicAccess.hpp"
-
 inline G1RegionMarkStatsCache::G1RegionMarkStatsCacheEntry* G1RegionMarkStatsCache::find_for_add(uint region_idx) {
   uint const cache_idx = hash(region_idx);
 
@@ -46,12 +44,12 @@ inline G1RegionMarkStatsCache::G1RegionMarkStatsCacheEntry* G1RegionMarkStatsCac
 
 inline void G1RegionMarkStatsCache::evict(uint idx) {
   G1RegionMarkStatsCacheEntry* cur = &_cache[idx];
-  if (cur->_stats._live_words != 0) {
-    AtomicAccess::add(&_target[cur->_region_idx]._live_words, cur->_stats._live_words);
+  if (cur->_stats.live_words() != 0) {
+    _target[cur->_region_idx]._live_words.add_then_fetch(cur->_stats.live_words());
   }
 
-  if (cur->_stats._incoming_refs != 0) {
-    AtomicAccess::add(&_target[cur->_region_idx]._incoming_refs, cur->_stats._incoming_refs);
+  if (cur->_stats.incoming_refs() != 0) {
+    _target[cur->_region_idx]._incoming_refs.add_then_fetch(cur->_stats.incoming_refs());
   }
 
   cur->clear();

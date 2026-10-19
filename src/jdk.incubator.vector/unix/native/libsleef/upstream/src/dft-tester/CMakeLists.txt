@@ -73,7 +73,35 @@ if((NOT MSVC) AND NOT SLEEF_CLANG_ON_WINDOWS)
   add_test_dft(${TARGET_NAIVETESTSP}_4 $<TARGET_FILE:${TARGET_NAIVETESTSP}> 4)
   add_test_dft(${TARGET_NAIVETESTSP}_5 $<TARGET_FILE:${TARGET_NAIVETESTSP}> 5)
   add_test_dft(${TARGET_NAIVETESTSP}_10 $<TARGET_FILE:${TARGET_NAIVETESTSP}> 10)
+
+  # Target executable measuredft
+  set(TARGET_MEASUREDFT "measuredft")
+  add_executable(${TARGET_MEASUREDFT} measuredft.c ${PROJECT_SOURCE_DIR}/include/sleefdft.h)
+  add_dependencies(${TARGET_MEASUREDFT} ${TARGET_HEADERS} ${TARGET_LIBSLEEF} ${TARGET_LIBDFT})
+  target_compile_definitions(${TARGET_MEASUREDFT} PRIVATE ${COMMON_TARGET_DEFINITIONS})
+  target_link_libraries(${TARGET_MEASUREDFT} ${COMMON_LINK_LIBRARIES})
+  set_target_properties(${TARGET_MEASUREDFT} PROPERTIES ${COMMON_TARGET_PROPERTIES})
 endif()
+
+# Target executable test_dftplanner
+set(TARGET_TEST_DFTPLANNER "test_dftplanner")
+add_executable(${TARGET_TEST_DFTPLANNER} test_dftplanner.cpp ${PROJECT_SOURCE_DIR}/include/sleefdft.h)
+add_dependencies(${TARGET_TEST_DFTPLANNER} ${TARGET_HEADERS} ${TARGET_LIBSLEEF} ${TARGET_LIBDFT})
+target_compile_definitions(${TARGET_TEST_DFTPLANNER} PRIVATE ${COMMON_TARGET_DEFINITIONS} MEASURE=1)
+target_link_libraries(${TARGET_TEST_DFTPLANNER} ${COMMON_LINK_LIBRARIES})
+set_target_properties(${TARGET_TEST_DFTPLANNER} PROPERTIES ${COMMON_TARGET_PROPERTIES})
+add_test(NAME ${TARGET_TEST_DFTPLANNER} COMMAND $<TARGET_FILE:${TARGET_TEST_DFTPLANNER}> ${PROJECT_BINARY_DIR}/testm1.plan ${PROJECT_BINARY_DIR}/testm2.plan)
+set_tests_properties(${TARGET_TEST_DFTPLANNER} PROPERTIES COST 2)
+
+# Target executable test_dftplannerest
+set(TARGET_TEST_DFTPLANNEREST "test_dftplannerest")
+add_executable(${TARGET_TEST_DFTPLANNEREST} test_dftplanner.cpp ${PROJECT_SOURCE_DIR}/include/sleefdft.h)
+add_dependencies(${TARGET_TEST_DFTPLANNEREST} ${TARGET_HEADERS} ${TARGET_LIBSLEEF} ${TARGET_LIBDFT})
+target_compile_definitions(${TARGET_TEST_DFTPLANNEREST} PRIVATE ${COMMON_TARGET_DEFINITIONS})
+target_link_libraries(${TARGET_TEST_DFTPLANNEREST} ${COMMON_LINK_LIBRARIES})
+set_target_properties(${TARGET_TEST_DFTPLANNEREST} PROPERTIES ${COMMON_TARGET_PROPERTIES})
+add_test(NAME ${TARGET_TEST_DFTPLANNEREST} COMMAND $<TARGET_FILE:${TARGET_TEST_DFTPLANNEREST}> ${PROJECT_BINARY_DIR}/teste1.plan ${PROJECT_BINARY_DIR}/teste2.plan)
+set_tests_properties(${TARGET_TEST_DFTPLANNEREST} PROPERTIES COST 2)
 
 # Target executable roundtriptest1ddp
 set(TARGET_ROUNDTRIPTEST1DDP "roundtriptest1ddp")
@@ -161,6 +189,34 @@ if (LIBFFTW3 AND NOT SLEEF_DISABLE_FFTW)
   add_test_dft(${TARGET_FFTWTEST2DSP}_8_8 $<TARGET_FILE:${TARGET_FFTWTEST2DSP}> 8 8)
   add_test_dft(${TARGET_FFTWTEST2DSP}_10_10 $<TARGET_FILE:${TARGET_FFTWTEST2DSP}> 10 10)
   add_test_dft(${TARGET_FFTWTEST2DSP}_5_15 $<TARGET_FILE:${TARGET_FFTWTEST2DSP}> 5 15)
+
+  if (SLEEF_LIBFFTW3_LIBRARIES)
+    # Target executable dftbenchdp
+    set(TARGET_BENCH1DDP "dftbenchdp")
+    add_executable(${TARGET_BENCH1DDP} dftbench.cpp ${PROJECT_SOURCE_DIR}/include/sleefdft.h)
+    add_dependencies(${TARGET_BENCH1DDP} ${TARGET_HEADERS} ${TARGET_LIBSLEEF} ${TARGET_LIBDFT})
+    target_compile_definitions(${TARGET_BENCH1DDP} PRIVATE ${COMMON_TARGET_DEFINITIONS} BASETYPEID=1)
+    target_link_libraries(${TARGET_BENCH1DDP} ${COMMON_LINK_LIBRARIES} ${SLEEF_LIBFFTW3_LIBRARIES})
+    set_target_properties(${TARGET_BENCH1DDP} PROPERTIES ${COMMON_TARGET_PROPERTIES})
+
+    #add_test_dft("dftbenchdp1d" $<TARGET_FILE:${TARGET_BENCH1DDP}> 8 0 1000 1)
+    #set_tests_properties("dftbenchdp1d" PROPERTIES COST 3)
+    add_test_dft("dftbenchdp2d" $<TARGET_FILE:${TARGET_BENCH1DDP}> 8 8 1000 1)
+    set_tests_properties("dftbenchdp2d" PROPERTIES COST 3)
+
+    # Target executable dftbenchsp
+    set(TARGET_BENCH1DSP "dftbenchsp")
+    add_executable(${TARGET_BENCH1DSP} dftbench.cpp ${PROJECT_SOURCE_DIR}/include/sleefdft.h)
+    add_dependencies(${TARGET_BENCH1DSP} ${TARGET_HEADERS} ${TARGET_LIBSLEEF} ${TARGET_LIBDFT})
+    target_compile_definitions(${TARGET_BENCH1DSP} PRIVATE ${COMMON_TARGET_DEFINITIONS} BASETYPEID=2)
+    target_link_libraries(${TARGET_BENCH1DSP} ${COMMON_LINK_LIBRARIES} ${SLEEF_LIBFFTW3_LIBRARIES})
+    set_target_properties(${TARGET_BENCH1DSP} PROPERTIES ${COMMON_TARGET_PROPERTIES})
+
+    #add_test_dft("dftbenchsp1d" $<TARGET_FILE:${TARGET_BENCH1DSP}> 8 0 1000 1)
+    #set_tests_properties("dftbenchsp1d" PROPERTIES COST 3)
+    add_test_dft("dftbenchsp2d" $<TARGET_FILE:${TARGET_BENCH1DSP}> 8 8 1000 1)
+    set_tests_properties("dftbenchsp2d" PROPERTIES COST 3)
+  endif()
 else(LIBFFTW3 AND NOT SLEEF_DISABLE_FFTW)
   if(MSVC OR SLEEF_CLANG_ON_WINDOWS)
     # Test roundtriptestdp

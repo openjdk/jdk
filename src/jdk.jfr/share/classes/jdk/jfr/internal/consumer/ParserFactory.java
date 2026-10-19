@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ final class ParserFactory {
         boolean constantPool = PrivateAccess.getInstance().isConstantPool(v);
         if (v.isArray()) {
             Type valueType = PrivateAccess.getInstance().getType(v);
-            ValueDescriptor element = PrivateAccess.getInstance().newValueDescriptor(v.getName(), valueType, v.getAnnotationElements(), 0, constantPool, null);
+            ValueDescriptor element = PrivateAccess.getInstance().newValueDescriptor(v.getName(), valueType, v.getAnnotationElements(), 0, constantPool);
             return new ArrayParser(createParser(element, event));
         }
         long id = v.getTypeId();
@@ -132,9 +132,12 @@ final class ParserFactory {
             case "short" -> new ShortParser();
             case "byte" ->  new ByteParser();
             case "java.lang.String" -> {
-                ConstantMap pool = new ConstantMap(ObjectFactory.create(type, timeConverter), type);
-                ConstantLookup lookup = new ConstantLookup(pool, type);
-                constantLookups.put(type.getId(), lookup);
+                ConstantLookup lookup = constantLookups.get(type.getId());
+                if (lookup == null) {
+                    ConstantMap pool = new ConstantMap(ObjectFactory.create(type, timeConverter), type);
+                    lookup = new ConstantLookup(pool, type);
+                    constantLookups.put(type.getId(), lookup);
+                }
                 yield new StringParser(lookup, event);
             }
             default ->  throw new IOException("Unknown primitive type " + type.getName());

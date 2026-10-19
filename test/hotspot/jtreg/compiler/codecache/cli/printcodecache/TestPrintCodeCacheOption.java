@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import java.util.EnumSet;
 public class TestPrintCodeCacheOption extends CodeCacheCLITestBase {
     private static final CodeCacheCLITestCase DISABLED_PRINT_CODE_CACHE
             = new CodeCacheCLITestCase(new CodeCacheCLITestCase.Description(
-                            options -> true, EnumSet.noneOf(BlobType.class)),
+                            options -> options.hot == 0, EnumSet.noneOf(BlobType.class)),
                     new PrintCodeCacheRunner(false));
 
     private static final CodeCacheCLITestCase.Runner DEFAULT_RUNNER
@@ -61,7 +61,7 @@ public class TestPrintCodeCacheOption extends CodeCacheCLITestBase {
                         .CommonDescriptions.NON_SEGMENTED.description,
                         DEFAULT_RUNNER),
                 new CodeCacheCLITestCase(CodeCacheCLITestCase
-                        .CommonDescriptions.NON_TIERED.description,
+                        .CommonDescriptions.NON_TIERED_WO_HOT.description,
                         DEFAULT_RUNNER),
                 new CodeCacheCLITestCase(CodeCacheCLITestCase
                         .CommonDescriptions.TIERED_LEVEL_0.description,
@@ -70,7 +70,13 @@ public class TestPrintCodeCacheOption extends CodeCacheCLITestBase {
                         .CommonDescriptions.TIERED_LEVEL_1.description,
                         DEFAULT_RUNNER),
                 new CodeCacheCLITestCase(CodeCacheCLITestCase
-                        .CommonDescriptions.TIERED_LEVEL_4.description,
+                        .CommonDescriptions.TIERED_LEVEL_4_WO_HOT.description,
+                        DEFAULT_RUNNER),
+                new CodeCacheCLITestCase(CodeCacheCLITestCase
+                        .CommonDescriptions.NON_TIERED_W_HOT.description,
+                        DEFAULT_RUNNER),
+                new CodeCacheCLITestCase(CodeCacheCLITestCase
+                        .CommonDescriptions.TIERED_LEVEL_4_W_HOT.description,
                         DEFAULT_RUNNER),
                 DISABLED_PRINT_CODE_CACHE);
     }

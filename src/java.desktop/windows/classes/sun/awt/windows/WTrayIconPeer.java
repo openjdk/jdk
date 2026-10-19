@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ final class WTrayIconPeer extends WObjectPeer implements TrayIconPeer {
     }
 
     void postEvent(AWTEvent event) {
-        WToolkit.postEvent(WToolkit.targetToAppContext(target), event);
+        WToolkit.postEvent(event);
     }
 
     native void create();

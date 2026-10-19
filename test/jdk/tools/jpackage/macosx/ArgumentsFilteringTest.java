@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,10 @@ public class ArgumentsFilteringTest {
     public void test1() {
         JPackageCommand cmd = JPackageCommand.helloAppImage();
         cmd.executeAndAssertHelloAppImageCreated();
-        var appVerifier = HelloApp.assertMainLauncher(cmd);
-        if (appVerifier != null) {
+        HelloApp.assertMainLauncher(cmd).ifPresent(appVerifier -> {
             appVerifier.execute("-psn_1_1");
             appVerifier.verifyOutput();
-        }
+        });
     }
 
     @Test
@@ -61,10 +60,9 @@ public class ArgumentsFilteringTest {
         JPackageCommand cmd = JPackageCommand.helloAppImage()
                 .addArguments("--arguments", "-psn_2_2");
         cmd.executeAndAssertHelloAppImageCreated();
-        var appVerifier = HelloApp.assertMainLauncher(cmd);
-        if (appVerifier != null) {
+        HelloApp.assertMainLauncher(cmd).ifPresent(appVerifier -> {
             appVerifier.execute("-psn_1_1");
             appVerifier.verifyOutput("-psn_2_2");
-        }
+        });
     }
 }

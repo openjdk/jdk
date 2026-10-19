@@ -60,7 +60,7 @@ private:
   static MemoryPool*                    _compressed_class_pool;
 
 public:
-  static void set_universe_heap(CollectedHeap* heap);
+  static void initialize(CollectedHeap* heap);
   static void add_code_heap_memory_pool(CodeHeap* heap, const char* name);
   static void add_metaspace_memory_pools();
 

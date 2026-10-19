@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * Copyright (c) 2022, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -32,8 +32,9 @@
 #ifndef OS_AIX_LIBPERFSTAT_AIX_HPP
 #define OS_AIX_LIBPERFSTAT_AIX_HPP
 
+#include "cppstdlib/cstdlib.hpp"
+
 #include <sys/types.h>
-#include <stdlib.h>
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // These are excerpts from the AIX 7.1 libperfstat.h -

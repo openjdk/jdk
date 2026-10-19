@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,11 @@
 #include "oops/metadata.hpp"
 #include "utilities/align.hpp"
 
+class AOTCodeEntry;
 class MethodTrainingData;
 
 class MethodCounters : public Metadata {
  friend class VMStructs;
- friend class JVMCIVMStructs;
 
  // Used by CDS. These classes need to access the private default constructor.
  template <class T> friend class CppVtableTesterA;
@@ -49,14 +49,23 @@ class MethodCounters : public Metadata {
   Method* _method;
 
   Metadata*         _method_training_data;
+#if INCLUDE_CDS
+  // After JDK-8380476 FIXME: Jamming in a code reference here is a code
+  // smell.  Since access to this value is infrequent, it does not
+  // need to be a pointer.  (See AOTCodeCache::invalidate_entry.)
+  // Suggestion: Have finish_write build a two-column binary-search
+  // table in the AOT cache, to map method ID to preload method index.
+  // Searchable static indexes are a core competency for AOT.
+  AOTCodeEntry*     _aot_preload_code_entry;      // AOT Code Cache entry for preload code
+#endif
   jlong             _prev_time;                   // Previous time the rate was acquired
   float             _rate;                        // Events (invocation and backedge counter increments) per millisecond
   int               _invoke_mask;                 // per-method Tier0InvokeNotifyFreqLog
   int               _backedge_mask;               // per-method Tier0BackedgeNotifyFreqLog
   int               _prev_event_count;            // Total number of events saved at previous callback
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   u2                _interpreter_throwout_count; // Count of times method was exited via exception while interpreting
-#endif
+#endif // COMPILER2
 #if INCLUDE_JVMTI
   u2                _number_of_breakpoints;      // fullspeed debugging support
 #endif
@@ -72,7 +81,7 @@ class MethodCounters : public Metadata {
   static MethodCounters* allocate_no_exception(const methodHandle& mh);
   static MethodCounters* allocate_with_exception(const methodHandle& mh, TRAPS);
 
-  void deallocate_contents(ClassLoaderData* loader_data) {}
+  void deallocate_contents(ClassLoaderData* loader_data) NOT_CDS_RETURN;
 
   static int method_counters_size() {
     return align_up((int)sizeof(MethodCounters), wordSize) / wordSize;
@@ -86,7 +95,7 @@ class MethodCounters : public Metadata {
 
   void clear_counters();
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   void interpreter_throwout_increment() {
     if (_interpreter_throwout_count < 65534) {
       _interpreter_throwout_count++;
@@ -98,14 +107,14 @@ class MethodCounters : public Metadata {
   void set_interpreter_throwout_count(u2 count) {
     _interpreter_throwout_count = count;
   }
-#else // COMPILER2_OR_JVMCI
+#else // COMPILER2
   u2  interpreter_throwout_count() const {
     return 0;
   }
   void set_interpreter_throwout_count(u2 count) {
     assert(count == 0, "count must be 0");
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
 #if INCLUDE_JVMTI
   u2   number_of_breakpoints() const   { return _number_of_breakpoints; }
@@ -166,6 +175,11 @@ class MethodCounters : public Metadata {
   }
 
 #if INCLUDE_CDS
+  void set_aot_preload_code_entry(AOTCodeEntry* entry);
+  AOTCodeEntry* aot_preload_code_entry() const   {
+    return _aot_preload_code_entry;
+  }
+
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,8 +96,8 @@ public abstract class EventSettings {
         }
 
         @Override
-        public ValueDescriptor newValueDescriptor(String name, Type fieldType, List<AnnotationElement> annos, int dimension, boolean constantPool, String fieldName) {
-            return new ValueDescriptor(fieldType, name, annos, dimension, constantPool, fieldName);
+        public ValueDescriptor newValueDescriptor(String name, Type fieldType, List<AnnotationElement> annos, int dimension, boolean constantPool) {
+            return new ValueDescriptor(fieldType, name, annos, dimension, constantPool);
         }
 
         @Override
@@ -126,11 +126,6 @@ public abstract class EventSettings {
         }
 
         @Override
-        public String getFieldName(ValueDescriptor v) {
-            return v.getJavaFieldName();
-        }
-
-        @Override
         public ValueDescriptor newValueDescriptor(Class<?> type, String name) {
             return new ValueDescriptor(type, name, List.of(), true);
         }
@@ -148,6 +143,11 @@ public abstract class EventSettings {
         @Override
         public PlatformRecorder getPlatformRecorder() {
             return FlightRecorder.getFlightRecorder().getInternal();
+        }
+
+        @Override
+        public Recording newRecording(Boolean register) {
+            return new Recording(register, Map.of());
         }
 
         @Override

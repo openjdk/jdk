@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,41 +25,30 @@
 package jdk.jpackage.internal.cli;
 
 import java.util.Objects;
-import java.util.function.Function;
 
-interface ValueConverter<T> {
-
-    /**
-     * Converts the given string value into a Java type.
-     *
-     * @param value the string to convert
-     * @return the converted value
-     * @throws IllegalArgumentException if the given string value can not be
-     *                                  converted to an object of type {@link T}
-     */
-    T convert(String value) throws IllegalArgumentException;
+interface ValueConverter<T, U> extends ValueConverterFunction<T, U> {
 
     /**
      * Gives the class of the type of values this converter converts to.
      *
      * @return the target class for conversion
      */
-    Class<? extends T> valueType();
+    Class<? extends U> valueType();
 
-    static <T> ValueConverter<T> create(Function<String, T> mapper, Class<? extends T> type) {
-        Objects.requireNonNull(mapper);
+    static <T, U> ValueConverter<T, U> create(ValueConverterFunction<T, U> conv, Class<? extends U> type) {
+        Objects.requireNonNull(conv);
         Objects.requireNonNull(type);
 
         return new ValueConverter<>() {
 
             @Override
-            public T convert(String value) {
+            public U convert(T value) throws Exception {
                 Objects.requireNonNull(value);
-                return Objects.requireNonNull(mapper.apply(value));
+                return Objects.requireNonNull(conv.convert(value));
             }
 
             @Override
-            public Class<? extends T> valueType() {
+            public Class<? extends U> valueType() {
                 return type;
             }
 

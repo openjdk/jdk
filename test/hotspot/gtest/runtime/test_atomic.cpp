@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,99 @@
  *
  */
 
+#include "cppstdlib/new.hpp"
 #include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/os.hpp"
 
 #include "unittest.hpp"
 
 // These tests of Atomic<T> only verify functionality.  They don't verify
 // atomicity.
+
+template<typename T>
+struct AtomicInitializationTestSupport {
+  struct Holder {
+    Atomic<T> _explicitly_initialized;
+    Atomic<T> _default_initialized;
+    Atomic<T> _value_initialized;
+
+    Holder()
+      : _explicitly_initialized(T()),
+        /* _default_initialized */
+        _value_initialized{}
+    {}
+  };
+
+  struct HolderNoConstructor {
+    Atomic<T> _default_initialized;
+  };
+
+  void test() {
+    T t = T();
+
+    {
+      Holder h;
+
+      EXPECT_EQ(t, h._explicitly_initialized.load_relaxed());
+      EXPECT_EQ(t, h._default_initialized.load_relaxed());
+      EXPECT_EQ(t, h._value_initialized.load_relaxed());
+    }
+
+    {
+      Holder h{};
+
+      EXPECT_EQ(t, h._explicitly_initialized.load_relaxed());
+      EXPECT_EQ(t, h._default_initialized.load_relaxed());
+      EXPECT_EQ(t, h._value_initialized.load_relaxed());
+    }
+
+    {
+      alignas(Holder) char mem[sizeof(Holder)];
+      memset(mem, 0xFF, sizeof(Holder));
+      Holder* h = new (mem) Holder();
+
+      EXPECT_EQ(t, h->_explicitly_initialized.load_relaxed());
+      EXPECT_EQ(t, h->_default_initialized.load_relaxed());
+      EXPECT_EQ(t, h->_value_initialized.load_relaxed());
+    }
+
+    // No-constructor variant
+
+    {
+      HolderNoConstructor h;
+
+      EXPECT_EQ(t, h._default_initialized.load_relaxed());
+    }
+
+    {
+      HolderNoConstructor h{};
+
+      EXPECT_EQ(t, h._default_initialized.load_relaxed());
+    }
+
+    {
+      alignas(HolderNoConstructor) char mem[sizeof(HolderNoConstructor)];
+      memset(mem, 0xFF, sizeof(HolderNoConstructor));
+      HolderNoConstructor* h = new (mem) HolderNoConstructor();
+
+      EXPECT_EQ(t, h->_default_initialized.load_relaxed());
+    }
+  }
+};
+
+TEST_VM(AtomicInitializationTest, byte) {
+  AtomicInitializationTestSupport<char>().test();
+}
+
+TEST_VM(AtomicInitializationTest, integer) {
+  AtomicInitializationTestSupport<int32_t>().test();
+}
+
+TEST_VM(AtomicInitializationTest, pointer) {
+  AtomicInitializationTestSupport<void*>().test();
+}
 
 template<typename T>
 struct AtomicIntegerArithmeticTestSupport {
@@ -159,6 +244,35 @@ TEST_VM(AtomicIntegerTest, cmpxchg_int32) {
 TEST_VM(AtomicIntegerTest, cmpxchg_int64) {
   // Check if 64-bit atomics are available on the machine.
   using Support = AtomicIntegerCmpxchgTestSupport<int64_t>;
+  Support().test();
+}
+
+template<typename T>
+struct AtomicIntegerCmpsetTestSupport {
+  Atomic<T> _test_value;
+
+  AtomicIntegerCmpsetTestSupport() : _test_value{} {}
+
+  void test() {
+    T zero = 0;
+    T five = 5;
+    T ten = 10;
+    _test_value.store_relaxed(zero);
+    EXPECT_FALSE(_test_value.compare_set(five, ten));
+    EXPECT_EQ(zero, _test_value.load_relaxed());
+    EXPECT_TRUE(_test_value.compare_set(zero, ten));
+    EXPECT_EQ(ten, _test_value.load_relaxed());
+  }
+};
+
+TEST_VM(AtomicIntegerTest, cmpset_int32) {
+  using Support = AtomicIntegerCmpsetTestSupport<int32_t>;
+  Support().test();
+}
+
+TEST_VM(AtomicIntegerTest, cmpset_int64) {
+  // Check if 64-bit atomics are available on the machine.
+  using Support = AtomicIntegerCmpsetTestSupport<int64_t>;
   Support().test();
 }
 

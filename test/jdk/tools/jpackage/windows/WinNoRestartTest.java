@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,18 @@
  * questions.
  */
 
-import static jdk.jpackage.test.WindowsHelper.killAppLauncherProcess;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CfgFile;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.TKit;
 
 /* @test
  * @bug 8340311
@@ -47,7 +50,7 @@ import jdk.jpackage.test.JPackageCommand;
 public class WinNoRestartTest {
 
     @Test
-    public static void test() throws InterruptedException, IOException {
+    public static void test() throws InterruptedException, IOException, ExecutionException {
         var cmd = JPackageCommand.helloAppImage().ignoreFakeRuntime();
 
         // Configure test app to launch in a way it will not exit
@@ -77,7 +80,7 @@ public class WinNoRestartTest {
     private static record NoRerunConfig(NoRerunSectionConfig firstSection,
             NoRerunSectionConfig secondSection, boolean expectedNoRestarted) {
 
-        void apply(JPackageCommand cmd, CfgFile origCfgFile) throws InterruptedException {
+        void apply(JPackageCommand cmd, CfgFile origCfgFile) throws InterruptedException, ExecutionException {
             // Alter the main launcher .cfg file
             var cfgFile = new CfgFile();
             if (firstSection != null) {
@@ -92,16 +95,43 @@ public class WinNoRestartTest {
             // Save updated main launcher .cfg file
             cfgFile.save(cmd.appLauncherCfgPath(null));
 
+            var state = TKit.state();
+            var f = new CompletableFuture<Process>();
+
             // Launch the app in a separate thread
             new Thread(() -> {
-                HelloApp.executeLauncher(cmd);
+                TKit.withState(() -> {
+                    HelloApp.assertMainLauncher(cmd).get().processListener(f::complete).execute();
+                }, state);
             }).start();
 
-            // Wait a bit to let the app start
-            Thread.sleep(Duration.ofSeconds(10));
+            var mainLauncherProcess = f.get();
 
-            // Find the main app launcher process and kill it
-            killAppLauncherProcess(cmd, null, expectedNoRestarted ? 1 : 2);
+            try {
+                // Wait a bit to let the app start
+                Thread.sleep(Duration.ofSeconds(10));
+
+                try (var children = mainLauncherProcess.children()) {
+                    Optional<String> childPid = children.filter(p -> {
+                        return mainLauncherProcess.info().command().equals(p.info().command());
+                    }).map(ProcessHandle::pid).map(Object::toString).findFirst();
+
+                    Optional<String> expectedChildPid;
+                    if (expectedNoRestarted) {
+                        expectedChildPid = Optional.empty();
+                    } else {
+                        expectedChildPid = childPid.or(() -> {
+                            return Optional.of("<some>");
+                        });
+                    }
+                    TKit.assertEquals(expectedChildPid, childPid, String.format(
+                            "Check the main launcher process with PID=%d restarted",
+                            mainLauncherProcess.pid()));
+                }
+            } finally {
+                TKit.trace("About to kill the main launcher process...");
+                mainLauncherProcess.destroyForcibly();
+            }
         }
     }
 

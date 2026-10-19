@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "jvm.h"
 #include "io_util.h"
 #include "io_util_md.h"
+#include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -75,20 +76,26 @@ FD
 handleOpen(const char *path, int oflag, int mode) {
     FD fd;
     RESTARTABLE(open(path, oflag, mode), fd);
-    if (fd != -1) {
-        struct stat buf;
-        int result;
-        RESTARTABLE(fstat(fd, &buf), result);
-        if (result != -1) {
-            if (S_ISDIR(buf.st_mode)) {
-                close(fd);
-                errno = EISDIR;
-                fd = -1;
-            }
-        } else {
+    // No further checking is needed if the file is not a
+    // directory or open returned an error
+    if (fd == -1 || ((oflag & O_ACCMODE) != O_RDONLY) != 0) {
+        return fd;
+    }
+
+    // FileInputStream is specified to throw if the
+    // file is a directory
+    struct stat buf;
+    int result;
+    RESTARTABLE(fstat(fd, &buf), result);
+    if (result != -1) {
+        if (S_ISDIR(buf.st_mode)) {
             close(fd);
+            errno = EISDIR;
             fd = -1;
         }
+    } else {
+        close(fd);
+        fd = -1;
     }
     return fd;
 }

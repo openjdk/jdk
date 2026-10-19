@@ -75,7 +75,8 @@ png_destroy_png_struct(png_structrp png_ptr)
  * have the ability to do that.
  */
 PNG_FUNCTION(png_voidp,PNGAPI
-png_calloc,(png_const_structrp png_ptr, png_alloc_size_t size),PNG_ALLOCATED)
+png_calloc,(png_const_structrp png_ptr, png_alloc_size_t size),
+    PNG_ALLOCATED)
 {
    png_voidp ret;
 
@@ -147,7 +148,8 @@ png_malloc_array_checked(png_const_structrp png_ptr, int nelements,
 
 PNG_FUNCTION(png_voidp /* PRIVATE */,
 png_malloc_array,(png_const_structrp png_ptr, int nelements,
-    size_t element_size),PNG_ALLOCATED)
+    size_t element_size),
+    PNG_ALLOCATED)
 {
    if (nelements <= 0 || element_size == 0)
       png_error(png_ptr, "internal error: array alloc");
@@ -157,7 +159,8 @@ png_malloc_array,(png_const_structrp png_ptr, int nelements,
 
 PNG_FUNCTION(png_voidp /* PRIVATE */,
 png_realloc_array,(png_const_structrp png_ptr, png_const_voidp old_array,
-    int old_elements, int add_elements, size_t element_size),PNG_ALLOCATED)
+    int old_elements, int add_elements, size_t element_size),
+    PNG_ALLOCATED)
 {
    /* These are internal errors: */
    if (add_elements <= 0 || element_size == 0 || old_elements < 0 ||
@@ -196,7 +199,8 @@ png_realloc_array,(png_const_structrp png_ptr, png_const_voidp old_array,
  * function png_malloc_default is also provided.
  */
 PNG_FUNCTION(png_voidp,PNGAPI
-png_malloc,(png_const_structrp png_ptr, png_alloc_size_t size),PNG_ALLOCATED)
+png_malloc,(png_const_structrp png_ptr, png_alloc_size_t size),
+    PNG_ALLOCATED)
 {
    png_voidp ret;
 
@@ -270,7 +274,8 @@ png_free(png_const_structrp png_ptr, png_voidp ptr)
 }
 
 PNG_FUNCTION(void,PNGAPI
-png_free_default,(png_const_structrp png_ptr, png_voidp ptr),PNG_DEPRECATED)
+png_free_default,(png_const_structrp png_ptr, png_voidp ptr),
+    PNG_DEPRECATED)
 {
    if (png_ptr == NULL || ptr == NULL)
       return;
@@ -284,8 +289,8 @@ png_free_default,(png_const_structrp png_ptr, png_voidp ptr),PNG_DEPRECATED)
  * of allocating and freeing memory.
  */
 void PNGAPI
-png_set_mem_fn(png_structrp png_ptr, png_voidp mem_ptr, png_malloc_ptr
-  malloc_fn, png_free_ptr free_fn)
+png_set_mem_fn(png_structrp png_ptr, png_voidp mem_ptr,
+    png_malloc_ptr malloc_fn, png_free_ptr free_fn)
 {
    if (png_ptr != NULL)
    {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,6 @@ import javax.swing.JComponent;
 import javax.swing.JRootPane;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.ComponentFactory;
 import sun.awt.ConstrainableGraphics;
 import sun.awt.EmbeddedFrame;
@@ -234,11 +233,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getParent
      */
     transient Container parent;
-
-    /**
-     * The {@code AppContext} of the component.
-     */
-    transient AppContext appContext;
 
     /**
      * The x position of the component in the parent's coordinate system.
@@ -877,12 +871,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
             {
                  Component.setRequestFocusController(requestController);
             }
-            public AppContext getAppContext(Component comp) {
-                 return comp.appContext;
-            }
-            public void setAppContext(Component comp, AppContext appContext) {
-                 comp.appContext = appContext;
-            }
             public Container getParent(Component comp) {
                 return comp.getParent_NoClientCode();
             }
@@ -975,7 +963,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * tree (for example, by a {@code Frame} object).
      */
     protected Component() {
-        appContext = AppContext.getAppContext();
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -3452,7 +3439,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 (width > 0) && (height > 0)) {
                 PaintEvent e = new PaintEvent(this, PaintEvent.UPDATE,
                                               new Rectangle(x, y, width, height));
-                SunToolkit.postEvent(SunToolkit.targetToAppContext(this), e);
+                SunToolkit.postEvent(e);
             }
         }
     }
@@ -4000,7 +3987,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * {@code true}.
          * @see #createBuffers(int, BufferCapabilities)
          */
-        @SuppressWarnings("removal")
         protected FlipBufferStrategy(int numBuffers, BufferCapabilities caps)
             throws AWTException
         {
@@ -4787,14 +4773,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
     @SuppressWarnings("deprecation")
     void dispatchEventImpl(AWTEvent e) {
         int id = e.getID();
-
-        // Check that this component belongs to this app-context
-        AppContext compContext = appContext;
-        if (compContext != null && !compContext.equals(AppContext.getAppContext())) {
-            if (eventLog.isLoggable(PlatformLogger.Level.FINE)) {
-                eventLog.fine("Event " + e + " is being dispatched on the wrong AppContext");
-            }
-        }
 
         if (eventLog.isLoggable(PlatformLogger.Level.FINEST)) {
             eventLog.finest("{0}", e);
@@ -7938,7 +7916,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             (this, temporary, focusedWindowChangeAllowed, time, cause);
         if (!success) {
             KeyboardFocusManager.getCurrentKeyboardFocusManager
-                (appContext).dequeueKeyEvents(time, this);
+                ().dequeueKeyEvents(time, this);
             if (focusLog.isLoggable(PlatformLogger.Level.FINEST)) {
                 focusLog.finest("Peer request failed");
             }
@@ -8129,7 +8107,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
         return res;
     }
 
-    @SuppressWarnings("removal")
     final Component getNextFocusCandidate() {
         Container rootAncestor = getTraversalRoot();
         Component comp = this;
@@ -8938,7 +8915,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
         s.defaultReadObject();
 
-        appContext = AppContext.getAppContext();
         coalescingEnabled = checkCoalescing();
         if (componentSerializedDataVersion < 4) {
             // These fields are non-transient and rely on default

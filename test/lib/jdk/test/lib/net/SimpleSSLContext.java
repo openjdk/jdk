@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,16 @@
 
 package jdk.test.lib.net;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
-import java.io.*;
-import java.security.*;
-import javax.net.ssl.*;
+import java.security.KeyStore;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.StringTokenizer;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 /**
  * Utility for creating a simple usable {@link SSLContext} for testing purposes.
@@ -39,17 +43,7 @@ public final class SimpleSSLContext {
 
     private static final String DEFAULT_KEY_STORE_FILE_REL_PATH = "jdk/test/lib/net/testkeys";
 
-    private final SSLContext ssl;
-
-    // Made `public` for backward compatibility
-    public SimpleSSLContext() throws IOException {
-        this.ssl = findSSLContext(DEFAULT_KEY_STORE_FILE_REL_PATH, DEFAULT_PROTOCOL);
-    }
-
-    // Kept for backward compatibility
-    public SimpleSSLContext(String keyStoreFileRelPath) throws IOException {
-        this.ssl = findSSLContext(Objects.requireNonNull(keyStoreFileRelPath), DEFAULT_PROTOCOL);
-    }
+    private SimpleSSLContext() {}
 
     /**
      * {@return a new {@link SSLContext} instance by searching for a key store
@@ -134,22 +128,6 @@ public final class SimpleSSLContext {
                     keyStoreFilePath, protocol);
             throw new RuntimeException(message, e);
         }
-    }
-
-    // Kept for backward compatibility
-    public static SSLContext getContext(String protocol) throws IOException {
-        try {
-            return protocol == null || protocol.isEmpty()
-                    ? findSSLContext()
-                    : findSSLContext(protocol);
-        } catch (RuntimeException re) {
-            throw new IOException(re);
-        }
-    }
-
-    // Kept for backward compatibility
-    public SSLContext get() {
-        return ssl;
     }
 
 }

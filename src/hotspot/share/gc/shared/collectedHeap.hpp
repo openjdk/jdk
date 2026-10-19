@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "memory/metaspace.hpp"
 #include "memory/universe.hpp"
 #include "oops/stackChunkOop.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"
@@ -91,7 +92,6 @@ public:
 class CollectedHeap : public CHeapObj<mtGC> {
   friend class CPUTimeUsage::GC;
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   friend class IsSTWGCActiveMark; // Block structured external access to _is_stw_gc_active
   friend class MemAllocator;
 
@@ -130,8 +130,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
   unsigned int _total_collections;          // ... started
   unsigned int _total_full_collections;     // ... started
-  NOT_PRODUCT(volatile size_t _promotion_failure_alot_count;)
-  NOT_PRODUCT(volatile size_t _promotion_failure_alot_gc_number;)
+  NOT_PRODUCT(Atomic<size_t> _promotion_failure_alot_count;)
+  NOT_PRODUCT(Atomic<size_t> _promotion_failure_alot_gc_number;)
 
   jlong _vmthread_cpu_time;
 
@@ -241,6 +241,10 @@ protected:
    */
   virtual jint initialize() = 0;
 
+  // Initialize serviceability support. This should prepare the implementation
+  // for accepting serviceability-related calls, like memory_managers(), memory_pools().
+  virtual void initialize_serviceability() = 0;
+
   // In many heaps, there will be a need to perform some initialization activities
   // after the Universe is fully formed, but before general heap allocation is allowed.
   // This is the correct place to place such initialization methods.
@@ -285,7 +289,7 @@ protected:
   DEBUG_ONLY(bool is_in_or_null(const void* p) const { return p == nullptr || is_in(p); })
 
   void set_gc_cause(GCCause::Cause v);
-  GCCause::Cause gc_cause() { return _gc_cause; }
+  GCCause::Cause gc_cause() const { return _gc_cause; }
 
   oop obj_allocate(Klass* klass, size_t size, TRAPS);
   virtual oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS);
@@ -308,6 +312,8 @@ protected:
   static void fill_with_object(HeapWord* start, HeapWord* end, bool zap = true) {
     fill_with_object(start, pointer_delta(end, start), zap);
   }
+
+  inline static bool is_filler_object(oop obj);
 
   virtual void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
   static size_t min_dummy_object_size() {
@@ -417,8 +423,6 @@ protected:
   // Generate any dumps preceding or following a full gc
   void full_gc_dump(GCTimer* timer, bool before);
 
-  virtual void initialize_serviceability() = 0;
-
   void print_relative_to_gc(GCWhen::Type when) const;
 
  public:
@@ -500,14 +504,11 @@ protected:
   // Non product verification and debugging.
 #ifndef PRODUCT
   // Support for PromotionFailureALot.  Return true if it's time to cause a
-  // promotion failure.  The no-argument version uses
-  // this->_promotion_failure_alot_count as the counter.
-  bool promotion_should_fail(volatile size_t* count);
+  // promotion failure.
   bool promotion_should_fail();
 
   // Reset the PromotionFailureALot counters.  Should be called at the end of a
   // GC in which promotion failure occurred.
-  void reset_promotion_should_fail(volatile size_t* count);
   void reset_promotion_should_fail();
 #endif  // #ifndef PRODUCT
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,8 @@
 
 /*
  * @test
- * @bug 8345431
+ * @bug 8345431 8375433
  * @summary test validator to report malformed jar file
- * @library /test/lib
- * @modules jdk.jartool
- * @build jdk.test.lib.Platform
- *        jdk.test.lib.util.FileUtils
  * @run junit/othervm ValidatorTest
  */
 
@@ -40,6 +36,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertLinesMatch;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -59,12 +56,14 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import jdk.test.lib.util.FileUtils;
-
 class ValidatorTest {
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
         .orElseThrow(() ->
             new RuntimeException("jar tool not found")
+        );
+    private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
+        .orElseThrow(() ->
+            new RuntimeException("javac tool not found")
         );
 
     private final String nl = System.lineSeparator();
@@ -308,6 +307,44 @@ class ValidatorTest {
                 assertTrue(err.contains("Warning: entry name " + entryName + " is not valid"), "missing warning for " + entryName);
             }
         }
+    }
+
+    @Test
+    public void testInvalidAutomaticModuleName() throws Exception {
+        System.out.printf("%n%n*****Creating Jar with invalid Automatic-Module-Name in Manifest*****%n%n");
+        var file = Path.of("InvalidAutomaticModuleName.jar");
+        var manifest = Path.of("MANIFEST.MF");
+        Files.writeString(manifest,
+                """
+                Automatic-Module-Name: default
+                """);
+        jar("--create --file " + file + " --manifest " + manifest);
+        var e = assertThrows(IOException.class, () -> jar("--validate --file " + file.toString()));
+        var err = e.getMessage();
+        System.out.println(err);
+        assertTrue(err.contains("invalid module name of Automatic-Module-Name entry in manifest: default"), "missing warning for: default");
+    }
+
+    @Test
+    public void testWrongAutomaticModuleName() throws Exception {
+        System.out.printf("%n%n*****Creating Jar with wrong Automatic-Module-Name in Manifest*****%n%n");
+        var file = Path.of("WrongAutomaticModuleName.jar");
+        var foo = Path.of("module-info.java");
+        Files.writeString(foo,
+                """
+                module foo {}
+                """);
+        var manifest = Path.of("MANIFEST.MF");
+        Files.writeString(manifest,
+                """
+                Automatic-Module-Name: bar
+                """);
+        JAVAC_TOOL.run(System.out, System.err, foo.toString());
+        jar("--create --file " + file + " --manifest " + manifest + " module-info.class");
+        var e = assertThrows(IOException.class, () -> jar("--validate --file " + file.toString()));
+        var err = e.getMessage();
+        System.out.println(err);
+        assertTrue(err.contains("expected Automatic-Module-Name entry in manifest: bar to match name of compiled module: foo"), "missing warning for: foo/bar");
     }
 
     /**

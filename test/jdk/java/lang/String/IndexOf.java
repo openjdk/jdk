@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Intel Corporation. All rights reserved.
+ * Copyright (c) 2024, 2026, Intel Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,15 @@
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:-TieredCompilation -XX:UseAVX=2 -XX:+UnlockDiagnosticVMOptions -XX:+EnableX86ECoreOpts IndexOf
  */
 
+/*
+ * @test
+ * @bug 8360271
+ * @summary test String indexOf() intrinsic
+ * @requires vm.cpu.features ~= ".*avx2.*"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:-TieredCompilation -XX:UseAVX=2 -XX:+UnlockDiagnosticVMOptions -XX:+EnableX86ECoreOpts -XX:-CompactStrings IndexOf
+ */
+
  public class IndexOf {
   final int scope = 32*2+16+8;
   final char a, aa, b, c, d;
@@ -56,11 +65,11 @@
               d = 'd';
               break;
           case UU:
-              a = '\u0061';
+              a = '\u1061';
               aa = a;
-              b = '\u0062';
+              b = '\u1062';
               c = '\u1063';
-              d = '\u0064';
+              d = '\u1064';
               break;
           default: //case UL:
               a = 'a';
@@ -73,7 +82,7 @@
   }
 
   // needle    =~ /ab*d/
-  // badNeedle =~ /ab*db*d/
+  // badNeedle =~ /ab*cb*d/
   interface Append {void append(int pos, char cc);}
   String newNeedle(int size, int badPosition) {
       if (size<2) {throw new RuntimeException("Fix testcase "+size);}

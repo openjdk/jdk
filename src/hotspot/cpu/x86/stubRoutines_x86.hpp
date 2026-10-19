@@ -55,9 +55,13 @@ class x86 {
 #define DECLARE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
   DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name)
 
-private:
-  STUBGEN_ARCH_ENTRIES_DO(DECLARE_ARCH_ENTRY, DECLARE_ARCH_ENTRY_INIT)
+#define DECLARE_ARCH_ENTRY_ARRAY(arch, blob_name, stub_name, field_name, getter_name, count) \
+  static address STUB_FIELD_NAME(field_name) [count] ;
 
+private:
+  STUBGEN_ARCH_ENTRIES_DO(DECLARE_ARCH_ENTRY, DECLARE_ARCH_ENTRY_INIT, DECLARE_ARCH_ENTRY_ARRAY)
+
+#undef DECLARE_ARCH_ENTRY_ARRAY
 #undef DECLARE_ARCH_ENTRY_INIT
 #undef DECLARE_ARCH_ENTRY
 
@@ -70,9 +74,13 @@ private:
 #define DEFINE_ARCH_ENTRY_GETTER_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
   DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name)
 
-public:
-  STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY_GETTER, DEFINE_ARCH_ENTRY_GETTER_INIT)
+#define DEFINE_ARCH_ENTRY_GETTER_ARRAY(arch, blob_name, stub_name, field_name, getter_name, count) \
+  static address getter_name(int idx) { return STUB_FIELD_NAME(field_name) [idx]; }
 
+public:
+  STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY_GETTER, DEFINE_ARCH_ENTRY_GETTER_INIT, DEFINE_ARCH_ENTRY_GETTER_ARRAY)
+
+#undef DEFINE_ARCH_ENTRY_GETTER_ARRAY
 #undef DEFINE_ARCH_ENTRY_GETTER_INIT
 #undef DEFINE_ARCH_GETTER_ENTRY
 
@@ -110,8 +118,30 @@ public:
   static address k256_W_addr()    { return _k256_W_adr; }
   static address k512_W_addr()    { return _k512_W_addr; }
 
+  // declare storage for jump tables used by string index stubs
+
+  // we assert this equals the number of tags in
+  // StrIntrinsicNode::ArgEncoding in code that uses the value to
+  // avoid having to inlcude opto headers here
+  static constexpr int STRING_INDEXOF_TABLE_COUNT = 4;
+  static constexpr int STRING_INDEXOF_NUMBER_OF_CASES = 10;
+  static address small_jump_table[STRING_INDEXOF_TABLE_COUNT * STRING_INDEXOF_NUMBER_OF_CASES];
+  static address big_jump_table[STRING_INDEXOF_TABLE_COUNT * STRING_INDEXOF_NUMBER_OF_CASES];
+
+  static address *small_jump_table_base(int idx) {
+    assert(idx >= 0 && idx < STRING_INDEXOF_TABLE_COUNT, "invalid jump table index %d", idx);
+    return small_jump_table + (idx * STRING_INDEXOF_NUMBER_OF_CASES);
+  }
+
+  static address *big_jump_table_base(int idx) {
+    assert(idx >= 0 && idx < STRING_INDEXOF_TABLE_COUNT, "invalid jump table index %d", idx);
+    return big_jump_table + (idx * STRING_INDEXOF_NUMBER_OF_CASES);
+  }
+
   static address arrays_hashcode_powers_of_31() { return (address)_arrays_hashcode_powers_of_31; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);
+
+  static void init_AOTAddressTable(GrowableArray<address>& external_addresses);
 };
 
 #endif // CPU_X86_STUBROUTINES_X86_HPP

@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2016 Google, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +26,7 @@
  * @test
  * @bug 8148174
  * @summary brittle white box test of internal array management
- * @run testng ArrayManagement
+ * @run junit ArrayManagement
  */
 
 import java.lang.reflect.Field;
@@ -35,8 +36,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.SplittableRandom;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class ArrayManagement {
 
@@ -61,9 +62,9 @@ public class ArrayManagement {
             super.ensureCapacity(minCapacity);
             assertTrue(capacity() >= minCapacity);
             if (minCapacity <= oldCapacity)
-                assertEquals(capacity(), oldCapacity);
+                assertEquals(oldCapacity, capacity());
             if (minCapacity > 0)
-                assertEquals(modCount(), oldModCount + 1);
+                assertEquals(oldModCount + 1, modCount());
         }
     }
 
@@ -89,117 +90,117 @@ public class ArrayManagement {
         case 3: assertTrue(list.addAll(size, singletonList())); break;
         default: throw new AssertionError();
         }
-        assertEquals(list.modCount(), modCount + 1);
-        assertEquals(list.size(), size + 1);
+        assertEquals(modCount + 1, list.modCount());
+        assertEquals(size + 1, list.size());
     }
 
     @Test public void defaultCapacity() {
         PublicVector<Object> list = new PublicVector<>();
-        assertEquals(new PublicVector<Object>().capacity(), DEFAULT_CAPACITY);
+        assertEquals(DEFAULT_CAPACITY, new PublicVector<Object>().capacity());
         for (int i = 0; i < DEFAULT_CAPACITY; i++) {
             addOneElement(list);
-            assertEquals(list.capacity(), DEFAULT_CAPACITY);
+            assertEquals(DEFAULT_CAPACITY, list.capacity());
         }
         addOneElement(list);
-        assertEquals(list.capacity(), newCapacity(DEFAULT_CAPACITY));
+        assertEquals(newCapacity(DEFAULT_CAPACITY), list.capacity());
     }
 
     @Test public void defaultCapacityEnsureCapacity() {
         PublicVector<Object> list = new PublicVector<>();
         for (int i = 0; i <= DEFAULT_CAPACITY; i++) {
             list.ensureCapacity(i);     // no-op!
-            assertEquals(list.capacity(), DEFAULT_CAPACITY);
+            assertEquals(DEFAULT_CAPACITY, list.capacity());
         }
         for (int i = 0; i < DEFAULT_CAPACITY; i++) {
             addOneElement(list);
-            assertEquals(list.capacity(), DEFAULT_CAPACITY);
+            assertEquals(DEFAULT_CAPACITY, list.capacity());
         }
         addOneElement(list);
-        assertEquals(list.capacity(), newCapacity(DEFAULT_CAPACITY));
+        assertEquals(newCapacity(DEFAULT_CAPACITY), list.capacity());
         {
             int capacity = list.capacity();
             list.ensureCapacity(capacity + 1);
-            assertEquals(list.capacity(), newCapacity(capacity));
+            assertEquals(newCapacity(capacity), list.capacity());
         }
         {
             int capacity = list.capacity();
             list.ensureCapacity(3 * capacity);
-            assertEquals(list.capacity(), 3 * capacity);
+            assertEquals(3 * capacity, list.capacity());
         }
     }
 
     @Test public void ensureCapacityBeyondDefaultCapacity() {
         PublicVector<Object> list = new PublicVector<>();
         list.ensureCapacity(DEFAULT_CAPACITY + 1);
-        assertEquals(list.capacity(), newCapacity(DEFAULT_CAPACITY));
+        assertEquals(newCapacity(DEFAULT_CAPACITY), list.capacity());
     }
 
     @Test public void explicitZeroCapacity() {
         PublicVector<Object> list = new PublicVector<>(0);
-        assertEquals(list.capacity(), 0);
+        assertEquals(0, list.capacity());
         addOneElement(list);
-        assertEquals(list.capacity(), 1);
+        assertEquals(1, list.capacity());
         addOneElement(list);
-        assertEquals(list.capacity(), 2);
+        assertEquals(2, list.capacity());
         addOneElement(list);
-        assertEquals(list.capacity(), 4);
+        assertEquals(4, list.capacity());
         addOneElement(list);
-        assertEquals(list.capacity(), 4);
+        assertEquals(4, list.capacity());
         addOneElement(list);
-        assertEquals(list.capacity(), 8);
+        assertEquals(8, list.capacity());
         addOneElement(list);
-        assertEquals(list.capacity(), 8);
+        assertEquals(8, list.capacity());
         addOneElement(list);
-        assertEquals(list.capacity(), 8);
+        assertEquals(8, list.capacity());
         list.clear();
-        assertEquals(list.capacity(), 8);
+        assertEquals(8, list.capacity());
     }
 
     @Test public void explicitZeroCapacityWithCapacityIncrement() {
         PublicVector<Object> list = new PublicVector<>(0, 2);
-        assertEquals(list.capacity(), 0);
+        assertEquals(0, list.capacity());
         addOneElement(list);
-        assertEquals(list.capacity(), 2);
+        assertEquals(2, list.capacity());
         addOneElement(list);
-        assertEquals(list.capacity(), 2);
+        assertEquals(2, list.capacity());
         addOneElement(list);
-        assertEquals(list.capacity(), 4);
+        assertEquals(4, list.capacity());
         addOneElement(list);
-        assertEquals(list.capacity(), 4);
+        assertEquals(4, list.capacity());
         addOneElement(list);
-        assertEquals(list.capacity(), 6);
+        assertEquals(6, list.capacity());
         addOneElement(list);
-        assertEquals(list.capacity(), 6);
+        assertEquals(6, list.capacity());
         addOneElement(list);
-        assertEquals(list.capacity(), 8);
+        assertEquals(8, list.capacity());
         list.clear();
-        assertEquals(list.capacity(), 8);
+        assertEquals(8, list.capacity());
     }
 
     @Test public void explicitLargeCapacity() {
         int n = DEFAULT_CAPACITY * 3;
         PublicVector<Object> list = new PublicVector<>(n);
-        assertEquals(list.capacity(), n);
+        assertEquals(n, list.capacity());
         list.ensureCapacity(0);
         list.ensureCapacity(n);
         for (int i = 0; i < n; i++) addOneElement(list);
-        assertEquals(list.capacity(), n);
+        assertEquals(n, list.capacity());
 
         addOneElement(list);
-        assertEquals(list.capacity(), newCapacity(n));
+        assertEquals(newCapacity(n), list.capacity());
     }
 
     @Test public void explicitLargeCapacityWithCapacityIncrement() {
         int n = DEFAULT_CAPACITY * 3;
         PublicVector<Object> list = new PublicVector<>(n, 2);
-        assertEquals(list.capacity(), n);
+        assertEquals(n, list.capacity());
         list.ensureCapacity(0);
         list.ensureCapacity(n);
         for (int i = 0; i < n; i++) addOneElement(list);
-        assertEquals(list.capacity(), n);
+        assertEquals(n, list.capacity());
 
         addOneElement(list);
-        assertEquals(list.capacity(), n + 2);
+        assertEquals(n + 2, list.capacity());
     }
 
     @Test public void emptyArraysAreNotShared() {

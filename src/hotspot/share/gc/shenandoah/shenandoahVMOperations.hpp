@@ -36,9 +36,10 @@ class ShenandoahFullGC;
 // VM_ShenandoahOperation
 //   - VM_ShenandoahInitMark: initiate concurrent marking
 //   - VM_ShenandoahFinalMarkStartEvac: finish up concurrent marking, and start evacuation
+//   - VM_ShenandoahFinalRoots: finish up roots processing
 //   - VM_ShenandoahInitUpdateRefs: initiate update references
 //   - VM_ShenandoahFinalUpdateRefs: finish up update references
-//   - VM_ShenandoahFinalRoots: finish up roots on a non-evacuating cycle
+//   - VM_ShenandoahFinalVerify: final verification at the end of the cycle
 //   - VM_ShenandoahReferenceOperation:
 //       - VM_ShenandoahFullGC: do full GC
 //       - VM_ShenandoahDegeneratedGC: do STW degenerated GC
@@ -133,6 +134,15 @@ public:
   explicit VM_ShenandoahFinalRoots(ShenandoahConcurrentGC* gc);
   VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahFinalRoots; }
   const char* name()             const override { return "Shenandoah Final Roots"; }
+  void doit() override;
+};
+
+class VM_ShenandoahFinalVerify: public VM_ShenandoahOperation {
+  ShenandoahConcurrentGC* const _gc;
+public:
+  explicit VM_ShenandoahFinalVerify(ShenandoahConcurrentGC* gc);
+  VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahFinalVerify; }
+  const char* name()             const override { return "Shenandoah Final Verify"; }
   void doit() override;
 };
 

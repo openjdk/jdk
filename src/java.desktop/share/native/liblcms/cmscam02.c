@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2024 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -285,27 +285,32 @@ CAM02COLOR InverseCorrelates(CAM02COLOR clr, cmsCIECAM02* pMod)
            (clr.J / 100.0),
            (1.0 / (pMod->c * pMod->z)));
 
-    p1 = e / t;
     p2 = (clr.A / pMod->Nbb) + 0.305;
-    p3 = 21.0 / 20.0;
 
-    hr = clr.h * d2r;
-
-    if (fabs(sin(hr)) >= fabs(cos(hr))) {
-        p4 = p1 / sin(hr);
-        clr.b = (p2 * (2.0 + p3) * (460.0 / 1403.0)) /
-            (p4 + (2.0 + p3) * (220.0 / 1403.0) *
-            (cos(hr) / sin(hr)) - (27.0 / 1403.0) +
-            p3 * (6300.0 / 1403.0));
-        clr.a = clr.b * (cos(hr) / sin(hr));
+    if ( t <= 0.0 ) {     // special case from spec notes, avoid divide by zero
+        clr.a = clr.b = 0.0;
     }
     else {
-        p5 = p1 / cos(hr);
-        clr.a = (p2 * (2.0 + p3) * (460.0 / 1403.0)) /
-            (p5 + (2.0 + p3) * (220.0 / 1403.0) -
-            ((27.0 / 1403.0) - p3 * (6300.0 / 1403.0)) *
-            (sin(hr) / cos(hr)));
-        clr.b = clr.a * (sin(hr) / cos(hr));
+        hr = clr.h * d2r;
+        p1 = e / t;
+        p3 = 21.0 / 20.0;
+
+        if (fabs(sin(hr)) >= fabs(cos(hr))) {
+            p4 = p1 / sin(hr);
+            clr.b = (p2 * (2.0 + p3) * (460.0 / 1403.0)) /
+                (p4 + (2.0 + p3) * (220.0 / 1403.0) *
+                (cos(hr) / sin(hr)) - (27.0 / 1403.0) +
+                p3 * (6300.0 / 1403.0));
+            clr.a = clr.b * (cos(hr) / sin(hr));
+        }
+        else {
+            p5 = p1 / cos(hr);
+            clr.a = (p2 * (2.0 + p3) * (460.0 / 1403.0)) /
+                (p5 + (2.0 + p3) * (220.0 / 1403.0) -
+                ((27.0 / 1403.0) - p3 * (6300.0 / 1403.0)) *
+                (sin(hr) / cos(hr)));
+            clr.b = clr.a * (sin(hr) / cos(hr));
+        }
     }
 
     clr.RGBpa[0] = ((460.0 / 1403.0) * p2) +

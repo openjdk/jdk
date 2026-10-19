@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.awt.image.*;
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
-import sun.awt.AppContext;
 
 /**
  * Implements the bumps used throughout the Metal Look and Feel.
@@ -50,7 +49,7 @@ class MetalBumps implements Icon {
     protected Color shadowColor;
     protected Color backColor;
 
-    private static final Object METAL_BUMPS = new Object();
+    private static final List<BumpBuffer> bumpsList = new ArrayList<BumpBuffer>();
     protected BumpBuffer buffer;
 
     /**
@@ -66,20 +65,14 @@ class MetalBumps implements Icon {
 
     private static BumpBuffer createBuffer(GraphicsConfiguration gc,
                                            Color topColor, Color shadowColor, Color backColor) {
-        AppContext context = AppContext.getAppContext();
-        @SuppressWarnings("unchecked")
-        List<BumpBuffer> buffers = (List<BumpBuffer>) context.get(METAL_BUMPS);
-        if (buffers == null) {
-            buffers = new ArrayList<BumpBuffer>();
-            context.put(METAL_BUMPS, buffers);
-        }
-        for (BumpBuffer buffer : buffers) {
+
+        for (BumpBuffer buffer : bumpsList) {
             if (buffer.hasSameConfiguration(gc, topColor, shadowColor, backColor)) {
                 return buffer;
             }
         }
         BumpBuffer buffer = new BumpBuffer(gc, topColor, shadowColor, backColor);
-        buffers.add(buffer);
+        bumpsList.add(buffer);
         return buffer;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.parser.hotspot;
 
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.parser.IREncodingParser;
+import compiler.lib.ir_framework.driver.irmatching.parser.ApplicableIRRulesParser;
 import compiler.lib.ir_framework.driver.irmatching.parser.TestMethods;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 
@@ -34,10 +34,10 @@ import java.nio.file.Paths;
 
 /**
  * Class to parse the ideal compile phases and PrintOptoAssembly outputs of the test class from the hotspot_pid* file
- * of all methods identified by {@link IREncodingParser}.
+ * of all methods identified by {@link ApplicableIRRulesParser}.
  *
  * @see IRMethod
- * @see IREncodingParser
+ * @see ApplicableIRRulesParser
  */
 public class HotSpotPidFileParser {
     private final State state;
@@ -47,8 +47,8 @@ public class HotSpotPidFileParser {
     }
 
     /**
-     * Parse the hotspot_pid*.log file from the test VM. Read the ideal compile phase and PrintOptoAssembly outputs for
-     * all methods defined by the IR encoding.
+     * Parse the hotspot_pid*.log file from the Test VM. Read the ideal compile phase and PrintOptoAssembly outputs for
+     * all methods defined by the Applicable IR Rules.
      */
     public LoggedMethods parse(String hotspotPidFileName) {
         try (var reader = Files.newBufferedReader(Paths.get(hotspotPidFileName))) {

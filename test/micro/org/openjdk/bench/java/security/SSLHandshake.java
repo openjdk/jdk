@@ -44,6 +44,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
 
@@ -75,8 +76,15 @@ public class SSLHandshake {
     @Param({"true", "false"})
     boolean resume;
 
-    @Param({"TLSv1.2", "TLS"})
-    String tlsVersion;
+    @Param({
+            "TLSv1.2-secp256r1",
+            "TLSv1.3-x25519", "TLSv1.3-secp256r1", "TLSv1.3-secp384r1",
+            "TLSv1.3-X25519MLKEM768", "TLSv1.3-SecP256r1MLKEM768", "TLSv1.3-SecP384r1MLKEM1024"
+    })
+    String versionAndGroup;
+
+    private String tlsVersion;
+    private String namedGroup;
 
     private static SSLContext getServerContext() {
         try {
@@ -96,6 +104,10 @@ public class SSLHandshake {
 
     @Setup(Level.Trial)
     public void init() throws Exception {
+        String[] components = versionAndGroup.split("-", 2);
+        tlsVersion = components[0];
+        namedGroup = components[1];
+
         KeyStore ts = TestCertificates.getTrustStore();
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(
@@ -195,5 +207,14 @@ public class SSLHandshake {
          */
         clientEngine = sslClientCtx.createSSLEngine("client", 80);
         clientEngine.setUseClientMode(true);
+
+        // Set the key exchange named group in client and server engines
+        SSLParameters clientParams = clientEngine.getSSLParameters();
+        clientParams.setNamedGroups(new String[]{namedGroup});
+        clientEngine.setSSLParameters(clientParams);
+
+        SSLParameters serverParams = serverEngine.getSSLParameters();
+        serverParams.setNamedGroups(new String[]{namedGroup});
+        serverEngine.setSSLParameters(serverParams);
     }
 }

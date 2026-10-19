@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2024.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -15,7 +15,7 @@
 #include "quaddef.h"
 #include "misc.h"
 
-#ifndef SLEEF_ENABLE_CUDA
+#ifndef ENABLE_CUDA
 extern const double Sleef_rempitabdp[];
 #endif
 
@@ -292,7 +292,7 @@ extern const double Sleef_rempitabdp[];
 #endif
 #endif
 
-#ifdef SLEEF_ENABLE_CUDA
+#ifdef ENABLE_CUDA
 #define CONFIG 3
 #include "helperpurec_scalar.h"
 #ifdef DORENAME
@@ -2170,7 +2170,8 @@ EXPORT CONST VECTOR_CC vdouble xexp(vdouble d) {
 
   u = vldexp2_vd_vd_vi(u, q);
 
-  u = vsel_vd_vo_vd_vd(vgt_vo_vd_vd(d, vcast_vd_d(709.78271114955742909217217426)), vcast_vd_d(SLEEF_INFINITY), u);
+  vopmask o = vgt_vo_vd_vd(d, vcast_vd_d(LOG_DBL_MAX));
+  u = vsel_vd_vo_vd_vd(o, vcast_vd_d(SLEEF_INFINITY), u);
   u = vreinterpret_vd_vm(vandnot_vm_vo64_vm(vlt_vo_vd_vd(d, vcast_vd_d(-1000)), vreinterpret_vm_vd(u)));
 
   return u;
@@ -2340,13 +2341,13 @@ static INLINE CONST VECTOR_CC vdouble expk(vdouble2 d) {
 
 #if !defined(DETERMINISTIC)
 EXPORT CONST VECTOR_CC vdouble xpow(vdouble x, vdouble y) {
-#if 1
   vopmask yisint = visint_vo_vd(y);
   vopmask yisodd = vand_vo_vo_vo(visodd_vo_vd(y), yisint);
 
   vdouble2 d = ddmul_vd2_vd2_vd(logk(vabs_vd_vd(x)), y);
   vdouble result = expk(d);
-  result = vsel_vd_vo_vd_vd(vgt_vo_vd_vd(vd2getx_vd_vd2(d), vcast_vd_d(709.78271114955742909217217426)), vcast_vd_d(SLEEF_INFINITY), result);
+  vopmask o = vgt_vo_vd_vd(vd2getx_vd_vd2(d), vcast_vd_d(LOG_DBL_MAX));
+  result = vsel_vd_vo_vd_vd(o, vcast_vd_d(SLEEF_INFINITY), result);
 
   result = vmul_vd_vd_vd(result,
                          vsel_vd_vo_vd_vd(vgt_vo_vd_vd(x, vcast_vd_d(0)),
@@ -2372,9 +2373,6 @@ EXPORT CONST VECTOR_CC vdouble xpow(vdouble x, vdouble y) {
   result = vsel_vd_vo_vd_vd(vor_vo_vo_vo(veq_vo_vd_vd(y, vcast_vd_d(0)), veq_vo_vd_vd(x, vcast_vd_d(1))), vcast_vd_d(1), result);
 
   return result;
-#else
-  return expk(ddmul_vd2_vd2_vd(logk(x), y));
-#endif
 }
 #endif // #if !defined(DETERMINISTIC)
 
@@ -2995,7 +2993,9 @@ EXPORT CONST VECTOR_CC vdouble xlog1p(vdouble d) {
 
   vdouble r = vadd_vd_vd_vd(vd2getx_vd_vd2(s), vd2gety_vd_vd2(s));
 
-  r = vsel_vd_vo_vd_vd(vgt_vo_vd_vd(d, vcast_vd_d(1e+307)), vcast_vd_d(SLEEF_INFINITY), r);
+  // Use log(d) if d too large to use core approximation.
+  vopmask ocore = vle_vo_vd_vd(d, vcast_vd_d(LOG1P_BOUND));
+  if(!LIKELY(vtestallones_i_vo64 (ocore))) r = vsel_vd_vo_vd_vd(ocore, r, xlog_u1(d));
   r = vsel_vd_vo_vd_vd(vor_vo_vo_vo(vlt_vo_vd_vd(d, vcast_vd_d(-1)), visnan_vo_vd(d)), vcast_vd_d(SLEEF_NAN), r);
   r = vsel_vd_vo_vd_vd(veq_vo_vd_vd(d, vcast_vd_d(-1)), vcast_vd_d(-SLEEF_INFINITY), r);
   r = vsel_vd_vo_vd_vd(visnegzero_vo_vd(d), vcast_vd_d(-0.0), r);
@@ -3081,7 +3081,7 @@ EXPORT CONST VECTOR_CC vint xexpfrexp(vdouble x) {
   vint ret = vcastu_vi_vm(vreinterpret_vm_vd(x));
   ret = vsub_vi_vi_vi(vand_vi_vi_vi(vsrl_vi_vi_i(ret, 20), vcast_vi_i(0x7ff)), vcast_vi_i(0x3fe));
 
-  ret = vsel_vi_vo_vi_vi(vor_vo_vo_vo(vor_vo_vo_vo(veq_vo_vd_vd(x, vcast_vd_d(0)), visnan_vo_vd(x)), visinf_vo_vd(x)), vcast_vi_i(0), ret);
+  ret = vsel_vi_vo_vi_vi(vcast_vo32_vo64(vor_vo_vo_vo(vor_vo_vo_vo(veq_vo_vd_vd(x, vcast_vd_d(0)), visnan_vo_vd(x)), visinf_vo_vd(x))), vcast_vi_i(0), ret);
 
   return ret;
 }

@@ -79,13 +79,15 @@ public class CaretPositionTest extends Frame {
 
     public void test() throws AWTException, InterruptedException,
             InvocationTargetException {
-        EventQueue.invokeAndWait(() -> {
-                    onScreen = text_field.getLocationOnScreen();
-                    size = text_field.getSize();
-                });
         Robot robot = new Robot();
         robot.setAutoDelay(50);
         robot.delay(1000);
+
+        EventQueue.invokeAndWait(() -> {
+            onScreen = text_field.getLocationOnScreen();
+            size = text_field.getSize();
+        });
+
         int y = onScreen.y + (size.height / 2);
         robot.mouseMove(onScreen.x + (size.width / 2), y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);

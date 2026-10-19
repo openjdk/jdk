@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,15 @@
 
 package javax.xml.xpath.ptests;
 
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Class containing the test cases for XPathFunctionResolver.
@@ -38,7 +39,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm javax.xml.xpath.ptests.XPathFunctionResolverTest
+ * @run junit/othervm javax.xml.xpath.ptests.XPathFunctionResolverTest
  */
 public class XPathFunctionResolverTest {
     /**
@@ -50,7 +51,7 @@ public class XPathFunctionResolverTest {
      * Create XPath object before every test. Make sure function resolver has
      * been set for XPath object.
      */
-    @BeforeTest
+    @BeforeEach
     public void setup() {
         xpath = XPathFactory.newInstance().newXPath();
         if (xpath.getXPathFunctionResolver() == null) {
@@ -65,17 +66,16 @@ public class XPathFunctionResolverTest {
      */
     @Test
     public void testCheckXPathFunctionResolver01() throws XPathExpressionException {
-        assertEquals(xpath.evaluate("round(1.7)", (Object)null), "2");
+        assertEquals("2", xpath.evaluate("round(1.7)", (Object) null));
     }
 
     /**
      * Test for resolveFunction(QName functionName,int arity); evaluate throws
      * NPE if functionName  is null.
      *
-     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testCheckXPathFunctionResolver02() throws XPathExpressionException {
-        assertEquals(xpath.evaluate(null, "5"), "2");
+    @Test
+    public void testCheckXPathFunctionResolver02() {
+        assertThrows(NullPointerException.class, () -> xpath.evaluate(null, "5"));
     }
 }

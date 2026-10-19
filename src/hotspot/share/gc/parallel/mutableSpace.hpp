@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -53,8 +54,8 @@ class MutableSpace: public CHeapObj<mtGC> {
   MemRegion _last_setup_region;
   size_t _page_size;
   HeapWord* _bottom;
-  HeapWord* volatile _top;
-  HeapWord* _end;
+  Atomic<HeapWord*> _top;
+  Atomic<HeapWord*> _end;
 
   void numa_setup_pages(MemRegion mr, bool clear_space);
 
@@ -64,21 +65,20 @@ class MutableSpace: public CHeapObj<mtGC> {
 protected:
   size_t page_size() const                 { return _page_size;         }
 
+  Atomic<HeapWord*>* top_addr()            { return &_top;              }
+
 public:
   virtual ~MutableSpace() = default;
   MutableSpace(size_t page_size);
 
   // Accessors
   HeapWord* bottom() const                 { return _bottom; }
-  HeapWord* top() const                    { return _top;    }
-  HeapWord* end() const                    { return _end; }
+  HeapWord* top() const                    { return _top.load_relaxed(); }
+  HeapWord* end() const                    { return _end.load_relaxed(); }
 
   void set_bottom(HeapWord* value)         { _bottom = value; }
-  virtual void set_top(HeapWord* value)    { _top = value;   }
-  void set_end(HeapWord* value)            { _end = value; }
-
-  HeapWord* volatile* top_addr()           { return &_top; }
-  HeapWord** end_addr()                    { return &_end; }
+  virtual void set_top(HeapWord* value)    { _top.store_relaxed(value); }
+  void set_end(HeapWord* value)            { _end.store_relaxed(value); }
 
   MemRegion region() const { return MemRegion(bottom(), end()); }
 
@@ -110,7 +110,7 @@ public:
   // Boolean queries.
   bool is_empty() const              { return used_in_words() == 0; }
   bool not_empty() const             { return used_in_words() > 0; }
-  bool contains(const void* p) const { return _bottom <= p && p < _end; }
+  bool contains(const void* p) const { return _bottom <= p && p < end(); }
 
   // Size computations.  Sizes are in bytes.
   size_t used_in_bytes() const                { return used_in_words() * HeapWordSize; }

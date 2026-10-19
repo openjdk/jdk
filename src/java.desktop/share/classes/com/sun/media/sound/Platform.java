@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.media.sound;
 
+import java.nio.ByteOrder;
 import java.util.StringTokenizer;
 
 /**
@@ -39,12 +40,6 @@ final class Platform {
     private static final String libName = "jsound";
 
     private static boolean isNativeLibLoaded;
-
-    // SYSTEM CHARACTERISTICS
-    // vary according to hardware architecture
-
-    // intel is little-endian.  sparc is big-endian.
-    private static boolean bigEndian;
 
     static {
         loadLibraries();
@@ -66,7 +61,7 @@ final class Platform {
      * Determine whether the system is big-endian.
      */
     static boolean isBigEndian() {
-        return bigEndian;
+        return ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN);
     }
 
     /**
@@ -82,9 +77,6 @@ final class Platform {
             if (Printer.err) Printer.err("Couldn't load library "+libName+": "+t.toString());
             isNativeLibLoaded = false;
         }
-        if (isNativeLibLoaded) {
-            bigEndian = nIsBigEndian();
-        }
     }
 
     static boolean isMidiIOEnabled() {
@@ -98,7 +90,4 @@ final class Platform {
     static boolean isDirectAudioEnabled() {
         return isNativeLibLoaded;
     }
-
-    // the following native method is implemented in Platform.c
-    private static native boolean nIsBigEndian();
 }

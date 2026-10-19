@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,19 +36,22 @@ import jdk.internal.vm.annotation.Stable;
 /**
  * StructuredTaskScope implementation.
  */
-final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
+final class StructuredTaskScopeImpl<T, R, R_X extends Throwable>
+        implements StructuredTaskScope<T, R, R_X> {
     private static final VarHandle CANCELLED =
             MhUtil.findVarHandle(MethodHandles.lookup(), "cancelled", boolean.class);
 
-    private final Joiner<? super T, ? extends R> joiner;
+    private final Joiner<? super T, ? extends R, R_X> joiner;
     private final ThreadFactory threadFactory;
     private final ThreadFlock flock;
 
     // scope state, set by owner thread, read by any thread
-    private static final int ST_FORKED         = 1,   // subtasks forked, need to join
-                             ST_JOIN_STARTED   = 2,   // join started, can no longer fork
-                             ST_JOIN_COMPLETED = 3,   // join completed
-                             ST_CLOSED         = 4;   // closed
+    private static final int ST_FORKED              = 1,   // subtasks forked, need to join
+                             ST_JOIN_STARTED        = 2,   // join started, can no longer fork
+                             ST_JOIN_COMPLETED      = 3,   // join completed
+                             ST_CLOSED_BEFORE_JOIN  = 4,   // closed, join did not complete
+                             ST_CLOSED_AFTER_JOIN   = 5;   // closed, join completed
+
     private volatile int state;
 
     // set or read by any thread
@@ -61,7 +64,7 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
     private volatile boolean timeoutExpired;
 
     @SuppressWarnings("this-escape")
-    private StructuredTaskScopeImpl(Joiner<? super T, ? extends R> joiner,
+    private StructuredTaskScopeImpl(Joiner<? super T, ? extends R, R_X> joiner,
                                     ThreadFactory threadFactory,
                                     String name) {
         this.joiner = joiner;
@@ -74,12 +77,12 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
      * and with configuration that is the result of applying the given function to the
      * default configuration.
      */
-    static <T, R> StructuredTaskScope<T, R> open(Joiner<? super T, ? extends R> joiner,
-                                                 UnaryOperator<Configuration> configOperator) {
+    static <T, R, R_X extends Throwable> StructuredTaskScope<T, R, R_X>
+    open(Joiner<? super T, ? extends R, R_X> joiner, UnaryOperator<Configuration> configOperator) {
         Objects.requireNonNull(joiner);
 
         var config = (ConfigImpl) configOperator.apply(ConfigImpl.defaultConfig());
-        var scope = new StructuredTaskScopeImpl<T, R>(joiner, config.threadFactory(), config.name());
+        var scope = new StructuredTaskScopeImpl<T, R, R_X>(joiner, config.threadFactory(), config.name());
 
         // schedule timeout
         Duration timeout = config.timeout();
@@ -111,7 +114,8 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
      * Returns true if join has been invoked and there is an outcome.
      */
     private boolean isJoinCompleted() {
-        return state >= ST_JOIN_COMPLETED;
+        int s = state;
+        return (s == ST_JOIN_COMPLETED || s == ST_CLOSED_AFTER_JOIN);
     }
 
     /**
@@ -173,7 +177,7 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
     private <U extends T> void onComplete(SubtaskImpl<U> subtask) {
         assert subtask.state() != Subtask.State.UNAVAILABLE;
         @SuppressWarnings("unchecked")
-        var j = (Joiner<U, ? extends R>) joiner;
+        var j = (Joiner<U, ? extends R, ? extends Throwable>) joiner;
         if (j.onComplete(subtask)) {
             cancel();
         }
@@ -192,16 +196,22 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
 
         // notify joiner, even if cancelled
         @SuppressWarnings("unchecked")
-        var j = (Joiner<U, ? extends R>) joiner;
+        var j = (Joiner<U, ? extends R, ? extends Throwable>) joiner;
         if (j.onFork(subtask)) {
             cancel();
         }
 
         if (!cancelled) {
             // create thread to run task
-            Thread thread = threadFactory.newThread(subtask);
-            if (thread == null) {
-                throw new RejectedExecutionException("Rejected by thread factory");
+            Thread thread;
+            try {
+                thread = threadFactory.newThread(subtask);
+                if (thread == null) {
+                    throw new RejectedExecutionException("Rejected by thread factory");
+                }
+            } catch (Throwable e) {
+                subtask.notRun(e);
+                throw e;
             }
 
             // attempt to start the thread
@@ -209,8 +219,14 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
             try {
                 flock.start(thread);
             } catch (IllegalStateException e) {
-                // shutdown by another thread, or underlying flock is shutdown due
-                // to unstructured use
+                // thread flock may be shutdown
+                if (!cancelled) {
+                    subtask.notRun(e);
+                    throw e;
+                }
+            } catch (Throwable e) {
+                subtask.notRun(e);
+                throw e;
             }
         }
 
@@ -228,7 +244,7 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
     }
 
     @Override
-    public R join() throws InterruptedException {
+    public R join() throws R_X, InterruptedException {
         ensureOwner();
         if (state >= ST_JOIN_COMPLETED) {
             throw new IllegalStateException("Already joined or scope is closed");
@@ -245,19 +261,13 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
         // all subtasks completed or scope cancelled
         state = ST_JOIN_COMPLETED;
 
-        // invoke joiner onTimeout if timeout expired
+        // invoke joiner result() or timeout() method
         if (timeoutExpired) {
-            cancel();  // ensure cancelled before calling onTimeout
-            joiner.onTimeout();
+            cancel();  // ensure cancelled before calling joiner
+            return joiner.timeout();
         } else {
             cancelTimeout();
-        }
-
-        // invoke joiner to get result
-        try {
             return joiner.result();
-        } catch (Throwable e) {
-            throw new FailedException(e);
         }
     }
 
@@ -270,7 +280,7 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
     public void close() {
         ensureOwner();
         int s = state;
-        if (s == ST_CLOSED) {
+        if (s == ST_CLOSED_BEFORE_JOIN || s == ST_CLOSED_AFTER_JOIN) {
             return;
         }
 
@@ -284,7 +294,7 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
         try {
             flock.close();
         } finally {
-            state = ST_CLOSED;
+            state = (s == ST_JOIN_COMPLETED) ? ST_CLOSED_AFTER_JOIN : ST_CLOSED_BEFORE_JOIN;
         }
 
         // throw ISE if the owner didn't join after forking
@@ -310,12 +320,13 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
             }
         }
 
-        private final StructuredTaskScopeImpl<? super T, ?> scope;
+        private final StructuredTaskScopeImpl<? super T, ?, ?> scope;
         private final Callable<? extends T> task;
         private volatile Object result;
         @Stable private Thread thread;
+        private Thread caller;
 
-        SubtaskImpl(StructuredTaskScopeImpl<? super T, ?> scope, Callable<? extends T> task) {
+        SubtaskImpl(StructuredTaskScopeImpl<? super T, ?, ?> scope, Callable<? extends T> task) {
             this.scope = scope;
             this.task = task;
         }
@@ -365,6 +376,20 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
             scope.onComplete(this);
         }
 
+        void notRun(Throwable ex) {
+            result = new AltResult(State.FAILED, ex);
+            caller = Thread.currentThread();
+            try {
+                scope.onComplete(this);
+            } catch (Throwable e) {
+                if (e != ex) {
+                    ex.addSuppressed(e);
+                }
+            } finally {
+                caller = null;
+            }
+        }
+
         @Override
         public Subtask.State state() {
             Object result = this.result;
@@ -395,7 +420,11 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
 
         @Override
         public Throwable exception() {
-            ensureJoinedIfNotSubtask();
+            // allow main task to invoke Subtask::exception from onComplete callback
+            Thread caller = this.caller;
+            if (caller == null || caller != Thread.currentThread()) {
+                ensureJoinedIfNotSubtask();
+            }
             Object result = this.result;
             if (result instanceof AltResult alt && alt.state() == State.FAILED) {
                 return alt.exception();

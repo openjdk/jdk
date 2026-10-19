@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +31,7 @@ import java.util.Random;
 
 /*
  * @test
- * @bug 8294816
+ * @bug 8294816 8342095
  * @key randomness
  * @summary Test Math.min/max vectorization miscompilation for integer subwords
  * @library /test/lib /
@@ -58,11 +59,11 @@ public class TestMinMaxSubword {
         }
     }
 
-    // Ensure vector max/min instructions are not generated for integer subword types
-    // as Java APIs for Math.min/max do not support integer subword types and superword
-    // should not generate vectorized Min/Max nodes for them.
+    // Ensure that casts to/from subword types are emitted, as java APIs for Math.min/max do not support integer subword
+    // types and superword should generate int versions and then cast between them.
+
     @Test
-    @IR(failOn = {IRNode.MIN_VI, IRNode.MIN_VF, IRNode.MIN_VD})
+    @IR(applyIfCPUFeature = { "avx", "true" }, counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", ">0" })
     public static void testMinShort() {
         for (int i = 0; i < LENGTH; i++) {
            sb[i] = (short) Math.min(sa[i], val);
@@ -78,7 +79,7 @@ public class TestMinMaxSubword {
     }
 
     @Test
-    @IR(failOn = {IRNode.MAX_VI, IRNode.MAX_VF, IRNode.MAX_VD})
+    @IR(applyIfCPUFeature = { "avx", "true" }, counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", ">0" })
     public static void testMaxShort() {
         for (int i = 0; i < LENGTH; i++) {
             sb[i] = (short) Math.max(sa[i], val);
@@ -93,7 +94,7 @@ public class TestMinMaxSubword {
     }
 
     @Test
-    @IR(failOn = {IRNode.MIN_VI, IRNode.MIN_VF, IRNode.MIN_VD})
+    @IR(applyIfCPUFeature = { "avx", "true" }, counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", ">0" })
     public static void testMinByte() {
         for (int i = 0; i < LENGTH; i++) {
            bb[i] = (byte) Math.min(ba[i], val);
@@ -109,7 +110,7 @@ public class TestMinMaxSubword {
     }
 
     @Test
-    @IR(failOn = {IRNode.MAX_VI, IRNode.MAX_VF, IRNode.MAX_VD})
+    @IR(applyIfCPUFeature = { "avx", "true" }, counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", ">0" })
     public static void testMaxByte() {
         for (int i = 0; i < LENGTH; i++) {
             bb[i] = (byte) Math.max(ba[i], val);

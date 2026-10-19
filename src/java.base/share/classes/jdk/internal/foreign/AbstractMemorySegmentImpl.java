@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,10 +245,18 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public final Optional<MemorySegment> asOverlappingSlice(MemorySegment other) {
         final AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(other);
-        if (overlaps(that)) {
-            final long offsetToThat = that.address() - this.address();
-            final long newOffset = offsetToThat >= 0 ? offsetToThat : 0;
-            return Optional.of(asSlice(newOffset, Math.min(this.byteSize() - newOffset, that.byteSize() + offsetToThat)));
+        if (unsafeGetBase() == that.unsafeGetBase()) { // both either native or the same heap segment
+            final long thisStart = this.unsafeGetOffset();
+            final long thatStart = that.unsafeGetOffset();
+            final long thisEnd = thisStart + this.byteSize();
+            final long thatEnd = thatStart + that.byteSize();
+            // Memory segments denote half-open intervals [start, end).
+            if (thisStart < thatEnd && thisEnd > thatStart) {
+                // The intersection is [max(starts), min(ends)).
+                final long overlapStart = Math.max(thisStart, thatStart);
+                final long overlapEnd = Math.min(thisEnd, thatEnd);
+                return Optional.of(asSlice(overlapStart - thisStart, overlapEnd - overlapStart));
+            }
         }
         return Optional.empty();
     }
@@ -551,6 +559,14 @@ public abstract sealed class AbstractMemorySegmentImpl
                 unsafeGetOffset() == that.unsafeGetOffset();
     }
 
+    @ForceInline
+    @Override
+    public String getString(long offset, Charset charset, long byteLength) {
+        Utils.checkNonNegativeArgument(byteLength, "byteLength");
+        Objects.requireNonNull(charset);
+        return StringSupport.read(this, offset, charset, byteLength);
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(
@@ -700,6 +716,16 @@ public abstract sealed class AbstractMemorySegmentImpl
                     srcArray, srcInfo.base() + (srcIndex * srcInfo.scale()),
                     destImpl.unsafeGetBase(), destImpl.unsafeGetOffset() + dstOffset, elementCount * srcInfo.scale(), srcInfo.scale());
         }
+    }
+
+    @ForceInline
+    public static long copy(String src, Charset dstEncoding, int srcIndex, MemorySegment dst, long dstOffset, int numChars) {
+        Objects.requireNonNull(src);
+        Objects.requireNonNull(dstEncoding);
+        Objects.requireNonNull(dst);
+
+        AbstractMemorySegmentImpl destImpl = (AbstractMemorySegmentImpl)dst;
+        return StringSupport.copyBytes(src, destImpl, dstEncoding, dstOffset, srcIndex, numChars);
     }
 
     // accessors

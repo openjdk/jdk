@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,13 +45,14 @@ import jdk.httpclient.test.lib.quic.QuicServerConnection;
 import jdk.internal.net.http.quic.QuicTransportParameters;
 import jdk.internal.net.http.quic.QuicTransportParameters.ParameterId;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -64,17 +65,17 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.http3.Http3TestServer
- * @run testng/othervm -Djdk.internal.httpclient.debug=true StreamLimitTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 public class StreamLimitTest {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    private HttpTestServer server;
-    private QuicServer quicServer;
-    private URI requestURI;
-    private volatile QuicServerConnection latestServerConn;
+    private static HttpTestServer server;
+    private static QuicServer quicServer;
+    private static URI requestURI;
+    private static volatile QuicServerConnection latestServerConn;
 
-    private final class Handler implements HttpTestHandler {
+    private static final class Handler implements HttpTestHandler {
 
         @Override
         public void handle(HttpTestExchange exchange) throws IOException {
@@ -97,8 +98,8 @@ public class StreamLimitTest {
         }
     }
 
-    @BeforeClass
-    public void beforeClass() throws Exception {
+    @BeforeAll
+    public static void beforeClass() throws Exception {
         quicServer = Http3TestServer.quicServerBuilder().sslContext(sslContext).build();
         final Http3TestServer h3Server = new Http3TestServer(quicServer) {
             @Override
@@ -118,8 +119,8 @@ public class StreamLimitTest {
         requestURI = new URI("https://" + server.serverAuthority() + "/foo");
     }
 
-    @AfterClass
-    public void afterClass() throws Exception {
+    @AfterAll
+    public static void afterClass() throws Exception {
         latestServerConn = null;
         if (server != null) {
             server.stop();
@@ -161,8 +162,8 @@ public class StreamLimitTest {
             System.out.println("Sending request " + i + " to " + requestURI);
             final HttpResponse<String> resp = client.send(req,
                     HttpResponse.BodyHandlers.ofString());
-            Assert.assertEquals(resp.version(), HTTP_3, "Unexpected response version");
-            Assert.assertEquals(resp.statusCode(), 200, "Unexpected response code");
+            Assertions.assertEquals(HTTP_3, resp.version(), "Unexpected response version");
+            Assertions.assertEquals(200, resp.statusCode(), "Unexpected response code");
             final String respBody = resp.body();
             System.out.println("Request " + i + " was handled by server connection: " + respBody);
             if (i == 1) {
@@ -170,7 +171,7 @@ public class StreamLimitTest {
                 // to this request
                 requestHandledBy = respBody;
             } else {
-                Assert.assertEquals(respBody, requestHandledBy, "Request was handled by an" +
+                Assertions.assertEquals(requestHandledBy, respBody, "Request was handled by an" +
                         " unexpected server connection");
             }
         }
@@ -193,20 +194,20 @@ public class StreamLimitTest {
                     + requestURI);
             final HttpResponse<String> resp = client.send(reqWithTimeout,
                     HttpResponse.BodyHandlers.ofString());
-            Assert.assertEquals(resp.version(), HTTP_3, "Unexpected response version");
-            Assert.assertEquals(resp.statusCode(), 200, "Unexpected response code");
+            Assertions.assertEquals(HTTP_3, resp.version(), "Unexpected response version");
+            Assertions.assertEquals(200, resp.statusCode(), "Unexpected response code");
             final String respBody = resp.body();
             System.out.println("Request " + i + " was handled by server connection: " + respBody);
             if (i == 1) {
                 // first request after the limit was hit.
                 // verify that it was handled by a new connection and not the one that handled
                 // the previous N requests
-                Assert.assertNotEquals(respBody, requestHandledBy, "Request was expected to be" +
+                Assertions.assertNotEquals(requestHandledBy, respBody, "Request was expected to be" +
                         " handled by a new server connection, but wasn't");
                 // keep track this new server connection id which responded to this request
                 requestHandledBy = respBody;
             } else {
-                Assert.assertEquals(respBody, requestHandledBy, "Request was handled by an" +
+                Assertions.assertEquals(requestHandledBy, respBody, "Request was handled by an" +
                         " unexpected server connection");
             }
         }
@@ -231,13 +232,13 @@ public class StreamLimitTest {
                     " to " + requestURI);
             final HttpResponse<String> resp = client.send(reqWithTimeout,
                     HttpResponse.BodyHandlers.ofString());
-            Assert.assertEquals(resp.version(), HTTP_3, "Unexpected response version");
-            Assert.assertEquals(resp.statusCode(), 200, "Unexpected response code");
+            Assertions.assertEquals(HTTP_3, resp.version(), "Unexpected response version");
+            Assertions.assertEquals(200, resp.statusCode(), "Unexpected response code");
             final String respBody = resp.body();
             System.out.println("Request " + i + " was handled by server connection: " + respBody);
             // all these requests should be handled by the same server connection which handled
             // the previous requests
-            Assert.assertEquals(respBody, requestHandledBy, "Request was handled by an" +
+            Assertions.assertEquals(requestHandledBy, respBody, "Request was handled by an" +
                     " unexpected server connection");
         }
         // at this point the newer limit for bidi stream creation has reached on the client.
@@ -254,12 +255,12 @@ public class StreamLimitTest {
         System.out.println("Sending request, without timeout, to " + requestURI);
         final HttpResponse<String> finalResp = client.send(finalReq,
                 HttpResponse.BodyHandlers.ofString());
-        Assert.assertEquals(finalResp.version(), HTTP_3, "Unexpected response version");
-        Assert.assertEquals(finalResp.statusCode(), 200, "Unexpected response code");
+        Assertions.assertEquals(HTTP_3, finalResp.version(), "Unexpected response version");
+        Assertions.assertEquals(200, finalResp.statusCode(), "Unexpected response code");
         final String finalRespBody = finalResp.body();
         System.out.println("Request was handled by server connection: " + finalRespBody);
         // this request should have been handled by a new server connection
-        Assert.assertNotEquals(finalRespBody, requestHandledBy, "Request was handled by an" +
+        Assertions.assertNotEquals(requestHandledBy, finalRespBody, "Request was handled by an" +
                 " unexpected server connection");
     }
 }

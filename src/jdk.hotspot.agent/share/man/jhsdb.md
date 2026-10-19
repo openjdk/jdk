@@ -119,20 +119,20 @@ The `jhsdb` tool can be launched in any one of the following modes:
 
 ## Options for the debugd Mode
 
-`--serverid` *server-id*
+[`--serverid`]{#debugd-option--serverid} *server-id*
 :   An optional unique ID for this debug server. This is required if multiple
     debug servers are run on the same machine.
 
-`--rmiport` *port*
+[`--rmiport`]{#debugd-option--rmiport} *port*
 :   Sets the port number to which the RMI connector is bound. If not specified
     a random available port is used.
 
-`--registryport` *port*
+[`--registryport`]{#debugd-option--registryport} *port*
 :   Sets the RMI registry port. This option overrides the system property
     'sun.jvm.hotspot.rmi.port'. If not specified, the system property is used.
     If the system property is not set, the default port 1099 is used.
 
-`--hostname` *hostname*
+[`--hostname`]{#debugd-option--hostname} *hostname*
 :   Sets the hostname the RMI connector is bound. The value could be a hostname
     or an IPv4/IPv6 address. This option overrides the system property
     'java.rmi.server.hostname'. If not specified, the system property is used.
@@ -140,10 +140,10 @@ The `jhsdb` tool can be launched in any one of the following modes:
 
 ## Options for the jinfo Mode
 
-`--flags`
+[`--flags`]{#jinfo-option--flags}
 :   Prints the VM flags.
 
-`--sysprops`
+[`--sysprops`]{#jinfo-option--sysprops}
 :   Prints the Java system properties.
 
 no option
@@ -154,33 +154,33 @@ no option
 no option
 :   Prints the same information as Solaris `pmap`.
 
-`--heap`
+[`--heap`]{#jmap-option--heap}
 :   Prints the `java` heap summary.
 
-`--binaryheap`
+[`--binaryheap`]{#jmap-option--binaryheap}
 :   Dumps the `java` heap in `hprof` binary format.
 
-`--dumpfile` *name*
+[`--dumpfile`]{#jmap-option--dumpfile} *name*
 :   The name of the dumpfile.
 
-`--histo`
+[`--histo`]{#jmap-option--histo}
 :   Prints the histogram of `java` object heap.
 
-`--clstats`
+[`--clstats`]{#jmap-option--clstats}
 :   Prints the class loader statistics.
 
-`--finalizerinfo`
+[`--finalizerinfo`]{#jmap-option--finalizerinfo}
 :   Prints the information on objects awaiting finalization.
 
 ## Options for the jstack Mode
 
-`--locks`
+[`--locks`]{#jstack-option--locks}
 :   Prints the `java.util.concurrent` locks information.
 
-`--mixed`
+[`--mixed`]{#jstack-option--mixed}
 :   Attempts to print both `java` and native frames if the platform allows it.
 
 ## Options for the jsnap Mode
 
-`--all`
+[`--all`]{#jsnap-option--all}
 :   Prints all performance counters.

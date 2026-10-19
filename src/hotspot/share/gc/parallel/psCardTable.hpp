@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/shared/cardTable.hpp"
 #include "oops/oop.hpp"
+#include "runtime/atomic.hpp"
 
 class MutableSpace;
 class ObjectStartArray;
@@ -37,7 +38,7 @@ class PSCardTable: public CardTable {
   static constexpr size_t num_cards_in_stripe = 128;
   static_assert(num_cards_in_stripe >= 1, "progress");
 
-  volatile int _preprocessing_active_workers;
+  Atomic<int> _preprocessing_active_workers;
 
   bool is_dirty(CardValue* card) {
     return !is_clean(card);
@@ -68,6 +69,8 @@ class PSCardTable: public CardTable {
                            HeapWord* start,
                            HeapWord* end);
 
+  void commit_delta_excluding(MemRegion delta, MemRegion already_committed, bool should_clear_card = false);
+
  public:
   PSCardTable(MemRegion whole_heap) : CardTable(whole_heap),
                                       _preprocessing_active_workers(0) {}
@@ -83,6 +86,11 @@ class PSCardTable: public CardTable {
                                   uint n_stripes);
 
   bool is_dirty_for_addr(void *addr);
+
+  void verify_clean_cards(MemRegion mr) const NOT_DEBUG_RETURN;
+
+  void right_shift_gen_boundary(MemRegion new_region0, MemRegion new_region1);
+  void left_shift_gen_boundary(MemRegion new_region0, MemRegion new_region1);
 
   // Card marking
   void inline_write_ref_field_gc(void* field) {

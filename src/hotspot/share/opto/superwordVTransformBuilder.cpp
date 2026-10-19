@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,11 +189,11 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Load());
     const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * vlen));
     const LoadNode::ControlDependency control_dependency = load_control_dependency(pack);
-    vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, properties, vector_p, p0->adr_type(), control_dependency);
+    vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, properties, vector_p, p0->in_adr_type(), control_dependency);
   } else if (p0->is_Store()) {
     const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Store());
     const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * vlen));
-    vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, properties, vector_p, p0->adr_type());
+    vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, properties, vector_p, p0->in_adr_type());
   } else if (p0->is_Cmp()) {
     vtn = new (_vtransform.arena()) VTransformCmpVectorNode(_vtransform, properties);
   } else if (p0->is_Bool()) {
@@ -254,6 +254,20 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
 
   Node_List* pack_in = _packset.pack_input_at_index_or_null(pack, index);
   if (pack_in != nullptr) {
+    Node* in_p0 = pack_in->at(0);
+    BasicType def_bt = _vloop_analyzer.types().velt_basic_type(in_p0);
+    BasicType use_bt = _vloop_analyzer.types().velt_basic_type(p0);
+
+    // If the use and def types are different, emit a cast node
+    if (use_bt != def_bt && !p0->is_Convert() && VectorCastNode::is_supported_subword_cast(def_bt, use_bt, pack->size())) {
+      VTransformNode* in = get_vtnode(pack_in->at(0));
+      const VTransformVectorNodeProperties properties = VTransformVectorNodeProperties::make_from_pack(pack, _vloop_analyzer);
+      VTransformNode* cast = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, 2, properties, VectorCastNode::opcode(-1, def_bt));
+      cast->set_req(1, in);
+
+      return cast;
+    }
+
     // Input is a matching pack -> vtnode already exists.
     assert(index != 2 || !VectorNode::is_shift(p0), "shift's count cannot be vector");
     return get_vtnode(pack_in->at(0));

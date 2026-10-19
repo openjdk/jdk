@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
 #if defined(__linux__)
 #include <arpa/inet.h>
 #include <net/route.h>
-#include <sys/utsname.h>
 #endif
 
 #if defined(MACOSX)
@@ -68,13 +67,14 @@ NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
 void
 NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
     char fullMsg[512];
-    if (!msg) {
-        msg = "no further information";
-    }
     switch(errorNumber) {
     case EBADF:
-        jio_snprintf(fullMsg, sizeof(fullMsg), "socket closed: %s", msg);
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", fullMsg);
+        if (msg == NULL) {
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "socket closed");
+        } else {
+            jio_snprintf(fullMsg, sizeof(fullMsg), "socket closed: %s", msg);
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", fullMsg);
+        }
         break;
     default:
         errno = errorNumber;
@@ -93,20 +93,10 @@ jint  IPv4_supported()
     return JNI_TRUE;
 }
 
-#if defined(DONT_ENABLE_IPV6)
-jint  IPv6_supported()
-{
-    return JNI_FALSE;
-}
-
-#else /* !DONT_ENABLE_IPV6 */
-
 jint  IPv6_supported()
 {
     int fd;
     void *ipv6_fn;
-    SOCKETADDRESS sa;
-    socklen_t sa_len = sizeof(SOCKETADDRESS);
 
     fd = socket(AF_INET6, SOCK_STREAM, 0) ;
     if (fd < 0) {
@@ -150,7 +140,6 @@ jint  IPv6_supported()
         return JNI_TRUE;
     }
 }
-#endif /* DONT_ENABLE_IPV6 */
 
 jint reuseport_supported(int ipv6_available)
 {
@@ -177,13 +166,21 @@ jint reuseport_supported(int ipv6_available)
 
 void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
                                                const char* hostname,
-                                               int gai_error)
+                                               int gai_error,
+                                               int sys_errno)
 {
     int size;
     char *buf;
+    const char *sys_errno_string = NULL;
     const char *error_string = gai_strerror(gai_error);
-    if (error_string == NULL)
+    if (error_string == NULL) {
         error_string = "unknown error";
+    }
+    if (gai_error == EAI_SYSTEM) {
+        // EAI_SYSTEM implies that the actual error is stored in the system errno.
+        // Here we get the string representation of that errno.
+        sys_errno_string = strerror(sys_errno);
+    }
     int enhancedExceptions = getEnhancedExceptionsAllowed(env);
     if (enhancedExceptions == ENH_INIT_ERROR && (*env)->ExceptionCheck(env)) {
         return;
@@ -194,16 +191,33 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
     } else {
         size = 0;
     }
-    size += strlen(error_string) + 3;
-
+    if (sys_errno_string == NULL) {
+        // the 3 is for the additional 3 characters - colon, space and
+        // the NULL termination character, that we will include in the
+        // message of the Exception that we construct
+        size += strlen(error_string) + 3;
+    } else {
+        // the 5 is for the additional 5 characters - 2 colons, 2 spaces and
+        // the NULL termination character, that we will include in the
+        // message of the Exception that we construct
+        size += strlen(error_string) + strlen(sys_errno_string) + 5;
+    }
     buf = (char *) malloc(size);
     if (buf) {
         jstring s;
         int n;
         if (enhancedExceptions == ENH_ENABLED) {
-            n = snprintf(buf, size, "%s: %s", hostname, error_string);
+            if (sys_errno_string == NULL) {
+                n = snprintf(buf, size, "%s: %s", hostname, error_string);
+            } else {
+                n = snprintf(buf, size, "%s: %s: %s", hostname, error_string, sys_errno_string);
+            }
         } else {
-            n = snprintf(buf, size, " %s", error_string);
+            if (sys_errno_string == NULL) {
+                n = snprintf(buf, size, " %s", error_string);
+            } else {
+                n = snprintf(buf, size, " %s: %s", error_string, sys_errno_string);
+            }
         }
         if (n >= 0) {
             s = JNU_NewStringPlatform(env, buf);
@@ -371,9 +385,7 @@ NET_GetSockOpt(int fd, int level, int opt, void *result,
     }
 #endif
 
-/* Workaround for Mac OS treating linger value as
- *  signed integer
- */
+/* macOS stores linger values as signed shorts in the kernel. */
 #ifdef MACOSX
     if (level == SOL_SOCKET && opt == SO_LINGER) {
         struct linger* to_cast = (struct linger*)result;
@@ -399,6 +411,16 @@ int
 NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
                int len)
 {
+
+#ifdef _ALLBSD_SOURCE
+    /* macOS and BSD stores linger values as signed shorts in the kernel. */
+    if (level == SOL_SOCKET && opt == SO_LINGER) {
+        struct linger* to_cast = (struct linger*)arg;
+        if (to_cast->l_linger > 32767) {
+            to_cast->l_linger = 32767;
+        }
+    }
+#endif
 
 #ifndef IPTOS_TOS_MASK
 #define IPTOS_TOS_MASK 0x1e
@@ -571,28 +593,11 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
 /*
  * Wrapper for bind system call - performs any necessary pre/post
  * processing to deal with OS specific issues :-
- *
- * Linux allows a socket to bind to 127.0.0.255 which must be
- * caught.
  */
 int
 NET_Bind(int fd, SOCKETADDRESS *sa, int len)
 {
     int rv;
-
-#ifdef __linux__
-    /*
-     * ## get bugId for this issue - goes back to 1.2.2 port ##
-     * ## When IPv6 is enabled this will be an IPv4-mapped
-     * ## with family set to AF_INET6
-     */
-    if (sa->sa.sa_family == AF_INET) {
-        if ((ntohl(sa->sa4.sin_addr.s_addr) & 0x7f0000ff) == 0x7f0000ff) {
-            errno = EADDRNOTAVAIL;
-            return -1;
-        }
-    }
-#endif
 
     rv = bind(fd, &sa->sa, len);
 

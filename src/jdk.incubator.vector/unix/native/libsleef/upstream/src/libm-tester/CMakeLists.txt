@@ -65,13 +65,25 @@ include_directories(${sleef_BINARY_DIR}/include)          # sleef.h
 include_directories(${sleef_SOURCE_DIR}/src/libm)         # rename.h
 include_directories(${sleef_BINARY_DIR}/src/libm/include) # rename headers
 
-if(NOT LIB_MPFR)
+if (SLEEF_ENFORCE_TESTER AND NOT SLEEF_ENABLE_TESTER)
+  message(FATAL_ERROR "SLEEF_ENFORCE_TESTER is specified but SLEEF_ENABLE_TESTER is false")
+endif(SLEEF_ENFORCE_TESTER AND NOT SLEEF_ENABLE_TESTER)
+
+if(SLEEF_ENABLE_TESTER AND NOT LIB_MPFR)
   find_program(TESTER_COMMAND tester)
-endif(NOT LIB_MPFR)
+endif(SLEEF_ENABLE_TESTER AND NOT LIB_MPFR)
 
 if (SLEEF_ENFORCE_TESTER AND NOT LIB_MPFR AND NOT TESTER_COMMAND)
   message(FATAL_ERROR "SLEEF_ENFORCE_TESTER is specified and tester is not available")
 endif(SLEEF_ENFORCE_TESTER AND NOT LIB_MPFR AND NOT TESTER_COMMAND)
+
+if (SLEEF_ENFORCE_TESTER4 AND NOT SLEEF_ENABLE_TESTER4)
+  message(FATAL_ERROR "SLEEF_ENFORCE_TESTER4 is specified but SLEEF_ENABLE_TESTER4 is false")
+endif()
+
+if (SLEEF_ENFORCE_TESTER4 AND NOT TLFLOAT_LIBRARIES)
+  message(FATAL_ERROR "SLEEF_ENFORCE_TESTER4 is specified but TLFloat is not available")
+endif()
 
 find_library(LIBRT rt)
 if (NOT LIBRT)
@@ -79,6 +91,7 @@ if (NOT LIBRT)
 endif()
 
 set(CMAKE_C_FLAGS "${ORG_CMAKE_C_FLAGS} ${SLEEF_C_FLAGS} ${FLAGS_NOSTRICTALIASING}")
+set(CMAKE_CXX_FLAGS "${ORG_CMAKE_CXX_FLAGS} ${SLEEF_C_FLAGS} ${FLAGS_NOSTRICTALIASING}")
 
 set(COMMON_TARGET_PROPERTIES
   C_STANDARD 99                  # -std=gnu99
@@ -89,6 +102,17 @@ if (SLEEF_ENABLE_LTO)
 endif()
 
 #
+
+function(add_test_with_emu C CMD)
+  if (SDE_COMMAND)
+    add_test(NAME ${CMD} COMMAND ${SDE_COMMAND} "--" ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMD})
+  elseif(EMULATOR)
+    add_test(NAME ${CMD} COMMAND ${EMULATOR} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMD})
+  else()
+    add_test(NAME ${CMD} COMMAND ${CMD})
+  endif()
+  set_tests_properties(${CMD} PROPERTIES COST ${C})
+endfunction()
 
 function(add_test_iut IUT C)
   if (LIB_MPFR)
@@ -126,14 +150,19 @@ function(add_test_iut IUT C)
   endif()
 endfunction()
 
-# Compile executable 'iut'
-add_executable(${TARGET_IUT} iut.c testerutil.c)
-target_compile_definitions(${TARGET_IUT} PRIVATE ${COMMON_TARGET_DEFINITIONS})
-target_link_libraries(${TARGET_IUT} ${TARGET_LIBSLEEF}
-  ${LIBM} ${LIBRT})
-set_target_properties(${TARGET_IUT} PROPERTIES ${COMMON_TARGET_PROPERTIES})
-add_test_iut(${TARGET_IUT} 1.0)
-set(IUT_LIST ${TARGET_IUT})
+if (SLEEF_ENABLE_TESTER)
+  # Compile executable 'iut'
+  add_executable(${TARGET_IUT} iut.c)
+  target_compile_definitions(${TARGET_IUT} PRIVATE ${COMMON_TARGET_DEFINITIONS})
+  target_link_libraries(${TARGET_IUT} ${TARGET_LIBSLEEF} ${TARGET_TESTERUTIL_OBJ}
+    ${LIBM} ${LIBRT})
+  set_target_properties(${TARGET_IUT} PROPERTIES ${COMMON_TARGET_PROPERTIES})
+  add_test_iut(${TARGET_IUT} 1.0)
+  set(IUT_LIST ${TARGET_IUT})
+
+  # Tests depends on the library
+  add_dependencies(${TARGET_IUT} ${TARGET_HEADERS})
+endif()
 
 # Compile executable 'iutcuda'
 if (SLEEF_BUILD_INLINE_HEADERS AND SED_COMMAND AND CMAKE_CUDA_COMPILER)
@@ -145,97 +174,179 @@ if (SLEEF_BUILD_INLINE_HEADERS AND SED_COMMAND AND CMAKE_CUDA_COMPILER)
   list(APPEND IUT_LIST iutcuda)
 endif()
 
-set(IUT_SRC iutsimd.c ${sleef_SOURCE_DIR}/src/common/main_checkfeature.c testerutil.c)
+set(IUT_SRC iutsimd.c ${sleef_SOURCE_DIR}/src/common/main_checkfeature.c)
 
 # Add vector extension `iut`s
 macro(test_extension SIMD)
   if(COMPILER_SUPPORTS_${SIMD})
     string(TOLOWER ${SIMD} LCSIMD)
-    string(CONCAT TARGET_IUT${SIMD} "iut" ${LCSIMD})
 
-    add_executable(${TARGET_IUT${SIMD}} ${IUT_SRC})
-    target_compile_options(${TARGET_IUT${SIMD}}
-      PRIVATE ${FLAGS_ENABLE_${SIMD}})
-    target_compile_definitions(${TARGET_IUT${SIMD}}
-      PRIVATE ENABLE_${SIMD}=1 ${COMMON_TARGET_DEFINITIONS})
-    target_link_libraries(${TARGET_IUT${SIMD}} ${TARGET_LIBSLEEF}
-      ${LIBM} ${LIBRT})
-    if (FORCE_AAVPCS)
-      target_compile_definitions(${TARGET_IUT${SIMD}} PRIVATE ENABLE_AAVPCS=1)
-    endif(FORCE_AAVPCS)
+    if (SLEEF_ENABLE_TESTER)
+      string(CONCAT TARGET_IUT${SIMD} "iut" ${LCSIMD})
 
-    add_dependencies(${TARGET_IUT${SIMD}} ${TARGET_HEADERS})
-    add_dependencies(${TARGET_IUT${SIMD}} ${TARGET_LIBSLEEF})
-    set_target_properties(${TARGET_IUT${SIMD}} PROPERTIES ${COMMON_TARGET_PROPERTIES})
-    if (DEFINED COSTOVERRIDE_${SIMD})
-      add_test_iut(${TARGET_IUT${SIMD}} ${COSTOVERRIDE_${SIMD}})
-    else()
-      add_test_iut(${TARGET_IUT${SIMD}} 1.0)
-    endif()
-    list(APPEND IUT_LIST ${TARGET_IUT${SIMD}})
+      add_executable(${TARGET_IUT${SIMD}} ${IUT_SRC})
+      target_compile_options(${TARGET_IUT${SIMD}}
+        PRIVATE ${FLAGS_ENABLE_${SIMD}})
+      target_compile_definitions(${TARGET_IUT${SIMD}}
+        PRIVATE ENABLE_${SIMD}=1 ${COMMON_TARGET_DEFINITIONS})
+      target_link_libraries(${TARGET_IUT${SIMD}} ${TARGET_LIBSLEEF} ${TARGET_TESTERUTIL_OBJ}
+        ${LIBM} ${LIBRT})
+      if (FORCE_AAVPCS)
+        target_compile_definitions(${TARGET_IUT${SIMD}} PRIVATE ENABLE_AAVPCS=1)
+      endif(FORCE_AAVPCS)
 
-    # The iut programs whose names begin with "iuty" are the iut for the
-    # deterministic version of functions. By checking the result of
-    # testing with iutysse2, for example, it can be checked that the
-    # corresponding deterministic functions passes the accuracy and
-    # nonnumber tests.
-
-    string(CONCAT IUTYNAME "iuty" ${LCSIMD})
-    add_executable(${IUTYNAME} ${IUT_SRC})
-    target_compile_options(${IUTYNAME}
-      PRIVATE ${FLAGS_ENABLE_${SIMD}})
-    target_compile_definitions(${IUTYNAME}
-      PRIVATE ENABLE_${SIMD}=1 ${COMMON_TARGET_DEFINITIONS} DETERMINISTIC=1)
-    target_link_libraries(${IUTYNAME} ${TARGET_LIBSLEEF}
-      ${LIBM} ${LIBRT})
-    add_dependencies(${IUTYNAME} ${TARGET_HEADERS})
-    add_dependencies(${IUTYNAME} ${TARGET_LIBSLEEF})
-    set_target_properties(${IUTYNAME} PROPERTIES ${COMMON_TARGET_PROPERTIES})
-    if (DEFINED COSTOVERRIDE_${SIMD})
-      add_test_iut(${IUTYNAME} ${COSTOVERRIDE_${SIMD}})
-    else()
-      add_test_iut(${IUTYNAME} 1.0)
-    endif()
-    list(APPEND IUT_LIST ${IUTYNAME})
-
-    # The iut programs whose names begin with "iuti" are the iut for the
-    # inline version of functions.
-
-    if (SLEEF_BUILD_INLINE_HEADERS AND SED_COMMAND)
-      string(CONCAT IUTINAME "iuti" ${LCSIMD})
-      add_executable(${IUTINAME} ${IUT_SRC})
-      target_compile_options(${IUTINAME} PRIVATE ${FLAGS_ENABLE_${SIMD}})
-      target_compile_definitions(${IUTINAME}
-        PRIVATE ENABLE_${SIMD}=1 ${COMMON_TARGET_DEFINITIONS}
-        USE_INLINE_HEADER="sleefinline_${LCSIMD}.h"
-        MACRO_ONLY_HEADER="macroonly${SIMD}.h"
-        SIMD_SUFFIX=_${LCSIMD}_sleef
-        )
-      target_include_directories(${IUTINAME} PRIVATE ${PROJECT_BINARY_DIR}/include)
-      target_link_libraries(${IUTINAME} ${LIBM} ${LIBRT})
-      add_dependencies(${IUTINAME} ${TARGET_INLINE_HEADERS})
-      set_target_properties(${IUTINAME} PROPERTIES C_STANDARD 99)
+      add_dependencies(${TARGET_IUT${SIMD}} ${TARGET_HEADERS})
+      add_dependencies(${TARGET_IUT${SIMD}} ${TARGET_LIBSLEEF})
+      set_target_properties(${TARGET_IUT${SIMD}} PROPERTIES ${COMMON_TARGET_PROPERTIES})
       if (DEFINED COSTOVERRIDE_${SIMD})
-        add_test_iut(${IUTINAME} ${COSTOVERRIDE_${SIMD}})
+        add_test_iut(${TARGET_IUT${SIMD}} ${COSTOVERRIDE_${SIMD}})
       else()
-        add_test_iut(${IUTINAME} 1.0)
+        add_test_iut(${TARGET_IUT${SIMD}} 1.0)
       endif()
-      list(APPEND IUT_LIST ${IUTINAME})
-    endif(SLEEF_BUILD_INLINE_HEADERS AND SED_COMMAND)
+      list(APPEND IUT_LIST ${TARGET_IUT${SIMD}})
+
+      # The iut programs whose names begin with "iuty" are the iut for the
+      # deterministic version of functions. By checking the result of
+      # testing with iutysse2, for example, it can be checked that the
+      # corresponding deterministic functions passes the accuracy and
+      # nonnumber tests.
+
+      string(CONCAT IUTYNAME "iuty" ${LCSIMD})
+      add_executable(${IUTYNAME} ${IUT_SRC})
+      target_compile_options(${IUTYNAME}
+        PRIVATE ${FLAGS_ENABLE_${SIMD}})
+      target_compile_definitions(${IUTYNAME}
+        PRIVATE ENABLE_${SIMD}=1 ${COMMON_TARGET_DEFINITIONS} DETERMINISTIC=1)
+      target_link_libraries(${IUTYNAME} ${TARGET_LIBSLEEF} ${TARGET_TESTERUTIL_OBJ}
+        ${LIBM} ${LIBRT})
+      add_dependencies(${IUTYNAME} ${TARGET_HEADERS})
+      add_dependencies(${IUTYNAME} ${TARGET_LIBSLEEF})
+      set_target_properties(${IUTYNAME} PROPERTIES ${COMMON_TARGET_PROPERTIES})
+      if (DEFINED COSTOVERRIDE_${SIMD})
+        add_test_iut(${IUTYNAME} ${COSTOVERRIDE_${SIMD}})
+      else()
+        add_test_iut(${IUTYNAME} 1.0)
+      endif()
+      list(APPEND IUT_LIST ${IUTYNAME})
+
+      # The iut programs whose names begin with "iuti" are the iut for the
+      # inline version of functions.
+
+      if (SLEEF_BUILD_INLINE_HEADERS AND SED_COMMAND)
+        string(CONCAT IUTINAME "iuti" ${LCSIMD})
+        add_executable(${IUTINAME} ${IUT_SRC})
+        target_compile_options(${IUTINAME} PRIVATE ${FLAGS_ENABLE_${SIMD}})
+        target_compile_definitions(${IUTINAME}
+          PRIVATE ENABLE_${SIMD}=1 ${COMMON_TARGET_DEFINITIONS}
+          USE_INLINE_HEADER="sleefinline_${LCSIMD}.h"
+          MACRO_ONLY_HEADER="macroonly${SIMD}.h"
+          SIMD_SUFFIX=_${LCSIMD}_sleef
+        )
+        target_include_directories(${IUTINAME} PRIVATE ${PROJECT_BINARY_DIR}/include)
+        target_link_libraries(${IUTINAME} ${TARGET_TESTERUTIL_OBJ} ${LIBM} ${LIBRT})
+        add_dependencies(${IUTINAME} ${TARGET_INLINE_HEADERS})
+        set_target_properties(${IUTINAME} PROPERTIES C_STANDARD 99)
+        if (DEFINED COSTOVERRIDE_${SIMD})
+          add_test_iut(${IUTINAME} ${COSTOVERRIDE_${SIMD}})
+        else()
+          add_test_iut(${IUTINAME} 1.0)
+        endif()
+        list(APPEND IUT_LIST ${IUTINAME})
+      endif(SLEEF_BUILD_INLINE_HEADERS AND SED_COMMAND)
+    endif(SLEEF_ENABLE_TESTER)
+
+    #
+
+    if (SLEEF_ENABLE_TESTER4 AND TLFLOAT_LIBRARIES)
+      set(TESTER4_SRC tester4simd.cpp ${sleef_SOURCE_DIR}/src/common/main_checkfeature.c)
+
+      string(CONCAT TARGET_TESTER4_${SIMD} "tester4" ${LCSIMD})
+
+      add_executable(${TARGET_TESTER4_${SIMD}} ${TESTER4_SRC})
+      target_compile_options(${TARGET_TESTER4_${SIMD}}
+        PRIVATE ${FLAGS_ENABLE_${SIMD}})
+      target_compile_definitions(${TARGET_TESTER4_${SIMD}}
+        PRIVATE ENABLE_${SIMD}=1 ${COMMON_TARGET_DEFINITIONS})
+      target_link_libraries(${TARGET_TESTER4_${SIMD}} ${TARGET_LIBSLEEF} ${TLFLOAT_LIBRARIES} ${TARGET_TESTERUTIL_OBJ})
+      if (FORCE_AAVPCS)
+        target_compile_definitions(${TARGET_TESTER4_${SIMD}} PRIVATE ENABLE_AAVPCS=1)
+      endif(FORCE_AAVPCS)
+
+      add_dependencies(${TARGET_TESTER4_${SIMD}} ${TARGET_HEADERS})
+      add_dependencies(${TARGET_TESTER4_${SIMD}} ${TARGET_LIBSLEEF})
+      add_dependencies(${TARGET_TESTER4_${SIMD}} ext_tlfloat)
+      set_target_properties(${TARGET_TESTER4_${SIMD}} PROPERTIES ${COMMON_TARGET_PROPERTIES})
+      if (DEFINED COSTOVERRIDE_${SIMD})
+        add_test_with_emu(${COSTOVERRIDE_${SIMD}} ${TARGET_TESTER4_${SIMD}})
+      else()
+        add_test_with_emu(1.0 ${TARGET_TESTER4_${SIMD}})
+      endif()
+
+      #
+
+      string(CONCAT TARGET_TESTER4Y_${SIMD} "tester4y" ${LCSIMD})
+
+      add_executable(${TARGET_TESTER4Y_${SIMD}} ${TESTER4_SRC})
+      target_compile_options(${TARGET_TESTER4Y_${SIMD}}
+        PRIVATE ${FLAGS_ENABLE_${SIMD}})
+      target_compile_definitions(${TARGET_TESTER4Y_${SIMD}}
+        PRIVATE ENABLE_${SIMD}=1 ${COMMON_TARGET_DEFINITIONS} DETERMINISTIC=1)
+      target_link_libraries(${TARGET_TESTER4Y_${SIMD}} ${TARGET_LIBSLEEF} ${TLFLOAT_LIBRARIES} ${TARGET_TESTERUTIL_OBJ})
+      add_dependencies(${TARGET_TESTER4Y_${SIMD}} ${TARGET_HEADERS})
+      add_dependencies(${TARGET_TESTER4Y_${SIMD}} ${TARGET_LIBSLEEF})
+      add_dependencies(${TARGET_TESTER4Y_${SIMD}} ext_tlfloat)
+      set_target_properties(${TARGET_TESTER4Y_${SIMD}} PROPERTIES ${COMMON_TARGET_PROPERTIES})
+      if (DEFINED COSTOVERRIDE_${SIMD})
+        add_test_with_emu(${COSTOVERRIDE_${SIMD}} ${TARGET_TESTER4Y_${SIMD}})
+      else()
+        add_test_with_emu(1.0 ${TARGET_TESTER4Y_${SIMD}})
+      endif()
+
+      #
+
+      if (SLEEF_BUILD_INLINE_HEADERS)
+        string(CONCAT TARGET_TESTER4I_${SIMD} "tester4i" ${LCSIMD})
+
+        add_executable(${TARGET_TESTER4I_${SIMD}} ${TESTER4_SRC})
+        target_compile_options(${TARGET_TESTER4I_${SIMD}}
+          PRIVATE ${FLAGS_ENABLE_${SIMD}})
+        target_link_libraries(${TARGET_TESTER4I_${SIMD}} ${TLFLOAT_LIBRARIES} ${TARGET_TESTERUTIL_OBJ})
+        if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+          target_compile_options(${TARGET_TESTER4I_${SIMD}} PRIVATE "-Wno-unknown-pragmas")
+        endif()
+        target_compile_definitions(${TARGET_TESTER4I_${SIMD}}
+          PRIVATE ENABLE_${SIMD}=1 ${COMMON_TARGET_DEFINITIONS}
+          USE_INLINE_HEADER="sleefinline_${LCSIMD}.h"
+          MACRO_ONLY_HEADER="macroonly${SIMD}.h"
+          SIMD_SUFFIX=_${LCSIMD}_sleef
+          )
+        target_include_directories(${TARGET_TESTER4I_${SIMD}} PRIVATE ${PROJECT_BINARY_DIR}/include)
+        add_dependencies(${TARGET_TESTER4I_${SIMD}} ${TARGET_INLINE_HEADERS})
+        add_dependencies(${TARGET_TESTER4I_${SIMD}} ext_tlfloat)
+        set_target_properties(${TARGET_TESTER4I_${SIMD}} PROPERTIES ${COMMON_TARGET_PROPERTIES})
+        if (DEFINED COSTOVERRIDE_${SIMD})
+          add_test_with_emu(${COSTOVERRIDE_${SIMD}} ${TARGET_TESTER4I_${SIMD}})
+        else()
+          add_test_with_emu(1.0 ${TARGET_TESTER4I_${SIMD}})
+        endif()
+      endif(SLEEF_BUILD_INLINE_HEADERS)
+    endif(SLEEF_ENABLE_TESTER4 AND TLFLOAT_LIBRARIES)
+
+    #
 
     if(LIB_MPFR AND NOT ${SIMD} STREQUAL NEON32 AND NOT ${SIMD} STREQUAL NEON32VFPV4 AND NOT MINGW)
       # Build tester2 SIMD
       string(TOLOWER ${SIMD} SCSIMD)
       foreach(P dp sp)
               set(T "tester2${SCSIMD}${P}")
-              add_executable(${T} tester2simd${P}.c testerutil.c)
+              add_executable(${T} tester2simd${P}.c)
               if(FORCE_AAVPCS)
                 target_compile_definitions(${T} PRIVATE ENABLE_AAVPCS=1)
               endif(FORCE_AAVPCS)
               target_compile_options(${T} PRIVATE ${FLAGS_ENABLE_${SIMD}})
               target_compile_definitions(${T} PRIVATE ENABLE_${SIMD}=1 USEMPFR=1 ${COMMON_TARGET_DEFINITIONS})
               set_target_properties(${T} PROPERTIES ${COMMON_TARGET_PROPERTIES})
-              target_link_libraries(${T} ${TARGET_LIBSLEEF} ${LIB_MPFR} ${LIBM} ${LIBGMP})
+              target_link_libraries(${T} ${TARGET_LIBSLEEF} ${TARGET_TESTERUTIL_OBJ} ${LIB_MPFR} ${LIBGMP} ${LIBM})
               add_dependencies(${T} ${TARGET_HEADERS})
               add_dependencies(${T} ${TARGET_LIBSLEEF})
               if (MPFR_INCLUDE_DIR)
@@ -246,11 +357,11 @@ macro(test_extension SIMD)
               # testing program for the deterministic version of functions.
 
               set(T "tester2y${SCSIMD}${P}")
-              add_executable(${T} tester2simd${P}.c testerutil.c)
+              add_executable(${T} tester2simd${P}.c)
               target_compile_options(${T} PRIVATE ${FLAGS_ENABLE_${SIMD}})
               target_compile_definitions(${T} PRIVATE ENABLE_${SIMD}=1 USEMPFR=1 ${COMMON_TARGET_DEFINITIONS} DETERMINISTIC=1)
               set_target_properties(${T} PROPERTIES ${COMMON_TARGET_PROPERTIES})
-              target_link_libraries(${T} ${TARGET_LIBSLEEF} ${LIB_MPFR} ${LIBM} ${LIBGMP})
+              target_link_libraries(${T} ${TARGET_LIBSLEEF} ${TARGET_TESTERUTIL_OBJ} ${LIB_MPFR} ${LIBGMP} ${LIBM})
               add_dependencies(${T} ${TARGET_HEADERS})
               add_dependencies(${T} ${TARGET_LIBSLEEF})
               if (MPFR_INCLUDE_DIR)
@@ -259,13 +370,16 @@ macro(test_extension SIMD)
       endforeach()
     endif()
 
-    if(NOT ${SIMD} STREQUAL NEON32 AND NOT ${SIMD} STREQUAL NEON32VFPV4 AND SLEEF_OPENSSL_FOUND)
+    if(NOT ${SIMD} STREQUAL NEON32 AND NOT ${SIMD} STREQUAL NEON32VFPV4)
       # Build tester3
       string(TOLOWER ${SIMD} SCSIMD)
       set(T "tester3${SCSIMD}")
-      add_executable(${T} tester3.c ${sleef_SOURCE_DIR}/src/common/main_checkfeature.c testerutil.c)
+      add_executable(${T} tester3.c ${sleef_SOURCE_DIR}/src/common/main_checkfeature.c)
       target_compile_options(${T} PRIVATE ${FLAGS_ENABLE_${SIMD}})
       target_compile_definitions(${T} PRIVATE ${COMMON_TARGET_DEFINITIONS} ${TESTER3_DEFINITIONS_${SIMD}})
+      if (NOT SLEEF_OPENSSL_FOUND)
+        target_compile_definitions(${T} PRIVATE SLEEF_USE_INTERNAL_SHA256=1)
+      endif()
       set_target_properties(${T} PROPERTIES ${COMMON_TARGET_PROPERTIES})
 
       # Enable Vector PCS for Advanced SIMD (if supported)
@@ -273,8 +387,18 @@ macro(test_extension SIMD)
         host_target_AAVPCS_definitions(${T})
       endif()
 
-      target_link_libraries(${T} ${TARGET_LIBSLEEF} ${LIBM} ${SLEEF_OPENSSL_LIBRARIES})
-      target_include_directories(${T} PRIVATE ${SLEEF_OPENSSL_INCLUDE_DIR})
+      target_link_libraries(${T} ${TARGET_LIBSLEEF} ${TARGET_TESTERUTIL_OBJ} ${LIBM})
+      if(LIB_MPFR)
+        target_link_libraries(${T} ${LIB_MPFR} ${LIBGMP})
+      endif()
+      if (SLEEF_OPENSSL_FOUND)
+        target_link_libraries(${T} ${SLEEF_OPENSSL_LIBRARIES})
+        target_include_directories(${T} PRIVATE ${SLEEF_OPENSSL_INCLUDE_DIR})
+      else()
+        target_link_libraries(${T} ${TARGET_PSHA_OBJ})
+        target_include_directories(${T} PRIVATE ${sleef_SOURCE_DIR}/src/common)
+      endif()
+
       add_dependencies(${T} ${TARGET_HEADERS})
       add_dependencies(${T} ${TARGET_LIBSLEEF})
 
@@ -371,53 +495,99 @@ endif(ENABLE_GNUABI)
 #
 
 if (SLEEF_ARCH_X86)
-  # iutdsp128
-  add_executable(iutdsp128 ${IUT_SRC})
-  target_compile_definitions(iutdsp128 PRIVATE ENABLE_DSP128=1 ${COMMON_TARGET_DEFINITIONS})
-  target_compile_options(iutdsp128 PRIVATE ${FLAGS_ENABLE_SSE2})
-  target_link_libraries(iutdsp128 ${TARGET_LIBSLEEF} ${LIBM} ${LIBRT})
-  add_dependencies(iutdsp128 ${TARGET_HEADERS} ${TARGET_LIBSLEEF})
-  add_test_iut(iutdsp128 1.0)
-  list(APPEND IUT_LIST iutdsp128)
+  if (SLEEF_ENABLE_TESTER)
+    # iutdsp128
+    add_executable(iutdsp128 ${IUT_SRC})
+    target_compile_definitions(iutdsp128 PRIVATE ENABLE_DSP128=1 ${COMMON_TARGET_DEFINITIONS})
+    target_compile_options(iutdsp128 PRIVATE ${FLAGS_ENABLE_SSE2})
+    target_link_libraries(iutdsp128 ${TARGET_LIBSLEEF} ${LIBRT} ${TARGET_TESTERUTIL_OBJ} ${LIBM})
+    add_dependencies(iutdsp128 ${TARGET_HEADERS} ${TARGET_LIBSLEEF})
+    add_test_iut(iutdsp128 1.0)
+    list(APPEND IUT_LIST iutdsp128)
 
-  # iutdsp256
-  add_executable(iutdsp256 ${IUT_SRC})
-  target_compile_definitions(iutdsp256 PRIVATE ENABLE_DSP256=1 ${COMMON_TARGET_DEFINITIONS})
-  target_compile_options(iutdsp256 PRIVATE ${FLAGS_ENABLE_AVX})
-  target_link_libraries(iutdsp256 ${TARGET_LIBSLEEF} ${LIBM} ${LIBRT})
-  add_dependencies(iutdsp256 ${TARGET_HEADERS} ${TARGET_LIBSLEEF})
-  add_test_iut(iutdsp256 1.0)
-  list(APPEND IUT_LIST iutdsp256)
+    # iutdsp256
+    add_executable(iutdsp256 ${IUT_SRC})
+    target_compile_definitions(iutdsp256 PRIVATE ENABLE_DSP256=1 ${COMMON_TARGET_DEFINITIONS})
+    target_compile_options(iutdsp256 PRIVATE ${FLAGS_ENABLE_AVX})
+    target_link_libraries(iutdsp256 ${TARGET_LIBSLEEF} ${LIBRT} ${TARGET_TESTERUTIL_OBJ} ${LIBM})
+    add_dependencies(iutdsp256 ${TARGET_HEADERS} ${TARGET_LIBSLEEF})
+    add_test_iut(iutdsp256 1.0)
+    list(APPEND IUT_LIST iutdsp256)
+  endif(SLEEF_ENABLE_TESTER)
+
+  if (SLEEF_ENABLE_TESTER4 AND TLFLOAT_LIBRARIES)
+    # tester4dsp128
+    add_executable(tester4dsp128 ${TESTER4_SRC})
+    target_compile_definitions(tester4dsp128 PRIVATE
+      ENABLE_DSP128=1 ${COMMON_TARGET_DEFINITIONS})
+    target_compile_options(tester4dsp128 PRIVATE ${FLAGS_ENABLE_SSE2})
+    target_link_libraries(tester4dsp128 ${TARGET_LIBSLEEF} ${TLFLOAT_LIBRARIES} ${TARGET_TESTERUTIL_OBJ})
+    add_dependencies(tester4dsp128 ${TARGET_HEADERS} ${TARGET_LIBSLEEF} ext_tlfloat)
+    add_test_with_emu(1.0 tester4dsp128)
+
+    # tester4dsp256
+    add_executable(tester4dsp256 ${TESTER4_SRC})
+    target_compile_definitions(tester4dsp256 PRIVATE
+      ENABLE_DSP256=1 ${COMMON_TARGET_DEFINITIONS})
+    target_compile_options(tester4dsp256 PRIVATE ${FLAGS_ENABLE_AVX})
+    target_link_libraries(tester4dsp256 ${TARGET_LIBSLEEF} ${TLFLOAT_LIBRARIES} ${TARGET_TESTERUTIL_OBJ})
+    add_dependencies(tester4dsp256 ${TARGET_HEADERS} ${TARGET_LIBSLEEF} ext_tlfloat)
+    add_test_with_emu(1.0 tester4dsp256)
+  endif(SLEEF_ENABLE_TESTER4 AND TLFLOAT_LIBRARIES)
 endif(SLEEF_ARCH_X86)
 
 if (SLEEF_ARCH_PPC64)
-  add_executable(iutdsp128 ${IUT_SRC})
-  target_compile_definitions(iutdsp128 PRIVATE ENABLE_DSPPOWER_128=1 ${COMMON_TARGET_DEFINITIONS})
-  target_compile_options(iutdsp128 PRIVATE ${FLAGS_ENABLE_VSX})
-  target_link_libraries(iutdsp128 ${TARGET_LIBSLEEF} ${LIBM} ${LIBRT})
-  add_dependencies(iutdsp128 ${TARGET_HEADERS} ${TARGET_LIBSLEEF})
-  add_test_iut(iutdsp128 1.0)
-  list(APPEND IUT_LIST iutdsp128)
+  if (SLEEF_ENABLE_TESTER)
+    add_executable(iutdsp128 ${IUT_SRC})
+    target_compile_definitions(iutdsp128 PRIVATE ENABLE_DSPPOWER_128=1 ${COMMON_TARGET_DEFINITIONS})
+    target_compile_options(iutdsp128 PRIVATE ${FLAGS_ENABLE_VSX})
+    target_link_libraries(iutdsp128 ${TARGET_LIBSLEEF} ${LIBRT} ${TARGET_TESTERUTIL_OBJ} ${LIBM})
+    add_dependencies(iutdsp128 ${TARGET_HEADERS} ${TARGET_LIBSLEEF})
+    add_test_iut(iutdsp128 1.0)
+    list(APPEND IUT_LIST iutdsp128)
+  endif(SLEEF_ENABLE_TESTER)
+
+  if (SLEEF_ENABLE_TESTER4 AND TLFLOAT_LIBRARIES)
+    add_executable(tester4dsp128 ${TESTER4_SRC})
+    target_compile_definitions(tester4dsp128 PRIVATE ENABLE_DSPPOWER_128=1 ${COMMON_TARGET_DEFINITIONS})
+    target_compile_options(tester4dsp128 PRIVATE ${FLAGS_ENABLE_VSX})
+    target_link_libraries(tester4dsp128 ${TARGET_LIBSLEEF} ${TLFLOAT_LIBRARIES} ${TARGET_TESTERUTIL_OBJ})
+    add_dependencies(tester4dsp128 ${TARGET_HEADERS} ${TARGET_LIBSLEEF} ext_tlfloat)
+    add_test_with_emu(1.0 tester4dsp128)
+  endif(SLEEF_ENABLE_TESTER4 AND TLFLOAT_LIBRARIES)
 endif(SLEEF_ARCH_PPC64)
 
 if (SLEEF_ARCH_S390X)
-  add_executable(iutdsp128 ${IUT_SRC})
-  target_compile_definitions(iutdsp128 PRIVATE ENABLE_DSPS390X_128=1 ${COMMON_TARGET_DEFINITIONS})
-  target_compile_options(iutdsp128 PRIVATE ${FLAGS_ENABLE_VXE})
-  target_link_libraries(iutdsp128 ${TARGET_LIBSLEEF} ${LIBM} ${LIBRT})
-  add_dependencies(iutdsp128 ${TARGET_HEADERS} ${TARGET_LIBSLEEF})
-  add_test_iut(iutdsp128 1.0)
-  list(APPEND IUT_LIST iutdsp128)
+  if (SLEEF_ENABLE_TESTER)
+    add_executable(iutdsp128 ${IUT_SRC})
+    target_compile_definitions(iutdsp128 PRIVATE ENABLE_DSPS390X_128=1 ${COMMON_TARGET_DEFINITIONS})
+    target_compile_options(iutdsp128 PRIVATE ${FLAGS_ENABLE_VXE})
+    target_link_libraries(iutdsp128 ${TARGET_LIBSLEEF} ${LIBRT} ${TARGET_TESTERUTIL_OBJ} ${LIBM})
+    add_dependencies(iutdsp128 ${TARGET_HEADERS} ${TARGET_LIBSLEEF})
+    add_test_iut(iutdsp128 1.0)
+    list(APPEND IUT_LIST iutdsp128)
+  endif(SLEEF_ENABLE_TESTER)
+
+  if (SLEEF_ENABLE_TESTER4 AND TLFLOAT_LIBRARIES)
+    add_executable(tester4dsp128 ${TESTER4_SRC})
+    target_compile_definitions(tester4dsp128 PRIVATE ENABLE_DSPS390X_128=1 ${COMMON_TARGET_DEFINITIONS})
+    target_compile_options(tester4dsp128 PRIVATE ${FLAGS_ENABLE_VXE})
+    target_link_libraries(tester4dsp128 ${TARGET_LIBSLEEF} ${TLFLOAT_LIBRARIES} ${TARGET_TESTERUTIL_OBJ})
+    add_dependencies(tester4dsp128 ${TARGET_HEADERS} ${TARGET_LIBSLEEF} ext_tlfloat)
+    add_test_with_emu(1.0 tester4dsp128)
+  endif(SLEEF_ENABLE_TESTER4 AND TLFLOAT_LIBRARIES)
 endif(SLEEF_ARCH_S390X)
 
 if(SLEEF_BUILD_SCALAR_LIB)
-  # Compile executable 'iutscalar'
-  add_executable(iutscalar iut.c testerutil.c)
-  target_compile_definitions(iutscalar PRIVATE ${COMMON_TARGET_DEFINITIONS})
-  target_link_libraries(iutscalar sleefscalar ${TARGET_LIBSLEEF} ${LIBM} ${LIBRT})
-  set_target_properties(iutscalar PROPERTIES ${COMMON_TARGET_PROPERTIES})
-  add_test_iut(iutscalar 1.0)
-  list(APPEND IUT_LIST iutscalar)
+  if (SLEEF_ENABLE_TESTER)
+    # Compile executable 'iutscalar'
+    add_executable(iutscalar iut.c)
+    target_compile_definitions(iutscalar PRIVATE ${COMMON_TARGET_DEFINITIONS})
+    target_link_libraries(iutscalar sleefscalar ${TARGET_LIBSLEEF} ${LIBRT} ${TARGET_TESTERUTIL_OBJ} ${LIBM})
+    set_target_properties(iutscalar PROPERTIES ${COMMON_TARGET_PROPERTIES})
+    add_test_iut(iutscalar 1.0)
+    list(APPEND IUT_LIST iutscalar)
+  endif(SLEEF_ENABLE_TESTER)
 endif()
 
 if(LIB_MPFR AND NOT MINGW)
@@ -433,7 +603,7 @@ if(LIB_MPFR AND NOT MINGW)
   endif()
   foreach(P ${PRECISIONS})
     set(T "tester2${P}")
-    add_executable(${T} tester2${P}.c testerutil.c)
+    add_executable(${T} tester2${P}.c)
     target_compile_definitions(${T} PRIVATE USEMPFR=1 ${ENABLEFLOAT128} ${COMMON_TARGET_DEFINITIONS})
     set_target_properties(${T} PROPERTIES ${COMMON_TARGET_PROPERTIES})
     if (FORCE_AAVPCS)
@@ -442,15 +612,15 @@ if(LIB_MPFR AND NOT MINGW)
     if (MPFR_INCLUDE_DIR)
       target_include_directories(${T} PRIVATE ${MPFR_INCLUDE_DIR})
     endif()
-    target_link_libraries(${T} ${TARGET_LIBSLEEF} ${LIBQUADMATH} ${LIB_MPFR} ${LIBM} ${LIBGMP})
+    target_link_libraries(${T} ${TARGET_LIBSLEEF} ${LIBQUADMATH} ${TARGET_QTESTERUTIL_OBJ} ${TARGET_TESTERUTIL_OBJ} ${LIB_MPFR} ${LIBGMP} ${LIBM})
     add_dependencies(${T} ${TARGET_HEADERS})
     add_dependencies(${T} ${TARGET_LIBSLEEF})
   endforeach()
 
   # Compile executable 'tester'
-  add_host_executable(${TARGET_TESTER} tester.c testerutil.c)
+  add_host_executable(${TARGET_TESTER} tester.c)
   if (NOT CMAKE_CROSSCOMPILING)
-    target_link_libraries(${TARGET_TESTER} ${LIB_MPFR} ${TARGET_LIBSLEEF} ${LIBM} ${LIBGMP})
+    target_link_libraries(${TARGET_TESTER} ${TARGET_LIBSLEEF} ${TARGET_TESTERUTIL_OBJ} ${LIB_MPFR} ${LIBGMP} ${LIBM})
     target_compile_definitions(${TARGET_TESTER}
       PRIVATE USEMPFR=1 ${COMMON_TARGET_DEFINITIONS})
     target_compile_options(${TARGET_TESTER} PRIVATE -Wno-unused-result)
@@ -512,6 +682,3 @@ if (FILECHECK_COMMAND AND COMPILER_SUPPORTS_OPENMP AND SLEEF_ARCH_X86 AND CMAKE_
   add_test(NAME testervecabi-sse2 COMMAND sh -c "${CMAKE_C_COMPILER} -Wno-attributes -fopenmp -msse2 -O3 ${CMAKE_CURRENT_SOURCE_DIR}/testervecabi.c -I${sleef_BINARY_DIR}/include -S -o- | ${FILECHECK_COMMAND} ${CMAKE_CURRENT_SOURCE_DIR}/testervecabi.c -check-prefix=CHECK-SSE2")
   add_test(NAME testervecabi-avx2 COMMAND sh -c "${CMAKE_C_COMPILER} -Wno-attributes -fopenmp -mavx2 -O3 ${CMAKE_CURRENT_SOURCE_DIR}/testervecabi.c -I${sleef_BINARY_DIR}/include -S -o- | ${FILECHECK_COMMAND} ${CMAKE_CURRENT_SOURCE_DIR}/testervecabi.c -check-prefix=CHECK-AVX2")
 endif()
-
-# Tests depends on the library
-add_dependencies(${TARGET_IUT} ${TARGET_HEADERS})

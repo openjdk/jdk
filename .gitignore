@@ -16,6 +16,7 @@ NashornProfile.txt
 **/JTreport/**
 **/JTwork/**
 /src/utils/LogCompilation/target/
+/src/utils/LogCompilation/logc.jar
 /.project/
 /.settings/
 /compile_commands.json
@@ -23,8 +24,6 @@ NashornProfile.txt
 /.gdbinit
 /.lldbinit
 **/core.[0-9]*
-*.rej
-*.orig
 test/benchmarks/**/target
 /src/hotspot/CMakeLists.txt
 /src/hotspot/compile_commands.json

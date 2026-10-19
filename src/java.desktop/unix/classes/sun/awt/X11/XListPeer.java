@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1233,10 +1233,12 @@ final class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClie
      */
     @Override
     public void select(int index) {
-        // Programmatic select() should also set the focus index
-        setFocusIndex(index);
-        repaint(PAINT_FOCUS);
-        selectItem(index);
+        if (index >= 0 && index < items.size()) {
+            // Programmatic select() should also set the focus index
+            setFocusIndex(index);
+            repaint(PAINT_FOCUS);
+            selectItem(index);
+        }
     }
 
     /**

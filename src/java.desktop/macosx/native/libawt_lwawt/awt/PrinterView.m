@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,9 +72,8 @@ static jclass sjc_PAbortEx = NULL;
     }
 }
 
-- (void)setFirstPage:(jint)firstPage lastPage:(jint)lastPage {
-    fFirstPage = firstPage;
-    fLastPage = lastPage;
+- (void)setTotalPages:(jint)totalPages {
+    fTotalPages = totalPages;
 }
 
 - (void)drawRect:(NSRect)aRect
@@ -156,15 +155,15 @@ static jclass sjc_PAbortEx = NULL;
         return NO;
     }
 
-    aRange->location = fFirstPage + 1;
+    aRange->location = 1;
 
-    if (fLastPage == java_awt_print_Pageable_UNKNOWN_NUMBER_OF_PAGES)
+    if (fTotalPages == java_awt_print_Pageable_UNKNOWN_NUMBER_OF_PAGES)
     {
         aRange->length = NSIntegerMax;
     }
     else
     {
-        aRange->length = (fLastPage + 1) - fFirstPage;
+        aRange->length = fTotalPages;
     }
 
     return YES;

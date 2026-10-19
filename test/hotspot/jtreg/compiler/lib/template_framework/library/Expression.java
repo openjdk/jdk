@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -333,6 +333,72 @@ public class Expression {
     }
 
     /**
+     * Creates a new Expression with 5 arguments.
+     *
+     * @param returnType The return type of the {@link Expression}.
+     * @param s0 The first string, to be placed before {@code t0}.
+     * @param t0 The type of the first argument.
+     * @param s1 The second string, to be placed before {@code t1}.
+     * @param t1 The type of the second argument.
+     * @param s2 The third string, to be placed before {@code t2}.
+     * @param t2 The type of the third argument.
+     * @param s3 The fourth string, to be placed before {@code t3}.
+     * @param t3 The type of the fourth argument.
+     * @param s4 The fifth string, to be placed before {@code t4}.
+     * @param t4 The type of the fifth argument.
+     * @param s5 The last string, finishing the {@link Expression}.
+     * @return the new {@link Expression}.
+     */
+    public static Expression make(CodeGenerationDataNameType returnType,
+                                  String s0,
+                                  CodeGenerationDataNameType t0,
+                                  String s1,
+                                  CodeGenerationDataNameType t1,
+                                  String s2,
+                                  CodeGenerationDataNameType t2,
+                                  String s3,
+                                  CodeGenerationDataNameType t3,
+                                  String s4,
+                                  CodeGenerationDataNameType t4,
+                                  String s5) {
+        return make(returnType, s0, t0, s1, t1, s2, t2, s3, t3, s4, t4, s5, new Info());
+    }
+
+    /**
+     * Creates a new Expression with 5 arguments.
+     *
+     * @param returnType The return type of the {@link Expression}.
+     * @param s0 The first string, to be placed before {@code t0}.
+     * @param t0 The type of the first argument.
+     * @param s1 The second string, to be placed before {@code t1}.
+     * @param t1 The type of the second argument.
+     * @param s2 The third string, to be placed before {@code t2}.
+     * @param t2 The type of the third argument.
+     * @param s3 The fourth string, to be placed before {@code t3}.
+     * @param t3 The type of the fourth argument.
+     * @param s4 The fifth string, to be placed before {@code t4}.
+     * @param t4 The type of the fifth argument.
+     * @param s5 The last string, finishing the {@link Expression}.
+     * @param info Additional information about the {@link Expression}.
+     * @return the new {@link Expression}.
+     */
+    public static Expression make(CodeGenerationDataNameType returnType,
+                                  String s0,
+                                  CodeGenerationDataNameType t0,
+                                  String s1,
+                                  CodeGenerationDataNameType t1,
+                                  String s2,
+                                  CodeGenerationDataNameType t2,
+                                  String s3,
+                                  CodeGenerationDataNameType t3,
+                                  String s4,
+                                  CodeGenerationDataNameType t4,
+                                  String s5,
+                                  Info info) {
+        return new Expression(returnType, List.of(t0, t1, t2, t3, t4), List.of(s0, s1, s2, s3, s4, s5), info);
+    }
+
+    /**
      * Creates a {@link TemplateToken} for the use in a {@link Template} by applying the
      * {@code arguments} to the {@link Expression}. It is the users responsibility to
      * ensure that the argument tokens match the required {@link #argumentTypes}.
@@ -383,6 +449,23 @@ public class Expression {
     }
 
     /**
+     * {@link Nesting} defines the different ways of selecting {@link Expression}s
+     * to nest based on their types.
+     */
+    public enum Nesting {
+        /**
+         * Only nest {@Expression}s where the argument and return types match exactly
+         * based on the implementation of {@link CodeGenerateionDataNameType#isSubtypeOf}.
+         */
+        EXACT,
+        /**
+         * Only nest {@Expression}s where the return type is a subtype of the argument
+         * type based on the implemetation of {@link CodeGenerateionDataNameType#isSubtypeOf}.
+         */
+        SUBTYPE
+    }
+
+    /**
      * Create a nested {@link Expression} with a specified {@code returnType} from a
      * set of {@code expressions}.
      *
@@ -391,11 +474,13 @@ public class Expression {
      *                    the nested {@link Expression}.
      * @param maxNumberOfUsedExpressions the maximal number of {@link Expression}s from the
      *                                   {@code expressions} are nested.
+     * @param nesting control the {@link Nesting} of the sampled {@link Expression}s.
      * @return a new randomly nested {@link Expression}.
      */
     public static Expression nestRandomly(CodeGenerationDataNameType returnType,
                                           List<Expression> expressions,
-                                          int maxNumberOfUsedExpressions) {
+                                          int maxNumberOfUsedExpressions,
+                                          Nesting nesting) {
         List<Expression> filtered = expressions.stream().filter(e -> e.returnType.isSubtypeOf(returnType)).toList();
 
         if (filtered.isEmpty()) {
@@ -406,7 +491,7 @@ public class Expression {
         Expression expression = filtered.get(r);
 
         for (int i = 1; i < maxNumberOfUsedExpressions; i++) {
-            expression = expression.nestRandomly(expressions);
+            expression = expression.nestRandomly(expressions, nesting);
         }
         return expression;
     }
@@ -416,12 +501,16 @@ public class Expression {
      * {@code this} {@link Expression}, ensuring compatibility of argument and return type.
      *
      * @param nestingExpressions list of expressions we sample from for the inner {@link Expression}.
+     * @param nesting control the {@link Nesting} of the sampled {@link Expression}s.
      * @return a new nested {@link Expression}.
      */
-    public Expression nestRandomly(List<Expression> nestingExpressions) {
+    public Expression nestRandomly(List<Expression> nestingExpressions, Nesting nesting) {
         int argumentIndex = RANDOM.nextInt(this.argumentTypes.size());
         CodeGenerationDataNameType argumentType = this.argumentTypes.get(argumentIndex);
-        List<Expression> filtered = nestingExpressions.stream().filter(e -> e.returnType.isSubtypeOf(argumentType)).toList();
+        List<Expression> filtered = nestingExpressions.stream()
+                                                      .filter(e -> e.returnType.isSubtypeOf(argumentType) &&
+                                                                (nesting == Nesting.EXACT ? argumentType.isSubtypeOf(e.returnType) : true))
+                                                      .toList();
 
         if (filtered.isEmpty()) {
             // Found no expression that has a matching returnType.

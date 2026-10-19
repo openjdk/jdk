@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestExchange;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
@@ -63,6 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  *          systems
  * @run junit/othervm/timeout=180 -Djdk.httpclient.quic.idleTimeout=30
  *                    -Djdk.httpclient.keepalive.timeout.h3=120
+ *                    -Djdk.httpclient.HttpClient.log=quic:hs
  *                    ${test.main.class}
  */
 class H3IdleExceedsQuicIdleTimeout {
@@ -106,7 +108,7 @@ class H3IdleExceedsQuicIdleTimeout {
         assertEquals(120,
                 Integer.parseInt(System.getProperty("jdk.httpclient.keepalive.timeout.h3")),
                 "unexpected HTTP/3 idle timeout");
-        try (final HttpClient client = HttpClient.newBuilder()
+        try (final HttpClient client = HttpServerAdapters.createClientBuilderForH3()
                 .sslContext(sslCtx)
                 .proxy(NO_PROXY)
                 .version(HTTP_3)

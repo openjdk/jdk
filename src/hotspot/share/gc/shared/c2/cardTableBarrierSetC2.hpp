@@ -43,10 +43,10 @@ protected:
                                                 Node* new_val, const Type* value_type) const;
   virtual Node* atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const;
 
-  Node* byte_map_base_node(GraphKit* kit) const;
+  Node* byte_map_base_node(IdealKit* kit) const;
 
 public:
-  virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const;
+  virtual void eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node) const;
   virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, bool is_clone_instance, ArrayCopyPhase phase) const;
 
   static bool use_ReduceInitialCardMarks();

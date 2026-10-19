@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 package jdk.jfr.api.recording.misc;
 
+import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 import jdk.jfr.consumer.RecordedEvent;
@@ -79,8 +80,14 @@ public class TestRecordingCopy {
         Asserts.assertEquals(stoppedCopy.getState(), RecordingState.STOPPED);
         assertCopy(stoppedCopy, original);
 
-        // Clean-up
         original.close();
+        int beforeCount  = FlightRecorder.getFlightRecorder().getRecordings().size();
+        Recording closedCopy = original.copy(true);
+        Asserts.assertEquals(closedCopy.getState(), RecordingState.CLOSED);
+        int afterCount = FlightRecorder.getFlightRecorder().getRecordings().size();
+        Asserts.assertEquals(beforeCount, afterCount);
+
+        // Clean-up
         runningCopy.stop();
         runningCopy.close();
         stoppedCopy.close();

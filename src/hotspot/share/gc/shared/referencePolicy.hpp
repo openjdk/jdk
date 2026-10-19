@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,12 @@
 #ifndef SHARE_GC_SHARED_REFERENCEPOLICY_HPP
 #define SHARE_GC_SHARED_REFERENCEPOLICY_HPP
 
+#include "cppstdlib/limits.hpp"
+#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/integerCast.hpp"
 
 // referencePolicy is used to determine when soft reference objects
 // should be cleared.
@@ -56,28 +61,32 @@ class AlwaysClearPolicy : public ReferencePolicy {
   }
 };
 
-class LRUCurrentHeapPolicy : public ReferencePolicy {
+class AbstractLRUReferencePolicy : public ReferencePolicy {
  private:
-  jlong _max_interval;
+  static constexpr uint64_t UninitializedMaxInterval = std::numeric_limits<uint64_t>::max();
+  uint64_t _max_interval = UninitializedMaxInterval;
+
+ protected:
+  void set_max_interval(uint64_t max_interval);
 
  public:
-  LRUCurrentHeapPolicy();
+  bool should_clear_reference(oop p, jlong timestamp_clock) final;
+  void setup() override = 0;
 
-  // Capture state (of-the-VM) information needed to evaluate the policy
-  void setup();
-  virtual bool should_clear_reference(oop p, jlong timestamp_clock);
+  static constexpr uint64_t MaximumMaxInterval = integer_cast<uint64_t>(max_jlong);
+  static_assert(UninitializedMaxInterval > MaximumMaxInterval, "Used to catch uninitialized _max_interval");
 };
 
-class LRUMaxHeapPolicy : public ReferencePolicy {
- private:
-  jlong _max_interval;
-
+class LRUCurrentHeapPolicy : public AbstractLRUReferencePolicy {
  public:
-  LRUMaxHeapPolicy();
-
   // Capture state (of-the-VM) information needed to evaluate the policy
-  void setup();
-  virtual bool should_clear_reference(oop p, jlong timestamp_clock);
+  void setup() final;
+};
+
+class LRUMaxHeapPolicy : public AbstractLRUReferencePolicy {
+ public:
+  // Capture state (of-the-VM) information needed to evaluate the policy
+  void setup() final;
 };
 
 #endif // SHARE_GC_SHARED_REFERENCEPOLICY_HPP

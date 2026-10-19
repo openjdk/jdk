@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,19 @@
 
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-/**
+/*
  * @test
  * @bug 8159746
- * @run testng DefaultMethods
+ * @run junit DefaultMethods
  * @summary Basic tests for Proxy::invokeSuper default method
  */
 
@@ -96,15 +96,11 @@ public class DefaultMethods {
     }
 
     private static Method findDefaultMethod(Class<?> refc, Method m) {
-        try {
-            assertTrue(refc.isInterface());
+        assertTrue(refc.isInterface());
 
-            Method method = refc.getMethod(m.getName(), m.getParameterTypes());
-            assertTrue(method.isDefault());
-            return method;
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
+        Method method = assertDoesNotThrow(() -> refc.getMethod(m.getName(), m.getParameterTypes()));
+        assertTrue(method.isDefault());
+        return method;
     }
 
     @Test
@@ -115,12 +111,11 @@ public class DefaultMethods {
                     return InvocationHandler.invokeDefault(o, findDefaultMethod(I2.class, method), params);
                 });
         I1 i1 = (I1) proxy;
-        assertEquals(i1.m(), 20);
+        assertEquals(20, i1.m());
     }
 
     // a default method is declared in one of the proxy interfaces
-    @DataProvider(name = "defaultMethods")
-    private Object[][] defaultMethods() {
+    private static Object[][] defaultMethods() {
         return new Object[][]{
             new Object[]{new Class<?>[]{I1.class, I2.class}, true, 10},
             new Object[]{new Class<?>[]{I1.class, I3.class}, true, 10},
@@ -133,13 +128,14 @@ public class DefaultMethods {
         };
     }
 
-    @Test(dataProvider = "defaultMethods")
+    @ParameterizedTest
+    @MethodSource("defaultMethods")
     public void testDefaultMethod(Class<?>[] intfs, boolean isDefault, int expected) throws Throwable {
         InvocationHandler ih = (proxy, method, params) -> {
             System.out.format("invoking %s with parameters: %s%n", method, Arrays.toString(params));
             switch (method.getName()) {
                 case "m":
-                    assertTrue(method.isDefault() == isDefault);
+                    assertEquals(isDefault, method.isDefault());
                     assertTrue(Arrays.stream(proxy.getClass().getInterfaces())
                                      .anyMatch(intf -> method.getDeclaringClass() == intf),
                                Arrays.toString(proxy.getClass().getInterfaces()));
@@ -156,13 +152,12 @@ public class DefaultMethods {
         Object proxy = Proxy.newProxyInstance(DefaultMethods.class.getClassLoader(), intfs, ih);
         Method m = proxy.getClass().getMethod("m");
         int result = (int)m.invoke(proxy);
-        assertEquals(result, expected);
+        assertEquals(expected, result);
     }
 
     // a default method may be declared in a proxy interface or
     // inherited from a superinterface of a proxy interface
-    @DataProvider(name = "supers")
-    private Object[][] supers() {
+    private static Object[][] supers() {
         return new Object[][]{
             // invoke "m" implemented in the first proxy interface
             // same as the method passed to InvocationHandler::invoke
@@ -188,7 +183,8 @@ public class DefaultMethods {
         };
     }
 
-    @Test(dataProvider = "supers")
+    @ParameterizedTest
+    @MethodSource("supers")
     public void testSuper(Class<?>[] intfs, Class<?> proxyInterface, int expected) throws Throwable {
         final InvocationHandler ih = (proxy, method, params) -> {
             switch (method.getName()) {
@@ -203,21 +199,21 @@ public class DefaultMethods {
         Object proxy = Proxy.newProxyInstance(loader, intfs, ih);
         if (proxyInterface == I1.class) {
             I1 i1 = (I1) proxy;
-            assertEquals(i1.m(), expected);
+            assertEquals(expected, i1.m());
         } else if (proxyInterface == I2.class) {
             I2 i2 = (I2) proxy;
-            assertEquals(i2.m(), expected);
+            assertEquals(expected, i2.m());
         } else if (proxyInterface == I3.class) {
             I3 i3 = (I3) proxy;
-            assertEquals(i3.m(), expected);
+            assertEquals(expected, i3.m());
         } else if (proxyInterface == I4.class) {
             I4 i4 = (I4) proxy;
-            assertEquals(i4.m(), expected);
+            assertEquals(expected, i4.m());
         } else {
             throw new UnsupportedOperationException(proxyInterface.toString());
         }
         // invoke via InvocationHandler.invokeDefaultMethod directly
-        assertEquals(InvocationHandler.invokeDefault(proxy, proxyInterface.getMethod("m")), expected);
+        assertEquals(expected, InvocationHandler.invokeDefault(proxy, proxyInterface.getMethod("m")));
     }
 
     // invoke I12 default methods with parameters and var args
@@ -236,12 +232,12 @@ public class DefaultMethods {
         };
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         I12 i12 = (I12) Proxy.newProxyInstance(loader, new Class<?>[] { I12.class }, ih);
-        assertEquals(i12.sum(1, 2), 3);
-        assertEquals(i12.concat(1, 2, 3, 4), new Object[]{1, 2, 3, 4});
+        assertEquals(3, i12.sum(1, 2));
+        assertArrayEquals(new Object[]{1, 2, 3, 4}, i12.concat(1, 2, 3, 4));
         Method m = I12.class.getMethod("concat", Object.class, Object[].class);
         assertTrue(m.isDefault());
-        assertEquals(InvocationHandler.invokeDefault(i12, m, 100, new Object[] {"foo", true, "bar"}),
-                     new Object[] {100, "foo", true, "bar"});
+        assertArrayEquals(new Object[] {100, "foo", true, "bar"}, (Object[])
+                InvocationHandler.invokeDefault(i12, m, 100, new Object[] {"foo", true, "bar"}));
     }
 
     // test a no-arg default method with and without arguments passed in the invocation
@@ -250,13 +246,13 @@ public class DefaultMethods {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         Object proxy = Proxy.newProxyInstance(loader, new Class<?>[]{I4.class}, HANDLER);
         Method m1 = I4.class.getMethod("m");
-        assertTrue(m1.getDeclaringClass() == I4.class);
+        assertSame(I4.class, m1.getDeclaringClass());
         assertTrue(m1.isDefault());
         InvocationHandler.invokeDefault(proxy, m1);
         InvocationHandler.invokeDefault(proxy, m1, new Object[0]);
 
         Method m2 = I4.class.getMethod("mix", int.class, String.class);
-        assertTrue(m1.getDeclaringClass() == I4.class);
+        assertSame(I4.class, m1.getDeclaringClass());
         assertTrue(m1.isDefault());
         InvocationHandler.invokeDefault(proxy, m2, Integer.valueOf(100), "foo");
     }
@@ -267,38 +263,37 @@ public class DefaultMethods {
         I3 proxy = (I3)Proxy.newProxyInstance(loader, new Class<?>[]{I3.class}, HANDLER);
         Method m = I3.class.getMethod("m3", String[].class);
         assertTrue(m.isVarArgs() && m.isDefault());
-        assertEquals(proxy.m3("a", "b", "cde"), 5);
-        assertEquals(InvocationHandler.invokeDefault(proxy, m, (Object)new String[] { "a", "bc" }), 3);
+        assertEquals(5, proxy.m3("a", "b", "cde"));
+        assertEquals(3, InvocationHandler.invokeDefault(proxy, m, (Object)new String[] { "a", "bc" }));
     }
 
     /*
      * Invoke I12::m which is an abstract method
      */
-    @Test(expectedExceptions = {IllegalArgumentException.class})
+    @Test
     public void invokeAbstractMethod() throws Exception {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         I12 proxy = (I12) Proxy.newProxyInstance(loader, new Class<?>[]{I12.class}, HANDLER);
         Method method = I12.class.getMethod("m");
-        assertTrue(method.getDeclaringClass() == I12.class);
+        assertSame(I12.class, method.getDeclaringClass());
         assertFalse(method.isDefault());
-        proxy.m();
+        assertThrows(IllegalArgumentException.class, () -> proxy.m());
     }
 
     /*
      * Invoke a non proxy (default) method with parameters
      */
-    @Test(expectedExceptions = {IllegalArgumentException.class})
+    @Test
     public void invokeNonProxyMethod() throws Throwable {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         I3 proxy = (I3) Proxy.newProxyInstance(loader, new Class<?>[]{I3.class}, HANDLER);
         Method m = I4.class.getMethod("mix", int.class, String.class);
         assertTrue(m.isDefault());
-        InvocationHandler.invokeDefault(proxy, m);
+        assertThrows(IllegalArgumentException.class, () -> InvocationHandler.invokeDefault(proxy, m));
     }
 
     // negative cases
-    @DataProvider(name = "negativeCases")
-    private Object[][] negativeCases() {
+    private static Object[][] negativeCases() {
         return new Object[][]{
             // I4::m overrides I1::m and I2::m
             new Object[] { new Class<?>[]{I4.class}, I1.class, "m" },
@@ -315,25 +310,20 @@ public class DefaultMethods {
         };
     }
 
-    @Test(dataProvider = "negativeCases", expectedExceptions = {IllegalArgumentException.class})
+    @ParameterizedTest
+    @MethodSource("negativeCases")
     public void testNegativeCase(Class<?>[] interfaces, Class<?> defc, String name)
             throws Throwable {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         Object proxy = Proxy.newProxyInstance(loader, interfaces, HANDLER);
-        try {
-            Method method = defc.getDeclaredMethod(name);
-            InvocationHandler.invokeDefault(proxy, method);
-        } catch (Throwable e) {
-            System.out.format("%s method %s::%s exception thrown: %s%n",
-                              Arrays.toString(interfaces), defc.getName(), name, e.getMessage());
-            throw e;
-        }
+        Method method = defc.getDeclaredMethod(name);
+        assertThrows(IllegalArgumentException.class, () ->
+                InvocationHandler.invokeDefault(proxy, method));
     }
 
-    @DataProvider(name = "illegalArguments")
-    private Object[][] illegalArguments() {
-        return new Object[][] {
-            new Object[] { new Object[0]},
+    private static Object[] illegalArguments() {
+        return new Object[] {
+            new Object[] { null },
             new Object[] { new Object[] { 100 }},
             new Object[] { new Object[] { 100, "foo", 100 }},
             new Object[] { new Object[] { 100L, "foo" }},
@@ -342,21 +332,18 @@ public class DefaultMethods {
         };
     }
 
-    @Test(dataProvider = "illegalArguments", expectedExceptions = {IllegalArgumentException.class})
+    @ParameterizedTest
+    @MethodSource("illegalArguments")
     public void testIllegalArgument(Object[] args) throws Throwable {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         I4 proxy = (I4)Proxy.newProxyInstance(loader, new Class<?>[]{I4.class}, HANDLER);
         Method m = I4.class.getMethod("mix", int.class, String.class);
         assertTrue(m.isDefault());
-        if (args.length == 0) {
-            // substitute empty args with null since @DataProvider doesn't allow null array
-            args = null;
-        }
-        InvocationHandler.invokeDefault(proxy, m, args);
+        assertThrows(IllegalArgumentException.class, () ->
+                InvocationHandler.invokeDefault(proxy, m, args));
     }
 
-    @DataProvider(name = "throwables")
-    private Object[][] throwables() {
+    private static Object[][] throwables() {
         return new Object[][] {
             new Object[] { new IOException() },
             new Object[] { new IllegalArgumentException() },
@@ -367,16 +354,14 @@ public class DefaultMethods {
         };
     }
 
-    @Test(dataProvider = "throwables")
+    @ParameterizedTest
+    @MethodSource("throwables")
     public void testInvocationException(Throwable exception) throws Throwable {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         IX proxy = (IX)Proxy.newProxyInstance(loader, new Class<?>[]{IX.class}, HANDLER);
         Method m = IX.class.getMethod("doThrow", Throwable.class);
-        try {
-            InvocationHandler.invokeDefault(proxy, m, exception);
-        } catch (Throwable e) {
-            assertEquals(e, exception);
-        }
+        assertSame(exception, assertThrows(Throwable.class, () ->
+                InvocationHandler.invokeDefault(proxy, m, exception)));
     }
 
     private static final InvocationHandler HANDLER = (proxy, method, params) -> {

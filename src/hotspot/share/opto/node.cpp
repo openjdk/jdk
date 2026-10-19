@@ -38,13 +38,17 @@
 #include "opto/matcher.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/reachability.hpp"
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/type.hpp"
+#include "opto/valuetypenode.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
+#include "utilities/vmError.hpp"
 
 class RegMask;
 // #include "phase.hpp"
@@ -503,6 +507,9 @@ Node *Node::clone() const {
   if (is_expensive()) {
     C->add_expensive_node(n);
   }
+  if (is_ReachabilityFence()) {
+    C->add_reachability_fence(n->as_ReachabilityFence());
+  }
   if (for_post_loop_opts_igvn()) {
     // Don't add cloned node to Compile::_for_post_loop_opts_igvn list automatically.
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
@@ -519,9 +526,6 @@ Node *Node::clone() const {
   if (n->is_OpaqueTemplateAssertionPredicate()) {
     C->add_template_assertion_predicate_opaque(n->as_OpaqueTemplateAssertionPredicate());
   }
-
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->register_potential_barrier_node(n);
 
   n->set_idx(C->next_unique()); // Get new unique index as well
   NOT_PRODUCT(n->_igv_idx = C->next_igv_idx());
@@ -570,6 +574,12 @@ Node *Node::clone() const {
     // Clone it to make sure it's not shared between SafePointNodes.
     n->as_SafePoint()->clone_jvms(C);
     n->as_SafePoint()->clone_replaced_nodes();
+  }
+  if (n->is_ValueType()) {
+    C->add_value_type(n);
+  }
+  if (n->is_LoadFlat() || n->is_StoreFlat()) {
+    C->add_flat_access(n);
   }
   Compile::current()->record_modified_node(n);
   return n;                     // Return the clone
@@ -622,6 +632,9 @@ void Node::destruct(PhaseValues* phase) {
   if (is_expensive()) {
     compile->remove_expensive_node(this);
   }
+  if (is_ReachabilityFence()) {
+    compile->remove_reachability_fence(as_ReachabilityFence());
+  }
   if (is_OpaqueTemplateAssertionPredicate()) {
     compile->remove_template_assertion_predicate_opaque(as_OpaqueTemplateAssertionPredicate());
   }
@@ -630,6 +643,9 @@ void Node::destruct(PhaseValues* phase) {
   }
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
+  }
+  if (is_ValueType()) {
+    compile->remove_value_type(this);
   }
   if (for_merge_stores_igvn()) {
     compile->remove_from_merge_stores_igvn(this);
@@ -642,8 +658,6 @@ void Node::destruct(PhaseValues* phase) {
       compile->remove_unstable_if_trap(as_CallStaticJava(), false);
     }
   }
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->unregister_potential_barrier_node(this);
 
   // See if the input array was allocated just prior to the object
   int edge_size = _max*sizeof(void*);
@@ -874,7 +888,7 @@ void Node::ins_req( uint idx, Node *n ) {
 }
 
 //-----------------------------find_edge---------------------------------------
-int Node::find_edge(Node* n) {
+int Node::find_edge(const Node* n) const {
   for (uint i = 0; i < len(); i++) {
     if (_in[i] == n)  return i;
   }
@@ -1134,6 +1148,80 @@ void Node::raise_bottom_type(const Type* new_type) {
   }
 }
 
+const TypePtr* Node::out_adr_type() const {
+  const TypePtr* res = out_adr_type_impl();
+
+#ifdef ASSERT
+  if (Node::in_dump() || VMError::is_error_reported()) {
+    return res;
+  }
+
+  // Verify that in_adr_type contains out_adr_type, except for Start, obviously it consumes nothing
+  if (is_Start()) {
+    return res;
+  }
+
+  // Load must have no out_adr_type
+  if (is_Load() && res != nullptr) {
+    stringStream ss;
+    res->dump_on(&ss);
+    assert(false, "Node %s must have no out_adr_type, out: %s", Name(), ss.as_string());
+  }
+
+  const TypePtr* in_type = in_adr_type_impl();
+  // Store, LoadStore, and Phi must have the same out_adr_type and in_adr_type
+  if ((is_Store() || is_LoadStore() || is_Phi()) && res != in_type) {
+    stringStream ss;
+    ss.print(", out: ");
+    if (res == nullptr) {
+      ss.print("nullptr");
+    } else {
+      res->dump_on(&ss);
+    }
+    ss.print(", in: ");
+    if (in_type == nullptr) {
+      ss.print("nullptr");
+    } else {
+      in_type->dump_on(&ss);
+    }
+    assert(false, "Node %s must have the same out_adr_type and in_adr_type%s", Name(), ss.as_string());
+  }
+
+  // For some reasons, Raw can be used as Bot (see GraphKit::set_output_for_allocation for
+  // example), so be lenient here
+  if (res != nullptr && in_type != TypePtr::BOTTOM && in_type != TypeRawPtr::BOTTOM && res != in_type) {
+    stringStream ss;
+    ss.print(", out: ");
+    res->dump_on(&ss);
+    ss.print(", in: ");
+    if (in_type == nullptr) {
+      ss.print("nullptr");
+    } else {
+      in_type->dump_on(&ss);
+    }
+    assert(false, "Node %s: in_adr_type must contain out_adr_type%s", Name(), ss.as_string());
+  }
+
+  // Unless this node is pinned, we must either have no out_adr_type or have the same out_adr_type
+  // and in_adr_type. This is because we DO NOT know how to compute the anti-dependence of any
+  // other node. The exceptions are the intrinsic nodes which are constructed specially to
+  // materialize anti-dependencies as def-use dependencies.
+  bool has_special_anti_dependence_construction = Opcode() == Op_StrCompressedCopy ||
+                                                  Opcode() == Op_StrInflatedCopy ||
+                                                  Opcode() == Op_EncodeISOArray;
+  if (!is_Mach() && !is_CFG() && !pinned() && res != nullptr && res != in_type && !has_special_anti_dependence_construction) {
+    stringStream ss;
+    ss.print(", out: ");
+    res->dump_on(&ss);
+    ss.print(", in: ");
+    in_type->dump_on(&ss);
+    assert(false, "Node %s: cannot compute anti-dependencies%s", Name(), ss.as_string());
+  }
+#endif // ASSERT
+
+  return res;
+}
+
 //------------------------------Identity---------------------------------------
 // Return a node that the given node is equivalent to.
 Node* Node::Identity(PhaseGVN* phase) {
@@ -1151,15 +1239,19 @@ const Type* Node::Value(PhaseGVN* phase) const {
 // 'Idealize' the graph rooted at this Node.
 //
 // In order to be efficient and flexible there are some subtle invariants
-// these Ideal calls need to hold.  Running with '-XX:VerifyIterativeGVN=1' checks
-// these invariants, although its too slow to have on by default.  If you are
-// hacking an Ideal call, be sure to test with '-XX:VerifyIterativeGVN=1'
+// these Ideal calls need to hold. Some of the flag bits for '-XX:VerifyIterativeGVN'
+// can help with validating these invariants, although they are too slow to have on by default:
+//    - '-XX:VerifyIterativeGVN=1' checks the def-use info
+//    - '-XX:VerifyIterativeGVN=100000' checks the return value
+// If you are hacking an Ideal call, be sure to use these.
 //
 // The Ideal call almost arbitrarily reshape the graph rooted at the 'this'
 // pointer.  If ANY change is made, it must return the root of the reshaped
 // graph - even if the root is the same Node.  Example: swapping the inputs
 // to an AddINode gives the same answer and same root, but you still have to
-// return the 'this' pointer instead of null.
+// return the 'this' pointer instead of null. If the node was already dead
+// before the Ideal call, this rule does not apply, and it is fine to return
+// nullptr even if modifications were made.
 //
 // You cannot return an OLD Node, except for the 'this' pointer.  Use the
 // Identity call to return an old Node; basically if Identity can find
@@ -1219,6 +1311,13 @@ bool Node::has_special_unique_user() const {
   } else if (this->is_Load() && n->is_Move()) {
     // Condition for MoveX2Y (LoadX mem) => LoadY mem
     return true;
+  } else if (op == Op_LoadUS && n->Opcode() == Op_LShiftI) {
+    // Condition for RShiftI(LShiftI(LoadUS(...), 16), 16) => LoadS(...), see RShiftINode::Ideal
+    return true;
+  } else if ((op == Op_LoadB || op == Op_LoadS) && n->Opcode() == Op_AndI) {
+    // AndINode::Ideal turns AndI(LoadB/S) into AndI(LoadUB/US), if the LoadB
+    // only has a single use.
+    return true;
   } else if (op == Op_AddL) {
     // Condition for convL2I(addL(x,y)) ==> addI(convL2I(x),convL2I(y))
     return n->Opcode() == Op_ConvL2I && n->in(1) == this;
@@ -1237,7 +1336,12 @@ bool Node::has_special_unique_user() const {
   } else {
     return false;
   }
-};
+}
+
+bool Node::should_process_when_disconnect_output(Node* output) const {
+  return (is_Phi() && as_Phi()->is_dead_phi()) ||
+         output->is_data_proj_of_pure_function(this);
+}
 
 //--------------------------find_exact_control---------------------------------
 // Skip Proj and CatchProj nodes chains. Check for Null and Top.
@@ -1462,19 +1566,16 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
           if (n->outcnt() == 0) {   // Input also goes dead?
             if (!n->is_Con())
               nstack.push(n);       // Clear it out as well
-          } else if (n->outcnt() == 1 &&
-                     n->has_special_unique_user()) {
-            igvn->add_users_to_worklist( n );
+          } else if (n->outcnt() == 1 && n->has_special_unique_user()) {
+            igvn->add_users_to_worklist(n);
           } else if (n->outcnt() <= 2 && n->is_Store()) {
             // Push store's uses on worklist to enable folding optimization for
             // store/store and store/load to the same address.
             // The restriction (outcnt() <= 2) is the same as in set_req_X()
             // and remove_globally_dead_node().
             igvn->add_users_to_worklist( n );
-          } else if (dead->is_data_proj_of_pure_function(n)) {
+          } else if (n->should_process_when_disconnect_output(dead)) {
             igvn->_worklist.push(n);
-          } else {
-            BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn, n);
           }
         }
       }
@@ -2609,7 +2710,7 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
     t->dump_on(st);
   } else if (t == Type::MEMORY) {
     st->print("  Memory:");
-    MemNode::dump_adr_type(adr_type(), st);
+    MemNode::dump_adr_type(out_adr_type(), st);
   } else if (Verbose || WizardMode) {
     st->print("  Type:");
     if (t) {
@@ -2871,7 +2972,7 @@ bool Node::is_iteratively_computed() {
 //--------------------------find_similar------------------------------
 // Return a node with opcode "opc" and same inputs as "this" if one can
 // be found; Otherwise return null;
-Node* Node::find_similar(int opc) {
+Node* Node::find_similar(int opc, bool is_commutative) {
   if (req() >= 2) {
     Node* def = in(1);
     if (def && def->outcnt() >= 2) {
@@ -2879,9 +2980,26 @@ Node* Node::find_similar(int opc) {
         Node* use = def->fast_out(i);
         if (use != this &&
             use->Opcode() == opc &&
-            use->req() == req() &&
-            has_same_inputs_as(use)) {
-          return use;
+            use->req() == req()) {
+          bool same = false;
+          if (!is_commutative || req() < 3) {
+            same = use->has_same_inputs_as(this);
+          } else {
+            if (use->in(0) == in(0) &&
+                ((use->in(1) == in(1) && use->in(2) == in(2)) ||
+                 (use->in(1) == in(2) && use->in(2) == in(1)))) {
+              same = true;
+              for (uint j = 3; j < req(); j++) {
+                if (use->in(j) != in(j)) {
+                  same = false;
+                  break;
+                }
+              }
+            }
+          }
+          if (same) {
+            return use;
+          }
         }
       }
     }
@@ -2969,8 +3087,9 @@ bool Node::is_dead_loop_safe() const {
     if (in(0)->is_Allocate()) {
       return false;
     }
-    // MemNode::can_see_stored_value() peeks through the boxing call
-    if (in(0)->is_CallStaticJava() && in(0)->as_CallStaticJava()->is_boxing_method()) {
+    // MemNode::can_see_stored_value() peeks through boxing calls and
+    // ProjNode::Identity() peeks through boxing and unboxing calls.
+    if (in(0)->is_boxing_or_unboxing_call()) {
       return false;
     }
     return true;
@@ -2981,6 +3100,11 @@ bool Node::is_dead_loop_safe() const {
 bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || Opcode() == Op_Mod(bt) ||
                                                       Opcode() == Op_UDiv(bt) || Opcode() == Op_UMod(bt); }
 
+bool Node::is_boxing_or_unboxing_call() const {
+  return is_CallStaticJava() && (as_CallStaticJava()->is_boxing_method() ||
+                                 as_CallStaticJava()->is_unboxing_method());
+}
+
 // `maybe_pure_function` is assumed to be the input of `this`. This is a bit redundant,
 // but we already have and need maybe_pure_function in all the call sites, so
 // it makes it obvious that the `maybe_pure_function` is the same node as in the caller,
@@ -2988,6 +3112,52 @@ bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || 
 // the local in the caller.
 bool Node::is_data_proj_of_pure_function(const Node* maybe_pure_function) const {
   return Opcode() == Op_Proj && as_Proj()->_con == TypeFunc::Parms && maybe_pure_function->is_CallLeafPure();
+}
+
+// Whether this is an intrinsic node that accesses memory and has a memory input, such as array
+// equal intrinsic. Some nodes do access memory but do not have a memory input, such as
+// PartialSubTypeCheck, they are not included here.
+bool Node::is_memory_access_intrinsic() const {
+  switch (Opcode()) {
+    case Op_StrComp:
+    case Op_StrEquals:
+    case Op_StrIndexOf:
+    case Op_StrIndexOfChar:
+    case Op_StrCompressedCopy:
+    case Op_StrInflatedCopy:
+    case Op_AryEq:
+    case Op_CountPositives:
+    case Op_VectorizedHashCode:
+    case Op_EncodeISOArray:
+      return true;
+    default:
+      return false;
+  }
+}
+
+//--------------------------has_non_debug_uses------------------------------
+// Checks whether the node has any non-debug uses or not.
+bool Node::has_non_debug_uses() const {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* u = fast_out(i);
+    if (u->is_SafePoint()) {
+      if (u->is_Call() && u->as_Call()->has_non_debug_use(this)) {
+        return true;
+      }
+      if (u->is_StoreFlat() && u->as_StoreFlat()->has_non_debug_use(this)) {
+        return true;
+      }
+      if (u->is_LoadFlat() && u->as_LoadFlat()->has_non_debug_use(this)) {
+        return true;
+      }
+      // Non-call safepoints have only debug uses.
+    } else if (u->is_ReachabilityFence()) {
+      // Reachability fence is treated as debug use.
+    } else {
+      return true; // everything else is conservatively treated as non-debug use
+    }
+  }
+  return false; // no non-debug uses found
 }
 
 //=============================================================================
@@ -3047,7 +3217,7 @@ void Unique_Node_List::remove(Node* n) {
 
 //-----------------------remove_useless_nodes----------------------------------
 // Remove useless nodes from worklist
-void Unique_Node_List::remove_useless_nodes(VectorSet &useful) {
+void Unique_Node_List::remove_useless_nodes(const VectorSet& useful) {
   for (uint i = 0; i < size(); ++i) {
     Node *n = at(i);
     assert( n != nullptr, "Did not expect null entries in worklist");
@@ -3065,7 +3235,7 @@ void Node_Stack::grow() {
   size_t old_top = pointer_delta(_inode_top,_inodes,sizeof(INode)); // save _top
   size_t old_max = pointer_delta(_inode_max,_inodes,sizeof(INode));
   size_t max = old_max << 1;             // max * 2
-  _inodes = REALLOC_ARENA_ARRAY(_a, INode, _inodes, old_max, max);
+  _inodes = REALLOC_ARENA_ARRAY(_a, _inodes, old_max, max);
   _inode_max = _inodes + max;
   _inode_top = _inodes + old_top;        // restore _top
 }
@@ -3183,4 +3353,3 @@ Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   return Node::Ideal(phase, can_reshape);
 }
-

@@ -31,6 +31,8 @@ import java.lang.classfile.Instruction;
 import java.lang.classfile.Opcode;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
+import jdk.internal.classfile.impl.BytecodeHelpers;
+import jdk.internal.classfile.impl.Util;
 
 /**
  * Models a local variable increment instruction in the {@code code} array of a
@@ -82,6 +84,37 @@ public sealed interface IncrementInstruction extends Instruction
      * @throws IllegalArgumentException if {@code slot} or {@code constant} is out of range
      */
     static IncrementInstruction of(int slot, int constant) {
-        return new AbstractInstruction.UnboundIncrementInstruction(slot, constant);
+        var opcode = BytecodeHelpers.validateAndIsWideIinc(slot, constant) ? Opcode.IINC_W: Opcode.IINC;
+        return new AbstractInstruction.UnboundIncrementInstruction(opcode, slot, constant);
+    }
+
+    /**
+     * {@return an increment instruction}
+     * <p>
+     * {@code slot} must be {@link java.lang.classfile##u1 u1} and
+     * {@code constant} must be within {@code [-128, 127]} for
+     * {@link Opcode#IINC iinc}, or {@code slot} must be
+     * {@link java.lang.classfile##u2 u2} and {@code constant} must be
+     * within {@code [-32768, 32767]} for {@link Opcode#IINC_W wide iinc}.
+     *
+     * @apiNote
+     * The explicit {@code op} argument allows creating {@code wide} or
+     * regular increment instructions when {@code slot} and
+     * {@code constant} can be encoded with more optimized
+     * increment instructions.
+     *
+     * @param op the opcode for the specific type of increment instruction,
+     *           which must be of kind {@link Opcode.Kind#INCREMENT}
+     * @param slot the local variable slot to increment
+     * @param constant the increment constant
+     * @throws IllegalArgumentException if the opcode kind is not
+     *         {@link Opcode.Kind#INCREMENT} or {@code slot} or
+     *         {@code constant} is out of range
+     * @since 27
+     */
+    static IncrementInstruction of(Opcode op, int slot, int constant) {
+        Util.checkKind(op, Opcode.Kind.INCREMENT);
+        BytecodeHelpers.validateIncrement(op, slot, constant);
+        return new AbstractInstruction.UnboundIncrementInstruction(op, slot, constant);
     }
 }

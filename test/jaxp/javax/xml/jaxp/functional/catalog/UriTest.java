@@ -23,35 +23,37 @@
 
 package catalog;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import javax.xml.catalog.CatalogException;
+import javax.xml.catalog.CatalogFeatures;
+import javax.xml.catalog.CatalogResolver;
+
 import static catalog.CatalogTestUtils.CATALOG_URI;
 import static catalog.CatalogTestUtils.RESOLVE_CONTINUE;
 import static catalog.CatalogTestUtils.catalogUriResolver;
 import static catalog.ResolutionChecker.checkNoUriMatch;
 import static catalog.ResolutionChecker.checkUriResolution;
-
-import javax.xml.catalog.CatalogResolver;
-import javax.xml.catalog.CatalogException;
-import javax.xml.catalog.CatalogFeatures;
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm catalog.UriTest
+ * @run junit/othervm catalog.UriTest
  * @summary Get matched URIs from uri entries.
  */
 public class UriTest {
 
-    @Test(dataProvider = "uri-matchedUri")
+    @ParameterizedTest
+    @MethodSource("dataOnMatch")
     public void testMatch(String uri, String matchedUri) {
         checkUriResolution(createResolver(), uri, matchedUri);
     }
 
-    @DataProvider(name = "uri-matchedUri")
-    public Object[][] dataOnMatch() {
+    public static Object[][] dataOnMatch() {
         return new Object[][] {
                 // The matched URI of the specified URI reference is defined in
                 // a uri entry. The match is an absolute path.
@@ -92,12 +94,12 @@ public class UriTest {
     /*
      * If no match is found, a CatalogException should be thrown.
      */
-    @Test(expectedExceptions = CatalogException.class)
+    @Test
     public void testNoMatch() {
-        checkNoUriMatch(createResolver());
+        assertThrows(CatalogException.class, () -> checkNoUriMatch(createResolver()));
     }
 
-    private CatalogResolver createResolver() {
+    private static CatalogResolver createResolver() {
         return catalogUriResolver(CATALOG_URI);
     }
 }

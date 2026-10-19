@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,24 +26,25 @@
  * @bug 8186046
  * @summary Test nested dynamic constant declarations that are recursive
  * @compile CondyNestedTest_Code.jcod
- * @run testng CondyNestedTest
- * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyNestedTest
+ * @run junit CondyNestedTest
+ * @run junit/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyNestedTest
  */
-
-import org.testng.Assert;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CondyNestedTest {
 
     static final Class[] THROWABLES = {InvocationTargetException.class, StackOverflowError.class};
     private static final MethodHandles.Lookup L = MethodHandles.lookup();
 
-    Class<?> c;
+    static Class<?> c;
 
 //    static final MethodHandles.Lookup L = MethodHandles.lookup();
 //
@@ -243,28 +244,17 @@ public class CondyNestedTest {
 //    }
 
     static void test(Method m, Class<? extends Throwable>... ts) {
-        Throwable caught = null;
-        try {
-            m.invoke(null);
-        } catch (Throwable t) {
-            caught = t;
-        }
+        Throwable caught = assertThrows(Throwable.class, () -> m.invoke(null));
 
-        if (caught == null) {
-            Assert.fail("Throwable expected");
-        }
-
-        String actualMessage = null;
         for (int i = 0; i < ts.length; i++) {
-            actualMessage = caught.getMessage();
-            Assert.assertNotNull(caught);
-            Assert.assertTrue(ts[i].isAssignableFrom(caught.getClass()));
+            int level = i;
+            assertInstanceOf(ts[i], caught, () -> "Level %d".formatted(level));
             caught = caught.getCause();
         }
     }
 
-    @BeforeClass
-    public void findClass() throws Exception {
+    @BeforeAll
+    public static void findClass() throws Exception {
         c = Class.forName("CondyNestedTest_Code");
     }
 

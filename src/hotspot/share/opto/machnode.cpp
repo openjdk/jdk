@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,10 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
+#include "opto/ad.hpp"
 #include "opto/machnode.hpp"
+#include "opto/node.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/output.hpp"
 #include "opto/regalloc.hpp"
 #include "utilities/vmError.hpp"
@@ -343,9 +346,73 @@ const Node* MachNode::get_base_and_disp(intptr_t &offset, const TypePtr* &adr_ty
   return base;
 }
 
+const TypePtr* MachNode::out_adr_type_impl() const {
+  // A node produces memory if it is a memory node, or if it has a memory Proj
+  bool produce_memory = bottom_type() == Type::MEMORY;
+  if (!produce_memory) {
+    for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+      const Node* out = fast_out(i);
+      if (out->is_Proj() && out->bottom_type() == Type::MEMORY) {
+        produce_memory = true;
+        break;
+      }
+    }
+  }
 
-//---------------------------------adr_type---------------------------------
-const class TypePtr *MachNode::adr_type() const {
+  if (const TypePtr* res = _out_adr_type; res != TYPE_PTR_SENTINAL) {
+#ifdef ASSERT
+    if (produce_memory) {
+      assert(res != nullptr, "must declare an out_adr_type");
+      verify_adr_type(res, compute_adr_type_from_inputs());
+    } else {
+      assert(res == nullptr, "unexpected memory producer");
+    }
+#endif // ASSERT
+    return res;
+  } else if (produce_memory) {
+    return compute_adr_type_from_inputs();
+  } else {
+    return nullptr;
+  }
+}
+
+const TypePtr* MachNode::in_adr_type_impl() const {
+  if (const TypePtr* res = _in_adr_type; res != TYPE_PTR_SENTINAL) {
+    DEBUG_ONLY(verify_adr_type(res, compute_adr_type_from_inputs()));
+    return res;
+  } else {
+    return compute_adr_type_from_inputs();
+  }
+}
+
+void MachNode::verify_adr_type(const TypePtr* declared, const TypePtr* verify) const {
+#ifdef ASSERT
+  if (Node::in_dump() || VMError::is_error_reported()) {
+    return;
+  }
+
+  if (verify == nullptr) {
+    return;
+  }
+
+  if (declared == nullptr) {
+    assert(ideal_Opcode() == Op_PrefetchAllocation, "must either not declare an adr_type, or declare a non-null adr_type");
+    return;
+  }
+
+  if (declared != verify && declared->cast_to_ptr_type(TypePtr::BotPTR) != verify) {
+    stringStream ss;
+    verify->dump_on(&ss); ss.cr();
+    declared->dump_on(&ss); ss.cr();
+    tty->print_cr("%s", ss.as_string());
+    assert(false, "adr_type may be incorrect");
+  }
+#endif // ASSERT
+}
+
+// Fall-back computation for nodes that miss _adr_type assignments due to post-match expansion,
+// seen on PPC
+const TypePtr* MachNode::compute_adr_type_from_inputs() const {
   intptr_t offset = 0;
   const TypePtr *adr_type = TYPE_PTR_SENTINAL;  // attempt computing adr_type
   const Node *base = get_base_and_disp(offset, adr_type);
@@ -415,6 +482,22 @@ const class TypePtr *MachNode::adr_type() const {
     return TypePtr::BOTTOM;
   }
   assert(tp->base() != Type::AnyPtr, "not a bare pointer");
+
+  if (tp->isa_aryptr()) {
+    // In the case of a flat value type array, each field has its
+    // own slice so we need to extract the field being accessed from
+    // the address computation
+    if (offset == Type::OffsetBot) {
+      Node* base;
+      Node* index;
+      const MachOper* oper = memory_inputs(base, index);
+      if (oper != (MachOper*)-1) {
+        offset = oper->constant_disp();
+        return tp->is_aryptr()->add_field_offset_and_offset(offset)->add_offset(Type::OffsetBot);
+      }
+    }
+    return tp->is_aryptr()->add_field_offset_and_offset(offset);
+  }
 
   return tp->add_offset(offset);
 }
@@ -487,6 +570,11 @@ void MachNode::method_set( intptr_t addr ) {
 
 //------------------------------rematerialize----------------------------------
 bool MachNode::rematerialize() const {
+  // Never rematerialize CastI2N because it might "hide" narrow oops from a safepoint
+  if (ideal_Opcode() == Op_CastI2N) {
+    return false;
+  }
+
   // Temps are always rematerializable
   if (is_MachTemp()) return true;
 
@@ -552,7 +640,7 @@ void MachNode::dump_spec(outputStream *st) const {
       st->print(" _");
     }
   }
-  const TypePtr *t = adr_type();
+  const TypePtr* t = in_adr_type();
   if( t ) {
     Compile* C = Compile::current();
     if( C->alias_type(t)->is_volatile() )
@@ -561,7 +649,11 @@ void MachNode::dump_spec(outputStream *st) const {
   if (barrier_data() != 0) {
     st->print(" barrier(");
     BarrierSet::barrier_set()->barrier_set_c2()->dump_barrier_data(this, st);
-    st->print(") ");
+    st->print(")");
+  }
+  if (_bottom_type != nullptr) {
+    st->print(" ");
+    _bottom_type->dump_on(st);
   }
 }
 
@@ -571,19 +663,6 @@ void MachNode::dump_format(PhaseRegAlloc *ra, outputStream *st) const {
   format(ra, st); // access to virtual
 }
 #endif
-
-//=============================================================================
-#ifndef PRODUCT
-void MachTypeNode::dump_spec(outputStream *st) const {
-  MachNode::dump_spec(st);
-  if (_bottom_type != nullptr) {
-    _bottom_type->dump_on(st);
-  } else {
-    st->print(" null");
-  }
-}
-#endif
-
 
 //=============================================================================
 int MachConstantNode::constant_offset() {
@@ -648,22 +727,6 @@ const Type *MachProjNode::bottom_type() const {
   return Type::mreg2type[_ideal_reg];
 }
 
-const TypePtr *MachProjNode::adr_type() const {
-  if (bottom_type() == Type::MEMORY) {
-    // in(0) might be a narrow MemBar; otherwise we will report TypePtr::BOTTOM
-    Node* ctrl = in(0);
-    if (ctrl == nullptr)  return nullptr; // node is dead
-    const TypePtr* adr_type = ctrl->adr_type();
-    #ifdef ASSERT
-    if (!VMError::is_error_reported() && !Node::in_dump())
-      assert(adr_type != nullptr, "source must have adr_type");
-    #endif
-    return adr_type;
-  }
-  assert(bottom_type()->base() != Type::Memory, "no other memories?");
-  return nullptr;
-}
-
 #ifndef PRODUCT
 void MachProjNode::dump_spec(outputStream *st) const {
   ProjNode::dump_spec(st);
@@ -687,12 +750,6 @@ uint MachReturnNode::size_of() const { return sizeof(*this); }
 //------------------------------Registers--------------------------------------
 const RegMask &MachReturnNode::in_RegMask( uint idx ) const {
   return _in_rms[idx];
-}
-
-const TypePtr *MachReturnNode::adr_type() const {
-  // most returns and calls are assumed to consume & modify all of memory
-  // the matcher will copy non-wide adr_types from ideal originals
-  return _adr_type;
 }
 
 //=============================================================================
@@ -719,8 +776,8 @@ const RegMask &MachSafePointNode::in_RegMask( uint idx ) const {
 
 bool MachCallNode::cmp( const Node &n ) const
 { return _tf == ((MachCallNode&)n)._tf; }
-const Type *MachCallNode::bottom_type() const { return tf()->range(); }
-const Type* MachCallNode::Value(PhaseGVN* phase) const { return tf()->range(); }
+const Type *MachCallNode::bottom_type() const { return tf()->range_cc(); }
+const Type* MachCallNode::Value(PhaseGVN* phase) const { return tf()->range_cc(); }
 
 #ifndef PRODUCT
 void MachCallNode::dump_spec(outputStream *st) const {
@@ -731,9 +788,8 @@ void MachCallNode::dump_spec(outputStream *st) const {
 }
 #endif
 
-#ifndef _LP64
 bool MachCallNode::return_value_is_used() const {
-  if (tf()->range()->cnt() == TypeFunc::Parms) {
+  if (tf()->range_sig()->cnt() == TypeFunc::Parms) {
     // void return
     return false;
   }
@@ -748,22 +804,30 @@ bool MachCallNode::return_value_is_used() const {
   }
   return false;
 }
-#endif
 
 // Similar to cousin class CallNode::returns_pointer
 // Because this is used in deoptimization, we want the type info, not the data
 // flow info; the interpreter will "use" things that are dead to the optimizer.
 bool MachCallNode::returns_pointer() const {
-  const TypeTuple *r = tf()->range();
+  const TypeTuple *r = tf()->range_sig();
   return (r->cnt() > TypeFunc::Parms &&
           r->field_at(TypeFunc::Parms)->isa_ptr());
+}
+
+bool MachCallNode::returns_scalarized() const {
+  return tf()->returns_value_type_as_fields();
 }
 
 //------------------------------Registers--------------------------------------
 const RegMask &MachCallNode::in_RegMask(uint idx) const {
   // Values in the domain use the users calling convention, embodied in the
   // _in_rms array of RegMasks.
-  if (idx < tf()->domain()->cnt()) {
+  if (entry_point() == nullptr && idx == TypeFunc::Parms) {
+    // Null entry point is a special cast where the target of the call
+    // is in a register.
+    return MachNode::in_RegMask(idx);
+  }
+  if (idx < tf()->domain_sig()->cnt()) {
     return _in_rms[idx];
   }
   if (idx == mach_constant_base_node_input()) {
@@ -794,7 +858,7 @@ void MachCallJavaNode::dump_spec(outputStream *st) const {
 const RegMask &MachCallJavaNode::in_RegMask(uint idx) const {
   // Values in the domain use the users calling convention, embodied in the
   // _in_rms array of RegMasks.
-  if (idx < tf()->domain()->cnt()) {
+  if (idx < tf()->domain_cc()->cnt()) {
     return _in_rms[idx];
   }
   if (idx == mach_constant_base_node_input()) {
@@ -873,13 +937,6 @@ JVMState jvms_for_throw(0);
 JVMState *MachHaltNode::jvms() const {
   return &jvms_for_throw;
 }
-
-uint MachMemBarNode::size_of() const { return sizeof(*this); }
-
-const TypePtr *MachMemBarNode::adr_type() const {
-  return _adr_type;
-}
-
 
 //=============================================================================
 #ifndef PRODUCT

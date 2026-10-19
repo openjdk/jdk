@@ -127,7 +127,7 @@ public class SSLSocketKeyLimit {
             System.setProperty("test.java.opts", System.getProperty("test.java.opts") +
                     " -Dtest.src=" + System.getProperty("test.src") +
                             " -Dtest.jdk=" + System.getProperty("test.jdk") +
-                            " -Djavax.net.debug=ssl,handshake" +
+                            " -Djavax.net.debug=ssl" +
                             " -Djava.security.properties=" + f.getName());
 
             System.out.println("test.java.opts: " +

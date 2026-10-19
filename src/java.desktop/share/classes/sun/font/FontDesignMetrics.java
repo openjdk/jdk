@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ import sun.java2d.DisposerRecord;
  * The FontDesignMetrics class expresses font metrics in terms of arbitrary
  * <i>typographic units</i> (not points) chosen by the font supplier
  * and used in the underlying platform font representations.  These units are
- * defined by dividing the em-square into a grid.  The em-sqaure is the
+ * defined by dividing the em-square into a grid.  The em-square is the
  * theoretical square whose dimensions are the full body height of the
  * font.  A typographic unit is the smallest measurable unit in the
  * em-square.  The number of units-per-em is determined by the font
@@ -214,12 +214,12 @@ public final class FontDesignMetrics extends FontMetrics {
         }
 
         public boolean equals(Object key) {
-            if (!(key instanceof MetricsKey)) {
-                return false;
+            if (key == this) {
+                return true;
             }
-            return
-                font.equals(((MetricsKey)key).font) &&
-                frc.equals(((MetricsKey)key).frc);
+            return key instanceof MetricsKey other &&
+                font.equals(other.font) &&
+                frc.equals(other.frc);
         }
 
         public int hashCode() {

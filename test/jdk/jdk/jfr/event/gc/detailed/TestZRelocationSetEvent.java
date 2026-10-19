@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package jdk.jfr.event.gc.detailed;
 
 import java.util.List;
 
-import static gc.testlibrary.Allocation.blackHole;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.EventNames;
@@ -36,7 +35,7 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR & vm.gc.Z
  * @requires vm.flagless
  * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @run main/othervm -XX:+UseZGC -Xmx32M jdk.jfr.event.gc.detailed.TestZRelocationSetEvent
+ * @run main/othervm -XX:+UseZGC -Xmx64M jdk.jfr.event.gc.detailed.TestZRelocationSetEvent
  */
 
 public class TestZRelocationSetEvent {

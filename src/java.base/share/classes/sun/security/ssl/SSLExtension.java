@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,6 +269,27 @@ enum SSLExtension implements SSLStringizer {
 
     // Extensions defined in RFC 7924 (TLS Cached Information Extension)
     CACHED_INFO             (0x0019, "cached_info"),
+
+    // Extensions defined in RFC 8879 (TLS Certificate Compression)
+    CH_COMPRESS_CERTIFICATE (0x001B, "compress_certificate",
+                             SSLHandshake.CLIENT_HELLO,
+                             ProtocolVersion.PROTOCOLS_OF_13,
+                             CompressCertExtension.chNetworkProducer,
+                             CompressCertExtension.chOnLoadConsumer,
+                             null,
+                             null,
+                             null,
+                             CompressCertExtension.ccStringizer),
+
+    CR_COMPRESS_CERTIFICATE (0x001B, "compress_certificate",
+                             SSLHandshake.CERTIFICATE_REQUEST,
+                             ProtocolVersion.PROTOCOLS_OF_13,
+                             CompressCertExtension.crNetworkProducer,
+                             CompressCertExtension.crOnLoadConsumer,
+                             null,
+                             null,
+                             null,
+                             CompressCertExtension.ccStringizer),
 
     // Extensions defined in RFC 5077 (TLS Session Resumption without Server-Side State)
     CH_SESSION_TICKET       (0x0023, "session_ticket",
@@ -844,7 +865,7 @@ enum SSLExtension implements SSLStringizer {
         String property = System.getProperty(propertyName);
         // this method is called from class initializer; logging here
         // will occasionally pin threads and deadlock if called from a virtual thread
-        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,sslctx")
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSLCTX)
                 && !Thread.currentThread().isVirtual()) {
             SSLLogger.fine(
                     "System property " + propertyName + " is set to '" +

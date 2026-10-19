@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,8 @@ public:
   virtual const Type *bottom_type() const = 0;
   virtual bool       is_CFG() const { return true; }
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
-  virtual bool depends_only_on_test() const { return false; }
   virtual const RegMask &out_RegMask() const;
-  virtual Node *match( const ProjNode *proj, const Matcher *m );
+  virtual Node* match(const ProjNode* proj, const Matcher* m);
   virtual uint ideal_reg() const { return NotAMachineReg; }
   ProjNode* proj_out(uint which_proj) const; // Get a named projection
   ProjNode* proj_out_or_null(uint which_proj) const;
@@ -150,6 +149,34 @@ public:
   ProjNode* find_first(uint which_proj, bool is_io_use) const;
 };
 
+class BinaryMultiNode : public MultiNode {
+protected:
+  BinaryMultiNode(Node* ctrl, Node* in1, Node* in2) : MultiNode(3) {
+    init_req(0, ctrl);
+    init_req(1, in1);
+    init_req(2, in2);
+  }
+
+public:
+  enum {
+    first_proj_num = 0,
+    second_proj_num = 1
+  };
+
+  virtual Node* Identity(PhaseGVN* phase) { return this; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape) { return nullptr; }
+  virtual const Type* Value(PhaseGVN* phase) const { return bottom_type(); }
+  virtual uint hash() const { return Node::hash(); }
+  virtual bool is_CFG() const { return false; }
+  virtual uint ideal_reg() const { return NotAMachineReg; }
+
+  ProjNode* first_proj() const { return proj_out_or_null(first_proj_num); }
+  ProjNode* second_proj() const { return proj_out_or_null(second_proj_num); }
+
+private:
+  virtual bool depends_only_on_test() const { return false; }
+};
+
 //------------------------------ProjNode---------------------------------------
 // This class defines a Projection node.  Projections project a single element
 // out of a tuple (or Signature) type.  Only MultiNodes produce TypeTuple
@@ -176,10 +203,8 @@ public:
   const bool _is_io_use;        // Used to distinguish between the projections
                                 // used on the control and io paths from a macro node
   virtual int Opcode() const;
-  virtual bool      is_CFG() const;
-  virtual bool depends_only_on_test() const { return false; }
+  virtual bool is_CFG() const;
   virtual const Type *bottom_type() const;
-  virtual const TypePtr *adr_type() const;
   virtual bool pinned() const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
@@ -200,6 +225,9 @@ public:
   //                                             other_proj->[region->..]call_uct"
   // null otherwise
   CallStaticJavaNode* is_uncommon_trap_if_pattern(Deoptimization::DeoptReason reason = Deoptimization::Reason_none) const;
+
+private:
+  virtual const TypePtr* out_adr_type_impl() const;
 };
 
 // A ProjNode variant that captures an adr_type(). Used as a projection of InitializeNode to have the right adr_type()
@@ -220,11 +248,12 @@ protected:
 public:
   NarrowMemProjNode(InitializeNode* src, const TypePtr* adr_type);
 
-  virtual const TypePtr* adr_type() const {
+  virtual int Opcode() const;
+
+private:
+  const TypePtr* out_adr_type_impl() const final {
     return _adr_type;
   }
-
-  virtual int Opcode() const;
 };
 
 template <class Callback> ProjNode* MultiNode::apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback, uint which_proj) const {
@@ -254,7 +283,11 @@ template <class Callback> ProjNode* MultiNode::apply_to_projs(DUIterator_Fast& i
  * after the current IGVN.
  */
 class TupleNode : public MultiNode {
+private:
   const TypeTuple* _tf;
+  const TypePtr* _adr_type;
+
+  TupleNode(const TypeTuple* tf, const TypePtr* out_adr_type) : MultiNode(tf->cnt()), _tf(tf), _adr_type(out_adr_type) {}
 
   template <typename... NN>
   static void make_helper(TupleNode* tn, uint i, Node* node, NN... nn) {
@@ -265,21 +298,23 @@ class TupleNode : public MultiNode {
   static void make_helper(TupleNode*, uint) {}
 
 public:
-  TupleNode(const TypeTuple* tf) : MultiNode(tf->cnt()), _tf(tf) {}
-
-  int Opcode() const override;
-  const Type* bottom_type() const override { return _tf; }
-
   /* Give as many `Node*` as you want in the `nn` pack:
-   * TupleNode::make(tf, input1)
-   * TupleNode::make(tf, input1, input2, input3, input4)
+   * TupleNode::make(tf, adr_type, input1)
+   * TupleNode::make(tf, adr_type, input1, input2, input3, input4)
    */
   template <typename... NN>
-  static TupleNode* make(const TypeTuple* tf, NN... nn) {
-    TupleNode* tn = new TupleNode(tf);
+  static TupleNode* make(const TypeTuple* tf, const TypePtr* out_adr_type, NN... nn) {
+    TupleNode* tn = new TupleNode(tf, out_adr_type);
     make_helper(tn, 0, nn...);
     return tn;
   }
+
+  int            Opcode()      const override;
+  const Type*    bottom_type() const override { return _tf; }
+  uint           size_of()     const override { return sizeof(TupleNode); }
+
+private:
+  const TypePtr* out_adr_type_impl() const final { return _adr_type; }
 };
 
 #endif // SHARE_OPTO_MULTNODE_HPP

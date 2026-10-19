@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ import static java.net.Proxy.NO_PROXY;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext ProxyTest
  *        jdk.httpclient.test.lib.common.TestServerConfigurator
- * @run main/othervm ProxyTest
+ * @run main/othervm ${test.main.class}
  * @author danielfuchs
  */
 public class ProxyTest {

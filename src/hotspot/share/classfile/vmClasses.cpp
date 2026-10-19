@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
 
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotMappedHeapLoader.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -43,6 +43,9 @@
 #include "oops/instanceStackChunkKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/globals.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 InstanceKlass* vmClasses::_klasses[static_cast<int>(vmClassID::LIMIT)]
                                                  =  { nullptr /*, nullptr...*/ };
@@ -154,7 +157,7 @@ void vmClasses::resolve_all(TRAPS) {
     }
     if (HeapShared::is_archived_heap_in_use() && !CDSConfig::is_using_full_module_graph()) {
       // Need to remove all the archived java.lang.Module objects from HeapShared::roots().
-      ClassLoaderDataShared::clear_archived_oops();
+      AOTModules::clear_archived_oops();
     }
 #endif // INCLUDE_CDS_JAVA_HEAP
     // Initialize the constant pool for the Object_class
@@ -260,10 +263,14 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
 
   klass->restore_unshareable_info(loader_data, domain, nullptr, THREAD);
   SystemDictionary::load_shared_class_misc(klass, loader_data);
-  Dictionary* dictionary = loader_data->dictionary();
-  dictionary->add_klass(THREAD, klass->name(), klass);
+
+  JFR_ONLY(Jfr::on_definition(klass, THREAD));
+
   klass->add_to_hierarchy(THREAD);
   assert(klass->is_loaded(), "Must be in at least loaded state");
+
+  Dictionary* dictionary = loader_data->dictionary();
+  dictionary->add_klass(THREAD, klass->name(), klass);
 
   if (class_load_event.should_commit()) {
     JFR_ONLY(SystemDictionary::post_class_load_event(&class_load_event, klass, loader_data);)

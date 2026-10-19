@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import java.awt.event.WindowEvent;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import sun.awt.SunToolkit;
-import sun.awt.AppContext;
 
 public class JaWSTest implements ActionListener, Runnable {
 
@@ -52,7 +51,6 @@ public class JaWSTest implements ActionListener, Runnable {
     static volatile JaWSTest worker;
     static volatile Dialog dummyDialog;
     static final Object signalObject = new Object();
-    static volatile AppContext appContextObject = null;
     static volatile Button button = null;
     static final CountDownLatch dialogFinished = new CountDownLatch(1);
 
@@ -115,9 +113,6 @@ public class JaWSTest implements ActionListener, Runnable {
                 e.printStackTrace();
                 dummyDialog.setVisible(false);
             }
-            if (appContextObject != null) {
-                appContextObject = null;
-            }
             dummyDialog.dispose();
         }
         System.err.println("Show Something");
@@ -127,21 +122,17 @@ public class JaWSTest implements ActionListener, Runnable {
     public void run() {
         System.err.println("Running");
         try {
-            appContextObject = SunToolkit.createNewAppContext();
-       } finally {
-           try {
-               Thread.sleep(1000);
-           } catch (InterruptedException ie) {
-               ie.printStackTrace();
-           }
-           System.err.println("Before Hiding 1");
-           dummyDialog.setVisible(false);
-           System.err.println("Before Synchronized");
-           synchronized (signalObject) {
-               System.err.println("In Synchronized");
-               signalObject.notify();
-               System.err.println("After Notify");
-           }
+           Thread.sleep(1000);
+        } catch (InterruptedException ie) {
+            ie.printStackTrace();
+        }
+        System.err.println("Before Hiding 1");
+        dummyDialog.setVisible(false);
+        System.err.println("Before Synchronized");
+        synchronized (signalObject) {
+            System.err.println("In Synchronized");
+            signalObject.notify();
+            System.err.println("After Notify");
         }
         System.err.println("Stop Running");
     }

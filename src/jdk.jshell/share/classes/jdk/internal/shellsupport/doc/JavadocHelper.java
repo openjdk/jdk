@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,7 @@ import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Pair;
+import java.util.function.Function;
 
 import jdk.internal.org.commonmark.ext.gfm.tables.TablesExtension;
 import jdk.internal.org.commonmark.node.Node;
@@ -114,11 +115,12 @@ public abstract class JavadocHelper implements AutoCloseable {
      * @param sourceLocations paths where source files should be searched
      * @return a JavadocHelper
      */
-    public static JavadocHelper create(JavacTask mainTask, Collection<? extends Path> sourceLocations) {
+    public static JavadocHelper create(JavacTask mainTask, Collection<? extends Path> sourceLocations,
+                                       Function<String, String> extraBinaryName2FullSource) {
         StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null);
         try {
             fm.setLocationFromPaths(StandardLocation.SOURCE_PATH, sourceLocations);
-            return new OnDemandJavadocHelper(mainTask, fm, sourceLocations);
+            return new OnDemandJavadocHelper(mainTask, fm, extraBinaryName2FullSource);
         } catch (IOException ex) {
             try {
                 fm.close();
@@ -139,16 +141,6 @@ public abstract class JavadocHelper implements AutoCloseable {
                 @Override
                 public String getResolvedDocComment(StoredElement forElement) throws IOException {
                     return null;
-                }
-
-                @Override
-                public StoredElement getHandle(Element forElement) {
-                    return null;
-                }
-
-                @Override
-                public Collection<? extends Path> getSourceLocations() {
-                    return List.of();
                 }
             };
         }
@@ -174,9 +166,6 @@ public abstract class JavadocHelper implements AutoCloseable {
      */
     public abstract Element getSourceElement(Element forElement) throws IOException;
 
-    public abstract StoredElement getHandle(Element forElement);
-    public abstract Collection<? extends Path> getSourceLocations();
-
     /**Closes the helper.
      *
      * @throws IOException if something foes wrong during the close
@@ -184,20 +173,86 @@ public abstract class JavadocHelper implements AutoCloseable {
     @Override
     public abstract void close() throws IOException;
 
-    public record StoredElement(String module, String binaryName, String handle) {}
+    public record StoredElement(String module, String binaryName, String handle) {
+        public static StoredElement getStoredElement(JavacTask mainTask, Element forElement) {
+            TypeElement type = topLevelType(forElement);
+
+            if (type == null)
+                return null;
+
+            Elements elements = mainTask.getElements();
+            ModuleElement module = elements.getModuleOf(type);
+            String moduleName = module == null || module.isUnnamed()
+                    ? null
+                    : module.getQualifiedName().toString();
+            String binaryName = elements.getBinaryName(type).toString();
+            String handle = elementSignature(forElement);
+
+            return new StoredElement(moduleName, binaryName, handle);
+        }
+
+    }
+
+    private static String elementSignature(Element el) {
+        switch (el.getKind()) {
+            case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE: case RECORD:
+                return ((TypeElement) el).getQualifiedName().toString();
+            case FIELD:
+                return elementSignature(el.getEnclosingElement()) + "." + el.getSimpleName() + ":" + el.asType();
+            case ENUM_CONSTANT:
+                return elementSignature(el.getEnclosingElement()) + "." + el.getSimpleName();
+            case EXCEPTION_PARAMETER: case LOCAL_VARIABLE: case PARAMETER: case RESOURCE_VARIABLE:
+                return el.getSimpleName() + ":" + el.asType();
+            case CONSTRUCTOR: case METHOD:
+                StringBuilder header = new StringBuilder();
+                header.append(elementSignature(el.getEnclosingElement()));
+                if (el.getKind() == ElementKind.METHOD) {
+                    header.append(".");
+                    header.append(el.getSimpleName());
+                }
+                header.append("(");
+                String sep = "";
+                ExecutableElement method = (ExecutableElement) el;
+                for (Iterator<? extends VariableElement> i = method.getParameters().iterator(); i.hasNext();) {
+                    VariableElement p = i.next();
+                    header.append(sep);
+                    header.append(p.asType());
+                    sep = ", ";
+                }
+                header.append(")");
+                return header.toString();
+            case PACKAGE, STATIC_INIT, INSTANCE_INIT, TYPE_PARAMETER,
+                 OTHER, MODULE, RECORD_COMPONENT, BINDING_VARIABLE:
+                return el.toString();
+            default:
+                throw Assert.error(el.getKind().name());
+        }
+    }
+
+    private static TypeElement topLevelType(Element el) {
+        if (el.getKind() == ElementKind.PACKAGE)
+            return null;
+
+        while (el != null && el.getEnclosingElement().getKind() != ElementKind.PACKAGE) {
+            el = el.getEnclosingElement();
+        }
+
+        return el != null && (el.getKind().isClass() || el.getKind().isInterface()) ? (TypeElement) el : null;
+    }
 
     private static final class OnDemandJavadocHelper extends JavadocHelper {
         private final JavacTask mainTask;
         private final JavaFileManager baseFileManager;
         private final StandardJavaFileManager fm;
         private final Map<String, Pair<JavacTask, TreePath>> signature2Source = new HashMap<>();
-        private final Collection<? extends Path> sourceLocations;
+        private final Function<String, String> extraBinaryName2FullSource;
 
-        private OnDemandJavadocHelper(JavacTask mainTask, StandardJavaFileManager fm, Collection<? extends Path> sourceLocations) {
+        private OnDemandJavadocHelper(JavacTask mainTask, StandardJavaFileManager fm,
+                                      Function<String, String> extraBinaryName2FullSource) {
             this.mainTask = mainTask;
             this.baseFileManager = ((JavacTaskImpl) mainTask).getContext().get(JavaFileManager.class);
             this.fm = fm;
-            this.sourceLocations = sourceLocations;
+            this.extraBinaryName2FullSource = extraBinaryName2FullSource;
         }
 
         @Override
@@ -233,29 +288,6 @@ public abstract class JavadocHelper implements AutoCloseable {
                 return forElement;
 
             return result;
-        }
-
-        @Override
-        public StoredElement getHandle(Element forElement) {
-            TypeElement type = topLevelType(forElement);
-
-            if (type == null)
-                return null;
-
-            Elements elements = mainTask.getElements();
-            ModuleElement module = elements.getModuleOf(type);
-            String moduleName = module == null || module.isUnnamed()
-                    ? null
-                    : module.getQualifiedName().toString();
-            String binaryName = elements.getBinaryName(type).toString();
-            String handle = elementSignature(forElement);
-
-            return new StoredElement(moduleName, binaryName, handle);
-        }
-
-        @Override
-        public Collection<? extends Path> getSourceLocations() {
-            return sourceLocations;
         }
 
          private String getResolvedDocComment(JavacTask task, TreePath el) throws IOException {
@@ -543,9 +575,9 @@ public abstract class JavadocHelper implements AutoCloseable {
 
                         for (DocTree t : inheritedText.get(0)) {
                             start = Math.min(start,
-                                             sp.getStartPosition(null, inheritedDocTree, t) - offset);
+                                             sp.getStartPosition(inheritedDocTree, t) - offset);
                             end   = Math.max(end,
-                                             sp.getEndPosition(null, inheritedDocTree, t) - offset);
+                                             sp.getEndPosition(inheritedDocTree, t) - offset);
                         }
                         String text = end >= 0 ? inherited.substring((int) start, (int) end) : "";
 
@@ -559,8 +591,8 @@ public abstract class JavadocHelper implements AutoCloseable {
                         } else {
                             //replace the {@inheritDoc} with the full text from
                             //the overridden method:
-                            long inheritedStart = sp.getStartPosition(null, dcTree, node);
-                            long inheritedEnd   = sp.getEndPosition(null, dcTree, node);
+                            long inheritedStart = sp.getStartPosition(dcTree, node);
+                            long inheritedEnd   = sp.getEndPosition(dcTree, node);
                             int[] span = new int[] {(int) inheritedStart, (int) inheritedEnd};
 
                             replace.computeIfAbsent(span, s -> new ArrayList<>())
@@ -571,11 +603,11 @@ public abstract class JavadocHelper implements AutoCloseable {
                 }
                 @Override
                 public Void visitLink(LinkTree node, Void p) {
-                    if (sp.isRewrittenTree(null, dcTree, node)) {
+                    if (sp.isRewrittenTree(dcTree, node)) {
                         //this link is a synthetic rewritten link, replace
                         //the original span with the new link:
-                        int start = (int) sp.getStartPosition(null, dcTree, node);
-                        int end   = (int) sp.getEndPosition(null, dcTree, node);
+                        int start = (int) sp.getStartPosition(dcTree, node);
+                        int end   = (int) sp.getEndPosition(dcTree, node);
 
                         replace.computeIfAbsent(new int[] {start, end}, _ -> new ArrayList<>())
                                .add(node.toString());
@@ -601,7 +633,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                             //this tree)
                             //if there is a newline immediately behind this tree, insert behind
                             //the newline:
-                            long endPos = sp.getEndPosition(null, dcTree, tree);
+                            long endPos = sp.getEndPosition(dcTree, tree);
                             if (endPos >= offset) {
                                 if (endPos - offset + 1 < docComment.length() &&
                                     docComment.charAt((int) (endPos - offset + 1)) == '\n') {
@@ -744,7 +776,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                         }
                     };
                 DocCommentTree tree = trees.getDocCommentTree(fo);
-                offset += (int) trees.getSourcePositions().getStartPosition(null, tree, tree);
+                offset += (int) trees.getSourcePositions().getStartPosition(tree, tree);
                 return Pair.of(tree, offset);
             } catch (URISyntaxException ex) {
                 throw new IllegalStateException(ex);
@@ -822,52 +854,6 @@ public abstract class JavadocHelper implements AutoCloseable {
             }
         }
         //where:
-            private String elementSignature(Element el) {
-                switch (el.getKind()) {
-                    case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE: case RECORD:
-                        return ((TypeElement) el).getQualifiedName().toString();
-                    case FIELD:
-                        return elementSignature(el.getEnclosingElement()) + "." + el.getSimpleName() + ":" + el.asType();
-                    case ENUM_CONSTANT:
-                        return elementSignature(el.getEnclosingElement()) + "." + el.getSimpleName();
-                    case EXCEPTION_PARAMETER: case LOCAL_VARIABLE: case PARAMETER: case RESOURCE_VARIABLE:
-                        return el.getSimpleName() + ":" + el.asType();
-                    case CONSTRUCTOR: case METHOD:
-                        StringBuilder header = new StringBuilder();
-                        header.append(elementSignature(el.getEnclosingElement()));
-                        if (el.getKind() == ElementKind.METHOD) {
-                            header.append(".");
-                            header.append(el.getSimpleName());
-                        }
-                        header.append("(");
-                        String sep = "";
-                        ExecutableElement method = (ExecutableElement) el;
-                        for (Iterator<? extends VariableElement> i = method.getParameters().iterator(); i.hasNext();) {
-                            VariableElement p = i.next();
-                            header.append(sep);
-                            header.append(p.asType());
-                            sep = ", ";
-                        }
-                        header.append(")");
-                        return header.toString();
-                    case PACKAGE, STATIC_INIT, INSTANCE_INIT, TYPE_PARAMETER,
-                         OTHER, MODULE, RECORD_COMPONENT, BINDING_VARIABLE:
-                        return el.toString();
-                    default:
-                        throw Assert.error(el.getKind().name());
-                }
-            }
-
-            private TypeElement topLevelType(Element el) {
-                if (el.getKind() == ElementKind.PACKAGE)
-                    return null;
-
-                while (el != null && el.getEnclosingElement().getKind() != ElementKind.PACKAGE) {
-                    el = el.getEnclosingElement();
-                }
-
-                return el != null && (el.getKind().isClass() || el.getKind().isInterface()) ? (TypeElement) el : null;
-            }
 
             private void fillElementCache(JavacTask task, CompilationUnitTree cut) throws IOException {
                 Trees trees = Trees.instance(task);
@@ -907,8 +893,15 @@ public abstract class JavadocHelper implements AutoCloseable {
                                                         binaryName,
                                                         JavaFileObject.Kind.SOURCE);
 
-            if (jfo == null)
-                return null;
+            if (jfo == null) {
+                String fullSource = extraBinaryName2FullSource.apply(binaryName);
+
+                if (fullSource == null) {
+                    return null;
+                }
+
+                jfo = SimpleJavaFileObject.forSource(URI.create("mem://Temp.java"), fullSource);
+            }
 
             List<JavaFileObject> jfos = Arrays.asList(jfo);
             JavaFileManager patchFM = moduleName != null
@@ -939,7 +932,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                                                    Iterable<? extends DocTree> trees) {
             StringBuilder sourceBuilder = new StringBuilder();
             List<int[]> replaceSpans = new ArrayList<>();
-            int currentSpanStart = (int) sp.getStartPosition(null, comment, trees.iterator().next());
+            int currentSpanStart = (int) sp.getStartPosition(comment, trees.iterator().next());
             DocTree lastTree = null;
 
             for (DocTree tree : trees) {
@@ -958,8 +951,8 @@ public abstract class JavadocHelper implements AutoCloseable {
                     }
                     sourceBuilder.append(code);
                 } else {
-                    int treeStart = (int) sp.getStartPosition(null, comment, tree);
-                    int treeEnd = (int) sp.getEndPosition(null, comment, tree);
+                    int treeStart = (int) sp.getStartPosition(comment, tree);
+                    int treeEnd = (int) sp.getEndPosition(comment, tree);
                     replaceSpans.add(new int[] {currentSpanStart, treeStart});
                     currentSpanStart = treeEnd;
                     sourceBuilder.append(PLACEHOLDER);
@@ -967,7 +960,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                 lastTree = tree;
             }
 
-            int end = (int) sp.getEndPosition(null, comment, lastTree);
+            int end = (int) sp.getEndPosition(comment, lastTree);
 
             replaceSpans.add(new int[] {currentSpanStart, end});
 
@@ -1006,8 +999,8 @@ public abstract class JavadocHelper implements AutoCloseable {
             }
 
             @Override
-            public long getStartPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
-                ensureAdjustedSpansFilled(file, comment, tree);
+            public long getStartPosition(DocCommentTree comment, DocTree tree) {
+                ensureAdjustedSpansFilled(comment, tree);
 
                 long[] adjusted = adjustedSpan.get(tree);
 
@@ -1015,12 +1008,12 @@ public abstract class JavadocHelper implements AutoCloseable {
                     return adjusted[0];
                 }
 
-                return delegate.getStartPosition(file, comment, tree);
+                return delegate.getStartPosition(comment, tree);
             }
 
             @Override
-            public long getEndPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
-                ensureAdjustedSpansFilled(file, comment, tree);
+            public long getEndPosition(DocCommentTree comment, DocTree tree) {
+                ensureAdjustedSpansFilled(comment, tree);
 
                 long[] adjusted = adjustedSpan.get(tree);
 
@@ -1028,28 +1021,26 @@ public abstract class JavadocHelper implements AutoCloseable {
                     return adjusted[1];
                 }
 
-                return delegate.getEndPosition(file, comment, tree);
+                return delegate.getEndPosition(comment, tree);
             }
 
             @Override
-            public long getStartPosition(CompilationUnitTree file, Tree tree) {
-                return delegate.getStartPosition(file, tree);
+            public long getStartPosition(Tree tree) {
+                return delegate.getStartPosition(tree);
             }
 
             @Override
-            public long getEndPosition(CompilationUnitTree file, Tree tree) {
-                return delegate.getEndPosition(file, tree);
+            public long getEndPosition(Tree tree) {
+                return delegate.getEndPosition(tree);
             }
 
-            boolean isRewrittenTree(CompilationUnitTree file,
-                                    DocCommentTree comment,
+            boolean isRewrittenTree(DocCommentTree comment,
                                     DocTree tree) {
-                ensureAdjustedSpansFilled(file, comment, tree);
+                ensureAdjustedSpansFilled(comment, tree);
                 return rewrittenTrees.contains(tree);
             }
 
-            private void ensureAdjustedSpansFilled(CompilationUnitTree file,
-                                                   DocCommentTree comment,
+            private void ensureAdjustedSpansFilled(DocCommentTree comment,
                                                    DocTree tree) {
                 if (tree.getKind() != DocTree.Kind.LINK &&
                     tree.getKind() != DocTree.Kind.LINK_PLAIN) {
@@ -1057,7 +1048,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                 }
 
                 long[] span;
-                long treeStart = delegate.getStartPosition(file, comment, tree);
+                long treeStart = delegate.getStartPosition(comment, tree);
 
                 if (treeStart == (-1)) {
                     LinkTree link = (LinkTree) tree;
@@ -1069,15 +1060,15 @@ public abstract class JavadocHelper implements AutoCloseable {
 
                     for (DocTree t : nested) {
                         start = Math.min(start,
-                                         delegate.getStartPosition(file, comment, t));
+                                         delegate.getStartPosition(comment, t));
                         end   = Math.max(end,
-                                         delegate.getEndPosition(file, comment, t));
+                                         delegate.getEndPosition(comment, t));
                     }
 
                     span = new long[] {(int) start - 1, (int) end + 1};
                     rewrittenTrees.add(tree);
                 } else {
-                    long treeEnd = delegate.getEndPosition(file, comment, tree);
+                    long treeEnd = delegate.getEndPosition(comment, tree);
                     span = new long[] {treeStart, treeEnd};
                 }
 

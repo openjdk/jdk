@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package java.util;
 
-import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.TrustFinalFields;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -46,10 +46,18 @@ import java.util.stream.Stream;
  * action if a value is present).
  *
  * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization or
+ * with {@linkplain java.lang.ref.Reference object references}.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code Optional} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
  *
  * @apiNote
  * {@code Optional} is primarily intended for use as a method return type where
@@ -62,7 +70,9 @@ import java.util.stream.Stream;
  * @since 1.8
  */
 @jdk.internal.ValueBased
-public final class Optional<T> {
+@TrustFinalFields
+// See doc/value-class-preview.md for an overview of value class generation
+public final /*value*/ class Optional<T> {
     /**
      * Common instance for {@code empty()}.
      */
@@ -71,7 +81,6 @@ public final class Optional<T> {
     /**
      * If non-null, the value; if null, indicates no value is present
      */
-    @Stable
     private final T value;
 
     /**

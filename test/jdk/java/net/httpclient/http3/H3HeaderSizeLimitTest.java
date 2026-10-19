@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 
 import javax.net.ssl.SSLContext;
@@ -39,15 +38,15 @@ import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.httpclient.test.lib.quic.QuicServer;
 import jdk.internal.net.http.Http3ConnectionAccess;
 import jdk.internal.net.http.http3.ConnectionSettings;
-import jdk.test.lib.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -57,19 +56,19 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @build java.net.http/jdk.internal.net.http.Http3ConnectionAccess
- * @run testng/othervm
+ * @run junit/othervm
  *              -Djdk.internal.httpclient.debug=true
- *              -Djdk.httpclient.HttpClient.log=requests,responses,errors H3HeaderSizeLimitTest
+ *              -Djdk.httpclient.HttpClient.log=requests,responses,errors ${test.main.class}
  */
 public class H3HeaderSizeLimitTest implements HttpServerAdapters {
 
     private static final long HEADER_SIZE_LIMIT_BYTES = 1024;
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    private HttpTestServer h3Server;
-    private String requestURIBase;
+    private static HttpTestServer h3Server;
+    private static String requestURIBase;
 
-    @BeforeClass
-    public void beforeClass() throws Exception {
+    @BeforeAll
+    public static void beforeClass() throws Exception {
         final QuicServer quicServer = Http3TestServer.quicServerBuilder()
                 .sslContext(sslContext)
                 .build();
@@ -82,8 +81,8 @@ public class H3HeaderSizeLimitTest implements HttpServerAdapters {
                 .port(h3Server.getAddress().getPort()).build().toString();
     }
 
-    @AfterClass
-    public void afterClass() throws Exception {
+    @AfterAll
+    public static void afterClass() throws Exception {
         if (h3Server != null) {
             System.out.println("Stopping server " + h3Server.getAddress());
             h3Server.stop();
@@ -111,7 +110,7 @@ public class H3HeaderSizeLimitTest implements HttpServerAdapters {
             final HttpResponse<Void> response = client.send(
                     reqBuilder.build(),
                     BodyHandlers.discarding());
-            Assert.assertEquals(response.statusCode(), 200, "Unexpected status code");
+            Assertions.assertEquals(200, response.statusCode(), "Unexpected status code");
             if (i == 3) {
                 var cf = Http3ConnectionAccess.peerSettings(client, response);
                 if (!cf.isDone()) {
@@ -131,14 +130,14 @@ public class H3HeaderSizeLimitTest implements HttpServerAdapters {
         }
         final HttpRequest request = reqBuilder.build();
         System.out.println("Issuing request to " + reqURI);
-        final IOException thrown = Assert.expectThrows(ProtocolException.class,
+        final IOException thrown = Assertions.assertThrows(ProtocolException.class,
                 () -> client.send(request, BodyHandlers.discarding()));
         if (!thrown.getMessage().equals("Request headers size exceeds limit set by peer")) {
             throw thrown;
         }
         // test same with async
         System.out.println("Issuing async request to " + reqURI);
-        final ExecutionException asyncThrown = Assert.expectThrows(ExecutionException.class,
+        final ExecutionException asyncThrown = Assertions.assertThrows(ExecutionException.class,
                 () -> client.sendAsync(request, BodyHandlers.discarding()).get());
         if (!(asyncThrown.getCause() instanceof ProtocolException)) {
             System.err.println("Received unexpected cause");

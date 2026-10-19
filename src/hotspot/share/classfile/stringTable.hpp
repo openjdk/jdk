@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,49 +109,17 @@ public:
   static bool needs_rehashing() { return _needs_rehashing; }
   static inline void update_needs_rehash(bool rehash);
 
-  // Sharing
-#if INCLUDE_CDS_JAVA_HEAP
-  static inline oop read_string_from_compact_hashtable(address base_address, u4 index);
-
+  // AOT support
+  static inline oop read_string_from_compact_hashtable(address base_address, u4 index) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
 private:
-  static bool _is_two_dimensional_shared_strings_array;
-  static OopHandle _shared_strings_array;
-  static int _shared_strings_array_root_index;
-
-  // All the shared strings are referenced through _shared_strings_array to keep them alive.
-  // Each shared string is stored as a 32-bit index in ::_shared_table. The index
-  // is interpreted in two ways:
-  //
-  // [1] _is_two_dimensional_shared_strings_array = false: _shared_strings_array is an Object[].
-  //     Each shared string is stored as _shared_strings_array[index]
-  //
-  // [2] _is_two_dimensional_shared_strings_array = true: _shared_strings_array is an Object[][]
-  //     This happens when there are too many elements in the shared table. We store them
-  //     using two levels of objArrays, such that none of the arrays are too big for
-  //     AOTMappedHeapWriter::is_too_large_to_archive(). In this case, the index is splited into two
-  //     parts. Each shared string is stored as _shared_strings_array[primary_index][secondary_index]:
-  //
-  //           [bits 31 .. 14][ bits 13 .. 0  ]
-  //            primary_index  secondary_index
-  const static int _secondary_array_index_bits = 14;
-  const static int _secondary_array_max_length = 1 << _secondary_array_index_bits;
-  const static int _secondary_array_index_mask = _secondary_array_max_length - 1;
-
-  // make sure _secondary_array_index_bits is not too big
-  static void verify_secondary_array_index_bits() PRODUCT_RETURN;
-#endif // INCLUDE_CDS_JAVA_HEAP
-
- private:
   static oop lookup_shared(const StringWrapper& name, unsigned int hash) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
- public:
+public:
   static oop lookup_shared(const jchar* name, int len) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static size_t shared_entry_count() NOT_CDS_JAVA_HEAP_RETURN_(0);
-  static void allocate_shared_strings_array(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-  static void load_shared_strings_array() NOT_CDS_JAVA_HEAP_RETURN;
-  static oop init_shared_strings_array() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static void init_shared_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void write_shared_table() NOT_CDS_JAVA_HEAP_RETURN;
-  static void set_shared_strings_array_index(int root_index) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+  static void move_shared_strings_into_runtime_table();
 
   // Jcmd
   static void dump(outputStream* st, bool verbose=false);

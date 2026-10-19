@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,7 @@ public class MediaName extends Media implements Attribute {
      *
      * @return the string table
      */
+    @Override
     protected String[] getStringTable()
     {
         return myStringTable.clone();
@@ -117,6 +118,7 @@ public class MediaName extends Media implements Attribute {
      *
      * @return the enumeration value table
      */
+    @Override
     protected EnumSyntax[] getEnumValueTable() {
         return (EnumSyntax[])myEnumValueTable.clone();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1006,11 +1006,11 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     public Void visitReference(ReferenceTree tree, Void ignore) {
         // Exclude same-file anchor links from reference checks
         if (!tree.getSignature().startsWith("##")) {
-            Element e = env.trees.getElement(getCurrentPath());
-            if (e == null) {
-                reportBadReference(tree);
-            } else if ((inLink || inSee)
-                    && e.getKind() == ElementKind.CLASS && e.asType().getKind() != TypeKind.DECLARED) {
+            if (inLink || inSee) {
+                if (env.trees.getElement(getCurrentPath()) == null) {
+                    reportBadReference(tree);
+                }
+            } else if (env.trees.getType(getCurrentPath()) == null) {
                 reportBadReference(tree);
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ PreservedMarksSet* ParCompactionManager::_preserved_marks_set = nullptr;
 ParCompactionManager::ParCompactionManager(PreservedMarks* preserved_marks,
                                            ReferenceProcessor* ref_processor,
                                            uint parallel_gc_threads)
-  :_partial_array_splitter(_partial_array_state_manager, parallel_gc_threads, ObjArrayMarkingStride),
+  :_partial_array_splitter(_partial_array_state_manager, parallel_gc_threads),
    _mark_and_push_closure(this, ref_processor) {
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
@@ -119,15 +119,14 @@ ParCompactionManager::gc_thread_compaction_manager(uint index) {
   return _manager_array[index];
 }
 
-void ParCompactionManager::push_objArray(oop obj) {
-  assert(obj->is_objArray(), "precondition");
+void ParCompactionManager::push_objArray(objArrayOop obj) {
+  assert(obj->is_array_with_oops(), "precondition");
   _mark_and_push_closure.do_klass(obj->klass());
 
-  objArrayOop obj_array = objArrayOop(obj);
-  size_t array_length = obj_array->length();
+  size_t array_length = obj->length();
   size_t initial_chunk_size =
-    _partial_array_splitter.start(&_marking_stack, obj_array, nullptr, array_length);
-  follow_array(obj_array, 0, initial_chunk_size);
+    _partial_array_splitter.start(&_marking_stack, obj, nullptr, array_length, ObjArrayMarkingStride);
+  follow_array(obj, 0, initial_chunk_size);
 }
 
 void ParCompactionManager::process_array_chunk(PartialArrayState* state, bool stolen) {
@@ -173,14 +172,12 @@ void ParCompactionManager::drain_region_stacks() {
 size_t ParCompactionManager::pop_shadow_region_mt_safe(PSParallelCompact::RegionData* region_ptr) {
   MonitorLocker ml(_shadow_region_monitor, Mutex::_no_safepoint_check_flag);
   while (true) {
+    // If the heap region has no remaining destination dependencies, use it directly.
+    if (region_ptr->available()) {
+      return InvalidShadow;
+    }
     if (!_shadow_region_array->is_empty()) {
       return _shadow_region_array->pop();
-    }
-    // Check if the corresponding heap region is available now.
-    // If so, we don't need to get a shadow region anymore, and
-    // we return InvalidShadow to indicate such a case.
-    if (region_ptr->claimed()) {
-      return InvalidShadow;
     }
     ml.wait(1);
   }
@@ -203,13 +200,13 @@ void ParCompactionManager::remove_all_shadow_regions() {
 
 #if TASKQUEUE_STATS
 void ParCompactionManager::print_and_reset_taskqueue_stats() {
-  marking_stacks()->print_and_reset_taskqueue_stats("Marking Stacks");
+  marking_stacks()->print_and_reset_taskqueue_stats("Full GC");
 
   auto get_pa_stats = [&](uint i) {
     return _manager_array[i]->partial_array_task_stats();
   };
   PartialArrayTaskStats::log_set(ParallelGCThreads, get_pa_stats,
-                                 "Partial Array Task Stats");
+                                 "Full GC Partial Array");
   uint parallel_gc_threads = ParallelScavengeHeap::heap()->workers().max_workers();
   for (uint i = 0; i < parallel_gc_threads; ++i) {
     get_pa_stats(i)->reset();

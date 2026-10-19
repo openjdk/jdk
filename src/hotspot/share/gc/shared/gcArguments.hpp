@@ -40,10 +40,13 @@ protected:
   virtual void initialize_heap_flags_and_sizes();
   virtual void initialize_size_info();
 
+  size_t limit_heap_by_allocatable_memory(size_t size);
+
   DEBUG_ONLY(void assert_flags();)
   DEBUG_ONLY(void assert_size_info();)
 
 public:
+  virtual void set_heap_size();
   virtual void initialize();
 
   // Return the (conservative) maximum heap alignment

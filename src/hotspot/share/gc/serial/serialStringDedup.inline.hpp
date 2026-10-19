@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -21,8 +22,8 @@
  * questions.
  */
 
-#ifndef SHARE_GC_SERIAL_STRINGDEDUP_INLINE_HPP
-#define SHARE_GC_SERIAL_STRINGDEDUP_INLINE_HPP
+#ifndef SHARE_GC_SERIAL_SERIALSTRINGDEDUP_INLINE_HPP
+#define SHARE_GC_SERIAL_SERIALSTRINGDEDUP_INLINE_HPP
 
 #include "gc/serial/serialStringDedup.hpp"
 
@@ -30,12 +31,12 @@
 #include "oops/oop.inline.hpp"
 
 bool SerialStringDedup::is_candidate_from_evacuation(oop obj,
+                                                     const Klass* klass,
                                                      bool obj_is_tenured) {
-  return StringDedup::is_enabled() &&
-         java_lang_String::is_instance(obj) &&
+  return StringDedup::is_enabled_string(klass) &&
          (obj_is_tenured ?
           StringDedup::is_below_threshold_age(obj->age()) :
           StringDedup::is_threshold_age(obj->age()));
 }
 
-#endif // SHARE_GC_SERIAL_STRINGDEDUP_INLINE_HPP
+#endif // SHARE_GC_SERIAL_SERIALSTRINGDEDUP_INLINE_HPP

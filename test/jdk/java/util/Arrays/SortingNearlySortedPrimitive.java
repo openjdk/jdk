@@ -1,6 +1,6 @@
 /*
  * Copyright 2015 Goldman Sachs.
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,9 @@
  *          code that detects patterns in the array to determine if it is nearly
  *          sorted and if so employs and optimizes merge sort rather than a
  *          Dual-Pivot QuickSort.
- *
- * @run testng SortingNearlySortedPrimitive
+ * @run junit/othervm -Xmx64m SortingNearlySortedPrimitive
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,6 +41,12 @@ import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SortingNearlySortedPrimitive {
 
     static final int BASE = 3;
@@ -112,7 +115,6 @@ public class SortingNearlySortedPrimitive {
     }
 
 
-    @DataProvider(name = "shapes")
     public Object[][] createShapes() {
         Stream<List<Object>> baseCases = Stream.of(
                 List.of("hiZeroLowTest", (IntFunction<int[]>) this::hiZeroLowData),
@@ -141,7 +143,8 @@ public class SortingNearlySortedPrimitive {
         return nl.toArray();
     }
 
-    @Test(dataProvider = "shapes")
+    @ParameterizedTest
+    @MethodSource("createShapes")
     public void testShapes(String testName, IntFunction<int[]> dataMethod, int size) {
         int[] intSourceArray = dataMethod.apply(size);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8003258 8029434
- * @run testng Lines
+ * @run junit Lines
  */
 
 import java.io.BufferedReader;
@@ -41,10 +41,15 @@ import java.util.NoSuchElementException;
 import java.util.Spliterator;
 import java.util.stream.Stream;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
 
-@Test(groups = "unit")
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class Lines {
     private static final Map<String, Integer> cases = new HashMap<>();
 
@@ -155,75 +160,81 @@ public class Lines {
     private static void verify(Map.Entry<String, Integer> e) {
         final String data = e.getKey();
         final int total_lines = e.getValue();
-        try (BufferedReader br = new BufferedReader(
-                                    new StringReader(data))) {
-            assertEquals(br.lines()
-                           .mapToInt(l -> 1).reduce(0, (x, y) -> x + y),
-                         total_lines,
-                         data + " should produce " + total_lines + " lines.");
-        } catch (IOException ioe) {
-            fail("Should not have any exception.");
-        }
+        assertDoesNotThrow
+            (() -> {
+                try (BufferedReader br =
+                     new BufferedReader(new StringReader(data))) {
+                    assertEquals(total_lines,
+                                 br.lines().mapToInt(l -> 1).reduce(0, (x, y) -> x + y),
+                                 data + " should produce " + total_lines + " lines.");
+                }
+            });
     }
 
+    @Test
     public void testLinesBasic() {
         // Basic test cases
         cases.entrySet().stream().forEach(Lines::verify);
         // Similar test, also verify MockLineReader is correct
-        for (int i = 0; i < 10; i++) {
-            try (BufferedReader br = new BufferedReader(new MockLineReader(i))) {
-                assertEquals(br.lines()
-                               .peek(l -> assertTrue(l.matches("^Line \\d+$")))
-                               .mapToInt(l -> 1).reduce(0, (x, y) -> x + y),
-                             i,
-                             "MockLineReader(" + i + ") should produce " + i + " lines.");
-            } catch (IOException ioe) {
-                fail("Unexpected IOException.");
-            }
-        }
+        assertDoesNotThrow
+            (() -> {
+                for (int i = 0; i < 10; i++) {
+                    try (BufferedReader br =
+                         new BufferedReader(new MockLineReader(i))) {
+                        assertEquals(i,
+                                     br.lines()
+                                     .peek(l -> assertTrue(l.matches("^Line \\d+$")))
+                                     .mapToInt(l -> 1).reduce(0, (x, y) -> x + y),
+                                     "MockLineReader(" + i + ") should produce " + i + " lines.");
+                    }
+                }
+            });
     }
 
+    @Test
     public void testUncheckedIOException() throws IOException {
         MockLineReader r = new MockLineReader(10, 3);
         ArrayList<String> ar = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(r)) {
-            br.lines().limit(3L).forEach(ar::add);
-            assertEquals(ar.size(), 3, "Should be able to read 3 lines.");
-        } catch (UncheckedIOException uioe) {
-            fail("Unexpected UncheckedIOException");
-        }
+        assertDoesNotThrow
+            (() -> {
+                try (BufferedReader br = new BufferedReader(r)) {
+                    br.lines().limit(3L).forEach(ar::add);
+                    assertEquals(3, ar.size(), "Should be able to read 3 lines.");
+                }
+            });
         r.reset();
-        try (BufferedReader br = new BufferedReader(r)) {
-            br.lines().forEach(ar::add);
-            fail("Should had thrown UncheckedIOException.");
-        } catch (UncheckedIOException uioe) {
-            assertEquals(r.getLineNumber(), 4, "should fail to read 4th line");
-            assertEquals(ar.size(), 6, "3 + 3 lines read");
-        }
+        assertThrows(UncheckedIOException.class,
+                     () -> {
+                         try (BufferedReader br = new BufferedReader(r)) {
+                             br.lines().forEach(ar::add);
+                         }
+                     });
+        assertEquals(4, r.getLineNumber(), "should fail to read 4th line");
+        assertEquals(6, ar.size(), "3 + 3 lines read");
         for (int i = 0; i < ar.size(); i++) {
-            assertEquals(ar.get(i), "Line " + (i % 3 + 1));
+            assertEquals("Line " + (i % 3 + 1), ar.get(i));
         }
     }
 
+    @Test
     public void testIterator() throws IOException {
         MockLineReader r = new MockLineReader(6);
         BufferedReader br = new BufferedReader(r);
         String line = br.readLine();
-        assertEquals(r.getLineNumber(), 1, "Read one line");
+        assertEquals(1, r.getLineNumber(), "Read one line");
         Stream<String> s = br.lines();
         Iterator<String> it = s.iterator();
         // Ensure iterate with only next works
         for (int i = 0; i < 5; i++) {
             String str = it.next();
-            assertEquals(str, "Line " + (i + 2), "Addtional five lines");
+            assertEquals("Line " + (i + 2), str, "Addtional five lines");
         }
         // NoSuchElementException
-        try {
-            it.next();
-            fail("Should have run out of lines.");
-        } catch (NoSuchElementException nsse) {}
+        assertThrows(NoSuchElementException.class, () -> it.next(),
+                     "Should have run out of lines.");
     }
 
+    @Test
     public void testPartialReadAndLineNo() throws IOException {
         MockLineReader r = new MockLineReader(5);
         LineNumberReader lr = new LineNumberReader(r);
@@ -231,23 +242,24 @@ public class Lines {
         lr.read(buf, 0, 5);
         assertEquals(0, lr.getLineNumber(), "LineNumberReader start with line 0");
         assertEquals(1, r.getLineNumber(), "MockLineReader start with line 1");
-        assertEquals(new String(buf), "Line ");
+        assertEquals("Line ", new String(buf));
         String l1 = lr.readLine();
-        assertEquals(l1, "1", "Remaining of the first line");
+        assertEquals("1", l1, "Remaining of the first line");
         assertEquals(1, lr.getLineNumber(), "Line 1 is read");
         assertEquals(1, r.getLineNumber(), "MockLineReader not yet go next line");
         lr.read(buf, 0, 4);
         assertEquals(1, lr.getLineNumber(), "In the middle of line 2");
-        assertEquals(new String(buf, 0, 4), "Line");
+        assertEquals("Line", new String(buf, 0, 4));
         ArrayList<String> ar = lr.lines()
              .peek(l -> assertEquals(lr.getLineNumber(), r.getLineNumber()))
              .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
-        assertEquals(ar.get(0), " 2", "Remaining in the second line");
+        assertEquals(" 2", ar.get(0), "Remaining in the second line");
         for (int i = 1; i < ar.size(); i++) {
-            assertEquals(ar.get(i), "Line " + (i + 2), "Rest are full lines");
+            assertEquals("Line " + (i + 2), ar.get(i), "Rest are full lines");
         }
     }
 
+    @Test
     public void testInterlacedRead() throws IOException {
         MockLineReader r = new MockLineReader(10);
         BufferedReader br = new BufferedReader(r);
@@ -256,26 +268,24 @@ public class Lines {
         Iterator<String> it = s.iterator();
 
         br.read(buf);
-        assertEquals(new String(buf), "Line ");
-        assertEquals(it.next(), "1");
-        try {
-            s.iterator().next();
-            fail("Should failed on second attempt to get iterator from s");
-        } catch (IllegalStateException ise) {}
+        assertEquals("Line ", new String(buf));
+        assertEquals("1", it.next());
+        assertThrows(IllegalStateException.class, () -> s.iterator().next(),
+                     "Should fail on second call to Iterator next method");
         br.read(buf, 0, 2);
-        assertEquals(new String(buf, 0, 2), "Li");
+        assertEquals("Li", new String(buf, 0, 2));
         // Get stream again should continue from where left
         // Only read remaining of the line
         br.lines().limit(1L).forEach(line -> assertEquals(line, "ne 2"));
         br.read(buf, 0, 2);
-        assertEquals(new String(buf, 0, 2), "Li");
+        assertEquals("Li", new String(buf, 0, 2));
         br.read(buf, 0, 2);
-        assertEquals(new String(buf, 0, 2), "ne");
-        assertEquals(it.next(), " 3");
+        assertEquals("ne", new String(buf, 0, 2));
+        assertEquals(" 3", it.next());
         // Line 4
         br.readLine();
         // interator pick
-        assertEquals(it.next(), "Line 5");
+        assertEquals("Line 5", it.next());
         // Another stream instantiated by lines()
         AtomicInteger line_no = new AtomicInteger(6);
         br.lines().forEach(l -> assertEquals(l, "Line " + line_no.getAndIncrement()));
@@ -283,14 +293,16 @@ public class Lines {
         assertFalse(it.hasNext());
     }
 
+    @Test
     public void testCharacteristics() {
-        try (BufferedReader br = new BufferedReader(
-                                    new StringReader(""))) {
-            Spliterator<String> instance = br.lines().spliterator();
-            assertTrue(instance.hasCharacteristics(Spliterator.NONNULL));
-            assertTrue(instance.hasCharacteristics(Spliterator.ORDERED));
-        } catch (IOException ioe) {
-            fail("Should not have any exception.");
-        }
+        assertDoesNotThrow
+            (() -> {
+                try (BufferedReader br =
+                     new BufferedReader(new StringReader(""))) {
+                    Spliterator<String> instance = br.lines().spliterator();
+                    assertTrue(instance.hasCharacteristics(Spliterator.NONNULL));
+                    assertTrue(instance.hasCharacteristics(Spliterator.ORDERED));
+                }
+            });
     }
 }

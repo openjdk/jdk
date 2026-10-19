@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,9 @@
 #include "gdefs.h"
 
 #include <sys/param.h>
-#include <sys/utsname.h>
 
 #ifdef AIX
-#include "porting_aix.h" /* For the 'dladdr' function. */
+#define dladdr JVM_dladdr
 #endif
 
 #ifdef DEBUG
@@ -50,8 +49,6 @@
     }
 
 static void *awtHandle = NULL;
-
-typedef jint JNICALL JNI_OnLoad_type(JavaVM *vm, void *reserved);
 
 /* Initialize the Java VM instance variable when the library is
    first loaded */
@@ -102,10 +99,7 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
     char buf[MAXPATHLEN];
     int32_t len;
     char *p, *tk;
-    JNI_OnLoad_type *JNI_OnLoad_ptr;
-    struct utsname name;
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(vm, JNI_VERSION_1_2);
-    void *v;
 
     if (awtHandle != NULL) {
         /* Avoid several loading attempts */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  * @author Tom Santos
  * @author Igor Kushnirskiy
  */
-public final class WindowsComboBoxUI extends BasicComboBoxUI {
+public class WindowsComboBoxUI extends BasicComboBoxUI {
 
     private static final MouseListener rolloverListener =
         new MouseAdapter() {
@@ -532,7 +532,7 @@ public final class WindowsComboBoxUI extends BasicComboBoxUI {
     }
 
     @SuppressWarnings("serial") // Same-version serialization only
-    protected final class WinComboPopUp extends BasicComboPopup {
+    protected class WinComboPopUp extends BasicComboPopup {
         private Skin listBoxBorder = null;
         private XPStyle xp;
 
@@ -550,7 +550,7 @@ public final class WindowsComboBoxUI extends BasicComboBoxUI {
             return new InvocationKeyHandler();
         }
 
-        protected final class InvocationKeyHandler extends BasicComboPopup.InvocationKeyHandler {
+        protected class InvocationKeyHandler extends BasicComboPopup.InvocationKeyHandler {
             protected InvocationKeyHandler() {
                 WinComboPopUp.this.super();
             }
@@ -570,7 +570,7 @@ public final class WindowsComboBoxUI extends BasicComboBoxUI {
     /**
      * Subclassed to highlight selected item in an editable combo box.
      */
-    public static final class WindowsComboBoxEditor
+    public static class WindowsComboBoxEditor
         extends BasicComboBoxEditor.UIResource {
 
         /**

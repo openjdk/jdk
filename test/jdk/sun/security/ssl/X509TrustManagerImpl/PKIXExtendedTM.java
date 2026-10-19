@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @test
  * @bug 6916074 8170131
  * @summary Add support for TLS 1.2
- * @enablePreview
  * @run main/othervm PKIXExtendedTM 0
  * @run main/othervm PKIXExtendedTM 1
  * @run main/othervm PKIXExtendedTM 2
@@ -917,7 +916,7 @@ public class PKIXExtendedTM {
     /*
      * Turn on SSL debugging?
      */
-    static boolean debug = false;
+    static boolean debug = Boolean.getBoolean("test.debug");
 
     /*
      * Define the server side of the test.

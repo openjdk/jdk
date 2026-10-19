@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,17 @@ package jdk.jpackage.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.lang.reflect.Array;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.converter.SimpleArgumentConverter;
 
 
 public final class JUnitUtils {
+
+    private JUnitUtils() {}
 
     /**
      * Convenience adapter for {@link Assertions#assertArrayEquals(byte[], byte[])},
@@ -64,6 +69,10 @@ public final class JUnitUtils {
         return EXCEPTION_OM.toMap(ex);
     }
 
+    public static Exception removeExceptionCause(Exception ex) {
+        return new ExceptionCauseRemover(ex);
+    }
+
 
     public static final class ExceptionPattern {
 
@@ -77,19 +86,24 @@ public final class JUnitUtils {
                 return false;
             }
 
-            if (expectedMessage != null && !expectedMessage.equals(ex.getMessage())) {
+            if (expectedMessage != null && !Objects.equals(expectedMessage.orElse(null), ex.getMessage())) {
                 return false;
             }
 
-            if (expectedCauseType != null && !expectedCauseType.isInstance(ex.getCause())) {
-                return false;
+            if (expectedCauseType != null) {
+                var cause = ex.getCause();
+                if (expectedCauseType.isEmpty() != (cause == null)) {
+                    return false;
+                } else if (expectedCauseType.isPresent() && !expectedCauseType.orElseThrow().isInstance(cause)) {
+                    return false;
+                }
             }
 
             return true;
         }
 
         public ExceptionPattern hasMessage(String v) {
-            expectedMessage = v;
+            expectedMessage = Optional.ofNullable(v);
             return this;
         }
 
@@ -99,7 +113,7 @@ public final class JUnitUtils {
         }
 
         public ExceptionPattern isCauseInstanceOf(Class<? extends Throwable> v) {
-            expectedCauseType = v;
+            expectedCauseType = Optional.ofNullable(v);
             return this;
         }
 
@@ -111,9 +125,53 @@ public final class JUnitUtils {
             return hasCause(true);
         }
 
-        private String expectedMessage;
+        private Optional<String> expectedMessage;
         private Class<? extends Exception> expectedType;
-        private Class<? extends Throwable> expectedCauseType;
+        private Optional<Class<? extends Throwable>> expectedCauseType;
+    }
+
+
+    public static class ArrayConverter extends SimpleArgumentConverter {
+
+        @Override
+        protected Object convert(Object source, Class<?> targetType) {
+
+            if (source == null) {
+                return null;
+            }
+
+            if (!(source instanceof String value) || !targetType.isArray()) {
+                throw new IllegalArgumentException("Expected a String and an array type");
+            }
+
+            var componentType = targetType.getComponentType();
+            var values = value.split("\\s*,\\s*");
+            var result = Array.newInstance(componentType, values.length);
+
+            for (int i = 0; i < values.length; i++) {
+                Array.set(result, i, TestMethodSupplier.fromString(values[i], componentType));
+            }
+
+            return result;
+        }
+    }
+
+
+    private static final class ExceptionCauseRemover extends Exception {
+
+        ExceptionCauseRemover(Exception ex) {
+            super(ex.getMessage());
+            type = ex.getClass();
+        }
+
+        // Not explicitly but implicitly used by exceptionAsPropertyMap()
+        public Class<?> getType() {
+            return type;
+        }
+
+        private final Class<?> type;
+
+        private static final long serialVersionUID = 1L;
     }
 
 

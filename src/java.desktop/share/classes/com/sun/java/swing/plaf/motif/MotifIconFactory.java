@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,7 @@ public class MotifIconFactory implements Serializable
         private Color highlight = UIManager.getColor("controlHighlight");
         private Color lightShadow = UIManager.getColor("controlLightShadow");
 
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             AbstractButton b = (AbstractButton) c;
             ButtonModel model = b.getModel();
@@ -158,10 +159,12 @@ public class MotifIconFactory implements Serializable
             }
         }
 
+        @Override
         public int getIconWidth() {
             return csize;
         }
 
+        @Override
         public int getIconHeight() {
             return csize;
         }
@@ -258,6 +261,7 @@ public class MotifIconFactory implements Serializable
         private Color highlight = UIManager.getColor("controlHighlight");
         private Color shadow = UIManager.getColor("controlShadow");
 
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             // fill interior
             AbstractButton b = (AbstractButton) c;
@@ -303,10 +307,12 @@ public class MotifIconFactory implements Serializable
             }
         }
 
+        @Override
         public int getIconWidth() {
             return 14;
         }
 
+        @Override
         public int getIconHeight() {
             return 14;
         }
@@ -315,10 +321,13 @@ public class MotifIconFactory implements Serializable
     @SuppressWarnings("serial") // Same-version serialization only
     private static class MenuItemCheckIcon implements Icon, UIResource, Serializable
     {
+        @Override
         public void paintIcon(Component c,Graphics g, int x, int y)
             {
             }
+        @Override
         public int getIconWidth() { return 0; }
+        @Override
         public int getIconHeight() { return 0; }
     }  // end class MenuItemCheckIcon
 
@@ -326,10 +335,13 @@ public class MotifIconFactory implements Serializable
     @SuppressWarnings("serial") // Same-version serialization only
     private static class MenuItemArrowIcon implements Icon, UIResource, Serializable
     {
+        @Override
         public void paintIcon(Component c,Graphics g, int x, int y)
             {
             }
+        @Override
         public int getIconWidth() { return 0; }
+        @Override
         public int getIconHeight() { return 0; }
     }  // end class MenuItemArrowIcon
 
@@ -340,6 +352,7 @@ public class MotifIconFactory implements Serializable
         private Color shadow = UIManager.getColor("controlShadow");
         private Color highlight = UIManager.getColor("controlHighlight");
 
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             AbstractButton b = (AbstractButton) c;
             ButtonModel model = b.getModel();
@@ -414,7 +427,9 @@ public class MotifIconFactory implements Serializable
             }
 
         }
+        @Override
         public int getIconWidth() { return 10; }
+        @Override
         public int getIconHeight() { return 10; }
     } // End class MenuArrowIcon
 }

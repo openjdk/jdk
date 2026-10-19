@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,7 @@ public class PrintJob2D extends PrintJob {
      * the PrintGraphics interface.
      * @see java.awt.PrintGraphics
      */
+    @Override
     public Graphics getGraphics() {
         /* The caller wants a Graphics instance but we do
          * not want them to make 2D calls. We can't hand
@@ -94,6 +95,7 @@ public class PrintJob2D extends PrintJob {
      * Except (since 1.3) when the application specifies a resolution.
      * In that case it is scaled accordingly.
      */
+    @Override
     public Dimension getPageDimension() {
         return printJobDelegate.getPageDimension();
     }
@@ -103,6 +105,7 @@ public class PrintJob2D extends PrintJob {
      * Note that this doesn't have to correspond to the physical
      * resolution of the printer.
      */
+    @Override
     public int getPageResolution() {
         return printJobDelegate.getPageResolution();
     }
@@ -110,6 +113,7 @@ public class PrintJob2D extends PrintJob {
     /**
      * Returns true if the last page will be printed first.
      */
+    @Override
     public boolean lastPageFirst() {
         return printJobDelegate.lastPageFirst();
     }
@@ -117,6 +121,7 @@ public class PrintJob2D extends PrintJob {
     /**
      * Ends the print job and does any necessary cleanup.
      */
+    @Override
     public synchronized void end() {
         printJobDelegate.end();
     }
@@ -128,6 +133,7 @@ public class PrintJob2D extends PrintJob {
             printJobDelegate = delegate;
         }
 
+        @Override
         public void dispose() {
             printJobDelegate.end();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "gc/z/zMarkStackEntry.hpp"
 #include "gc/z/zMarkTerminate.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class Thread;
@@ -60,8 +61,8 @@ private:
   ZMarkingSMR        _marking_smr;
   ZMarkStripeSet     _stripes;
   ZMarkTerminate     _terminate;
-  volatile size_t    _work_nproactiveflush;
-  volatile size_t    _work_nterminateflush;
+  Atomic<size_t>     _work_nproactiveflush;
+  Atomic<size_t>     _work_nterminateflush;
   size_t             _nproactiveflush;
   size_t             _nterminateflush;
   size_t             _ntrycomplete;

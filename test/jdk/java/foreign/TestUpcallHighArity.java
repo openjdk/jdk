@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,13 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native
+ * @run junit/othervm/native
  *   --enable-native-access=ALL-UNNAMED
  *   TestUpcallHighArity
  */
 
 import java.lang.foreign.*;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -44,6 +42,11 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestUpcallHighArity extends CallGeneratorHelper {
     static final MethodHandle MH_do_upcall;
 
@@ -59,7 +62,8 @@ public class TestUpcallHighArity extends CallGeneratorHelper {
         );
     }
 
-    @Test(dataProvider = "args")
+    @ParameterizedTest
+    @MethodSource("args")
     public void testUpcall(MethodHandle downcall, MethodType upcallType,
                            FunctionDescriptor upcallDescriptor) throws Throwable {
         AtomicReference<Object[]> capturedArgs = new AtomicReference<>();
@@ -83,7 +87,6 @@ public class TestUpcallHighArity extends CallGeneratorHelper {
         }
     }
 
-    @DataProvider
     public static Object[][] args() {
         return new Object[][]{
             { MH_do_upcall,

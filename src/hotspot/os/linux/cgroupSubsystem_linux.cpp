@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "cgroupV2Subsystem_linux.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
-#include "os_linux.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -41,6 +40,8 @@
 // Inlined from <linux/magic.h> for portability.
 #ifndef CGROUP2_SUPER_MAGIC
 #  define CGROUP2_SUPER_MAGIC 0x63677270
+#else
+  static_assert(CGROUP2_SUPER_MAGIC == 0x63677270);
 #endif
 
 // controller names have to match the *_IDX indices
@@ -181,16 +182,16 @@ void CgroupSubsystemFactory::set_controller_paths(CgroupInfo* cg_infos,
                                name, mount_path, cg_infos[controller]._mount_path);
       os::free(cg_infos[controller]._mount_path);
       os::free(cg_infos[controller]._root_mount_path);
-      cg_infos[controller]._mount_path = os::strdup(mount_path);
-      cg_infos[controller]._root_mount_path = os::strdup(root_path);
+      cg_infos[controller]._mount_path = os::strdup(mount_path, mtInternal);
+      cg_infos[controller]._root_mount_path = os::strdup(root_path, mtInternal);
       cg_infos[controller]._read_only = read_only;
     } else {
       log_debug(os, container)("Duplicate %s controllers detected. Picking %s, skipping %s.",
                                name, cg_infos[controller]._mount_path, mount_path);
     }
   } else {
-    cg_infos[controller]._mount_path = os::strdup(mount_path);
-    cg_infos[controller]._root_mount_path = os::strdup(root_path);
+    cg_infos[controller]._mount_path = os::strdup(mount_path, mtInternal);
+    cg_infos[controller]._root_mount_path = os::strdup(root_path, mtInternal);
     cg_infos[controller]._read_only = read_only;
   }
 }
@@ -287,7 +288,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
       while ((controller = strsep(&p, ISSPACE_CHARS)) != nullptr) {
         int i;
         if ((i = cg_v2_controller_index(controller)) != -1) {
-          cg_infos[i]._name = os::strdup(controller);
+          cg_infos[i]._name = os::strdup(controller, mtInternal);
           cg_infos[i]._enabled = true;
           if (i == PIDS_IDX || i == CPUSET_IDX) {
             log_debug(os, container)("Detected optional %s controller entry in %s",
@@ -332,24 +333,24 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
         continue;
       }
       if (strcmp(name, "memory") == 0) {
-        cg_infos[MEMORY_IDX]._name = os::strdup(name);
+        cg_infos[MEMORY_IDX]._name = os::strdup(name, mtInternal);
         cg_infos[MEMORY_IDX]._hierarchy_id = hierarchy_id;
         cg_infos[MEMORY_IDX]._enabled = (enabled == 1);
       } else if (strcmp(name, "cpuset") == 0) {
-        cg_infos[CPUSET_IDX]._name = os::strdup(name);
+        cg_infos[CPUSET_IDX]._name = os::strdup(name, mtInternal);
         cg_infos[CPUSET_IDX]._hierarchy_id = hierarchy_id;
         cg_infos[CPUSET_IDX]._enabled = (enabled == 1);
       } else if (strcmp(name, "cpu") == 0) {
-        cg_infos[CPU_IDX]._name = os::strdup(name);
+        cg_infos[CPU_IDX]._name = os::strdup(name, mtInternal);
         cg_infos[CPU_IDX]._hierarchy_id = hierarchy_id;
         cg_infos[CPU_IDX]._enabled = (enabled == 1);
       } else if (strcmp(name, "cpuacct") == 0) {
-        cg_infos[CPUACCT_IDX]._name = os::strdup(name);
+        cg_infos[CPUACCT_IDX]._name = os::strdup(name, mtInternal);
         cg_infos[CPUACCT_IDX]._hierarchy_id = hierarchy_id;
         cg_infos[CPUACCT_IDX]._enabled = (enabled == 1);
       } else if (strcmp(name, "pids") == 0) {
         log_debug(os, container)("Detected optional pids controller entry in %s", controllers_file);
-        cg_infos[PIDS_IDX]._name = os::strdup(name);
+        cg_infos[PIDS_IDX]._name = os::strdup(name, mtInternal);
         cg_infos[PIDS_IDX]._hierarchy_id = hierarchy_id;
         cg_infos[PIDS_IDX]._enabled = (enabled == 1);
       }
@@ -409,20 +410,20 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     while (!cgroups_v2_enabled && (token = strsep(&controllers, ",")) != nullptr) {
       if (strcmp(token, "memory") == 0) {
         assert(hierarchy_id == cg_infos[MEMORY_IDX]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch for memory");
-        cg_infos[MEMORY_IDX]._cgroup_path = os::strdup(cgroup_path);
+        cg_infos[MEMORY_IDX]._cgroup_path = os::strdup(cgroup_path, mtInternal);
       } else if (strcmp(token, "cpuset") == 0) {
         assert(hierarchy_id == cg_infos[CPUSET_IDX]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch for cpuset");
-        cg_infos[CPUSET_IDX]._cgroup_path = os::strdup(cgroup_path);
+        cg_infos[CPUSET_IDX]._cgroup_path = os::strdup(cgroup_path, mtInternal);
       } else if (strcmp(token, "cpu") == 0) {
         assert(hierarchy_id == cg_infos[CPU_IDX]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch for cpu");
-        cg_infos[CPU_IDX]._cgroup_path = os::strdup(cgroup_path);
+        cg_infos[CPU_IDX]._cgroup_path = os::strdup(cgroup_path, mtInternal);
       } else if (strcmp(token, "cpuacct") == 0) {
         assert(hierarchy_id == cg_infos[CPUACCT_IDX]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch for cpuacct");
-        cg_infos[CPUACCT_IDX]._cgroup_path = os::strdup(cgroup_path);
+        cg_infos[CPUACCT_IDX]._cgroup_path = os::strdup(cgroup_path, mtInternal);
       } else if (strcmp(token, "pids") == 0) {
         assert(hierarchy_id == cg_infos[PIDS_IDX]._hierarchy_id, "/proc/cgroups (%d) and /proc/self/cgroup (%d) hierarchy mismatch for pids",
                                                                  cg_infos[PIDS_IDX]._hierarchy_id, hierarchy_id);
-        cg_infos[PIDS_IDX]._cgroup_path = os::strdup(cgroup_path);
+        cg_infos[PIDS_IDX]._cgroup_path = os::strdup(cgroup_path, mtInternal);
       }
     }
     if (cgroups_v2_enabled) {
@@ -433,7 +434,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
       }
       for (int i = 0; i < CG_INFO_LENGTH; i++) {
         assert(cg_infos[i]._cgroup_path == nullptr, "cgroup path must only be set once");
-        cg_infos[i]._cgroup_path = os::strdup(cgroup_path);
+        cg_infos[i]._cgroup_path = os::strdup(cgroup_path, mtInternal);
       }
     }
   }
@@ -605,6 +606,11 @@ void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
   }
 }
 
+void CgroupSubsystem::adjust_controllers(physical_memory_size_type upper_mem_bound, int upper_cpu_bound) {
+  CgroupUtil::adjust_controller(memory_controller()->controller(), upper_mem_bound);
+  CgroupUtil::adjust_controller(cpu_controller()->controller(), upper_cpu_bound);
+}
+
 /* active_processor_count
  *
  * Calculate an appropriate number of active processors for the
@@ -631,22 +637,20 @@ void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
  * return:
  *    true if there were no errors. false otherwise.
  */
-bool CgroupSubsystem::active_processor_count(int& value) {
-  int cpu_count;
-  int result = -1;
-
+bool CgroupSubsystem::active_processor_count(int (*cpu_bound_func)(), double& value) {
   // We use a cache with a timeout to avoid performing expensive
   // computations in the event this function is called frequently.
   // [See 8227006].
-  CachingCgroupController<CgroupCpuController>* contrl = cpu_controller();
-  CachedMetric* cpu_limit = contrl->metrics_cache();
+  CachingCgroupController<CgroupCpuController, double>* contrl = cpu_controller();
+  CachedMetric<double>* cpu_limit = contrl->metrics_cache();
   if (!cpu_limit->should_check_metric()) {
-    value = (int)cpu_limit->value();
-    log_trace(os, container)("CgroupSubsystem::active_processor_count (cached): %d", value);
+    value = cpu_limit->value();
+    log_trace(os, container)("CgroupSubsystem::active_processor_count (cached): %.2f", value);
     return true;
   }
 
-  cpu_count = os::Linux::active_processor_count();
+  double cpu_count = static_cast<double>(cpu_bound_func());
+  double result = -1;
   if (!CgroupUtil::processor_count(contrl->controller(), cpu_count, result)) {
     return false;
   }
@@ -666,13 +670,13 @@ bool CgroupSubsystem::active_processor_count(int& value) {
  *
  * return:
  *    false if retrieving the value failed
- *    true if retrieving the value was successfull and the value was
+ *    true if retrieving the value was successful and the value was
  *    set in the 'value' reference.
  */
 bool CgroupSubsystem::memory_limit_in_bytes(physical_memory_size_type upper_bound,
                                             physical_memory_size_type& value) {
-  CachingCgroupController<CgroupMemoryController>* contrl = memory_controller();
-  CachedMetric* memory_limit = contrl->metrics_cache();
+  CachingCgroupController<CgroupMemoryController, physical_memory_size_type>* contrl = memory_controller();
+  CachedMetric<physical_memory_size_type>* memory_limit = contrl->metrics_cache();
   if (!memory_limit->should_check_metric()) {
     value = memory_limit->value();
     return true;

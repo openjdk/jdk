@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,6 +201,16 @@ public class SingleByte
             return encode(c) != UNMAPPABLE_ENCODING;
         }
 
+        public boolean canEncode(CharSequence cs) {
+            int length = cs.length();
+            for (int i = 0; i < length; i++) {
+                if (!canEncode(cs.charAt(i))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         public boolean isLegalReplacement(byte[] repl) {
             return ((repl.length == 1 && repl[0] == (byte)'?') ||
                     super.isLegalReplacement(repl));
@@ -217,7 +227,7 @@ public class SingleByte
             int len = Math.min(dl - dp, sl - sp);
 
             if (isASCIICompatible) {
-                int n = JLA.uncheckedEncodeASCII(sa, sp, da, dp, len);
+                int n = JLA.encodeASCII(sa, sp, da, dp, len);
                 sp += n;
                 dp += n;
                 len -= n;

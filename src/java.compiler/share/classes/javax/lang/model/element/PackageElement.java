@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,8 @@ import javax.lang.model.type.TypeMirror;
  * </ul>
  *
  * @see javax.lang.model.util.Elements#getPackageOf
+ * @jls 7.4 Package Declarations
+ *
  * @since 1.6
  */
 public interface PackageElement extends Element, QualifiedNameable {
@@ -87,6 +89,7 @@ public interface PackageElement extends Element, QualifiedNameable {
      * @return the fully qualified name of this package, or an
      * empty name if this is an unnamed package
      * @jls 6.7 Fully Qualified Names and Canonical Names
+     * @jls 7.4.1 Named Packages
      */
     Name getQualifiedName();
 

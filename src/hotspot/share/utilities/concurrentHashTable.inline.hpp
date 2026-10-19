@@ -157,7 +157,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   if (is_locked()) {
     return false;
   }
-  if (_first.compare_exchange(expect, node) == expect) {
+  if (_first.compare_set(expect, node)) {
     return true;
   }
   return false;
@@ -172,7 +172,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   }
   // We will expect a clean first pointer.
   Node* tmp = first();
-  if (_first.compare_exchange(tmp, set_state(tmp, STATE_LOCK_BIT)) == tmp) {
+  if (_first.compare_set(tmp, set_state(tmp, STATE_LOCK_BIT))) {
     return true;
   }
   return false;
@@ -217,7 +217,7 @@ template <typename CONFIG, MemTag MT>
 inline ConcurrentHashTable<CONFIG, MT>::
   InternalTable::~InternalTable()
 {
-  FREE_C_HEAP_ARRAY(Bucket, _buckets);
+  FREE_C_HEAP_ARRAY(_buckets);
 }
 
 // ScopedCS
@@ -1264,22 +1264,6 @@ inline TableStatistics ConcurrentHashTable<CONFIG, MT>::
   } else {
     return TableStatistics(*_stats_rate, summary, literal_bytes, sizeof(Bucket), sizeof(Node));
   }
-}
-
-template <typename CONFIG, MemTag MT>
-template <typename VALUE_SIZE_FUNC>
-inline TableStatistics ConcurrentHashTable<CONFIG, MT>::
-  statistics_get(Thread* thread, VALUE_SIZE_FUNC& vs_f, TableStatistics old)
-{
-  if (!try_resize_lock(thread)) {
-    return old;
-  }
-  InternalTable* table = get_table();
-  NumberSeq summary;
-  size_t    literal_bytes = 0;
-
-  internal_statistics_range(thread, 0, table->_size, vs_f, summary, literal_bytes);
-  return internal_statistics_epilog(thread, summary, literal_bytes);
 }
 
 template <typename CONFIG, MemTag MT>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,5 +241,22 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
         // byte bit counter in SHA-384/512
         padding = new byte[136];
         padding[0] = (byte)0x80;
+    }
+
+    /**
+     * Digest block-length bytes in a single operation.
+     * Subclasses are expected to override this method. It is intended
+     * for fixed-length short input where input includes padding bytes.
+     * @param input byte array to be digested
+     * @param inLen the length of the input
+     * @param output the output buffer
+     * @param outOffset the offset into output buffer where digest should be written
+     * @param outLen the length of the output buffer
+     * @throws UnsupportedOperationException if a subclass does not override this method
+     */
+    void implDigestFixedLengthPreprocessed (
+            byte[] input, int inLen, byte[] output, int outOffset, int outLen)
+            throws UnsupportedOperationException {
+        throw new UnsupportedOperationException("should not be here");
     }
 }

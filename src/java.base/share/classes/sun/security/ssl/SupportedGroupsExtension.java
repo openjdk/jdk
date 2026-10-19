@@ -164,7 +164,8 @@ final class SupportedGroupsExtension {
 
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(CH_SUPPORTED_GROUPS)) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                         "Ignore unavailable supported_groups extension");
                 }
@@ -177,7 +178,8 @@ final class SupportedGroupsExtension {
             for (String name : chc.sslConfig.namedGroups) {
                 NamedGroup ng = NamedGroup.nameOf(name);
                 if (ng == null) {
-                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.fine(
                                 "Ignore unspecified named group: " + name);
                     }
@@ -193,14 +195,16 @@ final class SupportedGroupsExtension {
                         ng.isSupported(chc.activeCipherSuites) &&
                         ng.isPermitted(chc.algorithmConstraints)) {
                     namedGroups.add(ng);
-                } else if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                } else if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                         "Ignore inactive or disabled named group: " + ng.name);
                 }
             }
 
             if (namedGroups.isEmpty()) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning("no available named group");
                 }
 
@@ -244,7 +248,8 @@ final class SupportedGroupsExtension {
 
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(CH_SUPPORTED_GROUPS)) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                         "Ignore unavailable supported_groups extension");
                 }
@@ -319,7 +324,8 @@ final class SupportedGroupsExtension {
 
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(EE_SUPPORTED_GROUPS)) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                         "Ignore unavailable supported_groups extension");
                 }
@@ -336,7 +342,7 @@ final class SupportedGroupsExtension {
                 NamedGroup ng = NamedGroup.nameOf(name);
                 if (ng == null) {
                     if (SSLLogger.isOn() &&
-                            SSLLogger.isOn("ssl,handshake")) {
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.fine(
                                 "Ignore unspecified named group: " + name);
                     }
@@ -352,14 +358,16 @@ final class SupportedGroupsExtension {
                         ng.isSupported(shc.activeCipherSuites) &&
                         ng.isPermitted(shc.algorithmConstraints)) {
                     namedGroups.add(ng);
-                } else if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                } else if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                         "Ignore inactive or disabled named group: " + ng.name);
                 }
             }
 
             if (namedGroups.isEmpty()) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning("no available named group");
                 }
 
@@ -399,7 +407,8 @@ final class SupportedGroupsExtension {
 
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(EE_SUPPORTED_GROUPS)) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                         "Ignore unavailable supported_groups extension");
                 }

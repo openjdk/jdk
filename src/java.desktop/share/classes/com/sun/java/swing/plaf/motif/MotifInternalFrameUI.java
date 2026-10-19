@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,11 +81,13 @@ public class MotifInternalFrameUI extends BasicInternalFrameUI {
         super(w);
     }
 
+    @Override
     public void installUI(JComponent c)   {
         super.installUI(c);
         setColors((JInternalFrame)c);
     }
 
+    @Override
     protected void installDefaults() {
         Border frameBorder = frame.getBorder();
         frame.setLayout(internalFrameLayout = createLayoutManager());
@@ -95,6 +97,7 @@ public class MotifInternalFrameUI extends BasicInternalFrameUI {
     }
 
 
+    @Override
     protected void installKeyboardActions(){
       super.installKeyboardActions();
       // We replace the
@@ -103,6 +106,7 @@ public class MotifInternalFrameUI extends BasicInternalFrameUI {
     }
 
 
+    @Override
     protected void uninstallDefaults() {
         LookAndFeel.uninstallBorder(frame);
         frame.setLayout(null);
@@ -113,15 +117,18 @@ public class MotifInternalFrameUI extends BasicInternalFrameUI {
       return frame;
     }
 
+    @Override
     public JComponent createNorthPane(JInternalFrame w) {
         titlePane = new MotifInternalFrameTitlePane(w);
         return titlePane;
     }
 
+    @Override
     public Dimension getMaximumSize(JComponent x) {
         return Toolkit.getDefaultToolkit().getScreenSize();
     }
 
+    @Override
     protected void uninstallKeyboardActions(){
       super.uninstallKeyboardActions();
       if (isKeyBindingRegistered()){
@@ -132,6 +139,7 @@ public class MotifInternalFrameUI extends BasicInternalFrameUI {
       }
     }
 
+    @Override
     protected void setupMenuOpenKey(){
         super.setupMenuOpenKey();
         ActionMap map = SwingUtilities.getUIActionMap(frame);
@@ -141,9 +149,11 @@ public class MotifInternalFrameUI extends BasicInternalFrameUI {
             // titlePane ivar in BasicInternalFrameUI, making supers action throw
             // an NPE for us.
             map.put("showSystemMenu", new AbstractAction(){
+                @Override
                 public void actionPerformed(ActionEvent e){
                     titlePane.showSystemMenu();
                 }
+                @Override
                 public boolean isEnabled(){
                     return isKeyBindingActive();
                 }
@@ -151,13 +161,16 @@ public class MotifInternalFrameUI extends BasicInternalFrameUI {
         }
     }
 
+    @Override
     protected void setupMenuCloseKey(){
         ActionMap map = SwingUtilities.getUIActionMap(frame);
         if (map != null) {
             map.put("hideSystemMenu", new AbstractAction(){
+                @Override
                 public void actionPerformed(ActionEvent e){
                     titlePane.hideSystemMenu();
                 }
+                @Override
                 public boolean isEnabled(){
                     return isKeyBindingActive();
                 }
@@ -184,6 +197,7 @@ public class MotifInternalFrameUI extends BasicInternalFrameUI {
         if (diActionMap == null) {
             diActionMap = new ActionMapUIResource();
             diActionMap.put("hideSystemMenu", new AbstractAction(){
+                @Override
                 public void actionPerformed(ActionEvent e){
                     JInternalFrame.JDesktopIcon icon = getFrame().
                                      getDesktopIcon();
@@ -191,6 +205,7 @@ public class MotifInternalFrameUI extends BasicInternalFrameUI {
                                                getUI();
                     micon.hideSystemMenu();
                 }
+                @Override
                 public boolean isEnabled(){
                     return isKeyBindingActive();
                 }
@@ -201,12 +216,14 @@ public class MotifInternalFrameUI extends BasicInternalFrameUI {
 
     /** This method is called when the frame becomes selected.
       */
+    @Override
     protected void activateFrame(JInternalFrame f) {
         super.activateFrame(f);
         setColors(f);
     }
     /** This method is called when the frame is no longer selected.
       */
+    @Override
     protected void deactivateFrame(JInternalFrame f) {
         setColors(f);
         super.deactivateFrame(f);

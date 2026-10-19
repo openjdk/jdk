@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1133,12 +1133,14 @@ fprintf(stderr,"Flags   : %d\n",dst->flags);
     {
         unsigned char *cP = (unsigned char *)mlib_ImageGetData(dst);
 
-        memset(cP, 0, mlib_ImageGetWidth(dst)*mlib_ImageGetHeight(dst));
+        if (ddata == NULL) { // zero medialib allocated memory
+            memset(cP, 0, mlib_ImageGetWidth(dst) * mlib_ImageGetHeight(dst) * mlib_ImageGetChannels(dst));
+        }
     }
 
     /* Perform the transformation */
-    if ((status = (*sMlibFns[MLIB_AFFINE].fptr)(dst, src, mtx, filter,
-                                  MLIB_EDGE_SRC_EXTEND) != MLIB_SUCCESS))
+    status = (*sMlibFns[MLIB_AFFINE].fptr)(dst, src, mtx, filter, MLIB_EDGE_SRC_EXTEND);
+    if (status != MLIB_SUCCESS)
     {
         printMedialibError(status);
         /* REMIND: Free the regions */
@@ -1209,7 +1211,6 @@ static int lookupShortData(mlib_image* src, mlib_image* dst,
     LookupArrayInfo* lookup)
 {
     int x, y;
-    unsigned int mask = NLUT-1;
 
     unsigned short* srcLine = (unsigned short*)src->data;
     unsigned char* dstLine = (unsigned char*)dst->data;
@@ -2113,7 +2114,6 @@ allocateArray(JNIEnv *env, BufImageS_t *imageP,
     unsigned char *cDataP;
     RasterS_t *rasterP = &imageP->raster;
     ColorModelS_t *cmP = &imageP->cmodel;
-    int dataType = BYTE_DATA_TYPE;
     int width;
     int height;
     HintS_t *hintP = &imageP->hints;
@@ -2131,38 +2131,7 @@ allocateArray(JNIEnv *env, BufImageS_t *imageP,
     /* increment width.  Expanding top and left requires bumping      */
     /* around pointers and incrementing the width/height              */
 
-#if 0
-    if (0 && useEdges) {
-        baseWidth  = rasterP->baseRasterWidth;
-        baseHeight = rasterP->baseRasterHeight;
-        baseXoff = rasterP->baseOriginX;
-        baseYoff = rasterP->baseOriginY;
-
-        if (rasterP->minX + rasterP->width < baseXoff + baseWidth) {
-            /* Can use edge */
-            width++;
-        }
-        if (rasterP->minY + rasterP->height < baseYoff + baseHeight) {
-            /* Can use edge */
-            height++;
-        }
-
-        if (rasterP->minX > baseXoff ) {
-            /* Can use edge */
-            width++;
-            /* NEED TO BUMP POINTER BACK A PIXELSTRIDE */
-        }
-        if (rasterP->minY  > baseYoff) {
-            /* Can use edge */
-            height++;
-            /* NEED TO BUMP POINTER BACK A SCANLINE */
-        }
-
-
-    }
-#endif
     if (cvtToDefault) {
-        int status = 0;
         *mlibImagePP = (*sMlibSysFns.createFP)(MLIB_BYTE, 4, width, height);
         if (*mlibImagePP == NULL) {
             return -1;
@@ -2216,7 +2185,11 @@ allocateArray(JNIEnv *env, BufImageS_t *imageP,
     /* Means we need to fill in alpha */
     if (!cvtToDefault && addAlpha) {
         *mlibImagePP = (*sMlibSysFns.createFP)(MLIB_BYTE, 4, width, height);
-        if (*mlibImagePP != NULL) {
+        if (*mlibImagePP == NULL) {
+            (*env)->ReleasePrimitiveArrayCritical(env, rasterP->jdata, dataP,
+                                                  JNI_ABORT);
+            return -1;
+        } else {
             unsigned int *dstP  = (unsigned int *)
                 mlib_ImageGetData(*mlibImagePP);
             int dstride = (*mlibImagePP)->stride>>2;
@@ -2232,10 +2205,10 @@ allocateArray(JNIEnv *env, BufImageS_t *imageP,
                     dP[x] = sP[x] | 0xff000000;
                 }
             }
+            (*env)->ReleasePrimitiveArrayCritical(env, rasterP->jdata, dataP,
+                                                  JNI_ABORT);
+            return 0;
         }
-        (*env)->ReleasePrimitiveArrayCritical(env, rasterP->jdata, dataP,
-                                              JNI_ABORT);
-        return 0;
     }
     else if ((hintP->packing & BYTE_INTERLEAVED) == BYTE_INTERLEAVED) {
         int nChans = (cmP->isDefaultCompatCM ? 4 : hintP->numChans);
@@ -2250,6 +2223,11 @@ allocateArray(JNIEnv *env, BufImageS_t *imageP,
                                               hintP->sStride,
                                               (unsigned char *)dataP
                                               + hintP->dataOffset);
+        if (*mlibImagePP == NULL) {
+            (*env)->ReleasePrimitiveArrayCritical(env, rasterP->jdata, dataP,
+                                                  JNI_ABORT);
+            return -1;
+        }
     }
     else if ((hintP->packing & SHORT_INTERLEAVED) == SHORT_INTERLEAVED) {
         *mlibImagePP = (*sMlibSysFns.createStructFP)(MLIB_SHORT,
@@ -2259,6 +2237,11 @@ allocateArray(JNIEnv *env, BufImageS_t *imageP,
                                               imageP->raster.scanlineStride*2,
                                               (unsigned short *)dataP
                                               + hintP->channelOffset);
+        if (*mlibImagePP == NULL) {
+            (*env)->ReleasePrimitiveArrayCritical(env, rasterP->jdata, dataP,
+                                                  JNI_ABORT);
+            return -1;
+        }
     }
     else {
         /* Release the data array */
@@ -2276,7 +2259,6 @@ allocateRasterArray(JNIEnv *env, RasterS_t *rasterP,
                     mlib_image **mlibImagePP, void **dataPP, int isSrc) {
     void *dataP;
     unsigned char *cDataP;
-    int dataType = BYTE_DATA_TYPE;
     int width;
     int height;
     int dataSize;
@@ -2301,36 +2283,6 @@ allocateRasterArray(JNIEnv *env, RasterS_t *rasterP,
     /* increment width.  Expanding top and left requires bumping      */
     /* around pointers and incrementing the width/height              */
 
-#if 0
-    if (0 && useEdges) {
-        baseWidth  = rasterP->baseRasterWidth;
-        baseHeight = rasterP->baseRasterHeight;
-        baseXoff = rasterP->baseOriginX;
-        baseYoff = rasterP->baseOriginY;
-
-        if (rasterP->minX + rasterP->width < baseXoff + baseWidth) {
-            /* Can use edge */
-            width++;
-        }
-        if (rasterP->minY + rasterP->height < baseYoff + baseHeight) {
-            /* Can use edge */
-            height++;
-        }
-
-        if (rasterP->minX > baseXoff ) {
-            /* Can use edge */
-            width++;
-            /* NEED TO BUMP POINTER BACK A PIXELSTRIDE */
-        }
-        if (rasterP->minY  > baseYoff) {
-            /* Can use edge */
-            height++;
-            /* NEED TO BUMP POINTER BACK A SCANLINE */
-        }
-
-
-    }
-#endif
     switch (rasterP->type) {
     case sun_awt_image_IntegerComponentRaster_TYPE_INT_8BIT_SAMPLES:
         if (!((rasterP->chanOffsets[0] == 0 || SAFE_TO_ALLOC_2(rasterP->chanOffsets[0], 4)) &&
@@ -2358,6 +2310,11 @@ allocateRasterArray(JNIEnv *env, RasterS_t *rasterP,
                                               width, height,
                                               rasterP->scanlineStride*4,
                                               (unsigned char *)dataP + offset);
+        if (*mlibImagePP == NULL) {
+            (*env)->ReleasePrimitiveArrayCritical(env, rasterP->jdata, dataP,
+                                                  JNI_ABORT);
+            return -1;
+        }
         *dataPP = dataP;
         return 0;
     case sun_awt_image_IntegerComponentRaster_TYPE_BYTE_SAMPLES:
@@ -2386,6 +2343,11 @@ allocateRasterArray(JNIEnv *env, RasterS_t *rasterP,
                                               width, height,
                                               rasterP->scanlineStride,
                                               (unsigned char *)dataP + offset);
+        if (*mlibImagePP == NULL) {
+            (*env)->ReleasePrimitiveArrayCritical(env, rasterP->jdata, dataP,
+                                                  JNI_ABORT);
+            return -1;
+        }
         *dataPP = dataP;
         return 0;
     case sun_awt_image_IntegerComponentRaster_TYPE_USHORT_SAMPLES:
@@ -2416,6 +2378,11 @@ allocateRasterArray(JNIEnv *env, RasterS_t *rasterP,
                                                      width, height,
                                                      rasterP->scanlineStride*2,
                                                      (unsigned char *)dataP + offset);
+        if (*mlibImagePP == NULL) {
+            (*env)->ReleasePrimitiveArrayCritical(env, rasterP->jdata, dataP,
+                                                  JNI_ABORT);
+            return -1;
+        }
         *dataPP = dataP;
         return 0;
 

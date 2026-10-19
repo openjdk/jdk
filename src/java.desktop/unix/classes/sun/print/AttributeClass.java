@@ -175,6 +175,30 @@ public final class AttributeClass {
     }
 
     /**
+     * Returns 3 int values.
+     * xres, yres, resolution as either dpi or dpcm
+     * The resolution is just a single byte of data.
+     */
+    public int[] getIntResolutionValue() {
+        int[] res = {0, 0, 0};
+        byte[] bufArray = (byte[])myValue;
+        if (bufArray != null) {
+            int nBytes = 4; // 32-bit signed integer
+            for (int j=0; j<2; j++) { // 2 set of integers
+                byte[] intBytes = new byte[nBytes];
+                // REMIND: # bytes should be 8
+                for (int i=0; i< nBytes; i++) {
+                    //+ 1 because the 1st byte is length
+                    intBytes[i] = bufArray[i+(4*j)+1];
+                }
+                res[j] = convertToInt(intBytes);
+            }
+            res[2] = (int)bufArray[9];
+        }
+        return res;
+    }
+
+    /**
      * Returns String value.
      */
     public String getStringValue() {

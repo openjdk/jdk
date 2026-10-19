@@ -55,7 +55,7 @@ public class AddAll {
         for (int i = 0; i < N; i++) {
             int rangeLen = rnd.nextInt(10);
             if (Collections.addAll(c, range(x, x + rangeLen)) !=
-                (rangeLen != 0))
+                    (rangeLen != 0))
                 throw new RuntimeException("" + rangeLen);
             x += rangeLen;
         }

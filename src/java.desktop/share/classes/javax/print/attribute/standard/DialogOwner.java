@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ public final class DialogOwner implements PrintRequestAttribute {
 
     private static class Accessor extends DialogOwnerAccessor {
 
+         @Override
          public long getOwnerID(DialogOwner owner) {
              return owner.getID();
          }
@@ -133,6 +134,7 @@ public final class DialogOwner implements PrintRequestAttribute {
      * @return printing attribute class (category), an instance of class
      *         {@link Class java.lang.Class}
      */
+    @Override
     public final Class<? extends Attribute> getCategory() {
         return DialogOwner.class;
     }
@@ -145,6 +147,7 @@ public final class DialogOwner implements PrintRequestAttribute {
      * {@code "dialog-owner"}.
      *
      */
+    @Override
     public final String getName() {
         return "dialog-owner";
 

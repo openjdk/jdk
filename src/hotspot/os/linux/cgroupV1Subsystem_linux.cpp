@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
     os::free(_path);
     _path = nullptr;
   }
-  _cgroup_path = os::strdup(cgroup_path);
+  _cgroup_path = os::strdup(cgroup_path, mtInternal);
   stringStream ss;
   if (_root != nullptr && cgroup_path != nullptr) {
     ss.print_raw(_mount_point);
@@ -120,7 +120,7 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
         }
       }
     }
-    _path = os::strdup(ss.base());
+    _path = os::strdup(ss.base(), mtInternal);
   }
 }
 
@@ -326,10 +326,8 @@ CgroupV1Subsystem::CgroupV1Subsystem(CgroupV1Controller* cpuset,
     _cpuset(cpuset),
     _cpuacct(cpuacct),
     _pids(pids) {
-  CgroupUtil::adjust_controller(memory);
-  CgroupUtil::adjust_controller(cpu);
-  _memory = new CachingCgroupController<CgroupMemoryController>(memory);
-  _cpu = new CachingCgroupController<CgroupCpuController>(cpu);
+  _memory = new CachingCgroupController<CgroupMemoryController, physical_memory_size_type>(memory);
+  _cpu = new CachingCgroupController<CgroupCpuController, double>(cpu);
 }
 
 bool CgroupV1Subsystem::is_containerized() {
@@ -475,13 +473,13 @@ void CgroupV1MemoryController::print_version_specific_info(outputStream* st, phy
 char* CgroupV1Subsystem::cpu_cpuset_cpus() {
   char cpus[1024];
   CONTAINER_READ_STRING_CHECKED(_cpuset, "/cpuset.cpus", "cpuset.cpus", cpus, 1024);
-  return os::strdup(cpus);
+  return os::strdup(cpus, mtInternal);
 }
 
 char* CgroupV1Subsystem::cpu_cpuset_memory_nodes() {
   char mems[1024];
   CONTAINER_READ_STRING_CHECKED(_cpuset, "/cpuset.mems", "cpuset.mems", mems, 1024);
-  return os::strdup(mems);
+  return os::strdup(mems, mtInternal);
 }
 
 /* cpu_quota
