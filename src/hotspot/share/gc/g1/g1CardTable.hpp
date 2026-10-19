@@ -118,7 +118,7 @@ public:
   // perform the dirtying atomically.
   inline bool mark_clean_as_from_remset(CardValue* card);
 
-  // Change Clean cards in a (large) area on the card table as From_Remset, preserving
+  // Mark Clean cards in a (large) area on the card table as From_Remset, preserving
   // cards already marked otherwise. Assumes that most cards in that area are Clean.
   // Not atomic.
   inline size_t mark_clean_range_as_from_remset(size_t start_card_index, size_t num_cards);

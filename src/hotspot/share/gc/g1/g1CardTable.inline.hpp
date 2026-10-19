@@ -70,13 +70,18 @@ inline size_t G1CardTable::mark_clean_range_as_from_remset(size_t start_card_ind
     if (value == WordAllClean) {
       *cur_word = WordAllFromRemset;
       result += sizeof(size_t);
-    } else if ((value & WordAlreadyScanned) == 0) {
-      // Do nothing if there is no "Clean" card in it.
     } else {
-      // There is a mix of cards in there. Tread "slowly".
-      size_t clean_card_mask = (value & WordAlreadyScanned) * 0xff; // All "Clean" cards have 0xff, all other places 0x00 now.
-      result += population_count(clean_card_mask) / BitsPerByte;
-      *cur_word = blend(value, WordAllFromRemset, clean_card_mask);
+      // Find the bytes that are exactly "Clean" (0xff).
+      // Adding 1 to the low 7 bits of each byte can never carry into the next byte, so
+      // bit 7 of each byte in clean_bits is set iff that byte is 0xff.
+      const size_t low_bits = (SIZE_MAX / 255) * 0x7f;
+      const size_t high_bits = ~low_bits;
+      size_t clean_bits = ((value & low_bits) + WordAlreadyScanned) & value & high_bits;
+      if (clean_bits != 0) {
+        size_t clean_card_mask = (clean_bits >> 7) * 0xff; // All "Clean" cards have 0xff, all other places 0x00 now.
+        result += population_count(clean_bits);
+        *cur_word = blend(value, WordAllFromRemset, clean_card_mask);
+      }
     }
     cur_word++;
   }
