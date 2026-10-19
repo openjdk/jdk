@@ -82,5 +82,6 @@ module jdk.jlink {
         jdk.tools.jlink.internal.plugins.VendorVersionPlugin,
         jdk.tools.jlink.internal.plugins.CDSPlugin,
         jdk.tools.jlink.internal.plugins.SaveJlinkArgfilesPlugin,
-        jdk.tools.jlink.internal.plugins.CACertsPlugin;
+        jdk.tools.jlink.internal.plugins.CACertsPlugin,
+        jdk.tools.jlink.internal.plugins.SecurityPropertiesPlugin;
 }

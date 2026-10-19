@@ -34,7 +34,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <sys/utsname.h>
 
 #include <jni.h>
 #include <jni_util.h>

@@ -651,6 +651,7 @@ void ShenandoahConcurrentGC::entry_self_forward_stranded_objects() {
                               ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
                               "concurrent self forwarding");
 
+  update_phase(ShenandoahController::EVAC);
   heap->try_inject_alloc_failure();
   heap->try_inject_pin();
   op_self_forward_stranded_objects();
