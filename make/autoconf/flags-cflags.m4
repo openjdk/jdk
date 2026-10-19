@@ -724,6 +724,12 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     else
       AC_MSG_RESULT([no])
     fi
+
+    if test "x$FLAGS_OS" = xlinux && test "x$FLAGS_CPU" = xriscv64; then
+      # SA needs asynchronous unwind tables to unwind native frames. They are
+      # not enabled by default on riscv64 before GCC 13 and Clang 17.
+      $1_CFLAGS_CPU="${$1_CFLAGS_CPU} -fasynchronous-unwind-tables"
+    fi
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
