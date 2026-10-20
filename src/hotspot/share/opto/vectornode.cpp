@@ -28,6 +28,7 @@
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
+#include "opto/genericOpts.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
@@ -918,6 +919,16 @@ VectorNode* VectorNode::scalar2vector(Node* s, uint vlen, BasicType bt, bool is_
 
   const TypeVect* vt = TypeVect::make(bt, vlen);
   return new ReplicateNode(s, vt);
+}
+
+// Build an integer constant vector, or a vector mask when is_mask is true,
+// with vlen lanes of element type bt.
+VectorNode* VectorNode::make_con(PhaseGVN* phase, uint vlen, BasicType bt, jlong value, bool is_mask) {
+  assert(is_integral_type(bt), "expected an integral type");
+  Node* const_node = bt == T_LONG
+                      ? (Node*)phase->longcon(value)
+                      : (Node*)phase->intcon((jint)value);
+  return scalar2vector(const_node, vlen, bt, is_mask);
 }
 
 VectorNode* VectorNode::shift_count(int opc, Node* cnt, uint vlen, BasicType bt) {
@@ -1909,14 +1920,8 @@ static Node* convertFromLongToMaskAll(PhaseGVN* phase, const TypeLong* bits_type
 
   if (VectorNode::is_maskall_type(bits_type, vlen) &&
       Matcher::match_rule_supported_vector(Op_Replicate, vlen, maskall_bt)) {
-    Node* con = nullptr;
-    jlong con_value = bits_type->get_con() == 0L ? 0L : -1L;
-    if (maskall_bt == T_LONG) {
-      con = phase->longcon(con_value);
-    } else {
-      con = phase->intcon(con_value);
-    }
-    Node* res = VectorNode::scalar2vector(con, vlen, maskall_bt, vt->isa_pvectmask() != nullptr);
+    int con_value = bits_type->get_con() == 0L ? 0 : -1;
+    Node* res = VectorNode::make_con(phase, vlen, maskall_bt, con_value, vt->isa_pvectmask() != nullptr);
     // Convert back to the original floating-point data type.
     if (is_floating_point_type(bt)) {
       res = new VectorMaskCastNode(phase->transform(res), vt);
@@ -2238,23 +2243,17 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
 
     int subVopc = 0;
     int addVopc = 0;
-    Node* shift_mask_node = nullptr;
-    Node* const_one_node = nullptr;
 
     assert(cnt->bottom_type()->isa_vect(), "Unexpected shift");
     if (bt == T_LONG) {
-      shift_mask_node = phase->longcon(shift_mask);
-      const_one_node = phase->longcon(1L);
       subVopc = VectorNode::opcode(Op_SubL, bt);
       addVopc = VectorNode::opcode(Op_AddL, bt);
     } else {
-      shift_mask_node = phase->intcon(shift_mask);
-      const_one_node = phase->intcon(1);
       subVopc = VectorNode::opcode(Op_SubI, bt);
       addVopc = VectorNode::opcode(Op_AddI, bt);
     }
-    Node* vector_mask = phase->transform(VectorNode::scalar2vector(shift_mask_node, vlen, bt));
-    Node* vector_one = phase->transform(VectorNode::scalar2vector(const_one_node, vlen, bt));
+    Node* vector_mask = phase->transform(VectorNode::make_con(phase, vlen, bt, shift_mask));
+    Node* vector_one = phase->transform(VectorNode::make_con(phase, vlen, bt, 1));
 
     shiftRCnt = cnt;
     shiftRCnt = phase->transform(VectorNode::make(Op_AndV, shiftRCnt, vector_mask, vt));
@@ -2546,29 +2545,17 @@ Node* FmaVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 Node* NegVNode::degenerate_integral_negate(PhaseGVN* phase, bool is_predicated) {
   const TypeVect* vt = vect_type();
   BasicType bt = vt->element_basic_type();
-  uint vlen = length();
 
   // Transformation for predicated NegVI/L
   if (is_predicated) {
       // (NegVI/L src m) ==> (AddVI/L (XorV src (ReplicateI/L -1) m) (ReplicateI/L 1) m)
-      Node* const_minus_one = nullptr;
-      Node* const_one = nullptr;
-      int add_opc;
-      if (bt == T_LONG) {
-        const_minus_one = phase->longcon(-1L);
-        const_one = phase->longcon(1L);
-        add_opc = Op_AddL;
-      } else {
-        const_minus_one = phase->intcon(-1);
-        const_one = phase->intcon(1);
-        add_opc = Op_AddI;
-      }
-      const_minus_one = phase->transform(VectorNode::scalar2vector(const_minus_one, vlen, bt));
+      int add_opc = (bt == T_LONG) ? Op_AddL : Op_AddI;
+      Node* const_minus_one = phase->transform(VectorNode::make_con(phase, vt->length(), bt, -1));
       Node* xorv = VectorNode::make(Op_XorV, in(1), const_minus_one, vt);
       xorv->add_req(in(2));
       xorv->add_flag(Node::Flag_is_predicated_vector);
       phase->transform(xorv);
-      const_one = phase->transform(VectorNode::scalar2vector(const_one, vlen, bt));
+      Node* const_one = phase->transform(VectorNode::make_con(phase, vt->length(), bt, 1));
       Node* addv = VectorNode::make(VectorNode::opcode(add_opc, bt), xorv, const_one, vt);
       addv->add_req(in(2));
       addv->add_flag(Node::Flag_is_predicated_vector);
@@ -2576,16 +2563,8 @@ Node* NegVNode::degenerate_integral_negate(PhaseGVN* phase, bool is_predicated) 
   }
 
   // NegVI/L ==> (SubVI/L (ReplicateI/L 0) src)
-  Node* const_zero = nullptr;
-  int sub_opc;
-  if (bt == T_LONG) {
-    const_zero = phase->longcon(0L);
-    sub_opc = Op_SubL;
-  } else {
-    const_zero = phase->intcon(0);
-    sub_opc = Op_SubI;
-  }
-  const_zero = phase->transform(VectorNode::scalar2vector(const_zero, vlen, bt));
+  int sub_opc = (bt == T_LONG) ? Op_SubL : Op_SubI;
+  Node* const_zero = phase->transform(VectorNode::make_con(phase, vt->length(), bt, 0));
   return VectorNode::make(VectorNode::opcode(sub_opc, bt), const_zero, in(1), vt);
 }
 
@@ -2902,55 +2881,6 @@ Node* XorVNode::Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_resha
   return new VectorBlendNode(a, blend, in(3));
 }
 
-// Canonicalize "(A & B) ^ B" to "~A & B" so backends that already match
-// "~A & B" (e.g. AArch64 BIC) can reuse that pattern.
-//
-// (XorV     (AndV     A B) B) => (AndV     B (XorV     A (Replicate -1)))
-// (XorVMask (AndVMask A B) B) => (AndVMask B (XorVMask A (MaskAll   -1)))
-Node* XorVNode::Ideal_XorV_And_to_AndNot(PhaseGVN* phase, bool can_reshape) {
-  // Predicated vectors are not supported: masked Vector API ops must keep
-  // the unmasked lanes from the first operand.
-  if (is_predicated_vector()) {
-    return nullptr;
-  }
-
-  const bool is_mask = Opcode() == Op_XorVMask;
-  const int and_opcode = is_mask ? Op_AndVMask : Op_AndV;
-
-  Node* and_node = in(1);
-  Node* shared = in(2);
-  if (and_node->Opcode() != and_opcode) {
-    and_node = in(2);
-    shared = in(1);
-  }
-  // Required conditions:
-  //   1. And should only have a single use, otherwise the optimization may be
-  //      unprofitable.
-  //   2. And must be unpredicated and share one operand with the Xor.
-  if (and_node->Opcode() != and_opcode ||
-      and_node->is_predicated_vector() ||
-      and_node->outcnt() != 1 ||
-      (shared != and_node->in(1) && shared != and_node->in(2))) {
-    return nullptr;
-  }
-
-  Node* other = and_node->in(1) == shared ? and_node->in(2) : and_node->in(1);
-  // Neither "shared" nor "other" should be the Top node
-  if (shared->is_top() || other->is_top()) {
-    return nullptr;
-  }
-
-  BasicType bt = vect_type()->element_basic_type();
-  Node* minus_one = (type2aelembytes(bt) == 8)
-                      ? (Node*)phase->longcon(-1L)
-                      : (Node*)phase->intcon(-1);
-  Node* all_ones = phase->transform(
-    VectorNode::scalar2vector(minus_one, length(), bt, is_mask));
-  Node* not_other = phase->transform(
-    VectorNode::make(Op_XorV, other, all_ones, vect_type(), is_mask));
-  return VectorNode::make(Op_AndV, shared, not_other, vect_type(), is_mask);
-}
-
 Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // (XorV src src)      => (Replicate zero)
   // (XorVMask src src)  => (MaskAll zero)
@@ -2975,11 +2905,12 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return res;
   }
 
-  res = Ideal_XorV_And_to_AndNot(phase, can_reshape);
+  // (XorV (AndV A B) B)         => (AndV B (XorV A (Replicate -1)))
+  // (XorVMask (AndVMask A B) B) => (AndVMask B (XorVMask A (MaskAll -1)))
+  res = GenericOpts::Ideal_XorAnd_to_AndNot(this, phase);
   if (res != nullptr) {
     return res;
   }
-
   return VectorNode::Ideal(phase, can_reshape);
 }
 
@@ -3137,7 +3068,7 @@ Node* VectorSliceNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         Matcher::match_rule_supported_vector(add_vopc, num_elem, elem_bt)) {
       jint elem_origin = byte_origin / type2aelembytes(elem_bt);
       Node* iota  = phase->transform(new VectorLoadConstNode(phase->makecon(TypeInt::ZERO), vt));
-      Node* shift = phase->transform(VectorNode::scalar2vector(phase->intcon(elem_origin), num_elem, elem_bt));
+      Node* shift = phase->transform(VectorNode::make_con(phase, num_elem, elem_bt, elem_origin));
       Node* index = phase->transform(VectorNode::make(add_vopc, iota, shift, vt));
       return new SelectFromTwoVectorNode(index, vec1(), vec2(), vt);
     }

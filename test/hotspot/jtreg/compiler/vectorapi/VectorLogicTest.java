@@ -65,6 +65,11 @@ public class VectorLogicTest {
     private static final long[] lb = new long[BUF_LEN];
     private static final long[] lr = new long[BUF_LEN];
 
+    private interface ByteAt { byte at(int i); }
+    private interface ShortAt { short at(int i); }
+    private interface IntAt { int at(int i); }
+    private interface LongAt { long at(int i); }
+
     static {
         Generator<Integer> iGen = RD.ints();
         Generator<Long> lGen = RD.longs();
@@ -82,30 +87,30 @@ public class VectorLogicTest {
     }
 
     @DontInline
-    private static void verifyByte() {
+    private static void verifyBytes(byte[] result, ByteAt expected) {
         for (int i = 0; i < B_SPECIES.length(); i++) {
-            Asserts.assertEquals((byte) ((ba[i] & bb[i]) ^ bb[i]), br[i]);
+            Asserts.assertEquals(expected.at(i), result[i]);
         }
     }
 
     @DontInline
-    private static void verifyShort() {
+    private static void verifyShorts(short[] result, ShortAt expected) {
         for (int i = 0; i < S_SPECIES.length(); i++) {
-            Asserts.assertEquals((short) ((sa[i] & sb[i]) ^ sb[i]), sr[i]);
+            Asserts.assertEquals(expected.at(i), result[i]);
         }
     }
 
     @DontInline
-    private static void verifyInt() {
+    private static void verifyInts(int[] result, IntAt expected) {
         for (int i = 0; i < I_SPECIES.length(); i++) {
-            Asserts.assertEquals((ia[i] & ib[i]) ^ ib[i], ir[i]);
+            Asserts.assertEquals(expected.at(i), result[i]);
         }
     }
 
     @DontInline
-    private static void verifyLong() {
+    private static void verifyLongs(long[] result, LongAt expected) {
         for (int i = 0; i < L_SPECIES.length(); i++) {
-            Asserts.assertEquals((la[i] & lb[i]) ^ lb[i], lr[i]);
+            Asserts.assertEquals(expected.at(i), result[i]);
         }
     }
 
@@ -119,7 +124,7 @@ public class VectorLogicTest {
         ByteVector va = ByteVector.fromArray(B_SPECIES, ba, 0);
         ByteVector vb = ByteVector.fromArray(B_SPECIES, bb, 0);
         va.and(vb).lanewise(VectorOperators.XOR, vb).intoArray(br, 0);
-        verifyByte();
+        verifyBytes(br, i -> (byte) ((ba[i] & bb[i]) ^ bb[i]));
     }
 
     @Test
@@ -129,7 +134,7 @@ public class VectorLogicTest {
         ShortVector va = ShortVector.fromArray(S_SPECIES, sa, 0);
         ShortVector vb = ShortVector.fromArray(S_SPECIES, sb, 0);
         va.and(vb).lanewise(VectorOperators.XOR, vb).intoArray(sr, 0);
-        verifyShort();
+        verifyShorts(sr, i -> (short) ((sa[i] & sb[i]) ^ sb[i]));
     }
 
     @Test
@@ -139,7 +144,7 @@ public class VectorLogicTest {
         IntVector va = IntVector.fromArray(I_SPECIES, ia, 0);
         IntVector vb = IntVector.fromArray(I_SPECIES, ib, 0);
         va.and(vb).lanewise(VectorOperators.XOR, vb).intoArray(ir, 0);
-        verifyInt();
+        verifyInts(ir, i -> (ia[i] & ib[i]) ^ ib[i]);
     }
 
     @Test
@@ -149,7 +154,7 @@ public class VectorLogicTest {
         LongVector va = LongVector.fromArray(L_SPECIES, la, 0);
         LongVector vb = LongVector.fromArray(L_SPECIES, lb, 0);
         va.and(vb).lanewise(VectorOperators.XOR, vb).intoArray(lr, 0);
-        verifyLong();
+        verifyLongs(lr, i -> (la[i] & lb[i]) ^ lb[i]);
     }
 
     // Exercise canonicalization when the shared operand is the first input of
@@ -162,7 +167,7 @@ public class VectorLogicTest {
         ByteVector va = ByteVector.fromArray(B_SPECIES, ba, 0);
         ByteVector vb = ByteVector.fromArray(B_SPECIES, bb, 0);
         vb.and(va).lanewise(VectorOperators.XOR, vb).intoArray(br, 0);
-        verifyByte();
+        verifyBytes(br, i -> (byte) ((ba[i] & bb[i]) ^ bb[i]));
     }
 
     @Test
@@ -172,7 +177,7 @@ public class VectorLogicTest {
         ShortVector va = ShortVector.fromArray(S_SPECIES, sa, 0);
         ShortVector vb = ShortVector.fromArray(S_SPECIES, sb, 0);
         vb.and(va).lanewise(VectorOperators.XOR, vb).intoArray(sr, 0);
-        verifyShort();
+        verifyShorts(sr, i -> (short) ((sa[i] & sb[i]) ^ sb[i]));
     }
 
     @Test
@@ -182,7 +187,7 @@ public class VectorLogicTest {
         IntVector va = IntVector.fromArray(I_SPECIES, ia, 0);
         IntVector vb = IntVector.fromArray(I_SPECIES, ib, 0);
         vb.and(va).lanewise(VectorOperators.XOR, vb).intoArray(ir, 0);
-        verifyInt();
+        verifyInts(ir, i -> (ia[i] & ib[i]) ^ ib[i]);
     }
 
     @Test
@@ -192,7 +197,104 @@ public class VectorLogicTest {
         LongVector va = LongVector.fromArray(L_SPECIES, la, 0);
         LongVector vb = LongVector.fromArray(L_SPECIES, lb, 0);
         vb.and(va).lanewise(VectorOperators.XOR, vb).intoArray(lr, 0);
-        verifyLong();
+        verifyLongs(lr, i -> (la[i] & lb[i]) ^ lb[i]);
+    }
+
+    // Exercise canonicalization when the shared operand is the first input of
+    // the XorV: XorV(b, AndV(a, b)), i.e. B ^ (A & B).
+
+    @Test
+    @IR(counts = { IRNode.VAND_NOT_I, ">= 1" },
+        applyIfCPUFeature = { "asimd", "true" })
+    public static void testNotAndXorCommutativeByte() {
+        ByteVector va = ByteVector.fromArray(B_SPECIES, ba, 0);
+        ByteVector vb = ByteVector.fromArray(B_SPECIES, bb, 0);
+        vb.lanewise(VectorOperators.XOR, va.and(vb)).intoArray(br, 0);
+        verifyBytes(br, i -> (byte) ((ba[i] & bb[i]) ^ bb[i]));
+    }
+
+    @Test
+    @IR(counts = { IRNode.VAND_NOT_I, ">= 1" },
+        applyIfCPUFeature = { "asimd", "true" })
+    public static void testNotAndXorCommutativeShort() {
+        ShortVector va = ShortVector.fromArray(S_SPECIES, sa, 0);
+        ShortVector vb = ShortVector.fromArray(S_SPECIES, sb, 0);
+        vb.lanewise(VectorOperators.XOR, va.and(vb)).intoArray(sr, 0);
+        verifyShorts(sr, i -> (short) ((sa[i] & sb[i]) ^ sb[i]));
+    }
+
+    @Test
+    @IR(counts = { IRNode.VAND_NOT_I, ">= 1" },
+        applyIfCPUFeature = { "asimd", "true" })
+    public static void testNotAndXorCommutativeInt() {
+        IntVector va = IntVector.fromArray(I_SPECIES, ia, 0);
+        IntVector vb = IntVector.fromArray(I_SPECIES, ib, 0);
+        vb.lanewise(VectorOperators.XOR, va.and(vb)).intoArray(ir, 0);
+        verifyInts(ir, i -> (ia[i] & ib[i]) ^ ib[i]);
+    }
+
+    @Test
+    @IR(counts = { IRNode.VAND_NOT_L, ">= 1" },
+        applyIfCPUFeature = { "asimd", "true" })
+    public static void testNotAndXorCommutativeLong() {
+        LongVector va = LongVector.fromArray(L_SPECIES, la, 0);
+        LongVector vb = LongVector.fromArray(L_SPECIES, lb, 0);
+        vb.lanewise(VectorOperators.XOR, va.and(vb)).intoArray(lr, 0);
+        verifyLongs(lr, i -> (la[i] & lb[i]) ^ lb[i]);
+    }
+
+    // AndV has another use, so the rewrite must not fire.
+
+    @Test
+    @IR(failOn = { IRNode.VAND_NOT_I },
+        applyIfCPUFeature = { "asimd", "true" })
+    public static void testNotAndMultiUseByte() {
+        ByteVector va = ByteVector.fromArray(B_SPECIES, ba, 0);
+        ByteVector vb = ByteVector.fromArray(B_SPECIES, bb, 0);
+        ByteVector vand = va.and(vb);
+        vand.lanewise(VectorOperators.XOR, vb).intoArray(br, 0);
+        verifyBytes(br, i -> (byte) ((ba[i] & bb[i]) ^ bb[i]));
+        vand.intoArray(br, 0);
+        verifyBytes(br, i -> (byte) (ba[i] & bb[i]));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.VAND_NOT_I },
+        applyIfCPUFeature = { "asimd", "true" })
+    public static void testNotAndMultiUseShort() {
+        ShortVector va = ShortVector.fromArray(S_SPECIES, sa, 0);
+        ShortVector vb = ShortVector.fromArray(S_SPECIES, sb, 0);
+        ShortVector vand = va.and(vb);
+        vand.lanewise(VectorOperators.XOR, vb).intoArray(sr, 0);
+        verifyShorts(sr, i -> (short) ((sa[i] & sb[i]) ^ sb[i]));
+        vand.intoArray(sr, 0);
+        verifyShorts(sr, i -> (short) (sa[i] & sb[i]));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.VAND_NOT_I },
+        applyIfCPUFeature = { "asimd", "true" })
+    public static void testNotAndMultiUseInt() {
+        IntVector va = IntVector.fromArray(I_SPECIES, ia, 0);
+        IntVector vb = IntVector.fromArray(I_SPECIES, ib, 0);
+        IntVector vand = va.and(vb);
+        vand.lanewise(VectorOperators.XOR, vb).intoArray(ir, 0);
+        verifyInts(ir, i -> (ia[i] & ib[i]) ^ ib[i]);
+        vand.intoArray(ir, 0);
+        verifyInts(ir, i -> ia[i] & ib[i]);
+    }
+
+    @Test
+    @IR(failOn = { IRNode.VAND_NOT_L },
+        applyIfCPUFeature = { "asimd", "true" })
+    public static void testNotAndMultiUseLong() {
+        LongVector va = LongVector.fromArray(L_SPECIES, la, 0);
+        LongVector vb = LongVector.fromArray(L_SPECIES, lb, 0);
+        LongVector vand = va.and(vb);
+        vand.lanewise(VectorOperators.XOR, vb).intoArray(lr, 0);
+        verifyLongs(lr, i -> (la[i] & lb[i]) ^ lb[i]);
+        vand.intoArray(lr, 0);
+        verifyLongs(lr, i -> la[i] & lb[i]);
     }
 
     public static void main(String[] args) {

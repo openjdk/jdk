@@ -27,16 +27,13 @@ import jdk.incubator.vector.*;
 import java.util.concurrent.TimeUnit;
 import java.util.Random;
 
-// Measures the Vector API not_and pattern (A & B) ^ B == ~A & B, which folds to
-// a single BIC instruction on AArch64.
-
-@BenchmarkMode(Mode.Throughput)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgs = { "--add-modules=jdk.incubator.vector" })
-public class LogicOperationsBenchmark {
+public class VectorLogicOperationsBenchmark {
     @Param({"1024"})
     private int size;
 
