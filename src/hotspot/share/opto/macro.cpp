@@ -69,30 +69,6 @@
 #include "gc/g1/g1ThreadLocalData.hpp"
 #endif // INCLUDE_G1GC
 
-
-//
-// Replace any references to "oldref" in inputs to "use" with "newref".
-// Returns the number of replacements made.
-//
-int PhaseMacroExpand::replace_input(Node *use, Node *oldref, Node *newref) {
-  int nreplacements = 0;
-  uint req = use->req();
-  for (uint j = 0; j < use->len(); j++) {
-    Node *uin = use->in(j);
-    if (uin == oldref) {
-      if (j < req)
-        use->set_req(j, newref);
-      else
-        use->set_prec(j, newref);
-      nreplacements++;
-    } else if (j >= req && uin == nullptr) {
-      break;
-    }
-  }
-  return nreplacements;
-}
-
-
 Node* PhaseMacroExpand::opt_bits_test(Node* ctrl, Node* region, int edge, CmpNode* cmp) {
   Node* bol = transform_later(new BoolNode(cmp, BoolTest::ne));
   IfNode* iff = new IfNode( ctrl, bol, PROB_MIN, COUNT_UNKNOWN );

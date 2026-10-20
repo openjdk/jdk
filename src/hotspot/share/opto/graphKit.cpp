@@ -2852,21 +2852,6 @@ Node* GraphKit::null_check_oop(Node* value, Node* *null_control,
   return cast;
 }
 
-//------------------------------opt_iff----------------------------------------
-// Optimize the fast-check IfNode.  Set the fast-path region slot 2.
-// Return slow-path control.
-Node* GraphKit::opt_iff(Node* region, Node* iff) {
-  IfNode *opt_iff = _gvn.transform(iff)->as_If();
-
-  // Fast path taken; set region slot 2
-  Node *fast_taken = _gvn.transform( new IfFalseNode(opt_iff) );
-  region->init_req(2,fast_taken); // Capture fast-control
-
-  // Fast path not-taken, i.e. slow path
-  Node *slow_taken = _gvn.transform( new IfTrueNode(opt_iff) );
-  return slow_taken;
-}
-
 //-----------------------------make_runtime_call-------------------------------
 Node* GraphKit::make_runtime_call(int flags,
                                   const TypeFunc* call_type, address call_addr,

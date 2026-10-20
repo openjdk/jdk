@@ -1017,8 +1017,6 @@ private:
   static void ensure_zero_trip_guard_proj(Node* node, bool is_main_loop);
 #endif
  private:
-  static void get_opaque_template_assertion_predicate_nodes(ParsePredicateSuccessProj* parse_predicate_proj,
-                                                            Unique_Node_List& list);
   void update_main_loop_assertion_predicates(CountedLoopNode* new_main_loop_head, int stride_con_before_unroll);
   void initialize_assertion_predicates_for_peeled_loop(CountedLoopNode* peeled_loop_head,
                                                        CountedLoopNode* remaining_loop_head,
@@ -1375,7 +1373,6 @@ public:
 
     const Node* _back_control;
     const IdealLoopTree* _loop;
-    PhaseIdealLoop* _phase;
 
     Node* _cmp;
     Node* _incr;
@@ -1384,11 +1381,10 @@ public:
     float _cl_prob;
 
   public:
-    LoopExitTest(const Node* back_control, const IdealLoopTree* loop, PhaseIdealLoop* phase) :
+    LoopExitTest(const Node* back_control, const IdealLoopTree* loop) :
       _is_valid(false),
       _back_control(back_control),
       _loop(loop),
-      _phase(phase),
       _cmp(nullptr),
       _incr(nullptr),
       _limit(nullptr),
@@ -1684,7 +1680,6 @@ public:
                                    const UnswitchCandidate& unswitch_candidate, const IfNode* loop_selector);
   void add_unswitched_loop_version_bodies_to_igvn(IdealLoopTree* loop, const Node_List& old_new);
   static void increment_unswitch_counts(LoopNode* original_head, LoopNode* new_head);
-  void remove_unswitch_candidate_from_loops(const Node_List& old_new, const UnswitchedLoopSelector& unswitched_loop_selector);
 #ifndef PRODUCT
   static void trace_loop_unswitching_count(IdealLoopTree* loop, LoopNode* original_head);
   static void trace_loop_unswitching_impossible(const LoopNode* original_head);
@@ -2153,7 +2148,7 @@ class CountedLoopConverter {
       _phase(phase),
       _iv_bt(iv_bt),
       _back_control(_phase->loop_exit_control(_loop)),
-      _exit_test(_back_control, _loop, _phase),
+      _exit_test(_back_control, _loop),
       _iv_incr(_head, _loop),
       _truncated_increment(_iv_bt),
       _stride(PhaseIdealLoop::LoopIVStride(_iv_bt)),

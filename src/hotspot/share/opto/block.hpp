@@ -189,7 +189,6 @@ public:
   int num_fall_throughs();      // How many fall-through candidate this block has
   void update_uncommon_branch(Block* un); // Lower branch prob to uncommon code
   bool succ_fall_through(uint i); // Is successor "i" is a fall-through candidate
-  Block* lone_fall_through();   // Return lone fall-through Block or null
 
   Block* dom_lca(Block* that);  // Compute LCA in dominator tree.
 
@@ -740,7 +739,6 @@ class CFGLoop : public CFGElement {
     assert(hd->head()->is_Loop(), "must begin with loop head node");
     return hd;
   }
-  Block* backedge_block(); // Return the block on the backedge of the loop (else null)
   void compute_loop_depth(int depth);
   void compute_freq(); // compute frequency with loop assuming head freq 1.0f
   void scale_freq();   // scale frequency by loop trip count (including outer loops)

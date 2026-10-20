@@ -1433,11 +1433,10 @@ class VectorMaskGenNode : public TypeNode {
 // be either "BVectMask" or "PVectMask" depending on the platform.
 class VectorMaskOpNode : public TypeNode {
  private:
-  int _mopc;
   const TypeVect* _vect_type;
  public:
-  VectorMaskOpNode(Node* mask, const Type* ty, int mopc):
-    TypeNode(ty, 2), _mopc(mopc), _vect_type(mask->bottom_type()->is_vect()) {
+  VectorMaskOpNode(Node* mask, const Type* ty):
+    TypeNode(ty, 2), _vect_type(mask->bottom_type()->is_vect()) {
     assert(Matcher::has_predicated_vectors() || _vect_type->element_basic_type() == T_BOOLEAN, "");
     init_req(1, mask);
   }
@@ -1447,7 +1446,6 @@ class VectorMaskOpNode : public TypeNode {
   virtual  uint  size_of() const { return sizeof(VectorMaskOpNode); }
   virtual uint  ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  int get_mask_Opcode() const { return _mopc;}
   static Node* make(Node* mask, const Type* ty, int mopc);
 };
 
@@ -1455,7 +1453,7 @@ class VectorMaskOpNode : public TypeNode {
 class VectorMaskTrueCountNode : public VectorMaskOpNode {
  public:
   VectorMaskTrueCountNode(Node* mask, const Type* ty):
-    VectorMaskOpNode(mask, ty, Op_VectorMaskTrueCount) {}
+    VectorMaskOpNode(mask, ty) {}
   virtual int Opcode() const;
 };
 
@@ -1464,7 +1462,7 @@ class VectorMaskTrueCountNode : public VectorMaskOpNode {
 class VectorMaskFirstTrueNode : public VectorMaskOpNode {
  public:
   VectorMaskFirstTrueNode(Node* mask, const Type* ty):
-    VectorMaskOpNode(mask, ty, Op_VectorMaskFirstTrue) {}
+    VectorMaskOpNode(mask, ty) {}
   virtual int Opcode() const;
 };
 
@@ -1473,7 +1471,7 @@ class VectorMaskFirstTrueNode : public VectorMaskOpNode {
 class VectorMaskLastTrueNode : public VectorMaskOpNode {
  public:
   VectorMaskLastTrueNode(Node* mask, const Type* ty):
-    VectorMaskOpNode(mask, ty, Op_VectorMaskLastTrue) {}
+    VectorMaskOpNode(mask, ty) {}
   virtual int Opcode() const;
 };
 
@@ -1484,7 +1482,7 @@ class VectorMaskLastTrueNode : public VectorMaskOpNode {
 class VectorMaskToLongNode : public VectorMaskOpNode {
  public:
   VectorMaskToLongNode(Node* mask, const Type* ty):
-    VectorMaskOpNode(mask, ty, Op_VectorMaskToLong) {}
+    VectorMaskOpNode(mask, ty) {}
   virtual int Opcode() const;
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
   Node* Ideal_MaskAll(PhaseGVN* phase);

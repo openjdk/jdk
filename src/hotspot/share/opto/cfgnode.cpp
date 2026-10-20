@@ -3608,7 +3608,7 @@ void JumpProjNode::dump_spec(outputStream *st) const {
 
 void JumpProjNode::dump_compact_spec(outputStream *st) const {
   ProjNode::dump_compact_spec(st);
-  st->print("(%d)%d@%d", _switch_val, _proj_no, _dest_bci);
+  st->print("(%d)%d@%d", _switch_val, _con, _dest_bci);
 }
 #endif
 
