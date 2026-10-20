@@ -1278,7 +1278,7 @@ void MacroAssembler::post_call_nop() {
   relocate(post_call_nop_Relocation::spec());
   InlineSkippedInstructionsCounter skipCounter(this);
   Assembler::emit_int32(Assembler::CMPLI_OPCODE | Assembler::opp_u_field(1, 9, 9));
-  assert(is_post_call_nop(*(int*)(pc() - 4)), "post call not not found");
+  assert(is_post_call_nop(*(int*)(pc() - 4)), "post call nop not found");
 }
 
 int MacroAssembler::ic_check_size() {
@@ -3286,6 +3286,7 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
 }
 
 void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert_different_registers(markword, R0);
   andi(R0, markword, markWord::value_type_pattern_mask);
   cmpwi(CR0, R0, markWord::value_type_pattern);
@@ -3293,6 +3294,7 @@ void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_va
 }
 
 void MacroAssembler::test_oop_is_not_value_type(Register object, Label& not_value_type, bool can_be_null) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   if (can_be_null) {
     cmpdi(CR0, object, 0);
     beq(CR0, not_value_type);
@@ -3304,16 +3306,19 @@ void MacroAssembler::test_oop_is_not_value_type(Register object, Label& not_valu
 }
 
 void MacroAssembler::test_field_is_null_free_value_type(Register flags, Label& is_null_free_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   testbitdi(CR0, R0, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
   bne(CR0, is_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_not_null_free_value_type(Register flags, Label& not_null_free_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   testbitdi(CR0, R0, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
   beq(CR0, not_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_flat(Register flags, Label& is_flat) {
+  assert(UseFieldFlattening, "should not be used without field flattening enabled");
   testbitdi(CR0, R0, flags, ResolvedFieldEntry::is_flat_shift);
   bne(CR0, is_flat);
 }
@@ -3336,22 +3341,27 @@ void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int
 }
 
 void MacroAssembler::test_flat_array_oop(Register oop, Register temp_reg, Label& is_flat_array, bool maybe_far) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, true, is_flat_array, maybe_far);
 }
 
 void MacroAssembler::test_non_flat_array_oop(Register oop, Register temp_reg, Label& is_non_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, false, is_non_flat_array);
 }
 
 void MacroAssembler::test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array, bool maybe_far) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, true, is_null_free_array, maybe_far);
 }
 
 void MacroAssembler::test_non_null_free_array_oop(Register oop, Register temp_reg, Label& is_non_null_free_array) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, false, is_non_null_free_array);
 }
 
 void MacroAssembler::test_flat_array_layout(Register lh, Label& is_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   testbitdi(CR0, R0, lh, exact_log2(Klass::_lh_array_tag_flat_value_bit_inplace));
   bne(CR0, is_flat_array);
 }
@@ -3365,11 +3375,13 @@ void MacroAssembler::load_metadata(Register dst, Register src) {
 }
 
 void MacroAssembler::payload_offset(Register value_klass, Register offset) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   ld(offset, in_bytes(ValueKlass::adr_members_offset()), value_klass);
   lwz(offset, in_bytes(ValueKlass::payload_offset_offset()), offset);
 }
 
 void MacroAssembler::payload_address(Register oop, Register data, Register value_klass, Register t1) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   // ((address) (void*) o) + vk->payload_offset();
   payload_offset(value_klass, t1);
   add(data, oop, t1);

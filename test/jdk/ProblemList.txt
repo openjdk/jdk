@@ -396,6 +396,10 @@ java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8308807 aix-ppc6
 java/net/MulticastSocket/SetLoopbackMode.java                   7122846,8308807 macosx-all,aix-ppc64
 java/net/MulticastSocket/SetOutgoingIf.java                     8308807 aix-ppc64
 java/net/MulticastSocket/Test.java                              7145658 macosx-all
+java/net/httpclient/ConnectTimeoutTest.java#sync                8393427 macosx-27.0
+java/net/httpclient/ConnectTimeoutTest.java#sync-proxy          8393427 macosx-27.0
+java/net/httpclient/ConnectTimeoutTest.java#async               8393427 macosx-27.0
+java/net/httpclient/ConnectTimeoutTest.java#async-proxy         8393427 macosx-27.0
 
 ############################################################################
 
@@ -410,6 +414,7 @@ java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java 8144003 macosx-
 java/nio/channels/DatagramChannel/Promiscuous.java              8144003 macosx-all
 java/nio/channels/SocketChannel/CloseDuringConnect.java         8375658 macosx-all
 java/nio/channels/SocketChannel/OpenLeak.java                   8375658 macosx-all
+java/nio/channels/AsyncCloseAndInterrupt.java                   8393427 macosx-27.0
 
 ############################################################################
 
@@ -450,6 +455,9 @@ sun/security/smartcardio/TestPresent.java                       8039280 generic-
 sun/security/smartcardio/TestTransmit.java                      8039280 generic-all
 
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
+
+sun/security/pkcs11/Provider/CheckRegistration.java             8394846 generic-all
+sun/security/pkcs11/tls/TestExtendedMasterSecretHandshake.java  8394846 generic-all
 
 ############################################################################
 

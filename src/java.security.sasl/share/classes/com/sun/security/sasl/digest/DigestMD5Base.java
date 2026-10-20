@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1000,7 +1000,7 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
             }
 
             /* First, compare MAC's before updating any of our state */
-            if (!Arrays.equals(mac, expectedMac)) {
+            if (!MessageDigest.isEqual(mac, expectedMac)) {
                 //  Discard message and do not increment sequence number
                 logger.log(Level.INFO, "DIGEST23:Unmatched MACs");
                 return EMPTY_BYTE_ARRAY;
@@ -1450,7 +1450,7 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
             }
 
             // First, compare MACs before updating state
-            if (!Arrays.equals(mac, expectedMac)) {
+            if (!MessageDigest.isEqual(mac, expectedMac)) {
                 //  Discard message and do not increment sequence number
                 logger.log(Level.INFO, "DIGEST41:Unmatched MACs");
                 return EMPTY_BYTE_ARRAY;
