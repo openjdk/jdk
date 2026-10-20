@@ -35,17 +35,16 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.StreamPumper;
 
 public class Jdb implements AutoCloseable {
     public Jdb(String... args) {
-        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jdb")
-                .addVMArgs(Utils.getTestJavaOpts())
-                .addVMArg("-Duser.language=en")
-                .addVMArg("-Duser.country=US");
-        ProcessBuilder pb = new ProcessBuilder(launcher.getCommand());
+        ProcessBuilder pb = new ProcessBuilder(JDKToolFinder.getTestJDKTool("jdb"));
+        pb.command().addAll(Utils.getForwardVmOptions());
+        pb.command().add("-J-Duser.language=en");
+        pb.command().add("-J-Duser.country=US");
         pb.command().addAll(Arrays.asList(args));
         try {
             jdb = pb.start();

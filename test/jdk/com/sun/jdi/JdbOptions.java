@@ -93,7 +93,7 @@ public class JdbOptions {
             jdb.waitForSimplePrompt(1024, false);
             new OutputAnalyzer(jdb.getJdbOutput())
                     .shouldContain("-Dtest.jdb.vm.opts=vm")
-                    .shouldContain("-Dtest.jdb.java.opts=java");
+                    .shouldNotContain("-Dtest.jdb.java.opts=java");
         }
 
         // the simplest case
