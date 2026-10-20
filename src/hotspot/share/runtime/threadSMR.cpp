@@ -954,7 +954,7 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads, JavaThread* thread_to_de
   }
 
   // We can defer a reclamation attempt if free_list() was called when adding
-  // a thread (i.e. thread_to_delete == nullptr). This amortizes the cost of
+  // a thread (i.e., thread_to_delete == nullptr). This amortizes the cost of
   // scanning the hazard pointers. When removing a thread, we attempt to
   // reclaim any retired ThreadsList. We also use the same scan to determine
   // if it's safe to delete the thread, thereby potentially avoiding a costly
