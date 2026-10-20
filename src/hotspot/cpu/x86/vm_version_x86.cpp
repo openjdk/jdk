@@ -1888,9 +1888,6 @@ void VM_Version::get_processor_features() {
 
   CHECK_CPU_FEATURE(UsePopCountInstruction, POPCNT, supports_popcnt(), "popcnt" SINGLE_INST_WARNING_MSG);
   CHECK_CPU_FEATURE(UseSHA, SHA, supports_sha() || (supports_avx2() && supports_bmi2()), "SHA" MULTI_INST_WARNING_MSG);
-  if (compute_fast_bmi2()) {
-    _features.set_feature(CPU_FAST_BMI2);
-  }
 
   stringStream ss(2048);
   if (supports_hybrid()) {
