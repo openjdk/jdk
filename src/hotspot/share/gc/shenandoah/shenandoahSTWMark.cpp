@@ -133,13 +133,9 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
       _root_scanner.roots_do(&init_mark, worker_id);
       break;
     }
-    case YOUNG: {
-      ShenandoahMarkRefsClosure<YOUNG> init_mark(queue, rp, nullptr);
-      _root_scanner.roots_do(&init_mark, worker_id);
-      break;
-    }
+    case YOUNG:
     case OLD:
-      // We never exclusively mark the old generation on a safepoint. This would be encompassed
+      // We never exclusively mark the old or young generation on a safepoint. This would be encompassed
       // by a 'global' collection. Note that both GLOBAL and NON_GEN mark the entire heap, but
       // the GLOBAL closure is specialized for the generational mode.
     default:
@@ -148,6 +144,8 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
 }
 
 void ShenandoahSTWMark::finish_mark(uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::full_gc_mark, ShenandoahPhaseTimings::Work, worker_id);
+  ShenandoahPhaseTimings::Phase phase = ShenandoahPhaseTimings::full_gc_mark;
+  ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::Work, worker_id);
+
   mark_loop(worker_id, &_terminator, _generation->type(), false /* not cancellable */);
 }
