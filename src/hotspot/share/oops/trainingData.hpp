@@ -680,7 +680,9 @@ public:
       }
       template<typename U = T, ENABLE_IF(std::is_pointer<U>::value && std::is_base_of<TrainingData, typename std::remove_pointer<U>::type>::value)>
       void prepare(Visitor& visitor) {
-        _first->prepare(visitor);
+        if (_first != nullptr) {
+          _first->prepare(visitor);
+        }
         _remaining.prepare(visitor);
       }
       template<typename U = T, ENABLE_IF(!(std::is_pointer<U>::value && std::is_base_of<TrainingData, typename std::remove_pointer<U>::type>::value))>
