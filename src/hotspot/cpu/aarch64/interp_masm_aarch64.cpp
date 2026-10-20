@@ -689,6 +689,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     Label not_null;
     cbnz(r0, not_null);
     // Returned value is null, zero all return registers because they may belong to oop fields
+    mov(j_rarg0, zr);
     mov(j_rarg1, zr);
     mov(j_rarg2, zr);
     mov(j_rarg3, zr);

@@ -930,6 +930,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 
     untested("remove_activation ValueTypeReturnedAsFields null");
     // Returned value is null, zero all return registers because they may belong to oop fields
+    li(R3_ARG0, 0);
     li(R3_ARG1, 0);
     li(R4_ARG2, 0);
     li(R5_ARG3, 0);
