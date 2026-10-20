@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.FileUtils;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -159,11 +161,15 @@ public class CDSJarUtils {
      */
     public static class JarOptions {
         private String [] options;
+        private String manifestFile;
+        private String extraManifestLines;
         private JarOptions() {}
 
         public static JarOptions of(String... options) {
             JarOptions jo = new JarOptions();
             jo.options = options;
+            jo.manifestFile = null;
+            jo.extraManifestLines = "";
             return jo;
         }
 
@@ -173,11 +179,50 @@ public class CDSJarUtils {
             }
             return this;
         }
-        public JarOptions setManifest(String manifest) {
-            if (manifest != null) {
-                options = StringArrayUtils.concat(options, "--manifest=" + manifest);
-            }
+        public JarOptions setManifest(String manifestFile) {
+            this.manifestFile = manifestFile;
             return this;
+        }
+
+        public JarOptions setAutomaticModule(String moduleName) {
+            if (extraManifestLines.length() > 0) {
+                extraManifestLines += "\n";
+            }
+            extraManifestLines += "Automatic-Module-Name: " + moduleName;
+            return this;
+        }
+
+        private String mergeManifestHelper() throws IOException {
+            Path tempPath = Files.createTempFile("jar", ".manifest");
+            try (FileWriter writer = new FileWriter(tempPath.toString())) {
+                if (manifestFile != null) {
+                    String content = Files.readString(Paths.get(manifestFile));
+                    writer.write(content);
+                }
+                if (extraManifestLines.length() > 0) {
+                    writer.write(extraManifestLines);
+                    writer.write("\n");
+                }
+            }
+            return tempPath.toAbsolutePath().toString();
+        }
+
+        private String mergeManifest() {
+            try {
+                return mergeManifestHelper();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public String [] getOptions() {
+            if (extraManifestLines.length() > 0) {
+                return StringArrayUtils.concat(options, "--manifest=" + mergeManifest());
+            } else if (manifestFile != null) {
+                return StringArrayUtils.concat(options, "--manifest=" + manifestFile);
+            } else {
+                return options;
+            }
         }
     }
 
@@ -193,7 +238,7 @@ public class CDSJarUtils {
         argList.add("--create");
         argList.add("--file=" + jarPath);
         if (jarOptions != null) {
-            for (String s : jarOptions.options) {
+            for (String s : jarOptions.getOptions()) {
                 argList.add(s);
             }
         }
