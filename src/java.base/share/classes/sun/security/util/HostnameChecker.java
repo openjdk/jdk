@@ -125,7 +125,7 @@ public class HostnameChecker {
 
     /**
      * Check if the certificate allows use of the given IP address.
-     *
+     * <p>
      * From RFC2818:
      * In some cases, the URI is specified as an IP address rather than a
      * hostname. In this case, the iPAddress subjectAltName must be present
@@ -140,26 +140,30 @@ public class HostnameChecker {
         }
         for (List<?> next : subjAltNames) {
             // For IP address, it needs to be exact match
-            if (((Integer)next.get(0)).intValue() == ALTNAME_IP) {
+            if ((int) next.get(0) == ALTNAME_IP) {
                 String ipAddress = (String)next.get(1);
+
                 if (expectedIP.equalsIgnoreCase(ipAddress)) {
                     return;
                 } else {
-                    // compare InetAddress objects in order to ensure
-                    // equality between a long IPv6 address and its
-                    // abbreviated form.
+                    // Compare InetAddress objects if literal check failed.
+                    // InetAddress.getByName() normalizes IP address, thus
+                    // the following is insured:
+                    //   - Equality between a long IPv6 address and its
+                    //     abbreviated form.
+                    //   - Equality between IPv4-Mapped IPv6 address and its
+                    //     regular IPv4 form.
                     try {
                         if (InetAddress.getByName(expectedIP).equals(
                                 InetAddress.getByName(ipAddress))) {
                             return;
                         }
-                    } catch (UnknownHostException e) {}
+                    } catch (UnknownHostException _) {}
                 }
             }
         }
         throw new CertificateException("No subject alternative " +
-                        "names matching " + "IP address " +
-                        expectedIP + " found");
+                        "names matching IP address " + expectedIP + " found");
     }
 
     /**

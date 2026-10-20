@@ -221,6 +221,13 @@ public final class JdkConstants {
     public static final String XPATH_TOTALOP_LIMIT = "jdk.xml.xpathTotalOpLimit";
 
     /**
+     * jdk.xml.allowNonXSLTSysProps: controls whether XPath's system-property()
+     * function is permitted to access non-XSLT-defined JVM system properties.
+     */
+    public static final String XPATH_ALLOW_NON_XSLT_SYS_PROPS =
+            "jdk.xml.allowNonXSLTSysProps";
+
+    /**
      * JDK TransformerFactory and Transformer attribute that specifies a class
      * loader that will be used for extension functions class loading
      * Value: a "null", the default value, means that the default EF class loading
@@ -428,4 +435,9 @@ public final class JdkConstants {
     public static final int CDATA_CHUNK_SIZE_DEFAULT
             = SecuritySupport.getJAXPSystemProperty(Integer.class, CDATA_CHUNK_SIZE, "0");
 
+    /**
+     * Enable TemplatesImpl deserialization.
+     */
+    public static final String SP_ENABLE_TEMPLATESIMPL_DESERIALIZATION =
+            "jdk.xml.enableTemplatesImplDeserialization";
 }
