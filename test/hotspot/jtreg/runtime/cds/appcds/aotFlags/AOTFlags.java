@@ -369,7 +369,7 @@ public class AOTFlags {
         out.shouldNotHaveExitValue(0);
 
         //----------------------------------------------------------------------
-        printTestCase("Retrain: Non-existent AOTCache specified with -XX:AOTMode=record");
+        printTestCase("Iterative: Non-existent AOTCache specified with -XX:AOTMode=record");
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
@@ -381,7 +381,7 @@ public class AOTFlags {
         out.shouldNotHaveExitValue(0);
 
         //----------------------------------------------------------------------
-        printTestCase("Retrain: cannot use AOTCache created with -XX:-AOTClassLinking");
+        printTestCase("Iterative: cannot use AOTCache created with -XX:-AOTClassLinking");
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTCacheOutput=hello-noaotlink.aot",
             "-XX:-AOTClassLinking",

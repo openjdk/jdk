@@ -35,7 +35,7 @@
  *        ConstraintBase
  *        ConstraintChild
  *        SecondOnlyConstraint
- * @run driver IterativeTrainingVerificationConstraints AOT-Retrain2 --two-step-training
+ * @run driver IterativeTrainingVerificationConstraints AOT-Iterative2 --two-step-training
  */
 
 import java.io.File;

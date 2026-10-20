@@ -4165,6 +4165,7 @@ The AOT cache can be used with the following command-line options:
     This option cannot be used together with `-XX:AOTCacheOutput`.
 
     The *cachefile* is read in AOT modes `record`, `required` and `auto`, and is ignored by mode `off`.
+
     The *cachefile* is written by AOT mode `create`.  In that case, this option is
     equivalent to `-XX:AOTCacheOutput=`*cachefile*.
 

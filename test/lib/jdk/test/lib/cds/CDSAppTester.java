@@ -41,13 +41,16 @@ import jtreg.SkippedException;
  *
  * This class supports 5 kinds of workflows:
  *
- *    - STATIC:       Use the classic CDS static archive workflow (i.e., -Xshare:dump)
- *    - DYNAMIC:      Use the classic CDS dynamic archive workflow (i.e., -XX:ArchiveClassesAtExit=...)
- *    - AOT:          Use the AOT workflow defines in JEP 483/514.
- *    - AOT-Retrain:  Same as AOT, except that the training run uses an AOTCache created with
- *                    "java -XX:AOTCacheOutput=... --version"
- *    - AOT-Retrain2: Same as AOT-Retrain, except that the training run uses an AOTCache that created
- *                    by running the test application itself.
+ *    - STATIC:          Use the classic CDS static archive workflow (i.e., -Xshare:dump)
+ *    - DYNAMIC:         Use the classic CDS dynamic archive workflow (i.e., -XX:ArchiveClassesAtExit=...)
+ *    - AOT:             Use the AOT workflow defines in JEP 483/514.
+ *    - AOT-Iterative1:  Same as AOT, except that we iteratively train the application ONCE --
+ *                       the training run uses an AOTCache created with
+ *                       "java -XX:AOTCacheOutput=... --version"
+ *    - AOT-Iterative2:  Same as AOT, except that we iteratively train the application TWICE -
+ *                       - we first train the application using the AOT workflow
+ *                       - we then train the application again, using the AOT cache created
+ *                         in the last step.
  *
  * The AOT workflows run with two-step training by default. If you want to test with one-step training,
  * start jtreg with -vmoption:-DCDSAppTester.one.step.training=true.
@@ -105,7 +108,7 @@ abstract public class CDSAppTester {
         dynamicArchiveFileLog = logFileName(dynamicArchiveFile);
         tempBaseArchiveFile = name() + ".temp-base.jsa";
 
-        // The following are used in AOT-Retrain -- load this AOTCache when training the app.
+        // The following are used in AOT-Iterative1 -- load this AOTCache when training the app.
         aotConfigurationFileForRetraining = name() + ".base.aotconfig";
         aotConfigurationFileForRetrainingLog = logFileName(aotConfigurationFileForRetraining);;
         aotCacheFileForRetraining = name() + ".base.aot";
@@ -606,9 +609,9 @@ abstract public class CDSAppTester {
                 runDynamicWorkflow();
             } else if (args[0].equals("AOT")) {
                 runAOTWorkflow(args);
-            } else if (args[0].equals("AOT-Retrain")) {
+            } else if (args[0].equals("AOT-Iterative1")) {
                 runAOTRetrainWorkflow(false, args);
-            } else if (args[0].equals("AOT-Retrain2")) {
+            } else if (args[0].equals("AOT-Iterative2")) {
                 runAOTRetrainWorkflow(true, args);
             } else {
                 throw new RuntimeException(err);

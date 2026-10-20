@@ -41,8 +41,8 @@
  * @run junit/othervm/timeout=480 -Dcds.app.tester.workflow=AOT MethodHandlesInvokersTest
  */
 /*
- * @test id=aot-retrain
- * @summary Run the MethodHandlesInvokersTest.java test in CDSAppTester::AOT-Retrain workflow.
+ * @test id=aot-iterative1
+ * @summary Run the MethodHandlesInvokersTest.java test in CDSAppTester::AOT-Iterative1 workflow.
  * @requires vm.cds & vm.compMode != "Xcomp"
  * @requires vm.cds.supports.aot.class.linking
  * @comment work around JDK-8345635
@@ -55,11 +55,11 @@
  *        ../../../../../../jdk/java/lang/invoke/MethodHandlesInvokersTest.java
  *        ../../../../../../jdk/java/lang/invoke/remote/RemoteExample.java
  *        ../../../../../../jdk/java/lang/invoke/common/test/java/lang/invoke/lib/CodeCacheOverflowProcessor.java
- * @run junit/othervm/timeout=480 -Dcds.app.tester.workflow=AOT-Retrain MethodHandlesInvokersTest
+ * @run junit/othervm/timeout=480 -Dcds.app.tester.workflow=AOT-Iterative1 MethodHandlesInvokersTest
  */
 /*
- * @test id=aot-retrain2
- * @summary Run the MethodHandlesInvokersTest.java test in CDSAppTester::AOT-Retrain2 workflow.
+ * @test id=aot-iterative2
+ * @summary Run the MethodHandlesInvokersTest.java test in CDSAppTester::AOT-Iterative2 workflow.
  * @requires vm.cds & vm.compMode != "Xcomp"
  * @requires vm.cds.supports.aot.class.linking
  * @comment work around JDK-8345635
@@ -72,7 +72,7 @@
  *        ../../../../../../jdk/java/lang/invoke/MethodHandlesInvokersTest.java
  *        ../../../../../../jdk/java/lang/invoke/remote/RemoteExample.java
  *        ../../../../../../jdk/java/lang/invoke/common/test/java/lang/invoke/lib/CodeCacheOverflowProcessor.java
- * @run junit/othervm/timeout=480 -Dcds.app.tester.workflow=AOT-Retrain2 MethodHandlesInvokersTest
+ * @run junit/othervm/timeout=480 -Dcds.app.tester.workflow=AOT-Iterative2 MethodHandlesInvokersTest
  */
 /*
  * @test id=dynamic

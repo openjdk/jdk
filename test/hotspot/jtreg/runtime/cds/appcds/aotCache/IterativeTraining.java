@@ -30,7 +30,7 @@
  * @build IterativeTraining Hello HelloMore Hi Hey
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar IterativeTrainingApp First Second
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar Hello HelloMore Hi Hey Greet
- * @run driver IterativeTraining  AOT-Retrain2
+ * @run driver IterativeTraining  AOT-Iterative2
  */
 
 import java.io.File;

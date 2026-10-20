@@ -50,21 +50,21 @@
  */
 
 /*
- * @test id=aot-retrain
+ * @test id=aot-iterative1
  * @requires vm.cds.supports.aot.class.linking
- * @summary Run JavacBenchApp with AOT cache, with retraining
+ * @summary Run JavacBenchApp with AOT cache in CDSAppTester::AOT-Iterative1 workflow
  * @requires vm.cds
  * @library /test/lib /test/setup_aot
- * @run driver JavacBench AOT-Retrain
+ * @run driver JavacBench AOT-Iterative1
  */
 
 /*
- * @test id=aot-retrain2
+ * @test id=aot-iterative2
  * @requires vm.cds.supports.aot.class.linking
- * @summary Run JavacBenchApp with AOT cache, with retraining
+ * @summary Run JavacBenchApp with AOT cache in CDSAppTester::AOT-Iterative2 workflow
  * @requires vm.cds
  * @library /test/lib /test/setup_aot
- * @run driver JavacBench AOT-Retrain2
+ * @run driver JavacBench AOT-Iterative2
  */
 
 import jdk.test.lib.cds.CDSAppTester;

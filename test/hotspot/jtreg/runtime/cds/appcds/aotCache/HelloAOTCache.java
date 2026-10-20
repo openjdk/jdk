@@ -31,8 +31,8 @@
  * @build HelloAOTCache
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar HelloAOTCacheApp
  * @run driver HelloAOTCache AOT
- * @run driver HelloAOTCache AOT-Retrain
- * @run driver HelloAOTCache AOT-Retrain2
+ * @run driver HelloAOTCache AOT-Iterative1
+ * @run driver HelloAOTCache AOT-Iterative2
  */
 
 import jdk.test.lib.cds.SimpleCDSAppTester;
