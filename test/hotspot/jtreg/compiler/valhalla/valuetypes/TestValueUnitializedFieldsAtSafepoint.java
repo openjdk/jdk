@@ -24,6 +24,8 @@
 package compiler.valhalla.valuetypes;
 /*
  * @test
+ * @bug 8394960
+ * @summary [Valhalla] unitialized field when null value returned from the interpreter
  * @enablePreview
  * @run main ${test.main.class}
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=exclude,${test.main.class}::get
