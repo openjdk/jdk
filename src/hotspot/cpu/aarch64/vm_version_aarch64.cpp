@@ -121,7 +121,7 @@ void VM_Version::initialize() {
   if (UseAOTCacheCpuFeaturesOnly) {
     uint64_t* aot_cache_cpu_features = (uint64_t*)get_aot_cache_cpu_features();
     if (aot_cache_cpu_features != nullptr) {
-      if (is_super_set(_features, *aot_cache_cpu_features)) {
+      if (super_set_of(_features, *aot_cache_cpu_features)) {
         uint64_t features_to_clear = features_not_in(_features, *aot_cache_cpu_features);
         _features = clear_features(_features, features_to_clear);
       } else {

@@ -198,7 +198,7 @@ public:
   }
 
   // Is features_set1 a super set of features_set2?
-  static bool is_super_set(uint64_t features_set1, uint64_t features_set2) {
+  static bool super_set_of(uint64_t features_set1, uint64_t features_set2) {
     if ((features_set1 | features_set2) == features_set1) {
       return true;
     }
