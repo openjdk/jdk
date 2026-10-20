@@ -352,15 +352,15 @@ Java_sun_nio_ch_Net_getIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
                                   jboolean mayNeedConversion, jint level, jint opt)
 {
 
-    if (level == IPPROTO_IPV6 && opt == IPV6_TCLASS) {
-        /* No op */
-        return 0;
-    }
-
     int result = 0;
     struct linger linger;
     char *arg;
     int arglen, n;
+
+    if (level == IPPROTO_IPV6 && opt == IPV6_TCLASS) {
+        /* No op */
+        return 0;
+    }
 
     if (level == SOL_SOCKET && opt == SO_LINGER) {
         arg = (char *)&linger;
@@ -400,14 +400,14 @@ Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
                                   jboolean mayNeedConversion, jint level, jint opt, jint arg, jboolean ipv6)
 {
 
-    if (level == IPPROTO_IPV6 && opt == IPV6_TCLASS) {
-     /* No op */
-     return;
-    }
-
     struct linger linger;
     char *parg;
     int arglen, n;
+
+    if (level == IPPROTO_IPV6 && opt == IPV6_TCLASS) {
+        /* No op */
+        return;
+    }
 
     if (level == SOL_SOCKET && opt == SO_LINGER) {
         parg = (char *)&linger;
