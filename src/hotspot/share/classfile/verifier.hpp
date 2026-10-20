@@ -352,8 +352,10 @@ class ClassVerifier : public StackObj {
     u2 stackmap_index, int bci, StackMapFrame* current_frame,
     StackMapTable* stackmap_table, bool no_control_flow, TRAPS);
 
+  // broken_type: the type replaced by top in the exception frame's locals
+  // (invokespecial <init> on a broken object); else top, if none.
   void verify_exception_handler_targets(
-    int bci, bool this_uninit, bool is_init, VerificationType type,
+    int bci, VerificationType broken_type,
     StackMapFrame* current_frame, StackMapTable* stackmap_table, TRAPS);
 
   void verify_ldc(
@@ -371,12 +373,12 @@ class ClassVerifier : public StackObj {
   void verify_invoke_init(
     RawBytecodeStream* bcs, u2 ref_index, VerificationType ref_class_type,
     StackMapFrame* current_frame, u4 code_length, bool in_try_block,
-    bool* this_uninit, const constantPoolHandle& cp, StackMapTable* stackmap_table,
+    bool* verified_exc_handlers, const constantPoolHandle& cp, StackMapTable* stackmap_table,
     TRAPS);
 
   void verify_invoke_instructions(
     RawBytecodeStream* bcs, u4 code_length, StackMapFrame* current_frame,
-    bool in_try_block, bool* this_uninit,
+    bool in_try_block, bool* verified_exc_handlers,
     const constantPoolHandle& cp, StackMapTable* stackmap_table, TRAPS);
 
   VerificationType get_newarray_type(u2 index, int bci, TRAPS);

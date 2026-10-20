@@ -79,11 +79,12 @@ void StackMapFrame::print_strict_fields(AssertUnsetFieldTable* table) {
   }
 }
 
-StackMapFrame* StackMapFrame::frame_in_exception_handler(bool is_init, VerificationType broken_type, u1 flags) {
+StackMapFrame* StackMapFrame::frame_in_exception_handler(VerificationType broken_type, u1 flags) {
   Thread* thr = _verifier->thread();
   VerificationType* stack = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, 1);
   VerificationType* locals = _locals;
-  guarantee(is_init ? broken_type.is_uninitialized() : broken_type.is_bogus(), "no random types here");
+  bool have_uninitialized = broken_type.is_uninitialized();
+  guarantee(have_uninitialized || broken_type.is_bogus(), "must be uninitialized or top");
 
   // Return a StackMapFrame with a potentially modified local variable
   // array and an empty operand stack with one unused slot.  The caller
@@ -100,7 +101,7 @@ StackMapFrame* StackMapFrame::frame_in_exception_handler(bool is_init, Verificat
   //
   // If the local array is not changed, the original input array is
   // shared as part of the returned frame.
-  if (is_init) {
+  if (have_uninitialized) {
     bool found = false;
     VerificationType* new_locals = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, _max_locals);
     for (int32_t i = 0; i < _max_locals; i++) {

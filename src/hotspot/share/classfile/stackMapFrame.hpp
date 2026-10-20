@@ -248,7 +248,8 @@ class StackMapFrame : public ResourceObj {
   }
 
   // Return a StackMapFrame with a potentially modified local variable array and empty stack.
-  StackMapFrame* frame_in_exception_handler(bool is_init, VerificationType broken_type, u1 flags);
+  // See further details about broken_type at the function definition.
+  StackMapFrame* frame_in_exception_handler(VerificationType broken_type, u1 flags);
 
   // Set local variable type array based on m's signature.
   VerificationType set_locals_from_arg(
