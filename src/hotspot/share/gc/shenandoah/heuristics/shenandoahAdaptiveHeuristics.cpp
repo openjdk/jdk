@@ -330,7 +330,7 @@ bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(const Shenand
   if (rate.baseline_consumption() > allocatable_bytes) {
     const ShenandoahSignedSize baseline_rate = ShenandoahSignedSize::get(rate.baseline_rate());
 
-    log_trigger("%sBaseline Allocation Rate. %.2fms GC predicted, " PROPERFMT " free, "
+    log_trigger("%sAllocation Rate. %.2fms GC predicted, " PROPERFMT " free, "
                 PROPERFMT_F "/s average allocation rate",
                 is_humongous ? "Humongous " : "",
                 rate.duration_seconds() * 1000, PROPERFMTARGS(allocatable_bytes),
@@ -427,7 +427,7 @@ bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(const Sh
   if (rate.momentary_consumption() > allocatable_bytes) {
     const ShenandoahSignedSize momentary_rate = ShenandoahSignedSize::get(rate.momentary_rate());
     assert(rate.accelerated_consumption() == 0, "Momentary trigger is meant to exclude acceleration trigger");
-    log_trigger("%sMomentary Allocation Rate. %.2fms GC predicted, " PROPERFMT " free, "
+    log_trigger("%sAllocation Rate. %.2fms GC predicted, " PROPERFMT " free, "
                 PROPERFMT_F "/s momentary allocation rate",
                 is_humongous ? "Humongous " : "",
                 rate.duration_seconds() * 1000, PROPERFMTARGS(allocatable_bytes),
@@ -440,7 +440,7 @@ bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(const Sh
     const ShenandoahSignedSize predicted_rate = ShenandoahSignedSize::get(rate.predicted_rate());
     const ShenandoahSignedSize acceleration = ShenandoahSignedSize::get(rate.acceleration());
     assert(rate.momentary_consumption() == 0, "Acceleration trigger is meant to exclude momentary trigger");
-    log_trigger("%sAccelerating Allocation Rate. %.2fms GC predicted, " PROPERFMT " free, "
+    log_trigger("%sAllocation Rate. %.2fms GC predicted, " PROPERFMT " free, "
                 PROPERFMT_F "/s predicted allocation rate, " PROPERFMT_F "/s^2 acceleration",
                 is_humongous ? "Humongous " : "",
                 rate.duration_seconds() * 1000, PROPERFMTARGS(allocatable_bytes),

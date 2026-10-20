@@ -56,7 +56,9 @@ void ShenandoahGenerationalHeuristics::record_cycle_end() {
   ShenandoahAdaptiveHeuristics::record_cycle_end();
 
   ShenandoahAllocationRate& alloc_rate = ShenandoahHeap::heap()->alloc_rate();
+  ShenandoahAllocationRate& humongous_alloc_rate = ShenandoahHeap::heap()->humongous_alloc_rate();
   alloc_rate.update_minimum_sample_size(_space_info->soft_mutator_available());
+  humongous_alloc_rate.update_minimum_sample_size(_space_info->soft_mutator_available());
 }
 
 inline void assert_no_in_place_promotions() {

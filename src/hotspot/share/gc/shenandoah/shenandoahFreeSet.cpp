@@ -2846,8 +2846,8 @@ void ShenandoahFreeSet::update_max_contig_cache(size_t bytes) {
 }
 
 size_t ShenandoahFreeSet::max_humongous_allocatable() {
-  // TODO: max age is not refreshed at a fixed frequency, but only when it's needed for calculation.
-  // Maybe move ShenandoahMaxContigRegionMaxAgeMiliSec to a constant in the code rather than in shenandoah_globals.hpp?
+  // TODO: Maybe move ShenandoahMaxContigRegionMaxAgeMiliSec to a constant in the code rather than in shenandoah_globals.hpp?
+  // The max age is not refreshed at a fixed frequency, but only when it's needed for calculation.
   const jlong max_age_ns = (jlong) ShenandoahMaxContigRegionMaxAgeMiliSec * NANOSECS_PER_MILLISEC;
   // use nanos since javaTimeMillis doesn't increase monotonically
   if (os::javaTimeNanos() - _cached_max_contig_age_ns.load_relaxed() > max_age_ns) {
