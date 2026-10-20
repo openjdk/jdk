@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -44,12 +44,15 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
       if (MacroAssembler::is_load_pc_relative_at(addr())) {
         address constptr = (address)code()->oop_addr_at(reloc->oop_index());
         bytes = MacroAssembler::pd_patch_instruction_size(addr(), constptr);
-        assert((address)Bytes::get_native_u8(constptr) == x, "error in oop relocation");
+        assert((address)MacroAssembler::get_native_u8(constptr) == x, "error in oop relocation");
       } else {
         bytes = MacroAssembler::patch_oop(addr(), x);
       }
       break;
     }
+    case relocInfo::metadata_type:
+      bytes = MacroAssembler::patch_metadata(addr(), x);
+      break;
     default:
       bytes = MacroAssembler::pd_patch_instruction_size(addr(), x);
       break;
@@ -74,7 +77,12 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
 address Relocation::pd_call_destination(address orig_addr) {
   assert(is_call(), "should be a call here");
   if (NativeCall::is_at(addr())) {
-    return nativeCall_at(addr())->reloc_destination();
+    // A reloc call keeps its destination in its address stub, so the
+    // instruction sequence at orig_addr must not be decoded here: the
+    // auipc + ld pair points to itself until the call is linked to the
+    // stub in pd_set_call_destination.
+    NativeCall* call = nativeCall_at(addr());
+    return call->destination();
   }
 
   if (orig_addr != nullptr) {
@@ -93,12 +101,16 @@ address Relocation::pd_call_destination(address orig_addr) {
 void Relocation::pd_set_call_destination(address x) {
   assert(is_call(), "should be a call here");
   if (NativeCall::is_at(addr())) {
-    NativeCall* call = nativeCall_at(addr());
-    call->reloc_set_destination(x);
+    // Nothing to do while code is still living in a CodeBuffer, where the call
+    // does not have an address stub yet. See NativeCall::stub_address().
+    if (x != nullptr) {
+      NativeCall* call = nativeCall_at(addr());
+      call->set_destination(x);
+    }
   } else {
     MacroAssembler::pd_patch_instruction_size(addr(), x);
-    assert(pd_call_destination(addr()) == x, "fail in reloc");
   }
+  guarantee(pd_call_destination(addr()) == x, "fail in reloc");
 }
 
 address* Relocation::pd_address_in_code() {
@@ -118,4 +130,12 @@ void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffe
 }
 
 void metadata_Relocation::pd_fix_value(address x) {
+}
+
+address trampoline_stub_Relocation::pd_destination() {
+  return reinterpret_cast<address>(Bytes::get_native_u8(addr()));
+}
+
+void trampoline_stub_Relocation::pd_set_destination(address x) {
+  Bytes::put_native_u8(addr(), reinterpret_cast<uint64_t>(x));
 }

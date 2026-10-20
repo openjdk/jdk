@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,12 @@
 
 #include "utilities/bitMap.inline.hpp"
 
-inline bool G1CommittedRegionMap::active(uint index) const {
+inline bool G1CommittedRegionMap::is_active(uint index) const {
   return _active.par_at(index);
 }
 
-inline bool G1CommittedRegionMap::inactive(uint index) const {
-  return _inactive.at(index);
+inline bool G1CommittedRegionMap::is_pending_uncommit(uint index) const {
+  return _pending_uncommit.at(index);
 }
 
 #endif // SHARE_GC_G1_G1COMMITTEDREGIONMAP_INLINE_HPP

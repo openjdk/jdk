@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1REGIONS_HPP
-#define SHARE_VM_GC_G1_G1REGIONS_HPP
+#ifndef SHARE_GC_G1_G1REGIONSONNODES_HPP
+#define SHARE_GC_G1_G1REGIONSONNODES_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
@@ -33,7 +33,7 @@ class G1HeapRegion;
 
 // Contains per node index region count
 class G1RegionsOnNodes : public StackObj {
-  Atomic<uint>*  _count_per_node;
+  Atomic<uint>*  _num_regions_on_node;
   G1NUMA*        _numa;
 
 public:
@@ -41,12 +41,12 @@ public:
 
   ~G1RegionsOnNodes();
 
-  // Increase _count_per_node for the node of given heap region.
+  // Increase _num_regions_per_node for the node of given heap region.
   void add(G1HeapRegion* hr);
 
   void clear();
 
-  uint count(uint node_index) const;
+  uint num_regions_on_node(uint node_index) const;
 };
 
-#endif // SHARE_VM_GC_G1_G1REGIONS_HPP
+#endif // SHARE_GC_G1_G1REGIONSONNODES_HPP

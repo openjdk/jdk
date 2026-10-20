@@ -25,24 +25,23 @@
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotCompressedPointers.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMapLogger.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
 #include "cds/dynamicArchive.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoader.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
-#include "code/aotCodeCache.hpp"
 #include "interpreter/abstractInterpreter.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
@@ -183,6 +182,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _ptrmap(mtClassShared),
   _rw_ptrmap(mtClassShared),
   _ro_ptrmap(mtClassShared),
+  _ac_ptrmap(mtClassShared),
   _rw_src_objs(),
   _ro_src_objs(),
   _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
@@ -322,9 +322,9 @@ void ArchiveBuilder::sort_klasses() {
 
 address ArchiveBuilder::reserve_buffer() {
   // On 64-bit: reserve address space for archives up to the max encoded offset limit.
-  // On 32-bit: use 256MB + AOT code size due to limited virtual address space.
+  // On 32-bit: use 256MB due to limited virtual address space.
   size_t buffer_size = LP64_ONLY(AOTCompressedPointers::MaxMetadataOffsetBytes)
-                       NOT_LP64(256 * M + AOTCodeCache::max_aot_code_size());
+                       NOT_LP64(256 * M);
   ReservedSpace rs = MemoryReserver::reserve(buffer_size,
                                              AOTMetaspace::core_region_alignment(),
                                              os::vm_page_size(),
@@ -367,7 +367,7 @@ address ArchiveBuilder::reserve_buffer() {
     size_t static_archive_size = _mapped_static_archive_top - _mapped_static_archive_bottom;
 
     // At run time, we will mmap the dynamic archive at my_archive_requested_bottom
-    _requested_static_archive_top = _requested_static_archive_bottom + static_archive_size;
+    _requested_static_archive_top = ArchiveUtils::offset_from_requested_base(_requested_static_archive_bottom, static_archive_size);
     my_archive_requested_bottom = align_up(_requested_static_archive_top, AOTMetaspace::core_region_alignment());
 
     _requested_dynamic_archive_bottom = my_archive_requested_bottom;
@@ -375,7 +375,7 @@ address ArchiveBuilder::reserve_buffer() {
 
   _buffer_to_requested_delta = my_archive_requested_bottom - _buffer_bottom;
 
-  address my_archive_requested_top = my_archive_requested_bottom + buffer_size;
+  address my_archive_requested_top = ArchiveUtils::offset_from_requested_base(my_archive_requested_bottom, buffer_size);
   if (my_archive_requested_bottom <  _requested_static_archive_bottom ||
       my_archive_requested_top    <= _requested_static_archive_bottom) {
     // Size overflow.
@@ -437,11 +437,6 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
   SourceObjInfo src_info(ref, read_only, follow_mode);
   bool created;
   SourceObjInfo* p = _src_obj_table.put_if_absent(src_obj, src_info, &created);
-  if (created) {
-    if (_src_obj_table.maybe_grow()) {
-      log_info(aot, hashtables)("Expanded _src_obj_table table to %d", _src_obj_table.table_size());
-    }
-  }
 
 #ifdef ASSERT
   if (ref->type() == MetaspaceClosureType::MethodType) {
@@ -639,7 +634,10 @@ void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
 
 void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* src_info) {
   address src = src_info->source_addr();
-  int bytes = src_info->size_in_bytes();
+  // Symbols may be allocated in C-heap with a size smaller than src_info->size_in_bytes(), so
+  // copy the exact number of bytes to avoid triggering ASAN error.
+  int bytes = (src_info->type() == MetaspaceClosureType::SymbolType) ?
+              ((Symbol*)src)->byte_size() : src_info->size_in_bytes();
   char* dest = dump_region->allocate_metaspace_obj(bytes, src, src_info->type(),
                                                    src_info->read_only(), &_alloc_stats);
 
@@ -656,9 +654,6 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
     bool created;
     _buffered_to_src_table.put_if_absent((address)dest, src, &created);
     assert(created, "must be");
-    if (_buffered_to_src_table.maybe_grow()) {
-      log_info(aot, hashtables)("Expanded _buffered_to_src_table table to %d", _buffered_to_src_table.table_size());
-    }
   }
 
   intptr_t* archived_vtable = CppVtables::get_archived_vtable(src_info->type(), (address)dest);
@@ -849,10 +844,10 @@ void ArchiveBuilder::make_klasses_shareable() {
           assert(0, "shouldn't happen");
         }
         if (CDSConfig::is_dumping_method_handles()) {
-          assert(HeapShared::is_archivable_hidden_klass(ik), "sanity");
+          assert(AOTHeap::is_archivable_hidden_klass(ik), "sanity");
         } else {
           // Legacy CDS support for lambda proxies
-          CDS_JAVA_HEAP_ONLY(assert(HeapShared::is_lambda_proxy_klass(ik), "sanity");)
+          CDS_JAVA_HEAP_ONLY(assert(AOTHeap::is_lambda_proxy_klass(ik), "sanity");)
         }
       } else if (ik->defined_by_boot_loader()) {
         type = "boot";
@@ -988,7 +983,7 @@ size_t ArchiveBuilder::any_to_offset(address p) const {
 }
 
 address ArchiveBuilder::offset_to_buffered_address(size_t offset) const {
-  address requested_addr = _requested_static_archive_bottom + offset;
+  address requested_addr = ArchiveUtils::offset_from_requested_base(_requested_static_archive_bottom, offset);
   address buffered_addr = requested_addr - _buffer_to_requested_delta;
   assert(is_in_buffer_space(buffered_addr), "bad offset");
   return buffered_addr;
@@ -1020,7 +1015,7 @@ narrowKlass ArchiveBuilder::get_requested_narrow_klass(Klass* k) {
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
-// RelocateBufferToRequested --- Relocate all the pointers in rw/ro,
+// RelocateBufferToRequested --- Relocate all the pointers in rw/ro/ac,
 // so that the archive can be mapped to the "requested" location without runtime relocation.
 //
 // - See ArchiveBuilder header for the definition of "buffer", "mapped" and "requested"
@@ -1054,7 +1049,7 @@ class RelocateBufferToRequested : public BitMapClosure {
 
     address bottom = _builder->buffer_bottom();
     address top = _builder->buffer_top();
-    address new_bottom = bottom + _buffer_to_requested_delta;
+    address new_bottom = bottom +  _buffer_to_requested_delta;
     address new_top = top + _buffer_to_requested_delta;
     aot_log_debug(aot)("Relocating archive from [" INTPTR_FORMAT " - " INTPTR_FORMAT "] to "
                    "[" INTPTR_FORMAT " - " INTPTR_FORMAT "]",
@@ -1115,7 +1110,7 @@ void ArchiveBuilder::relocate_to_requested() {
   size_t my_archive_size = buffer_top() - buffer_bottom();
 
   if (CDSConfig::is_dumping_static_archive()) {
-    _requested_static_archive_top = _requested_static_archive_bottom + my_archive_size;
+    _requested_static_archive_top = ArchiveUtils::offset_from_requested_base(_requested_static_archive_bottom, my_archive_size);
     RelocateBufferToRequested<true> patcher(this);
     patcher.doit();
   } else {
@@ -1142,11 +1137,12 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, AOTMappedHeapInfo* mapp
   write_region(mapinfo, AOTMetaspace::ac, &_ac_region, /*read_only=*/false,/*allow_exec=*/false);
 
   // Split pointer map into read-write and read-only bitmaps
-  ArchivePtrMarker::initialize_rw_ro_maps(&_rw_ptrmap, &_ro_ptrmap);
+  ArchivePtrMarker::initialize_rw_ro_ac_maps(&_rw_ptrmap, &_ro_ptrmap, &_ac_ptrmap);
 
   size_t bitmap_size_in_bytes;
   char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::rw_ptrmap(),
                                               ArchivePtrMarker::ro_ptrmap(),
+                                              ArchivePtrMarker::ac_ptrmap(),
                                               mapped_heap_info,
                                               streamed_heap_info,
                                               bitmap_size_in_bytes);
@@ -1166,15 +1162,15 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, AOTMappedHeapInfo* mapp
   mapinfo->write_header();
   mapinfo->close();
 
+  aot_log_info(aot)("Full module graph = %s", CDSConfig::is_dumping_full_module_graph() ? "enabled" : "disabled");
   if (log_is_enabled(Info, aot)) {
-    log_info(aot)("Full module graph = %s", CDSConfig::is_dumping_full_module_graph() ? "enabled" : "disabled");
     print_stats();
   }
 
   if (log_is_enabled(Info, aot, map)) {
     AOTMapLogger::dumptime_log(this, mapinfo, mapped_heap_info, streamed_heap_info, bitmap, bitmap_size_in_bytes);
   }
-  CDS_JAVA_HEAP_ONLY(HeapShared::destroy_archived_object_cache());
+  CDS_JAVA_HEAP_ONLY(AOTHeap::destroy_archived_object_cache());
   FREE_C_HEAP_ARRAY(bitmap);
 }
 

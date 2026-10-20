@@ -22,18 +22,18 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
-#include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
 class LogStream;
+class ShenandoahScanRemembered;
 class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
 class ShenandoahOldHeuristics;
@@ -51,7 +51,7 @@ private:
   ssize_t _region_balance;
 
   // Set when evacuation in the old generation fails. When this is set, the control thread will initiate a
-  // full GC instead of a futile degenerated cycle.
+  // full GC instead of a futile concurrent cycle.
   ShenandoahSharedFlag _failed_evacuation;
 
   // Bytes reserved within old-gen to hold the results of promotion. This is separate from
@@ -73,11 +73,6 @@ private:
   // evacuation or by promote-in-place.  This value is used by the young heuristic to trigger mixed collections.
   // It is also used when computing the optimum size for the old generation.
   size_t _promotion_potential;
-
-  // When a region is selected to be promoted in place, the remaining free memory is filled
-  // in to prevent additional allocations (preventing premature promotion of newly allocated
-  // objects). This field records the total amount of padding used for such regions.
-  size_t _pad_for_promote_in_place;
 
   // During construction of the collection set, we keep track of regions that are eligible
   // for promotion in place. These fields track the count of those humongous and regular regions.
@@ -154,10 +149,6 @@ public:
   size_t get_promotion_potential() const { return _promotion_potential; }
 
   // See description in field declaration
-  void set_pad_for_promote_in_place(size_t pad) { _pad_for_promote_in_place = pad; }
-  size_t get_pad_for_promote_in_place() const { return _pad_for_promote_in_place; }
-
-  // See description in field declaration
   void set_expected_humongous_region_promotions(size_t region_count) { _promotable_humongous_regions = region_count; }
   void set_expected_regular_region_promotions(size_t region_count) { _promotable_regular_regions = region_count; }
   size_t get_expected_in_place_promotions() const { return _promotable_humongous_regions + _promotable_regular_regions; }
@@ -170,7 +161,7 @@ public:
   // This will signal the heuristic to trigger an old generation collection
   void handle_failed_transfer();
 
-  // This will signal the control thread to run a full GC instead of a futile degenerated gc
+  // This will signal the control thread to run a full GC
   void handle_failed_evacuation();
 
   // Increment promotion failure counters, optionally log a more detailed message
@@ -202,7 +193,7 @@ public:
   void clear_cards_for(ShenandoahHeapRegion* region);
 
   // Mark card for this location as dirty
-  void mark_card_as_dirty(void* location);
+  void mark_card_as_dirty(void* location) const;
 
   template<typename T>
   class ShenandoahHeapRegionLambda : public ShenandoahHeapRegionClosure {
@@ -254,34 +245,11 @@ public:
   void transition_old_generation_after_global_gc();
 
   void prepare_gc() override;
-  void prepare_regions_and_collection_set(bool concurrent) override;
-  void record_success_concurrent(bool abbreviated) override;
+  void prepare_regions_and_collection_set() override;
   void cancel_marking() override;
 
   // Cancels old gc and transitions to the idle state
   void cancel_gc();
-
-  // The SATB barrier will be "enabled" until old marking completes. This means it is
-  // possible for an entire young collection cycle to execute while the SATB barrier is enabled.
-  // Consider a situation like this, where we have a pointer 'B' at an object 'A' which is in
-  // the young collection set:
-  //
-  //      +--Young, CSet------+     +--Young, Regular----+
-  //      |                   |     |                    |
-  //      |                   |     |                    |
-  //      |       A <--------------------+ B             |
-  //      |                   |     |                    |
-  //      |                   |     |                    |
-  //      +-------------------+     +--------------------+
-  //
-  // If a mutator thread overwrites pointer B, the SATB barrier will dutifully enqueue
-  // object A. However, this object will be trashed when the young cycle completes. We must,
-  // therefore, filter this object from the SATB buffer before any old mark threads see it.
-  // We do this with a handshake before final-update-refs (see shenandoahConcurrentGC.cpp).
-  //
-  // This method is here only for degenerated cycles. A concurrent cycle may be cancelled before
-  // we have a chance to execute the handshake to flush the SATB in final-update-refs.
-  void transfer_pointers_from_satb() const;
 
   // True if there are old regions waiting to be selected for a mixed collection
   bool has_unprocessed_collection_candidates();
@@ -304,7 +272,6 @@ public:
   // Abandon any regions waiting for mixed collections
   void abandon_collection_candidates();
 
-public:
   enum State {
     FILLING, IDLE, MARKING, EVACUATING, EVACUATING_AFTER_GLOBAL
   };
@@ -352,7 +319,7 @@ public:
 
   size_t usage_trigger_threshold() const;
 
-  bool can_start_gc() {
+  bool can_start_gc() const {
     return _state == IDLE;
   }
 
@@ -368,4 +335,4 @@ public:
 };
 
 
-#endif //SHARE_VM_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
+#endif //SHARE_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP

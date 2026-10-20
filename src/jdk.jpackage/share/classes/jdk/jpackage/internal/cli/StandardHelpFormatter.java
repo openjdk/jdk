@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,8 @@ final class StandardHelpFormatter {
         private static Stream<? extends OptionSpec<?>> appImageOptions() {
             return Stream.of(
                     StandardOption.INPUT,
-                    StandardOption.APP_CONTENT
+                    StandardOption.APP_CONTENT,
+                    StandardOption.APP_RESOURCES
             ).map(OptionValue::getSpec);
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1013,8 +1013,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ restore_default_fp_mode();
   }
 
-  // Do safepoint check
-  __ mov(Rtemp, _thread_in_native_trans);
+  // Perform Native->Java thread transition
+  __ mov(Rtemp, _thread_in_Java);
   __ str_32(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
@@ -1033,6 +1033,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   saved_result_fp = fnoreg;
 #endif // __ABI_HARD__
 
+  // Do safepoint check
   {
   Label call, skip_call;
   __ safepoint_poll(Rtemp, call);
@@ -1041,17 +1042,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ b(skip_call, eq);
   __ bind(call);
   __ mov(R0, Rthread);
-  __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans), relocInfo::none);
+  __ call(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans), relocInfo::none);
   __ bind(skip_call);
 
 #if R9_IS_SCRATCHED
   __ restore_method();
 #endif
   }
-
-  // Perform Native->Java thread transition
-  __ mov(Rtemp, _thread_in_Java);
-  __ str_32(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
 
   // Zero handles and last_java_sp
   __ reset_last_Java_frame(Rtemp);

@@ -29,6 +29,7 @@
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "classfile/classLoaderStats.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
@@ -48,7 +49,6 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -316,7 +316,7 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
         return;
       }
 
-      char *opt = (char *)os::malloc(opt_len, mtInternal);
+      char *opt = (char *)os::malloc(opt_len, mtServiceability);
       if (opt == nullptr) {
         output()->print_cr("JVMTI agent attach failed: "
                            "Could not allocate %zu bytes for argument.",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,12 +69,19 @@ void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay_ms) {
 }
 
 void G1ServiceThread::schedule(G1ServiceTask* task, jlong delay_ms, bool notify) {
+  guarantee(delay_ms >= 0, "Delay must be non-negative");
   guarantee(task->is_registered(), "Must be registered before scheduled");
   guarantee(task->next() == nullptr, "Task already in queue");
 
+  // Make sure that the deadline time stamp does not overflow.
+  jlong freq = os::elapsed_frequency() / MILLIUNITS;
+  jlong max_delay_ms = MIN2(delay_ms, max_jlong / freq);
+  jlong max_delay_counter = TimeHelper::millis_to_counter(max_delay_ms);
+
   // Schedule task by setting the task time and adding it to queue.
-  jlong delay = TimeHelper::millis_to_counter(delay_ms);
-  task->set_time(os::elapsed_counter() + delay);
+  julong deadline = (julong)os::elapsed_counter() + (julong)max_delay_counter;
+  jlong bounded_deadline = checked_cast<jlong>(MIN2(deadline, (julong)(max_jlong - 1)));
+  task->set_time(bounded_deadline);
 
   MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
   _task_queue.add_ordered(task);

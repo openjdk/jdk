@@ -56,7 +56,7 @@ import java.util.function.Function;
 
 /**
  * HashMap using hashing and "open addressing".
- * Hash entries are inline class instances.
+ * Hash entries are value class instances.
  * As described in <em>Introduction to Algorithms, 3rd Edition (The MIT Press)</em>,
  * Section 11 Hash tables and Section 11.4 Open addressing.
  *

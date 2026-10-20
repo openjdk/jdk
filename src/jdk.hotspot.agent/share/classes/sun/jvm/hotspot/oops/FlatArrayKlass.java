@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,10 @@ import sun.jvm.hotspot.utilities.Observer;
 
 // FlatArrayKlass is a proxy for FlatArrayKlass in the JVM
 
-public class FlatArrayKlass extends ArrayKlass {
+public class FlatArrayKlass extends ObjArrayKlass {
+
+  private static CIntegerField layoutKindField;
+
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -46,14 +49,20 @@ public class FlatArrayKlass extends ArrayKlass {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type t = db.lookupType("FlatArrayKlass");
-    // TODO: implement similar features as in ObjArrayKlass
+
+    layoutKindField = t.getCIntegerField("_layout_kind");
   }
 
   public FlatArrayKlass(Address addr) {
     super(addr);
   }
 
+  public LayoutKind getLayoutKind() {
+    return LayoutKind.valueOf((int)layoutKindField.getValue(addr));
+  }
+
   public void printValueOn(PrintStream tty) {
-    tty.print("FlatArrayKlass");
+    tty.print("FlatArrayKlass for ");
+    getElementKlass().printValueOn(tty);
   }
 }
