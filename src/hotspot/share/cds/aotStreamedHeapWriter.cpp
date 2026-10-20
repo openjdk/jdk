@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotModules.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/aotStreamedHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
@@ -145,6 +146,7 @@ void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassSha
       oop obj = dfs_stack.pop();
       assert(obj != nullptr, "null root");
       int* dfs_number = _dfs_order_table->get(cast_from_oop<void*>(obj));
+      assert(dfs_number != nullptr, "reachable obj not added to _source_objs");
       if (*dfs_number != -1) {
         // Already visited in the traversal
         continue;
@@ -321,7 +323,7 @@ size_t AOTStreamedHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
 
   if (java_lang_Module::is_instance(src_obj)) {
     // These native pointers will be restored explicitly at run time.
-    Modules::check_archived_module_oop(src_obj);
+    AOTModules::check_archived_module_oop(src_obj);
     update_buffered_object_field<ModuleEntry*>(to, java_lang_Module::module_entry_offset(), nullptr);
   } else if (java_lang_ClassLoader::is_instance(src_obj)) {
 #ifdef ASSERT
@@ -371,14 +373,14 @@ template <typename T> void AOTStreamedHeapWriter::map_oop_field_in_buffer(oop ob
 void AOTStreamedHeapWriter::update_header_for_buffered_addr(address buffered_addr, oop src_obj,  Klass* src_klass) {
   narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(src_klass);
 
-  markWord mw = Arguments::enable_preview() ? src_klass->prototype_header() : markWord::prototype();
+  markWord mw = Arguments::is_valhalla_enabled() ? src_klass->prototype_header() : markWord::prototype();
   oopDesc* fake_oop = (oopDesc*)buffered_addr;
 
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap. This also has the side effect of pre-initializing the
   // identity_hash for all shared objects, so they are less likely to be written
   // into during run time, increasing the potential of memory sharing.
-  if (src_obj != nullptr && !src_klass->is_inline_klass()) {
+  if (src_obj != nullptr && !src_klass->is_value_klass()) {
     intptr_t src_hash = src_obj->identity_hash();
     mw = mw.copy_set_hash(src_hash);
   }
@@ -435,7 +437,7 @@ static void log_bitmap_usage(const char* which, BitMap* bitmap, size_t total_bit
 
 // Update all oop fields embedded in the buffered objects
 void AOTStreamedHeapWriter::map_embedded_oops(AOTStreamedHeapInfo* heap_info) {
-  size_t oopmap_unit = (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop));
+  size_t oopmap_unit = heapOopSize;
   size_t heap_region_byte_size = _buffer_used;
   heap_info->oopmap()->resize(heap_region_byte_size / oopmap_unit);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1409,7 +1409,7 @@ bool PhaseCFG::is_cheaper_block(Block* LCA, Node* self, uint target_latency,
                                 int cand_cnt, bool in_latency) {
   if (StressGCM) {
     // Should be randomly accepted in stress mode
-    return C->randomized_select(cand_cnt);
+    return C->stress().randomized_select(cand_cnt);
   }
 
   const double delta = 1 + PROB_UNLIKELY_MAG(4);

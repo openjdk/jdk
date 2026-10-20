@@ -171,8 +171,8 @@ public class Object {
      * that is, for any non-null reference values {@code x} and
      * {@code y}, this method returns {@code true} if and only
      * if {@code x} and {@code y} refer to the same identity object or
-     * indistinguishable value objects ({@code x == y} has the value
-     * {@code true}).
+     * <a id=equalsIndistinguishable>indistinguishable value objects ({@code x == y} has the value
+     * {@code true})</a>.
      * <p>
      * In other words, under the object equality equivalence
      * relation, each equivalence class only has a single element.

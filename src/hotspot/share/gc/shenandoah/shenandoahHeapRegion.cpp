@@ -424,6 +424,7 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   }
 
   st->print("|%s", shenandoah_affiliation_code(affiliation()));
+  st->print("|A %2d", age());
 
 #define SHR_PTR_FORMAT "%12" PRIxPTR
 
@@ -517,7 +518,6 @@ size_t get_card_count(size_t words) {
 void ShenandoahHeapRegion::oop_iterate_humongous_slice_dirty(OopIterateClosure* blk,
                                                              HeapWord* start, size_t words, bool write_table) const {
   assert(is_humongous(), "only humongous region here");
-
   ShenandoahHeapRegion* r = humongous_start_region();
   oop obj = cast_to_oop(r->bottom());
   size_t num_cards = get_card_count(words);
@@ -815,15 +815,6 @@ void ShenandoahHeapRegion::set_state(RegionState to) {
     evt.commit();
   }
   _state.release_store(to);
-}
-
-void ShenandoahHeapRegion::record_pin() {
-  _critical_pins.add_then_fetch((size_t)1);
-}
-
-void ShenandoahHeapRegion::record_unpin() {
-  assert(pin_count() > 0, "Region %zu should have non-zero pins", index());
-  _critical_pins.sub_then_fetch((size_t)1);
 }
 
 size_t ShenandoahHeapRegion::pin_count() const {

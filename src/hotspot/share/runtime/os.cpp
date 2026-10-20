@@ -1341,6 +1341,20 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   // Compressed klass needs to be decoded first.
   // Todo: questionable for COH - can we do this better?
 #ifdef _LP64
+  if (UseCompactObjectHeaders) {
+    markWord mw = (markWord)(uintptr_t)(addr);
+    static constexpr uintptr_t valhalla_reserved_bits_in_place = right_n_bits(markWord::valhalla_reserved_bits)
+                                                                    << markWord::valhalla_reserved_shift;
+    static constexpr uintptr_t markbits_must_be_zero = valhalla_reserved_bits_in_place | markWord::self_fwd_bit_in_place;
+    if ((!mw.has_hash()) && (mw.value() & markbits_must_be_zero) == 0 && Klass::is_valid(mw.klass_without_asserts())) {
+      st->print(PTR_FORMAT " looks like a valid markword: ", p2i(addr));
+      mw.print_on(st);
+      st->print(" ");
+      mw.klass()->print_on(st);
+      return;
+    }
+  }
+
   if (((uintptr_t)addr &~ (uintptr_t)max_juint) == 0) {
     narrowKlass narrow_klass = (narrowKlass)(uintptr_t)addr;
     Klass* k = CompressedKlassPointers::decode_without_asserts(narrow_klass);
@@ -2135,7 +2149,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
       // goal without. In that case, we optimize probing by sorting the attach
       // points: We attempt outermost points first, then work ourselves up to
       // the middle. That reduces address space fragmentation. We also alternate
-      // hemispheres, which increases the chance of successfull mappings if the
+      // hemispheres, which increases the chance of successful mappings if the
       // previous mapping had been blocked by large maps.
       hemi_split(points, num_attempts);
     }
@@ -2386,8 +2400,8 @@ char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc,
 }
 
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,
-                           char *addr, size_t bytes, MemTag mem_tag,
-                            bool read_only, bool allow_exec) {
+                     char *addr, size_t bytes, bool read_only,
+                     MemTag mem_tag, bool allow_exec) {
   char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, mem_tag);

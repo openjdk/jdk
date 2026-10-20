@@ -275,6 +275,7 @@
           "margin of error for the average cycle time and average "         \
           "allocation rate. Increasing this value will cause the "          \
           "heuristic to initiate more concurrent cycles." )                 \
+          range(0.319,3.291)                                                \
                                                                             \
   product(uintx, ShenandoahGuaranteedGCInterval, 5*60*1000, EXPERIMENTAL,   \
           "Many heuristics would guarantee a concurrent GC cycle at "       \
@@ -442,12 +443,6 @@
           "After this number of consecutive Full GCs fail to make "         \
           "progress, Shenandoah will raise out of memory errors. Note "     \
           "that progress is determined by ShenandoahCriticalFreeThreshold") \
-                                                                            \
-  product(bool, ShenandoahImplicitGCInvokesConcurrent, false, EXPERIMENTAL, \
-          "Should internally-caused GC requests invoke concurrent cycles, " \
-          "should they do the stop-the-world (Degenerated / Full GC)? "     \
-          "Many heuristics automatically enable this. This option is "      \
-          "similar to global ExplicitGCInvokesConcurrent.")                 \
                                                                             \
   product(bool, ShenandoahHumongousMoves, true, DIAGNOSTIC,                 \
           "Allow moving humongous regions. This makes GC more resistant "   \

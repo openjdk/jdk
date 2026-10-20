@@ -31,22 +31,22 @@
 #include "gc/g1/g1HeapRegion.inline.hpp"
 
 bool G1CardTableClaimTable::has_unclaimed_cards(uint region) {
-  assert(region < _max_reserved_regions, "Tried to access invalid region %u", region);
+  assert(region < _max_num_regions, "Tried to access invalid region %u", region);
   return _card_claims[region].load_relaxed() < G1HeapRegion::CardsPerRegion;
 }
 
 void G1CardTableClaimTable::reset_to_unclaimed(uint region) {
-  assert(region < _max_reserved_regions, "Tried to access invalid region %u", region);
+  assert(region < _max_num_regions, "Tried to access invalid region %u", region);
   _card_claims[region].store_relaxed(0u);
 }
 
 uint G1CardTableClaimTable::claim_cards(uint region, uint increment) {
-  assert(region < _max_reserved_regions, "Tried to access invalid region %u", region);
+  assert(region < _max_num_regions, "Tried to access invalid region %u", region);
   return _card_claims[region].fetch_then_add(increment, memory_order_relaxed);
 }
 
 uint G1CardTableClaimTable::claim_chunk(uint region) {
-  assert(region < _max_reserved_regions, "Tried to access invalid region %u", region);
+  assert(region < _max_num_regions, "Tried to access invalid region %u", region);
   return _card_claims[region].fetch_then_add(cards_per_chunk(), memory_order_relaxed);
 }
 

@@ -77,9 +77,6 @@ public @interface PreviewFeature {
         STRUCTURED_CONCURRENCY,
         @JEP(number = 531, title = "Lazy Constants", status = "Third Preview")
         LAZY_CONSTANTS,
-        @JEP(number=538, title="PEM Encodings of Cryptographic Objects",
-            status="Third Preview")
-        PEM_API,
         /**
          * Indicates a preview API exists to allow access to the environment
          * where all preview features of the current Java SE release are enabled.

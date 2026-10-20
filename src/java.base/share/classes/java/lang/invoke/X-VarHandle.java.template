@@ -533,6 +533,9 @@ final class VarHandle$InputType$s {
 #if[Object]
         @ForceInline
         static Object checkCast(FieldStaticReadWrite handle, $type$ value) {
+            if (handle.nullRestricted && value == null) {
+                throw new NullPointerException();
+            }
             return handle.fieldType.cast(value);
         }
 #end[Object]

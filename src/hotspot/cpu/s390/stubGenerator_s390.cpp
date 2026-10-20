@@ -33,6 +33,7 @@
 #include "interpreter/interp_masm.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_s390.hpp"
+#include "oops/valueKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -49,6 +50,9 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#if INCLUDE_ZGC
+#include "gc/z/zBarrierSetAssembler.hpp"
+#endif
 
 // Declaration and definition of StubGenerator (no .hpp file).
 // For a more detailed description of the stub routine structure
@@ -124,6 +128,10 @@ class StubGenerator: public StubCodeGenerator {
     StubId stub_id = StubId::stubgen_call_stub_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
+
+    if (ValueTypeReturnedAsFields) {
+      __ stop("fix T_OBJECT");
+    }
 
     Register r_arg_call_wrapper_addr   = Z_ARG1;
     Register r_arg_result_addr         = Z_ARG2;
@@ -446,8 +454,18 @@ class StubGenerator: public StubCodeGenerator {
         __ z_stg(Z_RET, 0, r_arg_result_addr);
         __ z_br(Z_R14); // Return to caller.
         __ align(handlerLen);
+      // T_FLAT_ELEMENT:
+        guarantee(T_FLAT_ELEMENT == T_VOID + 1, "check BasicType definition in globalDefinitions.hpp");
+        // never reachable, see SignatureIterator::fp_is_valid_type in signature.cpp, it only accepts
+        // is_java_primitive || is_reference_type || T_VOID.
+        // T_FLAT_ELEMENT fails all three, so no method's stored result type can ever be T_FLAT_ELEMENT.
+        __ z_illtrap(0xde);  // pattern: 0x00de00ad
+        __ z_illtrap(0xad);
+        __ z_illtrap(0xbe);
+        __ z_illtrap(0xef);
+        __ align(handlerLen);
       // T_ADDRESS:
-        guarantee(T_ADDRESS == T_VOID+1, "check BasicType definition in globalDefinitions.hpp");
+        guarantee(T_ADDRESS == T_FLAT_ELEMENT+1, "check BasicType definition in globalDefinitions.hpp");
         __ z_stg(Z_RET, 0, r_arg_result_addr);
         __ z_br(Z_R14); // Return to caller.
         __ align(handlerLen);
@@ -1357,6 +1375,12 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, T_OBJECT, Z_ARG1, Z_ARG2, Z_ARG3);
 
+#if INCLUDE_ZGC
+    if (UseZGC) {
+      ZBarrierSetAssembler *zbs = (ZBarrierSetAssembler*)bs;
+      zbs->generate_disjoint_oop_copy(_masm, dest_uninitialized);
+    } else
+#endif
     generate_disjoint_copy(aligned, size, true, true);
 
     bs->arraycopy_epilogue(_masm, decorators, T_OBJECT, Z_ARG2, Z_ARG3, true);
@@ -1468,6 +1492,12 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, T_OBJECT, Z_ARG1, Z_ARG2, Z_ARG3);
 
+#if INCLUDE_ZGC
+    if (UseZGC) {
+      ZBarrierSetAssembler *zbs = (ZBarrierSetAssembler*)bs;
+      zbs->generate_conjoint_oop_copy(_masm, dest_uninitialized);
+    } else
+#endif
     generate_conjoint_copy(aligned, size, true);  // Must preserve ARG2, ARG3.
 
     bs->arraycopy_epilogue(_masm, decorators, T_OBJECT, Z_ARG2, Z_ARG3, true);
@@ -3433,11 +3463,11 @@ class StubGenerator: public StubCodeGenerator {
     __ resolve_global_jobject(Z_ARG1, Z_tmp_1, Z_tmp_2);
       // Load target method from receiver
     __ load_heap_oop(Z_method, Address(Z_ARG1, java_lang_invoke_MethodHandle::form_offset()),
-                    noreg, noreg, IS_NOT_NULL);
+                    Z_tmp_1, Z_tmp_2, IS_NOT_NULL);
     __ load_heap_oop(Z_method, Address(Z_method, java_lang_invoke_LambdaForm::vmentry_offset()),
-                    noreg, noreg, IS_NOT_NULL);
+                    Z_tmp_1, Z_tmp_2, IS_NOT_NULL);
     __ load_heap_oop(Z_method, Address(Z_method, java_lang_invoke_MemberName::method_offset()),
-                    noreg, noreg, IS_NOT_NULL);
+                    Z_tmp_1, Z_tmp_2, IS_NOT_NULL);
     __ z_lg(Z_method, Address(Z_method, java_lang_invoke_ResolvedMethodName::vmtarget_offset()));
     __ z_stg(Z_method, Address(Z_thread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
 

@@ -667,6 +667,7 @@ final class MacPackagingPipeline {
             .desktopIntegrationDirectory("Contents/Resources")
             .appModsDirectory("Contents/app/mods")
             .contentDirectory("Contents")
+            .resourcesDirectory("Contents/Resources")
             .create();
 
     static final MacApplicationLayout APPLICATION_LAYOUT = MacApplicationLayout.create(

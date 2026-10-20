@@ -39,7 +39,6 @@
 // - - NativeMovRegMem
 // - - NativeJump
 // - - - NativeGeneralJump
-// - - NativeIllegalInstruction
 // - - NativeCallTrampolineStub
 // - - NativeMembar
 // - - NativeLdSt
@@ -80,6 +79,14 @@ public:
   bool is_movz();
   bool is_movk();
   bool is_stop();
+
+  bool is_udf(uint16_t imm) {
+    uint32_t insn = uint_at(0);
+    return Instruction_aarch64::extract(insn, 31, 16) == 0 &&
+      Instruction_aarch64::extract(insn, 15, 0) == imm;
+  }
+
+  enum : uint16_t { udf_stop = 1, udf_deopt };
 
 protected:
   address addr_at(int offset) const { return address(this) + offset; }
@@ -416,12 +423,6 @@ inline NativeGeneralJump* nativeGeneralJump_at(address address) {
   return jump;
 }
 
-class NativeIllegalInstruction: public NativeInstruction {
-public:
-  // Insert illegal opcode as specific address
-  static void insert(address code_pos);
-};
-
 inline bool NativeInstruction::is_nop() const{
   uint32_t insn = *(uint32_t*)addr_at(0);
   return insn == 0xd503201f;
@@ -621,8 +622,7 @@ class NativeDeoptInstruction: public NativeInstruction {
 
   static bool is_deopt_at(address instr) {
     assert(instr != nullptr, "");
-    uint32_t value = *(uint32_t *) instr;
-    return value == 0xd4ade001;
+    return nativeInstruction_at(instr)->is_udf(udf_deopt);
   }
 
   // MT-safe patching

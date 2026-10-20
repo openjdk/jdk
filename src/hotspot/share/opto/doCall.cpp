@@ -27,6 +27,7 @@
 #include "ci/ciSymbols.hpp"
 #include "classfile/vmIntrinsics.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -40,12 +41,12 @@
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/graphKit.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "opto/valuetypenode.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
@@ -113,6 +114,14 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     allow_inline = false;
   }
 
+  if (AOTCodeCache::is_using_code()) {
+    // During production run, when AOT code is used,
+    // C2 compilation could be requested without collecting
+    // profiling. Instead use profiling from training run.
+    // Make sure training data is loaded for callee.
+    callee->ensure_method_data(true /*training_data_only*/);
+  }
+
   // Note: When we get profiling during stage-1 compiles, we want to pull
   // from more specific profile data which pertains to this inlining.
   // Right now, ignore the information in jvms->caller(), and do method[bci].
@@ -170,6 +179,21 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         cg_intrinsic = cg;
         cg = nullptr;
       } else if (IncrementalInline && should_delay_vector_inlining(callee, jvms)) {
+        if (IncrementalInlineVector && allow_inline) {
+          // Try to incrementally inline fallback implementation if intrinsification attempt fails.
+          CallGenerator* fallback_cg;
+          {
+            InlinePrinterSuspendScope guard(C->inline_printer());
+            fallback_cg = call_generator(callee, vtable_index, call_does_dispatch, jvms,
+                                         true /*allow_inline*/, prof_factor,
+                                         speculative_receiver_type, false /*allow_intrinsics*/);
+          }
+          if (fallback_cg != nullptr && fallback_cg->is_parse()) {
+            return CallGenerator::for_vector_late_inline(callee, cg, fallback_cg);
+          }
+          // Fallback not inlineable by regular heuristics; fall through.
+        }
+        // Don't try to inline fallback implementation.
         return CallGenerator::for_late_inline(callee, cg);
       } else {
         return cg;
@@ -518,6 +542,10 @@ bool Parse::can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass* kl
   if (!holder_klass->is_being_initialized() &&
       !holder_klass->is_initialized() &&
       !holder_klass->is_interface()) {
+    if (C->env()->task()->is_aot_compile()) {
+      ResourceMark rm;
+      log_debug(aot, compilation)("Emitting uncommon trap (cannot compile call site) in AOT code for %s", holder_klass->name()->as_klass_external_name());
+    }
     uncommon_trap(Deoptimization::Reason_uninitialized,
                   Deoptimization::Action_reinterpret,
                   holder_klass);
@@ -584,6 +612,20 @@ void Parse::do_call() {
     return;
   }
   assert(holder_klass->is_loaded(), "");
+
+  if (bc() == Bytecodes::_invokestatic && C->do_clinit_barriers() &&
+      C->needs_clinit_barrier(holder_klass, method())) {
+    // Generate class init barrier for static method in AOT "preload" code.
+    clinit_barrier(holder_klass, method());
+    if (stopped()) {
+      // Constant folding of class initialization state check is not expected here.
+      // For AOT "preload" code all instance classes are considered initialized.
+      // See Reason_AOTCompileForPreload case in ciEnv::compute_init_state_for_aot_compile().
+      // But check it anyway to be safe.
+      return; // MUST uncommon-trap?
+    }
+  }
+
   //assert((bc_callee->is_static() || is_invokedynamic) == !has_receiver , "must match bc");  // XXX invokehandle (cur_bc_raw)
   // Note: this takes into account invokeinterface of methods declared in java/lang/Object,
   // which should be invokevirtuals but according to the VM spec may be invokeinterfaces
@@ -835,22 +877,22 @@ void Parse::do_call() {
     if (!rtype->is_void()) {
       Node* retnode = peek();
       const Type* rettype = gvn().type(retnode);
-      if (!cg->method()->return_value_is_larval() && !retnode->is_InlineType() && rettype->is_inlinetypeptr()) {
-        retnode = InlineTypeNode::make_from_oop(this, retnode, rettype->inline_klass());
+      if (!cg->method()->return_value_is_larval() && !retnode->is_ValueType() && rettype->is_valueklassptr()) {
+        retnode = ValueTypeNode::make_from_oop(this, retnode, rettype->value_klass());
         dec_sp(1);
         push(retnode);
       }
     }
 
     if (cg->method()->receiver_maybe_larval() && receiver != nullptr &&
-        !receiver->is_InlineType() && gvn().type(receiver)->is_inlinetypeptr()) {
-      InlineTypeNode* non_larval = InlineTypeNode::make_from_oop(this, receiver, gvn().type(receiver)->inline_klass());
+        !receiver->is_ValueType() && gvn().type(receiver)->is_valueklassptr()) {
+      ValueTypeNode* non_larval = ValueTypeNode::make_from_oop(this, receiver, gvn().type(receiver)->value_klass());
       // Relinquish the oop input, we will delay the allocation to the point it is needed, see the
-      // comments in InlineTypeNode::Ideal for more details
+      // comments in ValueTypeNode::Ideal for more details
       non_larval = non_larval->clone_if_required(&gvn(), nullptr);
       non_larval->set_oop(gvn(), null());
       non_larval->set_is_buffered(gvn(), false);
-      non_larval = gvn().transform(non_larval)->as_InlineType();
+      non_larval = gvn().transform(non_larval)->as_ValueType();
       map()->replace_edge(receiver, non_larval);
     }
   }

@@ -166,45 +166,51 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+//------------------------------AddFPNode--------------------------------------
+// Add 2 floats, doubles, or half-precision floats
+class AddFPNode : public AddNode {
+protected:
+  AddFPNode(Node* in1, Node* in2) : AddNode(in1, in2) {}
+public:
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase) { return this; }
+};
+
 //------------------------------AddFNode---------------------------------------
 // Add 2 floats
-class AddFNode : public AddNode {
+class AddFNode : public AddFPNode {
 public:
-  AddFNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  AddFNode( Node *in1, Node *in2 ) : AddFPNode(in1,in2) {}
   virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *add_of_identity( const Type *t1, const Type *t2 ) const;
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeF::ZERO; }
   virtual const Type *bottom_type() const { return Type::FLOAT; }
   int max_opcode() const { return Op_MaxF; }
   int min_opcode() const { return Op_MinF; }
-  virtual Node* Identity(PhaseGVN* phase) { return this; }
   virtual uint ideal_reg() const { return Op_RegF; }
 };
 
 //------------------------------AddDNode---------------------------------------
 // Add 2 doubles
-class AddDNode : public AddNode {
+class AddDNode : public AddFPNode {
 public:
-  AddDNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  AddDNode( Node *in1, Node *in2 ) : AddFPNode(in1,in2) {}
   virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *add_of_identity( const Type *t1, const Type *t2 ) const;
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeD::ZERO; }
   virtual const Type *bottom_type() const { return Type::DOUBLE; }
   int max_opcode() const { return Op_MaxD; }
   int min_opcode() const { return Op_MinD; }
-  virtual Node* Identity(PhaseGVN* phase) { return this; }
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
 //------------------------------AddHFNode---------------------------------------
 // Add 2 half-precision floats
-class AddHFNode : public AddNode {
+class AddHFNode : public AddFPNode {
 public:
-  AddHFNode(Node* in1, Node* in2) : AddNode(in1,in2) {}
+  AddHFNode(Node* in1, Node* in2) : AddFPNode(in1, in2) {}
   virtual int Opcode() const;
   virtual const Type* add_of_identity(const Type* t1, const Type* t2) const;
   virtual const Type* add_ring(const Type*, const Type*) const;
@@ -212,7 +218,6 @@ public:
   virtual const Type* bottom_type() const { return Type::HALF_FLOAT; }
   int max_opcode() const { return Op_MaxHF; }
   int min_opcode() const { return Op_MinHF; }
-  virtual Node* Identity(PhaseGVN* phase) { return this; }
   virtual uint ideal_reg() const { return Op_RegF; }
 };
 
