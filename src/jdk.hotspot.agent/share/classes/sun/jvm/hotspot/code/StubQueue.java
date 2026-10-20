@@ -110,7 +110,7 @@ public class StubQueue extends VMObject {
 
   public Stub getNext(Stub s) {
     long i = getIndexOf(s) + getStubSize(s);
-    if (i == getBufferLimit()) {
+    if (i == getBufferLimit() && getQueueEnd() < getBufferLimit()) {
       i = 0;
     }
     return ((i == getQueueEnd()) ? null : getStubAt(i));
