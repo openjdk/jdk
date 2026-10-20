@@ -2275,6 +2275,10 @@ public class Lower extends TreeTranslator {
         // Class is serializable
         return true;
       }
+      if (sym.isValueClass()) {
+          // Class is value class
+          return true;
+      }
       return false;
     }
 
