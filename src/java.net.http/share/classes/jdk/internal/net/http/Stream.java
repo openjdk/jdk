@@ -213,10 +213,16 @@ class Stream<T> extends ExchangeImpl<T> {
             while (!inputQ.isEmpty()) {
                 if (errorRef.get() != null) {
                     if (bodyCf == null) bodyCf = getBody(subscriber);
+
                     // if the bodyCf is completed exceptionally, or cancelled,
                     // there is no point in pulling the data.
                     // if bodyCf is null just stop here; this is not expected.
                     if (bodyCf == null || bodyCf.isCompletedExceptionally()) break;
+
+                    // otherwise, we just ignore the error for now to give a chance
+                    // to the caller to pull the buffered data. The error will
+                    // eventually be reported when the buffered data has been pulled,
+                    // unless the entire response was successfully decoded and completed.
                 }
                 Http2Frame frame = inputQ.peek();
                 if (frame instanceof ResetFrame rf) {
