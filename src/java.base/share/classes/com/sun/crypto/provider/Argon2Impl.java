@@ -532,8 +532,13 @@ public final class Argon2Impl {
                 throw new ProviderException("Wrong input array size: " +
                         bytes.length);
             }
-            this.value = new long[ARGON2_QWORDS_IN_BLOCK];
-            b2lLittle(bytes, 0, value, 0, ARGON2_BLOCK_SIZE);
+            try {
+                this.value = new long[ARGON2_QWORDS_IN_BLOCK];
+                b2lLittle(bytes, 0, value, 0, ARGON2_BLOCK_SIZE);
+            } finally {
+                // erase after converting them to longs
+                Arrays.fill(bytes, (byte)0);
+            }
         }
 
         private byte[] getBytes() {

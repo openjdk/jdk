@@ -28,7 +28,7 @@
  * @summary Ensure that Argon2ParameterSpec builder methods throw the
  *     expected exception for invalid arguments.
  */
-import jdk.test.lib.Utils;
+import jdk.test.lib.Asserts;
 
 import java.nio.charset.StandardCharsets;
 import javax.crypto.spec.Argon2ParameterSpec;
@@ -44,43 +44,41 @@ public class InvalidArgs {
         final byte[] b8 = "12345678".getBytes();
 
         final Builder b = Argon2ParameterSpec.newBuilder();
-        Utils.runAndCheckException(()->b.build(b8, b8), iaeCls);
-        Utils.runAndCheckException(()->b.parallelism(-1), iaeCls);
-        Utils.runAndCheckException(()->b.parallelism(0), iaeCls);
-        Utils.runAndCheckException
-                (()->b.parallelism(2).memoryKiB(12).build(b8, b8), iaeCls);
-        Utils.runAndCheckException
-                (()->b.parallelism(2).memoryPowerOfTwo(3).build(b8, b8),
-                iaeCls);
-        Utils.runAndCheckException(()->b.tagLen(0), iaeCls);
-        Utils.runAndCheckException(()->b.tagLen(2), iaeCls);
-        Utils.runAndCheckException(()->b.memoryKiB(-1), iaeCls);
-        Utils.runAndCheckException(()->b.memoryKiB(0), iaeCls);
-        Utils.runAndCheckException(()->b.memoryKiB(7), iaeCls);
-        Utils.runAndCheckException
-                (()->b.memoryKiB(16).parallelism(3).build(b8, b8), iaeCls);
-        Utils.runAndCheckException(()->b.memoryPowerOfTwo(2), iaeCls);
-        Utils.runAndCheckException
-                (()->b.memoryPowerOfTwo(4).parallelism(3).build(b8, b8),
-                iaeCls);
-        Utils.runAndCheckException(()->b.iterations(0), iaeCls);
-        Utils.runAndCheckException(()->b.secret(null), iaeCls);
-        Utils.runAndCheckException(()->b.associatedData(null), iaeCls);
+        Asserts.assertThrows(iaeCls, ()->b.build(b8, b8));
+        Asserts.assertThrows(iaeCls, ()->b.parallelism(-1));
+        Asserts.assertThrows(iaeCls, ()->b.parallelism(0));
+        Asserts.assertThrows(iaeCls,
+                ()->b.parallelism(2).memoryKiB(12).build(b8, b8));
+        Asserts.assertThrows(iaeCls,
+                ()->b.parallelism(2).memoryPowerOfTwo(3).build(b8, b8));
+        Asserts.assertThrows(iaeCls, ()->b.tagLen(0));
+        Asserts.assertThrows(iaeCls, ()->b.tagLen(2));
+        Asserts.assertThrows(iaeCls, ()->b.memoryKiB(-1));
+        Asserts.assertThrows(iaeCls, ()->b.memoryKiB(0));
+        Asserts.assertThrows(iaeCls, ()->b.memoryKiB(7));
+        Asserts.assertThrows(iaeCls,
+                ()->b.memoryKiB(16).parallelism(3).build(b8, b8));
+        Asserts.assertThrows(iaeCls, ()->b.memoryPowerOfTwo(2));
+        Asserts.assertThrows(iaeCls,
+                ()->b.memoryPowerOfTwo(4).parallelism(3).build(b8, b8));
+        Asserts.assertThrows(iaeCls, ()->b.iterations(0));
+        Asserts.assertThrows(iaeCls, ()->b.secret(null));
+        Asserts.assertThrows(iaeCls, ()->b.associatedData(null));
 
         final char[] c0 = new char[0];
         // setup the builder w/ the required parameters
         b.parallelism(2).memoryKiB(32).tagLen(8).iterations(5);
 
-        Utils.runAndCheckException(()->b.build(null, b8), iaeCls);
-        Utils.runAndCheckException(()->b.build(B0, b8), iaeCls);
-        Utils.runAndCheckException(()->b.build(b8, null), iaeCls);
-        Utils.runAndCheckException(()->b.build(null, c0,
-                StandardCharsets.UTF_8), iaeCls);
-        Utils.runAndCheckException(()->b.build(B0, c0, StandardCharsets.UTF_8),
-                iaeCls);
-        Utils.runAndCheckException(()->b.build(b8, null,
-                StandardCharsets.UTF_8), iaeCls);
-        Utils.runAndCheckException(()->b.build(b8, c0, null), iaeCls);
+        Asserts.assertThrows(iaeCls, ()->b.build(null, b8));
+        Asserts.assertThrows(iaeCls, ()->b.build(B0, b8));
+        Asserts.assertThrows(iaeCls, ()->b.build(b8, null));
+        Asserts.assertThrows(iaeCls,
+                ()->b.build(null, c0, StandardCharsets.UTF_8));
+        Asserts.assertThrows(iaeCls,
+                ()->b.build(B0, c0, StandardCharsets.UTF_8));
+        Asserts.assertThrows(iaeCls,
+                ()->b.build(b8, null, StandardCharsets.UTF_8));
+        Asserts.assertThrows(iaeCls, ()->b.build(b8, c0, null));
 
         System.out.println(b.build(b8, b8));
         System.out.println(b.build(b8, c0, StandardCharsets.UTF_8));
