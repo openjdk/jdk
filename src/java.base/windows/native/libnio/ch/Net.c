@@ -334,14 +334,15 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_getIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
                                   jboolean mayNeedConversion, jint level, jint opt)
 {
-
     int result = 0;
     struct linger linger;
     char *arg;
     int arglen, n;
 
+    /**
+     * IPV6_TCLASS is not supported on Windows
+     */
     if (level == IPPROTO_IPV6 && opt == IPV6_TCLASS) {
-        /* No op */
         return 0;
     }
 
@@ -382,13 +383,14 @@ JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
                                   jboolean mayNeedConversion, jint level, jint opt, jint arg, jboolean ipv6)
 {
-
     struct linger linger;
     char *parg;
     int arglen, n;
 
+    /**
+     * IPV6_TCLASS is not supported on Windows
+     */
     if (level == IPPROTO_IPV6 && opt == IPV6_TCLASS) {
-        /* No op */
         return;
     }
 
