@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,15 +89,6 @@ public class SocketChannelConnectionSetup {
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
                 .include(org.openjdk.bench.java.net.SocketChannelConnectionSetup.class.getSimpleName())
-                .warmupForks(1)
-                .forks(2)
-                .build();
-
-        new Runner(opt).run();
-
-        opt = new OptionsBuilder()
-                .include(org.openjdk.bench.java.net.SocketChannelConnectionSetup.class.getSimpleName())
-                .jvmArgs("-Djdk.net.useFastTcpLoopback=true")
                 .warmupForks(1)
                 .forks(2)
                 .build();

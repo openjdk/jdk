@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_CDS_HEAPSHARED_HPP
-#define SHARE_CDS_HEAPSHARED_HPP
+#ifndef SHARE_CDS_AOTHEAP_HPP
+#define SHARE_CDS_AOTHEAP_HPP
 
 #include "cds/aotMetaspace.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
@@ -128,7 +128,7 @@ enum class HeapArchiveMode {
   _streaming
 };
 
-class HeapShared: AllStatic {
+class AOTHeap: AllStatic {
   friend class VerifySharedOopClosure;
 
 public:
@@ -230,8 +230,8 @@ private:
   typedef ResizeableHashTable<OopHandle, CachedOopInfo,
       AnyObj::C_HEAP,
       mtClassShared,
-      HeapShared::archived_object_cache_hash,
-      HeapShared::oop_handle_equals> ArchivedObjectCache;
+      AOTHeap::archived_object_cache_hash,
+      AOTHeap::oop_handle_equals> ArchivedObjectCache;
   static ArchivedObjectCache* _archived_object_cache;
 
   class DumpTimeKlassSubGraphInfoTable
@@ -289,7 +289,7 @@ private:
   typedef ResizeableHashTable<oop, bool,
       AnyObj::C_HEAP,
       mtClassShared,
-      HeapShared::oop_address_hash> SeenObjectsTable;
+      AOTHeap::oop_address_hash> SeenObjectsTable;
 
   static SeenObjectsTable *_seen_objects_table;
 
@@ -416,7 +416,7 @@ private:
   static void set_has_native_pointers(oop src_obj);
   static uintptr_t archive_location(oop src_obj);
 
-  // We use the HeapShared::roots() array to make sure that objects stored in the
+  // We use the AOTHeap::roots() array to make sure that objects stored in the
   // archived heap region are not prematurely collected. These roots include:
   //
   //    - mirrors of classes that have not yet been loaded.
@@ -425,7 +425,7 @@ private:
   //    - java.lang.Module objects that have not yet been added to the module graph
   //
   // When a mirror M becomes referenced by a newly loaded class K, M will be removed
-  // from HeapShared::roots() via clear_root(), and K will be responsible for
+  // from AOTHeap::roots() via clear_root(), and K will be responsible for
   // keeping M alive.
   //
   // Other types of roots are also cleared similarly when they become referenced.
@@ -498,4 +498,4 @@ private:
   static void log_oop_details(oop source_oop, address buffered_addr);
 };
 
-#endif // SHARE_CDS_HEAPSHARED_HPP
+#endif // SHARE_CDS_AOTHEAP_HPP

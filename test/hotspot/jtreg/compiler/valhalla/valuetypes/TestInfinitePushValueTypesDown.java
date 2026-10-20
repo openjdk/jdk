@@ -21,37 +21,35 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8392533
- * @summary Test that a holder null check is performed when storing to an empty flat field.
+ * @bug 8392784
  * @enablePreview
- * @requires vm.compiler1.enabled
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,${test.main.class}::test ${test.main.class}
  * @run main ${test.main.class}
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 ${test.main.class}
  */
 
-package compiler.valhalla.valuetypes;
+public class TestInfinitePushValueTypesDown {
 
-public class TestEmptyStoreToNullHolder {
-    static value class Empty { }
+    static value class MyValue {
+        Object other;
 
-    Empty field = new Empty();
+        MyValue(Object other) {
+            this.other = other;
+        }
+    }
 
-    static void test(TestEmptyStoreToNullHolder holder) {
-        holder.field = null;
+    static Object test() {
+        Object other = null;
+        for (int i = 0; i < 1; i++) {
+            other = new MyValue(other);
+        }
+        return other;
     }
 
     public static void main(String[] args) {
-        TestEmptyStoreToNullHolder holder = new TestEmptyStoreToNullHolder();
-        for (int i = 0; i < 20_000; i++) {
-            test(holder);
-        }
-        try {
-            test(null);
-            throw new RuntimeException("No NullPointerException thrown!");
-        } catch (NullPointerException expected) {
-            // Expected
+        for (int i = 0; i < 50_000; i++) {
+            test();
         }
     }
 }
