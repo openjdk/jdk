@@ -1052,7 +1052,6 @@ source_hpp %{
   // will do an acquire. If so, this node must not do the acquire
   // operation.
   bool followed_by_acquire(const Node *n);
-
 %}
 
 source %{
@@ -3778,7 +3777,7 @@ operand immN() %{
 %}
 
 operand immN_31bit() %{
-  predicate(MacroAssembler::compressed_oop_constants_fit_in_31_bits());
+  predicate(MacroAssembler::compressed_oops_fit_in_31_bits());
   match(ConN);
 
   op_cost(5);
