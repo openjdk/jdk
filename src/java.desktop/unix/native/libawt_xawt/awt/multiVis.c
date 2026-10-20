@@ -1034,15 +1034,6 @@ static int src_in_overlay(image_region_type *src, int numOverlayVisuals,
  *
  ******************************************************************************/
 
-
-
-#define STATIC_GRAY     0x01
-#define GRAY_SCALE      0x02
-#define PSEUDO_COLOR    0x04
-#define TRUE_COLOR      0x10
-#define DIRECT_COLOR    0x11
-
-
 static int      weCreateServerOverlayVisualsProperty = False;
 
 

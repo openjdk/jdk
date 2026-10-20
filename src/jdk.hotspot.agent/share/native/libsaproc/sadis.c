@@ -57,11 +57,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#ifdef _WINDOWS
-#define JVM_MAXPATHLEN _MAX_PATH
-#else
+#ifndef _WINDOWS
 #include <sys/param.h>
-#define JVM_MAXPATHLEN MAXPATHLEN
 #endif
 
 #include "jni_util.h"

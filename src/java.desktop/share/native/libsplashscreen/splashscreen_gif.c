@@ -31,7 +31,6 @@
 #include "sizecalc.h"
 
 #define GIF_TRANSPARENT     0x01
-#define GIF_USER_INPUT      0x02
 #define GIF_DISPOSE_MASK    0x07
 #define GIF_DISPOSE_SHIFT   2
 

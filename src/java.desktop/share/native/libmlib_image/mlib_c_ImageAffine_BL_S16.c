@@ -67,12 +67,6 @@
 
 /***************************************************************/
 #define DTYPE  mlib_s16
-#define FTYPE  mlib_d64
-
-/***************************************************************/
-#define TTYPE    mlib_s32
-#define I2F(x)   (x)
-#define ROUND(x) (x)
 
 #define FUN_NAME(CHAN) mlib_ImageAffine_s16_##CHAN##_bl
 

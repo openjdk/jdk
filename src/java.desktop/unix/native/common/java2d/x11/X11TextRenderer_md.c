@@ -33,10 +33,10 @@
 #endif /* !HEADLESS */
 #include <jlong.h>
 
+#ifndef HEADLESS
+
 #define TEXT_BM_WIDTH   1024
 #define TEXT_BM_HEIGHT  32
-
-#ifndef HEADLESS
 
 static jboolean checkPixmap(JNIEnv *env, AwtGraphicsConfigDataPtr cData)
 {

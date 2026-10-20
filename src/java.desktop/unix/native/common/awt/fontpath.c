@@ -42,10 +42,6 @@
 #ifndef HEADLESS
 #include <X11/Xlib.h>
 #include <awt.h>
-#else
-/* locks ought to be included from awt.h */
-#define AWT_LOCK()
-#define AWT_UNLOCK()
 #endif /* !HEADLESS */
 
 #ifndef HEADLESS

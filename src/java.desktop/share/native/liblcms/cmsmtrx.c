@@ -55,9 +55,7 @@
 
 #include "lcms2_internal.h"
 
-
 #define DSWAP(x, y)     {cmsFloat64Number tmp = (x); (x)=(y); (y)=tmp;}
-
 
 // Initiate a vector
 void CMSEXPORT _cmsVEC3init(cmsVEC3* r, cmsFloat64Number x, cmsFloat64Number y, cmsFloat64Number z)

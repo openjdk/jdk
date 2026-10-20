@@ -67,12 +67,6 @@
 
 /***************************************************************/
 #define DTYPE  mlib_u8
-#define FTYPE  mlib_f32
-
-/***************************************************************/
-#define TTYPE    mlib_f32
-#define I2F(x)   ((mlib_f32)(x))
-#define ROUND(x) ((x) + 0.5f)
 
 #define FUN_NAME(CHAN) mlib_ImageAffine_u8_##CHAN##_bl
 

@@ -702,9 +702,6 @@ CallJavaMainInNewThread(jlong stack_size, void* args) {
     return rslt;
 }
 
-/* Coarse estimation of number of digits assuming the worst case is a 64-bit pid. */
-#define MAX_PID_STR_SZ   20
-
 int
 JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
         int argc, char **argv,

@@ -33,7 +33,6 @@
 #include "FrameID.h"
 
 #define INITIAL_REF_ALLOC 50
-#define SMALLEST(a, b) ((a) < (b)) ? (a) : (b)
 
 /*
  * TO DO: Support processing of replies through command input streams.

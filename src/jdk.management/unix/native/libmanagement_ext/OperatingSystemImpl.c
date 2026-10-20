@@ -69,7 +69,8 @@ static jlong page_size = 0;
 
 /* This gets us the new structured proc interfaces of 5.6 & later */
 /* - see comment in <sys/procfs.h> */
-#define _STRUCTURED_PROC 1
+// seems the strange define was for Solaris
+// #define _STRUCTURED_PROC 1
 #include <sys/procfs.h>
 
 #endif /* _ALLBSD_SOURCE */

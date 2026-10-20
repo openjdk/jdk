@@ -47,7 +47,8 @@
 #include "awt_p.h"
 #include "awt_GraphicsEnv.h"
 
-#define XK_KATAKANA
+//X11/keysym.h should already give the Japanese XK_KATAKANA
+//#define XK_KATAKANA
 #include <X11/keysym.h>     /* standard X keysyms */
 #include <X11/DECkeysym.h>  /* DEC vendor-specific */
 #include <X11/Sunkeysym.h>  /* Sun vendor-specific */

@@ -85,10 +85,8 @@ JNIEXPORT jboolean JNICALL AWTIsHeadless() {
 
 #ifdef MACOSX
   #define LWAWT_PATH "/libawt_lwawt.dylib"
-  #define DEFAULT_PATH LWAWT_PATH
 #else
   #define XAWT_PATH "/libawt_xawt.so"
-  #define DEFAULT_PATH XAWT_PATH
   #define HEADLESS_PATH "/libawt_headless.so"
 #endif
 

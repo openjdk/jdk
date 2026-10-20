@@ -104,7 +104,6 @@ static char *x11GraphicsConfigClassName = "sun/awt/X11GraphicsConfig";
  * Xinerama screens).
  */
 
-#define MAXFRAMEBUFFERS 16
 typedef struct {
    int   screen_number;
    short x_org;

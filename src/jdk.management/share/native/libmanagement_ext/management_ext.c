@@ -29,8 +29,6 @@
 #include "jvm.h"
 #include "management_ext.h"
 
-#define ERR_MSG_SIZE 128
-
 const JmmInterface* jmm_interface_management_ext = NULL;
 static JavaVM* jvm = NULL;
 jint jmm_version_management_ext = 0;

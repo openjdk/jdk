@@ -71,8 +71,10 @@ OGLBlendRule StdBlendRules[] = {
 };
 
 /** Evaluates to "front" or "back", depending on the value of buf. */
+#ifdef DEBUG
 #define OGLC_ACTIVE_BUFFER_NAME(buf) \
     (buf == GL_FRONT || buf == GL_COLOR_ATTACHMENT0_EXT) ? "front" : "back"
+#endif
 
 /**
  * Initializes the viewport and projection matrix, effectively positioning

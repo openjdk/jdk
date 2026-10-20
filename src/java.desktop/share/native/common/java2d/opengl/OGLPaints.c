@@ -304,7 +304,6 @@ OGLPaints_SetTexturePaint(OGLContext *oglc,
  */
 #define CYCLE_NONE    0
 #define CYCLE_REFLECT 1
-#define CYCLE_REPEAT  2
 
 /**
  * The following constants are flags that can be bitwise-or'ed together

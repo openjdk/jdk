@@ -85,9 +85,7 @@ typedef struct {
     struct in6_addr netmask;
 } AllowedPeerInfo;
 
-#define STR(x) #x
 #define MAX_PEER_ENTRIES 32
-#define MAX_PEERS_STR STR(MAX_PEER_ENTRIES)
 static AllowedPeerInfo _peers[MAX_PEER_ENTRIES];
 static int _peers_cnt = 0;
 
