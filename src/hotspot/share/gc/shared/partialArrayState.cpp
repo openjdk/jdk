@@ -33,18 +33,20 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-PartialArrayState::PartialArrayState(oop src, oop dst,
+PartialArrayState::PartialArrayState(objArrayOop array,
                                      size_t index, size_t length,
                                      size_t chunk_size,
                                      size_t initial_refcount)
-  : _source(src),
-    _destination(dst),
+  : _array(array),
     _length(length),
     _chunk_size(chunk_size),
     _index(index),
     _refcount(initial_refcount)
 {
   assert(index <= length, "precondition");
+  assert(chunk_size > 0, "precondition");
+  assert((length - index) % chunk_size == 0, "whole chunks remain");
+  assert(initial_refcount > 0, "must have a task reference");
 }
 
 void PartialArrayState::add_references(size_t count) {
@@ -76,7 +78,7 @@ PartialArrayStateAllocator::~PartialArrayStateAllocator() {
   _manager->release_allocator();
 }
 
-PartialArrayState* PartialArrayStateAllocator::allocate(oop src, oop dst,
+PartialArrayState* PartialArrayStateAllocator::allocate(objArrayOop array,
                                                         size_t index,
                                                         size_t length,
                                                         size_t chunk_size,
@@ -90,7 +92,7 @@ PartialArrayState* PartialArrayStateAllocator::allocate(oop src, oop dst,
     head->~FreeListEntry();
     p = head;
   }
-  return ::new (p) PartialArrayState(src, dst, index, length, chunk_size, initial_refcount);
+  return ::new (p) PartialArrayState(array, index, length, chunk_size, initial_refcount);
 }
 
 void PartialArrayStateAllocator::release(PartialArrayState* state) {
@@ -118,6 +120,7 @@ PartialArrayStateManager::~PartialArrayStateManager() {
 }
 
 Arena* PartialArrayStateManager::register_allocator() {
+  assert(_released_allocators.load_relaxed() == 0, "allocator destruction has begun");
   uint idx = _registered_allocators.fetch_then_add(1u, memory_order_relaxed);
   assert(idx < _max_allocators, "exceeded configured max number of allocators");
   return ::new (&_arenas[idx]) Arena(mtGC);

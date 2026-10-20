@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,14 +44,17 @@ public final class SunPageSelection implements PrintRequestAttribute {
         pages = value;
     }
 
+    @Override
     public Class<? extends Attribute> getCategory() {
         return SunPageSelection.class;
     }
 
+    @Override
     public String getName() {
         return "sun-page-selection";
     }
 
+    @Override
     public String toString() {
        return "page-selection: " + pages;
     }

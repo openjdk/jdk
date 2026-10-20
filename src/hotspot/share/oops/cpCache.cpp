@@ -23,9 +23,9 @@
  */
 
 #include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -409,9 +409,9 @@ void ConstantPoolCache::remove_unshareable_info() {
   _archived_references_index = -1;
   if (CDSConfig::is_dumping_heap()) {
     ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(constant_pool());
-    oop rr = HeapShared::scratch_resolved_references(src_cp);
+    oop rr = AOTHeap::scratch_resolved_references(src_cp);
     if (rr != nullptr) {
-      _archived_references_index = HeapShared::append_root(rr);
+      _archived_references_index = AOTHeap::append_root(rr);
     }
   }
 #endif
@@ -436,6 +436,18 @@ void ConstantPoolCache::iterate_resolved_field_entries_with_archivability_check(
 
     bool archivable = (resolved && !CDSConfig::is_dumping_preimage_static_archive() &&
                        AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index));
+
+    // The state of strict static field accesses is reset in InstanceKlass::remove_unshareable_info
+    // when the class does not have an AOT initialized mirror. Since <clinit> will be called in
+    // the subsequent runtime, the resolved field entries associated with strict static fields are
+    // not archiveable.
+    if (rfi->is_resolved(Bytecodes::_getstatic) || rfi->is_resolved(Bytecodes::_putstatic)) {
+      InstanceKlass* holder = rfi->field_holder();
+      if (!holder->has_aot_initialized_mirror() && holder->field_is_strict(rfi->field_index())) {
+        archivable = false;
+      }
+    }
+
     f(cp, src_cp, cp_index, rfi, resolved, archivable);
   }
 }
@@ -707,12 +719,12 @@ oop ConstantPoolCache::archived_references() {
   if (_archived_references_index < 0) {
     return nullptr;
   }
-  return HeapShared::get_root(_archived_references_index);
+  return AOTHeap::get_root(_archived_references_index);
 }
 
 void ConstantPoolCache::clear_archived_references() {
   if (_archived_references_index >= 0) {
-    HeapShared::clear_root(_archived_references_index);
+    AOTHeap::clear_root(_archived_references_index);
     _archived_references_index = -1;
   }
 }

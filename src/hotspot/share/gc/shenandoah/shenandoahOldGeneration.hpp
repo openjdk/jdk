@@ -52,7 +52,7 @@ private:
   ssize_t _region_balance;
 
   // Set when evacuation in the old generation fails. When this is set, the control thread will initiate a
-  // full GC instead of a futile degenerated cycle.
+  // full GC instead of a futile concurrent cycle.
   ShenandoahSharedFlag _failed_evacuation;
 
   // Bytes reserved within old-gen to hold the results of promotion. This is separate from
@@ -84,6 +84,10 @@ private:
 
   // True if old regions may be safely traversed by the remembered set scan.
   bool _is_parsable;
+
+  // Read by mutators, written by control thread. This is a logical id for an old generation collection.
+  // It is stable across interruptions by young GCs.
+  Atomic<size_t> _started_gc_id;
 
   bool coalesce_and_fill();
 
@@ -162,7 +166,7 @@ public:
   // This will signal the heuristic to trigger an old generation collection
   void handle_failed_transfer();
 
-  // This will signal the control thread to run a full GC instead of a futile degenerated gc
+  // This will signal the control thread to run a full GC
   void handle_failed_evacuation();
 
   // Increment promotion failure counters, optionally log a more detailed message
@@ -246,34 +250,11 @@ public:
   void transition_old_generation_after_global_gc();
 
   void prepare_gc() override;
-  void prepare_regions_and_collection_set(bool concurrent) override;
-  void record_success_concurrent(bool abbreviated) override;
+  void prepare_regions_and_collection_set() override;
   void cancel_marking() override;
 
   // Cancels old gc and transitions to the idle state
   void cancel_gc();
-
-  // The SATB barrier will be "enabled" until old marking completes. This means it is
-  // possible for an entire young collection cycle to execute while the SATB barrier is enabled.
-  // Consider a situation like this, where we have a pointer 'B' at an object 'A' which is in
-  // the young collection set:
-  //
-  //      +--Young, CSet------+     +--Young, Regular----+
-  //      |                   |     |                    |
-  //      |                   |     |                    |
-  //      |       A <--------------------+ B             |
-  //      |                   |     |                    |
-  //      |                   |     |                    |
-  //      +-------------------+     +--------------------+
-  //
-  // If a mutator thread overwrites pointer B, the SATB barrier will dutifully enqueue
-  // object A. However, this object will be trashed when the young cycle completes. We must,
-  // therefore, filter this object from the SATB buffer before any old mark threads see it.
-  // We do this with a handshake before final-update-refs (see shenandoahConcurrentGC.cpp).
-  //
-  // This method is here only for degenerated cycles. A concurrent cycle may be cancelled before
-  // we have a chance to execute the handshake to flush the SATB in final-update-refs.
-  void transfer_pointers_from_satb() const;
 
   // True if there are old regions waiting to be selected for a mixed collection
   bool has_unprocessed_collection_candidates();
@@ -296,7 +277,6 @@ public:
   // Abandon any regions waiting for mixed collections
   void abandon_collection_candidates();
 
-public:
   enum State {
     FILLING, IDLE, MARKING, EVACUATING, EVACUATING_AFTER_GLOBAL
   };
@@ -362,21 +342,8 @@ public:
     _started_gc_id.store_relaxed(gc_id);
   }
 
-private:
-  // Read by mutators, written by control thread
-  Atomic<size_t> _started_gc_id;
-  Atomic<size_t> _completed_gc_id;
-
-protected:
-  void update_completed_gc_id();
-
-public:
   size_t started_gc_id() const {
     return _started_gc_id.load_relaxed();
-  }
-
-  size_t completed_gc_id() const {
-    return _completed_gc_id.load_relaxed();
   }
 };
 

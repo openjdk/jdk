@@ -339,7 +339,11 @@ public class WhiteBox {
   // Shenandoah
   public native int shenandoahRegionSize();
   public native int shenandoahRegionCount();
-  public native void shenandoahOldGC();
+  public native long shenandoahOldMarkGC(int timeoutSeconds);
+  public long shenandoahOldMarkGC() {
+    final int TIMEOUT_SECONDS = 10;
+    return shenandoahOldMarkGC(TIMEOUT_SECONDS);
+  }
 
   // NMT
   public native long NMTMalloc(long size);

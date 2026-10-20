@@ -388,14 +388,14 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
   G1HeapRegion* humongous_start = _hrm.allocate_humongous(obj_regions);
   if (humongous_start == nullptr) {
     // Policy: We could not find enough regions for the humongous object in the
-    // free list. Look through the heap to find a mix of free and uncommitted regions.
+    // free list. Look through the heap to find a mix of free, pending uncommit or uncommitted regions.
     // If so, expand the heap and allocate the humongous object.
     humongous_start = _hrm.expand_and_allocate_humongous(obj_regions);
     if (humongous_start != nullptr) {
       // We managed to find a region by expanding the heap.
       log_debug(gc, ergo, heap)("Heap expansion (humongous allocation request). Allocation request: %zuB",
                                 word_size * HeapWordSize);
-      policy()->record_new_heap_size(num_committed_regions());
+      policy()->record_new_heap_size(num_active_regions());
     } else {
       // Policy: Potentially trigger a defragmentation GC.
     }
@@ -552,18 +552,18 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size) {
   // when mmap'ing archived heap data in, so pre-touching is wasted.
   FlagSetting fs(AlwaysPreTouch, false);
 
-  size_t commits = 0;
+  size_t num_newly_activated_regions = 0;
   // Attempt to allocate towards the end of the heap.
   HeapWord* start_addr = reserved.end() - align_up(word_size, G1HeapRegion::GrainWords);
   MemRegion range = MemRegion(start_addr, word_size);
   HeapWord* last_address = range.last();
-  if (!_hrm.allocate_containing_regions(range, &commits, workers())) {
+  if (!_hrm.allocate_containing_regions(range, &num_newly_activated_regions, workers())) {
     return nullptr;
   }
   increase_used(word_size * HeapWordSize);
-  if (commits != 0) {
+  if (num_newly_activated_regions != 0) {
     log_debug(gc, ergo, heap)("Attempt heap expansion (allocate archive regions). Total size: %zuB",
-                              G1HeapRegion::GrainWords * HeapWordSize * commits);
+                              G1HeapRegion::GrainWords * HeapWordSize * num_newly_activated_regions);
   }
 
   // Mark each G1 region touched by the range as old, add it to
@@ -607,22 +607,22 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
          p2i(start_address), p2i(last_address));
   size_used += range.byte_size();
 
-  uint max_shrink_count = 0;
+  uint max_num_regions_to_shrink = 0;
   if (capacity() > MinHeapSize) {
     size_t max_shrink_bytes = capacity() - MinHeapSize;
-    max_shrink_count = (uint)(max_shrink_bytes / G1HeapRegion::GrainBytes);
+    max_num_regions_to_shrink = (uint)(max_shrink_bytes / G1HeapRegion::GrainBytes);
   }
 
-  uint shrink_count = 0;
+  uint num_shrunk_regions = 0;
   // Free, empty and uncommit regions with CDS archive content.
   auto dealloc_archive_region = [&] (G1HeapRegion* r, bool is_last) {
     guarantee(r->is_old(), "Expected old region at index %u", r->hrm_index());
     _old_set.remove(r);
     r->set_free();
     r->set_top(r->bottom());
-    if (shrink_count < max_shrink_count) {
+    if (num_shrunk_regions < max_num_regions_to_shrink) {
       _hrm.shrink_at(r->hrm_index(), 1);
-      shrink_count++;
+      num_shrunk_regions++;
     } else {
       _hrm.insert_into_free_list(r);
     }
@@ -630,11 +630,11 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
 
   iterate_regions_in_range(range, dealloc_archive_region);
 
-  if (shrink_count != 0) {
+  if (num_shrunk_regions != 0) {
     log_debug(gc, ergo, heap)("Attempt heap shrinking (CDS archive regions). Total size: %zuB (%u Regions)",
-                              G1HeapRegion::GrainWords * HeapWordSize * shrink_count, shrink_count);
+                              G1HeapRegion::GrainWords * HeapWordSize * num_shrunk_regions, num_shrunk_regions);
     // Explicit uncommit.
-    uncommit_regions(shrink_count);
+    uncommit_regions(num_shrunk_regions);
   }
   decrease_used(size_used);
 }
@@ -1151,7 +1151,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
   log_debug(gc, ergo, heap)("Heap resize. Requested expansion amount: %zuB aligned expansion amount: %zuB (%u regions)",
                             expand_bytes, aligned_expand_bytes, num_regions_to_expand);
 
-  if (num_inactive_regions() == 0) {
+  if (num_non_active_regions() == 0) {
     log_debug(gc, ergo, heap)("Heap resize. Did not expand the heap (heap already fully expanded)");
     return false;
   }
@@ -1160,7 +1160,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
 
   size_t actual_expand_bytes = expanded_by * G1HeapRegion::GrainBytes;
   assert(actual_expand_bytes <= aligned_expand_bytes, "post-condition");
-  policy()->record_new_heap_size(num_committed_regions());
+  policy()->record_new_heap_size(num_active_regions());
 
   return true;
 }
@@ -1169,12 +1169,12 @@ bool G1CollectedHeap::expand_single_region(uint node_index) {
   uint expanded_by = _hrm.expand_on_preferred_node(node_index);
 
   if (expanded_by == 0) {
-    assert(num_inactive_regions() == 0, "Should be no regions left, available: %u", num_inactive_regions());
+    assert(num_non_active_regions() == 0, "Should be no regions left, available: %u", num_non_active_regions());
     log_debug(gc, ergo, heap)("Did not expand the heap (heap already fully expanded)");
     return false;
   }
 
-  policy()->record_new_heap_size(num_committed_regions());
+  policy()->record_new_heap_size(num_active_regions());
   return true;
 }
 
@@ -1192,7 +1192,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
   log_debug(gc, ergo, heap)("Heap resize. Requested shrinking amount: %zuB actual shrinking amount: %zuB (%u regions)",
                             shrink_bytes, shrunk_bytes, num_regions_removed);
   if (num_regions_removed > 0) {
-    policy()->record_new_heap_size(num_committed_regions());
+    policy()->record_new_heap_size(num_active_regions());
   } else {
     log_debug(gc, ergo, heap)("Heap resize. Did not shrink the heap (heap shrinking operation failed)");
   }
@@ -1745,7 +1745,7 @@ void G1CollectedHeap::ref_processing_init() {
 }
 
 size_t G1CollectedHeap::capacity() const {
-  return _hrm.num_committed_regions() * G1HeapRegion::GrainBytes;
+  return _hrm.num_active_regions() * G1HeapRegion::GrainBytes;
 }
 
 size_t G1CollectedHeap::unused_committed_regions_in_bytes() const {
@@ -2461,7 +2461,7 @@ G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
 
   VirtualSpaceSummary heap_summary = create_heap_space_summary();
   return G1HeapSummary(heap_summary, heap_used, eden_used_bytes, eden_capacity_bytes,
-                       survivor_used_bytes, old_gen_used_bytes, num_committed_regions());
+                       survivor_used_bytes, old_gen_used_bytes, num_active_regions());
 }
 
 G1EvacSummary G1CollectedHeap::create_g1_evac_summary(G1EvacStats* stats) {
@@ -2512,16 +2512,16 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   _refinement_epoch++;
 }
 
-uint G1CollectedHeap::uncommit_regions(uint region_limit) {
-  return _hrm.uncommit_inactive_regions(region_limit);
+uint G1CollectedHeap::uncommit_regions(uint max_num_regions_to_uncommit) {
+  return _hrm.uncommit_regions(max_num_regions_to_uncommit);
 }
 
-bool G1CollectedHeap::has_uncommittable_regions() {
-  return _hrm.has_inactive_regions();
+bool G1CollectedHeap::has_pending_uncommit_regions() {
+  return _hrm.has_pending_uncommit_regions();
 }
 
 void G1CollectedHeap::uncommit_regions_if_necessary() {
-  if (has_uncommittable_regions()) {
+  if (has_pending_uncommit_regions()) {
     G1UncommitRegionTask::enqueue();
   }
 }
@@ -2864,7 +2864,7 @@ void G1CollectedHeap::record_obj_copy_mem_stats() {
 
   log_debug(gc)("Allocated %u survivor %u old percent total %1.2f%% (%u%%)",
                 _survivor_evac_stats.num_filled_regions(), _old_evac_stats.num_filled_regions(),
-                percent_of(num_allocated_regions, num_committed_regions() - num_allocated_regions),
+                percent_of(num_allocated_regions, num_active_regions() - num_allocated_regions),
                 G1ReservePercent);
 
   policy()->old_gen_alloc_tracker()->
