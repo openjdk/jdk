@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_CDS_CDSHEAPVERIFIER_HPP
 #define SHARE_CDS_CDSHEAPVERIFIER_HPP
 
-#include "cds/heapShared.hpp"
+#include "cds/aotHeap.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oopHandle.hpp"
 #include "utilities/growableArray.hpp"
@@ -53,7 +53,7 @@ class CDSHeapVerifier : public KlassClosure {
       15889, // prime number
       AnyObj::C_HEAP,
       mtClassShared,
-      HeapShared::oop_address_hash> _table;
+      AOTHeap::oop_address_hash> _table;
 
   GrowableArray<const char**> _exclusions;
   GrowableArray<oop> _shared_secret_accessors;
@@ -88,7 +88,7 @@ class CDSHeapVerifier : public KlassClosure {
     return false;
   }
 
-  static int trace_to_root(outputStream* st, oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* p);
+  static int trace_to_root(outputStream* st, oop orig_obj, oop orig_field, AOTHeap::CachedOopInfo* p);
 
   CDSHeapVerifier();
   ~CDSHeapVerifier();
@@ -99,7 +99,7 @@ public:
   virtual void do_klass(Klass* k);
 
   // For HashTable::iterate()
-  inline bool do_entry(OopHandle& orig_obj, HeapShared::CachedOopInfo& value);
+  inline bool do_entry(OopHandle& orig_obj, AOTHeap::CachedOopInfo& value);
 
   static void verify();
 

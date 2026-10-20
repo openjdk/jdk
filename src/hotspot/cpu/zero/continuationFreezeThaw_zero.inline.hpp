@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_ZERO_CONTINUATION_ZERO_INLINE_HPP
-#define CPU_ZERO_CONTINUATION_ZERO_INLINE_HPP
+#ifndef CPU_ZERO_CONTINUATIONFREEZETHAW_ZERO_INLINE_HPP
+#define CPU_ZERO_CONTINUATIONFREEZETHAW_ZERO_INLINE_HPP
 
 #include "oops/stackChunkOop.inline.hpp"
 #include "runtime/frame.hpp"
@@ -123,4 +123,4 @@ inline void ThawBase::prefetch_chunk_pd(void* start, int size) {
   Unimplemented();
 }
 
-#endif // CPU_ZERO_CONTINUATION_ZERO_INLINE_HPP
+#endif // CPU_ZERO_CONTINUATIONFREEZETHAW_ZERO_INLINE_HPP

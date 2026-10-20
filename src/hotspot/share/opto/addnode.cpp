@@ -869,7 +869,7 @@ const Type *AddPNode::bottom_type() const {
     txoffset = tx->get_con();
   }
   if (tp->isa_aryptr()) {
-    // In the case of a flat inline type array, each field has its
+    // In the case of a flat value type array, each field has its
     // own slice so we need to extract the field being accessed from
     // the address computation
     return tp->is_aryptr()->add_field_offset_and_offset(txoffset);
@@ -895,7 +895,7 @@ const Type* AddPNode::Value(PhaseGVN* phase) const {
     p2offset = p2->get_con();
   }
   if (p1->isa_aryptr()) {
-    // In the case of a flat inline type array, each field has its
+    // In the case of a flat value type array, each field has its
     // own slice so we need to extract the field being accessed from
     // the address computation
     return p1->is_aryptr()->add_field_offset_and_offset(p2offset);
@@ -961,6 +961,17 @@ uint AddPNode::match_edge(uint idx) const {
 Node* OrINode::Identity(PhaseGVN* phase) {
   // x | x => x
   if (in(1) == in(2)) {
+    return in(1);
+  }
+
+  // x | (y | x) => y | x
+  if (in(2)->Opcode() == Op_OrI &&
+      (in(2)->in(1) == in(1) || in(2)->in(2) == in(1))) {
+    return in(2);
+  }
+  // (x | y) | x => x | y
+  if (in(1)->Opcode() == Op_OrI &&
+      (in(1)->in(1) == in(2) || in(1)->in(2) == in(2))) {
     return in(1);
   }
 
@@ -1034,6 +1045,17 @@ const Type* OrINode::add_ring(const Type* t1, const Type* t2) const {
 Node* OrLNode::Identity(PhaseGVN* phase) {
   // x | x => x
   if (in(1) == in(2)) {
+    return in(1);
+  }
+
+  // x | (y | x) => y | x
+  if (in(2)->Opcode() == Op_OrL &&
+      (in(2)->in(1) == in(1) || in(2)->in(2) == in(1))) {
+    return in(2);
+  }
+  // (x | y) | x => x | y
+  if (in(1)->Opcode() == Op_OrL &&
+      (in(1)->in(1) == in(2) || in(1)->in(2) == in(2))) {
     return in(1);
   }
 
@@ -1588,6 +1610,8 @@ Node* MaxLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
   if (can_reshape) {
     return fold_subI_no_underflow_pattern(this, phase);
+  } else {
+    phase->record_for_igvn(this);
   }
   return nullptr;
 }
@@ -1620,6 +1644,8 @@ Node* MinLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
   if (can_reshape) {
     return fold_subI_no_underflow_pattern(this, phase);
+  } else {
+    phase->record_for_igvn(this);
   }
   return nullptr;
 }

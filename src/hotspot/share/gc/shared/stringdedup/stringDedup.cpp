@@ -59,7 +59,7 @@ StringDedup::Stat StringDedup::_total_stat{};
 // Configuration for predicates used to decide whether to deduplicate.
 // The initial values are suitable for deduplication being disabled.
 const Klass* StringDedup::_string_klass_or_null = nullptr; // No klass will match.
-static_assert(markWord::max_age < UINT_MAX, "assumption");
+static_assert(markWord::max_age < UINT_MAX);
 uint StringDedup::_enabled_age_threshold = UINT_MAX;       // Age never equals max.
 uint StringDedup::_enabled_age_limit = 0;                  // Age is never less than zero.
 

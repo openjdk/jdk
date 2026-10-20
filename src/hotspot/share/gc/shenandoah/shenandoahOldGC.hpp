@@ -27,8 +27,9 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
-#include "gc/shenandoah/shenandoahVerifier.hpp"
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
+class ShenandoahController;
 class ShenandoahOldGeneration;
 
 class ShenandoahOldGC : public ShenandoahConcurrentGC {

@@ -32,10 +32,10 @@
 #include "oops/markWord.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/resolvedMethodEntry.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
@@ -1054,7 +1054,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     bind(no_reserved_zone_enabling);
   }
 
-  if (state == atos && InlineTypeReturnedAsFields) {
+  if (state == atos && ValueTypeReturnedAsFields) {
     Label skip;
     Label not_null;
     testptr(rax, rax);
@@ -1068,14 +1068,14 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     jmp(skip);
     bind(not_null);
 
-    // Check if we are returning a non-null inline type and load its fields into registers
-    test_oop_is_not_inline_type(rax, rscratch1, skip, /* can_be_null= */ false);
+    // Check if we are returning a non-null value type and load its fields into registers
+    test_oop_is_not_value_type(rax, rscratch1, skip, /* can_be_null= */ false);
 
-    // Load fields from a buffered value with an inline class specific handler
+    // Load fields from a buffered value with a value class specific handler
     load_klass(rdi, rax, rscratch1);
-    movptr(rdi, Address(rdi, InlineKlass::adr_members_offset()));
-    movptr(rdi, Address(rdi, InlineKlass::unpack_handler_offset()));
-    // Unpack handler can be null if inline type is not scalarizable in returns
+    movptr(rdi, Address(rdi, ValueKlass::adr_members_offset()));
+    movptr(rdi, Address(rdi, ValueKlass::unpack_handler_offset()));
+    // Unpack handler can be null if value type is not scalarizable in returns
     testptr(rdi, rdi);
     jcc(Assembler::zero, skip);
     call(rdi);
@@ -1121,34 +1121,24 @@ void InterpreterMacroAssembler::get_method_counters(Register method,
 }
 
 void InterpreterMacroAssembler::read_flat_field(Register entry, Register obj) {
+  assert(UseFieldFlattening, "Should be used only if field flattening is enabled");
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::read_flat_field),
           obj, entry);
 }
 
 void InterpreterMacroAssembler::write_flat_field(Register entry, Register tmp1, Register tmp2,
-                                                 Register obj, Register off, Register value) {
-  assert_different_registers(entry, tmp1, tmp2, obj, off, value);
+                                                 Register obj, Register value) {
+  assert(UseFieldFlattening, "Should be used only if field flattening is enabled");
+  assert_different_registers(entry, tmp1, tmp2, obj, value);
 
   Label slow_path, done;
 
   load_unsigned_byte(tmp2, Address(entry, in_bytes(ResolvedFieldEntry::flags_offset())));
-  test_field_is_not_null_free_inline_type(tmp2, tmp1, slow_path);
+  test_field_is_not_null_free_value_type(tmp2, tmp1, slow_path);
 
   null_check(value); // FIXME JDK-8341120
 
-  lea(obj, Address(obj, off, Address::times_1));
-
-  load_klass(tmp2, value, tmp1);
-  payload_addr(value, value, tmp2);
-
-  Register idx = tmp1;
-  load_unsigned_short(idx, Address(entry, in_bytes(ResolvedFieldEntry::field_index_offset())));
-  movptr(tmp2, Address(entry, in_bytes(ResolvedFieldEntry::field_holder_offset())));
-
-  Register layout_info = off;
-  inline_layout_info(tmp2, idx, layout_info);
-
-  flat_field_copy(IN_HEAP, value, obj, layout_info);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::write_null_free_flat_field), obj, value, entry);
   jmp(done);
 
   bind(slow_path);
@@ -1622,19 +1612,23 @@ template <class ArrayData> void InterpreterMacroAssembler::profile_array_type(Re
     mov(tmp, array);
     profile_obj_type(tmp, Address(mdp, in_bytes(ArrayData::array_offset())));
 
-    Label not_flat;
-    test_non_flat_array_oop(array, tmp, not_flat);
+    if (Arguments::is_valhalla_enabled()) {
+      if (UseArrayFlattening) {
+        Label not_flat;
+        test_non_flat_array_oop(array, tmp, not_flat);
 
-    set_mdp_flag_at(mdp, ArrayData::flat_array_byte_constant());
+        set_mdp_flag_at(mdp, ArrayData::flat_array_byte_constant());
 
-    bind(not_flat);
+        bind(not_flat);
+      }
 
-    Label not_null_free;
-    test_non_null_free_array_oop(array, tmp, not_null_free);
+      Label not_null_free;
+      test_non_null_free_array_oop(array, tmp, not_null_free);
 
-    set_mdp_flag_at(mdp, ArrayData::null_free_array_byte_constant());
+      set_mdp_flag_at(mdp, ArrayData::null_free_array_byte_constant());
 
-    bind(not_null_free);
+      bind(not_null_free);
+    }
 
     bind(profile_continue);
   }
@@ -1699,6 +1693,7 @@ void InterpreterMacroAssembler::profile_acmp(Register mdp,
                                              Register left,
                                              Register right,
                                              Register tmp) {
+  assert(Arguments::is_valhalla_enabled(), "Profiling acmp makes sense only for value types");
   if (ProfileInterpreter) {
     Label profile_continue;
 
@@ -1708,18 +1703,18 @@ void InterpreterMacroAssembler::profile_acmp(Register mdp,
     mov(tmp, left);
     profile_obj_type(tmp, Address(mdp, in_bytes(ACmpData::left_offset())));
 
-    Label left_not_inline_type;
-    test_oop_is_not_inline_type(left, tmp, left_not_inline_type);
-    set_mdp_flag_at(mdp, ACmpData::left_inline_type_byte_constant());
-    bind(left_not_inline_type);
+    Label left_not_value_type;
+    test_oop_is_not_value_type(left, tmp, left_not_value_type);
+    set_mdp_flag_at(mdp, ACmpData::left_value_type_byte_constant());
+    bind(left_not_value_type);
 
     mov(tmp, right);
     profile_obj_type(tmp, Address(mdp, in_bytes(ACmpData::right_offset())));
 
-    Label right_not_inline_type;
-    test_oop_is_not_inline_type(right, tmp, right_not_inline_type);
-    set_mdp_flag_at(mdp, ACmpData::right_inline_type_byte_constant());
-    bind(right_not_inline_type);
+    Label right_not_value_type;
+    test_oop_is_not_value_type(right, tmp, right_not_value_type);
+    set_mdp_flag_at(mdp, ACmpData::right_value_type_byte_constant());
+    bind(right_not_value_type);
 
     bind(profile_continue);
   }

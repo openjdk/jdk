@@ -118,7 +118,7 @@ void oopDesc::verify(oopDesc* oop_desc) {
 intptr_t oopDesc::slow_identity_hash(markWord current_mark, Thread* current) {
   precond(!current_mark.has_hash());
 
-  assert(!is_inline(), "slow_identity_hash should not be called for value objects");
+  assert(!is_value(), "slow_identity_hash should not be called for value objects");
 
   // Calculate the new hash
   const intptr_t new_hash = ObjectSynchronizer::get_next_hash(current, this);
@@ -161,14 +161,15 @@ template <class T> void VerifyOopClosure::do_oop_work(T* p) {
 void VerifyOopClosure::do_oop(oop* p)       { VerifyOopClosure::do_oop_work(p); }
 void VerifyOopClosure::do_oop(narrowOop* p) { VerifyOopClosure::do_oop_work(p); }
 
-// type test operations that doesn't require inclusion of oop.inline.hpp.
+// Type test operations that doesn't require inclusion of oop.inline.hpp.
 bool oopDesc::is_instance_noinline()        const { return is_instance();         }
+bool oopDesc::is_value_noinline()           const { return is_value();            }
 bool oopDesc::is_instanceRef_noinline()     const { return is_instanceRef();      }
 bool oopDesc::is_stackChunk_noinline()      const { return is_stackChunk();       }
 bool oopDesc::is_array_noinline()           const { return is_array();            }
+bool oopDesc::is_typeArray_noinline()       const { return is_typeArray();        }
 bool oopDesc::is_objArray_noinline()        const { return is_objArray();         }
 bool oopDesc::is_refArray_noinline()        const { return is_refArray();         }
-bool oopDesc::is_typeArray_noinline()       const { return is_typeArray();        }
 bool oopDesc::is_flatArray_noinline()       const { return is_flatArray();        }
 
 #if INCLUDE_CDS_JAVA_HEAP
