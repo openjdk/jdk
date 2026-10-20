@@ -135,11 +135,6 @@
           "level for gc+remset")                                            \
           range(0, max_intx)                                                \
                                                                             \
-  product(double, G1ConcMarkStepDurationMillis, 10.0,                       \
-          "(Deprecated) Target duration of individual concurrent marking "  \
-          "steps in milliseconds. This option has no effect.")              \
-          range(1.0, DBL_MAX)                                               \
-                                                                            \
   product(uint, G1RefProcDrainInterval, 1000,                               \
           "The number of discovered reference objects to process before "   \
           "draining concurrent marking work queues.")                       \
