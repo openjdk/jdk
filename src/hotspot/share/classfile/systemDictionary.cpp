@@ -23,8 +23,8 @@
  */
 
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -1005,7 +1005,7 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
     // At this point, no modules have been defined yet. KlassSubGraphInfo::check_allowed_klass()
     // has restricted the classes can be loaded at this step to be only:
     // [1] cs->is_modules_image(): classes in java.base, or,
-    // [2] HeapShared::is_a_test_class_in_unnamed_module(ik): classes in bootstrap/unnamed module
+    // [2] AOTHeap::is_a_test_class_in_unnamed_module(ik): classes in bootstrap/unnamed module
     assert(cl->is_modules_image(),
            "only these classes can be loaded before the module system is initialized");
     assert(class_loader.is_null(), "sanity");
@@ -1773,7 +1773,7 @@ void SystemDictionary::initialize(TRAPS) {
   vmClasses::resolve_all(CHECK);
   // Resolve classes used by archived heap objects
   if (CDSConfig::is_using_archive()) {
-    HeapShared::resolve_classes(THREAD);
+    AOTHeap::resolve_classes(THREAD);
   }
 }
 

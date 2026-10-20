@@ -392,7 +392,7 @@ instruct g1CompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP 
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
-               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
+               memory_order_release, $res$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register    /* store_addr */,
                        $newval$$Register /* new_val */,
@@ -424,7 +424,7 @@ instruct g1CompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRe
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
-               /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
+               memory_order_seq_cst, $res$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register    /* store_addr */,
                        $newval$$Register /* new_val */,
@@ -453,7 +453,7 @@ instruct g1CompareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN 
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::uint32,
-               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
+               memory_order_release, $res$$Register);
     __ decode_heap_oop($tmp1$$Register, $newval$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register  /* store_addr */,
@@ -483,7 +483,7 @@ instruct g1CompareAndExchangeNAcq(iRegNNoSp res, indirect mem, iRegN oldval, iRe
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::uint32,
-               /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
+               memory_order_seq_cst, $res$$Register);
     __ decode_heap_oop($tmp1$$Register, $newval$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register  /* store_addr */,
@@ -497,7 +497,6 @@ instruct g1CompareAndExchangeNAcq(iRegNNoSp res, indirect mem, iRegN oldval, iRe
 instruct g1CompareAndSwapP(iRegINoSp res, indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegP oldval, rFlagsReg cr)
 %{
   predicate(UseG1GC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   effect(TEMP res, TEMP tmp1, TEMP tmp2, KILL cr);
   ins_cost(2 * VOLATILE_REF_COST);
@@ -515,8 +514,8 @@ instruct g1CompareAndSwapP(iRegINoSp res, indirect mem, iRegP newval, iRegPNoSp 
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
-               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
-               /*result as bool*/ true);
+               memory_order_release, $res$$Register,
+               /* result as bool */ true);
     write_barrier_post(masm, this,
                        $mem$$Register    /* store_addr */,
                        $newval$$Register /* new_val */,
@@ -547,8 +546,8 @@ instruct g1CompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP newval, iRegPNo
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
-               /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
-               /*result as bool*/ true);
+               memory_order_seq_cst, $res$$Register,
+               /* result as bool */ true);
     write_barrier_post(masm, this,
                        $mem$$Register    /* store_addr */,
                        $newval$$Register /* new_val */,
@@ -561,7 +560,6 @@ instruct g1CompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP newval, iRegPNo
 instruct g1CompareAndSwapN(iRegINoSp res, indirect mem, iRegN newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegN oldval, rFlagsReg cr)
 %{
   predicate(UseG1GC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  match(Set res (CompareAndSwapN mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
   effect(TEMP res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
   ins_cost(2 * VOLATILE_REF_COST);
@@ -579,8 +577,8 @@ instruct g1CompareAndSwapN(iRegINoSp res, indirect mem, iRegN newval, iRegPNoSp 
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::uint32,
-               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
-               /*result as bool*/ true);
+               memory_order_release, $res$$Register,
+               /* result as bool */ true);
     __ decode_heap_oop($tmp1$$Register, $newval$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register  /* store_addr */,
@@ -612,8 +610,8 @@ instruct g1CompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN newval, iRegPNo
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::uint32,
-              /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
-              /*result as bool*/ true);
+              memory_order_seq_cst, $res$$Register,
+              /* result as bool */ true);
     __ decode_heap_oop($tmp1$$Register, $newval$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register  /* store_addr */,
@@ -622,32 +620,6 @@ instruct g1CompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN newval, iRegPNo
                        $tmp3$$Register /* tmp2 */);
   %}
   ins_pipe(pipe_slow);
-%}
-
-instruct g1GetAndSetP(indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp preval, rFlagsReg cr)
-%{
-  predicate(UseG1GC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  match(Set preval (GetAndSetP mem newval));
-  effect(TEMP preval, TEMP tmp1, TEMP tmp2, KILL cr);
-  ins_cost(2 * VOLATILE_REF_COST);
-  format %{ "atomic_xchg  $preval, $newval, [$mem]" %}
-  ins_encode %{
-    guarantee($mem$$disp == 0, "impossible encoding");
-    assert_different_registers($mem$$Register, $newval$$Register);
-    write_barrier_pre(masm, this,
-                      $mem$$Register    /* obj */,
-                      $preval$$Register /* pre_val (as a temporary register) */,
-                      $tmp1$$Register   /* tmp1 */,
-                      $tmp2$$Register   /* tmp2 */,
-                      RegSet::of($mem$$Register, $preval$$Register, $newval$$Register) /* preserve */);
-    __ atomic_xchg($preval$$Register, $newval$$Register, $mem$$Register);
-    write_barrier_post(masm, this,
-                       $mem$$Register    /* store_addr */,
-                       $newval$$Register /* new_val */,
-                       $tmp1$$Register   /* tmp1 */,
-                       $tmp2$$Register   /* tmp2 */);
-  %}
-  ins_pipe(pipe_serial);
 %}
 
 instruct g1GetAndSetPAcq(indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp preval, rFlagsReg cr)
@@ -672,33 +644,6 @@ instruct g1GetAndSetPAcq(indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp t
                        $newval$$Register /* new_val */,
                        $tmp1$$Register   /* tmp1 */,
                        $tmp2$$Register   /* tmp2 */);
-  %}
-  ins_pipe(pipe_serial);
-%}
-
-instruct g1GetAndSetN(indirect mem, iRegN newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegNNoSp preval, rFlagsReg cr)
-%{
-  predicate(UseG1GC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  match(Set preval (GetAndSetN mem newval));
-  effect(TEMP preval, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
-  ins_cost(2 * VOLATILE_REF_COST);
-  format %{ "atomic_xchgwu $preval, $newval, [$mem]" %}
-  ins_encode %{
-    guarantee($mem$$disp == 0, "impossible encoding");
-    assert_different_registers($mem$$Register, $newval$$Register);
-    write_barrier_pre(masm, this,
-                      $mem$$Register  /* obj */,
-                      $tmp1$$Register /* pre_val */,
-                      $tmp2$$Register /* tmp1 */,
-                      $tmp3$$Register /* tmp2 */,
-                      RegSet::of($mem$$Register, $preval$$Register, $newval$$Register) /* preserve */);
-    __ atomic_xchgwu($preval$$Register, $newval$$Register, $mem$$Register);
-    __ decode_heap_oop($tmp1$$Register, $newval$$Register);
-    write_barrier_post(masm, this,
-                       $mem$$Register  /* store_addr */,
-                       $tmp1$$Register /* new_val */,
-                       $tmp2$$Register /* tmp1 */,
-                       $tmp3$$Register /* tmp2 */);
   %}
   ins_pipe(pipe_serial);
 %}
