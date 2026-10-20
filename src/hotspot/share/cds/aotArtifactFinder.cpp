@@ -216,7 +216,9 @@ void AOTArtifactFinder::add_aot_inited_class(InstanceKlass* ik) {
         add_aot_inited_class(s);
       }
 
-      Array<InstanceKlass*>* interfaces = ik->local_interfaces();
+      // An uninitialized direct interface may have initialized superinterfaces
+      // that declare default methods. Preserve their initialization state too.
+      Array<InstanceKlass*>* interfaces = ik->transitive_interfaces();
       int len = interfaces->length();
       for (int i = 0; i < len; i++) {
         InstanceKlass* intf = interfaces->at(i);

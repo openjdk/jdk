@@ -45,7 +45,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -394,7 +393,7 @@ enum {
 
 // Supports I/O operations for a dump
 // Base class for dump and parallel dump
-class AbstractDumpWriter : public CHeapObj<mtInternal> {
+class AbstractDumpWriter : public CHeapObj<mtServiceability> {
  protected:
   enum {
     io_buffer_max_size = 1*M,
@@ -666,15 +665,15 @@ DumpWriter::DumpWriter(const char* path, bool overwrite, AbstractCompressor* com
   _tmp_size(0) {
   _error = (char*)_writer->open_writer();
   if (_error == nullptr) {
-    _buffer = (char*)os::malloc(io_buffer_max_size, mtInternal);
+    _buffer = (char*)os::malloc(io_buffer_max_size, mtServiceability);
     if (compressor != nullptr) {
       _error = (char*)_compressor->init(io_buffer_max_size, &_out_size, &_tmp_size);
       if (_error == nullptr) {
         if (_out_size > 0) {
-          _out_buffer = (char*)os::malloc(_out_size, mtInternal);
+          _out_buffer = (char*)os::malloc(_out_size, mtServiceability);
         }
         if (_tmp_size > 0) {
-          _tmp_buffer = (char*)os::malloc(_tmp_size, mtInternal);
+          _tmp_buffer = (char*)os::malloc(_tmp_size, mtServiceability);
         }
       }
     }
@@ -854,9 +853,9 @@ public:
       if (field.is_flat()) {
         const fieldDescriptor& fd = field.field_descriptor();
         InstanceKlass* holder_klass = fd.field_holder();
-        ValueFieldLayoutInfo* layout_info = holder_klass->value_field_layout_info_adr(fd.index());
-        _value_klass = layout_info->klass();
-        _layout_kind = layout_info->kind();
+        ValueFieldInfo* vfi = holder_klass->value_field_info_adr(fd.index());
+        _value_klass = vfi->klass();
+        _layout_kind = vfi->kind();
       } else {
         _value_klass = nullptr;
         _layout_kind = LayoutKind::REFERENCE;
@@ -1834,7 +1833,7 @@ void JavaStackRefDumper::dump_java_stack_refs(StackValueCollection* values) {
 // Class to collect, store and dump thread-related data:
 // - HPROF_TRACE and HPROF_FRAME records;
 // - HPROF_GC_ROOT_THREAD_OBJ/HPROF_GC_ROOT_JAVA_FRAME/HPROF_GC_ROOT_JNI_LOCAL subrecords.
-class ThreadDumper : public CHeapObj<mtInternal> {
+class ThreadDumper : public CHeapObj<mtServiceability> {
 public:
   enum class ThreadType { Platform, MountedVirtual, UnmountedVirtual };
 
@@ -2242,7 +2241,7 @@ void HeapObjectDumper::do_object(oop o) {
 }
 
 // The dumper controller for parallel heap dump
-class DumperController : public CHeapObj<mtInternal> {
+class DumperController : public CHeapObj<mtServiceability> {
  private:
    Monitor* _lock;
    Mutex* _global_writer_lock;
@@ -2783,7 +2782,7 @@ void VM_HeapDumper::dump_stack_traces(AbstractDumpWriter* writer) {
   writer->write_u4(0);                    // frame count
 
   // max number if every platform thread is carrier with mounted virtual thread
-  _thread_dumpers = NEW_C_HEAP_ARRAY(ThreadDumper*, Threads::number_of_threads() * 2, mtInternal);
+  _thread_dumpers = NEW_C_HEAP_ARRAY(ThreadDumper*, Threads::number_of_threads() * 2, mtServiceability);
 
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread * thread = jtiwh.next(); ) {
     if (ThreadDumper::should_dump_pthread(thread)) {
@@ -2965,7 +2964,7 @@ void HeapDumper::set_error(char const* error) {
   if (error == nullptr) {
     _error = nullptr;
   } else {
-    _error = os::strdup(error);
+    _error = os::strdup(error, mtServiceability);
     assert(_error != nullptr, "allocation failure");
   }
 }
