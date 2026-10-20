@@ -23,10 +23,10 @@
  */
 
 #include "cds/aotCompressedPointers.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
 #include "cds/runTimeClassInfo.hpp"
-#include "cds/aotSystemDictionary.hpp"
 
 void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   InstanceKlass* k = info._klass;

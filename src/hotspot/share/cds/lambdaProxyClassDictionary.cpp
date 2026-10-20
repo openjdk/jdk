@@ -24,11 +24,11 @@
 
 #include "cds/aotClassFilter.hpp"
 #include "cds/aotCompressedPointers.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
-#include "cds/aotSystemDictionary.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/metaspaceClosure.hpp"

@@ -47,6 +47,7 @@
 // the singleton class the_null_class_loader_data().
 
 #include "cds/aotHeap.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/dictionary.hpp"
@@ -55,7 +56,6 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "cds/aotSystemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"

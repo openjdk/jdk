@@ -23,8 +23,8 @@
  */
 
 #include "cds/aotHeap.hpp"
-#include "cds/cdsEnumKlass.hpp"
 #include "cds/aotSystemDictionary.hpp"
+#include "cds/cdsEnumKlass.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/fieldStreams.inline.hpp"

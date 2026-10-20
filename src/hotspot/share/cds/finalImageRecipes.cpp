@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cdsConfig.hpp"
@@ -31,7 +32,6 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "cds/aotSystemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
