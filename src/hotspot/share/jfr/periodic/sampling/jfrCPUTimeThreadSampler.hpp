@@ -43,9 +43,20 @@ struct JfrCPUTimeSampleRequest {
 };
 
 // Fixed size async-signal-safe SPSC linear queue backed by an array.
-// Designed to be only used under lock and read linearly
+// All accesses to the queue, with the exception of the atomic
+// lost-samples counters, are guarded by a tri-state lock:
+// - ENQUEUE: locked for enqueuing by a signal handler
+// - DEQUEUE: locked for dequeuing, initialization, or deallocation
+// - UNLOCKED: no lock held
 class JfrCPUTimeTraceQueue {
  private:
+  enum LockState {
+    UNLOCKED,
+    ENQUEUE,
+    DEQUEUE
+  };
+
+  volatile LockState _lock;
   JfrCPUTimeSampleRequest* _data;
   u4 _capacity;
   // next unfilled index
@@ -57,6 +68,8 @@ class JfrCPUTimeTraceQueue {
   static const u4 CPU_TIME_QUEUE_INITIAL_CAPACITY = 20;
   static const u4 CPU_TIME_QUEUE_MAX_CAPACITY     = 2000;
 
+  LockState lock_state() const;
+
  public:
   JfrCPUTimeTraceQueue(u4 capacity);
 
@@ -67,14 +80,10 @@ class JfrCPUTimeTraceQueue {
 
   JfrCPUTimeSampleRequest& at(u4 index);
 
-  u4 size() const { return _head; }
-
-  u4 capacity() const { return _capacity; }
+  u4 size() const;
 
   // deletes all samples in the queue
   void set_capacity(u4 capacity);
-
-  bool is_empty() const { return _head == 0; }
 
   u4 lost_samples() const;
 
@@ -92,8 +101,16 @@ class JfrCPUTimeTraceQueue {
   // init the queue capacity
   void init();
 
+  void deallocate();
+
   void clear();
 
+  // signal safe; fails if the lock is already held
+  bool try_acquire_enqueue_lock();
+  // waits while the lock is held for enqueue; fails if it is held for dequeue
+  bool try_acquire_dequeue_lock();
+  void acquire_dequeue_lock();
+  void release_lock();
 };
 
 
@@ -118,8 +135,6 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void destroy();
 
   void update_run_state(JfrCPUSamplerThrottle& throttle);
-
-  static void set_rate(JfrCPUSamplerThrottle& throttle);
 
  public:
   static void set_rate(double rate);

@@ -43,6 +43,7 @@
 #include "runtime/vmOperation.hpp"
 #include "runtime/vmThread.hpp"
 #include "signals_posix.hpp"
+#include "utilities/spinYield.hpp"
 #include "utilities/ticks.hpp"
 
 static const int64_t RECOMPUTE_INTERVAL_MS = 100;
@@ -68,7 +69,7 @@ static JavaThread* get_java_thread_if_valid() {
 }
 
 JfrCPUTimeTraceQueue::JfrCPUTimeTraceQueue(u4 capacity) :
-   _data(nullptr), _capacity(capacity), _head(0), _lost_samples(0), _lost_samples_due_to_queue_full(0) {
+   _lock(UNLOCKED), _data(nullptr), _capacity(capacity), _head(0), _lost_samples(0), _lost_samples_due_to_queue_full(0) {
   if (capacity != 0) {
     _data = JfrCHeapObj::new_array<JfrCPUTimeSampleRequest>(capacity);
   }
@@ -81,8 +82,41 @@ JfrCPUTimeTraceQueue::~JfrCPUTimeTraceQueue() {
   }
 }
 
+JfrCPUTimeTraceQueue::LockState JfrCPUTimeTraceQueue::lock_state() const {
+  return AtomicAccess::load_acquire(&_lock);
+}
+
+bool JfrCPUTimeTraceQueue::try_acquire_enqueue_lock() {
+  return AtomicAccess::cmpxchg(&_lock, UNLOCKED, ENQUEUE) == UNLOCKED;
+}
+
+bool JfrCPUTimeTraceQueue::try_acquire_dequeue_lock() {
+  while (true) {
+    LockState got = AtomicAccess::cmpxchg(&_lock, UNLOCKED, DEQUEUE);
+    if (got == UNLOCKED) {
+      return true; // successfully locked for dequeuing
+    }
+    if (got == DEQUEUE) {
+      return false; // already locked for dequeuing
+    }
+    // else wait for the lock to be released by a signal handler
+  }
+}
+
+void JfrCPUTimeTraceQueue::acquire_dequeue_lock() {
+  SpinYield s;
+  while (AtomicAccess::cmpxchg(&_lock, UNLOCKED, DEQUEUE) != UNLOCKED) {
+    s.wait();
+  }
+}
+
+void JfrCPUTimeTraceQueue::release_lock() {
+  assert(lock_state() != UNLOCKED, "invariant");
+  AtomicAccess::release_store(&_lock, UNLOCKED);
+}
+
 bool JfrCPUTimeTraceQueue::enqueue(JfrCPUTimeSampleRequest& request) {
-  assert(JavaThread::current()->jfr_thread_local()->is_cpu_time_jfr_enqueue_locked(), "invariant");
+  assert(lock_state() == ENQUEUE, "invariant");
   assert(&JavaThread::current()->jfr_thread_local()->cpu_time_jfr_queue() == this, "invariant");
   if (_head >= _capacity) {
     return false;
@@ -92,13 +126,20 @@ bool JfrCPUTimeTraceQueue::enqueue(JfrCPUTimeSampleRequest& request) {
 }
 
 JfrCPUTimeSampleRequest& JfrCPUTimeTraceQueue::at(u4 index) {
+  assert(lock_state() == DEQUEUE, "invariant");
   assert(index < _head, "invariant");
   return _data[index];
+}
+
+u4 JfrCPUTimeTraceQueue::size() const {
+  assert(lock_state() != UNLOCKED, "invariant");
+  return _head;
 }
 
 static volatile u4 _lost_samples_sum = 0;
 
 void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
+  assert(lock_state() == DEQUEUE, "invariant");
   if (capacity == _capacity) {
     return;
   }
@@ -140,7 +181,12 @@ void JfrCPUTimeTraceQueue::init() {
   set_capacity(CPU_TIME_QUEUE_INITIAL_CAPACITY);
 }
 
+void JfrCPUTimeTraceQueue::deallocate() {
+  set_capacity(0);
+}
+
 void JfrCPUTimeTraceQueue::clear() {
+  assert(lock_state() == DEQUEUE, "invariant");
   _head = 0;
 }
 
@@ -290,7 +336,10 @@ void JfrCPUSamplerThread::on_javathread_create(JavaThread* thread) {
   }
   JfrThreadLocal* tl = thread->jfr_thread_local();
   assert(tl != nullptr, "invariant");
-  tl->cpu_time_jfr_queue().init();
+
+  JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
+  queue.acquire_dequeue_lock();
+  queue.init();
   timer_t timerid;
   if (create_timer_for_thread(thread, timerid)) {
     tl->set_cpu_timer(&timerid);
@@ -298,8 +347,9 @@ void JfrCPUSamplerThread::on_javathread_create(JavaThread* thread) {
     if (!AtomicAccess::or_then_fetch(&_warned_about_timer_creation_failure, true)) {
       log_warning(jfr)("Failed to create timer for a thread");
     }
-    tl->deallocate_cpu_time_jfr_queue();
+    queue.deallocate();
   }
+  queue.release_lock();
 }
 
 void JfrCPUSamplerThread::on_javathread_terminate(JavaThread* thread) {
@@ -309,14 +359,16 @@ void JfrCPUSamplerThread::on_javathread_terminate(JavaThread* thread) {
   if (timer == nullptr) {
     return; // no timer was created for this thread
   }
-  tl->acquire_cpu_time_jfr_dequeue_lock();
+
+  JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
+  queue.acquire_dequeue_lock();
   tl->unset_cpu_timer();
-  tl->deallocate_cpu_time_jfr_queue();
-  s4 lost_samples = tl->cpu_time_jfr_queue().lost_samples();
+  queue.deallocate();
+  s4 lost_samples = queue.lost_samples();
   if (lost_samples > 0) {
     JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), lost_samples);
   }
-  tl->release_cpu_time_jfr_queue_lock();
+  queue.release_lock();
 }
 
 void JfrCPUSamplerThread::start_thread() {
@@ -389,7 +441,7 @@ void JfrCPUSamplerThread::stackwalk_threads_in_native() {
     JavaThread* jt = tlh.list()->thread_at(i);
     JfrThreadLocal* tl = jt->jfr_thread_local();
     if (tl->wants_async_processing_of_cpu_time_jfr_requests()) {
-      if (jt->thread_state() != _thread_in_native || !tl->try_acquire_cpu_time_jfr_dequeue_lock()) {
+      if (jt->thread_state() != _thread_in_native || !tl->cpu_time_jfr_queue().try_acquire_dequeue_lock()) {
         tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
         continue;
       }
@@ -398,7 +450,7 @@ void JfrCPUSamplerThread::stackwalk_threads_in_native() {
       } else {
         tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
       }
-      tl->release_cpu_time_jfr_queue_lock();
+      tl->cpu_time_jfr_queue().release_lock();
     }
   }
 }
@@ -598,7 +650,7 @@ void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
     queue.increment_lost_samples();
     return;
   }
-  if (!tl->try_acquire_cpu_time_jfr_enqueue_lock()) {
+  if (!queue.try_acquire_enqueue_lock()) {
     queue.increment_lost_samples();
     return;
   }
@@ -629,7 +681,7 @@ void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
     tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
   }
 
-  tl->release_cpu_time_jfr_queue_lock();
+  queue.release_lock();
 }
 
 static const int SIG = SIGPROF;
@@ -753,8 +805,11 @@ class VM_JFRTerminateCPUTimeSampler : public VM_Operation {
       if (timer == nullptr) {
         continue;
       }
-      tl->deallocate_cpu_time_jfr_queue();
+      JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
+      queue.acquire_dequeue_lock();
+      queue.deallocate();
       tl->unset_cpu_timer();
+      queue.release_lock();
     }
   };
 };
