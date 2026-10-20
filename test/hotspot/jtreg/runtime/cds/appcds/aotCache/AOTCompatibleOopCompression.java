@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Sanity test for -XX:+AOTCompatibleOopCompression
- * @requires vm.cds.supports.aot.class.linking
+ * @requires vm.cds.supports.aot.code.caching
  * @requires vm.bits == 64 & vm.opt.final.UseCompressedOops == true
  * @library /test/lib
  * @build AOTCompatibleOopCompression
@@ -63,7 +63,7 @@ public class AOTCompatibleOopCompression {
             if (runMode == RunMode.ASSEMBLY) {
                 return new String[] {"-XX:+UnlockDiagnosticVMOptions", "-XX:+AOTCompatibleOopCompression"};
             } else if (runMode == RunMode.PRODUCTION) {
-                return new String[] {"-Xlog:aot", "-XX:AOTMode=on", "-XX:HeapBaseMinAddress=0x800000000"};
+                return new String[] {"-Xlog:aot", "-XX:AOTMode=required", "-XX:HeapBaseMinAddress=0x800000000"};
             } else {
                 return new String[0];
             }

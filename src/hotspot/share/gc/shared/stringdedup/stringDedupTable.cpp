@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
+#include "cds/aotHeap.inline.hpp"
 #include "cds/aotMappedHeapLoader.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
@@ -518,7 +518,7 @@ void StringDedup::Table::install(typeArrayOop obj, uint hash_code) {
 // access to a String that is incompletely constructed; the value could be
 // set before the coder.
 bool StringDedup::Table::try_deduplicate_shared(oop java_string) {
-  assert(!HeapShared::is_loading_streaming_mode(), "should not reach here");
+  assert(!AOTHeap::is_loading_streaming_mode(), "should not reach here");
   typeArrayOop value = java_lang_String::value(java_string);
   assert(value != nullptr, "precondition");
   assert(TypeArrayKlass::cast(value->klass())->element_type() == T_BYTE, "precondition");
@@ -564,7 +564,7 @@ bool StringDedup::Table::try_deduplicate_shared(oop java_string) {
 }
 
 bool StringDedup::Table::try_deduplicate_found_shared(oop java_string, oop found) {
-  assert(!HeapShared::is_loading_streaming_mode(), "should not reach here");
+  assert(!AOTHeap::is_loading_streaming_mode(), "should not reach here");
   _cur_stat.inc_known_shared();
   typeArrayOop found_value = java_lang_String::value(found);
   if (found_value == java_lang_String::value(java_string)) {

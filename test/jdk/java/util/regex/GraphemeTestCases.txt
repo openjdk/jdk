@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,4 +30,10 @@
 ÷ 1F468 × 200D × 1F469 × 200D × 1F466 × 200d ÷ 0041 ÷
 ÷ 1F468 × 200D × 1F469 × 200D × 1F466 ÷ 0041 ÷
 ÷ 0041 ÷ 1F468 × 200D × 1F469 × 200D × 1F466 ÷ 0041 ÷
-÷ 1F468 × 200D × 1F3FE × 200D × 1F469 × 1F3FE × 200D × 1F466 ÷ 0041 ÷
+÷ 1F468 × 200D × 1F3FE × 200D ÷ 1F469 × 1F3FE × 200D × 1F466 ÷ 0041 ÷
+
+# bug 8393247
+÷ 1F44D × 200D × 200D ÷ 1F44D ÷
+÷ 1F44D × 0301 × 200D × 1F44D ÷
+÷ 1F44D × 200D × 0301 ÷ 1F44D ÷
+÷ 1F44D × 093E × 200D ÷ 1F44D ÷

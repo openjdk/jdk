@@ -49,7 +49,6 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @bug 8327695
  * @summary Test the basic value class implementation in C2.
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -62,7 +61,6 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @bug 8327695
  * @summary Test the basic value class implementation in C2.
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -75,7 +73,6 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @bug 8327695
  * @summary Test the basic value class implementation in C2.
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -88,7 +85,6 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @bug 8327695
  * @summary Test the basic value class implementation in C2.
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -101,7 +97,6 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @bug 8327695
  * @summary Test the basic value class implementation in C2.
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -114,7 +109,6 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @bug 8327695
  * @summary Test the basic value class implementation in C2.
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -127,7 +121,6 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @bug 8327695
  * @summary Test the basic value class implementation in C2.
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -384,7 +377,7 @@ static MyValue1 tmp = null;
     }
 
     // Test loop with uncommon trap referencing a value object
-    @Test
+    @Test(allowNotCompilable = true)
     @IR(applyIf = {"UseArrayFlattening", "true"},
         failOn = LOAD_OF_ANY_KLASS,
         counts = {SCOPE_OBJECT, ">= 1"})
@@ -412,10 +405,13 @@ static MyValue1 tmp = null;
 
     @Run(test = "test12")
     public void test12_verifier(RunInfo info) {
-        // Disable OSR compilation prevents the method from getting recompiled because the IR rules
-        // expect all loads moved into the uncommon trap, which is not the case when the method get
-        // recompiled and the path that was unreached before is now compiled
+        // IR rules expect all loads moved into the uncommon trap, which is not the case when the method get
+        // recompiled and the path that was unreached before is now compiled. To avoid this, we need to block
+        // stray OSR compilations and recompiles after warmup.
         WhiteBox.getWhiteBox().makeMethodNotCompilable(info.getTest(), CompLevel.C2.getValue(), true);
+        if (info.isTestC2Compiled()) {
+            WhiteBox.getWhiteBox().makeMethodNotCompilable(info.getTest(), CompLevel.C2.getValue(), false);
+        }
         long result = test12(info.isWarmUp());
         Asserts.assertEQ(result, info.isWarmUp() ? rL + (1000 * rI) : ((Math.abs(rI) % 10) + 1) * hash());
     }

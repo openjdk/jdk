@@ -29,6 +29,7 @@ package gc.g1;
  * @summary Ensure the output for a minor GC with G1
  * includes the expected necessary messages.
  * @requires vm.gc.G1
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

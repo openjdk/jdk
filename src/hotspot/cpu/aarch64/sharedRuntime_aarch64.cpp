@@ -645,7 +645,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
       // compiled code so we may not have buffers to back the value
       // objects. Allocate the buffers here with a runtime call for
       // the value arguments that needs a buffer.
-      RegisterSaver reg_save(true /* save_vectors */);
+      RegisterSaver reg_save(false /* save_vectors */);
       OopMap* map = reg_save.save_live_registers(masm, 0, &frame_size_in_words);
 
       frame_complete = __ offset();
@@ -2927,7 +2927,7 @@ BufferedValueTypeBlob* SharedRuntime::generate_buffered_value_type_adapter(const
   Register Rresult = r14;  // See StubGenerator::generate_call_stub().
   __ ldr(r0, Address(Rresult));
   __ resolve_jobject(r0 /* value */,
-                     rthread /* thread */,
+                     r11 /* tmp */,
                      r12 /* tmp */);
   __ str(r0, Address(Rresult));
 

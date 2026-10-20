@@ -1353,20 +1353,9 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # promulgated 2022-07-14 and published 2022-08-13:
 # https://www.diariooficial.interior.gob.cl/publicaciones/2022/08/13/43327/01/2172567.pdf
 # https://www.bcn.cl/leychile/navegar?idNorma=1179983
-#
-# From Paul Eggert (2022-08-17):
-# Although the presidential decree stops at fall 2026, assume that
-# similar DST rules will continue thereafter.
 
-# From Paul Eggert (2025-01-15):
-# Diario Regional Aysén's Sebastián Martel reports that 94% of Aysén
-# citizens polled in November favored changing the rules from
-# -04/-03-with-DST to -03 all year...
-# https://www.diarioregionalaysen.cl/noticia/actualidad/2024/12/presentan-decision-que-gano-la-votacion-sobre-el-cambio-del-huso-horario-en-aysen
-#
 # From Yonathan Dossow (2025-03-20):
-# [T]oday we have more confirmation of the change.  [Aysén] region will keep
-# UTC-3 all year...
+# [Aysén] region will keep UTC-3 all year...
 # https://www.cnnchile.com/pais/region-de-aysen-mantendra-horario-de-verano-todo-el-ano_20250320/
 # https://www.latercera.com/nacional/noticia/tras-consulta-ciudadana-region-de-aysen-mantendra-el-horario-de-verano-durante-todo-el-ano/
 # https://x.com/min_interior/status/1902692504270672098
@@ -1377,6 +1366,14 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # https://www.diariooficial.interior.gob.cl/publicaciones/2025/03/20/44104/01/2624263.pdf
 # https://www.bcn.cl/leychile/Navegar?idNorma=1211955
 # Model this as a change to standard offset effective 2025-03-20.
+
+# From Paul Eggert (2026-08-11):
+# Chile’s timekeeping regime is renewed by Decreto 98 of 2026 of the
+# Ministry of the Interior, Undersecretariat of the Interior,
+# promulgated 2026-06-30 and published 2026-07-02:
+# https://www.bcn.cl/leychile/navegar?idNorma=1225724
+# Although this decree stops at fall 2029, assume that
+# similar DST rules will continue thereafter.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Chile	1927	1931	-	Sep	 1	0:00	1:00	-
@@ -1495,13 +1492,19 @@ Zone Antarctica/Palmer	0	-	-00	1965
 # Milne gives 4:56:16.4 for Bogotá time in 1899.  He writes,
 # "A variation of fifteen minutes in the public clocks of Bogota is not rare."
 
+# From Paul Eggert (2026-07-17):
+# The 1992 spring forward was May 2 at 00:00.  See:
+# Jiménez FA. La noche en que Colombia perdió una hora para encarar el apagón,
+# ¿se repetirá la historia en 2026? El Colombiano. 2026-06-21.
+# https://www.elcolombiano.com/negocios/colombia-perdio-una-hora-para-evitar-apagon-horario-gaviria-LF37983109
+
 # From Alois Treindl (2022-11-10):
 # End of time change in Colombia 1993 ... should be 6 February 24h ...
 # DECRETO 267 DE 1993
 # https://www.suin-juriscol.gov.co/viewDocument.asp?ruta=Decretos/1061335
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	CO	1992	only	-	May	 3	 0:00	1:00	-
+Rule	CO	1992	only	-	May	 2	 0:00	1:00	-
 Rule	CO	1993	only	-	Feb	 6	24:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 		#STDOFF	-4:56:16.4
