@@ -79,7 +79,7 @@ public final class MultiThreadFontMetrics extends Thread {
         }
         return p.exitValue();
     }
- 
+
     static void runMetricsTest() throws Exception {
 
         System.setProperty("java.awt.headless", "true");
@@ -91,7 +91,7 @@ public final class MultiThreadFontMetrics extends Thread {
         for (int i = 0; i < numThreads; i++) {
             final int threadNumber = i;
             threads[i] = new MultiThreadFontMetrics();
-            
+
         }
         for (Thread t : threads) {
             t.start();
