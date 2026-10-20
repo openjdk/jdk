@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -905,7 +905,7 @@ static BOOL shouldUsePressAndHold() {
 /********************************  BEGIN NSTextInputClient Protocol  ********************************/
 
 
-static jclass jc_CInputMethod = NULL;
+DECLARE_CLASS_ONLY(jc_CInputMethod);
 
 #define GET_CIM_CLASS() \
     GET_CLASS(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
