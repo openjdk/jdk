@@ -222,7 +222,7 @@ public class TestGenerationalReferenceProcessing {
             assertReferencesCleared(YOUNG, YOUNG, classifier);
             assertReferencesCleared(OLD, YOUNG, classifier);
         } else {
-            WB.shenandoahOldGC();
+            WB.shenandoahOldMarkGC();
 
             int cleared = removeClearedWeakReferences();
             classifier.classify();
