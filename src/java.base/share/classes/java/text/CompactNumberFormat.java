@@ -105,7 +105,7 @@ import java.util.stream.Collectors;
  * digits. This is why the patterns provided for formatting contain only the minimum
  * integer digits, prefix and/or suffix, but no fractional part. If needed, users can use
  * {@link #setMinimumFractionDigits(int)} to support fractional digits for compact number formatting.
- * For example, using the following patterns {@code {"", "", "", 0K, ...}} with the {@link
+ * For example, using the following patterns {@code {"", "", "", "0K", ...}} with the {@link
  * Locale#US US locale} and a minimum of 1 fractional digit, {@code 55.5} is formatted as
  * "56", and {@code 5500} is formatted as "5.5K".
  *
