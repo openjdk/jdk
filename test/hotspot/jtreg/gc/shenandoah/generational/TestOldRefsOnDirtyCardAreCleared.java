@@ -115,7 +115,7 @@ public final class TestOldRefsOnDirtyCardAreCleared {
         RETAIN_REF.youngPointer = new Object();
 
         // Step 5. Run an old GC cycle. This should clear out the weak referents
-        WB.shenandoahOldGC();
+        WB.shenandoahOldMarkGC();
 
         // Step 6. Fail if any references still have referents (should be zero)
         for (int i = 0, n = WEAK_REFS.size(); i < n; ++i) {
