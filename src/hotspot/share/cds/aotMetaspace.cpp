@@ -58,7 +58,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/aotCodeCache.hpp"
@@ -526,14 +526,14 @@ void AOTMetaspace::serialize(SerializeClosure* soc) {
   SymbolTable::serialize_shared_table_header(soc);
   StringTable::serialize_shared_table_header(soc);
   AOTHeap::serialize_tables(soc);
-  SystemDictionaryShared::serialize_dictionary_headers(soc);
+  AOTSystemDictionary::serialize_dictionary_headers(soc);
   AOTLinkedClassBulkLoader::serialize(soc);
   FinalImageRecipes::serialize(soc);
   TrainingData::serialize(soc);
   InstanceMirrorKlass::serialize_offsets(soc);
 
   // Dump/restore well known classes (pointers)
-  SystemDictionaryShared::serialize_vm_classes(soc);
+  AOTSystemDictionary::serialize_vm_classes(soc);
   soc->do_tag(--tag);
 
   CDS_JAVA_HEAP_ONLY(AOTModules::serialize(soc);)
@@ -709,7 +709,7 @@ public:
 
   virtual void iterate_roots(MetaspaceClosure* it) {
     AOTArtifactFinder::all_cached_classes_do(it);
-    SystemDictionaryShared::dumptime_classes_do(it);
+    AOTSystemDictionary::dumptime_classes_do(it);
     Universe::metaspace_pointers_do(it);
     vmSymbols::metaspace_pointers_do(it);
     TrainingData::iterate_roots(it);
@@ -749,7 +749,7 @@ char* VM_PopulateDumpSharedSpace::dump_early_read_only_tables() {
 char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*& cl_config) {
   ArchiveBuilder::OtherROAllocMark mark;
 
-  SystemDictionaryShared::write_to_archive();
+  AOTSystemDictionary::write_to_archive();
   cl_config = AOTClassLocationConfig::dumptime()->write_to_archive();
   AOTClassLinker::write_to_archive();
   if (CDSConfig::is_dumping_preimage_static_archive()) {
@@ -783,7 +783,7 @@ void VM_PopulateDumpSharedSpace::doit() {
     guarantee(!CDSConfig::is_using_archive(), "We should not be using an archive when we dump");
   }
 
-  DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
+  DEBUG_ONLY(AOTSystemDictionary::NoClassLoadingMark nclm);
 
   _pending_method_handle_intrinsics = new (mtClassShared) GrowableArray<Method*>(256, mtClassShared);
   if (CDSConfig::is_dumping_method_handles()) {
@@ -1399,7 +1399,7 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
   }
 
   if (ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
-      !SystemDictionaryShared::has_class_failed_verification(ik)) {
+      !AOTSystemDictionary::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
     if (ik->defined_by_other_loaders() && ik->class_loader() == nullptr) {
       // The verification decision is based on BytecodeVerificationRemote
@@ -1420,9 +1420,9 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
                             current->pending_exception()->klass()->external_name(),
                             message == nullptr ? "(no message)" : java_lang_String::as_utf8_string(message));
       CLEAR_PENDING_EXCEPTION;
-      SystemDictionaryShared::set_class_has_failed_verification(ik);
+      AOTSystemDictionary::set_class_has_failed_verification(ik);
     } else {
-      assert(!SystemDictionaryShared::has_class_failed_verification(ik), "sanity");
+      assert(!AOTSystemDictionary::has_class_failed_verification(ik), "sanity");
       ik->compute_has_loops_flag_for_methods();
     }
     BytecodeVerificationLocal = saved;
@@ -2254,11 +2254,11 @@ void AOTMetaspace::initialize_shared_spaces() {
       tty->print_cr("Static archive version %d", static_mapinfo->version());
     }
 
-    SystemDictionaryShared::print_shared_archive(tty);
+    AOTSystemDictionary::print_shared_archive(tty);
     if (dynamic_mapinfo != nullptr) {
       tty->print_cr("\n\nDynamic archive name: %s", dynamic_mapinfo->full_path());
       tty->print_cr("Dynamic archive version %d", dynamic_mapinfo->version());
-      SystemDictionaryShared::print_shared_archive(tty, false/*dynamic*/);
+      AOTSystemDictionary::print_shared_archive(tty, false/*dynamic*/);
     }
 
     TrainingData::print_archived_training_data_on(tty);

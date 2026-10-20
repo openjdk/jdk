@@ -33,7 +33,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "gc/shared/gcVMOperations.hpp"

@@ -33,7 +33,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "jni.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -409,7 +409,7 @@ void ModuleEntry::metaspace_pointers_do(MetaspaceClosure* it) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 bool ModuleEntry::should_be_archived() const {
-  return SystemDictionaryShared::is_builtin_loader(loader_data());
+  return AOTSystemDictionary::is_builtin_loader(loader_data());
 }
 
 void ModuleEntry::remove_unshareable_info() {

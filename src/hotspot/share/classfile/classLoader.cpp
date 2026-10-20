@@ -39,7 +39,7 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
@@ -389,7 +389,7 @@ bool ClassPathZipEntry::has_entry(const char* name, Handle class_loader, bool is
   // loader but CDS.getResource() will ensure the resource is retrieved from the correct
   // JAR file anyway.
   if (class_loader != nullptr && is_multi_release_jar) {
-    assert(SystemDictionaryShared::is_builtin_loader(ClassLoaderData::class_loader_data(class_loader())), "must be");
+    assert(AOTSystemDictionary::is_builtin_loader(ClassLoaderData::class_loader_data(class_loader())), "must be");
     JavaValue result(T_OBJECT);
     oop class_name_oop = java_lang_String::create_oop_from_str(name, CHECK_false);
     Handle h_class_name(THREAD, class_name_oop);
@@ -1323,11 +1323,11 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
     return;
   }
 
-  if (!SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
+  if (!AOTSystemDictionary::is_builtin_loader(ik->class_loader_data())) {
     // A class loaded by a user-defined classloader.
     assert(ik->shared_classpath_index() < 0, "not assigned yet");
     ik->set_shared_classpath_index(UNREGISTERED_INDEX);
-    SystemDictionaryShared::set_shared_class_misc_info(ik, (ClassFileStream*)stream);
+    AOTSystemDictionary::set_shared_class_misc_info(ik, (ClassFileStream*)stream);
     return;
   }
 

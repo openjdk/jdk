@@ -31,7 +31,7 @@
 class InstanceKlass;
 class Thread;
 
-// Used by SystemDictionaryShared/AOTArtifactFinder to filter out classes that
+// Used by AOTSystemDictionary/AOTArtifactFinder to filter out classes that
 // shouldn't be included into the AOT cache -- for example, classes that are used only
 // in the training/assembly phases for building contents in the AOT cache.
 //

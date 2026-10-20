@@ -28,7 +28,7 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/symbol.hpp"

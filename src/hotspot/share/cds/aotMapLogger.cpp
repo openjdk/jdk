@@ -32,7 +32,7 @@
 #include "cds/filemap.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -160,11 +160,11 @@ void AOTMapLogger::runtime_log(FileMapInfo* static_mapinfo, FileMapInfo* dynamic
     // another object starts. There's also no type information.
     //
     // However, we can rebuild our index by iterating over all the objects using
-    // MetaspaceClosure, starting from the dictionary of Klasses in SystemDictionaryShared.
+    // MetaspaceClosure, starting from the dictionary of Klasses in AOTSystemDictionary.
     GrowableArray<Klass*> klasses;
-    SystemDictionaryShared::get_all_archived_classes(/*is_static*/true, &klasses);
+    AOTSystemDictionary::get_all_archived_classes(/*is_static*/true, &klasses);
     if (dynamic_mapinfo != nullptr) {
-      SystemDictionaryShared::get_all_archived_classes(/*is_static*/false, &klasses);
+      AOTSystemDictionary::get_all_archived_classes(/*is_static*/false, &klasses);
     }
 
     for (int i = 0; i < klasses.length(); i++) {

@@ -86,7 +86,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
 #if INCLUDE_CDS
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #endif
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
@@ -896,7 +896,7 @@ InstanceKlass* SystemDictionary::resolve_class_from_stream(
 
 #if INCLUDE_CDS
   if (!CDSConfig::is_dumping_static_archive()) {
-    k = SystemDictionaryShared::lookup_from_stream(class_name,
+    k = AOTSystemDictionary::lookup_from_stream(class_name,
                                                    class_loader,
                                                    cl_info.protection_domain(),
                                                    st,
@@ -1288,7 +1288,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   ClassLoadingService::notify_class_loaded(ik, true /* shared class */);
 
   if (CDSConfig::is_dumping_final_static_archive()) {
-    SystemDictionaryShared::init_dumptime_info_from_preimage(ik);
+    AOTSystemDictionary::init_dumptime_info_from_preimage(ik);
   }
 }
 
@@ -1436,7 +1436,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
     if (CDSConfig::is_using_archive())
     {
       PerfTraceTime vmtimer(ClassLoader::perf_shared_classload_time());
-      InstanceKlass* ik = SystemDictionaryShared::find_builtin_class(class_name);
+      InstanceKlass* ik = AOTSystemDictionary::find_builtin_class(class_name);
       if (ik != nullptr && ik->defined_by_boot_loader() && !ik->shared_loading_failed()) {
         SharedClassLoadingMark slm(THREAD, ik);
         k = load_shared_class(ik, class_loader, Handle(), nullptr,  pkg_entry, CHECK_NULL);
@@ -1764,7 +1764,7 @@ void SystemDictionary::initialize(TRAPS) {
   LoaderConstraintTable::initialize();
   PlaceholderTable::initialize();
 #if INCLUDE_CDS
-  SystemDictionaryShared::initialize();
+  AOTSystemDictionary::initialize();
   if (CDSConfig::is_dumping_archive()) {
     AOTClassLocationConfig::dumptime_init(THREAD);
   }
@@ -1953,7 +1953,7 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
 #if INCLUDE_CDS
     if (CDSConfig::is_dumping_archive() && klass_being_linked != nullptr &&
         !klass_being_linked->in_aot_cache()) {
-         SystemDictionaryShared::record_linking_constraint(constraint_name,
+         AOTSystemDictionary::record_linking_constraint(constraint_name,
                                      InstanceKlass::cast(klass_being_linked),
                                      class_loader1, class_loader2);
     }
@@ -2598,7 +2598,7 @@ bool SystemDictionary::is_nonpublic_Object_method(Method* m) {
 // ----------------------------------------------------------------------------
 
 void SystemDictionary::print_on(outputStream *st) {
-  CDS_ONLY(SystemDictionaryShared::print_on(st));
+  CDS_ONLY(AOTSystemDictionary::print_on(st));
   GCMutexLocker mu(SystemDictionary_lock);
 
   ClassLoaderDataGraph::print_dictionary(st);
@@ -2630,7 +2630,7 @@ void SystemDictionary::dump(outputStream *st, bool verbose) {
   if (verbose) {
     print_on(st);
   } else {
-    CDS_ONLY(SystemDictionaryShared::print_table_statistics(st));
+    CDS_ONLY(AOTSystemDictionary::print_table_statistics(st));
     ClassLoaderDataGraph::print_table_statistics(st);
     LoaderConstraintTable::print_table_statistics(st);
   }

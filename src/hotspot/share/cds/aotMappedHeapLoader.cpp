@@ -30,7 +30,7 @@
 #include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/stringTable.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"

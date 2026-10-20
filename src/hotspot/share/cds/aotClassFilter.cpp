@@ -44,7 +44,7 @@ AOTClassFilter::FilterMark::~FilterMark() {
   _filtering_thread = nullptr;
 }
 
-// Is called only from SystemDictionaryShared::init_dumptime_info(), which holds DumpTimeTable_lock
+// Is called only from AOTSystemDictionary::init_dumptime_info(), which holds DumpTimeTable_lock
 bool AOTClassFilter::is_aot_tooling_class(InstanceKlass* ik) {
   assert_lock_strong(DumpTimeTable_lock);
   if (_current_mark == nullptr || _filtering_thread != Thread::current()) {

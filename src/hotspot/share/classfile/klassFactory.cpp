@@ -30,7 +30,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/klassFactory.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
@@ -208,7 +208,7 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
   InstanceKlass* result = parser.create_instance_klass(old_stream != stream, *cl_inst_info, CHECK_NULL);
   assert(result != nullptr, "result cannot be null with no pending exception");
   if (CDSConfig::is_dumping_archive() && stream->from_class_file_load_hook()) {
-    SystemDictionaryShared::set_from_class_file_load_hook(result);
+    AOTSystemDictionary::set_from_class_file_load_hook(result);
   }
 
   if (cached_class_file != nullptr) {

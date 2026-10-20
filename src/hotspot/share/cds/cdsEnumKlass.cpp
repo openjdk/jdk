@@ -24,7 +24,7 @@
 
 #include "cds/aotHeap.hpp"
 #include "cds/cdsEnumKlass.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/fieldStreams.inline.hpp"
@@ -107,7 +107,7 @@ void CDSEnumKlass::archive_static_field(int level, KlassSubGraphInfo* subgraph_i
   log_info(aot, heap)("Archived enum obj @%d %s::%s (" INTPTR_FORMAT ")",
                       root_index, ik->external_name(), fd.name()->as_C_string(),
                       p2i((oopDesc*)oop_field));
-  SystemDictionaryShared::add_enum_klass_static_field(ik, root_index);
+  AOTSystemDictionary::add_enum_klass_static_field(ik, root_index);
 }
 
 bool CDSEnumKlass::initialize_enum_klass(InstanceKlass* k, TRAPS) {

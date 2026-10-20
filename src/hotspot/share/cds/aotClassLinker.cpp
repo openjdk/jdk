@@ -33,7 +33,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
@@ -127,7 +127,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
   assert(is_initialized(), "sanity");
   assert(CDSConfig::is_dumping_aot_linked_classes(), "sanity");
 
-  if (!SystemDictionaryShared::is_builtin(ik)) {
+  if (!AOTSystemDictionary::is_builtin(ik)) {
     // not loaded by a class loader which we know about
     return false;
   }
@@ -136,7 +136,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
     return true;
   }
 
-  if (!ik->is_linked() && SystemDictionaryShared::has_class_failed_verification(ik)) {
+  if (!ik->is_linked() && AOTSystemDictionary::has_class_failed_verification(ik)) {
     return false;
   }
 

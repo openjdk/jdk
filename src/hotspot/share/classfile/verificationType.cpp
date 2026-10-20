@@ -25,7 +25,7 @@
 #include "cds/cdsConfig.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "classfile/verificationType.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
@@ -118,7 +118,7 @@ bool VerificationType::is_reference_assignable_from(
 #if INCLUDE_CDS
     if (CDSConfig::is_dumping_archive()) {
       bool skip_assignability_check = false;
-      SystemDictionaryShared::add_verification_constraint(context->current_class(),
+      AOTSystemDictionary::add_verification_constraint(context->current_class(),
               name(), from.name(), from_field_is_protected, from.is_array(),
               from.is_object(), &skip_assignability_check);
       if (skip_assignability_check) {

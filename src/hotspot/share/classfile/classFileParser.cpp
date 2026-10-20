@@ -35,7 +35,7 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "classfile/verificationType.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
@@ -5771,7 +5771,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   if (!is_internal()) {
     ik->print_class_load_logging(_loader_data, module_entry, _stream);
     if (CDSConfig::is_dumping_archive()) {
-      SystemDictionaryShared::check_code_source(ik, _stream);
+      AOTSystemDictionary::check_code_source(ik, _stream);
     }
 
     if (ik->minor_version() == JAVA_PREVIEW_MINOR_VERSION &&
