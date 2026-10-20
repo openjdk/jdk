@@ -27,7 +27,7 @@
  * @summary Checks that -XX:CompileCommand=PrintIdealNodeCount,... works
  * @requires vm.debug & vm.compiler2.enabled & vm.flagless
  * @library /test/lib
- * @run driver compiler.print.CompileCommandPrintIdealNodeCount
+ * @run driver ${test.main.class}
  */
 
 package compiler.print;
