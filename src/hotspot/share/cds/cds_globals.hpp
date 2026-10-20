@@ -105,7 +105,8 @@
                                                                             \
   product(ccstr, AOTMode, nullptr,                                          \
           "Specifies how AOTCache should be created or used. Valid values " \
-          "are: off, record, create, auto, on; the default is auto")        \
+          "are: off, record, create, auto, required, and (deprecated) on; "   \
+          "the default is auto")                                            \
           constraint(AOTModeConstraintFunc, AtParse)                        \
                                                                             \
   product(ccstr, AOTConfiguration, nullptr,                                 \

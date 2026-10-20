@@ -30,7 +30,6 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotStreamedHeap.hpp"
 #include "cds/archiveUtils.hpp"
-#include "cds/heapShared.hpp"
 #include "include/cds.h"
 #include "logging/logLevel.hpp"
 #include "memory/allocation.hpp"

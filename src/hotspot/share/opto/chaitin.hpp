@@ -479,8 +479,6 @@ class PhaseChaitin : public PhaseRegAlloc {
 
   bool is_high_pressure( Block *b, LRG *lrg, uint insidx );
 
-  uint _oldphi;                 // Node index which separates pre-allocation nodes
-
   Block **_blks;                // Array of blocks sorted by frequency for coalescing
 
   double _high_frequency_lrg;   // Frequency at which LRG will be spilled for debug info
@@ -777,12 +775,9 @@ private:
 
 private:
 
-  static int _final_loads, _final_stores, _final_copies, _final_memoves;
-  static double _final_load_cost, _final_store_cost, _final_copy_cost, _final_memove_cost;
-  static int _conserv_coalesce, _conserv_coalesce_pair;
-  static int _conserv_coalesce_trie, _conserv_coalesce_quad;
+  static int _conserv_coalesce;
   static int _post_alloc;
-  static int _lost_opp_pp_coalesce, _lost_opp_cflow_coalesce;
+  static int _lost_opp_cflow_coalesce;
   static int _used_cisc_instructions, _unused_cisc_instructions;
   static int _allocator_attempts, _allocator_successes;
 

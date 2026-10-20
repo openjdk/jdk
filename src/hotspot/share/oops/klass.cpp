@@ -22,9 +22,9 @@
  *
  */
 
+#include "cds/aotHeap.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
@@ -826,9 +826,9 @@ void Klass::remove_java_mirror() {
         assert(InstanceKlass::cast(k)->defined_by_other_loaders(), "sanity");
       }
     } else {
-      oop scratch_mirror = HeapShared::scratch_java_mirror(orig_mirror);
+      oop scratch_mirror = AOTHeap::scratch_java_mirror(orig_mirror);
       if (scratch_mirror != nullptr) {
-        _archived_mirror_index = HeapShared::append_root(scratch_mirror);
+        _archived_mirror_index = AOTHeap::append_root(scratch_mirror);
       }
     }
   }
@@ -880,7 +880,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);
     log_debug(aot, mirror)("%s has raw archived mirror", external_name());
-    if (HeapShared::is_archived_heap_in_use()) {
+    if (AOTHeap::is_archived_heap_in_use()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
                                                               protection_domain,
                                                               CHECK);
@@ -908,12 +908,12 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
 #if INCLUDE_CDS_JAVA_HEAP
 oop Klass::archived_java_mirror() {
   assert(has_archived_mirror_index(), "must have archived mirror");
-  return HeapShared::get_root(_archived_mirror_index);
+  return AOTHeap::get_root(_archived_mirror_index);
 }
 
 void Klass::clear_archived_mirror_index() {
   if (_archived_mirror_index >= 0) {
-    HeapShared::clear_root(_archived_mirror_index);
+    AOTHeap::clear_root(_archived_mirror_index);
   }
   _archived_mirror_index = -1;
 }

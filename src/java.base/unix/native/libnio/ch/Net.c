@@ -42,11 +42,6 @@
 #include "nio_util.h"
 #include "nio.h"
 
-#ifdef _AIX
-#include <stdlib.h>
-#include <sys/utsname.h>
-#endif
-
 /**
  * IP_MULTICAST_ALL supported since 2.6.31 but may not be available at
  * build time.

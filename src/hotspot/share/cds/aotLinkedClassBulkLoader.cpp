@@ -24,11 +24,11 @@
 
 #include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLinker.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLinkedClassTable.hpp"
 #include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
@@ -88,7 +88,7 @@ void AOTLinkedClassBulkLoader::preload_classes_impl(TRAPS) {
   preload_classes_in_table(table->app(), "app", h_system_loader, CHECK);
 
   // Do this after all boot/platform/app classes are loaded, but before bytecode execution.
-  HeapShared::load_cached_resolved_methods();
+  AOTHeap::load_cached_resolved_methods();
 
   if (CDSConfig::is_redumping_aot_configuration()) {
    SystemDictionaryShared::copy_unregistered_classes_for_retraining(THREAD);
@@ -158,7 +158,7 @@ static void allocate_scratch_oops(Klass* k, TRAPS) {
       objArrayOop resolved_references = cp->resolved_references();
       if (resolved_references != nullptr) {
         objArrayOop scratch_references = oopFactory::new_objArray(vmClasses::Object_klass(), resolved_references->length(), CHECK);
-        HeapShared::add_scratch_resolved_references(cp, scratch_references);
+        AOTHeap::add_scratch_resolved_references(cp, scratch_references);
       }
     }
   }
@@ -466,7 +466,7 @@ void AOTLinkedClassBulkLoader::init_classes_for_loader(Handle class_loader, Arra
   }
 
   if (!early_only) {
-    HeapShared::init_classes_for_special_subgraph(class_loader, CHECK);
+    AOTHeap::init_classes_for_special_subgraph(class_loader, CHECK);
   }
 }
 
