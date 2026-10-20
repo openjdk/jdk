@@ -4654,7 +4654,8 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
 
     // The ratio of the two strides cannot be represented as an int
     // if stride_con2 is min_jint (or min_jlong, respectively) and
-    // stride_con is -1.
+    // stride_con is -1. This check must run before the division below,
+    // otherwise min_jlong / -1 is an undefined behaviour.
     if (stride_con2 == min_signed_integer(stride_con2_bt) && stride_con == -1) {
       continue;
     }
