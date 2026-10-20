@@ -116,7 +116,7 @@ class MallocSiteTable : AllStatic {
   // Each bucket chain cannot be longer than what a 16 bit pos idx can hold (hopefully way shorter)
 #define MAX_BUCKET_LENGTH         (USHRT_MAX - 1)
 
-  STATIC_ASSERT(table_size <= MAX_MALLOCSITE_TABLE_SIZE);
+  static_assert(table_size <= MAX_MALLOCSITE_TABLE_SIZE);
 
   static uint32_t build_marker(unsigned bucket_idx, unsigned pos_idx) {
     assert(bucket_idx <= MAX_MALLOCSITE_TABLE_SIZE && pos_idx < MAX_BUCKET_LENGTH, "overflow");
@@ -172,6 +172,10 @@ class MallocSiteTable : AllStatic {
 
   static void print_tuning_statistics(outputStream* st);
 
+  static int entry_count() {
+    return _entry_count.load_relaxed();
+  }
+
  private:
   static MallocSiteHashtableEntry* new_entry(const NativeCallStack& key, MemTag mem_tag);
 
@@ -196,7 +200,7 @@ class MallocSiteTable : AllStatic {
  private:
   // The callsite hashtable. It has to be a static table,
   // since malloc call can come from C runtime linker.
-  static Atomic<size_t>                     _entry_count;
+  static Atomic<int>                        _entry_count;
   static Atomic<MallocSiteHashtableEntry*>* _table;
   static const NativeCallStack*             _hash_entry_allocation_stack;
   static const MallocSiteHashtableEntry*    _hash_entry_allocation_site;

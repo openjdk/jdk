@@ -299,7 +299,13 @@ class GraphBuilder {
   void throw_op(int bci);
 
   // value types
-  void copy_value_content(ciValueKlass* vk, Value src, int src_off, Value dest, int dest_off, ValueStack* state_before, ciField* enclosing_field = nullptr);
+  struct CopyNullChecks {
+    bool needs_src;
+    bool needs_dst;
+  };
+
+  void copy_value_content(ciValueKlass* vk, Value src, int src_off, Value dest, int dest_off, ValueStack* state_before,
+                          CopyNullChecks& null_checks, ciField* enclosing_field = nullptr);
 
   // stack/code manipulation helpers
   Instruction* append_with_bci(Instruction* instr, int bci);

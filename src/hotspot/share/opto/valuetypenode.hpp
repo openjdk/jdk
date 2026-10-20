@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_VALUETYPENODE_HPP
-#define SHARE_VM_OPTO_VALUETYPENODE_HPP
+#ifndef SHARE_OPTO_VALUETYPENODE_HPP
+#define SHARE_OPTO_VALUETYPENODE_HPP
 
 #include "ci/ciValueKlass.hpp"
 #include "oops/accessDecorators.hpp"
@@ -40,6 +40,7 @@ class ValueTypeNode : public TypeNode {
 private:
   ValueTypeNode(ciValueKlass* vk, Node* oop, bool null_free)
       : TypeNode(TypeInstPtr::make(null_free ? TypePtr::NotNull : TypePtr::BotPTR, vk), Values + vk->nof_declared_nonstatic_fields()) {
+    assert(Arguments::is_valhalla_enabled(), "should not be used without value types");
     init_class_id(Class_ValueType);
     init_req(Oop, oop);
     Compile::current()->add_value_type(this);
@@ -201,9 +202,14 @@ public:
 
   bool is_mismatched() const;
 
+  bool has_non_debug_use(const Node* n) const {
+    return find_edge(n) <= TypeFunc::Parms + 1;
+  }
+
 private:
   LoadFlatNode(ciValueKlass* vk, const TypeTuple* type, bool null_free, DecoratorSet decorators)
     : SafePointNode(TypeFunc::Parms + 2, nullptr, TypePtr::BOTTOM), _vk(vk), _type(type), _null_free(null_free), _decorators(decorators) {
+    assert(UseArrayFlattening || UseFieldFlattening, "should not be used without flattening enabled");
     init_class_id(Class_LoadFlat);
     Compile::current()->add_flat_access(this);
   }
@@ -242,9 +248,14 @@ public:
 
   bool is_mismatched() const;
 
+  bool has_non_debug_use(const Node* n) const {
+    return find_edge(n) <= TypeFunc::Parms + 2;
+  }
+
 private:
   StoreFlatNode(bool null_free, DecoratorSet decorators)
     : SafePointNode(TypeFunc::Parms + 3, nullptr, TypePtr::BOTTOM), _null_free(null_free), _decorators(decorators) {
+    assert(UseArrayFlattening || UseFieldFlattening, "should not be used without flattening enabled");
     init_class_id(Class_StoreFlat);
     Compile::current()->add_flat_access(this);
   }
@@ -253,4 +264,4 @@ private:
   static Node* set_payload_value(PhaseIterGVN& igvn, BasicType payload_bt, Node* payload, BasicType val_bt, Node* value, int offset);
 };
 
-#endif // SHARE_VM_OPTO_VALUETYPENODE_HPP
+#endif // SHARE_OPTO_VALUETYPENODE_HPP

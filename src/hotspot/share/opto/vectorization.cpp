@@ -223,13 +223,13 @@ VStatus VLoopMemorySlices::find_memory_slices() {
     if (n->is_memory_phi()) {
       // Memory slice with stores (and maybe loads)
       PhiNode* phi = n->as_Phi();
-      int alias_idx = C->get_alias_index(phi->adr_type());
+      int alias_idx = C->get_alias_index(phi->out_adr_type());
       assert(_inputs.at(alias_idx) == nullptr, "did not yet touch this slice");
       _inputs.at_put(alias_idx, phi->in(1));
       _heads.at_put(alias_idx, phi);
     } else if (n->is_Load()) {
       LoadNode* load = n->as_Load();
-      int alias_idx = C->get_alias_index(load->adr_type());
+      int alias_idx = C->get_alias_index(load->in_adr_type());
       PhiNode* head = _heads.at(alias_idx);
       if (head == nullptr) {
         // We did not find a phi on this slice yet -> must be a slice with only loads.
@@ -248,7 +248,7 @@ VStatus VLoopMemorySlices::find_memory_slices() {
     } else if (n->is_Store()) {
       // Found a store. Make sure it is in a slice with a Phi.
       StoreNode* store = n->as_Store();
-      int alias_idx = C->get_alias_index(store->adr_type());
+      int alias_idx = C->get_alias_index(store->out_adr_type());
       PhiNode* head = _heads.at(alias_idx);
       assert(head != nullptr, "should have found a mem phi for this slice");
 #endif

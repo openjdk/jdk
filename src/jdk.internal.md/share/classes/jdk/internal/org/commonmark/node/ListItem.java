@@ -32,6 +32,15 @@
 
 package jdk.internal.org.commonmark.node;
 
+/**
+ * A child of a {@link ListBlock}, containing other blocks (e.g. {@link Paragraph}, other lists, etc).
+ * <p>
+ * Note that a list item can't directly contain {@link Text}, it needs to be:
+ * {@link ListItem} : {@link Paragraph} : {@link Text}.
+ * If you want a list that is rendered tightly, create a list with {@link ListBlock#setTight(boolean)}.
+ *
+ * @see <a href="https://spec.commonmark.org/0.31.2/#list-items">CommonMark Spec: List items</a>
+ */
 public class ListItem extends Block {
 
     private Integer markerIndent;
@@ -83,5 +92,19 @@ public class ListItem extends Block {
 
     public void setContentIndent(Integer contentIndent) {
         this.contentIndent = contentIndent;
+    }
+
+    /**
+     * @deprecated list items should only contain block nodes; if you're trying to create a list that is rendered
+     * without paragraphs, use {@link ListBlock#setTight(boolean)} instead.
+     */
+    @Override
+    @Deprecated
+    public void appendChild(Node child) {
+        super.appendChild(child);
+    }
+
+    public void appendChild(Block child) {
+        super.appendChild(child);
     }
 }

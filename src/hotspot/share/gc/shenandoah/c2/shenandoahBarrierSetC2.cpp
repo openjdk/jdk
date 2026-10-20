@@ -600,7 +600,7 @@ void ShenandoahBarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base
   ac->set_clone_array();
   Node* n = kit->gvn().transform(ac);
   if (n == ac) {
-    ac->set_adr_type(TypeRawPtr::BOTTOM);
+    ac->set_out_adr_type(TypeRawPtr::BOTTOM);
     kit->set_predefined_output_for_runtime_call(ac, ac->in(TypeFunc::Memory), TypeRawPtr::BOTTOM);
   } else {
     kit->set_all_memory(n);
@@ -775,13 +775,13 @@ void ShenandoahBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase p
     const TypePtr* adr_type = nullptr;
     if (is_Load(opc)) {
       bd = n->as_Load()->barrier_data();
-      adr_type = n->as_Load()->adr_type();
+      adr_type = n->as_Load()->in_adr_type();
     } else if (is_Store(opc)) {
       bd = n->as_Store()->barrier_data();
-      adr_type = n->as_Store()->adr_type();
+      adr_type = n->as_Store()->out_adr_type();
     } else if (is_LoadStore(opc)) {
       bd = n->as_LoadStore()->barrier_data();
-      adr_type = n->as_LoadStore()->adr_type();
+      adr_type = n->as_LoadStore()->out_adr_type();
     } else if (n->is_Mem()) {
       bd = MemNode::barrier_data(n);
       verify_gc_barrier_assert(bd == 0, "Other mem nodes should have no barrier data", bd, n);
@@ -912,7 +912,7 @@ void ShenandoahBarrierStubC2::load_post(MacroAssembler* masm, const MachNode* no
     check |= needs_keep_alive_barrier(node)    ? ShenandoahHeap::MARKING : 0;
     check |= needs_load_ref_barrier(node)      ? ShenandoahHeap::HAS_FORWARDED : 0;
     check |= needs_load_ref_barrier_weak(node) ? ShenandoahHeap::WEAK_ROOTS : 0;
-    stub->enter_if_gc_state(*masm, check, tmp1);
+    stub->enter_if_gc_state(*masm, check, tmp1, tmp2);
   }
 }
 
@@ -921,7 +921,7 @@ void ShenandoahBarrierStubC2::store_pre(MacroAssembler* masm, const MachNode* no
   if (needs_slow_barrier(node)) {
     assert(!needs_load_ref_barrier(node), "Should not be required for stores");
     ShenandoahBarrierStubC2* const stub = create(node, tmp1, addr, tmp2, tmp3, narrow, /* do_load = */ true);
-    stub->enter_if_gc_state(*masm, ShenandoahHeap::MARKING, tmp1);
+    stub->enter_if_gc_state(*masm, ShenandoahHeap::MARKING, tmp1, tmp2);
   }
 }
 
@@ -939,7 +939,7 @@ void ShenandoahBarrierStubC2::load_store_pre(MacroAssembler* masm, const MachNod
     check |= needs_keep_alive_barrier(node) ? ShenandoahHeap::MARKING : 0;
     check |= needs_load_ref_barrier(node)   ? ShenandoahHeap::HAS_FORWARDED : 0;
     assert(!needs_load_ref_barrier_weak(node), "Not supported for Load/Stores");
-    stub->enter_if_gc_state(*masm, check, tmp1);
+    stub->enter_if_gc_state(*masm, check, tmp1, tmp2);
   }
 }
 

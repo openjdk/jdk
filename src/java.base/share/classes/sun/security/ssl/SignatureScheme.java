@@ -29,6 +29,7 @@ import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.NamedParameterSpec;
 import java.security.spec.PSSParameterSpec;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -44,6 +45,19 @@ import sun.security.util.KeyUtil;
 import sun.security.util.SignatureUtil;
 
 enum SignatureScheme {
+    // ML_DSA algorithms
+    MLDSA65                 (0x0905, "mldsa65", "ML-DSA-65",
+                                    "ML-DSA",
+                                    ProtocolVersion.PROTOCOLS_OF_13),
+
+    MLDSA87                 (0x0906, "mldsa87", "ML-DSA-87",
+                                    "ML-DSA",
+                                    ProtocolVersion.PROTOCOLS_OF_13),
+
+    MLDSA44                 (0x0904, "mldsa44", "ML-DSA-44",
+                                    "ML-DSA",
+                                    ProtocolVersion.PROTOCOLS_OF_13),
+
     // ECDSA algorithms
     ECDSA_SECP256R1_SHA256  (0x0403, "ecdsa_secp256r1_sha256",
                                     "SHA256withECDSA",
@@ -537,6 +551,19 @@ enum SignatureScheme {
             if (keySize >= ss.minimalKeySize &&
                     keyAlgorithm.equalsIgnoreCase(ss.keyAlgorithm) &&
                     ss.isAllowed(constraints, version, HANDSHAKE_SCOPE)) {
+                if (signingKey.getParams() instanceof NamedParameterSpec nps
+                        && !ss.algorithm.equalsIgnoreCase(nps.getName())) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(
+                                    SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
+                        SSLLogger.finest(
+                                "Ignore the signature algorithm (" + ss +
+                                        "), unsupported named parameter: " +
+                                        nps.getName());
+                    }
+                    continue;
+                }
+
                 if ((ss.namedGroup != null) && (ss.namedGroup.spec ==
                         NamedGroupSpec.NAMED_GROUP_ECDHE)) {
                     ECParameterSpec params =
@@ -640,6 +667,12 @@ enum SignatureScheme {
             InvalidAlgorithmParameterException, InvalidKeyException {
         if (!isAvailable) {
             return null;
+        }
+
+        if (publicKey.getParams() instanceof NamedParameterSpec nps
+                && !algorithm.equalsIgnoreCase(nps.getName())) {
+                throw new InvalidKeyException("Unsupported named parameter: " +
+                        nps.getName());
         }
 
         Signature verifier = Signature.getInstance(algorithm);

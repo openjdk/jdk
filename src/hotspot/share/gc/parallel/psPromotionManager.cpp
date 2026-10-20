@@ -263,14 +263,11 @@ void PSPromotionManager::process_array_chunk(objArrayOop obj, size_t start, size
 }
 
 void PSPromotionManager::process_array_chunk(PartialArrayState* state, bool stolen) {
-  // Access before release by claim().
-  objArrayOop to_array = objArrayOop(state->destination());
-  precond(to_array->is_array_with_oops());
-
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, &_claimed_stack_depth, stolen);
+  precond(claim._array->is_array_with_oops());
 
-  process_array_chunk(to_array, claim._start, claim._end);
+  process_array_chunk(claim._array, claim._start, claim._end);
 }
 
 void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
@@ -280,11 +277,10 @@ void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
 
   objArrayOop to_array = objArrayOop(new_obj);
   size_t array_length = to_array->length();
-  size_t initial_chunk_size =
-    // The source array is unused when processing states.
-    _partial_array_splitter.start(&_claimed_stack_depth, nullptr, to_array, array_length, ParGCArrayScanChunk);
+  PartialArraySplitter::Claim chunk =
+    _partial_array_splitter.start(&_claimed_stack_depth, to_array, array_length, ParGCArrayScanChunk);
 
-  process_array_chunk(to_array, 0, initial_chunk_size);
+  process_array_chunk(chunk._array, chunk._start, chunk._end);
 }
 
 oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
