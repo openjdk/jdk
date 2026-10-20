@@ -135,11 +135,6 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
   }
 
-  if (UseVectorizedMismatchIntrinsic) {
-    warning("VectorizedMismatch intrinsic is not available on this CPU.");
-    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
-  }
-
   if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
     FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
   }
@@ -264,6 +259,16 @@ void VM_Version::common_initialize() {
       warning("CRC32C intrinsic is not available on this CPU.");
       FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
     }
+  }
+
+  bool supported = UseRVV && UseZbb &&
+                   (_initial_vector_length == 16 || _initial_vector_length == 32);
+  if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, supported);
+  } else if (!supported && UseVectorizedMismatchIntrinsic) {
+    warning("VectorizedMismatch intrinsic not available (requires RVV, Zbb "
+            "and vector length is 16 or 32 on this CPU).");
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
   if (ValueTypePassFieldsAsArgs) {
@@ -524,6 +529,7 @@ void VM_Version::c2_initialize() {
       FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
     }
   }
+
 }
 
 #endif // COMPILER2
