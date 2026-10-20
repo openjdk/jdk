@@ -9824,6 +9824,7 @@ instruct cmpFlag_branch(cmpOpEqNeOverflow cmp, rFlagsReg cr, label lbl) %{
   ins_short_branch(1);
 %}
 
+// Compare signed int and branch near instructions
 instruct cmpI_branch(cmpOp cmp, iRegI op1, iRegI op2, label lbl)
 %{
   // Same match rule as `far_cmpI_branch'.
@@ -10207,6 +10208,7 @@ instruct far_cmpFlag_branch(cmpOpEqNeOverflow cmp, rFlagsReg cr, label lbl) %{
   ins_pipe(pipe_cmpz_branch);
 %}
 
+// Compare signed int and branch far instructions
 instruct far_cmpI_branch(cmpOp cmp, iRegI op1, iRegI op2, label lbl) %{
   match(If cmp (CmpI op1 op2));
   effect(USE lbl);
