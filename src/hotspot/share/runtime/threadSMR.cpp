@@ -1159,7 +1159,7 @@ void ThreadsSMRSupport::wait_until_not_protected(JavaThread *thread) {
       // is not on the current ThreadsList.
       MutexLocker ml(Threads_lock);
       // ThreadsSMRSupport::remove_thread() has removed the thread
-      // from the current ThreadsList. But an older retired
+      // from the current ThreadsList, but an older retired
       // ThreadsList may still contain the thread. In that case, that
       // ThreadsList will remain on the _to_delete_list as long as
       // it's protected by a hazard pointer or a nested handle. Thus,
