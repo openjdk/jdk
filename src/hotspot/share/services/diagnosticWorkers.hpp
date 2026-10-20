@@ -32,9 +32,9 @@
 class ThreadClosure;
 class WorkerThreads;
 
-// Worker pool shared by heap dump and heap inspection. The pool is created lazily
-// on the first parallel request and threads are added to the pool as each request
-// needs them. Threads are reused and exist until the VM exits.
+// Worker pool used by diagnostic tasks, for example heap dump and heap inspection.
+// The pool is created lazily on the first parallel request and threads are added to
+// the pool as each request needs them. Threads are reused and exist until the VM exits.
 class DiagnosticWorkers : public AllStatic {
 private:
   // Written once by the VM thread at a safepoint. Also read by the error reporter,
@@ -48,7 +48,7 @@ public:
   static WorkerThreads* workers();
 
   // Applies the closure to each diagnostic worker if the worker pool has been created.
-  static void diagnostic_threads_do(ThreadClosure* tc);
+  static void threads_do(ThreadClosure* tc);
 
   // Sets the number of active worker threads (capped at max_workers()) and returns the
   // active thread count. Creates the worker pool on first use. Returns 0 if the pool

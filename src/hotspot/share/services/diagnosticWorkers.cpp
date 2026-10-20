@@ -47,7 +47,7 @@ WorkerThreads* DiagnosticWorkers::workers() {
   return _workers.load_relaxed();
 }
 
-void DiagnosticWorkers::diagnostic_threads_do(ThreadClosure* tc) {
+void DiagnosticWorkers::threads_do(ThreadClosure* tc) {
   // The error reporter can call this method outside a safepoint, so use load_acquire().
   WorkerThreads* workers = _workers.load_acquire();
   if (workers != nullptr) {

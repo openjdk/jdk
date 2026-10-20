@@ -231,7 +231,7 @@ static void print_thread_details_for_supposed_stack_address(const void* from, co
   }
 
   ThreadStackClosure diag_cl(from, to);
-  DiagnosticWorkers::diagnostic_threads_do(&diag_cl);
+  DiagnosticWorkers::threads_do(&diag_cl);
   if (diag_cl._found) {
     print_thread_details(diag_cl._tid, "DiagWorker", st);
   }
