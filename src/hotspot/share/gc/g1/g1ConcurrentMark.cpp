@@ -1077,8 +1077,7 @@ public:
     task->record_start_time();
     if (!_cm->has_aborted()) {
       do {
-        task->do_marking_step(G1ConcMarkStepDurationMillis,
-                              true  /* do_termination */,
+        task->do_marking_step(true  /* do_termination */,
                               false /* is_serial*/);
 
         _cm->do_yield_check();
@@ -1599,14 +1598,11 @@ public:
       //
       // Note: G1CMTask::do_marking_step() can set the G1CMTask::has_aborted()
       // flag while there may still be some work to do. (See the comment at
-      // the beginning of G1CMTask::do_marking_step() for those conditions -
-      // one of which is reaching the specified time target.) It is only
-      // when G1CMTask::do_marking_step() returns without setting the
-      // has_aborted() flag that the marking step has completed.
+      // the beginning of G1CMTask::do_marking_step() for those conditions.)
+      // It is only when G1CMTask::do_marking_step() returns without setting
+      // the has_aborted() flag that the marking step has completed.
       do {
-        double mark_step_duration_ms = G1ConcMarkStepDurationMillis;
-        _task->do_marking_step(mark_step_duration_ms,
-                               false      /* do_termination */,
+        _task->do_marking_step(false      /* do_termination */,
                                _is_serial);
       } while (_task->has_aborted() && !_cm->has_overflown());
       _ref_counter = _ref_counter_limit;
@@ -1617,9 +1613,8 @@ public:
 // 'Drain' oop closure used by both serial and parallel reference processing.
 // Uses the G1CMTask associated with a given worker thread (for serial
 // reference processing the G1CMtask for worker 0 is used). Calls the
-// do_marking_step routine, with an unbelievably large timeout value,
-// to drain the marking data structures of the remaining entries
-// added by the 'keep alive' oop closure above.
+// do_marking_step routine to drain the marking data structures of the
+// remaining entries added by the 'keep alive' oop closure above.
 
 class G1CMDrainMarkingStackClosure : public VoidClosure {
   G1ConcurrentMark* _cm;
@@ -1645,13 +1640,11 @@ class G1CMDrainMarkingStackClosure : public VoidClosure {
       //
       // Note: G1CMTask::do_marking_step() can set the G1CMTask::has_aborted()
       // flag while there may still be some work to do. (See the comment at
-      // the beginning of G1CMTask::do_marking_step() for those conditions -
-      // one of which is reaching the specified time target.) It is only
-      // when G1CMTask::do_marking_step() returns without setting the
-      // has_aborted() flag that the marking step has completed.
+      // the beginning of G1CMTask::do_marking_step() for those conditions.)
+      // It is only when G1CMTask::do_marking_step() returns without setting
+      // the has_aborted() flag that the marking step has completed.
 
-      _task->do_marking_step(1000000000.0 /* something very large */,
-                             true         /* do_termination */,
+      _task->do_marking_step(true         /* do_termination */,
                              _is_serial);
     } while (_task->has_aborted() && !_cm->has_overflown());
   }
@@ -1829,8 +1822,7 @@ public:
     }
 
     do {
-      task->do_marking_step(1000000000.0 /* something very large */,
-                            true         /* do_termination       */,
+      task->do_marking_step(true         /* do_termination       */,
                             false        /* is_serial            */);
     } while (task->has_aborted() && !_cm->has_overflown());
     // If we overflow, then we do not want to restart. We instead
@@ -2318,22 +2310,14 @@ bool G1CMTask::regular_clock_call() {
     return false;
   }
 
-  // (4) We check whether we should yield. If we have to, then we abort.
+  // (3) We check whether we should yield. If we have to, then we abort.
   if (SuspendibleThreadSet::should_yield()) {
     // We should yield. To do this we abort the task. The caller is
     // responsible for yielding.
     return false;
   }
 
-  // (5) We check whether we've reached our time quota. If we have,
-  // then we abort.
-  double elapsed_time_ms = (double)(os::current_thread_cpu_time() - _start_cpu_time_ns) / NANOSECS_PER_MILLISEC;
-  if (elapsed_time_ms > _time_target_ms) {
-    _has_timed_out = true;
-    return false;
-  }
-
-  // (6) Finally, we check whether there are enough completed STAB
+  // (4) Finally, we check whether there are enough completed SATB
   // buffers available for processing. If there are, we abort.
   SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
   if (!_draining_satb_buffers && satb_mq_set.process_completed_buffers()) {
@@ -2738,15 +2722,7 @@ void G1CMTask::attempt_termination(bool is_serial) {
   }
 }
 
-void G1CMTask::handle_abort(bool is_serial, double elapsed_time_ms) {
-  if (_has_timed_out) {
-    double diff_ms = elapsed_time_ms - _time_target_ms;
-    // Keep statistics of how well we did with respect to hitting
-    // our target only if we actually timed out (if we aborted for
-    // other reasons, then the results might get skewed).
-    _marking_step_diff_ms.add(diff_ms);
-  }
-
+void G1CMTask::handle_abort(bool is_serial) {
   if (!_cm->has_overflown()) {
     return;
   }
@@ -2794,7 +2770,7 @@ void G1CMTask::handle_abort(bool is_serial, double elapsed_time_ms) {
 
 /*****************************************************************************
 
-    The do_marking_step(time_target_ms, ...) method is the building
+    The do_marking_step(...) method is the building
     block of the parallel marking framework. It can be called in parallel
     with other invocations of do_marking_step() on different tasks
     (but only one per task, obviously) and concurrently with the
@@ -2845,9 +2821,7 @@ void G1CMTask::handle_abort(bool is_serial, double elapsed_time_ms) {
       long. During remark, all completed buffers are processed, as
       well as the filled in parts of any uncompleted buffers.
 
-    The do_marking_step() method tries to abort when the time target
-    has been reached. There are a few other cases when the
-    do_marking_step() method also aborts:
+    There are a few cases when the do_marking_step() method aborts:
 
       (1) When the marking phase has been aborted (after a Full GC).
 
@@ -2886,10 +2860,8 @@ void G1CMTask::handle_abort(bool is_serial, double elapsed_time_ms) {
     marking phase has scanned or the number of references the marking
     phase has visited reach a given limit. Additional invocations to
     the method clock have been planted in a few other strategic places
-    too. The initial reason for the clock method was to avoid calling
-    cpu time gathering too regularly, as it is quite expensive. So,
-    once it was in place, it was natural to piggy-back all the other
-    conditions on it too and not constantly check them throughout the code.
+    too. This avoids constantly checking the abort conditions throughout
+    the code.
 
     If do_termination is true then do_marking_step will enter its
     termination protocol.
@@ -2907,22 +2879,15 @@ void G1CMTask::handle_abort(bool is_serial, double elapsed_time_ms) {
 
  *****************************************************************************/
 
-void G1CMTask::do_marking_step(double time_target_ms,
-                               bool do_termination,
+void G1CMTask::do_marking_step(bool do_termination,
                                bool is_serial) {
-  assert(time_target_ms >= 1.0, "minimum granularity is 1ms");
-
-  _start_cpu_time_ns = os::current_thread_cpu_time();
+  jlong start_cpu_time_ns = os::current_thread_cpu_time();
 
   // If do_stealing is true then do_marking_step will attempt to
   // steal work from the other G1CMTasks. It only makes sense to
   // enable stealing when the termination protocol is enabled
   // and do_marking_step() is not being called serially.
   bool do_stealing = do_termination && !is_serial;
-
-  G1Predictions const& predictor = _g1h->policy()->predictor();
-  double diff_prediction_ms = predictor.predict_zero_bounded(&_marking_step_diff_ms);
-  _time_target_ms = time_target_ms - diff_prediction_ms;
 
   // set up the variables that are used in the work-based scheme to
   // call the regular clock method
@@ -2932,7 +2897,6 @@ void G1CMTask::do_marking_step(double time_target_ms,
 
   // clear all flags
   clear_has_aborted();
-  _has_timed_out = false;
   _draining_satb_buffers = false;
 
   ++_calls;
@@ -3007,13 +2971,13 @@ void G1CMTask::do_marking_step(double time_target_ms,
   // escape it by accident.
   set_cm_oop_closure(nullptr);
   jlong end_cpu_time_ns = os::current_thread_cpu_time();
-  double elapsed_time_ms = (double)(end_cpu_time_ns - _start_cpu_time_ns) / NANOSECS_PER_MILLISEC;
+  double elapsed_time_ms = (double)(end_cpu_time_ns - start_cpu_time_ns) / NANOSECS_PER_MILLISEC;
   // Update the step history.
   _step_times_ms.add(elapsed_time_ms);
 
   if (has_aborted()) {
     // The task was aborted for some reason.
-    handle_abort(is_serial, elapsed_time_ms);
+    handle_abort(is_serial);
   }
 }
 
@@ -3029,8 +2993,6 @@ G1CMTask::G1CMTask(uint worker_id,
   _partial_array_splitter(_cm->partial_array_state_manager(), _cm->max_num_tasks()),
   _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize),
   _calls(0),
-  _time_target_ms(0.0),
-  _start_cpu_time_ns(0),
   _cm_oop_closure(nullptr),
   _curr_region(nullptr),
   _finger(nullptr),
@@ -3042,16 +3004,12 @@ G1CMTask::G1CMTask(uint worker_id,
   _refs_reached_limit(0),
   _real_refs_reached_limit(0),
   _has_aborted(false),
-  _has_timed_out(false),
   _draining_satb_buffers(false),
   _step_times_ms(),
   _elapsed_time_ms(0.0),
-  _termination_time_ms(0.0),
-  _marking_step_diff_ms()
+  _termination_time_ms(0.0)
 {
   guarantee(task_queue != nullptr, "invariant");
-
-  _marking_step_diff_ms.add(0.5);
 }
 
 // These are formatting macros that are used below to ensure

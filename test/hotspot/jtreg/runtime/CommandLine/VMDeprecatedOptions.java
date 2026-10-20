@@ -29,11 +29,12 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.cli.*;
 import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.gc.GC;
 
 /*
  * @test
  * @bug 8066821
- * @summary Test that various options are deprecated. See deprecated_jvm_flags in arguments.cpp.
+ * @summary Test that various options are deprecated. See special_jvm_flags in arguments.cpp.
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -69,6 +70,9 @@ public class VMDeprecatedOptions {
             Arrays.asList(new String[][] {
             })
           );
+        }
+        if (GC.G1.isSupported()) {
+            deprecated.add(new String[] {"G1ConcMarkStepDurationMillis", "10.0"});
         }
         if (wb.isJFRIncluded()) {
             deprecated.add(new String[] {"FlightRecorder", "false"});

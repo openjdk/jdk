@@ -775,11 +775,6 @@ private:
   // Number of calls to this task
   uint                        _calls;
 
-  // When the virtual timer reaches this time, the marking step should exit
-  double                      _time_target_ms;
-  // Start cpu time of the current marking step
-  jlong                       _start_cpu_time_ns;
-
   // Oop closure used for iterations over oops
   G1CMOopClosure*             _cm_oop_closure;
 
@@ -814,8 +809,6 @@ private:
 
   // If true, then the task has aborted for some reason
   bool                        _has_aborted;
-  // Set when the task aborts because it has met its time quota
-  bool                        _has_timed_out;
   // True when we're draining SATB buffers; this avoids the task
   // aborting due to SATB buffers being available (as we're already
   // dealing with them)
@@ -827,8 +820,6 @@ private:
   double                      _elapsed_time_ms;
   // Termination time of this task
   double                      _termination_time_ms;
-
-  TruncatedSeq                _marking_step_diff_ms;
 
   // Updates the local fields after this task has claimed
   // a new region to scan
@@ -849,7 +840,7 @@ private:
   void attempt_termination(bool is_serial);
 
   // Handles the has_aborted scenario.
-  void handle_abort(bool is_serial, double elapsed_time_ms);
+  void handle_abort(bool is_serial);
 
   // Called when either the words scanned or the refs visited limit
   // has been reached
@@ -901,12 +892,10 @@ public:
   // Clears all the fields that correspond to a claimed region.
   void clear_region_fields();
 
-  // The main method of this class which performs a marking step
-  // trying not to exceed the given duration. However, it might exit
-  // prematurely, according to some conditions (i.e. SATB buffers are
-  // available for processing).
-  void do_marking_step(double target_ms,
-                       bool do_termination,
+  // The main method of this class which performs a marking step. It
+  // might exit prematurely, according to some conditions (i.e. SATB
+  // buffers are available for processing).
+  void do_marking_step(bool do_termination,
                        bool is_serial);
 
   // These two calls start and stop the timer
