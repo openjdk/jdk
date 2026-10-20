@@ -23,7 +23,7 @@
 
 /*
  * @test TestMetaspaceFirstGC
- * @bug 8208250 8391711 8392597
+ * @bug 8208250 8391711 8392597 8394782
  * @summary Verify that the first metadata GC request seen after startup is made when metaspace reaches the MetaspaceSize threshold
  * @requires vm.hasJFR
  * @requires vm.gc != "Shenandoah"
@@ -117,8 +117,9 @@ public class TestMetaspaceFirstGC {
         try (RecordingStream rs = new RecordingStream()) {
             // a concurrent collector may fold the requested GC into a cycle that is already
             // running and never emit the cause, the failed allocation inside loadOneClass is the
-            // candidate, whether a GC was really asked for is checked afterwards. A failure outside
-            // loadOneClass stops the loading too, the first request can't be measured after that
+            // candidate, whether a GC was really asked for is checked afterwards.
+            // A failure outside loadOneClass also stops loading; the recording determines
+            // whether it preceded the candidate and made the measurement unusable.
             rs.enable(EventNames.MetaspaceAllocationFailure).withStackTrace();
             rs.onEvent(EventNames.MetaspaceAllocationFailure, event -> metadataGC.countDown());
             rs.startAsync();
