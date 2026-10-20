@@ -3919,6 +3919,7 @@ const char* GraphBuilder::check_can_parse(ciMethod* callee) const {
 const char* GraphBuilder::should_not_inline(ciMethod* callee) const {
   if ( compilation()->directive()->should_not_inline(callee, compilation()->env()->comp_level())) return "disallowed by CompileCommand";
   if ( callee->dont_inline())          return "don't inline by annotation";
+  if (StressExcludeInlining && Stress::should_exclude_inlining(callee, compiler_c1)) return "excluded by StressExcludeInlining";
   return nullptr;
 }
 

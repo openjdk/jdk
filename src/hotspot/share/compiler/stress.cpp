@@ -22,11 +22,14 @@
  *
  */
 
+#include "ci/ciMethod.hpp"
+#include "classfile/altHashing.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/stress.hpp"
+#include "oops/method.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
 #include "utilities/ticks.hpp"
@@ -108,4 +111,35 @@ const uint RANDOMIZED_DOMAIN_MASK = (1 << (RANDOMIZED_DOMAIN_POW + 1)) - 1;
 // We don't care about the domain size as long as (RANDOMIZED_DOMAIN / count) is large.
 bool Stress::randomized_select(uint count) {
   return (random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
+}
+
+static const uint COMPILATION_SALT = 0;
+static const uint INLINING_SALT    = 1 << 8;
+
+static bool randomized_exclude(uint salt, const Symbol* holder, const Symbol* name, const Symbol* signature) {
+  uint64_t seed = (static_cast<uint64_t>(StressSeed) << 32) | salt;
+  uint32_t hash = AltHashing::halfsiphash_32(seed, holder->base(), holder->utf8_length());
+  hash = AltHashing::halfsiphash_32(hash, name->base(), name->utf8_length());
+  hash = AltHashing::halfsiphash_32(hash, signature->base(), signature->utf8_length());
+  return hash % StressExcludeMean == 0;
+}
+
+bool Stress::should_exclude_compilation(const Method* method, int comp_level) {
+  if (method->is_native() || method->is_method_handle_intrinsic()) {
+    return false;
+  }
+  CompilerType comp = is_c1_compile(comp_level) ? compiler_c1 : compiler_c2;
+  return randomized_exclude(COMPILATION_SALT | comp,
+                            method->method_holder()->name(), method->name(), method->signature());
+}
+
+bool Stress::should_exclude_inlining(ciMethod* callee, CompilerType comp) {
+  if (callee->force_inline() || callee->is_method_handle_intrinsic() ||
+      callee->intrinsic_id() != vmIntrinsics::_none) {
+    return false;
+  }
+  return randomized_exclude(INLINING_SALT | comp,
+                            callee->holder()->name()->get_symbol(),
+                            callee->name()->get_symbol(),
+                            callee->signature()->as_symbol()->get_symbol());
 }
