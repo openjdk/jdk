@@ -189,8 +189,6 @@ public:
 
   virtual bool is_concurrent_mark_in_progress() = 0;
   void confirm_heuristics_mode();
-
-  virtual void record_success_concurrent(bool abbreviated, size_t gc_id);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP

@@ -428,7 +428,9 @@ void ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
     if (alloc_stall_count() == 0) {
       _heap->notify_gc_progress();
     }
-    generation->update_completed_gc_id(get_gc_id());
+
+    // For old GC, record that it has completed the gc it started
+    generation->update_completed_gc_id(generation->started_gc_id());
     generation->heuristics()->record_concurrent_completion();
     _heap->shenandoah_policy()->record_success_old();
 
@@ -467,7 +469,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
 
     // In the generational mode, we don't use global heuristics to trigger global cycles, so
     // direct heuristic signals to the young heuristics
-    _heap->young_generation()->update_completed_gc_id(get_gc_id());
+    generation->update_completed_gc_id(get_gc_id());
     _heap->young_generation()->heuristics()->record_concurrent_completion();
     _heap->shenandoah_policy()->record_success_concurrent(get_gc_id(), generation->is_young(), gc.abbreviated());
 
@@ -701,11 +703,6 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
                                    ? ShenandoahHeap::heap()->young_generation()
                                    : ShenandoahHeap::heap()->global_generation();
   wait_for_gc_cycle(cause, generation);
-}
-
-void ShenandoahGenerationalControlThread::notify_gc_waiters() {
-  MonitorLocker ml(&_gc_waiters_lock);
-  ml.notify_all();
 }
 
 const char* ShenandoahGenerationalControlThread::gc_mode_name(GCMode mode) {

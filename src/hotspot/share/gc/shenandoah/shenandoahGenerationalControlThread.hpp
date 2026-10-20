@@ -93,6 +93,10 @@ protected:
 
   // Will also schedule an immediate full gc if old evacuations failed
   void clear_allocation_failure_and_notify_waiters() override;
+
+  // Handle whitebox requests to run old or young cycles
+  void handle_requested_gc(GCCause::Cause cause) override;
+
 private:
 
   // Executes one GC cycle
