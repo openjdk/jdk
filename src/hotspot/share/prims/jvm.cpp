@@ -23,12 +23,13 @@
  */
 
 #include "cds/aotClassInitializer.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "classfile/classFileStream.hpp"
@@ -66,7 +67,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/recordComponent.hpp"
 #include "oops/refArrayOop.inline.hpp"
 #include "oops/valueKlass.inline.hpp"
@@ -805,7 +805,6 @@ JVM_ENTRY(jint, JVM_IHashCode(JNIEnv* env, jobject handle))
     Handle ho(THREAD, obj);
     args.push_oop(ho);
     methodHandle method(THREAD, Universe::value_object_hash_code_method());
-    method->method_holder()->initialize(CHECK_0); // Ensure class ValueObjectMethods is initialized
     JavaCalls::call(&result, method, &args, THREAD);
     Exceptions::wrap_exception_in_internal_error("Internal error in hashCode", CHECK_0);
 
@@ -1347,7 +1346,7 @@ JVM_END
 JVM_ENTRY(void, JVM_DefineArchivedModules(JNIEnv *env, jobject platform_loader, jobject system_loader))
   Handle h_platform_loader (THREAD, JNIHandles::resolve(platform_loader));
   Handle h_system_loader (THREAD, JNIHandles::resolve(system_loader));
-  Modules::define_archived_modules(h_platform_loader, h_system_loader, CHECK);
+  AOTModules::define_archived_modules(h_platform_loader, h_system_loader, CHECK);
 JVM_END
 
 // Reflection support //////////////////////////////////////////////////////////////////////////////
@@ -3527,7 +3526,7 @@ JVM_END
 
 JVM_ENTRY(void, JVM_InitializeFromArchive(JNIEnv* env, jclass cls))
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
-  HeapShared::initialize_from_archived_subgraph(THREAD, k);
+  AOTHeap::initialize_from_archived_subgraph(THREAD, k);
 JVM_END
 
 JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,

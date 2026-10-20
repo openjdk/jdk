@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_SUPPORT_JFRRESOLUTION_HPP
-#define SHARE_SUPPORT_JFRRESOLUTION_HPP
+#ifndef SHARE_JFR_SUPPORT_JFRRESOLUTION_HPP
+#define SHARE_JFR_SUPPORT_JFRRESOLUTION_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/exceptions.hpp"
@@ -43,4 +43,4 @@ class JfrResolution : AllStatic {
   static void on_backpatching(const Method* callee_method, JavaThread* jt);
 };
 
-#endif // SHARE_SUPPORT_JFRRESOLUTION_HPP
+#endif // SHARE_JFR_SUPPORT_JFRRESOLUTION_HPP

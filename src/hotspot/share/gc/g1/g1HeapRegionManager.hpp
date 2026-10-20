@@ -63,7 +63,7 @@ class G1HeapRegionTable : public G1BiasedMappedArray<G1HeapRegion*> {
 //
 // We keep track of three region counts:
 //
-// * num_committed_regions() is the number of currently committed regions using
+// * num_active_regions() is the number of currently active regions using
 //   the committed map. These may not be contiguous.
 // * _next_highest_used_hrm_index (not exposed outside this class) is the
 //   highest heap region index +1 for which we have G1HeapRegions.
@@ -79,7 +79,7 @@ class G1HeapRegionManager: public CHeapObj<mtGC> {
   G1RegionToSpaceMapper* _refinement_table_mapper;
 
   // Keeps track of the currently committed regions in the heap. The committed regions
-  // can either be active (ready for use) or inactive (ready for uncommit).
+  // can either be active (ready for use) or pending uncommit (ready for uncommit).
   G1CommittedRegionMap _committed_map;
 
   // Internal only. The highest heap region index +1 we allocated a G1HeapRegion instance for.
@@ -94,7 +94,7 @@ class G1HeapRegionManager: public CHeapObj<mtGC> {
   // Initialize the G1HeapRegions in the range and put them on the free list.
   void initialize_regions(uint start, uint num_regions);
 
-  // Find a contiguous set of empty or uncommitted regions of length num_regions and return
+  // Find a contiguous set of free active, pending uncommit or uncommitted regions of length num_regions and return
   // the index of the first region or G1_NO_HRM_INDEX if the search was unsuccessful.
   // Start and end defines the range to seek in, policy is first-fit.
   uint find_contiguous_in_range(uint start, uint end, uint num_regions);
@@ -147,8 +147,8 @@ class G1HeapRegionManager: public CHeapObj<mtGC> {
 
   // Expand helper for cases when the regions to expand are well defined.
   void expand_exact(uint start, uint num_regions, WorkerThreads* pretouch_workers);
-  // Expand helper activating inactive regions rather than committing new ones.
-  uint expand_inactive(uint num_regions);
+  // Expand helper activating pending uncommit regions rather than committing new ones.
+  uint expand_pending_uncommit(uint num_regions);
   // Expand helper finding new regions to commit.
   uint expand_any(uint num_regions, WorkerThreads* pretouch_workers);
 
@@ -187,8 +187,8 @@ public:
   // humongous object that hr is part of.
   inline G1HeapRegion* next_region_in_humongous(G1HeapRegion* hr) const;
 
-  // If addr is within the committed space return its corresponding
-  // G1HeapRegion, otherwise return null.
+  // Return the G1HeapRegion the given addr is in. May return null for regions
+  // that were never committed.
   inline G1HeapRegion* addr_to_region(HeapWord* addr) const;
 
   // Insert the given region into the free region list.
@@ -202,7 +202,8 @@ public:
     _free_list.add_ordered(list);
   }
 
-  // Allocate a free region with specific node index. If fails allocate with next node index.
+  // Allocate a free region on a specific node. If that fails, use the next available
+  // on another node.
   G1HeapRegion* allocate_free_region(G1HeapRegionType type, uint requested_node_index);
 
   // Allocate a humongous object from the free list
@@ -223,7 +224,7 @@ public:
     return _free_list.num_regions();
   }
 
-  uint num_used_regions() const { return num_committed_regions() - num_free_regions(); }
+  uint num_used_regions() const { return num_active_regions() - num_free_regions(); }
 
   uint num_free_regions(uint node_index) const {
     return _free_list.num_regions_on_node(node_index);
@@ -233,11 +234,11 @@ public:
     return num_free_regions() * G1HeapRegion::GrainBytes;
   }
 
-  // Return the number of regions uncommitted or ready to be uncommitted.
-  uint num_inactive_regions() const { return max_num_regions() - num_committed_regions(); }
+  // Return the number of regions uncommitted or pending uncommit.
+  uint num_non_active_regions() const { return max_num_regions() - num_active_regions(); }
 
   // Return the number of regions currently active and available for use.
-  uint num_committed_regions() const { return _committed_map.num_active_regions(); }
+  uint num_active_regions() const { return _committed_map.num_active_regions(); }
 
   // The number of regions reserved for the heap.
   uint max_num_regions() const { return (uint)_regions.length(); }
@@ -259,30 +260,30 @@ public:
 
   // Allocate the regions that contain the address range specified, committing the
   // regions if necessary. Return false if any of the regions is already committed
-  // and not free, and return the number of regions newly committed in num_regions_committed.
-  bool allocate_containing_regions(MemRegion range, size_t* num_regions_committed, WorkerThreads* pretouch_workers);
+  // and not free, and return the number of regions newly activated in num_newly_activated_regions.
+  bool allocate_containing_regions(MemRegion range, size_t* num_newly_activated_regions, WorkerThreads* pretouch_workers);
 
-  // Apply blk->do_heap_region() on all committed regions in address order,
+  // Apply blk->do_heap_region() on all active regions in address order,
   // terminating the iteration early if do_heap_region() returns true.
   void iterate(G1HeapRegionClosure* blk) const;
   void iterate(G1HeapRegionIndexClosure* blk) const;
 
   void par_iterate(G1HeapRegionClosure* blk, G1HeapRegionClaimer* hrclaimer, const uint start_index) const;
 
-  // Uncommit up to num_regions_to_remove regions that are completely free.
-  // Return the actual number of uncommitted regions.
+  // Deactivate up to num_regions_to_remove regions that are completely free for later uncommit.
+  // Return the actual number of deactivated regions.
   uint shrink_by(uint num_regions_to_remove);
 
   // Remove a number of regions starting at the specified index, which must be available,
-  // empty, and free. The regions are marked inactive and can later be uncommitted.
+  // empty, and free. The regions are marked pending uncommit and can later be uncommitted.
   void shrink_at(uint index, size_t num_regions);
 
-  // Check if there are any inactive regions that can be uncommitted.
-  bool has_inactive_regions() const;
+  // Check if there are any pending uncommit regions that can be uncommitted.
+  bool has_pending_uncommit_regions() const;
 
-  // Uncommit inactive regions. Limit the number of regions to uncommit and return
-  // actual number uncommitted.
-  uint uncommit_inactive_regions(uint limit);
+  // Uncommit pending uncommit regions. Limit the number of regions to uncommit by the
+  // given value and return actual number uncommitted.
+  uint uncommit_regions(uint max_num_regions_to_uncommit);
 
   void verify();
 

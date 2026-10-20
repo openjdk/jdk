@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,10 +93,12 @@ public class PSStreamPrintJob implements CancelablePrintJob {
         this.service = service;
     }
 
+    @Override
     public PrintService getPrintService() {
         return service;
     }
 
+    @Override
     public PrintJobAttributeSet getAttributes() {
         synchronized (this) {
             if (jobAttrSet == null) {
@@ -109,6 +111,7 @@ public class PSStreamPrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void addPrintJobListener(PrintJobListener listener) {
         synchronized (this) {
             if (listener == null) {
@@ -121,6 +124,7 @@ public class PSStreamPrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void removePrintJobListener(PrintJobListener listener) {
         synchronized (this) {
             if (listener == null || jobListeners == null ) {
@@ -220,6 +224,7 @@ public class PSStreamPrintJob implements CancelablePrintJob {
        }
     }
 
+    @Override
     public void addPrintJobAttributeListener(
                                   PrintJobAttributeListener listener,
                                   PrintJobAttributeSet attributes) {
@@ -239,6 +244,7 @@ public class PSStreamPrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void removePrintJobAttributeListener(
                                         PrintJobAttributeListener listener) {
         synchronized (this) {
@@ -259,6 +265,7 @@ public class PSStreamPrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void print(Doc doc, PrintRequestAttributeSet attributes)
         throws PrintException {
 
@@ -519,6 +526,7 @@ public class PSStreamPrintJob implements CancelablePrintJob {
     }
 
     /* Cancel PrinterJob jobs that haven't yet completed. */
+    @Override
     public void cancel() throws PrintException {
         synchronized (this) {
             if (!printing) {

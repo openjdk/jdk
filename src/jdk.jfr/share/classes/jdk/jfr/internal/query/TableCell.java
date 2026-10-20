@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ final class TableCell {
     public int getPreferredWidth() {
         return preferredWidth;
     }
+
     public void addLine(String text) {
         int contentWidth = getContentWidth();
         if (text.length() > contentWidth) {
@@ -111,10 +112,6 @@ final class TableCell {
 
     public int getContentSize() {
         return cellHeight * getContentWidth();
-    }
-
-    public List<String> getLines() {
-        return lines;
     }
 
     private String truncate(String text, int size) {
