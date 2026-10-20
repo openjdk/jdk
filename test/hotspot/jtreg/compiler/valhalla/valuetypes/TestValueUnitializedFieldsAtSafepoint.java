@@ -38,7 +38,7 @@ public class TestValueUnitializedFieldsAtSafepoint {
                           Object o3, Object o4, Object o5) {
     }
 
-    static V get(long poison) {
+    static V get() {
         return null;
     }
 
@@ -47,7 +47,7 @@ public class TestValueUnitializedFieldsAtSafepoint {
     }
 
     static int test() {
-        V v = get(1L);
+        V v = get();
         safepoint();
         return v == null ? 42 : v.o0.hashCode();
     }
