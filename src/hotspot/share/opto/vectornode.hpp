@@ -696,6 +696,34 @@ public:
   virtual uint size_of() const { return sizeof(*this); }
 };
 
+// Vector divide byte
+class DivVBNode : public VectorNode {
+public:
+  DivVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+// Vector divide short
+class DivVSNode : public VectorNode {
+public:
+  DivVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+// Vector divide int
+class DivVINode : public VectorNode {
+public:
+  DivVINode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+// Vector divide long
+class DivVLNode : public VectorNode {
+public:
+  DivVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
 // Vector divide half float
 class DivVHFNode : public VectorNode {
 public:
@@ -1186,15 +1214,19 @@ class LoadVectorNode : public LoadNode {
 #endif
 };
 
-// Load Vector from memory via index map
+// Gather:
+//   indices: int-vector of indices
+//   adr: memory address (e.g. array base plus offset)
+//   output[i] = adr[indices[i]]
+//
+// Note: assumes that indices are all in-bounds, performs no index checking.
 class LoadVectorGatherNode : public LoadVectorNode {
  public:
   LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGather);
     add_req(indices);
-    DEBUG_ONLY(bool is_subword = is_subword_type(vt->element_basic_type()));
-    assert(is_subword || indices->bottom_type()->is_vect(), "indices must be in vector");
+    assert(indices->bottom_type()->is_vect(), "indices must be in vector");
     assert(req() == MemNode::ValueIn + 1, "match_edge expects that index input is in MemNode::ValueIn");
   }
 
@@ -1249,8 +1281,13 @@ class StoreVectorNode : public StoreNode {
 #endif
 };
 
-// Store Vector into memory via index map
- class StoreVectorScatterNode : public StoreVectorNode {
+// Scatter:
+//   indices: int-vector of indices
+//   adr: memory address (e.g. array base plus offset)
+//   adr[indices[i]] = val[i]
+//
+// Note: assumes that indices are all in-bounds, performs no index checking.
+class StoreVectorScatterNode : public StoreVectorNode {
   public:
    enum { Indices = 4 };
    StoreVectorScatterNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* indices)
@@ -1310,7 +1347,12 @@ class LoadVectorMaskedNode : public LoadVectorNode {
   }
 };
 
-// Load Vector from memory via index map under the influence of a predicate register(mask).
+// Masked Gather:
+//   indices: int-vector of indices
+//   adr: memory address (e.g. array base plus offset)
+//   output[i] = mask[i] ? adr[indices[i]] : 0
+//
+// Note: assumes that indices are all in-bounds, performs no index checking.
 class LoadVectorGatherMaskedNode : public LoadVectorNode {
  public:
   LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask)
@@ -1319,7 +1361,7 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
     add_req(indices);
     add_req(mask);
     assert(req() == MemNode::ValueIn + 2, "match_edge expects that last input is in MemNode::ValueIn+1");
-    assert(is_subword_type(vt->element_basic_type()) || indices->bottom_type()->is_vect(), "indices must be in vector");
+    assert(indices->bottom_type()->is_vect(), "indices must be in vector");
   }
 
   virtual int Opcode() const;
@@ -1332,7 +1374,12 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
   }
 };
 
-// Store Vector into memory via index map under the influence of a predicate register(mask).
+// Masked Scatter:
+//   indices: int-vector of indices
+//   adr: memory address (e.g. array base plus offset)
+//   if (mask[i]) { adr[indices[i]] = val[i] }
+//
+// Note: assumes that indices are all in-bounds, performs no index checking.
 class StoreVectorScatterMaskedNode : public StoreVectorNode {
   public:
    enum { Indices = 4,
@@ -1787,6 +1834,25 @@ class VectorTestNode : public CmpNode {
   }
 };
 
+// Vector slice operation with constant index. Slices a segment of adjacent lanes,
+// starting at a given origin lane in the current vector, and continuing (as needed)
+// into an immediately following vector.
+class VectorSliceNode : public VectorNode {
+ public:
+  VectorSliceNode(Node* vec1, Node* vec2, Node* origin, const TypeVect* vt)
+    : VectorNode(vec1, vec2, origin, vt) {
+    assert(origin->is_Con(), "origin must be a constant");
+  }
+
+  virtual int Opcode() const;
+  Node* vec1() const { return in(1); }
+  Node* vec2() const { return in(2); }
+  Node* origin() const { return in(3); }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+
 // Blend two vectors based on a vector mask. For each lane, select the value
 // from the first input vector (vec1) if the corresponding mask lane is set,
 // otherwise select from the second input vector (vec2).
@@ -2156,11 +2222,10 @@ class VectorBoxAllocateNode : public CallStaticJavaNode {
 // vector value. This is a macro node expanded during vector optimization
 // phase.
 class VectorUnboxNode : public VectorNode {
- protected:
-  uint size_of() const { return sizeof(*this); }
- public:
-  VectorUnboxNode(Compile* C, const TypeVect* vec_type, Node* obj, Node* mem)
+public:
+  VectorUnboxNode(Compile* C, const TypeVect* vec_type, Node* ctrl, Node* obj, Node* mem)
     : VectorNode(mem, obj, vec_type) {
+    init_req(0, ctrl);
     init_class_id(Class_VectorUnbox);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
@@ -2171,6 +2236,11 @@ class VectorUnboxNode : public VectorNode {
   Node* mem() const { return in(1); }
   virtual Node* Identity(PhaseGVN* phase);
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
+private:
+  uint size_of() const { return sizeof(*this); }
+  bool depends_only_on_test_impl() const { return false; }
+  const TypePtr* in_adr_type_impl() const final { return TypePtr::BOTTOM; }
 };
 
 // Lane-wise right rotation of the first input by the second input.

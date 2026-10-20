@@ -110,6 +110,7 @@ class ServerImpl {
     static final long REQ_RSP_TIMER_SCHEDULE = ServerConfig.getReqRspTimerScheduleMillis();
     static final long MAX_REQ_TIME = getTimeMillis(ServerConfig.getMaxReqTime());
     static final long MAX_RSP_TIME = getTimeMillis(ServerConfig.getMaxRspTime());
+    static final boolean HOST_VALIDATION_DISABLED = ServerConfig.isHostValidationDisabled();;
     static final boolean reqRspTimeoutEnabled = MAX_REQ_TIME != -1 || MAX_RSP_TIME != -1;
     // the maximum idle duration for a connection which is currently idle but has served
     // some request in the past
@@ -538,6 +539,8 @@ class ServerImpl {
                                 if (MAX_CONNECTIONS > 0 && allConnections.size() >= MAX_CONNECTIONS) {
                                     // we've hit max limit of current open connections, so we go
                                     // ahead and close this connection without processing it
+                                    logger.log(Level.DEBUG, "connection limit reached, " +
+                                            "closing accepted connection " + chan);
                                     try {
                                         chan.close();
                                     } catch (IOException ignore) {
@@ -768,18 +771,34 @@ class ServerImpl {
                             requestLine, "Bad request line");
                     return;
                 }
+
+                // Read the request URI
                 String uriStr = requestLine.substring(start, space);
+                // Reject ambiguous URIs
+                if (uriStr.startsWith("//")) {
+                    reject(Code.HTTP_BAD_REQUEST,
+                            requestLine, "Bad request URI");
+                    return;
+                }
                 URI uri;
                 try {
                     uri = new URI(uriStr);
                 } catch (URISyntaxException e3) {
                     reject(Code.HTTP_BAD_REQUEST,
-                            requestLine, "URISyntaxException thrown");
+                            requestLine, "Bad request URI");
                     return;
                 }
+
                 start = space+1;
                 String version = requestLine.substring(start);
-                Headers headers = req.headers();
+                Headers headers;
+                try {
+                    headers = req.headers();
+                } catch (ProtocolException pe) {
+                    reject(Code.HTTP_BAD_REQUEST, requestLine,
+                            "Failed to parse headers: " + pe.getMessage());
+                    return;
+                }
                 /* check key for illegal characters */
                 for (var k : headers.keySet()) {
                     if (!isValidName(k)) {
@@ -827,6 +846,25 @@ class ServerImpl {
                     }
                     if (clen == 0) {
                         requestCompleted(connection);
+                    }
+                }
+                /* check if there's a single Host header */
+                if (!HOST_VALIDATION_DISABLED) {
+                    List<String> hostValueList = headers.get("Host");
+                    if (hostValueList == null || hostValueList.isEmpty()) {
+                        if (!version.equalsIgnoreCase("http/1.0")) {
+                            reject(400, requestLine, "Missing Host header");
+                            return;
+                        }
+                    } else if (hostValueList.size() > 1) {
+                        reject(400, requestLine, "Multiple Host headers");
+                        return;
+                    } else {
+                        String host = hostValueList.get(0);
+                        if (host.indexOf(',') != -1) {
+                            reject(400, requestLine, "Multiple Host header values");
+                            return;
+                        }
                     }
                 }
                 ctx = contexts.findContext(protocol, uri.getPath());

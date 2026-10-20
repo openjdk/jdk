@@ -22,22 +22,25 @@
  *
  */
 
+#include "code/codeCache.hpp"
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGC.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "utilities/events.hpp"
 
 
-ShenandoahOldGC::ShenandoahOldGC(ShenandoahOldGeneration* generation, ShenandoahSharedFlag& allow_preemption) :
-    ShenandoahConcurrentGC(generation, false), _old_generation(generation), _allow_preemption(allow_preemption) {
+ShenandoahOldGC::ShenandoahOldGC(ShenandoahOldGeneration* generation, ShenandoahSharedFlag& allow_preemption)
+  : ShenandoahConcurrentGC(nullptr, generation, false)
+  , _old_generation(generation)
+  , _allow_preemption(allow_preemption) {
 }
 
 // Final mark for old-gen is different for young than old, so we
@@ -64,7 +67,7 @@ void ShenandoahOldGC::op_final_mark() {
     // We need to do this because weak root cleaning reports the number of dead handles
     JvmtiTagMap::set_needs_cleaning();
 
-    _generation->prepare_regions_and_collection_set(true);
+    _generation->prepare_regions_and_collection_set();
 
     heap->set_unload_classes(false);
     heap->prepare_concurrent_roots();
@@ -73,6 +76,9 @@ void ShenandoahOldGC::op_final_mark() {
       Universe::verify();
     }
 
+    // Arm nmethods/stack for concurrent processing
+    CodeCache::arm_all_nmethods();
+
     {
       ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_mark_propagate_gc_state);
       heap->propagate_gc_state_to_all_threads();
@@ -80,10 +86,15 @@ void ShenandoahOldGC::op_final_mark() {
   }
 }
 
+// Intentionally does not update controller phase. Allocation stalls are always attributed to state of young.
 bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   auto heap = ShenandoahGenerationalHeap::heap();
   assert(!_old_generation->is_doing_mixed_evacuations(), "Should not start an old gc with pending mixed evacuations");
   assert(!_old_generation->is_preparing_for_mark(), "Old regions need to be parsable during concurrent mark.");
+  heap->release_injected_pins();
+
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent GC", "");
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_gc, /* log_heap_usage = */ true);
 
   // Enable preemption of old generation mark.
   _allow_preemption.set();
@@ -134,7 +145,7 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   // return from here with weak roots in progress. This is not a valid gc state
   // for any young collections (or allocation failures) that interrupt the old
   // collection.
-  heap->concurrent_final_roots();
+  vmop_entry_final_roots();
 
   // After concurrent old marking finishes, we reclaim immediate garbage. Further, we may also want to expand OLD in order
   // to make room for anticipated promotions and/or for mixed evacuations.  Mixed evacuations are especially likely to

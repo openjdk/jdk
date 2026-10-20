@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,27 +269,28 @@ public class EnvHelp {
                 defaultQueueSize = Integer.parseInt(s);
             }
         } catch (RuntimeException e) {
-            logger.warning("getNotifBufferSize",
-                           "Can't use System property "+
-                           BUFFER_SIZE_PROPERTY+ ": " + e);
-              logger.debug("getNotifBufferSize", e);
+            logger.warning("getNotifBufferSize", "Can't use System property " +
+                           BUFFER_SIZE_PROPERTY + ": " + e);
+            logger.debug("getNotifBufferSize", e);
         }
 
         int queueSize = defaultQueueSize;
 
         try {
             if (env.containsKey(BUFFER_SIZE_PROPERTY)) {
-                queueSize = (int)EnvHelp.getIntegerAttribute(env,BUFFER_SIZE_PROPERTY,
-                                            defaultQueueSize,0,
+                queueSize = (int)EnvHelp.getIntegerAttribute(env, BUFFER_SIZE_PROPERTY,
+                                            defaultQueueSize, 0,
                                             Integer.MAX_VALUE);
             }
         } catch (RuntimeException e) {
-            logger.warning("getNotifBufferSize",
-                           "Can't determine queuesize (using default): "+
-                           e);
+            logger.warning("getNotifBufferSize", "Can't determine queuesize (using default): " + e);
             logger.debug("getNotifBufferSize", e);
         }
 
+        // Throw if near maximum value (ArrayQueue will add one to size before creating array).
+        if (queueSize >= Integer.MAX_VALUE - 1) {
+            throw new IllegalArgumentException("Notification Buffer size too large");
+        }
         return queueSize;
     }
 

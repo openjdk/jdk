@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,15 @@ final class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
     private WComponentPeer parent;
     private FilenameFilter fileFilter;
 
+    /*
+     * The file dialog runs a nested message loop while it is open.
+     * Allow only one native file dialog at a time to prevent reentrant
+     * GetOpenFileName/GetSaveFileName.
+     */
+    private static final Object showLock = new Object();
+    private volatile boolean isShowRequested;
+    private volatile boolean isShowFinished;
+
     private Vector<WWindowPeer> blockedWindows = new Vector<>();
 
     //Needed to fix 4152317
@@ -86,20 +95,51 @@ final class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
     private native void _dispose();
     @Override
     protected void disposeImpl() {
+        isShowRequested = false;
         WToolkit.targetDisposedPeer(target, this);
         _dispose();
     }
 
-    private native void _show();
+    private native boolean _show();
     private native void _hide();
 
     @Override
     public void show() {
-        new Thread(null, this::_show, "FileDialog", 0, false).start();
+        synchronized (this) {
+            isShowRequested = true;
+            isShowFinished = false;
+        }
+        new Thread(null, this::showFileDialog, "FileDialog", 0, false).start();
+    }
+
+    private void showFileDialog() {
+        synchronized (showLock) {
+            if (!isShowRequested || isDisposed()) {
+                return;
+            }
+            if (_show()) {
+                waitForShowFinished();
+            }
+            isShowRequested = false;
+        }
+    }
+
+    private synchronized void waitForShowFinished() {
+        while (!isShowFinished) {
+            try {
+                wait();
+            } catch (InterruptedException ignored) {}
+        }
+    }
+
+    private synchronized void showFinished() {
+        isShowFinished = true;
+        notifyAll();
     }
 
     @Override
     void hide() {
+        isShowRequested = false;
         _hide();
     }
 
@@ -115,6 +155,9 @@ final class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
             } else {
                 window.modalEnable((Dialog)target);
             }
+        }
+        if (hwnd != 0 && !isShowRequested) {
+            WToolkit.executeOnEventHandlerThread(target, this::_hide);
         }
     }
 
@@ -174,6 +217,7 @@ final class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
                  fileDialog.setVisible(false);
              }
         });
+        showFinished();
     } // handleSelected()
 
     // NOTE: This method is called by privileged threads.
@@ -191,6 +235,7 @@ final class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
                  fileDialog.setVisible(false);
              }
         });
+        showFinished();
     } // handleCancel()
 
     //This whole static block is a part of 4152317 fix

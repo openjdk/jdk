@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,7 +236,7 @@ void PhaseCFG::schedule_pinned_nodes(VectorSet &visited) {
       }
 
       // process all inputs that are non null
-      for (int i = node->req()-1; i >= 0; --i) {
+      for (int i = node->len()-1; i >= 0; --i) {
         if (node->in(i) != nullptr) {
           spstack.push(node->in(i));
         }
@@ -736,7 +736,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, const bool
 
   // Compute the alias index.  Loads and stores with different alias indices
   // do not need anti-dependence edges.
-  int load_alias_idx = C->get_alias_index(load->adr_type());
+  int load_alias_idx = C->get_alias_index(load->in_adr_type());
 #ifdef ASSERT
   assert(Compile::AliasIdxTop <= load_alias_idx && load_alias_idx < C->num_alias_types(), "Invalid alias index");
   if (load_alias_idx == Compile::AliasIdxBot && C->do_aliasing() &&
@@ -904,7 +904,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, const bool
     // Compute the alias index. If the use_mem_state has an alias index
     // different from the load's, it is not anti-dependent. Wide MemBar's
     // are anti-dependent with everything (except immutable memories).
-    const TypePtr* adr_type = use_mem_state->adr_type();
+    const TypePtr* adr_type = use_mem_state->out_adr_type();
     if (!C->can_alias(adr_type, load_alias_idx))  continue;
 
     // Most slow-path runtime calls do NOT modify Java memory, but
@@ -1409,7 +1409,7 @@ bool PhaseCFG::is_cheaper_block(Block* LCA, Node* self, uint target_latency,
                                 int cand_cnt, bool in_latency) {
   if (StressGCM) {
     // Should be randomly accepted in stress mode
-    return C->randomized_select(cand_cnt);
+    return C->stress().randomized_select(cand_cnt);
   }
 
   const double delta = 1 + PROB_UNLIKELY_MAG(4);
@@ -1596,6 +1596,9 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
         early->add_inst(self);
         continue;
         break;
+      case Op_CastI2N:
+        early->add_inst(self);
+        continue;
       case Op_CheckCastPP: {
         // Don't move CheckCastPP nodes away from their input, if the input
         // is a rawptr (5071820).

@@ -75,12 +75,6 @@ public abstract class Frame implements Cloneable {
   /** Size of ConstMethod for computing BCI from BCP (FIXME: hack) */
   private static long    ConstMethodSize;
 
-  private static int pcReturnOffset;
-
-  public static int pcReturnOffset() {
-    return pcReturnOffset;
-  }
-
   protected void adjustForDeopt() {
     if (pc != null) {
       // Look for a deopt pc and if it is deopted convert to original pc
@@ -104,8 +98,6 @@ public abstract class Frame implements Cloneable {
     // FIXME: not sure whether alignment here is correct or how to
     // force it (round up to address size?)
     ConstMethodSize = ConstMethodType.getSize();
-
-    pcReturnOffset = db.lookupIntConstant("frame::pc_return_offset").intValue();
   }
 
   protected int bcpToBci(Address bcp, ConstMethod cm) {

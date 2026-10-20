@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,12 @@
  * questions.
  */
 
+// -- This file was mechanically generated: Do not edit! -- //
+
 /*
  * @test
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 VarHandleTestMethodHandleAccessLong
  */
 
@@ -44,9 +46,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
     static final long static_final_v = 0x0123456789ABCDEFL;
 
-    static long static_v;
+    static long static_v = 0x0123456789ABCDEFL;
 
-    final long final_v = 0x0123456789ABCDEFL;
+    final long final_v;
 
     long v;
 
@@ -59,6 +61,12 @@ public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
     VarHandle vhStaticFinalField;
 
     VarHandle vhArray;
+
+    public VarHandleTestMethodHandleAccessLong() {
+        final_v = 0x0123456789ABCDEFL;
+        v = 0x0123456789ABCDEFL;
+        super();
+    }
 
     @BeforeAll
     public void setup() throws Exception {
@@ -286,10 +294,30 @@ public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
 
         // Compare set and get
         {
+            hs.get(TestAccessMode.SET).invokeExact(recv, 0x0123456789ABCDEFL);
+
             long o = (long) hs.get(TestAccessMode.GET_AND_SET).invokeExact(recv, 0xCAFEBABECAFEBABEL);
             assertEquals(0x0123456789ABCDEFL, o, "getAndSet long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(0xCAFEBABECAFEBABEL, x, "getAndSet long value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, 0x0123456789ABCDEFL);
+
+            long o = (long) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(recv, 0xCAFEBABECAFEBABEL);
+            assertEquals(0x0123456789ABCDEFL, o, "getAndSetAcquire long");
+            long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(0xCAFEBABECAFEBABEL, x, "getAndSetAcquire long value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, 0x0123456789ABCDEFL);
+
+            long o = (long) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(recv, 0xCAFEBABECAFEBABEL);
+            assertEquals(0x0123456789ABCDEFL, o, "getAndSetRelease long");
+            long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(0xCAFEBABECAFEBABEL, x, "getAndSetRelease long value");
         }
 
         // get and add, add and get
@@ -574,7 +602,7 @@ public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
             assertEquals(success, false, "failing weakCompareAndSet long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(0x0123456789ABCDEFL, x, "failing weakCompareAndSetRe long value");
+            assertEquals(0x0123456789ABCDEFL, x, "failing weakCompareAndSet long value");
         }
 
         // Compare set and get
@@ -587,7 +615,6 @@ public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
             assertEquals(0xCAFEBABECAFEBABEL, x, "getAndSet long value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact(0x0123456789ABCDEFL);
 
@@ -597,7 +624,6 @@ public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
             assertEquals(0xCAFEBABECAFEBABEL, x, "getAndSetAcquire long value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact(0x0123456789ABCDEFL);
 
@@ -869,10 +895,10 @@ public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
             }
 
             {
-                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
-                assertEquals(success, false, "failing weakCompareAndSetAcquire long");
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
+                assertEquals(success, false, "failing weakCompareAndSetRelease long");
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(0xCAFEBABECAFEBABEL, x, "failing weakCompareAndSetAcquire long value");
+                assertEquals(0xCAFEBABECAFEBABEL, x, "failing weakCompareAndSetRelease long value");
             }
 
             {

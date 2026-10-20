@@ -114,10 +114,7 @@ void PhaseCFG::ensure_node_is_at_block_or_above(Node* n, Block* b) {
 // The val is the pointer being checked for nullness or
 // decodeHeapOop_not_null node if it did not fold into address.
 void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allowed_reasons) {
-  // Assume if null check need for 0 offset then always needed
-  // Intel solaris doesn't support any null checks yet and no
-  // mechanism exists (yet) to set the switches at an os_cpu level
-  if( !ImplicitNullChecks || MacroAssembler::needs_explicit_null_check(0)) return;
+  if (!ImplicitNullChecks) return;
 
   // Make sure the ptr-is-null path appears to be uncommon!
   float f = block->end()->as_MachIf()->_prob;
@@ -226,6 +223,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     case Op_StoreF:
     case Op_StoreI:
     case Op_StoreL:
+    case Op_StoreLSpecial:
     case Op_StoreP:
     case Op_StoreN:
     case Op_StoreNKlass:
@@ -314,9 +312,9 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
           tptr = base->bottom_type()->is_ptr();
         }
         // Give up if offset is not a compile-time constant.
-        if (offset == Type::OffsetBot || tptr->_offset == Type::OffsetBot)
+        if (offset == Type::OffsetBot || tptr->offset() == Type::OffsetBot)
           continue;
-        offset += tptr->_offset; // correct if base is offsetted
+        offset += tptr->offset(); // correct if base is offsetted
         // Give up if reference is beyond page size.
         if (MacroAssembler::needs_explicit_null_check(offset))
           continue;
@@ -327,21 +325,30 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       }
     }
 
-    // Check ctrl input to see if the null-check dominates the memory op
     Block *cb = get_block_for_node(mach);
-    cb = cb->_idom;             // Always hoist at least 1 block
-    if( !was_store ) {          // Stores can be hoisted only one block
-      while( cb->_dom_depth > (block->_dom_depth + 1))
-        cb = cb->_idom;         // Hoist loads as far as we want
-      // The non-null-block should dominate the memory op, too. Live
-      // range spilling will insert a spill in the non-null-block if it is
-      // needs to spill the memory op for an implicit null check.
-      if (cb->_dom_depth == (block->_dom_depth + 1)) {
-        if (cb != not_null_block) continue;
-        cb = cb->_idom;
+
+    if (was_store) {
+      // A store can only be moved from the immediate non-null successor.
+      if (cb != not_null_block) {
+        continue;
+      }
+    } else {
+      // A load can be used here only if its block is dominated by the
+      // non-null successor. Check this explicitly because a candidate load
+      // may have been scheduled on the null path instead.
+      // For example, in JDK-8389578, loop opts did not recognize equivalent
+      // oop and value-type null_marker checks, leaving a redundant check.
+      // The load was protected by earlier null checks, but its only use
+      // was in the scalarized debug info of the redundant check's uncommon
+      // trap. This allowed the load to be scheduled on that check's null path.
+      if (!not_null_block->dominates(cb)) {
+        continue;
       }
     }
-    if( cb != block ) continue;
+
+    if (not_null_block->_idom != block) {
+      continue;
+    }
 
     // Found a memory user; see if it can be hoisted to check-block
     uint vidx = 0;              // Capture index of value into memop
@@ -361,7 +368,11 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
         continue;
       }
       // Block of memory-op input
-      Block *inb = get_block_for_node(mach->in(j));
+      Block* inb = get_block_for_node(mach->in(j));
+      if (mach->in(j)->is_Con() && mach->in(j)->req() == 1 && inb == get_block_for_node(mach)) {
+        // Ignore constant loads scheduled in the same block (we can simply hoist them as well)
+        continue;
+      }
       Block *b = block;          // Start from nul check
       while( b != inb && b->_dom_depth > inb->_dom_depth )
         b = b->_idom;           // search upwards for input
@@ -433,6 +444,27 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       move_node_and_its_projections_to_block(val, block);
     }
   }
+
+  // Hoist constant load inputs as well.
+  for (uint i = 1; i < best->req(); ++i) {
+    Node* n = best->in(i);
+    if (n->is_Con() && get_block_for_node(n) == get_block_for_node(best)) {
+      get_block_for_node(n)->find_remove(n);
+      block->add_inst(n);
+      map_node_to_block(n, block);
+      // Constant loads may kill flags (for example, when XORing a register).
+      // Check for flag-killing projections that also need to be hoisted.
+      for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+        Node* proj = n->fast_out(j);
+        if (proj->is_MachProj()) {
+          get_block_for_node(proj)->find_remove(proj);
+          block->add_inst(proj);
+          map_node_to_block(proj, block);
+        }
+      }
+    }
+  }
+
 
   // Move any MachTemp inputs to the end of the test block.
   for (uint i = 0; i < best->req(); i++) {
@@ -692,7 +724,7 @@ Node* PhaseCFG::select(
     cand_cnt++;
     if (choice < n_choice ||
         (choice == n_choice &&
-         ((StressLCM && C->randomized_select(cand_cnt)) ||
+         ((StressLCM && C->stress().randomized_select(cand_cnt)) ||
           (!StressLCM &&
            (latency < n_latency ||
             (latency == n_latency &&
@@ -742,6 +774,7 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
         case Op_StoreF:
         case Op_StoreI:
         case Op_StoreL:
+        case Op_StoreLSpecial:
         case Op_StoreP:
         case Op_StoreN:
         case Op_StoreVector:
@@ -909,7 +942,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
   regs.insert(_matcher.c_frame_pointer());
 
   // Set all registers killed and not already defined by the call.
-  uint r_cnt = mcall->tf()->range()->cnt();
+  uint r_cnt = mcall->tf()->range_cc()->cnt();
   int op = mcall->ideal_Opcode();
   MachProjNode* proj = new MachProjNode(mcall, r_cnt + 1, RegMask::EMPTY, MachProjNode::fat_proj);
   map_node_to_block(proj, block);

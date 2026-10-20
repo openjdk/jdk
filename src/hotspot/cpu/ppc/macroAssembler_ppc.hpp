@@ -28,12 +28,16 @@
 
 #include "asm/assembler.hpp"
 #include "oops/accessDecorators.hpp"
+#include "runtime/signature.hpp"
 #include "utilities/macros.hpp"
 
 // MacroAssembler extends Assembler by a few frequently used macros.
 
 class ciTypeArray;
 class OopMap;
+class ciValueKlass;
+class SigEntry;
+class VMRegPair;
 
 class MacroAssembler: public Assembler {
  public:
@@ -394,6 +398,11 @@ class MacroAssembler: public Assembler {
                           Register Rmethod_toc = noreg,
                           bool scratch_emit = false);
 
+  // Value type specific methods
+#include "asm/macroAssembler_common.hpp"
+
+  void save_stack_increment(int sp_inc, int frame_size);
+
  protected:
 
   // It is imperative that all calls into the VM are handled via the
@@ -500,7 +509,7 @@ class MacroAssembler: public Assembler {
  private:
   // Helper functions for word/sub-word atomics.
   void atomic_get_and_modify_generic(Register dest_current_value, Register exchange_value,
-                                     Register addr_base, Register tmp1, Register tmp2, Register tmp3,
+                                     Register addr_base, Register tmp,
                                      bool cmpxchgx_hint, bool is_add, int size);
   void cmpxchg_loop_body(ConditionRegister flag, Register dest_current_value,
                          RegisterOrConstant compare_value, Register exchange_value,
@@ -510,43 +519,34 @@ class MacroAssembler: public Assembler {
                        Register addr_base, int semantics, bool cmpxchgx_hint, Register int_flag_success,
                        Label* failed_ext, bool contention_hint, bool weak, int size);
  public:
-  // Temps and addr_base are killed if processor does not support Power 8 instructions.
   // Result will be sign extended.
-  void getandsetb(Register dest_current_value, Register exchange_value, Register addr_base,
-                  Register tmp1, Register tmp2, Register tmp3, bool cmpxchgx_hint) {
-    atomic_get_and_modify_generic(dest_current_value, exchange_value, addr_base, tmp1, tmp2, tmp3, cmpxchgx_hint, false, 1);
+  void getandsetb(Register dest_current_value, Register exchange_value, Register addr_base, bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, exchange_value, addr_base, noreg, cmpxchgx_hint, false, 1);
   }
-  // Temps and addr_base are killed if processor does not support Power 8 instructions.
   // Result will be sign extended.
-  void getandseth(Register dest_current_value, Register exchange_value, Register addr_base,
-                  Register tmp1, Register tmp2, Register tmp3, bool cmpxchgx_hint) {
-    atomic_get_and_modify_generic(dest_current_value, exchange_value, addr_base, tmp1, tmp2, tmp3, cmpxchgx_hint, false, 2);
+  void getandseth(Register dest_current_value, Register exchange_value, Register addr_base, bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, exchange_value, addr_base, noreg, cmpxchgx_hint, false, 2);
   }
-  void getandsetw(Register dest_current_value, Register exchange_value, Register addr_base,
-                  bool cmpxchgx_hint) {
-    atomic_get_and_modify_generic(dest_current_value, exchange_value, addr_base, noreg, noreg, noreg, cmpxchgx_hint, false, 4);
+  void getandsetw(Register dest_current_value, Register exchange_value, Register addr_base, bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, exchange_value, addr_base, noreg, cmpxchgx_hint, false, 4);
   }
-  void getandsetd(Register dest_current_value, Register exchange_value, Register addr_base,
-                  bool cmpxchgx_hint);
-  // tmp2/3 and addr_base are killed if processor does not support Power 8 instructions (tmp1 is always needed).
+  void getandsetd(Register dest_current_value, Register exchange_value, Register addr_base, bool cmpxchgx_hint);
   // Result will be sign extended.
   void getandaddb(Register dest_current_value, Register inc_value, Register addr_base,
-                  Register tmp1, Register tmp2, Register tmp3, bool cmpxchgx_hint) {
-    atomic_get_and_modify_generic(dest_current_value, inc_value, addr_base, tmp1, tmp2, tmp3, cmpxchgx_hint, true, 1);
+                  Register tmp, bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, inc_value, addr_base, tmp, cmpxchgx_hint, true, 1);
   }
-  // tmp2/3 and addr_base are killed if processor does not support Power 8 instructions (tmp1 is always needed).
   // Result will be sign extended.
   void getandaddh(Register dest_current_value, Register inc_value, Register addr_base,
-                  Register tmp1, Register tmp2, Register tmp3, bool cmpxchgx_hint) {
-    atomic_get_and_modify_generic(dest_current_value, inc_value, addr_base, tmp1, tmp2, tmp3, cmpxchgx_hint, true, 2);
+                  Register tmp, bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, inc_value, addr_base, tmp, cmpxchgx_hint, true, 2);
   }
   void getandaddw(Register dest_current_value, Register inc_value, Register addr_base,
-                  Register tmp1, bool cmpxchgx_hint) {
-    atomic_get_and_modify_generic(dest_current_value, inc_value, addr_base, tmp1, noreg, noreg, cmpxchgx_hint, true, 4);
+                  Register tmp, bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, inc_value, addr_base, tmp, cmpxchgx_hint, true, 4);
   }
   void getandaddd(Register dest_current_value, Register exchange_value, Register addr_base,
                   Register tmp, bool cmpxchgx_hint);
-  // Temps, addr_base and exchange_value are killed if processor does not support Power 8 instructions.
   // compare_value must be at least 32 bit sign extended. Result will be sign extended.
   void cmpxchgb(ConditionRegister flag, Register dest_current_value,
                 RegisterOrConstant compare_value, Register exchange_value,
@@ -556,7 +556,6 @@ class MacroAssembler: public Assembler {
     cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, semantics,
                     cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 1);
   }
-  // Temps, addr_base and exchange_value are killed if processor does not support Power 8 instructions.
   // compare_value must be at least 32 bit sign extended. Result will be sign extended.
   void cmpxchgh(ConditionRegister flag, Register dest_current_value,
                 RegisterOrConstant compare_value, Register exchange_value,
@@ -813,6 +812,32 @@ class MacroAssembler: public Assembler {
   void decode_klass_not_null(Register dst, Register src = noreg);
   Register encode_klass_not_null(Register dst, Register src = noreg);
 
+  // markWord tests, kills markWord reg
+  void test_markword_is_value_type(Register markword, Label& is_value_type);
+
+  // ValueKlass queries, kills temp_reg
+  void test_oop_is_not_value_type(Register object, Label& not_value_type, bool can_be_null = true);
+
+  void test_field_is_null_free_value_type(Register flags, Label& is_null_free);
+  void test_field_is_not_null_free_value_type(Register flags, Label& not_null_free);
+  void test_field_is_flat(Register flags, Label& is_flat);
+
+  // Check oops for special arrays, i.e. flat arrays and/or null-free arrays
+  void test_oop_prototype_bit(Register oop, Register temp_reg, int32_t test_bit, bool jmp_set, Label& jmp_label, bool maybe_far = false);
+  void test_flat_array_oop(Register oop, Register temp_reg, Label& is_flat_array, bool maybe_far = false);
+  void test_non_flat_array_oop(Register oop, Register temp_reg, Label& is_non_flat_array);
+  void test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array, bool maybe_far = false);
+  void test_non_null_free_array_oop(Register oop, Register temp_reg, Label& is_non_null_free_array);
+
+  // Check array klass layout helper for flat or null-free arrays...
+  void test_flat_array_layout(Register lh, Label& is_flat_array);
+
+  void load_metadata(Register dst, Register src);
+
+  // value type data payload offsets...
+  void payload_offset(Register value_klass, Register offset);
+  void payload_address(Register oop, Register data, Register value_klass, Register t1);
+
   // SIGTRAP-based range checks for arrays.
   inline void trap_range_check_l(Register a, Register b);
   inline void trap_range_check_l(Register a, int si16);
@@ -842,6 +867,7 @@ class MacroAssembler: public Assembler {
   void clear_memory_unrolled(Register base_ptr, int cnt_dwords, Register tmp = R0, int offset = 0);
   void clear_memory_constlen(Register base_ptr, int cnt_dwords, Register tmp = R0);
   void clear_memory_doubleword(Register base_ptr, Register cnt_dwords, Register tmp = R0, long const_cnt = -1);
+  void fill_words(Register base, Register cnt, Register value);
 
   // Emitters for BigInteger.multiplyToLen intrinsic.
   inline void multiply64(Register dest_hi, Register dest_lo,
@@ -972,11 +998,8 @@ class MacroAssembler: public Assembler {
     asm_assert_mems_zero(ne, 8, mem_offset, mem_base, msg);
   }
 
-  // Calls verify_oop. If UseCompressedOops is on, decodes the oop.
-  // Preserves reg.
-  void verify_coop(Register reg, const char*);
   // Emit code to verify that reg contains a valid oop if +VerifyOops is set.
-  void verify_oop(Register reg, const char* s = "broken oop");
+  void verify_oop(Register reg, const char* s = "broken oop", bool compressed = false);
   void verify_oop_addr(RegisterOrConstant offs, Register base, const char* s = "contains broken oop");
 
   // TODO: verify method and klass metadata (compare against vptr?)
@@ -1010,6 +1033,9 @@ class MacroAssembler: public Assembler {
   void should_not_reach_here(const char* msg = nullptr) { stop(stop_shouldnotreachhere, msg); }
 
   void zap_from_to(Register low, int before, Register high, int after, Register val, Register addr) PRODUCT_RETURN;
+
+  // Value type specific methods
+  #include "asm/macroAssembler_common.hpp"
 };
 
 #endif // CPU_PPC_MACROASSEMBLER_PPC_HPP

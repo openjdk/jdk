@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.security.provider.certpath;
 
+import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -189,6 +190,16 @@ class URICertStore extends CertStoreSpi {
     }
 
     /**
+     * Maximum size for a CRL downloaded through a URICertStore
+     * in bytes. This can be controlled by the com.sun.security.crl.maxSize
+     * Security or System property. The System property, if set, overrides
+     * the Security property. The default size is 20MiB.
+     */
+    private static final long MAX_CRL_DOWNLOAD_SIZE =
+            SecurityProperties.getOverridableLongProp(
+                    "com.sun.security.crl.maxSize", 20971520, debug);
+
+    /**
      * Enumeration for the allowed schemes we support when following a
      * URI from an authorityInfoAccess extension on a certificate.
      */
@@ -228,6 +239,13 @@ class URICertStore extends CertStoreSpi {
     private static final boolean CA_ISS_ALLOW_ANY;
 
     static {
+        // Add a debug message for the configured CRL download limit
+        if (debug != null) {
+            debug.println("Maximum downloadable CRL size: " +
+                    MAX_CRL_DOWNLOAD_SIZE +
+                    ((MAX_CRL_DOWNLOAD_SIZE < 0) ? " (DISABLED)" : ""));
+        }
+
         boolean allowAny = false;
         try {
             if (Builder.USE_AIA) {
@@ -623,7 +641,19 @@ class URICertStore extends CertStoreSpi {
                 if (debug != null) {
                     debug.println("Downloading new CRL...");
                 }
-                crl = (X509CRL) factory.generateCRL(in);
+                InputStream crlIn = (MAX_CRL_DOWNLOAD_SIZE > -1) ?
+                        new SizeLimitedInputStream(in, MAX_CRL_DOWNLOAD_SIZE) :
+                        in;
+                try {
+                    crl = (X509CRL) factory.generateCRL(crlIn);
+                } catch (IllegalArgumentException iae) {
+                    // IAE should only be thrown when the CRL exceeds a
+                    // configured maximum length.
+                    if (debug != null) {
+                        debug.println("Discarding CRL: " + iae.getMessage());
+                        crl = null;
+                    }
+                }
             }
             return getMatchingCRLs(crl, selector);
         } catch (IOException | CRLException e) {
@@ -814,6 +844,61 @@ class URICertStore extends CertStoreSpi {
             }
 
             return true;
+        }
+    }
+
+    /**
+     * Stream wrapper used when an InputStream passed into a CertificateFactory
+     * needs to be size limited.  It will throw IllegalArgumentException when
+     * the downloaded resource via the underlying stream exceeds the maximum
+     * limit.
+     */
+    private static class SizeLimitedInputStream extends FilterInputStream {
+
+        private final long maxBytes;
+        private long bytesRead = 0;
+
+        private SizeLimitedInputStream(InputStream in, long maxBytes) {
+            super(in);
+            this.maxBytes = maxBytes;
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (bytesRead >= maxBytes) {
+                // We will use IAE here to differentiate this special case
+                // from other IOEs that the underlying input stream might
+                // legitimately throw.
+                throw new IllegalArgumentException("InputStream exceeded max " +
+                        "size of " + maxBytes);
+            }
+
+            int b = super.read();
+            if (b != -1) {
+                bytesRead++;
+            }
+            return b;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+
+            if (bytesRead >= maxBytes) {
+                // We will use IAE here to differentiate this special case
+                // from other IOEs that the underlying input stream might
+                // legitimately throw.
+                throw new IllegalArgumentException("InputStream exceeded max " +
+                        "size of " + maxBytes);
+            }
+
+            long remaining = maxBytes - bytesRead;
+            int toRead = (int) Math.min(len, remaining);
+
+            int n = super.read(b, off, toRead);
+            if (n != -1) {
+                bytesRead += n;
+            }
+            return n;
         }
     }
 }

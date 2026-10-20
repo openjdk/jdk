@@ -40,6 +40,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.TreeSet;
 
 import junit.framework.Test;
 
@@ -166,6 +167,101 @@ public class PriorityQueueTest extends JSR166TestCase {
         q.addAll(Arrays.asList(items));
         for (int i = SIZE - 1; i >= 0; --i)
             mustEqual(items[i], q.poll());
+    }
+
+    /**
+     * Queue contains all elements of collection used to initialize and
+     * uses the custom comparator provided to order its elements
+     */
+    public void testConstructor8() {
+        Item[] items = seqItems(SIZE);
+        MyReverseComparator cmp = new MyReverseComparator();
+        @SuppressWarnings("unchecked")
+        PriorityQueue<Item> q = new PriorityQueue<>(Arrays.asList(items), cmp);
+        assertEquals(cmp, q.comparator());
+        for (int i = SIZE - 1; i >= 0; --i)
+            mustEqual(items[i], q.poll());
+    }
+
+    /**
+     * Initializing from Collection with a comparator has the order
+     * of its elements the same as the queue initialized with a comparator
+     * and populated with Collection after initialization
+     */
+    public void testConstructor9() {
+        Item[] items = seqItems(SIZE);
+        MyReverseComparator cmp = new MyReverseComparator();
+        @SuppressWarnings("unchecked")
+        PriorityQueue<Item> q1 = new PriorityQueue<>(Arrays.asList(items), cmp);
+        @SuppressWarnings("unchecked")
+        PriorityQueue<Item> q2 = new PriorityQueue<>(SIZE, cmp);
+        q2.addAll(Arrays.asList(items));
+        for (int i = 0; i < SIZE; ++i)
+            mustEqual(q1.poll(), q2.poll());
+    }
+
+    /**
+     * Initializing from null Collection throws NPE
+     */
+    public void testConstructor10() {
+        try {
+            new PriorityQueue<Item>((Collection<Item>)null, new MyReverseComparator());
+            shouldThrow();
+        } catch (NullPointerException success) {}
+    }
+
+    /**
+     * Initializing from Collection of null elements throws NPE
+     */
+    public void testConstructor11() {
+        try {
+            new PriorityQueue<Item>(Arrays.asList(new Item[SIZE]), new MyReverseComparator());
+            shouldThrow();
+        } catch (NullPointerException success) {}
+    }
+
+    /**
+     * Initializing from PriorityQueue and its comparator
+     */
+    public void testConstructor12() {
+        Item[] items = seqItems(SIZE);
+        MyReverseComparator cmp = new MyReverseComparator();
+        @SuppressWarnings("unchecked")
+        PriorityQueue<Item> q1 = new PriorityQueue<>(cmp);
+        q1.addAll(Arrays.asList(items));
+        @SuppressWarnings("unchecked")
+        PriorityQueue<Item> q2 = new PriorityQueue<>(q1, q1.comparator());
+        for (int i = 0; i < SIZE; ++i)
+            mustEqual(q1.poll(), q2.poll());
+    }
+
+    /**
+     * Initializing from SortedSet and its comparator
+     */
+    public void testConstructor13() {
+        Item[] items = seqItems(SIZE);
+        MyReverseComparator cmp = new MyReverseComparator();
+        @SuppressWarnings("unchecked")
+        TreeSet<Item> s = new TreeSet<>(cmp);
+        s.addAll(Arrays.asList(items));
+        @SuppressWarnings("unchecked")
+        PriorityQueue<Item> q = new PriorityQueue<>(s, s.comparator());
+        for (int i = 0; i < SIZE; ++i)
+            mustEqual(q.poll(), s.removeFirst());
+    }
+
+    /**
+     * Initializing with null comparator
+     */
+    public void testConstructor14() {
+        Item[] items = seqItems(SIZE);
+        @SuppressWarnings("unchecked")
+        PriorityQueue<Item> q1 = new PriorityQueue<>((Comparator<Item>) null);
+        q1.addAll(Arrays.asList(items));
+        @SuppressWarnings("unchecked")
+        PriorityQueue<Item> q2 = new PriorityQueue<>(Arrays.asList(items), null);
+        for (int i = 0; i < SIZE; ++i)
+            mustEqual(q1.poll(), q2.poll());
     }
 
     /**

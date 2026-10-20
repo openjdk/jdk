@@ -81,6 +81,16 @@
  * @run driver compiler.codegen.TestRedundantLea StoreNParallel
  */
 
+/*
+ * @test id=Spill
+ * @bug 8020282
+ * @summary Test that we do not generate redundant leas and remove related spills on x86.
+ * @requires os.simpleArch == "x64"
+ * @modules jdk.compiler/com.sun.tools.javac.util
+ * @library /test/lib /
+ * @run driver compiler.codegen.TestRedundantLea Spill
+ */
+
 
 package compiler.codegen;
 
@@ -128,6 +138,9 @@ public class TestRedundantLea {
             case "StoreNParallel" -> {
                 framework = new TestFramework(StoreNTest.class);
                 framework.addFlags("-XX:+UseParallelGC");
+            }
+            case "Spill" -> {
+                framework = new TestFramework(SpillTest.class);
             }
             default -> {
                 throw new IllegalArgumentException("Unknown test name \"" + testName +"\"");
@@ -274,9 +287,7 @@ class RegexFindTest {
 
 // The matcher generates leaP* rules for storing an object in an array of objects
 // at a constant offset, but only when using the Serial or Parallel GC.
-// Here, we can also manipulate the offset such that we get a leaP32Narrow rule
-// and we can demonstrate that the peephole also removes simple cases of unneeded
-// spills.
+// Here, we can also manipulate the offset such that we get a leaP32Narrow rule.
 class StoreNTest {
     private static final int SOME_SIZE = 42;
     private static final int OFFSET8BIT_IDX = 3;
@@ -287,8 +298,6 @@ class StoreNTest {
 
     private StoreNTestHelper[] classArr8bit = new StoreNTestHelper[SOME_SIZE];
     private StoreNTestHelper[] classArr32bit = new StoreNTestHelper[SOME_SIZE];
-    private Object[] objArr8bit = new Object[SOME_SIZE];
-    private Object[] objArr32bit = new Object[SOME_SIZE];
 
     @Test
     @IR(counts = {IRNode.LEA_P, "=2"},
@@ -302,13 +311,6 @@ class StoreNTest {
     @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
         phase = {CompilePhase.FINAL_CODE},
         applyIf = {"OptoPeephole", "true"})
-    // Test that the peephole removes a spill.
-    @IR(counts = {IRNode.MEM_TO_REG_SPILL_COPY, "=4"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIfAnd ={"OptoPeephole", "false", "UseCompactObjectHeaders", "false"})
-    @IR(counts = {IRNode.MEM_TO_REG_SPILL_COPY, "=3"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIfAnd ={"OptoPeephole", "true", "UseCompactObjectHeaders", "false"})
     public void testRemoveSpill() {
         this.classArr8bit[OFFSET8BIT_IDX] = new StoreNTestHelper(CURRENT, OTHER);
         this.classArr32bit[OFFSET32BIT_IDX] = new StoreNTestHelper(OTHER, CURRENT);
@@ -331,40 +333,6 @@ class StoreNTest {
         this.classArr8bit[OFFSET8BIT_IDX] = new StoreNTestHelper(CURRENT, OTHER);
         this.classArr8bit[OFFSET32BIT_IDX] = new StoreNTestHelper(CURRENT, OTHER);
     }
-
-    @Test
-    @IR(counts = {IRNode.LEA_P, "=2"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIfPlatform = {"mac", "false"})
-    // Negative test
-    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=2"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"OptoPeephole", "false"})
-    // Test that the peephole worked for leaPCompressedOopOffset
-    @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"OptoPeephole", "true"})
-    public void testNoAlloc() {
-        this.objArr8bit[OFFSET8BIT_IDX] = CURRENT;
-        this.objArr32bit[OFFSET32BIT_IDX] = OTHER;
-    }
-
-    @Test
-    @IR(counts = {IRNode.LEA_P, "=2"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIfPlatform = {"mac", "false"})
-    // Negative test
-    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"OptoPeephole", "false"})
-    // Test that the peephole worked for leaPCompressedOopOffset
-    @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"OptoPeephole", "true"})
-    public void testNoAllocSameArray() {
-        this.objArr8bit[OFFSET8BIT_IDX] = CURRENT;
-        this.objArr8bit[OFFSET32BIT_IDX] = OTHER;
-    }
 }
 
 class StoreNTestHelper {
@@ -374,5 +342,56 @@ class StoreNTestHelper {
     public StoreNTestHelper(Object o1, Object o2) {
         this.o1 = o1;
         this.o2 = o2;
+    }
+}
+
+// This test validates that the peephole removes simple spills.
+// The code for the test originates from compiler/escapeAnalysis/Test6775880.java.
+class SpillTest {
+    int cnt;
+    int b[];
+    String s;
+
+    @Run(test = "test")
+    public static void run() {
+        SpillTest t = new SpillTest();
+        t.cnt = 3;
+        t.b = new int[3];
+        t.b[0] = 0;
+        t.b[1] = 1;
+        t.b[2] = 2;
+        int j = 0;
+        t.s = "";
+        t.test();
+    }
+
+    @Test
+    // TODO: Make tests more precise
+    @IR(counts = {IRNode.LEA_P, "=2"},
+        phase = {CompilePhase.FINAL_CODE},
+        applyIfPlatform = {"mac", "false"})
+    // Negative test
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, ">=2"},
+        phase = {CompilePhase.FINAL_CODE},
+        applyIf = {"OptoPeephole", "false"})
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "<=2"},
+        phase = {CompilePhase.FINAL_CODE},
+        applyIf = {"OptoPeephole", "true"})
+    // Test that the peephole removes a spill.
+    @IR(counts = {IRNode.MEM_TO_REG_SPILL_COPY, ">=18"},
+        phase = {CompilePhase.FINAL_CODE},
+        applyIf = {"OptoPeephole", "false"})
+    @IR(counts = {IRNode.MEM_TO_REG_SPILL_COPY, ">=16"},
+        phase = {CompilePhase.FINAL_CODE},
+        applyIf = {"OptoPeephole", "true"})
+    String test() {
+        String res = "";
+        for (int i = 0; i < cnt; i++) {
+            if (i != 0) {
+                res = res + ".";
+            }
+            res = res + b[i];
+        }
+        return res;
     }
 }

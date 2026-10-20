@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,9 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 import java.util.NoSuchElementException;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 final class TestSymbolLookupFindOrThrow {
 
@@ -44,7 +43,7 @@ final class TestSymbolLookupFindOrThrow {
     @Test
     void findOrThrow() {
         MemorySegment symbol = SymbolLookup.loaderLookup().findOrThrow("foo");
-        Assertions.assertNotEquals(0, symbol.address());
+        assertNotEquals(0, symbol.address());
     }
 
     @Test

@@ -89,15 +89,19 @@ public class TestTrampoline {
     }
 
     static class Test {
-        private static void test(String s, int i) {
+        // Use a StringBuilder to avoid issues with String.charAt() not being
+        // inlined on Windows because its UTF-16 path was executed at startup
+        // but not enough for C2 to inline it.
+        private static void test(StringBuilder s, int i) {
             if (s.charAt(i) > 128)
                 throw new RuntimeException();
         }
 
         public static void main(String[] args) {
-            String s = "Returns the char value at the specified index.";
+            var sb = new StringBuilder();
+            sb.append("Returns the char value at the specified index.");
             for (int i = 0; i < ITERATIONS_TO_HEAT_LOOP; ++i) {
-                test(s, i % s.length());
+                test(sb, i % sb.length());
             }
         }
     }

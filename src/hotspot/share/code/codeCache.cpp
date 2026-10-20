@@ -22,6 +22,7 @@
  *
  */
 
+#include "code/aotCodeCache.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/codeHeapState.hpp"
@@ -30,6 +31,7 @@
 #include "code/dependencyContext.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
+#include "code/vtableStubs.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -37,6 +39,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gcCause.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
@@ -231,13 +234,30 @@ void CodeCache::initialize_heaps() {
   assert(heap_available(CodeBlobType::MethodNonProfiled), "MethodNonProfiled heap is always available for segmented code heap");
 
   uint64_t compiler_buffer_size_uint64 = 0;
-  COMPILER1_PRESENT(compiler_buffer_size_uint64 += (uint64_t)CompilationPolicy::c1_count() * Compiler::code_buffer_size());
-  COMPILER2_PRESENT(compiler_buffer_size_uint64 += (uint64_t)CompilationPolicy::c2_count() * C2Compiler::initial_code_buffer_size());
+  // Take into account AOT C1 threads in case C1 JIT compilation is disabled,
+  // the space is needed for, at least, one buffer to initialize C1 runtime.
+  int c1_count = MAX2(CompilationPolicy::c1_count(), (CompilationPolicy::ac1_count() > 0 ? 1 : 0));
+  int c2_count = CompilationPolicy::c2_count();
+  COMPILER1_PRESENT(compiler_buffer_size_uint64 += (uint64_t)c1_count * Compiler::code_buffer_size());
+  COMPILER2_PRESENT(compiler_buffer_size_uint64 += (uint64_t)c2_count * C2Compiler::initial_code_buffer_size());
   if (compiler_buffer_size_uint64 > (uint64_t)CODE_CACHE_SIZE_LIMIT) {
     err_msg msg("CICompilerCount is too large (%" PRIdPTR "): compiler buffer size exceeds the CodeCache size limit", CICompilerCount);
     vm_exit_during_initialization(msg);
   }
   size_t compiler_buffer_size = integer_cast_permit_tautology<size_t>(compiler_buffer_size_uint64);
+
+  // During AOT assembly phase more compiler threads are used
+  // and C2 temp buffer is bigger.
+  // But due to rounding issue the total code cache size could be smaller
+  // than during production run. We can not use AOT code in such case
+  // because branch and call instructions will be incorrect.
+  //
+  // Increase code cache size to guarantee that total size
+  // will be bigger during assembly phase.
+  if (AOTCodeCache::maybe_dumping_code()) {
+    cache_size += align_up(compiler_buffer_size, min_size);
+    cache_size = MIN2(cache_size, CODE_CACHE_SIZE_LIMIT);
+  }
 
   if (!non_nmethod.set) {
     non_nmethod.size += compiler_buffer_size;
@@ -592,6 +612,27 @@ CodeBlob* CodeCache::next_blob(CodeHeap* heap, CodeBlob* cb) {
   return (CodeBlob*)heap->next(cb);
 }
 
+static int report_code_heap_full_event(CodeBlobType code_blob_type) {
+  CodeHeap* heap = CodeCache::get_code_heap(code_blob_type);
+  assert(heap != nullptr, "heap is null");
+  int full_count = heap->report_full();
+  EventCodeCacheFull event;
+  if (event.should_commit()) {
+    event.set_codeBlobType((u1)code_blob_type);
+    event.set_startAddress((u8)heap->low_boundary());
+    event.set_commitedTopAddress((u8)heap->high());
+    event.set_reservedTopAddress((u8)heap->high_boundary());
+    event.set_entryCount(heap->blob_count());
+    event.set_methodCount(heap->nmethod_count());
+    event.set_adaptorCount(heap->adapter_count());
+    event.set_unallocatedCapacity(heap->unallocated_capacity());
+    event.set_fullCount(full_count);
+    event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
+    event.commit();
+  }
+  return full_count;
+}
+
 /**
  * Do not seize the CodeCache lock here--if the caller has not
  * already done so, we are going to lose bigtime, since the code
@@ -637,9 +678,6 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
             type = CodeBlobType::MethodNonProfiled;
           }
           break;
-        case CodeBlobType::MethodHot:
-          type = CodeBlobType::MethodNonProfiled;
-          break;
         default:
           break;
         }
@@ -654,6 +692,8 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
       if (handle_alloc_failure) {
         MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
         CompileBroker::handle_full_code_cache(orig_code_blob_type);
+      } else if (orig_code_blob_type == CodeBlobType::MethodHot) {
+        report_code_heap_full_event(orig_code_blob_type);
       }
       return nullptr;
     } else {
@@ -813,7 +853,8 @@ void CodeCache::update_cold_gc_count() {
   size_t used = max - free;
   double gc_interval = time - last_time;
 
-  _unloading_threshold_gc_requested = false;
+  AtomicAccess::store(&_unloading_threshold_gc_state, UnloadingRequestState::Idle);
+
   _last_unloading_time = time;
   _last_unloading_used = used;
 
@@ -888,7 +929,7 @@ void CodeCache::gc_on_allocation() {
   double free_ratio = double(free) / double(max);
   if (free_ratio <= StartAggressiveSweepingAt / 100.0)  {
     // In case the GC is concurrent, we make sure only one thread requests the GC.
-    if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
+    if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_state, UnloadingRequestState::Idle, UnloadingRequestState::Active) == UnloadingRequestState::Idle) {
       log_info(codecache)("Triggering aggressive GC due to having only %.3f%% free memory", free_ratio * 100.0);
       Universe::heap()->collect(GCCause::_codecache_GC_aggressive);
     }
@@ -914,7 +955,7 @@ void CodeCache::gc_on_allocation() {
   // it is eventually invoked to avoid trouble.
   if (allocated_since_last_ratio > threshold) {
     // In case the GC is concurrent, we make sure only one thread requests the GC.
-    if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
+    if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_state, UnloadingRequestState::Idle, UnloadingRequestState::Active) == UnloadingRequestState::Idle) {
       log_info(codecache)("Triggering threshold (%.3f%%) GC due to allocating %.3f%% since last unloading (%.3f%% used -> %.3f%% used)",
                           threshold * 100.0, allocated_since_last_ratio * 100.0, last_used_ratio * 100.0, used_ratio * 100.0);
       Universe::heap()->collect(GCCause::_codecache_GC_threshold);
@@ -934,7 +975,7 @@ uint64_t CodeCache::_cold_gc_count = INT_MAX;
 
 double CodeCache::_last_unloading_time = 0.0;
 size_t CodeCache::_last_unloading_used = 0;
-volatile bool CodeCache::_unloading_threshold_gc_requested = false;
+volatile CodeCache::UnloadingRequestState CodeCache::_unloading_threshold_gc_state = UnloadingRequestState::Idle;
 TruncatedSeq CodeCache::_unloading_gc_intervals(10 /* samples */);
 TruncatedSeq CodeCache::_unloading_allocation_rates(10 /* samples */);
 
@@ -967,6 +1008,23 @@ void CodeCache::on_gc_marking_cycle_finish() {
   assert(is_gc_marking_cycle_active(), "Marking cycle started before last one finished");
   ++_gc_epoch;
   update_cold_gc_count();
+}
+
+void CodeCache::defer_unloading_gc_request() {
+  assert_at_safepoint();
+  assert(_unloading_threshold_gc_state == UnloadingRequestState::Active, "only defer active requests");
+  AtomicAccess::store(&_unloading_threshold_gc_state, UnloadingRequestState::Deferred);
+}
+
+void CodeCache::clear_deferred_unloading_gc_request() {
+  // Codecache marking may still be active after aborting gc marking, so we can not
+  // use is_marking_active() to check whether we are in the correct state to clear
+  // the deferred state.
+  // Requests are only deferred outside GC marking, and only cleared after
+  // at the end of whitebox, we can just clear it if it was Deferred.
+  AtomicAccess::cmpxchg(&_unloading_threshold_gc_state,
+                        UnloadingRequestState::Deferred,
+                        UnloadingRequestState::Idle);
 }
 
 void CodeCache::arm_all_nmethods() {
@@ -1162,8 +1220,8 @@ size_t CodeCache::max_distance_to_non_nmethod() {
     CodeHeap* blob = get_code_heap(CodeBlobType::NonNMethod);
     // the max distance is minimized by placing the NonNMethod segment
     // in between MethodProfiled and MethodNonProfiled segments
-    size_t dist1 = (size_t)blob->high() - (size_t)_low_bound;
-    size_t dist2 = (size_t)_high_bound - (size_t)blob->low();
+    size_t dist1 = (size_t)blob->high_boundary() - (size_t)_low_bound;
+    size_t dist2 = (size_t)_high_bound - (size_t)blob->low_boundary();
     return dist1 > dist2 ? dist1 : dist2;
   }
 }
@@ -1308,11 +1366,12 @@ static void check_live_nmethods_dependencies(DepChange& changes) {
         // Determine if dependency is already checked. table->put(...) returns
         // 'true' if the dependency is added (i.e., was not in the hashtable).
         if (table->put(*current_sig, 1)) {
-          if (deps.check_dependency() != nullptr) {
+          Klass* witness = deps.check_dependency();
+          if (witness != nullptr) {
             // Dependency checking failed. Print out information about the failed
             // dependency and finally fail with an assert. We can fail here, since
             // dependency checking is never done in a product build.
-            tty->print_cr("Failed dependency:");
+            deps.print_dependency(tty, witness, true);
             changes.print();
             nm->print();
             nm->print_dependencies_on(tty);
@@ -1338,6 +1397,13 @@ void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, KlassD
   NoSafepointVerifier nsv;
   for (DepChange::ContextStream str(changes, nsv); str.next(); ) {
     InstanceKlass* d = str.klass();
+    {
+      LogStreamHandle(Trace, dependencies) log;
+      if (log.is_enabled()) {
+        log.print("Processing context ");
+        d->name()->print_value_on(&log);
+      }
+    }
     d->mark_dependent_nmethods(deopt_scope, changes);
   }
 
@@ -1513,11 +1579,7 @@ void CodeCache::verify() {
 PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
 void CodeCache::report_codemem_full(CodeBlobType code_blob_type, bool print) {
-  // Get nmethod heap for the given CodeBlobType and build CodeCacheFull event
-  CodeHeap* heap = get_code_heap(code_blob_type);
-  assert(heap != nullptr, "heap is null");
-
-  int full_count = heap->report_full();
+  int full_count = report_code_heap_full_event(code_blob_type);
 
   if ((full_count == 1) || print) {
     // Not yet reported for this heap, report
@@ -1560,21 +1622,6 @@ void CodeCache::report_codemem_full(CodeBlobType code_blob_type, bool print) {
         CompileBroker::print_heapinfo(tty, "all", 4096); // details, may be a lot!
       }
     }
-  }
-
-  EventCodeCacheFull event;
-  if (event.should_commit()) {
-    event.set_codeBlobType((u1)code_blob_type);
-    event.set_startAddress((u8)heap->low_boundary());
-    event.set_commitedTopAddress((u8)heap->high());
-    event.set_reservedTopAddress((u8)heap->high_boundary());
-    event.set_entryCount(heap->blob_count());
-    event.set_methodCount(heap->nmethod_count());
-    event.set_adaptorCount(heap->adapter_count());
-    event.set_unallocatedCapacity(heap->unallocated_capacity());
-    event.set_fullCount(heap->full_count());
-    event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
-    event.commit();
   }
 }
 PRAGMA_DIAG_POP
@@ -1634,20 +1681,16 @@ void CodeCache::print_internals() {
 
   int i = 0;
   FOR_ALL_ALLOCABLE_HEAPS(heap) {
-    if ((_nmethod_heaps->length() >= 1) && Verbose) {
-      tty->print_cr("-- %s --", (*heap)->name());
-    }
+    int heap_total = 0;
+    tty->print_cr("-- %s --", (*heap)->name());
     FOR_ALL_BLOBS(cb, *heap) {
       total++;
+      heap_total++;
       if (cb->is_nmethod()) {
         nmethod* nm = (nmethod*)cb;
 
-        if (Verbose && nm->method() != nullptr) {
-          ResourceMark rm;
-          char *method_name = nm->method()->name_and_sig_as_C_string();
-          tty->print("%s", method_name);
-          if(nm->is_not_entrant()) { tty->print_cr(" not-entrant"); }
-        }
+        tty->print("%4d: ", heap_total);
+        CompileTask::print(tty, nm, (nm->is_not_entrant() ? "non-entrant" : ""), true, true);
 
         nmethodCount++;
 
@@ -1971,8 +2014,8 @@ void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   AllCodeBlobsIterator iter(AllCodeBlobsIterator::not_unloading);
   while (iter.next()) {
     CodeBlob *cb = iter.method();
-    if (is_stub_code_blob(cb)) {
-      // Individual stub routines are dumped after the main loop.
+    if (is_stub_code_blob(cb) || cb->is_vtable_blob()) {
+      // Individual stub routines and vtable stubs are dumped after the main loop.
       continue;
     }
     ResourceMark rm;
@@ -1991,6 +2034,13 @@ void CodeCache::write_perf_map(const char* filename, outputStream* st) {
                 (intptr_t)d->begin(), (intptr_t)d->size_in_bytes(),
                 d->group(), d->name());
   }
+  VtableStubs::vtable_stub_do([&](VtableStub* s) {
+    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s [%d]",
+                (intptr_t)s->code_begin(),
+                (intptr_t)s->code_size(),
+                s->is_vtable_stub() ? "vtable stub" : "itable stub",
+                s->index());
+  });
 }
 #endif // LINUX
 

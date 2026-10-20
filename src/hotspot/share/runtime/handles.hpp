@@ -31,6 +31,7 @@
 
 class InstanceKlass;
 class Klass;
+class ValueKlass;
 class Thread;
 
 //------------------------------------------------------------------------------------------------------------------------
@@ -128,6 +129,8 @@ DEF_HANDLE(stackChunk       , is_stackChunk_noinline       )
 DEF_HANDLE(array            , is_array_noinline            )
 DEF_HANDLE(objArray         , is_objArray_noinline         )
 DEF_HANDLE(typeArray        , is_typeArray_noinline        )
+DEF_HANDLE(flatArray        , is_flatArray_noinline        )
+DEF_HANDLE(refArray         , is_refArray_noinline         )
 
 //------------------------------------------------------------------------------------------------------------------------
 

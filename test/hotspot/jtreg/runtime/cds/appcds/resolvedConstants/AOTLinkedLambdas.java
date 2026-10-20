@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes/
+ * @modules java.base/jdk.internal.misc
  * @build AOTLinkedLambdas
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 AOTLinkedLambdasApp InitTracker
@@ -41,50 +42,47 @@
 
 import java.util.function.Supplier;
 import static java.util.stream.Collectors.*;
+import jdk.internal.misc.Unsafe;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.cds.SimpleCDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class AOTLinkedLambdas {
-    static final String classList = "AOTLinkedLambdas.classlist";
     static final String appJar = ClassFileInstaller.getJarPath("app.jar");
     static final String mainClass = AOTLinkedLambdasApp.class.getName();
 
     public static void main(String[] args) throws Exception {
-        CDSTestUtils.dumpClassList(classList, "-cp", appJar, mainClass)
-            .assertNormalExit(output -> {
-                output.shouldContain("Hello AOTLinkedLambdasApp");
-            });
-
-        CDSOptions opts = (new CDSOptions())
-            .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
+        SimpleCDSAppTester t = SimpleCDSAppTester.of("AOTLinkedLambdas")
+            .classpath(appJar)
+            .addVmArgs("-esa", // see JDK-8340836
                        "-XX:+AOTClassLinking",
+                       "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                        "-Xlog:aot+resolve=trace",
                        "-Xlog:aot+class=debug",
-                       "-Xlog:cds+class=debug",
-                       "-cp", appJar);
+                       "-Xlog:cds+class=debug")
+            .appCommandLine(mainClass)
+            .setTrainingChecker((OutputAnalyzer output) -> {
+                output.shouldContain("Hello AOTLinkedLambdasApp");
+            })
+            .setAssemblyChecker((OutputAnalyzer dumpOut) -> {
+                dumpOut.shouldContain("Can aot-resolve Lambda proxy of interface type IA");
+                dumpOut.shouldContain("Can aot-resolve Lambda proxy of interface type IB");
+                dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IC");
+                dumpOut.shouldContain("Can aot-resolve Lambda proxy of interface type ID2");
+                dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IE2"); // unsupported = IE1
+                dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IF2");
+                dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IG2");
+                dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IH3"); // unsupported = IH1
+            })
+            .runAOTTrainingAndAssemblyWorkflow();
 
-        OutputAnalyzer dumpOut = CDSTestUtils.createArchiveAndCheck(opts);
-        dumpOut.shouldContain("Can aot-resolve Lambda proxy of interface type IA");
-        dumpOut.shouldContain("Can aot-resolve Lambda proxy of interface type IB");
-        dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IC");
-        dumpOut.shouldContain("Can aot-resolve Lambda proxy of interface type ID2");
-        dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IE2"); // unsupported = IE1
-        dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IF2");
-        dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IG2");
-        dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IH3"); // unsupported = IH1
-
-        CDSOptions runOpts = (new CDSOptions())
-            .setUseVersion(false)
-            .addPrefix("-Xlog:cds",
-                       "-esa",         // see JDK-8340836
-                       "-cp", appJar)
-            .addSuffix(mainClass);
-
-        CDSTestUtils.run(runOpts)
-            .assertNormalExit("Hello AOTLinkedLambdasApp",
-                              "hello, world");
+        t.setProductionChecker((OutputAnalyzer out) -> {
+                out.shouldContain("Hello AOTLinkedLambdasApp");
+                out.shouldContain("hello, world");
+            })
+            .productionRun();
     }
 }
 
@@ -211,6 +209,13 @@ class AOTLinkedLambdasApp {
         // ID2 - has <clinit>, but no default method
         ID2 id2 = () -> {};
         id2.doit();
+        // ID1 must be initialized even though the intervening ID2 is not.
+        if (Unsafe.getUnsafe().shouldBeInitialized(ID1.class)) {
+            throw new RuntimeException("ID1 should have been initialized");
+        }
+        if (!Unsafe.getUnsafe().shouldBeInitialized(ID2.class)) {
+            throw new RuntimeException("ID2 should not have been initialized");
+        }
         InitTracker.assertOrder("InitTracker, FooB, BarB, FooA, BarA, IA, IC");
         System.out.println(ID2._dummy);
         InitTracker.assertOrder("InitTracker, FooB, BarB, FooA, BarA, IA, IC, ID2");

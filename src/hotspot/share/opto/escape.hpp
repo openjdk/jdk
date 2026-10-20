@@ -372,6 +372,13 @@ private:
   // Compute the escape state for arguments to a call.
   void process_call_arguments(CallNode *call);
 
+  // Whether a call returns one of its arguments, according to BCEA.
+  bool returns_an_argument(const CallNode* call);
+
+  // Whether a call's returned argument cannot be connected due to scalarization
+  // or type mismatches.
+  bool has_incompatible_argument_return(const CallNode* call);
+
   // Add PointsToNode node corresponding to a call
   void add_call_node(CallNode* call);
 
@@ -485,6 +492,8 @@ private:
   // Optimize ideal graph.
   void optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklist,
                             GrowableArray<MemBarStoreStoreNode*>& storestore_worklist);
+  // Expand flat accesses to accesses to each component if the object does not escape
+  void optimize_flat_accesses(GrowableArray<SafePointNode*>& sfn_worklist);
   // Optimize objects compare.
   const TypeInt* optimize_ptr_compare(Node* left, Node* right);
 
@@ -560,7 +569,9 @@ private:
   PhiNode* split_memory_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth);
 
   void  move_inst_mem(Node* n, Unique_Node_List& orig_phis);
+  bool flat_access_aliases_with(Node* flat_access, const TypeOopPtr *toop);
   Node* find_inst_mem(Node* mem, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth = 0);
+  Node* find_inst_mem_assert_no_new_node(Node* mem, int alias_idx, Unique_Node_List& orig_phi_worklist);
   Node* step_through_mergemem(MergeMemNode *mmem, int alias_idx, const TypeOopPtr *toop);
 
   Node_Array _node_map; // used for bookkeeping during type splitting
@@ -622,6 +633,9 @@ private:
   bool reduce_phi_on_safepoints(PhiNode* ophi);
   bool reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, Node* selector, Unique_Node_List& safepoints);
   void reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_worklist);
+#ifdef ASSERT
+  void verify_ram_after_reduce_phi(const Unique_Node_List &reducible_merges, const Unique_Node_List& reduced_merges);
+#endif
 
   void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {
 #ifndef PRODUCT
@@ -659,9 +673,12 @@ public:
 
   // To be used by, e.g., BarrierSetC2 impls
   Node* get_addp_base(Node* addp);
+  DEBUG_ONLY(static bool is_load_array_klass_related(const Node* uncast_base));
 
   // Utility function for nodes that load an object
   void add_objload_to_connection_graph(Node* n, Unique_Node_List* delayed_worklist);
+
+  void add_proj(Node* n, Unique_Node_List* delayed_worklist);
 
   // Add LocalVar node and edge if possible
   void add_local_var_and_edge(Node* n, PointsToNode::EscapeState es, Node* to,
@@ -687,6 +704,8 @@ public:
 
   void add_to_congraph_unsafe_access(Node* n, uint opcode, Unique_Node_List* delayed_worklist);
   bool add_final_edges_unsafe_access(Node* n, uint opcode);
+
+  static bool compatible_return(CallJavaNode* call, uint k);
 
 #ifndef PRODUCT
   static int _no_escape_counter;

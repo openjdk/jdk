@@ -90,7 +90,6 @@ private:
   Bundle*                _node_bundling_base;    // Information for instruction bundling
 
   // For deopt
-  int                    _orig_pc_slot;
   int                    _orig_pc_slot_offset_in_bytes;
 
   ConstantTable          _constant_table;        // The constant table for this compilation unit.

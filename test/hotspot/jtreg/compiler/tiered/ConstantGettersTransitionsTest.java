@@ -24,6 +24,7 @@
 /**
  * @test ConstantGettersTransitionsTest
  * @summary Test the correctness of compilation level transitions for constant getters methods
+ * @requires vm.opt.final.TieredCompilation
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
