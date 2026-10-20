@@ -1346,13 +1346,24 @@ static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src,
   intptr_t counter_contents = (ProfileCaptureRatio > 1
                                && md_base_address != nullptr
                                && dst.getMode() == Address::base_plus_offset)
-    ? get_counter(md_base_address, dst.offset(), T_LONG) : -1;
+    ? get_counter(md_base_address, dst.offset(), T_LONG) : 0;
 
   auto as_C1_masm = C1_masm->as_C1_MacroAssembler();
   auto masm = [=]() { return as_C1_masm; };
-
   __ block_comment("increment_mdo {");
-  if (ProfileCaptureRatio > 1 && counter_contents != 0) {
+  if (ProfileCaptureRatio == 1) {
+    __ increment(dst, src);
+  } else if (counter_contents != 0 || AggressiveProfileReduction) {
+    if (AggressiveProfileReduction) {
+      // Make sure the counter in memory is nonzero
+      Label nonzero;
+      __ block_comment("AggressiveProfileReduction");
+      __ ldr(rscratch1, dst);
+      __ cbz(rscratch1, nonzero);
+      __ mov(rscratch1, 1);
+      __ str(rscratch1, dst);
+      __ bind(nonzero);
+    }
     Label nope;
     int ratio_shift = exact_log2(ProfileCaptureRatio);
     __ ubfx(rscratch1, r_profile_rng, 32 - ratio_shift, ratio_shift);

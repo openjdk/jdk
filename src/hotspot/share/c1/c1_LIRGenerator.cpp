@@ -989,25 +989,25 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
     LIR_Opr tmp = new_pointer_register();  // really an intptr_t counter
     LIR_Opr step = LIR_OprFact::intConst(DataLayout::counter_increment);
 
-#if 0
-    LIR_Opr data_offset_reg = new_pointer_register();
-    __ cmove(lir_cond(cond),
-             LIR_OprFact::intptrConst(taken_count_offset),
-             LIR_OprFact::intptrConst(not_taken_count_offset),
-             data_offset_reg, as_BasicType(if_instr->x()->type()));
+    if (AggressiveProfileReduction) {
+      LabelObj *done = new LabelObj(), *yes = new LabelObj();
+      __ branch(lir_cond(cond), yes->label());
+      __ increment_counter(step, tmp, md_reg, md->constant_encoding(),
+                           LIR_OprFact::intConst(not_taken_count_offset));
+      __ branch(lir_cond_always, done->label());
+      __ branch_destination(yes->label());
+      __ increment_counter(step, tmp, md_reg, md->constant_encoding(),
+                           LIR_OprFact::intConst(taken_count_offset));
+      __ branch_destination(done->label());
+    } else {
+      LIR_Opr data_offset_reg = new_pointer_register();
+      __ cmove(lir_cond(cond),
+               LIR_OprFact::intptrConst(taken_count_offset),
+               LIR_OprFact::intptrConst(not_taken_count_offset),
+               data_offset_reg, as_BasicType(if_instr->x()->type()));
 
-    __ increment_counter(step, tmp, md_reg, md->constant_encoding(), data_offset_reg);
-#else
-    LabelObj *done = new LabelObj(), *yes = new LabelObj();
-    __ branch(lir_cond(cond), yes->label());
-    __ increment_counter(step, tmp, md_reg, md->constant_encoding(),
-                         LIR_OprFact::intConst(not_taken_count_offset));
-    __ branch(lir_cond_always, done->label());
-    __ branch_destination(yes->label());
-    __ increment_counter(step, tmp, md_reg, md->constant_encoding(),
-                         LIR_OprFact::intConst(taken_count_offset));
-    __ branch_destination(done->label());
-#endif
+      __ increment_counter(step, tmp, md_reg, md->constant_encoding(), data_offset_reg);
+    }
   }
 }
 
