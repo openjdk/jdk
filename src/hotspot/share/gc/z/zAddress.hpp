@@ -101,9 +101,9 @@ extern uint32_t  ZBackingIndexMax;
 // minus the shift of the load metadata bit start encodes the numbers 0, 1, 2 and 3.
 // These numbers in binary correspond to 00, 01, 10 and 11. The low order bit in said
 // numbers correspond to the simulated RemappedYoung[0, 1] value, and the high order bit
-// corresponds to the simulated RemappedOld[0, 1] value. On AArch64, the remap bits
-// of zpointers are the complement of this bit. So there are 3 good bits and one bad bit
-// instead. This lends itself better to AArch64 instructions.
+// corresponds to the simulated RemappedOld[0, 1] value. On AArch64 and RISCV64, the remap
+// bits of zpointers are the complement of this bit. So there are 3 good bits and one bad
+// bit instead. This lends itself better to their instructions (tbz/tbnz and slli/bgez).
 //
 // We decide the bit to be taken by having the RemappedYoungMask and RemappedOldMask
 // variables, which alternate between what two bits they accept for their corresponding
