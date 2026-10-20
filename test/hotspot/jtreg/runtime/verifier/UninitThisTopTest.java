@@ -30,32 +30,26 @@
  */
 
 public class UninitThisTopTest {
-   public static void main(String[] args) {
 
+    static void negativeTest(String testName, String errmsg) throws Exception {
+        try {
+            Class.forName(testName);
+            throw new RuntimeException("Should fail with VerifyError");
+        } catch (VerifyError e) {
+            if (!e.getMessage().contains(errmsg)) {
+                throw new RuntimeException("Wrong VerifyError: " + e.getMessage());
+            } else {
+                System.out.println("PASSED");
+            }
+        }
+    }
+
+   public static void main(String[] args) throws Exception {
         // Positive test
         UninitializedTopControl c0 = new UninitializedTopControl();
 
         // Negative tests
-        try {
-            UninitThisTop c = new UninitThisTop();
-            throw new RuntimeException("Should fail with VerifyError");
-        } catch (VerifyError e) {
-            if (!e.getMessage().contains("Type top (current frame, locals[0]) is not assignable to uninitializedThis (stack map, locals[0])")) {
-                throw new RuntimeException("Wrong VerifyError: " + e.getMessage());
-            } else {
-                System.out.println("PASSED");
-            }
-        }
-
-        try {
-            UninitializedTop c = new UninitializedTop();
-            throw new RuntimeException("Should fail with VerifyError");
-        } catch (VerifyError e) {
-            if (!e.getMessage().contains("Type top (current frame, locals[1]) is not assignable to uninitialized 5 (stack map, locals[1])")) {
-                throw new RuntimeException("Wrong VerifyError: " + e.getMessage());
-            } else {
-                System.out.println("PASSED");
-            }
-        }
+        negativeTest("UninitThisTop", "Type top (current frame, locals[0]) is not assignable to uninitializedThis (stack map, locals[0])");
+        negativeTest("UninitializedTop", "Type top (current frame, locals[1]) is not assignable to uninitialized 5 (stack map, locals[1])");
     }
 }
