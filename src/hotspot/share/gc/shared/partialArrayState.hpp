@@ -66,7 +66,7 @@ class PartialArrayState {
 
   PartialArrayState(objArrayOop array,
                     size_t index, size_t length,
-                    size_t chunk_size, size_t initial_refcount);
+                    size_t chunk_size);
 
   // Increment the ref-count by count before publishing that many tasks to a queue.
   void add_references(size_t count);
@@ -121,7 +121,7 @@ public:
 
   PartialArrayState* allocate(objArrayOop array,
                               size_t index, size_t length,
-                              size_t chunk_size, size_t initial_refcount);
+                              size_t chunk_size);
 
   // Decrement the state's ref-count by one.  If it reaches zero, recycle on
   // this allocator's free-list.  The state must belong to the same manager.

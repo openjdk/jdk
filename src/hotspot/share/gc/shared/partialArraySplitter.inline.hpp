@@ -54,7 +54,7 @@ PartialArraySplitter::start(Queue* queue,
   if (end < length) {
     TASKQUEUE_STATS_ONLY(_stats.inc_split();)
     PartialArrayState* state =
-      _allocator.allocate(array, end, length, chunk_size, 1);
+      _allocator.allocate(array, end, length, chunk_size);
     enqueue(queue, state, 1);
   }
   return Claim{array, 0, end};
