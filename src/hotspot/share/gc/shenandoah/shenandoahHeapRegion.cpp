@@ -74,7 +74,8 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _mixed_candidate_garbage_words(0),
   _update_watermark(start),
   _age(0),
-  _needs_bitmap_reset(false)
+  _needs_bitmap_reset(false),
+  _humongous_start_region(nullptr)
   {
 
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
@@ -117,7 +118,6 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
 void ShenandoahHeapRegion::make_affiliated_maybe() {
   shenandoah_assert_heaplocked();
   assert(!ShenandoahHeap::heap()->mode()->is_generational(), "Only call if non-generational");
-  _humongous_start_region = nullptr;
   switch (state()) {
    case _empty_uncommitted:
    case _empty_committed:
@@ -201,11 +201,12 @@ void ShenandoahHeapRegion::make_humongous_start_bypass(ShenandoahAffiliation aff
 void ShenandoahHeapRegion::make_humongous_cont(ShenandoahHeapRegion* humongous_start) {
   shenandoah_assert_heaplocked();
   reset_age();
-  _humongous_start_region = humongous_start;
+  assert((humongous_start != nullptr) && humongous_start->is_humongous_start(), "Precondition");
   switch (state()) {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
+     _humongous_start_region = humongous_start;
      set_state(_humongous_cont);
       return;
     default:
@@ -219,13 +220,14 @@ void ShenandoahHeapRegion::make_humongous_cont_bypass(ShenandoahAffiliation affi
   set_affiliation(affiliation);
   // Don't bother to account for affiliated regions during Full GC.  We recompute totals at end.
   reset_age();
-  _humongous_start_region = humongous_start;
+  assert((humongous_start != nullptr) && humongous_start->is_humongous_start(), "Precondition");
   switch (state()) {
     case _empty_committed:
     case _regular:
     case _humongous_start:
     case _humongous_cont:
       set_state(_humongous_cont);
+      _humongous_start_region = humongous_start;
       return;
     default:
       report_illegal_transition("humongous continuation bypass");

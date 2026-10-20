@@ -1572,7 +1572,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
     // Humongous allocation retires all regions at once: no allocation is possible anymore.
     // retire_range_from_partition() will adjust bounds on Mutator free set if appropriate and will recompute affiliated.
     _partitions.retire_range_from_partition(ShenandoahFreeSetPartitionId::Mutator, beg, end);
-    ShenandoahHeapRegion* the_start_region;
+    ShenandoahHeapRegion* the_start_region = nullptr;  // Dead initialization. Value is overwritten on first iteration before use.
     for (idx_t i = beg; i <= end; i++) {
       ShenandoahHeapRegion* r = _heap->get_region(i);
       assert(i == beg || _heap->get_region(i - 1)->index() + 1 == r->index(), "Should be contiguous");

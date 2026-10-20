@@ -281,7 +281,8 @@ private:
   // This is only read/written by a gc worker to avoid unnecessary bitmap resets
   bool _needs_bitmap_reset;
 
-  // If this is a humongous region, points to the corresponding humongous start region
+  // If this is a humongous region, points to the corresponding humongous start region.
+  // If this is not a humongous region, this don't care value should never be fetched.
   ShenandoahHeapRegion* _humongous_start_region;
 
 public:
@@ -473,7 +474,6 @@ public:
     assert(is_humongous(), "Must be part of a humongous object");
     return _humongous_start_region;
   }
-
 
   HeapWord* top() const         { return _top;     }
   void set_top(HeapWord* v)     { _top = v;        }
