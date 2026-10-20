@@ -24,7 +24,7 @@
 
 #include "cds/aotCacheAccess.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/aotHeap.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciField.hpp"
@@ -67,7 +67,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/symbolHandle.hpp"
 #include "oops/trainingData.hpp"
@@ -2010,7 +2009,7 @@ InstanceKlass::ClassState ciEnv::compute_init_state_for_aot_compile(InstanceKlas
       // are initialized in production run, but they are not recorded as init dependencies.
       // CI query should report their status as if in production run, otherwise AOT
       // code would have uncommon traps at invokedynamic calls.
-      if (HeapShared::is_core_java_lang_invoke_klass(ik)) {
+      if (AOTHeap::is_core_java_lang_invoke_klass(ik)) {
         log_trace(aot, compilation)("%d: core_java_lang_invoke: (%s) %s", task()->compile_id(), InstanceKlass::state2name(ik->init_state()), ik->external_name());
         return InstanceKlass::ClassState::fully_initialized;
       }
