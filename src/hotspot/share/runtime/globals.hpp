@@ -236,6 +236,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseIntPoly25519Intrinsics, false, DIAGNOSTIC,               \
           "Use intrinsics for sun.security.util.math.intpoly.IntegerPolynomial25519") \
                                                                             \
+  product(bool, UseIntPolyP384Intrinsics, false, DIAGNOSTIC,                \
+          "Use intrinsics for sun.security.util.math.intpoly.IntegerPolynomialP384") \
+                                                                            \
   product(size_t, LargePageSizeInBytes, 0,                                  \
           "Maximum large page size used (0 will use the default large "     \
           "page size for the environment as the maximum) "                  \
