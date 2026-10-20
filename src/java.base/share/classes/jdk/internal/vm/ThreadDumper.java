@@ -185,8 +185,8 @@ public class ThreadDumper {
         Instant now = Instant.now();
         Thread.State state = snapshot.threadState();
         writer.println("#" + thread.threadId() + " \"" + snapshot.threadName()
-                + "\" " + (thread.isVirtual() ? "virtual " : "") + state + " " + now);
-
+                + "\" " + (thread.isVirtual() ? "virtual " : "")
+                + Objects.toIdentityString(thread) + " " + state + " " + now);
         StackTraceElement[] stackTrace = snapshot.stackTrace();
         int depth = 0;
         while (depth < stackTrace.length) {
@@ -359,6 +359,7 @@ public class ThreadDumper {
             jsonWriter.writeProperty("virtual", Boolean.TRUE);
         }
         jsonWriter.writeProperty("name", snapshot.threadName());
+        jsonWriter.writeProperty("threadObj", Objects.toIdentityString(thread));
         jsonWriter.writeProperty("state", state);
 
         // park blocker
@@ -573,7 +574,6 @@ public class ThreadDumper {
                 switch (c) {
                     case '"'  -> sb.append("\\\"");
                     case '\\' -> sb.append("\\\\");
-                    case '/'  -> sb.append("\\/");
                     case '\b' -> sb.append("\\b");
                     case '\f' -> sb.append("\\f");
                     case '\n' -> sb.append("\\n");
@@ -581,7 +581,7 @@ public class ThreadDumper {
                     case '\t' -> sb.append("\\t");
                     default -> {
                         if (c <= 0x1f) {
-                            sb.append(String.format("\\u%04x", c));
+                            sb.append(String.format("\\u%04x", (int) c));
                         } else {
                             sb.append(c);
                         }

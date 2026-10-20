@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8284161 8287008 8309406 8356870 8365057
+ * @bug 8284161 8287008 8309406 8356870 8365057 8394915
  * @summary Basic test for com.sun.management.HotSpotDiagnosticMXBean.dumpThreads
  * @requires vm.continuations
  * @modules java.base/jdk.internal.vm jdk.management
@@ -48,6 +48,7 @@ import java.nio.file.Files;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -55,12 +56,12 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinWorkerThread;
+import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -69,6 +70,8 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.HotSpotDiagnosticMXBean.ThreadDumpFormat;
+import static java.lang.Thread.State.*;
+
 import jdk.test.lib.threaddump.ThreadDump;
 import jdk.test.lib.thread.VThreadPinner;
 import jdk.test.lib.thread.VThreadRunner;
@@ -119,6 +122,7 @@ class DumpThreads {
             assertNotNull(fields, "current thread not found");
             assertEquals(currentThread.getName(), fields.name());
             assertEquals(currentThread.isVirtual(), fields.isVirtual());
+            assertEquals(Objects.toIdentityString(currentThread), fields.threadObj());
         }
     }
 
@@ -137,6 +141,7 @@ class DumpThreads {
                     .orElse(null);
             assertNotNull(ti, "current thread not found");
             assertEquals(currentThread.isVirtual(), ti.isVirtual());
+            assertEquals(Objects.toIdentityString(currentThread), ti.threadObj());
         }
     }
 
@@ -174,18 +179,15 @@ class DumpThreads {
      * Test that the JSON thread dump has a thread container for the given executor.
      */
     private void testThreadContainer(ExecutorService executor, String name) throws Exception {
-        var threadRef = new AtomicReference<Thread>();
-
+        var queue = new SynchronousQueue<Thread>();
         executor.submit(() -> {
-            threadRef.set(Thread.currentThread());
+            queue.put(Thread.currentThread());
             LockSupport.park();
+            return null;
         });
 
-        // capture Thread
-        Thread thread;
-        while ((thread = threadRef.get()) == null) {
-            Thread.sleep(20);
-        }
+        // executor managed thread
+        Thread thread = queue.take();
 
         try {
             // dump threads to file and parse as JSON object
@@ -338,7 +340,7 @@ class DumpThreads {
             // released it.
             List<String> lines;
             ThreadDump.ThreadInfo ti;
-            synchronized(lock) {
+            synchronized (lock) {
                 // thread dump in plain text should include thread
                 lines = dumpThreadsToPlainText();
                 ThreadFields fields = findThread(tid, lines);
@@ -631,6 +633,104 @@ class DumpThreads {
     }
 
     /**
+     * Test thread waiting in Thread.join.
+     */
+    @ParameterizedTest
+    @MethodSource("threadFactories")
+    void testThreadJoin(ThreadFactory factory) throws Exception {
+        Thread parkingThread = factory.newThread(LockSupport::park);
+        Thread joinerThread = factory.newThread(() -> {
+            try {
+                parkingThread.join();
+            } catch (Throwable e) {
+                fail(e);
+            }
+        });
+        parkingThread.start();
+        joinerThread.start();
+        try {
+            // wait for joiner thread to wait in Thread.join
+            awaitWaiting(joinerThread, "java.lang.Thread.join");
+            long joinerTid = joinerThread.threadId();
+
+            // plain text thread dump
+            List<String> lines = dumpThreadsToPlainText();
+            ThreadFields fields = findThread(joinerTid, lines);
+            assertNotNull(fields, "thread not found");
+            assertEquals("WAITING", fields.state());
+
+            // JSON thread dump
+            ThreadDump threadDump = dumpThreadsToJson();
+            ThreadDump.ThreadInfo ti = threadDump.rootThreadContainer()
+                    .findThread(joinerTid)
+                    .orElse(null);
+            assertNotNull(ti, "Thread " + joinerTid + " not found");
+
+            // Compiled native frames have no locals. If Object.wait0 has been compiled
+            // then we may not have the object that the thread is waiting on.
+            Method wait0 = Object.class.getDeclaredMethod("wait0", long.class);
+            if (!WhiteBox.getWhiteBox().isMethodCompiled(wait0)) {
+                String expectedWaitingOn = Objects.toIdentityString(parkingThread);
+
+                // plain text dump should have "waiting on" line
+                assertTrue(contains(lines, "- waiting on <" + expectedWaitingOn));
+
+                // JSon thread dump should have waitingOn property
+                assertEquals(expectedWaitingOn, ti.waitingOn());
+            }
+        } finally {
+            LockSupport.unpark(parkingThread);
+            parkingThread.join();
+            joinerThread.join();
+        }
+    }
+
+    /**
+     * Test thread parked in StructuredTaskScope.join.
+     */
+    @ParameterizedTest
+    @MethodSource("threadFactories")
+    void testStructuredTaskScopeJoin(ThreadFactory factory) throws Exception {
+        var queue = new SynchronousQueue<StructuredTaskScope<?, ?, ?>>();
+        var thread = factory.newThread(() -> {
+            try (var scope = StructuredTaskScope.open()) {
+                queue.put(scope);
+                scope.fork(() -> LockSupport.park());
+                scope.join();
+            } catch (InterruptedException _) {
+                // expected
+            } catch (Throwable e) {
+                fail(e);
+            }
+        });
+        thread.start();
+        StructuredTaskScope<?, ?, ?> scope = queue.take();
+        awaitWaiting(thread, "java.util.concurrent.StructuredTaskScopeImpl.join");
+        long tid = thread.threadId();
+        try {
+            String scopeId = Objects.toIdentityString(scope);
+
+            // thread dump in plain text should have "parking to wait for" line
+            List<String> lines = dumpThreadsToPlainText();
+            ThreadFields fields = findThread(tid, lines);
+            assertNotNull(fields, "thread not found");
+            assertEquals("WAITING", fields.state());
+            String line = find(lines, "- parking to wait for <" + scopeId + ">");
+            assertNotNull(line, "parking to wait line not found");
+
+            // JSON thread dump should have the expected parkBlocker
+            ThreadDump threadDump = dumpThreadsToJson();
+            var ti = threadDump.rootThreadContainer()
+                    .findThread(thread.threadId())
+                    .orElseThrow();
+            assertEquals(scopeId, ti.parkBlocker());
+        } finally {
+            thread.interrupt();
+            thread.join();
+        }
+    }
+
+    /**
      * Test that dumpThreads throws if the output file already exists.
      */
     @Test
@@ -703,7 +803,11 @@ class DumpThreads {
     /**
      * Represents the data for a thread found in a plain text thread dump.
      */
-    private record ThreadFields(long tid, String name, boolean isVirtual, String state) { }
+    private record ThreadFields(long tid,
+                                String name,
+                                boolean isVirtual,
+                                String threadObj,
+                                String state) { }
 
     /**
      * Find a thread in the lines of a plain text thread dump.
@@ -717,15 +821,17 @@ class DumpThreads {
             return null;
         }
 
-        // #3 "main" RUNNABLE 2025-04-18T15:22:12.012450Z
-        // #36 "" virtual WAITING 2025-04-18T15:22:12.012450Z
-        Pattern pattern = Pattern.compile("#(\\d+)\\s+\"([^\"]*)\"\\s+(virtual\\s+)?(\\w+)\\s+(.*)");
+        // #3 "main" java.lang.Thread@1234abcd RUNNABLE 2026-10-18T15:22:12.012450Z
+        // #36 "" virtual java.lang.VirtualThread@5678abcd WAITING 2026-10-18T15:22:12.012450Z
+        var pattern = Pattern.compile(
+                "#(\\d+)\\s+\"([^\"]*)\"\\s+(virtual\\s+)?(\\S+@[0-9a-fA-F]+)\\s+(\\w+)\\s+.*");
         Matcher matcher = pattern.matcher(line);
         assertTrue(matcher.matches());
         String name = matcher.group(2);
         boolean isVirtual = "virtual ".equals(matcher.group(3));
-        String state = matcher.group(4);
-        return new ThreadFields(tid, name, isVirtual, state);
+        String threadObj = matcher.group(4);
+        String state = matcher.group(5);
+        return new ThreadFields(tid, name, isVirtual, threadObj, state);
     }
 
     /**
@@ -789,6 +895,28 @@ class DumpThreads {
             assertTrue(state != Thread.State.TERMINATED, "Thread has terminated");
             Thread.sleep(10);
             state = thread.getState();
+        }
+    }
+
+    /**
+     * Waits for the given thread to wait at the given location
+     * ({@code <class-name>.<method-name>}).
+     */
+    private static void awaitWaiting(Thread target, String location) throws InterruptedException {
+        int index = location.lastIndexOf('.');
+        String className = location.substring(0, index);
+        String methodName = location.substring(index + 1);
+        boolean found = false;
+        while (!found) {
+            Thread.State state = target.getState();
+            assertTrue(state != TERMINATED);
+            found = (state == WAITING || state == TIMED_WAITING)
+                    && Arrays.stream(target.getStackTrace())
+                    .anyMatch(f -> f.getClassName().equals(className)
+                            && f.getMethodName().equals(methodName));
+            if (!found) {
+                Thread.sleep(20);
+            }
         }
     }
 
