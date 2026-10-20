@@ -26,6 +26,7 @@
 #include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotCompressedPointers.hpp"
+#include "cds/aotHeap.inline.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMappedHeapLoader.hpp"
 #include "cds/aotMappedHeapWriter.hpp"
@@ -40,7 +41,6 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsEnumKlass.hpp"
 #include "cds/cdsHeapVerifier.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -100,13 +100,13 @@ struct ArchivableStaticFieldInfo {
   }
 };
 
-HeapArchiveMode HeapShared::_heap_load_mode = HeapArchiveMode::_uninitialized;
-HeapArchiveMode HeapShared::_heap_write_mode = HeapArchiveMode::_uninitialized;
+HeapArchiveMode AOTHeap::_heap_load_mode = HeapArchiveMode::_uninitialized;
+HeapArchiveMode AOTHeap::_heap_write_mode = HeapArchiveMode::_uninitialized;
 
-size_t HeapShared::_alloc_count[HeapShared::ALLOC_STAT_SLOTS];
-size_t HeapShared::_alloc_size[HeapShared::ALLOC_STAT_SLOTS];
-size_t HeapShared::_total_obj_count;
-size_t HeapShared::_total_obj_size;
+size_t AOTHeap::_alloc_count[AOTHeap::ALLOC_STAT_SLOTS];
+size_t AOTHeap::_alloc_size[AOTHeap::ALLOC_STAT_SLOTS];
+size_t AOTHeap::_total_obj_count;
+size_t AOTHeap::_total_obj_size;
 
 #ifdef ASSERT
 // All classes that have at least one instance in the cached heap.
@@ -140,11 +140,11 @@ static ArchivableStaticFieldInfo archive_subgraph_entry_fields[] = {
   {nullptr, nullptr},
 };
 
-KlassSubGraphInfo* HeapShared::_dump_time_special_subgraph;
-ArchivedKlassSubGraphInfoRecord* HeapShared::_run_time_special_subgraph;
-GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = nullptr;
-OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
-MetaspaceObjToOopHandleTable* HeapShared::_scratch_objects_table = nullptr;
+KlassSubGraphInfo* AOTHeap::_dump_time_special_subgraph;
+ArchivedKlassSubGraphInfoRecord* AOTHeap::_run_time_special_subgraph;
+GrowableArrayCHeap<oop, mtClassShared>* AOTHeap::_pending_roots = nullptr;
+OopHandle AOTHeap::_scratch_basic_type_mirrors[T_VOID+1];
+MetaspaceObjToOopHandleTable* AOTHeap::_scratch_objects_table = nullptr;
 static GrowableArray<int>* _dumptime_resolved_methods = nullptr;
 static Array<int>* _runtime_resolved_methods = nullptr;
 
@@ -157,7 +157,7 @@ static bool is_subgraph_root_class_of(ArchivableStaticFieldInfo fields[], Instan
   return false;
 }
 
-bool HeapShared::is_subgraph_root_class(InstanceKlass* ik) {
+bool AOTHeap::is_subgraph_root_class(InstanceKlass* ik) {
   assert(CDSConfig::is_dumping_heap(), "dump-time only");
   if (CDSConfig::is_dumping_klass_subgraphs()) {
     // Legacy CDS archive support (to be deprecated)
@@ -167,7 +167,7 @@ bool HeapShared::is_subgraph_root_class(InstanceKlass* ik) {
   }
 }
 
-oop HeapShared::CachedOopInfo::orig_referrer() const {
+oop AOTHeap::CachedOopInfo::orig_referrer() const {
   return _orig_referrer.resolve();
 }
 
@@ -175,7 +175,7 @@ oop HeapShared::CachedOopInfo::orig_referrer() const {
 // while copying the oops into the AOT heap region. We don't want to
 // have any side effects during the copying, so we avoid calling
 // p->identity_hash() which can update the object header.
-unsigned HeapShared::oop_address_hash(oop const& p) {
+unsigned AOTHeap::oop_address_hash(oop const& p) {
   assert(SafepointSynchronize::is_at_safepoint() ||
          JavaThread::current()->is_in_no_safepoint_scope(), "sanity");
   return primitive_hash(cast_from_oop<intptr_t>(p));
@@ -188,7 +188,7 @@ unsigned HeapShared::oop_address_hash(oop const& p) {
 //   copying the objects into the cache. This will allow the hashcode to be
 //   dynamically and randomly computed in each production, which generally
 //   desirable to make the hashcodes more random between runs.
-unsigned HeapShared::archived_object_cache_hash(OopHandle const& oh) {
+unsigned AOTHeap::archived_object_cache_hash(OopHandle const& oh) {
   oop o = oh.resolve();
   if (o == nullptr) {
     return 0;
@@ -208,7 +208,7 @@ unsigned HeapShared::archived_object_cache_hash(OopHandle const& oh) {
   }
 }
 
-bool HeapShared::oop_handle_equals(const OopHandle& a, const OopHandle& b) {
+bool AOTHeap::oop_handle_equals(const OopHandle& a, const OopHandle& b) {
   return a.resolve() == b.resolve();
 }
 
@@ -234,7 +234,7 @@ static void reset_states(oop obj, TRAPS) {
   }
 }
 
-void HeapShared::reset_archived_object_states(TRAPS) {
+void AOTHeap::reset_archived_object_states(TRAPS) {
   assert(CDSConfig::is_dumping_heap(), "dump-time only");
   log_debug(aot)("Resetting platform loader");
   reset_states(SystemDictionary::java_platform_loader(), CHECK);
@@ -259,7 +259,7 @@ void HeapShared::reset_archived_object_states(TRAPS) {
   reset_states(boot_loader(), CHECK);
 }
 
-void HeapShared::ensure_determinism(TRAPS) {
+void AOTHeap::ensure_determinism(TRAPS) {
   TempNewSymbol class_name = SymbolTable::new_symbol("jdk/internal/util/WeakReferenceKey");
   TempNewSymbol method_name = SymbolTable::new_symbol("ensureDeterministicAOTCache");
 
@@ -276,22 +276,22 @@ void HeapShared::ensure_determinism(TRAPS) {
   assert(result.get_jboolean() == false, "sanity");
 }
 
-void HeapShared::prepare_for_archiving(TRAPS) {
+void AOTHeap::prepare_for_archiving(TRAPS) {
   reset_archived_object_states(CHECK);
   ensure_determinism(CHECK);
 }
 
-HeapShared::ArchivedObjectCache* HeapShared::_archived_object_cache = nullptr;
+AOTHeap::ArchivedObjectCache* AOTHeap::_archived_object_cache = nullptr;
 
 // Controls the hashing method for the _archived_object_cache.
 // Changes from false to true once, after all objects are copied,
 // inside make_archived_object_cache_gc_safe().
 // See archived_object_cache_hash() for more details.
-bool HeapShared::_use_identity_hash_for_archived_object_cache = false;
+bool AOTHeap::_use_identity_hash_for_archived_object_cache = false;
 
-bool HeapShared::is_archived_heap_in_use() {
-  if (HeapShared::is_loading()) {
-    if (HeapShared::is_loading_streaming_mode()) {
+bool AOTHeap::is_archived_heap_in_use() {
+  if (AOTHeap::is_loading()) {
+    if (AOTHeap::is_loading_streaming_mode()) {
       return AOTStreamedHeapLoader::is_in_use();
     } else {
       return AOTMappedHeapLoader::is_in_use();
@@ -301,7 +301,7 @@ bool HeapShared::is_archived_heap_in_use() {
   return false;
 }
 
-bool HeapShared::can_use_archived_heap() {
+bool AOTHeap::can_use_archived_heap() {
   FileMapInfo* static_mapinfo = FileMapInfo::current_info();
   if (static_mapinfo == nullptr) {
     return false;
@@ -319,34 +319,34 @@ bool HeapShared::can_use_archived_heap() {
   return true;
 }
 
-bool HeapShared::is_too_large_to_archive(size_t size) {
-  if (HeapShared::is_writing_streaming_mode()) {
+bool AOTHeap::is_too_large_to_archive(size_t size) {
+  if (AOTHeap::is_writing_streaming_mode()) {
     return false;
   } else {
     return AOTMappedHeapWriter::is_too_large_to_archive(size);
   }
 }
 
-bool HeapShared::is_too_large_to_archive(oop obj) {
-  if (HeapShared::is_writing_streaming_mode()) {
+bool AOTHeap::is_too_large_to_archive(oop obj) {
+  if (AOTHeap::is_writing_streaming_mode()) {
     return false;
   } else {
     return AOTMappedHeapWriter::is_too_large_to_archive(obj);
   }
 }
 
-bool HeapShared::is_string_too_large_to_archive(oop string) {
+bool AOTHeap::is_string_too_large_to_archive(oop string) {
   typeArrayOop value = java_lang_String::value_no_keepalive(string);
   return is_too_large_to_archive(value);
 }
 
-void HeapShared::initialize_loading_mode(HeapArchiveMode mode) {
+void AOTHeap::initialize_loading_mode(HeapArchiveMode mode) {
   assert(_heap_load_mode == HeapArchiveMode::_uninitialized, "already set?");
   assert(mode != HeapArchiveMode::_uninitialized, "sanity");
   _heap_load_mode = mode;
 };
 
-void HeapShared::initialize_writing_mode() {
+void AOTHeap::initialize_writing_mode() {
   assert(!FLAG_IS_ERGO(AOTStreamableObjects), "Should not have been ergonomically set yet");
 
   if (!CDSConfig::is_dumping_archive()) {
@@ -383,14 +383,14 @@ void HeapShared::initialize_writing_mode() {
   }
 }
 
-void HeapShared::initialize_streaming() {
+void AOTHeap::initialize_streaming() {
   assert(is_loading_streaming_mode(), "shouldn't call this");
   if (can_use_archived_heap()) {
     AOTStreamedHeapLoader::initialize();
   }
 }
 
-void HeapShared::enable_gc() {
+void AOTHeap::enable_gc() {
 #ifdef ASSERT
   // At this point, a GC may start and will be able to see some or all
   // of the cached oops. The class of each oop seen by the GC must have
@@ -411,26 +411,26 @@ void HeapShared::enable_gc() {
   }
 }
 
-void HeapShared::materialize_thread_object() {
+void AOTHeap::materialize_thread_object() {
   if (AOTStreamedHeapLoader::is_in_use()) {
     AOTStreamedHeapLoader::materialize_thread_object();
   }
 }
 
-void HeapShared::archive_interned_string(oop string) {
-  assert(HeapShared::is_writing_mapping_mode(), "Only used by this mode");
+void AOTHeap::archive_interned_string(oop string) {
+  assert(AOTHeap::is_writing_mapping_mode(), "Only used by this mode");
   bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, string);
   assert(success, "shared strings array must not point to arrays or strings that are too large to archive");
 }
 
-void HeapShared::update_scratch_mirror_field(oop scratch_m, int field_offset, oop new_field_obj) {
+void AOTHeap::update_scratch_mirror_field(oop scratch_m, int field_offset, oop new_field_obj) {
   archive_updated_mirror_field(scratch_m->obj_field(field_offset), new_field_obj);
   scratch_m->obj_field_put(field_offset, new_field_obj);
 }
 
 // It's possible for a scratch mirror to be scanned before one of its oop fields (such as acmp_maps) is
 // updated. When this happens, we must ensure that the new oop is also archived.
-void HeapShared::archive_updated_mirror_field(oop old_field_obj, oop new_field_obj) {
+void AOTHeap::archive_updated_mirror_field(oop old_field_obj, oop new_field_obj) {
   if (old_field_obj != new_field_obj) {
     assert(old_field_obj == nullptr, "cannot update a non-null oop field that might have already been scanned");
     assert(new_field_obj != nullptr, "must be");
@@ -439,9 +439,9 @@ void HeapShared::archive_updated_mirror_field(oop old_field_obj, oop new_field_o
   }
 }
 
-void HeapShared::finalize_initialization(FileMapInfo* static_mapinfo) {
-  if (HeapShared::is_loading()) {
-    if (HeapShared::is_loading_streaming_mode()) {
+void AOTHeap::finalize_initialization(FileMapInfo* static_mapinfo) {
+  if (AOTHeap::is_loading()) {
+    if (AOTHeap::is_loading_streaming_mode()) {
       // Heap initialization can be done only after vtables are initialized by ReadClosure.
       AOTStreamedHeapLoader::finish_initialization(static_mapinfo);
     } else {
@@ -452,7 +452,7 @@ void HeapShared::finalize_initialization(FileMapInfo* static_mapinfo) {
   }
 }
 
-void HeapShared::make_archived_object_cache_gc_safe() {
+void AOTHeap::make_archived_object_cache_gc_safe() {
   ArchivedObjectCache* new_cache = new (mtClass)ArchivedObjectCache(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
 
   // It's safe to change the behavior of the hash function now, because iterate_all()
@@ -487,19 +487,19 @@ void HeapShared::make_archived_object_cache_gc_safe() {
   _archived_object_cache = new_cache;
 }
 
-HeapShared::CachedOopInfo* HeapShared::get_cached_oop_info(oop obj) {
+AOTHeap::CachedOopInfo* AOTHeap::get_cached_oop_info(oop obj) {
   OopHandle oh(Universe::vm_global(), obj);
   CachedOopInfo* result = _archived_object_cache->get(oh);
   oh.release(Universe::vm_global());
   return result;
 }
 
-bool HeapShared::has_been_archived(oop obj) {
+bool AOTHeap::has_been_archived(oop obj) {
   assert(CDSConfig::is_dumping_heap(), "dump-time only");
   return get_cached_oop_info(obj) != nullptr;
 }
 
-int HeapShared::append_root(oop obj) {
+int AOTHeap::append_root(oop obj) {
   assert(SafepointSynchronize::is_at_safepoint(), "sanity");
   assert(CDSConfig::is_dumping_heap(), "dump-time only");
   assert(_pending_roots != nullptr, "sanity");
@@ -527,7 +527,7 @@ int HeapShared::append_root(oop obj) {
   }
 }
 
-int HeapShared::add_to_pending_roots(oop obj) {
+int AOTHeap::add_to_pending_roots(oop obj) {
   if (_pending_roots->length() == (int)max_jint) {
     // This should never happen, but just in case we have HUGE caches ...
     AOTMetaspace::unrecoverable_writing_error("too many pending roots");
@@ -536,7 +536,7 @@ int HeapShared::add_to_pending_roots(oop obj) {
   return _pending_roots->append(obj);
 }
 
-int HeapShared::get_root_index(oop obj) {
+int AOTHeap::get_root_index(oop obj) {
   if (java_lang_Class::is_instance(obj)) {
     obj = scratch_java_mirror(obj);
   }
@@ -558,15 +558,15 @@ int HeapShared::get_root_index(oop obj) {
   return -1;
 }
 
-oop HeapShared::get_root(int index, bool clear) {
+oop AOTHeap::get_root(int index, bool clear) {
   assert(index >= 0, "sanity");
   assert(is_archived_heap_in_use(), "getting roots into heap that is not used");
 
   oop result;
-  if (HeapShared::is_loading_streaming_mode()) {
+  if (AOTHeap::is_loading_streaming_mode()) {
     result = AOTStreamedHeapLoader::get_root(index);
   } else {
-    assert(HeapShared::is_loading_mapping_mode(), "must be");
+    assert(AOTHeap::is_loading_mapping_mode(), "must be");
     result = AOTMappedHeapLoader::get_root(index);
   }
 
@@ -577,13 +577,13 @@ oop HeapShared::get_root(int index, bool clear) {
   return result;
 }
 
-void HeapShared::finish_materialize_objects() {
+void AOTHeap::finish_materialize_objects() {
   if (AOTStreamedHeapLoader::is_in_use()) {
     AOTStreamedHeapLoader::finish_materialize_objects();
   }
 }
 
-void HeapShared::clear_root(int index) {
+void AOTHeap::clear_root(int index) {
   if (CDSConfig::is_using_aot_linked_classes()) {
     // When AOT linked classes are in use, all roots will be in use all
     // the time, there's no benefit for clearing the roots. Also, we
@@ -597,16 +597,16 @@ void HeapShared::clear_root(int index) {
     if (log_is_enabled(Debug, aot, heap)) {
       log_debug(aot, heap)("Clearing root %d: was %zu", index, p2i(get_root(index, false /* clear */)));
     }
-    if (HeapShared::is_loading_streaming_mode()) {
+    if (AOTHeap::is_loading_streaming_mode()) {
       AOTStreamedHeapLoader::clear_root(index);
     } else {
-      assert(HeapShared::is_loading_mapping_mode(), "must be");
+      assert(AOTHeap::is_loading_mapping_mode(), "must be");
       AOTMappedHeapLoader::clear_root(index);
     }
   }
 }
 
-bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgraph_info) {
+bool AOTHeap::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgraph_info) {
   assert(CDSConfig::is_dumping_heap(), "dump-time only");
 
   assert(!obj->is_stackChunk(), "do not archive stack chunks");
@@ -626,7 +626,7 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
   count_allocation(obj->size());
   DEBUG_ONLY(_dumptime_classes_with_cached_oops->add(obj->klass()));
 
-  if (HeapShared::is_writing_streaming_mode()) {
+  if (AOTHeap::is_writing_streaming_mode()) {
     AOTStreamedHeapWriter::add_source_obj(obj);
   } else {
     AOTMappedHeapWriter::add_source_obj(obj);
@@ -653,7 +653,7 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
         // For the other subgraphs, we have a weaker mechanism to ensure that
         // all classes in a subgraph are initialized before the subgraph is programmatically
         // returned from jdk.internal.misc.CDS::initializeFromArchive().
-        // See HeapShared::initialize_from_archived_subgraph().
+        // See AOTHeap::initialize_from_archived_subgraph().
     {
       AOTArtifactFinder::add_aot_inited_class(InstanceKlass::cast(k));
     }
@@ -669,7 +669,7 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
         m = RegeneratedClasses::maybe_get_regenerated_object(m);
         InstanceKlass* method_holder = m->method_holder();
         AOTArtifactFinder::add_cached_class(method_holder);
-        _dumptime_resolved_methods->append(HeapShared::append_root(obj));
+        _dumptime_resolved_methods->append(AOTHeap::append_root(obj));
       }
     } else if (AOTCodeCache::is_dumping_code() &&
                (java_lang_invoke_MethodHandle::is_instance(obj) || is_interned_string(obj))) {
@@ -727,24 +727,24 @@ public:
   }
 };
 
-void HeapShared::add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) {
+void AOTHeap::add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) {
   if (SystemDictionaryShared::is_builtin_loader(src->pool_holder()->class_loader_data())) {
     _scratch_objects_table->set_oop(src, dest);
   }
 }
 
-refArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
+refArrayOop AOTHeap::scratch_resolved_references(ConstantPool* src) {
   oop rr = _scratch_objects_table->get_oop(src);
   return rr == nullptr ? nullptr : oop_cast<refArrayOop>(rr);
 }
 
-void HeapShared::remove_scratch_resolved_references(ConstantPool* src) {
+void AOTHeap::remove_scratch_resolved_references(ConstantPool* src) {
   if (CDSConfig::is_dumping_heap()) {
     _scratch_objects_table->remove_oop(src);
   }
 }
 
-void HeapShared::init_dumping() {
+void AOTHeap::init_dumping() {
   _scratch_objects_table = new (mtClass)MetaspaceObjToOopHandleTable();
   _dumptime_resolved_methods = new (mtClassShared) GrowableArray<int>(100, mtClassShared);
   _pending_roots = new GrowableArrayCHeap<oop, mtClassShared>(500);
@@ -752,7 +752,7 @@ void HeapShared::init_dumping() {
   DEBUG_ONLY(_dumptime_classes_with_cached_oops = new (mtClassShared)ArchivableKlassTable());
 }
 
-void HeapShared::init_scratch_objects_for_basic_type_mirrors(TRAPS) {
+void AOTHeap::init_scratch_objects_for_basic_type_mirrors(TRAPS) {
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
     BasicType bt = (BasicType)i;
     if (!is_reference_type(bt)) {
@@ -767,7 +767,7 @@ void HeapShared::init_scratch_objects_for_basic_type_mirrors(TRAPS) {
 // that java_mirror will be returned if the mirror is already a scratch mirror.
 //
 // See java_lang_Class::create_scratch_mirror() for more info.
-oop HeapShared::scratch_java_mirror(oop java_mirror) {
+oop AOTHeap::scratch_java_mirror(oop java_mirror) {
   assert(java_lang_Class::is_instance(java_mirror), "must be");
 
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
@@ -786,21 +786,21 @@ oop HeapShared::scratch_java_mirror(oop java_mirror) {
   }
 }
 
-oop HeapShared::scratch_java_mirror(BasicType t) {
+oop AOTHeap::scratch_java_mirror(BasicType t) {
   assert((uint)t < T_VOID+1, "range check");
   assert(!is_reference_type(t), "sanity");
   return _scratch_basic_type_mirrors[t].resolve();
 }
 
-oop HeapShared::scratch_java_mirror(Klass* k) {
+oop AOTHeap::scratch_java_mirror(Klass* k) {
   return _scratch_objects_table->get_oop(k);
 }
 
-void HeapShared::set_scratch_java_mirror(Klass* k, oop mirror) {
+void AOTHeap::set_scratch_java_mirror(Klass* k, oop mirror) {
   _scratch_objects_table->set_oop(k, mirror);
 }
 
-void HeapShared::remove_scratch_objects(Klass* k) {
+void AOTHeap::remove_scratch_objects(Klass* k) {
   // Klass is being deallocated. Java mirror can still be alive, and it should not
   // point to dead klass. We need to break the link from mirror to the Klass.
   // See how InstanceKlass::deallocate_contents does it for normal mirrors.
@@ -820,24 +820,24 @@ void HeapShared::remove_scratch_objects(Klass* k) {
 //string compares on names is fragile and will break as soon as somebody
 //changes the names in the JDK code.  See discussion in JDK-8342481 for
 //related ideas about marking AOT-related classes.
-bool HeapShared::is_lambda_form_klass(InstanceKlass* ik) {
+bool AOTHeap::is_lambda_form_klass(InstanceKlass* ik) {
   return ik->is_hidden() && ik->name()->starts_with("java/lang/invoke/LambdaForm$");
 }
 
-bool HeapShared::is_lambda_proxy_klass(InstanceKlass* ik) {
+bool AOTHeap::is_lambda_proxy_klass(InstanceKlass* ik) {
   return ik->is_hidden() && (ik->name()->index_of_at(0, "$$Lambda+", 9) > 0);
 }
 
-bool HeapShared::is_string_concat_klass(InstanceKlass* ik) {
+bool AOTHeap::is_string_concat_klass(InstanceKlass* ik) {
   return ik->is_hidden() && ik->name()->starts_with("java/lang/String$$StringConcat");
 }
 
-bool HeapShared::is_archivable_hidden_klass(InstanceKlass* ik) {
+bool AOTHeap::is_archivable_hidden_klass(InstanceKlass* ik) {
   return CDSConfig::is_dumping_method_handles() &&
     (is_lambda_form_klass(ik) || is_lambda_proxy_klass(ik) || is_string_concat_klass(ik));
 }
 
-void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
+void AOTHeap::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
   ik->set_has_aot_initialized_mirror();
 
   oop orig_mirror;
@@ -921,7 +921,7 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
   }
 }
 
-void HeapShared::copy_java_mirror(oop orig_mirror, oop scratch_m) {
+void AOTHeap::copy_java_mirror(oop orig_mirror, oop scratch_m) {
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap.
   if (orig_mirror->has_identity_hash()) {
@@ -963,20 +963,20 @@ void HeapShared::copy_java_mirror(oop orig_mirror, oop scratch_m) {
 static objArrayOop get_archived_resolved_references(InstanceKlass* src_ik) {
   if (SystemDictionaryShared::is_builtin_loader(src_ik->class_loader_data())) {
     objArrayOop rr = src_ik->constants()->resolved_references_or_null();
-    if (rr != nullptr && !HeapShared::is_too_large_to_archive(rr)) {
-      return HeapShared::scratch_resolved_references(src_ik->constants());
+    if (rr != nullptr && !AOTHeap::is_too_large_to_archive(rr)) {
+      return AOTHeap::scratch_resolved_references(src_ik->constants());
     }
   }
   return nullptr;
 }
 
-int HeapShared::archive_exception_instance(oop exception) {
+int AOTHeap::archive_exception_instance(oop exception) {
   bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, exception);
   assert(success, "sanity");
   return append_root(exception);
 }
 
-void HeapShared::get_pointer_info(oop src_obj, bool& has_oop_pointers, bool& has_native_pointers) {
+void AOTHeap::get_pointer_info(oop src_obj, bool& has_oop_pointers, bool& has_native_pointers) {
   OopHandle oh(&src_obj);
   CachedOopInfo* info = archived_object_cache()->get(oh);
   assert(info != nullptr, "must be");
@@ -984,7 +984,7 @@ void HeapShared::get_pointer_info(oop src_obj, bool& has_oop_pointers, bool& has
   has_native_pointers = info->has_native_pointers();
 }
 
-void HeapShared::set_has_native_pointers(oop src_obj) {
+void AOTHeap::set_has_native_pointers(oop src_obj) {
   OopHandle oh(&src_obj);
   CachedOopInfo* info = archived_object_cache()->get(oh);
   assert(info != nullptr, "must be");
@@ -993,7 +993,7 @@ void HeapShared::set_has_native_pointers(oop src_obj) {
 
 // Between start_scanning_for_oops() and end_scanning_for_oops(), we discover all Java heap objects that
 // should be stored in the AOT cache. The scanning is coordinated by AOTArtifactFinder.
-void HeapShared::start_scanning_for_oops() {
+void AOTHeap::start_scanning_for_oops() {
   {
     NoSafepointVerifier nsv;
 
@@ -1004,7 +1004,7 @@ void HeapShared::start_scanning_for_oops() {
     // Cache for recording where the archived objects are copied to
     create_archived_object_cache();
 
-    if (HeapShared::is_writing_mapping_mode() && (UseG1GC || UseCompressedOops)) {
+    if (AOTHeap::is_writing_mapping_mode() && (UseG1GC || UseCompressedOops)) {
       aot_log_info(aot)("Heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
                     UseCompressedOops ? p2i(CompressedOops::begin()) :
                     G1GC_ONLY(UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().start()) :) 0L,
@@ -1019,25 +1019,25 @@ void HeapShared::start_scanning_for_oops() {
   Universe::archive_exception_instances();
 }
 
-void HeapShared::end_scanning_for_oops() {
+void AOTHeap::end_scanning_for_oops() {
   if (is_writing_mapping_mode()) {
     StringTable::init_shared_table();
   }
   delete_seen_objects_table();
 }
 
-void HeapShared::write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info) {
+void AOTHeap::write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info) {
   {
     NoSafepointVerifier nsv;
     CDSHeapVerifier::verify();
     check_special_subgraph_classes();
   }
 
-  if (HeapShared::is_writing_mapping_mode()) {
+  if (AOTHeap::is_writing_mapping_mode()) {
     StringTable::write_shared_table();
     AOTMappedHeapWriter::write(_pending_roots, mapped_heap_info);
   } else {
-    assert(HeapShared::is_writing_streaming_mode(), "are there more modes?");
+    assert(AOTHeap::is_writing_streaming_mode(), "are there more modes?");
     AOTStreamedHeapWriter::write(_pending_roots, streamed_heap_info);
   }
 
@@ -1056,7 +1056,7 @@ void HeapShared::write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeap
   make_archived_object_cache_gc_safe();
 }
 
-void HeapShared::scan_java_mirror(oop orig_mirror) {
+void AOTHeap::scan_java_mirror(oop orig_mirror) {
   oop m = scratch_java_mirror(orig_mirror);
   if (m != nullptr) { // nullptr if for custom class loader
     copy_java_mirror(orig_mirror, m);
@@ -1065,7 +1065,7 @@ void HeapShared::scan_java_mirror(oop orig_mirror) {
   }
 }
 
-void HeapShared::scan_java_class(Klass* orig_k) {
+void AOTHeap::scan_java_class(Klass* orig_k) {
   scan_java_mirror(orig_k->java_mirror());
 
   if (orig_k->is_instance_klass()) {
@@ -1073,13 +1073,13 @@ void HeapShared::scan_java_class(Klass* orig_k) {
     orig_ik->constants()->prepare_resolved_references_for_archiving();
     objArrayOop rr = get_archived_resolved_references(orig_ik);
     if (rr != nullptr) {
-      bool success = HeapShared::archive_reachable_objects_from(1, _dump_time_special_subgraph, rr);
+      bool success = AOTHeap::archive_reachable_objects_from(1, _dump_time_special_subgraph, rr);
       assert(success, "must be");
     }
   }
 }
 
-void HeapShared::archive_subgraphs() {
+void AOTHeap::archive_subgraphs() {
   assert(CDSConfig::is_dumping_heap(), "must be");
 
   if (CDSConfig::is_dumping_klass_subgraphs()) {
@@ -1090,13 +1090,13 @@ void HeapShared::archive_subgraphs() {
 //
 // Subgraph archiving support
 //
-HeapShared::DumpTimeKlassSubGraphInfoTable* HeapShared::_dump_time_subgraph_info_table = nullptr;
-HeapShared::RunTimeKlassSubGraphInfoTable   HeapShared::_run_time_subgraph_info_table;
+AOTHeap::DumpTimeKlassSubGraphInfoTable* AOTHeap::_dump_time_subgraph_info_table = nullptr;
+AOTHeap::RunTimeKlassSubGraphInfoTable   AOTHeap::_run_time_subgraph_info_table;
 
 // Get the subgraph_info for Klass k. A new subgraph_info is created if
 // there is no existing one for k. The subgraph_info records the "buffered"
 // address of the class.
-KlassSubGraphInfo* HeapShared::init_subgraph_info(Klass* k) {
+KlassSubGraphInfo* AOTHeap::init_subgraph_info(Klass* k) {
   assert(CDSConfig::is_dumping_heap(), "dump time only");
   bool created;
   KlassSubGraphInfo* info =
@@ -1105,7 +1105,7 @@ KlassSubGraphInfo* HeapShared::init_subgraph_info(Klass* k) {
   return info;
 }
 
-KlassSubGraphInfo* HeapShared::get_subgraph_info(Klass* k) {
+KlassSubGraphInfo* AOTHeap::get_subgraph_info(Klass* k) {
   assert(CDSConfig::is_dumping_heap(), "dump time only");
   KlassSubGraphInfo* info = _dump_time_subgraph_info_table->get(k);
   assert(info != nullptr, "must have been initialized");
@@ -1123,7 +1123,7 @@ void KlassSubGraphInfo::add_subgraph_entry_field(int static_field_offset, oop v)
   if (v == nullptr) {
     _subgraph_entry_fields->append(-1);
   } else {
-    _subgraph_entry_fields->append(HeapShared::append_root(v));
+    _subgraph_entry_fields->append(AOTHeap::append_root(v));
   }
 }
 
@@ -1150,7 +1150,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
       // -XX:AOTInitTestClass must be used carefully in regression tests to
       // include only classes that are safe to aot-initialize.
       assert(ik->class_loader() == nullptr ||
-             HeapShared::is_lambda_proxy_klass(ik) ||
+             AOTHeap::is_lambda_proxy_klass(ik) ||
              AOTClassInitializer::has_test_class(),
             "we can archive only instances of boot classes or lambda proxy classes");
     } else {
@@ -1218,7 +1218,7 @@ void KlassSubGraphInfo::check_allowed_klass(InstanceKlass* ik) {
   const char* lambda_msg = "";
   if (CDSConfig::is_dumping_method_handles()) {
     lambda_msg = ", or a lambda proxy class";
-    if (HeapShared::is_lambda_proxy_klass(ik) &&
+    if (AOTHeap::is_lambda_proxy_klass(ik) &&
         (ik->class_loader() == nullptr ||
          ik->class_loader() == SystemDictionary::java_platform_loader() ||
          ik->class_loader() == SystemDictionary::java_system_loader())) {
@@ -1293,14 +1293,14 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
   ArchivePtrMarker::mark_pointer(&_subgraph_object_klasses);
 }
 
-class HeapShared::CopyKlassSubGraphInfoToArchive : StackObj {
+class AOTHeap::CopyKlassSubGraphInfoToArchive : StackObj {
   CompactHashtableWriter* _writer;
 public:
   CopyKlassSubGraphInfoToArchive(CompactHashtableWriter* writer) : _writer(writer) {}
 
   bool do_entry(Klass* klass, KlassSubGraphInfo& info) {
     if (info.subgraph_object_klasses() != nullptr || info.subgraph_entry_fields() != nullptr) {
-      ArchivedKlassSubGraphInfoRecord* record = HeapShared::archive_subgraph_info(&info);
+      ArchivedKlassSubGraphInfoRecord* record = AOTHeap::archive_subgraph_info(&info);
       Klass* buffered_k = ArchiveBuilder::get_buffered_klass(klass);
       unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary((address)buffered_k);
       _writer->add(hash, AOTCompressedPointers::encode_not_null(record));
@@ -1309,7 +1309,7 @@ public:
   }
 };
 
-ArchivedKlassSubGraphInfoRecord* HeapShared::archive_subgraph_info(KlassSubGraphInfo* info) {
+ArchivedKlassSubGraphInfoRecord* AOTHeap::archive_subgraph_info(KlassSubGraphInfo* info) {
   ArchivedKlassSubGraphInfoRecord* record =
       (ArchivedKlassSubGraphInfoRecord*)ArchiveBuilder::ro_region_alloc(sizeof(ArchivedKlassSubGraphInfoRecord));
   record->init(info);
@@ -1326,7 +1326,7 @@ ArchivedKlassSubGraphInfoRecord* HeapShared::archive_subgraph_info(KlassSubGraph
 //   info. The value is stored back to the corresponding field at runtime.
 // - A list of klasses that need to be loaded/initialized before archived
 //   java object sub-graph can be accessed at runtime.
-void HeapShared::write_subgraph_info_table() {
+void AOTHeap::write_subgraph_info_table() {
   // Allocate the contents of the hashtable(s) inside the RO region of the CDS archive.
   DumpTimeKlassSubGraphInfoTable* d_table = _dump_time_subgraph_info_table;
   CompactHashtableStats stats;
@@ -1343,14 +1343,14 @@ void HeapShared::write_subgraph_info_table() {
   }
 }
 
-void HeapShared::serialize_tables(SerializeClosure* soc) {
+void AOTHeap::serialize_tables(SerializeClosure* soc) {
   _run_time_subgraph_info_table.serialize_header(soc);
   soc->do_ptr(&_run_time_special_subgraph);
   soc->do_ptr(&_runtime_resolved_methods);
   DEBUG_ONLY(soc->do_ptr(&_runtime_classes_with_cached_oops));
 }
 
-void HeapShared::load_cached_resolved_methods() {
+void AOTHeap::load_cached_resolved_methods() {
   precond(CDSConfig::is_using_aot_linked_classes());
   if (_runtime_resolved_methods != nullptr) {
     JavaThread* current = JavaThread::current();
@@ -1394,16 +1394,16 @@ static void verify_the_heap(Klass* k, const char* which) {
   }
 }
 
-// Before GC can execute, we must ensure that all oops reachable from HeapShared::roots()
+// Before GC can execute, we must ensure that all oops reachable from AOTHeap::roots()
 // have a valid klass. I.e., oopDesc::klass() must have already been resolved.
-void HeapShared::resolve_classes(JavaThread* current) {
+void AOTHeap::resolve_classes(JavaThread* current) {
   assert(CDSConfig::is_using_archive(), "runtime only!");
   if (CDSConfig::is_using_klass_subgraphs()) {
     resolve_classes_for_subgraphs(current, archive_subgraph_entry_fields);
   }
 }
 
-void HeapShared::resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]) {
+void AOTHeap::resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]) {
   for (int i = 0; fields[i].valid(); i++) {
     ArchivableStaticFieldInfo* info = &fields[i];
     TempNewSymbol klass_name = SymbolTable::new_symbol(info->klass_name);
@@ -1413,7 +1413,7 @@ void HeapShared::resolve_classes_for_subgraphs(JavaThread* current, ArchivableSt
   }
 }
 
-void HeapShared::resolve_classes_for_subgraph_of(JavaThread* current, Klass* k) {
+void AOTHeap::resolve_classes_for_subgraph_of(JavaThread* current, Klass* k) {
   JavaThread* THREAD = current;
   ExceptionMark em(THREAD);
   const ArchivedKlassSubGraphInfoRecord* record =
@@ -1436,7 +1436,7 @@ static const char* java_lang_invoke_core_klasses[] = {
   "java/lang/invoke/BoundMethodHandle$Species_L",
 };
 
-void HeapShared::initialize_java_lang_invoke(TRAPS) {
+void AOTHeap::initialize_java_lang_invoke(TRAPS) {
   if (CDSConfig::is_using_aot_linked_classes() || CDSConfig::is_dumping_method_handles()) {
     int len = sizeof(java_lang_invoke_core_klasses)/sizeof(char*);
     for (int i = 0; i < len; i++) {
@@ -1445,7 +1445,7 @@ void HeapShared::initialize_java_lang_invoke(TRAPS) {
   }
 }
 
-bool HeapShared::is_core_java_lang_invoke_klass(InstanceKlass* klass) {
+bool AOTHeap::is_core_java_lang_invoke_klass(InstanceKlass* klass) {
   ResourceMark rm;
   char* s2 = klass->name()->as_C_string();
   int len = sizeof(java_lang_invoke_core_klasses)/sizeof(char*);
@@ -1473,7 +1473,7 @@ bool HeapShared::is_core_java_lang_invoke_klass(InstanceKlass* klass) {
 // the aot-initialized mirror of Fruit has a static field that references HashSet, which
 // should be initialized before any Java code can access the Fruit class. Note that
 // HashSet itself doesn't necessary need to be an aot-initialized class.
-void HeapShared::init_classes_for_special_subgraph(Handle class_loader, TRAPS) {
+void AOTHeap::init_classes_for_special_subgraph(Handle class_loader, TRAPS) {
   if (!is_archived_heap_in_use()) {
     return;
   }
@@ -1504,7 +1504,7 @@ void HeapShared::init_classes_for_special_subgraph(Handle class_loader, TRAPS) {
   }
 }
 
-void HeapShared::initialize_from_archived_subgraph(JavaThread* current, Klass* k) {
+void AOTHeap::initialize_from_archived_subgraph(JavaThread* current, Klass* k) {
   JavaThread* THREAD = current;
   if (!CDSConfig::is_using_klass_subgraphs()) {
     return; // nothing to do
@@ -1540,7 +1540,7 @@ void HeapShared::initialize_from_archived_subgraph(JavaThread* current, Klass* k
 }
 
 const ArchivedKlassSubGraphInfoRecord*
-HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAPS) {
+AOTHeap::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAPS) {
   assert(!CDSConfig::is_dumping_heap(), "Should not be called when dumping heap");
 
   if (!k->in_aot_cache()) {
@@ -1596,7 +1596,7 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
   return record;
 }
 
-void HeapShared::resolve_or_init(const char* klass_name, bool do_init, TRAPS) {
+void AOTHeap::resolve_or_init(const char* klass_name, bool do_init, TRAPS) {
   TempNewSymbol klass_name_sym =  SymbolTable::new_symbol(klass_name);
   InstanceKlass* k = SystemDictionaryShared::find_builtin_class(klass_name_sym);
   if (k == nullptr) {
@@ -1609,7 +1609,7 @@ void HeapShared::resolve_or_init(const char* klass_name, bool do_init, TRAPS) {
   }
 }
 
-void HeapShared::resolve_or_init(Klass* k, bool do_init, TRAPS) {
+void AOTHeap::resolve_or_init(Klass* k, bool do_init, TRAPS) {
   if (!do_init) {
     if (k->class_loader_data() == nullptr) {
       Klass* resolved_k = SystemDictionary::resolve_or_null(k->name(), CHECK);
@@ -1620,7 +1620,7 @@ void HeapShared::resolve_or_init(Klass* k, bool do_init, TRAPS) {
       }
     }
   } else {
-    assert(k->class_loader_data() != nullptr, "must have been resolved by HeapShared::resolve_classes");
+    assert(k->class_loader_data() != nullptr, "must have been resolved by AOTHeap::resolve_classes");
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       ik->initialize(CHECK);
@@ -1631,7 +1631,7 @@ void HeapShared::resolve_or_init(Klass* k, bool do_init, TRAPS) {
   }
 }
 
-void HeapShared::init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphInfoRecord* record) {
+void AOTHeap::init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphInfoRecord* record) {
   verify_the_heap(k, "before");
 
   Array<int>* entry_field_records = record->entry_field_records();
@@ -1671,7 +1671,7 @@ void HeapShared::init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphI
   verify_the_heap(k, "after ");
 }
 
-void HeapShared::clear_archived_roots_of(Klass* k) {
+void AOTHeap::clear_archived_roots_of(Klass* k) {
   unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(k);
   const ArchivedKlassSubGraphInfoRecord* record = _run_time_subgraph_info_table.lookup(k, hash, 0);
   if (record != nullptr) {
@@ -1689,7 +1689,7 @@ void HeapShared::clear_archived_roots_of(Klass* k) {
 
 // Push all oop fields (or oop array elemenets in case of an objArray) in
 // _referencing_obj onto the _stack.
-class HeapShared::OopFieldPusher: public BasicOopIterateClosure {
+class AOTHeap::OopFieldPusher: public BasicOopIterateClosure {
   PendingOopStack* _stack;
   GrowableArray<oop> _found_oop_fields;
   int _level;
@@ -1770,13 +1770,13 @@ public:
   bool result() { return _result; }
 };
 
-HeapShared::CachedOopInfo HeapShared::make_cached_oop_info(oop obj, oop referrer) {
+AOTHeap::CachedOopInfo AOTHeap::make_cached_oop_info(oop obj, oop referrer) {
   PointsToOopsChecker points_to_oops_checker;
   obj->oop_iterate(&points_to_oops_checker);
   return CachedOopInfo(OopHandle(Universe::vm_global(), referrer), points_to_oops_checker.result());
 }
 
-void HeapShared::init_box_classes(TRAPS) {
+void AOTHeap::init_box_classes(TRAPS) {
   if (is_archived_heap_in_use()) {
     vmClasses::Boolean_klass()->initialize(CHECK);
     vmClasses::Character_klass()->initialize(CHECK);
@@ -1790,8 +1790,8 @@ void HeapShared::init_box_classes(TRAPS) {
   }
 }
 
-// Used by HeapShared::find_flat_field_klasses().
-class HeapShared::FlatFieldKlassFinder : public FieldClosure {
+// Used by AOTHeap::find_flat_field_klasses().
+class AOTHeap::FlatFieldKlassFinder : public FieldClosure {
   KlassSubGraphInfo* _subgraph_info;
   oop _obj;
   const ValuePayloadContext* _vpc;
@@ -1821,7 +1821,7 @@ public:
   }
 };
 
-void HeapShared::add_flat_field_klass(KlassSubGraphInfo* subgraph_info, ValueKlass* k) {
+void AOTHeap::add_flat_field_klass(KlassSubGraphInfo* subgraph_info, ValueKlass* k) {
   subgraph_info->add_subgraph_object_klass(k);
   if (InstanceKlass::cast(k)->is_enum_subclass()
       || (subgraph_info == _dump_time_special_subgraph)) {
@@ -1839,12 +1839,12 @@ void HeapShared::add_flat_field_klass(KlassSubGraphInfo* subgraph_info, ValueKla
 //         @NullRestricted Point p1;
 //         @NullRestricted Point p2; ... }
 //
-// Klasses of non-flat fields are already recorded by HeapShared::archive_object().
+// Klasses of non-flat fields are already recorded by AOTHeap::archive_object().
 //
-// If only a single instance of Line is archived, HeapShared::archive_object() would
+// If only a single instance of Line is archived, AOTHeap::archive_object() would
 // have never visited a heap oop instance of Point, but we must store Point in
 // AOT-initialized state. This function finds Point.
-void HeapShared::find_flat_field_klasses(KlassSubGraphInfo* subgraph_info, oop orig_obj) {
+void AOTHeap::find_flat_field_klasses(KlassSubGraphInfo* subgraph_info, oop orig_obj) {
   Klass* klass = orig_obj->klass();
 
   if (klass->is_flatArray_klass()) {
@@ -1884,7 +1884,7 @@ void HeapShared::find_flat_field_klasses(KlassSubGraphInfo* subgraph_info, oop o
 //     trace all  objects that are reachable from it, and make sure these objects are archived.
 // (3) Record the klasses of all objects that are reachable from orig_obj (including those that
 //     were already archived when this function is called)
-bool HeapShared::archive_reachable_objects_from(int level,
+bool AOTHeap::archive_reachable_objects_from(int level,
                                                 KlassSubGraphInfo* subgraph_info,
                                                 oop orig_obj) {
   assert(orig_obj != nullptr, "must be");
@@ -1908,7 +1908,7 @@ bool HeapShared::archive_reachable_objects_from(int level,
   return true;
 }
 
-bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGraphInfo* subgraph_info,
+bool AOTHeap::walk_one_object(PendingOopStack* stack, int level, KlassSubGraphInfo* subgraph_info,
                                  oop orig_obj, oop referrer) {
   assert(orig_obj != nullptr, "must be");
   if (!JavaClasses::is_supported_for_archiving(orig_obj)) {
@@ -1948,7 +1948,7 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
   } else if (java_lang_Class::is_instance(orig_obj) && subgraph_info != _dump_time_special_subgraph) {
     // Without CDSConfig::is_dumping_aot_linked_classes(), we only allow archived objects to
     // point to the mirrors of (1) j.l.Object, (2) primitive classes, and (3) box classes. These are initialized
-    // very early by HeapShared::init_box_classes().
+    // very early by AOTHeap::init_box_classes().
     if (orig_obj == vmClasses::Object_klass()->java_mirror()
         || java_lang_Class::is_primitive(orig_obj)
         || orig_obj == vmClasses::Boolean_klass()->java_mirror()
@@ -2063,7 +2063,7 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
 // for loading and initializing before any object in the archived graph can
 // be accessed at runtime.
 //
-void HeapShared::archive_reachable_objects_from_static_field(InstanceKlass *k,
+void AOTHeap::archive_reachable_objects_from_static_field(InstanceKlass *k,
                                                              const char* klass_name,
                                                              int field_offset,
                                                              const char* field_name) {
@@ -2112,12 +2112,12 @@ class VerifySharedOopClosure: public BasicOopIterateClosure {
   template <class T> void do_oop_work(T *p) {
     oop obj = HeapAccess<>::oop_load(p);
     if (obj != nullptr) {
-      HeapShared::verify_reachable_objects_from(obj);
+      AOTHeap::verify_reachable_objects_from(obj);
     }
   }
 };
 
-void HeapShared::verify_subgraph_from_static_field(InstanceKlass* k, int field_offset) {
+void AOTHeap::verify_subgraph_from_static_field(InstanceKlass* k, int field_offset) {
   precond(CDSConfig::is_dumping_klass_subgraphs());
   assert(k->defined_by_boot_loader(), "must be boot class");
 
@@ -2128,7 +2128,7 @@ void HeapShared::verify_subgraph_from_static_field(InstanceKlass* k, int field_o
   }
 }
 
-void HeapShared::verify_subgraph_from(oop orig_obj) {
+void AOTHeap::verify_subgraph_from(oop orig_obj) {
   if (!has_been_archived(orig_obj)) {
     // It's OK for the root of a subgraph to be not archived. See comments in
     // archive_reachable_objects_from().
@@ -2141,7 +2141,7 @@ void HeapShared::verify_subgraph_from(oop orig_obj) {
   delete_seen_objects_table();
 }
 
-void HeapShared::verify_reachable_objects_from(oop obj) {
+void AOTHeap::verify_reachable_objects_from(oop obj) {
   _num_total_verifications ++;
   if (java_lang_Class::is_instance(obj)) {
     obj = RegeneratedClasses::maybe_get_regenerated_mirror(obj);
@@ -2157,7 +2157,7 @@ void HeapShared::verify_reachable_objects_from(oop obj) {
 }
 #endif
 
-void HeapShared::check_special_subgraph_classes() {
+void AOTHeap::check_special_subgraph_classes() {
   if (CDSConfig::is_dumping_aot_linked_classes()) {
     // We can have aot-initialized classes (such as Enums) that can reference objects
     // of arbitrary types. Currently, we trust the JEP 483 implementation to only
@@ -2191,29 +2191,29 @@ void HeapShared::check_special_subgraph_classes() {
   }
 }
 
-HeapShared::SeenObjectsTable* HeapShared::_seen_objects_table = nullptr;
-HeapShared::PendingOop HeapShared::_object_being_archived;
-size_t HeapShared::_num_new_walked_objs;
-size_t HeapShared::_num_new_archived_objs;
-size_t HeapShared::_num_old_recorded_klasses;
+AOTHeap::SeenObjectsTable* AOTHeap::_seen_objects_table = nullptr;
+AOTHeap::PendingOop AOTHeap::_object_being_archived;
+size_t AOTHeap::_num_new_walked_objs;
+size_t AOTHeap::_num_new_archived_objs;
+size_t AOTHeap::_num_old_recorded_klasses;
 
-size_t HeapShared::_num_total_subgraph_recordings = 0;
-size_t HeapShared::_num_total_walked_objs = 0;
-size_t HeapShared::_num_total_archived_objs = 0;
-size_t HeapShared::_num_total_recorded_klasses = 0;
-size_t HeapShared::_num_total_verifications = 0;
+size_t AOTHeap::_num_total_subgraph_recordings = 0;
+size_t AOTHeap::_num_total_walked_objs = 0;
+size_t AOTHeap::_num_total_archived_objs = 0;
+size_t AOTHeap::_num_total_recorded_klasses = 0;
+size_t AOTHeap::_num_total_verifications = 0;
 
-bool HeapShared::has_been_seen_during_subgraph_recording(oop obj) {
+bool AOTHeap::has_been_seen_during_subgraph_recording(oop obj) {
   return _seen_objects_table->get(obj) != nullptr;
 }
 
-void HeapShared::set_has_been_seen_during_subgraph_recording(oop obj) {
+void AOTHeap::set_has_been_seen_during_subgraph_recording(oop obj) {
   assert(!has_been_seen_during_subgraph_recording(obj), "sanity");
   _seen_objects_table->put_when_absent(obj, true);
   ++ _num_new_walked_objs;
 }
 
-void HeapShared::start_recording_subgraph(InstanceKlass *k, const char* class_name) {
+void AOTHeap::start_recording_subgraph(InstanceKlass *k, const char* class_name) {
   log_info(aot, heap)("Start recording subgraph(s) for archived fields in %s", class_name);
   init_subgraph_info(k);
   init_seen_objects_table();
@@ -2222,7 +2222,7 @@ void HeapShared::start_recording_subgraph(InstanceKlass *k, const char* class_na
   _num_old_recorded_klasses = get_subgraph_info(k)->num_subgraph_object_klasses();
 }
 
-void HeapShared::done_recording_subgraph(InstanceKlass *k, const char* class_name) {
+void AOTHeap::done_recording_subgraph(InstanceKlass *k, const char* class_name) {
   size_t num_new_recorded_klasses = get_subgraph_info(k)->num_subgraph_object_klasses() -
     _num_old_recorded_klasses;
   log_info(aot, heap)("Done recording subgraph(s) for archived fields in %s: "
@@ -2260,7 +2260,7 @@ public:
   int offset()     { return _offset; }
 };
 
-void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
+void AOTHeap::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
                                             TRAPS) {
   for (int i = 0; fields[i].valid(); i++) {
     ArchivableStaticFieldInfo* info = &fields[i];
@@ -2310,7 +2310,7 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
   }
 }
 
-void HeapShared::init_subgraph_entry_fields(TRAPS) {
+void AOTHeap::init_subgraph_entry_fields(TRAPS) {
   assert(CDSConfig::is_dumping_heap(), "must be");
   _dump_time_subgraph_info_table = new (mtClass)DumpTimeKlassSubGraphInfoTable();
   if (CDSConfig::is_dumping_klass_subgraphs()) {
@@ -2318,21 +2318,21 @@ void HeapShared::init_subgraph_entry_fields(TRAPS) {
   }
 }
 
-void HeapShared::init_for_dumping(TRAPS) {
+void AOTHeap::init_for_dumping(TRAPS) {
   if (CDSConfig::is_dumping_heap()) {
     init_subgraph_entry_fields(CHECK);
   }
 }
 
-void HeapShared::init_heap_writer() {
-  if (HeapShared::is_writing_streaming_mode()) {
+void AOTHeap::init_heap_writer() {
+  if (AOTHeap::is_writing_streaming_mode()) {
     AOTStreamedHeapWriter::init();
   } else {
     AOTMappedHeapWriter::init();
   }
 }
 
-void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[]) {
+void AOTHeap::archive_object_subgraphs(ArchivableStaticFieldInfo fields[]) {
   _num_total_subgraph_recordings = 0;
   _num_total_walked_objs = 0;
   _num_total_archived_objs = 0;
@@ -2344,7 +2344,7 @@ void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[]) {
   // [2] Create a list of all the class of the objects that can be reached
   //     by any of these static fields.
   //     At runtime, these classes are initialized before X's archived fields
-  //     are restored by HeapShared::initialize_from_archived_subgraph().
+  //     are restored by AOTHeap::initialize_from_archived_subgraph().
   for (int i = 0; fields[i].valid(); ) {
     ArchivableStaticFieldInfo* info = &fields[i];
     const char* klass_name = info->klass_name;
@@ -2381,7 +2381,7 @@ void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[]) {
 #endif
 }
 
-bool HeapShared::is_interned_string(oop obj) {
+bool AOTHeap::is_interned_string(oop obj) {
   if (!java_lang_String::is_instance(obj)) {
     return false;
   }
@@ -2395,14 +2395,14 @@ bool HeapShared::is_interned_string(oop obj) {
   return StringTable::lookup(name, len) == obj;
 }
 
-bool HeapShared::is_dumped_interned_string(oop o) {
+bool AOTHeap::is_dumped_interned_string(oop o) {
   return is_interned_string(o) && has_been_archived(o);
 }
 
 // These tables should be used only within the CDS safepoint, so
 // delete them before we exit the safepoint. Otherwise the table will
 // contain bad oops after a GC.
-void HeapShared::delete_tables_with_raw_oops() {
+void AOTHeap::delete_tables_with_raw_oops() {
   assert(_seen_objects_table == nullptr, "should have been deleted");
 
   if (is_writing_mapping_mode()) {
@@ -2413,7 +2413,7 @@ void HeapShared::delete_tables_with_raw_oops() {
   }
 }
 
-void HeapShared::debug_trace() {
+void AOTHeap::debug_trace() {
   ResourceMark rm;
   oop referrer = _object_being_archived.referrer();
   if (referrer != nullptr) {
@@ -2462,7 +2462,7 @@ class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
 };
 #endif
 
-void HeapShared::count_allocation(size_t size) {
+void AOTHeap::count_allocation(size_t size) {
   _total_obj_count ++;
   _total_obj_size += size;
   for (int i = 0; i < ALLOC_STAT_SLOTS; i++) {
@@ -2482,7 +2482,7 @@ static double avg_size(size_t size, size_t count) {
   return avg;
 }
 
-void HeapShared::print_stats() {
+void AOTHeap::print_stats() {
   size_t huge_count = _total_obj_count;
   size_t huge_size = _total_obj_size;
 
@@ -2507,7 +2507,7 @@ void HeapShared::print_stats() {
                       avg_size(_total_obj_size, _total_obj_count));
 }
 
-bool HeapShared::is_metadata_field(oop src_obj, int offset) {
+bool AOTHeap::is_metadata_field(oop src_obj, int offset) {
   bool result = false;
   do_metadata_offsets(src_obj, [&](int metadata_offset) {
     if (metadata_offset == offset) {
@@ -2517,7 +2517,7 @@ bool HeapShared::is_metadata_field(oop src_obj, int offset) {
   return result;
 }
 
-void HeapShared::remap_dumped_metadata(oop src_obj, address archived_object) {
+void AOTHeap::remap_dumped_metadata(oop src_obj, address archived_object) {
   do_metadata_offsets(src_obj, [&](int offset) {
     Metadata** buffered_field_addr = (Metadata**)(archived_object + offset);
     Metadata* native_ptr = *buffered_field_addr;
@@ -2534,7 +2534,7 @@ void HeapShared::remap_dumped_metadata(oop src_obj, address archived_object) {
   });
 }
 
-bool HeapShared::is_archived_boot_layer_available(JavaThread* current) {
+bool AOTHeap::is_archived_boot_layer_available(JavaThread* current) {
   TempNewSymbol klass_name = SymbolTable::new_symbol(ARCHIVED_BOOT_LAYER_CLASS);
   InstanceKlass* k = SystemDictionary::find_instance_klass(current, klass_name, Handle());
   if (k == nullptr) {
