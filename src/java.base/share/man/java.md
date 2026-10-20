@@ -4164,10 +4164,16 @@ The AOT cache can be used with the following command-line options:
 :   Specifies the location of the AOT cache. The standard extension for *cachefile* is `.aot`.
     This option cannot be used together with `-XX:AOTCacheOutput`.
 
-    This option is compatible with `AOTMode` settings of `required`, `create`, or `auto` (the default).
-    The *cachefile* is read in AOT modes `required` and `auto`, and is ignored by mode `off`.
+    The *cachefile* is read in AOT modes `record`, `required` and `auto`, and is ignored by mode `off`.
     The *cachefile* is written by AOT mode `create`.  In that case, this option is
     equivalent to `-XX:AOTCacheOutput=`*cachefile*.
+
+    The `-XX:AOTCache=<oldcache>` option is allowed when a JVM process is executed with the AOTMode
+    of `record` (i.e., this JVM process is executing an AOT training run). If this option is specified,
+    `<oldcache>` must be a valid AOT cache. The AOT configuration file written by this JVM process will
+    contain:
+      - Profile data recorded in `<oldcache>`, and,
+      - New profile data recorded in the current JVM process.
 
 [`-XX:AOTCacheOutput=`]{#-XX_AOTCacheOutput}*cachefile*
 :   Specifies the location of the AOT cache to write. The standard extension for *cachefile* is `.aot`.
