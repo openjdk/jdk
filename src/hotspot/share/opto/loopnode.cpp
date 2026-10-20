@@ -224,7 +224,7 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
         if (nb_ctl_proj > 1) {
           break;
         }
-        assert(parent_ctl->is_Start() || parent_ctl->is_MemBar() || parent_ctl->is_Call(), "unexpected node");
+        assert(parent_ctl->is_Start() || parent_ctl->is_MemBar() || parent_ctl->is_SafePoint(), "unexpected node");
         assert(idom(ctl) == parent_ctl, "strange");
         next = idom(parent_ctl);
       }
@@ -548,7 +548,7 @@ void PhaseIdealLoop::add_parse_predicate(Deoptimization::DeoptReason reason, Nod
     address call_addr = OptoRuntime::uncommon_trap_blob()->entry_point();
     const TypePtr* no_memory_effects = nullptr;
     CallNode* unc = new CallStaticJavaNode(OptoRuntime::uncommon_trap_Type(), call_addr, "uncommon_trap",
-                                           no_memory_effects);
+                                           no_memory_effects, TypePtr::BOTTOM);
 
     Node* mem = nullptr;
     Node* i_o = nullptr;
@@ -599,7 +599,7 @@ static bool no_side_effect_since_safepoint(Compile* C, const Node* head, const N
     Node* u = head->fast_out(i);
     if (u->is_memory_phi()) {
       Node* m = u->in(LoopNode::LoopBackControl);
-      if (u->adr_type() == TypePtr::BOTTOM) {
+      if (u->out_adr_type() == TypePtr::BOTTOM) {
         if (m->is_MergeMem() && mem->is_MergeMem()) {
           if (m != mem DEBUG_ONLY(|| true)) {
             // MergeMemStream can modify m, for example to adjust the length to mem.
@@ -629,11 +629,11 @@ static bool no_side_effect_since_safepoint(Compile* C, const Node* head, const N
         }
       } else {
         if (mem->is_MergeMem()) {
-          if (m != mem->as_MergeMem()->memory_at(C->get_alias_index(u->adr_type()))) {
+          if (m != mem->as_MergeMem()->memory_at(C->get_alias_index(u->out_adr_type()))) {
             return false;
           }
 #ifdef ASSERT
-          mm->set_memory_at(C->get_alias_index(u->adr_type()), mem->as_MergeMem()->base_memory());
+          mm->set_memory_at(C->get_alias_index(u->out_adr_type()), mem->as_MergeMem()->base_memory());
 #endif
         } else {
           if (m != mem) {
@@ -1289,9 +1289,17 @@ bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint strid
     register_new_node(new_limit, predicates.entry());
   } else {
     assert(bt == T_INT && known_short_running_loop, "only CountedLoop statically known to be short running");
+    // If an OpaqueLoopInitNode is shared by several template assertion predicates, the code that updates them (below)
+    // will encounter it several times. Updating it more than once introduces a dead loop:
+    // 1- current OpaqueLoopInitNode is replaced by (AddI (OpaqueLoopInitNode ..)) with a new OpaqueLoopInitNode
+    // 2- The new OpaqueLoopInitNode in (AddI (OpaqueLoopInitNode ..)) is encountered again and replaced by the same
+    //    (AddI (OpaqueLoopInitNode ..)) resulting in a dead loop
+    // new_nodes is set so the new OpaqueLoopInitNode is ignored by UpdateInitForTemplateAssertionPredicates so step 2
+    // doesn't happen
+    uint last_node_index = C->unique();
     PredicateIterator predicate_iterator(entry_control);
     Node* new_init = new_assertion_predicate_opaque_init(entry_control, init, int_zero);
-    UpdateInitForTemplateAssertionPredicates update_init_for_template_assertion_predicates(new_init, this);
+    UpdateInitForTemplateAssertionPredicates update_init_for_template_assertion_predicates(new_init, this, last_node_index);
     predicate_iterator.for_each(update_init_for_template_assertion_predicates);
   }
   IfNode* exit_test = head->loopexit();
@@ -3352,14 +3360,14 @@ void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIte
     for (DUIterator_Fast imax, i = cle_out->fast_outs(imax); i < imax; i++) {
       Node* u = cle_out->fast_out(i);
       if (u->is_Store()) {
-        int alias_idx = igvn->C->get_alias_index(u->adr_type());
+        int alias_idx = igvn->C->get_alias_index(u->out_adr_type());
         Node* first = u;
         for (;;) {
           Node* next = first->in(MemNode::Memory);
           if (!next->is_Store() || next->in(0) != cle_out) {
             break;
           }
-          assert(igvn->C->get_alias_index(next->adr_type()) == alias_idx, "");
+          assert(igvn->C->get_alias_index(next->out_adr_type()) == alias_idx, "");
           first = next;
         }
         Node* last = u;
@@ -3370,7 +3378,7 @@ void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIte
             if (uu->is_Store() && uu->in(0) == cle_out) {
               assert(next == nullptr, "only one in the outer loop");
               next = uu;
-              assert(igvn->C->get_alias_index(next->adr_type()) == alias_idx, "");
+              assert(igvn->C->get_alias_index(next->out_adr_type()) == alias_idx, "");
             }
           }
           if (next == nullptr) {
@@ -3384,10 +3392,10 @@ void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIte
           if (uu->is_Phi()) {
             Node* be = uu->in(LoopNode::LoopBackControl);
             if (be->is_Store() && be->in(0) == inner_cl->in(LoopNode::LoopBackControl)) {
-              assert(igvn->C->get_alias_index(uu->adr_type()) != alias_idx && igvn->C->get_alias_index(uu->adr_type()) != Compile::AliasIdxBot, "unexpected store");
+              assert(igvn->C->get_alias_index(uu->out_adr_type()) != alias_idx && igvn->C->get_alias_index(uu->out_adr_type()) != Compile::AliasIdxBot, "unexpected store");
             }
             if (be == last || be == first->in(MemNode::Memory)) {
-              assert(igvn->C->get_alias_index(uu->adr_type()) == alias_idx || igvn->C->get_alias_index(uu->adr_type()) == Compile::AliasIdxBot, "unexpected alias");
+              assert(igvn->C->get_alias_index(uu->out_adr_type()) == alias_idx || igvn->C->get_alias_index(uu->out_adr_type()) == Compile::AliasIdxBot, "unexpected alias");
               assert(phi == nullptr, "only one phi");
               phi = uu;
             }
@@ -3397,9 +3405,9 @@ void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIte
         for (DUIterator_Fast jmax, j = inner_cl->fast_outs(jmax); j < jmax; j++) {
           Node* uu = inner_cl->fast_out(j);
           if (uu->is_memory_phi()) {
-            if (uu->adr_type() == igvn->C->get_adr_type(igvn->C->get_alias_index(u->adr_type()))) {
+            if (uu->out_adr_type() == igvn->C->get_adr_type(igvn->C->get_alias_index(u->out_adr_type()))) {
               assert(phi == uu, "what's that phi?");
-            } else if (uu->adr_type() == TypePtr::BOTTOM) {
+            } else if (uu->out_adr_type() == TypePtr::BOTTOM) {
               Node* n = uu->in(LoopNode::LoopBackControl);
               uint limit = igvn->C->live_nodes();
               uint i = 0;
@@ -3413,7 +3421,7 @@ void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIte
                 } else if (n->is_Phi()) {
                   n = n->in(1);
                 } else if (n->is_MergeMem()) {
-                  n = n->as_MergeMem()->memory_at(igvn->C->get_alias_index(u->adr_type()));
+                  n = n->as_MergeMem()->memory_at(igvn->C->get_alias_index(u->out_adr_type()));
                 } else if (n->is_Store() || n->is_LoadStore() || n->is_ClearArray()) {
                   n = n->in(MemNode::Memory);
                 } else {
@@ -3430,7 +3438,7 @@ void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIte
           // inner loop has no phi for that memory
           // slice, create one for the outer loop
           phi = PhiNode::make(inner_cl, first->in(MemNode::Memory), Type::MEMORY,
-                              igvn->C->get_adr_type(igvn->C->get_alias_index(u->adr_type())));
+                              igvn->C->get_adr_type(igvn->C->get_alias_index(u->out_adr_type())));
           phi->set_req(LoopNode::LoopBackControl, last);
           phi = register_new_node(phi, inner_cl, igvn, iloop);
           igvn->replace_input_of(first, MemNode::Memory, phi);
@@ -3923,7 +3931,7 @@ const TypeInt* CountedLoopConverter::filtered_type_from_dominators(Node* val, No
               // We may have encountered multiple if conditions, that have no
               // overlap, and produce an empty/top type. Returning nullptr
               // is conservative, it means we do not constrain the type, which
-              // will just prevent further optimiziations.
+              // will just prevent further optimizations.
               assert(join_t->empty(), "top");
               return nullptr;
             }
@@ -3932,7 +3940,7 @@ const TypeInt* CountedLoopConverter::filtered_type_from_dominators(Node* val, No
         }
       }
       pred = _phase->idom(pred);
-      if (pred == nullptr || pred == _phase->C->top()) {
+      if (pred == nullptr || pred == _phase->C->top() || pred == _phase->C->start()) {
         break;
       }
       // Stop if going beyond definition block of val
@@ -4155,7 +4163,7 @@ static float estimate_path_freq( Node *n ) {
         n = n->in(0);
         continue;
       }
-      return data->as_CounterData()->count()/FreqCountInvocations;
+      return data->as_CounterData()->count();
     }
     // See if there's a gating IF test
     Node *n_c = n->in(0);
@@ -4225,8 +4233,8 @@ void IdealLoopTree::merge_many_backedges( PhaseIdealLoop *phase ) {
     if( out->is_Phi() ) {
       PhiNode* n = out->as_Phi();
       igvn.hash_delete(n);      // Delete from hash before hacking edges
-      Node *hot_phi = nullptr;
-      Node *phi = new PhiNode(r, n->type(), n->adr_type());
+      Node* hot_phi = nullptr;
+      Node* phi = new PhiNode(r, n->type(), n->out_adr_type());
       // Check all inputs for the ones to peel out
       uint j = 1;
       for( uint i = 2; i < n->req(); i++ ) {
@@ -4382,10 +4390,9 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
   visited.set(_head->_idx);
   while (stack.size() > 0) {
     Node* n = stack.pop();
-    if (n->is_Call() && n->as_Call()->guaranteed_safepoint()
-        && !(n->is_CallStaticJava() && n->as_CallStaticJava()->is_boxing_method())) {
+    if (n->is_Call() && n->as_Call()->guaranteed_safepoint() && !n->is_boxing_or_unboxing_call()) {
       // Terminate this path: guaranteed safepoint found.
-      // Boxing CallStaticJava calls are excluded as they may lack a safepoint on the fast path. This is
+      // Boxing and unboxing calls are excluded as they may lack a safepoint on the fast path. This is
       // not done via CallStaticJavaNode::guaranteed_safepoint() as that also controls PcDesc emission.
       // In the future, guaranteed_safepoint() should be reworked to correctly handle boxing methods
       // to avoid this additional check.
@@ -4486,12 +4493,11 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
     if (!_irreducible) {
       // Scan the dom-path nodes from tail to head
       for (Node* n = tail(); n != _head; n = _phase->idom(n)) {
-        // Boxing CallStaticJava calls are excluded as they may lack a safepoint on the fast path. This is
+        // Boxing and unboxing calls are excluded as they may lack a safepoint on the fast path. This is
         // not done via CallStaticJavaNode::guaranteed_safepoint() as that also controls PcDesc emission.
         // In the future, guaranteed_safepoint() should be reworked to correctly handle boxing methods
         // to avoid this additional check.
-        if (n->is_Call() && n->as_Call()->guaranteed_safepoint()
-            && !(n->is_CallStaticJava() && n->as_CallStaticJava()->is_boxing_method())) {
+        if (n->is_Call() && n->as_Call()->guaranteed_safepoint() && !n->is_boxing_or_unboxing_call()) {
           has_call = true;
           _has_sfpt = 1;          // Then no need for a safept!
           break;
@@ -6766,7 +6772,7 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
 // dominated by early is considered a potentially interfering store.
 // This can produce false positives.
 Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node* LCA) {
-  int load_alias_idx = C->get_alias_index(n->adr_type());
+  int load_alias_idx = C->get_alias_index(n->in_adr_type());
   if (C->alias_type(load_alias_idx)->is_rewritable()) {
     Unique_Node_List worklist;
 
@@ -6790,7 +6796,7 @@ Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node
         Node* sctrl = has_ctrl(s) ? get_ctrl(s) : s->in(0);
         assert(sctrl != nullptr || !s->is_reachable_from_root(), "must have control");
         if (sctrl != nullptr && !sctrl->is_top() && is_dominator(early, sctrl)) {
-          const TypePtr* adr_type = s->adr_type();
+          const TypePtr* adr_type = s->out_adr_type();
           if (s->is_ArrayCopy()) {
             // Copy to known instance needs destination type to test for aliasing
             const TypePtr* dest_type = s->as_ArrayCopy()->_dest_type;
@@ -6820,7 +6826,7 @@ Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node
     if (LCA != early) {
       for (uint i = 0; i < worklist.size(); i++) {
         Node* s = worklist.at(i);
-        if (s->is_Phi() && C->can_alias(s->adr_type(), load_alias_idx)) {
+        if (s->is_Phi() && C->can_alias(s->out_adr_type(), load_alias_idx)) {
           Node* r = s->in(0);
           for (uint j = 1; j < s->req(); j++) {
             Node* in = s->in(j);

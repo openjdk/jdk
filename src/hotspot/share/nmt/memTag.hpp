@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_NMT_MEM_TAG_HPP
-#define SHARE_NMT_MEM_TAG_HPP
+#ifndef SHARE_NMT_MEMTAG_HPP
+#define SHARE_NMT_MEMTAG_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
@@ -79,4 +79,4 @@ MEMORY_TAG_DO(MEMORY_TAG_SHORTNAME)
 // Make an int version of the sentinel end value.
 constexpr int mt_number_of_tags = static_cast<int>(MemTag::mt_number_of_tags);
 
-#endif // SHARE_NMT_MEM_TAG_HPP
+#endif // SHARE_NMT_MEMTAG_HPP

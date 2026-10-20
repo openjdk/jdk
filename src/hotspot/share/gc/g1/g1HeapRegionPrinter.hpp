@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public:
 
   static void active(G1HeapRegion* hr)                    { print("ACTIVE", hr); }
 
-  static void inactive(G1HeapRegion* hr)                  { print("INACTIVE", hr); }
+  static void pending_uncommit(G1HeapRegion* hr)          { print("PENDING-UNCOMMIT", hr); }
 
   static void uncommit(G1HeapRegion* hr)                  { print("UNCOMMIT", hr); }
 };

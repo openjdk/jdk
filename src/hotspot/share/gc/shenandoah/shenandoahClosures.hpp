@@ -200,33 +200,12 @@ public:
   inline void do_oop(narrowOop* p);
 };
 
-class ShenandoahNMethodAndDisarmClosure : public NMethodToOopClosure {
-public:
-  inline ShenandoahNMethodAndDisarmClosure(OopClosure* cl);
-  inline void do_nmethod(nmethod* nm);
-};
-
-
 //
 // ========= Update References
 //
 
-template <ShenandoahGenerationType GENERATION>
-class ShenandoahMarkUpdateRefsClosure : public ShenandoahMarkRefsSuperClosure {
-private:
-  template <class T>
-  inline void work(T* p);
-
-public:
-  ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q);
-
-  virtual void do_oop(narrowOop* p) { work(p); }
-  virtual void do_oop(oop* p)       { work(p); }
-};
-
-class ShenandoahUpdateRefsSuperClosure : public ShenandoahSuperClosure {};
-
-class ShenandoahNonConcUpdateRefsClosure : public ShenandoahUpdateRefsSuperClosure {
+template <bool CONCURRENT>
+class ShenandoahUpdateRefsClosure : public ShenandoahSuperClosure {
 private:
   template<class T>
   inline void work(T* p);
@@ -235,17 +214,6 @@ public:
   virtual void do_oop(narrowOop* p) { work(p); }
   virtual void do_oop(oop* p)       { work(p); }
 };
-
-class ShenandoahConcUpdateRefsClosure : public ShenandoahUpdateRefsSuperClosure {
-private:
-  template<class T>
-  inline void work(T* p);
-
-public:
-  virtual void do_oop(narrowOop* p) { work(p); }
-  virtual void do_oop(oop* p)       { work(p); }
-};
-
 
 class ShenandoahFlushSATB : public ThreadClosure {
 private:
@@ -261,6 +229,12 @@ public:
 //
 // ========= Utilities
 //
+
+class ShenandoahNoOpClosure : public OopClosure {
+public:
+  inline void do_oop(oop* p)       { }
+  inline void do_oop(narrowOop* p) { }
+};
 
 #ifdef ASSERT
 class ShenandoahAssertNotForwardedClosure : public OopClosure {
