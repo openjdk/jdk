@@ -233,19 +233,19 @@ public final class ValueLayouts {
     @ValueBased
     public static final class OfCharImpl extends AbstractValueLayout<OfCharImpl> implements ValueLayout.OfChar {
 
-        private OfCharImpl(ByteOrder order, Optional<IntegralExtension> integralExtension, long byteAlignment,
+        private OfCharImpl(ByteOrder order, long byteAlignment,
                            Optional<String> name) {
-            super(char.class, order, integralExtension, Character.BYTES, byteAlignment, name);
+            super(char.class, order, Optional.empty(), Character.BYTES, byteAlignment, name);
         }
 
         @Override
         OfCharImpl dup(ByteOrder order, Optional<IntegralExtension> integralExtension, long byteAlignment,
                        Optional<String> name) {
-            return new OfCharImpl(order, integralExtension, byteAlignment, name);
+            return new OfCharImpl(order, byteAlignment, name);
         }
 
-        public static OfChar of(ByteOrder order, Optional<IntegralExtension> integralExtension) {
-            return new OfCharImpl(order, integralExtension, Character.BYTES, Optional.empty());
+        public static OfChar of(ByteOrder order) {
+            return new OfCharImpl(order, Character.BYTES, Optional.empty());
         }
     }
 
@@ -434,7 +434,8 @@ public final class ValueLayouts {
             assert integralExtension.isEmpty();
             return ValueLayouts.OfBooleanImpl.of(order);
         } else if (carrier == char.class) {
-            return ValueLayouts.OfCharImpl.of(order, integralExtension);
+            assert integralExtension.isEmpty();
+            return ValueLayouts.OfCharImpl.of(order);
         } else if (carrier == byte.class) {
             return ValueLayouts.OfByteImpl.of(order, integralExtension);
         } else if (carrier == short.class) {
