@@ -216,7 +216,7 @@ class Stream<T> extends ExchangeImpl<T> {
                     // if the bodyCf is completed exceptionally, or cancelled,
                     // there is no point in pulling the data.
                     // if bodyCf is null just stop here; this is not expected.
-                    if (bodyCf == null || bodyCf.isCancelled() || bodyCf.isCompletedExceptionally()) break;
+                    if (bodyCf == null || bodyCf.isCompletedExceptionally()) break;
                 }
                 Http2Frame frame = inputQ.peek();
                 if (frame instanceof ResetFrame rf) {
