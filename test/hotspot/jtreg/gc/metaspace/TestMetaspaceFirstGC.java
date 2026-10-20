@@ -23,7 +23,7 @@
 
 /*
  * @test TestMetaspaceFirstGC
- * @bug 8208250 8391711 8392597 8394782
+ * @bug 8208250 8391711 8392597
  * @summary Verify that the first metadata GC request seen after startup is made when metaspace reaches the MetaspaceSize threshold
  * @requires vm.hasJFR
  * @requires vm.gc != "Shenandoah"
@@ -95,7 +95,7 @@ public class TestMetaspaceFirstGC {
     private static final List<ClassLoader> loaders = new ArrayList<>();
 
     // Counted down from the JFR stream at the first metadata allocation failure from any thread,
-    // whose it was and whether it was the first request is decided afterwards from the recording.
+    // the recording decides afterwards if it came from loadOneClass and was the first request.
     private static final CountDownLatch metadataGC = new CountDownLatch(1);
 
     public interface Dummy {}
