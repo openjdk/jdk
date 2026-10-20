@@ -25,6 +25,7 @@
 
 #include <windows.h>
 #include <winsock2.h>
+#include <Mswsock.h>
 
 #include "jni.h"
 #include "jni_util.h"
@@ -36,31 +37,6 @@
 
 #include "sun_nio_ch_Net.h"
 #include "sun_nio_ch_PollArrayWrapper.h"
-
-/**
- * Definitions to allow for building with older SDK include files.
- */
-
-#ifndef MCAST_BLOCK_SOURCE
-
-#define MCAST_BLOCK_SOURCE          43
-#define MCAST_UNBLOCK_SOURCE        44
-#define MCAST_JOIN_SOURCE_GROUP     45
-#define MCAST_LEAVE_SOURCE_GROUP    46
-
-#endif  /* MCAST_BLOCK_SOURCE */
-
-struct my_ip_mreq_source {
-    IN_ADDR imr_multiaddr;
-    IN_ADDR imr_sourceaddr;
-    IN_ADDR imr_interface;
-};
-
-struct my_group_source_req {
-    ULONG gsr_interface;
-    SOCKADDR_STORAGE gsr_group;
-    SOCKADDR_STORAGE gsr_source;
-};
 
 /**
  * Copy IPv6 address as jbytearray to target
@@ -152,7 +128,7 @@ Java_sun_nio_ch_Net_canUseIPv6OptionsWithIPv4LocalAddress0(JNIEnv* env, jclass c
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
-                            jboolean stream, jboolean reuse, jboolean fastLoopback)
+                            jboolean stream, jboolean reuse)
 {
     SOCKET s;
     int domain = (preferIPv6) ? AF_INET6 : AF_INET;
@@ -168,23 +144,6 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
     if (domain == AF_INET6 && ipv4_available()) {
         int opt = 0;
         setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, (const char *)&opt, sizeof(opt));
-    }
-
-    /* Enable SIO_LOOPBACK_FAST_PATH on TCP sockets if possible */
-    if (stream && fastLoopback) {
-        static int loopback_available = 1;
-        if (loopback_available) {
-            int rv = NET_EnableFastTcpLoopback((jint)s);
-            if (rv) {
-                if (rv == WSAEOPNOTSUPP) {
-                    loopback_available = 0;
-                } else {
-                    NET_ThrowNew(env, rv, "fastLoopback");
-                    closesocket(s);
-                    return IOS_THROWN;
-                }
-            }
-        }
     }
 
     /* Disable WSAECONNRESET errors for initially unconnected UDP sockets */
@@ -455,7 +414,7 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
                                 jint group, jint interf, jint source)
 {
     struct ip_mreq mreq;
-    struct my_ip_mreq_source mreq_source;
+    struct ip_mreq_source mreq_source;
     int opt, n, optlen;
     void* optval;
 
@@ -487,7 +446,7 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_blockOrUnblock4(JNIEnv *env, jobject this, jboolean block, jobject fdo,
                                    jint group, jint interf, jint source)
 {
-    struct my_ip_mreq_source mreq_source;
+    struct ip_mreq_source mreq_source;
     int n;
     int opt = (block) ? IP_BLOCK_SOURCE : IP_UNBLOCK_SOURCE;
 
@@ -518,7 +477,7 @@ static int setGroupSourceReqOption(JNIEnv* env,
                                    jint index,
                                    jbyteArray source)
 {
-    struct my_group_source_req req;
+    struct group_source_req req;
     struct sockaddr_in6* sin6;
 
     req.gsr_interface = (ULONG)index;

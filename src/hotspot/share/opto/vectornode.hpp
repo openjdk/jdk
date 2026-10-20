@@ -2221,6 +2221,7 @@ public:
 private:
   uint size_of() const { return sizeof(*this); }
   bool depends_only_on_test_impl() const { return false; }
+  const TypePtr* in_adr_type_impl() const final { return TypePtr::BOTTOM; }
 };
 
 // Lane-wise right rotation of the first input by the second input.

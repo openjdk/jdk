@@ -23,11 +23,11 @@
  */
 
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
 #include "cds/dynamicArchive.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -1440,10 +1440,10 @@ void ClassLoader::record_hidden_class(InstanceKlass* ik) {
     return;
   }
 
-  if (HeapShared::is_lambda_proxy_klass(ik)) {
+  if (AOTHeap::is_lambda_proxy_klass(ik)) {
     InstanceKlass* nest_host = ik->nest_host_not_null();
     ik->set_shared_classpath_index(nest_host->shared_classpath_index());
-  } else if (HeapShared::is_lambda_form_klass(ik)) {
+  } else if (AOTHeap::is_lambda_form_klass(ik)) {
     ik->set_shared_classpath_index(0);
   } else {
     // Generated invoker classes.

@@ -3601,10 +3601,12 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
   __ cmpq(r10_src_klass, rax);
   __ jcc(Assembler::notEqual, L_failed);
 
-  if (Arguments::is_valhalla_enabled()) {
+  if (UseArrayFlattening) {
     // Check for flat value type array -> return -1
     __ test_flat_array_oop(src, rax, L_failed);
+  }
 
+  if (Arguments::is_valhalla_enabled()) {
     // Check for null-free (non-flat) value type array -> handle as object array
     __ test_null_free_array_oop(src, rax, L_objArray);
   }
@@ -3738,12 +3740,14 @@ __ BIND(L_checkcast_copy);
 
 #ifdef ASSERT
     {
-      BLOCK_COMMENT("assert not null-free array {");
-      Label L;
-      __ test_non_null_free_array_oop(dst, rklass_tmp, L);
-      __ stop("unexpected null-free array");
-      __ bind(L);
-      BLOCK_COMMENT("} assert not null-free array");
+      if (Arguments::is_valhalla_enabled()) {
+        BLOCK_COMMENT("assert not null-free array {");
+        Label L;
+        __ test_non_null_free_array_oop(dst, rklass_tmp, L);
+        __ stop("unexpected null-free array");
+        __ bind(L);
+        BLOCK_COMMENT("} assert not null-free array");
+      }
     }
 #endif
 

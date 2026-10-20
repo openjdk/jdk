@@ -321,6 +321,7 @@ public:
     ArrayOrKlass
   };
   FlatArrayCheckNode(Compile* C, Node* mem, Node* array_or_klass) : CmpNode(mem, array_or_klass) {
+    assert(UseArrayFlattening, "Should not be used without flat arrays enabled");
     init_class_id(Class_FlatArrayCheck);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
@@ -329,6 +330,9 @@ public:
   virtual const Type* sub(const Type*, const Type*) const { ShouldNotReachHere(); return nullptr; }
   const Type* Value(PhaseGVN* phase) const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
+private:
+  const TypePtr* in_adr_type_impl() const final { return TypeRawPtr::BOTTOM; }
 };
 
 //------------------------------BoolTest---------------------------------------
@@ -473,6 +477,7 @@ public:
   NegNode(Node* in1) : Node(nullptr, in1) {
     init_class_id(Class_Neg);
   }
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------NegINode---------------------------------------
@@ -603,6 +608,7 @@ class ReverseBytesNode : public Node {
 public:
   ReverseBytesNode(Node* in) : Node(nullptr, in) {}
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
 };
 //-------------------------------ReverseBytesINode--------------------------------
 // reverse bytes of an integer

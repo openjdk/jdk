@@ -189,7 +189,7 @@ import java.util.function.Consumer;
  *     <td style="text-align:center;">{@link ValueLayout.OfBoolean}</td>
  *     <td style="text-align:center;">{@code boolean}</td>
  *     <td style="text-align:center;">{@code bool}</td>
- *     <td style="text-align:center;">{@code C_BOOLEAN}</td>
+ *     <td style="text-align:center;">{@code C_BOOL}</td>
  * <tr><th scope="row" style="font-weight:normal">{@code char}</th>
  *     <td style="text-align:center;">{@link ValueLayout.OfByte}</td>
  *     <td style="text-align:center;">{@code byte}</td>
@@ -377,7 +377,7 @@ import java.util.function.Consumer;
  *     MemorySegment comparFunc = linker.upcallStub(comparHandle, comparDesc, arena);
  *     MemorySegment array = arena.allocateFrom(C_INT, 0, 9, 3, 4, 6, 5, 1, 8, 2, 7);
  *     qsort.invokeExact(array, 10L, 4L, comparFunc);
- *     int[] sorted = array.toArray(ValueLayout.JAVA_INT); // [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
+ *     int[] sorted = array.toArray(C_INT); // [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
  * }
  * }
  *
