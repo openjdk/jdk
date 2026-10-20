@@ -2184,6 +2184,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 
   Label L_loop_search_receiver, L_loop_search_empty;
   Label L_restart, L_found_recv, L_found_empty, L_count_update;
+  Label L_done;
 
   // The code here recognizes three major cases:
   //   A. Fastest: receiver found in the table
@@ -2269,12 +2270,20 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   lea(rscratch2, Address(mdp, offset));
   cmpxchg_weak(/*addr*/ rscratch2, /*expected*/ zr, /*new*/ recv, Assembler::xword, memory_order_relaxed);
 
-  // CAS success means the slot now has the receiver we want. CAS failure means
-  // something had claimed the slot concurrently: it can be the same receiver we want,
-  // or something else. Since this is a slow path, we can optimize for code density,
-  // and just restart the search from the beginning.
-  b(L_restart);
-
+  if (ProfileCaptureRatio > 1 && is_C1_masm()) {
+    block_comment("INNER");
+    // We found one. Do the first increment.
+    br(NE, L_restart);
+    increment(Address(rscratch2, receiver_to_count_step), DataLayout::counter_increment);
+    b(L_done);
+  } else {
+    // CAS success means the slot now has the receiver we want. CAS
+    // failure means something had claimed the slot concurrently: it
+    // can be the same receiver we want, or something else. Since this
+    // is a slow path, we can optimize for code density, and just
+    // restart the search from the beginning.
+    b(L_restart);
+  }
   // Found a receiver, convert its slot offset to corresponding count offset.
   bind(L_found_recv);
   add(offset, offset, receiver_to_count_step);
@@ -2283,6 +2292,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   bind(L_count_update);
   inc(this, Address(mdp, offset), DataLayout::counter_increment);
 
+  bind(L_done);
   block_comment("} profile_receiver_type");
 }
 

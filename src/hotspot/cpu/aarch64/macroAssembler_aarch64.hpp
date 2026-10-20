@@ -98,6 +98,8 @@ class MacroAssembler: public Assembler {
 
   void call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions = true);
 
+  virtual bool is_C1_masm() { return false; }
+
  private:
 
   enum KlassDecodeMode {

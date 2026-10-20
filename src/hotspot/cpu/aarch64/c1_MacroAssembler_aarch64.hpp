@@ -35,6 +35,8 @@ using MacroAssembler::null_check;
   // initialization
   void pd_init() { _rsp_offset = 0; }
 
+protected:
+  virtual bool is_C1_masm() { return true; }
 
  public:
   void try_allocate(

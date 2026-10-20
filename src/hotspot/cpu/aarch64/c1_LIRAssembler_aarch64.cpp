@@ -1346,24 +1346,13 @@ static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src,
   intptr_t counter_contents = (ProfileCaptureRatio > 1
                                && md_base_address != nullptr
                                && dst.getMode() == Address::base_plus_offset)
-    ? get_counter(md_base_address, dst.offset(), T_LONG) : 0;
+    ? get_counter(md_base_address, dst.offset(), T_LONG) : -1;
 
   auto as_C1_masm = C1_masm->as_C1_MacroAssembler();
   auto masm = [=]() { return as_C1_masm; };
+
   __ block_comment("increment_mdo {");
-  if (ProfileCaptureRatio == 1) {
-    __ increment(dst, src);
-  } else if (counter_contents != 0 || AggressiveProfileReduction) {
-    if (AggressiveProfileReduction) {
-      // Make sure the counter in memory is nonzero
-      Label nonzero;
-      __ block_comment("AggressiveProfileReduction");
-      __ ldr(rscratch1, dst);
-      __ cbz(rscratch1, nonzero);
-      __ mov(rscratch1, 1);
-      __ str(rscratch1, dst);
-      __ bind(nonzero);
-    }
+  if (ProfileCaptureRatio > 1 && counter_contents != 0) {
     Label nope;
     int ratio_shift = exact_log2(ProfileCaptureRatio);
     __ ubfx(rscratch1, r_profile_rng, 32 - ratio_shift, ratio_shift);
@@ -1372,6 +1361,7 @@ static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src,
     } __ bind(nope);
     __ step_random(r_profile_rng, rscratch2);
   } else {
+    // We know that this counter is zero. Assume that it will be a rare event.
     __ increment(dst, src);
   }
   __ block_comment("} increment_mdo");
@@ -2848,7 +2838,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
       __ nop();
       __ bind(*counter_stub->alt_entry());
       __ ldrw(rscratch1, nop_insn);
-      __ strw(rscratch1, Address(lr, -4));
+      __ strw(rscratch1, Address(lr, -NativeCall::instruction_size));
 
       ce->const2reg(md_opr, md_reg, lir_patch_none, nullptr);
       ce->mem2reg(counter_address, dest_opr,
