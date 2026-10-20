@@ -82,6 +82,10 @@ public class AsyncShutdownNowInvokeAnyRace {
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         int falseAlarms = 0;
         for (int rep = 1; rep < reps; rep++) {
+
+            if (Thread.interrupted()) // Ensure that the test respects interruptions
+                throw new InterruptedException();
+
             ForkJoinPool pool = new ForkJoinPool(1);
             CountDownLatch pleaseShutdownNow = new CountDownLatch(1);
             int nTasks = rnd.nextInt(2, 5);
@@ -106,43 +110,37 @@ public class AsyncShutdownNowInvokeAnyRace {
                 } catch (Throwable t) { throw new AssertionError(t); }
             };
             Future<Void> shutdownResult = CompletableFuture.runAsync(shutdown);
-            try {
-                try {
-                    if (rnd.nextBoolean())
-                        pool.invokeAny(tasks, 10L, SECONDS);
-                    else
-                        pool.invokeAny(tasks);
-                    throw new AssertionError("should throw");
-                } catch (RejectedExecutionException re) {
-                    falseAlarms++;
-                } catch (CancellationException re) {
-                } catch (ExecutionException ex) {
-                    Throwable cause = ex.getCause();
-                    if (!(cause instanceof InterruptedException) &&
-                        !(cause instanceof CancellationException))
-                        throw ex;
-                } catch (TimeoutException ex) {
-                    dumpTestThreads();
-                    String detail = String.format(
-                        "invokeAny timed out, "
-                        + "nTasks=%d rep=%d threadsStarted=%d%n"
-                        + "poolAtShutdownNow=%s%n"
-                        + "poolAtTimeout=%s%n"
-                        + "queuedTaskCount=%d queuedSubmissionCount=%d",
-                        nTasks, rep, threadsStarted.get(),
-                        poolAtShutdownNow,
-                        pool,
-                        pool.getQueuedTaskCount(),
-                        pool.getQueuedSubmissionCount());
-                    throw new AssertionError(detail, ex);
-                }
-            } finally {
-                pool.shutdown();
-                if (!pool.awaitTermination(16, SECONDS)) {
-                    dumpTestThreads();
-                    throw new AssertionError("pool did not terminate after repetition " + rep);
-                }
+
+            try (pool) { // Ensure that the pool is terminated after each iteration
+                if (rnd.nextBoolean())
+                    pool.invokeAny(tasks, 10L, SECONDS);
+                else
+                    pool.invokeAny(tasks);
+                throw new AssertionError("should throw");
+            } catch (RejectedExecutionException re) {
+                falseAlarms++;
+            } catch (CancellationException re) {
+            } catch (ExecutionException ex) {
+                Throwable cause = ex.getCause();
+                if (!(cause instanceof InterruptedException) &&
+                    !(cause instanceof CancellationException))
+                    throw ex;
+            } catch (TimeoutException ex) {
+                dumpTestThreads();
+                String detail = String.format(
+                    "invokeAny timed out, "
+                    + "nTasks=%d rep=%d threadsStarted=%d%n"
+                    + "poolAtShutdownNow=%s%n"
+                    + "poolAtTimeout=%s%n"
+                    + "queuedTaskCount=%d queuedSubmissionCount=%d",
+                    nTasks, rep, threadsStarted.get(),
+                    poolAtShutdownNow,
+                    pool,
+                    pool.getQueuedTaskCount(),
+                    pool.getQueuedSubmissionCount());
+                throw new AssertionError(detail, ex);
             }
+
             if (falseAlarms != 0)
                 System.out.println("Premature shutdowns = " + falseAlarms);
             shutdownResult.get();
