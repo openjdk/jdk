@@ -240,7 +240,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   const bool has_humongous_alloc_request_since_gc = ShenandoahHeap::heap()->max_humongous_regions_since_gc() > 0;
   // Skipping calc if has_humongous_alloc_request_since_gc is false - the calc requires a lock
-  const size_t humongous_allocatable_bytes = has_humongous_alloc_request_since_gc ? ShenandoahHeap::heap()->free_set()->calc_max_humongous_allocatable() : 0;
+  const size_t humongous_allocatable_bytes = has_humongous_alloc_request_since_gc ?
+                              ShenandoahHeap::heap()->free_set()->max_humongous_allocatable() : 0;
   if (has_humongous_alloc_request_since_gc && trigger_min_humongous_threshold(humongous_allocatable_bytes)) {
     return true;
   }
@@ -281,7 +282,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   return ShenandoahHeuristics::should_start_gc();
 }
-
 
 bool ShenandoahAdaptiveHeuristics::trigger_min_humongous_threshold(size_t max_humongous_available) {
   const size_t max_requested_regions = ShenandoahHeap::heap()->max_humongous_regions_since_gc();

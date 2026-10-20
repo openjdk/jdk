@@ -1381,7 +1381,9 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _young_unaffiliated_regions(0),
   _global_unaffiliated_regions(0),
   _total_young_regions(0),
-  _total_global_regions(0)
+  _total_global_regions(0),
+  _cached_max_contig_bytes(0),
+  _cached_max_contig_age_ns(0)
 {
   clear_internal();
 }
@@ -2375,6 +2377,8 @@ void ShenandoahFreeSet::finish_rebuild(size_t young_trashed_regions, size_t old_
   _total_global_regions = _heap->num_regions();
   establish_old_collector_alloc_bias();
 
+  update_max_contig_cache(mutator_free_stats_locked().max_contig_empty_bytes);
+
   // Release the rebuild lock now.  What remains in this function is read-only
   rebuild_lock()->unlock();
   _partitions.assert_bounds();
@@ -2835,9 +2839,23 @@ ShenandoahFreeSet::MutatorFreeStats ShenandoahFreeSet::mutator_free_stats_locked
   return stats;
 }
 
-size_t ShenandoahFreeSet::calc_max_humongous_allocatable() {
-  ShenandoahHeapLocker locker(_heap->lock());
-  return mutator_free_stats_locked().max_contig_empty_bytes;
+void ShenandoahFreeSet::update_max_contig_cache(size_t bytes) {
+  shenandoah_assert_heaplocked();
+  _cached_max_contig_bytes.store_relaxed(bytes);
+  _cached_max_contig_age_ns.store_relaxed(os::javaTimeNanos());
+}
+
+size_t ShenandoahFreeSet::max_humongous_allocatable() {
+  // TODO: max age is not refreshed at a fixed frequency, but only when it's needed for calculation.
+  // Maybe move ShenandoahMaxContigRegionMaxAgeMiliSec to a constant in the code rather than in shenandoah_globals.hpp?
+  const jlong max_age_ns = (jlong) ShenandoahMaxContigRegionMaxAgeMiliSec * NANOSECS_PER_MILLISEC;
+  // use nanos since javaTimeMillis doesn't increase monotonically
+  if (os::javaTimeNanos() - _cached_max_contig_age_ns.load_relaxed() > max_age_ns) {
+    ShenandoahHeapLocker locker(_heap->lock());
+    update_max_contig_cache(mutator_free_stats_locked().max_contig_empty_bytes);
+  }
+
+  return _cached_max_contig_bytes.load_relaxed();
 }
 
 void ShenandoahFreeSet::log_status() {
@@ -2917,6 +2935,7 @@ void ShenandoahFreeSet::log_status() {
     LogStream ls(lt);
 
     const MutatorFreeStats stats = mutator_free_stats_locked();
+    update_max_contig_cache(stats.max_contig_empty_bytes);
     const size_t max_humongous = stats.max_contig_empty_bytes;
     const size_t total_free_ext = stats.total_free_ext;
     const size_t total_used_in_freeset = stats.used_in_freeset;

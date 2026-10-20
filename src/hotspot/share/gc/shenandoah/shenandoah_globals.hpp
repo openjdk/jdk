@@ -158,6 +158,11 @@
           "it.")                                                       \
           range(0.001,0.999)                                                \
                                                                             \
+  product(uintx, ShenandoahMaxContigRegionMaxAgeMiliSec, 50, EXPERIMENTAL,  \
+          "The max age in millisecond for contiguous empty region count"    \
+          "on the heap.")                                                   \
+          range(0,1000)                                                     \
+                                                                            \
   product(size_t, ShenandoahGenerationalTenuringCohortPopulationThreshold,  \
                                                          4*K, EXPERIMENTAL, \
           "(Generational mode only) Cohorts whose population is lower than "\

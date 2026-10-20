@@ -616,6 +616,11 @@ private:
 
   MutatorFreeStats mutator_free_stats_locked() const;
 
+  Atomic<size_t> _cached_max_contig_bytes;
+  Atomic<jlong> _cached_max_contig_age_ns;
+
+  void update_max_contig_cache(size_t bytes);
+
 public:
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
 
@@ -660,7 +665,7 @@ public:
   // Public because ShenandoahRegionPartitions assertions require access.
   size_t alloc_capacity(ShenandoahHeapRegion *r) const;
   size_t alloc_capacity(size_t idx) const;
-  size_t calc_max_humongous_allocatable();
+  size_t max_humongous_allocatable();
 
   // Return bytes used by old
   inline size_t old_used() {

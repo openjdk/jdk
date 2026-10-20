@@ -1042,7 +1042,7 @@ HeapWord* ShenandoahHeap::allocate_memory_work(ShenandoahAllocRequest& req, bool
 
   HeapWord* result = _allocator->allocate(req, in_new_region);
 
-  if (req.is_mutator_alloc() && ShenandoahHeapRegion::requires_humongous(req.size())) {
+  if (req.is_mutator_alloc() && ShenandoahHeapRegion::requires_humongous(req.size()) && !req.is_cds()) {
     const size_t curr_region_count = ShenandoahHeapRegion::required_regions(req.size() * HeapWordSize);
     if (curr_region_count > _max_humongous_regions_since_gc.load_relaxed()) {
       _max_humongous_regions_since_gc.store_relaxed(curr_region_count);
