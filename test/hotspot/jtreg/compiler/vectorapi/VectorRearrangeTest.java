@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @bug 8350463
- * @summary AArch64: Add vector rearrange support for small lane count vectors
+ * @bug 8350463 8394902
+ * @summary Test vector rearrange support for small lane count vectors
  * @modules jdk.incubator.vector
  * @library /test/lib /
  *
@@ -183,7 +183,7 @@ public class VectorRearrangeTest {
     }
 
     @Test
-    @IR(counts = {IRNode.REARRANGE_VI, IRNode.VECTOR_SIZE_2, " >0 "}, applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.REARRANGE_VI, IRNode.VECTOR_SIZE_2, " >0 "}, applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     public void rearrange_int64() {
         VectorShuffle<Integer> shuffle = VectorShuffle.fromArray(ispec64, indexes[0], 0);
         for (int i = 0; i < LENGTH; i += ispec64.length()) {
@@ -223,7 +223,7 @@ public class VectorRearrangeTest {
     }
 
     @Test
-    @IR(counts = {IRNode.REARRANGE_VL, IRNode.VECTOR_SIZE_2, " >0 "}, applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.REARRANGE_VL, IRNode.VECTOR_SIZE_2, " >0 "}, applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     public void rearrange_long128() {
         VectorShuffle<Long> shuffle = VectorShuffle.fromArray(lspec128, indexes[0], 0);
         for (int i = 0; i < LENGTH; i += lspec128.length()) {
@@ -243,7 +243,7 @@ public class VectorRearrangeTest {
     }
 
     @Test
-    @IR(counts = {IRNode.REARRANGE_VF, IRNode.VECTOR_SIZE_2, " >0 "}, applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.REARRANGE_VF, IRNode.VECTOR_SIZE_2, " >0 "}, applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     public void rearrange_float64() {
         VectorShuffle<Float> shuffle = VectorShuffle.fromArray(fspec64, indexes[0], 0);
         for (int i = 0; i < LENGTH; i += fspec64.length()) {
@@ -283,7 +283,7 @@ public class VectorRearrangeTest {
     }
 
     @Test
-    @IR(counts = {IRNode.REARRANGE_VD, IRNode.VECTOR_SIZE_2, " >0 "}, applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.REARRANGE_VD, IRNode.VECTOR_SIZE_2, " >0 "}, applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     public void rearrange_double128() {
         VectorShuffle<Double> shuffle = VectorShuffle.fromArray(dspec128, indexes[0], 0);
         for (int i = 0; i < LENGTH; i += dspec128.length()) {
