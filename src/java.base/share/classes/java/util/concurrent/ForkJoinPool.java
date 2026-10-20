@@ -2006,7 +2006,7 @@ public class ForkJoinPool extends AbstractExecutorService
     private int scan(WorkQueue w, int stride, int src) {
         WorkQueue[] qs; int n;
         if ((qs = queues) != null && w != null && (n = qs.length) > 0) {
-            int taken = 0; boolean propagated = false;
+            int taken = 0, propagated = 0;
             scan: for (int i = src, polls = n << 1;;) {
                 WorkQueue q;
                 int qid = i & (n - 1);
@@ -2030,13 +2030,15 @@ public class ForkJoinPool extends AbstractExecutorService
                                 break scan;  // busy or stalled; reorder scan
                             }
                             q.base = nb;
-                            if (taken++ == 0)
+                            if (taken++ == 0) {
+                                propagated = b - 1;
                                 w.source = src = qid;
-                            if (nt == null)
-                                propagated = false;
-                            else if (!propagated) {
-                                propagated = true;
-                                signalWork();
+                            }
+                            if (nt != null) {
+                                int ppg = propagated;
+                                propagated = nb;
+                                if (ppg != b)
+                                    signalWork();
                             }
                             w.topLevelExec(t);
                         }
