@@ -651,10 +651,6 @@ BOOL AwtPrintControl::InitPrintDialog(JNIEnv *env,
         env->DeleteLocalRef(dialogOwner);
         dialogOwner = NULL;
     }
-    jobject mdh = NULL;
-    jobject dest = NULL;
-    jobject select = NULL;
-    jobject dialog = NULL;
     LPTSTR printName = NULL;
     LPTSTR portName = NULL;
 

@@ -515,7 +515,6 @@ MsgRouting AwtDialog::WmEndModal()
 
     CheckUninstallModalHook();
 
-    HWND parentHWnd = ::GetParent(GetHWnd());
     jobject peer = GetPeer(env);
     jobject target = GetTarget(env);
     if (::GetForegroundWindow() == GetHWnd()) {

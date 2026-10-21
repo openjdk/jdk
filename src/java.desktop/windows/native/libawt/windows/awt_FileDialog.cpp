@@ -70,8 +70,10 @@ static LPCTSTR OpenFileNameProp = TEXT("AWT_OFN");
 void
 AwtFileDialog::Initialize(JNIEnv *env, jstring filterDescription)
 {
+#ifdef DEBUG
     int length = env->GetStringLength(filterDescription);
     DASSERT(length + 1 < MAX_FILTER_STRING);
+#endif
     LPCTSTR tmp = JNU_GetStringPlatformChars(env, filterDescription, NULL);
     _tcscpy_s(s_fileFilterString, MAX_FILTER_STRING, tmp);
     JNU_ReleaseStringPlatformChars(env, filterDescription, tmp);
@@ -233,7 +235,6 @@ AwtFileDialog::Show(void *p)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     jobject peer;
-    LPTSTR fileBuffer = NULL;
     LPTSTR currentDirectory = NULL;
     jint mode = 0;
     BOOL result = FALSE;
@@ -261,7 +262,6 @@ AwtFileDialog::Show(void *p)
         }
 //      DASSERT(awtParent);
         title = (jstring)(env)->GetObjectField(target, AwtDialog::titleID);
-        HWND hwndOwner = awtParent ? awtParent->GetHWnd() : NULL;
 
         if (title == NULL || env->GetStringLength(title)==0) {
             title = JNU_NewStringPlatform(env, L" ");

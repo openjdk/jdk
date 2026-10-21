@@ -105,9 +105,6 @@ AwtList* AwtList::Create(jobject peer, jobject parent)
              * NOTE: WS_CLIPCHILDREN is excluded so that repaint requests
              * from Java will pass through the wrap to the native listbox.
              */
-            DWORD wrapStyle = WS_CHILD | WS_CLIPSIBLINGS;
-            DWORD wrapExStyle = 0;
-
             DWORD style = WS_CHILD | WS_CLIPSIBLINGS | WS_VSCROLL | WS_HSCROLL |
                 LBS_NOINTEGRALHEIGHT | LBS_NOTIFY | LBS_OWNERDRAWFIXED;
             DWORD exStyle = WS_EX_CLIENTEDGE;

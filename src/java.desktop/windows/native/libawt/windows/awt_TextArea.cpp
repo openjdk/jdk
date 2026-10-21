@@ -116,7 +116,6 @@ LRESULT
 AwtTextArea::WindowProc(UINT message, WPARAM wParam, LPARAM lParam) {
 
     LRESULT retValue = 0;
-    MsgRouting mr = mrDoDefault;
 
     switch (message) {
     case EM_SETCHARFORMAT:

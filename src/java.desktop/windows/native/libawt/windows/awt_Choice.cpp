@@ -365,7 +365,6 @@ void AwtChoice::SetFont(AwtFont* font)
 
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     jobject target = GetTarget(env);
-    jint height = env->GetIntField(target, AwtComponent::heightID);
 
     Reshape(env->GetIntField(target, AwtComponent::xID),
             env->GetIntField(target, AwtComponent::yID),
