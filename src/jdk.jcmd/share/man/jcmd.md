@@ -36,6 +36,8 @@ jcmd - send diagnostic command requests to a running Java Virtual Machine
 `jcmd` \[*pid* \| *main-class*\] *command*... \| `PerfCounter.print` \| `-f`
 *filename*
 
+`jcmd` \[ `-c` \] \[ `-L` *LIB_PATH* \] \[ `-R` *CACHE_PATH* \] *corefile* *command*... | `-f` *filename*
+
 `jcmd` \[`-l`\]
 
 `jcmd` `-h`
@@ -53,6 +55,9 @@ jcmd - send diagnostic command requests to a running Java Virtual Machine
     of available commands for `jcmd` is obtained by running the `help` command
     (`jcmd` *pid* `help`) where *pid* is the process ID for the running Java
     process.
+
+*corefile*
+:   The filename of a core file or MiniDump from a JVM (Linux and Windows only).
 
 `Perfcounter.print`
 :   Prints the performance counters exposed by the specified Java process.
@@ -72,6 +77,23 @@ jcmd - send diagnostic command requests to a running Java Virtual Machine
 
 `-h`
 :   Displays the `jcmd` utility's command-line help.
+
+
+When using a core file (Linux) or MiniDump (Windows) for post-mortem analysis:
+
+`-c`
+:   Forces reading a core file, only required in case of a clash with a live process name.
+
+`-L` *LIB_PATH*
+:   Must be given if using a core file which originates from another system, and the JVM is
+    not available at the same path, or if the JVM at the path in the core has changed.
+    LIB_PATH must name a directory containing a copy of the same JDK that the corefile originated from.
+    When analyzing a corefile a `corefile.revival` cache directory is
+    created.  -L is not required once the cache is created.
+
+`-R` *CACHE_PATH*
+:   Should be specified when the core file is in a read-only location, to give a path
+    where cache files may be stored.  This must be specified on subsequent invocations.
 
 ## Description
 
@@ -101,6 +123,18 @@ request to the Java process with the specified identifier or to all Java
 processes with the specified name of the main class. You can also send the
 diagnostic command request to all available Java processes by specifying `0` as
 the process identifier.
+
+## Core files
+
+When using jcmd to analyze a core file or MiniDump, the JVM library (e.g. libjvm.so
+or jvm.dll) is loaded and code there is executed.  When using a transported core
+file, ensure the JVM library was acquired from a genuine distribution of the exact
+JDK running in the core file.
+
+The target JVM in the core file must be a version of the JVM with this feature.
+
+The `help` command can be used on a core file, and will show the subset of commands
+available (not all commands are relevant, or possible).
 
 ## Commands for jcmd
 

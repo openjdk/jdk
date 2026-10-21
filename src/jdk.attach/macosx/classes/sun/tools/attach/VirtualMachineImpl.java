@@ -42,7 +42,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Bsd implementation of HotSpotVirtualMachine
  */
 @SuppressWarnings("restricted")
-public class VirtualMachineImpl extends HotSpotVirtualMachine {
+public class VirtualMachineImpl extends HotSpotVirtualMachineLive {
 
     /**
      * HotSpot PerfData file prefix

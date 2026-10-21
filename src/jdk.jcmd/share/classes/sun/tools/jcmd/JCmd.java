@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,22 @@
 
 package sun.tools.jcmd;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.net.URISyntaxException;
 
 import com.sun.tools.attach.AttachOperationFailedException;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 import com.sun.tools.attach.AttachNotSupportedException;
+import com.sun.tools.attach.spi.AttachProvider;
 
 import sun.tools.attach.HotSpotVirtualMachine;
 import sun.tools.common.ProcessArgumentMatcher;
@@ -59,10 +64,16 @@ public class JCmd {
             System.exit(1);
         }
 
-        if (arg.isShowUsage()) {
+        boolean noCommand = arg.getCommand() == null || arg.getCommand().isEmpty();
+        if (arg.isShowUsage() ||
+            (noCommand && !arg.isListCounters() && !arg.isListProcesses())
+            ) {
+            // "help" is already added, for a PID, to show available commands.
+            // For cores, show usage as -L may be required.
             Arguments.usage();
             System.exit(0);
         }
+        // jcmd with no args must show live process list
 
         ProcessArgumentMatcher ap = null;
         try {
@@ -79,7 +90,22 @@ public class JCmd {
             System.exit(0);
         }
 
-        Collection<String> pids = ap.getVirtualMachinePids(JCmd.class);
+        Collection<String> pids = null;
+        if (!arg.isForceCore()) {
+            pids = ap.getVirtualMachinePids(JCmd.class);
+        }
+
+        if (pids == null /* including if arg.isForceCore() */ || pids.isEmpty()) {
+            System.out.println(arg.getProcessString() + ":");
+            try {
+                executeCommandForCore(arg.getProcessString(), arg.getLibDirs(), arg.getRevivalCachePath(), arg.getCommand());
+                System.exit(0);
+            } catch (Exception ex) {
+                // An error like "Unknown diagnostic command" was already printed.
+                ex.printStackTrace();
+                System.exit(1);
+            }
+        }
 
         if (pids.isEmpty()) {
             System.err.println("Could not find any processes matching : '"
@@ -107,13 +133,51 @@ public class JCmd {
         System.exit(success ? 0 : 1);
     }
 
+    private static final String PROVIDER_CORE_TYPE = "core";
+
+    private static VirtualMachine attachCore(String id, Map<String, String> env) throws AttachNotSupportedException, IOException {
+        AttachNotSupportedException lastExc = null;
+        for (AttachProvider p : AttachProvider.providers()) {
+            try {
+                if (p.type().equals(PROVIDER_CORE_TYPE)) {
+                    return p.attachVirtualMachine(id, env);
+                }
+            } catch (AttachNotSupportedException e) {
+                lastExc = e;
+            }
+        }
+        if (lastExc != null) {
+            throw lastExc;
+        }
+        throw new AttachNotSupportedException("Attach to core not implemented (no Attach Provider available)");
+    }
+
     private static void executeCommandForPid(String pid, String command)
         throws AttachNotSupportedException, IOException,
                UnsupportedEncodingException {
-        VirtualMachine vm = VirtualMachine.attach(pid);
 
-        // Cast to HotSpotVirtualMachine as this is an
-        // implementation specific method.
+        VirtualMachine vm = VirtualMachine.attach(pid);
+        executeCommandCommon(vm, command);
+        vm.detach();
+    }
+
+    private static void executeCommandForCore(String pid, String libDirs, String revivalCachePath, String command)
+        throws AttachNotSupportedException, IOException, UnsupportedEncodingException {
+
+        Map<String,String> env = new HashMap<>();
+        if (libDirs != null) {
+            env.put("libDirs", libDirs);
+        }
+        if (revivalCachePath != null) {
+            env.put("revivalCachePath", revivalCachePath);
+        }
+        VirtualMachine vm = attachCore(pid, env);
+        executeCommandCommon(vm, command);
+        vm.detach();
+    }
+
+    private static void executeCommandCommon(VirtualMachine vm, String command) throws IOException, UnsupportedEncodingException {
+        // Cast to HotSpotVirtualMachine as executeJCmd is an implementation specific method.
         HotSpotVirtualMachine hvm = (HotSpotVirtualMachine) vm;
         String lines[] = command.split("\\n");
         for (String line : lines) {
@@ -127,7 +191,6 @@ public class JCmd {
                 System.out.println("Command executed successfully");
             }
         }
-        vm.detach();
     }
 
     private static void listCounters(String pid) {
