@@ -617,7 +617,7 @@ private:
   void updates_after_load_split(Node* data_phi, Node* previous_load, GrowableArray<Node *>  &alloc_worklist);
   Node* split_castpp_load_through_phi(Node* curr_addp, Node* curr_load, Node* region, GrowableArray<Node*>* bases_for_loads, GrowableArray<Node *>  &alloc_worklist);
   void reset_scalar_replaceable_entries(PhiNode* ophi);
-  bool has_reducible_merge_base(AddPNode* n, Unique_Node_List<PhiNode>& reducible_merges);
+  bool has_reducible_merge_base(AddPNode* n, Unique_Node_List<PhiNode>& reducible_merges) const;
   Node* specialize_cmp(Node* base, Node* curr_ctrl);
   Node* specialize_castpp(Node* castpp, Node* base, Node* current_control);
 

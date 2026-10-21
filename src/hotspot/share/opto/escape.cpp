@@ -1227,7 +1227,7 @@ PhiNode* ConnectionGraph::create_selector(PhiNode* ophi) const {
 // Returns true if the AddP node 'n' has at least one base that is a reducible
 // merge. If the base is a CastPP/CheckCastPP then the input of the cast is
 // checked instead.
-bool ConnectionGraph::has_reducible_merge_base(AddPNode* n, Unique_Node_List<PhiNode>& reducible_merges) {
+bool ConnectionGraph::has_reducible_merge_base(AddPNode* n, Unique_Node_List<PhiNode>& reducible_merges) const {
   PointsToNode* ptn = ptnode_adr(n->_idx);
   if (ptn == nullptr || !ptn->is_Field() || ptn->as_Field()->base_count() < 2) {
     return false;
