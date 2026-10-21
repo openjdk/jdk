@@ -29,7 +29,6 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "gc/shared/collectedHeap.hpp"

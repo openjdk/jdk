@@ -21,38 +21,12 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8392533
- * @summary Test that a holder null check is performed when storing to an empty flat field.
- * @enablePreview
- * @requires vm.compiler1.enabled
- * @run main ${test.main.class}
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 ${test.main.class}
- */
+// key: compiler.err.value.finalize
+// key: compiler.note.preview.filename
+// key: compiler.note.preview.recompile
+// key: compiler.warn.has.been.deprecated.for.removal
+// options: --enable-preview  -source ${jdk.version}
 
-package compiler.valhalla.valuetypes;
-
-public class TestEmptyStoreToNullHolder {
-    static value class Empty { }
-
-    Empty field = new Empty();
-
-    static void test(TestEmptyStoreToNullHolder holder) {
-        holder.field = null;
-    }
-
-    public static void main(String[] args) {
-        TestEmptyStoreToNullHolder holder = new TestEmptyStoreToNullHolder();
-        for (int i = 0; i < 20_000; i++) {
-            test(holder);
-        }
-        try {
-            test(null);
-            throw new RuntimeException("No NullPointerException thrown!");
-        } catch (NullPointerException expected) {
-            // Expected
-        }
-    }
+abstract value class AbstractValueClassWithFinalizeMethod {
+    protected void finalize() throws Throwable { }
 }
-
