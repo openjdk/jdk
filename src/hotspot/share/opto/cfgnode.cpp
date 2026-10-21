@@ -43,6 +43,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "opto/valuetypenode.hpp"
@@ -378,7 +379,7 @@ bool RegionNode::is_unreachable_from_root(const PhaseGVN* phase) const {
   VectorSet visited;
 
   // Mark all control nodes reachable from root outputs
-  const Node* n = (Node*)phase->C->root();
+  const Node* n = phase->C->root();
   nstack.push(n);
   visited.set(n->_idx);
   while (nstack.size() != 0) {
