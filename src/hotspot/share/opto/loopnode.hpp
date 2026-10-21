@@ -1615,7 +1615,8 @@ public:
 
   // Construct a range check for a predicate if
   BoolNode* rc_predicate(Node* ctrl, int scale, Node* offset, Node* init, Node* limit,
-                         jint stride, Node* range, bool upper, bool& overflow);
+                         jint stride, Node* range, bool upper, bool& overflow,
+                         Node* bound = nullptr, BoolTest::mask test = BoolTest::lt);
 
   // Implementation of the loop predication to promote checks outside the loop
   bool loop_predication_impl(IdealLoopTree *loop);
@@ -1640,7 +1641,7 @@ public:
                                         Node_List& if_proj_list);
   IfTrueNode* create_template_assertion_predicate(CountedLoopNode* loop_head, ParsePredicateNode* parse_predicate,
                                                   IfProjNode* new_control, int scale, Node* offset, Node* range);
-  void eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
+  void eliminate_hoisted_range_check(IfProjNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
 
   // Helper function to collect predicate for eliminating the useless ones
   void eliminate_useless_predicates() const;
