@@ -146,29 +146,29 @@ void AOTMapLogger::log_ac_region() {
       const char* name = cache-> _store_buffer + name_offset;
 
       switch (entry->kind()) {
-        case  AOTCodeEntry::Kind::Nmethod:
-          log_debug(aot, map)(PTR_FORMAT ": @@ %-17s %d level=%d id=%d %s",
-            p2i(entry), AOTCodeCache::get_kind_name(entry->kind()),
-            entry->size(), entry->comp_level(), entry->comp_id(), name);
-          break;
-        case  AOTCodeEntry::Kind::StubGenBlob:
-          {
-            BlobId blob_id = (BlobId) entry->id();
+      case  AOTCodeEntry::Kind::Nmethod:
+        log_debug(aot, map)(PTR_FORMAT ": @@ %-17s %d level=%d id=%d %s",
+          p2i(entry), AOTCodeCache::get_kind_name(entry->kind()),
+          entry->size(), entry->comp_level(), entry->comp_id(), name);
+        break;
+      case  AOTCodeEntry::Kind::StubGenBlob:
+        {
+          BlobId blob_id = (BlobId) entry->id();
 
-            //First we log the stub blob
-            log_debug(aot, map)(PTR_FORMAT ": @@ %-17s %d id=%d %s",
-              p2i(entry), AOTCodeCache::get_kind_name(entry->kind()),
-              entry->size(), entry->id(), StubInfo::name(blob_id));
-
-            //Now we log each stub embedded inside the blob
-            cache->iterate_embedded_stubs(entry,  log_embedded_stub);
-          }
-          break;
-          default:
+          //First we log the stub blob
           log_debug(aot, map)(PTR_FORMAT ": @@ %-17s %d id=%d %s",
             p2i(entry), AOTCodeCache::get_kind_name(entry->kind()),
-            entry->size(), entry->id(), name);
-          break;
+            entry->size(), entry->id(), StubInfo::name(blob_id));
+
+          //Now we log each stub embedded inside the blob
+          cache->iterate_embedded_stubs(entry,  log_embedded_stub);
+        }
+        break;
+      default:
+        log_debug(aot, map)(PTR_FORMAT ": @@ %-17s %d id=%d %s",
+          p2i(entry), AOTCodeCache::get_kind_name(entry->kind()),
+          entry->size(), entry->id(), name);
+        break;
       }
     }
   }
