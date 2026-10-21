@@ -365,7 +365,7 @@ public:
 
   Node_List<Node>* strided_pack_input_at_index_or_null(const Node_List<Node>* pack, const int index, const int stride, const int offset) const;
   bool is_muladds2i_pack_with_pack_inputs(const Node_List<Node>* pack) const;
-  Node* same_inputs_at_index_or_null(const Node_List<Node>* pack, const int index) const;
+  static Node* same_inputs_at_index_or_null(const Node_List<Node>* pack, const int index);
   VTransformBoolTest get_bool_test(const Node_List<Node>* bool_pack) const;
 
   Node_List<Node>* pack_input_at_index_or_null(const Node_List<Node>* pack, const int index) const {
@@ -391,7 +391,7 @@ private:
 public:
   DEBUG_ONLY(void verify() const;)
   NOT_PRODUCT(void print() const;)
-  NOT_PRODUCT(static void print_pack(Node_List<Node>* pack);)
+  NOT_PRODUCT(static void print_pack(const Node_List<Node>* pack);)
 };
 
 // -----------------------------SuperWord---------------------------------
@@ -628,7 +628,7 @@ private:
   void filter_packs_for_power_of_2_size();
   void filter_packs_for_mutual_independence();
   void filter_packs_for_alignment();
-  const AlignmentSolution* pack_alignment_solution(const Node_List<Node>* pack);
+  const AlignmentSolution* pack_alignment_solution(const Node_List<Node>* pack) const;
   void filter_packs_for_implemented();
   void filter_packs_for_profitable();
 
@@ -637,7 +637,7 @@ private:
   // Can code be generated for the pack, restricted to size nodes?
   bool implemented(const Node_List<Node>* pack, const uint size) const;
   // Find the maximal implemented size smaller or equal to the packs size
-  uint max_implemented_size(const Node_List<Node>* pack);
+  uint max_implemented_size(const Node_List<Node>* pack) const;
 
   // For pack p, are all operands and all uses (with in the block) vector?
   bool profitable(const Node_List<Node>* p) const;

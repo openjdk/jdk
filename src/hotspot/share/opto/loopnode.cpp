@@ -8211,11 +8211,11 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   if( !chosen_loop->_child )   // Inner loop?
     chosen_loop->_body.push(n);// Collect inner loops
 
-  if (!_verify_only && n->Opcode() == Op_OpaqueZeroTripGuard) {
+  if (!_verify_only && n->is_OpaqueZeroTripGuard()) {
     _zero_trip_guard_opaque_nodes.push(n->as_OpaqueZeroTripGuard());
   }
 
-  if (!_verify_only && n->Opcode() == Op_OpaqueMultiversioning) {
+  if (!_verify_only && n->is_OpaqueMultiversioning()) {
     _multiversion_opaque_nodes.push(n->as_OpaqueMultiversioning());
   }
 }
@@ -8305,7 +8305,7 @@ class RealLCA {
   // Given idom chains of early and wrong LCA: Walk through idoms starting at StartNode and find the first node which
   // is different: Return the previously visited node which must be the real LCA.
   // The node lists also contain _early and _wrong_lca, respectively.
-  Node* find_real_lca(Unique_Node_List<Node>& early_with_idoms, Unique_Node_List<Node>& wrong_lca_with_idoms) {
+  Node* find_real_lca(const Unique_Node_List<Node>& early_with_idoms, const Unique_Node_List<Node>& wrong_lca_with_idoms) {
     int early_index = early_with_idoms.size() - 1;
     int wrong_lca_index = wrong_lca_with_idoms.size() - 1;
     bool found_difference = false;
@@ -8481,7 +8481,7 @@ void PhaseIdealLoop::dump_idoms_in_reverse(const Node* n, const Node_List<Node>&
 
 // Collect a R-P-O for the whole CFG.
 // Result list is in post-order (scan backwards for RPO)
-void PhaseIdealLoop::rpo(Node* start, Node_Stack<Node>& stk, VectorSet& visited, Node_List<Node>& rpo_list) const {
+void PhaseIdealLoop::rpo(Node* start, Node_Stack<Node>& stk, VectorSet& visited, Node_List<Node>& rpo_list) {
   stk.push(start, 0);
   visited.set(start->_idx);
 

@@ -3281,8 +3281,8 @@ private:
   Status find_def_store_unidirectional(const StoreNode* use_store) const;
 
   void collect_merge_list(Node_List<const StoreNode>& merge_list) const;
-  Node* make_merged_input_value(const Node_List<const StoreNode>& merge_list);
-  StoreNode* make_merged_store(const Node_List<const StoreNode>& merge_list, Node* merged_input_value);
+  Node* make_merged_input_value(const Node_List<const StoreNode>& merge_list) const;
+  StoreNode* make_merged_store(const Node_List<const StoreNode>& merge_list, Node* merged_input_value) const;
 
 #ifndef PRODUCT
   // Access to TraceMergeStores tags
@@ -3311,7 +3311,7 @@ private:
   }
 #endif
 
-  NOT_PRODUCT( void trace(const Node_List<const StoreNode>& merge_list, const Node* merged_input_value, const StoreNode* merged_store) const; )
+  NOT_PRODUCT(static void trace(const Node_List<const StoreNode>& merge_list, const Node* merged_input_value, const StoreNode* merged_store); )
 };
 
 StoreNode* MergePrimitiveStores::run() {
@@ -3647,7 +3647,7 @@ void MergePrimitiveStores::collect_merge_list(Node_List<const StoreNode>& merge_
 }
 
 // Merge the input values of the smaller stores to a single larger input value.
-Node* MergePrimitiveStores::make_merged_input_value(const Node_List<const StoreNode>& merge_list) {
+Node* MergePrimitiveStores::make_merged_input_value(const Node_List<const StoreNode>& merge_list) const {
   int new_memory_size = _store->memory_size() * merge_list.size();
   const StoreNode* first = merge_list.at(merge_list.size()-1);
   Node* merged_input_value = nullptr;
@@ -3749,7 +3749,7 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List<const StoreN
 //                 | | |  |                                           | | |  |                              //
 //                last_store (= _store)                              merged_store                           //
 //                                                                                                          //
-StoreNode* MergePrimitiveStores::make_merged_store(const Node_List<const StoreNode>& merge_list, Node* merged_input_value) {
+StoreNode* MergePrimitiveStores::make_merged_store(const Node_List<const StoreNode>& merge_list, Node* merged_input_value) const {
   const StoreNode* first_store = merge_list.at(merge_list.size()-1);
   Node* last_ctrl   = _store->in(MemNode::Control); // after (optional) RangeCheck
   Node* first_mem   = first_store->in(MemNode::Memory);
@@ -3779,7 +3779,7 @@ StoreNode* MergePrimitiveStores::make_merged_store(const Node_List<const StoreNo
 }
 
 #ifndef PRODUCT
-void MergePrimitiveStores::trace(const Node_List<const StoreNode>& merge_list, const Node* merged_input_value, const StoreNode* merged_store) const {
+void MergePrimitiveStores::trace(const Node_List<const StoreNode>& merge_list, const Node* merged_input_value, const StoreNode* merged_store) {
   stringStream ss;
   ss.print_cr("[TraceMergeStores]: Replace");
   for (int i = (int)merge_list.size() - 1; i >= 0; i--) {

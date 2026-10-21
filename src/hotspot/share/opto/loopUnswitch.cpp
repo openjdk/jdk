@@ -870,7 +870,7 @@ void PhaseIdealLoop::hoist_invariant_check_casts(const IdealLoopTree* loop, cons
 }
 
 // Enable more optimizations possibilities in the next IGVN round.
-void PhaseIdealLoop::add_unswitched_loop_version_bodies_to_igvn(IdealLoopTree* loop, const Node_List<Node>& old_new) {
+void PhaseIdealLoop::add_unswitched_loop_version_bodies_to_igvn(IdealLoopTree* loop, const Node_List<Node>& old_new) const {
   loop->record_for_igvn();
   for (int i = loop->_body.size() - 1; i >= 0; i--) {
     Node* n = loop->_body[i];

@@ -1465,7 +1465,7 @@ void SuperWord::filter_packs_for_mutual_independence() {
 }
 
 // Find the set of alignment solutions for load/store pack.
-const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List<Node>* pack) {
+const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List<Node>* pack) const {
   assert(pack != nullptr && (pack->at(0)->is_Load() || pack->at(0)->is_Store()), "only load/store packs");
 
   const MemNode* mem_ref = pack->at(0)->as_Mem();
@@ -1616,7 +1616,7 @@ bool SuperWord::implemented(const Node_List<Node>* pack, const uint size) const 
 }
 
 // Find the maximal implemented size smaller or equal to the packs size
-uint SuperWord::max_implemented_size(const Node_List<Node>* pack) {
+uint SuperWord::max_implemented_size(const Node_List<Node>* pack) const {
   uint size = round_down_power_of_2(pack->size());
   if (implemented(pack, size)) {
     return size;
@@ -1632,7 +1632,7 @@ uint SuperWord::max_implemented_size(const Node_List<Node>* pack) {
 }
 
 // If the j-th input for all nodes in the pack is the same input: return it, else nullptr.
-Node* PackSet::same_inputs_at_index_or_null(const Node_List<Node>* pack, const int index) const {
+Node* PackSet::same_inputs_at_index_or_null(const Node_List<Node>* pack, const int index) {
   Node* p0_in = pack->at(0)->in(index);
   for (uint i = 1; i < pack->size(); i++) {
     if (pack->at(i)->in(index) != p0_in) {
@@ -2691,7 +2691,7 @@ bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
          _vloop.phase()->C->get_alias_index(m2->in_adr_type());
 }
 
-LoadNode::ControlDependency SuperWordVTransformBuilder::load_control_dependency(const Node_List<Node>* pack) const {
+LoadNode::ControlDependency SuperWordVTransformBuilder::load_control_dependency(const Node_List<Node>* pack) {
   LoadNode::ControlDependency dep = LoadNode::DependsOnlyOnTest;
   for (uint i = 0; i < pack->size(); i++) {
     Node* n = pack->at(i);
@@ -3174,7 +3174,7 @@ void PackSet::print() const {
   }
 }
 
-void PackSet::print_pack(Node_List<Node>* pack) {
+void PackSet::print_pack(const Node_List<Node>* pack) {
   for (uint i = 0; i < pack->size(); i++) {
     tty->print("  %3d: ", i);
     pack->at(i)->dump();

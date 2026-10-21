@@ -462,8 +462,8 @@ class Invariance : public StackObj {
 //     scale*iv + offset <u R
 // where scale and offset are loop invariant and R >= 0.
 // Note: This is used by Loop Predication and PhaseIdealLoop::extract_long_range_check().
-bool IdealLoopTree::is_range_check_if(const IfProjNode* if_success_proj, PhaseIdealLoop *phase, BasicType bt, Node *iv, Node *&range,
-                                      Node *&offset, jlong &scale) const {
+bool IdealLoopTree::is_range_check_if(const IfProjNode* if_success_proj, PhaseIdealLoop* phase, BasicType bt, Node* iv,
+                                      Node*& range, Node*& offset, jlong& scale) const {
   IfNode* iff = if_success_proj->in(0)->as_If();
   if (!is_loop_exit(iff)) {
     return false;
@@ -542,7 +542,7 @@ bool IdealLoopTree::is_range_check_if(const IfProjNode* if_success_proj, PhaseId
   return true;
 }
 
-bool IdealLoopTree::is_range_check_if(const IfProjNode* if_success_proj, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const {
+bool IdealLoopTree::is_range_check_if(const IfProjNode* if_success_proj, PhaseIdealLoop* phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode* predicate_proj)) const {
   Node* range = nullptr;
   Node* offset = nullptr;
   jlong scale = 0;

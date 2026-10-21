@@ -2060,7 +2060,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
   }
 }
 
-void PhaseIdealLoop::update_addp_chain_base(AddPNode* x, Node* old_base, Node* new_base) {
+void PhaseIdealLoop::update_addp_chain_base(const AddPNode* x, const Node* old_base, Node* new_base) const {
   ResourceMark rm;
   Node_List<const AddPNode> wq;
   wq.push(x);
@@ -2388,7 +2388,7 @@ CmpNode*PhaseIdealLoop::clone_bool(PhiNode* phi) {
   return (CmpNode*)cmp;
 }
 
-void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List<Node>& old_new,
+void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, const Node_List<Node>& old_new,
                                                  IdealLoopTree* loop, IdealLoopTree* outer_loop,
                                                  Node_List<Node>*& split_if_set, Node_List<BoolNode>*& split_bool_set,
                                                  Node_List<CreateExNode>*& split_cex_set, Node_List<Node>& worklist,
@@ -3012,7 +3012,7 @@ void PhaseIdealLoop::fix_body_edges(const Node_List<Node>& body, IdealLoopTree* 
   }
 }
 
-void PhaseIdealLoop::clone_loop_body(const Node_List<Node>& body, Node_List<Node>& old_new, CloneMap* cm) {
+void PhaseIdealLoop::clone_loop_body(const Node_List<Node>& body, Node_List<Node>& old_new, CloneMap* cm) const {
   for (uint i = 0; i < body.size(); i++) {
     Node* old = body.at(i);
     Node* nnn = old->clone();
@@ -3476,7 +3476,7 @@ void PhaseIdealLoop::remove_cmpi_loop_exit(IfNode* if_cmp, IdealLoopTree *loop) 
 // nodes which have no inputs in the "member" set, and then
 // followed by the nodes that have an immediate input dependence
 // on a node in "sched".
-void PhaseIdealLoop::scheduled_nodelist(IdealLoopTree* loop, VectorSet& member, Node_List<Node>& sched) {
+void PhaseIdealLoop::scheduled_nodelist(const IdealLoopTree* loop, const VectorSet& member, Node_List<Node>& sched) {
 
   assert(member.test(loop->_head->_idx), "loop head must be in member set");
   VectorSet visited;
@@ -3676,8 +3676,8 @@ void PhaseIdealLoop::insert_phi_for_loop( Node* use, uint idx, Node* lp_entry_va
 #ifdef ASSERT
 //------------------------------ is_valid_loop_partition -------------------------------------
 // Validate the loop partition sets: peel and not_peel
-bool PhaseIdealLoop::is_valid_loop_partition(IdealLoopTree* loop, VectorSet& peel, Node_List<Node>& peel_list,
-                                             VectorSet& not_peel) {
+bool PhaseIdealLoop::is_valid_loop_partition(const IdealLoopTree* loop, const VectorSet& peel, const Node_List<Node>& peel_list,
+                                             const VectorSet& not_peel) {
   uint i;
   // Check that peel_list entries are in the peel set
   for (i = 0; i < peel_list.size(); i++) {

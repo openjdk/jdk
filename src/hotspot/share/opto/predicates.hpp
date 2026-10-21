@@ -593,7 +593,7 @@ class TemplateAssertionExpressionNode : public StackObj {
             opcode == Op_CastII);
   }
 
-  void push_outputs_of(Unique_Node_List<Node>& list, const Node* node) {
+  static void push_outputs_of(Unique_Node_List<Node>& list, const Node* node) {
     for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
       Node* output = node->fast_out(i);
       list.push(output);

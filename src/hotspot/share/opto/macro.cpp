@@ -957,7 +957,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
   return can_eliminate;
 }
 
-void PhaseMacroExpand::undo_previous_scalarizations(Node_List<SafePointNode>& safepoints_done, Node_List<const SafePointScalarObjectNode>& scalar_objects_done, AllocateNode* alloc) {
+void PhaseMacroExpand::undo_previous_scalarizations(Node_List<SafePointNode>& safepoints_done, Node_List<const SafePointScalarObjectNode>& scalar_objects_done, AllocateNode* alloc) const {
   Node* res = alloc->result_cast();
   assert(res == nullptr || res->is_CheckCastPP(), "unexpected AllocateNode result");
   assert(safepoints_done.size() == scalar_objects_done.size(), "inconsistent count");

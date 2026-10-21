@@ -1526,7 +1526,7 @@ public:
   };
   void clone_loop(IdealLoopTree* loop, Node_List<Node>& old_new, int dom_depth,
                   CloneLoopMode mode, Node* side_by_side_idom = nullptr);
-  void clone_loop_handle_data_uses(Node* old, Node_List<Node>& old_new,
+  void clone_loop_handle_data_uses(Node* old, const Node_List<Node>& old_new,
                                    IdealLoopTree* loop, IdealLoopTree* companion_loop,
                                    Node_List<Node>*& split_if_set, Node_List<BoolNode>*& split_bool_set,
                                    Node_List<CreateExNode>*& split_cex_set, Node_List<Node>& worklist,
@@ -1682,7 +1682,7 @@ public:
 
   void hoist_invariant_check_casts(const IdealLoopTree* loop, const Node_List<Node>& old_new,
                                    const UnswitchCandidate& unswitch_candidate, const IfNode* loop_selector);
-  void add_unswitched_loop_version_bodies_to_igvn(IdealLoopTree* loop, const Node_List<Node>& old_new);
+  void add_unswitched_loop_version_bodies_to_igvn(IdealLoopTree* loop, const Node_List<Node>& old_new) const;
   static void increment_unswitch_counts(LoopNode* original_head, LoopNode* new_head);
   void remove_unswitch_candidate_from_loops(const Node_List<Node>& old_new, const UnswitchedLoopSelector& unswitched_loop_selector);
 #ifndef PRODUCT
@@ -1725,7 +1725,7 @@ public:
   bool try_resume_optimizations_for_delayed_slow_loop(IdealLoopTree* lpt);
 
   // Create a scheduled list of nodes control dependent on ctrl set.
-  void scheduled_nodelist(IdealLoopTree* loop, VectorSet& ctrl, Node_List<Node>& sched);
+  static void scheduled_nodelist(const IdealLoopTree* loop, const VectorSet& ctrl, Node_List<Node>& sched);
   // Has a use in the vector set
   bool has_use_in_set( Node* n, VectorSet& vset );
   // Has use internal to the vector set (ie. not in a phi at the loop head)
@@ -1739,7 +1739,7 @@ public:
   void insert_phi_for_loop( Node* use, uint idx, Node* lp_entry_val, Node* back_edge_val, LoopNode* lp );
 #ifdef ASSERT
   // Validate the loop partition sets: peel and not_peel
-  bool is_valid_loop_partition(IdealLoopTree* loop, VectorSet& peel, Node_List<Node>& peel_list, VectorSet& not_peel);
+  static bool is_valid_loop_partition(const IdealLoopTree* loop, const VectorSet& peel, const Node_List<Node>& peel_list, const VectorSet& not_peel);
   // Ensure that uses outside of loop are of the right form
   bool is_valid_clone_loop_form(IdealLoopTree* loop, Node_List<Node>& peel_list,
                                 uint orig_exit_idx, uint clone_exit_idx);
@@ -2014,7 +2014,7 @@ public:
   bool verify_loop_ctrl(Node* n, const PhaseIdealLoop* phase_verify) const;
 #endif
 
-  void rpo(Node* start, Node_Stack<Node>& stk, VectorSet& visited, Node_List<Node>& rpo_list) const;
+  static void rpo(Node* start, Node_Stack<Node>& stk, VectorSet& visited, Node_List<Node>& rpo_list);
 
   void check_counted_loop_shape(IdealLoopTree* loop, Node* head, BasicType bt) NOT_DEBUG_RETURN;
 
@@ -2048,7 +2048,7 @@ public:
 
   bool try_merge_identical_ifs(Node* n);
 
-  void clone_loop_body(const Node_List<Node>& body, Node_List<Node>& old_new, CloneMap* cm);
+  void clone_loop_body(const Node_List<Node>& body, Node_List<Node>& old_new, CloneMap* cm) const;
 
   void fix_body_edges(const Node_List<Node>& body, IdealLoopTree* loop, const Node_List<Node>& old_new, int dd,
                       IdealLoopTree* parent, bool partial);
@@ -2071,7 +2071,7 @@ public:
 
   Node* similar_subtype_check(const Node* x, Node* r_in);
 
-  void update_addp_chain_base(AddPNode* x, Node* old_base, Node* new_base);
+  void update_addp_chain_base(const AddPNode* x, const Node* old_base, Node* new_base) const;
 
   bool can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x);
 
