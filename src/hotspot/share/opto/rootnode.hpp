@@ -78,7 +78,7 @@ public:
 // activated again on a subsequent igvn. When optimizations are over, the DeadPath node, if it is active, is expanded to
 // a Region and Halt node in Compile::final_graph_reshaping().
 
-// Rather than having this dedicated node, igvn could add a Halt node everytime it finds a dead cfg path from a data
+// Rather than having this dedicated node, igvn could add a Halt node every time it finds a dead cfg path from a data
 // node. What's likely, however, is that as igvn progresses, that same cfg path is found dead by following cfg edges.
 // The Halt node then becomes dead. To avoid this unnecessary cycle of creation of a Halt node only to have it be found
 // dead shortly after, dead cfg paths are added to the unique DeadPath node.

@@ -25,6 +25,7 @@
  * @test
  * @bug 8388435
  * @run main/othervm -Xcomp -XX:CompileOnly=${test.main.class}::test1 ${test.main.class}
+ * @run main ${test.main.class}
  */
 
 package compiler.igvn;

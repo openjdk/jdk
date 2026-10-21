@@ -26,7 +26,7 @@
  * @test
  * @bug 8383815
  * @summary C2: assert(false) failed: malformed IfNode with 1 outputs
- * @run main/othervm -XX:CompileCommand=compileonly,${test.main.class}*::* -XX:-TieredCompilation -Xbatch -XX:PerMethodTrapLimit=0 ${test.main.class}
+ * @run main/othervm -XX:CompileCommand=compileonly,${test.main.class}::* -XX:-TieredCompilation -Xbatch -XX:PerMethodTrapLimit=0 ${test.main.class}
  * @run main ${test.main.class}
  */
 

@@ -26,9 +26,9 @@
  * @bug 8380166
  * @summary C2: crash in compiled code due to zero division because of widened CastII
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -Xcomp -XX:CompileOnly=TestDeadPathManyDeadDataNodes::test1
+ *                   -Xcomp -XX:CompileOnly=${test.main.class}::test1
  *                   -XX:CompileCommand=quiet
- *                   -XX:CompileCommand=inline,TestDeadPathManyDeadDataNodes::inlined1
+ *                   -XX:CompileCommand=inline,${test.main.class}::inlined1
  *                   -XX:MaxRecursiveInlineLevel=1000 -XX:MaxInlineLevel=1000
  *                   -XX:-TieredCompilation -XX:+AlwaysIncrementalInline
  *                   -XX:+DelayAfterInliningCutoff -XX:+IncrementalInlineForceCleanup
@@ -1288,11 +1288,11 @@ public class TestDeadPathManyDeadDataNodes {
                 return res;
             default:
                 if (count == 0) {
-                if (boolParam) {
-                    res += arrayLength * 1;
-                }
-                field = 42;
-                return res;
+                    if (boolParam) {
+                        res += arrayLength * 1;
+                    }
+                    field = 42;
+                    return res;
                 } else {
                     return inlined1(boolParam, intParam / 100, arrayLength, count-1);
                 }
