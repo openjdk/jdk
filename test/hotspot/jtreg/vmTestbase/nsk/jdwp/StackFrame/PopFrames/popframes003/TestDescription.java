@@ -37,11 +37,10 @@
  *     so the caller frame stays frozen in the stack chunk. Here the
  *     debuggee runs with -Xcomp and the breakpoint is in a separate
  *     method stop() called by the tested method, so the tested method
- *     keeps its compiled frame and its caller stays a frozen compiled
- *     frame. The debugger pops the frame of the tested method, the
- *     caller of the breakpoint frame. The debuggee checks with WhiteBox
- *     that run and testedMethod are compiled and that the tested method
- *     was invoked exactly two times.
+ *     is still compiled when it unmounts and its caller stays a frozen
+ *     compiled frame. The debugger pops the frame of the tested method, the
+ *     caller of the breakpoint frame. The debuggee checks that the
+ *     tested method was invoked exactly two times.
  *     Test checks that debugee accept the command packet and
  *     replies with correct reply packet. Also test checks that
  *     after the frames are popped the tested method is invoked
@@ -70,9 +69,6 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
  * @build nsk.jdwp.StackFrame.PopFrames.popframes001a
  * @run driver
  *      nsk.jdwp.StackFrame.PopFrames.popframes001
@@ -82,8 +78,7 @@
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
  *      -popCaller
- *      -debugee.vmkeys="-Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                       -XX:+WhiteBoxAPI ${test.vm.opts} ${test.java.opts}
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}
  *                       -Xcomp -XX:+PreserveFramePointer
  *                       -XX:CompileCommand=dontinline,*::testedMethod
  *                       -XX:CompileCommand=dontinline,*::stop
