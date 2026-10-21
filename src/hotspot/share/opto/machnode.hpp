@@ -979,6 +979,7 @@ public:
   virtual int ideal_Opcode() const { return Op_CallStaticJava; }
   virtual uint size_of() const { return sizeof(MachUncommonTrapNode); }
   virtual uint rule() const { return 9999999; /* This node is constructed by match_sfpt. */ }
+  virtual const class Type* bottom_type() const { return TypeTuple::CONTROL; }
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual int reloc() const { return 1; /* The relocInfo::runtime_call_type relocation */ }
   virtual const RegMask& in_RegMask(uint) const;

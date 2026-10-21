@@ -1216,7 +1216,6 @@ MachNode* Matcher::match_sfpt(SafePointNode* sfpt) {
   MachSafePointNode* msfpt = nullptr;
   MachCallNode*      mcall = nullptr;
   JVMState*          sfpt_jvms = nullptr;
-  int                jvms_pos_adj = 0;
   uint               cnt;
   // Split out case for SafePoint vs Call
   CallNode* call = nullptr;
@@ -1247,9 +1246,9 @@ MachNode* Matcher::match_sfpt(SafePointNode* sfpt) {
         mn->add_req(static_java_call->in(i));
       }
     }
-    jvms_pos_adj--;
     msfpt = mn->as_MachSafePoint();
     sfpt_jvms = sfpt->jvms()->clone_deep(C);
+    sfpt_jvms->adapt_position(-1);
     cnt = TypeFunc::Parms;
   } else if (sfpt->is_Call()) {
     call = sfpt->as_Call();
@@ -1442,13 +1441,10 @@ MachNode* Matcher::match_sfpt(SafePointNode* sfpt) {
     // ins are not complete then.
     msfpt->ins_req(msfpt->mach_constant_base_node_input(), C->mach_constant_base_node());
     if (msfpt->jvms() &&
-        msfpt->mach_constant_base_node_input() <= msfpt->jvms()->debug_start() + msfpt->_jvmadj + jvms_pos_adj) {
+        msfpt->mach_constant_base_node_input() <= msfpt->jvms()->debug_start() + msfpt->_jvmadj) {
       // We added an edge before jvms, so we must adapt the position of the ins.
-      jvms_pos_adj++;
+      msfpt->jvms()->adapt_position(+1);
     }
-  }
-  if (jvms_pos_adj != 0) {
-    msfpt->jvms()->adapt_position(jvms_pos_adj);
   }
 
   // Registers killed by the call are set in the local scheduling pass

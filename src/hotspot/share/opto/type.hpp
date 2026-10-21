@@ -990,18 +990,19 @@ public:
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
   // Convenience common pre-built types.
-  static const TypeTuple *IFBOTH;
-  static const TypeTuple *IFFALSE;
-  static const TypeTuple *IFTRUE;
-  static const TypeTuple *IFNEITHER;
-  static const TypeTuple *LOOPBODY;
-  static const TypeTuple *MEMBAR;
-  static const TypeTuple *STORECONDITIONAL;
-  static const TypeTuple *START_I2C;
-  static const TypeTuple *INT_PAIR;
-  static const TypeTuple *LONG_PAIR;
-  static const TypeTuple *INT_CC_PAIR;
-  static const TypeTuple *LONG_CC_PAIR;
+  static const TypeTuple* CONTROL;
+  static const TypeTuple* IFBOTH;
+  static const TypeTuple* IFFALSE;
+  static const TypeTuple* IFTRUE;
+  static const TypeTuple* IFNEITHER;
+  static const TypeTuple* LOOPBODY;
+  static const TypeTuple* MEMBAR;
+  static const TypeTuple* STORECONDITIONAL;
+  static const TypeTuple* START_I2C;
+  static const TypeTuple* INT_PAIR;
+  static const TypeTuple* LONG_PAIR;
+  static const TypeTuple* INT_CC_PAIR;
+  static const TypeTuple* LONG_CC_PAIR;
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint, outputStream *st  ) const; // Specialized per-Type dumping
 #endif

@@ -614,30 +614,34 @@ void Type::Initialize_shared(Compile* current) {
   TypeLong::INT      = TypeLong::make((jlong)min_jint, (jlong)max_jint,WidenMin);
   TypeLong::TYPE_DOMAIN = TypeLong::LONG;
 
-  const Type **fboth =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
+  const Type** fcontrol = (const Type**)shared_type_arena->AmallocWords(1*sizeof(Type*));
+  fcontrol[0] = Type::CONTROL;
+  TypeTuple::CONTROL = TypeTuple::make(1, fcontrol);
+
+  const Type** fboth = (const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
   fboth[0] = Type::CONTROL;
   fboth[1] = Type::CONTROL;
-  TypeTuple::IFBOTH = TypeTuple::make( 2, fboth );
+  TypeTuple::IFBOTH = TypeTuple::make(2, fboth);
 
-  const Type **ffalse =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
+  const Type** ffalse = (const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
   ffalse[0] = Type::CONTROL;
   ffalse[1] = Type::TOP;
-  TypeTuple::IFFALSE = TypeTuple::make( 2, ffalse );
+  TypeTuple::IFFALSE = TypeTuple::make(2, ffalse);
 
-  const Type **fneither =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
+  const Type** fneither = (const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
   fneither[0] = Type::TOP;
   fneither[1] = Type::TOP;
-  TypeTuple::IFNEITHER = TypeTuple::make( 2, fneither );
+  TypeTuple::IFNEITHER = TypeTuple::make(2, fneither);
 
-  const Type **ftrue =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
+  const Type** ftrue = (const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
   ftrue[0] = Type::TOP;
   ftrue[1] = Type::CONTROL;
-  TypeTuple::IFTRUE = TypeTuple::make( 2, ftrue );
+  TypeTuple::IFTRUE = TypeTuple::make(2, ftrue);
 
-  const Type **floop =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
+  const Type** floop = (const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
   floop[0] = Type::CONTROL;
   floop[1] = TypeInt::INT;
-  TypeTuple::LOOPBODY = TypeTuple::make( 2, floop );
+  TypeTuple::LOOPBODY = TypeTuple::make(2, floop);
 
   TypePtr::NULL_PTR= TypePtr::make(AnyPtr, TypePtr::Null, Offset(0));
   TypePtr::NOTNULL = TypePtr::make(AnyPtr, TypePtr::NotNull, Offset::bottom);
@@ -646,10 +650,10 @@ void Type::Initialize_shared(Compile* current) {
   TypeRawPtr::BOTTOM = TypeRawPtr::make( TypePtr::BotPTR );
   TypeRawPtr::NOTNULL= TypeRawPtr::make( TypePtr::NotNull );
 
-  const Type **fmembar = TypeTuple::fields(0);
+  const Type** fmembar = TypeTuple::fields(0);
   TypeTuple::MEMBAR = TypeTuple::make(TypeFunc::Parms+0, fmembar);
 
-  const Type **fsc = (const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
+  const Type** fsc = (const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
   fsc[0] = TypeInt::CC;
   fsc[1] = Type::MEMORY;
   TypeTuple::STORECONDITIONAL = TypeTuple::make(2, fsc);
@@ -2241,18 +2245,19 @@ void TypeLong::dump_verbose() const {
 
 //=============================================================================
 // Convenience common pre-built types.
-const TypeTuple *TypeTuple::IFBOTH;     // Return both arms of IF as reachable
-const TypeTuple *TypeTuple::IFFALSE;
-const TypeTuple *TypeTuple::IFTRUE;
-const TypeTuple *TypeTuple::IFNEITHER;
-const TypeTuple *TypeTuple::LOOPBODY;
-const TypeTuple *TypeTuple::MEMBAR;
-const TypeTuple *TypeTuple::STORECONDITIONAL;
-const TypeTuple *TypeTuple::START_I2C;
-const TypeTuple *TypeTuple::INT_PAIR;
-const TypeTuple *TypeTuple::LONG_PAIR;
-const TypeTuple *TypeTuple::INT_CC_PAIR;
-const TypeTuple *TypeTuple::LONG_CC_PAIR;
+const TypeTuple* TypeTuple::CONTROL;
+const TypeTuple* TypeTuple::IFBOTH;     // Return both arms of IF as reachable
+const TypeTuple* TypeTuple::IFFALSE;
+const TypeTuple* TypeTuple::IFTRUE;
+const TypeTuple* TypeTuple::IFNEITHER;
+const TypeTuple* TypeTuple::LOOPBODY;
+const TypeTuple* TypeTuple::MEMBAR;
+const TypeTuple* TypeTuple::STORECONDITIONAL;
+const TypeTuple* TypeTuple::START_I2C;
+const TypeTuple* TypeTuple::INT_PAIR;
+const TypeTuple* TypeTuple::LONG_PAIR;
+const TypeTuple* TypeTuple::INT_CC_PAIR;
+const TypeTuple* TypeTuple::LONG_CC_PAIR;
 
 static void collect_value_fields(ciValueKlass* vk, const Type** field_array, uint& pos) {
   for (int i = 0; i < vk->nof_declared_nonstatic_fields(); i++) {

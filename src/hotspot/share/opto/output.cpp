@@ -517,8 +517,9 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
           reloc_size += CallStubImpl::reloc_call_trampoline();
 
           // No nop is needed to disambiguate from another safepoint.
-          assert(mach->as_MachUncommonTrap()->ret_addr_offset() > 0,
-                 "Safepoint address should be offset from the first instruction");
+          assert(mach->as_MachUncommonTrap()->ret_addr_offset() > 0 &&
+                 (uint)mach->as_MachUncommonTrap()->ret_addr_offset() < mach->size(C->regalloc()),
+                 "Safepoint address should be offset from the first instruction and should not point after the node");
         } else if (mach->is_MachCall()) {
           // add size information for trampoline stub
           // class CallStubImpl is platform-specific and defined in the *.ad files.
@@ -541,6 +542,7 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
           // nop to disambiguate the two safepoints.
           // ScheduleAndBundle() can rearrange nodes in a block,
           // check for all offsets inside this block.
+          assert(mach->ideal_Opcode() == Op_SafePoint, "An unexpected safepoint node, which might need handling above");
           if (last_call_adr >= blk_starts[i]) {
             blk_size += nop_size;
           }
@@ -1608,9 +1610,11 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
             assert(mach->as_MachCall()->ret_addr_offset() > 0,
                    "Safepoint address should be offset from the first instruction");
           } else if (mach->is_MachUncommonTrap()) {
-            assert(mach->as_MachUncommonTrap()->ret_addr_offset() > 0,
-                   "Safepoint address should be offset from the first instruction");
+            assert(mach->as_MachUncommonTrap()->ret_addr_offset() > 0 &&
+                   (uint)mach->as_MachUncommonTrap()->ret_addr_offset() < mach->size(C->regalloc()),
+                   "Safepoint address should be offset from the first instruction and should not point after the node");
           } else if (is_sfn) {
+            assert(mach->ideal_Opcode() == Op_SafePoint, "An unexpected safepoint node, which might need handling above");
             padding = nop_size;
           }
         }
