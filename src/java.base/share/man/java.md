@@ -3027,6 +3027,9 @@ they're used.
 :   Enables the use of Java Flight Recorder (JFR) during the runtime of the
     application. Since JDK 8u40 this option has not been required to use JFR.
 
+[`-XX:AOTMode=on`]{#-XX__AOTModeOn}
+:   Requires the AOTCache to be loaded. Use `-XX:AOTMode=required` instead.
+
 ## Obsolete Java Options
 
 These `java` options are still accepted but ignored, and a warning is issued
@@ -4161,8 +4164,8 @@ The AOT cache can be used with the following command-line options:
 :   Specifies the location of the AOT cache. The standard extension for *cachefile* is `.aot`.
     This option cannot be used together with `-XX:AOTCacheOutput`.
 
-    This option is compatible with `AOTMode` settings of `on`, `create`, or `auto` (the default).
-    The *cachefile* is read in AOT modes `on` and `auto`, and is ignored by mode `off`.
+    This option is compatible with `AOTMode` settings of `required`, `create`, or `auto` (the default).
+    The *cachefile* is read in AOT modes `required` and `auto`, and is ignored by mode `off`.
     The *cachefile* is written by AOT mode `create`.  In that case, this option is
     equivalent to `-XX:AOTCacheOutput=`*cachefile*.
 
@@ -4182,11 +4185,7 @@ The AOT cache can be used with the following command-line options:
 
 [`-XX:AOTMode=`]{#-XX_AOTMode}*mode*
 :   Specifies the AOT Mode for this run.
-    *mode* must be one of the following: `auto`, `off`, `record`, `create`, `on`, or `required`.
-
-    Note that `on` is an alias for `required`. All discussion below about `required`
-    also applies to `on`. The use of `on` is discouraged. The support of `on` may be deprecated and
-    removed in future releases.
+    *mode* must be one of the following: `auto`, `off`, `record`, `create`, or `required`.
 
 -   `auto`: This AOT mode is the default, and takes effect if no `-XX:AOTMode` option
     is present.  It automatically sets the AOT mode to `record`, `required`, or `off`, as follows:

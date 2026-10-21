@@ -189,6 +189,7 @@ class Options {
   const bool _do_locks_coarsening;   // Do locks coarsening
   const bool _do_superword;          // Do SuperWord
   const bool _do_stringopts;         // Do StringOpts
+  const bool _aot_compile;           // AOT code compilation
   const bool _for_aot_preload;       // Generate AOT code for preload (before Java method execution),
                                      // include class init barriers
   const bool _install_code;          // Install the code that was compiled
@@ -201,6 +202,7 @@ class Options {
           bool do_locks_coarsening,
           bool do_superword,
           bool do_stringopts,
+          bool aot_compile,
           bool for_aot_preload,
           bool install_code) :
           _subsume_loads(subsume_loads),
@@ -211,6 +213,7 @@ class Options {
           _do_locks_coarsening(do_locks_coarsening),
           _do_superword(do_superword),
           _do_stringopts(do_stringopts),
+          _aot_compile(aot_compile),
           _for_aot_preload(for_aot_preload),
           _install_code(install_code) {
   }
@@ -225,6 +228,7 @@ class Options {
        /* do_lock_coarsening = */ false,
        /* do_superword = */ true,
        /* do_stringopts = */ false,
+       /* aot_compile = */ false,
        /* for_aot_preload = */ false,
        /* install_code = */ true
     );
@@ -612,6 +616,7 @@ public:
   bool              do_superword() const        { return _options._do_superword; }
   bool              do_stringopts() const       { return _options._do_stringopts; }
 
+  bool              is_aot_compile()      const { return _options._aot_compile; }
   bool              do_clinit_barriers()  const { return _options._for_aot_preload; }
   bool              for_aot_preload()     const { return _options._for_aot_preload; }
 

@@ -26,6 +26,7 @@
 #include "cds/aotClassFilter.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotCompressedPointers.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
@@ -37,7 +38,6 @@
 #include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/runTimeClassInfo.hpp"
@@ -752,7 +752,7 @@ void SystemDictionaryShared::initialize() {
     _dumptime_table = new (mtClass) DumpTimeSharedClassTable;
     LambdaProxyClassDictionary::dumptime_init();
     if (CDSConfig::is_dumping_heap()) {
-      HeapShared::init_dumping();
+      AOTHeap::init_dumping();
     }
   }
 }
