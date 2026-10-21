@@ -574,15 +574,16 @@ private:
   Node* find_inst_mem_assert_no_new_node(Node* mem, int alias_idx, Unique_Node_List<PhiNode>& orig_phi_worklist);
   Node* step_through_mergemem(MergeMemNode *mmem, int alias_idx, const TypeOopPtr *toop);
 
-  Node_Array<Node> _node_map; // used for bookkeeping during type splitting
-                              // Used for the following purposes:
-                              // Memory Phi    - most recent unique Phi split out
-                              //                 from this Phi
-                              // MemNode       - new memory input for this node
-                              // CheckCastPP   - allocation that this is a cast of
-                              // allocation    - CheckCastPP of the allocation
-                              // NarrowMem     - newly created projection (type includes instance_id) from projection created
-                              //                 before EA
+  // used for bookkeeping during type splitting
+  // Used for the following purposes:
+  // Memory Phi    - most recent unique Phi split out
+  //                 from this Phi
+  // MemNode       - new memory input for this node
+  // CheckCastPP   - allocation that this is a cast of
+  // allocation    - CheckCastPP of the allocation
+  // NarrowMem     - newly created projection (type includes instance_id) from projection created
+  //                 before EA
+  Node_Array<Node> _node_map;
 
   // manage entries in _node_map
 
