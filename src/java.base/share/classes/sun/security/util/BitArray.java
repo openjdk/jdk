@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,11 @@ public class BitArray {
         return 1 << (BITS_PER_UNIT - 1 - (idx % BITS_PER_UNIT));
     }
 
+    private static int byteLen(int bitLen) {
+        return bitLen / BITS_PER_UNIT
+                + (bitLen % BITS_PER_UNIT == 0 ? 0 : 1);
+    }
+
     /**
      * Creates a BitArray of the specified size, initialized to zeros.
      */
@@ -62,7 +67,7 @@ public class BitArray {
 
         this.length = length;
 
-        repn = new byte[(length + BITS_PER_UNIT - 1)/BITS_PER_UNIT];
+        repn = new byte[byteLen(length)];
     }
 
     /**
@@ -88,15 +93,17 @@ public class BitArray {
         if (length < 0) {
             throw new IllegalArgumentException("Negative length for BitArray");
         }
-        if ((a.length - ofs) * BITS_PER_UNIT < length) {
+        int repLength = byteLen(length);
+
+        if (a.length - ofs < repLength) {
             throw new IllegalArgumentException
                 ("Byte array too short to represent " + length + "-bit array");
         }
 
         this.length = length;
 
-        int repLength = ((length + BITS_PER_UNIT - 1)/BITS_PER_UNIT);
-        int unusedBits = repLength*BITS_PER_UNIT - length;
+        int unusedBits = (BITS_PER_UNIT - length % BITS_PER_UNIT)
+                % BITS_PER_UNIT;
         byte bitMask = (byte) (0xFF << unusedBits);
 
         /*
@@ -118,7 +125,7 @@ public class BitArray {
     @SuppressWarnings("this-escape")
     public BitArray(boolean[] bits) {
         length = bits.length;
-        repn = new byte[(length + 7)/8];
+        repn = new byte[byteLen(length)];
 
         for (int i=0; i < length; i++) {
             set(i, bits[i]);

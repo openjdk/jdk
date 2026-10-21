@@ -54,7 +54,7 @@ class BitMap {
   typedef uintptr_t bm_word_t;  // Element type of array that represents the
                                 // bitmap, with BitsPerWord bits per element.
   // If this were to fail, there are lots of places that would need repair.
-  STATIC_ASSERT((sizeof(bm_word_t) * BitsPerByte) == BitsPerWord);
+  static_assert((sizeof(bm_word_t) * BitsPerByte) == BitsPerWord);
 
   // Hints for range sizes.
   typedef enum {

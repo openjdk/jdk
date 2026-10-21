@@ -27,14 +27,12 @@ import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
-import jdk.test.whitebox.WhiteBox;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /*
  * @test
@@ -237,11 +235,11 @@ public class TestIRMatching {
         runCheck(BadFailOnConstraint.create(CheckCastArray.class, "array", 1, cmp, "Constant"),
                  BadFailOnConstraint.create(CheckCastArray.class, "array", 2, 1,cmp, "Constant", "MyClass"),
                  BadFailOnConstraint.create(CheckCastArray.class, "array", 2, 2,cmp, "Constant", "ir_framework/tests/MyClass"),
-                 GoodFailOnConstraint.create(CheckCastArray.class, "array", 3),
-                 Platform.isS390x() ? // There is no checkcast_arraycopy stub for C2 on s390
-                     GoodFailOnConstraint.create(CheckCastArray.class, "arrayCopy", 1)
-                     : BadFailOnConstraint.create(CheckCastArray.class, "arrayCopy", 1, "checkcast_arraycopy")
+                 GoodFailOnConstraint.create(CheckCastArray.class, "array", 3)
         );
+        runCheck(Platform.isS390x() ? // There is no checkcast_arraycopy stub for C2 on s390
+                     GoodFailOnConstraint.create(CheckCastArrayCopy.class, "arrayCopy", 1)
+                     : BadFailOnConstraint.create(CheckCastArrayCopy.class, "arrayCopy", 1, "checkcast_arraycopy"));
 
         try {
             runWithArgumentsFail(CompilationOutputOfFails.class);
@@ -430,6 +428,38 @@ public class TestIRMatching {
         String applicableIRRules = output.split("Applicable IR Rules")[1];
         if (applicableIRRules.contains(methodName)) {
             addException(new RuntimeException("Should not find ids for \"" + methodName + "\"" + System.lineSeparator()));
+        }
+    }
+
+    // IR rules can also be defined in inner classes. In this case, the ourwe class is not allowed to also define
+    // IR rules (results in a format violation).
+    static class CountComparisons {
+        int iFld;
+
+        @Test
+        @IR(counts = {IRNode.STORE, "= 1",
+                IRNode.STORE, "=1",
+                IRNode.STORE, " = 1",
+                IRNode.STORE, "  =  1",
+                IRNode.STORE, ">= 1",
+                IRNode.STORE, ">=1",
+                IRNode.STORE, " >= 1",
+                IRNode.STORE, "  >=  1",
+                IRNode.STORE, "<= 1",
+                IRNode.STORE, "<=1",
+                IRNode.STORE, " <= 1",
+                IRNode.STORE, "  <=  1",
+                IRNode.STORE, "> 0",
+                IRNode.STORE, ">0",
+                IRNode.STORE, " > 0",
+                IRNode.STORE, "  >  0",
+                IRNode.STORE, "< 2",
+                IRNode.STORE, "<2",
+                IRNode.STORE, " < 2",
+                IRNode.STORE, "  <  2",
+        })
+        public void countComparison() {
+            iFld = 3;
         }
     }
 }
@@ -634,36 +664,6 @@ class FlagComparisons {
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "!= 50"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " !=  50"}) // Index 23
     public void testMatchNoneIf50() {}
-}
-
-class CountComparisons {
-    int iFld;
-
-    @Test
-    @IR(counts = {IRNode.STORE, "= 1",
-                  IRNode.STORE, "=1",
-                  IRNode.STORE, " = 1",
-                  IRNode.STORE, "  =  1",
-                  IRNode.STORE, ">= 1",
-                  IRNode.STORE, ">=1",
-                  IRNode.STORE, " >= 1",
-                  IRNode.STORE, "  >=  1",
-                  IRNode.STORE, "<= 1",
-                  IRNode.STORE, "<=1",
-                  IRNode.STORE, " <= 1",
-                  IRNode.STORE, "  <=  1",
-                  IRNode.STORE, "> 0",
-                  IRNode.STORE, ">0",
-                  IRNode.STORE, " > 0",
-                  IRNode.STORE, "  >  0",
-                  IRNode.STORE, "< 2",
-                  IRNode.STORE, "<2",
-                  IRNode.STORE, " < 2",
-                  IRNode.STORE, "  <  2",
-    })
-    public void countComparison() {
-        iFld = 3;
-    }
 }
 
 class GoodCount {
@@ -1317,6 +1317,10 @@ class CheckCastArray {
         array(oArr);
         array(mArr);
     }
+}
+
+class CheckCastArrayCopy {
+    MyClass[] mArr = new MyClass[10];
 
     @Test
     @IR(failOn = IRNode.CHECKCAST_ARRAYCOPY) // fails

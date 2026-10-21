@@ -38,6 +38,7 @@
 #include "logging/logStream.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
@@ -632,20 +633,6 @@ public:
     return FakeOop(_iter, _iter->obj_at(addr));
   }
 
-  FakeOop read_value_oop_at(address value_addr, Klass* k) {
-    OopData data = {
-      value_addr,                                         // _buffered_addr, address of the flat value shifted by the payload offset
-      requested_addr() + (value_addr - buffered_addr()),  // _requested_addr
-      target_location() + (value_addr - buffered_addr()), // _target_location
-      0,                                                  // _narrow_location, narrow oop not used
-      cast_to_oop(value_addr),                            // _raw_oop
-      k,                                                  // _klass
-      0,                                                  // _size
-      false                                               // _is_root_segment
-    };
-    return FakeOop(_iter, data);
-  }
-
   FakeOop obj_field(int field_offset) {
     if (UseCompressedOops) {
       return read_oop_at(raw_oop()->field_addr<narrowOop>(field_offset));
@@ -654,10 +641,9 @@ public:
     }
   }
 
-  void print_non_oop_field(outputStream* st, fieldDescriptor* fd, int indent = 0, int base_offset = 0) {
-    // fd->print_on_for() works for non-oop fields in fake oops
+  void print_non_oop_field(outputStream* st, fieldDescriptor* fd, int indent, const ValuePayloadContext* vpc) {
     precond(fd->field_type() != T_ARRAY && fd->field_type() != T_OBJECT);
-    fd->print_on_for(st, raw_oop(), indent, base_offset);
+    fd->print_on_for(st, raw_oop(), indent, vpc);
   }
 }; // AOTMapLogger::FakeOop
 
@@ -709,15 +695,8 @@ public:
     return raw_flatArrayOop()->length();
   }
 
-  // Create a wrapper for an archived flat array element
-  FakeOop element_at(int i) {
-    ValueKlass* elem_k = ((FlatArrayKlass*)real_klass())->element_klass();
-    address value_addr = (address)raw_flatArrayOop()->value_at_addr(i, real_klass()->layout_helper()) - elem_k->payload_offset();
-    return read_value_oop_at(value_addr, elem_k);
-  }
-
-  int element_offset_at(int i) {
-    return (address)raw_flatArrayOop()->value_at_addr(i, real_klass()->layout_helper()) - cast_from_oop<address>(raw_flatArrayOop());
+  int value_offset(int i) {
+    return raw_flatArrayOop()->value_offset_as_int(i, real_klass()->layout_helper());
   }
 }; // AOTMapLogger::FakeFlatArray
 
@@ -858,20 +837,16 @@ class AOTMapLogger::ArchivedFieldPrinter : public FieldClosure {
   FakeOop _fake_oop;
   outputStream* _st;
   int _indent;
-  int _base_offset;
+  const ValuePayloadContext* _vpc;
 public:
-  ArchivedFieldPrinter(FakeOop fake_oop, outputStream* st, int indent = 1, int base_offset = 0) :
-                       _fake_oop(fake_oop), _st(st), _indent(indent), _base_offset(base_offset) {}
+  ArchivedFieldPrinter(FakeOop fake_oop, outputStream* st, int indent = 1, const ValuePayloadContext* vpc = nullptr)
+    : FieldClosure(), _fake_oop(fake_oop), _st(st), _indent(indent), _vpc(vpc) {
+    precond(_fake_oop.raw_oop() != nullptr);
+  }
 
   void do_field(fieldDescriptor* fd) {
     for (int i = 0; i < _indent; i++) _st->print("  ");
     _st->print(" - ");
-
-    if (_fake_oop.raw_oop() == nullptr) {
-      fd->print_on(_st, _base_offset);
-      _st->cr();
-      return;
-    }
 
     BasicType ft = fd->field_type();
     switch (ft) {
@@ -879,24 +854,23 @@ public:
     case T_OBJECT:
       {
         if (fd->is_flat()) {
-          int index = fd->index();
-          ValueKlass* vk = fd->field_holder()->get_value_type_field_klass(index);
-          int field_offset = fd->offset() - vk->payload_offset();
-          address field_addr = (address)_fake_oop.buffered_field_addr(field_offset);
-          bool is_null = false;
+          // offset of the payload that represents this field, from the beginning of _fake_oop
+          int field_offset_in_obj = fd->field_offset_in_obj(_vpc);
+          ValueKlass* vk = fd->flat_field_klass();
+          bool is_null = fd->is_flat_field_marked_as_null(_fake_oop.buffered_addr(), _vpc);
 
           if (!fd->is_null_free_value_type()) {
             assert(fd->has_null_marker(), "should have null marker");
-            is_null = vk->is_payload_marked_as_null(_fake_oop.buffered_addr() + fd->offset());
             _st->print("Flat value type field '%s':", vk->name()->as_C_string());
           } else {
+            precond(!is_null);
             _st->print("Flat value null-free type field '%s':", vk->name()->as_C_string());
           }
           // Print fields of flat field (recursively)
           if (!is_null) {
             _st->cr();
-            FakeOop obj = _fake_oop.read_value_oop_at(field_addr, vk);
-            ArchivedFieldPrinter print_field(obj, _st, _indent + 1, _base_offset + field_offset);
+            ValuePayloadContext field_vpc{vk, field_offset_in_obj};
+            ArchivedFieldPrinter print_field(_fake_oop, _st, _indent + 1, &field_vpc);
             vk->do_nonstatic_fields(&print_field);
           } else {
             _st->print_cr(" null");
@@ -905,19 +879,18 @@ public:
           if (fd->field_flags().has_null_marker()) {
             for (int i = 0; i < _indent + 1; i++) _st->print("  ");
             _st->print_cr(" - [null_marker] @%d %s",
-                      vk->null_marker_offset() + _base_offset + field_offset,
-                      is_null ? "Field marked as null" : "Field marked as non-null");
+                          field_offset_in_obj + vk->null_marker_offset_in_payload(),
+                          is_null ? "Field marked as null" : "Field marked as non-null");
           }
-          return; // Do not print underlying representation
         } else {
-          fd->print_on(_st); // print just the name and offset
-          FakeOop field_value = _fake_oop.obj_field(fd->offset());
+          fd->print_on(_st, _vpc); // print just the name and offset
+          FakeOop field_value = _fake_oop.obj_field(fd->field_offset_in_obj(_vpc));
           print_oop_info_cr(_st, field_value);
         }
       }
       break;
     default:
-      _fake_oop.print_non_oop_field(_st, fd, _indent, _base_offset); // name, offset, value
+      _fake_oop.print_non_oop_field(_st, fd, _indent, _vpc);
       _st->cr();
     }
   }
@@ -1059,21 +1032,21 @@ void AOTMapLogger::print_oop_details(FakeOop fake_oop, outputStream* st) {
     FakeFlatArray fake_flat_array = fake_oop.as_flat_array();
     ValueKlass* elem_k = ((FlatArrayKlass*)real_klass)->element_klass();
     for (int i = 0; i < fake_flat_array.length(); i++) {
+      int elem_offset = fake_flat_array.value_offset(i);
       bool is_null = false;
-      int off = fake_flat_array.element_offset_at(i);
-      FakeOop elm = fake_flat_array.element_at(i);
 
       if (!real_klass->is_null_free_array_klass()) {
-        is_null = elem_k->is_payload_marked_as_null(elm.buffered_addr() + elem_k->payload_offset());
+        is_null = elem_k->is_payload_marked_as_null(fake_flat_array.buffered_addr() + elem_offset);
         st->print(" - Flat value type element '%s':", elem_k->name()->as_C_string());
       } else {
         st->print(" - Flat value null-free type element '%s':", elem_k->name()->as_C_string());
       }
-      st->print(" - Index %3d offset %3d: ", i, off);
+      st->print(" - Index %3d offset %3d:", i, elem_offset);
 
       if (!is_null) {
         st->cr();
-        ArchivedFieldPrinter print_field(elm, st);
+        ValuePayloadContext vpc{elem_k, elem_offset};
+        ArchivedFieldPrinter print_field(fake_flat_array, st, 1, &vpc);
         elem_k->do_nonstatic_fields(&print_field);
       } else {
         assert(!real_klass->is_null_free_array_klass(), "must be");
@@ -1082,8 +1055,8 @@ void AOTMapLogger::print_oop_details(FakeOop fake_oop, outputStream* st) {
 
       if (!real_klass->is_null_free_array_klass()) {
         st->print_cr("   - [null_marker] @%d %s",
-                     off + elem_k->null_marker_offset_in_payload(),
-                     is_null ? "Field marked as null" : "Field marked as non-null");
+                     elem_offset + elem_k->null_marker_offset_in_payload(),
+                     is_null ? "Element marked as null" : "Element marked as non-null");
       }
     }
   } else if (real_klass->is_refArray_klass()) {

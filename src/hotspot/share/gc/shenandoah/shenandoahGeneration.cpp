@@ -25,6 +25,7 @@
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
@@ -81,24 +82,6 @@ public:
   size_t parallel_region_stride() override { return 8; }
 
   bool is_thread_safe() override { return true; }
-};
-
-// Copy the write-version of the card-table into the read-version, clearing the
-// write-copy.
-class ShenandoahMergeWriteTable: public ShenandoahHeapRegionClosure {
-private:
-  ShenandoahScanRemembered* _scanner;
-public:
-  ShenandoahMergeWriteTable(ShenandoahScanRemembered* scanner) : _scanner(scanner) {}
-
-  void heap_region_do(ShenandoahHeapRegion* r) override {
-    assert(r->is_old(), "Don't waste time doing this for non-old regions");
-    _scanner->merge_write_table(r->bottom(), ShenandoahHeapRegion::region_size_words());
-  }
-
-  bool is_thread_safe() override {
-    return true;
-  }
 };
 
 // Add [TAMS, top) volume over young regions. Used to correct age 0 cohort census
@@ -228,20 +211,6 @@ void ShenandoahGeneration::swap_card_tables() {
   old_generation->card_scan()->swap_card_tables();
 }
 
-// Copy the write-version of the card-table into the read-version, clearing the
-// write-version. The work is done at a safepoint and in parallel by the GC
-// worker threads.
-void ShenandoahGeneration::merge_write_table() {
-  // This should only happen for degenerated cycles
-  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
-  heap->assert_gc_workers(heap->workers()->active_workers());
-  shenandoah_assert_safepoint();
-
-  ShenandoahOldGeneration* old_generation = heap->old_generation();
-  ShenandoahMergeWriteTable task(old_generation->card_scan());
-  old_generation->parallel_heap_region_iterate(&task);
-}
-
 void ShenandoahGeneration::prepare_gc() {
   reset_mark_bitmap<true>();
 }
@@ -250,16 +219,15 @@ void ShenandoahGeneration::parallel_heap_region_iterate_free(ShenandoahHeapRegio
   ShenandoahHeap::heap()->parallel_heap_region_iterate(cl);
 }
 
-void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
+void ShenandoahGeneration::prepare_regions_and_collection_set() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahCollectionSet* collection_set = heap->collection_set();
   bool is_generational = heap->mode()->is_generational();
 
-  assert(!heap->is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
+  assert(!heap->is_full_gc_in_progress(), "Only for concurrent GC");
   assert(!is_old(), "Only YOUNG and GLOBAL GC perform evacuations");
   {
-    ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_update_region_states :
-                            ShenandoahPhaseTimings::degen_gc_final_update_region_states);
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_region_states);
     // Update region state for every active region, but only update the liveness data for
     // the generation we marked. We always need to update the watermark for old regions.
     // If there are mixed collections pending, we also need to synchronize the pinned status
@@ -284,8 +252,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
   }
 
   {
-    ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::choose_cset :
-                            ShenandoahPhaseTimings::degen_gc_choose_cset);
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::choose_cset);
 
     collection_set->clear();
     ShenandoahHeapLocker locker(heap->lock());
@@ -307,10 +274,9 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
   }
 
   {
-    ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset :
-                            ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_rebuild_freeset);
     ShenandoahHeapLocker locker(heap->lock());
-    // At start of evacation, we do NOT compute_old_generation_balance()
+    // At start of evacuation, we do NOT compute_old_generation_balance()
     size_t young_trashed_regions, old_trashed_regions, first_old, last_old, num_old;
     _free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old, last_old, num_old);
     _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
@@ -400,7 +366,7 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
   uint nworkers = heap->workers()->active_workers();
 
   ShenandoahReferenceProcessor* rp = ref_processor();
-  ShenandoahRegionChunkIterator work_list(nworkers);
+  ShenandoahRegionChunkIterator work_list(heap);
   ShenandoahScanRememberedTask task(task_queues(), old_gen_task_queues(), rp, &work_list, is_concurrent);
   heap->assert_gc_workers(nworkers);
   heap->workers()->run_task(&task);
@@ -425,9 +391,4 @@ size_t ShenandoahGeneration::available(size_t capacity) const {
   size_t in_use = used();
   size_t result = in_use > capacity ? 0 : capacity - in_use;
   return result;
-}
-
-void ShenandoahGeneration::record_success_concurrent(bool abbreviated) {
-  heuristics()->record_success_concurrent();
-  ShenandoahHeap::heap()->shenandoah_policy()->record_success_concurrent(is_young(), abbreviated);
 }

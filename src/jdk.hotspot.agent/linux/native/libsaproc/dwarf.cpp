@@ -115,11 +115,11 @@ bool DwarfParser::process_cie(unsigned char *start_of_entry, uint32_t id) {
       if (*augmentation_string == 'R') {
         _fde_ptr_encoding = *_buf++;
       } else if (*augmentation_string == 'P') {
-        print_debug("DWARF Warning: Ignore augmentation: P\n");
+        print_warning("DWARF: Ignore augmentation: P\n");
         unsigned char enc = *_buf++; // first argument (encoding)
         get_decoded_value(enc); // skip second argument (personality routine handler)
       } else if (*augmentation_string == 'L') {
-        print_debug("DWARF Warning: Ignore augmentation: L\n");
+        print_warning("DWARF: Ignore augmentation: L\n");
         _buf++; // skip 1 arguments
       }
       augmentation_string++;
@@ -225,7 +225,7 @@ bool DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
         break;
       case 0x0b: // DW_CFA_restore_state
         if (remember_state.empty()) {
-          print_debug("DWARF Error: DW_CFA_restore_state with empty stack.\n");
+          print_warning("DWARF: DW_CFA_restore_state with empty stack.\n");
           return false;
         }
         _state = remember_state.top();
@@ -233,7 +233,7 @@ bool DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
         restore_arch_specific_state();
         break;
       case 0x0f: // DW_CFA_def_cfa_expression
-        print_debug("DWARF: DW_CFA_def_cfa_expression is not yet supported.\n");
+        print_warning("DWARF: DW_CFA_def_cfa_expression is not yet supported.\n");
         return false;
       case 0xc0: {// DW_CFA_restore
         enum DWARF_Register reg = static_cast<enum DWARF_Register>(opa);
@@ -242,7 +242,7 @@ bool DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
       }
       default:
         if (!process_arch_specific_dwarf_instructions(op)) {
-          print_error("DWARF: Unknown opcode: 0x%x\n", op);
+          print_warning("DWARF: Unknown opcode: 0x%x\n", op);
           return false;
         }
     }

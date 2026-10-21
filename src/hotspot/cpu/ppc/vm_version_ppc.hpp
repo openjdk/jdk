@@ -49,7 +49,7 @@ protected:
 
   static void print_features();
   static void determine_features(); // also measures cache line size
-  static void config_dscr(); // Power 8: Configure Data Stream Control Register.
+  static void config_dscr(); // Configure Data Stream Control Register.
 
 public:
   // Initialization

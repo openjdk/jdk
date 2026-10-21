@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_VM_PRIMS_DOWNCALLLINKER_HPP
-#define SHARE_VM_PRIMS_DOWNCALLLINKER_HPP
+#ifndef SHARE_PRIMS_DOWNCALLLINKER_HPP
+#define SHARE_PRIMS_DOWNCALLLINKER_HPP
 
 #include "prims/foreignGlobals.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -103,4 +103,4 @@ public:
   };
 };
 
-#endif // SHARE_VM_PRIMS_DOWNCALLLINKER_HPP
+#endif // SHARE_PRIMS_DOWNCALLLINKER_HPP

@@ -44,24 +44,17 @@ ShenandoahAgeCensus::ShenandoahAgeCensus(uint max_workers)
   }
 
   _global_age_tables = NEW_C_HEAP_ARRAY(AgeTable*, MAX_SNAPSHOTS, mtGC);
-  CENSUS_NOISE(_global_noise = NEW_C_HEAP_ARRAY(ShenandoahNoiseStats, MAX_SNAPSHOTS, mtGC);)
   _tenuring_threshold = NEW_C_HEAP_ARRAY(uint, MAX_SNAPSHOTS, mtGC);
-  CENSUS_NOISE(_skipped = 0);
-  NOT_PRODUCT(_counted = 0);
-  NOT_PRODUCT(_total = 0);
 
   for (int i = 0; i < MAX_SNAPSHOTS; i++) {
     // Note that we don't now get perfdata from age_table
     _global_age_tables[i] = new AgeTable(false);
-    CENSUS_NOISE(_global_noise[i].clear();)
     // Sentinel value
     _tenuring_threshold[i] = MAX_COHORTS;
   }
   _local_age_tables = NEW_C_HEAP_ARRAY(AgeTable*, _max_workers, mtGC);
-  CENSUS_NOISE(_local_noise = NEW_C_HEAP_ARRAY(ShenandoahNoiseStats, max_workers, mtGC);)
   for (uint i = 0; i < _max_workers; i++) {
     _local_age_tables[i] = new AgeTable(false);
-    CENSUS_NOISE(_local_noise[i].clear();)
   }
   _epoch = MAX_SNAPSHOTS - 1;  // see prepare_for_census_update()
 }
@@ -72,33 +65,13 @@ ShenandoahAgeCensus::~ShenandoahAgeCensus() {
   }
   FREE_C_HEAP_ARRAY(_global_age_tables);
   FREE_C_HEAP_ARRAY(_tenuring_threshold);
-  CENSUS_NOISE(FREE_C_HEAP_ARRAY(_global_noise));
   if (_local_age_tables) {
     for (uint i = 0; i < _max_workers; i++) {
       delete _local_age_tables[i];
     }
     FREE_C_HEAP_ARRAY(_local_age_tables);
-    CENSUS_NOISE(FREE_C_HEAP_ARRAY(_local_noise));
   }
 }
-
-#ifdef SHENANDOAH_CENSUS_NOISE
-void ShenandoahAgeCensus::add_skipped(size_t size, uint worker_id) {
-  _local_noise[worker_id].skipped += size;
-}
-
-void ShenandoahAgeCensus::add_aged(size_t size, uint worker_id) {
-  _local_noise[worker_id].aged += size;
-}
-
-void ShenandoahAgeCensus::add_clamped(size_t size, uint worker_id) {
-  _local_noise[worker_id].clamped += size;
-}
-
-void ShenandoahAgeCensus::add_young(size_t size, uint worker_id) {
-  _local_noise[worker_id].young += size;
-}
-#endif // SHENANDOAH_CENSUS_NOISE
 
 // Prepare for a new census update, by clearing appropriate global slots.
 void ShenandoahAgeCensus::prepare_for_census_update() {
@@ -107,7 +80,6 @@ void ShenandoahAgeCensus::prepare_for_census_update() {
     _epoch=0;
   }
   _global_age_tables[_epoch]->clear();
-  CENSUS_NOISE(_global_noise[_epoch].clear();)
 }
 
 // Update the census data from appropriate sources,
@@ -115,7 +87,6 @@ void ShenandoahAgeCensus::prepare_for_census_update() {
 void ShenandoahAgeCensus::update_census(size_t age0_pop) {
   prepare_for_census_update();
   assert(_global_age_tables[_epoch]->is_clear(), "Dirty decks");
-  CENSUS_NOISE(assert(_global_noise[_epoch].is_clear(), "Dirty decks");)
 
   // Seed cohort 0 with population that may have been missed during
   // regular census.
@@ -124,19 +95,11 @@ void ShenandoahAgeCensus::update_census(size_t age0_pop) {
   // Merge data from local age tables into the global age table for the epoch,
   // clearing the local tables.
   for (uint i = 0; i < _max_workers; i++) {
-    // age stats
     _global_age_tables[_epoch]->merge(_local_age_tables[i]);
     _local_age_tables[i]->clear();   // clear for next census
-    // Merge noise stats
-    CENSUS_NOISE(_global_noise[_epoch].merge(_local_noise[i]);)
-    CENSUS_NOISE(_local_noise[i].clear();)
   }
 
   update_tenuring_threshold();
-
-  // used for checking reasonableness of census coverage, non-product
-  // only.
-  NOT_PRODUCT(update_total();)
 }
 
 size_t ShenandoahAgeCensus::get_tenurable_bytes(const uint tenuring_threshold) const {
@@ -155,7 +118,6 @@ void ShenandoahAgeCensus::reset_global() {
   assert(_epoch < MAX_SNAPSHOTS, "Out of bounds");
   for (uint i = 0; i < MAX_SNAPSHOTS; i++) {
     _global_age_tables[i]->clear();
-    CENSUS_NOISE(_global_noise[i].clear();)
   }
   _epoch = MAX_SNAPSHOTS;
   assert(_epoch < MAX_SNAPSHOTS, "Error");
@@ -165,7 +127,6 @@ void ShenandoahAgeCensus::reset_global() {
 void ShenandoahAgeCensus::reset_local() {
   for (uint i = 0; i < _max_workers; i++) {
     _local_age_tables[i]->clear();
-    CENSUS_NOISE(_local_noise[i].clear();)
   }
 }
 
@@ -174,9 +135,7 @@ void ShenandoahAgeCensus::reset_local() {
 bool ShenandoahAgeCensus::is_clear_global() {
   assert(_epoch < MAX_SNAPSHOTS, "Out of bounds");
   for (uint i = 0; i < MAX_SNAPSHOTS; i++) {
-    bool clear = _global_age_tables[i]->is_clear();
-    CENSUS_NOISE(clear |= _global_noise[i].is_clear();)
-    if (!clear) {
+    if (!_global_age_tables[i]->is_clear()) {
       return false;
     }
   }
@@ -186,34 +145,11 @@ bool ShenandoahAgeCensus::is_clear_global() {
 // Is local census information clear?
 bool ShenandoahAgeCensus::is_clear_local() {
   for (uint i = 0; i < _max_workers; i++) {
-    bool clear = _local_age_tables[i]->is_clear();
-    CENSUS_NOISE(clear |= _local_noise[i].is_clear();)
-    if (!clear) {
+    if (!_local_age_tables[i]->is_clear()) {
       return false;
     }
   }
   return true;
-}
-
-size_t ShenandoahAgeCensus::get_all_ages(uint snap) {
-  assert(snap < MAX_SNAPSHOTS, "Out of bounds");
-  size_t pop = 0;
-  const AgeTable* pv = _global_age_tables[snap];
-  for (uint i = 0; i < MAX_COHORTS; i++) {
-    pop += pv->sizes[i];
-  }
-  return pop;
-}
-
-size_t ShenandoahAgeCensus::get_skipped(uint snap) {
-  assert(snap < MAX_SNAPSHOTS, "Out of bounds");
-  return _global_noise[snap].skipped;
-}
-
-void ShenandoahAgeCensus::update_total() {
-  _counted = get_all_ages(_epoch);
-  _skipped = get_skipped(_epoch);
-  _total   = _counted + _skipped;
 }
 #endif // !PRODUCT
 
@@ -332,7 +268,6 @@ void ShenandoahAgeCensus::print() {
 
   const uint tt = tenuring_threshold();
 
-  size_t total= 0;
   for (uint i = 1; i < MAX_COHORTS; i++) {
     const size_t prev_pop = prev_pv->sizes[i-1];  // (i-1) OK because i >= 1
     const size_t cur_pop  = cur_pv->sizes[i];
@@ -342,26 +277,9 @@ void ShenandoahAgeCensus::print() {
       ls.print_cr(" - age %3u: prev %10zu bytes, curr %10zu bytes, mortality %.2f ",
          i, prev_pop * oopSize, cur_pop * oopSize, mr);
     }
-    total += cur_pop;
     if (i == tt) {
       // Underline the cohort for tenuring threshold (if < MAX_COHORTS)
       ls.print_cr("----------------------------------------------------------------------------");
     }
   }
-  CENSUS_NOISE(_global_noise[cur_epoch].print(ls, total);)
 }
-
-#ifdef SHENANDOAH_CENSUS_NOISE
-void ShenandoahNoiseStats::print(LogStream& ls, const size_t total) {
-  if (total > 0) {
-    const float f_skipped = (float)skipped/(float)total;
-    const float f_aged    = (float)aged/(float)total;
-    const float f_clamped = (float)clamped/(float)total;
-    const float f_young   = (float)young/(float)total;
-    ls.print_cr("Skipped: %10zu (%.2f),  R-Aged: %10zu (%.2f),  "
-                "Clamped: %10zu (%.2f),  R-Young: %10zu (%.2f)",
-                skipped*oopSize, f_skipped, aged*oopSize, f_aged,
-                clamped*oopSize, f_clamped, young*oopSize, f_young);
-  }
-}
-#endif // SHENANDOAH_CENSUS_NOISE

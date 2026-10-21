@@ -27,7 +27,7 @@
 * @summary Unsigned Vector Min / Max transforms
 * @modules jdk.incubator.vector
 * @library /test/lib /
-* @run driver compiler.vectorapi.VectorUnsignedMinMaxOperationsTest
+* @run driver ${test.main.class}
 */
 
 package compiler.vectorapi;
@@ -63,7 +63,7 @@ public class VectorUnsignedMinMaxOperationsTest {
 
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
-        testFramework.setDefaultWarmup(5000)
+        testFramework.setDefaultWarmup(100)
                      .addFlags("--add-modules=jdk.incubator.vector")
                      .start();
     }
@@ -117,7 +117,6 @@ public class VectorUnsignedMinMaxOperationsTest {
 
     @Test
     @IR(counts = {IRNode.UMAX_VB, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
-    @Warmup(value = 10000)
     public void umax_byte() {
         for (int i = 0; i < COUNT; i += bspec.length()) {
             ByteVector.fromArray(bspec, byte_in1, i)
@@ -140,7 +139,6 @@ public class VectorUnsignedMinMaxOperationsTest {
 
     @Test
     @IR(counts = {IRNode.UMAX_VS, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
-    @Warmup(value = 10000)
     public void umax_short() {
         for (int i = 0; i < COUNT; i += sspec.length()) {
             ShortVector.fromArray(sspec, short_in1, i)
@@ -163,7 +161,6 @@ public class VectorUnsignedMinMaxOperationsTest {
 
     @Test
     @IR(counts = {IRNode.UMAX_VI, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
-    @Warmup(value = 10000)
     public void umax_int() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
             IntVector.fromArray(ispec, int_in1, i)
@@ -186,7 +183,6 @@ public class VectorUnsignedMinMaxOperationsTest {
 
     @Test
     @IR(counts = {IRNode.UMAX_VL, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
-    @Warmup(value = 10000)
     public void umax_long() {
         for (int i = 0; i < COUNT; i += lspec.length()) {
             LongVector.fromArray(lspec, long_in1, i)
@@ -209,7 +205,6 @@ public class VectorUnsignedMinMaxOperationsTest {
 
     @Test
     @IR(counts = {IRNode.UMIN_VB, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
-    @Warmup(value = 10000)
     public void umin_byte() {
         for (int i = 0; i < COUNT; i += bspec.length()) {
             ByteVector.fromArray(bspec, byte_in1, i)
@@ -232,7 +227,6 @@ public class VectorUnsignedMinMaxOperationsTest {
 
     @Test
     @IR(counts = {IRNode.UMIN_VS, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
-    @Warmup(value = 10000)
     public void umin_short() {
         for (int i = 0; i < COUNT; i += sspec.length()) {
             ShortVector.fromArray(sspec, short_in1, i)
@@ -255,7 +249,6 @@ public class VectorUnsignedMinMaxOperationsTest {
 
     @Test
     @IR(counts = {IRNode.UMIN_VI, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
-    @Warmup(value = 10000)
     public void umin_int() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
             IntVector.fromArray(ispec, int_in1, i)
@@ -278,7 +271,6 @@ public class VectorUnsignedMinMaxOperationsTest {
 
     @Test
     @IR(counts = {IRNode.UMIN_VL, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
-    @Warmup(value = 10000)
     public void umin_long() {
         for (int i = 0; i < COUNT; i += lspec.length()) {
             LongVector.fromArray(lspec, long_in1, i)
@@ -301,7 +293,6 @@ public class VectorUnsignedMinMaxOperationsTest {
 
     @Test
     @IR(counts = {IRNode.UMIN_VI, " 0 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
-    @Warmup(value = 10000)
     public void umin_ir_transform1() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
             IntVector.fromArray(ispec, int_in1, i)
@@ -324,7 +315,6 @@ public class VectorUnsignedMinMaxOperationsTest {
 
     @Test
     @IR(counts = {IRNode.UMAX_VI, " 0 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
-    @Warmup(value = 10000)
     public void umax_ir_transform1() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
             IntVector.fromArray(ispec, int_in1, i)
@@ -347,7 +337,6 @@ public class VectorUnsignedMinMaxOperationsTest {
 
     @Test
     @IR(counts = {IRNode.UMAX_VI, " 0 ", IRNode.UMIN_VI, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
-    @Warmup(value = 10000)
     public void umin_max_ir_transform1() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
             IntVector vec1 = IntVector.fromArray(ispec, int_in1, i);
@@ -374,7 +363,6 @@ public class VectorUnsignedMinMaxOperationsTest {
 
     @Test
     @IR(counts = {IRNode.UMIN_VI, " 0 ", IRNode.UMAX_VI, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
-    @Warmup(value = 10000)
     public void umin_max_ir_transform2() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
             IntVector vec1 = IntVector.fromArray(ispec, int_in1, i);
@@ -401,7 +389,6 @@ public class VectorUnsignedMinMaxOperationsTest {
 
     @Test
     @IR(counts = {IRNode.UMAX_VI, " 0 ", IRNode.UMIN_VI, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
-    @Warmup(value = 10000)
     public void umin_max_ir_transform3() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
             IntVector vec1 = IntVector.fromArray(ispec, int_in1, i);
@@ -428,7 +415,6 @@ public class VectorUnsignedMinMaxOperationsTest {
 
     @Test
     @IR(counts = {IRNode.UMIN_VI, " 0 ", IRNode.UMAX_VI, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
-    @Warmup(value = 10000)
     public void umin_max_ir_transform4() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
             IntVector vec1 = IntVector.fromArray(ispec, int_in1, i);
@@ -455,7 +441,6 @@ public class VectorUnsignedMinMaxOperationsTest {
 
     @Test
     @IR(counts = {IRNode.UMIN_VI, " 0 ", IRNode.UMAX_VI, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
-    @Warmup(value = 10000)
     public void umin_max_ir_transform5() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
             IntVector vec1 = IntVector.fromArray(ispec, int_in1, i);
