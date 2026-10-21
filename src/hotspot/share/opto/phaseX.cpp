@@ -1091,6 +1091,12 @@ bool PhaseIterGVN::needs_deep_revisit(const Node* n) const {
   default:
     break;
   }
+  // ValueType::Ideal -> is_loaded searches through many hops, via nested
+  // ValueType, object references, casts, DecodeN, to eventually find if
+  // the field loads are all at desired offsets and from the same object.
+  if (n->is_ValueType()) {
+    return true;
+  }
   return false;
 }
 
