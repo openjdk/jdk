@@ -103,7 +103,7 @@ public class VectorRearrangeTest {
     }
 
     @Test
-    @IR(counts = {IRNode.REARRANGE_VB, IRNode.VECTOR_SIZE_8, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.REARRANGE_VB, IRNode.VECTOR_SIZE_8, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     public void rearrange_byte64() {
         VectorShuffle<Byte> shuffle = VectorShuffle.fromArray(bspec64, indexes[2], 0);
         for (int i = 0; i < LENGTH; i += bspec64.length()) {
@@ -123,7 +123,7 @@ public class VectorRearrangeTest {
     }
 
     @Test
-    @IR(counts = {IRNode.REARRANGE_VB, IRNode.VECTOR_SIZE_16, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.REARRANGE_VB, IRNode.VECTOR_SIZE_16, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     public void rearrange_byte128() {
         VectorShuffle<Byte> shuffle = VectorShuffle.fromArray(bspec128, indexes[3], 0);
         for (int i = 0; i < LENGTH; i += bspec128.length()) {
@@ -143,7 +143,7 @@ public class VectorRearrangeTest {
     }
 
     @Test
-    @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_4, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_4, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     public void rearrange_short64() {
         VectorShuffle<Short> shuffle = VectorShuffle.fromArray(sspec64, indexes[1], 0);
         for (int i = 0; i < LENGTH; i += sspec64.length()) {
@@ -163,7 +163,7 @@ public class VectorRearrangeTest {
     }
 
     @Test
-    @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_8, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_8, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     public void rearrange_short128() {
         VectorShuffle<Short> shuffle = VectorShuffle.fromArray(sspec128, indexes[2], 0);
         for (int i = 0; i < LENGTH; i += sspec128.length()) {
@@ -203,7 +203,7 @@ public class VectorRearrangeTest {
     }
 
     @Test
-    @IR(counts = {IRNode.REARRANGE_VI, IRNode.VECTOR_SIZE_4, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.REARRANGE_VI, IRNode.VECTOR_SIZE_4, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     public void rearrange_int128() {
         VectorShuffle<Integer> shuffle = VectorShuffle.fromArray(ispec128, indexes[1], 0);
         for (int i = 0; i < LENGTH; i += ispec128.length()) {
@@ -263,7 +263,7 @@ public class VectorRearrangeTest {
     }
 
     @Test
-    @IR(counts = {IRNode.REARRANGE_VF, IRNode.VECTOR_SIZE_4, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.REARRANGE_VF, IRNode.VECTOR_SIZE_4, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     public void rearrange_float128() {
         VectorShuffle<Float> shuffle = VectorShuffle.fromArray(fspec128, indexes[1], 0);
         for (int i = 0; i < LENGTH; i += fspec128.length()) {
