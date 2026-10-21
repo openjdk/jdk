@@ -218,6 +218,10 @@ void DowncallLinker::StubGenerator::generate() {
   _oop_maps  = _needs_transition ? new OopMapSet() : nullptr;
   address start = __ pc();
 
+#ifdef _WINDOWS
+  __ generate_stack_overflow_check(allocated_frame_size);
+#endif
+
   __ enter();
 
   // return address and rbp are already in place

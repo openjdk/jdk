@@ -1797,8 +1797,14 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ bind(L_skip_barrier);
   }
 
+#ifdef _WINDOWS
+  // Include the frame allocated below and use page-stepped bangs so a large
+  // frame cannot skip the fixed HotSpot zones.
+  __ generate_stack_overflow_check(stack_size - 2 * wordSize);
+#else
   // Generate stack overflow check
   __ bang_stack_with_offset(checked_cast<int>(StackOverflow::stack_shadow_zone_size()));
+#endif
 
   // Generate a new frame for the wrapper.
   __ enter();
