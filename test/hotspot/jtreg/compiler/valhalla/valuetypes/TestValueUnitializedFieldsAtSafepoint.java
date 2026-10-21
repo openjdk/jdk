@@ -22,6 +22,7 @@
  */
 
 package compiler.valhalla.valuetypes;
+
 /*
  * @test
  * @bug 8394960
@@ -32,7 +33,6 @@ package compiler.valhalla.valuetypes;
  *                   -XX:CompileCommand=dontinline,${test.main.class}::safepoint
  *                   -XX:CompileOnly=${test.main.class}::* ${test.main.class}
  */
-
 
 public class TestValueUnitializedFieldsAtSafepoint {
     static value record V(Object o0, Object o1, Object o2,
