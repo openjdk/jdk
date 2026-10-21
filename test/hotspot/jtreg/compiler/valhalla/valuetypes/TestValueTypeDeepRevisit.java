@@ -29,7 +29,7 @@
  * @enablePreview
  * @run main ${test.main.class}
  * @run main/othervm -Xbatch
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:VerifyIterativeGVN=1110
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
  *                   -XX:CompileOnly=${test.main.class}::test
  *                   ${test.main.class}
  */
