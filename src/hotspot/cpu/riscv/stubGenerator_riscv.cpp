@@ -2248,10 +2248,12 @@ class StubGenerator: public StubCodeGenerator {
     __ load_klass(t1, dst);
     __ bne(t1, scratch_src_klass, L_failed);
 
-    if (Arguments::is_valhalla_enabled()) {
+    if (UseArrayFlattening) {
       // Check for flat value type array -> return -1
       __ test_flat_array_oop(src, t1, L_failed);
+    }
 
+    if (Arguments::is_valhalla_enabled()) {
       // Check for null-free (non-flat) value type array -> handle as object array
       __ test_null_free_array_oop(src, t1, L_objArray);
     }
@@ -5817,10 +5819,11 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
-    // generate load for the i'th register
-    void gen_load(uint i, Register base) {
-      assert(i < L, "invalid i: %u", i);
-      __ ld(_regs[i], Address(base, 8 * i));
+    // Generate loads for all cached registers.
+    void gen_loads(Register base) {
+      for (uint i = 0; i < L; i++) {
+        __ ld(_regs[i], Address(base, 8 * i));
+      }
     }
 
     // add i'th 32-bit integer to dest
@@ -5841,72 +5844,84 @@ class StubGenerator: public StubCodeGenerator {
 
   typedef RegCache<8> BufRegCache;
 
-  // a += value + x + ac;
-  // a = Integer.rotateLeft(a, s) + b;
-  void m5_FF_GG_HH_II_epilogue(BufRegCache& reg_cache,
-                               Register a, Register b, Register c, Register d,
-                               int k, int s, int t,
-                               Register value) {
-    // a += ac
-    __ addw(a, a, t, t1);
-
-    // a += x;
-    reg_cache.add_u32(a, k);
-    // a += value;
-    __ addw(a, a, value);
-
-    // a = Integer.rotateLeft(a, s) + b;
-    __ rolw(a, a, s);
-    __ addw(a, a, b);
-  }
-
-  // a += ((b & c) | ((~b) & d)) + x + ac;
+  // a += (d ^ (b & (c ^ d))) + x + ac;
   // a = Integer.rotateLeft(a, s) + b;
   void md5_FF(BufRegCache& reg_cache,
               Register a, Register b, Register c, Register d,
               int k, int s, int t,
-              Register rtmp1, Register rtmp2) {
-    // rtmp1 = b & c
-    __ andr(rtmp1, b, c);
+              Register rtmp1) {
+    // rtmp1 = c ^ d
+    __ xorr(rtmp1, c, d);
 
-    // rtmp2 = (~b) & d
-    __ andn(rtmp2, d, b);
+    // a += ac
+    __ addw(a, a, t, t1);
 
-    // rtmp1 = (b & c) | ((~b) & d)
-    __ orr(rtmp1, rtmp1, rtmp2);
+    // rtmp1 = b & (c ^ d) = b & rtmp1
+    __ andr(rtmp1, b, rtmp1);
 
-    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t, rtmp1);
+    // a += x
+    reg_cache.add_u32(a, k);
+
+    // rtmp1 = d ^ (b & (c ^ d)) = d ^ rtmp1
+    __ xorr(rtmp1, d, rtmp1);
+
+    // a += d ^ (b & (c ^ d))
+    __ addw(a, a, rtmp1);
+
+    // a = Integer.rotateLeft(a, s) + b
+    __ rolw(a, a, s);
+    __ addw(a, a, b);
   }
 
-  // a += ((b & d) | (c & (~d))) + x + ac;
+  // a += ((c & (~d)) + (b & d)) + x + ac;
   // a = Integer.rotateLeft(a, s) + b;
   void md5_GG(BufRegCache& reg_cache,
               Register a, Register b, Register c, Register d,
               int k, int s, int t,
               Register rtmp1, Register rtmp2) {
-    // rtmp1 = b & d
-    __ andr(rtmp1, b, d);
+    // a += x + ac
+    reg_cache.add_u32(a, k);
+    __ addw(a, a, t, t1);
 
-    // rtmp2 = c & (~d)
-    __ andn(rtmp2, c, d);
+    // rtmp1 = c & (~d)
+    __ andn(rtmp1, c, d);
 
-    // rtmp1 = (b & d) | (c & (~d))
-    __ orr(rtmp1, rtmp1, rtmp2);
+    // rtmp2 = b & d
+    __ andr(rtmp2, b, d);
 
-    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t, rtmp1);
+    // a += c & (~d)
+    __ addw(a, a, rtmp1);
+
+    // a += b & d
+    __ addw(a, a, rtmp2);
+
+    // a = Integer.rotateLeft(a, s) + b
+    __ rolw(a, a, s);
+    __ addw(a, a, b);
   }
 
-  // a += ((b ^ c) ^ d) + x + ac;
+  // a += (b ^ (c ^ d)) + x + ac;
   // a = Integer.rotateLeft(a, s) + b;
   void md5_HH(BufRegCache& reg_cache,
               Register a, Register b, Register c, Register d,
               int k, int s, int t,
-              Register rtmp1, Register rtmp2) {
-    // rtmp1 = (b ^ c) ^ d
-    __ xorr(rtmp2, b, c);
-    __ xorr(rtmp1, rtmp2, d);
+              Register rtmp1) {
+    // rtmp1 = c ^ d
+    __ xorr(rtmp1, c, d);
 
-    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t, rtmp1);
+    // a += x + ac
+    reg_cache.add_u32(a, k);
+    __ addw(a, a, t, t1);
+
+    // rtmp1 = b ^ (c ^ d)
+    __ xorr(rtmp1, b, rtmp1);
+
+    // a += b ^ (c ^ d)
+    __ addw(a, a, rtmp1);
+
+    // a = Integer.rotateLeft(a, s) + b
+    __ rolw(a, a, s);
+    __ addw(a, a, b);
   }
 
   // a += (c ^ (b | (~d))) + x + ac;
@@ -5915,11 +5930,20 @@ class StubGenerator: public StubCodeGenerator {
               Register a, Register b, Register c, Register d,
               int k, int s, int t,
               Register rtmp1, Register rtmp2) {
+    // a += x + ac
+    reg_cache.add_u32(a, k);
+    __ addw(a, a, t, t1);
+
     // rtmp1 = c ^ (b | (~d))
     __ orn(rtmp2, b, d);
     __ xorr(rtmp1, c, rtmp2);
 
-    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t, rtmp1);
+    // a += c ^ (b | (~d))
+    __ addw(a, a, rtmp1);
+
+    // a = Integer.rotateLeft(a, s) + b
+    __ rolw(a, a, s);
+    __ addw(a, a, b);
   }
 
   // Arguments:
@@ -6078,31 +6102,25 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(c, state2);
     __ mv(d, state3);
 
+    reg_cache.gen_loads(buf);
+
     // Round 1
-    reg_cache.gen_load(0, buf);
-    md5_FF(reg_cache, a, b, c, d,  0, S11, 0xd76aa478, rtmp1, rtmp2);
-    md5_FF(reg_cache, d, a, b, c,  1, S12, 0xe8c7b756, rtmp1, rtmp2);
-    reg_cache.gen_load(1, buf);
-    md5_FF(reg_cache, c, d, a, b,  2, S13, 0x242070db, rtmp1, rtmp2);
-    md5_FF(reg_cache, b, c, d, a,  3, S14, 0xc1bdceee, rtmp1, rtmp2);
-    reg_cache.gen_load(2, buf);
-    md5_FF(reg_cache, a, b, c, d,  4, S11, 0xf57c0faf, rtmp1, rtmp2);
-    md5_FF(reg_cache, d, a, b, c,  5, S12, 0x4787c62a, rtmp1, rtmp2);
-    reg_cache.gen_load(3, buf);
-    md5_FF(reg_cache, c, d, a, b,  6, S13, 0xa8304613, rtmp1, rtmp2);
-    md5_FF(reg_cache, b, c, d, a,  7, S14, 0xfd469501, rtmp1, rtmp2);
-    reg_cache.gen_load(4, buf);
-    md5_FF(reg_cache, a, b, c, d,  8, S11, 0x698098d8, rtmp1, rtmp2);
-    md5_FF(reg_cache, d, a, b, c,  9, S12, 0x8b44f7af, rtmp1, rtmp2);
-    reg_cache.gen_load(5, buf);
-    md5_FF(reg_cache, c, d, a, b, 10, S13, 0xffff5bb1, rtmp1, rtmp2);
-    md5_FF(reg_cache, b, c, d, a, 11, S14, 0x895cd7be, rtmp1, rtmp2);
-    reg_cache.gen_load(6, buf);
-    md5_FF(reg_cache, a, b, c, d, 12, S11, 0x6b901122, rtmp1, rtmp2);
-    md5_FF(reg_cache, d, a, b, c, 13, S12, 0xfd987193, rtmp1, rtmp2);
-    reg_cache.gen_load(7, buf);
-    md5_FF(reg_cache, c, d, a, b, 14, S13, 0xa679438e, rtmp1, rtmp2);
-    md5_FF(reg_cache, b, c, d, a, 15, S14, 0x49b40821, rtmp1, rtmp2);
+    md5_FF(reg_cache, a, b, c, d,  0, S11, 0xd76aa478, rtmp1);
+    md5_FF(reg_cache, d, a, b, c,  1, S12, 0xe8c7b756, rtmp1);
+    md5_FF(reg_cache, c, d, a, b,  2, S13, 0x242070db, rtmp1);
+    md5_FF(reg_cache, b, c, d, a,  3, S14, 0xc1bdceee, rtmp1);
+    md5_FF(reg_cache, a, b, c, d,  4, S11, 0xf57c0faf, rtmp1);
+    md5_FF(reg_cache, d, a, b, c,  5, S12, 0x4787c62a, rtmp1);
+    md5_FF(reg_cache, c, d, a, b,  6, S13, 0xa8304613, rtmp1);
+    md5_FF(reg_cache, b, c, d, a,  7, S14, 0xfd469501, rtmp1);
+    md5_FF(reg_cache, a, b, c, d,  8, S11, 0x698098d8, rtmp1);
+    md5_FF(reg_cache, d, a, b, c,  9, S12, 0x8b44f7af, rtmp1);
+    md5_FF(reg_cache, c, d, a, b, 10, S13, 0xffff5bb1, rtmp1);
+    md5_FF(reg_cache, b, c, d, a, 11, S14, 0x895cd7be, rtmp1);
+    md5_FF(reg_cache, a, b, c, d, 12, S11, 0x6b901122, rtmp1);
+    md5_FF(reg_cache, d, a, b, c, 13, S12, 0xfd987193, rtmp1);
+    md5_FF(reg_cache, c, d, a, b, 14, S13, 0xa679438e, rtmp1);
+    md5_FF(reg_cache, b, c, d, a, 15, S14, 0x49b40821, rtmp1);
 
     // Round 2
     md5_GG(reg_cache, a, b, c, d,  1, S21, 0xf61e2562, rtmp1, rtmp2);
@@ -6123,22 +6141,22 @@ class StubGenerator: public StubCodeGenerator {
     md5_GG(reg_cache, b, c, d, a, 12, S24, 0x8d2a4c8a, rtmp1, rtmp2);
 
     // Round 3
-    md5_HH(reg_cache, a, b, c, d,  5, S31, 0xfffa3942, rtmp1, rtmp2);
-    md5_HH(reg_cache, d, a, b, c,  8, S32, 0x8771f681, rtmp1, rtmp2);
-    md5_HH(reg_cache, c, d, a, b, 11, S33, 0x6d9d6122, rtmp1, rtmp2);
-    md5_HH(reg_cache, b, c, d, a, 14, S34, 0xfde5380c, rtmp1, rtmp2);
-    md5_HH(reg_cache, a, b, c, d,  1, S31, 0xa4beea44, rtmp1, rtmp2);
-    md5_HH(reg_cache, d, a, b, c,  4, S32, 0x4bdecfa9, rtmp1, rtmp2);
-    md5_HH(reg_cache, c, d, a, b,  7, S33, 0xf6bb4b60, rtmp1, rtmp2);
-    md5_HH(reg_cache, b, c, d, a, 10, S34, 0xbebfbc70, rtmp1, rtmp2);
-    md5_HH(reg_cache, a, b, c, d, 13, S31, 0x289b7ec6, rtmp1, rtmp2);
-    md5_HH(reg_cache, d, a, b, c,  0, S32, 0xeaa127fa, rtmp1, rtmp2);
-    md5_HH(reg_cache, c, d, a, b,  3, S33, 0xd4ef3085, rtmp1, rtmp2);
-    md5_HH(reg_cache, b, c, d, a,  6, S34, 0x04881d05, rtmp1, rtmp2);
-    md5_HH(reg_cache, a, b, c, d,  9, S31, 0xd9d4d039, rtmp1, rtmp2);
-    md5_HH(reg_cache, d, a, b, c, 12, S32, 0xe6db99e5, rtmp1, rtmp2);
-    md5_HH(reg_cache, c, d, a, b, 15, S33, 0x1fa27cf8, rtmp1, rtmp2);
-    md5_HH(reg_cache, b, c, d, a,  2, S34, 0xc4ac5665, rtmp1, rtmp2);
+    md5_HH(reg_cache, a, b, c, d,  5, S31, 0xfffa3942, rtmp1);
+    md5_HH(reg_cache, d, a, b, c,  8, S32, 0x8771f681, rtmp1);
+    md5_HH(reg_cache, c, d, a, b, 11, S33, 0x6d9d6122, rtmp1);
+    md5_HH(reg_cache, b, c, d, a, 14, S34, 0xfde5380c, rtmp1);
+    md5_HH(reg_cache, a, b, c, d,  1, S31, 0xa4beea44, rtmp1);
+    md5_HH(reg_cache, d, a, b, c,  4, S32, 0x4bdecfa9, rtmp1);
+    md5_HH(reg_cache, c, d, a, b,  7, S33, 0xf6bb4b60, rtmp1);
+    md5_HH(reg_cache, b, c, d, a, 10, S34, 0xbebfbc70, rtmp1);
+    md5_HH(reg_cache, a, b, c, d, 13, S31, 0x289b7ec6, rtmp1);
+    md5_HH(reg_cache, d, a, b, c,  0, S32, 0xeaa127fa, rtmp1);
+    md5_HH(reg_cache, c, d, a, b,  3, S33, 0xd4ef3085, rtmp1);
+    md5_HH(reg_cache, b, c, d, a,  6, S34, 0x04881d05, rtmp1);
+    md5_HH(reg_cache, a, b, c, d,  9, S31, 0xd9d4d039, rtmp1);
+    md5_HH(reg_cache, d, a, b, c, 12, S32, 0xe6db99e5, rtmp1);
+    md5_HH(reg_cache, c, d, a, b, 15, S33, 0x1fa27cf8, rtmp1);
+    md5_HH(reg_cache, b, c, d, a,  2, S34, 0xc4ac5665, rtmp1);
 
     // Round 4
     md5_II(reg_cache, a, b, c, d,  0, S41, 0xf4292244, rtmp1, rtmp2);
@@ -7474,8 +7492,11 @@ class StubGenerator: public StubCodeGenerator {
     // construct a NaN in 32 bits from the NaN in 16 bits,
     // we need the payloads of non-canonical NaNs to be preserved.
     __ mv(t1, 0x7f800000);
-    // sign-bit was already set via sign-extension if necessary.
-    __ slli(t0, src, 13);
+    // The upper 16 bits of a short argument are unspecified. Sign-extend the
+    // low 16 bits before shifting so that the float sign bit comes from the
+    // float16 sign bit.
+    __ sext(t0, src, 16);
+    __ slli(t0, t0, 13);
     __ orr(t1, t0, t1);
     __ fmv_w_x(dst, t1);
 
@@ -7818,6 +7839,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     __ kernel_crc32(crc, buf, len,
                     c_rarg3, c_rarg4, c_rarg5, c_rarg6, // tmp's for tables
                     c_rarg7, t2, t3, t4, t5, t6);       // misc tmps
+    __ sext(crc, crc, 32);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();
@@ -7855,6 +7877,7 @@ static const int64_t right_3_bits = right_n_bits(3);
                      c_rarg3, c_rarg4,           // byte_table, clmul_table
                      c_rarg5, c_rarg6, c_rarg7,  // accum_hi, k1, k2
                      t2, t3, t4);                // scratch1, scratch2, fold_end
+    __ sext(crc, crc, 32);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();
@@ -7949,22 +7972,8 @@ static const int64_t right_3_bits = right_n_bits(3);
     Register new_value = c_rarg2;
     Register result = c_rarg3;
 
-    Assembler::Aqrl acquire;
-    Assembler::Aqrl release;
-    switch (order) {
-      case memory_order_relaxed:
-        acquire = Assembler::relaxed;
-        release = Assembler::relaxed;
-        break;
-      case memory_order_release:
-        acquire = Assembler::relaxed;
-        release = Assembler::rl;
-        break;
-      default:
-        acquire = Assembler::aq;
-        release = Assembler::rl;
-        break;
-    }
+    atomic_memory_order cas_order = order == memory_order_conservative
+                                      ? memory_order_acq_rel : order;
 
     bool use_single_cas = UseZacas &&
                           ((size != Assembler::int8) || UseZabha);
@@ -7981,11 +7990,10 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     if ((size == Assembler::int8) && !(UseZacas && UseZabha)) {
       __ cmpxchg_narrow_value(addr, expected, new_value, size,
-                              acquire, release,
-                              result, false, x14, x15, x16);
+                              cas_order, result, false, x14, x15, x16);
     } else {
       __ cmpxchg(addr, expected, new_value, size,
-                 acquire, release, result);
+                 cas_order, result);
     }
 
     if (order == memory_order_conservative) {

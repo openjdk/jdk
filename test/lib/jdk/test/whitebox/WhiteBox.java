@@ -336,6 +336,15 @@ public class WhiteBox {
    */
   public native long[] g1GetMixedGCInfo(int liveness);
 
+  // Shenandoah
+  public native int shenandoahRegionSize();
+  public native int shenandoahRegionCount();
+  public native long shenandoahOldMarkGC(int timeoutSeconds);
+  public long shenandoahOldMarkGC() {
+    final int TIMEOUT_SECONDS = 10;
+    return shenandoahOldMarkGC(TIMEOUT_SECONDS);
+  }
+
   // NMT
   public native long NMTMalloc(long size);
   public native void NMTFree(long mem);
@@ -849,6 +858,11 @@ public class WhiteBox {
                                    String procSelfCgroup,
                                    String procSelfMountinfo);
   public native void printOsInfo();
+
+  // Total physical memory as seen by the VM, respecting container limits.
+  public native long physicalMemory();
+
+  // Total physical memory as seen by the VM, deliberately ignoring container limits.
   public native long hostPhysicalMemory();
   public native long hostAvailableMemory();
   public native long hostPhysicalSwap();
