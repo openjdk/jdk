@@ -288,6 +288,11 @@
           "Maximum allowed edges in the interference graphs")               \
           range(0, max_juint)                                               \
                                                                             \
+  product(uint, RegSplitLimit, 20*M, DIAGNOSTIC,                            \
+          "Maximum product of spill and CFG block counts during Split "     \
+          "in the Register Allocator")                                      \
+          range(0, max_juint)                                               \
+                                                                            \
   develop(bool, UseUniqueSubclasses, true,                                  \
           "Narrow an abstract reference to the unique concrete subclass")   \
                                                                             \
@@ -935,6 +940,9 @@
           "Use StoreStore barrier instead of Release barrier at the end "   \
           "of constructors")                                                \
                                                                             \
+  product(bool, PreloadReduceTraps, true, DIAGNOSTIC,                       \
+          "Preload code should avoid traps as much as possible.")           \
+                                                                            \
   develop(bool, KillPathsReachableByDeadTypeNode, true,                     \
           "When a Type node becomes top, make paths where the node is "     \
           "used dead by replacing them with a Halt node. Turning this off " \
@@ -993,6 +1001,20 @@
   product(uint, HotCodeCallLevel, 1, EXPERIMENTAL,                          \
           "Number of levels of callees to relocate per candidate")          \
           range(0, max_juint)                                               \
+                                                                            \
+  /* Next three AOT code flags are used only during assembly phase */       \
+  /* for tier4 AOT compilation and they are ignored in other phases */      \
+                                                                            \
+  product(double, AOTCodeInvokeBase, 100.0, DIAGNOSTIC,                     \
+          "AOT code invocation base limit")                                 \
+          range(1.0, 10000.0)                                               \
+                                                                            \
+  product(double, AOTCodeInvokeScale, 1.0, DIAGNOSTIC,                      \
+          "scale AOT code invocation limit")                                \
+          range(0.001, 1000.0)                                              \
+                                                                            \
+  product(bool, UseAOTCodeCounters, true, DIAGNOSTIC,                       \
+          "Use AOT code counter to trigger JIT compilation")                \
 
 // end of C2_FLAGS
 

@@ -124,7 +124,8 @@ void Parse::array_load(BasicType bt) {
       if (!array_type->is_not_flat()) {
         if (element_ptr->is_valueklassptr()) {
           ciValueKlass* vk = element_ptr->value_klass();
-          Node* flat_array = cast_to_flat_array(array, vk);
+          ciObjArrayKlass* array_klass = get_flat_array_klass(vk);
+          Node* flat_array = cast_to_flat_array(array, array_klass, false);
 
           // It may be the case that array is only known to be not flat when we try to cast it to a
           // flat array. For example, array is a not-null-free array and vk does not have a
@@ -296,7 +297,8 @@ void Parse::array_store(BasicType bt) {
 
           if (vk != nullptr) {
             // Element type is known, cast and store to flat array layout.
-            Node* flat_array = cast_to_flat_array(array, vk);
+            ciObjArrayKlass* array_klass = get_flat_array_klass(vk);
+            Node* flat_array = cast_to_flat_array(array, array_klass, false);
 
             // It may be the case that array is only known to be not flat when we try to cast it to
             // a flat array. For example, array is a not-null-free array and vk does not have a
@@ -1787,7 +1789,7 @@ inline int Parse::repush_if_args() {
 }
 
 // Used by StressUnstableIfTraps
-static volatile int _trap_stress_counter = 0;
+volatile int Parse::_trap_stress_counter = 0;
 
 void Parse::increment_trap_stress_counter(Node*& counter, Node*& incr_store) {
   Node* counter_addr = makecon(TypeRawPtr::make((address)&_trap_stress_counter));

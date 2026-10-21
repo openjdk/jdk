@@ -126,7 +126,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     ori(tmp1_mark, tmp1_mark, markWord::lock_neutral_value);
     xori(tmp3_t, tmp1_mark, markWord::lock_neutral_value);
     cmpxchg(/*addr*/ obj, /*expected*/ tmp1_mark, /*new*/ tmp3_t, Assembler::int64,
-            /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_t);
+            memory_order_acquire, /*result*/ tmp3_t);
     bne(tmp1_mark, tmp3_t, slow_path);
 
     bind(push);
@@ -206,7 +206,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     Register tid = tmp4;
     ld(tid, Address(xthread, JavaThread::monitor_owner_id_offset()));
     cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ tid, Assembler::int64,
-            /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
+            memory_order_acquire, /*result*/ tmp3_owner);
     beqz(tmp3_owner, monitor_locked);
 
     // Normally, a contended monitor enters the runtime slow path here.
@@ -229,7 +229,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
       wrs_sto();
       bind(retry);
       cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ tid, Assembler::int64,
-              /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
+              memory_order_acquire, /*result*/ tmp3_owner);
       beqz(tmp3_owner, monitor_locked);
       bne(tmp3_owner, tid, slow_path);
       bind(recursive);
@@ -321,7 +321,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
     ori(tmp3_t, tmp1_mark, markWord::lock_neutral_value);
     cmpxchg(/*addr*/ obj, /*expected*/ tmp1_mark, /*new*/ tmp3_t, Assembler::int64,
-            /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, /*result*/ tmp3_t);
+            memory_order_release, /*result*/ tmp3_t);
     beq(tmp1_mark, tmp3_t, unlocked);
 
     bind(push_and_slow_path);
@@ -1861,8 +1861,7 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   const VectorRegister v_coeffs = v6;
   const VectorRegister v_tmp    = v8;
 
-  const address adr_pows31 = StubRoutines::riscv::arrays_hashcode_powers_of_31()
-                           + sizeof(jint);
+  const address adr_pows31 = StubRoutines::riscv::arrays_hashcode_powers_of_31();
   Label VEC_LOOP, DONE, SCALAR_TAIL, SCALAR_TAIL_LOOP;
 
   // NB: at this point (a) 'result' already has some value,
@@ -1872,6 +1871,9 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   beqz(t0, SCALAR_TAIL);
 
   la(t1, ExternalAddress(adr_pows31));
+  // Keep the relocation target at the registered stub entry, then skip the
+  // first element when loading the vector coefficients.
+  addi(t1, t1, sizeof(jint));
   lw(pow31_highest, Address(t1, -1 * sizeof(jint)));
 
   vsetvli(consumed, cnt, Assembler::e32, Assembler::m2);
@@ -2106,6 +2108,40 @@ void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Regis
   }
 }
 
+// Set dst to 0 if the condition specified by cmpFlag is true, or 1 otherwise.
+// cmpFlag may include unsigned_branch_mask for an unsigned comparison.
+void C2_MacroAssembler::enc_cmove_zero_one(int cmpFlag, Register op1, Register op2, Register dst) {
+  bool is_unsigned = (cmpFlag & unsigned_branch_mask) == unsigned_branch_mask;
+  int op_select = cmpFlag & (~unsigned_branch_mask);
+
+  switch (op_select) {
+    case BoolTest::eq:
+      xorr(dst, op1, op2);
+      snez(dst, dst);
+      break;
+    case BoolTest::ne:
+      xorr(dst, op1, op2);
+      seqz(dst, dst);
+      break;
+    case BoolTest::lt:
+      is_unsigned ? sltu(dst, op1, op2) : slt(dst, op1, op2);
+      seqz(dst, dst);
+      break;
+    case BoolTest::gt:
+      is_unsigned ? sltu(dst, op2, op1) : slt(dst, op2, op1);
+      seqz(dst, dst);
+      break;
+    case BoolTest::le:
+      is_unsigned ? sltu(dst, op2, op1) : slt(dst, op2, op1);
+      break;
+    case BoolTest::ge:
+      is_unsigned ? sltu(dst, op1, op2) : slt(dst, op1, op2);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
 void C2_MacroAssembler::enc_cmove_cmp_fp(int cmpFlag, FloatRegister op1, FloatRegister op2, Register dst, Register src, bool is_single) {
   int op_select = cmpFlag & (~unsigned_branch_mask);
 
@@ -2209,6 +2245,160 @@ void C2_MacroAssembler::enc_cmove_fp_cmp_fp(int cmpFlag,
       assert(false, "unsupported compare condition");
       ShouldNotReachHere();
   }
+}
+
+// Set dst to 0 if the floating-point condition is true, or 1 otherwise.
+// cmpFlag may include double_branch_mask for a double comparison.
+// CmpF/CmpD treat unordered as less: eq/gt/ge are false for NaN, while
+// ne/lt/le are true.
+void C2_MacroAssembler::enc_cmove_cmp_fp_zero_one(int cmpFlag, FloatRegister op1, FloatRegister op2, Register dst) {
+  bool is_single = (cmpFlag & double_branch_mask) == 0;
+  int op_select = cmpFlag & (~double_branch_mask);
+
+  switch (op_select) {
+    case BoolTest::eq:
+      is_single ? feq_s(dst, op1, op2) : feq_d(dst, op1, op2);
+      seqz(dst, dst);
+      break;
+    case BoolTest::ne:
+      is_single ? feq_s(dst, op1, op2) : feq_d(dst, op1, op2);
+      break;
+    case BoolTest::lt:
+      is_single ? fle_s(dst, op2, op1) : fle_d(dst, op2, op1);
+      break;
+    case BoolTest::le:
+      is_single ? flt_s(dst, op2, op1) : flt_d(dst, op2, op1);
+      break;
+    case BoolTest::gt:
+      is_single ? flt_s(dst, op2, op1) : flt_d(dst, op2, op1);
+      seqz(dst, dst);
+      break;
+    case BoolTest::ge:
+      is_single ? fle_s(dst, op2, op1) : fle_d(dst, op2, op1);
+      seqz(dst, dst);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+static void vshift_left(C2_MacroAssembler* masm, VectorRegister dst, VectorRegister src, int shift) {
+  assert(shift >= 0 && shift <= BitsPerInt, "unexpected shift amount");
+  if (shift < BitsPerInt) {
+    masm->vsll_vi(dst, src, shift);
+  } else {
+    masm->mv(t0, shift);
+    masm->vsll_vx(dst, src, t0);
+  }
+}
+
+static void vshift_right(C2_MacroAssembler* masm, VectorRegister dst, VectorRegister src, int shift) {
+  assert(shift >= 0 && shift <= BitsPerInt, "unexpected shift amount");
+  if (shift < BitsPerInt) {
+    masm->vsrl_vi(dst, src, shift);
+  } else {
+    masm->mv(t0, shift);
+    masm->vsrl_vx(dst, src, t0);
+  }
+}
+
+// Compute the parallel suffix XOR used to construct the movement masks in
+// Integer.compress, Long.compress, Integer.expand, and Long.expand. Within each
+// vector element, dst bit k is src[k] ^ src[k-1] ^ ... ^ src[0]. Each round
+// doubles the number of source bits covered.
+static void parallel_suffix_v(C2_MacroAssembler* masm, VectorRegister dst,
+                              VectorRegister src, VectorRegister tmp, bool is_int) {
+  const int bits = is_int ? BitsPerInt : BitsPerLong;
+  const int rounds = exact_log2(bits);
+
+  masm->vmv_v_v(dst, src);
+  for (int i = 0; i < rounds; i++) {
+    vshift_left(masm, tmp, dst, 1 << i);
+    masm->vxor_vv(dst, dst, tmp);
+  }
+}
+
+// Compress the bits selected by mask toward the least-significant bit of each
+// vector element while preserving their order. This is the vector equivalent
+// of Integer.compress and Long.compress and uses the same movement-mask algorithm.
+void C2_MacroAssembler::compress_bits_v(VectorRegister dst, VectorRegister src, VectorRegister bit_mask,
+                                        VectorRegister src_tmp, VectorRegister mask_tmp,
+                                        VectorRegister tmp1, VectorRegister tmp2,
+                                        BasicType bt, uint vector_length, VectorMask vm) {
+  assert(bt == T_INT || bt == T_LONG, "unsupported element type");
+  const bool is_int = bt == T_INT;
+  const int bits = is_int ? BitsPerInt : BitsPerLong;
+  const int rounds = exact_log2(bits);
+
+  vsetvli_helper(bt, vector_length);
+  vand_vv(dst, src, bit_mask, vm);
+  vmv_v_v(mask_tmp, bit_mask);
+  vnot_v(tmp1, mask_tmp);
+  vshift_left(this, tmp1, tmp1, 1);
+
+  for (int i = 0; i < rounds; i++) {
+    const int shift = 1 << i;
+    parallel_suffix_v(this, tmp2, tmp1, src_tmp, is_int);
+    vand_vv(src_tmp, tmp2, mask_tmp);
+    vnot_v(tmp2, tmp2);
+    vand_vv(tmp1, tmp1, tmp2);
+
+    vxor_vv(mask_tmp, mask_tmp, src_tmp);
+    vshift_right(this, tmp2, src_tmp, shift);
+    vor_vv(mask_tmp, mask_tmp, tmp2);
+
+    vand_vv(tmp2, dst, src_tmp);
+    vxor_vv(dst, dst, tmp2, vm);
+    vshift_right(this, tmp2, tmp2, shift);
+    vor_vv(dst, dst, tmp2, vm);
+  }
+}
+
+// Expand the low-order bits of src into the positions selected by mask in each
+// vector element. First record the movement masks used by compression, then
+// apply them in reverse order to implement Integer.expand and Long.expand.
+void C2_MacroAssembler::expand_bits_v(VectorRegister dst, VectorRegister src, VectorRegister bit_mask,
+                                      VectorRegister src_tmp, VectorRegister mask_tmp,
+                                      VectorRegister mask_move1, VectorRegister mask_move2,
+                                      VectorRegister mask_move3, VectorRegister mask_move4,
+                                      VectorRegister mask_move5, VectorRegister mask_move6,
+                                      VectorRegister tmp1, VectorRegister tmp2,
+                                      BasicType bt, uint vector_length, VectorMask vm) {
+  assert(bt == T_INT || bt == T_LONG, "unsupported element type");
+  const bool is_int = bt == T_INT;
+  const int bits = is_int ? BitsPerInt : BitsPerLong;
+  const int rounds = exact_log2(bits);
+  VectorRegister mask_moves[LogBitsPerLong] = {
+    mask_move1, mask_move2, mask_move3, mask_move4, mask_move5, mask_move6
+  };
+
+  vsetvli_helper(bt, vector_length);
+  vmv_v_v(src_tmp, src);
+  vmv_v_v(mask_tmp, bit_mask);
+  vor_vv(dst, mask_tmp, mask_tmp, vm);
+  vnot_v(tmp1, mask_tmp);
+  vshift_left(this, tmp1, tmp1, 1);
+
+  for (int i = 0; i < rounds; i++) {
+    const int shift = 1 << i;
+    parallel_suffix_v(this, tmp2, tmp1, mask_moves[i], is_int);
+    vand_vv(mask_moves[i], tmp2, mask_tmp);
+    vnot_v(tmp2, tmp2);
+    vand_vv(tmp1, tmp1, tmp2);
+
+    vxor_vv(mask_tmp, mask_tmp, mask_moves[i]);
+    vshift_right(this, tmp2, mask_moves[i], shift);
+    vor_vv(mask_tmp, mask_tmp, tmp2);
+  }
+
+  for (int i = rounds - 1; i >= 0; i--) {
+    const int shift = 1 << i;
+    vshift_left(this, tmp2, src_tmp, shift);
+    vxor_vv(tmp2, tmp2, src_tmp);
+    vand_vv(tmp2, tmp2, mask_moves[i]);
+    vxor_vv(src_tmp, src_tmp, tmp2);
+  }
+  vand_vv(dst, src_tmp, dst, vm);
 }
 
 // Set dst to NaN if any NaN input.
@@ -3069,6 +3259,34 @@ void C2_MacroAssembler::reduce_minmax_fp_v(FloatRegister dst,
   bind(L_done);
 }
 
+void C2_MacroAssembler::reduce_mul_fp_v(FloatRegister dst, FloatRegister src1, VectorRegister src2,
+                                        VectorRegister vtmp1, VectorRegister vtmp2,
+                                        bool is_double, uint vector_length) {
+  assert(vector_length >= 2, "unsupported vector length");
+  assert(is_power_of_2(vector_length), "vector length must be a power of two");
+  assert_different_registers(dst, src1);
+  assert_different_registers(src2, vtmp1, vtmp2);
+
+  BasicType bt = is_double ? T_DOUBLE : T_FLOAT;
+  vsetvli_helper(bt, vector_length);
+
+  vector_length /= 2;
+  slidedown_v(vtmp1, src2, vector_length);
+  vsetvli_helper(bt, vector_length);
+  vfmul_vv(vtmp1, vtmp1, src2);
+
+  while (vector_length > 1) {
+    vector_length /= 2;
+    slidedown_v(vtmp2, vtmp1, vector_length);
+    vsetvli_helper(bt, vector_length);
+    vfmul_vv(vtmp1, vtmp1, vtmp2);
+  }
+
+  vfmv_f_s(dst, vtmp1);
+  is_double ? fmul_d(dst, dst, src1)
+            : fmul_s(dst, dst, src1);
+}
+
 bool C2_MacroAssembler::in_scratch_emit_size() {
   if (ciEnv::current()->task() != nullptr) {
     PhaseOutput* phase_output = Compile::current()->output();
@@ -3102,8 +3320,14 @@ void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
     case Op_MaxReductionV:
       vredmax_vs(tmp, src2, tmp, vm);
       break;
+    case Op_UMaxReductionV:
+      vredmaxu_vs(tmp, src2, tmp, vm);
+      break;
     case Op_MinReductionV:
       vredmin_vs(tmp, src2, tmp, vm);
+      break;
+    case Op_UMinReductionV:
+      vredminu_vs(tmp, src2, tmp, vm);
       break;
     default:
       ShouldNotReachHere();

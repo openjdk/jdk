@@ -23,13 +23,13 @@
  */
 
 #include "cds/aotClassInitializer.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsEnumKlass.hpp"
 #include "cds/classListWriter.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -792,7 +792,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   if (constants() != nullptr) {
     assert (!constants()->on_stack(), "shouldn't be called if anything is onstack");
     if (!constants()->in_aot_cache()) {
-      HeapShared::remove_scratch_resolved_references(constants());
+      AOTHeap::remove_scratch_resolved_references(constants());
       MetadataFactory::free_metadata(loader_data, constants());
     }
     // Delete any cached resolution errors for the constant pool
@@ -844,7 +844,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    HeapShared::remove_scratch_objects(this);
+    AOTHeap::remove_scratch_objects(this);
   }
 #endif
 }
@@ -3124,6 +3124,19 @@ void InstanceKlass::remove_unshareable_info() {
   // being added to class hierarchy (see InstanceKlass:::add_to_hierarchy()).
   _init_state = allocated;
 
+  // Classes without an AOT-initialized mirror will run <clinit> again. Restore
+  // the initial status of their strict static fields for that execution.
+  if (has_strict_static_fields() && !has_aot_initialized_mirror()) {
+    for (AllFieldStream fs(this); !fs.done(); fs.next()) {
+      FieldInfo fi = fs.to_FieldInfo();
+      if (fi.access_flags().is_strict() && fi.access_flags().is_static() && fi.initializer_index() == 0) {
+        FieldStatus& fs = *fields_status()->adr_at(fi.index());
+        fs.update_strict_static_unset(true);
+        fs.update_strict_static_unread(true);
+      }
+    }
+  }
+
   { // Otherwise this needs to take out the Compile_lock.
     assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
     init_implementor();
@@ -3158,7 +3171,7 @@ void InstanceKlass::remove_unshareable_info() {
   _methods_jmethod_ids = nullptr;
   _jni_ids = nullptr;
   _oop_map_cache = nullptr;
-  if (CDSConfig::is_dumping_method_handles() && HeapShared::is_lambda_proxy_klass(this)) {
+  if (CDSConfig::is_dumping_method_handles() && AOTHeap::is_lambda_proxy_klass(this)) {
     // keep _nest_host
   } else {
     // clear _nest_host to ensure re-load at runtime
@@ -4146,6 +4159,10 @@ const char* InstanceKlass::init_state_name() const {
   return state_names[init_state()];
 }
 
+const char* InstanceKlass::state2name(ClassState s) {
+  return state_names[s];
+}
+
 void InstanceKlass::print_class_flags(outputStream* st) const {
   AccessFlags flags(compute_modifier_flags());
   if (flags.is_public    ()) st->print("public ");
@@ -4760,8 +4777,9 @@ void JNIid::verify(InstanceKlass* holder) {
 
 void InstanceKlass::set_init_state(ClassState state) {
 #ifdef ASSERT
+  // TODO enable: assert(state <= initialization_error, "only store known states");
   bool good_state = in_aot_cache() ? (_init_state <= state)
-                                               : (_init_state < state);
+                                   : (_init_state < state);
   assert(good_state || state == allocated, "illegal state transition");
 #endif
   assert(_init_thread == nullptr, "should be cleared before state change");

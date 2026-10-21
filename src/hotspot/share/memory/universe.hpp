@@ -167,7 +167,7 @@ class Universe: AllStatic {
 
 #if INCLUDE_CDS_JAVA_HEAP
   // Each slot i stores an index that can be used to restore _basic_type_mirrors[i]
-  // from the archive heap using HeapShared::get_root(int)
+  // from the archive heap using AOTHeap::get_root(int)
   static int _archived_basic_type_mirror_indices[T_VOID+1];
 #endif
 
