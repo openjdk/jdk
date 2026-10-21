@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package compiler.valhalla.valuetypes;
 /*
  * @test
  * @enablePreview
- * @run main/othervm  ${test.main.class}
+ * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:CompileOnly=${test.main.class}::test1  ${test.main.class}
  */
 
 
@@ -35,29 +35,33 @@ public class TestCCMismatchNativeMethods {
         System.loadLibrary("TestCCMismatchNativeMethods");
     }
 
-
     value record V(int x) { }
 
     static class A {
-        V m(V v) {
-            return v;
+        int m(V v1, V v2) {
+            return v1.x;
         }
     }
 
-    static class B {
-        native V m(V v);
+    static class B extends A {
+        native int m(V v1, V v2);
     }
 
+    static class C extends A {
+    }
+    
     static int test1(A a, V v) {
-        return a.m(v).x;
+        return a.m(v, v);
     }
 
     public static void main(String[] args) {
         A a = new A();
         B b = new B();
+        C c = new C();
         for (int i = 0; i < 20_000; i++) {
-            test(a, new V(42));
-            test(b, new V(42));
+            test1(a, new V(42));
+            test1(b, new V(42));
+            test1(c, new V(42));
         }
     }
 }
