@@ -1312,7 +1312,7 @@ bool ConnectionGraph::reduce_phi_on_safepoints(PhiNode* ophi) {
 // SafePointScalarObjectNode for each scalar replaceable input. Each
 // SafePointScalarMergeNode may describe multiple scalar replaced objects -
 // check detailed description in SafePointScalarMergeNode class header.
-bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, Node* selector, Unique_Node_List<SafePointNode>& safepoints) {
+bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, Node* selector, const Unique_Node_List<SafePointNode>& safepoints) const {
   PhaseMacroExpand mexp(*_igvn);
   Node* original_sfpt_parent =  cast != nullptr ? cast : ophi;
   const TypeOopPtr* merge_t = _igvn->type(original_sfpt_parent)->make_oopptr();
@@ -3490,7 +3490,7 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Uniq
   }
 }
 
-bool ConnectionGraph::has_non_reducible_merge(FieldNode* field, Unique_Node_List<PhiNode>& reducible_merges) {
+bool ConnectionGraph::has_non_reducible_merge(const FieldNode* field, const Unique_Node_List<PhiNode>& reducible_merges) {
   for (BaseIterator i(field); i.has_next(); i.next()) {
     Node* base = i.get()->ideal_node();
     if (base->is_Phi() && !reducible_merges.member(base->as_Phi())) {
@@ -3500,7 +3500,7 @@ bool ConnectionGraph::has_non_reducible_merge(FieldNode* field, Unique_Node_List
   return false;
 }
 
-void ConnectionGraph::revisit_reducible_phi_status(JavaObjectNode* jobj, Unique_Node_List<PhiNode>& reducible_merges) {
+void ConnectionGraph::revisit_reducible_phi_status(JavaObjectNode* jobj, Unique_Node_List<PhiNode>& reducible_merges) const {
   assert(jobj != nullptr && !jobj->scalar_replaceable(), "jobj should be set as NSR before calling this function.");
 
   // Look for 'phis' that refer to 'jobj' as the last
@@ -3536,7 +3536,7 @@ void ConnectionGraph::revisit_reducible_phi_status(JavaObjectNode* jobj, Unique_
 }
 
 // Propagate NSR (Not scalar replaceable) state.
-void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNode*>& jobj_worklist, Unique_Node_List<PhiNode>& reducible_merges) {
+void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNode*>& jobj_worklist, Unique_Node_List<PhiNode>& reducible_merges) const {
   int jobj_length = jobj_worklist.length();
   bool found_nsr_alloc = true;
   while (found_nsr_alloc) {

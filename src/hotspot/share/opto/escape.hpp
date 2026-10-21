@@ -484,10 +484,10 @@ private:
   void adjust_scalar_replaceable_state(JavaObjectNode* jobj, Unique_Node_List<PhiNode>& reducible_merges);
 
   // Reevaluate Phis reducible status after 'obj' became NSR.
-  void revisit_reducible_phi_status(JavaObjectNode* jobj, Unique_Node_List<PhiNode>& reducible_merges);
+  void revisit_reducible_phi_status(JavaObjectNode* jobj, Unique_Node_List<PhiNode>& reducible_merges) const;
 
   // Propagate NSR (Not scalar replaceable) state.
-  void find_scalar_replaceable_allocs(GrowableArray<JavaObjectNode*>& jobj_worklist, Unique_Node_List<PhiNode>& reducible_merges);
+  void find_scalar_replaceable_allocs(GrowableArray<JavaObjectNode*>& jobj_worklist, Unique_Node_List<PhiNode>& reducible_merges) const;
 
   // Optimize ideal graph.
   void optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklist,
@@ -612,7 +612,7 @@ private:
 
   // -------------------------------------------
   // Methods related to Reduce Allocation Merges
-  bool has_non_reducible_merge(FieldNode* field, Unique_Node_List<PhiNode>& reducible_merges);
+  static bool has_non_reducible_merge(const FieldNode* field, const Unique_Node_List<PhiNode>& reducible_merges);
   PhiNode* create_selector(PhiNode* ophi) const;
   void updates_after_load_split(Node* data_phi, Node* previous_load, GrowableArray<Node *>  &alloc_worklist);
   Node* split_castpp_load_through_phi(Node* curr_addp, Node* curr_load, Node* region, GrowableArray<Node*>* bases_for_loads, GrowableArray<Node *>  &alloc_worklist);
@@ -632,7 +632,7 @@ private:
   void reduce_phi_on_castpp_field_load(CastPPNode* castpp, GrowableArray<Node*> &alloc_worklist);
   void reduce_phi_on_cmp(Node* cmp);
   bool reduce_phi_on_safepoints(PhiNode* ophi);
-  bool reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, Node* selector, Unique_Node_List<SafePointNode>& safepoints);
+  bool reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, Node* selector, const Unique_Node_List<SafePointNode>& safepoints) const;
   void reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_worklist);
 #ifdef ASSERT
   void verify_ram_after_reduce_phi(const Unique_Node_List<PhiNode>& reducible_merges, const Unique_Node_List<const PhiNode>& reduced_merges);
