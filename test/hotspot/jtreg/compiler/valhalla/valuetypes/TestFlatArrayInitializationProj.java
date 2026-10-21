@@ -68,9 +68,13 @@ public class TestFlatArrayInitializationProj {
         );
     }
 
-    @Run(test = {"test"})
+    @Run(test = {"testAtomicNullFree",
+                 "testNonAtomicNullFree",
+                 "testAtomicNullable"})
     public static void run() {
-        verify(test(), ATOMIC_NULL_FREE);
+        verify(testAtomicNullFree(), ATOMIC_NULL_FREE);
+        verify(testNonAtomicNullFree(), NON_ATOMIC_NULL_FREE);
+        verify(testAtomicNullable(), ATOMIC_NULLABLE);
     }
 
     private static void verify(MyValue[] src, MyValue[] dst) {
@@ -92,7 +96,25 @@ public class TestFlatArrayInitializationProj {
         counts = {IRNode.NARROW_MEM_PROJ_OF_FIELD, "x", "1",
                   IRNode.NARROW_MEM_PROJ_OF_FIELD, "y", "1",
                   IRNode.NARROW_MEM_PROJ_OF_ADR_TYPE, "aryptr:flat:", "2"})
-    public static MyValue[] test() {
+    public static MyValue[] testAtomicNullFree() {
         return ATOMIC_NULL_FREE.clone();
+    }
+
+    @Test
+    @IR(phase = CompilePhase.SPLIT_INLINES_ARRAY,
+        counts = {IRNode.NARROW_MEM_PROJ_OF_FIELD, "x", "1",
+                  IRNode.NARROW_MEM_PROJ_OF_FIELD, "y", "1",
+                  IRNode.NARROW_MEM_PROJ_OF_ADR_TYPE, "aryptr:flat:", "2"})
+    public static MyValue[] testNonAtomicNullFree() {
+        return NON_ATOMIC_NULL_FREE.clone();
+    }
+
+    @Test
+    @IR(phase = CompilePhase.SPLIT_INLINES_ARRAY,
+        counts = {IRNode.NARROW_MEM_PROJ_OF_FIELD, "x", "1",
+                  IRNode.NARROW_MEM_PROJ_OF_FIELD, "y", "1",
+                  IRNode.NARROW_MEM_PROJ_OF_ADR_TYPE, "aryptr:flat:", "3"}) // 2 + 1 null marker
+    public static MyValue[] testAtomicNullable() {
+        return ATOMIC_NULLABLE.clone();
     }
 }
