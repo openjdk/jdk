@@ -974,8 +974,9 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
   // If we need a safepoint check, generate full interpreter entry.
   __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
 
-  // We don't generate local frame and don't align stack because
-  // we call stub code and there is no safepoint on this path.
+  // We don't generate a local frame because there is no safepoint on this
+  // path. The interpreter uses the scalar CRC32 loop; the optimized stub
+  // remains available to compiled code.
 
   // Load parameters
   const Register crc = c_rarg0;  // crc
@@ -1000,10 +1001,26 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
   // Can now load 'len' since we're finished with 'off'
   __ lw(len, Address(esp, 0));                // Length
 
-  __ andi(sp, x19_sender_sp, -16); // Restore the caller's SP
+  const Register val = c_rarg3;
+  const Register tbl = c_rarg4;
+  Label loop, done;
 
-  // We are frameless so we can just jump to the stub.
-  __ far_jump(RuntimeAddress(StubRoutines::updateBytesCRC32()));
+  __ la(tbl, ExternalAddress(StubRoutines::crc_table_addr()));
+  __ notr(crc, crc); // ~crc
+  __ zext(crc, crc, 32);
+  __ bind(loop);
+  __ beqz(len, done);
+  __ lbu(val, Address(buf));
+  __ update_byte_crc32(crc, val, tbl);
+  __ addi(buf, buf, 1);
+  __ addiw(len, len, -1);
+  __ j(loop);
+  __ bind(done);
+  __ notr(crc, crc); // ~crc
+  __ sext(crc, crc, 32);
+
+  __ andi(sp, x19_sender_sp, -16); // Restore the caller's SP
+  __ ret();
 
   // generate a vanilla native entry as the slow path
   __ bind(slow_path);

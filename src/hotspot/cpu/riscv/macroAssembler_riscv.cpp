@@ -2175,6 +2175,7 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
 }
 
 
+#ifdef COMPILER2
 // This improvement (vectorization) is based on java.base/share/native/libzip/zlib/zcrc32.c.
 // To make it, following steps are taken:
 //  1. in zcrc32.c, modify N to 16 and related code,
@@ -2196,14 +2197,12 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
     add(tableN16, table3, 1 * single_table_size * sizeof(juint), tmp1);
     mv(tmp5, 0xff);
 
-    // Pick the smallest LMUL that still holds N 32-bit elements.
-    const uint32_t vlen = VM_Version::vector_length_in_bytes();
-    if (vlen == 16) {
+    if (MaxVectorSize == 16) {
       vsetivli(zr, N, Assembler::e32, Assembler::m4, Assembler::mu, Assembler::tu);
-    } else if (vlen == 32) {
+    } else if (MaxVectorSize == 32) {
       vsetivli(zr, N, Assembler::e32, Assembler::m2, Assembler::mu, Assembler::tu);
     } else {
-      assert(vlen > 32, "sanity");
+      assert(MaxVectorSize > 32, "sanity");
       vsetivli(zr, N, Assembler::e32, Assembler::m1, Assembler::mu, Assembler::tu);
     }
 
@@ -2328,7 +2327,7 @@ void MacroAssembler::crc32_vclmul_fold_16_bytes_vectorsize_16_3(VectorRegister v
 void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_16(Register crc, Register buf, Register len,
                                               Register vclmul_table, Register tmp1, Register tmp2) {
   assert_different_registers(crc, buf, len, vclmul_table, tmp1, tmp2, t1);
-  assert(VM_Version::vector_length_in_bytes() == 16, "sanity");
+  assert(MaxVectorSize == 16, "sanity");
 
   const int TABLE_STEP = 16;
   const int STEP = 16;
@@ -2438,7 +2437,7 @@ void MacroAssembler::crc32_vclmul_fold_to_16_bytes_vectorsize_32(VectorRegister 
 void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_32(Register crc, Register buf, Register len,
                                               Register vclmul_table, Register tmp1, Register tmp2) {
   assert_different_registers(crc, buf, len, vclmul_table, tmp1, tmp2, t1);
-  assert(VM_Version::vector_length_in_bytes() >= 32, "sanity");
+  assert(MaxVectorSize >= 32, "sanity");
 
   // utility: load table
   #define CRC32_VCLMUL_LOAD_TABLE(vt, rt, vtmp, rtmp) \
@@ -2612,7 +2611,7 @@ void MacroAssembler::kernel_crc32_vclmul_fold(Register crc, Register buf, Regist
   add(vclmul_table, vclmul_table, table_num * single_table_size * sizeof(juint), tmp1);
   la(table0, table_addr);
 
-  if (VM_Version::vector_length_in_bytes() == 16) {
+  if (MaxVectorSize == 16) {
     kernel_crc32_vclmul_fold_vectorsize_16(crc, buf, len, vclmul_table, tmp1, tmp2);
   } else {
     kernel_crc32_vclmul_fold_vectorsize_32(crc, buf, len, vclmul_table, tmp1, tmp2);
@@ -2624,6 +2623,7 @@ void MacroAssembler::kernel_crc32_vclmul_fold(Register crc, Register buf, Regist
   update_word_crc32(crc, tmp2, tmp3, tmp4, tmp5, table0, table1, table2, table3, false);
   update_word_crc32(crc, tmp2, tmp3, tmp4, tmp5, table0, table1, table2, table3, true);
 }
+#endif // COMPILER2
 
 /**
  * @param crc   register containing existing CRC (32-bit)
@@ -2678,13 +2678,15 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     update_byte_crc32(crc, tmp2, table0);
   bind(L_skip2);
 
+#ifdef COMPILER2
   if (UseRVV) {
     const int64_t tmp_limit =
             UseZvbc ? 128 * 3 // 3 rounds of folding with carry-less multiplication
-                    : VM_Version::vector_length_in_bytes() >= 32 ? unroll_words*3 : unroll_words*5;
+                    : MaxVectorSize >= 32 ? unroll_words*3 : unroll_words*5;
     mv(tmp1, tmp_limit);
     bge(len, tmp1, L_vector_entry);
   }
+#endif // COMPILER2
 
   mv(tmp1, unroll_words);
   blt(len, tmp1, L_by4_loop_entry);
@@ -2736,6 +2738,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     update_byte_crc32(crc, tmp1, table0);
 
   // put vector code here, otherwise "offset is too large" error occurs.
+#ifdef COMPILER2
   if (UseRVV) {
     // only need to jump exit when UseRVV == true, it's a jump from end of block `L_by1_loop`.
     j(L_exit);
@@ -2751,6 +2754,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 
     bgtz(len, L_by4_loop_entry);
   }
+#endif // COMPILER2
 
   bind(L_exit);
     andn(crc, tmp5, crc);
