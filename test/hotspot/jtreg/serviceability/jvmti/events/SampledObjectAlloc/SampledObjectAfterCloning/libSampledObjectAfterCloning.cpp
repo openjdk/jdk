@@ -58,13 +58,13 @@ SampledObjectAlloc(jvmtiEnv* jvmti_env,
 }
 
 JNIEXPORT jint JNICALL
-Java_SampledObjecAfterCloningTest_sampledObjectField(JNIEnv* jni, jclass cls, jobject object) {
+Java_SampledObjectAfterCloningTest_sampledObjectField(JNIEnv* jni, jclass cls, jobject object) {
   return sampled_value;
 }
 
 
 JNIEXPORT void JNICALL
-Java_SampledObjecAfterCloningTest_init(JNIEnv* env, jclass cls, jclass payload_cls) {
+Java_SampledObjectAfterCloningTest_init(JNIEnv* env, jclass cls, jclass payload_cls) {
   payload_class = (jclass)env->NewGlobalRef(payload_cls);
 
   jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, nullptr);

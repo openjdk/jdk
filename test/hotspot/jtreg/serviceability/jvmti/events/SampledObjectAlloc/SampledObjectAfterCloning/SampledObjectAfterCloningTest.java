@@ -22,16 +22,16 @@
  */
 
 /*
- * @test id=Z
+ * @test
  * @bug 8383787
- * @summary Test verifies that SampledObjectAlloc event is called with after clone().
+ * @summary Test verifies that SampledObjectAlloc event is called after clone().
  * @requires vm.jvmti
- * @run main/othervm/native -agentlib:SampledObjecAfterCloning SampledObjecAfterCloningTest
+ * @run main/othervm/native -agentlib:SampledObjectAfterCloning SampledObjectAfterCloningTest
  */
 
 
-public class SampledObjecAfterCloningTest {
-    private static final String AGENT_LIB = "SampledObjecAfterCloning";
+public class SampledObjectAfterCloningTest {
+    private static final String AGENT_LIB = "SampledObjectAfterCloning";
 
     private static native void init(Class<?> payloadClass);
     private static native int sampledObjectField(Object object);
