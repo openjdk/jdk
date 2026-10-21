@@ -55,6 +55,8 @@ source %{
     __ vsetvli_helper(bt, vector_length);
     __ vcpop_m(t0, mask);
     if (test_predicate == BoolTest::overflow) {
+      // Subtract vector_length so we can compare against zr without
+      // materializing vector_length in another register.
       __ sub(t0, t0, vector_length);
     }
     __ enc_cmove(cmpcode, t0, zr, dst, src);
@@ -68,6 +70,8 @@ source %{
     __ vsetvli_helper(bt, vector_length);
     __ vcpop_m(t0, mask);
     if (test_predicate == BoolTest::overflow) {
+      // Subtract vector_length so we can compare against zr without
+      // materializing vector_length in another register.
       __ sub(t0, t0, vector_length);
     }
     __ enc_cmove_fp_cmp(cmpcode, t0, zr, dst, src, is_single);
@@ -6183,15 +6187,16 @@ instruct cmovI_vtest_alltrue_negate(iRegINoSp dst, cmpOp cop, vRegMask op1, vReg
 
 // CMove with register values and a condition produced by VectorTest.
 //
-// The two rules above only cover the canonical "cond ? 1 : 0" boolean materialization, where vcpop.m already produces
-// the result. All other cases need the mask test lowered into a GPR first, so the corresponding cmove encoder can
-// compare it against zr:
+// The two rules above directly materialize a boolean (0 or 1) from anyTrue()/allTrue().
+// The rules below select between arbitrary register values, using the population
+// count to form the condition passed to the corresponding cmove encoder:
 //
 //   anytrue: vcpop.m t0, op1                  // t0 != 0 iff some element is set
 //   alltrue: vcpop.m t0, op1; sub t0, t0, vl  // t0 == 0 iff every element is set
 //
-// $cop is restricted to eq/ne by cmpOpEqNe, the only conditions produced by VectorTest, so anytrue and alltrue need
-// separate rules.
+// The outer Bool condition ($cop) is restricted to eq/ne by cmpOpEqNe.
+// Separate rules distinguish the VectorTest predicates: ne for anyTrue,
+// overflow for allTrue.
 
 instruct cmovI_vtest_anytrue_reg(iRegINoSp dst, iRegI src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
   predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::ne);
