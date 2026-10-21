@@ -275,6 +275,26 @@ public class TestSliceOptValueTransforms {
         }
     }
 
+    @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_B, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"asimd", "true"})
+    public void test8BMaxExtIndexByteAArch64() {
+        for (int i = 0; i < B64.loopBound(SIZE); i += B64.length()) {
+            ByteVector.fromArray(B64, bsrc1, i)
+                      .slice(7, ByteVector.fromArray(B64, bsrc2, i))
+                      .intoArray(bdst, i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_B, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"asimd", "true"})
+    public void test16BMaxExtIndexByteAArch64() {
+        for (int i = 0; i < B128.loopBound(SIZE); i += B128.length()) {
+            ByteVector.fromArray(B128, bsrc1, i)
+                      .slice(15, ByteVector.fromArray(B128, bsrc2, i))
+                      .intoArray(bdst, i);
+        }
+    }
+
     // Short tests
 
     @Test

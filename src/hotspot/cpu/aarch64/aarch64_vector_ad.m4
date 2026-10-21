@@ -354,6 +354,7 @@ source %{
       case Op_CompressBitsV:
       case Op_ExpandBitsV:
       case Op_VectorBitwiseBlend:
+      case Op_VectorSlice:
       // There is no native SVE divide for BYTE/SHORT elements (these are
       // emulated by widening to 32-bit), so the masked variants are handled
       // by an unpredicated divide combined with a VectorBlend.
@@ -5634,7 +5635,7 @@ SELECT_FROM_TWO_VECTORS(12, 13)
 SELECT_FROM_TWO_VECTORS(17, 18)
 SELECT_FROM_TWO_VECTORS(23, 24)
 
-// ---------------------------------- VectorSlice --------------------------------
+// -------------------------------- VectorSlice --------------------------------
 
 instruct vslice(vReg dst, vReg src1, vReg src2, immI origin) %{
   predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
@@ -5642,6 +5643,7 @@ instruct vslice(vReg dst, vReg src1, vReg src2, immI origin) %{
   format %{ "vslice $dst, $src1, $src2, $origin" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    assert(length_in_bytes == 8 || length_in_bytes == 16, "must be");
     __ ext($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
            $src1$$FloatRegister, $src2$$FloatRegister, $origin$$constant);
   %}
