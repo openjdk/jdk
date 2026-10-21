@@ -138,17 +138,17 @@ class FieldInfo {
   // classfile parser produces these records in a temporary array, and
   // then compresses them into a FieldInfoStream.
   //
-  u4 _index;                    // which field it is
-  u2 _name_index;               // index in CP of name
-  u2 _signature_index;          // index in CP of descriptor
-  u4 _offset;                   // offset in object layout
-  AccessFlags _access_flags;    // access flags (JVM spec)
-  FieldFlags _field_flags;      // VM defined flags (not JVM spec)
-  LayoutKind _layout_kind;      // LayoutKind if the field is flat
-  u4 _null_marker_offset;       // null marker offset for this field in the object layout
-  u2 _initializer_index;        // index from ConstantValue attr (or 0)
-  u2 _generic_signature_index;  // index from GenericSignature attr (or 0)
-  u2 _contention_group;         // index from @Contended group item (or 0)
+  u4 _index;                        // which field it is
+  u2 _name_index;                   // index in CP of name
+  u2 _signature_index;              // index in CP of descriptor
+  u4 _offset;                       // offset in object layout
+  AccessFlags _access_flags;        // access flags (JVM spec)
+  FieldFlags _field_flags;          // VM defined flags (not JVM spec)
+  FlatLayoutSlot _flat_layout_slot; // Layout if the field is flat
+  u4 _null_marker_offset;           // null marker offset for this field in the object layout
+  u2 _initializer_index;            // index from ConstantValue attr (or 0)
+  u2 _generic_signature_index;      // index from GenericSignature attr (or 0)
+  u2 _contention_group;             // index from @Contended group item (or 0)
 
  public:
 
@@ -158,7 +158,7 @@ class FieldInfo {
                 _offset(0),
                 _access_flags(AccessFlags(0)),
                 _field_flags(FieldFlags(0)),
-                _layout_kind(LayoutKind::UNKNOWN),
+                _flat_layout_slot(),
                 _null_marker_offset(0),
                 _initializer_index(0),
                 _generic_signature_index(0),
@@ -171,7 +171,7 @@ class FieldInfo {
             _offset(0),
             _access_flags(access_flags),
             _field_flags(fflags),
-            _layout_kind(LayoutKind::UNKNOWN),
+            _flat_layout_slot(),
             _null_marker_offset(0),
             _initializer_index(initval_index),
             _generic_signature_index(0),
@@ -192,10 +192,11 @@ class FieldInfo {
   AccessFlags access_flags() const           { return _access_flags; }
   FieldFlags field_flags() const             { return _field_flags; }
   FieldFlags* field_flags_addr()             { return &_field_flags; }
-  LayoutKind layout_kind() const             { return _layout_kind; }
-  void set_layout_kind(LayoutKind lk) {
+  FlatLayout flat_layout() const             { return _flat_layout_slot.get_if(_field_flags.is_flat()); }
+  LayoutKind layout_kind() const             { return flat_layout().layout_kind(); }
+  void set_flat_layout(FlatLayout flat_layout) {
     assert(_field_flags.is_flat(), "Must be");
-    _layout_kind = lk;
+    _flat_layout_slot = flat_layout;
   }
   u4 null_marker_offset() const              { return _null_marker_offset; }
   void set_null_marker_offset(u4 offset) {

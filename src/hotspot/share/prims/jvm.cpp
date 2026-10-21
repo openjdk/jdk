@@ -567,10 +567,10 @@ JVM_ENTRY(jboolean, JVM_IsAtomicArray(JNIEnv *env, jarray array))
 
   if (klass->is_flatArray_klass()) {
     FlatArrayKlass* fak = FlatArrayKlass::cast(klass);
-    if (LayoutKindHelper::is_atomic_flat(fak->layout_kind())) {
+    if (fak->flat_layout().is_atomic()) {
       return true;
     }
-    bool is_null_free = !LayoutKindHelper::is_nullable_flat(fak->layout_kind());
+    bool is_null_free = !fak->flat_layout().is_nullable();
     if (fak->element_klass()->is_naturally_atomic(is_null_free)) {
       return true;
     }

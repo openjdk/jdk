@@ -192,8 +192,12 @@
   nonstatic_field(ResolvedMethodEntry,         _cpool_index,                                  u2)                                    \
   nonstatic_field(ConstantPoolCache,           _resolved_indy_entries,                        Array<ResolvedIndyEntry>*)             \
   nonstatic_field(ResolvedIndyEntry,           _cpool_index,                                  u2)                                    \
+  nonstatic_field(FlatLayout,                  _layout_kind,                                  LayoutKind)                            \
+  nonstatic_field(FlatLayoutSlot,              _flat_layout,                                  FlatLayout)                            \
+  nonstatic_field(OptionalFlatLayout,          _is_flat,                                      bool)                                  \
+  nonstatic_field(OptionalFlatLayout,          _flat_layout,                                  FlatLayoutSlot)                        \
   nonstatic_field(ValueFieldInfo,              _klass,                                        ValueKlass*)                           \
-  nonstatic_field(ValueFieldInfo,              _kind,                                         LayoutKind)                            \
+  nonstatic_field(ValueFieldInfo,              _optional_flat_layout,                         OptionalFlatLayout)                    \
   volatile_nonstatic_field(InstanceKlass,      _array_klasses,                                ObjArrayKlass*)                        \
   nonstatic_field(InstanceKlass,               _methods,                                      Array<Method*>*)                       \
   nonstatic_field(InstanceKlass,               _default_methods,                              Array<Method*>*)                       \
@@ -274,7 +278,7 @@
   nonstatic_field(ConstMethod,                 _num_stack_arg_slots,                          u2)                                    \
   nonstatic_field(ObjArrayKlass,               _element_klass,                                Klass*)                                \
   nonstatic_field(ObjArrayKlass,               _bottom_klass,                                 Klass*)                                \
-  nonstatic_field(FlatArrayKlass,              _layout_kind,                                  LayoutKind)                            \
+  nonstatic_field(FlatArrayKlass,              _flat_layout,                                  FlatLayout)                            \
   volatile_nonstatic_field(Symbol,             _hash_and_refcount,                            unsigned int)                          \
   nonstatic_field(Symbol,                      _length,                                       u2)                                    \
   unchecked_nonstatic_field(Symbol,            _body,                                         sizeof(u1)) /* NOTE: no type */        \
@@ -962,6 +966,9 @@
     declare_type(ValueFieldInfo, MetaspaceObj)                            \
                                                                           \
   declare_toplevel_type(ValueKlass::Members)                              \
+  declare_toplevel_type(FlatLayout)                                       \
+  declare_toplevel_type(FlatLayoutSlot)                                   \
+  declare_toplevel_type(OptionalFlatLayout)                               \
                                                                           \
   declare_toplevel_type(narrowKlass)                                      \
                                                                           \
@@ -1493,13 +1500,10 @@
   /* LayoutKind enum */                                                   \
   /*******************/                                                   \
                                                                           \
-  declare_constant(LayoutKind::REFERENCE)                                 \
-  declare_constant(LayoutKind::BUFFERED)                                  \
   declare_constant(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT)                 \
   declare_constant(LayoutKind::NULL_FREE_ATOMIC_FLAT)                     \
   declare_constant(LayoutKind::NULLABLE_ATOMIC_FLAT)                      \
   declare_constant(LayoutKind::NULLABLE_NON_ATOMIC_FLAT)                  \
-  declare_constant(LayoutKind::UNKNOWN)                                   \
                                                                           \
   /*********************************/                                     \
   /* InstanceKlass ClassState enum */                                     \

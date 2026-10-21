@@ -3662,18 +3662,11 @@ bool AOTCodeCache::write_klass(Klass* klass) {
     can_write = AOTCacheAccess::can_generate_aot_code(klass);
     ObjArrayKlass* oak = ObjArrayKlass::cast(klass);
     array_dim = oak->dimension();
-    if (klass->is_refined_objArray_klass()) {
-      // Preserve property of object array
-      Klass::KlassKind kind;
-      LayoutKind layout;
-      if (klass->is_flatArray_klass()) {
-        kind = Klass::FlatArrayKlassKind;
-        layout = FlatArrayKlass::cast(klass)->layout_kind();
-      } else {
-        kind = Klass::RefArrayKlassKind;
-        layout = LayoutKind::REFERENCE;
-      }
-      array_desc = ArrayDescription(kind, oak->properties(), layout).value();
+    // Preserve property of object array
+    if (klass->is_flatArray_klass()) {
+      array_desc = ArrayDescription::flat(oak->properties(), FlatArrayKlass::cast(klass)->layout_kind()).value();
+    } else if (klass->is_refArray_klass()) {
+      array_desc = ArrayDescription::reference(oak->properties()).value();
     }
     klass = oak->bottom_klass(); // overwrites klass
   }
