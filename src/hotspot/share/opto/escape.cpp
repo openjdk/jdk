@@ -5227,11 +5227,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node*>& alloc_worklist,
       // Reducible Phi's will be removed from the graph after split_unique_types
       // finishes. For now we just try to split out the SR inputs of the merge.
       Node* parent = n->in(1);
-      if (n->is_Phi() && reducible_merges.member(n->as_Phi())) {
-        reduce_phi(n->as_Phi(), alloc_worklist);
+      if (PhiNode* phi = n->isa_Phi(); phi != nullptr && reducible_merges.member(phi)) {
+        reduce_phi(phi, alloc_worklist);
 #ifdef ASSERT
         if (VerifyReduceAllocationMerges) {
-          reduced_merges.push(n->as_Phi());
+          reduced_merges.push(phi);
         }
 #endif
         continue;

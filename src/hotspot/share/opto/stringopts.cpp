@@ -51,11 +51,11 @@ class StringConcat : public ResourceObj {
                                        // indicating how to treat the value.
   Node_List<const Node> _constructors;   // List of constructors (many in case of stacked concat)
   Node_List<Node>     _control;        // List of control nodes that will be deleted
-  Node_List<CallStaticJavaNode> _uncommon_traps; // Uncommon traps that needs to be rewritten
-                                                 // to restart at the initial JVMState.
+  Node_List<CallStaticJavaNode> _uncommon_traps;  // Uncommon traps that needs to be rewritten
+                                                  // to restart at the initial JVMState.
   Unique_Node_List<const Node> _allowed_compares; // validate_control_flow() needs to know which compare nodes are
-                                            // accepted users of call results. In case of stacked concats,
-                                            // these need to be persisted across merges for validation.
+                                                  // accepted users of call results. In case of stacked concats,
+                                                  // these need to be persisted across merges for validation.
 
   static constexpr uint STACKED_CONCAT_UPPER_BOUND = 256; // argument limit for a merged concat.
                                                           // The value 256 was derived by measuring

@@ -5367,7 +5367,9 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet& visited, Node_List<Node>& 
       // to avoid this additional check.
     } else if (n->Opcode() == Op_SafePoint) {
       if (_phase->get_loop(n) != this) {
-        if (_required_safept == nullptr) _required_safept = new Node_List<const SafePointNode>();
+        if (_required_safept == nullptr) {
+          _required_safept = new Node_List<const SafePointNode>();
+        }
         // save the first we run into on that path: closest to the tail if the head has a single backedge
         _required_safept->push(n->as_SafePoint());
       }
@@ -5517,7 +5519,9 @@ void IdealLoopTree::check_safepts(VectorSet& visited, Node_List<Node>& stack) {
     // inner loop attempts to delete it's safepoints.
     if (_child != nullptr && !has_call && !has_local_ncsfpt) {
       if (nonlocal_ncsfpt != nullptr) {
-        if (_required_safept == nullptr) _required_safept = new Node_List<const SafePointNode>();
+        if (_required_safept == nullptr) {
+          _required_safept = new Node_List<const SafePointNode>();
+        }
         _required_safept->push(nonlocal_ncsfpt->as_SafePoint());
       } else {
         // Failed to find a suitable safept on the dom-path.  Now use

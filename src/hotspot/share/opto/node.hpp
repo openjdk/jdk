@@ -1849,8 +1849,8 @@ public:
   // Allow move constructor for && (eg. capture return of function)
   Node_Array(Node_Array&&) = default;
 
-  T* operator[] (uint i) const // Lookup, or null for not mapped
-  { return (i<_max) ? _nodes[i] : (T*)nullptr; }
+  // Lookup, or null for not mapped
+  T* operator[] (uint i) const { return (i < _max) ? _nodes[i] : (T*)nullptr; }
   T* at(uint i) const { assert(i<_max,"oob"); return _nodes[i]; }
   T** adr() { return _nodes; }
   // Extend the mapping: index i maps to Node *n.
