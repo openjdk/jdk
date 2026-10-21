@@ -28,6 +28,7 @@
 #endif
 
 #include <dlfcn.h>
+#include <time.h>
 #include "jni_util.h"
 #include "awt.h"
 
@@ -75,14 +76,17 @@ int (*fp_pw_core_disconnect)(struct pw_core *core);
 struct pw_context * (*fp_pw_context_new)(struct pw_loop *main_loop,
                                    struct pw_properties *props,
                                    size_t user_data_size);
+void (*fp_pw_context_destroy)(struct pw_context *context);
 
 struct pw_thread_loop *
 (*fp_pw_thread_loop_new)(const char *name, const struct spa_dict *props);
 struct pw_loop * (*fp_pw_thread_loop_get_loop)(struct pw_thread_loop *loop);
 void (*fp_pw_thread_loop_signal)(struct pw_thread_loop *loop,
                                  bool wait_for_accept);
-void (*fp_pw_thread_loop_wait)(struct pw_thread_loop *loop);
-void (*fp_pw_thread_loop_accept)(struct pw_thread_loop *loop);
+int (*fp_pw_thread_loop_timed_wait_full)(struct pw_thread_loop *loop,
+                                        const struct timespec *abstime);
+int (*fp_pw_thread_loop_get_time)(struct pw_thread_loop *loop,
+                                  struct timespec *abstime, int64_t timeout);
 int (*fp_pw_thread_loop_start)(struct pw_thread_loop *loop);
 void (*fp_pw_thread_loop_stop)(struct pw_thread_loop *loop);
 void (*fp_pw_thread_loop_destroy)(struct pw_thread_loop *loop);
@@ -102,6 +106,9 @@ int DEBUG_SCREENCAST_ENABLED = FALSE;
 #define EXCEPTION_CHECK_DESCRIBE() if ((*env)->ExceptionCheck(env)) { \
                                       (*env)->ExceptionDescribe(env); \
                                    }
+
+// 10 s timeout for format negotiation and frames from all requested screens.
+static const int64_t PIPEWIRE_TIMEOUT_NS = 10LL * 1000 * 1000 * 1000;
 
 static gboolean hasPipewireFailed = FALSE;
 static gboolean sessionClosed = TRUE;
@@ -158,6 +165,10 @@ static void doCleanup() {
 
     for (int i = 0; i < screenSpace.screenCount; ++i) {
         struct ScreenProps *screenProps = &screenSpace.screens[i];
+        if (screenProps->captureDataPixbuf) {
+            gtk->g_object_unref(screenProps->captureDataPixbuf);
+            screenProps->captureDataPixbuf = NULL;
+        }
         if (screenProps->data) {
             if (screenProps->data->stream) {
                 fp_pw_thread_loop_lock(pw.loop);
@@ -181,6 +192,11 @@ static void doCleanup() {
     if (pw.core) {
         fp_pw_core_disconnect(pw.core);
         pw.core = NULL;
+    }
+
+    if (pw.context) {
+        fp_pw_context_destroy(pw.context);
+        pw.context = NULL;
     }
 
     if (pw.loop) {
@@ -281,7 +297,7 @@ static void onStreamParamChanged(
                      data->rawFormat.size.height);
 
     data->hasFormat = TRUE;
-    fp_pw_thread_loop_signal(pw.loop, TRUE);
+    fp_pw_thread_loop_signal(pw.loop, FALSE);
 }
 
 static void onStreamProcess(void *userdata) {
@@ -299,7 +315,6 @@ static void onStreamProcess(void *userdata) {
     if (
             !data->hasFormat
             || !screen->shouldCapture
-            || screen->captureDataReady
     ) {
         return;
     }
@@ -310,6 +325,11 @@ static void onStreamProcess(void *userdata) {
     if (!data->stream
         || (pwBuffer = fp_pw_stream_dequeue_buffer(data->stream)) == NULL) {
         DEBUG_SCREEN_PREFIX(screen, "!!! out of buffers\n", NULL);
+        return;
+    }
+
+    if (screen->captureDataReady) {
+        fp_pw_stream_queue_buffer(data->stream, pwBuffer);
         return;
     }
 
@@ -344,7 +364,6 @@ static void onStreamProcess(void *userdata) {
     );
 
     GdkRectangle captureArea = screen->captureArea;
-    GdkRectangle screenBounds = screen->bounds;
 
     GdkPixbuf *pixbuf = gtk->gdk_pixbuf_new_from_data(spaData.data,
                                                       GDK_COLORSPACE_RGB,
@@ -355,9 +374,14 @@ static void onStreamProcess(void *userdata) {
                                                       spaData.chunk->stride,
                                                       NULL,
                                                       NULL);
+    if (!pixbuf) {
+        ERR("Cannot create a pixbuf from stream data.\n");
+        goto fail;
+    }
 
-    if (screen->bounds.width != streamWidth
-        || screen->bounds.height != streamHeight) {
+    gboolean needsScaling = screen->bounds.width != streamWidth
+                            || screen->bounds.height != streamHeight;
+    if (needsScaling) {
 
         DEBUG_SCREEN_PREFIX(screen, "scaling stream data %dx%d -> %dx%d\n",
                          streamWidth, streamHeight,
@@ -369,37 +393,39 @@ static void onStreamProcess(void *userdata) {
                                                          screen->bounds.height,
                                                          GDK_INTERP_BILINEAR);
 
+        if (!scaled) {
+            ERR("Cannot scale the stream pixbuf.\n");
+            goto fail;
+        }
         gtk->g_object_unref(pixbuf);
         pixbuf = scaled;
     }
 
-    GdkPixbuf *cropped = NULL;
-    if (captureArea.width != screenBounds.width
-        || captureArea.height != screenBounds.height) {
-
-        cropped = gtk->gdk_pixbuf_new(GDK_COLORSPACE_RGB,
+    if (needsScaling
+        && captureArea.x == 0 && captureArea.y == 0
+        && captureArea.width == screen->bounds.width
+        && captureArea.height == screen->bounds.height) {
+        screen->captureDataPixbuf = pixbuf;
+    } else {
+        GdkPixbuf *cropped = gtk->gdk_pixbuf_new(GDK_COLORSPACE_RGB,
                                       TRUE,
                                       8,
                                       captureArea.width,
                                       captureArea.height);
-        if (cropped) {
-            gtk->gdk_pixbuf_copy_area(pixbuf,
+        if (!cropped) {
+            ERR("Cannot create a new pixbuf.\n");
+            goto fail;
+        }
+        gtk->gdk_pixbuf_copy_area(pixbuf,
                                       captureArea.x,
                                       captureArea.y,
                                       captureArea.width,
                                       captureArea.height,
                                       cropped,
                                       0, 0);
-        } else {
-            ERR("Cannot create a new pixbuf.\n");
-        }
 
         gtk->g_object_unref(pixbuf);
-        pixbuf = NULL;
-
-        data->screenProps->captureDataPixbuf = cropped;
-    } else {
-        data->screenProps->captureDataPixbuf = pixbuf;
+        screen->captureDataPixbuf = cropped;
     }
 
     screen->captureDataReady = TRUE;
@@ -408,6 +434,15 @@ static void onStreamProcess(void *userdata) {
     fp_pw_stream_queue_buffer(data->stream, pwBuffer);
 
     fp_pw_thread_loop_signal(pw.loop, FALSE);
+    return;
+
+    fail:
+        if (pixbuf) {
+            gtk->g_object_unref(pixbuf);
+        }
+        fp_pw_stream_queue_buffer(data->stream, pwBuffer);
+        hasPipewireFailed = TRUE;
+        fp_pw_thread_loop_signal(pw.loop, FALSE);
 }
 
 static void onStreamStateChanged(
@@ -485,10 +520,13 @@ static bool startStream(
 }
 
 /**
+ * The caller must hold the PipeWire thread loop lock.
+ *
  * @param index of a screen
+ * @param captureDeadline shared deadline for format negotiation and screen capture
  * @return TRUE on success
  */
-static gboolean connectStream(int index) {
+static gboolean connectStream(int index, const struct timespec *captureDeadline) {
     DEBUG_SCREENCAST("@@@ using screen %i\n", index);
     if (index >= screenSpace.screenCount) {
         DEBUG_SCREENCAST("!!! Wrong index for screen\n", NULL);
@@ -500,9 +538,7 @@ static gboolean connectStream(int index) {
     data->screenProps = &screenSpace.screens[index];
 
     if (!sessionClosed && data->stream) {
-        fp_pw_thread_loop_lock(pw.loop);
         int result = fp_pw_stream_set_active(data->stream, TRUE);
-        fp_pw_thread_loop_unlock(pw.loop);
 
         DEBUG_SCREEN_PREFIX(data->screenProps,
                             "stream %p: activate result |%i|\n",
@@ -527,7 +563,6 @@ static gboolean connectStream(int index) {
     if (!data->stream) {
         DEBUG_SCREEN_PREFIX(data->screenProps,
                             "!!! Could not create a pipewire stream\n", NULL);
-        fp_pw_thread_loop_unlock(pw.loop);
         return FALSE;
     }
 
@@ -543,17 +578,19 @@ static gboolean connectStream(int index) {
     if (!startStream(data->stream, screenSpace.screens[index].id)){
         DEBUG_SCREEN_PREFIX(data->screenProps,
                             "!!! Could not start a pipewire stream\n", NULL);
-        fp_pw_thread_loop_unlock(pw.loop);
         return FALSE;
     }
 
-    while (!data->hasFormat) {
-        fp_pw_thread_loop_wait(pw.loop);
-        fp_pw_thread_loop_accept(pw.loop);
-        if (hasPipewireFailed) {
-            fp_pw_thread_loop_unlock(pw.loop);
+    while (!hasPipewireFailed && !data->hasFormat) {
+        int result = fp_pw_thread_loop_timed_wait_full(pw.loop, captureDeadline);
+        if (result < 0) {
+            DEBUG_SCREEN_PREFIX(data->screenProps,
+                                "Format wait failed: %d\n", result);
             return FALSE;
         }
+    }
+    if (hasPipewireFailed) {
+        return FALSE;
     }
 
     DEBUG_SCREEN_PREFIX(data->screenProps,
@@ -636,7 +673,7 @@ static const struct pw_core_events coreEvents = {
  * @param requestedArea requested screenshot area
  * @return TRUE on success
  */
-static gboolean doLoop(GdkRectangle requestedArea) {
+static gboolean doLoop(GdkRectangle requestedArea, struct timespec *captureDeadline) {
     gboolean isLoopLockTaken = FALSE;
     if (!pw.loop && !sessionClosed) {
         pw.loop = fp_pw_thread_loop_new("AWT Pipewire Thread", NULL);
@@ -688,6 +725,13 @@ static gboolean doLoop(GdkRectangle requestedArea) {
         }
 
         pw_core_add_listener(pw.core, &pw.coreListener, &coreEvents, NULL);
+    } else if (pw.loop) {
+        fp_pw_thread_loop_lock(pw.loop);
+        isLoopLockTaken = TRUE;
+    }
+
+    if (fp_pw_thread_loop_get_time(pw.loop, captureDeadline, PIPEWIRE_TIMEOUT_NS) < 0) {
+        goto fail;
     }
 
     for (int i = 0; i < screenSpace.screenCount; ++i) {
@@ -707,7 +751,7 @@ static gboolean doLoop(GdkRectangle requestedArea) {
 
         DEBUG_SCREEN_PREFIX(screen, "@@@ adding screen %i\n", i);
         if (checkScreen(i, requestedArea)) {
-            if (!connectStream(i)){
+            if (!connectStream(i, captureDeadline)){
                 goto fail;
             }
         }
@@ -781,11 +825,12 @@ static gboolean loadSymbols() {
     LOAD_SYMBOL(fp_pw_context_connect_fd, "pw_context_connect_fd");
     LOAD_SYMBOL(fp_pw_core_disconnect, "pw_core_disconnect");
     LOAD_SYMBOL(fp_pw_context_new, "pw_context_new");
+    LOAD_SYMBOL(fp_pw_context_destroy, "pw_context_destroy");
     LOAD_SYMBOL(fp_pw_thread_loop_new, "pw_thread_loop_new");
     LOAD_SYMBOL(fp_pw_thread_loop_get_loop, "pw_thread_loop_get_loop");
     LOAD_SYMBOL(fp_pw_thread_loop_signal, "pw_thread_loop_signal");
-    LOAD_SYMBOL(fp_pw_thread_loop_wait, "pw_thread_loop_wait");
-    LOAD_SYMBOL(fp_pw_thread_loop_accept, "pw_thread_loop_accept");
+    LOAD_SYMBOL(fp_pw_thread_loop_timed_wait_full, "pw_thread_loop_timed_wait_full");
+    LOAD_SYMBOL(fp_pw_thread_loop_get_time, "pw_thread_loop_get_time");
     LOAD_SYMBOL(fp_pw_thread_loop_start, "pw_thread_loop_start");
     LOAD_SYMBOL(fp_pw_thread_loop_stop, "pw_thread_loop_stop");
     LOAD_SYMBOL(fp_pw_thread_loop_destroy, "pw_thread_loop_destroy");
@@ -952,18 +997,26 @@ static int makeScreencast(
         return pw.pwFd;
     }
 
-    if (!doLoop(*requestedArea)) {
+    struct timespec captureDeadline;
+    if (!doLoop(*requestedArea, &captureDeadline)) {
         return RESULT_ERROR;
     }
 
-    while (!isAllDataReady()) {
-        fp_pw_thread_loop_lock(pw.loop);
-        fp_pw_thread_loop_wait(pw.loop);
-        fp_pw_thread_loop_unlock(pw.loop);
-        if (hasPipewireFailed) {
-            doCleanup();
-            return RESULT_ERROR;
+    fp_pw_thread_loop_lock(pw.loop);
+    int waitResult = 0;
+    while (!hasPipewireFailed && !isAllDataReady()) {
+        waitResult = fp_pw_thread_loop_timed_wait_full(pw.loop, &captureDeadline);
+        if (waitResult < 0) {
+            DEBUG_SCREENCAST("Frame wait failed: %d\n", waitResult);
+            break;
         }
+    }
+    gboolean failed = hasPipewireFailed || waitResult < 0;
+    fp_pw_thread_loop_unlock(pw.loop);
+
+    if (failed) {
+        doCleanup();
+        return RESULT_ERROR;
     }
 
     return RESULT_OK;
@@ -1095,17 +1148,15 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
                 }
             }
 
+            fp_pw_thread_loop_lock(pw.loop);
             if (screenProps->captureDataPixbuf) {
                 gtk->g_object_unref(screenProps->captureDataPixbuf);
                 screenProps->captureDataPixbuf = NULL;
             }
             screenProps->shouldCapture = FALSE;
-
-            fp_pw_thread_loop_lock(pw.loop);
             fp_pw_stream_set_active(screenProps->data->stream, FALSE);
-            fp_pw_thread_loop_unlock(pw.loop);
-
             screenProps->captureDataReady = FALSE;
+            fp_pw_thread_loop_unlock(pw.loop);
         }
     }
 

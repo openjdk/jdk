@@ -206,7 +206,6 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
        )
   , _live(nullptr)
   , _lo_degree(0), _lo_stk_degree(0), _hi_degree(0), _simplified(0)
-  , _oldphi(unique)
 #ifndef PRODUCT
   , _trace_spilling(C->directive()->TraceSpillingOption)
 #endif
@@ -2699,20 +2698,8 @@ void PhaseChaitin::verify(ResourceArea* a, bool verify_ifg) const {
 }
 #endif // ASSERT
 
-int PhaseChaitin::_final_loads  = 0;
-int PhaseChaitin::_final_stores = 0;
-int PhaseChaitin::_final_memoves= 0;
-int PhaseChaitin::_final_copies = 0;
-double PhaseChaitin::_final_load_cost  = 0;
-double PhaseChaitin::_final_store_cost = 0;
-double PhaseChaitin::_final_memove_cost= 0;
-double PhaseChaitin::_final_copy_cost  = 0;
 int PhaseChaitin::_conserv_coalesce = 0;
-int PhaseChaitin::_conserv_coalesce_pair = 0;
-int PhaseChaitin::_conserv_coalesce_trie = 0;
-int PhaseChaitin::_conserv_coalesce_quad = 0;
 int PhaseChaitin::_post_alloc = 0;
-int PhaseChaitin::_lost_opp_pp_coalesce = 0;
 int PhaseChaitin::_lost_opp_cflow_coalesce = 0;
 int PhaseChaitin::_used_cisc_instructions   = 0;
 int PhaseChaitin::_unused_cisc_instructions = 0;
@@ -2724,19 +2711,11 @@ uint PhaseChaitin::_high_pressure           = 0;
 uint PhaseChaitin::_low_pressure            = 0;
 
 void PhaseChaitin::print_chaitin_statistics() {
-  tty->print_cr("Inserted %d spill loads, %d spill stores, %d mem-mem moves and %d copies.", _final_loads, _final_stores, _final_memoves, _final_copies);
-  tty->print_cr("Total load cost= %6.0f, store cost = %6.0f, mem-mem cost = %5.2f, copy cost = %5.0f.", _final_load_cost, _final_store_cost, _final_memove_cost, _final_copy_cost);
-  tty->print_cr("Adjusted spill cost = %7.0f.",
-                _final_load_cost*4.0 + _final_store_cost  * 2.0 +
-                _final_copy_cost*1.0 + _final_memove_cost*12.0);
-  tty->print("Conservatively coalesced %d copies, %d pairs",
-                _conserv_coalesce, _conserv_coalesce_pair);
-  if( _conserv_coalesce_trie || _conserv_coalesce_quad )
-    tty->print(", %d tries, %d quads", _conserv_coalesce_trie, _conserv_coalesce_quad);
+  tty->print("Conservatively coalesced %d copies",
+                _conserv_coalesce);
   tty->print_cr(", %d post alloc.", _post_alloc);
-  if( _lost_opp_pp_coalesce || _lost_opp_cflow_coalesce )
-    tty->print_cr("Lost coalesce opportunity, %d private-private, and %d cflow interfered.",
-                  _lost_opp_pp_coalesce, _lost_opp_cflow_coalesce );
+  if (_lost_opp_cflow_coalesce)
+    tty->print_cr("Lost coalesce opportunity, %d cflow interfered.", _lost_opp_cflow_coalesce);
   if( _used_cisc_instructions || _unused_cisc_instructions )
     tty->print_cr("Used cisc instruction  %d,  remained in register %d",
                    _used_cisc_instructions, _unused_cisc_instructions);

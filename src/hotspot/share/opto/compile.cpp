@@ -606,7 +606,7 @@ void Compile::print_compile_messages() {
   if( PrintOpto ) {
     if (is_osr_compilation()) {
       tty->print("[OSR]");
-    } else if (env()->task()->is_aot_compile()) {
+    } else if (is_aot_compile()) {
       if (for_aot_preload()) {
         tty->print("[PRE]");
       } else {
@@ -649,9 +649,8 @@ void Compile::print_ideal_ir(const char* compile_phase_name) const {
   NoSafepointVerifier nsv;
   ttyLocker ttyl;
   if (xtty != nullptr) {
-    CompileTask* task = env()->task();
-    bool aot_comp = task->is_aot_load_or_compile();
-    bool aot_preload_comp = task->is_aot_preload_or_compile();
+    bool aot_comp = is_aot_compile();
+    bool aot_preload_comp = for_aot_preload();
     xtty->head("ideal compile_id='%d'%s compile_phase='%s'",
                compile_id(),
                is_osr_compilation() ? " compile_kind='osr'" :
@@ -786,7 +785,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   set_print_intrinsics(directive->PrintIntrinsicsOption);
   set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
 
-  if ((ProfileTraps && !ci_env->is_aot_compile()) ||
+  if ((ProfileTraps && !is_aot_compile()) ||
       AOTCodeCache::is_using_code()) {
     // Make sure the method being compiled gets its own MDO,
     // so we can at least track the decompile_count().
@@ -2336,7 +2335,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
     Node* n = wq.at(i);
     if (n->is_Mem()) {
       const TypePtr* adr_type = nullptr;
-      adr_type = get_adr_type(get_alias_index(n->adr_type()));
+      adr_type = get_adr_type(get_alias_index(n->in_adr_type()));
       if (adr_type == TypeAryPtr::INLINES) {
         memnodes.push(n);
       }
@@ -2371,7 +2370,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
   int start_alias = num_alias_types(); // Start of new aliases
   for (uint i = 0; i < memnodes.size(); i++) {
     Node* m = memnodes.at(i);
-    const TypePtr* adr_type = m->adr_type();
+    const TypePtr* adr_type = m->in_adr_type();
 #ifdef ASSERT
     m->as_Mem()->set_adr_type(adr_type);
 #endif // ASSERT
@@ -2401,8 +2400,8 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
       // bottom memory, we pop element off the stack one at a
       // time, in reverse order, and move them to the right slice
       // by changing their memory edges.
-      if ((n->is_Phi() && n->adr_type() != TypePtr::BOTTOM) || n->is_Mem() ||
-          (n->adr_type() == TypeAryPtr::INLINES && !n->is_NarrowMemProj())) {
+      if ((n->is_Phi() && n->out_adr_type() != TypePtr::BOTTOM) || n->is_Mem() ||
+          (n->out_adr_type() == TypeAryPtr::INLINES && !n->is_NarrowMemProj())) {
         assert(!seen.test_set(n->_idx), "");
         // Uses (a load for instance) will need to be moved to the
         // right slice as well and will get a new memory state
@@ -2452,7 +2451,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
           n = n->in(0)->in(TypeFunc::Memory);
         }
       } else {
-        assert(n->adr_type() == TypePtr::BOTTOM || (n->Opcode() == Op_Node && n->_idx >= last) || n->is_NarrowMemProj(), "");
+        assert(n->out_adr_type() == TypePtr::BOTTOM || (n->Opcode() == Op_Node && n->_idx >= last) || n->is_NarrowMemProj(), "");
         // Build a new MergeMem node to carry the new memory state
         // as we build it. IGVN should fold extraneous MergeMem
         // nodes.
@@ -2472,7 +2471,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
 
           Node* base = alloc->in(TypeFunc::Memory);
           assert(base->bottom_type() == Type::MEMORY, "the memory input of AllocateNode must be a memory");
-          assert(base->adr_type() == TypePtr::BOTTOM, "the memory input of AllocateNode must be a bottom memory");
+          assert(base->out_adr_type() == TypePtr::BOTTOM, "the memory input of AllocateNode must be a bottom memory");
           // Must create a MergeMem with base as the base memory, do not clone if base is a
           // MergeMem because it may not be processed yet
           mm = MergeMemNode::make(nullptr);
@@ -2513,7 +2512,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
           uint idx = stack.index();
           if (m->is_Mem()) {
             // Move memory node to its new slice
-            const TypePtr* adr_type = m->adr_type();
+            const TypePtr* adr_type = m->in_adr_type();
             int alias = get_alias_index(adr_type);
             Node* prev = mm->memory_at(alias);
             igvn.replace_input_of(m, MemNode::Memory, prev);
@@ -2560,7 +2559,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
               if (!adr_type->isa_aryptr() || !adr_type->is_flat()) {
                 continue;
               }
-              MemBarNode* mb = new MemBarCPUOrderNode(this, j, nullptr);
+              MemBarNode* mb = new MemBarCPUOrderNode(this, adr_type, adr_type, nullptr);
               igvn.register_new_node_with_optimizer(mb);
               Node* mem = mm->memory_at(j);
               mb->init_req(TypeFunc::Control, ctrl);
@@ -2617,7 +2616,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
   wq.push(root());
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
-    assert(n->adr_type() != TypeAryPtr::INLINES, "should have been removed from the graph");
+    assert(n->out_adr_type() != TypeAryPtr::INLINES && n->in_adr_type() != TypeAryPtr::INLINES, "should have been removed from the graph");
     for (uint j = 0; j < n->req(); j++) {
       Node* m = n->in(j);
       if (m != nullptr) {
@@ -4073,7 +4072,7 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
 
 #ifdef ASSERT
   if( n->is_Mem() ) {
-    int alias_idx = get_alias_index(n->as_Mem()->adr_type());
+    int alias_idx = get_alias_index(n->as_Mem()->in_adr_type());
     assert( n->in(0) != nullptr || alias_idx != Compile::AliasIdxRaw ||
             // oop will be recorded in oop map if load crosses safepoint
             (n->is_Load() && (n->as_Load()->bottom_type()->isa_oopptr() ||
@@ -4165,7 +4164,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     if (!Matcher::match_rule_supported(Op_CallLeafPure)) {
       CallNode* call = n->as_Call();
       CallNode* new_call = new CallLeafNode(call->tf(), call->entry_point(),
-                                            call->_name, TypeRawPtr::BOTTOM);
+                                            call->_name, nullptr, nullptr);
       new_call->init_req(TypeFunc::Control, call->in(TypeFunc::Control));
       new_call->init_req(TypeFunc::I_O, C->top());
       new_call->init_req(TypeFunc::Memory, C->top());
@@ -6293,7 +6292,7 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
                               Node* parm6) const {
   Node* str_node = gvn->transform(new ConPNode(TypeRawPtr::make(((address) str))));
   const TypeFunc* type = OptoRuntime::debug_print_Type(parm0, parm1, parm2, parm3, parm4, parm5, parm6);
-  Node* call = new CallLeafNode(type, call_addr, "debug_print", TypeRawPtr::BOTTOM);
+  Node* call = new CallLeafNode(type, call_addr, "debug_print", nullptr, nullptr);
 
   // find the most suitable control input
   Unique_Node_List worklist, candidates;

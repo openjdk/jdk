@@ -23,8 +23,8 @@
  */
 
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -1005,7 +1005,7 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
     // At this point, no modules have been defined yet. KlassSubGraphInfo::check_allowed_klass()
     // has restricted the classes can be loaded at this step to be only:
     // [1] cs->is_modules_image(): classes in java.base, or,
-    // [2] HeapShared::is_a_test_class_in_unnamed_module(ik): classes in bootstrap/unnamed module
+    // [2] AOTHeap::is_a_test_class_in_unnamed_module(ik): classes in bootstrap/unnamed module
     assert(cl->is_modules_image(),
            "only these classes can be loaded before the module system is initialized");
     assert(class_loader.is_null(), "sanity");
@@ -1564,19 +1564,6 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
   // which will require a token to perform the define class
   check_constraints(k, loader_data, true, CHECK);
 
-  // Register class just loaded with class loader (placed in ArrayList)
-  // Note we do this before updating the dictionary, as this can
-  // fail with an OutOfMemoryError (if it does, we will *not* put this
-  // class in the dictionary and will not update the class hierarchy).
-  // JVMTI FollowReferences needs to find the classes this way.
-  if (k->class_loader() != nullptr) {
-    methodHandle m(THREAD, Universe::loader_addClass_method());
-    JavaValue result(T_VOID);
-    JavaCallArguments args(class_loader);
-    args.push_oop(Handle(THREAD, k->java_mirror()));
-    JavaCalls::call(&result, m, &args, CHECK);
-  }
-
   JFR_ONLY(Jfr::on_definition(k, THREAD);)
 
   // Add to class hierarchy, and do possible deoptimizations.
@@ -1688,8 +1675,8 @@ InstanceKlass* SystemDictionary::find_or_define_instance_class(Symbol* class_nam
     assert(defined_k != nullptr, "Should have a klass if there's no exception");
     k->class_loader_data()->add_to_deallocate_list(k);
   } else if (HAS_PENDING_EXCEPTION) {
-    // Remove this InstanceKlass from the LoaderConstraintTable if added.
-    LoaderConstraintTable::remove_failed_loaded_klass(k, class_loader_data(class_loader));
+    // Validate that this InstanceKlass is not present in the LoaderConstraintTable.
+    LoaderConstraintTable::check_failed_loaded_klass(k, class_loader_data(class_loader));
     assert(defined_k == nullptr, "Should not have a klass if there's an exception");
     k->class_loader_data()->add_to_deallocate_list(k);
   }
@@ -1773,7 +1760,7 @@ void SystemDictionary::initialize(TRAPS) {
   vmClasses::resolve_all(CHECK);
   // Resolve classes used by archived heap objects
   if (CDSConfig::is_using_archive()) {
-    HeapShared::resolve_classes(THREAD);
+    AOTHeap::resolve_classes(THREAD);
   }
 }
 
