@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class SmtpClient extends TransferProtocolClient {
     }
 
     public void to(String s) throws IOException {
-        if (s.indexOf('\n') != -1) {
+        if (s.indexOf('\n') != -1 || s.indexOf('\r') != -1) {
             throw new IOException("Illegal SMTP command",
                     new IllegalArgumentException("Illegal carriage return"));
         }
@@ -120,7 +120,7 @@ public class SmtpClient extends TransferProtocolClient {
     }
 
     public void from(String s) throws IOException {
-        if (s.indexOf('\n') != -1) {
+        if (s.indexOf('\n') != -1 || s.indexOf('\r') != -1) {
             throw new IOException("Illegal SMTP command",
                     new IllegalArgumentException("Illegal carriage return"));
         }

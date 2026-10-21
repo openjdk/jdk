@@ -39,7 +39,6 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 
@@ -376,7 +375,7 @@ void CDSHeapVerifier::do_klass(Klass* k) {
   if (k->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(k);
 
-    if (HeapShared::is_subgraph_root_class(ik)) {
+    if (AOTHeap::is_subgraph_root_class(ik)) {
       // ik is inside one of the ArchivableStaticFieldInfo tables
       // in heapShared.cpp. We assume such classes are programmed to
       // update their static fields correctly at runtime.
@@ -401,11 +400,11 @@ void CDSHeapVerifier::add_static_obj_field(InstanceKlass* ik, oop field, Symbol*
 
 // This function is called once for every archived heap object. Warn if this object is referenced by
 // a static field of a class that's not aot-initialized.
-inline bool CDSHeapVerifier::do_entry(OopHandle& orig_obj_handle, HeapShared::CachedOopInfo& value) {
+inline bool CDSHeapVerifier::do_entry(OopHandle& orig_obj_handle, AOTHeap::CachedOopInfo& value) {
   oop orig_obj = orig_obj_handle.resolve();
   _archived_objs++;
 
-  if (java_lang_String::is_instance(orig_obj) && HeapShared::is_dumped_interned_string(orig_obj)) {
+  if (java_lang_String::is_instance(orig_obj) && AOTHeap::is_dumped_interned_string(orig_obj)) {
     // It's quite often for static fields to have interned strings. These are most likely not
     // problematic (and are hard to filter). So we will ignore them.
     return true;
@@ -452,7 +451,7 @@ public:
 
 // Call this function (from gdb, etc) if you want to know why an object is archived.
 void CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj) {
-  HeapShared::CachedOopInfo* info = HeapShared::get_cached_oop_info(orig_obj);
+  AOTHeap::CachedOopInfo* info = AOTHeap::get_cached_oop_info(orig_obj);
   if (info != nullptr) {
     trace_to_root(st, orig_obj, nullptr, info);
   } else {
@@ -483,10 +482,10 @@ const char* static_field_name(oop mirror, oop field) {
   return "<unknown>";
 }
 
-int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* info) {
+int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_field, AOTHeap::CachedOopInfo* info) {
   int level = 0;
   if (info->orig_referrer() != nullptr) {
-    HeapShared::CachedOopInfo* ref = HeapShared::get_cached_oop_info(info->orig_referrer());
+    AOTHeap::CachedOopInfo* ref = AOTHeap::get_cached_oop_info(info->orig_referrer());
     assert(ref != nullptr, "sanity");
     level = trace_to_root(st, info->orig_referrer(), orig_obj, ref) + 1;
   } else if (java_lang_String::is_instance(orig_obj)) {
@@ -522,7 +521,7 @@ int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_fiel
 
 void CDSHeapVerifier::verify() {
   CDSHeapVerifier verf;
-  HeapShared::archived_object_cache()->iterate(&verf);
+  AOTHeap::archived_object_cache()->iterate(&verf);
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

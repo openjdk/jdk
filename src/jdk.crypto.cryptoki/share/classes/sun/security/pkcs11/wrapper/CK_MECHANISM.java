@@ -1,8 +1,7 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
- */
-
-/* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
+ * Copyright (c) 2026, IBM Corporation. All rights reserved.
+ * Copyright (c) 2002 Graz University of Technology. All rights reserved.
  *
  * Redistribution and use in  source and binary forms, with or without
  * modification, are permitted  provided that the following conditions are met:
@@ -108,6 +107,10 @@ public class CK_MECHANISM {
     }
 
     public CK_MECHANISM(long mechanism, CK_TLS12_MASTER_KEY_DERIVE_PARAMS params) {
+        init(mechanism, params);
+    }
+
+    public CK_MECHANISM(long mechanism, CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS params) {
         init(mechanism, params);
     }
 

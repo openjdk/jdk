@@ -226,10 +226,10 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_OS],
 AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_LIBC],
 [
   case "$1" in
-    *linux*-musl)
+    *linux*-musl*)
       VAR_LIBC=musl
       ;;
-    *linux*-gnu)
+    *linux*-gnu*)
       VAR_LIBC=gnu
       ;;
     *)

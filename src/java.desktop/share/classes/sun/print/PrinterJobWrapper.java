@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,18 +50,22 @@ public class PrinterJobWrapper implements PrintRequestAttribute {
         return job;
     }
 
+    @Override
     public final Class<? extends Attribute> getCategory() {
         return PrinterJobWrapper.class;
     }
 
+    @Override
     public final String getName() {
         return "printerjob-wrapper";
     }
 
+    @Override
     public String toString() {
        return "printerjob-wrapper: " + job.toString();
     }
 
+    @Override
     public int hashCode() {
         return job.hashCode();
     }
