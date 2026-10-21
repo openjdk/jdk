@@ -195,12 +195,18 @@ class MacroAssembler: public Assembler {
   void str(Register Rx, const Address &adr);
   void strw(Register Rx, const Address &adr);
   void ldr(FloatRegister Rt, SIMD_RegVariant T, const Address& adr);
+  void ldr(FloatRegister Rt, SIMD_RegVariant T, address dest) = delete;
   void str(FloatRegister Rt, SIMD_RegVariant T, const Address& adr);
+  void str(FloatRegister Rt, SIMD_RegVariant T, address dest) = delete;
 
 #define DEFINE_LDR_STR_FUNCS(suffix, elem_kind)              \
+  void ldr##suffix(FloatRegister Rq, address dest) = delete; \
+                                                             \
   void ldr##suffix(FloatRegister Rq, const Address& adr) {   \
     MacroAssembler::ldr(Rq, elem_kind, adr);                 \
   }                                                          \
+                                                             \
+  void str##suffix(FloatRegister Rq, address dest) = delete; \
                                                              \
   void str##suffix(FloatRegister Rq, const Address& adr) {   \
     MacroAssembler::str(Rq, elem_kind, adr);                 \

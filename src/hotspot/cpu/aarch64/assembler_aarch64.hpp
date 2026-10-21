@@ -2364,8 +2364,10 @@ private:
   static short SIMD_Size_in_bytes[];
 
 public:
-#define INSN(NAME, op)                                                  \
-  void NAME(FloatRegister Rt, SIMD_RegVariant T, const Address &adr) {  \
+#define INSN(NAME, op)                                                   \
+  void NAME(FloatRegister Rt, SIMD_RegVariant T, address dest) = delete; \
+                                                                         \
+  void NAME(FloatRegister Rt, SIMD_RegVariant T, const Address &adr) {   \
     ld_st2(as_Register(Rt), adr, (int)T & 3, op + ((T==Q) ? 0b10:0b00), 1); \
   }
 

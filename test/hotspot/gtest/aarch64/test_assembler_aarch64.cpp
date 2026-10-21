@@ -656,6 +656,7 @@ TEST_VM(AssemblerAArch64, decode_encode_klass_not_null) {
   GtestFriendToMacroAssembler::test_decode_encode_klass();
 }
 TEST_VM(AssemblerAArch64, merge_simd_ldst) {
+  FlagSetting fs(AvoidUnalignedAccesses, false);
   BufferBlob* b = BufferBlob::create("aarch64Test", 400);
   CodeBuffer code(b);
   MacroAssembler _masm(&code);
@@ -756,13 +757,13 @@ TEST_VM(AssemblerAArch64, literal_register_load) {
   MacroAssembler _masm(&code);
 
   {
-    __ ldrs(v2, __ pc() + 8);
-    __ ldrq(v0, __ pc() + 4);
-    __ ldrd(v1, __ pc());
+    __ ldrs(v2, InternalAddress(__ pc() + 8));
+    __ ldrq(v0, InternalAddress(__ pc() + 4));
+    __ ldrd(v1, InternalAddress(__ pc()));
     __ nop();
-    __ ldr(v2, __ S, __ pc() + 8);
-    __ ldr(v0, __ Q, __ pc() + 4);
-    __ ldr(v1, __ D, __ pc());
+    __ ldr(v2, __ S, InternalAddress(__ pc() + 8));
+    __ ldr(v0, __ Q, InternalAddress(__ pc() + 4));
+    __ ldr(v1, __ D, InternalAddress(__ pc()));
     __ nop();
     __ ldrs(v2, r0);
     __ ldrq(v0, r1);
