@@ -142,7 +142,7 @@ static void destroy_lib_info(struct ps_prochandle* ph) {
        }
        else if (lib->fd != ph->core->exec_fd) {
          // Prevents double-close in core mode.
-	 // exec_fd would be closed at close_files().
+         // exec_fd would be closed at close_files().
          close(lib->fd);
        }
      }
