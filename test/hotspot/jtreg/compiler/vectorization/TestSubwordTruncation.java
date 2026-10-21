@@ -617,7 +617,8 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.COMPRESS_BITS, ">0" })
+    @IR(counts = { IRNode.COMPRESS_BITS, ">0" }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
+    @IR(counts = { IRNode.COMPRESS_BITS, ">0" }, applyIfCPUFeature = { "svebitperm", "true" })
     @Arguments(setup = "setupIntArray")
     public Object[] testCompressBitsI(int[] in) {
         byte[] res = new byte[SIZE];
@@ -630,7 +631,8 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.EXPAND_BITS, ">0" })
+    @IR(counts = { IRNode.EXPAND_BITS, ">0" }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
+    @IR(counts = { IRNode.EXPAND_BITS, ">0" }, applyIfCPUFeature = { "svebitperm", "true" })
     @Arguments(setup = "setupIntArray")
     public Object[] testExpandBitsI(int[] in) {
         byte[] res = new byte[SIZE];
@@ -643,7 +645,8 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.COMPRESS_BITS, ">0" })
+    @IR(counts = { IRNode.COMPRESS_BITS, ">0" }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
+    @IR(counts = { IRNode.COMPRESS_BITS, ">0" }, applyIfCPUFeature = { "svebitperm", "true" })
     @Arguments(setup = "setupLongArray")
     public Object[] testCompressBitsL(long[] in) {
         byte[] res = new byte[SIZE];
@@ -656,7 +659,8 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.EXPAND_BITS, ">0" })
+    @IR(counts = { IRNode.EXPAND_BITS, ">0" }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
+    @IR(counts = { IRNode.EXPAND_BITS, ">0" }, applyIfCPUFeature = { "svebitperm", "true" })
     @Arguments(setup = "setupLongArray")
     public Object[] testExpandBitsL(long[] in) {
         byte[] res = new byte[SIZE];
