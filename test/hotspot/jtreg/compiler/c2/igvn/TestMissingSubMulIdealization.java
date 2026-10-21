@@ -26,7 +26,7 @@ package compiler.c2.igvn;
 /*
  * @test
  * @bug 8394889
- * @summary C2 IGVN should idealize: (0 - x) * (0 - x) -> x * x
+ * @summary C2 IGVN should idealize: (0 - x) * (0 - y) -> x * y
  * @library /test/lib /
  * @run main/othervm -Xbatch
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
