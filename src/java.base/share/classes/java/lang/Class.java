@@ -102,131 +102,93 @@ import static java.lang.classfile.ClassFile.ACC_ABSTRACT;
 import static java.lang.classfile.ClassFile.ACC_FINAL;
 
 /**
- * Instances of the class {@code Class} represent types in a running
- * Java application. The two kinds of types are {@linkplain #isPrimitive()
- * primitive types and void} and reference types. Reference types consist of
- * {@linkplain #isClassOrInterface() classes and interfaces} and {@linkplain
- * #isArray() array types}. An {@linkplain #isEnum() enum} class and a
- * {@linkplain #isRecord() record} class are kinds of class; an {@linkplain
- * #isAnnotation() annotation} interface is a kind of {@linkplain #isInterface()
- * interface}. Every array also belongs to an array type that is reflected as
- * a {@code Class} object that is shared by all arrays with the same
- * element type and number of dimensions.  The primitive Java types
- * ({@code boolean}, {@code byte}, {@code char}, {@code short}, {@code
- * int}, {@code long}, {@code float}, and {@code double}), and the
- * keyword {@code void} are also represented as {@code Class} objects.
- *
- * <p> {@code Class} has no public constructor. Instead a {@code Class}
- * object is constructed automatically by the Java Virtual Machine when
- * a class is derived from the bytes of a {@code class} file through
- * the invocation of one of the following methods:
+ * Represents all class and interface declarations and all Java run-time types.
+ * Each {@code Class} object uniquely represents a type in the current Java
+ * runtime, which is a {@linkplain #isPrimitive() primitive type, void}, or a
+ * reference type. A reference type is an {@linkplain #isArray() array type},
+ * a class, or an {@linkplain #isInterface() interface}.
+ * <p>
+ * {@linkplain #isClassOrInterface() A class or an interface} is a declaration;
+ * the other run-time types are specified by the Java Platform. All classes and
+ * interfaces, except anonymous classes, have a {@linkplain #getSimpleName()
+ * simple name}, from which derives the {@linkplain #getCanonicalName()
+ * canonical name}. The declarations of classes and interfaces may have
+ * {@linkplain #getModifiers() access} and {@linkplain #getDeclaredAnnotations()
+ * annotation} modifiers. A class may specify a direct {@linkplain
+ * #getAnnotatedSuperclass() superclass}; both a class and an interface may
+ * specify direct {@linkplain #getAnnotatedInterfaces() superinterfaces}.
+ * A class or interface may be {@linkplain #isSealed() sealed}, exhaustively
+ * listing its subtypes, or {@linkplain #getTypeParameters() generic}, declaring
+ * type parameters. Classes and interfaces both declare {@linkplain
+ * #getDeclaredFields() fields} and {@linkplain #getDeclaredMethods() methods};
+ * classes can also declare {@linkplain #getDeclaredConstructors()
+ * constructors}. {@linkplain #isEnum() Enum classes}, {@linkplain #isRecord()
+ * record classes}, and {@linkplain #isAnnotation() annotation interfaces} are
+ * specified by specialized kinds of class and interface declarations that
+ * introduce elements not available in normal class or interface declarations.
+ * A {@linkplain #getEnclosingClass() nested} class or interface is enclosed
+ * within another class or interface: it is a {@linkplain #isMemberClass()
+ * member} class or interface, a {@linkplain #isLocalClass() local} class or
+ * interface, or an {@linkplain #isAnonymousClass() anonymous class}. A compact
+ * compilation unit implicitly declares a class in the unnamed package with an
+ * arbitrary simple name, which becomes its canonical and binary name.
+ * <p>
+ * The Java Virtual Machine loads the declaration of a class or an interface as
+ * a binary, known as a {@code class} file. The {@link java.lang.classfile}
+ * library processes {@code class} files. A {@code class} file always have a
+ * {@linkplain #getName() binary name}, and can recover a Java class or
+ * interface declaration, with differences: some {@linkplain #accessFlags()
+ * access flags} do not have corresponding access modifiers in the Java
+ * language; in particular, some {@code class} files are {@linkplain
+ * #isSynthetic() synthetic}, meaning they do not correspond to Java
+ * declarations. A {@code class} file may declare {@linkplain #getNestHost()
+ * nestmates}, not available in the Java language.
+ * <p>
+ * A {@linkplain #getClassLoader() defining class loader} loads a {@code class}
+ * file, and the JVM creates the corresponding {@code Class} object: a binary
+ * name and a defining class loader identifies a class or interface. The
+ * defining class loader resolves symbolic references in the {@code class} file
+ * and determines the run-time {@linkplain #getPackage() package}, {@linkplain
+ * #getModule() module}, {@linkplain #isNestmateOf nest membership}, {@linkplain
+ * #getProtectionDomain() protection domain}, {@linkplain #getSigners()
+ * signers}, and {@linkplain #desiredAssertionStatus() assertion status} of the
+ * class or interface. At creation, a class or interface may be {@linkplain
+ * #isHidden() hidden} that it gives up the ability to be resolved by external
+ * {@linkplain #describeConstable() symbolic references}, where its name is not
+ * a {@linkplain ClassLoader##binary-name binary name}, for more {@linkplain
+ * MethodHandles.Lookup.ClassOption customization} in its run-time creation.
+ * <p>
+ * Aside from hidden classes and interfaces and array types with hidden
+ * element types, a run-time type can be converted to a {@linkplain
+ * #describeConstable() symbolic reference} for {@code class} files and a
+ * reference type can be discovered by the {@link
+ * #forName(String, boolean, ClassLoader) forName} methods.
+ * The {@code Class} class provides methods to inspect the relation
+ * between run-time types, such as {@linkplain #isAssignableFrom(Class)
+ * subtyping between reference types} and whether an object is {@linkplain
+ * #isInstance(Object) an instance of} a reference type.
+ * <p>
+ * Programmer can obtain a {@code Class} object that represents:
  * <ul>
- * <li> {@link ClassLoader#defineClass(String, byte[], int, int) ClassLoader::defineClass}
- * <li> {@link java.lang.invoke.MethodHandles.Lookup#defineClass(byte[])
- *      java.lang.invoke.MethodHandles.Lookup::defineClass}
- * <li> {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
- *      java.lang.invoke.MethodHandles.Lookup::defineHiddenClass}
+ * <li>a Java type using a <dfn>class literal</dfn> (JLS {@jls 15.8.2}), such as
+ *     {@code String.class} or {@code int[].class}
+ * <li>the class of an object using {@link Object#getClass() Object::getClass},
+ *     such as {@code "".getClass()} or {@code new int[0].getClass()}
+ * <li>a class or interface using one of the {@link #forName(String) forName}
+ *     methods, as if through resolution of a symbolic reference, such as
+ *     {@code Class.forName("java.lang.String")} or {@code Class.forName("[I")}
+ * <li>a {@linkplain Field#getType() field type}, a {@linkplain
+ *     Method#getReturnType() method return type}, the {@linkplain
+ *     Executable#getParameterTypes() type of a method parameter}, and an
+ *     {@linkplain #componentType() array component type}
  * </ul>
- *
- * <p> The methods of class {@code Class} expose many characteristics of a
- * class or interface. Most characteristics are derived from the {@code class}
- * file that the class loader passed to the Java Virtual Machine or
- * from the {@code class} file passed to {@code Lookup::defineClass}
- * or {@code Lookup::defineHiddenClass}.
- * A few characteristics are determined by the class loading environment
- * at run time, such as the module returned by {@link #getModule() getModule()}.
- *
- * <p> The following example uses a {@code Class} object to print the
- * class name of an object:
- *
- * {@snippet lang="java" :
- * void printClassName(Object obj) {
- *     System.out.println("The class of " + obj +
- *                        " is " + obj.getClass().getName());
- * }}
- *
- * It is also possible to get the {@code Class} object for a named
- * class or interface (or for {@code void}) using a <dfn>class literal</dfn>
- * (JLS {@jls 15.8.2}).
- * For example:
- *
- * {@snippet lang="java" :
- * System.out.println("The name of class Foo is: " + Foo.class.getName()); // @highlight substring="Foo.class"
- * }
- *
- * <p> Some methods of class {@code Class} expose whether the declaration of
- * a class or interface in Java source code was <em>enclosed</em> within
- * another declaration. Other methods describe how a class or interface
- * is situated in a <dfn>{@index "nest"}</dfn>. A nest is a set of
- * classes and interfaces, in the same run-time package, that
- * allow mutual access to their {@code private} members.
- * The classes and interfaces are known as <dfn>{@index "nestmates"}</dfn>
- * (JVMS {@jvms 4.7.29}).
- * One nestmate acts as the
- * <dfn>nest host</dfn> (JVMS {@jvms 4.7.28}), and enumerates the other nestmates which
- * belong to the nest; each of them in turn records it as the nest host.
- * The classes and interfaces which belong to a nest, including its host, are
- * determined when
- * {@code class} files are generated, for example, a Java compiler
- * will typically record a top-level class as the host of a nest where the
- * other members are the classes and interfaces whose declarations are
- * enclosed within the top-level class declaration.
- *
- * <p> Unless otherwise specified, methods in this class throw a
+ * <p>
+ * Unless otherwise specified, methods in this class throw a
  * {@link NullPointerException} when they are called with {@code null}
  * or an array that contains {@code null} as an argument.
  *
- * <h2><a id=hiddenClasses>Hidden Classes</a></h2>
- * A class or interface created by the invocation of
- * {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
- * Lookup::defineHiddenClass} is a {@linkplain Class#isHidden() <dfn>hidden</dfn>}
- * {@linkplain #isClassOrInterface() class or interface}.
- * All kinds of class, including enum classes and record classes, may be
- * hidden classes; all kinds of interface, including annotation interfaces,
- * may be hidden interfaces.
+ * @param <T> represents the run-time type modeled by this {@code Class} object
  *
- * The {@linkplain #getName() name of a hidden class or interface} is
- * not a {@linkplain ClassLoader##binary-name binary name},
- * which means the following:
- * <ul>
- * <li>A hidden class or interface cannot be referenced by the constant pools
- *     of other classes and interfaces.
- * <li>A hidden class or interface cannot be described in
- *     {@linkplain java.lang.constant.ConstantDesc <em>nominal form</em>} by
- *     {@link #describeConstable() Class::describeConstable},
- *     {@link ClassDesc#of(String) ClassDesc::of}, or
- *     {@link ClassDesc#ofDescriptor(String) ClassDesc::ofDescriptor}.
- * <li>A hidden class or interface cannot be discovered by {@link #forName Class::forName}
- *     or {@link ClassLoader#loadClass(String, boolean) ClassLoader::loadClass}.
- * </ul>
- *
- * A hidden class or interface is never an array class, but may be
- * the element type of an array. In all other respects, the fact that
- * a class or interface is hidden has no bearing on the characteristics
- * exposed by the methods of class {@code Class}.
- *
- * <h2><a id=implicitClasses>Implicitly Declared Classes</a></h2>
- *
- * Conventionally, a Java compiler, starting from a source file for an
- * implicitly declared class, say {@code HelloWorld.java}, creates a
- * similarly-named {@code class} file, {@code HelloWorld.class}, where
- * the class stored in that {@code class} file is named {@code
- * "HelloWorld"}, matching the base names of the source and {@code
- * class} files.
- *
- * For the {@code Class} object of an implicitly declared class {@code
- * HelloWorld}, the methods to get the {@linkplain #getName name} and
- * {@linkplain #getTypeName type name} return results
- * equal to {@code "HelloWorld"}. The {@linkplain #getSimpleName
- * simple name} of such an implicitly declared class is {@code "HelloWorld"} and
- * the {@linkplain #getCanonicalName canonical name} is {@code "HelloWorld"}.
- *
- * @param <T> the type of the class modeled by this {@code Class}
- * object.  For example, the type of {@code String.class} is {@code
- * Class<String>}.  Use {@code Class<?>} if the class being modeled is
- * unknown.
- *
- * @see     java.lang.ClassLoader#defineClass(byte[], int, int)
  * @since   1.0
  */
 @AOTSafeClassInitializer
@@ -859,8 +821,9 @@ public final class Class<T> implements java.io.Serializable,
      * Determines if this {@code Class} object represents an array type.
      * <p>
      * Array types are {@linkplain ##referencetype reference types}. Every array
-     * type has a unique {@linkplain #componentType() component type}, and
-     * {@linkplain #arrayType() vice versa}.
+     * type has a {@linkplain #componentType() unique component type}, and for
+     * every legal component type, there is a {@linkplain #arrayType() unique
+     * array type}.
      *
      * @return {@code true} if this {@code Class} object represents an array
      *         type; {@code false} otherwise.
@@ -921,8 +884,8 @@ public final class Class<T> implements java.io.Serializable,
     private static final int NON_CLASS_FILE_MODIFIER_MASK = ACC_ABSTRACT | ACC_FINAL;
 
     /**
-     * Determines if this {@code Class} object represents a class or {@linkplain
-     * #isInterface() interface}.
+     * Determines if this {@code Class} object represents a class or an
+     * {@linkplain #isInterface() interface}.
      * <p>
      * Classes and interfaces are {@linkplain ##referencetype reference types}.
      * They are derived from {@code class} files and can declare fields and
@@ -3923,18 +3886,30 @@ public final class Class<T> implements java.io.Serializable,
      * Returns the nest host of the <a href=#nest>nest</a> to which the class
      * or interface represented by this {@code Class} object belongs.
      * Every class and interface belongs to exactly one nest.
-     *
+     * <p>
+     * A <dfn>{@index "nest"}</dfn> is a set of classes and interfaces, in the
+     * same run-time {@linkplain #getPackage() package}, that allow mutual
+     * access to their {@code private} members. The classes and interfaces are
+     * known as <dfn>{@index "nestmates"}</dfn>. One nestmate acts as the
+     * <dfn>nest host</dfn> (JVMS {@jvms 4.7.28}), and enumerates the other
+     * nestmates which belong to the nest; each of them in turn records it as
+     * the nest host. The classes and interfaces which belong to a nest,
+     * including its host, are determined by the {@code class} file; for
+     * example, a Java compiler will typically record a top-level class as the
+     * host of a nest where the other members are the classes and interfaces
+     * whose declarations are enclosed within the top-level class declaration.
+     * <p>
      * If the nest host of this class or interface has previously
      * been determined, then this method returns the nest host.
      * If the nest host of this class or interface has
      * not previously been determined, then this method determines the nest
      * host using the algorithm of JVMS 5.4.4, and returns it.
-     *
+     * <p>
      * Often, a class or interface belongs to a nest consisting only of itself,
      * in which case this method returns {@code this} to indicate that the class
      * or interface is the nest host.
-     *
-     * <p>If this {@code Class} object represents a primitive type, an array type,
+     * <p>
+     * If this {@code Class} object represents a primitive type, an array type,
      * or {@code void}, then this method returns {@code this},
      * indicating that the represented entity belongs to the nest consisting only of
      * itself, and is the nest host.
@@ -3958,6 +3933,7 @@ public final class Class<T> implements java.io.Serializable,
      * class or interface represented by this {@code Class} object.
      * Two classes or interfaces are nestmates
      * if they have the same {@linkplain #getNestHost() nest host}.
+
      *
      * @param c the class to check
      * @return {@code true} if this class and {@code c} are members of
@@ -4117,8 +4093,8 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
-     * Returns a {@code Class} for an array type whose component type
-     * is described by this {@linkplain Class}.
+     * Returns the {@code Class} representing the array type whose component
+     * type is described by this {@code Class}.
      *
      * @throws UnsupportedOperationException if this component type is {@linkplain
      *         Void#TYPE void} or if the number of dimensions of the resulting array
@@ -4150,15 +4126,21 @@ public final class Class<T> implements java.io.Serializable,
         Class<?> c = isArray() ? elementType() : this;
         return c.isHidden() ? Optional.empty()
                             : Optional.of(ConstantUtils.classDesc(this));
-   }
+    }
 
     /**
-     * {@return {@code true} if and only if the underlying class is a hidden
-     * {@linkplain #isClassOrInterface() class or interface}}
+     * {@return {@code true} if and only if this {@code Class} object represents
+     * a hidden {@linkplain #isClassOrInterface() class or interface}}
+     * The name of a hidden class or interface is not a {@linkplain
+     * ClassLoader##binary-name binary name}, so it cannot appear in symbolic
+     * references of other {@code class} files, field types, or method types,
+     * and cannot be discovered by a class loader or {@code forName}.
+     * Same for any array type with a hidden class or interface as its element
+     * type.
      *
      * @since 15
      * @see MethodHandles.Lookup#defineHiddenClass
-     * @see Class##hiddenClasses Hidden Classes
+     * @see MethodHandles.Lookup#defineHiddenClassWithClassData
      */
     @IntrinsicCandidate
     public native boolean isHidden();
