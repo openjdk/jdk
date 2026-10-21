@@ -178,9 +178,9 @@ public:
   void make_affiliated_maybe();
   void make_regular_bypass();
   void make_humongous_start();
-  void make_humongous_cont(ShenandoahHeapRegion* humongous_start);
+  void make_humongous_cont(uint32_t humongous_start_index);
   void make_humongous_start_bypass(ShenandoahAffiliation affiliation);
-  void make_humongous_cont_bypass(ShenandoahAffiliation affiliation, ShenandoahHeapRegion* humongous_start);
+  void make_humongous_cont_bypass(ShenandoahAffiliation affiliation, uint32_t humongous_start_index);
   void make_pinned();
   void make_unpinned();
   void make_cset();
@@ -283,7 +283,7 @@ private:
 
   // If this is a humongous region, points to the corresponding humongous start region.
   // If this is not a humongous region, this don't care value should never be fetched.
-  ShenandoahHeapRegion* _humongous_start_region;
+  uint32_t _humongous_start_region_index;
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
@@ -472,7 +472,7 @@ public:
   // Find humongous start region that this region belongs to
   ShenandoahHeapRegion* humongous_start_region() const {
     assert(is_humongous(), "Must be part of a humongous object");
-    return _humongous_start_region;
+    return ShenandoahHeap::heap()->get_region(_humongous_start_region_index);
   }
 
   HeapWord* top() const         { return _top;     }

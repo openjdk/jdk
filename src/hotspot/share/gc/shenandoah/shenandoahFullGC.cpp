@@ -1042,15 +1042,12 @@ void ShenandoahFullGC::compact_humongous_objects() {
           r->make_regular_bypass();
           r->set_top(r->bottom());
         }
-
-        ShenandoahHeapRegion* the_start_region;
         for (size_t c = new_start; c <= new_end; c++) {
           ShenandoahHeapRegion* r = heap->get_region(c);
           if (c == new_start) {
             r->make_humongous_start_bypass(original_affiliation);
-            the_start_region = r;
           } else {
-            r->make_humongous_cont_bypass(original_affiliation, the_start_region);
+            r->make_humongous_cont_bypass(original_affiliation, new_start);
           }
 
           // Trailing region may be non-full, record the remainder there
