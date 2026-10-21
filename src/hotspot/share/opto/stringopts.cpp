@@ -49,7 +49,7 @@ class StringConcat : public ResourceObj {
   Node*               _arguments;      // The list of arguments to be concatenated
   GrowableArray<int>  _mode;           // into a String along with a mode flag
                                        // indicating how to treat the value.
-  Node_List<const Node> _constructors;   // List of constructors (many in case of stacked concat)
+  Node_List<const Node> _constructors; // List of constructors (many in case of stacked concat)
   Node_List<Node>     _control;        // List of control nodes that will be deleted
   Node_List<CallStaticJavaNode> _uncommon_traps;  // Uncommon traps that needs to be rewritten
                                                   // to restart at the initial JVMState.
