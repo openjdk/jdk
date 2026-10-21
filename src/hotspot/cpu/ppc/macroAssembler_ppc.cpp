@@ -204,18 +204,12 @@ address MacroAssembler::get_address_of_calculate_address_from_global_toc_at(addr
 #ifdef _LP64
 bool MacroAssembler::_compressed_oops_fit_in_31_bits = false;
 
-static bool compute_compressed_oops_fit_in_31_bits() {
-  // This is the encoding base and points before the noaccess prefix.
-  const uintptr_t heap_base = (uintptr_t)CompressedOops::base();
-  const uintptr_t heap_end = (uintptr_t)CompressedOops::end();
-  assert(heap_end > heap_base, "compressed oop range must not be empty");
-  const uintptr_t heap_range = heap_end - heap_base;
-  const jlong max_encoded_oop = (jlong)((heap_range - 1) >> CompressedOops::shift());
-  return Assembler::is_uimm(max_encoded_oop, 31);
-}
-
 void MacroAssembler::initialize_compressed_oops_fit_in_31_bits() {
-  _compressed_oops_fit_in_31_bits = UseCompressedOops && compute_compressed_oops_fit_in_31_bits();
+  if (UseCompressedOops) {
+    address max_oop = align_down(CompressedOops::end() - 1, MinObjAlignmentInBytes);
+    narrowOop max_encoded_oop = CompressedOops::encode(cast_to_oop(max_oop));
+    _compressed_oops_fit_in_31_bits = Assembler::is_uimm((jlong)max_encoded_oop, 31);
+  }
 }
 
 // Patch compressed oop constants.

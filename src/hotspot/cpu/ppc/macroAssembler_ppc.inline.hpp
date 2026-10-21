@@ -136,10 +136,6 @@ inline bool MacroAssembler::is_calculate_address_from_global_toc_at(address a, a
 }
 
 #ifdef _LP64
-inline bool MacroAssembler::compressed_oops_fit_in_31_bits() {
-  return _compressed_oops_fit_in_31_bits;
-}
-
 // Detect narrow oop constants.
 inline bool MacroAssembler::is_set_narrow_oop(address a, address lower_bound) {
   const address inst2_addr = a;
