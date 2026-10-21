@@ -1919,15 +1919,14 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
       // This output goes directly to the tty, not the compiler log.
       // To enable tools to match it up with the compilation activity,
       // be sure to tag this tty output with the compile ID.
+      bool aot_comp = C->is_aot_compile();
+      bool aot_preload_comp = C->for_aot_preload();
       if (xtty != nullptr) {
-        CompileTask* task = C->env()->task();
-        bool aot_comp = task->is_aot_load_or_compile();
-        bool aot_preload_comp = task->is_aot_preload_or_compile();
         xtty->head("opto_assembly compile_id='%d'%s", C->compile_id(),
                    C->is_osr_compilation() ? " compile_kind='osr'" :
                    (aot_preload_comp ? " compile_kind='AP'" : (aot_comp ? " compile_kind='A'" : "")));
       }
-      const char* is_aot = C->env()->is_aot_compile() ? (C->for_aot_preload() ? "(AP) " : "(A) -") : "-----";
+      const char* is_aot = aot_comp ? (aot_preload_comp ? "(AP) " : "(A) -") : "-----";
       if (C->method() != nullptr) {
         tty->print_cr("----------------------- MetaData before Compile_id = %d %s-------------------", C->compile_id(), is_aot);
         tty->print_raw(method_metadata_str.freeze());

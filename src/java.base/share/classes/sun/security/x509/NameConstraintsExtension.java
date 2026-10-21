@@ -449,7 +449,14 @@ public class NameConstraintsExtension extends Extension
                     }
                 } else {
                     if (!hasNameType(altNames, GeneralNameInterface.NAME_DNS)) {
-                        altNames.add(new GeneralName(new DNSName(cn)));
+                        // Replacing wildcard character '*' with 'z' to check
+                        // the domain name template validity.
+                        new DNSName(cn.replace('*', 'z'));
+                        // If the above line doesn't throw, use Der constructor
+                        // which performs no format checks: we want to accept
+                        // DNS name with any wildcard here.
+                        altNames.add(new GeneralName(new DNSName(new DerValue(
+                                DerValue.tag_IA5String, cn))));
                     }
                 }
             } catch (IOException ioe) {

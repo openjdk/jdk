@@ -2594,10 +2594,14 @@ class StubGenerator: public StubCodeGenerator {
     __ bne(CR5, L_failed);
 
     // Check for flat value type array -> return -1
-    __ test_flat_array_oop(src, temp, L_failed);
+    if (UseArrayFlattening) {
+      __ test_flat_array_oop(src, temp, L_failed);
+    }
 
     // Check for null-free (non-flat) value type array -> handle as object array
-    __ test_null_free_array_oop(src, temp, L_objArray);
+    if (Arguments::is_valhalla_enabled()) {
+      __ test_null_free_array_oop(src, temp, L_objArray);
+    }
 
     __ cmpwi(CR6, lh, Klass::_lh_neutral_value); // if (!src->is_Array()) return -1;
     __ bge(CR6, L_failed);
@@ -2694,6 +2698,17 @@ class StubGenerator: public StubCodeGenerator {
       __ lwz(temp, lh_offset, dst_klass);
       __ cmpw(CR0, lh, temp);
       __ bne(CR0, L_failed);
+
+#ifdef ASSERT
+      if (Arguments::is_valhalla_enabled()) {
+        BLOCK_COMMENT("assert not null-free array {");
+        Label L;
+        __ test_non_null_free_array_oop(dst, temp, L);
+        __ stop("unexpected null-free array");
+        __ bind(L);
+        BLOCK_COMMENT("} assert not null-free array");
+      }
+#endif
 
       // It is safe to examine both src.length and dst.length.
       arraycopy_range_checks(src, src_pos, dst, dst_pos, length,

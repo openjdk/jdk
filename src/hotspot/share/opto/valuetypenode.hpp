@@ -40,6 +40,7 @@ class ValueTypeNode : public TypeNode {
 private:
   ValueTypeNode(ciValueKlass* vk, Node* oop, bool null_free)
       : TypeNode(TypeInstPtr::make(null_free ? TypePtr::NotNull : TypePtr::BotPTR, vk), Values + vk->nof_declared_nonstatic_fields()) {
+    assert(Arguments::is_valhalla_enabled(), "should not be used without value types");
     init_class_id(Class_ValueType);
     init_req(Oop, oop);
     Compile::current()->add_value_type(this);
@@ -208,6 +209,7 @@ public:
 private:
   LoadFlatNode(ciValueKlass* vk, const TypeTuple* type, bool null_free, DecoratorSet decorators)
     : SafePointNode(TypeFunc::Parms + 2, nullptr, TypePtr::BOTTOM), _vk(vk), _type(type), _null_free(null_free), _decorators(decorators) {
+    assert(UseArrayFlattening || UseFieldFlattening, "should not be used without flattening enabled");
     init_class_id(Class_LoadFlat);
     Compile::current()->add_flat_access(this);
   }
@@ -253,6 +255,7 @@ public:
 private:
   StoreFlatNode(bool null_free, DecoratorSet decorators)
     : SafePointNode(TypeFunc::Parms + 3, nullptr, TypePtr::BOTTOM), _null_free(null_free), _decorators(decorators) {
+    assert(UseArrayFlattening || UseFieldFlattening, "should not be used without flattening enabled");
     init_class_id(Class_StoreFlat);
     Compile::current()->add_flat_access(this);
   }

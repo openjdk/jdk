@@ -24,9 +24,9 @@
 
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -165,7 +165,7 @@ void AOTConstantPoolResolver::preresolve_string_cp_entries(InstanceKlass* ik, TR
     if (LambdaFormInvokers::may_be_regenerated_class(ik->name())) {
       eager_resolve = true;
     }
-    if (ik->is_hidden() && HeapShared::is_archivable_hidden_klass(ik)) {
+    if (ik->is_hidden() && AOTHeap::is_archivable_hidden_klass(ik)) {
       eager_resolve = true;
     }
 
