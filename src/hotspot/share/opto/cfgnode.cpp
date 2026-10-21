@@ -3373,7 +3373,7 @@ bool PhiNode::can_be_replaced_by(PhaseGVN* phase, const PhiNode* other) const {
 Node* PhiNode::clone_through_phi(PhiNode* root_phi, const Type* t, uint c, PhaseIterGVN* igvn) {
   Node_Stack<PhiNode> stack(1);
   VectorSet visited;
-  Node_List<PhiNode>  node_map;
+  Node_List<PhiNode> node_map;
 
   stack.push(root_phi, 1); // ignore control
   visited.set(root_phi->_idx);
@@ -3424,7 +3424,7 @@ Node* PhiNode::merge_through_phi(PhiNode* root_phi, PhaseIterGVN* igvn) {
 
   VectorBoxNode* cached_vbox = nullptr;
   while (stack.is_nonempty()) {
-    const Node* n   = stack.node();
+    const Node* n = stack.node();
     uint  idx = stack.index();
     if (idx < n->req()) {
       stack.set_index(idx + 1);
