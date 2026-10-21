@@ -752,9 +752,6 @@ const RegMask &MachReturnNode::in_RegMask( uint idx ) const {
   return _in_rms[idx];
 }
 
-//=============================================================================
-const Type *MachSafePointNode::bottom_type() const {  return TypeTuple::MEMBAR; }
-
 //------------------------------Registers--------------------------------------
 const RegMask &MachSafePointNode::in_RegMask( uint idx ) const {
   // Values in the domain use the users calling convention, embodied in the

@@ -42,6 +42,7 @@ import java.util.Date;
  * @run main/othervm Chunghwa before policyOff valid
  */
 
+
 public class Chunghwa {
 
     private static final String CERT_PATH = "chains" + File.separator + "chunghwa";
@@ -50,11 +51,17 @@ public class Chunghwa {
     // named "<root>-chain.pem".
     private static final String ROOT_TO_TEST = "chunghwaepkirootca";
 
-    // Date after the restrictions take effect
+    // Date after the restrictions took effect when distrust was first announced
     private static final ZonedDateTime DISTRUST_DATE =
             LocalDate.of(2026, 03, 18).atStartOfDay(ZoneOffset.UTC);
+    private static final LocalDate APRIL_19_2027 = LocalDate.of(2027, 04, 19);
+    private static final LocalDate TODAY = LocalDate.now();
 
     public static void main(String[] args) throws Exception {
+
+        if (args[1].equals("policyOn") && TODAY.isAfter(APRIL_19_2027)) {
+            args[2] = "invalid";
+        }
 
         Distrust distrust = new Distrust(args);
 

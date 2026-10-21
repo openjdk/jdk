@@ -120,7 +120,8 @@ ZDriverMinor::ZDriverMinor()
     _port(),
     _gc_timer(),
     _jfr_tracer(),
-    _used_at_start() {
+    _used_at_start(),
+    _max_at_start() {
   ZDriver::set_minor(this);
   set_name("ZDriverMinor");
   create_and_start();
@@ -162,6 +163,14 @@ void ZDriverMinor::set_used_at_start(size_t used) {
 
 size_t ZDriverMinor::used_at_start() const {
   return _used_at_start;
+}
+
+void ZDriverMinor::set_max_at_start(size_t max) {
+  _max_at_start = max;
+}
+
+size_t ZDriverMinor::max_at_start() const {
+  return _max_at_start;
 }
 
 class ZDriverScopeMinor : public StackObj {
@@ -321,7 +330,8 @@ ZDriverMajor::ZDriverMajor()
     _port(),
     _gc_timer(),
     _jfr_tracer(),
-    _used_at_start() {
+    _used_at_start(),
+    _max_at_start() {
   ZDriver::set_major(this);
   set_name("ZDriverMajor");
   create_and_start();
@@ -378,6 +388,14 @@ void ZDriverMajor::set_used_at_start(size_t used) {
 
 size_t ZDriverMajor::used_at_start() const {
   return _used_at_start;
+}
+
+void ZDriverMajor::set_max_at_start(size_t max) {
+  _max_at_start = max;
+}
+
+size_t ZDriverMajor::max_at_start() const {
+  return _max_at_start;
 }
 
 class ZDriverScopeMajor : public StackObj {
