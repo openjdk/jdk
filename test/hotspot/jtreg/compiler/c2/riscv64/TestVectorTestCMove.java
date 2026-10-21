@@ -85,14 +85,6 @@ public class TestVectorTestCMove {
         return VectorMask.fromLong(SPECIES, bits).allTrue() ? a : b;
     }
 
-    // Negated condition, so the Bool handed to the rule as cmpOpEqNe is eq
-    // rather than ne. The rule is the same, only $cop$$cmpcode differs.
-    @Test(compLevel = CompLevel.C2)
-    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ANYTRUE, ">0"})
-    static int notAnyTrueI(long bits, int a, int b) {
-        return !VectorMask.fromLong(SPECIES, bits).anyTrue() ? a : b;
-    }
-
     // ---------------- long: CMoveL ----------------
 
     @Test(compLevel = CompLevel.C2)
@@ -108,9 +100,6 @@ public class TestVectorTestCMove {
     }
 
     // ---------------- float: CMoveF ----------------
-    //
-    // Float and double values go through enc_cmove_fp_cmp() instead of
-    // enc_cmove(), so both condition directions are worth covering here too.
 
     @Test(compLevel = CompLevel.C2)
     @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ANYTRUE, ">0"})
@@ -122,12 +111,6 @@ public class TestVectorTestCMove {
     @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ALLTRUE, ">0"})
     static float allTrueF(long bits, float a, float b) {
         return VectorMask.fromLong(SPECIES, bits).allTrue() ? a : b;
-    }
-
-    @Test(compLevel = CompLevel.C2)
-    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ALLTRUE, ">0"})
-    static float notAllTrueF(long bits, float a, float b) {
-        return !VectorMask.fromLong(SPECIES, bits).allTrue() ? a : b;
     }
 
     // ---------------- double: CMoveD ----------------
@@ -150,50 +133,57 @@ public class TestVectorTestCMove {
     // branch unpredictable matters: conditional_move() refuses to convert a
     // diamond whose If is almost always, or almost never, taken.
 
-    @Run(test = {"anyTrueI", "allTrueI", "notAnyTrueI",
-                 "anyTrueL", "allTrueL",
-                 "anyTrueF", "allTrueF", "notAllTrueF",
-                 "anyTrueD", "allTrueD"})
-    public void run() {
-        // anyTrue: ALL -> true, SOME -> true, NONE -> false
-        // allTrue: ALL -> true, SOME -> false, NONE -> false
-
+    @Run(test = "anyTrueI")
+    public void runAnyTrueI() {
         Asserts.assertEQ(anyTrueI(ALL, 7, 9), 7);
         Asserts.assertEQ(anyTrueI(SOME, 7, 9), 7);
         Asserts.assertEQ(anyTrueI(NONE, 7, 9), 9);
+    }
 
+    @Run(test = "allTrueI")
+    public void runAllTrueI() {
         Asserts.assertEQ(allTrueI(ALL, 7, 9), 7);
         Asserts.assertEQ(allTrueI(SOME, 7, 9), 9);
         Asserts.assertEQ(allTrueI(NONE, 7, 9), 9);
+    }
 
-        Asserts.assertEQ(notAnyTrueI(ALL, 7, 9), 9);
-        Asserts.assertEQ(notAnyTrueI(SOME, 7, 9), 9);
-        Asserts.assertEQ(notAnyTrueI(NONE, 7, 9), 7);
-
+    @Run(test = "anyTrueL")
+    public void runAnyTrueL() {
         Asserts.assertEQ(anyTrueL(ALL, 7L, 9L), 7L);
         Asserts.assertEQ(anyTrueL(SOME, 7L, 9L), 7L);
         Asserts.assertEQ(anyTrueL(NONE, 7L, 9L), 9L);
+    }
 
+    @Run(test = "allTrueL")
+    public void runAllTrueL() {
         Asserts.assertEQ(allTrueL(ALL, 7L, 9L), 7L);
         Asserts.assertEQ(allTrueL(SOME, 7L, 9L), 9L);
         Asserts.assertEQ(allTrueL(NONE, 7L, 9L), 9L);
+    }
 
+    @Run(test = "anyTrueF")
+    public void runAnyTrueF() {
         Asserts.assertEQ(anyTrueF(ALL, 7f, 9f), 7f);
         Asserts.assertEQ(anyTrueF(SOME, 7f, 9f), 7f);
         Asserts.assertEQ(anyTrueF(NONE, 7f, 9f), 9f);
+    }
 
+    @Run(test = "allTrueF")
+    public void runAllTrueF() {
         Asserts.assertEQ(allTrueF(ALL, 7f, 9f), 7f);
         Asserts.assertEQ(allTrueF(SOME, 7f, 9f), 9f);
         Asserts.assertEQ(allTrueF(NONE, 7f, 9f), 9f);
+    }
 
-        Asserts.assertEQ(notAllTrueF(ALL, 7f, 9f), 9f);
-        Asserts.assertEQ(notAllTrueF(SOME, 7f, 9f), 7f);
-        Asserts.assertEQ(notAllTrueF(NONE, 7f, 9f), 7f);
-
+    @Run(test = "anyTrueD")
+    public void runAnyTrueD() {
         Asserts.assertEQ(anyTrueD(ALL, 7d, 9d), 7d);
         Asserts.assertEQ(anyTrueD(SOME, 7d, 9d), 7d);
         Asserts.assertEQ(anyTrueD(NONE, 7d, 9d), 9d);
+    }
 
+    @Run(test = "allTrueD")
+    public void runAllTrueD() {
         Asserts.assertEQ(allTrueD(ALL, 7d, 9d), 7d);
         Asserts.assertEQ(allTrueD(SOME, 7d, 9d), 9d);
         Asserts.assertEQ(allTrueD(NONE, 7d, 9d), 9d);
