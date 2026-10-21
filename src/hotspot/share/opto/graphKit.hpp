@@ -790,6 +790,7 @@ class GraphKit : public Phase {
 
   public:
   // Helper functions for fast/slow path codes
+  Node* opt_iff(Node* region, Node* iff);
   Node* make_runtime_call(int flags,
                           const TypeFunc* call_type, address call_addr,
                           const char* call_name,
