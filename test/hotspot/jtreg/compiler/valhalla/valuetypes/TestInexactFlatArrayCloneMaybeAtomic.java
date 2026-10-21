@@ -62,6 +62,8 @@ public class TestInexactFlatArrayCloneMaybeAtomic {
 
     static MyValue[] test(boolean atomic) {
         MyValue[] source = atomic ? ATOMIC : NON_ATOMIC;
+        // Clone a possibly flat array that is either atomic or non-atomic.
+        // Hence, the layout of the array element is not exact.
         return source.clone();
     }
 
@@ -70,8 +72,20 @@ public class TestInexactFlatArrayCloneMaybeAtomic {
             boolean atomic = (i & 1) == 0;
             boolean flat = ValueClass.isFlatArray(atomic ? ATOMIC : NON_ATOMIC);
             MyValue[] result = test(atomic);
-            if (result[0] != VALUE || ValueClass.isAtomicArray(result) != atomic || !ValueClass.isNullRestrictedArray(result) || ValueClass.isFlatArray(result) != flat) {
-                throw new AssertionError("Unexpected clone");
+
+            // Some additional checks just to ensure the cloned array has
+            // the expected properties.
+            if (result[0] != VALUE) {
+                throw new AssertionError("Unexpected clone element value");
+            }
+            if (ValueClass.isAtomicArray(result) != atomic) {
+                throw new AssertionError("Unexpected clone atomic property");
+            }
+            if (!ValueClass.isNullRestrictedArray(result)) {
+                throw new AssertionError("Unexpected clone nullable property");
+            }
+            if (ValueClass.isFlatArray(result) != flat) {
+                throw new AssertionError("Unexpected clone flat property");
             }
         }
     }
