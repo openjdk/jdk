@@ -75,6 +75,11 @@ static void CImage_CopyNSImageIntoArray
 
 static NSBitmapImageRep* CImage_CreateImageRep(JNIEnv *env, jintArray buffer, jint width, jint height)
 {
+    jlong bufferLength = (*env)->GetArrayLength(env, buffer);
+    if (((jlong)width * height) > bufferLength) {
+        return 0L;
+    }
+
     NSBitmapImageRep* imageRep = [[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL
                                                                           pixelsWide:width
                                                                           pixelsHigh:height

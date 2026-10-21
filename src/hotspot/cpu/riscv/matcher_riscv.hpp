@@ -129,11 +129,6 @@
     return UseRVV;
   }
 
-  // Does target support predicated operation emulation.
-  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
-    return false;
-  }
-
   // Does the CPU supports vector variable rotate instructions?
   static bool supports_vector_variable_rotates(void) {
     return UseZvbb;
