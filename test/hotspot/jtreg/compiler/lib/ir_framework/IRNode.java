@@ -2497,6 +2497,18 @@ public class IRNode {
         machOnlyNameRegex(RISCV_LOAD_N2P_UNSCALED, "loadN2P_unscaled");
     }
 
+    // Conditional move whose condition is a VectorTest. One rule per value type,
+    // so match any of cmov{I,L,F,D,P,N}_vtest_<predicate>_reg.
+    public static final String RISCV_CMOVE_VTEST_ANYTRUE = PREFIX + "RISCV_CMOVE_VTEST_ANYTRUE" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_CMOVE_VTEST_ANYTRUE, "cmov[A-Z]_vtest_anytrue_reg");
+    }
+
+    public static final String RISCV_CMOVE_VTEST_ALLTRUE = PREFIX + "RISCV_CMOVE_VTEST_ALLTRUE" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_CMOVE_VTEST_ALLTRUE, "cmov[A-Z]_vtest_alltrue_reg");
+    }
+
     public static final String RISCV_VAND_NOTI_VX_MASKED = PREFIX + "RISCV_VAND_NOTI_VX_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(RISCV_VAND_NOTI_VX_MASKED, "vand_notI_vx_masked");
