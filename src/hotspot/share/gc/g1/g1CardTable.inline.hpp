@@ -63,7 +63,7 @@ inline size_t G1CardTable::mark_clean_range_as_from_remset(size_t start_card_ind
       // There is a mix of cards in there. Tread slowly.
       CardValue* cur = (CardValue*)cur_word;
       for (size_t i = 0; i < sizeof(size_t); i++) {
-        if (mark_clean_as_from_remset(cur[i])) {
+        if (mark_clean_as_from_remset(&cur[i])) {
           result++;
         }
       }
