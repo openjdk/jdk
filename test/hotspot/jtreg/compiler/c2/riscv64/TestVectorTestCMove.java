@@ -48,7 +48,6 @@ import compiler.lib.ir_framework.CompLevel;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Run;
-import compiler.lib.ir_framework.Scenario;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
 
@@ -66,24 +65,9 @@ public class TestVectorTestCMove {
     private static final long SOME = 1L;  // only lane 0 set  -> anyTrue
     private static final long NONE = 0L;  // no lane set      -> neither
 
-    private static final Object A = new Object();
-    private static final Object B = new Object();
-
-    // Reading the values out of oop fields keeps them narrow under
-    // UseCompressedOops, which is what produces a CMoveN rather than a CMoveP.
-    static class Holder {
-        Object f1 = A;
-        Object f2 = B;
-    }
-
-    private static final Holder H = new Holder();
-
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
         framework.addFlags("--add-modules=jdk.incubator.vector");
-        framework.addScenarios(
-            new Scenario(0, "-XX:+UseCompressedOops"),
-            new Scenario(1, "-XX:-UseCompressedOops"));
         framework.start();
     }
 
@@ -160,34 +144,6 @@ public class TestVectorTestCMove {
         return VectorMask.fromLong(SPECIES, bits).allTrue() ? a : b;
     }
 
-    // ---------------- Object: CMoveP / CMoveN ----------------
-    //
-    // No @IR rules: Matcher::match_rule_supported() returns false for
-    // Op_CMoveP / Op_CMoveN on RISC-V, so these stay branches for now. The
-    // CompLevel.C2 requirement still makes them a tripwire -- once those
-    // opcodes are enabled (JDK-8391910) they start producing a CMove with a
-    // VectorTest condition, and the matching rules have to exist by then.
-
-    @Test(compLevel = CompLevel.C2)
-    static Object anyTrueP(long bits, Object a, Object b) {
-        return VectorMask.fromLong(SPECIES, bits).anyTrue() ? a : b;
-    }
-
-    @Test(compLevel = CompLevel.C2)
-    static Object allTrueP(long bits, Object a, Object b) {
-        return VectorMask.fromLong(SPECIES, bits).allTrue() ? a : b;
-    }
-
-    @Test(compLevel = CompLevel.C2)
-    static Object anyTrueN(long bits, Holder h) {
-        return VectorMask.fromLong(SPECIES, bits).anyTrue() ? h.f1 : h.f2;
-    }
-
-    @Test(compLevel = CompLevel.C2)
-    static Object allTrueN(long bits, Holder h) {
-        return VectorMask.fromLong(SPECIES, bits).allTrue() ? h.f1 : h.f2;
-    }
-
     // ---------------- driver ----------------
     //
     // Every test sees all three mask patterns on each invocation. Keeping the
@@ -197,9 +153,7 @@ public class TestVectorTestCMove {
     @Run(test = {"anyTrueI", "allTrueI", "notAnyTrueI",
                  "anyTrueL", "allTrueL",
                  "anyTrueF", "allTrueF", "notAllTrueF",
-                 "anyTrueD", "allTrueD",
-                 "anyTrueP", "allTrueP",
-                 "anyTrueN", "allTrueN"})
+                 "anyTrueD", "allTrueD"})
     public void run() {
         // anyTrue: ALL -> true, SOME -> true, NONE -> false
         // allTrue: ALL -> true, SOME -> false, NONE -> false
@@ -243,21 +197,5 @@ public class TestVectorTestCMove {
         Asserts.assertEQ(allTrueD(ALL, 7d, 9d), 7d);
         Asserts.assertEQ(allTrueD(SOME, 7d, 9d), 9d);
         Asserts.assertEQ(allTrueD(NONE, 7d, 9d), 9d);
-
-        Asserts.assertSame(anyTrueP(ALL, A, B), A);
-        Asserts.assertSame(anyTrueP(SOME, A, B), A);
-        Asserts.assertSame(anyTrueP(NONE, A, B), B);
-
-        Asserts.assertSame(allTrueP(ALL, A, B), A);
-        Asserts.assertSame(allTrueP(SOME, A, B), B);
-        Asserts.assertSame(allTrueP(NONE, A, B), B);
-
-        Asserts.assertSame(anyTrueN(ALL, H), A);
-        Asserts.assertSame(anyTrueN(SOME, H), A);
-        Asserts.assertSame(anyTrueN(NONE, H), B);
-
-        Asserts.assertSame(allTrueN(ALL, H), A);
-        Asserts.assertSame(allTrueN(SOME, H), B);
-        Asserts.assertSame(allTrueN(NONE, H), B);
     }
 }

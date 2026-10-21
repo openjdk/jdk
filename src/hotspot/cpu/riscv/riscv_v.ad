@@ -6230,68 +6230,6 @@ instruct cmovL_vtest_alltrue_reg(iRegLNoSp dst, iRegL src, cmpOpEqNe cop, vRegMa
   ins_pipe(pipe_slow);
 %}
 
-instruct cmovP_vtest_anytrue_reg(iRegPNoSp dst, iRegP src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
-  predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::ne);
-  match(Set dst (CMoveP (Binary cop (VectorTest op1 op2)) (Binary dst src)));
-  format %{ "CMoveP $dst, (vectortest $cop $op1 $op2), $dst, $src\t#@cmovP_vtest_anytrue_reg" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this, $op1);
-    uint vector_length = Matcher::vector_length(this, $op1);
-    __ vsetvli_helper(bt, vector_length);
-    __ vcpop_m(t0, as_VectorRegister($op1$$reg));
-    __ enc_cmove($cop$$cmpcode, t0, zr,
-                 as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct cmovP_vtest_alltrue_reg(iRegPNoSp dst, iRegP src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
-  predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::overflow);
-  match(Set dst (CMoveP (Binary cop (VectorTest op1 op2)) (Binary dst src)));
-  format %{ "CMoveP $dst, (vectortest $cop $op1 $op2), $dst, $src\t#@cmovP_vtest_alltrue_reg" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this, $op1);
-    uint vector_length = Matcher::vector_length(this, $op1);
-    __ vsetvli_helper(bt, vector_length);
-    __ vcpop_m(t0, as_VectorRegister($op1$$reg));
-    __ sub(t0, t0, vector_length);
-    __ enc_cmove($cop$$cmpcode, t0, zr,
-                 as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct cmovN_vtest_anytrue_reg(iRegNNoSp dst, iRegN src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
-  predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::ne);
-  match(Set dst (CMoveN (Binary cop (VectorTest op1 op2)) (Binary dst src)));
-  format %{ "CMoveN $dst, (vectortest $cop $op1 $op2), $dst, $src\t#@cmovN_vtest_anytrue_reg" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this, $op1);
-    uint vector_length = Matcher::vector_length(this, $op1);
-    __ vsetvli_helper(bt, vector_length);
-    __ vcpop_m(t0, as_VectorRegister($op1$$reg));
-    __ enc_cmove($cop$$cmpcode, t0, zr,
-                 as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct cmovN_vtest_alltrue_reg(iRegNNoSp dst, iRegN src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
-  predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::overflow);
-  match(Set dst (CMoveN (Binary cop (VectorTest op1 op2)) (Binary dst src)));
-  format %{ "CMoveN $dst, (vectortest $cop $op1 $op2), $dst, $src\t#@cmovN_vtest_alltrue_reg" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this, $op1);
-    uint vector_length = Matcher::vector_length(this, $op1);
-    __ vsetvli_helper(bt, vector_length);
-    __ vcpop_m(t0, as_VectorRegister($op1$$reg));
-    __ sub(t0, t0, vector_length);
-    __ enc_cmove($cop$$cmpcode, t0, zr,
-                 as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct cmovF_vtest_anytrue_reg(fRegF dst, fRegF src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
   predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::ne);
   match(Set dst (CMoveF (Binary cop (VectorTest op1 op2)) (Binary dst src)));
