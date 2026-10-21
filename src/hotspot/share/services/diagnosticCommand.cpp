@@ -892,16 +892,18 @@ EventLogDCmd::EventLogDCmd(outputStream* output, bool heap) :
 }
 
 void EventLogDCmd::execute(DCmdSource source, TRAPS) {
-  int max = (int)_max.value();
-  if (max < 0) {
-    output()->print_cr("Invalid max option: \"%d\".", max);
+  jlong max = _max.value();
+  if (max < 0 || max > max_jint) {
+    output()->print_cr("Invalid max option: \"" JLONG_FORMAT "\".", max);
     return;
   }
+
+  int max_int = (int)max;
   const char* log_name = _log.value();
   if (log_name != nullptr) {
-    Events::print_one(output(), log_name, max);
+    Events::print_one(output(), log_name, max_int);
   } else {
-    Events::print_all(output(), max);
+    Events::print_all(output(), max_int);
   }
 }
 

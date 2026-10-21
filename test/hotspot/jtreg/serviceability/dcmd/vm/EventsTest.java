@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,14 @@ public class EventsTest {
         long lines = output.asLines().stream().filter(x -> x.contains("Loading class")).count();
         Assert.assertTrue(lines == MAX, "There are should be " + MAX + " lines");
     }
+    public void run_max_incorrect(CommandExecutor executor) {
+        OutputAnalyzer output = executor.execute("VM.events max=" + (-1));
+        output.stdoutShouldMatch("Invalid max option:");
+
+        OutputAnalyzer output2 = executor.execute("VM.events max=" + (Integer.MAX_VALUE + 1L));
+        output2.stdoutShouldMatch("Invalid max option:");
+    }
+
 
     public void run_max_selected(CommandExecutor executor) {
         OutputAnalyzer output = executor.execute("VM.events log=load max=" + MAX);
@@ -91,6 +99,7 @@ public class EventsTest {
         run_all(new JMXExecutor());
         run_selected(new JMXExecutor());
         run_max(new JMXExecutor());
+        run_max_incorrect(new JMXExecutor());
         run_max_selected(new JMXExecutor());
     }
 }
