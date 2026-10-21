@@ -136,7 +136,7 @@ static void destroy_lib_info(struct ps_prochandle* ph) {
      if (lib->symtab) {
         destroy_symtab(lib->symtab);
      }
-     if (lib->fd >= 1) {
+     if (lib->fd >= 0) {
        if (ph->core == NULL) {
          close(lib->fd);
        }
