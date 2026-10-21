@@ -69,6 +69,20 @@ RegionNode* PhaseIdealLoop::split_thru_region(Node* n, RegionNode* region) {
   return r;
 }
 
+ProjNode* PhaseIdealLoop::unique_scmem_proj_if_any(Node* n) {
+  ProjNode* proj = nullptr;
+  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+    Node* u = n->fast_out(i);
+    if (u->Opcode() == Op_SCMemProj) {
+      assert(proj == nullptr, "only one SCMemProj");
+      proj = u->as_Proj();
+    } else {
+      assert(!u->is_Proj(), "we can't split nodes with Proj uses other than SCMemProj");
+    }
+  }
+  return proj;
+}
+
 //------------------------------split_up---------------------------------------
 // Split block-local op up through the phis to empty the current block
 bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
@@ -155,6 +169,15 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     tty->print_cr("  Splitting up: %d %s", n->_idx, n->Name());
   }
 #endif
+  // If n has a SCMemProj use, pushing n through the Phi and then the SCMemProj (which has then a Phi input) through the
+  // Phi doesn't work as split if needs the adr_type of an SCMemProj to create its Phi which Proj::addr_type() gets from
+  // its input: that works as long as the input of the SCMemProj is n but not if it's a Phi. Prepare the Phi for the
+  // SCMemProj here before n is cloned.
+  ProjNode* mem_proj = unique_scmem_proj_if_any(n);
+  Node* phi_mem_proj = nullptr;
+  if (mem_proj != nullptr) {
+    phi_mem_proj = PhiNode::make_blank(blk1, mem_proj);
+  }
   Node *phi = PhiNode::make_blank(blk1, n);
   for( uint j = 1; j < blk1->req(); j++ ) {
     Node *x = n->clone();
@@ -177,6 +200,21 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
 
   // Remove cloned-up value from optimizer; use phi instead
   _igvn.replace_node( n, phi );
+
+  if (mem_proj != nullptr) {
+    for (uint j = 1; j < blk1->req(); j++) {
+      Node* x = mem_proj->clone();
+      x->set_req(0, phi->in(j));
+      register_new_node(x, blk1->in(j));
+      phi_mem_proj->init_req(j, x);
+    }
+    // Announce phi to optimizer
+    register_new_node(phi_mem_proj, blk1);
+
+    // Remove cloned-up value from optimizer; use phi instead
+    _igvn.replace_node(mem_proj, phi_mem_proj);
+  }
+  assert(!phi->has_out_with(Op_SCMemProj), "only works with a single SCMemProj use");
 
   // (There used to be a self-recursive call to split_up() here,
   // but it is not needed.  All necessary forward walking is done
@@ -298,7 +336,8 @@ void PhaseIdealLoop::clone_loadklass_nodes_at_cmp_index(const Node* n, Node* cmp
 }
 
 bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2) {
-  if( n->is_Cmp() ) {
+  if (n->is_Cmp()) {
+    assert(!n->is_FastLock(), "should not be materialized yet");
     assert(get_ctrl(n) == blk2 || get_ctrl(n) == blk1, "must be in block with IF");
     // Check for simple Cmp/Bool/CMove which we can clone-up.  Cmp/Bool/CMove
     // sequence can have no other users and it must all reside in the split-if
@@ -321,87 +360,80 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
         tty->print_cr("  Cloning down (Cmp): %d %s", n->_idx, n->Name());
       }
 #endif
-      if (!n->is_FastLock()) {
-        // Clone down any block-local BoolNode uses of this CmpNode
-        for (DUIterator i = n->outs(); n->has_out(i); i++) {
-          Node* bol = n->out(i);
-          assert( bol->is_Bool(), "" );
-          if (bol->outcnt() == 1) {
-            Node* use = bol->unique_out();
-            if (use->is_OpaqueConstantBool() || use->is_OpaqueTemplateAssertionPredicate() ||
-                use->is_OpaqueInitializedAssertionPredicate()) {
-              if (use->outcnt() == 1) {
-                Node* iff = use->unique_out();
-                assert(iff->is_If(), "unexpected node type");
-                Node *use_c = iff->in(0);
-                if (use_c == blk1 || use_c == blk2) {
-                  continue;
-                }
-              }
-            } else {
-              // We might see an Opaque1 from a loop limit check here
-              assert(use->is_If() || use->is_CMove() || use->Opcode() == Op_Opaque1 || use->is_AllocateArray(), "unexpected node type");
-              Node *use_c = (use->is_If() || use->is_AllocateArray()) ? use->in(0) : get_ctrl(use);
+       // Clone down any block-local BoolNode uses of this CmpNode
+      for (DUIterator i = n->outs(); n->has_out(i); i++) {
+        Node* bol = n->out(i);
+        assert(bol->is_Bool(), "");
+        if (bol->outcnt() == 1) {
+          Node* use = bol->unique_out();
+          if (use->is_OpaqueConstantBool() || use->is_OpaqueTemplateAssertionPredicate() ||
+              use->is_OpaqueInitializedAssertionPredicate()) {
+            if (use->outcnt() == 1) {
+              Node* iff = use->unique_out();
+              assert(iff->is_If(), "unexpected node type");
+              Node* use_c = iff->in(0);
               if (use_c == blk1 || use_c == blk2) {
-                assert(use->is_CMove(), "unexpected node type");
                 continue;
               }
             }
-          }
-          if (at_relevant_ctrl(bol, blk1, blk2)) {
-            // Recursively sink any BoolNode
-            for (DUIterator j = bol->outs(); bol->has_out(j); j++) {
-              Node* u = bol->out(j);
-              // Uses are either IfNodes, CMoves, OpaqueConstantBool or Opaque*AssertionPredicate
-              if (u->is_OpaqueConstantBool() || u->is_OpaqueTemplateAssertionPredicate() ||
-                  u->is_OpaqueInitializedAssertionPredicate()) {
-                assert(u->in(1) == bol, "bad input");
-                for (DUIterator_Last kmin, k = u->last_outs(kmin); k >= kmin; --k) {
-                  Node* iff = u->last_out(k);
-                  assert(iff->is_If() || iff->is_CMove(), "unexpected node type");
-                  assert( iff->in(1) == u, "" );
-                  // Get control block of either the CMove or the If input
-                  Node *iff_ctrl = iff->is_If() ? iff->in(0) : get_ctrl(iff);
-                  Node *x1 = bol->clone();
-                  Node *x2 = u->clone();
-                  register_new_node(x1, iff_ctrl);
-                  register_new_node(x2, iff_ctrl);
-                  _igvn.replace_input_of(x2, 1, x1);
-                  _igvn.replace_input_of(iff, 1, x2);
-                }
-                _igvn.remove_dead_node(u, PhaseIterGVN::NodeOrigin::Graph);
-                --j;
-              } else {
-                // We might see an Opaque1 from a loop limit check here
-                assert(u->is_If() || u->is_CMove() || u->Opcode() == Op_Opaque1 || u->is_AllocateArray(), "unexpected node type");
-                assert(u->is_AllocateArray() || u->in(1) == bol, "");
-                assert(!u->is_AllocateArray() || u->in(AllocateNode::ValidLengthTest) == bol, "wrong input to AllocateArray");
-                // Get control block of either the CMove or the If input
-                Node *u_ctrl = (u->is_If() || u->is_AllocateArray()) ? u->in(0) : get_ctrl(u);
-                assert((u_ctrl != blk1 && u_ctrl != blk2) || u->is_CMove(), "won't converge");
-                Node *x = bol->clone();
-                register_new_node(x, u_ctrl);
-                _igvn.replace_input_of(u, u->is_AllocateArray() ? AllocateNode::ValidLengthTest : 1, x);
-                --j;
-              }
+          } else {
+            // We might see an Opaque1 from a loop limit check here
+            assert(use->is_If() || use->is_CMove() || use->Opcode() == Op_Opaque1 || use->is_AllocateArray(), "unexpected node type");
+            Node* use_c = (use->is_If() || use->is_AllocateArray()) ? use->in(0) : get_ctrl(use);
+            if (use_c == blk1 || use_c == blk2) {
+              assert(use->is_CMove(), "unexpected node type");
+              continue;
             }
-            _igvn.remove_dead_node(bol, PhaseIterGVN::NodeOrigin::Graph);
-            --i;
           }
+        }
+        if (at_relevant_ctrl(bol, blk1, blk2)) {
+          // Recursively sink any BoolNode
+          for (DUIterator j = bol->outs(); bol->has_out(j); j++) {
+            Node* u = bol->out(j);
+            // Uses are either IfNodes, CMoves, OpaqueConstantBool or Opaque*AssertionPredicate
+            if (u->is_OpaqueConstantBool() || u->is_OpaqueTemplateAssertionPredicate() ||
+                u->is_OpaqueInitializedAssertionPredicate()) {
+              assert(u->in(1) == bol, "bad input");
+              for (DUIterator_Last kmin, k = u->last_outs(kmin); k >= kmin; --k) {
+                Node* iff = u->last_out(k);
+                assert(iff->is_If() || iff->is_CMove(), "unexpected node type");
+                assert(iff->in(1) == u, "");
+                // Get control block of either the CMove or the If input
+                Node* iff_ctrl = iff->is_If() ? iff->in(0) : get_ctrl(iff);
+                Node* x1 = bol->clone();
+                Node* x2 = u->clone();
+                register_new_node(x1, iff_ctrl);
+                register_new_node(x2, iff_ctrl);
+                _igvn.replace_input_of(x2, 1, x1);
+                _igvn.replace_input_of(iff, 1, x2);
+              }
+              _igvn.remove_dead_node(u, PhaseIterGVN::NodeOrigin::Graph);
+              --j;
+            } else {
+              // We might see an Opaque1 from a loop limit check here
+              assert(u->is_If() || u->is_CMove() || u->Opcode() == Op_Opaque1 || u->is_AllocateArray(), "unexpected node type");
+              assert(u->is_AllocateArray() || u->in(1) == bol, "");
+              assert(!u->is_AllocateArray() || u->in(AllocateNode::ValidLengthTest) == bol, "wrong input to AllocateArray");
+              // Get control block of either the CMove or the If input
+              Node* u_ctrl = (u->is_If() || u->is_AllocateArray()) ? u->in(0) : get_ctrl(u);
+              assert((u_ctrl != blk1 && u_ctrl != blk2) || u->is_CMove(), "won't converge");
+              Node* x = bol->clone();
+              register_new_node(x, u_ctrl);
+              _igvn.replace_input_of(u, u->is_AllocateArray() ? AllocateNode::ValidLengthTest : 1, x);
+              --j;
+            }
+          }
+          _igvn.remove_dead_node(bol, PhaseIterGVN::NodeOrigin::Graph);
+          --i;
         }
       }
       // Clone down this CmpNode
       for (DUIterator_Last jmin, j = n->last_outs(jmin); j >= jmin; --j) {
         Node* use = n->last_out(j);
-        uint pos = 1;
-        if (n->is_FastLock()) {
-          pos = TypeFunc::Parms + 2;
-          assert(use->is_Lock(), "FastLock only used by LockNode");
-        }
-        assert(use->in(pos) == n, "" );
-        Node *x = n->clone();
+        Node* x = n->clone();
         register_new_node(x, ctrl_or_self(use));
-        _igvn.replace_input_of(use, pos, x);
+        assert(use->in(1) == n, "should match");
+        _igvn.replace_input_of(use, 1, x);
       }
       _igvn.remove_dead_node(n, PhaseIterGVN::NodeOrigin::Graph);
 

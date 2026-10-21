@@ -152,7 +152,7 @@ void ShenandoahArguments::initialize() {
 
   // Record more information about previous cycles for improved debugging pleasure
   if (FLAG_IS_DEFAULT(LogEventsBufferEntries)) {
-    FLAG_SET_DEFAULT(LogEventsBufferEntries, 250);
+    FLAG_SET_DEFAULT(LogEventsBufferEntries, NOT_DEBUG(70) DEBUG_ONLY(250));
   }
 
   if ((InitialHeapSize == MaxHeapSize) && ShenandoahUncommit) {
@@ -243,8 +243,8 @@ void ShenandoahArguments::initialize_alignments() {
 CollectedHeap* ShenandoahArguments::create_heap() {
   if (strcmp(ShenandoahGCMode, "generational") != 0) {
     // Not generational
-    return new ShenandoahHeap(new ShenandoahCollectorPolicy());
+    return new ShenandoahHeap();
   } else {
-    return new ShenandoahGenerationalHeap(new ShenandoahCollectorPolicy());
+    return new ShenandoahGenerationalHeap();
   }
 }

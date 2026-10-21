@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #include <windows.h>
 #include <winsock2.h>
+#include <mswsock.h>
 #include <stddef.h>
 
 #include "jni.h"
@@ -36,26 +37,7 @@
 
 #include "sun_nio_ch_WindowsAsynchronousSocketChannelImpl.h"
 
-#ifndef WSAID_CONNECTEX
-#define WSAID_CONNECTEX {0x25a207b9,0xddf3,0x4660,{0x8e,0xe9,0x76,0xe5,0x8c,0x74,0x06,0x3e}}
-#endif
-
-#ifndef SO_UPDATE_CONNECT_CONTEXT
-#define SO_UPDATE_CONNECT_CONTEXT 0x7010
-#endif
-
-typedef BOOL (PASCAL *ConnectEx_t)
-(
-    SOCKET s,
-    const struct sockaddr* name,
-    int namelen,
-    PVOID lpSendBuffer,
-    DWORD dwSendDataLength,
-    LPDWORD lpdwBytesSent,
-    LPOVERLAPPED lpOverlapped
-);
-
-static ConnectEx_t ConnectEx_func;
+static LPFN_CONNECTEX ConnectEx_func;
 
 
 JNIEXPORT void JNICALL
