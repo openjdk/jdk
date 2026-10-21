@@ -1945,9 +1945,6 @@ bool AOTHeap::walk_one_object(PendingOopStack* stack, int level, KlassSubGraphIn
       orig_obj = scratch_java_mirror(orig_obj);
       assert(orig_obj != nullptr, "must be archived");
     }
-  } else if (java_lang_Class::is_instance(orig_obj) && subgraph_info == _dump_time_special_subgraph) {
-    orig_obj = scratch_java_mirror(orig_obj);
-    assert(orig_obj != nullptr, "must be archived");
   } else if (java_lang_Class::is_instance(orig_obj) && subgraph_info != _dump_time_special_subgraph) {
     // Without CDSConfig::is_dumping_aot_linked_classes(), we only allow archived objects to
     // point to the mirrors of (1) j.l.Object, (2) primitive classes, and (3) box classes. These are initialized
