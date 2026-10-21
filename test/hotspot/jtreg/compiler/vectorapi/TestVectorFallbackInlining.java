@@ -74,23 +74,27 @@ public class TestVectorFallbackInlining {
     }
 
     // The fallback is only late-inlined if it also passes the regular inlining heuristics.
-    // During warmup VectorSupport::sliceOp is called from the interpreter often enough to be
-    // compiled on its own, and with assertions enabled its nmethod grows beyond
-    // InlineSmallCode, so C2 rejects it as "already compiled into a big method". Keep it
-    // inlinable so that the rules below only depend on the late inlining machinery.
-    private static final String FORCE_INLINE_FALLBACK =
+    // During warmup the entry points are called from the interpreter often enough to be
+    // compiled on their own, and with assertions enabled their nmethods grow beyond
+    // InlineSmallCode, so C2 rejects them as too large. Keep them inlinable so that the
+    // rules below only depend on the late inlining machinery.
+    private static final String FORCE_INLINE_SLICE_FALLBACK =
             "-XX:CompileCommand=inline,jdk.internal.vm.vector.VectorSupport::sliceOp";
+    private static final String FORCE_INLINE_INSERT_FALLBACK =
+            "-XX:CompileCommand=inline,jdk.internal.vm.vector.VectorSupport::insert";
 
     public static void main(String[] args) {
         // Note: Some platforms don't activate EnableVectorSupport by default. Required here.
         // Left at its default value, only slice is selected.
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
-                                   FORCE_INLINE_FALLBACK,
+                                   FORCE_INLINE_SLICE_FALLBACK,
+                                   FORCE_INLINE_INSERT_FALLBACK,
                                    "-XX:+UnlockExperimentalVMOptions",
                                    "-XX:+EnableVectorSupport");
         // Explicitly enabled, so every operation is selected.
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
-                                   FORCE_INLINE_FALLBACK,
+                                   FORCE_INLINE_SLICE_FALLBACK,
+                                   FORCE_INLINE_INSERT_FALLBACK,
                                    "-XX:+IncrementalInlineVector",
                                    "-XX:+UnlockExperimentalVMOptions",
                                    "-XX:+EnableVectorSupport");
@@ -98,7 +102,8 @@ public class TestVectorFallbackInlining {
         // class, see TestSliceFallbackNotInlined.
         new TestFramework(TestSliceFallbackNotInlined.class)
                 .addFlags("--add-modules=jdk.incubator.vector",
-                          FORCE_INLINE_FALLBACK,
+                          FORCE_INLINE_SLICE_FALLBACK,
+                          FORCE_INLINE_INSERT_FALLBACK,
                           "-XX:-IncrementalInlineVector",
                           "-XX:+UnlockExperimentalVMOptions",
                           "-XX:+EnableVectorSupport")
