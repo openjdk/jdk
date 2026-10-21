@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @library /test/lib
  * @bug 8297878
  * @summary RSA_KEM example
  * @modules java.base/sun.security.jca
@@ -32,10 +33,8 @@
  */
 import sun.security.jca.JCAUtil;
 import sun.security.rsa.RSACore;
-import sun.security.util.*;
 
-import javax.crypto.*;
-import javax.crypto.spec.*;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -50,6 +49,25 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import javax.crypto.KeyGenerator;
+
+import jdk.test.lib.valueclass.AsValueClass;
+import sun.security.util.DerInputStream;
+import sun.security.util.DerOutputStream;
+import sun.security.util.DerValue;
+import sun.security.util.KeyUtil;
+import sun.security.util.KnownOIDs;
+import sun.security.util.ObjectIdentifier;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.DecapsulateException;
+import javax.crypto.KEM;
+import javax.crypto.KEMSpi;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 // This test implements RSA-KEM as described in RFC 5990. In this KEM, the
 // sender configures the encapsulator with an RSAKEMParameterSpec object.
@@ -290,6 +308,7 @@ public class RSA_KEM {
         }
     }
 
+    @AsValueClass
     public static class RSAKEMParameterSpec implements AlgorithmParameterSpec {
         private final String kdfAlg;
         private final String hashAlg;
