@@ -136,7 +136,16 @@ static void destroy_lib_info(struct ps_prochandle* ph) {
      if (lib->symtab) {
         destroy_symtab(lib->symtab);
      }
-     close(lib->fd);
+     if (lib->fd >= 1) {
+       if (ph->core == NULL) {
+         close(lib->fd);
+       }
+       else if (lib->fd != ph->core->exec_fd) {
+         // Prevents double-close in core mode.
+	 // exec_fd would be closed at close_files().
+         close(lib->fd);
+       }
+     }
      free(lib->frame.data);
      free(lib);
      lib = next;
