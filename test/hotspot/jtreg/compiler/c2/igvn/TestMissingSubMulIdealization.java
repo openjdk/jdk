@@ -29,7 +29,7 @@ package compiler.c2.igvn;
  * @summary C2 IGVN should idealize: (0 - x) * (0 - x) -> x * x
  * @library /test/lib /
  * @run main/othervm -Xbatch
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:VerifyIterativeGVN=1110
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
  *                   -XX:CompileOnly=${test.main.class}::test*
  *                   ${test.main.class}
  * @run main ${test.main.class}
