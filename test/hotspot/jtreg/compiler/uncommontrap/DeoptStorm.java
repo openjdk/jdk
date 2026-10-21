@@ -39,7 +39,7 @@ import jdk.test.lib.process.ProcessTools;
 public class DeoptStorm {
 
     private static final int MAX_DEOPT_LINES = 100;
-    private static final String DEOPT_TAG = "[debug][deoptimization]";
+    private static final String DEOPT_TAG = "UNCOMMON TRAP";
 
     public static void main(String[] args) throws Exception {
         if (args.length >= 1) {
