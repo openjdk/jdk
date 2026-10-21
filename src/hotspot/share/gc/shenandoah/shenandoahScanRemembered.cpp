@@ -811,15 +811,16 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
 
   // set up thread local closure for shen ref processor
   _rp->set_mark_closure(worker_id, &cl);
-  ShenandoahRegionChunk assignment;
+  struct ShenandoahRegionChunk assignment;
   while (_work_list->next(&assignment)) {
     ShenandoahHeapRegion* region = assignment._r;
     log_debug(gc, remset)("ShenandoahScanRememberedTask::do_work(%u), processing slice of region "
                           "%zu at offset %zu, size: %zu",
                           worker_id, region->index(), assignment._chunk_offset, assignment._chunk_size);
     if (region->is_old()) {
-      const size_t cluster_size = CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
-      const size_t clusters = assignment._chunk_size / cluster_size;
+      size_t cluster_size =
+        CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
+      size_t clusters = assignment._chunk_size / cluster_size;
       assert(clusters * cluster_size == assignment._chunk_size, "Chunk assignments must align on cluster boundaries");
       HeapWord* end_of_range = region->bottom() + assignment._chunk_offset + assignment._chunk_size;
 
