@@ -2382,6 +2382,10 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
   Node* payload = convert_to_payload(igvn, kit.control(), value, _null_free, oop_off_1, oop_off_2);
 
   ciValueKlass* vk = igvn.type(value)->value_klass();
+  // convert_to_payload should give us the offsets of up to 2 oops of vk in oop_off_1 and oop_off_2. The following holds:
+  // - they must be valid offsets for oops (0 or 4) or -1 (no oop)
+  // - if there is at least one oop, oop_off_1 != oop_off_2, i.e. oop_off_1 == oop_off_2 only if they are both -1, i.e. offsets are distincts
+  // - in case there is only one oop, its offset is stored in oop_off_1, and oop_off_2 == -1
   assert(oop_off_1 == -1 || oop_off_1 == 0 || oop_off_1 == 4, "invalid layout for %s, first oop at offset %d", vk->name()->as_utf8(), oop_off_1);
   assert(oop_off_2 == -1 || oop_off_2 == 0 || oop_off_2 == 4, "invalid layout for %s, second oop at offset %d", vk->name()->as_utf8(), oop_off_2);
   assert(oop_off_1 != oop_off_2 || oop_off_1 == -1, "we should have: oop_off_1 == oop_off_2 => oop_off_1 == -1. But oop_off_1=oop_off_2=%d", oop_off_1);
