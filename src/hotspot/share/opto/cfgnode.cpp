@@ -3370,8 +3370,8 @@ bool PhiNode::can_be_replaced_by(PhaseGVN* phase, const PhiNode* other) const {
          (other->_excluded_idx == nullptr || !other->_excluded_idx->contains(phase->C->get_alias_index(at)));
 }
 
-Node* PhiNode::clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIterGVN* igvn) {
-  Node_Stack<Node> stack(1);
+Node* PhiNode::clone_through_phi(PhiNode* root_phi, const Type* t, uint c, PhaseIterGVN* igvn) {
+  Node_Stack<PhiNode> stack(1);
   VectorSet visited;
   Node_List<PhiNode>  node_map;
 
@@ -3394,7 +3394,7 @@ Node* PhiNode::clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIte
         Node* new_phi = node_map[n->_idx];
         if (!visited.test_set(def->_idx)) { // not visited yet
           node_map.map(def->_idx, new PhiNode(def->in(0), t));
-          stack.push(def, 1); // ignore control
+          stack.push(def->as_Phi(), 1); // ignore control
         }
         Node* new_in = node_map[def->_idx];
         new_phi->set_req(idx, new_in);
@@ -3415,8 +3415,8 @@ Node* PhiNode::clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIte
   return new_phi;
 }
 
-Node* PhiNode::merge_through_phi(Node* root_phi, PhaseIterGVN* igvn) {
-  Node_Stack<const Node> stack(1);
+Node* PhiNode::merge_through_phi(PhiNode* root_phi, PhaseIterGVN* igvn) {
+  Node_Stack<const PhiNode> stack(1);
   VectorSet visited;
 
   stack.push(root_phi, 1); // ignore control
@@ -3433,7 +3433,7 @@ Node* PhiNode::merge_through_phi(Node* root_phi, PhaseIterGVN* igvn) {
         continue; // ignore dead path
       } else if (in->isa_Phi()) {
         if (!visited.test_set(in->_idx)) {
-          stack.push(in, 1); // ignore control
+          stack.push(in->as_Phi(), 1); // ignore control
         }
       } else if (in->Opcode() == Op_VectorBox) {
         VectorBoxNode* vbox = static_cast<VectorBoxNode*>(in);

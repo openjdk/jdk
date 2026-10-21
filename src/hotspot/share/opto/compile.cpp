@@ -2052,15 +2052,15 @@ static bool return_val_keeps_allocations_alive(Node* ret_val) {
   return some_allocations;
 }
 
-bool Compile::clear_argument_if_only_used_as_buffer_at_calls(Node* result_cast, PhaseIterGVN& igvn) {
+bool Compile::clear_argument_if_only_used_as_buffer_at_calls(const Node* result_cast, PhaseIterGVN& igvn) {
   ResourceMark rm;
-  Unique_Node_List<Node> wq;
+  Unique_Node_List<const Node> wq;
   wq.push(result_cast);
   Node_List<CallJavaNode> calls;
   for (uint i = 0; i < wq.size(); ++i) {
-    Node* n = wq.at(i);
+    const Node* n = wq.at(i);
     for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
-      Node* u = n->fast_out(j);
+      const Node* u = n->fast_out(j);
       if (u->is_Phi()) {
         wq.push(u);
       } else if (u->is_ValueType() && u->as_ValueType()->get_oop() == n) {

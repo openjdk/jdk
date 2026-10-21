@@ -216,10 +216,10 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_predicate(const ParsePredicateSucc
 
 // Update ctrl and control inputs of all data nodes starting from 'node' to 'new_ctrl' which have 'old_ctrl' as
 // current ctrl.
-void PhaseIdealLoop::set_ctrl_of_nodes_with_same_ctrl(Node* start_node, ProjNode* old_uncommon_proj,
+void PhaseIdealLoop::set_ctrl_of_nodes_with_same_ctrl(Node* start_node, const ProjNode* old_uncommon_proj,
                                                       Node* new_uncommon_proj) {
   ResourceMark rm;
-  const Unique_Node_List nodes_with_same_ctrl = find_nodes_with_same_ctrl(start_node, old_uncommon_proj);
+  const Unique_Node_List<Node> nodes_with_same_ctrl = find_nodes_with_same_ctrl(start_node, old_uncommon_proj);
   for (uint i = 0; i < nodes_with_same_ctrl.size(); i++) {
     Node* node = nodes_with_same_ctrl[i];
     if (node->in(0) == old_uncommon_proj) {
@@ -247,7 +247,8 @@ Unique_Node_List<Node> PhaseIdealLoop::find_nodes_with_same_ctrl(Node* node, con
 
 // Clone all data nodes with a ctrl to the old uncommon projection from `start_node' by following its inputs. Rewire the
 // cloned nodes to the new uncommon projection. Returns the clone of the `start_node`.
-Node* PhaseIdealLoop::clone_nodes_with_same_ctrl(Node* start_node, ProjNode* old_uncommon_proj, Node* new_uncommon_proj) {
+Node* PhaseIdealLoop::clone_nodes_with_same_ctrl(Node* start_node, const ProjNode* old_uncommon_proj,
+                                                 Node* new_uncommon_proj) {
   ResourceMark rm;
   DEBUG_ONLY(uint last_idx = C->unique();)
   const Unique_Node_List<Node> nodes_with_same_ctrl = find_nodes_with_same_ctrl(start_node, old_uncommon_proj);

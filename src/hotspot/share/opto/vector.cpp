@@ -176,7 +176,7 @@ static JVMState* clone_jvms(Compile* C, SafePointNode* sfpt) {
   return new_jvms;
 }
 
-void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
+void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) const {
   Node* vec_value = vec_box->in(VectorBoxNode::Value);
   PhaseGVN& gvn = *C->initial_gvn();
 
@@ -255,10 +255,10 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
   // Process debug uses at safepoints
   Unique_Node_List<SafePointNode> safepoints;
 
-  Unique_Node_List<Node> worklist;
+  Unique_Node_List<const Node> worklist;
   worklist.push(vec_box);
   while (worklist.size() > 0) {
-    Node* n = worklist.pop();
+    const Node* n = worklist.pop();
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* use = n->fast_out(i);
       if (use->is_SafePoint()) {

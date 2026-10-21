@@ -841,7 +841,7 @@ bool VLoopDependencyGraph::independent(Node* s1, Node* s2) const {
 // nodes list, we know that all nodes in the nodes list are independent.
 bool VLoopDependencyGraph::mutually_independent(const Node_List<Node>* nodes) const {
   ResourceMark rm;
-  Unique_Node_List<Node> worklist;
+  Unique_Node_List<const Node> worklist;
   VectorSet nodes_set;
   int min_d = depth(nodes->at(0));
   for (uint k = 0; k < nodes->size(); k++) {
@@ -857,7 +857,7 @@ bool VLoopDependencyGraph::mutually_independent(const Node_List<Node>* nodes) co
   bool speculate_away_weak_edges = _vloop.use_speculative_aliasing_checks();
 
   for (uint i = 0; i < worklist.size(); i++) {
-    Node* n = worklist.at(i);
+    const Node* n = worklist.at(i);
     for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
       if (speculate_away_weak_edges && preds.is_current_weak_memory_edge()) { continue; }
       Node* pred = preds.current();
