@@ -125,19 +125,12 @@ static bool randomized_exclude(uint salt, const Symbol* holder, const Symbol* na
 }
 
 bool Stress::should_exclude_compilation(const Method* method, int comp_level) {
-  if (method->is_native() || method->is_method_handle_intrinsic()) {
-    return false;
-  }
   CompilerType comp = is_c1_compile(comp_level) ? compiler_c1 : compiler_c2;
   return randomized_exclude(COMPILATION_SALT | comp,
                             method->method_holder()->name(), method->name(), method->signature());
 }
 
 bool Stress::should_exclude_inlining(ciMethod* callee, CompilerType comp) {
-  if (callee->force_inline() || callee->is_method_handle_intrinsic() ||
-      callee->intrinsic_id() != vmIntrinsics::_none) {
-    return false;
-  }
   return randomized_exclude(INLINING_SALT | comp,
                             callee->holder()->name()->get_symbol(),
                             callee->name()->get_symbol(),

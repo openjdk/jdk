@@ -239,11 +239,6 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     return true;
   }
 
-  if (StressExcludeInlining && Stress::should_exclude_inlining(callee_method, compiler_c2)) {
-    set_msg("excluded by StressExcludeInlining");
-    return true;
-  }
-
   int inline_depth = inline_level() + 1;
   if (ciReplay::should_inline(C->replay_inline_data(), callee_method, caller_bci, inline_depth, should_delay)) {
     if (should_delay) {
@@ -261,6 +256,11 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
 
   if (ciReplay::should_not_inline(callee_method)) {
     set_msg("disallowed by ciReplay");
+    return true;
+  }
+
+  if (StressExcludeInlining && Stress::should_exclude_inlining(callee_method, compiler_c2)) {
+    set_msg("excluded by StressExcludeInlining");
     return true;
   }
 
