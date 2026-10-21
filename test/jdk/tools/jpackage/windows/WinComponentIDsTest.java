@@ -49,12 +49,12 @@ import jdk.jpackage.test.Annotations.ParameterSupplier;
  * @summary Test case for JDK-8394606
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @build Win8394606Test
+ * @build WinComponentIDsTest
  * @requires (os.family == "windows")
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=Win8394606Test
+ *  --jpt-run=WinComponentIDsTest
  */
-public class Win8394606Test {
+public class WinComponentIDsTest {
 
     @Test
     @ParameterSupplier
