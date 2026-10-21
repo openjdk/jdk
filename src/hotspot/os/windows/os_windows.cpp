@@ -2847,7 +2847,27 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 
       return handle_stack_overflow_in_yellow_zone(thread, exceptionInfo, pc);
     } else if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
+      StackOverflow* overflow_state = thread->stack_overflow_state();
       address addr = (address)exception_record->ExceptionInformation[1];
+
+      bool in_red = overflow_state->in_stack_red_zone(addr);
+      bool in_yellow = overflow_state->in_stack_yellow_reserved_zone(addr);
+      if ((in_red || in_yellow) && overflow_state->stack_guard_zone_unused()) {
+        report_fatal_stack_overflow(thread, exceptionInfo, pc,
+                                    "HotSpot needs stack guards to handle stack exceptions.",
+                                    /* disable red zone */ false);
+      }
+
+      if (in_red) {
+        report_fatal_stack_overflow(thread, exceptionInfo, pc,
+                                    "An unrecoverable stack overflow has occurred.",
+                                    /* disable red zone */ true);
+      }
+
+      if (in_yellow) {
+        return handle_stack_overflow_in_yellow_zone(thread, exceptionInfo, pc);
+      }
+
       PNT_TIB tib = (PNT_TIB)NtCurrentTeb();
       if (addr < (address)tib->StackLimit && thread->is_in_usable_stack(addr)) {
         address target = align_down(addr, os::vm_page_size());
@@ -2861,7 +2881,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       }
 
       if (in_java) {
-        // Either stack overflow or null pointer exception.
         address addr = (address) exception_record->ExceptionInformation[1];
         address stack_end = thread->stack_end();
         if (addr < stack_end && addr >= stack_end - os::vm_page_size()) {
