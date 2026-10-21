@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8325506
+ * @bug 8325506 8385968
  * @library /test/lib
  * @modules java.base/sun.security.util
  * @run main/othervm Deterministic

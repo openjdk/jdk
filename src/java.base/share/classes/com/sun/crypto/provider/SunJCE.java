@@ -767,7 +767,6 @@ public final class SunJCE extends Provider {
         attrs.put("SupportedKeyClasses", "java.security.interfaces.ECKey" +
                 "|java.security.interfaces.XECKey");
         ps("KEM", "DHKEM", "com.sun.crypto.provider.DHKEM", null, attrs);
-        ps("KEM", "DH", "sun.security.ssl.DHasKEM", null, attrs);
 
         attrs.clear();
         attrs.put("ImplementedIn", "Software");
@@ -872,9 +871,11 @@ public final class SunJCE extends Provider {
                 throws NoSuchAlgorithmException {
             return switch (getType()) {
                 case "KeyPairGenerator" -> new Hybrid.KeyPairGeneratorImpl(
-                        getAttribute("left"), getAttribute("right"));
+                        getProvider(), getAttribute("left"),
+                        getAttribute("right"));
                 case "KEM" -> new Hybrid.KEMImpl(
-                        getAttribute("left"), getAttribute("right"));
+                        getProvider(), getAttribute("left"),
+                        getAttribute("right"));
                 default -> throw new NoSuchAlgorithmException(
                         "Unexpected value: " + getType());
             };

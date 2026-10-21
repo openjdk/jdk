@@ -146,7 +146,9 @@ public class KAKeyDerivation implements SSLKeyDerivation {
             // NOTE: do not reuse the HKDF object for "TlsEarlySecret" for
             // the handshake secret key derivation (below) as it may not
             // work with the "sharedSecret" obj.
-            KDF hkdf = getTls13KDF(hashAlg, sharedSecret);
+            // Delayed provider selection lets a provider that created an
+            // opaque KEM secret supply the compatible TLS HKDF service.
+            KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
             var spec = HKDFParameterSpec.ofExtract().addSalt(saltSecret)
                     .addIKM(sharedSecret);
 
@@ -158,24 +160,6 @@ public class KAKeyDerivation implements SSLKeyDerivation {
 
     private Provider getKEMProvider() {
         return (namedGroup != null) ? namedGroup.getKEMProvider() : null;
-    }
-
-    private KDF getTls13KDF(CipherSuite.HashAlg hashAlg, SecretKey ikm)
-            throws GeneralSecurityException {
-        if (ikm != null && !"RAW".equalsIgnoreCase(ikm.getFormat())) {
-            Provider provider = getKEMProvider();
-            if (provider != null) {
-                // A non-RAW secret from a KEM can be provider-opaque. It
-                // must be consumed by a KDF supplied by the provider that
-                // created it.
-                return KDF.getInstance(hashAlg.hkdfAlgorithm, provider);
-            }
-        }
-
-        // A RAW secret such as a TLS hybrid KEM secret, can be consumed by
-        // an HKDF selected through normal JCA provider preference. This also
-        // preserves the existing behavior for traditional key agreement.
-        return KDF.getInstance(hashAlg.hkdfAlgorithm);
     }
 
     /**

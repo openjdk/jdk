@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8379433
+ * @bug 8379433 8385968
  * @summary Test expected DecapsulateException thrown by Hybrid KEM implementation
  * @modules java.base/sun.security.ssl
  * @run main/othervm TestHybrid
@@ -43,6 +43,9 @@ public class TestHybrid {
         Provider p = Security.getProvider("SunJCE");
         if (p == null) {
             throw new RuntimeException("SunJCE provider not found");
+        }
+        if (p.getService("KEM", "DH") != null) {
+            throw new RuntimeException("SunJCE exposes internal KEM.DH");
         }
 
         String alg = "X25519MLKEM768";

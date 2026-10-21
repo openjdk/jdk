@@ -38,7 +38,7 @@ import javax.crypto.KeyGenerator;
 
 /*
  * @test
- * @bug 8185127
+ * @bug 8185127 8385968
  * @summary Test key comparison for the Keys generated through KeyGenerator
  * @run main CompareKeys
  */
