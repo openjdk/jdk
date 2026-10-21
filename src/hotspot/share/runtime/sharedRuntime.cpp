@@ -1364,7 +1364,6 @@ methodHandle SharedRuntime::find_callee_method(bool& caller_does_not_scalarize, 
     CallInfo callinfo;
     find_callee_info_helper(vfst, bc, callinfo, CHECK_(methodHandle()));
 
-    // Calls via mismatching methods are always non-scalarized
     if (!caller_does_not_scalarize) {
       // check if the call is an optimized virtual call
       RegisterMap reg_map(current,
@@ -1387,6 +1386,7 @@ methodHandle SharedRuntime::find_callee_method(bool& caller_does_not_scalarize, 
           is_optimized = true;
         }
       }
+      // Calls via mismatching methods are always non-scalarized
       caller_does_not_scalarize = is_optimized ? callinfo.selected_method()->mismatch() : callinfo.resolved_method()->mismatch();
     }
     callee_method = methodHandle(current, callinfo.selected_method());
