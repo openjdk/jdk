@@ -249,8 +249,8 @@ void ShenandoahArguments::initialize_heap_flags_and_sizes() {
 CollectedHeap* ShenandoahArguments::create_heap() {
   if (strcmp(ShenandoahGCMode, "generational") != 0) {
     // Not generational
-    return new ShenandoahHeap(new ShenandoahCollectorPolicy());
+    return new ShenandoahHeap();
   } else {
-    return new ShenandoahGenerationalHeap(new ShenandoahCollectorPolicy());
+    return new ShenandoahGenerationalHeap();
   }
 }

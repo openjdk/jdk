@@ -47,6 +47,7 @@
 #include "logging/log.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/pair.hpp"
@@ -1431,7 +1432,7 @@ bool G1Policy::next_gc_should_be_mixed() const {
 }
 
 size_t G1Policy::allowed_waste_in_collection_set() const {
-  return G1HeapWastePercent * _g1h->capacity() / 100;
+  return checked_cast<size_t>(static_cast<uint64_t>(_g1h->capacity()) * G1HeapWastePercent / 100);
 }
 
 bool G1Policy::try_get_available_bytes_estimate(size_t& available_bytes) const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
  * @test
  * @bug 7005016
  * @summary  pit jdk7 b121  sqe test jhttp/HttpServer150013 failing
- * @run main/othervm -Dsun.net.httpserver.clockTick=1000 -Dsun.net.httpserver.idleInterval=3 Test10
  * @run main/othervm -Dsun.net.httpserver.clockTick=1000 -Dsun.net.httpserver.idleInterval=3
- *                   -Djava.net.preferIPv6Addresses Test10
+ *                   -Dsun.net.httpserver.disableHostValidation=true Test10
+ * @run main/othervm -Dsun.net.httpserver.clockTick=1000 -Dsun.net.httpserver.idleInterval=3
+ *                   -Djava.net.preferIPv6Addresses
+ *                   -Dsun.net.httpserver.disableHostValidation=true Test10
  */
 
 import com.sun.net.httpserver.*;
@@ -42,6 +44,7 @@ import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
  */
 
 public class Test10 extends Test {
+    static volatile boolean handlerInvoked;
     public static void main (String[] args) throws Exception {
         System.out.print ("Test10: ");
         Handler handler = new Handler();
@@ -66,10 +69,10 @@ public class Test10 extends Test {
     }
 
     static class Handler implements HttpHandler {
-        volatile int invocation = 0;
         public void handle (HttpExchange t)
             throws IOException
         {
+            handlerInvoked = true;
             InputStream is = t.getRequestBody();
             while (is.read() != -1);
             Headers map = t.getRequestHeaders();
@@ -89,6 +92,9 @@ public class Test10 extends Test {
         int c;
         byte[] b = new byte [1024];
         while ((c=is.read(b)) != -1) ;
+        if (!handlerInvoked) {
+            throw new RuntimeException("Handler not invoked");
+        }
         is.close();
         socket.close();
     }

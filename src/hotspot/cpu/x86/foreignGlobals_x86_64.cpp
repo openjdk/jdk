@@ -54,8 +54,6 @@ const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   refArrayOop outputStorage = jdk_internal_foreign_abi_ABIDescriptor::outputStorage(abi_oop);
   parse_register_array(outputStorage, StorageType::INTEGER, abi._integer_return_registers, as_Register);
   parse_register_array(outputStorage, StorageType::VECTOR, abi._vector_return_registers, as_XMMRegister);
-  refArrayOop subarray = oop_cast<refArrayOop>(outputStorage->obj_at((int) StorageType::X87));
-  abi._X87_return_registers_noof = subarray->length();
 
   refArrayOop volatileStorage = jdk_internal_foreign_abi_ABIDescriptor::volatileStorage(abi_oop);
   parse_register_array(volatileStorage, StorageType::INTEGER, abi._integer_additional_volatile_registers, as_Register);
