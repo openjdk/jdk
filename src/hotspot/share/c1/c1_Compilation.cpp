@@ -49,6 +49,7 @@ typedef enum {
     _t_setup,
     _t_buildIR,
       _t_hir_parse,
+      _t_compute_code,
       _t_gvn,
       _t_optimize_blocks,
       _t_optimize_null_checks,
@@ -56,6 +57,7 @@ typedef enum {
     _t_emit_lir,
       _t_linearScan,
       _t_lirGeneration,
+      _t_recomputeCode,
     _t_codeemit,
     _t_codeinstall,
   max_phase_timers
@@ -66,6 +68,7 @@ static const char * timer_name[] = {
   "setup",
   "buildIR",
   "parse_hir",
+  "compute_code",
   "gvn",
   "optimize_blocks",
   "optimize_null_checks",
@@ -73,6 +76,7 @@ static const char * timer_name[] = {
   "emit_lir",
   "linearScan",
   "lirGeneration",
+  "recomputeCode",
   "codeemit",
   "codeinstall"
 };
@@ -199,7 +203,10 @@ void Compilation::build_hir() {
   // compute block ordering for code generation
   // the control flow must not be changed from here on
   // Exception: late control flow during LIR generation in conjuction with recompute_code().
-  _hir->compute_code();
+  {
+    PhaseTraceTime timeit(_t_compute_code);
+    _hir->compute_code();
+  }
 
   if (UseGlobalValueNumbering) {
     // No resource mark here! LoopInvariantCodeMotion can allocate ValueStack objects.
@@ -270,7 +277,10 @@ void Compilation::emit_lir() {
   if (has_late_control_flow()) {
     hir()->verify_late_controlflow();
 
-    hir()->recompute_code();
+    {
+      PhaseTraceTime timeit(_t_recomputeCode);
+      hir()->recompute_code();
+    }
   }
 
   {
@@ -687,6 +697,7 @@ void Compilation::print_timers() {
     tty->print_cr("       Build HIR:           %7.3f s",    timers[_t_buildIR].seconds());
     tty->print_cr("         Parse:               %7.3f s", timers[_t_hir_parse].seconds());
     tty->print_cr("         Optimize blocks:     %7.3f s", timers[_t_optimize_blocks].seconds());
+    tty->print_cr("         Compute Code:        %7.3f s", timers[_t_compute_code].seconds());
     tty->print_cr("         GVN:                 %7.3f s", timers[_t_gvn].seconds());
     tty->print_cr("         Null checks elim:    %7.3f s", timers[_t_optimize_null_checks].seconds());
     tty->print_cr("         Range checks elim:   %7.3f s", timers[_t_rangeCheckElimination].seconds());
@@ -705,11 +716,13 @@ void Compilation::print_timers() {
   {
     tty->print_cr("       Emit LIR:            %7.3f s",    timers[_t_emit_lir].seconds());
     tty->print_cr("         LIR Gen:             %7.3f s",   timers[_t_lirGeneration].seconds());
+    tty->print_cr("         Recompute Code:      %7.3f s",   timers[_t_recomputeCode].seconds());
     tty->print_cr("         Linear Scan:         %7.3f s",   timers[_t_linearScan].seconds());
     NOT_PRODUCT(LinearScan::print_timers(timers[_t_linearScan].seconds()));
 
     double other = timers[_t_emit_lir].seconds() -
       (timers[_t_lirGeneration].seconds() +
+       timers[_t_recomputeCode].seconds() +
        timers[_t_linearScan].seconds());
     if (other > 0) {
       tty->print_cr("         Other:               %7.3f s", other);
