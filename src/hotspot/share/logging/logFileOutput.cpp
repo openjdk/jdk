@@ -52,19 +52,6 @@ LogFileOutput::LogFileOutput(const char* name)
   _file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str);
 }
 
-bool LogFileOutput::matches_name(const char* name) const {
-  if (LogOutput::matches_name(name)) {
-    return true;
-  }
-  if (strncmp(name, Prefix, strlen(Prefix)) != 0) {
-    return false;
-  }
-  char* file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str);
-  bool same = os::same_files(_file_name, file_name);
-  os::free(file_name);
-  return same;
-}
-
 const char* LogFileOutput::cur_log_file_name() {
   if (strlen(_archive_name) == 0) {
     return _file_name;
@@ -277,6 +264,23 @@ class RotationLocker : public StackObj {
     _sem.signal();
   }
 };
+
+bool LogFileOutput::matches_name(const char* name) const {
+  if (LogOutput::matches_name(name)) {
+    return true;
+  }
+  if (strncmp(name, Prefix, strlen(Prefix)) != 0) {
+    return false;
+  }
+  char* file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str);
+  bool same;
+  {
+    RotationLocker lock(_rotation_semaphore);
+    same = os::same_files(_file_name, file_name);
+  }
+  os::free(file_name);
+  return same;
+}
 
 int LogFileOutput::write_blocking(const LogDecorations& decorations, const char* msg) {
   RotationLocker lock(_rotation_semaphore);

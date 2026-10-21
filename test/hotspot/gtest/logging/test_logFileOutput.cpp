@@ -27,6 +27,7 @@
 #include "logging/logFileOutput.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
+#include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
@@ -58,6 +59,43 @@ TEST_VM(LogFileOutput, matches_name) {
   EXPECT_TRUE(LogConfiguration::StderrLog->matches_name("stderr"));
   EXPECT_FALSE(LogConfiguration::StderrLog->matches_name("stdout"));
   EXPECT_FALSE(LogConfiguration::StderrLog->matches_name(file_name));
+}
+
+TEST_VM(LogFileOutput, matches_name_during_rotation) {
+  ResourceMark rm;
+  const char* path = prepend_temp_dir("log-matches-rotation");
+  const char* separator = os::file_separator();
+  const char* leaf = strrchr(path, separator[0]);
+  ASSERT_NE(nullptr, leaf);
+  stringStream name, alias, errors;
+  name.print("file=%s", path);
+  alias.print("file=%.*s.%s%s", static_cast<int>(leaf - path + 1), path, separator, leaf + 1);
+  {
+    LogFileOutput output(name.as_string());
+    ASSERT_TRUE(output.initialize("filecount=1,filesize=0", &errors)) << errors.as_string();
+    Semaphore ready(0), done(0);
+    auto rotate = [&](JavaTestThread*) {
+      ready.signal();
+      for (int i = 0; i < 1000; i++) {
+        output.force_rotate();
+      }
+    };
+    auto* thread = new SingleTestThread<decltype(rotate)>(&done, rotate);
+    thread->doit();
+    ready.wait();
+    int mismatches = 0;
+    for (int i = 0; i < 10000; i++) {
+      if (!output.matches_name(alias.as_string())) {
+        mismatches++;
+      }
+    }
+    done.wait();
+    EXPECT_EQ(0, mismatches);
+  }
+  delete_file(path);
+  stringStream archive;
+  archive.print("%s.0", path);
+  delete_file(archive.as_string());
 }
 
 // Test parsing a bunch of valid file output options
