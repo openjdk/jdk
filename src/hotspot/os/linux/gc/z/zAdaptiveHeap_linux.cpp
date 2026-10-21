@@ -109,7 +109,7 @@ void ZAdaptiveHeap::pd_machine_memory_info(ZMachineMemoryInfo& info) {
     }
 
     if (!(found_mem_total && (found_mem_available || (found_mem_free && found_active_file && found_inactive_file && found_sreclaimable)))) {
-      static bool n = [&]() {
+      static bool runs_once = [&]() {
         log_warning_p(gc, heap)("Failed to read one of the NUMA-node specific values: "
                                 "MemTotal: %d, MemAvailable: %d, MemFree: %d, Active(file): %d, Inactive(file): %d, SReclaimable: %d",
                                 found_mem_total, found_mem_available, found_mem_free, found_active_file, found_inactive_file, found_sreclaimable);
