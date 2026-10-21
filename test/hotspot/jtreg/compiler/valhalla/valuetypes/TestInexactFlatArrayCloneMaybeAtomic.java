@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @summary TODO
+ * @summary Test clone of flat array that does not have an exact klass,
+ *          i.e. multiple layouts are possible.
  * @bug 8390508
  * @requires vm.compiler2.enabled
  * @enablePreview
@@ -43,7 +44,7 @@ package compiler.valhalla.valuetypes;
 import jdk.internal.value.ValueClass;
 import jdk.internal.vm.annotation.LooselyConsistentValue;
 
-public class TestInexactFlatArrayClone {
+public class TestInexactFlatArrayCloneMaybeAtomic {
     @LooselyConsistentValue
     static value class MyValue {
         byte x;
@@ -69,7 +70,7 @@ public class TestInexactFlatArrayClone {
             boolean atomic = (i & 1) == 0;
             boolean flat = ValueClass.isFlatArray(atomic ? ATOMIC : NON_ATOMIC);
             MyValue[] result = test(atomic);
-            if (result[0] != VALUE || result[0] != VALUE || ValueClass.isAtomicArray(result) != atomic || !ValueClass.isNullRestrictedArray(result) || ValueClass.isFlatArray(result) != flat) {
+            if (result[0] != VALUE || ValueClass.isAtomicArray(result) != atomic || !ValueClass.isNullRestrictedArray(result) || ValueClass.isFlatArray(result) != flat) {
                 throw new AssertionError("Unexpected clone");
             }
         }
