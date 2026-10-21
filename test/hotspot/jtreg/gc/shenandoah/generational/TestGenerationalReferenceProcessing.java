@@ -95,12 +95,9 @@
  */
 package gc.shenandoah.generational;
 
-import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.ref.ReferenceQueue;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.TreeSet;
 import java.util.Set;
 import java.util.ArrayList;
 import java.util.List;
@@ -213,63 +210,48 @@ public class TestGenerationalReferenceProcessing {
         drainReferenceQueueAndClearReferents();
 
         if (referentGen == YOUNG) {
+            Set<WeakReference<?>> youngToYoung = classifier.getReferences(YOUNG, YOUNG);
+            Set<WeakReference<?>> oldToYoung = classifier.getReferences(OLD, YOUNG);
+
             WB.youngGC();
 
-            int cleared = removeClearedWeakReferences();
-            classifier.classify();
-            System.out.println("After Young GC, cleared: " + cleared + ", referents: " + classifier);
-
-            assertReferencesCleared(YOUNG, YOUNG, classifier);
-            assertReferencesCleared(OLD, YOUNG, classifier);
+            assertReferencesCleared(YOUNG, YOUNG, youngToYoung);
+            assertReferencesCleared(OLD, YOUNG, oldToYoung);
         } else {
+            Set<WeakReference<?>> oldToOld = classifier.getReferences(OLD, OLD);
+
             WB.shenandoahOldMarkGC();
 
-            int cleared = removeClearedWeakReferences();
-            classifier.classify();
-            System.out.println("After Old GC, cleared: " + cleared + ", referents: " + classifier);
-
-            assertReferencesCleared(OLD, OLD, classifier);
+            assertReferencesCleared(OLD, OLD, oldToOld);
         }
     }
 
-    private static void assertReferencesCleared(int referenceGen, int referentGen, ReferenceClassifier classifier) {
-        var references = classifier.getReferences(referenceGen, referentGen);
-        if (references.isEmpty()) {
-            return;
-        }
-
-        // Addresses here could be relocated and may not match logs from old gen collection
-        printReferences(referenceGen, referentGen, references);
-        throw new AssertionError(name(referenceGen) + " to " + name(referentGen) + " referents should have been cleared");
-    }
-
-    private static void printReferences(int referenceGen, int referentGen, Collection<WeakReference<?>> references) {
-        final int max_references = 10;
-        int references_shown = 0;
+    private static void assertReferencesCleared(int referenceGen, int referentGen, Set<WeakReference<?>> references) {
+        final int MaxReferences = 10;
+        int referencesShown = 0;
+        boolean allClear = true;
         for (var reference : references) {
-            if (references_shown >= max_references) {
-                break;
-            }
+            if (reference.get() != null) {
+                if (referencesShown >= MaxReferences) {
+                    break;
+                }
 
-            ++references_shown;
-            printReference(referenceGen, referentGen, reference);
+                printReference(referenceGen, referentGen, reference);
+                ++referencesShown;
+                allClear = false;
+            }
+        }
+
+        if (!allClear) {
+            throw new AssertionError(name(referenceGen) + " to " + name(referentGen) + " referents should have been cleared");
         }
     }
 
     private static void printReference(int referenceGen, int referentGen, WeakReference<?> reference) {
+        // Addresses here could be relocated and may not match logs from old gen collection
         System.out.printf("reference: 0x%x (%d) in %s refers to 0x%x (%d) in %s\n",
                           WB.getObjectAddress(reference), reference.hashCode(), name(referenceGen),
                           WB.getObjectAddress(reference.get()), reference.get().hashCode(), name(referentGen));
-    }
-
-    private static int removeClearedWeakReferences() {
-        int cleared = 0;
-        Reference<?> weak;
-        while ((weak = REF_QUEUE.poll()) != null) {
-            WEAK_REFS.remove(weak);
-            ++cleared;
-        }
-        return cleared;
     }
 
     private static void drainReferenceQueueAndClearReferents() {
