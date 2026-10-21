@@ -2685,6 +2685,43 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   return EXCEPTION_CONTINUE_EXECUTION;
 }
 
+static bool grow_windows_stack_to(address target) {
+  PNT_TIB tib = (PNT_TIB)NtCurrentTeb();
+
+  // Touch the page immediately below the current stack limit. Windows handles
+  // this as ordinary stack growth: it commits more stack, lowers StackLimit,
+  // and installs a new moving guard. Re-read StackLimit after every touch
+  // because Windows may grow the stack by more than one page at a time.
+  while (target < (address)tib->StackLimit) {
+    address old_limit = (address)tib->StackLimit;
+    volatile char* probe = reinterpret_cast<volatile char*>(
+        old_limit - os::vm_page_size());
+
+    // Dummy write to trigger an update to the stack limit.
+    *probe = 0;
+
+    if ((address)tib->StackLimit >= old_limit) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+[[noreturn]]
+static void report_fatal_stack_overflow(JavaThread* thread,
+    struct _EXCEPTION_POINTERS* exceptionInfo, address pc,
+    const char* message, bool disable_red_zone) {
+  if (disable_red_zone) {
+    thread->stack_overflow_state()->disable_stack_red_zone();
+  }
+
+  PEXCEPTION_RECORD exception_record = exceptionInfo->ExceptionRecord;
+  tty->print_raw_cr(message);
+  VMError::report_and_die(thread, exception_record->ExceptionCode, pc,
+                          exception_record, exceptionInfo->ContextRecord);
+}
+
 //-----------------------------------------------------------------------------
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
@@ -2760,6 +2797,19 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
                                 exceptionInfo->ContextRecord);
       }
     } else if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
+      address addr = (address)exception_record->ExceptionInformation[1];
+      PNT_TIB tib = (PNT_TIB)NtCurrentTeb();
+      if (addr < (address)tib->StackLimit && thread->is_in_usable_stack(addr)) {
+        address target = align_down(addr, os::vm_page_size());
+        if (grow_windows_stack_to(target)) {
+          return EXCEPTION_CONTINUE_EXECUTION;
+        }
+
+        report_fatal_stack_overflow(thread, exceptionInfo, pc,
+                                    "Unable to expand the Windows thread stack",
+                                    /* disable red zone */ true);
+      }
+
       if (in_java) {
         // Either stack overflow or null pointer exception.
         address addr = (address) exception_record->ExceptionInformation[1];
@@ -2780,14 +2830,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
             address stub = SharedRuntime::get_poll_stub(pc);
             return Handle_Exception(exceptionInfo, stub);
           }
-        }
-        // If it's a legal stack address map the entire region in
-        if (thread->is_in_usable_stack(addr)) {
-          addr = (address)((uintptr_t)addr &
-                            (~((uintptr_t)os::vm_page_size() - (uintptr_t)1)));
-          os::commit_memory((char *)addr, thread->stack_base() - addr,
-                            !ExecMem);
-          return EXCEPTION_CONTINUE_EXECUTION;
         }
         // Null pointer exception.
         if (MacroAssembler::uses_implicit_null_check((void*)addr)) {
