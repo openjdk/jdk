@@ -29,7 +29,8 @@ package compiler.valhalla.valuetypes;
  * @enablePreview
  * @run main ${test.main.class}
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=exclude,${test.main.class}::get
- *                   -XX:CompileCommand=dontinline,${test.main.class}::safepoint ${test.main.class}
+ *                   -XX:CompileCommand=dontinline,${test.main.class}::safepoint
+ *                   -XX:CompileOnly=${test.main.class}::* ${test.main.class}
  */
 
 
