@@ -127,11 +127,11 @@ private:
 
   union {
     uint   _embedded_stub_offset; // Start of embedded stubs in StubGenBlobs
-    uint   _comp_level;           // compilation level (not needed in StubGenBlobs)
+    uint   _comp_level;           // compilation level, nmethod only
   };
-  uint   _comp_id;     // compilation id
-  uint   _num_inlined_bytecodes;
-  uint   _inline_instructions_size; // size from training run
+  uint   _comp_id;     // compilation id, nmethod only
+  uint   _num_inlined_bytecodes;    // nmethod only
+  uint   _inline_instructions_size; // size from training run, nmethod only
 public:
   AOTCodeEntry(Kind kind,         uint id,
                uint offset,       uint size,
@@ -924,7 +924,6 @@ public:
   AOTCodeCache(bool is_dumping, bool is_using);
 
   const char* cache_buffer() const { return _load_buffer; }
-  const char* store_buffer() const { return _store_buffer; }
 
   // Use atomic access to _failed field.
   bool failed() const;
@@ -989,7 +988,7 @@ public:
   bool write_metadata(Metadata* m);
   bool write_oops(nmethod* nm);
   bool write_metadata(nmethod* nm);
-  bool write_stub_data(CodeBlob& blob, AOTStubData *stub_data, uint* stubs_offset = nullptr);
+  bool write_stub_data(CodeBlob& blob, AOTStubData* stub_data, uint* stubs_offset = nullptr);
 
 #ifndef PRODUCT
   bool write_asm_remarks(AsmRemarks& asm_remarks, GrowableArray<const char*>& remarks, GrowableArray<uint>& remarks_len, uint* size);
@@ -1087,7 +1086,7 @@ public:
   static bool verify_jvmti_state(ciEnv* env) NOT_CDS_RETURN_(true);
 
   //Helper for logging
-  static const char *get_kind_name(AOTCodeEntry::Kind kind);
+  static const char* get_kind_name(AOTCodeEntry::Kind kind);
 
   // It is used before AOTCodeCache is initialized.
   static bool maybe_dumping_code() NOT_CDS_RETURN_(false);
@@ -1104,7 +1103,7 @@ public:
   static void print_timers_on(outputStream* st) NOT_CDS_RETURN;
 
   typedef void (*embedded_stub_func)(intptr_t pointer, uint size, uint stub_id, const char* stub_name, uint entry_id) ;
-  void iterate_embedded_stubs(const AOTCodeEntry *entry, embedded_stub_func func);
+  void iterate_embedded_stubs(const AOTCodeEntry* entry, embedded_stub_func func);
 };
 
 // Control block for loading a single AOTCodeEntry asset from the "ac" region
