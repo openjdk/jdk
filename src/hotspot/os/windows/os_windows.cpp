@@ -452,6 +452,26 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
   return captured;
 }
 
+bool os::win32::install_stack_guarantee(size_t requested, size_t* effective) {
+  assert(requested <= max_juint, "stack guarantee does not fit in ULONG");
+  ULONG guarantee = static_cast<ULONG>(requested);
+  if (!SetThreadStackGuarantee(&guarantee)) {
+    return false;
+  }
+
+  // Read the configured value, which could be different from the requested
+  // value since Windows enforces it's own minimum stack guarantee.  Windows
+  // guarantees that the configured value will not be smaller than the requested
+  // value.
+  guarantee = 0;
+  if (!SetThreadStackGuarantee(&guarantee)) {
+    return false;
+  }
+
+  *effective = guarantee;
+  return true;
+}
+
 //   Returns the base of the stack, which is the stack's
 //   starting address.  This function must be called
 //   while running on the stack of the thread being queried.
@@ -4307,6 +4327,7 @@ int os::current_process_id() {
   return (_initial_pid ? _initial_pid : _getpid());
 }
 
+size_t                    os::win32::_stack_guarantee_size      = 0;
 int                       os::win32::_processor_type            = 0;
 // Processor level is not available on non-NT systems, use vm_version instead
 int                       os::win32::_processor_level           = 0;
@@ -4836,6 +4857,19 @@ size_t os::_os_min_stack_allowed = 64 * K;
 
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
+  const size_t requested = StackOverflow::stack_red_zone_size() +
+      StackOverflow::stack_yellow_zone_size() - vm_page_size();
+
+  size_t actual = 0;
+  if (!win32::install_stack_guarantee(requested, &actual) ||
+      actual < requested || !is_aligned(actual, vm_page_size())) {
+    tty->print_cr("Unable to establish the Windows stack guarantee");
+    return JNI_ERR;
+  }
+
+  assert(win32::_stack_guarantee_size == 0, "already initialized");
+  win32::_stack_guarantee_size = actual;
+
   const char* auto_schedules_message = "Host Windows OS automatically schedules threads across all processor groups.";
   const char* no_auto_schedules_message = "Host Windows OS does not automatically schedule threads across all processor groups.";
 
