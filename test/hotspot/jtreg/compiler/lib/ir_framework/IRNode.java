@@ -490,6 +490,12 @@ public class IRNode {
         superWordNodes(AND_REDUCTION_V, "AndReductionV");
     }
 
+    public static final String ANY_LOOP = PREFIX + "ANY_LOOP" + POSTFIX;
+    static {
+        String regex = START + "(Counted|LongCounted|OuterStripMined)?Loop\\b" + MID + END;
+        fromBeforeCountedLoops(ANY_LOOP, regex);
+    }
+
     public static final String CALL = PREFIX + "CALL" + POSTFIX;
     static {
         beforeMatchingNameRegex(CALL, "Call.*Java");

@@ -3939,6 +3939,7 @@ void MacroAssembler::null_check(Register reg, Register tmp, int64_t offset) {
 //-------------------------------------
 
 void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   static_assert(markWord::value_type_pattern <= 0x7FFF, "must fit in simm16 for z_chi");
   z_nilf(markword, markWord::value_type_pattern_mask);
   z_chi(markword, markWord::value_type_pattern);
@@ -3946,6 +3947,7 @@ void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_va
 }
 
 void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   if (can_be_null) {
     z_ltgr(object, object);
     branch_optimized(bcondEqual, not_value_type);
@@ -3957,16 +3959,19 @@ void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, L
 }
 
 void MacroAssembler::test_field_is_null_free_value_type(Register flags, Label& is_null_free) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   testbit(flags, ResolvedFieldEntry::is_null_free_value_type_shift);
   z_brc(Assembler::bcondAllOne, is_null_free);
 }
 
 void MacroAssembler::test_field_is_not_null_free_value_type(Register flags, Label& not_null_free_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   testbit(flags, ResolvedFieldEntry::is_null_free_value_type_shift);
   z_brc(Assembler::bcondAllZero, not_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_flat(Register flags, Label& is_flat) {
+  assert(UseFieldFlattening, "should not be used without field flattening enabled");
   testbit(flags, ResolvedFieldEntry::is_flat_shift);
   z_brc(Assembler::bcondAllOne, is_flat);
 }
@@ -4280,22 +4285,27 @@ void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int
 }
 
 void MacroAssembler::test_flat_array_oop(Register oop, Register temp_reg, Label& is_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, true, is_flat_array);
 }
 
 void MacroAssembler::test_non_flat_array_oop(Register oop, Register temp_reg, Label& is_non_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, false, is_non_flat_array);
 }
 
 void MacroAssembler::test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, true, is_null_free_array);
 }
 
 void MacroAssembler::test_non_null_free_array_oop(Register oop, Register temp_reg, Label& is_non_null_free_array) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, false, is_non_null_free_array);
 }
 
 void MacroAssembler::test_flat_array_layout(Register lh, Label& is_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   testbit(lh, exact_log2(Klass::_lh_array_tag_flat_value_bit_inplace));
   z_brnaz(is_flat_array);
 }
@@ -4544,11 +4554,13 @@ void MacroAssembler::store_heap_oop(Register Roop, const Address &a,
 }
 
 void MacroAssembler::payload_offset(Register value_klass, Register offset) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   z_lg(offset, Address(value_klass, ValueKlass::adr_members_offset()));
   z_llgf(offset, Address(offset, ValueKlass::payload_offset_offset()));
 }
 
 void MacroAssembler::payload_addr(Register oop, Register data, Register value_klass) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   // ((address) (void*) o) + vk->payload_offset();
   //
   // oop must differ from value_klass: payload_offset() overwrites value_klass
@@ -7144,22 +7156,26 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
 }
 
 bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState reg_state[]) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   Unimplemented();
 }
 
 bool MacroAssembler::unpack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
                             VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
                             RegState reg_state[]) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   Unimplemented();
 }
 
 bool MacroAssembler::pack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
                           VMRegPair* from, int from_count, int& from_index, VMReg to,
                           RegState reg_state[], Register val_array) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   Unimplemented();
 }
 
 int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   Unimplemented();
 }
 

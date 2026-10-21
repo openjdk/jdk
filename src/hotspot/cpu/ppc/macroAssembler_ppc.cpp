@@ -202,36 +202,27 @@ address MacroAssembler::get_address_of_calculate_address_from_global_toc_at(addr
 }
 
 #ifdef _LP64
-// Patch compressed oops or klass constants.
-// Assembler sequence is
-// 1) compressed oops:
-//    lis  rx = const.hi
-//    ori rx = rx | const.lo
-// 2) compressed klass:
-//    lis  rx = const.hi
-//    clrldi rx = rx & 0xFFFFffff // clearMS32b, optional
-//    ori rx = rx | const.lo
-// Clrldi will be passed by.
-address MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop data) {
+bool MacroAssembler::_compressed_oops_fit_in_31_bits = false;
+
+void MacroAssembler::initialize_compressed_oops_fit_in_31_bits() {
+  if (UseCompressedOops) {
+    address max_oop = align_down(CompressedOops::end() - 1, MinObjAlignmentInBytes);
+    narrowOop max_encoded_oop = CompressedOops::encode(cast_to_oop(max_oop));
+    _compressed_oops_fit_in_31_bits = Assembler::is_uimm((jlong)max_encoded_oop, 31);
+  }
+}
+
+// Patch compressed oop constants.
+// The relocation points to the ori of an adjacent lis/ori pair.
+//
+//   lis  rx = const.hi
+//   ori  rx = rx | const.lo
+address MacroAssembler::patch_set_narrow_oop(address a, address lower_bound, narrowOop data) {
   assert(UseCompressedOops, "Should only patch compressed oops");
 
   const address inst2_addr = a;
-  const int inst2 = *(int *)inst2_addr;
-
-  // The relocation points to the second instruction, the ori,
-  // and the ori reads and writes the same register dst.
-  const int dst = inv_rta_field(inst2);
-  assert(is_ori(inst2) && inv_rs_field(inst2) == dst, "must be ori reading and writing dst");
-  // Now, find the preceding addis which writes to dst.
-  int inst1 = 0;
-  address inst1_addr = inst2_addr - BytesPerInstWord;
-  bool inst1_found = false;
-  while (inst1_addr >= bound) {
-    inst1 = *(int *)inst1_addr;
-    if (is_lis(inst1) && inv_rs_field(inst1) == dst) { inst1_found = true; break; }
-    inst1_addr -= BytesPerInstWord;
-  }
-  assert(inst1_found, "inst is not lis");
+  assert(is_set_narrow_oop(inst2_addr, lower_bound), "must be lis/ori narrow oop constant");
+  const address inst1_addr = inst2_addr - BytesPerInstWord;
 
   uint32_t data_value = CompressedOops::narrow_oop_value(data);
   int xc = (data_value >> 16) & 0xffff;
@@ -243,27 +234,12 @@ address MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop
 }
 
 // Get compressed oop constant.
-narrowOop MacroAssembler::get_narrow_oop(address a, address bound) {
+narrowOop MacroAssembler::get_narrow_oop(address a, address lower_bound) {
   assert(UseCompressedOops, "Should only patch compressed oops");
 
   const address inst2_addr = a;
-  const int inst2 = *(int *)inst2_addr;
-
-  // The relocation points to the second instruction, the ori,
-  // and the ori reads and writes the same register dst.
-  const int dst = inv_rta_field(inst2);
-  assert(is_ori(inst2) && inv_rs_field(inst2) == dst, "must be ori reading and writing dst");
-  // Now, find the preceding lis which writes to dst.
-  int inst1 = 0;
-  address inst1_addr = inst2_addr - BytesPerInstWord;
-  bool inst1_found = false;
-
-  while (inst1_addr >= bound) {
-    inst1 = *(int *) inst1_addr;
-    if (is_lis(inst1) && inv_rs_field(inst1) == dst) { inst1_found = true; break;}
-    inst1_addr -= BytesPerInstWord;
-  }
-  assert(inst1_found, "inst is not lis");
+  assert(is_set_narrow_oop(inst2_addr, lower_bound), "must be lis/ori narrow oop constant");
+  const address inst1_addr = inst2_addr - BytesPerInstWord;
 
   uint xl = ((unsigned int) (get_imm(inst2_addr, 0) & 0xffff));
   uint xh = (((get_imm(inst1_addr, 0)) & 0xffff) << 16);
@@ -3286,6 +3262,7 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
 }
 
 void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert_different_registers(markword, R0);
   andi(R0, markword, markWord::value_type_pattern_mask);
   cmpwi(CR0, R0, markWord::value_type_pattern);
@@ -3293,6 +3270,7 @@ void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_va
 }
 
 void MacroAssembler::test_oop_is_not_value_type(Register object, Label& not_value_type, bool can_be_null) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   if (can_be_null) {
     cmpdi(CR0, object, 0);
     beq(CR0, not_value_type);
@@ -3304,16 +3282,19 @@ void MacroAssembler::test_oop_is_not_value_type(Register object, Label& not_valu
 }
 
 void MacroAssembler::test_field_is_null_free_value_type(Register flags, Label& is_null_free_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   testbitdi(CR0, R0, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
   bne(CR0, is_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_not_null_free_value_type(Register flags, Label& not_null_free_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   testbitdi(CR0, R0, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
   beq(CR0, not_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_flat(Register flags, Label& is_flat) {
+  assert(UseFieldFlattening, "should not be used without field flattening enabled");
   testbitdi(CR0, R0, flags, ResolvedFieldEntry::is_flat_shift);
   bne(CR0, is_flat);
 }
@@ -3336,22 +3317,27 @@ void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int
 }
 
 void MacroAssembler::test_flat_array_oop(Register oop, Register temp_reg, Label& is_flat_array, bool maybe_far) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, true, is_flat_array, maybe_far);
 }
 
 void MacroAssembler::test_non_flat_array_oop(Register oop, Register temp_reg, Label& is_non_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, false, is_non_flat_array);
 }
 
 void MacroAssembler::test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array, bool maybe_far) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, true, is_null_free_array, maybe_far);
 }
 
 void MacroAssembler::test_non_null_free_array_oop(Register oop, Register temp_reg, Label& is_non_null_free_array) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, false, is_non_null_free_array);
 }
 
 void MacroAssembler::test_flat_array_layout(Register lh, Label& is_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   testbitdi(CR0, R0, lh, exact_log2(Klass::_lh_array_tag_flat_value_bit_inplace));
   bne(CR0, is_flat_array);
 }
@@ -3365,11 +3351,13 @@ void MacroAssembler::load_metadata(Register dst, Register src) {
 }
 
 void MacroAssembler::payload_offset(Register value_klass, Register offset) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   ld(offset, in_bytes(ValueKlass::adr_members_offset()), value_klass);
   lwz(offset, in_bytes(ValueKlass::payload_offset_offset()), offset);
 }
 
 void MacroAssembler::payload_address(Register oop, Register data, Register value_klass, Register t1) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   // ((address) (void*) o) + vk->payload_offset();
   payload_offset(value_klass, t1);
   add(data, oop, t1);
