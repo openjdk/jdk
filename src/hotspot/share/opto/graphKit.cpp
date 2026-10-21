@@ -4361,7 +4361,19 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
       if (alias_adr_type->is_flat()) {
         C->set_flat_accesses();
       }
-      hook_memory_on_init(*this, elemidx, minit_in, _gvn.transform(new NarrowMemProjNode(init, alias_adr_type)));
+      // If the slice is flat, we will later want to split the shared flat slice (INLINES)
+      // into the individual field slices, with separate NarrowMemProj. But we can only
+      // do that if there is only one layout, i.e. if the klass is exact.
+      // In the future, we could devise some more elaborate aliasing scheme that would
+      // allow us to produce NarrowMemProj for inexact cases.
+      // For now, we just do the same as for the fields of reflective instance allocation,
+      // and leave the outgoing slice unchanged (i.e. we pass nullptr).
+      const bool is_flat_with_inexact_klass = alias_adr_type->is_flat() &&
+                                              !oop_type->klass_is_exact();
+      Node* init_mem = is_flat_with_inexact_klass
+                       ? nullptr
+                       : _gvn.transform(new NarrowMemProjNode(init, alias_adr_type));
+      hook_memory_on_init(*this, elemidx, minit_in, init_mem);
     } else if (oop_type->isa_instptr()) {
       ciInstanceKlass* ik = oop_type->is_instptr()->instance_klass();
       for (int i = 0, len = ik->nof_nonstatic_fields(); i < len; i++) {
