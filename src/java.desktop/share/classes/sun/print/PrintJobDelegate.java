@@ -931,6 +931,7 @@ public class PrintJobDelegate implements Printable, Runnable {
      * @throws java.awt.print.PrinterException
      *         thrown when the print job is terminated.
      */
+    @Override
     public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
                  throws PrinterException {
 
@@ -975,6 +976,7 @@ public class PrintJobDelegate implements Printable, Runnable {
     }
 
 
+    @Override
     public void run() {
 
         try {
