@@ -33,11 +33,11 @@
  *     This test performs checking for
  *         command set: StackFrame
  *         command: PopFrames
- *     Same check as popframes001, but before the breakpoint the tested
- *     method joins another virtual thread. Run with the virtual thread
- *     factory the tested thread is unmounted there and comes back with
- *     only its top frame thawed, the caller frame stays frozen in the
- *     stack chunk. The pop has to bring that frame back.
+ *     Same check as popframes001, but the tested thread is a virtual
+ *     thread and before the breakpoint the tested method joins another
+ *     virtual thread. The tested thread is unmounted there and comes
+ *     back with only its top frame thawed, the caller frame stays frozen
+ *     in the stack chunk. The pop has to bring that frame back.
  *     Test checks that debugee accept the command packet and
  *     replies with correct reply packet. Also test checks that
  *     after current frame is popped the tested method is invoked
@@ -75,5 +75,6 @@
  *      -transport.address=dynamic
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}
  *                       -XX:CompileCommand=exclude,*TestedThreadClass::run
+ *                       -Dtest.thread.factory=Virtual
  *                       -Dpopframes001.unmount=true"
  */

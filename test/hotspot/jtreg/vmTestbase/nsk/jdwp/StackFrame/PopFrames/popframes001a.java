@@ -44,7 +44,10 @@ public class popframes001a {
     public static final String THREAD_NAME = "testedThread";
 
     // line nunber for breakpoint
-    public static final int BREAKPOINT_LINE_NUMBER = 156;
+    public static final int BREAKPOINT_LINE_NUMBER = 168;
+
+    // line number of the popframes003 breakpoint in stop()
+    public static final int STOP_LINE_NUMBER = 182;
 
     // scaffold objects
     private static volatile ArgumentHandler argumentHandler = null;
@@ -86,6 +89,13 @@ public class popframes001a {
             return popframes001.FAILED;
         }
 
+        // popping only stop() would reach the breakpoint twice as well
+        if (TestedThreadClass.COMPILED_CALLER && TestedThreadClass.invokations != 2) {
+            log.complain("Tested method invoked " + TestedThreadClass.invokations + " times, expected 2");
+            log.display("Debugee FAILED");
+            return popframes001.FAILED;
+        }
+
         log.display("Debugee PASSED");
         return popframes001.PASSED;
     }
@@ -100,7 +110,7 @@ public class popframes001a {
         private static final boolean UNMOUNT = Boolean.getBoolean("popframes001.unmount");
         private static final boolean COMPILED_CALLER = Boolean.getBoolean("popframes001.compiledCaller");
 
-        // set when run() turns out not to be compiled
+        // set when run() or testedMethod() turns out not to be compiled
         public static volatile boolean notCompiled = false;
 
         public TestedThreadClass(String name) {
@@ -125,12 +135,14 @@ public class popframes001a {
             int boo = 0;
 
             log.display("Breakpoint line reached");
-            if (COMPILED_CALLER) {
-                // the frozen caller has to be a compiled frame in that test
+            if (COMPILED_CALLER && invokations == 1) {
+                // the frozen caller has to be a compiled frame in that test, checked once, the pop deoptimizes both
                 try {
+                    WhiteBox wb = WhiteBox.getWhiteBox();
                     Method run = TestedThreadClass.class.getDeclaredMethod("run");
-                    if (WhiteBox.getWhiteBox().getMethodCompilationLevel(run) == 0) {
-                        log.complain("run() is not compiled");
+                    Method tested = TestedThreadClass.class.getDeclaredMethod("testedMethod", int.class);
+                    if (wb.getMethodCompilationLevel(run) == 0 || wb.getMethodCompilationLevel(tested) == 0) {
+                        log.complain("run() or testedMethod() is not compiled");
                         notCompiled = true;
                     }
                 } catch (NoSuchMethodException e) {
@@ -139,11 +151,11 @@ public class popframes001a {
             }
             if (UNMOUNT) {
                 // joining a virtual thread unmounts a virtual tested thread, so the frame below is frozen when popped
+                Thread tested = Thread.currentThread();
                 Thread parker = Thread.ofVirtual().start(() -> {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
+                    // ends once the tested thread is parked in the join below
+                    while (tested.getState() != Thread.State.WAITING) {
+                        Thread.yield();
                     }
                 });
                 try {
@@ -156,7 +168,18 @@ public class popframes001a {
             boo = arg * 2; // BREAKPOINT_LINE_NUMBER
             log.display("Breakpoint line passed");
 
+            if (COMPILED_CALLER) {
+                // popframes003 breaks in stop() and pops this frame together with it
+                stop();
+            }
+
             return boo;
+        }
+
+        // breakpoint method for popframes003
+        public void stop() {
+            // next line is for breakpoint
+            log.display("Stop line reached"); // STOP_LINE_NUMBER
         }
     }
 }
