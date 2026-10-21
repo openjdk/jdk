@@ -23,9 +23,9 @@
  */
 
 #include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -59,7 +59,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/refArrayOop.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -232,7 +231,7 @@ void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
     // Create a "scratch" copy of the resolved references array to archive
     if (CDSConfig::is_dumping_heap()) {
       refArrayOop scratch_references = oopFactory::new_refArray(vmClasses::Object_klass(), map_length, CHECK);
-      HeapShared::add_scratch_resolved_references(this, scratch_references);
+      AOTHeap::add_scratch_resolved_references(this, scratch_references);
     }
   }
 }
@@ -350,7 +349,7 @@ refArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
       keep_resolved_refs.at_put(rr_index, true);
     });
 
-    refArrayOop scratch_rr = HeapShared::scratch_resolved_references(this);
+    refArrayOop scratch_rr = AOTHeap::scratch_resolved_references(this);
     Array<u2>* ref_map = reference_map();
     int ref_map_len = ref_map == nullptr ? 0 : ref_map->length();
     for (int i = 0; i < rr_len; i++) {
@@ -361,7 +360,7 @@ refArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
           int index = object_to_cp_index(i);
           if (tag_at(index).is_string()) {
             assert(java_lang_String::is_instance(obj), "must be");
-            if (!HeapShared::is_string_too_large_to_archive(obj)) {
+            if (!AOTHeap::is_string_too_large_to_archive(obj)) {
               scratch_rr->obj_at_put(i, obj);
             }
             continue;
@@ -401,7 +400,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   if (vmClasses::Object_klass_is_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
-    if (HeapShared::is_archived_heap_in_use() &&
+    if (AOTHeap::is_archived_heap_in_use() &&
         _cache->archived_references() != nullptr) {
       oop archived = _cache->archived_references();
       // Create handle for the archived resolved reference array object
@@ -426,7 +425,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
 
   if (CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_heap() && resolved_references() != nullptr) {
     objArrayOop scratch_references = oopFactory::new_objArray(vmClasses::Object_klass(), resolved_references()->length(), CHECK);
-    HeapShared::add_scratch_resolved_references(this, scratch_references);
+    AOTHeap::add_scratch_resolved_references(this, scratch_references);
   }
 }
 

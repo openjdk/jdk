@@ -549,7 +549,7 @@ public:
 
 #ifdef ASSERT
   void verify_optimize(bool deep_revisit_converged);
-  void verify_Value_for(const Node* n, bool strict = false);
+  void verify_Value_for(const Node* n, const Type* tnew, bool strict = false);
   void verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit_converged);
   void verify_Identity_for(Node* n);
   void verify_node_invariants_for(const Node* n);
@@ -734,7 +734,7 @@ class PhaseCCP : public PhaseIterGVN {
 
   // Worklist algorithm identifies constants
   void analyze();
-  void analyze_step(Unique_Node_List& worklist, Node* n);
+  bool analyze_step(Unique_Node_List& worklist, Node* n);
   bool needs_revisit(Node* n) const;
 #ifdef ASSERT
   void verify_type(Node* n, const Type* tnew, const Type* told);

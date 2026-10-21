@@ -35,6 +35,7 @@ import sun.jvm.hotspot.types.WrongTypeException;
 public class ValueFieldInfo extends VMObject {
 
     private static MetadataField klassField;
+    private static CIntField kindField;
 
     static {
         VM.registerVMInitializedObserver((_, _) -> initialize(VM.getVM().getTypeDataBase()));
@@ -44,6 +45,7 @@ public class ValueFieldInfo extends VMObject {
         Type type = db.lookupType("ValueFieldInfo");
 
         klassField = new MetadataField(type.getAddressField("_klass"), 0);
+        kindField = new CIntField(type.getCIntegerField("_kind"), 0);
     }
 
     public ValueFieldInfo(Address addr) {
@@ -52,6 +54,11 @@ public class ValueFieldInfo extends VMObject {
 
     public ValueKlass getKlass() {
         return (ValueKlass)klassField.getValue(this);
+    }
+
+    public LayoutKind getKind() {
+        int rawVal = (int)kindField.getValue(this);
+        return LayoutKind.valueOf(rawVal);
     }
 
 }

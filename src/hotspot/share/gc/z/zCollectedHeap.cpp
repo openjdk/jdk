@@ -111,7 +111,7 @@ void ZCollectedHeap::stop() {
 }
 
 size_t ZCollectedHeap::max_capacity() const {
-  return _heap.max_capacity();
+  return _heap.dynamic_max_capacity();
 }
 
 size_t ZCollectedHeap::capacity() const {
@@ -243,7 +243,7 @@ MemoryUsage ZCollectedHeap::memory_usage() {
   const size_t initial_size = InitialHeapSize;
   const size_t committed    = ZHeap::heap()->capacity();
   const size_t used         = MIN2(ZHeap::heap()->used(), committed);
-  const size_t max_size     = ZHeap::heap()->max_capacity();
+  const size_t max_size     = MAX2(ZHeap::heap()->dynamic_max_capacity(), committed);
 
   return MemoryUsage(initial_size, used, committed, max_size);
 }
@@ -326,7 +326,7 @@ VirtualSpaceSummary ZCollectedHeap::create_heap_space_summary() {
   // Fake values. ZGC does not commit memory contiguously in the reserved
   // address space, and the reserved space is larger than MaxHeapSize.
   const uintptr_t committed_end = ZAddressHeapBase + capacity();
-  const uintptr_t reserved_end = ZAddressHeapBase + max_capacity();
+  const uintptr_t reserved_end = MAX2(ZAddressHeapBase + max_capacity(), committed_end);
 
   return VirtualSpaceSummary((HeapWord*)start, (HeapWord*)committed_end, (HeapWord*)reserved_end);
 }
