@@ -810,8 +810,6 @@ bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
     ctrl->in(0)->Opcode() == Op_If &&
     ctrl->in(0)->outcnt() == 2 &&
     ctrl->in(0)->as_If()->cmp_folds(igvn, true) &&
-    // Must compare the same type and value.
-    ctrl->in(0)->in(1)->in(1)->Opcode() == in(1)->in(1)->Opcode() &&
     ctrl->in(0)->in(1)->in(1)->in(1) != nullptr &&
     ctrl->in(0)->in(1)->in(1)->in(1) != igvn->C->top() &&
     ctrl->in(0)->in(1)->in(1)->in(1) == in(1)->in(1)->in(1);
@@ -1394,8 +1392,8 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //     hi_type = [min(hi->_lo+1, max_value) .. max_value]   for n > hi
     //     -> hi_type->_lo <= hi->_lo + 1
     //   We will need the assumption (LO-HI) below, which we can
-    //   establish with the following (CHECK), guarding the subtraction
-    //   when hi_type->_lo == min_value to avoid underflow:
+    //   establish with the following (CHECK). As asserted above,
+    //   hi_type->_lo > min_value, so subtracting 1 cannot underflow:
     //        lo_type->_hi     <  hi_type->_lo - 1      (CHECK)
     //     -> lo_type->_hi + 1 <= hi_type->_lo - 1
     //     -> lo->_hi          <= hi->_lo

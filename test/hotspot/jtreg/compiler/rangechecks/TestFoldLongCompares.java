@@ -35,6 +35,8 @@ import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
 
 public class TestFoldLongCompares {
+    // Choose bounds outside the int range to exercise long-specific folding.
+    // Leave room for LO - 1 and HI + 1, which checkBounds() tests without overflow.
     private static final long LO = Integer.MIN_VALUE - 1L;
     private static final long HI = Integer.MAX_VALUE + 1L;
 
