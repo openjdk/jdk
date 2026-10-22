@@ -25,8 +25,11 @@ package compiler.valhalla.valuetypes;
 
 /*
  * @test
+ * @bug 8395610
+ * @summary native method calls are not scalarized and cause mismatches
  * @enablePreview
- * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:CompileOnly=${test.main.class}::test*  ${test.main.class}
+ * @run main/othervm -XX:-TieredCompilation ${test.main.class}
+ * @run main ${test.main.class}
  */
 
 
