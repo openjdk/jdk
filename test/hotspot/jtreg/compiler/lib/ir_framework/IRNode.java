@@ -2507,12 +2507,12 @@ public class IRNode {
     // Exclude the separate _negate rules that materialize boolean results.
     public static final String RISCV_CMOVE_VTEST_ANYTRUE = PREFIX + "RISCV_CMOVE_VTEST_ANYTRUE" + POSTFIX;
     static {
-        machOnlyNameRegex(RISCV_CMOVE_VTEST_ANYTRUE, "cmov[ILFD]_vtest_anytrue\\b");
+        machOnlyNameRegex(RISCV_CMOVE_VTEST_ANYTRUE, "cmov[ILFDPN]_vtest_anytrue\\b");
     }
 
     public static final String RISCV_CMOVE_VTEST_ALLTRUE = PREFIX + "RISCV_CMOVE_VTEST_ALLTRUE" + POSTFIX;
     static {
-        machOnlyNameRegex(RISCV_CMOVE_VTEST_ALLTRUE, "cmov[ILFD]_vtest_alltrue\\b");
+        machOnlyNameRegex(RISCV_CMOVE_VTEST_ALLTRUE, "cmov[ILFDPN]_vtest_alltrue\\b");
     }
 
     public static final String RISCV_VAND_NOTI_VX_MASKED = PREFIX + "RISCV_VAND_NOTI_VX_MASKED" + POSTFIX;

@@ -139,7 +139,7 @@ public class TestVectorTestCMove {
     }
 
     @Test(compLevel = CompLevel.C2)
-    @IR(counts = {"cmovP_vtest_anytrue", ">0"},
+    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ANYTRUE, ">0"},
         phase = CompilePhase.FINAL_CODE,
         applyIf = {"UseCompressedOops", "false"})
     static Object anyTrueP(long bits, Object first, Object second) {
@@ -147,7 +147,7 @@ public class TestVectorTestCMove {
     }
 
     @Test(compLevel = CompLevel.C2)
-    @IR(counts = {"cmovP_vtest_alltrue", ">0"},
+    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ALLTRUE, ">0"},
         phase = CompilePhase.FINAL_CODE,
         applyIf = {"UseCompressedOops", "false"})
     static Object allTrueP(long bits, Object first, Object second) {
@@ -155,7 +155,7 @@ public class TestVectorTestCMove {
     }
 
     @Test(compLevel = CompLevel.C2)
-    @IR(counts = {"cmovN_vtest_anytrue\\b", ">0"},
+    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ANYTRUE, ">0"},
         phase = CompilePhase.FINAL_CODE,
         applyIf = {"UseCompressedOops", "true"})
     static void anyTrueN(long bits) {
@@ -165,7 +165,7 @@ public class TestVectorTestCMove {
     }
 
     @Test(compLevel = CompLevel.C2)
-    @IR(counts = {"cmovN_vtest_alltrue\\b", ">0"},
+    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ALLTRUE, ">0"},
         phase = CompilePhase.FINAL_CODE,
         applyIf = {"UseCompressedOops", "true"})
     static void allTrueN(long bits) {
