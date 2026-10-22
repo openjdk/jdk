@@ -288,12 +288,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void notify_method_exit(bool is_native_method, TosState state,
                           NotifyMethodExitMode mode, bool check_exceptions);
 
-  // Allocate instance in "obj" and read in the content of the inline field
+  // Allocate instance in "obj" and read in the content of the value field
   // NOTES:
   //   - input holder object via "obj", which must be r0,
   //     will return new instance via the same reg
   void read_flat_field(Register entry, Register obj);
-  void write_flat_field(Register entry, Register tmp1, Register tmp2, Register obj, Register field_offset, Register value);
+  void write_flat_field(Register entry, Register tmp1, Register tmp2, Register obj, Register value);
 };
 
 #endif // CPU_PPC_INTERP_MASM_PPC_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,10 +95,18 @@ void print_debug(const char* format,...) {
   }
 }
 
+void print_warning(const char* format,...) {
+  va_list alist;
+  va_start(alist, format);
+  fputs("libsaproc WARNING: ", stdout);
+  vfprintf(stdout, format, alist);
+  va_end(alist);
+}
+
 void print_error(const char* format,...) {
   va_list alist;
   va_start(alist, format);
-  fputs("ERROR: ", stderr);
+  fputs("libsaproc ERROR: ", stderr);
   vfprintf(stderr, format, alist);
   va_end(alist);
 }
@@ -185,6 +193,15 @@ void destroy_lib_info(struct ps_prochandle* ph) {
     if (lib->symtab) {
       destroy_symtab(lib->symtab);
     }
+    if (lib->fd >= 0) {
+      if (ph->core == NULL) {
+        close(lib->fd);
+      } else if (lib->fd != ph->core->exec_fd) {
+        // Prevents double-close in core mode.
+        // exec_fd would be closed at close_files().
+        close(lib->fd);
+      }
+    }
     free(lib);
     lib = next;
   }
@@ -201,9 +218,8 @@ void destroy_thread_info(struct ps_prochandle* ph) {
 
 // ps_prochandle cleanup
 void Prelease(struct ps_prochandle* ph) {
-  // do the "derived class" clean-up first
-  ph->ops->release(ph);
   destroy_lib_info(ph);
+  ph->ops->release(ph);
   destroy_thread_info(ph);
   free(ph);
 }

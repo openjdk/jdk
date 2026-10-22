@@ -30,7 +30,7 @@
  * @run driver ${test.main.class}
  */
 
-package testlibrary_tests.ir_framework.tests;
+package ir_framework.tests;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;

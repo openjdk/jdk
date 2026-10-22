@@ -77,7 +77,7 @@ static oop oop_from_oop_location(stackChunkOop chunk, void* addr) {
     // stack values. Note: do not heal the location, to avoid accidentally
     // corrupting the stack. Stack watermark barriers are supposed to handle
     // the healing.
-    val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(val);
+    val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, val, (oop*)nullptr);
   }
 #endif
 
@@ -114,7 +114,7 @@ static oop oop_from_narrowOop_location(stackChunkOop chunk, void* addr, bool is_
     // stack values. Note: do not heal the location, to avoid accidentally
     // corrupting the stack. Stack watermark barriers are supposed to handle
     // the healing.
-    val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(val);
+    val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, val, (narrowOop*)nullptr);
   }
 #endif
 
@@ -247,7 +247,7 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMapT* 
     if (ov->has_properties()) {
       Klass* k = java_lang_Class::as_Klass(ov->klass()->as_ConstantOopReadValue()->value()());
       if (!k->is_array_klass()) {
-        // Don't treat inline type as scalar replaced if it is null
+        // Don't treat value type as scalar replaced if it is null
         jint null_marker = StackValue::create_stack_value(fr, reg_map, ov->properties())->get_jint();
         scalar_replaced &= (null_marker != 0);
       }

@@ -774,9 +774,6 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
     if (!created) {
       error("Duplicated ID %d for class %s", id, _class_name);
     }
-    if (id2klass_table()->maybe_grow()) {
-      log_info(aot, hashtables)("Expanded id2klass_table() to %d", id2klass_table()->table_size());
-    }
   }
 
   return klass;

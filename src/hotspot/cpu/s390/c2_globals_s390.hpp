@@ -55,7 +55,6 @@ define_pd_global(intx, MinJumpTableSize,             18);
 // scheduler sick.
 define_pd_global(bool, OptoPeephole,                 false);
 define_pd_global(bool, UseCISCSpill,                 true);
-define_pd_global(bool, OptoBundling,                 false);
 define_pd_global(bool, OptoScheduling,               false);
 define_pd_global(bool, OptoRegScheduling,            false);
 define_pd_global(bool, SuperWordLoopUnrollAnalysis,  true);

@@ -50,5 +50,6 @@ class StdoutMessages implements JavaMessage {
         for (String message : messages) {
             System.out.println("- " + message);
         }
+        System.out.println();
     }
 }

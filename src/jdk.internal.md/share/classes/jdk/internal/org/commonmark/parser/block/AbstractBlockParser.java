@@ -33,9 +33,12 @@
 package jdk.internal.org.commonmark.parser.block;
 
 import jdk.internal.org.commonmark.node.Block;
+import jdk.internal.org.commonmark.node.DefinitionMap;
 import jdk.internal.org.commonmark.node.SourceSpan;
 import jdk.internal.org.commonmark.parser.InlineParser;
 import jdk.internal.org.commonmark.parser.SourceLine;
+
+import java.util.List;
 
 public abstract class AbstractBlockParser implements BlockParser {
 
@@ -61,6 +64,11 @@ public abstract class AbstractBlockParser implements BlockParser {
     @Override
     public void addSourceSpan(SourceSpan sourceSpan) {
         getBlock().addSourceSpan(sourceSpan);
+    }
+
+    @Override
+    public List<DefinitionMap<?>> getDefinitions() {
+        return List.of();
     }
 
     @Override

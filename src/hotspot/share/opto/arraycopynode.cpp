@@ -29,13 +29,13 @@
 #include "gc/shared/gc_globals.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/graphKit.hpp"
-#include "opto/inlinetypenode.hpp"
+#include "opto/valuetypenode.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 const TypeFunc* ArrayCopyNode::_arraycopy_type_Type = nullptr;
 
 ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard)
-  : CallNode(arraycopy_type(), nullptr, TypePtr::BOTTOM),
+  : CallNode(arraycopy_type(), nullptr, TypePtr::BOTTOM, TypePtr::BOTTOM),
     _kind(None),
     _alloc_tightly_coupled(alloc_tightly_coupled),
     _has_negative_length_guard(has_negative_length_guard),
@@ -145,7 +145,7 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
       // 3 or 4 elements) might lead to the same length input
       // (e.g. 2 double-words).
       assert(!ary_src->size()->is_con() || (get_length_if_constant(phase) >= 0) ||
-             (UseArrayFlattening && ary_src->elem()->make_oopptr() != nullptr && ary_src->elem()->make_oopptr()->can_be_inline_type()) ||
+             (UseArrayFlattening && ary_src->elem()->make_oopptr() != nullptr && ary_src->elem()->make_oopptr()->can_be_value_type()) ||
              phase->is_IterGVN() || phase->C->inlining_incrementally() || StressReflectiveCode, "inconsistent");
       if (ary_src->size()->is_con()) {
         return ary_src->size()->get_con();
@@ -326,7 +326,7 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     if ((!ary_dest->is_flat() && bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), dest_elem, false, false, BarrierSetC2::Optimization)) ||
-        (ary_dest->is_flat() && ary_src->elem()->inline_klass()->contains_oops() &&
+        (ary_dest->is_flat() && ary_src->elem()->value_klass()->contains_oops() &&
          bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), T_OBJECT, false, false, BarrierSetC2::Optimization))) {
       // It's an object array copy but we can't emit the card marking that is needed
       return false;
@@ -381,7 +381,7 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     disjoint_bases = true;
 
     if (ary_src->elem()->make_oopptr() != nullptr &&
-        ary_src->elem()->make_oopptr()->can_be_inline_type()) {
+        ary_src->elem()->make_oopptr()->can_be_value_type()) {
       return false;
     }
 
@@ -392,7 +392,7 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     if ((!ary_src->is_flat() && bs->array_copy_requires_gc_barriers(true, elem, true, is_clone_inst(), BarrierSetC2::Optimization)) ||
-        (ary_src->is_flat() && ary_src->elem()->inline_klass()->contains_oops() &&
+        (ary_src->is_flat() && ary_src->elem()->value_klass()->contains_oops() &&
          bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, is_clone_inst(), BarrierSetC2::Optimization))) {
       // It's an object array copy but we can't emit the card marking that is needed
       return false;
@@ -426,10 +426,6 @@ const TypeAryPtr* ArrayCopyNode::get_address_type(PhaseGVN* phase, const TypePtr
   return atp->add_offset(Type::OffsetBot)->is_aryptr();
 }
 
-const TypePtr* ArrayCopyNode::get_src_adr_type(PhaseGVN* phase) const {
-  return get_address_type(phase, _src_type, in(Src));
-}
-
 void ArrayCopyNode::array_copy_test_overlap(GraphKit& kit, bool disjoint_bases, int count, Node*& backward_ctl) {
   Node* ctl = kit.control();
   if (!disjoint_bases && count > 1) {
@@ -461,7 +457,7 @@ void ArrayCopyNode::copy(GraphKit& kit,
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   Node* ctl = kit.control();
   if (atp_dest->is_flat()) {
-    ciInlineKlass* vk = atp_src->elem()->inline_klass();
+    ciValueKlass* vk = atp_src->elem()->value_klass();
     for (int j = 0; j < vk->nof_nonstatic_fields(); j++) {
       ciField* field = vk->nonstatic_field_at(j);
       int off_in_vt = field->offset_in_bytes() - vk->payload_offset();
@@ -649,7 +645,7 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type* dest_type = phase->type(dest);
 
   if (src_type->isa_aryptr() && dest_type->isa_instptr()) {
-    // clone used for load of unknown inline type can't be optimized at
+    // clone used for load of unknown value type can't be optimized at
     // this point
     return nullptr;
   }
@@ -818,10 +814,6 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseVal
 
   Node* c = mb->in(0);
 
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  // step over g1 gc barrier if we're at e.g. a clone with ReduceInitialCardMarks off
-  c = bs->step_over_gc_barrier(c);
-
   CallNode* call = nullptr;
   guarantee(c != nullptr, "step_over_gc_barrier failed, there must be something to step to.");
   if (c->is_Region()) {
@@ -836,6 +828,7 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseVal
     }
   } else if (may_modify_helper(t_oop, c->in(0), phase, ac)) {
 #ifdef ASSERT
+    BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     bool use_ReduceInitialCardMarks = BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
       static_cast<CardTableBarrierSetC2*>(bs)->use_ReduceInitialCardMarks();
     assert(c == mb->in(0) || (ac->is_clonebasic() && !use_ReduceInitialCardMarks), "only for clone");

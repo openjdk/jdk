@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_PRETOUCH_HPP
-#define SHARE_GC_SHARED_PRETOUCH_HPP
+#ifndef SHARE_GC_SHARED_PRETOUCHTASK_HPP
+#define SHARE_GC_SHARED_PRETOUCHTASK_HPP
 
 #include "gc/shared/workerThread.hpp"
 #include "runtime/atomic.hpp"
@@ -47,4 +47,4 @@ public:
 
 };
 
-#endif // SHARE_GC_SHARED_PRETOUCH_HPP
+#endif // SHARE_GC_SHARED_PRETOUCHTASK_HPP

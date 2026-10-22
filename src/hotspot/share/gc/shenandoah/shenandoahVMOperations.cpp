@@ -24,7 +24,6 @@
 
 
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
-#include "gc/shenandoah/shenandoahDegeneratedGC.hpp"
 #include "gc/shenandoah/shenandoahFullGC.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -105,16 +104,6 @@ void VM_ShenandoahFullGC::doit() {
   _full_gc->entry_full(_gc_cause);
 }
 
-VM_ShenandoahDegeneratedGC::VM_ShenandoahDegeneratedGC(ShenandoahDegenGC* gc)
-  : VM_ShenandoahReferenceOperation(gc->generation()), _gc(gc) {
-}
-
-void VM_ShenandoahDegeneratedGC::doit() {
-  ShenandoahGCPauseMark mark(_gc_id, "Degenerated GC", SvcGCMarker::CONCURRENT);
-  set_active_generation();
-  _gc->entry_degenerated();
-}
-
 VM_ShenandoahInitUpdateRefs::VM_ShenandoahInitUpdateRefs(ShenandoahConcurrentGC* gc)
   : VM_ShenandoahOperation(gc->generation()), _gc(gc) {
 }
@@ -133,6 +122,16 @@ void VM_ShenandoahFinalUpdateRefs::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Final Update Refs", SvcGCMarker::CONCURRENT);
   set_active_generation();
   _gc->entry_final_update_refs();
+}
+
+VM_ShenandoahFinalRoots::VM_ShenandoahFinalRoots(ShenandoahConcurrentGC* gc)
+  : VM_ShenandoahOperation(gc->generation()), _gc(gc) {
+}
+
+void VM_ShenandoahFinalRoots::doit() {
+  ShenandoahGCPauseMark mark(_gc_id, "Final Roots", SvcGCMarker::CONCURRENT);
+  set_active_generation();
+  _gc->entry_final_roots();
 }
 
 VM_ShenandoahFinalVerify::VM_ShenandoahFinalVerify(ShenandoahConcurrentGC* gc)

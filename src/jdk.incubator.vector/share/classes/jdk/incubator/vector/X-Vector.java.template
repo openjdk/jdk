@@ -843,16 +843,16 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
     final
     $abstractvectortype$ lanewiseTemplate(VectorOperators.Unary op) {
         if (opKind(op, VO_SPECIAL)) {
+#if[BITWISE]
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             }
-#if[BITWISE]
             else if (op == NOT) {
                 return broadcast(-1).lanewise(XOR, this);
             }
 #end[BITWISE]
 #if[FP]
-            else if (opKind(op, VO_MATHLIB)) {
+            if (opKind(op, VO_MATHLIB)) {
                 return unaryMathOp(op);
             }
 #end[FP]
@@ -878,16 +878,16 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
                                           VectorMask<$Boxtype$> m) {
         m.check(maskClass, this);
         if (opKind(op, VO_SPECIAL)) {
+#if[BITWISE]
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
             }
-#if[BITWISE]
             else if (op == NOT) {
                 return lanewise(XOR, broadcast(-1), m);
             }
 #end[BITWISE]
 #if[FP]
-            else if (opKind(op, VO_MATHLIB)) {
+            if (opKind(op, VO_MATHLIB)) {
                 return blend(unaryMathOp(op), m);
             }
 #end[FP]
@@ -2545,6 +2545,7 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
             }
 #end[FP]
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m{#if[FP]?.cast(vsp)});
@@ -2599,6 +2600,7 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
             }
 #end[FP]
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m{#if[FP]?.cast(vsp)});
@@ -2875,20 +2877,26 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
     /*package-private*/
     final
     @ForceInline
-    $abstractvectortype$ sliceTemplate(int origin, Vector<$Boxtype$> v1) {
+    <V extends Vector<$Boxtype$>>
+    $abstractvectortype$ sliceTemplate(int origin, V v1) {
         $abstractvectortype$ that = ($abstractvectortype$) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        $Bitstype$Vector iotaVector = ($Bitstype$Vector) iotaShuffle().toBitsVector();
+        return ($abstractvectortype$)VectorSupport.sliceOp(origin, getClass(), LANE_TYPE_ORDINAL, length(), this, that,
+            (index, vec1, vec2) ->  {
+                $Bitstype$Vector iotaVector = ($Bitstype$Vector) vec1.iotaShuffle().toBitsVector();
 #if[FP]
-        $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vspecies().asIntegral(), ($bitstype$)(length() - origin));
-        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
+                $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vec1.vspecies().asIntegral(),
+                                                                     ($bitstype$)(vec1.length() - index));
+                VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vec1.vspecies());
 #else[FP]
-        $abstractvectortype$ filter = broadcast(($type$)(length() - origin));
-        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+                $abstractvectortype$ filter = vec1.broadcast(($type$)(vec1.length() - index));
+                VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter);
 #end[FP]
-        AbstractShuffle<$Boxtype$> iota = iotaShuffle(origin, 1, true);
-        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
+                AbstractShuffle<$Boxtype$> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.rearrange(iota).blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**
@@ -2915,16 +2923,22 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
     @ForceInline
     $abstractvectortype$ sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        $Bitstype$Vector iotaVector = ($Bitstype$Vector) iotaShuffle().toBitsVector();
+        $abstractvectortype$ that = ($abstractvectortype$) vspecies().zero();
+        return ($abstractvectortype$)VectorSupport.sliceOp(origin, getClass(), LANE_TYPE_ORDINAL, length(), this, that,
+            (index, vec1, vec2) ->  {
+                $Bitstype$Vector iotaVector = ($Bitstype$Vector) vec1.iotaShuffle().toBitsVector();
 #if[FP]
-        $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vspecies().asIntegral(), ($bitstype$)(length() - origin));
-        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
+                $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vec1.vspecies().asIntegral(),
+                                                                     ($bitstype$)(vec1.length() - index));
+                VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vec1.vspecies());
 #else[FP]
-        $abstractvectortype$ filter = broadcast(($type$)(length() - origin));
-        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+                $abstractvectortype$ filter = vec1.broadcast(($type$)(vec1.length() - index));
+                VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter);
 #end[FP]
-        AbstractShuffle<$Boxtype$> iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+                AbstractShuffle<$Boxtype$> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**
@@ -5577,22 +5591,6 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
         }
 #end[!byte]
         return this;
-    }
-
-    @Override
-    @ForceInline
-    final
-    $abstractvectortype$ swapIfNeeded(AbstractSpecies<?> srcSpecies) {
-#if[byte]
-        return this;
-#else[byte]
-        int subLanesPerSrc = subLanesToSwap(srcSpecies);
-        if (subLanesPerSrc < 0) {
-            return this;
-        }
-        VectorShuffle<$Boxtype$> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
-        return ($abstractvectortype$) this.rearrange(shuffle);
-#end[byte]
     }
 
     static final int ARRAY_SHIFT =

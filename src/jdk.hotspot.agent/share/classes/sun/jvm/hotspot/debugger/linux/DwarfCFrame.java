@@ -26,6 +26,7 @@
 package sun.jvm.hotspot.debugger.linux;
 
 import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.debugger.DebuggerException;
 import sun.jvm.hotspot.debugger.ThreadProxy;
 import sun.jvm.hotspot.debugger.UnalignedAddressException;
 import sun.jvm.hotspot.debugger.UnmappedAddressException;
@@ -48,7 +49,7 @@ public class DwarfCFrame extends BasicCFrame {
 
     /**
      * @return DwarfParser instance for the PC, null if native library relates to the pc not found.
-     * @throws DebuggerException if DWARF processing is failed.
+     * @throws DwarfException if DWARF processing is failed.
      *         For example: pc is not covered in this DWARF, Common Information Entry (CIE) has
      *         language personality routine and/or Language Data Area (LSDA).
      */
@@ -57,7 +58,19 @@ public class DwarfCFrame extends BasicCFrame {
         if (libptr != null) {
             DwarfParser dwarf = linuxDbg.getCPU().equals("aarch64") ? new AARCH64DwarfParser(libptr)
                                                                     : new DwarfParser(libptr);
-            dwarf.processDwarf(pc);
+            try {
+                dwarf.processDwarf(pc);
+            } catch (DwarfException e) {
+                // DwarfException might be thrown from unwinding signal trampoline
+                // (e.g. __restore_rt on AMD64) because it might have DW_CFA_def_cfa_expression
+                // DWARF instruction.
+                // However SA can ignore the case safely because it does not rely on DWARF,
+                // would restore register values from the stack directly.
+                // Thus DwarfException would be rethrown if the pc is not in signal trampoline.
+                if (!linuxDbg.isSignalTrampoline(pc)) {
+                    throw e;
+                }
+            }
             return dwarf;
         }
         return null;

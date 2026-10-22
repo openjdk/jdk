@@ -26,6 +26,7 @@
 
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
@@ -97,7 +98,7 @@ void set_oop_field<narrowOop>(narrowOop* field, oop value) {
 
 static oop lrb(oop obj) {
   if (obj != nullptr && ShenandoahHeap::heap()->marking_context()->is_marked(obj)) {
-    return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(obj);
+    return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, obj, (oop*)nullptr);
   } else {
     return obj;
   }
@@ -503,7 +504,7 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
   // set_oop_field maintains the card mark barrier as this list is constructed.
   if (!CompressedOops::is_null(*list)) {
     oop head = lrb(CompressedOops::decode_not_null(*list));
-    shenandoah_assert_not_in_cset_except(&head, head, ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
+    shenandoah_assert_not_in_cset_except(&head, head, ShenandoahHeap::heap()->has_self_forwarded_objects() || ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
     oop prev = _pending_list.exchange(head);
     set_oop_field(p, prev);
     if (prev == nullptr) {
@@ -576,7 +577,7 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Ph
 
 void ShenandoahReferenceProcessor::enqueue_references_locked() {
   // Prepend internal pending list to external pending list
-  shenandoah_assert_not_in_cset_except(&_pending_list, _pending_list.load_relaxed(), ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
+  shenandoah_assert_not_in_cset_except(&_pending_list, _pending_list.load_relaxed(), ShenandoahHeap::heap()->has_self_forwarded_objects() || ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
 
   // During reference processing, we maintain a local list of references that are identified by
   //   _pending_list and _pending_list_tail.  _pending_list_tail points to the next field of the last Reference object on
@@ -603,7 +604,7 @@ void ShenandoahReferenceProcessor::enqueue_references(bool concurrent) {
     return;
   }
   if (!concurrent) {
-    // When called from mark-compact or degen-GC, the locking is done by the VMOperation,
+    // When called from STW mark, the locking is done by the VMOperation,
     enqueue_references_locked();
   } else {
     // Heap_lock protects external pending list

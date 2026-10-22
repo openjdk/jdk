@@ -23,11 +23,11 @@
  *
  */
 
+#include "cds/aotHeap.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
@@ -35,6 +35,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerThread.hpp"
 #include "compiler/compileTask.hpp"
@@ -99,6 +100,7 @@
 #include "runtime/vmOperations.hpp"
 #include "sanitizers/address.hpp"
 #include "services/attachListener.hpp"
+#include "services/diagnosticWorkers.hpp"
 #include "services/management.hpp"
 #include "services/threadIdTable.hpp"
 #include "services/threadService.hpp"
@@ -363,7 +365,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_Thread(), CHECK);
   create_initial_thread(thread_group, main_thread, CHECK);
 
-  HeapShared::init_box_classes(CHECK);
+  AOTHeap::init_box_classes(CHECK);
 
   // The VM creates objects of this class.
   initialize_class(vmSymbols::java_lang_Module(), CHECK);
@@ -377,11 +379,16 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::jdk_internal_misc_UnsafeConstants(), CHECK);
   jdk_internal_misc_UnsafeConstants::set_unsafe_constants();
 
+  // Initialize Value type support - this also initializes Unsafe.
+  if (Arguments::is_valhalla_enabled()) {
+    initialize_class(vmSymbols::java_lang_runtime_ValueObjectMethods(), CHECK);
+  }
+
   // The VM preresolves methods to these classes. Make sure that they get initialized
   initialize_class(vmSymbols::java_lang_reflect_Method(), CHECK);
   initialize_class(vmSymbols::java_lang_ref_Finalizer(), CHECK);
 
-  HeapShared::materialize_thread_object();
+  AOTHeap::materialize_thread_object();
 
   // Phase 1 of the system initialization in the library, java.lang.System class initialization
   call_initPhase1(CHECK);
@@ -428,7 +435,7 @@ void Threads::initialize_jsr292_core_classes(TRAPS) {
   initialize_class(vmSymbols::java_lang_invoke_MethodHandleNatives(), CHECK);
 
   if (UseSharedSpaces) {
-    HeapShared::initialize_java_lang_invoke(CHECK);
+    AOTHeap::initialize_java_lang_invoke(CHECK);
   }
 }
 
@@ -694,7 +701,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   StubCodeDesc::freeze();
 
   // Prepare AOT heap loader for GC.
-  HeapShared::enable_gc();
+  AOTHeap::enable_gc();
 
 #ifdef ADDRESS_SANITIZER
   Asan::initialize();
@@ -814,6 +821,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     initialize_class(vmSymbols::jdk_internal_vm_Continuation(), CHECK_JNI_ERR);
   }
 
+  // Pre-load AOT compiled methods
+  AOTCodeCache::preload_code(CHECK_JNI_ERR);
+
   if (NativeHeapTrimmer::enabled()) {
     NativeHeapTrimmer::initialize();
   }
@@ -867,7 +877,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   WatcherThread::run_all_tasks();
 
   // Finish materializing AOT objects
-  HeapShared::finish_materialize_objects();
+  AOTHeap::finish_materialize_objects();
 
   create_vm_timer.end();
 #ifdef ASSERT
@@ -1457,6 +1467,7 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   if (Universe::heap() != nullptr) {
     PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
     Universe::heap()->gc_threads_do(&print_closure);
+    DiagnosticWorkers::threads_do(&print_closure);
     num_other += print_closure.num_printed();
   }
 

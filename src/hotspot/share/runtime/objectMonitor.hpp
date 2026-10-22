@@ -27,7 +27,6 @@
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
-#include "oops/markWord.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
 #include "runtime/javaThread.hpp"
@@ -97,16 +96,8 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 //
 // ObjectMonitor Layout Overview/Highlights/Restrictions:
 //
-// - For performance reasons we ensure the _metadata field is located at offset 0,
-//   which in turn means that ObjectMonitor can't inherit from any other class nor use
-//   any virtual member functions.
-// - The _metadata and _owner fields should be separated by enough space
-//   to avoid false sharing due to parallel access by different threads.
-//   This is an advisory recommendation.
 // - The general layout of the fields in ObjectMonitor is:
-//     _metadata
-//     <lightly_used_fields>
-//     <optional padding>
+//     _object
 //     _owner
 //     <optional padding>
 //     <remaining_fields>
@@ -154,16 +145,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // ParkEvent of unblocker thread.
   static ParkEvent* _vthread_unparker_ParkEvent;
 
-  // Because of frequent access, the _metadata field is at offset zero (0),
-  // which is enforced by a STATIC_ASSERT() in metadata_addr().
-  volatile uintptr_t _metadata;     // contains the _object's hashCode
   WeakHandle _object;               // backward object pointer
-  // Separate _metadata and _owner on different cache lines since both can
-  // have busy multi-threaded access. _metadata and _object are set at initial
-  // inflation. The _object does not change, so it is a good choice to share
-  // its cache line with _metadata.
-  DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(_metadata) +
-                        sizeof(WeakHandle));
 
   static const int64_t NO_OWNER = 0;
   static const int64_t ANONYMOUS_OWNER = 1;
@@ -175,7 +157,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // both can have busy multi-threaded access. _previous_owner_tid is only
   // changed by ObjectMonitor::exit() so it is a good choice to share the
   // cache line with _owner.
-  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void* volatile) +
+  DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(int64_t volatile) +
                         sizeof(volatile uint64_t));
   ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
   volatile intx _recursions;        // recursion count, 0 for first entry
@@ -211,18 +193,10 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   static int Knob_SpinLimit;
 
   static ByteSize object_offset()      { return byte_offset_of(ObjectMonitor, _object); }
-  static ByteSize metadata_offset()    { return byte_offset_of(ObjectMonitor, _metadata); }
   static ByteSize owner_offset()       { return byte_offset_of(ObjectMonitor, _owner); }
   static ByteSize recursions_offset()  { return byte_offset_of(ObjectMonitor, _recursions); }
   static ByteSize succ_offset()        { return byte_offset_of(ObjectMonitor, _succ); }
   static ByteSize entry_list_offset()  { return byte_offset_of(ObjectMonitor, _entry_list); }
-
-  uintptr_t           metadata() const;
-  void                set_metadata(uintptr_t value);
-  volatile uintptr_t* metadata_addr();
-
-  intptr_t            hash() const;
-  void                set_hash(intptr_t hash);
 
   bool is_busy() const {
     // TODO-FIXME: assert _owner == NO_OWNER implies _recursions = 0

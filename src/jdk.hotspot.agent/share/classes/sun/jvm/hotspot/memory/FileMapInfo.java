@@ -138,7 +138,7 @@ public class FileMapInfo {
     metadataTypeArray[10] = db.lookupType("ObjArrayKlass");
     metadataTypeArray[11] = db.lookupType("RefArrayKlass");
     metadataTypeArray[12] = db.lookupType("FlatArrayKlass");
-    metadataTypeArray[13] = db.lookupType("InlineKlass");
+    metadataTypeArray[13] = db.lookupType("ValueKlass");
   }
 
   public FileMapHeader getHeader() {

@@ -50,7 +50,7 @@ inline bool JNIHandles::is_global_tagged(jobject handle) {
 
 inline oop* JNIHandles::local_ptr(jobject handle) {
   assert(is_local_tagged(handle), "precondition");
-  STATIC_ASSERT(TypeTag::local == 0);
+  static_assert(TypeTag::local == 0);
   return reinterpret_cast<oop*>(handle);
 }
 

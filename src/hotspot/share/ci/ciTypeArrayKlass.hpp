@@ -62,7 +62,7 @@ public:
     return this;
   }
 
-  virtual bool can_be_inline_array_klass() {
+  virtual bool can_be_value_array_klass() {
     return false;
   }
 };

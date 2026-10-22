@@ -55,7 +55,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.ADD_VI,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.ADD_I, ">= 1", IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static int int_add(int ia, int ib) {
         return IntVector.broadcast(ISP, ia)
@@ -73,7 +73,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.SUB_VI,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.SUB_I, ">= 1", IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static int int_sub(int ia, int ib) {
         return IntVector.broadcast(ISP, ia)
@@ -91,7 +91,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MUL_VI,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.MUL_I, ">= 1", IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static int int_mul(int ia, int ib) {
         return IntVector.broadcast(ISP, ia)
@@ -107,11 +107,11 @@ public class TestVectorBroadcastTransforms {
         Verify.checkEQ(ir, ia * ib);
     }
 
-    // Integer vector DIV is currently matched on SVE. push_through_replicate
+    // Integer vector DIV is currently matched on SVE and RVV. push_through_replicate
     // must be able to scalarize DivVI via VectorNode::make_scalar(Op_DivI).
     @Test
     @IR(failOn = IRNode.DIV_VI,
-        applyIfCPUFeature = {"sve", "true"},
+        applyIfCPUFeatureOr = {"sve", "true", "rvv", "true"},
         counts = { IRNode.DIV_I, ">= 1",
                    IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static int int_div(int ia, int ib) {
@@ -144,7 +144,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.AND_VI,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.AND_I, ">= 1", IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static int int_and(int ia, int ib) {
         return IntVector.broadcast(ISP, ia)
@@ -162,7 +162,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.OR_VI,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.OR_I, ">= 1", IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static int int_or(int ia, int ib) {
         return IntVector.broadcast(ISP, ia)
@@ -180,7 +180,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.XOR_VI,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.XOR_I, ">= 1", IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static int int_xor(int ia, int ib) {
         return IntVector.broadcast(ISP, ia)
@@ -198,7 +198,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MIN_VI,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.MIN_I, ">= 1", IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static int int_min(int ia, int ib) {
         return IntVector.broadcast(ISP, ia)
@@ -216,7 +216,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MAX_VI,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.MAX_I, ">= 1", IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static int int_max(int ia, int ib) {
         return IntVector.broadcast(ISP, ia)
@@ -240,7 +240,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.ADD_VL,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.ADD_L, ">= 1", IRNode.REPLICATE_L, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static long long_add(long la, long lb) {
         return LongVector.broadcast(LSP, la)
@@ -258,7 +258,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.SUB_VL,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.SUB_L, ">= 1", IRNode.REPLICATE_L, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static long long_sub(long la, long lb) {
         return LongVector.broadcast(LSP, la)
@@ -276,7 +276,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MUL_VL,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.MUL_L, ">= 1", IRNode.REPLICATE_L, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static long long_mul(long la, long lb) {
         return LongVector.broadcast(LSP, la)
@@ -294,7 +294,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.DIV_VL,
-        applyIfCPUFeature = {"sve", "true"},
+        applyIfCPUFeatureOr = {"sve", "true", "rvv", "true"},
         counts = { IRNode.DIV_L, ">= 1",
                    IRNode.REPLICATE_L, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static long long_div(long la, long lb) {
@@ -314,7 +314,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.AND_VL,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.AND_L, ">= 1", IRNode.REPLICATE_L, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static long long_and(long la, long lb) {
         return LongVector.broadcast(LSP, la)
@@ -332,7 +332,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.OR_VL,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.OR_L, ">= 1", IRNode.REPLICATE_L, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static long long_or(long la, long lb) {
         return LongVector.broadcast(LSP, la)
@@ -350,7 +350,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.XOR_VL,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.XOR_L, ">= 1", IRNode.REPLICATE_L, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static long long_xor(long la, long lb) {
         return LongVector.broadcast(LSP, la)
@@ -368,7 +368,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MIN_VL,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = {IRNode.REPLICATE_L, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static long long_min(long la, long lb) {
         return LongVector.broadcast(LSP, la)
@@ -386,7 +386,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MAX_VL,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = {IRNode.REPLICATE_L, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static long long_max(long la, long lb) {
         return LongVector.broadcast(LSP, la)
@@ -410,7 +410,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.ADD_VF,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.ADD_F, ">= 1", IRNode.REPLICATE_F, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static float float_add(float fa, float fb) {
         return FloatVector.broadcast(FSP, fa)
@@ -428,7 +428,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.SUB_VF,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.SUB_F, ">= 1", IRNode.REPLICATE_F, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static float float_sub(float fa, float fb) {
         return FloatVector.broadcast(FSP, fa)
@@ -446,7 +446,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MUL_VF,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.MUL_F, ">= 1", IRNode.REPLICATE_F, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static float float_mul(float fa, float fb) {
         return FloatVector.broadcast(FSP, fa)
@@ -464,7 +464,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.DIV_VF,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.DIV_F, ">= 1", IRNode.REPLICATE_F, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static float float_div(float fa, float fb) {
         return FloatVector.broadcast(FSP, fa)
@@ -483,7 +483,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MIN_VF,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.MIN_F, ">= 1", IRNode.REPLICATE_F, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static float float_min(float fa, float fb) {
         return FloatVector.broadcast(FSP, fa)
@@ -501,7 +501,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MAX_VF,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.MAX_F, ">= 1", IRNode.REPLICATE_F, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static float float_max(float fa, float fb) {
         return FloatVector.broadcast(FSP, fa)
@@ -519,7 +519,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.SQRT_VF,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.SQRT_F, ">= 1", IRNode.REPLICATE_F, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static float float_sqrt(float fa) {
         return FloatVector.broadcast(FSP, fa)
@@ -536,7 +536,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.FMA_VF,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.FMA_F, ">= 1", IRNode.REPLICATE_F, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static float float_fma(float fa, float fb, float fc) {
         return FloatVector.broadcast(FSP, fa)
@@ -562,7 +562,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.ADD_VD,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.ADD_D, ">= 1", IRNode.REPLICATE_D, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static double double_add(double da, double db) {
         return DoubleVector.broadcast(DSP, da)
@@ -580,7 +580,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.SUB_VD,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.SUB_D, ">= 1", IRNode.REPLICATE_D, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static double double_sub(double da, double db) {
         return DoubleVector.broadcast(DSP, da)
@@ -598,7 +598,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MUL_VD,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.MUL_D, ">= 1", IRNode.REPLICATE_D, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static double double_mul(double da, double db) {
         return DoubleVector.broadcast(DSP, da)
@@ -616,7 +616,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.DIV_VD,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.DIV_D, ">= 1", IRNode.REPLICATE_D, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static double double_div(double da, double db) {
         return DoubleVector.broadcast(DSP, da)
@@ -635,7 +635,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MIN_VD,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.MIN_D, ">= 1", IRNode.REPLICATE_D, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static double double_min(double da, double db) {
         return DoubleVector.broadcast(DSP, da)
@@ -653,7 +653,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MAX_VD,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.MAX_D, ">= 1", IRNode.REPLICATE_D, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static double double_max(double da, double db) {
         return DoubleVector.broadcast(DSP, da)
@@ -671,7 +671,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.SQRT_VD,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.SQRT_D, ">= 1", IRNode.REPLICATE_D, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static double double_sqrt(double da) {
         return DoubleVector.broadcast(DSP, da)
@@ -688,7 +688,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.FMA_VD,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.FMA_D, ">= 1", IRNode.REPLICATE_D, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static double double_fma(double da, double db, double dc) {
         return DoubleVector.broadcast(DSP, da)
@@ -716,7 +716,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.ADD_VB,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.ADD_I, ">= 1",
                    IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static byte byte_add(byte ba, byte bb) {
@@ -735,7 +735,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.SUB_VB,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.SUB_I, ">= 1",
                    IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static byte byte_sub(byte ba, byte bb) {
@@ -754,7 +754,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.ADD_VB,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.ADD_I, ">= 1",
                    IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static byte byte_add_overflow() {
@@ -771,7 +771,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.ADD_VB,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.ADD_I, ">= 1",
                    IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static byte byte_add_underflow() {
@@ -788,7 +788,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.SUB_VB,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.SUB_I, ">= 1",
                    IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static byte byte_sub_overflow() {
@@ -805,7 +805,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.SUB_VB,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.SUB_I, ">= 1",
                    IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static byte byte_sub_underflow() {
@@ -822,7 +822,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MUL_VB,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.MUL_I, ">= 1",
                    IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static byte byte_mul(byte ba, byte bb) {
@@ -841,7 +841,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.DIV_VB,
-        applyIfCPUFeature = {"sve", "true"},
+        applyIfCPUFeatureOr = {"sve", "true", "rvv", "true"},
         counts = { IRNode.DIV_I, ">= 1",
                    IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static byte byte_div(byte ba, byte bb) {
@@ -861,7 +861,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.AND_VB,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.AND_I, ">= 1", IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static byte byte_and(byte ba, byte bb) {
         return ByteVector.broadcast(BSP, ba)
@@ -879,7 +879,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.OR_VB,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.OR_I, ">= 1", IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static byte byte_or(byte ba, byte bb) {
         return ByteVector.broadcast(BSP, ba)
@@ -897,7 +897,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.XOR_VB,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.XOR_I, ">= 1", IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static byte byte_xor(byte ba, byte bb) {
         return ByteVector.broadcast(BSP, ba)
@@ -915,7 +915,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MIN_VB,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.MIN_I, ">= 1", IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static byte byte_min(byte ba, byte bb) {
         return ByteVector.broadcast(BSP, ba)
@@ -933,7 +933,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MAX_VB,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.MAX_I, ">= 1", IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static byte byte_max(byte ba, byte bb) {
         return ByteVector.broadcast(BSP, ba)
@@ -959,7 +959,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.ADD_VS,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.ADD_I, ">= 1",
                    IRNode.REPLICATE_S, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static short short_add(short sa, short sb) {
@@ -978,7 +978,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.SUB_VS,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.SUB_I, ">= 1",
                    IRNode.REPLICATE_S, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static short short_sub(short sa, short sb) {
@@ -997,7 +997,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.ADD_VS,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.ADD_I, ">= 1",
                    IRNode.REPLICATE_S, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static short short_add_overflow() {
@@ -1014,7 +1014,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.ADD_VS,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.ADD_I, ">= 1",
                    IRNode.REPLICATE_S, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static short short_add_underflow() {
@@ -1031,7 +1031,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.SUB_VS,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.SUB_I, ">= 1",
                    IRNode.REPLICATE_S, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static short short_sub_overflow() {
@@ -1048,7 +1048,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.SUB_VS,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.SUB_I, ">= 1",
                    IRNode.REPLICATE_S, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static short short_sub_underflow() {
@@ -1065,7 +1065,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MUL_VS,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.MUL_I, ">= 1",
                    IRNode.REPLICATE_S, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static short short_mul(short sa, short sb) {
@@ -1084,7 +1084,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.DIV_VS,
-        applyIfCPUFeature = {"sve", "true"},
+        applyIfCPUFeatureOr = {"sve", "true", "rvv", "true"},
         counts = { IRNode.DIV_I, ">= 1",
                    IRNode.REPLICATE_S, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static short short_div(short sa, short sb) {
@@ -1104,7 +1104,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.AND_VS,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.AND_I, ">= 1", IRNode.REPLICATE_S, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static short short_and(short sa, short sb) {
         return ShortVector.broadcast(SSP, sa)
@@ -1122,7 +1122,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.OR_VS,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.OR_I, ">= 1", IRNode.REPLICATE_S, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static short short_or(short sa, short sb) {
         return ShortVector.broadcast(SSP, sa)
@@ -1140,7 +1140,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.XOR_VS,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.XOR_I, ">= 1", IRNode.REPLICATE_S, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static short short_xor(short sa, short sb) {
         return ShortVector.broadcast(SSP, sa)
@@ -1158,7 +1158,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MIN_VS,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.MIN_I, ">= 1", IRNode.REPLICATE_S, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static short short_min(short sa, short sb) {
         return ShortVector.broadcast(SSP, sa)
@@ -1176,7 +1176,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.MAX_VS,
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         counts = { IRNode.MAX_I, ">= 1", IRNode.REPLICATE_S, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static short short_max(short sa, short sb) {
         return ShortVector.broadcast(SSP, sa)

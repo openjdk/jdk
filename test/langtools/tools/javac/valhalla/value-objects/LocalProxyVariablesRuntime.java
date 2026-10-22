@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8393065
  * @enablePreview
  * @compile LocalProxyVariablesRuntime.java
  * @run main LocalProxyVariablesRuntime
@@ -37,6 +38,8 @@ public class LocalProxyVariablesRuntime {
         new Value3(0);
         new Value4();
         new Value4(0);
+        new ValueCopy(new ValueCopy(1), 1, false);
+        new ValueCopy(new ValueCopy(2), 2, '0');
     }
 
     private static value class Value1 {
@@ -94,5 +97,27 @@ public class LocalProxyVariablesRuntime {
         public Value4() {}
 
         public Value4(int x) {}
+    }
+
+    private static value class ValueCopy {
+        private final int value;
+
+        public ValueCopy(int value) {
+            this.value = value;
+        }
+
+        public ValueCopy(ValueCopy original, int expected, boolean b) {
+            this.value = original.value;
+            if (value != expected) {
+                throw new IllegalStateException("Expected: " + expected + ", got: " + value);
+            }
+        }
+
+        public ValueCopy(ValueCopy original, int expected, char c) {
+            (this).value = original.value;
+            if (value != expected) {
+                throw new IllegalStateException("Expected: " + expected + ", got: " + value);
+            }
+        }
     }
 }

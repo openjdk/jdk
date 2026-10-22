@@ -23,7 +23,7 @@
  */
 
 #include "c1/c1_IR.hpp"
-#include "ci/ciInlineKlass.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "code/aotCodeCache.hpp"
 #include "gc/shared/c1/cardTableBarrierSetC1.hpp"
 #include "gc/shared/cardTable.hpp"
@@ -43,7 +43,7 @@ void CardTableBarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) 
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
 
   // Is this a flat, atomic access that might require gc barriers on oop fields?
-  ciInlineKlass* vk = access.vk();
+  ciValueKlass* vk = access.vk();
   if (vk != nullptr && vk->has_object_fields()) {
     // Add pre-barriers for oop fields
     for (int i = 0; i < vk->nof_nonstatic_fields(); i++) {

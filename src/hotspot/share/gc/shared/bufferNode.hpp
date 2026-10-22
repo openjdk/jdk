@@ -35,7 +35,7 @@
 
 class BufferNode {
   using InternalSizeType = LP64_ONLY(uint32_t) NOT_LP64(uint16_t);
-  static_assert(sizeof(InternalSizeType) <= sizeof(size_t), "assumption");
+  static_assert(sizeof(InternalSizeType) <= sizeof(size_t));
 
   InternalSizeType _index;
   InternalSizeType _capacity;

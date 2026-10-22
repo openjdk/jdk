@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -650,7 +650,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
         fpos += lcmd.cmdsize;  // next command position
         // make sure still within seg size.
         if (fpos  - lcmd.cmdsize - iter->offset > iter->memsz) {
-          print_debug("Warning: out of segment limit: %ld \n", fpos  - lcmd.cmdsize - iter->offset);
+          print_warning("out of segment limit: %ld \n", fpos  - lcmd.cmdsize - iter->offset);
           break;  // no need to iterate all commands
         }
         if (lcmd.cmd == LC_ID_DYLIB) {

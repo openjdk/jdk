@@ -32,15 +32,17 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-class outputStream;
-
-// Helper class for splitting the processing of a large objArray into multiple
-// tasks, to permit multiple threads to work on different pieces of the array
-// in parallel.
+// Each worker uses its own splitter to scan arrays in parallel.
+// Queued tasks share an atomic progress record; each claim returns a
+// disjoint, self-contained chunk and decrements the record's ref-count.
 class PartialArraySplitter {
   PartialArrayStateAllocator _allocator;
   PartialArrayTaskStepper _stepper;
   TASKQUEUE_STATS_ONLY(PartialArrayTaskStats _stats;)
+
+  // The state's ref-count must already include these tasks before publication.
+  template<typename Queue>
+  void enqueue(Queue* queue, PartialArrayState* state, uint count);
 
 public:
   PartialArraySplitter(PartialArrayStateManager* manager,
@@ -49,53 +51,30 @@ public:
 
   NONCOPYABLE(PartialArraySplitter);
 
-  // Setup to process an objArray in chunks.
-  //
-  // from_array is the array found by the collector that needs processing.  It
-  // may be null if to_array contains everything needed for processing.
-  //
-  // to_array is an unprocessed (possibly partial) copy of from_array, or null
-  // if a copy of from_array is not required.
-  //
-  // length is their length in elements.
-  //
-  // chunk_size the size of a single chunk.
-  //
-  // If t is a ScannerTask, queue->push(t) must be a valid expression.  The
-  // result of that expression is ignored.
-  //
-  // Returns the size of the initial chunk that is to be processed by the
-  // caller.
-  //
-  // Adds PartialArrayState ScannerTasks to the queue if needed to process the
-  // array in chunks. This permits other workers to steal and process them
-  // even while the caller is processing the initial chunk.  If length doesn't
-  // exceed the chunk size then the result will be length, indicating the
-  // caller is to process the entire array.  In this case, no tasks will have
-  // been added to the queue.
-  template<typename Queue>
-  size_t start(Queue* queue,
-               objArrayOop from_array,
-               objArrayOop to_array,
-               size_t length,
-               size_t chunk_size);
-
-  // Result type for claim(), carrying multiple values.  Provides the claimed
-  // chunk's start and end array indices.
+  // A chunk remains valid after its progress record has been recycled.  It
+  // does not own or keep the array alive; that is the collector's responsibility.
   struct Claim {
+    objArrayOop _array;
     size_t _start;
     size_t _end;
   };
+
+  // Start processing array[0, length).  Return the initial chunk and enqueue
+  // a continuation if any full-sized chunks remain.  Process the remainder
+  // first so every queued task claims exactly chunk_size elements.
+  template<typename Queue>
+  Claim start(Queue* queue,
+              objArrayOop array,
+              size_t length,
+              size_t chunk_size);
 
   // Claims a chunk from state, returning the index range for that chunk.  The
   // caller is expected to process that chunk.  Adds more state-based tasks to
   // the queue if needed, permitting other workers to steal and process them
   // even while the caller is processing this claim.
   //
-  // Releases the state. Callers must not use state after the call to this
-  // function. The state may have been recycled and reused.
-  //
-  // The queue has the same requirements as for start().
+  // Decrements the state's ref-count for the current task.  Callers must not
+  // use state after this call; it may have been recycled and reused.
   //
   // stolen indicates whether the state task was obtained from this queue or
   // stolen from some other queue.

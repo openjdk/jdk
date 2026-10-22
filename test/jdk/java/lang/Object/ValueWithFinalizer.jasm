@@ -1,0 +1,34 @@
+/* Javac reports an error when a value class declares a method overriding
+ * Object::finalize. The VM must still handle such class files correctly, so
+ * this class is supplied as jasm. It corresponds to the following source:
+ *
+ * value class ValueWithFinalizer {
+ *     CountDownLatch latch;
+ *     ValueWithFinalizer(CountDownLatch latch) {
+ *         this.latch = latch;
+ *     }
+ *     @Override
+ *     protected void finalize() {
+ *         latch.countDown();
+ *     }
+ * }
+ */
+final class ValueWithFinalizer version 72:65535 {
+    final strict Field latch:"Ljava/util/concurrent/CountDownLatch;";
+
+    Method "<init>":"(Ljava/util/concurrent/CountDownLatch;)V" stack 2 locals 2 {
+        aload_0;
+        aload_1;
+        putfield Field latch:"Ljava/util/concurrent/CountDownLatch;";
+        aload_0;
+        invokespecial Method java/lang/Object."<init>":"()V";
+        return;
+    }
+
+    protected Method finalize:"()V" stack 1 locals 1 {
+        aload_0;
+        getfield Field latch:"Ljava/util/concurrent/CountDownLatch;";
+        invokevirtual Method java/util/concurrent/CountDownLatch.countDown:"()V";
+        return;
+    }
+}

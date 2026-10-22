@@ -1703,6 +1703,14 @@ bool MethodData::profile_parameters_jsr292_only() {
   return profile_parameters_flag() == type_profile_jsr292;
 }
 
+bool MethodData::profile_array_accesses() {
+  return COMPILER2_PRESENT(UseArrayLoadStoreProfile ||) TypeProfileLevel > 0;
+}
+
+bool MethodData::profile_acmp() {
+  return COMPILER2_PRESENT(UseACmpProfile ||) (Arguments::is_valhalla_enabled() && TypeProfileLevel > 0);
+}
+
 bool MethodData::profile_all_parameters() {
   return profile_parameters_flag() == type_profile_all;
 }
@@ -1929,7 +1937,7 @@ void MethodData::remove_unshareable_info() {
 }
 
 void MethodData::restore_unshareable_info(TRAPS) {
-  //_extra_data_lock = new Mutex(Mutex::nosafepoint, "MDOExtraData_lock");
+  // Do nothing. _extra_data_lock is created lazily.
 }
 #endif // INCLUDE_CDS
 

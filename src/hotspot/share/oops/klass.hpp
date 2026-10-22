@@ -68,7 +68,7 @@ class Klass : public Metadata {
    enum KlassKind : u2
    {
      InstanceKlassKind,
-     InlineKlassKind,
+     ValueKlassKind,
      InstanceRefKlassKind,
      InstanceMirrorKlassKind,
      InstanceClassLoaderKlassKind,
@@ -506,7 +506,7 @@ protected:
     return (juint)_lh_array_tag_flat_value == (juint)(lh >> _lh_array_tag_shift);
   }
   static bool layout_helper_is_null_free(jint lh) {
-    assert(layout_helper_is_flatArray(lh) || layout_helper_is_refArray(lh), "must be array of inline types");
+    assert(layout_helper_is_flatArray(lh) || layout_helper_is_refArray(lh), "must be array of value types");
     return ((lh >> _lh_null_free_shift) & _lh_null_free_mask);
   }
   static jint layout_helper_set_null_free(jint lh) {
@@ -698,7 +698,7 @@ public:
   virtual bool is_flatArray_klass_slow()    const { return false; }
 #endif // ASSERT
   // current implementation uses this method even in non debug builds
-  virtual bool is_inline_klass_slow()       const { return false; }
+  virtual bool is_value_klass_slow()       const { return false; }
  public:
 
   // Fast non-virtual versions
@@ -714,7 +714,7 @@ public:
   #endif
 
   bool is_instance_klass()              const { return assert_same_query(_kind <= InstanceStackChunkKlassKind, is_instance_klass_slow()); }
-  bool is_inline_klass()                const { return assert_same_query(_kind == InlineKlassKind, is_inline_klass_slow()); }
+  bool is_value_klass()                 const { return assert_same_query(_kind == ValueKlassKind, is_value_klass_slow()); }
   bool is_reference_instance_klass()    const { return _kind == InstanceRefKlassKind; }
   bool is_mirror_instance_klass()       const { return _kind == InstanceMirrorKlassKind; }
   bool is_class_loader_instance_klass() const { return _kind == InstanceClassLoaderKlassKind; }
@@ -813,6 +813,11 @@ public:
 
   // for error reporting
   static bool is_valid(Klass* k);
+
+#if INCLUDE_CDS
+  // For klass in AOT cache
+  static bool is_valid_aot_klass(const Klass* k);
+#endif
 
   static void on_secondary_supers_verification_failure(Klass* super, Klass* sub, bool linear_result, bool table_result, const char* msg);
 };

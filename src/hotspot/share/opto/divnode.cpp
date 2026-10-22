@@ -1031,6 +1031,10 @@ const Type* UDivINode::Value(PhaseGVN* phase) const {
   if( t1 == Type::TOP ) return Type::TOP;
   if( t2 == Type::TOP ) return Type::TOP;
 
+  if (t2 == TypeInt::ZERO) {
+    return Type::TOP;
+  }
+
   // x/x == 1 since we always generate the dynamic divisor check for 0.
   if (in(1) == in(2)) {
     return TypeInt::ONE;
@@ -1066,6 +1070,10 @@ const Type* UDivLNode::Value(PhaseGVN* phase) const {
   const Type *t2 = phase->type( in(2) );
   if( t1 == Type::TOP ) return Type::TOP;
   if( t2 == Type::TOP ) return Type::TOP;
+
+  if (t2 == TypeLong::ZERO) {
+    return Type::TOP;
+  }
 
   // x/x == 1 since we always generate the dynamic divisor check for 0.
   if (in(1) == in(2)) {
@@ -1380,6 +1388,9 @@ Node* UModINode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 const Type* UModINode::Value(PhaseGVN* phase) const {
+  if (phase->type(in(2)) == TypeInt::ZERO) {
+    return Type::TOP;
+  }
   return unsigned_mod_value<TypeInt, juint, jint>(phase, this);
 }
 
@@ -1520,6 +1531,9 @@ Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 const Type* UModLNode::Value(PhaseGVN* phase) const {
+  if (phase->type(in(2)) == TypeLong::ZERO) {
+    return Type::TOP;
+  }
   return unsigned_mod_value<TypeLong, julong, jlong>(phase, this);
 }
 

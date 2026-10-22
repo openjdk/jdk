@@ -127,9 +127,7 @@ public:
 
   static ObjectMonitor* read_monitor(oop obj);
 
-  // Returns the identity hash value for an oop
-  // NOTE: It may cause monitor inflation
-  static intptr_t FastHashCode(Thread* current, oop obj);
+  static intptr_t get_next_hash(Thread* current, oop obj);
 
   // java.lang.Thread support
   static bool current_thread_holds_lock(JavaThread* current, Handle h_obj);
