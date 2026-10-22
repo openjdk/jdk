@@ -2276,7 +2276,7 @@ public class Lower extends TreeTranslator {
         return true;
       }
       if (sym.isValueClass()) {
-          // Class is value class
+          // Omitting enclosing instance field in value classes changes ==
           return true;
       }
       return false;
