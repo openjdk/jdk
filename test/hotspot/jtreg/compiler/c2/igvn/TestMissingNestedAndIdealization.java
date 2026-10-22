@@ -27,7 +27,6 @@ package compiler.c2.igvn;
  * @test
  * @bug 8395378
  * @summary Test notification for nested AndI/AndL optimization: (x & c1) & c2 -> x & (c1 & c2)
- * @library /test/lib /
  * @run main/othervm -Xbatch
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
  *                   -XX:CompileOnly=${test.main.class}::test*
