@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8395341
+ * @bug 8395341 8391910
  * @summary Conditional moves whose condition is a VectorTest are matched.
  *
  * A diamond controlled by VectorMask.anyTrue()/allTrue() is collapsed into a
@@ -48,6 +48,7 @@ import compiler.lib.ir_framework.CompLevel;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Run;
+import compiler.lib.ir_framework.Scenario;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
 
@@ -65,9 +66,22 @@ public class TestVectorTestCMove {
     private static final long SOME = 1L;  // only lane 0 set  -> anyTrue
     private static final long NONE = 0L;  // no lane set      -> neither
 
+    private static final Object FIRST = new Object();
+    private static final Object SECOND = new Object();
+
+    static class Holder {
+        Object first = FIRST;
+        Object second = SECOND;
+    }
+
+    private static final Holder HOLDER = new Holder();
+
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
         framework.addFlags("--add-modules=jdk.incubator.vector");
+        framework.addScenarios(
+            new Scenario(0, "-XX:+UseCompressedOops"),
+            new Scenario(1, "-XX:-UseCompressedOops"));
         framework.start();
     }
 
@@ -125,6 +139,26 @@ public class TestVectorTestCMove {
     @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ALLTRUE, ">0"})
     static double allTrueD(long bits, double a, double b) {
         return VectorMask.fromLong(SPECIES, bits).allTrue() ? a : b;
+    }
+
+    @Test(compLevel = CompLevel.C2)
+    static Object anyTrueP(long bits, Object first, Object second) {
+        return VectorMask.fromLong(SPECIES, bits).anyTrue() ? first : second;
+    }
+
+    @Test(compLevel = CompLevel.C2)
+    static Object allTrueP(long bits, Object first, Object second) {
+        return VectorMask.fromLong(SPECIES, bits).allTrue() ? first : second;
+    }
+
+    @Test(compLevel = CompLevel.C2)
+    static Object anyTrueN(long bits, Holder holder) {
+        return VectorMask.fromLong(SPECIES, bits).anyTrue() ? holder.first : holder.second;
+    }
+
+    @Test(compLevel = CompLevel.C2)
+    static Object allTrueN(long bits, Holder holder) {
+        return VectorMask.fromLong(SPECIES, bits).allTrue() ? holder.first : holder.second;
     }
 
     // ---------------- driver ----------------
@@ -187,5 +221,33 @@ public class TestVectorTestCMove {
         Asserts.assertEQ(allTrueD(ALL, 7d, 9d), 7d);
         Asserts.assertEQ(allTrueD(SOME, 7d, 9d), 9d);
         Asserts.assertEQ(allTrueD(NONE, 7d, 9d), 9d);
+    }
+
+    @Run(test = "anyTrueP")
+    public void runAnyTrueP() {
+        Asserts.assertSame(anyTrueP(ALL, FIRST, SECOND), FIRST);
+        Asserts.assertSame(anyTrueP(SOME, FIRST, SECOND), FIRST);
+        Asserts.assertSame(anyTrueP(NONE, FIRST, SECOND), SECOND);
+    }
+
+    @Run(test = "allTrueP")
+    public void runAllTrueP() {
+        Asserts.assertSame(allTrueP(ALL, FIRST, SECOND), FIRST);
+        Asserts.assertSame(allTrueP(SOME, FIRST, SECOND), SECOND);
+        Asserts.assertSame(allTrueP(NONE, FIRST, SECOND), SECOND);
+    }
+
+    @Run(test = "anyTrueN")
+    public void runAnyTrueN() {
+        Asserts.assertSame(anyTrueN(ALL, HOLDER), FIRST);
+        Asserts.assertSame(anyTrueN(SOME, HOLDER), FIRST);
+        Asserts.assertSame(anyTrueN(NONE, HOLDER), SECOND);
+    }
+
+    @Run(test = "allTrueN")
+    public void runAllTrueN() {
+        Asserts.assertSame(allTrueN(ALL, HOLDER), FIRST);
+        Asserts.assertSame(allTrueN(SOME, HOLDER), SECOND);
+        Asserts.assertSame(allTrueN(NONE, HOLDER), SECOND);
     }
 }
