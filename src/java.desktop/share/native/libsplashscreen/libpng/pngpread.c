@@ -47,11 +47,11 @@
 #define PNG_READ_SIG_MODE   0
 #define PNG_READ_CHUNK_MODE 1
 #define PNG_READ_IDAT_MODE  2
-//#define PNG_READ_tEXt_MODE  4
-//#define PNG_READ_zTXt_MODE  5
+#define PNG_READ_tEXt_MODE  4
+#define PNG_READ_zTXt_MODE  5
 #define PNG_READ_DONE_MODE  6
-//#define PNG_READ_iTXt_MODE  7
-//#define PNG_ERROR_MODE      8
+#define PNG_READ_iTXt_MODE  7
+#define PNG_ERROR_MODE      8
 
 #define PNG_PUSH_SAVE_BUFFER_IF_FULL \
 if (png_ptr->push_length + 4 > png_ptr->buffer_size) \
