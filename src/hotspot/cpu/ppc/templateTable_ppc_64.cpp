@@ -1866,10 +1866,10 @@ void TemplateTable::if_acmp(Condition cc) {
 
   __ pop_ptr(Rfirst);
 
-  __ profile_acmp(Rfirst, Rsecond, R11_scratch1, R12_scratch2);
-
-  const int is_value_type_mask = markWord::value_type_pattern;
   if (Arguments::is_valhalla_enabled()) {
+    __ profile_acmp(Rfirst, Rsecond, R11_scratch1, R12_scratch2);
+
+    const int is_value_type_mask = markWord::value_type_pattern;
     Label taken, not_taken;
     __ cmpd(CR0, Rfirst, Rsecond);
     __ beq(CR0, (cc == equal) ? taken : not_taken);
@@ -2852,7 +2852,9 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
       __ push(atos);
     } else {
       Label is_flat;
-      __ test_field_is_flat(Rflags, is_flat);
+      if (UseFieldFlattening) {
+        __ test_field_is_flat(Rflags, is_flat);
+      }
       do_oop_load(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, /* nv temp */ Rflags, IN_HEAP);
       __ verify_oop(R17_tos);
       __ push(atos);
@@ -2863,13 +2865,15 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
       __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
       __ bind(is_flat);
-      // field is flat (null-free or nullable with a null-marker)
-      __ mr(R17_tos, Rclass_or_obj);
-      __ read_flat_field(Rcache, R17_tos);
-      __ verify_oop(R17_tos);
-      __ push(atos);
-      if (rc == may_rewrite) {
-        patch_bytecode(Bytecodes::_fast_vgetfield, Rbc, Rscratch);
+      if (UseFieldFlattening) {
+        // field is flat (null-free or nullable with a null-marker)
+        __ mr(R17_tos, Rclass_or_obj);
+        __ read_flat_field(Rcache, R17_tos);
+        __ verify_oop(R17_tos);
+        __ push(atos);
+        if (rc == may_rewrite) {
+          patch_bytecode(Bytecodes::_fast_vgetfield, Rbc, Rscratch);
+        }
       }
     }
   }
@@ -3215,7 +3219,9 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
       do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
     } else {
       Label null_free_reference, is_flat, rewrite_value;
-      __ test_field_is_flat(Rflags, is_flat);
+      if (UseFieldFlattening) {
+        __ test_field_is_flat(Rflags, is_flat);
+      }
       __ test_field_is_null_free_value_type(Rflags, null_free_reference);
       pop_and_check_object(Rclass_or_obj);
       // Store into the field
@@ -3237,8 +3243,10 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
       __ b(rewrite_value);
 
       __ bind(is_flat);
-      pop_and_check_object(Rclass_or_obj);
-      __ write_flat_field(Rcache, Rscratch, Rscratch2, Rclass_or_obj, R17_tos);
+      if (UseFieldFlattening) {
+        pop_and_check_object(Rclass_or_obj);
+        __ write_flat_field(Rcache, Rscratch, Rscratch2, Rclass_or_obj, R17_tos);
+      }
       __ bind(rewrite_value);
       if (rc == may_rewrite) {
         patch_bytecode(Bytecodes::_fast_vputfield, Rbc, Rscratch, true, byte_no);
@@ -3316,14 +3324,22 @@ void TemplateTable::fast_storefield(TosState state) {
   switch(bytecode()) {
     case Bytecodes::_fast_vputfield:
     {
-      Label is_flat, done;
-      __ test_field_is_flat(Rflags, is_flat);
-      __ null_check_throw(R17_tos, -1, Rscratch);
-      do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
-      __ b(done);
-      __ bind(is_flat);
-      __ write_flat_field(Rcache, Rscratch, Rscratch2, Rclass_or_obj, R17_tos);
-      __ bind(done);
+      if (Arguments::is_valhalla_enabled()) {
+        Label is_flat, done;
+        if (UseFieldFlattening) {
+          __ test_field_is_flat(Rflags, is_flat);
+        }
+        __ null_check_throw(R17_tos, -1, Rscratch);
+        do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
+        __ b(done);
+        __ bind(is_flat);
+        if (UseFieldFlattening) {
+          __ write_flat_field(Rcache, Rscratch, Rscratch2, Rclass_or_obj, R17_tos);
+        }
+        __ bind(done);
+      } else {
+        __ should_not_reach_here();
+      }
       break;
     }
 
@@ -3404,17 +3420,22 @@ void TemplateTable::fast_accessfield(TosState state) {
   switch(bytecode()) {
     case Bytecodes::_fast_vgetfield:
     {
-      // field is flat
-      __ read_flat_field(Rcache, R17_tos);
-      __ verify_oop(R17_tos);
-      __ dispatch_epilog(state, Bytecodes::length_for(bytecode()));
+      if (UseFieldFlattening) {
+        // field is flat
+        __ read_flat_field(Rcache, R17_tos);
+        __ verify_oop(R17_tos);
+        __ dispatch_epilog(state, Bytecodes::length_for(bytecode()));
 
-      __ bind(LisVolatile);
-      if (support_IRIW_for_not_multiple_copy_atomic_cpu) { __ fence(); }
-      __ read_flat_field(Rcache, R17_tos);
-      __ verify_oop(R17_tos);
-      __ twi_0(R17_tos);
-      __ isync();
+        __ bind(LisVolatile);
+        if (support_IRIW_for_not_multiple_copy_atomic_cpu) { __ fence(); }
+        __ read_flat_field(Rcache, R17_tos);
+        __ verify_oop(R17_tos);
+        __ twi_0(R17_tos);
+        __ isync();
+      } else {
+        __ bind(LisVolatile);
+        __ should_not_reach_here();
+      }
       break;
     }
     case Bytecodes::_fast_agetfield:
@@ -4317,8 +4338,10 @@ void TemplateTable::monitorenter() {
   __ null_check_throw(Robj_to_lock, -1, Rscratch1);
 
   Label is_value_type;
-  __ ld(Rscratch1, oopDesc::mark_offset_in_bytes(), Robj_to_lock);
-  __ test_markword_is_value_type(Rscratch1, is_value_type);
+  if (Arguments::is_valhalla_enabled()) {
+    __ ld(Rscratch1, oopDesc::mark_offset_in_bytes(), Robj_to_lock);
+    __ test_markword_is_value_type(Rscratch1, is_value_type);
+  }
 
   // Check if any slot is present => short cut to allocation if not.
   __ cmpld(CR0, Rcurrent_monitor, Rbot);
@@ -4378,9 +4401,11 @@ void TemplateTable::monitorenter() {
   __ dispatch_next(vtos);
 
   __ bind(is_value_type);
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                    InterpreterRuntime::throw_identity_exception), Robj_to_lock);
-  __ should_not_reach_here();
+  if (Arguments::is_valhalla_enabled()) {
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                                       InterpreterRuntime::throw_identity_exception), Robj_to_lock);
+    __ should_not_reach_here();
+  }
 }
 
 void TemplateTable::monitorexit() {
@@ -4404,11 +4429,13 @@ void TemplateTable::monitorexit() {
   // Null pointer check.
   __ null_check_throw(Robj_to_lock, -1, Rscratch);
 
-  const int is_value_type_mask = markWord::value_type_pattern;
-  __ ld(Rscratch, oopDesc::mark_offset_in_bytes(), Robj_to_lock);
-  __ andi(Rscratch, Rscratch, is_value_type_mask);
-  __ cmpwi(CR0, Rscratch, is_value_type_mask);
-  __ beq(CR0, Lillegal_monitor_state);
+  if (Arguments::is_valhalla_enabled()) {
+    const int is_value_type_mask = markWord::value_type_pattern;
+    __ ld(Rscratch, oopDesc::mark_offset_in_bytes(), Robj_to_lock);
+    __ andi(Rscratch, Rscratch, is_value_type_mask);
+    __ cmpwi(CR0, Rscratch, is_value_type_mask);
+    __ beq(CR0, Lillegal_monitor_state);
+  }
 
   // Check corner case: unbalanced monitorEnter / Exit.
   __ cmpld(CR0, Rcurrent_monitor, Rbot);

@@ -1733,7 +1733,7 @@ bool MethodData::profile_array_accesses() {
 }
 
 bool MethodData::profile_acmp() {
-  return COMPILER2_PRESENT(UseACmpProfile ||) TypeProfileLevel > 0;
+  return COMPILER2_PRESENT(UseACmpProfile ||) (Arguments::is_valhalla_enabled() && TypeProfileLevel > 0);
 }
 
 bool MethodData::profile_all_parameters() {

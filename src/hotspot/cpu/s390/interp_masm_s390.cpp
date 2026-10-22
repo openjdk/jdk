@@ -1367,6 +1367,7 @@ void InterpreterMacroAssembler::profile_acmp(Register mdp,
                                              Register left,
                                              Register right,
                                              Register tmp) {
+  assert(Arguments::is_valhalla_enabled(), "Profiling acmp makes sense only for value types");
   if (ProfileInterpreter) {
     assert_different_registers(mdp, left, right, tmp);
     Label profile_continue;
@@ -1638,15 +1639,19 @@ void InterpreterMacroAssembler::profile_array_type(Register array,
 
     profile_obj_type(array, Address(tmp1, in_bytes(ArrayStoreData::array_offset())), tmp2);
 
-    Label not_flat;
-    test_non_flat_array_oop(array, tmp2, not_flat);
-    set_mdp_flag_at(tmp1, ArrayStoreData::flat_array_byte_constant());
-    bind(not_flat);
+    if (Arguments::is_valhalla_enabled()) {
+      if (UseArrayFlattening) {
+        Label not_flat;
+        test_non_flat_array_oop(array, tmp2, not_flat);
+        set_mdp_flag_at(tmp1, ArrayStoreData::flat_array_byte_constant());
+        bind(not_flat);
+      }
 
-    Label not_null_free;
-    test_non_null_free_array_oop(array, tmp2, not_null_free);
-    set_mdp_flag_at(tmp1, ArrayStoreData::null_free_array_byte_constant());
-    bind(not_null_free);
+      Label not_null_free;
+      test_non_null_free_array_oop(array, tmp2, not_null_free);
+      set_mdp_flag_at(tmp1, ArrayStoreData::null_free_array_byte_constant());
+      bind(not_null_free);
+    }
 
     bind(profile_continue);
   }
@@ -2243,6 +2248,7 @@ void InterpreterMacroAssembler::pop_interpreter_frame(Register return_pc, Regist
 //-------------------------------------
 
 void InterpreterMacroAssembler::read_flat_field(Register entry, Register obj) {
+  assert(UseFieldFlattening, "Should be used only if field flattening is enabled");
   assert_different_registers(entry, obj);
   assert_different_registers(entry, Z_ARG2);
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::read_flat_field), obj, entry);
@@ -2250,6 +2256,7 @@ void InterpreterMacroAssembler::read_flat_field(Register entry, Register obj) {
 
 void InterpreterMacroAssembler::write_flat_field(Register entry, Register tmp1,
                                                  Register tmp2, Register obj) {
+  assert(UseFieldFlattening, "Should be used only if field flattening is enabled");
   assert_different_registers(entry, tmp1, tmp2, obj);
   Label slow_path, done;
 

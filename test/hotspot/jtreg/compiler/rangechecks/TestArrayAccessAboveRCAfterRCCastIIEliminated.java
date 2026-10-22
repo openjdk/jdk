@@ -27,16 +27,18 @@
  * @summary [REDO] C2: crash in compiled code because of dependency on removed range check CastIIs
  *
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
- *                   -XX:CompileCommand=dontinline,TestArrayAccessAboveRCAfterRCCastIIEliminated::notInlined
- *                   TestArrayAccessAboveRCAfterRCCastIIEliminated
+ *                   -XX:CompileCommand=dontinline,${test.main.class}::notInlined
+ *                   ${test.main.class}
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
- *                   -XX:CompileCommand=dontinline,TestArrayAccessAboveRCAfterRCCastIIEliminated::notInlined
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM TestArrayAccessAboveRCAfterRCCastIIEliminated
- * @run main TestArrayAccessAboveRCAfterRCCastIIEliminated
- * @run main/othervm -XX:CompileCommand=dontinline,TestArrayAccessAboveRCAfterRCCastIIEliminated::notInlined
- *                   TestArrayAccessAboveRCAfterRCCastIIEliminated
+ *                   -XX:CompileCommand=dontinline,${test.main.class}::notInlined
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM ${test.main.class}
+ * @run main ${test.main.class}
+ * @run main/othervm -XX:CompileCommand=dontinline,${test.main.class}::notInlined
+ *                   ${test.main.class}
  *
  */
+
+package compiler.rangechecks;
 
 public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
     private static int intField;
@@ -482,7 +484,7 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
         }
     }
 
-    // Range check cast type widen after loop opts causes control dependency to be lost
+    // Widened range check cast type after loop opts causes control dependency to be lost
     private static void test14(int i, int j, int flag, boolean flag2) {
         int l = 0;
         for (; l < 10; l++);
@@ -490,12 +492,14 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
         int[] array = new int[10];
         notInlined(array);
         if (flag == 0) {
+            throw new RuntimeException("never taken");
         }
         if (flag2) {
             float[] newArray = new float[10];
             newArray[i+j] = 42; // i+j in [0, 9]
             float[] otherArray = new float[i+j]; // i+j in [0, max]
             if (flag == 0) {
+                throw new RuntimeException("never taken");
             }
             intField = array[otherArray.length];
         } else {
@@ -503,6 +507,7 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
             newArray[i+j] = 42; // i+j in [0, 9]
             float[] otherArray = new float[i+j]; // i+j in [0, max]
             if (flag == 0) {
+                throw new RuntimeException("never taken");
             }
             intField = array[otherArray.length];
         }
@@ -523,12 +528,14 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
         int[] array = new int[10];
         notInlined(array);
         if (flag == 0) {
+            throw new RuntimeException("never taken");
         }
         if (flag2) {
             float[] newArray = new float[10];
             newArray[i+j] = 42; // i+j in [0, 9]
             float[] otherArray = new float[i+j]; // i+j in [0, max]
             if (flag == 0) {
+                throw new RuntimeException("never taken");
             }
             intField = array[otherArray.length];
         } else {
@@ -536,6 +543,7 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
             newArray[i+j] = 42; // i+j in [0, 9]
             float[] otherArray = new float[i+j]; // i+j in [0, max]
             if (flag == 0) {
+                throw new RuntimeException("never taken");
             }
             intField = array[otherArray.length];
         }

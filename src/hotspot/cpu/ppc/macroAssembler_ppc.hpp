@@ -131,11 +131,19 @@ class MacroAssembler: public Assembler {
   static address get_address_of_calculate_address_from_global_toc_at(address a, address addr);
 
 #ifdef _LP64
+ private:
+  static bool _compressed_oops_fit_in_31_bits;
+
+ public:
+  static void initialize_compressed_oops_fit_in_31_bits();
+  inline static bool compressed_oops_fit_in_31_bits() {
+    return _compressed_oops_fit_in_31_bits;
+  }
   // Patch narrow oop constant.
-  inline static bool is_set_narrow_oop(address a, address bound);
+  inline static bool is_set_narrow_oop(address a, address lower_bound);
   // Returns address of first instruction in sequence.
-  static address patch_set_narrow_oop(address a, address bound, narrowOop data);
-  static narrowOop get_narrow_oop(address a, address bound);
+  static address patch_set_narrow_oop(address a, address lower_bound, narrowOop data);
+  static narrowOop get_narrow_oop(address a, address lower_bound);
 #endif
 
   inline static bool is_load_const_at(address a);

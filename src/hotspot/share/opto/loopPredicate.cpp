@@ -216,10 +216,10 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_predicate(const ParsePredicateSucc
 
 // Update ctrl and control inputs of all data nodes starting from 'node' to 'new_ctrl' which have 'old_ctrl' as
 // current ctrl.
-void PhaseIdealLoop::set_ctrl_of_nodes_with_same_ctrl(Node* start_node, ProjNode* old_uncommon_proj,
+void PhaseIdealLoop::set_ctrl_of_nodes_with_same_ctrl(Node* start_node, const ProjNode* old_uncommon_proj,
                                                       Node* new_uncommon_proj) {
   ResourceMark rm;
-  const Unique_Node_List nodes_with_same_ctrl = find_nodes_with_same_ctrl(start_node, old_uncommon_proj);
+  const Unique_Node_List<Node> nodes_with_same_ctrl = find_nodes_with_same_ctrl(start_node, old_uncommon_proj);
   for (uint i = 0; i < nodes_with_same_ctrl.size(); i++) {
     Node* node = nodes_with_same_ctrl[i];
     if (node->in(0) == old_uncommon_proj) {
@@ -230,8 +230,8 @@ void PhaseIdealLoop::set_ctrl_of_nodes_with_same_ctrl(Node* start_node, ProjNode
 }
 
 // Recursively find all input nodes with the same ctrl.
-Unique_Node_List PhaseIdealLoop::find_nodes_with_same_ctrl(Node* node, const ProjNode* ctrl) {
-  Unique_Node_List nodes_with_same_ctrl;
+Unique_Node_List<Node> PhaseIdealLoop::find_nodes_with_same_ctrl(Node* node, const ProjNode* ctrl) {
+  Unique_Node_List<Node> nodes_with_same_ctrl;
   nodes_with_same_ctrl.push(node);
   for (uint j = 0; j < nodes_with_same_ctrl.size(); j++) {
     Node* next = nodes_with_same_ctrl[j];
@@ -247,10 +247,11 @@ Unique_Node_List PhaseIdealLoop::find_nodes_with_same_ctrl(Node* node, const Pro
 
 // Clone all data nodes with a ctrl to the old uncommon projection from `start_node' by following its inputs. Rewire the
 // cloned nodes to the new uncommon projection. Returns the clone of the `start_node`.
-Node* PhaseIdealLoop::clone_nodes_with_same_ctrl(Node* start_node, ProjNode* old_uncommon_proj, Node* new_uncommon_proj) {
+Node* PhaseIdealLoop::clone_nodes_with_same_ctrl(Node* start_node, const ProjNode* old_uncommon_proj,
+                                                 Node* new_uncommon_proj) {
   ResourceMark rm;
   DEBUG_ONLY(uint last_idx = C->unique();)
-  const Unique_Node_List nodes_with_same_ctrl = find_nodes_with_same_ctrl(start_node, old_uncommon_proj);
+  const Unique_Node_List<Node> nodes_with_same_ctrl = find_nodes_with_same_ctrl(start_node, old_uncommon_proj);
   DataNodeGraph data_node_graph(nodes_with_same_ctrl, this);
   const OrigToNewHashtable& orig_to_clone = data_node_graph.clone(new_uncommon_proj);
   fix_cloned_data_node_controls(old_uncommon_proj, new_uncommon_proj, orig_to_clone);
@@ -272,23 +273,14 @@ void PhaseIdealLoop::fix_cloned_data_node_controls(const ProjNode* old_uncommon_
   orig_to_clone.iterate_all(orig_clone_action);
 }
 
-// Put all OpaqueTemplateAssertionPredicate nodes on a list, starting at 'predicate' and going up in the tree.
-void PhaseIdealLoop::get_opaque_template_assertion_predicate_nodes(ParsePredicateSuccessProj* parse_predicate_proj,
-                                                                   Unique_Node_List& list) {
-  Deoptimization::DeoptReason deopt_reason = parse_predicate_proj->in(0)->as_ParsePredicate()->deopt_reason();
-  PredicateBlockIterator predicate_iterator(parse_predicate_proj, deopt_reason);
-  OpaqueTemplateAssertionPredicateCollector opaque_template_assertion_predicate_collector(list);
-  predicate_iterator.for_each(opaque_template_assertion_predicate_collector);
-}
-
 //------------------------------Invariance-----------------------------------
 // Helper class for loop_predication_impl to compute invariance on the fly and
 // clone invariants.
 class Invariance : public StackObj {
   VectorSet _visited, _invariant;
-  Node_Stack _stack;
+  Node_Stack<Node> _stack;
   VectorSet _clone_visited;
-  Node_List _old_new; // map of old to new (clone)
+  Node_List<Node> _old_new; // map of old to new (clone)
   IdealLoopTree* _lpt;
   PhaseIdealLoop* _phase;
   Node* _data_dependency_on; // The projection into the loop on which data nodes are dependent or null otherwise
@@ -408,7 +400,7 @@ class Invariance : public StackObj {
       // later check again if a node needs to be treated as non-loop-
       // invariant as well.
       _data_dependency_on = entry;
-      Unique_Node_List wq;
+      Unique_Node_List<Node> wq;
       wq.push(entry);
       for (uint next = 0; next < wq.size(); ++next) {
         Node *n = wq.at(next);
@@ -433,7 +425,7 @@ class Invariance : public StackObj {
   }
 
   // Map old to n for invariance computation and clone
-  void map_ctrl(Node* old, Node* n) {
+  void map_ctrl(const Node* old, Node* n) {
     assert(old->is_CFG() && n->is_CFG(), "must be");
     _old_new.map(old->_idx, n); // "clone" of old is n
     _invariant.set(old->_idx);  // old is invariant
@@ -457,12 +449,12 @@ class Invariance : public StackObj {
   }
 };
 
-//------------------------------is_range_check_if -----------------------------------
-// Returns true if the predicate of iff is in "scale*iv + offset u< load_range(ptr)" format
-// Note: this function is particularly designed for loop predication. We require load_range
-//       and offset to be loop invariant computed on the fly by "invar"
-bool IdealLoopTree::is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoop *phase, BasicType bt, Node *iv, Node *&range,
-                                      Node *&offset, jlong &scale) const {
+// Returns true if the predicate has the form
+//     scale*iv + offset <u R
+// where scale and offset are loop invariant and R >= 0.
+// Note: This is used by Loop Predication and PhaseIdealLoop::extract_long_range_check().
+bool IdealLoopTree::is_range_check_if(const IfProjNode* if_success_proj, PhaseIdealLoop* phase, BasicType bt, Node* iv,
+                                      Node*& range, Node*& offset, jlong& scale) const {
   IfNode* iff = if_success_proj->in(0)->as_If();
   if (!is_loop_exit(iff)) {
     return false;
@@ -518,27 +510,30 @@ bool IdealLoopTree::is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoo
     return false;
   }
   range = cmp->in(2);
+
+  // Now we check the condition R >= 0 from the method comment.
   if (range->Opcode() != Op_LoadRange) {
     const TypeInteger* tinteger = phase->_igvn.type(range)->isa_integer(bt);
     if (tinteger == nullptr || tinteger->empty() || tinteger->lo_as_long() < 0) {
-      // Allow predication on positive values that aren't LoadRanges.
-      // This allows optimization of loops where the length of the
-      // array is a known value and doesn't need to be loaded back
-      // from the array.
+      // R is not proven to be non-negative. Bail out.
       return false;
     }
   } else {
+    // R = LoadRange are always non-negative.
     assert(bt == T_INT, "no LoadRange for longs");
   }
   scale  = 0;
   offset = nullptr;
+  // Now check the form
+  //     scale*iv + offset <u R
+  // from the method comment.
   if (!phase->is_scaled_iv_plus_offset(cmp->in(1), iv, bt, &scale, &offset)) {
     return false;
   }
   return true;
 }
 
-bool IdealLoopTree::is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const {
+bool IdealLoopTree::is_range_check_if(const IfProjNode* if_success_proj, PhaseIdealLoop* phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode* predicate_proj)) const {
   Node* range = nullptr;
   Node* offset = nullptr;
   jlong scale = 0;
@@ -790,7 +785,7 @@ float PathFrequency::to(Node* n) {
       float f = c == _dom ? 1 : _freqs.at(c->_idx);
       Node* prev = c;
       while (_stack.size() > 0 && prev == c) {
-        Node* n = _stack.node();
+        const Node* n = _stack.node();
         if (!n->is_Region()) {
           if (_phase->get_loop(n) != _phase->get_loop(n->in(0))) {
             // Found an inner loop: compute frequency of reaching this
@@ -940,14 +935,13 @@ float PathFrequency::to(Node* n) {
   return -1;
 }
 
-void PhaseIdealLoop::loop_predication_follow_branches(Node *n, IdealLoopTree *loop, float loop_trip_cnt,
-                                                      PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
-                                                      Node_List& if_proj_list) {
-  assert(n->is_Region(), "start from a region");
+void PhaseIdealLoop::loop_predication_follow_branches(RegionNode* n, IdealLoopTree* loop, float loop_trip_cnt,
+                                                      PathFrequency& pf, Node_Stack<const Node>& stack, VectorSet& seen,
+                                                      Node_List<const IfProjNode>& if_proj_list) {
   Node* tail = loop->tail();
   stack.push(n, 1);
   do {
-    Node* c = stack.node();
+    const Node* c = stack.node();
     assert(c->is_Region() || c->is_IfProj(), "only region here");
     uint i = stack.index();
 
@@ -975,7 +969,7 @@ void PhaseIdealLoop::loop_predication_follow_branches(Node *n, IdealLoopTree *lo
       }
     } else {
       if (c->is_IfProj()) {
-        if_proj_list.push(c);
+        if_proj_list.push(c->as_IfProj());
       }
       stack.pop();
     }
@@ -983,7 +977,7 @@ void PhaseIdealLoop::loop_predication_follow_branches(Node *n, IdealLoopTree *lo
   } while (stack.size() > 0);
 }
 
-bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_success_proj,
+bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, const IfProjNode* if_success_proj,
                                                   ParsePredicateSuccessProj* parse_predicate_proj, CountedLoopNode* cl,
                                                   ConNode* zero, Invariance& invar,
                                                   Deoptimization::DeoptReason deopt_reason) {
@@ -1210,23 +1204,23 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
 
   // Create list of if-projs such that a newer proj dominates all older
   // projs in the list, and they all dominate loop->tail()
-  Node_List if_proj_list;
-  Node_List regions;
+  Node_List<IfProjNode> if_proj_list;
+  Node_List<RegionNode> regions;
   Node* current_proj = loop->tail(); // start from tail
 
 
-  Node_List controls;
+  Node_List<Node> controls;
   while (current_proj != head) {
     if (loop == get_loop(current_proj) && // still in the loop ?
-        current_proj->is_Proj()        && // is a projection  ?
+        current_proj->is_IfProj()        && // is a projection  ?
         (current_proj->in(0)->Opcode() == Op_If ||
          current_proj->in(0)->Opcode() == Op_RangeCheck)) { // is a if projection ?
-      if_proj_list.push(current_proj);
+      if_proj_list.push(current_proj->as_IfProj());
     }
     if (follow_branches &&
         current_proj->Opcode() == Op_Region &&
         loop == get_loop(current_proj)) {
-      regions.push(current_proj);
+      regions.push(current_proj->as_Region());
     }
     current_proj = idom(current_proj);
   }
@@ -1235,9 +1229,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
 
   if (can_create_loop_predicates(profiled_loop_predicate_block)) {
     while (if_proj_list.size() > 0) {
-      Node* n = if_proj_list.pop();
-
-      IfProjNode* if_proj = n->as_IfProj();
+      IfProjNode* if_proj = if_proj_list.pop();
       IfNode* iff = if_proj->in(0)->as_If();
 
       CallStaticJavaNode* call = if_proj->is_uncommon_trap_if_pattern();
@@ -1276,28 +1268,28 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
 
     // Some projections were skipped due to an early loop exit. Try them with profile data.
     while (if_proj_list.size() > 0) {
-      Node* if_proj = if_proj_list.pop();
+      IfProjNode* if_proj = if_proj_list.pop();
       float f = pf.to(if_proj);
-      if (if_proj->as_Proj()->is_uncommon_trap_if_pattern() &&
+      if (if_proj->is_uncommon_trap_if_pattern() &&
           f * loop_trip_cnt >= 1) {
         ParsePredicateSuccessProj* profiled_loop_parse_predicate_proj =
             profiled_loop_predicate_block->parse_predicate_success_proj();
-        hoisted = loop_predication_impl_helper(loop, if_proj->as_IfProj(), profiled_loop_parse_predicate_proj,
+        hoisted = loop_predication_impl_helper(loop, if_proj, profiled_loop_parse_predicate_proj,
                                                cl, zero, invar, Deoptimization::Reason_profile_predicate) | hoisted;
       }
     }
 
     // And look into all branches
-    Node_Stack stack(0);
+    Node_Stack<const Node> stack(0);
     VectorSet seen;
-    Node_List if_proj_list_freq(area);
+    Node_List<const IfProjNode> if_proj_list_freq(area);
     while (regions.size() > 0) {
-      Node* c = regions.pop();
+      RegionNode* c = regions.pop();
       loop_predication_follow_branches(c, loop, loop_trip_cnt, pf, stack, seen, if_proj_list_freq);
     }
 
     for (uint i = 0; i < if_proj_list_freq.size(); i++) {
-      IfProjNode* if_proj = if_proj_list_freq.at(i)->as_IfProj();
+      const IfProjNode* if_proj = if_proj_list_freq.at(i);
       ParsePredicateSuccessProj* profiled_loop_parse_predicate_proj =
           profiled_loop_predicate_block->parse_predicate_success_proj();
       hoisted = loop_predication_impl_helper(loop, if_proj, profiled_loop_parse_predicate_proj, cl, zero,
