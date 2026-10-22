@@ -142,21 +142,25 @@ public class TestVectorTestCMove {
     }
 
     @Test(compLevel = CompLevel.C2)
+    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ANYTRUE, ">0"})
     static Object anyTrueP(long bits, Object first, Object second) {
         return VectorMask.fromLong(SPECIES, bits).anyTrue() ? first : second;
     }
 
     @Test(compLevel = CompLevel.C2)
+    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ALLTRUE, ">0"})
     static Object allTrueP(long bits, Object first, Object second) {
         return VectorMask.fromLong(SPECIES, bits).allTrue() ? first : second;
     }
 
     @Test(compLevel = CompLevel.C2)
+    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ANYTRUE, ">0"})
     static Object anyTrueN(long bits, Holder holder) {
         return VectorMask.fromLong(SPECIES, bits).anyTrue() ? holder.first : holder.second;
     }
 
     @Test(compLevel = CompLevel.C2)
+    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ALLTRUE, ">0"})
     static Object allTrueN(long bits, Holder holder) {
         return VectorMask.fromLong(SPECIES, bits).allTrue() ? holder.first : holder.second;
     }
