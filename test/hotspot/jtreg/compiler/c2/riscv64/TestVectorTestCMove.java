@@ -139,13 +139,17 @@ public class TestVectorTestCMove {
     }
 
     @Test(compLevel = CompLevel.C2)
-    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ANYTRUE, ">0"})
+    @IR(counts = {"cmovP_vtest_anytrue", ">0"},
+        phase = CompilePhase.FINAL_CODE,
+        applyIf = {"UseCompressedOops", "false"})
     static Object anyTrueP(long bits, Object first, Object second) {
         return VectorMask.fromLong(SPECIES, bits).anyTrue() ? first : second;
     }
 
     @Test(compLevel = CompLevel.C2)
-    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ALLTRUE, ">0"})
+    @IR(counts = {"cmovP_vtest_alltrue", ">0"},
+        phase = CompilePhase.FINAL_CODE,
+        applyIf = {"UseCompressedOops", "false"})
     static Object allTrueP(long bits, Object first, Object second) {
         return VectorMask.fromLong(SPECIES, bits).allTrue() ? first : second;
     }
