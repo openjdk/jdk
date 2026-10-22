@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2026, NTT DATA
@@ -76,6 +75,26 @@ public class LingeredAppWithValueObject extends LingeredApp {
         }
     }
 
+    public static class ValueThreadObj extends Thread {
+
+        public final Rec  rec;
+        public final Rec  nullField;
+
+        public ValueThreadObj(byte recA, byte recB) {
+            this.rec = new Rec(recA, recB);
+            this.nullField = null;
+        }
+    }
+
+    public static class NonNullValueThreadObj extends Thread {
+
+        public final Rec  rec;
+
+        public NonNullValueThreadObj(byte recA, byte recB) {
+            this.rec = new Rec(recA, recB);
+        }
+    }
+
     private static ValueObj valObj;
 
     @NullRestricted
@@ -86,6 +105,11 @@ public class LingeredAppWithValueObject extends LingeredApp {
     private static ValueObj[] valObjArray;
 
     private static NonFlattenedValueObj[] nonFlattenedValObjArray;
+
+    private static ValueThreadObj valThreadObj;
+
+    @NullRestricted
+    private static NonNullValueThreadObj nonNullValThreadObj;
 
     static {
         valObj = new ValueObj((byte)1, (byte)10, (byte)20);
@@ -102,6 +126,9 @@ public class LingeredAppWithValueObject extends LingeredApp {
           null,
           new NonFlattenedValueObj(200, new Object())
         };
+
+        valThreadObj = new ValueThreadObj((byte)10, (byte)20);
+        nonNullValThreadObj = new NonNullValueThreadObj((byte)30, (byte)40);
     }
 
     public static void main(String[] args) {
@@ -112,6 +139,8 @@ public class LingeredAppWithValueObject extends LingeredApp {
         addresses.setProperty("nonFlattenedValObj", String.format("0x%x", wb.getObjectAddress(nonFlattenedValObj)));
         addresses.setProperty("valObjArray", String.format("0x%x", wb.getObjectAddress(valObjArray)));
         addresses.setProperty("nonFlattenedValObjArray", String.format("0x%x", wb.getObjectAddress(nonFlattenedValObjArray)));
+        addresses.setProperty("valThreadObj", String.format("0x%x", wb.getObjectAddress(valThreadObj)));
+        addresses.setProperty("nonNullValThreadObj", String.format("0x%x", wb.getObjectAddress(nonNullValThreadObj)));
 
         try (var out = Files.newOutputStream(ADDR_FILE_PATH)) {
             addresses.store(out, null);

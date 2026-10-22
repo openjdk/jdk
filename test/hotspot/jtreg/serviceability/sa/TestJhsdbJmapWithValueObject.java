@@ -161,6 +161,25 @@ public class TestJhsdbJmapWithValueObject {
             obj = (JavaObject)array.getElements()[2];
             // Check regular fields
             Asserts.assertEquals("200", obj.getField("a").toString());
+
+
+            /**** valThreadObj ****/
+            obj = (JavaObject)jc.getStaticField("valThreadObj");
+
+            // Check flattened fields
+            rec = (JavaObject)obj.getField("rec");
+            Asserts.assertEquals("0xa", rec.getField("recA").toString());
+            Asserts.assertEquals("0x14", rec.getField("recB").toString());
+            Asserts.assertEquals("<null>", obj.getField("nullField").toString());
+
+
+            /**** nonNullValThreadObj ****/
+            obj = (JavaObject)jc.getStaticField("nonNullValThreadObj");
+
+            // Check value fields
+            rec = (JavaObject)obj.getField("rec");
+            Asserts.assertEquals("0x1e", rec.getField("recA").toString());
+            Asserts.assertEquals("0x28", rec.getField("recB").toString());
         }
     }
 
