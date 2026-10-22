@@ -2975,7 +2975,14 @@ void Parse::maybe_insert_optimization_delay_nodes() {
     Node* n = stack(i);
     const Type* t = _gvn.type(n);
     if (n->Opcode() != Op_OptimizationDelay &&
-        OptimizationDelayNode::can_delay_type(t)) {
+        OptimizationDelayNode::can_delay_type(t)) {// &&
+        //C->stress().random() % 10 >= 5) {
+      Node* delay = _gvn.transform(new OptimizationDelayNode(C, n, t));
+
+      // TODO: Not so sure about this below...
+      set_stack(i, delay);
+      C->record_for_igvn(delay);
+
       if (TraceOptimizationDelay) {
         tty->print_cr("[OptimizationDelay] bci=%d", bci());
         n->dump();

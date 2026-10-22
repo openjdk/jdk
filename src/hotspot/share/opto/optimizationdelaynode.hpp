@@ -37,11 +37,13 @@ public:
     _type(t)
   {
     assert(can_delay_type(t), "permissible input type");
+    // TODO: what to do with input type? We could widen it.
     // TODO: type assert?
     // TODO: macro flags?
   }
 
   virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return _type; } // TODO: change?
   virtual uint size_of() const { return sizeof(OptimizationDelayNode); }
 
   static bool can_delay_type(const Type* t) {
