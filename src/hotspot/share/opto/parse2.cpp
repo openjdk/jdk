@@ -42,6 +42,7 @@
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/optimizationdelaynode.hpp"
 #include "opto/parse.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subtypenode.hpp"
@@ -2962,6 +2963,8 @@ Node* Parse::optimize_cmp_with_klass(Node* c) {
   return c;
 }
 
+
+
 // TODO: desc
 void Parse::maybe_insert_optimization_delay_nodes() {
   if (C->stress().random() % 100 >= 1) {
@@ -2971,10 +2974,13 @@ void Parse::maybe_insert_optimization_delay_nodes() {
   for (int i = 0; i < sp(); i++) {
     Node* n = stack(i);
     const Type* t = _gvn.type(n);
-    if (n->Opcode() != Op_OptimizationDelay) {
+    if (n->Opcode() != Op_OptimizationDelay &&
+        OptimizationDelayNode::can_delay_type(t)) {
       if (TraceOptimizationDelay) {
         tty->print_cr("[OptimizationDelay] bci=%d", bci());
         n->dump();
+        t->dump();
+        tty->cr();
       }
     }
   }

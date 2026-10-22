@@ -36,12 +36,18 @@ public:
   : Node(nullptr, n),
     _type(t)
   {
+    assert(can_delay_type(t), "permissible input type");
     // TODO: type assert?
     // TODO: macro flags?
   }
 
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(OptimizationDelayNode); }
+
+  static bool can_delay_type(const Type* t) {
+    return t->isa_int() != nullptr ||
+           t->isa_long() != nullptr;
+  }
 };
 
 #endif // SHARE_OPTO_OPTIZATIONDELAYNODE_HPP
