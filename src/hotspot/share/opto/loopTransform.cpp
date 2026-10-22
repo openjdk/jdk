@@ -314,7 +314,7 @@ void IdealLoopTree::compute_profile_trip_cnt(PhaseIdealLoop *phase) {
       }
     } else {
       ResourceMark rm;
-      Unique_Node_List wq;
+      Unique_Node_List<Node> wq;
       wq.push(back);
       for (uint i = 0; i < wq.size(); i++) {
         Node *n = wq.at(i);
@@ -661,7 +661,7 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
 // dominates the remaining iterations. This allows us to:
 // - Remove all loop-invariant dominated tests in the main body.
 // - Remove all loop-invariant dominated stores in the main body.
-void PhaseIdealLoop::elide_redundancies_after_peeling(IdealLoopTree* loop, const Node_List& old_new) {
+void PhaseIdealLoop::elide_redundancies_after_peeling(IdealLoopTree* loop, const Node_List<Node>& old_new) {
   elide_redundant_tests_after_peeling(loop, old_new);
   elide_redundant_stores_after_peeling(loop, old_new);
 }
@@ -671,7 +671,7 @@ void PhaseIdealLoop::elide_redundancies_after_peeling(IdealLoopTree* loop, const
 // 'prev'. As a result, if the condition of 'test' is a loop invariant, 'test' will be dominated by
 // the IfProj of 'old_new[test->_idx]', and both 'test' and 'old_new[test->_idx]' will have the
 // same Bool input. This allows 'test' to be removed using PhaseIdealLoop::dominated_by.
-void PhaseIdealLoop::elide_redundant_tests_after_peeling(IdealLoopTree* loop, const Node_List& old_new) {
+void PhaseIdealLoop::elide_redundant_tests_after_peeling(IdealLoopTree* loop, const Node_List<Node>& old_new) {
   bool progress = true;
   while (progress) {
     progress = false; // Reset for next iteration
@@ -769,7 +769,7 @@ void PhaseIdealLoop::elide_redundant_tests_after_peeling(IdealLoopTree* loop, co
 // remove it from the main body. Note that this is only an analysis of the transformation as a
 // conceptual explanation. In practice, in try_move_store_before_loop, we don't actually peel and
 // unpeel the loop but we hoist the store directly.
-void PhaseIdealLoop::elide_redundant_stores_after_peeling(IdealLoopTree* loop, const Node_List& old_new) {
+void PhaseIdealLoop::elide_redundant_stores_after_peeling(IdealLoopTree* loop, const Node_List<Node>& old_new) {
   for (uint i = 0; i < loop->_body.size(); i++) {
     Node* n = loop->_body.at(i);
     if (n->is_Store() && loop->can_elide_store_after_peeling(n->as_Store(), old_new[n->_idx]->as_Store())) {
@@ -832,7 +832,7 @@ bool IdealLoopTree::can_elide_store_after_peeling_impl(StoreNode* store, StoreNo
   // with 'store'. If is_profitability_check is true, walk all the relevant nodes inside 'this'.
   // Otherwise, walk all the relevant nodes between 'store' and 'dominating_store'.
   ResourceMark rm;
-  Unique_Node_List worklist;
+  Unique_Node_List<Node> worklist;
   worklist.push(store->in(MemNode::Memory));
   AccessAnalyzer analyzer(&_phase->_igvn, store);
   for (uint worklist_idx = 0; worklist_idx < worklist.size(); worklist_idx++) {
@@ -1018,7 +1018,7 @@ bool IdealLoopTree::can_elide_store_after_peeling_impl(StoreNode* store, StoreNo
 //              v
 //             exit
 //
-void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
+void PhaseIdealLoop::do_peeling(IdealLoopTree* loop, Node_List<Node>& old_new) {
   assert(LoopPeeling != 0, "do_peeling called with loop peeling always disabled");
 
   C->set_major_progress();
@@ -1559,7 +1559,7 @@ bool IdealLoopTree::policy_peel_only(PhaseIdealLoop *phase) const {
 //------------------------------clone_up_backedge_goo--------------------------
 // If Node n lives in the back_ctrl block and cannot float, we clone a private
 // version of n in preheader_ctrl block and return that, otherwise return n.
-Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctrl, Node *n, VectorSet &visited, Node_Stack &clones) {
+Node* PhaseIdealLoop::clone_up_backedge_goo(Node* back_ctrl, Node* preheader_ctrl, Node* n, VectorSet& visited, Node_Stack<Node>& clones) {
   if (get_ctrl(n) != back_ctrl) return n;
 
   // Only visit once
@@ -1633,7 +1633,7 @@ void PhaseIdealLoop::ensure_zero_trip_guard_proj(Node* node, bool is_main_loop) 
 // Insert pre and post loops.  If peel_only is set, the pre-loop can not have
 // more iterations added.  It acts as a 'peel' only, no lower-bound RCE, no
 // alignment.  Useful to unroll loops that do no array accesses.
-void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_new, bool peel_only) {
+void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree* loop, Node_List<Node>& old_new, bool peel_only) {
 
 #ifndef PRODUCT
   if (TraceLoopOpts) {
@@ -1747,7 +1747,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   assert(post_head->in(1)->is_IfProj(), "must be zero-trip guard If node projection of the post loop");
 
   VectorSet visited;
-  Node_Stack clones(main_head->back_control()->outcnt());
+  Node_Stack<Node> clones(main_head->back_control()->outcnt());
   // Step B3: Make the fall-in values to the main-loop come from the
   // fall-out values of the pre-loop.
   const uint last_node_index_in_pre_loop_body = Compile::current()->unique() - 1;
@@ -1847,7 +1847,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
 // unroll_policy has  already informed  us that more  unrolling is  about to
 // happen  to the  main  loop.  The  resultant  post loop  will  serve as  a
 // vectorized drain loop.
-void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old_new) {
+void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree* loop, Node_List<Node>& old_new) {
   if (!loop->_head->is_CountedLoop()) return;
 
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
@@ -1931,7 +1931,7 @@ Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, const IdealLoop
 
 //------------------------------insert_post_loop-------------------------------
 // Insert post loops.  Add a post loop to the given loop passed.
-Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
+Node* PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List<Node>& old_new,
                                        CountedLoopNode* main_head, CountedLoopEndNode* main_end,
                                        Node* incr, Node* limit, CountedLoopNode*& post_head) {
   IfNode* outer_main_end = main_end;
@@ -2003,7 +2003,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   set_idom(post_head, zer_taken, dd_main_exit);
 
   VectorSet visited;
-  Node_Stack clones(main_head->back_control()->outcnt());
+  Node_Stack<Node> clones(main_head->back_control()->outcnt());
   // Step A3: Make the fall-in values to the post-loop come from the
   // fall-out values of the main-loop.
   for (DUIterator i = main_head->outs(); main_head->has_out(i); i++) {
@@ -2099,7 +2099,7 @@ void PhaseIdealLoop::update_main_loop_assertion_predicates(CountedLoopNode* new_
 void PhaseIdealLoop::initialize_assertion_predicates_for_peeled_loop(CountedLoopNode* peeled_loop_head,
                                                                      CountedLoopNode* remaining_loop_head,
                                                                      const uint first_node_index_in_cloned_loop_body,
-                                                                     const Node_List& old_new) {
+                                                                     const Node_List<Node>& old_new) {
   const NodeInOriginalLoopBody node_in_original_loop_body(first_node_index_in_cloned_loop_body, old_new);
   create_assertion_predicates_at_loop(peeled_loop_head, remaining_loop_head, node_in_original_loop_body, true);
 }
@@ -2111,7 +2111,7 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_main_loop(CountedLoopNo
                                                                    const uint first_node_index_in_pre_loop_body,
                                                                    const uint last_node_index_in_pre_loop_body,
                                                                    DEBUG_ONLY(const uint last_node_index_from_backedge_goo COMMA)
-                                                                   const Node_List& old_new) {
+                                                                   const Node_List<Node>& old_new) {
   assert(first_node_index_in_pre_loop_body < last_node_index_in_pre_loop_body, "cloned some nodes");
   const NodeInMainLoopBody node_in_main_loop_body(first_node_index_in_pre_loop_body,
                                                   last_node_index_in_pre_loop_body,
@@ -2185,7 +2185,7 @@ void PhaseIdealLoop::rewire_old_target_loop_entry_dependency_to_new_entry(
 
 //------------------------------do_unroll--------------------------------------
 // Unroll the loop body one step - make each trip do 2 iterations.
-void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adjust_min_trip) {
+void PhaseIdealLoop::do_unroll(IdealLoopTree* loop, Node_List<Node>& old_new, bool adjust_min_trip) {
   assert(LoopUnrollLimit, "");
   CountedLoopNode *loop_head = loop->_head->as_CountedLoop();
   CountedLoopEndNode *loop_end = loop_head->loopexit();
@@ -2203,8 +2203,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   }
 
   if (C->do_vector_loop() && (PrintOpto && (VerifyLoopOptimizations || TraceLoopOpts))) {
-    Node_Stack stack(C->live_nodes() >> 2);
-    Node_List rpo_list;
+    Node_Stack<Node> stack(C->live_nodes() >> 2);
+    Node_List<Node> rpo_list;
     VectorSet visited;
     visited.set(loop_head->_idx);
     rpo(loop_head, stack, visited, rpo_list);
@@ -2238,7 +2238,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
       // In rare cases, loop cloning (as for peeling, for instance) can break this by replacing
       // limit and the input of opaq by equivalent but distinct phis.
       // Next IGVN should clean it up. Let's try to detect we are in such a case.
-      Unique_Node_List& worklist = loop->_phase->_igvn._worklist;
+      Unique_Node_List<Node>& worklist = loop->_phase->_igvn._worklist;
       assert(C->major_progress(), "The operation that replaced limit and opaq->in(1) (e.g. peeling) should have set major_progress");
       assert(opaq->in(1)->is_Phi() && limit->is_Phi(), "Nodes limit and opaq->in(1) should have been replaced by PhiNodes by fix_data_uses from clone_loop.");
       assert(worklist.member(opaq->in(1)) && worklist.member(limit), "Nodes limit and opaq->in(1) differ and should have been recorded for IGVN.");
@@ -2453,7 +2453,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
 
 //------------------------------do_maximally_unroll----------------------------
 
-void PhaseIdealLoop::do_maximally_unroll(IdealLoopTree *loop, Node_List &old_new) {
+void PhaseIdealLoop::do_maximally_unroll(IdealLoopTree* loop, Node_List<Node>& old_new) {
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
   assert(cl->has_exact_trip_count(), "trip count is not exact");
   assert(cl->trip_count() > 0, "");
@@ -3475,7 +3475,7 @@ Node* PhaseIdealLoop::ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNod
   }
   control = pre_end->in(0);
   ResourceMark rm;
-  Unique_Node_List wq;
+  Unique_Node_List<Node> wq;
   wq.push(node);
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
@@ -3641,7 +3641,7 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
 #ifdef ASSERT
   // Call collect_loop_core_nodes to exercise the assert that checks that it finds the right number of nodes
   if (empty_loop_with_extra_nodes_candidate(phase)) {
-    Unique_Node_List wq;
+    Unique_Node_List<Node> wq;
     collect_loop_core_nodes(phase, wq);
   }
 #endif
@@ -3736,7 +3736,7 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
       return false;
     }
     // Peel the loop to ensure there's a zero trip guard
-    Node_List old_new;
+    Node_List<Node> old_new;
     phase->do_peeling(this, old_new);
   }
 
@@ -3785,8 +3785,8 @@ bool IdealLoopTree::empty_loop_with_data_nodes(PhaseIdealLoop* phase) const {
   if (!cl->is_strip_mined() || !empty_loop_with_extra_nodes_candidate(phase)) {
     return false;
   }
-  Unique_Node_List empty_loop_nodes;
-  Unique_Node_List wq;
+  Unique_Node_List<Node> empty_loop_nodes;
+  Unique_Node_List<Node> wq;
 
   // Start from all data nodes in the loop body that are not one of the EMPTY_LOOP_SIZE nodes expected in an empty body
   enqueue_data_nodes(phase, empty_loop_nodes, wq);
@@ -3827,7 +3827,7 @@ bool IdealLoopTree::empty_loop_with_data_nodes(PhaseIdealLoop* phase) const {
   return true;
 }
 
-bool IdealLoopTree::process_safepoint(PhaseIdealLoop* phase, Unique_Node_List& empty_loop_nodes, Unique_Node_List& wq,
+bool IdealLoopTree::process_safepoint(PhaseIdealLoop* phase, Unique_Node_List<Node>& empty_loop_nodes, Unique_Node_List<Node>& wq,
                                       Node* sfpt) const {
   CountedLoopNode* cl = _head->as_CountedLoop();
   if (cl->outer_safepoint() == sfpt) {
@@ -3871,8 +3871,8 @@ bool IdealLoopTree::empty_loop_with_extra_nodes_candidate(PhaseIdealLoop* phase)
   return true;
 }
 
-void IdealLoopTree::enqueue_data_nodes(PhaseIdealLoop* phase, Unique_Node_List& empty_loop_nodes,
-                                       Unique_Node_List& wq) const {
+void IdealLoopTree::enqueue_data_nodes(PhaseIdealLoop* phase, Unique_Node_List<Node>& empty_loop_nodes,
+                                       Unique_Node_List<Node>& wq) const {
   collect_loop_core_nodes(phase, empty_loop_nodes);
   for (uint i = 0; i < _body.size(); ++i) {
     Node* n = _body.at(i);
@@ -3883,7 +3883,7 @@ void IdealLoopTree::enqueue_data_nodes(PhaseIdealLoop* phase, Unique_Node_List& 
 }
 
 // This collects the node that would be left if this body was empty
-void IdealLoopTree::collect_loop_core_nodes(PhaseIdealLoop* phase, Unique_Node_List& wq) const {
+void IdealLoopTree::collect_loop_core_nodes(PhaseIdealLoop* phase, Unique_Node_List<Node>& wq) const {
   uint before = wq.size();
   wq.push(_head->in(LoopNode::LoopBackControl));
   for (uint i = before; i < wq.size(); ++i) {
@@ -3934,7 +3934,7 @@ bool IdealLoopTree::do_one_iteration_loop(PhaseIdealLoop *phase) {
 
 //=============================================================================
 //------------------------------iteration_split_impl---------------------------
-bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_new) {
+bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop* phase, Node_List<Node>& old_new) {
   if (!_head->is_Loop()) {
     // Head could be a region with a NeverBranch that was added in beautify loops but the region was not
     // yet transformed into a LoopNode. Bail out and wait until beautify loops turns it into a Loop node.
@@ -4108,7 +4108,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
 
 //=============================================================================
 //------------------------------iteration_split--------------------------------
-bool IdealLoopTree::iteration_split(PhaseIdealLoop* phase, Node_List &old_new) {
+bool IdealLoopTree::iteration_split(PhaseIdealLoop* phase, Node_List<Node>& old_new) {
   // Recursively iteration split nested loops
   if (_child && !_child->iteration_split(phase, old_new)) {
     return false;

@@ -2503,6 +2503,18 @@ public class IRNode {
         machOnlyNameRegex(RISCV_LOAD_N2P_UNSCALED, "loadN2P_unscaled");
     }
 
+    // Conditional move whose condition is a VectorTest. One rule per value type.
+    // Exclude the separate _negate rules that materialize boolean results.
+    public static final String RISCV_CMOVE_VTEST_ANYTRUE = PREFIX + "RISCV_CMOVE_VTEST_ANYTRUE" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_CMOVE_VTEST_ANYTRUE, "cmov[ILFD]_vtest_anytrue\\b");
+    }
+
+    public static final String RISCV_CMOVE_VTEST_ALLTRUE = PREFIX + "RISCV_CMOVE_VTEST_ALLTRUE" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_CMOVE_VTEST_ALLTRUE, "cmov[ILFD]_vtest_alltrue\\b");
+    }
+
     public static final String RISCV_VAND_NOTI_VX_MASKED = PREFIX + "RISCV_VAND_NOTI_VX_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(RISCV_VAND_NOTI_VX_MASKED, "vand_notI_vx_masked");
