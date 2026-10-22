@@ -37,6 +37,7 @@ import static build.tools.cldrconverter.CLDRConverter.LOCALE_TYPE_PREFIX;
 import static build.tools.cldrconverter.CLDRConverter.METAZONE_ID_PREFIX;
 import static build.tools.cldrconverter.CLDRConverter.TIMEZONE_ID_PREFIX;
 import static build.tools.cldrconverter.CLDRConverter.ZONE_NAME_PREFIX;
+import static build.tools.cldrconverter.CLDRConverter.ZoneNameSlot;
 
 import java.io.File;
 import java.io.IOException;
@@ -1154,7 +1155,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             return false;
         }
 
-        EnumSet<CLDRConverter.ZoneNameSlot> slots = zoneNameSlots(style, nameType);
+        EnumSet<ZoneNameSlot> slots = zoneNameSlots(style, nameType);
         if (slots.isEmpty()) {
             return false;
         }
@@ -1166,25 +1167,25 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         return true;
     }
 
-    private static EnumSet<CLDRConverter.ZoneNameSlot> zoneNameSlots(String style, String nameType) {
+    private static EnumSet<ZoneNameSlot> zoneNameSlots(String style, String nameType) {
         if (style == null) {
-            return EnumSet.allOf(CLDRConverter.ZoneNameSlot.class);
+            return EnumSet.allOf(ZoneNameSlot.class);
         }
 
         return switch (nameType == null ? style : nameType + '.' + style) {
-            case "long" -> EnumSet.of(CLDRConverter.ZoneNameSlot.STD_LONG,
-                    CLDRConverter.ZoneNameSlot.DST_LONG,
-                    CLDRConverter.ZoneNameSlot.GEN_LONG);
-            case "short" -> EnumSet.of(CLDRConverter.ZoneNameSlot.STD_SHORT,
-                    CLDRConverter.ZoneNameSlot.DST_SHORT,
-                    CLDRConverter.ZoneNameSlot.GEN_SHORT);
-            case "standard.long" -> EnumSet.of(CLDRConverter.ZoneNameSlot.STD_LONG);
-            case "standard.short" -> EnumSet.of(CLDRConverter.ZoneNameSlot.STD_SHORT);
-            case "daylight.long" -> EnumSet.of(CLDRConverter.ZoneNameSlot.DST_LONG);
-            case "daylight.short" -> EnumSet.of(CLDRConverter.ZoneNameSlot.DST_SHORT);
-            case "generic.long" -> EnumSet.of(CLDRConverter.ZoneNameSlot.GEN_LONG);
-            case "generic.short" -> EnumSet.of(CLDRConverter.ZoneNameSlot.GEN_SHORT);
-            default -> EnumSet.noneOf(CLDRConverter.ZoneNameSlot.class);
+            case "long" -> EnumSet.of(ZoneNameSlot.STD_LONG,
+                    ZoneNameSlot.DST_LONG,
+                    ZoneNameSlot.GEN_LONG);
+            case "short" -> EnumSet.of(ZoneNameSlot.STD_SHORT,
+                    ZoneNameSlot.DST_SHORT,
+                    ZoneNameSlot.GEN_SHORT);
+            case "standard.long" -> EnumSet.of(ZoneNameSlot.STD_LONG);
+            case "standard.short" -> EnumSet.of(ZoneNameSlot.STD_SHORT);
+            case "daylight.long" -> EnumSet.of(ZoneNameSlot.DST_LONG);
+            case "daylight.short" -> EnumSet.of(ZoneNameSlot.DST_SHORT);
+            case "generic.long" -> EnumSet.of(ZoneNameSlot.GEN_LONG);
+            case "generic.short" -> EnumSet.of(ZoneNameSlot.GEN_SHORT);
+            default -> EnumSet.noneOf(ZoneNameSlot.class);
         };
     }
 
