@@ -244,7 +244,7 @@ bool has_interfering_store(const ArrayCopyNode* ac, LoadNode* load, PhaseGVN* ph
   assert(ac != nullptr && load != nullptr, "sanity");
   AccessAnalyzer acc(phase, load);
   ResourceMark rm;
-  Unique_Node_List to_visit;
+  Unique_Node_List<Node> to_visit;
   to_visit.push(load->in(MemNode::Memory));
 
   for (uint worklist_idx = 0; worklist_idx < to_visit.size(); worklist_idx++) {
@@ -378,7 +378,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
 // on the input paths.
 // Note: this function is recursive, its depth is limited by the "level" argument
 // Returns the computed Phi, or null if it cannot compute it.
-Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *phi_type, const TypeOopPtr *adr_t, AllocateNode *alloc, Node_Stack *value_phis, int level) {
+Node* PhaseMacroExpand::value_from_mem_phi(Node* mem, BasicType ft, const Type* phi_type, const TypeOopPtr* adr_t, AllocateNode* alloc, Node_Stack<PhiNode>* value_phis, int level) {
   assert(mem->is_Phi(), "sanity");
   int alias_idx = C->get_alias_index(adr_t);
   int offset = adr_t->flat_offset();
@@ -394,7 +394,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
     }
   }
   // Check if an appropriate new value phi already exists.
-  Node* new_phi = value_phis->find(mem->_idx);
+  PhiNode* new_phi = value_phis->find(mem->_idx);
   if (new_phi != nullptr)
     return new_phi;
 
@@ -626,7 +626,7 @@ Node* PhaseMacroExpand::value_from_mem(Node* origin, Node* ctl, BasicType ft, co
       return n;
     } else if (mem->is_Phi()) {
       // attempt to produce a Phi reflecting the values on the input paths of the Phi
-      Node_Stack value_phis(8);
+      Node_Stack<PhiNode> value_phis(8);
       Node* phi = value_from_mem_phi(mem, ft, ftype, adr_t, alloc, &value_phis, ValueSearchLimit);
       if (phi != nullptr) {
         return phi;
@@ -741,7 +741,7 @@ Node* PhaseMacroExpand::value_type_from_mem(ciValueKlass* vk, const TypeAryPtr* 
 }
 
 // Check the possibility of scalar replacement.
-bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode* alloc, Unique_Node_List* safepoints) {
+bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode* alloc, Unique_Node_List<SafePointNode>* safepoints) {
   //  Scan the uses of the allocation to check for anything that would
   //  prevent us from eliminating it.
   NOT_PRODUCT( const char* fail_eliminate = nullptr; )
@@ -749,8 +749,8 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
   bool can_eliminate = true;
   bool reduce_merge_precheck = (safepoints == nullptr);
 
-  Unique_Node_List worklist;
-  Node* res = alloc->result_cast();
+  Unique_Node_List<const Node> worklist;
+  const Node* res = alloc->result_cast();
   const TypeOopPtr* res_type = nullptr;
   if (res == nullptr) {
     // All users were eliminated.
@@ -933,15 +933,15 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
   return can_eliminate;
 }
 
-void PhaseMacroExpand::undo_previous_scalarizations(Node_List& safepoints_done, Node_List& scalar_objects_done, AllocateNode* alloc) {
+void PhaseMacroExpand::undo_previous_scalarizations(Node_List<SafePointNode>& safepoints_done, Node_List<const SafePointScalarObjectNode>& scalar_objects_done, AllocateNode* alloc) const {
   Node* res = alloc->result_cast();
   assert(res == nullptr || res->is_CheckCastPP(), "unexpected AllocateNode result");
   assert(safepoints_done.size() == scalar_objects_done.size(), "inconsistent count");
 
   // rollback processed safepoints
   while (safepoints_done.size() > 0) {
-    SafePointNode* sfpt_done = safepoints_done.pop()->as_SafePoint();
-    SafePointScalarObjectNode* scobj = scalar_objects_done.pop()->as_SafePointScalarObject();
+    SafePointNode* sfpt_done = safepoints_done.pop();
+    const SafePointScalarObjectNode* scobj = scalar_objects_done.pop();
     assert(scobj->alloc() == alloc, "sanity");
 
     SafePointNode::NodeEdgeTempStorage non_debug_edges_worklist(igvn());
@@ -1011,7 +1011,7 @@ void PhaseMacroExpand::undo_previous_scalarizations(Node_List& safepoints_done, 
   }
 #endif
 
-void PhaseMacroExpand::process_field_value_at_safepoint(const Type* field_type, Node* field_val, SafePointNode* sfpt, Unique_Node_List* value_worklist) {
+void PhaseMacroExpand::process_field_value_at_safepoint(const Type* field_type, Node* field_val, SafePointNode* sfpt, Unique_Node_List<ValueTypeNode>* value_worklist) {
   if (UseCompressedOops && field_type->isa_narrowoop()) {
     // Enable "DecodeN(EncodeP(Allocate)) --> Allocate" transformation
     // to be able scalar replace the allocation.
@@ -1024,21 +1024,21 @@ void PhaseMacroExpand::process_field_value_at_safepoint(const Type* field_type, 
 
   // Keep track of value types to scalarize them later
   if (field_val->is_ValueType()) {
-    value_worklist->push(field_val);
+    value_worklist->push(field_val->as_ValueType());
   } else if (field_val->is_Phi()) {
     PhiNode* phi = field_val->as_Phi();
     // Eagerly replace value type phis now since we could be removing a value type allocation where we must
     // scalarize all its fields in safepoints.
     field_val = phi->try_push_value_types_down(&_igvn, true);
     if (field_val->is_ValueType()) {
-      value_worklist->push(field_val);
+      value_worklist->push(field_val->as_ValueType());
     }
   }
   DEBUG_ONLY(verify_value_type_compatibility(field_val->bottom_type(), field_type);)
   sfpt->add_req(field_val);
 }
 
-bool PhaseMacroExpand::add_array_elems_to_safepoint(AllocateNode* alloc, const TypeAryPtr* array_type, SafePointNode* sfpt, Unique_Node_List* value_worklist) {
+bool PhaseMacroExpand::add_array_elems_to_safepoint(AllocateNode* alloc, const TypeAryPtr* array_type, SafePointNode* sfpt, Unique_Node_List<ValueTypeNode>* value_worklist) {
   const Type* elem_type = array_type->elem();
   BasicType basic_elem_type = elem_type->array_element_basic_type();
 
@@ -1092,7 +1092,7 @@ bool PhaseMacroExpand::add_array_elems_to_safepoint(AllocateNode* alloc, const T
 // Recursively adds all flattened fields of a type 'iklass' inside 'base' to 'sfpt'.
 // 'offset_minus_header' refers to the offset of the payload of 'iklass' inside 'base' minus the
 // payload offset of 'iklass'. If 'base' is of type 'iklass' then 'offset_minus_header' == 0.
-bool PhaseMacroExpand::add_inst_fields_to_safepoint(ciInstanceKlass* iklass, AllocateNode* alloc, Node* base, int offset_minus_header, SafePointNode* sfpt, Unique_Node_List* value_worklist) {
+bool PhaseMacroExpand::add_inst_fields_to_safepoint(ciInstanceKlass* iklass, AllocateNode* alloc, Node* base, int offset_minus_header, SafePointNode* sfpt, Unique_Node_List<ValueTypeNode>* value_worklist) {
   const TypeInstPtr* base_type = _igvn.type(base)->is_instptr();
   auto report_failure = [&](int offset, bool is_forced_failure) {
 #ifndef PRODUCT
@@ -1175,7 +1175,7 @@ bool PhaseMacroExpand::add_inst_fields_to_safepoint(ciInstanceKlass* iklass, All
 }
 
 SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_description(AllocateNode* alloc, SafePointNode* sfpt,
-                                                                                  Unique_Node_List* value_worklist) {
+                                                                                  Unique_Node_List<ValueTypeNode>* value_worklist) {
   assert(sfpt->jvms()->endoff() == sfpt->req(), "no extra edges past debug info allowed");
 
   // Fields of scalar objs are referenced only at the end
@@ -1245,9 +1245,9 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
 }
 
 // Do scalar replacement.
-bool PhaseMacroExpand::scalar_replacement(AllocateNode* alloc, Unique_Node_List& safepoints) {
-  Node_List safepoints_done;
-  Node_List scalar_objects_done;
+bool PhaseMacroExpand::scalar_replacement(AllocateNode* alloc, Unique_Node_List<SafePointNode>& safepoints) {
+  Node_List<SafePointNode> safepoints_done;
+  Node_List<const SafePointScalarObjectNode> scalar_objects_done;
   Node* res = alloc->result_cast();
   assert(res == nullptr || res->is_CheckCastPP(), "unexpected AllocateNode result");
   const TypeOopPtr* res_type = nullptr;
@@ -1256,9 +1256,9 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode* alloc, Unique_Node_List&
   }
 
   // Process the safepoint uses
-  Unique_Node_List value_worklist;
+  Unique_Node_List<ValueTypeNode> value_worklist;
   while (safepoints.size() > 0) {
-    SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
+    SafePointNode* sfpt = safepoints.pop();
 
     SafePointNode::NodeEdgeTempStorage non_debug_edges_worklist(igvn());
 
@@ -1291,7 +1291,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode* alloc, Unique_Node_List&
   // because Deoptimization::reassign_flat_array_elements needs field values.
   bool allow_oop = (res_type != nullptr) && !res_type->is_flat();
   for (uint i = 0; i < value_worklist.size(); ++i) {
-    ValueTypeNode* vt = value_worklist.at(i)->as_ValueType();
+    ValueTypeNode* vt = value_worklist.at(i);
     if (!vt->make_scalar_in_safepoints(&_igvn, allow_oop)) {
       C->record_failure("out of nodes during scalarization");
       return false;
@@ -1313,7 +1313,7 @@ static void disconnect_projections(MultiNode* n, PhaseIterGVN& igvn) {
 
 // Process users of eliminated allocation.
 void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc, bool value_type_alloc) {
-  Unique_Node_List worklist;
+  Unique_Node_List<Node> worklist;
   Node* res = alloc->result_cast();
   if (res != nullptr) {
     worklist.push(res);
@@ -1526,7 +1526,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
 
   _callprojs = alloc->extract_projections(false /*separate_io_proj*/, false /*do_asserts*/);
 
-  Unique_Node_List safepoints;
+  Unique_Node_List<SafePointNode> safepoints;
   if (!can_eliminate_allocation(&_igvn, alloc, &safepoints)) {
     return false;
   }
@@ -3066,12 +3066,12 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
 void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
   assert(UseArrayFlattening, "Should not be called if flat arrays are not enabled");
   bool use_mark_word = _igvn.type(check->in(FlatArrayCheckNode::ArrayOrKlass))->isa_oopptr() != nullptr;
-  Unique_Node_List outputs;
+  Unique_Node_List<BoolNode> outputs;
 
   for (DUIterator_Fast imax, i = check->fast_outs(imax); i < imax; i++) {
     Node* bol = check->fast_out(i);
     assert(bol->is_Bool(), "expected Bool node, but got: %s", bol->Name());
-    outputs.push(bol);
+    outputs.push(bol->as_Bool());
     for (DUIterator_Fast jmax, j = bol->fast_outs(jmax); j < jmax; j++) {
       if (!bol->fast_out(j)->is_If()) {
         // No control input, fall back to layout helper check
@@ -3102,8 +3102,8 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
 
     // Replace the bool nodes
     for (uint i = 0; i < outputs.size(); ++i) {
-      Node* bol = outputs.at(i);
-      assert(bol->as_Bool()->_test._test == BoolTest::ne || bol->as_Bool()->_test._test == BoolTest::eq, "unexpected condition");
+      BoolNode* bol = outputs.at(i);
+      assert(bol->_test._test == BoolTest::ne || bol->_test._test == BoolTest::eq, "unexpected condition");
 
       // FlatArrayCheckNode returns true if one of the inputs is flat.
       // - Bool(FlatArrayCheckNode, !=) is testing that the arrays are not flat,
@@ -3139,11 +3139,11 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
     Node* cmp = transform_later(new CmpINode(masked, intcon(0)));
 
     for (uint i = 0; i < outputs.size(); ++i) {
-      Node* bol = outputs.at(i);
+      BoolNode* bol = outputs.at(i);
       for (DUIterator_Last jmin, j = bol->last_outs(jmin); j >= jmin; --j) {
         Node* user = bol->last_out(j);
         // See comment above for the logic of the .negate().
-        Node* new_bol = transform_later(new BoolNode(cmp, bol->as_Bool()->_test.negate()));
+        Node* new_bol = transform_later(new BoolNode(cmp, bol->_test.negate()));
         assert(user->is_If() || user->is_CMove(), "must be a legit user of Bool node");
         for (uint k = 0; k < user->req(); k++) {
           if (user->in(k) == bol) {
@@ -3612,12 +3612,12 @@ int PhaseMacroExpand::count_MemBar(Compile *C) {
   if (!PrintOptoStatistics) {
     return 0;
   }
-  Unique_Node_List ideal_nodes;
+  Unique_Node_List<const Node> ideal_nodes;
   int total = 0;
   ideal_nodes.map(C->live_nodes(), nullptr);
   ideal_nodes.push(C->root());
   for (uint next = 0; next < ideal_nodes.size(); ++next) {
-    Node* n = ideal_nodes.at(next);
+    const Node* n = ideal_nodes.at(next);
     if (n->is_MemBar()) {
       total++;
     }
