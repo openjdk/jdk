@@ -501,7 +501,7 @@ void InterpreterMacroAssembler::load_method_entry(Register cache, Register index
 }
 
 // Load object from cpool->resolved_references(index).
-void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index) {
+void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index, Register tmp) {
   assert_different_registers(result, index);
   get_constant_pool(result);
 
@@ -509,22 +509,21 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   //  - from field index to resolved_references() index and
   //  - from word index to byte offset.
   // Since this is a java object, it is potentially compressed.
-  Register tmp = index;  // reuse
   z_sllg(index, index, LogBytesPerHeapOop); // Offset into resolved references array.
   // Load pointer for resolved_references[] objArray.
   z_lg(result, in_bytes(ConstantPool::cache_offset()), result);
   z_lg(result, in_bytes(ConstantPoolCache::resolved_references_offset()), result);
-  resolve_oop_handle(result, Z_R0_scratch, Z_R1_scratch); // Load resolved references array itself.
+  resolve_oop_handle(result, tmp, Z_R0_scratch); // Load resolved references array itself.
 #ifdef ASSERT
   NearLabel index_ok;
   z_lgf(Z_R0, Address(result, arrayOopDesc::length_offset_in_bytes()));
   z_sllg(Z_R0, Z_R0, LogBytesPerHeapOop);
-  compare64_and_branch(tmp, Z_R0, Assembler::bcondLow, index_ok);
-  stop("resolved reference index out of bounds", 0x09256);
+  compare64_and_branch(index, Z_R0, Assembler::bcondLow, index_ok);
+  stop("resolved reference index out of bounds", 0x56);
   bind(index_ok);
 #endif
   z_agr(result, index);    // Address of indexed array element.
-  load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), tmp, noreg);
+  load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), tmp, Z_R0_scratch);
 }
 
 // load cpool->resolved_klass_at(index)
@@ -1057,6 +1056,7 @@ void InterpreterMacroAssembler::narrow(Register result, Register ret_type) {
 
 // remove activation
 //
+// Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
 // Unlock any Java monitors from synchronized blocks.
 // Remove the activation from the stack.
@@ -1083,6 +1083,23 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 #endif // ASSERT
 
   unlock_if_synchronized_method(state, throw_monitor_exception, install_monitor_exception);
+
+  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
+  // that would normally not be safe to use. Such bad returns into unsafe territory of
+  // the stack, will call InterpreterRuntime::at_unwind.
+  NearLabel fast_path;
+  Label slow_path;
+  safepoint_poll(slow_path, Z_R0_scratch, true /* at_return */, false /* in_nmethod */);
+  branch_optimized(Assembler::bcondAlways, fast_path);
+  bind (slow_path);
+  push(state);
+  get_PC(Z_R1_scratch);
+  set_last_Java_frame(Z_SP, Z_R1_scratch);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), Z_thread);
+  reset_last_Java_frame();
+  pop(state);
+  align(32);
+  bind(fast_path);
 
   // Save result (push state before jvmti call and pop it afterwards) and notify jvmti.
   notify_method_exit(false, state, notify_jvmti ? NotifyJVMTI : SkipNotifyJVMTI);
@@ -1350,6 +1367,7 @@ void InterpreterMacroAssembler::profile_acmp(Register mdp,
                                              Register left,
                                              Register right,
                                              Register tmp) {
+  assert(Arguments::is_valhalla_enabled(), "Profiling acmp makes sense only for value types");
   if (ProfileInterpreter) {
     assert_different_registers(mdp, left, right, tmp);
     Label profile_continue;
@@ -1621,15 +1639,19 @@ template <class ArrayData> void InterpreterMacroAssembler::profile_array_type(Re
 
     profile_obj_type(array, Address(tmp1, in_bytes(ArrayData::array_offset())), tmp2);
 
-    Label not_flat;
-    test_non_flat_array_oop(array, tmp2, not_flat);
-    set_mdp_flag_at(tmp1, ArrayData::flat_array_byte_constant());
-    bind(not_flat);
+    if (Arguments::is_valhalla_enabled()) {
+      if (UseArrayFlattening) {
+        Label not_flat;
+        test_non_flat_array_oop(array, tmp2, not_flat);
+        set_mdp_flag_at(tmp1, ArrayData::flat_array_byte_constant());
+        bind(not_flat);
+      }
 
-    Label not_null_free;
-    test_non_null_free_array_oop(array, tmp2, not_null_free);
-    set_mdp_flag_at(tmp1, ArrayData::null_free_array_byte_constant());
-    bind(not_null_free);
+      Label not_null_free;
+      test_non_null_free_array_oop(array, tmp2, not_null_free);
+      set_mdp_flag_at(tmp1, ArrayData::null_free_array_byte_constant());
+      bind(not_null_free);
+    }
 
     bind(profile_continue);
   }
@@ -2199,15 +2221,16 @@ void InterpreterMacroAssembler::pop_interpreter_frame(Register return_pc, Regist
 //-------------------------------------
 
 void InterpreterMacroAssembler::read_flat_field(Register entry, Register obj) {
+  assert(UseFieldFlattening, "Should be used only if field flattening is enabled");
   assert_different_registers(entry, obj);
   assert_different_registers(entry, Z_ARG2);
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::read_flat_field), obj, entry);
 }
 
-void InterpreterMacroAssembler::write_flat_field(Register entry, Register field_offset,
-                                                 Register tmp1, Register tmp2,
-                                                 Register obj) {
-  assert_different_registers(entry, field_offset, tmp1, tmp2, obj);
+void InterpreterMacroAssembler::write_flat_field(Register entry, Register tmp1,
+                                                 Register tmp2, Register obj) {
+  assert(UseFieldFlattening, "Should be used only if field flattening is enabled");
+  assert_different_registers(entry, tmp1, tmp2, obj);
   Label slow_path, done;
 
   // Load flags and check if field is null-free value type.
@@ -2217,24 +2240,8 @@ void InterpreterMacroAssembler::write_flat_field(Register entry, Register field_
   // Null check the value being stored (Z_tos holds the value oop).
   null_check(Z_tos);  // FIXME JDK-8341120
 
-  // Advance obj to the exact field address inside the object.
-  z_agr(obj, field_offset);
-
-  // Compute the payload address of the value oop (Z_tos).
-  // load_klass clobbers tmp1; payload_addr overwrites Z_tos in-place using tmp1 as the klass.
-  load_klass(tmp1, Z_tos);
-  payload_addr(Z_tos, Z_tos, tmp1);
-
-  // Load the ValueFieldLayoutInfo for this field:
-  //   field_index (u2) from the entry, holder klass pointer from the entry.
-  // Reuse field_offset as the layout_info register from here on.
-  Register layout_info = field_offset;
-  load_sized_value(tmp1, Address(entry, in_bytes(ResolvedFieldEntry::field_index_offset())), sizeof(u2), false);
-  load_sized_value(tmp2, Address(entry, in_bytes(ResolvedFieldEntry::field_holder_offset())), sizeof(void*), false);
-  value_field_layout_info(tmp2, tmp1, layout_info);
-
-  // Inline byte-copy of the value's payload into the flat field slot.
-  flat_field_copy(IN_HEAP, Z_tos, obj, layout_info);
+  z_lgr(tmp1, Z_tos);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::write_null_free_flat_field), obj, tmp1, entry);
   z_bru(done);
 
   bind(slow_path);

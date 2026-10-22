@@ -848,7 +848,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   char* thread_name = nullptr;
   if (log_is_enabled(Debug, os, thread, timer)) {
     ResourceMark rm(this);
-    thread_name = os::strdup(name());
+    thread_name = os::strdup(name(), mtInternal);
   }
 
   if (log_is_enabled(Info, os, thread)) {
@@ -2029,7 +2029,7 @@ void JavaThread::pretouch_stack() {
 
 // Deferred OopHandle release support.
 
-class OopHandleList : public CHeapObj<mtInternal> {
+class OopHandleList : public CHeapObj<mtThread> {
   static const int _count = 4;
   OopHandle _handles[_count];
   OopHandleList* _next;

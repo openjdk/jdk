@@ -29,6 +29,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -44,7 +45,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -61,6 +61,7 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
+#include "services/diagnosticWorkers.hpp"
 #include "services/heapDumper.hpp"
 #include "services/heapDumperCompression.hpp"
 #include "services/threadService.hpp"
@@ -393,7 +394,7 @@ enum {
 
 // Supports I/O operations for a dump
 // Base class for dump and parallel dump
-class AbstractDumpWriter : public CHeapObj<mtInternal> {
+class AbstractDumpWriter : public CHeapObj<mtServiceability> {
  protected:
   enum {
     io_buffer_max_size = 1*M,
@@ -665,15 +666,15 @@ DumpWriter::DumpWriter(const char* path, bool overwrite, AbstractCompressor* com
   _tmp_size(0) {
   _error = (char*)_writer->open_writer();
   if (_error == nullptr) {
-    _buffer = (char*)os::malloc(io_buffer_max_size, mtInternal);
+    _buffer = (char*)os::malloc(io_buffer_max_size, mtServiceability);
     if (compressor != nullptr) {
       _error = (char*)_compressor->init(io_buffer_max_size, &_out_size, &_tmp_size);
       if (_error == nullptr) {
         if (_out_size > 0) {
-          _out_buffer = (char*)os::malloc(_out_size, mtInternal);
+          _out_buffer = (char*)os::malloc(_out_size, mtServiceability);
         }
         if (_tmp_size > 0) {
-          _tmp_buffer = (char*)os::malloc(_tmp_size, mtInternal);
+          _tmp_buffer = (char*)os::malloc(_tmp_size, mtServiceability);
         }
       }
     }
@@ -853,9 +854,9 @@ public:
       if (field.is_flat()) {
         const fieldDescriptor& fd = field.field_descriptor();
         InstanceKlass* holder_klass = fd.field_holder();
-        ValueFieldLayoutInfo* layout_info = holder_klass->value_field_layout_info_adr(fd.index());
-        _value_klass = layout_info->klass();
-        _layout_kind = layout_info->kind();
+        ValueFieldInfo* vfi = holder_klass->value_field_info_adr(fd.index());
+        _value_klass = vfi->klass();
+        _layout_kind = vfi->kind();
       } else {
         _value_klass = nullptr;
         _layout_kind = LayoutKind::REFERENCE;
@@ -1273,8 +1274,7 @@ void DumperSupport::dump_instance_fields(AbstractDumpWriter* writer, oop o, int 
     if (field.is_flat()) {
       // check for possible nulls
       if (field.is_flat_nullable()) {
-        address payload = cast_from_oop<address>(o) + field_offset;
-        if (field.value_klass()->is_payload_marked_as_null(payload)) {
+        if (field.value_klass()->is_payload_marked_as_null(o, field_offset)) {
           writer->write_objectID(nullptr);
           continue;
         }
@@ -1834,7 +1834,7 @@ void JavaStackRefDumper::dump_java_stack_refs(StackValueCollection* values) {
 // Class to collect, store and dump thread-related data:
 // - HPROF_TRACE and HPROF_FRAME records;
 // - HPROF_GC_ROOT_THREAD_OBJ/HPROF_GC_ROOT_JAVA_FRAME/HPROF_GC_ROOT_JNI_LOCAL subrecords.
-class ThreadDumper : public CHeapObj<mtInternal> {
+class ThreadDumper : public CHeapObj<mtServiceability> {
 public:
   enum class ThreadType { Platform, MountedVirtual, UnmountedVirtual };
 
@@ -2179,12 +2179,13 @@ class HeapObjectDumper : public ObjectClosure {
   AbstractDumpWriter* writer()                  { return _writer; }
   UnmountedVThreadDumper* _vthread_dumper;
   FlatObjectDumper* _flat_dumper;
+  bool _skip_filler_objects;
 
   DumperClassCacheTable _class_cache;
 
  public:
-  HeapObjectDumper(AbstractDumpWriter* writer, UnmountedVThreadDumper* vthread_dumper, FlatObjectDumper* flat_dumper)
-    : _writer(writer), _vthread_dumper(vthread_dumper), _flat_dumper(flat_dumper) {}
+  HeapObjectDumper(AbstractDumpWriter* writer, UnmountedVThreadDumper* vthread_dumper, FlatObjectDumper* flat_dumper, bool skip_filler_objects)
+    : _writer(writer), _vthread_dumper(vthread_dumper), _flat_dumper(flat_dumper), _skip_filler_objects(skip_filler_objects) {}
 
   // called for each object in the heap
   void do_object(oop o);
@@ -2196,6 +2197,10 @@ void HeapObjectDumper::do_object(oop o) {
     if (!java_lang_Class::is_primitive(o)) {
       return;
     }
+  }
+
+  if (_skip_filler_objects && CollectedHeap::is_filler_object(o)) {
+    return;
   }
 
   if (DumperSupport::mask_dormant_archived_object(o, nullptr) == nullptr) {
@@ -2237,7 +2242,7 @@ void HeapObjectDumper::do_object(oop o) {
 }
 
 // The dumper controller for parallel heap dump
-class DumperController : public CHeapObj<mtInternal> {
+class DumperController : public CHeapObj<mtServiceability> {
  private:
    Monitor* _lock;
    Mutex* _global_writer_lock;
@@ -2249,7 +2254,7 @@ class DumperController : public CHeapObj<mtInternal> {
 
  public:
    DumperController(uint number) :
-     // _lock and _global_writer_lock are used for synchronization between GC worker threads inside safepoint,
+     // _lock and _global_writer_lock are used for synchronization between diagnostic worker threads inside safepoint,
      // so we lock with _no_safepoint_check_flag.
      // signal_start() acquires _lock when global writer is locked,
      // its rank must be less than _global_writer_lock rank.
@@ -2553,7 +2558,8 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public Unmounte
   }
   int dump_seq()           { return _dump_seq; }
   bool is_parallel_dump()  { return _num_dumper_threads > 1; }
-  void prepare_parallel_dump(WorkerThreads* workers);
+  // Returns the worker pool for a parallel dump or nullptr for a serial dump.
+  WorkerThreads* prepare_parallel_dump();
 
   VMOp_Type type() const { return VMOp_HeapDumper; }
   virtual bool doit_prologue();
@@ -2596,14 +2602,21 @@ bool VM_HeapDumper::doit_prologue() {
   return VM_GC_Operation::doit_prologue();
 }
 
-void VM_HeapDumper::prepare_parallel_dump(WorkerThreads* workers) {
-  uint num_active_workers = workers != nullptr ? workers->active_workers() : 0;
-  uint num_requested_dump_threads = _num_dumper_threads;
-  // check if we can dump in parallel based on requested and active threads
-  if (num_active_workers <= 1 || num_requested_dump_threads <= 1) {
+WorkerThreads* VM_HeapDumper::prepare_parallel_dump() {
+  const uint num_requested_dump_threads = _num_dumper_threads;
+  uint num_active_workers = 0;
+  WorkerThreads* workers = nullptr;
+
+  if (Universe::heap()->supports_parallel_object_iteration() && _num_dumper_threads > 1) {
+    num_active_workers = DiagnosticWorkers::try_and_set_active_workers(_num_dumper_threads);
+  }
+
+  // check if we can dump in parallel based on active threads
+  if (num_active_workers <= 1) {
     _num_dumper_threads = 1;
   } else {
-    _num_dumper_threads = clamp(num_requested_dump_threads, 2U, num_active_workers);
+    workers = DiagnosticWorkers::workers();
+    _num_dumper_threads = num_active_workers;
   }
   _dumper_controller = new (std::nothrow) DumperController(_num_dumper_threads);
   bool can_parallel = _num_dumper_threads > 1;
@@ -2611,6 +2624,7 @@ void VM_HeapDumper::prepare_parallel_dump(WorkerThreads* workers) {
                      "actual dump threads %u, parallelism %s",
                      num_requested_dump_threads, num_active_workers,
                      _num_dumper_threads, can_parallel ? "true" : "false");
+  return workers;
 }
 
 // The VM operation that dumps the heap. The dump consists of the following
@@ -2652,8 +2666,7 @@ void VM_HeapDumper::doit() {
     }
   }
 
-  WorkerThreads* workers = ch->safepoint_workers();
-  prepare_parallel_dump(workers);
+  WorkerThreads* workers = prepare_parallel_dump();
 
   if (!is_parallel_dump()) {
     work(VMDumperId);
@@ -2744,7 +2757,8 @@ void VM_HeapDumper::work(uint worker_id) {
     // of the heap dump.
 
     TraceTime timer(is_parallel_dump() ? "Dump heap objects in parallel" : "Dump heap objects", TRACETIME_LOG(Info, heapdump));
-    HeapObjectDumper obj_dumper(&segment_writer, this, &_flat_dumper);
+    bool skip_filler_objects = _gc_before_heap_dump;
+    HeapObjectDumper obj_dumper(&segment_writer, this, &_flat_dumper, skip_filler_objects);
     if (!is_parallel_dump()) {
       Universe::heap()->object_iterate(&obj_dumper);
     } else {
@@ -2777,7 +2791,7 @@ void VM_HeapDumper::dump_stack_traces(AbstractDumpWriter* writer) {
   writer->write_u4(0);                    // frame count
 
   // max number if every platform thread is carrier with mounted virtual thread
-  _thread_dumpers = NEW_C_HEAP_ARRAY(ThreadDumper*, Threads::number_of_threads() * 2, mtInternal);
+  _thread_dumpers = NEW_C_HEAP_ARRAY(ThreadDumper*, Threads::number_of_threads() * 2, mtServiceability);
 
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread * thread = jtiwh.next(); ) {
     if (ThreadDumper::should_dump_pthread(thread)) {
@@ -2959,7 +2973,7 @@ void HeapDumper::set_error(char const* error) {
   if (error == nullptr) {
     _error = nullptr;
   } else {
-    _error = os::strdup(error);
+    _error = os::strdup(error, mtServiceability);
     assert(_error != nullptr, "allocation failure");
   }
 }

@@ -111,31 +111,13 @@ const size_t ParallelCompactData::RegionSizeOffsetMask = RegionSize - 1;
 const size_t ParallelCompactData::RegionAddrOffsetMask = RegionSizeBytes - 1;
 const size_t ParallelCompactData::RegionAddrMask       = ~RegionAddrOffsetMask;
 
-const ParallelCompactData::RegionData::region_sz_t
-ParallelCompactData::RegionData::dc_shift = 27;
-
-const ParallelCompactData::RegionData::region_sz_t
-ParallelCompactData::RegionData::dc_mask = ~0U << dc_shift;
-
-const ParallelCompactData::RegionData::region_sz_t
-ParallelCompactData::RegionData::dc_one = 0x1U << dc_shift;
-
-const ParallelCompactData::RegionData::region_sz_t
-ParallelCompactData::RegionData::los_mask = ~dc_mask;
-
-const ParallelCompactData::RegionData::region_sz_t
-ParallelCompactData::RegionData::dc_claimed = 0x8U << dc_shift;
-
-const ParallelCompactData::RegionData::region_sz_t
-ParallelCompactData::RegionData::dc_completed = 0xcU << dc_shift;
-
 bool ParallelCompactData::RegionData::is_clear() {
   return (_destination == nullptr) &&
          (_source_region == 0) &&
          (_partial_obj_addr == nullptr) &&
          (_partial_obj_size == 0) &&
-         (dc_and_los() == 0) &&
-         (shadow_state() == 0);
+         (_live_obj_size.load_relaxed() == 0) &&
+         (state() == 0);
 }
 
 #ifdef ASSERT
@@ -144,8 +126,8 @@ void ParallelCompactData::RegionData::verify_clear() {
   assert(_source_region == 0, "inv");
   assert(_partial_obj_addr == nullptr, "inv");
   assert(_partial_obj_size == 0, "inv");
-  assert(dc_and_los() == 0, "inv");
-  assert(shadow_state() == 0, "inv");
+  assert(_live_obj_size.load_relaxed() == 0, "inv");
+  assert(state() == 0, "inv");
 }
 #endif
 
@@ -1283,25 +1265,6 @@ void PSParallelCompact::adjust_pointers() {
   ParallelScavengeHeap::heap()->workers().run_task(&task);
 }
 
-// Split [start, end) evenly for a number of workers and return the
-// range for worker_id.
-static void split_regions_for_worker(size_t start, size_t end,
-                                     uint worker_id, uint num_workers,
-                                     size_t* worker_start, size_t* worker_end) {
-  assert(start < end, "precondition");
-  assert(num_workers > 0, "precondition");
-  assert(worker_id < num_workers, "precondition");
-
-  size_t num_regions = end - start;
-  size_t num_regions_per_worker = num_regions / num_workers;
-  size_t remainder = num_regions % num_workers;
-  // The first few workers will get one extra.
-  *worker_start = start + worker_id * num_regions_per_worker
-                  + MIN2(checked_cast<size_t>(worker_id), remainder);
-  *worker_end = *worker_start + num_regions_per_worker
-                + (worker_id < remainder ? 1 : 0);
-}
-
 static bool safe_to_read_header(size_t words) {
   precond(words > 0);
 
@@ -1389,12 +1352,12 @@ void PSParallelCompact::forward_to_new_addr() {
 
         size_t dense_prefix_region = _summary_data.addr_to_region_idx(dense_prefix_addr);
         size_t top_region = _summary_data.addr_to_region_idx(_summary_data.region_align_up(top));
-        size_t start_region;
-        size_t end_region;
-        split_regions_for_worker(dense_prefix_region, top_region,
-                                 worker_id, _num_workers,
-                                 &start_region, &end_region);
-        for (size_t cur_region = start_region; cur_region < end_region; ++cur_region) {
+        assert(dense_prefix_region < top_region, "inv");
+
+        // Distribute adjacent regions across workers to balance forwarding work
+        // when live objects are clustered in the heap.
+        size_t start_region = dense_prefix_region + worker_id;
+        for (size_t cur_region = start_region; cur_region < top_region; cur_region += _num_workers) {
           RegionData* region_ptr = _summary_data.region(cur_region);
           size_t partial_obj_size = region_ptr->partial_obj_size();
 
@@ -1527,10 +1490,8 @@ void PSParallelCompact::prepare_region_draining_tasks(uint parallel_gc_threads)
 
   // Populate with [beg_region, end_region)
   for (size_t cur = end_region - 1; cur + 1 > beg_region; --cur) {
-    if (sd.region(cur)->claim_unsafe()) {
+    if (sd.region(cur)->available_to_normal()) {
       ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
-      bool result = sd.region(cur)->mark_normal();
-      assert(result, "Must succeed at this point.");
       cm->push_region(cur);
       region_logger.handle(cur);
       // Assign regions to tasks in round-robin fashion.
@@ -1743,15 +1704,15 @@ void PSParallelCompact::verify_regions_after_compaction() {
     // [beg_region, new_top_region) must be completed (as compaction targets)
     for (cur_region = beg_region; cur_region < new_top_region; ++cur_region) {
       const RegionData* const c = sd.region(cur_region);
-      assert(c->completed(), "region %zu not filled: destination_count=%u",
-             cur_region, c->destination_count());
+      assert(c->completed(), "region %zu not filled: destination_count=%u status=%s",
+             cur_region, c->destination_count(), c->status_name());
     }
 
     // [new_top_region, old_top_region) must be empty.
     for (cur_region = new_top_region; cur_region < old_top_region; ++cur_region) {
       const RegionData* const c = sd.region(cur_region);
-      assert(c->available(), "region %zu not empty: destination_count=%u",
-             cur_region, c->destination_count());
+      assert(c->available() && c->is_init(), "region %zu not empty: destination_count=%u status=%s",
+             cur_region, c->destination_count(), c->status_name());
     }
   }
   {
@@ -1767,8 +1728,8 @@ void PSParallelCompact::verify_regions_after_compaction() {
 
     for (size_t cur_region = beg_region; cur_region < end_region; ++cur_region) {
       const RegionData* const c = sd.region(cur_region);
-      assert(c->available(), "region %zu not empty: destination_count=%u",
-             cur_region, c->destination_count());
+      assert(c->available() && c->is_init(), "region %zu not empty: destination_count=%u status=%s",
+             cur_region, c->destination_count(), c->status_name());
     }
   }
 }
@@ -1880,17 +1841,16 @@ void PSParallelCompact::decrement_destination_counts(ParCompactionManager* cm,
   for (RegionData* cur = beg; cur < end; ++cur) {
     assert(cur->data_size() > 0, "region must have live data");
     cur->decrement_destination_count();
-    if (cur < enqueue_end && cur->available() && cur->claim()) {
-      if (cur->mark_normal()) {
+    if (cur < enqueue_end && cur->available()) {
+      if (cur->try_mark_normal()) {
         cm->push_region(sd.region(cur));
-      } else if (cur->mark_copied()) {
+      } else if (cur->try_complete_filled_shadow()) {
         // Try to copy the content of the shadow region back to its corresponding
         // heap region if the shadow region is filled. Otherwise, the GC thread
         // fills the shadow region will copy the data back (see
         // MoveAndUpdateShadowClosure::complete_region).
         copy_back(sd.region_to_addr(cur->shadow_region()), sd.region_to_addr(cur));
         ParCompactionManager::push_shadow_region_mt_safe(cur->shadow_region());
-        cur->set_completed();
       }
     }
   }
@@ -2163,7 +2123,7 @@ bool PSParallelCompact::steal_unavailable_region(ParCompactionManager* cm, size_
   uint active_gc_threads = ParallelScavengeHeap::heap()->workers().active_workers();
 
   while (next < old_new_top) {
-    if (sd.region(next)->mark_shadow()) {
+    if (sd.region(next)->try_mark_shadow()) {
       region_idx = next;
       return true;
     }
@@ -2224,7 +2184,7 @@ void MoveAndUpdateClosure::copy_partial_obj(size_t partial_obj_size)
 }
 
 void MoveAndUpdateClosure::complete_region(HeapWord* dest_addr, PSParallelCompact::RegionData* region_ptr) {
-  assert(region_ptr->shadow_state() == ParallelCompactData::RegionData::NormalRegion, "Region should be finished");
+  assert(region_ptr->is_normal(), "Region should be normal");
   region_ptr->set_completed();
 }
 
@@ -2254,18 +2214,16 @@ void MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words, markWord mark) 
 }
 
 void MoveAndUpdateShadowClosure::complete_region(HeapWord* dest_addr, PSParallelCompact::RegionData* region_ptr) {
-  assert(region_ptr->shadow_state() == ParallelCompactData::RegionData::ShadowRegion, "Region should be shadow");
+  assert(region_ptr->is_shadow(), "Region should be shadow");
   // Record the shadow region index
   region_ptr->set_shadow_region(_shadow);
-  // Mark the shadow region as filled to indicate the data is ready to be
-  // copied back
-  region_ptr->mark_filled();
+  // Finish shadow filling and determine whether this worker must copy back immediately.
+  bool copy_now = region_ptr->finish_shadow_fill();
   // Try to copy the content of the shadow region back to its corresponding
   // heap region if available; the GC thread that decreases the destination
   // count to zero will do the copying otherwise (see
   // PSParallelCompact::decrement_destination_counts).
-  if (((region_ptr->available() && region_ptr->claim()) || region_ptr->claimed()) && region_ptr->mark_copied()) {
-    region_ptr->set_completed();
+  if (copy_now) {
     PSParallelCompact::copy_back(PSParallelCompact::summary_data().region_to_addr(_shadow), dest_addr);
     ParCompactionManager::push_shadow_region_mt_safe(_shadow);
   }
