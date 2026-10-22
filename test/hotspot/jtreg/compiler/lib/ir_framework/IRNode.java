@@ -2503,7 +2503,7 @@ public class IRNode {
         machOnlyNameRegex(RISCV_LOAD_N2P_UNSCALED, "loadN2P_unscaled");
     }
 
-    // Conditional move whose condition is a VectorTest.
+    // Conditional move whose condition is a VectorTest. One rule per value type.
     // Exclude the separate _negate rules that materialize boolean results.
     public static final String RISCV_CMOVE_VTEST_ANYTRUE = PREFIX + "RISCV_CMOVE_VTEST_ANYTRUE" + POSTFIX;
     static {
