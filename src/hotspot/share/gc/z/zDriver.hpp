@@ -80,6 +80,7 @@ private:
   ConcurrentGCTimer _gc_timer;
   ZMinorTracer      _jfr_tracer;
   size_t            _used_at_start;
+  size_t            _max_at_start;
 
   void gc(const ZDriverRequest& request);
   void handle_alloc_stalls() const;
@@ -99,6 +100,8 @@ public:
 
   void set_used_at_start(size_t used);
   size_t used_at_start() const;
+  void set_max_at_start(size_t max);
+  size_t max_at_start() const;
 };
 
 class ZDriverMajor : public ZDriver {
@@ -107,6 +110,7 @@ private:
   ConcurrentGCTimer _gc_timer;
   ZMajorTracer      _jfr_tracer;
   size_t            _used_at_start;
+  size_t            _max_at_start;
 
   void collect_young(const ZDriverRequest& request);
 
@@ -129,6 +133,8 @@ public:
 
   void set_used_at_start(size_t used);
   size_t used_at_start() const;
+  void set_max_at_start(size_t max);
+  size_t max_at_start() const;
 };
 
 class ZDriverLocker : public StackObj {

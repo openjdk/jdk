@@ -40,6 +40,7 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/os.hpp"
+#include "services/diagnosticWorkers.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
@@ -734,8 +735,17 @@ uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fil
   return ric.missed_count();
 }
 
-void HeapInspection::heap_inspection(outputStream* st, WorkerThreads* workers) {
+void HeapInspection::heap_inspection(outputStream* st, uint num_workers) {
   ResourceMark rm;
+
+  // Use parallel workers if we have enough active workers and parallel heap iteration is supported.
+  WorkerThreads* workers = nullptr;
+  if (Universe::heap()->supports_parallel_object_iteration() && num_workers > 1) {
+    const uint active_workers = DiagnosticWorkers::try_and_set_active_workers(num_workers);
+    if (active_workers > 1) {
+      workers = DiagnosticWorkers::workers();
+    }
+  }
 
   KlassInfoTable cit(false);
   if (!cit.allocation_failed()) {

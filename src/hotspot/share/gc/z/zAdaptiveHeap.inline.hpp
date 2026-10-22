@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,32 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZRUNTIMEWORKERS_HPP
-#define SHARE_GC_Z_ZRUNTIMEWORKERS_HPP
+#ifndef SHARE_GC_Z_ZADAPTIVEHEAP_INLINE_HPP
+#define SHARE_GC_Z_ZADAPTIVEHEAP_INLINE_HPP
 
-#include "gc/shared/workerThread.hpp"
+#include "gc/z/zAdaptiveHeap.hpp"
 
-class ThreadClosure;
+#include "utilities/globalDefinitions.hpp"
 
-class ZRuntimeWorkers {
-private:
-  WorkerThreads _workers;
+inline physical_memory_size_type ZSystemMemoryPressureMetrics::available_memory() const {
+  return _max_memory - MIN2(_used_memory, _max_memory);
+}
 
-public:
-  ZRuntimeWorkers();
+inline double ZSystemMemoryPressureMetrics::fraction_of_max(physical_memory_size_type memory) const {
+  return percent_of(memory, _max_memory) / 100.0;
+}
 
-  WorkerThreads* workers();
+inline double ZSystemMemoryPressureMetrics::used_fraction() const {
+  return fraction_of_max(_used_memory);
+}
 
-  void threads_do(ThreadClosure* tc) const;
-};
+inline double ZSystemMemoryPressureMetrics::available_fraction() const {
+  return fraction_of_max(available_memory());
+}
 
-#endif // SHARE_GC_Z_ZRUNTIMEWORKERS_HPP
+inline bool ZAdaptiveHeap::explicit_max_capacity() {
+  precond(_initialized);
+  return _explicit_max_capacity;
+}
+
+#endif // SHARE_GC_Z_ZADAPTIVEHEAP_INLINE_HPP

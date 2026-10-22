@@ -904,7 +904,7 @@ public:
   void set_jvms(JVMState* s) {
     _jvms = s;
   }
-  virtual const Type    *bottom_type() const;
+  virtual const Type* bottom_type() const { return Type::CONTROL; }
 
   virtual const RegMask &in_RegMask(uint) const;
 

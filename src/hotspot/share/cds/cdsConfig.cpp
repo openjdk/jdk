@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotHeap.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMapLogger.hpp"
 #include "cds/aotMetaspace.hpp"
@@ -30,7 +31,6 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "code/aotCodeCache.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -122,7 +122,7 @@ void CDSConfig::ergo_initialize() {
     precond(allow_only_single_java_thread());
 
     // The AttachListenerThread may execute Java code or load new classes. It might see
-    // unexpected results after HeapShared::prepare_for_archiving().
+    // unexpected results after AOTHeap::prepare_for_archiving().
     //
     // We disable all new incoming attach requests, so you can't use jcmd, etc, on this JVM.
     // Since we are not running any application code in this JVM and only executed a very
@@ -1025,7 +1025,7 @@ bool CDSConfig::is_dumping_heap() {
 }
 
 bool CDSConfig::is_loading_heap() {
-  return HeapShared::is_archived_heap_in_use();
+  return AOTHeap::is_archived_heap_in_use();
 }
 
 bool CDSConfig::is_dumping_klass_subgraphs() {
@@ -1073,7 +1073,7 @@ bool CDSConfig::is_using_full_module_graph() {
     return false;
   }
 
-  if (is_using_archive() && HeapShared::can_use_archived_heap()) {
+  if (is_using_archive() && AOTHeap::can_use_archived_heap()) {
     // Classes used by the archived full module graph are loaded in JVMTI early phase.
     assert(!(JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()),
            "CDS should be disabled if early class hooks are enabled");

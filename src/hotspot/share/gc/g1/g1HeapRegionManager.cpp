@@ -92,21 +92,10 @@ void G1HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
 }
 
 G1HeapRegion* G1HeapRegionManager::allocate_free_region(G1HeapRegionType type, uint requested_node_index) {
-  G1HeapRegion* hr = nullptr;
   bool from_head = !type.is_young();
   G1NUMA* numa = G1NUMA::numa();
 
-  if (requested_node_index != G1NUMA::AnyNodeIndex && numa->is_enabled()) {
-    // Try to allocate with requested node index.
-    hr = _free_list.remove_region_with_node_index(from_head, requested_node_index);
-  }
-
-  if (hr == nullptr) {
-    // If there's a single active node or we did not get a region from our requested node,
-    // try without requested node index.
-    hr = _free_list.remove_region(from_head);
-  }
-
+  G1HeapRegion* hr = _free_list.remove_region(from_head, requested_node_index);
   if (hr != nullptr) {
     assert(hr->next() == nullptr, "Single region should not have next");
     assert(is_available(hr->hrm_index()), "Must be committed");

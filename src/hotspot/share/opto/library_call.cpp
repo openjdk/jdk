@@ -1202,21 +1202,26 @@ bool LibraryCallKit::inline_countPositives() {
   return true;
 }
 
+// <X extends RuntimeException>
+// int checkIndex(int index, int length,
+//                BiFunction<String, List<Number>, X> oobef)
+// <X extends RuntimeException>
+// long checkIndex(long index, long length,
+//                 BiFunction<String, List<Number>, X> oobef)
 bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   Node* index = argument(0);
   Node* length = bt == T_INT ? argument(1) : argument(2);
-  if (too_many_traps(Deoptimization::Reason_intrinsic) || too_many_traps(Deoptimization::Reason_range_check)) {
-    return false;
-  }
 
   // check that length is positive
   Node* len_pos_cmp = _gvn.transform(CmpNode::make(length, integercon(0, bt), bt));
   Node* len_pos_bol = _gvn.transform(new BoolNode(len_pos_cmp, BoolTest::ge));
 
   {
+    // Let the intepreter throw the exception since the actual exception that needs throwing is the
+    // result of oobef, which is not trivial
     BuildCutout unless(this, len_pos_bol, PROB_MAX);
     uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_make_not_entrant);
+                  Deoptimization::Action_none);
   }
 
   if (stopped()) {
@@ -1244,10 +1249,12 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   }
   set_control(_gvn.transform(new IfTrueNode(rc)));
   {
+    // Let the intepreter throw the exception since the actual exception that needs throwing is the
+    // result of oobef, which is not trivial
     PreserveJVMState pjvms(this);
     set_control(_gvn.transform(new IfFalseNode(rc)));
     uncommon_trap(Deoptimization::Reason_range_check,
-                  Deoptimization::Action_make_not_entrant);
+                  Deoptimization::Action_none);
   }
 
   if (stopped()) {
