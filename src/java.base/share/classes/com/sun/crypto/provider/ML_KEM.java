@@ -1211,7 +1211,7 @@ public final class ML_KEM {
     static void implKyberAddPolyJava(short[] result, short[] a, short[] b) {
         for (int m = 0; m < ML_KEM_N; m++) {
             int r = a[m] + b[m] + ML_KEM_Q; // This makes r > - ML_KEM_Q
-            a[m] = (short) r;
+            result[m] = (short) r;
         }
     }
 

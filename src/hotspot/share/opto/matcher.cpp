@@ -74,7 +74,6 @@ Matcher::Matcher()
   _reused(C->comp_arena()),
 #endif // !PRODUCT
   _allocation_started(false),
-  _ruleName(ruleName),
   _register_save_policy(register_save_policy),
   _c_reg_save_policy(c_reg_save_policy),
   _register_save_type(register_save_type),
@@ -141,11 +140,11 @@ OptoReg::Name Compile::compute_old_SP() {
 void Matcher::verify_new_nodes_only(Node* xroot) {
   // Make sure that the new graph only references new nodes
   ResourceMark rm;
-  Unique_Node_List worklist;
+  Unique_Node_List<const Node> worklist;
   VectorSet visited;
   worklist.push(xroot);
   while (worklist.size() > 0) {
-    Node* n = worklist.pop();
+    const Node* n = worklist.pop();
     if (visited.test_set(n->_idx)) {
       continue;
     }
@@ -2722,7 +2721,7 @@ void Matcher::specialize_generic_vector_operands() {
 
   // Replace generic vector operands (vec/legVec) with concrete ones (vec[SDXYZ]/legVec[SDXYZ])
   // and remove reg-to-reg vector moves (MoveVec2Leg and MoveLeg2Vec).
-  Unique_Node_List live_nodes;
+  Unique_Node_List<Node> live_nodes;
   C->identify_useful_nodes(live_nodes);
 
   while (live_nodes.size() > 0) {
@@ -2797,7 +2796,7 @@ bool Matcher::is_encode_and_store_pattern(const Node* n, const Node* m) {
 bool Matcher::verify_after_postselect_cleanup() {
   assert(!C->failing_internal() || C->failure_is_artificial(), "sanity");
   if (supports_generic_vector_operands) {
-    Unique_Node_List useful;
+    Unique_Node_List<Node> useful;
     C->identify_useful_nodes(useful);
     for (uint i = 0; i < useful.size(); i++) {
       MachNode* m = useful.at(i)->isa_Mach();

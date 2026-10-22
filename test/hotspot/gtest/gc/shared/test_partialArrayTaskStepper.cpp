@@ -23,50 +23,27 @@
  */
 
 #include "gc/shared/partialArrayTaskStepper.inline.hpp"
-#include "memory/allStatic.hpp"
-#include "runtime/atomic.hpp"
 #include "unittest.hpp"
-
-using Step = PartialArrayTaskStepper::Step;
-using Stepper = PartialArrayTaskStepper;
-
-class PartialArrayTaskStepper::TestSupport : AllStatic {
-public:
-  static Step next(const Stepper* stepper,
-                   size_t length,
-                   size_t chunk_size,
-                   Atomic<size_t>* to_length_addr) {
-    return stepper->next_impl(length, chunk_size, to_length_addr);
-  }
-};
-
-using StepperSupport = PartialArrayTaskStepper::TestSupport;
-
-static uint simulate(const Stepper* stepper,
-                     size_t length,
-                     size_t chunk_size,
-                     Atomic<size_t>* to_length_addr) {
-  Step init = stepper->start(length, chunk_size);
-  to_length_addr->store_relaxed(init._index);
-  uint queue_count = init._ncreate;
-  uint task = 0;
-  for ( ; queue_count > 0; ++task) {
-    --queue_count;
-    Step step = StepperSupport::next(stepper, length, chunk_size, to_length_addr);
-    queue_count += step._ncreate;
-  }
-  return task;
-}
 
 static void run_test(size_t length, size_t chunk_size, uint n_workers) {
   const PartialArrayTaskStepper stepper(n_workers);
-  Atomic<size_t> to_length;
-  uint tasks = simulate(&stepper, length, chunk_size, &to_length);
-  ASSERT_EQ(length, to_length.load_relaxed());
+  size_t index = length % chunk_size;
+  uint pending = index < length ? 1u : 0u;
+  uint tasks = 0;
+  while (pending > 0) {
+    ASSERT_LT(index, length);
+    --pending;
+    pending += stepper.continuation_tasks(index, length, chunk_size);
+    index += chunk_size;
+    ++tasks;
+    ASSERT_LE(pending, n_workers);
+    ASSERT_LE(pending, (length - index) / chunk_size);
+  }
+  ASSERT_EQ(length, index);
   ASSERT_EQ(tasks, length / chunk_size);
 }
 
-TEST(PartialArrayTaskStepperTest, doit) {
+TEST(PartialArrayTaskStepperTest, coverage_and_task_limit) {
   for (size_t chunk_size = 50; chunk_size <= 500; chunk_size += 50) {
     for (uint n_workers = 1; n_workers <= 256; n_workers = (n_workers * 3 / 2 + 1)) {
       for (size_t length = 0; length <= 1000000; length = (length * 2 + 1)) {
@@ -85,13 +62,9 @@ TEST(PartialArrayTaskStepperTest, overflow_beyond_array) {
   const size_t Length = INT32_MAX;
   const size_t ChunkSize = 1;
   const size_t Index = 1431655765;
-  const size_t NumWorkers = 16; // Fanout is 4.
+  const uint NumWorkers = 16; // Fanout is 4.
 
-  const Stepper stepper(NumWorkers);
+  const PartialArrayTaskStepper stepper(NumWorkers);
 
-  Atomic<size_t> to_length;
-  to_length.store_relaxed(Index);
-
-  Step step = StepperSupport::next(&stepper, Length, ChunkSize, &to_length);
-  ASSERT_EQ(1u, step._ncreate);
+  ASSERT_EQ(1u, stepper.continuation_tasks(Index, Length, ChunkSize));
 }

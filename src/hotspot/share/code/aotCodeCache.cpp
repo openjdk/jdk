@@ -29,7 +29,6 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciUtilities.inline.hpp"
@@ -117,6 +116,11 @@ const char* aot_code_entry_kind_name[] = {
   DO_AOTCODEENTRY_KIND(DECL_KIND_STRING)
 #undef DECL_KIND_STRING
 };
+
+// Used when logging, we need the human-readable name
+const char* AOTCodeCache::get_kind_name(const AOTCodeEntry::Kind kind) {
+  return aot_code_entry_kind_name[kind];
+}
 
 // Stream to printing AOTCodeCache loading failure.
 // Print to error channel when -XX:AOTMode is set to "on"
@@ -2057,8 +2061,9 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   // In the case of a multi-stub blob we need to write start, end,
   // secondary entries and extras. For any other blob entry addresses
   // beyond the blob start will be stored in the blob as offsets.
+  uint embedded_stub_offset = 0;
   if (stub_data != nullptr) {
-    if (!cache->write_stub_data(blob, stub_data)) {
+    if (!cache->write_stub_data(blob, stub_data, &embedded_stub_offset)) {
       return false;
     }
   }
@@ -2108,6 +2113,9 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   AOTCodeEntry* entry = new(cache) AOTCodeEntry(entry_kind, encode_id(entry_kind, id),
                                                 entry_position, entry_size, name_offset, name_size,
                                                 blob_offset, has_oop_maps);
+  if (embedded_stub_offset != 0) {
+    entry->set_embedded_stub_offset(embedded_stub_offset - entry_position);
+  }
   log_debug(aot, codecache, stubs)("Wrote code blob '%s' (id=%u, kind=%s) to AOT Code Cache", name, id, aot_code_entry_kind_name[entry_kind]);
   return true;
 }
@@ -2126,10 +2134,15 @@ bool AOTCodeCache::store_multi_stub_blob(CodeBlob& blob, BlobId id, AOTStubData*
   return store_code_blob(blob, AOTCodeEntry::StubGenBlob, (uint)id, StubInfo::name(id), stub_data, code_buffer);
 }
 
-bool AOTCodeCache::write_stub_data(CodeBlob &blob, AOTStubData *stub_data) {
+bool AOTCodeCache::write_stub_data(CodeBlob& blob, AOTStubData* stub_data, uint* stubs_offset) {
   if (!align_write_int()) {
     return false;
   }
+
+  if (stubs_offset != nullptr) {
+    *stubs_offset = _write_position;
+  }
+
   uint* count_ptr = (uint *)reserve_bytes(sizeof(uint));
   if (count_ptr == nullptr) {
     return false;
@@ -4500,10 +4513,7 @@ void AOTCodeAddressTable::init_extrs() {
 #if INCLUDE_JFR
   ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::write_checkpoint);
   ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::return_lease);
-  ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::load_barrier);
-  ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::epoch_address());
   ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::epoch_generation_address());
-  ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::signal_address());
   ADD_EXTERNAL_ADDRESS(&VMContinuations)
 #endif
   // For JFR
@@ -5360,6 +5370,48 @@ void AOTStubData::check_stored(StubId stub_id) {
   }
 }
 #endif
+
+//This is a helper function that executes a function over each embedded stub available
+// Embedded StubGenBlobs are assumed to have the following structure
+// [ count | StubId | offset | size | N | offset_1 | offset_2 | ... | offset_N ]
+void AOTCodeCache::iterate_embedded_stubs(const AOTCodeEntry* entry, const embedded_stub_func func) {
+  assert(entry->kind() == AOTCodeEntry::Kind::StubGenBlob, "invalid call");
+  // jump to the embedded stubs section
+  uint pos = entry->offset() + entry->embedded_stub_offset();
+  // skip stub count
+  pos += sizeof(uint);
+
+  // Now we can get the information we want to log (embedded stubs)
+  // get the first embedded stub id
+  StubId stub_id = *(StubId*)(_store_buffer + pos);
+  pos += sizeof(StubId);
+
+  // loop until we run out of stubs (no stubid)
+  while (stub_id != StubId::NO_STUBID) {
+    assert(stub_id > StubId::NO_STUBID && stub_id < StubId::NUM_STUBIDS, "Embedded Stub ID is not valid.");
+    assert(StubInfo::blob(stub_id) == (BlobId) entry->id(), "We found an embedded stub that doesn't belong here.");
+    uint offset = *(uint*)(_store_buffer + pos);
+    pos += sizeof(uint);
+    uint size = *(uint*)(_store_buffer + pos);
+    pos += sizeof(uint);
+
+    //Call the function on the embedded stub
+    (*func)(p2i(_store_buffer + entry->offset() + entry->code_offset() + offset),
+      size, (uint) stub_id, StubInfo::name(stub_id), (uint) entry->id());
+
+    //Get the number of secondary/extra entry offsets
+    int n = *(int*) (_store_buffer + pos);
+    pos += sizeof(int);
+    //to skip them and prepare for the following stub (if exists)
+    pos += n * sizeof(uint);
+    // the entry+extras count for the stub read from the file should exceed the declared entry count
+    assert(n >= StubInfo::entry_count(stub_id) - 1, "We are missing entries on this stub.");
+
+    // position ourselves in the potential following stub
+    stub_id = *(StubId*)(_store_buffer + pos);
+    pos += sizeof(StubId);
+  }
+}
 
 //============ Statistic ============
 

@@ -25,6 +25,7 @@
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotCompressedPointers.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMapLogger.hpp"
 #include "cds/aotMetaspace.hpp"
@@ -35,7 +36,6 @@
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
 #include "cds/dynamicArchive.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
@@ -844,10 +844,10 @@ void ArchiveBuilder::make_klasses_shareable() {
           assert(0, "shouldn't happen");
         }
         if (CDSConfig::is_dumping_method_handles()) {
-          assert(HeapShared::is_archivable_hidden_klass(ik), "sanity");
+          assert(AOTHeap::is_archivable_hidden_klass(ik), "sanity");
         } else {
           // Legacy CDS support for lambda proxies
-          CDS_JAVA_HEAP_ONLY(assert(HeapShared::is_lambda_proxy_klass(ik), "sanity");)
+          CDS_JAVA_HEAP_ONLY(assert(AOTHeap::is_lambda_proxy_klass(ik), "sanity");)
         }
       } else if (ik->defined_by_boot_loader()) {
         type = "boot";
@@ -1170,7 +1170,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, AOTMappedHeapInfo* mapp
   if (log_is_enabled(Info, aot, map)) {
     AOTMapLogger::dumptime_log(this, mapinfo, mapped_heap_info, streamed_heap_info, bitmap, bitmap_size_in_bytes);
   }
-  CDS_JAVA_HEAP_ONLY(HeapShared::destroy_archived_object_cache());
+  CDS_JAVA_HEAP_ONLY(AOTHeap::destroy_archived_object_cache());
   FREE_C_HEAP_ARRAY(bitmap);
 }
 
