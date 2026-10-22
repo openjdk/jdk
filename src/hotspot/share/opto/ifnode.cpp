@@ -368,7 +368,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   // We terminate once no users are left.
   while (phi->outcnt() > 0) {
     uint old_cnt = phi->outcnt();
-    Node* v = phi->raw_out(phi->outcnt() - 1); // User of the phi
+    Node* v = phi->raw_out(old_cnt - 1); // User of the phi
     igvn->rehash_node_delayed(v); // Have to fixup other Phi users
     uint vop = v->Opcode();
     Node *proj = nullptr;
