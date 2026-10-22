@@ -389,6 +389,8 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
   return false;
 }
 
+// Create a separate copy of the block-local Bool for each use, placing each copy in that use's control block.
+// Return true if the original Bool was removed.
 bool PhaseIdealLoop::clone_bool_down(Node* bol, const Node* blk1, const Node* blk2) {
   if (bol->outcnt() == 1) {
     Node* use = bol->unique_out();

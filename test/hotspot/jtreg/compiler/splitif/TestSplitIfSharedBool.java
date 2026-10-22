@@ -27,23 +27,19 @@
  * @summary Split-if must not replace a shared CMove condition with a Phi.
  * @requires vm.compiler2.enabled
  * @library /test/lib /
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbatch -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   compiler.splitif.TestSplitIfSharedBool
+ * @run driver ${test.main.class}
  */
 
 package compiler.splitif;
 
-import static compiler.whitebox.CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION;
-
-import java.lang.reflect.Method;
-
+import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
-import jdk.test.whitebox.WhiteBox;
 
 public class TestSplitIfSharedBool {
+    public static void main(String[] args) {
+        TestFramework.run();
+    }
+
     static int checksum(int value) {
         int sum = value < 32 ? 1 : 0;
         if (value < 16) sum++;
@@ -54,32 +50,33 @@ public class TestSplitIfSharedBool {
         return sum;
     }
 
+    @Test(compLevel = CompLevel.C2)
     static int test(int value) {
         value = value < 2 ? 2 : value > 4 ? 4 : value;
         return checksum(value + 16);
     }
 
-    public static void main(String[] args) throws Exception {
-        for (int i = 0; i < 10_000; i++) {
-            checksum(1);
-        }
-        checksum(0);
+    @Run(test = "test")
+    @Warmup(1)
+    public static void runTest(RunInfo info) {
+        if (info.isWarmUp()) {
+            // Build the profiles in one warmup invocation, then let the framework recompile test.
+            for (int i = 0; i < 10_000; i++) {
+                checksum(1);
+            }
+            // Deoptimize checksum by taking its previously untaken value <= 0 path.
+            checksum(0);
 
-        for (int i = 0; i < 10_000; i++) {
-            test(i & 8);
+            // Compile test using only inputs that are clamped to 2 or 4.
+            for (int i = 0; i < 10_000; i++) {
+                test(i & 8);
+            }
+            // Deoptimize test by taking its previously untaken in-range path.
+            test(3);
+        } else {
+            Asserts.assertEQ(5, test(0));
+            Asserts.assertEQ(5, test(3));
+            Asserts.assertEQ(5, test(8));
         }
-        test(3);
-        for (int i = 0; i < 10_000; i++) {
-            test(i & 8);
-        }
-
-        Method method = TestSplitIfSharedBool.class.getDeclaredMethod("test", int.class);
-        WhiteBox wb = WhiteBox.getWhiteBox();
-        wb.enqueueMethodForCompilation(method, COMP_LEVEL_FULL_OPTIMIZATION);
-        Asserts.assertEQ(COMP_LEVEL_FULL_OPTIMIZATION, wb.getMethodCompilationLevel(method),
-                "The method must finish C2 compilation");
-        Asserts.assertEQ(5, test(0));
-        Asserts.assertEQ(5, test(3));
-        Asserts.assertEQ(5, test(8));
     }
 }
