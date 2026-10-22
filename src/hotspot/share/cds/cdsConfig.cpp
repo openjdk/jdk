@@ -798,7 +798,9 @@ void CDSConfig::setup_compiler_args() {
     if (is_using_archive()) {
       // Re-training
       FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
-      AOTCodeCache::enable_caching();
+      if (AOTReplayTraining) {
+        AOTCodeCache::enable_caching();
+      }
     } else {
       FLAG_SET_ERGO(AOTReplayTraining, false);
       AOTCodeCache::disable_caching();
@@ -813,7 +815,10 @@ void CDSConfig::setup_compiler_args() {
 
     FLAG_SET_ERGO(AOTRecordTraining, false);
     FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
-    AOTCodeCache::enable_caching(); // Generate AOT code during assembly phase.
+    // Generate AOT code only when training data enabled
+    if (AOTReplayTraining) {
+      AOTCodeCache::enable_caching();
+    }
     disable_dumping_aot_code(); // Don't dump AOT code until metadata and heap are dumped.
   } else if (is_using_archive()) {
     // --- AOT production
