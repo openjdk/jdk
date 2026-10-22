@@ -423,21 +423,22 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
     } else if (v->is_ConstraintCast()) {
       // When splitting the constraint casts, need to have distinct copies
       // hooked to relevant projections and phi splits. This would keep constraint
-      // casts close to the control that guards them.
+      // casts and their users behind the control that guards them.
       Node* cast_c = v->clone();
-      Node* cast_x = v->clone();
-      Node* cast_phi = PhiNode::make_blank(proj_path_ctrl, v);
-
       cast_c->set_req(0, proj->Opcode() == Op_IfTrue ? iff_c_t : iff_c_f);
-      cast_x->set_req(0, proj->Opcode() == Op_IfTrue ? iff_x_t : iff_x_f);
       cast_c->set_req(1, phi_c);
+      cast_c = phase->transform(cast_c);
+
+      Node* cast_x = v->clone();
+      cast_x->set_req(0, proj->Opcode() == Op_IfTrue ? iff_x_t : iff_x_f);
       cast_x->set_req(1, phi_x);
+      cast_x = phase->transform(cast_x);
+
+      Node* cast_phi = PhiNode::make_blank(proj_path_ctrl, v);
       cast_phi->init_req(1, cast_c);
       cast_phi->init_req(2, cast_x);
-
-      cast_c = phase->transform(cast_c);
-      cast_x = phase->transform(cast_x);
       cast_phi = phase->transform(cast_phi);
+
       igvn->replace_node(v, cast_phi);
     } else {
       ShouldNotReachHere();
