@@ -828,9 +828,6 @@ class GraphKit : public Phase {
   BoxLockNode* shared_lock(Node* obj);
   void         shared_unlock(BoxLockNode* box, Node* obj);
 
-  // helper functions for the fast path/slow path idioms
-  Node* fast_and_slow(Node* in, const Type *result_type, Node* null_result, IfNode* fast_test, Node* fast_result, address slow_call, const TypeFunc *slow_call_type, Node* slow_arg, Klass* ex_klass, Node* slow_result);
-
   // Generate an instance-of idiom.  Used by both the instance-of bytecode
   // and the reflective instance-of call.
   Node* gen_instanceof(Node *subobj, Node* superkls, bool safe_for_replace = false);
@@ -911,7 +908,6 @@ class GraphKit : public Phase {
   void add_parse_predicate(Deoptimization::DeoptReason reason, int nargs);
 
   Node* make_constant_from_field(ciField* field, Node* obj);
-  Node* load_mirror_from_klass(Node* klass);
 
   // Vector API support (implemented in vectorIntrinsics.cpp)
   Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception = false);

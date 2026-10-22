@@ -1367,7 +1367,7 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
       Unique_Node_List<ValueTypeNode> value_worklist;
 #ifdef ASSERT
       const Type* res_type = alloc->result_cast()->bottom_type();
-      if (res_type->is_valueklassptr() && !Compile::current()->has_circular_value_type()) {
+      if (res_type->is_valueklassptr()) {
         assert(!ophi->as_Phi()->can_push_value_types_down(_igvn), "missed earlier scalarization opportunity");
       }
 #endif
@@ -2598,7 +2598,6 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "stringIndexOf") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "arraysort_stub") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "array_partition_stub") == 0 ||
-                  strcmp(call->as_CallLeaf()->_name, "get_class_id_intrinsic") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "unsafe_setmemory") == 0)
                  ))) {
             call->dump();

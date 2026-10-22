@@ -273,15 +273,6 @@ void PhaseIdealLoop::fix_cloned_data_node_controls(const ProjNode* old_uncommon_
   orig_to_clone.iterate_all(orig_clone_action);
 }
 
-// Put all OpaqueTemplateAssertionPredicate nodes on a list, starting at 'predicate' and going up in the tree.
-void PhaseIdealLoop::get_opaque_template_assertion_predicate_nodes(ParsePredicateSuccessProj* parse_predicate_proj,
-                                                                   Unique_Node_List<OpaqueTemplateAssertionPredicateNode>& list) {
-  Deoptimization::DeoptReason deopt_reason = parse_predicate_proj->in(0)->as_ParsePredicate()->deopt_reason();
-  PredicateBlockIterator predicate_iterator(parse_predicate_proj, deopt_reason);
-  OpaqueTemplateAssertionPredicateCollector opaque_template_assertion_predicate_collector(list);
-  predicate_iterator.for_each(opaque_template_assertion_predicate_collector);
-}
-
 //------------------------------Invariance-----------------------------------
 // Helper class for loop_predication_impl to compute invariance on the fly and
 // clone invariants.

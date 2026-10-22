@@ -4499,7 +4499,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree* loop, Node_List<Node
       return false;
     }
 
-    LoopExitTest loop_exit(back_control, loop, this);
+    LoopExitTest loop_exit(back_control, loop);
     loop_exit.build();
     if (!loop_exit.is_valid_with_bt(T_INT)) {
       return false;

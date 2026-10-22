@@ -52,8 +52,6 @@ class PhaseVector : public Phase {
   void eliminate_vbox_alloc_nodes();
   void eliminate_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc);
   void do_cleanup();
-  void scalarize_vector_boxes();
-  void expand_vector_boxes();
 
  public:
   PhaseVector(PhaseIterGVN& igvn) : Phase(Vector), _igvn(igvn) {}

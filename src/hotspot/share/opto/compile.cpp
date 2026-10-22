@@ -695,7 +695,6 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _strength_reduction(false),
       _do_cleanup(false),
       _has_reserved_stack_access(target->has_reserved_stack_access()),
-      _has_circular_value_type(false),
 #ifndef PRODUCT
       _igv_idx(0),
       _trace_opto_output(directive->TraceOptoOutputOption),
@@ -772,10 +771,6 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   set_print_assembly(print_opto_assembly || print_assembly);
 #else
   set_print_assembly(false); // must initialize.
-#endif
-
-#ifndef PRODUCT
-  set_parsed_irreducible_loop(false);
 #endif
 
   if (directive->ReplayInlineOption) {
@@ -1011,7 +1006,6 @@ Compile::Compile(ciEnv* ci_env,
       _inlining_progress(false),
       _inlining_incrementally(false),
       _has_reserved_stack_access(false),
-      _has_circular_value_type(false),
 #ifndef PRODUCT
       _igv_idx(0),
       _trace_opto_output(directive->TraceOptoOutputOption),
@@ -1074,7 +1068,6 @@ Compile::Compile(ciEnv* ci_env,
 
 #ifndef PRODUCT
   set_print_assembly(PrintFrameConverterAssembly);
-  set_parsed_irreducible_loop(false);
 #else
   set_print_assembly(false); // Must initialize.
 #endif
@@ -1294,7 +1287,7 @@ uint Compile::count_live_nodes_by_graph_walk() {
 void Compile::print_missing_nodes() {
 
   // Return if CompileLog is null and PrintIdealNodeCount is false.
-  if ((_log == nullptr) && (! PrintIdealNodeCount)) {
+  if ((_log == nullptr) && !directive()->PrintIdealNodeCountOption) {
     return;
   }
 
@@ -1325,7 +1318,7 @@ void Compile::print_missing_nodes() {
           if (_log != nullptr) {
             _log->elem("mismatched_node_info node_idx='%d' type='both live and dead'", i);
           }
-          if (PrintIdealNodeCount) {
+          if (directive()->PrintIdealNodeCountOption) {
             // Print the log message to tty
               tty->print_cr("mismatched_node idx='%d' both live and dead'", i);
               useful.at(i)->dump();
@@ -1336,7 +1329,7 @@ void Compile::print_missing_nodes() {
         if (_log != nullptr) {
           _log->elem("mismatched_node_info node_idx='%d' type='neither live nor dead'", i);
         }
-        if (PrintIdealNodeCount) {
+        if (directive()->PrintIdealNodeCountOption) {
           // Print the log message to tty
           tty->print_cr("mismatched_node idx='%d' type='neither live nor dead'", i);
         }
@@ -5358,7 +5351,7 @@ Compile::TracePhase::~TracePhase() {
     return; // timing code, not stressing bailouts.
   }
 #ifdef ASSERT
-  if (PrintIdealNodeCount) {
+  if (_compile->directive()->PrintIdealNodeCountOption) {
     tty->print_cr("phase name='%s' nodes='%d' live='%d' live_graph_walk='%d'",
                   phase_name(), _compile->unique(), _compile->live_nodes(), _compile->count_live_nodes_by_graph_walk());
   }

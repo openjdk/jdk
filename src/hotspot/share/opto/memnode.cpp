@@ -4254,27 +4254,6 @@ Node* StoreNode::Ideal_sign_extended_input(PhaseGVN* phase, int num_rejected_bit
   return nullptr;
 }
 
-//------------------------------value_never_loaded-----------------------------------
-// Determine whether there are any possible loads of the value stored.
-// For simplicity, we actually check if there are any loads from the
-// address stored to, not just for loads of the value stored by this node.
-//
-bool StoreNode::value_never_loaded(PhaseValues* phase) const {
-  Node *adr = in(Address);
-  const TypeOopPtr *adr_oop = phase->type(adr)->isa_oopptr();
-  if (adr_oop == nullptr)
-    return false;
-  if (!adr_oop->is_known_instance_field())
-    return false; // if not a distinct instance, there may be aliases of the address
-  for (DUIterator_Fast imax, i = adr->fast_outs(imax); i < imax; i++) {
-    Node *use = adr->fast_out(i);
-    if (use->is_Load() || use->is_LoadStore()) {
-      return false;
-    }
-  }
-  return true;
-}
-
 MemBarNode* StoreNode::trailing_membar() const {
   if (is_release()) {
     MemBarNode* trailing_mb = nullptr;

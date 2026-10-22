@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,32 @@
  * questions.
  */
 
-#include "gc/shared/gc_globals.hpp"
-#include "gc/shared/gcLogPrecious.hpp"
-#include "gc/z/zRuntimeWorkers.hpp"
-#include "runtime/java.hpp"
+#ifndef SHARE_GC_Z_ZADAPTIVEHEAP_INLINE_HPP
+#define SHARE_GC_Z_ZADAPTIVEHEAP_INLINE_HPP
 
-ZRuntimeWorkers::ZRuntimeWorkers()
-  : _workers("RuntimeWorker", ParallelGCThreads) {
+#include "gc/z/zAdaptiveHeap.hpp"
 
-  log_info_p(gc, init)("Runtime Workers: %u", _workers.max_workers());
+#include "utilities/globalDefinitions.hpp"
 
-  // Initialize worker threads
-  _workers.initialize_workers();
-  _workers.set_active_workers(_workers.max_workers());
-  if (_workers.active_workers() != _workers.max_workers()) {
-    vm_exit_during_initialization("Failed to create ZRuntimeWorkers");
-  }
+inline physical_memory_size_type ZSystemMemoryPressureMetrics::available_memory() const {
+  return _max_memory - MIN2(_used_memory, _max_memory);
 }
 
-WorkerThreads* ZRuntimeWorkers::workers() {
-  return &_workers;
+inline double ZSystemMemoryPressureMetrics::fraction_of_max(physical_memory_size_type memory) const {
+  return percent_of(memory, _max_memory) / 100.0;
 }
 
-void ZRuntimeWorkers::threads_do(ThreadClosure* tc) const {
-  _workers.threads_do(tc);
+inline double ZSystemMemoryPressureMetrics::used_fraction() const {
+  return fraction_of_max(_used_memory);
 }
+
+inline double ZSystemMemoryPressureMetrics::available_fraction() const {
+  return fraction_of_max(available_memory());
+}
+
+inline bool ZAdaptiveHeap::explicit_max_capacity() {
+  precond(_initialized);
+  return _explicit_max_capacity;
+}
+
+#endif // SHARE_GC_Z_ZADAPTIVEHEAP_INLINE_HPP
