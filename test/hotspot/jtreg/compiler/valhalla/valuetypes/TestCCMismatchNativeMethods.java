@@ -52,7 +52,7 @@ public class TestCCMismatchNativeMethods {
 
     static class C1 extends A1 {
     }
-    
+
     static class A2 {
         int m1(V1 v1, V1 v2) {
             return v1.x;
@@ -68,7 +68,7 @@ public class TestCCMismatchNativeMethods {
     static class D2 extends A2 {
         native int m1(V1 v1, V1 v2);
     }
-    
+
     static int test1(A1 a, V1 v) {
         return a.m1(v, v);
     }
