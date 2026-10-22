@@ -103,11 +103,16 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
                                 writeInternalObject(oop);
                             }
                             writeHeapRecordEpilogue();
-                            while (!flatObjects.isEmpty()) {
-                                writeInstance(flatObjects.pop(), flatObjects);
-                            }
                         } catch (IOException exp) {
                             throw new RuntimeException(exp);
+                        } finally {
+                            while (!flatObjects.isEmpty()) {
+                                try {
+                                    writeInstance(flatObjects.pop(), flatObjects);
+                                } catch (IOException exp) {
+                                    throw new RuntimeException(exp);
+                                }
+                            }
                         }
                         return false;
                     }
