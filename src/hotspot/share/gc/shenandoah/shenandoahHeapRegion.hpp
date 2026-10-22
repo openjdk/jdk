@@ -172,6 +172,7 @@ public:
   static int region_states_num() {
     return _REGION_STATES_NUM;
   }
+  static const uint32_t UndefinedRegionIndex = UINT32_MAX;
 
   // Allowed transitions from the outside code:
   void make_regular_allocation(ShenandoahAffiliation affiliation);
@@ -179,9 +180,9 @@ public:
   void make_affiliated_maybe();
   void make_regular_bypass();
   void make_humongous_start();
-  void make_humongous_cont(uint32_t humongous_start_index);
+  void make_humongous_cont(uint32_t start);
   void make_humongous_start_bypass(ShenandoahAffiliation affiliation);
-  void make_humongous_cont_bypass(ShenandoahAffiliation affiliation, uint32_t humongous_start_index);
+  void make_humongous_cont_bypass(ShenandoahAffiliation affiliation, uint32_t start);
   void make_pinned();
   void make_unpinned();
   void make_cset();
@@ -471,10 +472,7 @@ public:
   bool block_is_obj(const HeapWord* p) const { return p < top(); }
 
   // Find humongous start region that this region belongs to
-  ShenandoahHeapRegion* humongous_start_region() const {
-    assert(is_humongous(), "Must be part of a humongous object");
-    return ShenandoahHeap::heap()->get_region(_humongous_start_region_index);
-  }
+  inline uint32_t humongous_start_region() const;
 
   HeapWord* top() const         { return _top;     }
   void set_top(HeapWord* v)     { _top = v;        }

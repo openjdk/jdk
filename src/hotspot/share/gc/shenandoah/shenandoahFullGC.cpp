@@ -617,7 +617,7 @@ public:
       }
     } else if (r->is_humongous_continuation()) {
       // If we hit continuation, the non-live humongous starts should have been trashed already
-      assert(r->humongous_start_region()->has_live(), "Region %zu should have live", r->index());
+      assert(_heap->get_region(r->humongous_start_region())->has_live(), "Region %zu should have live", r->index());
     } else if (r->is_regular()) {
       if (!r->has_live()) {
         r->make_trash_immediate();

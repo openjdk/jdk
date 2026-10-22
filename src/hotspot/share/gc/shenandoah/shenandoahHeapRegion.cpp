@@ -75,7 +75,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _update_watermark(start),
   _age(0),
   _needs_bitmap_reset(false),
-  _humongous_start_region_index(0) {
+  _humongous_start_region_index(UndefinedRegionIndex) {
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
          "invalid space boundaries");
   if (ZapUnusedHeapArea && committed) {
@@ -95,7 +95,6 @@ void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
 void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affiliation) {
   shenandoah_assert_heaplocked();
   reset_age();
-  _humongous_start_region_index = 0;
   switch (state()) {
     case _empty_uncommitted:
       do_commit();
@@ -104,6 +103,7 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
       set_state(_regular);
     case _regular:
     case _pinned:
+      _humongous_start_region_index = UndefinedRegionIndex;
       return;
     default:
       report_illegal_transition("regular allocation");
@@ -155,7 +155,6 @@ void ShenandoahHeapRegion::make_regular_bypass() {
   assert (ShenandoahHeap::heap()->is_full_gc_in_progress(),
           "Only for STW GC");
   reset_age();
-  _humongous_start_region_index = 0;
   switch (state()) {
     case _empty_uncommitted:
       do_commit();
@@ -164,12 +163,15 @@ void ShenandoahHeapRegion::make_regular_bypass() {
     case _humongous_start:
     case _humongous_cont:
       set_state(_regular);
+      _humongous_start_region_index = UndefinedRegionIndex;
       return;
     case _pinned_cset:
       set_state(_pinned);
+      _humongous_start_region_index = UndefinedRegionIndex;
       return;
     case _regular:
     case _pinned:
+      _humongous_start_region_index = UndefinedRegionIndex;
       return;
     default:
       report_illegal_transition("regular bypass");
@@ -183,7 +185,7 @@ void ShenandoahHeapRegion::make_humongous_start() {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
-      _humongous_start_region_index = this->index();
+      _humongous_start_region_index = index();
       set_state(_humongous_start);
       return;
     default:
@@ -202,7 +204,7 @@ void ShenandoahHeapRegion::make_humongous_start_bypass(ShenandoahAffiliation aff
     case _regular:
     case _humongous_start:
     case _humongous_cont:
-      _humongous_start_region_index = this->index();
+      _humongous_start_region_index = index();
       set_state(_humongous_start);
       return;
     default:
@@ -210,15 +212,15 @@ void ShenandoahHeapRegion::make_humongous_start_bypass(ShenandoahAffiliation aff
   }
 }
 
-void ShenandoahHeapRegion::make_humongous_cont(uint32_t humongous_start_index) {
+void ShenandoahHeapRegion::make_humongous_cont(uint32_t start) {
   shenandoah_assert_heaplocked();
   reset_age();
-  assert(ShenandoahHeap::heap()->get_region(humongous_start_index)->is_humongous_start(), "Precondition");
+  assert(ShenandoahHeap::heap()->get_region(start)->is_humongous_start(), "Precondition");
   switch (state()) {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
-      _humongous_start_region_index = humongous_start_index;
+      _humongous_start_region_index = start;
       set_state(_humongous_cont);
       return;
     default:
@@ -226,20 +228,20 @@ void ShenandoahHeapRegion::make_humongous_cont(uint32_t humongous_start_index) {
   }
 }
 
-void ShenandoahHeapRegion::make_humongous_cont_bypass(ShenandoahAffiliation affiliation, uint32_t humongous_start_index) {
+void ShenandoahHeapRegion::make_humongous_cont_bypass(ShenandoahAffiliation affiliation, uint32_t start) {
   shenandoah_assert_heaplocked();
   assert (ShenandoahHeap::heap()->is_full_gc_in_progress(), "only for full GC");
   set_affiliation(affiliation);
   // Don't bother to account for affiliated regions during Full GC.  We recompute totals at end.
   reset_age();
-  assert(ShenandoahHeap::heap()->get_region(humongous_start_index)->is_humongous_start(), "Precondition");
+  assert(ShenandoahHeap::heap()->get_region(start)->is_humongous_start(), "Precondition");
   switch (state()) {
     case _empty_committed:
     case _regular:
     case _humongous_start:
     case _humongous_cont:
       set_state(_humongous_cont);
-      _humongous_start_region_index = humongous_start_index;
+      _humongous_start_region_index = start;
       return;
     default:
       report_illegal_transition("humongous continuation bypass");
@@ -321,6 +323,7 @@ void ShenandoahHeapRegion::make_trash() {
     case _regular:
       // Immediate region reclaim
       set_state(_trash);
+      _humongous_start_region_index = UndefinedRegionIndex;
       return;
     default:
       report_illegal_transition("trashing");
@@ -539,11 +542,11 @@ size_t get_card_count(size_t words) {
 void ShenandoahHeapRegion::oop_iterate_humongous_slice_dirty(OopIterateClosure* blk,
                                                              HeapWord* start, size_t words, bool write_table) const {
   assert(is_humongous(), "only humongous region here");
-  ShenandoahHeapRegion* r = humongous_start_region();
+  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
+  ShenandoahHeapRegion* r = heap->get_region(humongous_start_region());
   oop obj = cast_to_oop(r->bottom());
   size_t num_cards = get_card_count(words);
 
-  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
   size_t card_index = scanner->card_index_for_addr(start);
   if (write_table) {
@@ -566,7 +569,7 @@ void ShenandoahHeapRegion::oop_iterate_humongous_slice_dirty(OopIterateClosure* 
 void ShenandoahHeapRegion::oop_iterate_humongous_slice_all(OopIterateClosure* cl, HeapWord* start, size_t words) const {
   assert(is_humongous(), "only humongous region here");
 
-  ShenandoahHeapRegion* r = humongous_start_region();
+  ShenandoahHeapRegion* r = ShenandoahHeap::heap()->get_region(humongous_start_region());
   oop obj = cast_to_oop(r->bottom());
 
   // Scan all data, regardless of whether cards are dirty
