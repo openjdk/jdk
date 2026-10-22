@@ -38,18 +38,26 @@ public:
   {
     assert(can_delay_type(t), "permissible input type");
     // TODO: what to do with input type? We could widen it.
+    // Yes, otherwise for singletons we immediately collapse the node due to sigleton type.
     // TODO: type assert?
     // TODO: macro flags?
+  }
+
+  static bool can_delay_type(const Type* t) {
+    return t->isa_int() != nullptr ||
+           t->isa_long() != nullptr;
   }
 
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return _type; } // TODO: change?
   virtual uint size_of() const { return sizeof(OptimizationDelayNode); }
 
-  static bool can_delay_type(const Type* t) {
-    return t->isa_int() != nullptr ||
-           t->isa_long() != nullptr;
+#ifndef PRODUCT
+  virtual void dump_spec(outputStream* st) const {
+    st->print(" type=");
+    _type->dump_on(st);
   }
+#endif
 };
 
 #endif // SHARE_OPTO_OPTIZATIONDELAYNODE_HPP

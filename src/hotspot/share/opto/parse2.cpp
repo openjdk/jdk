@@ -2981,12 +2981,14 @@ void Parse::maybe_insert_optimization_delay_nodes() {
 
       // TODO: Not so sure about this below...
       set_stack(i, delay);
-      C->record_for_igvn(delay);
+      //C->record_for_igvn(delay);
 
       if (TraceOptimizationDelay) {
         tty->print_cr("[OptimizationDelay] bci=%d", bci());
         n->dump();
         t->dump();
+        tty->cr();
+        delay->dump();
         tty->cr();
       }
     }
