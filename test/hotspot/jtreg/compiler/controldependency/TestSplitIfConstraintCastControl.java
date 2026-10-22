@@ -71,7 +71,8 @@ public class TestSplitIfConstraintCastControl {
         }
     }
 
-    static class KV {
+    // Must be static final to reproduce the bug.
+    static final class KV {
         static final Box<String> EMPTY = new Box<>("EMPTY");
         final String k;
         final Box<String> v;
@@ -90,7 +91,8 @@ public class TestSplitIfConstraintCastControl {
         }
     }
 
-    static class Box<T> {
+    // Must be static final to reproduce the bug.
+    static final class Box<T> {
         final T v;
         Box(T v) {
             this.v = v;
