@@ -139,8 +139,7 @@ static void destroy_lib_info(struct ps_prochandle* ph) {
      if (lib->fd >= 0) {
        if (ph->core == NULL) {
          close(lib->fd);
-       }
-       else if (lib->fd != ph->core->exec_fd) {
+       } else if (lib->fd != ph->core->exec_fd) {
          // Prevents double-close in core mode.
          // exec_fd would be closed at close_files().
          close(lib->fd);
@@ -166,9 +165,8 @@ static void destroy_thread_info(struct ps_prochandle* ph) {
 // ps_prochandle cleanup
 JNIEXPORT void JNICALL
 Prelease(struct ps_prochandle* ph) {
-   // do the "derived class" clean-up first
-   ph->ops->release(ph);
    destroy_lib_info(ph);
+   ph->ops->release(ph);
    destroy_thread_info(ph);
    free(ph);
 }
