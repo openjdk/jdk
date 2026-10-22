@@ -30,6 +30,7 @@
 
 #if INCLUDE_JFR
 
+#include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allStatic.hpp"
 
@@ -80,26 +81,17 @@ public:
 private:
   alignas(CALLBACK_STORAGE_ALIGNMENT) char _callback_storage[CALLBACK_STORAGE_SIZE];
   u4 _max_frames;
-  void* _sample_sp;
-  void* _sample_pc;
-  void* _sample_bcp;
+  JfrSampleRequest _sample_request;
 
 public:
   JfrStackWalkRequest() :
     _max_frames(0),
-    _sample_sp(nullptr),
-    _sample_pc(nullptr),
-    _sample_bcp(nullptr) {}
+    _sample_request() {}
 
   void set_max_frames(u4 max_frames) { _max_frames = max_frames; }
   u4 max_frames() const { return _max_frames; }
 
-  void* sample_sp() const { return _sample_sp; }
-  void set_sample_sp(void* sp) { _sample_sp = sp; }
-  void* sample_pc() const { return _sample_pc; }
-  void set_sample_pc(void* pc) { _sample_pc = pc; }
-  void* sample_bcp() const { return _sample_bcp; }
-  void set_sample_bcp(void* bcp) { _sample_bcp = bcp; }
+  JfrSampleRequest& sample_request() { return _sample_request; }
 
   // Construct a callback in the embedded storage.
   // Enforces size and alignment constraints at compile time.
@@ -198,8 +190,6 @@ class JfrStackWalkerThreadLocal {
 
   bool _processing_requests;
 
-  volatile bool _vthread;
-
   bool try_acquire_enqueue_lock();
   bool try_acquire_dequeue_lock();
   void acquire_dequeue_lock();
@@ -211,11 +201,7 @@ public:
     _lock(UNLOCKED),
     _has_requests(false),
     _do_async_processing_of_requests(false),
-    _processing_requests(false),
-    _vthread(false) {}
-
-  static void on_set_current_thread(JavaThread* thread, oop thread_obj);
-  static bool is_vthread(JavaThread* jt);
+    _processing_requests(false) {}
 
   JfrStackWalkerRequestQueue& queue() {
     return _queue;
@@ -251,7 +237,6 @@ class JfrStackWalker : public AllStatic {
 
   static JfrNativeStackWalkerThread* _native_stackwalker_thread;
 
-  static void build_stack_walk_request(JfrStackWalkRequest& request, const void* ucontext, JavaThread* java_thread);
   static void trigger_async_processing_of_requests();
   static void process_requests(JavaThread* jt);
   // Process requests with the dequeue lock already held by the caller.

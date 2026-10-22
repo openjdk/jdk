@@ -203,7 +203,6 @@ static bool build_from_context(JfrSampleRequest& request,
   assert(tl != nullptr, "invariant");
   assert(jt != nullptr, "invariant");
   assert(jt->jfr_thread_local() == tl, "invariant");
-  assert(!jt->has_last_Java_frame(), "invariant");
   intptr_t* fp;
   request._sample_pc = os::fetch_frame_from_context(ucontext, reinterpret_cast<intptr_t**>(&request._sample_sp), &fp);
   assert(sp_in_stack(request, jt), "invariant");
@@ -273,38 +272,33 @@ JfrSampleResult JfrSampleRequestBuilder::build_java_sample_request(const void* u
     if (build_from_ljf(request, tl, jt)) {
       return set_unbiased_java_sample(request, tl, jt);
     }
-  } else if (build_from_context(request, ucontext, tl, jt)) {
-    return set_unbiased_java_sample(request, tl, jt);
+  } else {
+    assert(!jt->has_last_Java_frame(), "invariant");
+    if (build_from_context(request, ucontext, tl, jt)) {
+      return set_unbiased_java_sample(request, tl, jt);
+    }
   }
   return set_biased_java_sample(request, tl, jt);
 }
 
-
-// A biased sample request is denoted by an empty bcp and an empty pc.
-static inline void set_cpu_time_biased_sample(JfrSampleRequest& request, JavaThread* jt) {
-  if (request._sample_bcp != nullptr) {
-    request._sample_bcp = nullptr;
-  }
-  assert(request._sample_bcp == nullptr, "invariant");
-  request._sample_pc = nullptr;
-}
-
-void JfrSampleRequestBuilder::build_cpu_time_sample_request(JfrSampleRequest& request,
-                                                            void* ucontext,
-                                                            JavaThread* jt,
-                                                            JfrThreadLocal* tl,
-                                                            JfrTicks& now) {
+bool JfrSampleRequestBuilder::build_unbiased_sample_request(JfrSampleRequest& request,
+                                                            const void* ucontext,
+                                                            JavaThread* jt) {
   assert(jt != nullptr, "invariant");
-  request._sample_ticks = now;
+  assert(jt->thread_state() == _thread_in_Java || jt->thread_state() == _thread_in_native, "invariant");
+  JfrThreadLocal* const tl = jt->jfr_thread_local();
 
-  // Prioritize the ljf, if one exists.
+  // Prioritize the ljf, if one exists, and fall back to the context.
   request._sample_sp = jt->last_Java_sp();
-  if (request._sample_sp == nullptr || !build_from_ljf(request, tl, jt)) {
-    intptr_t* fp;
-    request._sample_pc = os::fetch_frame_from_context(ucontext, reinterpret_cast<intptr_t**>(&request._sample_sp), &fp);
+  if ((request._sample_sp != nullptr && build_from_ljf(request, tl, jt)) ||
+      (ucontext != nullptr && build_from_context(request, ucontext, tl, jt))) {
+    assert(request._sample_sp != nullptr, "invariant");
     assert(sp_in_stack(request, jt), "invariant");
-    if (!build(request, fp, jt)) {
-      set_cpu_time_biased_sample(request, jt);
-    }
+    assert(request._sample_bcp != nullptr || !is_interpreter(request), "invariant");
+    return true;
   }
+  // A biased sample request is denoted by an empty bcp and an empty pc.
+  request._sample_bcp = nullptr;
+  request._sample_pc = nullptr;
+  return false;
 }

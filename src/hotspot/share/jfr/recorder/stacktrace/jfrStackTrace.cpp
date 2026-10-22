@@ -54,13 +54,15 @@ static inline void copy_frames(JfrStackFrames* lhs_frames, const JfrStackFrames*
   memcpy(lhs_frames->adr_at(0), rhs_frames->adr_at(0), rhs_frames->length() * sizeof(JfrStackFrame));
 }
 
-JfrStackTrace::JfrStackTrace() :
+JfrStackTrace::JfrStackTrace() : JfrStackTrace(JfrOptionSet::stackdepth()) {}
+
+JfrStackTrace::JfrStackTrace(u4 max_frames) :
   _next(nullptr),
-  _frames(new JfrStackFrames(JfrOptionSet::stackdepth())), // ResourceArea
+  _frames(new JfrStackFrames(max_frames)), // ResourceArea
   _id(0),
   _hash(0),
   _count(0),
-  _max_frames(JfrOptionSet::stackdepth()),
+  _max_frames(max_frames),
   _frames_ownership(false),
   _reached_root(false),
   _lineno(false),
@@ -131,7 +133,7 @@ static inline bool is_in_continuation(const frame& frame, JavaThread* jt) {
     (Continuation::is_frame_in_continuation(jt, frame) || Continuation::is_continuation_enterSpecial(frame));
 }
 
-void JfrStackTrace::record_frame(const Method* method, int bci, u1 frame_type) {
+inline void JfrStackTrace::record_frame(const Method* method, int bci, u1 frame_type) {
   assert(method != nullptr, "invariant");
   const traceid mid = JfrTraceId::load(method);
   _hash = (_hash * 31) + mid;
@@ -304,16 +306,6 @@ bool JfrStackTrace::record_inner(JavaThread* jt, const frame& frame, bool in_con
     record_frame(method, bci, type);
   }
   return _count > 0;
-}
-
-void JfrStackTrace::start_record_frames() {
-  if (_hash == 0) {
-    _hash = 1;
-  }
-}
-
-void JfrStackTrace::end_record_frames(bool truncated) {
-  _reached_root = !truncated;
 }
 
 void JfrStackTrace::resolve_linenos() const {

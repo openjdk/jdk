@@ -32,7 +32,6 @@ class JfrChunkWriter;
 class InstanceKlass;
 
 class JfrStackFrame {
-  friend class JfrCPUTimeThreadSampling;
   friend class ObjectSampleCheckpoint;
  private:
   const InstanceKlass* _klass;

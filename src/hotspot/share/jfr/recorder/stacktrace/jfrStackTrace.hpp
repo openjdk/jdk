@@ -37,7 +37,6 @@ class JfrChunkWriter;
 struct JfrSampleRequest;
 
 class JfrStackTrace : public JfrCHeapObj {
-  friend class JfrCPUTimeThreadSampling;
   friend class JfrNativeSamplerCallback;
   friend class JfrStackTraceRepository;
   friend class LeakProfilerStackTraceWriter;
@@ -70,9 +69,9 @@ class JfrStackTrace : public JfrCHeapObj {
 
   int number_of_frames() const;
   bool have_lineno() const { return _lineno; }
-  bool full_stacktrace() const { return _reached_root; }
   bool record_inner(JavaThread* jt, const frame& frame, bool in_continuation, int skip, int64_t stack_filter_id = -1);
   bool record(JavaThread* jt, const frame& frame, bool in_continuation, int skip, int64_t stack_filter_id = -1);
+  void record_frame(const Method* method, int bci, u1 type);
   void record_interpreter_top_frame(const JfrSampleRequest& request);
   void record_stack_repair_top_frame(const JfrSampleRequest& request);
 
@@ -81,18 +80,16 @@ class JfrStackTrace : public JfrCHeapObj {
  public:
   // ResourceArea allocation, remember ResourceMark.
   JfrStackTrace();
+  JfrStackTrace(u4 max_frames);
   ~JfrStackTrace();
 
   traceid hash() const { return _hash; }
   traceid id() const { return _id; }
+  bool full_stacktrace() const { return _reached_root; }
 
   bool record(JavaThread* current_thread, int skip, int64_t stack_filter_id);
   bool record(JavaThread* jt, const frame& frame, bool in_continuation, const JfrSampleRequest& request);
   bool should_write() const { return !_written; }
-
-  void start_record_frames();
-  void record_frame(const Method* method, int bci, u1 type);
-  void end_record_frames(bool truncated);
 };
 
 #endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACE_HPP

@@ -158,7 +158,7 @@ static inline bool is_valid(const PcDesc* pc_desc) {
   return pc_desc != nullptr && pc_desc->scope_decode_offset() != DebugInformationRecorder::serialized_null;
 }
 
-static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame, bool& in_continuation, JavaThread* jt, bool& biased) {
+bool JfrThreadSampling::compute_top_frame(const JfrSampleRequest& request, frame& top_frame, bool& in_continuation, JavaThread* jt, bool& biased) {
   assert(jt != nullptr, "invariant");
 
   if (!jt->has_last_Java_frame()) {
@@ -299,7 +299,7 @@ static void record_thread_in_java(const JfrSampleRequest& request, const JfrTick
   frame top_frame;
   bool biased = false;
   bool in_continuation;
-  if (!compute_top_frame(request, top_frame, in_continuation, jt, biased)) {
+  if (!JfrThreadSampling::compute_top_frame(request, top_frame, in_continuation, jt, biased)) {
     return;
   }
 
