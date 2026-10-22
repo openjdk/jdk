@@ -70,15 +70,16 @@ public class TestInexactFlatArrayCloneMaybeAtomic {
     public static void main(String[] args) {
         for (int i = 0; i < 20_000; i++) {
             boolean desireAtomic = (i & 1) == 0;
-            boolean flat = ValueClass.isFlatArray(desireAtomic ? ATOMIC : NON_ATOMIC);
+            MyValue[] source = desireAtomic ? ATOMIC : NON_ATOMIC;
+            boolean flat = ValueClass.isFlatArray(source);
             // When flattening is disabled, then we use references and that becomes atomic,
             // so we are not guaranteed to get non-atomic when we request it.
-            boolean atomic = ValueClass.isAtomicArray(desireAtomic ? ATOMIC : NON_ATOMIC);
+            boolean atomic = ValueClass.isAtomicArray(source);
             MyValue[] result = test(desireAtomic);
 
             // Some additional checks just to ensure the cloned array has
             // the expected properties.
-            if (result[0] != VALUE) {
+            if (result[0] != source[0]) {
                 throw new AssertionError("Unexpected clone element value");
             }
             if (ValueClass.isAtomicArray(result) != atomic) {

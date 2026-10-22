@@ -44,7 +44,7 @@ package compiler.valhalla.valuetypes;
 import jdk.internal.value.ValueClass;
 import jdk.internal.vm.annotation.LooselyConsistentValue;
 
-public class TestInexactFlatArrayCloneMaybeNull {
+public class TestInexactFlatArrayCloneMaybeNullable {
     @LooselyConsistentValue
     static value class MyValue {
         byte x;
@@ -70,12 +70,13 @@ public class TestInexactFlatArrayCloneMaybeNull {
     public static void main(String[] args) {
         for (int i = 0; i < 20_000; i++) {
             boolean nullFree = (i & 1) == 0;
-            boolean flat = ValueClass.isFlatArray(nullFree ? NULL_FREE : NULLABLE);
+            MyValue[] source = nullFree ? NULL_FREE : NULLABLE;
+            boolean flat = ValueClass.isFlatArray(source);
             MyValue[] result = test(nullFree);
 
             // Some additional checks just to ensure the cloned array has
             // the expected properties.
-            if (result[0] != VALUE && result[0] != null) {
+            if (result[0] != source[0]) {
                 throw new AssertionError("Unexpected clone element value");
             }
             if (!ValueClass.isAtomicArray(result)) {
