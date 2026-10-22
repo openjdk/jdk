@@ -917,8 +917,6 @@ class CallStaticJavaNode : public CallJavaNode {
   // If this is an uncommon trap guarded by some condition, is it safe to change the condition to a narrower condition?
   // See comment in PhaseIdealLoop::do_split_if()
   bool _safe_for_fold_compare;
-  bool _is_boxing_method;
-  bool _is_unboxing_method;
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
 
@@ -928,11 +926,9 @@ class CallStaticJavaNode : public CallJavaNode {
 
 public:
   CallStaticJavaNode(Compile* C, const TypeFunc* tf, address addr, ciMethod* method)
-    : CallJavaNode(tf, addr, method, TypePtr::BOTTOM, TypePtr::BOTTOM), _safe_for_fold_compare(true),
-      _is_boxing_method(C->eliminate_boxing() && (method != nullptr) && method->is_boxing_method()),
-      _is_unboxing_method(C->eliminate_boxing() && (method != nullptr) && method->is_unboxing_method()) {
+    : CallJavaNode(tf, addr, method, TypePtr::BOTTOM, TypePtr::BOTTOM), _safe_for_fold_compare(true) {
     init_class_id(Class_CallStaticJava);
-    if (_is_boxing_method || _is_unboxing_method) {
+    if (C->eliminate_boxing() && (method != nullptr) && (method->is_boxing_method() || method->is_unboxing_method())) {
       C->add_macro_node(this);
     }
     const TypeTuple *r = tf->range_sig();
@@ -947,7 +943,7 @@ public:
     }
   }
   CallStaticJavaNode(const TypeFunc* tf, address addr, const char* name, const TypePtr* out_adr_type, const TypePtr* in_adr_type)
-    : CallJavaNode(tf, addr, nullptr, out_adr_type, in_adr_type), _safe_for_fold_compare(true), _is_boxing_method(false), _is_unboxing_method(false) {
+    : CallJavaNode(tf, addr, nullptr, out_adr_type, in_adr_type), _safe_for_fold_compare(true) {
     init_class_id(Class_CallStaticJava);
     _name = name;
   }
@@ -958,11 +954,11 @@ public:
   static int extract_uncommon_trap_request(const Node* call);
 
   bool is_boxing_method() const {
-    return _is_boxing_method;
+    return Compile::current()->eliminate_boxing() && (method() != nullptr) && method()->is_boxing_method();
   }
 
   bool is_unboxing_method() const {
-    return _is_unboxing_method;
+    return Compile::current()->eliminate_boxing() && (method() != nullptr) && method()->is_unboxing_method();
   }
 
   // Late inlining modifies the JVMState, so we need to deep clone it
