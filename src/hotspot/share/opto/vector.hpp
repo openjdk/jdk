@@ -46,14 +46,12 @@ class PhaseVector : public Phase {
                                const TypeInstPtr* box_type,
                                const TypeVect* vect_type);
   void scalarize_vbox_nodes();
-  void scalarize_vbox_node(VectorBoxNode* vec_box);
+  void scalarize_vbox_node(VectorBoxNode* vec_box) const;
   void expand_vunbox_nodes();
   void expand_vunbox_node(VectorUnboxNode* vec_box);
   void eliminate_vbox_alloc_nodes();
   void eliminate_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc);
   void do_cleanup();
-  void scalarize_vector_boxes();
-  void expand_vector_boxes();
 
  public:
   PhaseVector(PhaseIterGVN& igvn) : Phase(Vector), _igvn(igvn) {}

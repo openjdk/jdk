@@ -2133,7 +2133,9 @@ class LIR_OpProfileValueType : public LIR_Op {
     , _obj(obj)
     , _flag(flag)
     , _tmp(tmp)
-    , _not_null(not_null) { }
+    , _not_null(not_null) {
+    assert(Arguments::is_valhalla_enabled(), "Should not be called without value types enabled");
+  }
 
   LIR_Opr      mdp()              const             { return _mdp;              }
   LIR_Opr      obj()              const             { return _obj;              }

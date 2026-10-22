@@ -34,12 +34,6 @@
  *
  * @run main/othervm -Xmx1g -Xlog:stringdedup -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
- *      -XX:+ShenandoahDegeneratedGC
- *      TestStringDedupStress
- *
- * @run main/othervm -Xmx1g -Xlog:stringdedup -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
- *      -XX:-ShenandoahDegeneratedGC
  *      TestStringDedupStress
  */
 
@@ -54,7 +48,6 @@
  *
  * @run main/othervm -Xmx1g -Xlog:stringdedup -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
- *      -XX:+ShenandoahDegeneratedGC
  *      -DtargetStrings=3000000
  *      TestStringDedupStress
  */

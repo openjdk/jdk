@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
 class ShenandoahCollectionSet;
 class ShenandoahHeap;
@@ -55,6 +56,10 @@ private:
   // Bytes reserved within this generation to hold evacuated objects from the collection set
   size_t _evacuation_reserve;
 
+  // Read by mutators, written by control thread. This records the id of the last gc cycle
+  // to collect this generation.
+  Atomic<size_t> _completed_gc_id;
+
 protected:
   ShenandoahFreeSet* _free_set;
   ShenandoahHeuristics* _heuristics;
@@ -67,6 +72,14 @@ public:
   ShenandoahGeneration(ShenandoahGenerationType type,
                        uint max_workers);
   ~ShenandoahGeneration();
+
+  void update_completed_gc_id(size_t gc_id) {
+    _completed_gc_id.store_relaxed(gc_id);
+  }
+
+  size_t completed_gc_id() const {
+    return _completed_gc_id.load_relaxed();
+  }
 
   inline bool is_young() const                 { return _type == YOUNG; }
   inline bool is_old() const                   { return _type == OLD; }
@@ -109,11 +122,8 @@ public:
   template <bool FOR_CURRENT_CYCLE, bool FULL_GC = false>
   void reset_mark_bitmap();
 
-  // Used by concurrent and degenerated GC to reset remembered set.
+  // Used by concurrent GC to reset remembered set.
   void swap_card_tables();
-
-  // Update the read cards with the state of the write table (write table is not cleared).
-  void merge_write_table();
 
   // Called before init mark, expected to prepare regions for marking.
   virtual void prepare_gc();
@@ -135,7 +145,7 @@ public:
   //  been set aside to hold objects evacuated from the young-gen collection set.  Conservatively, this value
   //  equals the entire amount of live young-gen memory within the collection set, even though some of this memory
   //  will likely be promoted.
-  virtual void prepare_regions_and_collection_set(bool concurrent);
+  virtual void prepare_regions_and_collection_set();
 
   // Cancel marking (used by Full collect and when cancelling cycle).
   virtual void cancel_marking();
@@ -179,8 +189,6 @@ public:
 
   virtual bool is_concurrent_mark_in_progress() = 0;
   void confirm_heuristics_mode();
-
-  virtual void record_success_concurrent(bool abbreviated);
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP

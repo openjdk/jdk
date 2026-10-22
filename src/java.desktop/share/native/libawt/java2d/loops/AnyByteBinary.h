@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,16 +190,14 @@
         DSTTYPE ## DataType *DSTPTR = (DSTTYPE ## DataType *) (DSTBASE); \
         jint srcScan = (SRCINFO)->scanStride; \
         jint dstScan = (DSTINFO)->scanStride; \
-        jint srcx1 = (SRCINFO)->bounds.x1; \
-        jint dstx1 = (DSTINFO)->bounds.x1; \
         Init ## DSTTYPE ## StoreVarsY(DSTPREFIX, DSTINFO); \
         srcScan -= (WIDTH) * SRCTYPE ## PixelStride; \
         dstScan -= (WIDTH) * DSTTYPE ## PixelStride; \
         do { \
             Declare ## SRCTYPE ## InitialLoadVars(SRCINFO, SRCPTR, SRCPREFIX, \
-                                                  srcx1) \
+                                                  (SRCINFO)->bounds.x1) \
             Declare ## DSTTYPE ## InitialLoadVars(DSTINFO, DSTPTR, DSTPREFIX, \
-                                                  dstx1) \
+                                                  (DSTINFO)->bounds.x1) \
             juint w = WIDTH; \
             Init ## DSTTYPE ## StoreVarsX(DSTPREFIX, DSTINFO); \
             do { \
@@ -265,7 +263,6 @@ void NAME_XOR_BLIT(SRC, DST)(void *srcBase, void *dstBase, \
                              CompositeInfo *pCompInfo) \
 { \
     jint xorpixel = pCompInfo->details.xorPixel; \
-    juint alphamask = pCompInfo->alphaMask; \
     Declare ## SRC ## LoadVars(SrcRead) \
     Declare ## DST ## StoreVars(DstWrite) \
  \
@@ -276,7 +273,7 @@ void NAME_XOR_BLIT(SRC, DST)(void *srcBase, void *dstBase, \
                           BBXorVia1IntArgb(pSrc, SRC, SrcRead, \
                                            pDst, DST, DstWrite, \
                                            0, xorpixel, \
-                                           alphamask, pDstInfo)); \
+                                           pCompInfo->alphaMask, pDstInfo)); \
 }
 
 #define DEFINE_BYTE_BINARY_SOLID_FILLRECT(DST) \
@@ -387,7 +384,6 @@ void NAME_XOR_FILLRECT(DST)(SurfaceDataRasInfo *pRasInfo, \
                             CompositeInfo *pCompInfo) \
 { \
     jint xorpixel = pCompInfo->details.xorPixel; \
-    juint alphamask = pCompInfo->alphaMask; \
     DST ## DataType *pPix; \
     jint scan = pRasInfo->scanStride; \
     juint height = hiy - loy; \
@@ -400,7 +396,7 @@ void NAME_XOR_FILLRECT(DST)(SurfaceDataRasInfo *pRasInfo, \
         do { \
             InitialLoad ## DST(pPix, DstPix); \
             Xor ## DST ## PixelData(pPix, 0, DstPix, \
-                                    pixel, xorpixel, alphamask); \
+                                    pixel, xorpixel, pCompInfo->alphaMask); \
             ShiftBits ## DST(DstPix); \
         } while (--w > 0); \
         FinalStore ## DST(pPix, DstPix); \
@@ -417,7 +413,6 @@ void NAME_XOR_FILLSPANS(DST)(SurfaceDataRasInfo *pRasInfo, \
 { \
     void *pBase = pRasInfo->rasBase; \
     jint xorpixel = pCompInfo->details.xorPixel; \
-    juint alphamask = pCompInfo->alphaMask; \
     jint scan = pRasInfo->scanStride; \
     jint bbox[4]; \
  \
@@ -435,7 +430,7 @@ void NAME_XOR_FILLSPANS(DST)(SurfaceDataRasInfo *pRasInfo, \
             do { \
                 InitialLoad ## DST(pPix, DstPix); \
                 Xor ## DST ## PixelData(pPix, 0, DstPix, \
-                                        pixel, xorpixel, alphamask); \
+                                        pixel, xorpixel, pCompInfo->alphaMask); \
                 ShiftBits ## DST(DstPix); \
             } while (--relx > 0); \
             FinalStore ## DST(pPix, DstPix); \
@@ -454,7 +449,6 @@ void NAME_XOR_DRAWLINE(DST)(SurfaceDataRasInfo *pRasInfo, \
                             CompositeInfo *pCompInfo) \
 { \
     jint xorpixel = pCompInfo->details.xorPixel; \
-    juint alphamask = pCompInfo->alphaMask; \
     jint scan = pRasInfo->scanStride; \
     DST ## DataType *pPix = PtrCoord(pRasInfo->rasBase, \
                                      x1, DST ## PixelStride, \
@@ -468,7 +462,7 @@ void NAME_XOR_DRAWLINE(DST)(SurfaceDataRasInfo *pRasInfo, \
         do { \
             Declare ## DST ## InitialLoadVars(pRasInfo, pPix, DstPix, x1) \
             Xor ## DST ## PixelData(pPix, 0, DstPix, \
-                                    pixel, xorpixel, alphamask); \
+                                    pixel, xorpixel, pCompInfo->alphaMask); \
             FinalStore ## DST(pPix, DstPix); \
             x1 += bumpmajor; \
         } while (--steps > 0); \
@@ -476,7 +470,7 @@ void NAME_XOR_DRAWLINE(DST)(SurfaceDataRasInfo *pRasInfo, \
         do { \
             Declare ## DST ## InitialLoadVars(pRasInfo, pPix, DstPix, x1) \
             Xor ## DST ## PixelData(pPix, 0, DstPix, \
-                                    pixel, xorpixel, alphamask); \
+                                    pixel, xorpixel, pCompInfo->alphaMask); \
             FinalStore ## DST(pPix, DstPix); \
             if (error < 0) { \
                 x1 += bumpmajor; \
@@ -599,7 +593,6 @@ void NAME_XOR_DRAWGLYPHLIST(DST)(SurfaceDataRasInfo *pRasInfo, \
     jint glyphCounter; \
     jint scan = pRasInfo->scanStride; \
     jint xorpixel = pCompInfo->details.xorPixel; \
-    juint alphamask = pCompInfo->alphaMask; \
     DST ## DataType *pPix; \
  \
     for (glyphCounter = 0; glyphCounter < totalGlyphs; glyphCounter++) { \
@@ -618,7 +611,7 @@ void NAME_XOR_DRAWGLYPHLIST(DST)(SurfaceDataRasInfo *pRasInfo, \
                 InitialLoad ## DST(pPix, DstPix); \
                 if (pixels[x]) { \
                     Xor ## DST ## PixelData(pPix, 0, DstPix, \
-                                            fgpixel, xorpixel, alphamask); \
+                                            fgpixel, xorpixel, pCompInfo->alphaMask); \
                 } \
                 ShiftBits ## DST(DstPix); \
             } while (++x < width); \
@@ -646,8 +639,6 @@ void NAME_ALPHA_MASKBLIT(SRC, DST) \
     jint srcScan = pSrcInfo->scanStride; \
     jint dstScan = pDstInfo->scanStride; \
     jboolean loadsrc, loaddst; \
-    jint srcx1 = pSrcInfo->bounds.x1; \
-    jint dstx1 = pDstInfo->bounds.x1; \
     SRC ## DataType *pSrc = (SRC ## DataType *) (srcBase); \
     DST ## DataType *pDst = (DST ## DataType *) (dstBase); \
     Declare ## SRC ## AlphaLoadData(SrcRead) \
@@ -674,8 +665,8 @@ void NAME_ALPHA_MASKBLIT(SRC, DST) \
  \
     Init ## DST ## StoreVarsY(DstWrite, pDstInfo); \
     do { \
-        Declare ## SRC ## InitialLoadVars(pSrcInfo, pSrc, SrcRead, srcx1) \
-        Declare ## DST ## InitialLoadVars(pDstInfo, pDst, DstWrite, dstx1) \
+        Declare ## SRC ## InitialLoadVars(pSrcInfo, pSrc, SrcRead, pSrcInfo->bounds.x1) \
+        Declare ## DST ## InitialLoadVars(pDstInfo, pDst, DstWrite, pDstInfo->bounds.x1) \
         jint w = width; \
         Init ## DST ## StoreVarsX(DstWrite, pDstInfo); \
         do { \

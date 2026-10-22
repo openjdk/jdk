@@ -178,7 +178,6 @@ public:
 
 private:
   typedef struct {
-    TYPES                dual_type;
     BasicType            basic_type;
     const char*          msg;
     bool                 isa_oop;
@@ -387,7 +386,7 @@ public:
   // TRUE if type is a singleton
   virtual bool singleton(void) const;
 
-  // TRUE if type is above the lattice centerline, and is therefore vacuous
+  // TRUE if type is therefore vacuous, i.e. it is not inhabited, i.e. concretization is empty
   virtual bool empty(void) const;
 
   // Return a hash for this type.  The hash function is public so ConNode
@@ -431,11 +430,6 @@ public:
     return _const_basic_type[type];
   }
 
-  // For two instance arrays of same dimension, return the base element types.
-  // Otherwise or if the arrays have different dimensions, return null.
-  static void get_arrays_base_elements(const Type *a1, const Type *a2,
-                                       const TypeInstPtr **e1, const TypeInstPtr **e2);
-
   // Mapping to the array element's basic type.
   BasicType array_element_basic_type() const;
 
@@ -462,17 +456,16 @@ public:
   }
 
   // Convenience common pre-built types.
-  static const Type *ABIO;
-  static const Type *BOTTOM;
-  static const Type *CONTROL;
-  static const Type *DOUBLE;
-  static const Type *FLOAT;
-  static const Type *HALF_FLOAT;
-  static const Type *HALF;
-  static const Type *MEMORY;
-  static const Type *MULTI;
-  static const Type *RETURN_ADDRESS;
-  static const Type *TOP;
+  static const Type* ABIO;
+  static const Type* BOTTOM;
+  static const Type* CONTROL;
+  static const Type* DOUBLE;
+  static const Type* FLOAT;
+  static const Type* HALF_FLOAT;
+  static const Type* HALF;
+  static const Type* MEMORY;
+  static const Type* RETURN_ADDRESS;
+  static const Type* TOP;
 
   // Mapping from compiler type to VM BasicType
   BasicType basic_type() const       { return _type_info[_base].basic_type; }
@@ -550,12 +543,10 @@ public:
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
   // Convenience common pre-built types.
-  static const TypeF *MAX;
-  static const TypeF *MIN;
-  static const TypeF *ZERO; // positive zero only
-  static const TypeF *ONE;
-  static const TypeF *POS_INF;
-  static const TypeF *NEG_INF;
+  static const TypeF* ZERO; // positive zero only
+  static const TypeF* ONE;
+  static const TypeF* POS_INF;
+  static const TypeF* NEG_INF;
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
 #endif
@@ -582,8 +573,6 @@ public:
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
   // Convenience common pre-built types.
-  static const TypeH* MAX;
-  static const TypeH* MIN;
   static const TypeH* ZERO; // positive zero only
   static const TypeH* ONE;
   static const TypeH* POS_INF;
@@ -613,12 +602,10 @@ public:
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
   // Convenience common pre-built types.
-  static const TypeD *MAX;
-  static const TypeD *MIN;
-  static const TypeD *ZERO; // positive zero only
-  static const TypeD *ONE;
-  static const TypeD *POS_INF;
-  static const TypeD *NEG_INF;
+  static const TypeD* ZERO; // positive zero only
+  static const TypeD* ONE;
+  static const TypeD* POS_INF;
+  static const TypeD* NEG_INF;
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
 #endif
@@ -947,10 +934,8 @@ public:
   static const TypeLong* ONE;
   static const TypeLong* NON_ZERO;
   static const TypeLong* POS;
-  static const TypeLong* NEG;
   static const TypeLong* LONG;
   static const TypeLong* INT;    // 32-bit subrange [min_jint..max_jint]
-  static const TypeLong* UINT;   // 32-bit unsigned [0..max_juint]
   static const TypeLong* TYPE_DOMAIN; // alias for TypeLong::LONG
 
   // static convenience methods.
@@ -1197,7 +1182,7 @@ protected:
   static const TypeInterfaces* interfaces(ciKlass*& k, bool klass, bool interface, bool array, InterfaceHandling interface_handling);
 
 public:
-  enum PTR { TopPTR, AnyNull, Constant, Null, NotNull, BotPTR, lastPTR };
+  enum PTR { TopPTR, Constant, Null, NotNull, BotPTR, lastPTR };
 
   enum FlatInArray {
     TopFlat,        // Dedicated top element. Result when joining Flat and NotFlat.
@@ -1213,13 +1198,12 @@ protected:
           int inline_depth = InlineDepthBottom) :
     Type(t), _speculative(speculative), _inline_depth(inline_depth), _offset(offset), _ptr(ptr), _reloc(reloc) {
     assert(t == AnyPtr || (ptr != TopPTR && ptr != Null), "Top and Null must be AnyPtr");
-    assert(ptr != AnyNull, "Nonsensical PTR");
     assert(ptr == TopPTR || offset != Offset::top, "only TopPTR can have top offset");
     assert(static_cast<uint>(ptr) < static_cast<uint>(lastPTR), "out of bounds");
   }
   static const PTR ptr_meet[lastPTR][lastPTR];
-  static const PTR ptr_dual[lastPTR];
-  static const char * const ptr_msg[lastPTR];
+  static const PTR ptr_join[lastPTR][lastPTR];
+  static const char* const ptr_msg[lastPTR];
 
   static const char* const flat_in_array_msg[Uninitialized];
 
@@ -1299,14 +1283,8 @@ public:
   Offset join_offset(int offset) const;
 
   // meet and join over pointer equivalence sets
-  PTR meet_ptr( const PTR in_ptr ) const { return ptr_meet[in_ptr][ptr()]; }
-  PTR dual_ptr()                   const { return ptr_dual[ptr()];      }
-
-  // This is textually confusing unless one recalls that
-  // join(t) == dual()->meet(t->dual())->dual().
-  PTR join_ptr( const PTR in_ptr ) const {
-    return ptr_dual[ ptr_meet[ ptr_dual[in_ptr] ] [ dual_ptr() ] ];
-  }
+  PTR meet_ptr(const PTR in_ptr) const { return ptr_meet[in_ptr][ptr()]; }
+  PTR join_ptr(const PTR in_ptr) const { return ptr_join[in_ptr][ptr()]; }
 
   // Speculative type helper methods.
   virtual const TypePtr* speculative() const { return _speculative; }
@@ -1340,13 +1318,13 @@ public:
   virtual bool is_not_null_free()   const { return false; }
   virtual bool is_atomic()          const { return false; }
 
-  // Tests for relation to centerline of type lattice:
-  static bool above_centerline(PTR ptr) { return (ptr <= AnyNull); }
-  static bool below_centerline(PTR ptr) { return (ptr >= NotNull); }
+  static bool is_top(PTR ptr) { return ptr == TopPTR; }
+  static bool is_uniquely_inhabited(PTR ptr) { return ptr == Null || ptr == Constant; }
+  static bool is_at_most_uniquely_inhabited(PTR ptr) { return is_top(ptr) || is_uniquely_inhabited(ptr); }
   // Convenience common pre-built types.
-  static const TypePtr *NULL_PTR;
-  static const TypePtr *NOTNULL;
-  static const TypePtr *BOTTOM;
+  static const TypePtr* NULL_PTR;
+  static const TypePtr* NOTNULL;
+  static const TypePtr* BOTTOM;
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st  ) const;
 #endif
@@ -1805,10 +1783,10 @@ public:
   virtual const Type* xjoin_helper(const Type* t) const;
 
   // Value type array properties
-  const TypeAryPtr* cast_to_flat(bool flat) const;
-  const TypeAryPtr* cast_to_not_flat(bool not_flat = true) const;
-  const TypeAryPtr* cast_to_null_free(bool null_free) const;
-  const TypeAryPtr* cast_to_not_null_free(bool not_null_free = true) const;
+  const TypeAryPtr* cast_to_flat() const;
+  const TypeAryPtr* cast_to_not_flat() const;
+  const TypeAryPtr* cast_to_null_free() const;
+  const TypeAryPtr* cast_to_not_null_free() const;
   const TypeAryPtr* update_properties(const TypeAryPtr* new_type) const;
   jint flat_layout_helper() const;
   int flat_elem_size() const;
@@ -1834,17 +1812,21 @@ public:
 
   // Convenience common pre-built types.
   static const TypeAryPtr* BOTTOM;
-  static const TypeAryPtr *RANGE;
-  static const TypeAryPtr *OOPS;
-  static const TypeAryPtr *NARROWOOPS;
-  static const TypeAryPtr *BYTES;
-  static const TypeAryPtr *SHORTS;
-  static const TypeAryPtr *CHARS;
-  static const TypeAryPtr *INTS;
-  static const TypeAryPtr *LONGS;
-  static const TypeAryPtr *FLOATS;
-  static const TypeAryPtr *DOUBLES;
-  static const TypeAryPtr *INLINES;
+  static const TypeAryPtr* RANGE;
+  static const TypeAryPtr* OOPS;
+  static const TypeAryPtr* NARROWOOPS;
+  static const TypeAryPtr* BYTES;
+  static const TypeAryPtr* SHORTS;
+  static const TypeAryPtr* CHARS;
+  static const TypeAryPtr* INTS;
+  static const TypeAryPtr* LONGS;
+  static const TypeAryPtr* FLOATS;
+  static const TypeAryPtr* DOUBLES;
+  static const TypeAryPtr* INLINES;
+  static const TypeAryPtr* REFERENCES;
+  static const TypeAryPtr* NULL_FREES;
+  static const TypeAryPtr* NULLABLES;
+
   // selects one of the above:
   static const TypeAryPtr *get_array_body_type(BasicType elem) {
     assert((uint)elem <= T_CONFLICT && _array_body_type[elem] != nullptr, "bad elem type");
@@ -2110,7 +2092,6 @@ public:
   static const TypeAryKlassPtr* make(ciKlass* klass, InterfaceHandling interface_handling);
 
   const TypeAryKlassPtr* cast_to_non_refined() const;
-  const TypeAryKlassPtr* cast_to_default_refined() const;
   const TypeAryKlassPtr* cast_to_refined_array_klass_ptr(bool refined = true) const;
 
   const Type *elem() const { return _elem; }
