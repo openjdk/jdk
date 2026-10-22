@@ -60,8 +60,8 @@ public class TestInexactFlatArrayCloneMaybeAtomic {
     static final MyValue[] ATOMIC = (MyValue[])ValueClass.newNullRestrictedAtomicArray(MyValue.class, 1, VALUE);
     static final MyValue[] NON_ATOMIC = (MyValue[])ValueClass.newNullRestrictedNonAtomicArray(MyValue.class, 1, VALUE);
 
-    static MyValue[] test(boolean atomic) {
-        MyValue[] source = atomic ? ATOMIC : NON_ATOMIC;
+    static MyValue[] test(boolean desireAtomic) {
+        MyValue[] source = desireAtomic ? ATOMIC : NON_ATOMIC;
         // Clone a possibly flat array that is either atomic or non-atomic.
         // Hence, the layout of the array element is not exact.
         return source.clone();
@@ -69,9 +69,12 @@ public class TestInexactFlatArrayCloneMaybeAtomic {
 
     public static void main(String[] args) {
         for (int i = 0; i < 20_000; i++) {
-            boolean atomic = (i & 1) == 0;
-            boolean flat = ValueClass.isFlatArray(atomic ? ATOMIC : NON_ATOMIC);
-            MyValue[] result = test(atomic);
+            boolean desireAtomic = (i & 1) == 0;
+            boolean flat = ValueClass.isFlatArray(desireAtomic ? ATOMIC : NON_ATOMIC);
+            // When flattening is disabled, then we use references and that becomes atomic,
+            // so we are not guaranteed to get non-atomic when we request it.
+            boolean atomic = ValueClass.isAtomicArray(desireAtomic ? ATOMIC : NON_ATOMIC);
+            MyValue[] result = test(desireAtomic);
 
             // Some additional checks just to ensure the cloned array has
             // the expected properties.

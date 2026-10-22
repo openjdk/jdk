@@ -91,8 +91,7 @@ public class TestFlatArrayInitializationProj {
             Asserts.assertTrue(src[i] == dst[i]);
         }
         // Additional checks for flat array properties.
-        Asserts.assertTrue(ValueClass.isFlatArray(src));
-        Asserts.assertTrue(ValueClass.isFlatArray(dst));
+        Asserts.assertEQ(ValueClass.isFlatArray(src), ValueClass.isFlatArray(dst));
         Asserts.assertEQ(ValueClass.isNullRestrictedArray(src), ValueClass.isNullRestrictedArray(dst));
         Asserts.assertEQ(ValueClass.isAtomicArray(src), ValueClass.isAtomicArray(dst));
     }
