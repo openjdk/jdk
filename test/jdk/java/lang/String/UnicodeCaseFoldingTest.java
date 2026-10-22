@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary tests unicode case-folding based String comparison and equality
- * @bug 4397357
+ * @bug 4397357 8372208
  * @library /lib/testlibrary/java/lang
  * @modules java.base/jdk.internal.lang:+open
  * @run junit/othervm
@@ -283,6 +283,26 @@ public class UnicodeCaseFoldingTest {
         assertEquals(0, folded.compareToFoldCase(s));
         assertEquals(true, s.equalsFoldCase(folded));
         assertEquals(true, folded.equalsFoldCase(s));
+    }
+
+    @Test
+    void testFoldCaseAcrossDifferentUtf16Widths() {
+        String ligature = new String(Character.toChars(0x1DF95));
+
+        String[][] pairs = {
+            {ligature, "\u1E9E"},                  // Both fold to ss
+            {"\u0100" + ligature, "\u0100\u00DF"}  // Both fold to āss
+        };
+
+        for (String[] pair : pairs) {
+            String a = pair[0];
+            String b = pair[1];
+
+            assertEquals(0, a.compareToFoldCase(b));
+            assertEquals(0, b.compareToFoldCase(a));
+            assertEquals(true, a.equalsFoldCase(b));
+            assertEquals(true, b.equalsFoldCase(a));
+        }
     }
 
     // helper to test the integrity of folding mapping

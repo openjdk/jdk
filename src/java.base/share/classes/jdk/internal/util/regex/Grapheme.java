@@ -63,6 +63,7 @@ public final class Grapheme {
                     ret += advance;
                     ch0 = Character.codePointBefore(src, ret);
                     t0 = getType(ch0);
+                    gb11 = false;
                     continue;
                 }
             }
