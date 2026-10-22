@@ -5,7 +5,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
 -->
 
 <!--
-  Copyright © 1991-2025 Unicode, Inc.
+  Copyright © 1991-2026 Unicode, Inc.
   For terms of use, see http://www.unicode.org/copyright.html
   SPDX-License-Identifier: Unicode-3.0
   CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -314,6 +314,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
           <xs:element minOccurs="0" ref="variants"/>
           <xs:element minOccurs="0" ref="keys"/>
           <xs:element minOccurs="0" ref="types"/>
+          <xs:element minOccurs="0" ref="typeValues"/>
           <xs:element minOccurs="0" ref="transformNames"/>
           <xs:element minOccurs="0" ref="measurementSystemNames"/>
           <xs:element minOccurs="0" ref="codePatterns"/>
@@ -719,6 +720,36 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
   
   
   
+  
+  
+  
+  <xs:element name="typeValues">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="alias"/>
+        <xs:choice maxOccurs="unbounded" minOccurs="0">
+          <xs:element ref="typeValue"/>
+          <xs:element ref="special"/>
+        </xs:choice>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="typeValue">
+    <xs:complexType mixed="true">
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
   
   
   
@@ -1168,11 +1199,13 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
         <xs:sequence>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="exemplarCharacters"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="ellipsis"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="nestedBracketReplacement"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="moreInformation"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="stopwords"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="indexLabels"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="mapping"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="parseLenients"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="placeholderBoundarySpacing"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="special"/>
         </xs:sequence>
       </xs:choice>
@@ -1279,6 +1312,27 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
       <xs:attribute name="references"/>
     </xs:complexType>
   </xs:element>
+  
+  
+  
+  <xs:element name="nestedBracketReplacement">
+    <xs:complexType mixed="true">
+      <xs:attribute name="bracket" use="required"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
   
   
   
@@ -1571,6 +1625,40 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
   <xs:element name="parseLenient">
     <xs:complexType mixed="true">
       <xs:attribute name="sample" use="required"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <!-- ######################################################### -->
+  <xs:element name="placeholderBoundarySpacing">
+    <xs:complexType mixed="true">
+      <xs:attribute name="type" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="digit-digit"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="scopes" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="datetime"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute default="preserve" ref="xml:space"/>
       <xs:attribute name="alt" type="xs:NMTOKENS"/>
       <xs:attribute name="draft">
         <xs:simpleType>
@@ -2089,6 +2177,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
           <xs:element minOccurs="0" ref="monthNames"/>
           <xs:element minOccurs="0" ref="monthAbbr"/>
           <xs:element minOccurs="0" ref="monthPatterns"/>
+          <xs:element minOccurs="0" ref="dayOfMonths"/>
           <xs:element minOccurs="0" ref="days"/>
           <xs:element minOccurs="0" ref="dayNames"/>
           <xs:element minOccurs="0" ref="dayAbbr"/>
@@ -2496,6 +2585,100 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
       <xs:attribute name="references"/>
     </xs:complexType>
   </xs:element>
+  
+  
+  
+  <xs:element name="dayOfMonths">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="alias"/>
+        <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="default"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="dayOfMonthContext"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="special"/>
+        </xs:sequence>
+      </xs:choice>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="dayOfMonthContext">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="alias"/>
+        <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="default"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="dayOfMonthWidth"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="special"/>
+        </xs:sequence>
+      </xs:choice>
+      <xs:attribute name="type" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="format"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="dayOfMonthWidth">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="alias"/>
+        <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="dayOfMonth"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="special"/>
+        </xs:sequence>
+      </xs:choice>
+      <xs:attribute name="type" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="abbreviated"/>
+            <xs:enumeration value="wide"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="dayOfMonth">
+    <xs:complexType mixed="true">
+      <xs:attribute name="type" type="xs:NMTOKEN"/>
+      <xs:attribute name="ordinal">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="zero"/>
+            <xs:enumeration value="one"/>
+            <xs:enumeration value="two"/>
+            <xs:enumeration value="few"/>
+            <xs:enumeration value="many"/>
+            <xs:enumeration value="other"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <!-- There must be at least one of type or ordinal, but that constraint can't be expressed in the DTD -->
+  
   
   
   
@@ -3909,6 +4092,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
         <xs:element ref="alias"/>
         <xs:sequence>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="default"/>
+          <xs:element minOccurs="0" ref="numericSeparators"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="dateTimeFormatLength"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="availableFormats"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="appendItems"/>
@@ -3929,6 +4113,60 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
         </xs:simpleType>
       </xs:attribute>
       <xs:attribute name="validSubLocales"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="numericSeparators">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="alias"/>
+        <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="default"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="numericDateSeparator"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="numericTimeSeparator"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="special"/>
+        </xs:sequence>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="numericDateSeparator">
+    <xs:complexType mixed="true">
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="numericTimeSeparator">
+    <xs:complexType mixed="true">
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
     </xs:complexType>
   </xs:element>
   
@@ -4148,6 +4386,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
       <xs:choice>
         <xs:element ref="alias"/>
         <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="intervalFormatRanges"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="intervalFormatFallback"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="intervalFormatItem"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="special"/>
@@ -4170,6 +4409,38 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
   </xs:element>
   
   
+  
+  
+  
+  
+  <xs:element name="intervalFormatRanges">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="alias"/>
+        <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="intervalFormatRange"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="special"/>
+        </xs:sequence>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="intervalFormatRange">
+    <xs:complexType mixed="true">
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
   
   
   
@@ -4520,6 +4791,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="gmtFormat"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="gmtZeroFormat"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="gmtUnknownFormat"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="dualOffsetFormat"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="regionFormat"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="fallbackFormat"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="fallbackRegionFormat"/>
@@ -4642,7 +4914,30 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
   
   
   
+  
   <xs:element name="gmtUnknownFormat">
+    <xs:complexType mixed="true">
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="dualOffsetFormat">
     <xs:complexType mixed="true">
       <xs:attribute name="alt" type="xs:NMTOKENS"/>
       <xs:attribute name="draft">
@@ -6504,12 +6799,14 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
       </xs:attribute>
       <xs:attribute name="references"/>
       <xs:attribute name="validSubLocales"/>
+      <xs:attribute name="numberSystem"/>
     </xs:complexType>
   </xs:element>
   <!--
     # warning: pattern appears twice in the above. The first is for consistency with all other cases of
     pattern + displayName; the second is for backwards compatibility
   -->
+  
   
   
   

@@ -1,8 +1,26 @@
-﻿UNICODE LICENSE V3
-
 COPYRIGHT AND PERMISSION NOTICE
 
-Copyright © 2019-2025 Unicode, Inc.
+Copyright © 2001–2026 Unicode, Inc.
+
+Unicode Technical Standard #35, Unicode Locale Data Markup Language
+(LDML) made available in this repository is protected by copyright, and
+permission must be obtained from Unicode, Inc. prior to any
+reproduction, modification, or other use not permitted by the Unicode
+Terms of Use <https://www.unicode.org/copyright.html>. Specifically, you
+may make copies of this publication and may annotate and translate it
+solely for personal or internal business purposes and not for public
+distribution, provided that any such permitted copies and modifications
+fully reproduce all copyright and other legal notices contained in the
+original. You may not make copies of or modifications to this
+publication for public distribution, or incorporate it in whole or in
+part into any product or publication without the express written
+permission of Unicode. Notwithstanding the foregoing, you may within
+this repository provide comments and propose changes to this standard
+and may make copies/forks solely for such purposes provided that you
+reproduce this copyright notice and these terms of use in any such
+copy/fork.
+
+All other content in this repo is released under UNICODE LICENSE V3
 
 NOTICE TO USER: Carefully read the following legal agreement. BY
 DOWNLOADING, INSTALLING, COPYING OR OTHERWISE USING DATA FILES, AND/OR

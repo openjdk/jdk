@@ -32,6 +32,7 @@ bua ;	basic ;	Buriat
 ca ;	modern ;	Catalan
 ceb ;	moderate ;	Cebuano
 chr ;	modern ;	Cherokee
+ckb ;	basic ;	Central Kurdish
 cop ;	moderate ;	Coptic
 cs ;	modern ;	Czech
 csw ;	basic ;	Swampy Cree
@@ -92,6 +93,7 @@ kok ;	modern ;	Konkani
 kok_Latn ;	basic ;	Konkani (Latin)
 ks ;	basic ;	Kashmiri
 ks_Deva ;	basic ;	Kashmiri (Devanagari)
+ksh ;	basic ;	Colognian
 ku ;	basic ;	Kurdish
 kxv ;	basic ;	Kuvi
 kxv_Deva ;	basic ;	Kuvi (Devanagari)
@@ -129,12 +131,13 @@ pa ;	modern ;	Punjabi
 pcm ;	modern ;	Nigerian Pidgin
 pl ;	modern ;	Polish
 pms ;	basic ;	Piedmontese
+prg ;	basic ;	Prussian
 ps ;	modern ;	Pashto
 pt ;	modern ;	Portuguese
 qu ;	modern ;	Quechua
 quc ;	basic ;	Kʼicheʼ
 raj ;	basic ;	Rajasthani
-rm ;	modern ;	Romansh
+rm ;	moderate ;	Romansh
 ro ;	modern ;	Romanian
 ru ;	modern ;	Russian
 rw ;	basic ;	Kinyarwanda

@@ -1024,24 +1024,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@METADATA-->
 
 <!ELEMENT dayOfMonths ( alias | ( default*, dayOfMonthContext*, special* ) ) >
+    <!--@TECHPREVIEW-->
 <!ATTLIST dayOfMonths alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 
 <!ELEMENT dayOfMonthContext ( alias | ( default*, dayOfMonthWidth*, special* ) ) >
+    <!--@TECHPREVIEW-->
 <!ATTLIST dayOfMonthContext type (format) #REQUIRED >
 <!ATTLIST dayOfMonthContext alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 
 <!ELEMENT dayOfMonthWidth ( alias | ( dayOfMonth*, special* ) ) >
+    <!--@TECHPREVIEW-->
 <!ATTLIST dayOfMonthWidth type (abbreviated | wide) #REQUIRED >
 <!ATTLIST dayOfMonthWidth alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 
 <!ELEMENT dayOfMonth ( #PCDATA ) >
-	<!-- There must be at least one of type or ordinal, but that constraint can't be expressed in the DTD -->
+    <!-- There must be at least one of type or ordinal, but that constraint can't be expressed in the DTD -->
+    <!--@TECHPREVIEW-->
 <!ATTLIST dayOfMonth type NMTOKEN #IMPLIED >
     <!--@MATCH:literal/1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32-->
-<!ATTLIST dayOfMonth ordinal (zero | one | two | few | many | other) #IMPLIED>
+<!ATTLIST dayOfMonth ordinal (zero | one | two | few | many | other) #IMPLIED >
 <!ATTLIST dayOfMonth alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST dayOfMonth draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -1570,9 +1574,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@VALUE-->
     <!--@DEPRECATED-->
 
-<!ELEMENT numericSeparators ( alias | ( default*, numericDateSeparator*, numericTimeSeparator*, special*)) >
+<!ELEMENT numericSeparators ( alias | ( default*, numericDateSeparator*, numericTimeSeparator*, special* ) ) >
+    <!--@TECHPREVIEW-->
 
 <!ELEMENT numericDateSeparator ( #PCDATA ) >
+    <!--@TECHPREVIEW-->
 <!ATTLIST numericDateSeparator alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST numericDateSeparator draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
@@ -1581,6 +1587,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@METADATA-->
 
 <!ELEMENT numericTimeSeparator ( #PCDATA ) >
+    <!--@TECHPREVIEW-->
 <!ATTLIST numericTimeSeparator alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST numericTimeSeparator draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
@@ -1684,7 +1691,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT intervalFormatRange ( #PCDATA ) >
 <!ATTLIST intervalFormatRange type NMTOKEN #REQUIRED >
-    <!--@MATCH:literal/numeric, non-numeric, mixed -->
+    <!--@MATCH:literal/numeric, non-numeric, mixed-->
 <!ATTLIST intervalFormatRange alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST intervalFormatRange draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
