@@ -41,7 +41,7 @@ import static compiler.lib.generators.Generators.*;
  * @summary Test long limits in int counted loops are speculatively converted
  *          to int for counted loop optimizations - deoptimization traps.
  * @requires vm.compiler2.enabled
- * @requires (vm.opt.StressLongCountedLoop == null | vm.opt.StressLongCountedLoop != 0)
+ * @requires (vm.opt.StressLongCountedLoop == null | vm.opt.StressLongCountedLoop == 0)
  * @requires (vm.opt.PerMethodTrapLimit == null | vm.opt.PerMethodTrapLimit >= 5)
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox

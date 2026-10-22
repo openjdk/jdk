@@ -51,8 +51,8 @@ import static compiler.lib.template_framework.Template.*;
  * @key randomness stress
  * @summary Test long limits in int counted loops are speculatively converted
  *          to int for counted loop optimizations - stress test with
- *          StressLongCountedLoop to exercise the int -> long -> speculatively
- *          narrow back to int -> deopt -> recompile cycle.
+ *          StressLongCountedLoop to trigger more speculative-narrowing 
+ *          deoptimizations.
  * @requires vm.compiler2.enabled & vm.debug
  * @library /test/lib /
  * @run driver ${test.main.class} stress
