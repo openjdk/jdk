@@ -2845,7 +2845,7 @@ bool CompiledEntrySignature::check_supers_and_deoptimize(int arg_num) {
   assert(JavaThread::current()->thread_state() == _thread_in_vm, "must be in vm state");
 
   bool scalar_super = false;
-  bool non_scalar = false; //_method->is_native();
+  bool non_scalar = _method->is_native();
 
   GrowableArray<Method*>* supers = get_supers();
   for (int i = 0; i < supers->length(); ++i) {
