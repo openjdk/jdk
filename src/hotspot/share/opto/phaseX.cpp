@@ -732,9 +732,7 @@ Node* PhaseGVN::transform(Node* n) {
       set_progress();
     }
 #endif
-    set_type(k, t);
-    // If k is a TypeNode, capture any more-precise type permanently into Node
-    k->raise_bottom_type(t);
+    set_type_and_raise_bottom_type(k, t);
   }
 
   if (t->singleton() && !k->is_Con()) {
@@ -1728,6 +1726,33 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
     return;
   }
 
+  if (n->is_ValueType()) {
+    // ValueTypeNode::Ideal
+    // Pattern:
+    //   CheckCastPP as oop
+    //   --(ValueTypeNode::Oop)-> ValueType
+    //   --(AllocateNode::ValueType)-> Allocate
+    //   ---> Proj:Parm
+    //   ---> CheckCastPP
+    //   ---> user
+    //    ===>
+    //   oop ---> user
+    //
+    //  This is problematic as this optimization (using replace_allocation)
+    //  is part of ValueTypeNode, so it looks deep at outputs and not only
+    //  at inputs. It is possible to common two ValueTypeNode with the same
+    //  inputs, but only of them would trigger this optimization. If we
+    //  remove this one in favor of the one without such inputs, we will only
+    //  enqueue the users for optimization: this is not enough. We should
+    //  implement this in such a way it depends only on (transitive) inputs.
+    //
+    // Found with:
+    //   compiler/valhalla/valuetypes/TestCallingConvention.java#id4
+    //   -XX:-TieredCompilation -XX:VerifyIterativeGVN=1110
+
+    return;
+  }
+
   // Ideal should not make progress if it returns nullptr.
   // We use made_progress() rather than unique() or live_nodes() because some
   // Ideal implementations speculatively create nodes and kill them before
@@ -1950,6 +1975,11 @@ Node* PhaseIterGVN::register_new_node_with_optimizer(Node* n, Node* orig) {
   if (orig != nullptr)  C->copy_node_notes_to(n, orig);
   return n;
 }
+Node* PhaseIterGVN::register_and_hash_new_node_with_optimizer(Node* n, Node* orig) {
+  n = register_new_node_with_optimizer(n, orig);
+  Node* i = hash_find_insert(n);
+  return i == nullptr ? n : i;
+}
 
 //------------------------------transform--------------------------------------
 // Non-recursive: idealize Node 'n' with respect to its inputs and its value
@@ -1969,8 +1999,25 @@ Node *PhaseIterGVN::transform( Node *n ) {
   return transform_old(n);
 }
 
-Node *PhaseIterGVN::transform_old(Node* n) {
+Node* PhaseIterGVN::common_node(Node* n, bool try_insert) {
+  // Global Value Numbering
+  // We try to find an existing equivalent node.
+  Node* i = try_insert ? hash_find_insert(n) : hash_find(n);
+  if (i != nullptr && i != n) {
+    set_progress();
+    add_users_to_worklist(n);
+    subsume_node(n, i);
+    return i;
+  }
+  return nullptr;
+}
+
+Node* PhaseIterGVN::transform_old(Node* n) {
   NOT_PRODUCT(set_transforms());
+  if (Node* i = common_node(n, false); i != nullptr) {
+    return i;
+  }
+
   // Remove 'n' from hash table in case it gets modified
   _table.hash_delete(n);
 #ifdef ASSERT
@@ -2041,9 +2088,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   if (type_or_null(k) != t) {
     NOT_PRODUCT(inc_new_values();)
     set_progress();
-    set_type(k, t);
-    // If k is a TypeNode, capture any more-precise type permanently into Node
-    k->raise_bottom_type(t);
+    set_type_and_raise_bottom_type(k, t);
     // Move users of node to worklist
     add_users_to_worklist(k);
   }
@@ -2065,13 +2110,8 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     return i;
   }
 
-  // Global Value Numbering
-  i = hash_find_insert(k);      // Check for pre-existing node
-  if (i && (i != k)) {
-    // Return the pre-existing node if it isn't dead
-    set_progress();
-    add_users_to_worklist(k);
-    subsume_node(k, i);       // Everybody using k now uses i
+  i = common_node(k, true);
+  if (i != nullptr) {
     return i;
   }
 

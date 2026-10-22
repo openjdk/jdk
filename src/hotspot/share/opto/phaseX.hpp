@@ -316,9 +316,16 @@ public:
     return _types.fast_lookup(n->_idx);
   }
   // Record a type for a node.
-  void    set_type(const Node* n, const Type *t) {
+  void set_type(const Node* n, const Type* t) {
     assert(t != nullptr, "type must not be null");
     _types.map(n->_idx, t);
+  }
+  void set_type_and_raise_bottom_type(Node* n, const Type* t) {
+    assert(t != nullptr, "type must not be null");
+    set_type(n, t);
+    // If k is a TypeNode (or anything that contains its own type),
+    // capture any more-precise type permanently into Node
+    n->raise_bottom_type(t);
   }
   void    clear_type(const Node* n) {
     if (n->_idx < _types.Size()) {
@@ -475,7 +482,8 @@ private:
   DEBUG_ONLY(uint _num_processed;) // Running count for trace_PhaseIterGVN_verbose
 
   // Idealize old Node 'n' with respect to its inputs and its value
-  virtual Node *transform_old( Node *a_node );
+  virtual Node* transform_old(Node* a_node);
+  Node* common_node(Node* noden, bool try_insert);
 
   bool can_kill(Node* n) const;
 
@@ -574,6 +582,13 @@ public:
   // Optional 'orig' is an earlier version of this node.
   // It is significant only for debugging and profiling.
   Node* register_new_node_with_optimizer(Node* n, Node* orig = nullptr);
+  // Same as before, but also add to the hash table of node, so they are available
+  // to be commoned even in their non-ideal form. It is useful if we may create
+  // the same node multiple time, and transforming them would lead to even more nodes.
+  // It also cannot be the default strategy as it confuses loops. In particular, loops
+  // optimization often clone loops and modify nodes right away, so it is both useless
+  // and forbidden to put these new nodes in the hash table.
+  Node* register_and_hash_new_node_with_optimizer(Node* n, Node* orig = nullptr);
 
   // Origin of a dead node, describing why it is dying.
   // Speculative: a temporarily created node that was never part of the graph
