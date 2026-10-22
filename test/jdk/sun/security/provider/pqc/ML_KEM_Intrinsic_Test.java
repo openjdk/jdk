@@ -276,11 +276,10 @@ public class ML_KEM_Intrinsic_Test {
         addPolyJava.invoke(sum2, a, b);
 
         if (!Arrays.equals(sum1, sum2)) {
-            // needs @8386459
-            // throw new RuntimeException("[Seed " + seed + "@" + i
-            //         + "] Result AddPoly2 mismatch: "
-            //         + formatOf(sum1) + "\n != " + formatOf(sum2)
-            //         + "\n b = " + formatOf(b));
+            throw new RuntimeException("[Seed " + seed + "@" + i
+                    + "] Result AddPoly2 mismatch: "
+                    + formatOf(sum1) + "\n != " + formatOf(sum2)
+                    + "\n b = " + formatOf(b));
         }
     }
 
