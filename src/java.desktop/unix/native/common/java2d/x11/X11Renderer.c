@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ typedef struct {
             jint newMax = (PTR)->maxpoints*2;                               \
             if ((PTR)->pPoints == (PTR)->dfPoints) {                        \
                 (PTR)->pPoints = (XPoint*)malloc(newMax*sizeof(XPoint));    \
-                memcpy((PTR)->pPoints, _pnts, _npnts*sizeof(XPoint));       \
+                if ((PTR)->pPoints != NULL) memcpy((PTR)->pPoints, _pnts, _npnts*sizeof(XPoint));   \
             } else {                                                        \
                 (PTR)->pPoints = (XPoint*)realloc(                          \
                     _pnts, newMax*sizeof(XPoint));                          \
