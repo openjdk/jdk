@@ -45,6 +45,7 @@
 package compiler.c2.riscv64;
 
 import compiler.lib.ir_framework.CompLevel;
+import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Run;
@@ -69,12 +70,8 @@ public class TestVectorTestCMove {
     private static final Object FIRST = new Object();
     private static final Object SECOND = new Object();
 
-    static class Holder {
-        Object first = FIRST;
-        Object second = SECOND;
-    }
-
-    private static final Holder HOLDER = new Holder();
+    private static final Object[] ARRAY_SOURCE = {FIRST, SECOND};
+    private static final Object[] ARRAY_RESULT = new Object[1];
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
@@ -154,15 +151,23 @@ public class TestVectorTestCMove {
     }
 
     @Test(compLevel = CompLevel.C2)
-    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ANYTRUE, ">0"})
-    static Object anyTrueN(long bits, Holder holder) {
-        return VectorMask.fromLong(SPECIES, bits).anyTrue() ? holder.first : holder.second;
+    @IR(counts = {"cmovN_vtest_anytrue\\b", ">0"},
+        phase = CompilePhase.FINAL_CODE,
+        applyIf = {"UseCompressedOops", "true"})
+    static void anyTrueN(long bits) {
+        Object first = ARRAY_SOURCE[0];
+        Object second = ARRAY_SOURCE[1];
+        ARRAY_RESULT[0] = VectorMask.fromLong(SPECIES, bits).anyTrue() ? first : second;
     }
 
     @Test(compLevel = CompLevel.C2)
-    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ALLTRUE, ">0"})
-    static Object allTrueN(long bits, Holder holder) {
-        return VectorMask.fromLong(SPECIES, bits).allTrue() ? holder.first : holder.second;
+    @IR(counts = {"cmovN_vtest_alltrue\\b", ">0"},
+        phase = CompilePhase.FINAL_CODE,
+        applyIf = {"UseCompressedOops", "true"})
+    static void allTrueN(long bits) {
+        Object first = ARRAY_SOURCE[0];
+        Object second = ARRAY_SOURCE[1];
+        ARRAY_RESULT[0] = VectorMask.fromLong(SPECIES, bits).allTrue() ? first : second;
     }
 
     // ---------------- driver ----------------
@@ -243,15 +248,21 @@ public class TestVectorTestCMove {
 
     @Run(test = "anyTrueN")
     public void runAnyTrueN() {
-        Asserts.assertSame(anyTrueN(ALL, HOLDER), FIRST);
-        Asserts.assertSame(anyTrueN(SOME, HOLDER), FIRST);
-        Asserts.assertSame(anyTrueN(NONE, HOLDER), SECOND);
+        anyTrueN(ALL);
+        Asserts.assertSame(ARRAY_RESULT[0], FIRST);
+        anyTrueN(SOME);
+        Asserts.assertSame(ARRAY_RESULT[0], FIRST);
+        anyTrueN(NONE);
+        Asserts.assertSame(ARRAY_RESULT[0], SECOND);
     }
 
     @Run(test = "allTrueN")
     public void runAllTrueN() {
-        Asserts.assertSame(allTrueN(ALL, HOLDER), FIRST);
-        Asserts.assertSame(allTrueN(SOME, HOLDER), SECOND);
-        Asserts.assertSame(allTrueN(NONE, HOLDER), SECOND);
+        allTrueN(ALL);
+        Asserts.assertSame(ARRAY_RESULT[0], FIRST);
+        allTrueN(SOME);
+        Asserts.assertSame(ARRAY_RESULT[0], SECOND);
+        allTrueN(NONE);
+        Asserts.assertSame(ARRAY_RESULT[0], SECOND);
     }
 }
