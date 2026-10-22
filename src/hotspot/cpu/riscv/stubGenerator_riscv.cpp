@@ -3066,13 +3066,13 @@ class StubGenerator: public StubCodeGenerator {
   void ecb_loop(Register from, Register to, Register len, Register keylen,
                 VectorRegister rk[], bool encrypt) {
     const Register batch_bytes = t0;
-    Label L_bulk_loop, L_tail_loop, L_done;
+    Label L_bulk_loop, L_tail, L_tail_loop, L_done;
     // m1/e32 with VL = VLMAX; batch_bytes = VL * 4.
     __ vsetvli(batch_bytes, x0, Assembler::e32, Assembler::m1);
     __ slli(batch_bytes, batch_bytes, 2);
     BLOCK_COMMENT("ecb bulk loop (m1, VLMAX)");
     __ bind(L_bulk_loop);
-    __ bltu(len, batch_bytes, L_tail_loop);
+    __ bltu(len, batch_bytes, L_tail);
     __ vle32_v(v20, from);
     __ add(from, from, batch_bytes);
     if (encrypt) aes_encrypt_all(v20, keylen, rk);
@@ -3083,9 +3083,10 @@ class StubGenerator: public StubCodeGenerator {
     __ j(L_bulk_loop);
 
     BLOCK_COMMENT("ecb tail: single block (m1)");
-    __ bind(L_tail_loop);
+    __ bind(L_tail);
     __ beqz(len, L_done);
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ bind(L_tail_loop);
     __ vle32_v(v20, from);
     __ addi(from, from, 16);
     if (encrypt) aes_encrypt_all(v20, keylen, rk);
@@ -3093,7 +3094,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vse32_v(v20, to);
     __ addi(to, to, 16);
     __ subi(len, len, 16);
-    __ j(L_tail_loop);
+    __ bnez(len, L_tail_loop);
 
     __ bind(L_done);
   }
