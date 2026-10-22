@@ -32,7 +32,9 @@ package compiler.c2;
 
 public class TestDeadStoreToHeader {
     public static void main(String[] args) {
-        test(123);
+        for (int i = 0; i < 100; i++) {
+            test(123);
+        }
     }
     
     static String test(long l) {
