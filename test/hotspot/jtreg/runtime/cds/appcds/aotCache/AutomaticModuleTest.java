@@ -44,6 +44,7 @@ public class AutomaticModuleTest {
         CDSModulePackager modulePackager = new CDSModulePackager(SRC);
         String modulePath = modulePackager.getOutputDir().toString();
         modulePackager.createAutomaticModularJar("com.auto");
+        modulePackager.createModularJar("com.test");
 
         test(modulePath);
     }
@@ -51,9 +52,10 @@ public class AutomaticModuleTest {
     static void test(String modulePath) throws Exception {
         SimpleCDSAppTester tester =  SimpleCDSAppTester.of("AutomaticModuleTest")
             .modulepath(modulePath)
-            .addVmArgs("--add-modules", "java.logging")
-            .addVmArgs("-m", "com.auto/com.auto.ComAuto")
-            .appCommandLine("UnnamedModuleApp")
+            .addVmArgs("--add-modules", "java.logging,com.test")
+            .addVmArgs("--add-reads", "com.test=java.logging")
+            .addVmArgs("--add-reads", "com.test=com.auto")
+            .appCommandLine("-m", "com.auto/com.auto.ComAuto")
             .setTrainingChecker(out -> check(out))
             .setProductionChecker(out -> check(out))
             .runAOTWorkflow();
@@ -63,8 +65,11 @@ public class AutomaticModuleTest {
         out.shouldContain("OUT: com.auto.isNamed() = true");
         out.shouldContain("OUT: com.auto.getName() = com.auto");
         out.shouldContain("OUT: com.auto.canRead(java.logging) = true");
+        out.shouldContain("OUT: com.test.canRead(java.logging) = true");
         out.shouldContain("OUT: unnamed.canRead(java.logging) = true");
         out.shouldContain("OUT: com.auto.canRead(unnamed) = true");
         out.shouldContain("OUT: unnamed.canRead(com.auto) = true");
+        out.shouldContain("OUT: com.auto.canRead(com.test) = true");
+        out.shouldContain("OUT: com.test.canRead(com.auto) = true");
     }
 }

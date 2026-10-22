@@ -28,15 +28,21 @@ public class ComAuto {
     public static void main(String args[]) {
         Module unnamed = ComAuto.class.getClassLoader().getUnnamedModule();
         Module com_auto = ComAuto.class.getModule();
+        Module com_test = ModuleLayer.boot()
+            .findModule("com.test")
+            .orElseThrow(() -> new IllegalStateException("Run with --add-modules com.test"));
         Module java_logging = ModuleLayer.boot()
             .findModule("java.logging")
             .orElseThrow(() -> new IllegalStateException("Run with --add-modules java.logging"));
 
         System.out.println("OUT: com.auto.isNamed() = " + com_auto.isNamed());
         System.out.println("OUT: com.auto.getName() = " + com_auto.getName());
+        System.out.println("OUT: com.test.canRead(java.logging) = " + com_test.canRead(java_logging)); // must be true
         System.out.println("OUT: com.auto.canRead(java.logging) = " + com_auto.canRead(java_logging)); // must be true
         System.out.println("OUT: unnamed.canRead(java.logging) = " + unnamed.canRead(java_logging)); // must be true
         System.out.println("OUT: com.auto.canRead(unnamed) = " + com_auto.canRead(unnamed)); // must be true
         System.out.println("OUT: unnamed.canRead(com.auto) = " + com_auto.canRead(unnamed)); // must be true
+        System.out.println("OUT: com.auto.canRead(com.test) = " + com_auto.canRead(unnamed)); // must be true
+        System.out.println("OUT: com.test.canRead(com.auto) = " + com_test.canRead(com_auto)); // must be true
     }
 }
