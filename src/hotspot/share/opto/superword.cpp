@@ -2516,12 +2516,15 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   case Op_RotateRight:
   case Op_RotateLeft:
   case Op_PopCountI:
+  case Op_PopCountL:
   case Op_ReverseBytesS:
   case Op_ReverseBytesUS:
   case Op_ReverseBytesI:
   case Op_ReverseI:
   case Op_CountLeadingZerosI:
+  case Op_CountLeadingZerosL:
   case Op_CountTrailingZerosI:
+  case Op_CountTrailingZerosL:
   case Op_IsFiniteF:
   case Op_IsFiniteD:
   case Op_IsInfiniteF:
@@ -3198,7 +3201,3 @@ void VLoopBody::print() const {
 bool SuperWord::same_origin_idx(Node* a, Node* b) const {
   return a != nullptr && b != nullptr && _clone_map.same_idx(a->_idx, b->_idx);
 }
-bool SuperWord::same_generation(Node* a, Node* b) const {
-  return a != nullptr && b != nullptr && _clone_map.same_gen(a->_idx, b->_idx);
-}
-

@@ -555,7 +555,6 @@ class SuperWord : public ResourceObj {
 
   // CloneMap utilities
   bool same_origin_idx(Node* a, Node* b) const;
-  bool same_generation(Node* a, Node* b) const;
 
 private:
   bool SLP_extract();
