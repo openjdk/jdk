@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @key stress
  *
- * @summary converted from VM testbase nsk/stress/stack/stack018.
+ * @summary Repeatedly provoke stack overflow through reflective calls in multiple threads.
  * VM testbase keywords: [stress, diehard, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
@@ -47,20 +47,20 @@
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
  * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp" & vm.pageSize == 4096)
- * @run main/othervm/timeout=900 -Xss220K Stack018
+ * @run main/othervm/timeout=900 -Xss220K StackOverflowReflectionThreads
  */
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class Stack018 extends Thread {
+public class StackOverflowReflectionThreads extends Thread {
     private final static int THREADS = 10;
     private final static int CYCLES = 10;
     private final static int STEP = 100;
     private final static int RESERVE = 100;
 
     public static void main(String[] args) {
-        Stack018 test = new Stack018();
+        StackOverflowReflectionThreads test = new StackOverflowReflectionThreads();
         test.doRun();
     }
 
@@ -92,9 +92,9 @@ public class Stack018 extends Thread {
         //
         // Run the tested threads:
         //
-        Stack018 threads[] = new Stack018[THREADS];
+        StackOverflowReflectionThreads threads[] = new StackOverflowReflectionThreads[THREADS];
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new Stack018();
+            threads[i] = new StackOverflowReflectionThreads();
             threads[i].setName("Thread: " + (i + 1) + "/" + THREADS);
             threads[i].depthToTry = RESERVE * maxDepth;
             threads[i].start();
@@ -164,7 +164,7 @@ public class Stack018 extends Thread {
             //
             // Optimization trick: allocate once, use everywhere.
             //
-            method = Stack018.class.getMethod("recurse");
+            method = StackOverflowReflectionThreads.class.getMethod("recurse");
             params = new Object[]{};
         }
         this.depth = depth; // actual parameter
