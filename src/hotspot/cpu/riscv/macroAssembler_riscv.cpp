@@ -685,7 +685,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // offset is no longer needed after the address is computed.
   add(t1, mdp, offset);
   weak_cmpxchg(/*addr*/ t1, /*expected*/ zr, /*new*/ recv, Assembler::int64,
-               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::relaxed, /*result*/ t0);
+               memory_order_relaxed, /*result*/ t0);
 
   // CAS success means the slot now has the receiver we want. CAS failure means
   // something had claimed the slot concurrently: it can be the same receiver we want,
@@ -3070,6 +3070,10 @@ static int patch_offset_in_conditional_branch(address branch, int64_t offset) {
 
 static int patch_offset_in_pc_relative(address branch, int64_t offset) {
   const int PC_RELATIVE_INSTRUCTION_NUM = 2;                                    // auipc, addi/jalr/load
+  // The auipc pair can only encode a 32-bit pc-relative offset. Check the same
+  // range the emitters check, otherwise the high bits would be silently dropped.
+  guarantee(MacroAssembler::is_valid_32bit_offset(offset),
+            "offset " INT64_FORMAT " out of range for auipc", offset);
   Assembler::patch(branch, 31, 12, ((offset + 0x800) >> 12) & 0xfffff);         // Auipc.          offset[31:12]  ==> branch[31:12]
   Assembler::patch(branch + 4, 31, 20, offset & 0xfff);                         // Addi/Jalr/Load. offset[11:0]   ==> branch[31:20]
   return PC_RELATIVE_INSTRUCTION_NUM * MacroAssembler::instruction_size;
@@ -3254,6 +3258,24 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   return -1;
 }
 
+int MacroAssembler::patch_metadata(address insn_addr, address metadata) {
+  // Metadata is either a narrow klass (32 bits, materialized by set_narrow_klass()
+  // with li32) or a full 48-bit pointer (materialized by mov_metadata() with movptr).
+  if (MacroAssembler::is_li32_at(insn_addr)) {
+    // Move narrow klass
+    Metadata* value = reinterpret_cast<Metadata*>(metadata);
+    assert(value != nullptr && value->is_klass(), "narrow metadata must be a klass");
+    narrowKlass nk = CompressedKlassPointers::encode(static_cast<Klass*>(value));
+    return patch_imm_in_li32(insn_addr, static_cast<int32_t>(nk));
+  } else if (MacroAssembler::is_movptr1_at(insn_addr) ||
+             MacroAssembler::is_movptr2_at(insn_addr)) {
+    // Move wide metadata
+    return pd_patch_instruction_size(insn_addr, metadata);
+  }
+  ShouldNotReachHere();
+  return -1;
+}
+
 void MacroAssembler::reinit_heapbase() {
   if (UseCompressedOops) {
     if (Universe::is_fully_initialized() && !AOTCodeCache::is_on_for_dump()) {
@@ -3280,7 +3302,10 @@ void MacroAssembler::movptr(Register Rd, address addr, Register temp) {
 void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset, Register temp) {
   uint64_t uimm64 = (uint64_t)addr;
 #ifndef PRODUCT
-  {
+  // Skip the block comment when dumping the AOT code cache: the comment text is
+  // the build-time address, which is meaningless in a future JVM instance and
+  // would flood the AOT C string table with unique entries.
+  if (!AOTCodeCache::is_on_for_dump()) {
     char buffer[64];
     os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIx64, uimm64);
     block_comment(buffer);
@@ -3767,7 +3792,7 @@ void MacroAssembler::cmp_klass_bne(Register obj, Register klass,
 }
 
 // Move an oop into a register.
-void MacroAssembler::movoop(Register dst, jobject obj, Register tmp) {
+void MacroAssembler::movoop(Register dst, jobject obj) {
   int oop_index;
   if (obj == nullptr) {
     oop_index = oop_recorder()->allocate_oop_index(obj);
@@ -3783,7 +3808,7 @@ void MacroAssembler::movoop(Register dst, jobject obj, Register tmp) {
   RelocationHolder rspec = oop_Relocation::spec(oop_index);
 
   if (BarrierSet::barrier_set()->barrier_set_assembler()->supports_instruction_patching()) {
-    movptr(dst, Address((address)obj, rspec), tmp);
+    movptr(dst, Address((address)obj, rspec));
   } else {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
     ld(dst, Address(dummy, rspec));
@@ -3791,7 +3816,7 @@ void MacroAssembler::movoop(Register dst, jobject obj, Register tmp) {
 }
 
 // Move a metadata address into a register.
-void MacroAssembler::mov_metadata(Register dst, Metadata* obj, Register tmp) {
+void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
   assert((uintptr_t)obj < (1ull << 48), "48-bit overflow in metadata");
   int oop_index;
   if (obj == nullptr) {
@@ -3800,37 +3825,17 @@ void MacroAssembler::mov_metadata(Register dst, Metadata* obj, Register tmp) {
     oop_index = oop_recorder()->find_index(obj);
   }
   RelocationHolder rspec = metadata_Relocation::spec(oop_index);
-  movptr(dst, Address((address)obj, rspec), tmp);
-}
-
-void MacroAssembler::value_field_layout_info(Register holder_klass, Register index, Register layout_info) {
-  assert_different_registers(holder_klass, index, layout_info);
-  ValueFieldLayoutInfo array[2];
-  int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
-  if (is_power_of_2(size)) {
-    slli(index, index, log2i_exact(size)); // Scale index by power of 2
-  } else {
-    mv(layout_info, size);
-    mul(index, index, layout_info); // Scale the index to be the entry index * array_element_size
-  }
-  ld(layout_info, Address(holder_klass, InstanceKlass::value_field_layout_info_array_offset()));
-  add(layout_info, layout_info, Array<ValueFieldLayoutInfo>::base_offset_in_bytes());
-  add(layout_info, layout_info, index);
-  la(layout_info, Address(layout_info));
-}
-
-void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst,
-                                     Register value_field_layout_info) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->flat_field_copy(this, decorators, src, dst, value_field_layout_info);
+  movptr(dst, Address((address)obj, rspec));
 }
 
 void MacroAssembler::payload_offset(Register value_klass, Register offset) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   ld(offset, Address(value_klass, ValueKlass::adr_members_offset()));
   lwu(offset, Address(offset, ValueKlass::payload_offset_offset()));
 }
 
 void MacroAssembler::payload_address(Register oop, Register data, Register value_klass) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   assert_different_registers(data, t0);
   // ((address) (void*) o) + vk->payload_offset();
   Register offset = (data == oop) ? t0 : data;
@@ -3929,21 +3934,25 @@ void MacroAssembler::null_check(Register reg, int offset) {
 }
 
 void MacroAssembler::test_field_is_null_free_value_type(Register flags, Register temp_reg, Label& is_null_free_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
   bnez(temp_reg, is_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_not_null_free_value_type(Register flags, Register temp_reg, Label& not_null_free_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
   beqz(temp_reg, not_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label& is_flat) {
+  assert(UseFieldFlattening, "should not be used without field flattening enabled");
   test_bit(temp_reg, flags, ResolvedFieldEntry::is_flat_shift);
   bnez(temp_reg, is_flat);
 }
 
 void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert_different_registers(markword, t1);
   mv(t1, markWord::value_type_pattern_mask);
   andr(markword, markword, t1);
@@ -3952,6 +3961,7 @@ void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_va
 }
 
 void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert_different_registers(tmp, t0);
   if (can_be_null) {
     beqz(object, not_value_type);
@@ -3976,22 +3986,27 @@ void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int
 }
 
 void MacroAssembler::test_flat_array_oop(Register oop, Register temp_reg, Label& is_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, true, is_flat_array);
 }
 
 void MacroAssembler::test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, true, is_null_free_array);
 }
 
 void MacroAssembler::test_non_flat_array_oop(Register oop, Register temp_reg, Label&is_non_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, false, is_non_flat_array);
 }
 
 void MacroAssembler::test_non_null_free_array_oop(Register oop, Register temp_reg, Label&is_non_null_free_array) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, false, is_non_null_free_array);
 }
 
 void MacroAssembler::test_flat_array_layout(Register lh, Label& is_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_bit(t0, lh, exact_log2(Klass::_lh_array_tag_flat_value_bit_inplace));
   bnez(t0, is_flat_array);
 }
@@ -4599,17 +4614,51 @@ void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expecte
   andr(new_val, new_val, mask);
 }
 
+// Map a C++11-style memory order onto the RISC-V aq/rl bits applied to the
+// load-reserved (acquire) and store-conditional / amocas (release) halves of a CAS.
+static void cmpxchg_memory_order_to_aqrl(enum atomic_memory_order order,
+                                         Assembler::Aqrl& acquire, Assembler::Aqrl& release) {
+  switch (order) {
+    case memory_order_relaxed:
+      acquire = Assembler::relaxed;
+      release = Assembler::relaxed;
+      break;
+    case memory_order_acquire:
+      acquire = Assembler::aq;
+      release = Assembler::relaxed;
+      break;
+    case memory_order_release:
+      acquire = Assembler::relaxed;
+      release = Assembler::rl;
+      break;
+    case memory_order_acq_rel:
+      acquire = Assembler::aq;
+      release = Assembler::rl;
+      break;
+    case memory_order_seq_cst:
+      acquire = Assembler::aq;
+      // Zalasr acquire loads provide RCsc ordering after SC.rl; plain loads need SC.aqrl.
+      release = UseZalasr ? Assembler::rl : Assembler::aqrl;
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
 // cmpxchg_narrow_value will kill t0, t1, expected, new_val and tmps.
 // It's designed to implement compare and swap byte/boolean/char/short by lr.w/sc.w or amocas.w,
 // which are forced to work with 4-byte aligned address.
 void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
                                           Register new_val,
                                           Assembler::operand_size size,
-                                          Assembler::Aqrl acquire, Assembler::Aqrl release,
+                                          enum atomic_memory_order order,
                                           Register result, bool result_as_bool,
                                           Register tmp1, Register tmp2, Register tmp3) {
   assert(!(UseZacas && UseZabha), "Use amocas");
   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
+
+  Assembler::Aqrl acquire, release;
+  cmpxchg_memory_order_to_aqrl(order, acquire, release);
 
   Register scratch0 = t0, aligned_addr = t1;
   Register shift = tmp1, mask = tmp2, scratch1 = tmp3;
@@ -4621,11 +4670,13 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
   if (UseZacas) {
     // This word load pre-checks the target byte/short. A mismatch branches
     // directly to fail, so the acquiring amocas below is never executed.
-    // When Zalasr has elided a preceding volatile store's trailing StoreLoad
-    // fence, make the pre-check acquiring so s*.rl -> lw.aq still provides
-    // the required RCsc ordering on this failure path.
-    if (UseZalasr && (acquire == Assembler::aq)) {
-      lw_aq(result, aligned_addr);
+    // Make the pre-check acquiring on the volatile path, as for a volatile
+    // load: lw.aq with Zalasr, plain lw + fence r,rw otherwise. The Zalasr
+    // form additionally pairs with a preceding volatile store whose trailing
+    // StoreLoad fence was elided, so s*.rl -> lw.aq still provides the
+    // required RCsc ordering on this failure path.
+    if (acquire == Assembler::aq) {
+      lw_acquire(result, aligned_addr);
     } else {
       lw(result, aligned_addr);
     }
@@ -4689,11 +4740,14 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
 void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
                                                Register new_val,
                                                Assembler::operand_size size,
-                                               Assembler::Aqrl acquire, Assembler::Aqrl release,
+                                               enum atomic_memory_order order,
                                                Register result,
                                                Register tmp1, Register tmp2, Register tmp3) {
   assert(!(UseZacas && UseZabha), "Use amocas");
   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
+
+  Assembler::Aqrl acquire, release;
+  cmpxchg_memory_order_to_aqrl(order, acquire, release);
 
   Register scratch0 = t0, aligned_addr = t1;
   Register shift = tmp1, mask = tmp2, scratch1 = tmp3;
@@ -4705,11 +4759,13 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
   if (UseZacas) {
     // This word load pre-checks the target byte/short. A mismatch branches
     // directly to fail, so the acquiring amocas below is never executed.
-    // When Zalasr has elided a preceding volatile store's trailing StoreLoad
-    // fence, make the pre-check acquiring so s*.rl -> lw.aq still provides
-    // the required RCsc ordering on this failure path.
-    if (UseZalasr && (acquire == Assembler::aq)) {
-      lw_aq(result, aligned_addr);
+    // Make the pre-check acquiring on the volatile path, as for a volatile
+    // load: lw.aq with Zalasr, plain lw + fence r,rw otherwise. The Zalasr
+    // form additionally pairs with a preceding volatile store whose trailing
+    // StoreLoad fence was elided, so s*.rl -> lw.aq still provides the
+    // required RCsc ordering on this failure path.
+    if (acquire == Assembler::aq) {
+      lw_acquire(result, aligned_addr);
     } else {
       lw(result, aligned_addr);
     }
@@ -4756,12 +4812,15 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
 void MacroAssembler::cmpxchg(Register addr, Register expected,
                              Register new_val,
                              Assembler::operand_size size,
-                             Assembler::Aqrl acquire, Assembler::Aqrl release,
+                             enum atomic_memory_order order,
                              Register result, bool result_as_bool) {
   assert((UseZacas && UseZabha) || (size != int8 && size != int16), "unsupported operand size");
   assert_different_registers(addr, t0);
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
+
+  Assembler::Aqrl acquire, release;
+  cmpxchg_memory_order_to_aqrl(order, acquire, release);
 
   // NOTE:
   // Register _result_ may be the same register as _new_val_ or _expected_.
@@ -4817,7 +4876,7 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
 void MacroAssembler::weak_cmpxchg(Register addr, Register expected,
                                   Register new_val,
                                   Assembler::operand_size size,
-                                  Assembler::Aqrl acquire, Assembler::Aqrl release,
+                                  enum atomic_memory_order order,
                                   Register result) {
   assert((UseZacas && UseZabha) || (size != int8 && size != int16), "unsupported operand size");
   assert_different_registers(addr, t0);
@@ -4825,9 +4884,12 @@ void MacroAssembler::weak_cmpxchg(Register addr, Register expected,
   assert_different_registers(new_val, t0);
 
   if (UseZacas) {
-    cmpxchg(addr, expected, new_val, size, acquire, release, result, true);
+    cmpxchg(addr, expected, new_val, size, order, result, true);
     return;
   }
+
+  Assembler::Aqrl acquire, release;
+  cmpxchg_memory_order_to_aqrl(order, acquire, release);
 
   Label fail, done;
   load_reserved(t0, addr, size, acquire);
@@ -6823,6 +6885,66 @@ void MacroAssembler::float_to_float16_NaN(Register dst, FloatRegister src,
   orr(dst, tmp2, tmp1);
 }
 
+// j.l.Float.float16ToFloat
+void MacroAssembler::flt16_to_flt(FloatRegister dst, Register src) {
+  assert_different_registers(src, t0, t1);
+  Label L_NaN_Inf, L_done;
+
+  // On riscv, NaN needs a special process as fcvt does not work in that case.
+  // On riscv, Inf does not need a special process as fcvt can handle it correctly.
+  // but we consider to get the slow path to process NaN and Inf at the same time,
+  // as both of them are rare cases, and if we try to get the slow path to handle
+  // only NaN case it would sacrifise the performance for normal cases,
+  // i.e. non-NaN and non-Inf cases.
+
+  // check whether it's a NaN or +/- Inf.
+  mv(t0, 0x7c00);
+  andr(t1, src, t0);
+  beq(t0, t1, L_NaN_Inf);
+
+  // non-NaN or non-Inf cases, just use built-in instructions.
+  fmv_h_x(dst, src);
+  fcvt_s_h(dst, dst);
+  j(L_done);
+
+  bind(L_NaN_Inf);
+  // construct a NaN in 32 bits from the NaN in 16 bits,
+  // we need the payloads of non-canonical NaNs to be preserved.
+  mv(t1, 0x7f800000);
+  // The upper 16 bits of a short argument are unspecified. Sign-extend the
+  // low 16 bits before shifting so that the float sign bit comes from the
+  // float16 sign bit.
+  sext(t0, src, 16);
+  slli(t0, t0, 13);
+  orr(t1, t0, t1);
+  fmv_w_x(dst, t1);
+
+  bind(L_done);
+}
+
+// j.l.Float.floatToFloat16
+void MacroAssembler::flt_to_flt16(Register dst, FloatRegister src, FloatRegister ftmp) {
+  assert_different_registers(dst, t0, t1);
+  Label L_NaN, L_done;
+
+  // On riscv, NaN needs a special process as fcvt does not work in that case.
+
+  // check whether it's a NaN.
+  // replace fclass with feq as performance optimization.
+  feq_s(t0, src, src);
+  beqz(t0, L_NaN);
+
+  // non-NaN cases, just use built-in instructions.
+  fcvt_h_s(ftmp, src);
+  fmv_x_h(dst, ftmp);
+  j(L_done);
+
+  bind(L_NaN);
+  float_to_float16_NaN(dst, src, t0, t1);
+
+  bind(L_done);
+}
+
 #define FCVT_SAFE(FLOATCVT, FLOATSIG)                                                     \
 void MacroAssembler::FLOATCVT##_safe(Register dst, FloatRegister src, Register tmp) {     \
   Label done;                                                                             \
@@ -7031,40 +7153,46 @@ void MacroAssembler::sext(Register dst, Register src, int bits) {
   srai(dst, dst, XLEN - bits);
 }
 
+void MacroAssembler::narrow_subword_type(Register reg, BasicType bt) {
+  assert(is_subword_type(bt), "expected subword type");
+  switch (bt) {
+    case T_SHORT:
+      sext(reg, reg, 16);
+      break;
+    case T_CHAR:
+      zext(reg, reg, 16);
+      break;
+    case T_BYTE:
+      sext(reg, reg, 8);
+      break;
+    case T_BOOLEAN:
+      andi(reg, reg, 1);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
 void MacroAssembler::cmp_x2i(Register dst, Register src1, Register src2,
                              Register tmp, bool is_signed) {
   if (src1 == src2) {
     mv(dst, zr);
     return;
   }
-  Label done;
-  Register left = src1;
-  Register right = src2;
-  if (dst == src1) {
-    assert_different_registers(dst, src2, tmp);
-    mv(tmp, src1);
-    left = tmp;
-  } else if (dst == src2) {
-    assert_different_registers(dst, src1, tmp);
-    mv(tmp, src2);
-    right = tmp;
-  }
 
-  // installs 1 if gt else 0
+  // dst = (src1 > src2) - (src1 < src2)
+  assert_different_registers(tmp, dst);
+  assert_different_registers(tmp, src1);
+  assert_different_registers(tmp, src2);
+
   if (is_signed) {
-    slt(dst, right, left);
+    slt(tmp, src2, src1);
+    slt(dst, src1, src2);
   } else {
-    sltu(dst, right, left);
+    sltu(tmp, src2, src1);
+    sltu(dst, src1, src2);
   }
-  bnez(dst, done);
-  if (is_signed) {
-    slt(dst, left, right);
-  } else {
-    sltu(dst, left, right);
-  }
-  // dst = -1 if lt; else if eq , dst = 0
-  neg(dst, dst);
-  bind(done);
+  sub(dst, tmp, dst);
 }
 
 void MacroAssembler::cmp_l2i(Register dst, Register src1, Register src2, Register tmp)
@@ -7344,7 +7472,7 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register tmp1,
 
   xori(t, mark, markWord::lock_neutral_value);
   cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
-          /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ t);
+          memory_order_acquire, /*result*/ t);
   bne(mark, t, slow, /* is_far */ true);
 
   bind(push);
@@ -7415,7 +7543,7 @@ void MacroAssembler::fast_unlock(Register obj, Register tmp1, Register tmp2, Reg
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
   ori(t, mark, markWord::lock_neutral_value);
   cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
-          /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, /*result*/ t);
+          memory_order_release, /*result*/ t);
   beq(mark, t, unlocked);
 
   bind(push_and_slow);

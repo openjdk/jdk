@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_PPC_CONTINUATION_PPC_INLINE_HPP
-#define CPU_PPC_CONTINUATION_PPC_INLINE_HPP
+#ifndef CPU_PPC_CONTINUATIONFREEZETHAW_PPC_INLINE_HPP
+#define CPU_PPC_CONTINUATIONFREEZETHAW_PPC_INLINE_HPP
 
 #include "oops/stackChunkOop.inline.hpp"
 #include "runtime/frame.hpp"
@@ -682,4 +682,5 @@ inline void ThawBase::patch_pd(frame& f, intptr_t* caller_sp) {
 //                                                                                        ========================   (aligned)
 //
 //
-#endif // CPU_PPC_CONTINUATION_PPC_INLINE_HPP
+
+#endif // CPU_PPC_CONTINUATIONFREEZETHAW_PPC_INLINE_HPP

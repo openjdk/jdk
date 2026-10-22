@@ -34,16 +34,18 @@ public class NMethod extends CodeBlob {
   }
   private NMethod(Object[] obj) {
     super((Object[])obj[0]);
-    assert obj.length == 5;
+    assert obj.length == 6;
     comp_level = (Integer) obj[1];
     insts = (byte[]) obj[2];
     compile_id = (Integer) obj[3];
     entry_point = (Long) obj[4];
+    has_scoped_access = (boolean) obj[5];
   }
   public final byte[] insts;
   public final int comp_level;
   public final int compile_id;
   public final long entry_point;
+  public final boolean has_scoped_access;
 
   @Override
   public String toString() {
@@ -53,6 +55,7 @@ public class NMethod extends CodeBlob {
         + ", comp_level=" + comp_level
         + ", compile_id=" + compile_id
         + ", entry_point=" + entry_point
+        + ", has_scoped_access=" + has_scoped_access
         + '}';
   }
 }

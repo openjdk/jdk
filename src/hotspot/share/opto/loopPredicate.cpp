@@ -457,10 +457,10 @@ class Invariance : public StackObj {
   }
 };
 
-//------------------------------is_range_check_if -----------------------------------
-// Returns true if the predicate of iff is in "scale*iv + offset u< load_range(ptr)" format
-// Note: this function is particularly designed for loop predication. We require load_range
-//       and offset to be loop invariant computed on the fly by "invar"
+// Returns true if the predicate has the form
+//     scale*iv + offset <u R
+// where scale and offset are loop invariant and R >= 0.
+// Note: This is used by Loop Predication and PhaseIdealLoop::extract_long_range_check().
 bool IdealLoopTree::is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoop *phase, BasicType bt, Node *iv, Node *&range,
                                       Node *&offset, jlong &scale) const {
   IfNode* iff = if_success_proj->in(0)->as_If();
@@ -518,20 +518,23 @@ bool IdealLoopTree::is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoo
     return false;
   }
   range = cmp->in(2);
+
+  // Now we check the condition R >= 0 from the method comment.
   if (range->Opcode() != Op_LoadRange) {
     const TypeInteger* tinteger = phase->_igvn.type(range)->isa_integer(bt);
     if (tinteger == nullptr || tinteger->empty() || tinteger->lo_as_long() < 0) {
-      // Allow predication on positive values that aren't LoadRanges.
-      // This allows optimization of loops where the length of the
-      // array is a known value and doesn't need to be loaded back
-      // from the array.
+      // R is not proven to be non-negative. Bail out.
       return false;
     }
   } else {
+    // R = LoadRange are always non-negative.
     assert(bt == T_INT, "no LoadRange for longs");
   }
   scale  = 0;
   offset = nullptr;
+  // Now check the form
+  //     scale*iv + offset <u R
+  // from the method comment.
   if (!phase->is_scaled_iv_plus_offset(cmp->in(1), iv, bt, &scale, &offset)) {
     return false;
   }

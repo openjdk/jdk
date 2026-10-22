@@ -33,58 +33,47 @@
  */
 
 /*
- * @test id=64_COOP_CCP_NCOH
+ * @test id=64_COOP_NCOH
  * @requires vm.bits == 64
  * @library /test/lib
  * @requires vm.flagless
  * @modules java.base/jdk.internal.vm.annotation
  * @enablePreview
  * @compile FieldLayoutAnalyzer.java ValueFieldInheritanceTest.java
- * @run main runtime.valhalla.valuetypes.field_layout.ValueFieldInheritanceTest 64_COOP_CCP_NCOH
+ * @run main runtime.valhalla.valuetypes.field_layout.ValueFieldInheritanceTest 64_COOP_NCOH
  */
 
 /*
- * @test id=64_NCOOP_CCP_NCOH
+ * @test id=64_NCOOP_NCOH
  * @requires vm.bits == 64
  * @library /test/lib
  * @requires vm.flagless
  * @modules java.base/jdk.internal.vm.annotation
  * @enablePreview
  * @compile FieldLayoutAnalyzer.java ValueFieldInheritanceTest.java
- * @run main runtime.valhalla.valuetypes.field_layout.ValueFieldInheritanceTest 64_NCOOP_CCP_NCOH
+ * @run main runtime.valhalla.valuetypes.field_layout.ValueFieldInheritanceTest 64_NCOOP_NCOH
  */
 
 /*
- * @test id=64_NCOOP_NCCP_NCOH
+ * @test id=64_COOP_COH
  * @requires vm.bits == 64
  * @library /test/lib
  * @requires vm.flagless
  * @modules java.base/jdk.internal.vm.annotation
  * @enablePreview
  * @compile FieldLayoutAnalyzer.java ValueFieldInheritanceTest.java
- * @run main runtime.valhalla.valuetypes.field_layout.ValueFieldInheritanceTest 64_NCOOP_NCCP_NCOH
+ * @run main runtime.valhalla.valuetypes.field_layout.ValueFieldInheritanceTest 64_COOP_COH
  */
 
 /*
- * @test id=64_COOP_CCP_COH
+ * @test id=64_NCOOP_COH
  * @requires vm.bits == 64
  * @library /test/lib
  * @requires vm.flagless
  * @modules java.base/jdk.internal.vm.annotation
  * @enablePreview
  * @compile FieldLayoutAnalyzer.java ValueFieldInheritanceTest.java
- * @run main runtime.valhalla.valuetypes.field_layout.ValueFieldInheritanceTest 64_COOP_CCP_COH
- */
-
-/*
- * @test id=64_NCOOP_CCP_COH
- * @requires vm.bits == 64
- * @library /test/lib
- * @requires vm.flagless
- * @modules java.base/jdk.internal.vm.annotation
- * @enablePreview
- * @compile FieldLayoutAnalyzer.java ValueFieldInheritanceTest.java
- * @run main runtime.valhalla.valuetypes.field_layout.ValueFieldInheritanceTest 64_NCOOP_CCP_COH
+ * @run main runtime.valhalla.valuetypes.field_layout.ValueFieldInheritanceTest 64_NCOOP_COH
  */
 
 package runtime.valhalla.valuetypes.field_layout;
@@ -194,7 +183,6 @@ public class ValueFieldInheritanceTest {
   }
 
   static ProcessBuilder exec(String compressedOopsArg,
-                             String compressedKlassPointersArg,
                              String compactObjectHeader,
                              String... args) throws Exception {
     List<String> argsList = new ArrayList<>();
@@ -204,9 +192,6 @@ public class ValueFieldInheritanceTest {
     Collections.addAll(argsList, "-Xshare:off");
     if (compressedOopsArg != null) {
       Collections.addAll(argsList, compressedOopsArg);
-    }
-    if (compressedKlassPointersArg != null) {
-      Collections.addAll(argsList, compressedKlassPointersArg);
     }
     if (compactObjectHeader != null) {
       Collections.addAll(argsList, compactObjectHeader);
@@ -219,45 +204,34 @@ public class ValueFieldInheritanceTest {
 
   public static void main(String[] args) throws Exception {
     String compressedOopsArg;
-    String compressedKlassPointersArg;
     String compactObjectHeader;
 
     switch(args[0]) {
       case "32":
         compressedOopsArg = null;
-        compressedKlassPointersArg = null;
         compactObjectHeader = null;
         break;
-      case "64_COOP_CCP_NCOH":
+      case "64_COOP_NCOH":
         compressedOopsArg = "-XX:+UseCompressedOops";
-        compressedKlassPointersArg =  "-XX:+UseCompressedClassPointers";
         compactObjectHeader = "-XX:-UseCompactObjectHeaders";
         break;
-      case "64_NCOOP_CCP_NCOH":
+      case "64_NCOOP_NCOH":
         compressedOopsArg = "-XX:-UseCompressedOops";
-        compressedKlassPointersArg = "-XX:+UseCompressedClassPointers";
         compactObjectHeader = "-XX:-UseCompactObjectHeaders";
         break;
-      case "64_NCOOP_NCCP_NCOH":
-        compressedOopsArg = "-XX:-UseCompressedOops";
-        compressedKlassPointersArg = "-XX:-UseCompressedClassPointers";
-        compactObjectHeader = "-XX:-UseCompactObjectHeaders";
-        break;
-      case "64_COOP_CCP_COH":
+      case "64_COOP_COH":
         compressedOopsArg = "-XX:+UseCompressedOops";
-        compressedKlassPointersArg = "-XX:+UseCompressedClassPointers";
         compactObjectHeader = "-XX:+UseCompactObjectHeaders";
         break;
-      case "64_NCOOP_CCP_COH":
+      case "64_NCOOP_COH":
         compressedOopsArg = "-XX:-UseCompressedOops";
-        compressedKlassPointersArg = "-XX:+UseCompressedClassPointers";
         compactObjectHeader = "-XX:+UseCompactObjectHeaders";
         break;
       default: throw new RuntimeException("Unrecognized configuration");
     }
 
     // Execute the test runner in charge of loading all test classes
-    ProcessBuilder pb = exec(compressedOopsArg, compressedKlassPointersArg, compactObjectHeader,
+    ProcessBuilder pb = exec(compressedOopsArg, compactObjectHeader,
                              "runtime.valhalla.valuetypes.field_layout.ValueFieldInheritanceTest$TestRunner");
     OutputAnalyzer out = new OutputAnalyzer(pb.start());
 
