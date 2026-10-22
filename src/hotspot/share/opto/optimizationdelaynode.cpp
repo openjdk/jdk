@@ -23,5 +23,22 @@
  */
 
 #include "opto/optimizationdelaynode.hpp"
+#include "opto/phaseX.hpp"
 
-// TODO: maybe rm
+const Type* OptimizationDelayNode::Value(PhaseGVN* phase) const {
+  const Type* t_in = phase->type(in(1));
+
+  // We always have to propagate TOP, at least within one IGVN
+  // round, otherwise we risk dead data paths with live CFG.
+  if (t_in == Type::TOP) {
+    return t_in;
+  }
+  return _type;
+  // TODO: something more fancy for the types where we can manage.
+}
+
+Node* OptimizationDelayNode::Identity(PhaseGVN* phase) {
+  // TODO:: maybe reveal the node
+  // return in(1);
+  return this;
+}

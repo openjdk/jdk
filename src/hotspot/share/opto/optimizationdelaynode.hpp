@@ -27,7 +27,17 @@
 
 #include "opto/node.hpp"
 
-// TODO: desc
+// This node delays optimizations, to verify that different optimization
+// order for IGVN and CCP optimizations does not change the behavior of
+// the resulting code.
+// This node operates as identity-function, and simply passes on the
+// input as its output. Eventually, it will be removed and replaced
+// by its input node.
+// The node progressively reveals more information about its input:
+// 1. We can replace the node with its input, see Identity.
+// 2. We can initially keep the type of the node wider than the input type.
+// 3. We can progressively narrow the type, as long as it is equal to
+//    or wider than the input type.
 class OptimizationDelayNode : public Node {
   const Type* _type;
 
@@ -49,8 +59,12 @@ public:
   }
 
   virtual int Opcode() const;
+  virtual uint hash() const { return NO_HASH; }
+  virtual bool cmp(const Node& n) const { return this == &n; }
   virtual const Type* bottom_type() const { return _type; } // TODO: change?
   virtual uint size_of() const { return sizeof(OptimizationDelayNode); }
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream* st) const {
