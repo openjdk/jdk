@@ -215,7 +215,7 @@ public class TestOopsInReturnConvention {
 
     static class GarbageProducerThread extends Thread {
         public void run() {
-            for (;;) {
+            while (!isInterrupted()) {
                 // Produce some garbage and then let the GC do its work
                 Object[] arrays = new Object[1024];
                 for (int i = 0; i < arrays.length; i++) {
@@ -238,11 +238,16 @@ public class TestOopsInReturnConvention {
         garbage_producer.setDaemon(true);
         garbage_producer.start();
 
-        // Trigger compilation
-        for (int i = 0; i < 100_000; i++) {
-            boolean useNull = (i % 2) == 0;
-            LargeValueWithOops val = useNull ? null : new LargeValueWithOops(i);
-            caller(val, i, useNull);
+        try {
+            // Trigger compilation
+            for (int i = 0; i < 100_000; i++) {
+                boolean useNull = (i % 2) == 0;
+                LargeValueWithOops val = useNull ? null : new LargeValueWithOops(i);
+                caller(val, i, useNull);
+            }
+        } finally {
+            garbage_producer.interrupt();
+            garbage_producer.join();
         }
     }
 }

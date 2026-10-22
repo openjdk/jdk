@@ -24,12 +24,12 @@
 
 #include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLinker.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLinkedClassTable.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -68,7 +68,7 @@ void AOTLinkedClassBulkLoader::preload_classes(JavaThread* current) {
 void AOTLinkedClassBulkLoader::preload_classes_impl(TRAPS) {
   precond(CDSConfig::is_using_aot_linked_classes());
 
-  ClassLoaderDataShared::restore_archived_modules_for_preloading_classes(THREAD);
+  AOTModules::restore_archived_modules_for_preloading_classes(THREAD);
   Handle h_platform_loader(THREAD, SystemDictionary::java_platform_loader());
   Handle h_system_loader(THREAD, SystemDictionary::java_system_loader());
 
@@ -87,7 +87,7 @@ void AOTLinkedClassBulkLoader::preload_classes_impl(TRAPS) {
   preload_classes_in_table(table->app(), "app", h_system_loader, CHECK);
 
   // Do this after all boot/platform/app classes are loaded, but before bytecode execution.
-  HeapShared::load_cached_resolved_methods();
+  AOTHeap::load_cached_resolved_methods();
 }
 
 void AOTLinkedClassBulkLoader::preload_classes_in_table(Array<InstanceKlass*>* classes,
@@ -424,7 +424,7 @@ void AOTLinkedClassBulkLoader::init_classes_for_loader(Handle class_loader, Arra
   }
 
   if (!early_only) {
-    HeapShared::init_classes_for_special_subgraph(class_loader, CHECK);
+    AOTHeap::init_classes_for_special_subgraph(class_loader, CHECK);
   }
 }
 

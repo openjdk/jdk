@@ -125,8 +125,8 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   // reduce threads contention.
   class MarkingStatsCache : public CHeapObj<mtGC> {
     constexpr static size_t num_entries = 1024;
-    static_assert(is_power_of_2(num_entries), "inv");
-    static_assert(num_entries > 0, "inv");
+    static_assert(is_power_of_2(num_entries));
+    static_assert(num_entries > 0);
 
     constexpr static size_t entry_mask = num_entries - 1;
 

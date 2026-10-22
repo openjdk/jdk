@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,6 @@ public:
   int num_fall_throughs();      // How many fall-through candidate this block has
   void update_uncommon_branch(Block* un); // Lower branch prob to uncommon code
   bool succ_fall_through(uint i); // Is successor "i" is a fall-through candidate
-  Block* lone_fall_through();   // Return lone fall-through Block or null
 
   Block* dom_lca(Block* that);  // Compute LCA in dominator tree.
 
@@ -206,9 +205,7 @@ public:
   uint compute_loop_alignment();
 
   // BLOCK_FREQUENCY is a sentinel to mark uses of constant block frequencies.
-  // It is currently also used to scale such frequencies relative to
-  // FreqCountInvocations relative to the old value of 1500.
-#define BLOCK_FREQUENCY(f) ((f * (double) 1500) / FreqCountInvocations)
+#define BLOCK_FREQUENCY(f) (f * 1500.0)
 
   // Register Pressure (estimate) for Splitting heuristic
   uint _reg_pressure;
@@ -742,7 +739,6 @@ class CFGLoop : public CFGElement {
     assert(hd->head()->is_Loop(), "must begin with loop head node");
     return hd;
   }
-  Block* backedge_block(); // Return the block on the backedge of the loop (else null)
   void compute_loop_depth(int depth);
   void compute_freq(); // compute frequency with loop assuming head freq 1.0f
   void scale_freq();   // scale frequency by loop trip count (including outer loops)

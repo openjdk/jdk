@@ -48,9 +48,11 @@
 #include "opto/countbitsnode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
+#include "opto/int128tnode.hpp"
 #include "opto/library_call.hpp"
 #include "opto/mathexactnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/multnode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/opcodes.hpp"
@@ -754,6 +756,12 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_maxD_strict:
     return inline_min_max(intrinsic_id());
 
+  case vmIntrinsics::_addInt128TLo:
+  case vmIntrinsics::_addInt128THi:
+  case vmIntrinsics::_subInt128TLo:
+  case vmIntrinsics::_subInt128THi:
+    return inline_int128t_addsub(intrinsic_id());
+
   case vmIntrinsics::_VectorUnaryOp:
     return inline_vector_nary_operation(1);
   case vmIntrinsics::_VectorBinaryOp:
@@ -808,6 +816,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_index_vector();
   case vmIntrinsics::_IndexPartiallyInUpperRange:
     return inline_index_partially_in_upper_range();
+  case vmIntrinsics::_VectorSlice:
+    return inline_vector_slice();
 
   case vmIntrinsics::_getObjectSize:
     return inline_getObjectSize();
@@ -1192,21 +1202,26 @@ bool LibraryCallKit::inline_countPositives() {
   return true;
 }
 
+// <X extends RuntimeException>
+// int checkIndex(int index, int length,
+//                BiFunction<String, List<Number>, X> oobef)
+// <X extends RuntimeException>
+// long checkIndex(long index, long length,
+//                 BiFunction<String, List<Number>, X> oobef)
 bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   Node* index = argument(0);
   Node* length = bt == T_INT ? argument(1) : argument(2);
-  if (too_many_traps(Deoptimization::Reason_intrinsic) || too_many_traps(Deoptimization::Reason_range_check)) {
-    return false;
-  }
 
   // check that length is positive
   Node* len_pos_cmp = _gvn.transform(CmpNode::make(length, integercon(0, bt), bt));
   Node* len_pos_bol = _gvn.transform(new BoolNode(len_pos_cmp, BoolTest::ge));
 
   {
+    // Let the intepreter throw the exception since the actual exception that needs throwing is the
+    // result of oobef, which is not trivial
     BuildCutout unless(this, len_pos_bol, PROB_MAX);
     uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_make_not_entrant);
+                  Deoptimization::Action_none);
   }
 
   if (stopped()) {
@@ -1234,10 +1249,12 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   }
   set_control(_gvn.transform(new IfTrueNode(rc)));
   {
+    // Let the intepreter throw the exception since the actual exception that needs throwing is the
+    // result of oobef, which is not trivial
     PreserveJVMState pjvms(this);
     set_control(_gvn.transform(new IfFalseNode(rc)));
     uncommon_trap(Deoptimization::Reason_range_check,
-                  Deoptimization::Action_make_not_entrant);
+                  Deoptimization::Action_none);
   }
 
   if (stopped()) {
@@ -2108,6 +2125,29 @@ bool LibraryCallKit::inline_math_unsignedMultiplyHigh() {
   return true;
 }
 
+bool LibraryCallKit::inline_int128t_addsub(vmIntrinsicID id) {
+  Node* lo1 = argument(0);
+  Node* hi1 = argument(2);
+  Node* lo2 = argument(4);
+  Node* hi2 = argument(6);
+  Node* multi;
+  if (id == vmIntrinsics::_addInt128TLo || id == vmIntrinsics::_addInt128THi) {
+    multi = _gvn.transform(new AddI128TNode(lo1, hi1, lo2, hi2));
+  } else {
+    assert(id == vmIntrinsics::_subInt128TLo || id == vmIntrinsics::_subInt128THi, "unexpected input %s", vmIntrinsics::name_at(id));
+    multi = _gvn.transform(new SubI128TNode(lo1, hi1, lo2, hi2));
+  }
+
+  Node* result;
+  if (id == vmIntrinsics::_addInt128TLo || id == vmIntrinsics::_subInt128TLo) {
+    result = _gvn.transform(new ProjNode(multi, Int128TBinaryNode::lo_proj_num));
+  } else {
+    result = _gvn.transform(new ProjNode(multi, Int128TBinaryNode::hi_proj_num));
+  }
+  set_result(result);
+  return true;
+}
+
 inline int
 LibraryCallKit::classify_unsafe_addr(Node* &base, Node* &offset, BasicType type) {
   const TypePtr* base_type = TypePtr::NULL_PTR;
@@ -2474,6 +2514,25 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   // Save state and restore on bailout
   SavedState old_state(this);
 
+  if (const TypeAryPtr* base_ary_type = _gvn.type(base)->isa_aryptr(); type == T_OBJECT && base_ary_type != nullptr) {
+    // Read an object from a primitive array, or a Phi some of whose inputs are primitive arrays
+    if (base_ary_type->elem()->make_ptr() == nullptr) {
+      return false;
+    }
+
+    // Must not be a flat array
+    if (base_ary_type->is_flat()) {
+      return false;
+    }
+
+    // Refine the base so alias analysis can work properly
+    Node* refined_base = must_be_not_null(base, false);
+    base_ary_type = base_ary_type->cast_to_not_flat();
+    refined_base = _gvn.transform(new CheckCastPPNode(control(), base, base_ary_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+    replace_in_map(base, refined_base);
+    base = refined_base;
+  }
+
   Node* adr = make_unsafe_address(base, offset, type, kind == Relaxed);
   assert(!stopped(), "Inlining of unsafe access failed: address construction stopped unexpectedly");
 
@@ -2753,14 +2812,27 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
         // Flat array must have an exact type
         bool is_null_free = !LayoutKindHelper::is_nullable_flat(layout);
         bool is_atomic = LayoutKindHelper::is_atomic_flat(layout);
-        Node* new_base = cast_to_flat_array_exact(base, value_klass, is_null_free, is_atomic);
-        replace_in_map(base, new_base);
-        base = new_base;
-        ptr = basic_plus_adr(base, ConvL2X(offset));
-        const TypeAryPtr* ptr_type = _gvn.type(ptr)->is_aryptr();
-        if (ptr_type->field_offset().get() != 0) {
-          // TODO 8388444 This should be a CheckCastPP, can we add a test?
-          ptr = _gvn.transform(new CastPPNode(control(), ptr, ptr_type->with_field_offset(0), ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+        ciObjArrayKlass* array_klass = get_flat_array_klass_exact(value_klass, is_null_free, is_atomic);
+        if (!array_klass->is_loaded()) {
+          uncommon_trap(Deoptimization::Reason_unloaded,
+                        Deoptimization::Action_reinterpret,
+                        array_klass, "Flat array class meta-data unavailable");
+          return true;
+        } else {
+          Node* new_base = cast_to_flat_array(base, array_klass, true);
+          if (new_base->is_top()) {
+            uncommon_trap(Deoptimization::Reason_intrinsic,
+                          Deoptimization::Action_none);
+            return true;
+          }
+          replace_in_map(base, new_base);
+          base = new_base;
+          ptr = basic_plus_adr(base, ConvL2X(offset));
+          const TypeAryPtr* ptr_type = _gvn.type(ptr)->is_aryptr();
+          if (ptr_type->field_offset().get() != 0) {
+            // TODO 8388444 This should be a CheckCastPP, can we add a test?
+            ptr = _gvn.transform(new CastPPNode(control(), ptr, ptr_type->with_field_offset(0), ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+          }
         }
       } else {
         uncommon_trap(Deoptimization::Reason_intrinsic,
@@ -3204,7 +3276,10 @@ bool LibraryCallKit::inline_onspinwait() {
   return true;
 }
 
-bool LibraryCallKit::klass_needs_init_guard(Node* kls) {
+bool LibraryCallKit::klass_needs_init_guard(Node* kls) const {
+  if (C->do_clinit_barriers()) {
+    return true; // Generate guard in AOT preload code
+  }
   if (!kls->is_Con()) {
     return true;
   }
@@ -3439,85 +3514,6 @@ bool LibraryCallKit::inline_native_notify_jvmti_sync() {
 #endif // INCLUDE_JVMTI
 
 #ifdef JFR_HAVE_INTRINSICS
-
-/**
- * if oop->klass != null
- *   // normal class
- *   epoch = _epoch_state ? 2 : 1
- *   if oop->klass->trace_id & ((epoch << META_SHIFT) | epoch)) != epoch {
- *     ... // enter slow path when the klass is first recorded or the epoch of JFR shifts
- *   }
- *   id = oop->klass->trace_id >> TRACE_ID_SHIFT // normal class path
- * else
- *   // primitive class
- *   if oop->array_klass != null
- *     id = (oop->array_klass->trace_id >> TRACE_ID_SHIFT) + 1 // primitive class path
- *   else
- *     id = LAST_TYPE_ID + 1 // void class path
- *   if (!signaled)
- *     signaled = true
- */
-bool LibraryCallKit::inline_native_classID() {
-  Node* cls = argument(0);
-
-  IdealKit ideal(this);
-#define __ ideal.
-  IdealVariable result(ideal); __ declarations_done();
-  Node* kls = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(),
-                                                 basic_plus_adr(cls, java_lang_Class::klass_offset()),
-                                                 TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
-
-
-  __ if_then(kls, BoolTest::ne, null()); {
-    Node* kls_trace_id_addr = basic_plus_adr(kls, in_bytes(KLASS_TRACE_ID_OFFSET));
-    Node* kls_trace_id_raw = ideal.load(ideal.ctrl(), kls_trace_id_addr,TypeLong::LONG, T_LONG, Compile::AliasIdxRaw);
-
-    Node* epoch_address = makecon(TypeRawPtr::make(JfrIntrinsicSupport::epoch_address()));
-    Node* epoch = ideal.load(ideal.ctrl(), epoch_address, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
-    epoch = _gvn.transform(new LShiftLNode(longcon(1), epoch));
-    Node* mask = _gvn.transform(new LShiftLNode(epoch, intcon(META_SHIFT)));
-    mask = _gvn.transform(new OrLNode(mask, epoch));
-    Node* kls_trace_id_raw_and_mask = _gvn.transform(new AndLNode(kls_trace_id_raw, mask));
-
-    float unlikely  = PROB_UNLIKELY(0.999);
-    __ if_then(kls_trace_id_raw_and_mask, BoolTest::ne, epoch, unlikely); {
-      sync_kit(ideal);
-      make_runtime_call(RC_LEAF,
-                        OptoRuntime::class_id_load_barrier_Type(),
-                        CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::load_barrier),
-                        "class id load barrier",
-                        TypePtr::BOTTOM,
-                        kls);
-      ideal.sync_kit(this);
-    } __ end_if();
-
-    ideal.set(result,  _gvn.transform(new URShiftLNode(kls_trace_id_raw, ideal.ConI(TRACE_ID_SHIFT))));
-  } __ else_(); {
-    Node* array_kls = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(),
-                                                   basic_plus_adr(cls, java_lang_Class::array_klass_offset()),
-                                                   TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
-    __ if_then(array_kls, BoolTest::ne, null()); {
-      Node* array_kls_trace_id_addr = basic_plus_adr(array_kls, in_bytes(KLASS_TRACE_ID_OFFSET));
-      Node* array_kls_trace_id_raw = ideal.load(ideal.ctrl(), array_kls_trace_id_addr, TypeLong::LONG, T_LONG, Compile::AliasIdxRaw);
-      Node* array_kls_trace_id = _gvn.transform(new URShiftLNode(array_kls_trace_id_raw, ideal.ConI(TRACE_ID_SHIFT)));
-      ideal.set(result, _gvn.transform(new AddLNode(array_kls_trace_id, longcon(1))));
-    } __ else_(); {
-      // void class case
-      ideal.set(result, longcon(LAST_TYPE_ID + 1));
-    } __ end_if();
-
-    Node* signaled_flag_address = makecon(TypeRawPtr::make(JfrIntrinsicSupport::signal_address()));
-    Node* signaled = ideal.load(ideal.ctrl(), signaled_flag_address, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw, true, MemNode::acquire);
-    __ if_then(signaled, BoolTest::ne, ideal.ConI(1)); {
-      ideal.store(ideal.ctrl(), signaled_flag_address, ideal.ConI(1), T_BOOLEAN, Compile::AliasIdxRaw, MemNode::release, true);
-    } __ end_if();
-  } __ end_if();
-
-  final_sync(ideal);
-  set_result(ideal.value(result));
-#undef __
-  return true;
-}
 
 //------------------------inline_native_jvm_commit------------------
 bool LibraryCallKit::inline_native_jvm_commit() {
@@ -4932,17 +4928,34 @@ bool LibraryCallKit::inline_newArray(bool null_free, bool atomic) {
 // public static native boolean ValueClass::isNullRestrictedArray(Object array);
 // public static native boolean ValueClass::isAtomicArray(Object array);
 bool LibraryCallKit::inline_getArrayProperties(ArrayPropertiesCheck check) {
+  if (!Arguments::is_valhalla_enabled()) {
+    Node* res = gvn().transform(check == ArrayPropertiesCheck::IsAtomic ? intcon(1) : intcon(0));
+    set_result(res);
+    return true;
+  }
   Node* array = argument(0);
 
   Node* bol;
-  switch(check) {
+  switch (check) {
     case IsFlat:
-      bol = flat_array_test(array);
+      if (UseArrayFlattening) {
+        bol = flat_array_test(array);
+      } else {
+        Node* res = gvn().transform(intcon(0));
+        set_result(res);
+        return true;
+      }
       break;
     case IsNullRestricted:
       bol = null_free_array_test(array);
       break;
     case IsAtomic: {
+      if (!UseArrayFlattening) {
+        // Non-flat arrays are always atomic
+        Node* res = gvn().transform(intcon(1));
+        set_result(res);
+        return true;
+      }
       // See conditions in JVM_IsAtomicArray
       // 1. If not flat, then atomic, or else...
       RegionNode* atomic_region = new RegionNode(1);
@@ -5263,8 +5276,10 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
     if (Arguments::is_valhalla_enabled()) {
       // Handle value type arrays
       // TODO 8251971 This is too strong
-      generate_fair_guard(flat_array_test(original), bailout);
-      generate_fair_guard(flat_array_test(refined_klass_node), bailout);
+      if (UseArrayFlattening) {
+        generate_fair_guard(flat_array_test(original), bailout);
+        generate_fair_guard(flat_array_test(refined_klass_node), bailout);
+      }
       generate_fair_guard(null_free_array_test(original), bailout);
     }
 
@@ -5517,8 +5532,8 @@ Node* LibraryCallKit::get_hashcode_from_header(Node* header, RegionNode* unset_r
   Node* hash_val = _gvn.transform(new AndINode(hshifted_header, hash_mask));
 
   Node* no_hash_val = _gvn.intcon(markWord::no_hash);
-  Node* chk_assigned = _gvn.transform(new CmpINode( hash_val, no_hash_val));
-  Node* test_assigned = _gvn.transform(new BoolNode( chk_assigned, BoolTest::eq));
+  Node* chk_assigned = _gvn.transform(new CmpINode(hash_val, no_hash_val));
+  Node* test_assigned = _gvn.transform(new BoolNode(chk_assigned, BoolTest::eq));
 
   generate_slow_guard(test_assigned, unset_region);
 
@@ -5533,12 +5548,12 @@ Node* LibraryCallKit::get_hashcode_from_header(Node* header, RegionNode* unset_r
  * }
  *
  * cache_path:
- * if header is not safe to read { goto inline_fast_path }
+ * if header is not safe to read { goto value_fast_path }
  * hash = read_hash_from_header()
- * if hash is empty { goto inline_fast_path }
+ * if hash is empty { goto value_fast_path }
  * return hash
  *
- * inline_fast_path:
+ * value_fast_path:
  * if not static { goto slow }
  * if not value object { goto slow }
  * if value klass has no fast path { goto slow }
@@ -5559,7 +5574,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
     _slow_path = 1,  // Actually perform the runtime call
     _cache_path,  // Get the hash from the header
     _null_path,  // If object is null, hash is 0.
-    _inline_fast_path,  // Fast path for value objects only (see ValueKlass::Members::_fast_hashcode_offset et seqq.)
+    _value_fast_path,  // Fast path for value objects only (see ValueKlass::Members::_fast_hashcode_offset et seqq.)
     PATH_LIMIT,
   };
 
@@ -5600,11 +5615,11 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   }
 
   // We only go to the cache case code if we pass a number of guards. The paths which do
-  // not pass are accumulated in the inline_fast_path_region. The compute region tries
+  // not pass are accumulated in the value_fast_path_region. The compute region tries
   // to use the fast path for value types. That also needs a lot of guards to be met.
   // The paths which do not pass are accumulated in the slow_region, where we do the
   // runtime call, which is the last resort.
-  RegionNode* inline_fast_path_region = new RegionNode(1);
+  RegionNode* value_fast_path_region = new RegionNode(1);
   RegionNode* slow_region = new RegionNode(1);
 
   // If this is a virtual call, we generate a funny guard.  We pull out
@@ -5626,12 +5641,12 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   Node* no_ctrl = nullptr;
   Node* header = make_load(no_ctrl, header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
 
-  Node* hash_val = get_hashcode_from_header(header, inline_fast_path_region);
+  Node* hash_val = get_hashcode_from_header(header, value_fast_path_region);
 
   result_val->init_req(_cache_path, hash_val);
   result_reg->init_req(_cache_path, control());
 
-  set_control(_gvn.transform(inline_fast_path_region));
+  set_control(_gvn.transform(value_fast_path_region));
   IfNode* fast_path_iff = nullptr;
   if (!stopped()) {
     if (UseHashcodeFastPath && is_static && !_gvn.type(obj)->is_valueklassptr()) {
@@ -5668,6 +5683,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
             unmasked_region->init_req(1, IfTrue(iff_is_empty_object));
             unmasked_result->init_req(1, result_empty);
 
+            // There is a segment (case 2. or 3.)
             set_control(IfFalse(iff_is_empty_object));
 
             Node* obj_payload_addr = basic_plus_adr(obj, ConvI2L(offset));
@@ -5696,9 +5712,28 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
             unmasked_region->init_req(3, IfTrue(iff_is_long_payload));
             unmasked_result->init_req(3, result_long);
 
-            Node* fast_path_result = AndI(_gvn.transform(unmasked_result), intcon(markWord::hash_mask));
-            result_reg->init_req(_inline_fast_path, _gvn.transform(unmasked_region));
-            result_val->init_req(_inline_fast_path, fast_path_result);
+            set_control(_gvn.transform(unmasked_region));
+            Node* hash_mask_con = intcon(markWord::hash_mask);
+            Node* masked_result = AndI(_gvn.transform(unmasked_result), hash_mask_con);
+
+            // Now, we have computed the hash. But we don't want it to be markWord::no_hash.
+            // If it is, let's just take the hash of the Class, and since this Class is an identity object,
+            // it must be different from markWord::no_hash. Let's do a little diamond since it's easy enough
+            // and cmove experimentally failed to be as efficient.
+            RegionNode* avoid_no_hash_region = new RegionNode(3);
+            Node* no_hash_avoided_result = new PhiNode(avoid_no_hash_region, TypeInt::INT);
+
+            Node* no_hash_con = intcon(checked_cast<int>(markWord::no_hash));
+            Node* bol_hash_would_be_no_hash = BoolCmpI(masked_result, BoolTest::eq, no_hash_con);
+            IfNode* iff_hash_would_be_no_hash = create_and_map_if(control(), bol_hash_would_be_no_hash, PROB_FAIR, COUNT_UNKNOWN);
+            avoid_no_hash_region->init_req(1, IfTrue(iff_hash_would_be_no_hash));
+            no_hash_avoided_result->init_req(1, result_empty);
+
+            avoid_no_hash_region->init_req(2, IfFalse(iff_hash_would_be_no_hash));
+            no_hash_avoided_result->init_req(2, masked_result);
+
+            result_reg->init_req(_value_fast_path, _gvn.transform(avoid_no_hash_region));
+            result_val->init_req(_value_fast_path, _gvn.transform(no_hash_avoided_result));
           }
         }
       }
@@ -5712,8 +5747,8 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   result_mem->init_req(_null_path, init_mem);
   result_io ->init_req(_cache_path, i_o());
   result_mem->init_req(_cache_path, init_mem);
-  result_io  ->set_req(_inline_fast_path, i_o());
-  result_mem ->set_req(_inline_fast_path, init_mem);
+  result_io  ->set_req(_value_fast_path, i_o());
+  result_mem ->set_req(_value_fast_path, init_mem);
 
   // Generate code for the slow case.  We make a call to hashCode().
   set_control(_gvn.transform(slow_region));
@@ -6623,7 +6658,7 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
     int klass_idx = C->get_alias_index(ary_type->add_offset(oopDesc::klass_offset_in_bytes()));
 #endif
     auto move_proj = [&](ProjNode* proj) {
-      int alias_idx = C->get_alias_index(proj->adr_type());
+      int alias_idx = C->get_alias_index(proj->out_adr_type());
       assert(alias_idx == Compile::AliasIdxRaw ||
              alias_idx == elemidx ||
              alias_idx == mark_idx ||
@@ -7079,8 +7114,10 @@ bool LibraryCallKit::inline_arraycopy() {
       generate_fair_guard(tst, slow_region);
 
       // TODO 8251971 This is too strong
-      generate_fair_guard(flat_array_test(src), slow_region);
-      generate_fair_guard(flat_array_test(dest), slow_region);
+      if (UseArrayFlattening) {
+        generate_fair_guard(flat_array_test(src), slow_region);
+        generate_fair_guard(flat_array_test(dest), slow_region);
+      }
     }
 
     {
@@ -7735,6 +7772,11 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
   const TypeInt* basic_type_t = _gvn.type(basic_type)->is_int();
   if (!basic_type_t->is_con()) {
     return false; // Only intrinsify if mode argument is constant
+  }
+
+  const TypeAryPtr* array_t = _gvn.type(array)->isa_aryptr();
+  if (array_t == nullptr || array_t->elem() == Type::BOTTOM) {
+    return false; // failed input validation
   }
 
   array = must_be_not_null(array, true);
@@ -9104,6 +9146,11 @@ bool LibraryCallKit::inline_dilithiumAlmostInverseNtt() {
 }
 
 //------------------------------inline_dilithiumNttMult
+//
+// int sun.security.provider.ML_DSA.implDilithiumNttMult(int[] product,
+//                                                       int[] coeffs1,
+//                                                       int[] coeffs2)
+//
 bool LibraryCallKit::inline_dilithiumNttMult() {
   address stubAddr;
   const char *stubName;
@@ -9117,12 +9164,10 @@ bool LibraryCallKit::inline_dilithiumNttMult() {
   Node* result          = argument(0);
   Node* ntta            = argument(1);
   Node* nttb            = argument(2);
-  Node* zetas           = argument(3);
 
   result = must_be_not_null(result, true);
   ntta = must_be_not_null(ntta, true);
   nttb = must_be_not_null(nttb, true);
-  zetas = must_be_not_null(zetas, true);
 
   Node* result_start  = array_element_address(result, intcon(0), T_INT);
   assert(result_start, "result is null");
@@ -10342,4 +10387,3 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
   set_result(box_fp16_value(float16_box_type, field, result));
   return true;
 }
-

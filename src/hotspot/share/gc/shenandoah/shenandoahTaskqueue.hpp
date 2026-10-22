@@ -171,7 +171,7 @@ private:
   static const int pow_range_mask   = right_n_bits<int>(pow_bits);
 
   inline oop decode_oop(uintptr_t val) const {
-    STATIC_ASSERT(oop_shift == 0);
+    static_assert(oop_shift == 0);
     return cast_to_oop(val & oop_extract_mask);
   }
 
@@ -197,7 +197,7 @@ private:
   }
 
   inline uintptr_t encode_oop(oop obj, bool skip_live, bool weak) const {
-    STATIC_ASSERT(oop_shift == 0);
+    static_assert(oop_shift == 0);
     uintptr_t encoded = cast_from_oop<uintptr_t>(obj);
     if (skip_live) {
       encoded |= skip_live_extract_mask;

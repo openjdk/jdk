@@ -1,4 +1,4 @@
-#
+
 # This is the "master security properties file".
 #
 # An alternate java.security properties file may be specified
@@ -1451,23 +1451,18 @@ jdk.sasl.disabledMechanisms=
 # The supported values are:
 #
 #   SYMANTEC_TLS : Distrust TLS Server certificates anchored by a Symantec
-#   root CA and issued after April 16, 2019 unless issued by one of the
-#   following subordinate CAs which have a later distrust date:
-#     1. Apple IST CA 2 - G1, SHA-256 fingerprint:
-#        AC2B922ECFD5E01711772FEA8ED372DE9D1E2245FCE3F57A9CDBEC77296A424B
-#        Distrust after December 31, 2019.
-#     2. Apple IST CA 8 - G1, SHA-256 fingerprint:
-#        A4FE7C7F15155F3F0AEF7AAA83CF6E06DEB97CA3F909DF920AC1490882D488ED
-#        Distrust after December 31, 2019.
+#   root CA.
 #
 #   ENTRUST_TLS : Distrust TLS Server certificates anchored by
-#   an Entrust root CA and issued after November 11, 2024.
+#   an Entrust root CA.
 #
 #   CAMERFIRMA_TLS : Distrust TLS Server certificates anchored by
-#   a Camerfirma root CA and issued after April 15, 2025.
+#   a Camerfirma root CA.
 #
 #   CHUNGHWA_TLS : Distrust TLS Server certificates anchored by
 #   a Chunghwa root CA and issued after March 17, 2026.
+#   After April 19, 2027, certificates will be distrusted regardless
+#   of the date the certificate was issued.
 #
 # Leading and trailing whitespace surrounding each value are ignored.
 # Unknown values are ignored. If the property is commented out or set to the

@@ -30,7 +30,7 @@
  * @enablePreview
  * @requires vm.flagless
  * @compile HashOverflowTest.java
- * @run main/othervm -Xint -Xss256K
+ * @run main/othervm -Xint -Xss384K
  *                   runtime.valhalla.valuetypes.HashOverflowTest
  */
 

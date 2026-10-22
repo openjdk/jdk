@@ -80,7 +80,7 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
     ss.print_cr("%3s marked strong",              ctx->is_marked_strong(obj) ? "" : "not");
     ss.print_cr("%3s marked weak",                ctx->is_marked_weak(obj) ? "" : "not");
     ss.print_cr("%3s in collection set",          heap->in_collection_set(obj) ? "" : "not");
-    if (heap->mode()->is_generational() && !obj->is_forwarded()) {
+    if (heap->mode()->is_generational() && !ShenandoahForwarding::is_forwarded(obj)) {
       ss.print_cr("age: %d", obj->age());
     }
     ss.print_raw("mark: ");
@@ -167,27 +167,31 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
   msg.append("\n");
 
   if (level >= _safe_oop) {
-    oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
     msg.append("Forwardee:\n");
-    if (obj != fwd) {
+    if (ShenandoahForwarding::is_real_forwarded(obj)) {
+      oop fwd = ShenandoahForwarding::forwardee_raw(obj);
       if (level >= _safe_oop_fwd && os::is_readable_pointer(fwd)) {
         print_obj(msg, fwd);
       } else {
         print_obj_safe(msg, fwd);
       }
+    } else if (ShenandoahForwarding::is_self_forwarded(obj)) {
+      msg.append("  (self forwarded)");
     } else {
-      msg.append("  (the object itself)");
+      msg.append("  (not forwarded)");
     }
     msg.append("\n");
   }
 
   if (level >= _safe_oop_fwd) {
-    oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
-    oop fwd2 = ShenandoahForwarding::get_forwardee_raw_unchecked(fwd);
-    if (fwd != fwd2) {
-      msg.append("Second forwardee:\n");
-      print_obj_safe(msg, fwd2);
-      msg.append("\n");
+    if (ShenandoahForwarding::is_real_forwarded(obj)) {
+      oop fwd = ShenandoahForwarding::forwardee_raw(obj);
+      if (ShenandoahForwarding::is_forwarded(fwd)) {
+        oop fwd2 = ShenandoahForwarding::forwardee_raw(fwd);
+        msg.append("Second forwardee:\n");
+        print_obj_safe(msg, fwd2);
+        msg.append("\n");
+      }
     }
   }
 
@@ -237,9 +241,10 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                   file, line);
   }
 
-  oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
+  oop fwd = obj;
+  if (ShenandoahForwarding::is_real_forwarded(obj)) {
+    fwd = ShenandoahForwarding::forwardee_raw(obj);
 
-  if (obj != fwd) {
     // When Full GC moves the objects, we cannot trust fwdptrs. If we got here, it means something
     // tries fwdptr manipulation when Full GC is running. The only exception is using the fwdptr
     // that still points to the object itself.
@@ -276,8 +281,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
     }
 
     // Step 4. Check for multiple forwardings
-    oop fwd2 = ShenandoahForwarding::get_forwardee_raw_unchecked(fwd);
-    if (fwd != fwd2) {
+    if (ShenandoahForwarding::is_forwarded(fwd)) {
       print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                     "Multiple forwardings",
                     file, line);
@@ -373,9 +377,8 @@ void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, co
 
 void ShenandoahAsserts::assert_forwarded(void* interior_loc, oop obj, const char* file, int line) {
   assert_correct(interior_loc, obj, file, line);
-  oop fwd =   ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
-  if (obj == fwd) {
+  if (!ShenandoahForwarding::is_forwarded(obj)) {
     print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_forwarded failed",
                   "Object should be forwarded",
                   file, line);
@@ -384,9 +387,8 @@ void ShenandoahAsserts::assert_forwarded(void* interior_loc, oop obj, const char
 
 void ShenandoahAsserts::assert_not_forwarded(void* interior_loc, oop obj, const char* file, int line) {
   assert_correct(interior_loc, obj, file, line);
-  oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
-  if (obj != fwd) {
+  if (ShenandoahForwarding::is_forwarded(obj)) {
     print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_not_forwarded failed",
                   "Object should not be forwarded",
                   file, line);

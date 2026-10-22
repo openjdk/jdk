@@ -1581,6 +1581,9 @@ const Type* UModINode::Value(PhaseGVN* phase) const {
 }
 
 const Type* UModLNode::Value(PhaseGVN* phase) const {
+  if (phase->type(in(2)) == TypeLong::ZERO) {
+    return Type::TOP;
+  }
   return unsigned_mod_value<TypeLong, julong, jlong>(phase, this);
 }
 

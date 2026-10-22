@@ -31,7 +31,6 @@ import java.lang.annotation.Repeatable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -77,26 +76,23 @@ public final class TypeLibrary {
     private static ValueDescriptor createStartTimeField() {
         var annos = createStandardAnnotations("Start Time", null);
         annos.add(new jdk.jfr.AnnotationElement(Timestamp.class, Timestamp.TICKS));
-        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.START_TIME, Type.LONG, annos, 0, false,
-                ImplicitFields.START_TIME);
+        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.START_TIME, Type.LONG, annos, 0, false);
     }
 
     private static ValueDescriptor createStackTraceField() {
         var annos = createStandardAnnotations("Stack Trace", "Stack Trace starting from the method the event was committed in");
-        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.STACK_TRACE, Type.STACK_TRACE, annos, 0, true,
-                ImplicitFields.STACK_TRACE);
+        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.STACK_TRACE, Type.STACK_TRACE, annos, 0, true);
     }
 
     private static ValueDescriptor createThreadField() {
         var annos = createStandardAnnotations("Event Thread", "Thread in which event was committed in");
-        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.EVENT_THREAD, Type.THREAD, annos, 0, true,
-                ImplicitFields.EVENT_THREAD);
+        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.EVENT_THREAD, Type.THREAD, annos, 0, true);
     }
 
     private static ValueDescriptor createDurationField() {
         var annos = createStandardAnnotations("Duration", null);
         annos.add(new jdk.jfr.AnnotationElement(Timespan.class, Timespan.TICKS));
-        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.DURATION, Type.LONG, annos, 0, false, ImplicitFields.DURATION);
+        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.DURATION, Type.LONG, annos, 0, false);
     }
 
     public static synchronized void initialize() {
@@ -378,9 +374,8 @@ public final class TypeLibrary {
         Class<?> fieldType = field.getType();
         boolean constantPool = Thread.class == fieldType || fieldType == Class.class;
         Type type = createType(fieldType);
-        String fieldName = field.getName();
         Name name = field.getAnnotation(Name.class);
-        String useName = fieldName;
+        String useName = field.getName();
         if (name != null) {
             useName = Utils.validJavaIdentifier(name.value(), useName);
         }
@@ -391,7 +386,7 @@ public final class TypeLibrary {
                 ans.add(ae);
             }
         }
-        return PrivateAccess.getInstance().newValueDescriptor(useName, type, ans, 0, constantPool, fieldName);
+        return PrivateAccess.getInstance().newValueDescriptor(useName, type, ans, 0, constantPool);
     }
 
     private static List<Annotation> resolveRepeatedAnnotations(Annotation[] annotations) {

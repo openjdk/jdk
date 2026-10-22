@@ -510,6 +510,10 @@ protected:
   // Usually returns new_type.  Returns old_type if new_type is only a slight
   // improvement, such that it would take many (>>10) steps to reach 2**32.
 
+  DeadPathNode* dead_path();
+
+  void make_dependent_paths_dead_if_top(Node* dead_node, const Type* t);
+
 public:
 
   PhaseIterGVN(PhaseIterGVN* igvn); // Used by CCP constructor
@@ -549,7 +553,7 @@ public:
 
 #ifdef ASSERT
   void verify_optimize(bool deep_revisit_converged);
-  void verify_Value_for(const Node* n, bool strict = false);
+  void verify_Value_for(const Node* n, const Type* tnew, bool strict = false);
   void verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit_converged);
   void verify_Identity_for(Node* n);
   void verify_node_invariants_for(const Node* n);
@@ -611,7 +615,10 @@ public:
   // Passing the old node (as 'n'), rather than the new node,
   // prevents unnecessary notifications when the new node already
   // has other users.
-  void add_users_to_worklist(Node* n);
+  void add_users_to_worklist(Node* n) const;
+  // The generic version that will add it to a given worklist instead of
+  // the current this->_worklist.
+  static void add_users_to_worklist(Node* n, Unique_Node_List& worklist);
 
   // Replace old node with new one.
   void replace_node( Node *old, Node *nn ) {
@@ -702,7 +709,7 @@ protected:
 // Should be replaced with combined CCP & GVN someday.
 class PhaseCCP : public PhaseIterGVN {
   Unique_Node_List _root_and_safepoints;
-  Unique_Node_List _maybe_top_type_nodes;
+  Unique_Node_List _maybe_top_type_or_div_mod_nodes;
   // Non-recursive.  Use analysis to transform single Node.
   virtual Node* transform_once(Node* n);
 
@@ -731,7 +738,7 @@ class PhaseCCP : public PhaseIterGVN {
 
   // Worklist algorithm identifies constants
   void analyze();
-  void analyze_step(Unique_Node_List& worklist, Node* n);
+  bool analyze_step(Unique_Node_List& worklist, Node* n);
   bool needs_revisit(Node* n) const;
 #ifdef ASSERT
   void verify_type(Node* n, const Type* tnew, const Type* told);
