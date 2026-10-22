@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,36 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZRUNTIMEWORKERS_HPP
-#define SHARE_GC_Z_ZRUNTIMEWORKERS_HPP
+/**
+ * @test
+ * @bug 8392784
+ * @enablePreview
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,${test.main.class}::test ${test.main.class}
+ * @run main ${test.main.class}
+ */
 
-#include "gc/shared/workerThread.hpp"
+public class TestInfinitePushValueTypesDown {
 
-class ThreadClosure;
+    static value class MyValue {
+        Object other;
 
-class ZRuntimeWorkers {
-private:
-  WorkerThreads _workers;
+        MyValue(Object other) {
+            this.other = other;
+        }
+    }
 
-public:
-  ZRuntimeWorkers();
+    static Object test() {
+        Object other = null;
+        for (int i = 0; i < 1; i++) {
+            other = new MyValue(other);
+        }
+        return other;
+    }
 
-  WorkerThreads* workers();
+    public static void main(String[] args) {
+        for (int i = 0; i < 50_000; i++) {
+            test();
+        }
+    }
+}
 
-  void threads_do(ThreadClosure* tc) const;
-};
-
-#endif // SHARE_GC_Z_ZRUNTIMEWORKERS_HPP
