@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,11 +242,10 @@ void JfrCPUSamplerThread::run() {
 
 static volatile size_t count = 0;
 
-void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, traceid tid, Tickspan cpu_time_period) {
+void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, Tickspan cpu_time_period) {
   EventCPUTimeSample event(UNTIMED);
   event.set_failed(true);
   event.set_starttime(start_time);
-  event.set_eventThread(tid);
   event.set_stackTrace(0);
   event.set_samplingPeriod(cpu_time_period);
   event.set_biased(false);
@@ -255,11 +255,10 @@ void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, trac
 
 static volatile size_t biased_count = 0;
 
-void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased, JfrStackTrace& stacktrace) {
+void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid sid, Tickspan cpu_time_period, bool biased, JfrStackTrace& stacktrace) {
   EventCPUTimeSample event(UNTIMED);
   event.set_failed(false);
   event.set_starttime(start_time);
-  event.set_eventThread(tid);
   event.set_stackTrace(sid);
   event.set_samplingPeriod(cpu_time_period);
   event.set_biased(biased);
@@ -273,14 +272,13 @@ void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid si
   }
 }
 
-void JfrCPUTimeThreadSampling::send_lost_event(const JfrTicks &time, traceid tid, s4 lost_samples) {
+void JfrCPUTimeThreadSampling::send_lost_event(const JfrTicks &time, s4 lost_samples) {
   if (!EventCPUTimeSamplesLost::is_enabled()) {
     return;
   }
   EventCPUTimeSamplesLost event(UNTIMED);
   event.set_starttime(time);
   event.set_lostSamples(lost_samples);
-  event.set_eventThread(tid);
   event.commit();
 }
 
@@ -409,22 +407,35 @@ public:
 
   void on_stacktrace(JavaThread* jt, traceid sid, traceid tid, bool truncated, bool biased,
                      JfrStackTrace& stack_trace) final {
-    JfrCPUTimeThreadSampling::send_event(_sample_ticks, sid, tid, _cpu_time_period, biased, stack_trace);
+    Thread* const current = Thread::current();
+    JfrThreadLocal::impersonate(current, tid);
+    assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
+    JfrCPUTimeThreadSampling::send_event(_sample_ticks, sid, _cpu_time_period, biased, stack_trace);
 
-    if (Thread::current() == jt) {
+    if (current == jt) {
       // TODO: Safepoint latency would be better and more generically tracked in the
       // safepoint/handshake implementation.
       send_safepoint_latency_event(jt, sid);
     }
+    JfrThreadLocal::stop_impersonating(current);
   }
 
   void on_failure(JavaThread* jt, traceid tid) final {
-    JfrCPUTimeThreadSampling::send_empty_event(_sample_ticks, tid, _cpu_time_period);
+    Thread* const current = Thread::current();
+    JfrThreadLocal::impersonate(current, tid);
+    assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
+    JfrCPUTimeThreadSampling::send_empty_event(_sample_ticks, _cpu_time_period);
+    JfrThreadLocal::stop_impersonating(current);
   }
 
   void report_lost_requests(JavaThread* jt, u4 count) final {
-    JfrCPUTimeThreadSampling::send_lost_event(
-      JfrTicks::now(), JfrThreadLocal::thread_id(jt), (s4)count);
+    // Lost samples belong to the platform thread that owns the queue.
+    Thread* const current = Thread::current();
+    const traceid tid = JfrThreadLocal::jvm_thread_id(jt);
+    JfrThreadLocal::impersonate(current, tid);
+    assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
+    JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), (s4)count);
+    JfrThreadLocal::stop_impersonating(current);
   }
 
 };

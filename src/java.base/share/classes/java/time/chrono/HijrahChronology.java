@@ -637,6 +637,7 @@ public final class HijrahChronology extends AbstractChronology implements Serial
      * @return the length of the month
      */
     int getMonthLength(int prolepticYear, int monthOfYear) {
+        checkCalendarInit();
         int epochMonth = yearToEpochMonth(prolepticYear) + (monthOfYear - 1);
         if (epochMonth < 0 || epochMonth >= hijrahEpochMonthStartDays.length) {
             throw new DateTimeException("Invalid Hijrah date, year: " +

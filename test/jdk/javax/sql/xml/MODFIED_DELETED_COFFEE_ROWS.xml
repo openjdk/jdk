@@ -2,9 +2,9 @@
 <webRowSet xmlns="http://java.sun.com/xml/ns/jdbc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 xsi:schemaLocation="http://java.sun.com/xml/ns/jdbc http://java.sun.com/xml/ns/jdbc/webrowset.xsd">
   <properties>
-    <command><null/></command>
+    <command/>
     <concurrency>1008</concurrency>
-    <datasource><null/></datasource>
+    <datasource/>
     <escape-processing>true</escape-processing>
     <fetch-direction>1000</fetch-direction>
     <fetch-size>0</fetch-size>
@@ -20,7 +20,7 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/jdbc http://java.sun.com/xml/ns/j
     <rowset-type>ResultSet.TYPE_SCROLL_INSENSITIVE</rowset-type>
     <show-deleted>false</show-deleted>
     <table-name>COFFEES</table-name>
-    <url><null/></url>
+    <url/>
     <sync-provider>
       <sync-provider-name>com.sun.rowset.providers.RIOptimisticProvider</sync-provider-name>
       <sync-provider-vendor>Oracle Corporation</sync-provider-vendor>
@@ -40,7 +40,7 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/jdbc http://java.sun.com/xml/ns/j
       <signed>false</signed>
       <searchable>false</searchable>
       <column-display-size>0</column-display-size>
-      <column-label><null/></column-label>
+      <column-label/>
       <column-name>COF_NAME</column-name>
       <schema-name></schema-name>
       <column-precision>0</column-precision>
@@ -48,7 +48,7 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/jdbc http://java.sun.com/xml/ns/j
       <table-name></table-name>
       <catalog-name></catalog-name>
       <column-type>4</column-type>
-      <column-type-name><null/></column-type-name>
+      <column-type-name/>
     </column-definition>
     <column-definition>
       <column-index>2</column-index>
@@ -59,7 +59,7 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/jdbc http://java.sun.com/xml/ns/j
       <signed>false</signed>
       <searchable>false</searchable>
       <column-display-size>0</column-display-size>
-      <column-label><null/></column-label>
+      <column-label/>
       <column-name>SUP_ID</column-name>
       <schema-name></schema-name>
       <column-precision>0</column-precision>
@@ -67,7 +67,7 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/jdbc http://java.sun.com/xml/ns/j
       <table-name></table-name>
       <catalog-name></catalog-name>
       <column-type>12</column-type>
-      <column-type-name><null/></column-type-name>
+      <column-type-name/>
     </column-definition>
     <column-definition>
       <column-index>3</column-index>
@@ -78,7 +78,7 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/jdbc http://java.sun.com/xml/ns/j
       <signed>false</signed>
       <searchable>false</searchable>
       <column-display-size>0</column-display-size>
-      <column-label><null/></column-label>
+      <column-label/>
       <column-name>PRICE</column-name>
       <schema-name></schema-name>
       <column-precision>0</column-precision>
@@ -86,7 +86,7 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/jdbc http://java.sun.com/xml/ns/j
       <table-name></table-name>
       <catalog-name></catalog-name>
       <column-type>4</column-type>
-      <column-type-name><null/></column-type-name>
+      <column-type-name/>
     </column-definition>
     <column-definition>
       <column-index>4</column-index>
@@ -97,7 +97,7 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/jdbc http://java.sun.com/xml/ns/j
       <signed>false</signed>
       <searchable>false</searchable>
       <column-display-size>0</column-display-size>
-      <column-label><null/></column-label>
+      <column-label/>
       <column-name>SALES</column-name>
       <schema-name></schema-name>
       <column-precision>10</column-precision>
@@ -105,7 +105,7 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/jdbc http://java.sun.com/xml/ns/j
       <table-name></table-name>
       <catalog-name></catalog-name>
       <column-type>2</column-type>
-      <column-type-name><null/></column-type-name>
+      <column-type-name/>
     </column-definition>
     <column-definition>
       <column-index>5</column-index>
@@ -116,7 +116,7 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/jdbc http://java.sun.com/xml/ns/j
       <signed>false</signed>
       <searchable>false</searchable>
       <column-display-size>0</column-display-size>
-      <column-label><null/></column-label>
+      <column-label/>
       <column-name>TOTAL</column-name>
       <schema-name></schema-name>
       <column-precision>0</column-precision>
@@ -124,7 +124,7 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/jdbc http://java.sun.com/xml/ns/j
       <table-name></table-name>
       <catalog-name></catalog-name>
       <column-type>4</column-type>
-      <column-type-name><null/></column-type-name>
+      <column-type-name/>
     </column-definition>
     <column-definition>
       <column-index>6</column-index>
@@ -135,15 +135,15 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/jdbc http://java.sun.com/xml/ns/j
       <signed>false</signed>
       <searchable>false</searchable>
       <column-display-size>0</column-display-size>
-      <column-label><null/></column-label>
-      <column-name><null/></column-name>
+      <column-label/>
+      <column-name/>
       <schema-name></schema-name>
       <column-precision>0</column-precision>
       <column-scale>0</column-scale>
       <table-name></table-name>
       <catalog-name></catalog-name>
       <column-type>4</column-type>
-      <column-type-name><null/></column-type-name>
+      <column-type-name/>
     </column-definition>
   </metadata>
   <data>
@@ -156,12 +156,12 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/jdbc http://java.sun.com/xml/ns/j
       <columnValue>0</columnValue>
     </insertRow>
     <modifyRow>
-      <columnValue>2</columnValue>
-      <columnValue>French_Roast</columnValue>
-      <columnValue>49</columnValue>
-      <columnValue>8.99</columnValue>
-      <columnValue>0</columnValue>
-      <columnValue>0</columnValue>
+      <columnValue>2</columnValue><updateValue />
+      <columnValue>French_Roast</columnValue><updateValue />
+      <columnValue>49</columnValue><updateValue />
+      <columnValue>8.99</columnValue><updateValue />
+      <columnValue>0</columnValue><updateValue />
+      <columnValue>0</columnValue><updateValue />
     </modifyRow>
     <insertRow>
       <columnValue>3</columnValue>
@@ -172,12 +172,12 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/jdbc http://java.sun.com/xml/ns/j
       <columnValue>0</columnValue>
     </insertRow>
     <modifyRow>
-      <columnValue>4</columnValue>
-      <columnValue>Colombian_Decaf</columnValue>
-      <columnValue>101</columnValue>
-      <columnValue>8.99</columnValue>
-      <columnValue>0</columnValue>
-      <columnValue>0</columnValue>
+      <columnValue>4</columnValue><updateValue />
+      <columnValue>Colombian_Decaf</columnValue><updateValue />
+      <columnValue>101</columnValue><updateValue />
+      <columnValue>8.99</columnValue><updateValue />
+      <columnValue>0</columnValue><updateValue />
+      <columnValue>0</columnValue><updateValue />
     </modifyRow>
     <insertRow>
       <columnValue>5</columnValue>

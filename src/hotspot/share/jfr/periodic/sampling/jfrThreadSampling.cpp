@@ -315,6 +315,8 @@ static void record_thread_in_java(const JfrSampleRequest& request, const JfrTick
   }
   assert(sid != 0, "invariant");
   const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
+  JfrThreadLocal::impersonate(current, tid);
+  assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
   send_sample_event<EventExecutionSample>(request._sample_ticks, now, sid, tid);
   if (current == jt) {
     send_safepoint_latency_event(request, now, sid, jt);
@@ -332,6 +334,7 @@ static void drain_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl, Jav
       record_thread_in_java(request, now, tl, jt, current);
     }
     tl->clear_enqueued_requests();
+    JfrThreadLocal::stop_impersonating(current);
   }
   assert(!tl->has_enqueued_requests(), "invariant");
 }
@@ -379,12 +382,16 @@ bool JfrThreadSampling::process_native_sample_request(JfrThreadLocal* tl, JavaTh
       }
       sid = JfrStackTraceRepository::add(stacktrace);
     }
-    // Read the tid under the monitor to ensure that if its a virtual thread,
+
+    // Read the tid under the monitor to ensure that if it is a virtual thread,
     // it is not unmounted until we are done with it.
     tid = JfrThreadLocal::thread_id(jt);
+    // Since the sampler thread cannot commit any other event except its next sample,
+    // no explicit cleanup is required; the next processed sample overwrites the alias.
+    JfrThreadLocal::impersonate(sampler_thread, tid);
   }
-
   assert(tl->sample_state() == NO_SAMPLE, "invariant");
+  assert(JfrThreadLocal::thread_id(sampler_thread) == tid, "invariant");
   send_sample_event<EventNativeMethodSample>(start_time, start_time, sid, tid);
   return true;
 }
@@ -419,4 +426,3 @@ void JfrThreadSampling::process_sample_request(JavaThread* jt) {
   }
   drain_all_enqueued_requests(now, tl, jt, jt);
 }
-
