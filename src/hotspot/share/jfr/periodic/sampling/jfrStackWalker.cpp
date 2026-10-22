@@ -117,7 +117,11 @@ u4 JfrStackWalkerRequestQueue::get_and_reset_lost_requests_due_to_queue_full() {
 }
 
 void JfrStackWalkerRequestQueue::init() {
-  set_capacity(INITIAL_CAPACITY);
+  // Keep an existing queue: it may have grown, and may still hold requests
+  // from a previous use of the stack walker that its thread is about to process.
+  if (AtomicAccess::load(&_capacity) == 0) {
+    set_capacity(INITIAL_CAPACITY);
+  }
 }
 
 void JfrStackWalkerRequestQueue::clear() {

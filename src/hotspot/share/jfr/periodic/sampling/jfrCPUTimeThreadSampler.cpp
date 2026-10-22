@@ -201,6 +201,9 @@ void JfrCPUSamplerThread::enroll() {
     initialize_active_signal_handler_counter();
     log_trace(jfr)("Enrolling CPU thread sampler");
     _sample.signal();
+    // Initialize the stack walker before the timers so that it is ready
+    // before any timer signal can fire.
+    JfrStackWalker::initialize();
     if (!init_timers()) {
       log_error(jfr)("Failed to initialize timers for CPU thread sampler");
       disenroll();
@@ -217,6 +220,7 @@ void JfrCPUSamplerThread::disenroll() {
       stop_timer();
       stop_signal_handlers();
     }
+    JfrStackWalker::teardown();
     _sample.wait();
     log_trace(jfr)("Disenrolled CPU thread sampler");
   }
@@ -319,9 +323,6 @@ void JfrCPUTimeThreadSampling::create_sampler(JfrCPUSamplerThrottle& throttle) {
   assert(_sampler == nullptr, "invariant");
   _sampler = new JfrCPUSamplerThread(throttle);
   _sampler->start_thread();
-  // Initialize the stack walker before enrolling the CPU sampler so that
-  // _native_stackwalker_thread is non-null before any timer signal can fire.
-  JfrStackWalker::initialize();
   _sampler->enroll();
 }
 
