@@ -850,8 +850,9 @@ public:
     DEFINE_CLASS_ID(Neg,      Node, 22)
     DEFINE_CLASS_ID(ReachabilityFence, Node, 23)
     DEFINE_CLASS_ID(DivModInteger, Node, 24)
+    DEFINE_CLASS_ID(OptimizationDelay, Node, 25)
 
-    _max_classes  = ClassMask_DivModInteger
+    _max_classes  = ClassMask_OptimizationDelay
   };
   #undef DEFINE_CLASS_ID
 
@@ -1039,6 +1040,7 @@ public:
   DEFINE_CLASS_QUERY(OpaqueLoopStride)
   DEFINE_CLASS_QUERY(OpaqueMultiversioning)
   DEFINE_CLASS_QUERY(OpaqueZeroTripGuard)
+  DEFINE_CLASS_QUERY(OptimizationDelay)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
   DEFINE_CLASS_QUERY(OuterStripMinedLoopEnd)
   DEFINE_CLASS_QUERY(Parm)

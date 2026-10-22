@@ -52,6 +52,7 @@ public:
     // TODO: type assert?
     // TODO: macro flags?
     //C->add_optimization_delay(this);
+    init_class_id(Class_OptimizationDelay);
   }
 
   static bool can_delay_type(const Type* t) {
