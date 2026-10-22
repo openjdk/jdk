@@ -3908,7 +3908,7 @@ public:
 
 // Cache Management Operations
 // These instruction may be turned off for user space.
-  // Zicboz
+// Zicboz
   void cbo_zero(Register Rs1) {
     assert(UseZicboz, "sanity");
     unsigned insn = 0;
