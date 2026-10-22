@@ -3908,16 +3908,25 @@ public:
 
 // Cache Management Operations
 // These instruction may be turned off for user space.
-// Zicboz
-  void cbo_zero(Register Rs1) {
+ private:
+  enum CBO_FUNCT : unsigned int {
+    CBO_ZERO = 0b0000000000100
+  };
+
+  template <CBO_FUNCT FUNCT>
+  void cbo_base(Register Rs1) {
     assert(UseZicboz, "sanity");
     unsigned insn = 0;
     patch((address)&insn, 6,  0, 0b0001111);
     patch((address)&insn, 14, 12, 0b010);
     patch_reg((address)&insn, 15, Rs1);
-    patch((address)&insn, 31, 20, 0b0000000000100);
+    patch((address)&insn, 31, 20, FUNCT);
     emit(insn);
   }
+
+ public:
+  // Zicboz
+  void cbo_zero(Register Rs1) { cbo_base<CBO_ZERO>(Rs1); }
 
  private:
   enum PREFETCH_FUNCT : unsigned int {
