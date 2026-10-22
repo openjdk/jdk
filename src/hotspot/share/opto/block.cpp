@@ -416,7 +416,7 @@ uint PhaseCFG::build_cfg() {
   VectorSet visited;
 
   // Allocate stack with enough space to avoid frequent realloc
-  Node_Stack nstack(C->live_nodes() >> 1);
+  Node_Stack<Node> nstack(C->live_nodes() >> 1);
   nstack.push(_root, 0);
   uint sum = 0;                 // Counter for blocks
 

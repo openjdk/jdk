@@ -345,7 +345,7 @@ public:
   // Expand method for MachNode, replaces nodes representing pseudo
   // instructions with a set of nodes which represent real machine
   // instructions and compute the same value.
-  virtual MachNode *Expand( State *, Node_List &proj_list, Node* mem ) { return this; }
+  virtual MachNode* Expand(State*, Node_List<MachProjNode>& proj_list, Node* mem) { return this; }
 
   // Bottom_type call; value comes from operand0
   virtual const Type* bottom_type() const {
@@ -904,7 +904,7 @@ public:
   void set_jvms(JVMState* s) {
     _jvms = s;
   }
-  virtual const Type    *bottom_type() const;
+  virtual const Type* bottom_type() const { return Type::CONTROL; }
 
   virtual const RegMask &in_RegMask(uint) const;
 

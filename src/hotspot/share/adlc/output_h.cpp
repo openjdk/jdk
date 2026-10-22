@@ -1809,7 +1809,7 @@ void ArchDesc::declareClasses(FILE *fp) {
         instr->needs_constant_base() ||
         (instr->_matrule != nullptr &&
          instr->num_opnds() != instr->num_unique_opnds()) ) {
-      fprintf(fp,"  virtual MachNode      *Expand(State *state, Node_List &proj_list, Node* mem);\n");
+      fprintf(fp,"  virtual MachNode      *Expand(State* state, Node_List<MachProjNode>& proj_list, Node* mem);\n");
     }
 
     if (instr->is_pinned(_globalNames)) {

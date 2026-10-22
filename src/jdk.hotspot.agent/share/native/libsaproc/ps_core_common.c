@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,6 @@
 
 // close all file descriptors
 static void close_files(struct ps_prochandle* ph) {
-  lib_info* lib = NULL;
-
   // close core file descriptor
   if (ph->core->core_fd >= 0)
     close(ph->core->core_fd);
@@ -77,16 +75,6 @@ static void close_files(struct ps_prochandle* ph) {
   // close class share archive file
   if (ph->core->classes_jsa_fd >= 0)
     close(ph->core->classes_jsa_fd);
-
-  // close all library file descriptors
-  lib = ph->libs;
-  while (lib) {
-    int fd = lib->fd;
-    if (fd >= 0 && fd != ph->core->exec_fd) {
-      close(fd);
-    }
-    lib = lib->next;
-  }
 }
 
 // clean all map_info stuff

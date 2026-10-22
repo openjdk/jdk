@@ -167,7 +167,7 @@ class Universe: AllStatic {
 
 #if INCLUDE_CDS_JAVA_HEAP
   // Each slot i stores an index that can be used to restore _basic_type_mirrors[i]
-  // from the archive heap using HeapShared::get_root(int)
+  // from the archive heap using AOTHeap::get_root(int)
   static int _archived_basic_type_mirror_indices[T_VOID+1];
 #endif
 
@@ -248,7 +248,6 @@ class Universe: AllStatic {
   static uintx        the_array_interfaces_bitmap()   { return _the_array_interfaces_bitmap; }
 
   static Method*      finalizer_register_method();
-  static Method*      loader_addClass_method();
   static Method*      throw_illegal_access_error();
   static Method*      throw_no_such_method_error();
   static Method*      do_stack_walk_method();

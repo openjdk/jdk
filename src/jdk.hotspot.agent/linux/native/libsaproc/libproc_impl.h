@@ -39,6 +39,12 @@ typedef struct frame_info {
   uintptr_t v_addr;
   unsigned char* data;
   int size;
+
+  // Following fields should be declared as int instead of bool
+  // because "bool" would be defined as int in C in libproc.h.
+  // It causes unexpected memory access.
+  int is_debug_frame; // true if this info comes from .debug_frame
+  int tried_debug_frame; // true if .debug_frame was tried to load.
 } frame_info;
 
 // list of shared objects
@@ -130,6 +136,9 @@ void print_debug(const char* format,...);
 void print_warning(const char* format,...);
 void print_error(const char* format,...);
 bool is_debug();
+
+// read frame information for unwinding from specified ELF section.
+bool read_frame(const char* section, int fd, frame_info* frame);
 
 // deletes a thread from the thread list
 void delete_thread_info(struct ps_prochandle* ph, thread_info* thr);

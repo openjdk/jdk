@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,38 +23,27 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8392533
- * @summary Test that a holder null check is performed when storing to an empty flat field.
- * @enablePreview
- * @requires vm.compiler1.enabled
- * @run main ${test.main.class}
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 ${test.main.class}
- */
+#ifndef ExecCommand_h
+#define ExecCommand_h
 
-package compiler.valhalla.valuetypes;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-public class TestEmptyStoreToNullHolder {
-    static value class Empty { }
+#define EXEC_CALLBACK_IGNORE 0
+#define EXEC_CALLBACK_USE 1
+#define EXEC_CALLBACK_ERROR 2
 
-    Empty field = new Empty();
+typedef int (*ExecCommandCallbackType)(void*, char*);
 
-    static void test(TestEmptyStoreToNullHolder holder) {
-        holder.field = null;
-    }
+int execCommand(const char* const       argv[],
+                ExecCommandCallbackType callback,
+                void*                   callbackData);
 
-    public static void main(String[] args) {
-        TestEmptyStoreToNullHolder holder = new TestEmptyStoreToNullHolder();
-        for (int i = 0; i < 20_000; i++) {
-            test(holder);
-        }
-        try {
-            test(null);
-            throw new RuntimeException("No NullPointerException thrown!");
-        } catch (NullPointerException expected) {
-            // Expected
-        }
-    }
+void closePipeEnd(int* pipefd, int idx);
+
+#ifdef __cplusplus
 }
+#endif
 
+#endif /* #ifndef ExecCommand_h */

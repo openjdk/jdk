@@ -39,10 +39,10 @@ class TypeArrayKlass;
 // It also decides what Klasses must be cached in aot-initialized state.
 //
 // ArchiveBuilder uses [1] as roots to scan for all MetaspaceObjs that need to be cached.
-// HeapShared uses [2] to create an image of the archived heap.
+// AOTHeap uses [2] to create an image of the archived heap.
 //
 // [1] is stored in _all_cached_classes in aotArtifactFinder.cpp.
-// [2] is stored in HeapShared::archived_object_cache().
+// [2] is stored in AOTHeap::archived_object_cache().
 //
 // Although many Klasses and heap objects are created in the assembly phase, we only store a subset of them into
 // the AOT cache. For example:
@@ -68,9 +68,9 @@ class TypeArrayKlass;
 //      turn discover more Klasses and java heap objects.
 //    - The scanning continues until we reach a steady state.
 //
-// Note1: See TODO comments in HeapShared::archive_object() for exceptions to this rule.
+// Note1: See TODO comments in AOTHeap::archive_object() for exceptions to this rule.
 //
-// Note2: The scanning of Java objects is done in heapShared.cpp. Please see calls into the HeapShared class
+// Note2: The scanning of Java objects is done in heapShared.cpp. Please see calls into the AOTHeap class
 //        from AOTArtifactFinder.
 
 class AOTArtifactFinder : AllStatic {

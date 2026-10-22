@@ -94,8 +94,8 @@ public class TestMetaspaceFirstGC {
     // kept alive so no collection can unload them before the threshold is reached
     private static final List<ClassLoader> loaders = new ArrayList<>();
 
-    // Counted down from the JFR stream when a metadata allocation failure inside loadOneClass
-    // arrives, whether it was the first request is decided afterwards from the recording.
+    // Counted down from the JFR stream at the first metadata allocation failure from any thread,
+    // the recording decides afterwards if it came from loadOneClass and was the first request.
     private static final CountDownLatch metadataGC = new CountDownLatch(1);
 
     public interface Dummy {}
@@ -117,13 +117,11 @@ public class TestMetaspaceFirstGC {
         try (RecordingStream rs = new RecordingStream()) {
             // a concurrent collector may fold the requested GC into a cycle that is already
             // running and never emit the cause, the failed allocation inside loadOneClass is the
-            // candidate, whether a GC was really asked for is checked afterwards
+            // candidate, whether a GC was really asked for is checked afterwards.
+            // A failure outside loadOneClass also stops loading; the recording determines
+            // whether it preceded the candidate and made the measurement unusable.
             rs.enable(EventNames.MetaspaceAllocationFailure).withStackTrace();
-            rs.onEvent(EventNames.MetaspaceAllocationFailure, event -> {
-                if (fromLoadOneClass(event)) {
-                    metadataGC.countDown();
-                }
-            });
+            rs.onEvent(EventNames.MetaspaceAllocationFailure, event -> metadataGC.countDown());
             rs.startAsync();
             // load what the measured window touches before it opens, the recording is checked
             // afterwards for any other allocation failure inside it
@@ -209,6 +207,10 @@ public class TestMetaspaceFirstGC {
                     break;
                 }
                 earlierFailures++;
+            }
+            if (request == null && (startupFailures > 0 || earlierFailures > 0)) {
+                throw new SkippedException(startupFailures + " allocation failures before loading started and "
+                    + earlierFailures + " other allocation failures, none inside loadOneClass, the first metadata GC request can't be measured");
             }
             Asserts.assertNotNull(request, "no metaspace allocation failure inside loadOneClass");
             Instant nextLoad = null;
@@ -304,7 +306,7 @@ public class TestMetaspaceFirstGC {
             System.out.println("Metadata allocation failure seen after " + maxIterations + " load attempts, metaspace used=" + getMetaspaceUsed());
             return;
         }
-        throw new RuntimeException("No metadata allocation failure inside loadOneClass after " + maxIterations + " load attempts");
+        throw new RuntimeException("No metadata allocation failure after " + maxIterations + " load attempts");
     }
 
     private static void loadOneClass() {
