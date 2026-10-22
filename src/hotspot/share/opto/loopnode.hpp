@@ -1394,7 +1394,7 @@ public:
     float _cl_prob;
 
     // True when the exit test is "(long) int_iv < long_limit" (or similar): we may treat it as an int counted loop
-    // by rewriting the comparision to int (see ::speculatively_narrow_limit()). Until then, _raw_cmp/_raw_limit
+    // by rewriting the comparison to int (see ::speculatively_narrow_limit()). Until then, _raw_cmp/_raw_limit
     // describe the graph. After narrowing, _narrowed_cmp/_narrowed_limit hold the new CmpI and ConvL2I(limit).
     bool _should_speculatively_narrow_limit;
     Node* _narrowed_cmp;
