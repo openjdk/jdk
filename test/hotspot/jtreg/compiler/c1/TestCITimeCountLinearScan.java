@@ -25,7 +25,9 @@
  * @test
  * @bug 8374518
  * @summary Sanity check the flag -XX:+CITime and -XX:+CountLinearScan
- * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+CITime -XX:+CountLinearScan ${test.main.class}
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:-DisplayVMOutput -XX:+CITime -XX:+CountLinearScan
+ *                   ${test.main.class}
  */
 
 package compiler.c1;

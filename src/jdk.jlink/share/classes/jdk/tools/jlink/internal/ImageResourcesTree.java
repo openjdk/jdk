@@ -26,6 +26,7 @@ package jdk.tools.jlink.internal;
 
 import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ModuleLink;
+import jdk.internal.module.Checks;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -204,9 +205,10 @@ public final class ImageResourcesTree {
             }
 
             // We've collected information for all "packages", including the root
-            // (empty) package and anything under "META-INF". However, these should
-            // not have entries in the "/packages" directory.
-            packageToModules.keySet().removeIf(p -> p.isEmpty() || p.equals("META-INF") || p.startsWith("META-INF."));
+            // (empty) package and anything under non-package resource directories
+            // (e.g. "META-INF"). However, these should not have entries in the
+            // "/packages" directory.
+            packageToModules.keySet().removeIf(p -> !Checks.isPackageName(p));
             packageToModules.forEach((pkgName, modLinks) -> {
                 // Merge multiple links for the same module.
                 List<ModuleLink> pkgModules = modLinks.stream()
@@ -235,22 +237,46 @@ public final class ImageResourcesTree {
                 return;
             }
             String modName = fullPath.substring(1, modEnd);
-            String pkgPath = fullPath.substring(modEnd + 1);
+            String resPath = fullPath.substring(modEnd + 1);
+            int pathEnd = resPath.lastIndexOf('/');
 
             Node parentNode = getDirectoryNode(modName, modulesRoot);
             boolean isPreviewPath = false;
-            if (pkgPath.startsWith(PREVIEW_PREFIX)) {
+            if (resPath.startsWith("META-INF/")) {
+                parentNode = getDirectoryNode("META-INF", parentNode);
+                if (!resPath.startsWith(PREVIEW_PREFIX)) {
+                    // Non-preview META-INF paths are resources, not package
+                    // hierarchies, so directory and file names may contain dots.
+                    for (int i = "META-INF".length(), j; i != pathEnd; i = j) {
+                        j = resPath.indexOf('/', i + 1);
+                        parentNode = getDirectoryNode(resPath.substring(i + 1, j), parentNode);
+                    }
+                    String resourceName = resPath.substring(pathEnd + 1);
+                    Node resourceNode = parentNode.getChildren(resourceName);
+                    if (resourceNode == null) {
+                        new ResourceNode(resourceName, parentNode);
+                    } else if (!(resourceNode instanceof ResourceNode)) {
+                        throw new InvalidTreeException(resourceNode);
+                    }
+                    return;
+                }
                 // For preview paths, process nodes relative to the preview directory.
-                pkgPath = pkgPath.substring(PREVIEW_PREFIX.length());
-                Node metaInf = getDirectoryNode("META-INF", parentNode);
-                parentNode = getDirectoryNode("preview", metaInf);
+                parentNode = getDirectoryNode("preview", parentNode);
+                resPath = resPath.substring(PREVIEW_PREFIX.length());
+                pathEnd -= PREVIEW_PREFIX.length();
                 isPreviewPath = true;
             }
 
-            int pathEnd = pkgPath.lastIndexOf('/');
             // From invariants tested above, this must now be well-formed.
-            String fullPkgName = (pathEnd == -1) ? "" : pkgPath.substring(0, pathEnd).replace('/', '.');
-            String resourceName = pkgPath.substring(pathEnd + 1);
+            String pkgPath = (pathEnd == -1) ? "" : resPath.substring(0, pathEnd);
+            if (pkgPath.contains(".")) {
+                // Non META-INF entries are package paths. Dots in path segment
+                // names would otherwise be confused with package separators.
+                System.err.println("Invalid package path, skipping " + pkgPath);
+                return;
+            }
+            String fullPkgName = pkgPath.replace('/', '.');
+            String resourceName = resPath.substring(pathEnd + 1);
             // Intermediate packages are marked "empty" (no resources). This might
             // later be merged with a non-empty link for the same package.
             ModuleLink emptyLink = ModuleLink.forEmptyPackage(modName, isPreviewPath);

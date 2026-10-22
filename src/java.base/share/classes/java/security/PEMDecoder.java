@@ -25,8 +25,6 @@
 
 package java.security;
 
-import jdk.internal.javac.PreviewFeature;
-
 import jdk.internal.ref.CleanerFactory;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.rsa.RSAPrivateCrtKeyImpl;
@@ -48,10 +46,10 @@ import java.util.Objects;
  * PEM is a textual encoding used to store and transfer cryptographic
  * objects, such as asymmetric keys, certificates, and certificate revocation
  * lists (CRLs). It is defined in RFC 1421 and RFC 7468. PEM consists of
- * Base64-encoded content enclosed by a type-identifying header
- * and footer.
+ * Base64-encoded content enclosed by a header and footer that identify the
+ * type of the content.
  *
- * <p>The {@link #decode(String)} and {@link #decode(InputStream)} methods
+ * <p> The {@link #decode(String)} and {@link #decode(InputStream)} methods
  * return an instance of a class that matches the PEM type and implements
  * {@link BinaryEncodable}, as follows:
  * <ul>
@@ -70,11 +68,18 @@ import java.util.Objects;
  * </ul>
  *
  * <p> If the PEM type has no corresponding class, {@code decode(String)} and
- * {@code decode(InputStream)} will return a {@code PEM} object.
+ * {@code decode(InputStream)} return a {@code PEM} object.
+ *
+ * <p> If application code switches over the {@code BinaryEncodable} result of
+ * {@link #decode(String)} or {@link #decode(InputStream)}, the {@code switch} cannot
+ * be made exhaustive simply by providing a {@code case} label for every permitted
+ * subtype listed for {@code BinaryEncodable}; there also must be a {@code default}
+ * or {@code case BinaryEncodable} label to handle additional subtypes that
+ * might be added in the future.
  *
  * <p> The {@link #decode(String, Class)} and {@link #decode(InputStream, Class)}
- * methods accept a class parameter specifying the desired {@code BinaryEncodable}
- * type. These methods avoid the need for casting and are useful when multiple
+ * methods accept a parameter specifying the desired {@code BinaryEncodable}
+ * result. These methods avoid the need for casting and are useful when multiple
  * representations are possible. For example, if the PEM contains both public and
  * private keys, specifying {@code PrivateKey.class} returns only the private key.
  * If {@code X509EncodedKeySpec.class} is provided, the public key encoding is
@@ -109,11 +114,6 @@ import java.util.Objects;
  * for decryption, an {@link EncryptedPrivateKeyInfo} is returned.
  * A {@code PEMDecoder} configured for decryption can also decode unencrypted PEM.
  *
- * <p> The {@code BinaryEncodable} interface may evolve. When using a decode method
- * with {@code switch}, always include a {@code default} case rather than
- * relying on the classes specified in the permits clause to remain fixed.
- * An exhaustive {@code switch} may result in a {@link MatchException}.
- *
  * <p> This class is immutable and thread-safe.
  *
  * <p> Example: decode a private key:
@@ -136,6 +136,7 @@ import java.util.Objects;
  * @see PEMEncoder
  * @see PEM
  * @see EncryptedPrivateKeyInfo
+ * @see BinaryEncodable
  *
  * @spec https://www.rfc-editor.org/info/rfc1421
  *       RFC 1421: Privacy Enhancement for Internet Electronic Mail
@@ -144,9 +145,8 @@ import java.util.Objects;
  * @spec https://www.rfc-editor.org/info/rfc7468
  *       RFC 7468: Textual Encodings of PKIX, PKCS, and CMS Structures
  *
- * @since 25
+ * @since 28
  */
-@PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public final class PEMDecoder {
     private final Provider factory;
     private final PBEKeySpec keySpec;
@@ -291,8 +291,6 @@ public final class PEMDecoder {
      * @throws IllegalArgumentException if decoding fails or no PEM data is found
      * @throws NullPointerException if {@code str} is {@code null}
      * @throws CryptoException if an error occurs during decryption
-     *
-     * @since 27
      */
     public BinaryEncodable decode(String str) {
         Objects.requireNonNull(str);
@@ -332,8 +330,6 @@ public final class PEMDecoder {
      * @throws IllegalArgumentException if decoding fails
      * @throws NullPointerException if {@code InputStream} is {@code null}
      * @throws CryptoException if an error occurs during decryption
-     *
-     * @since 27
      */
     public BinaryEncodable decode(InputStream is) throws IOException {
         Objects.requireNonNull(is);
@@ -376,8 +372,6 @@ public final class PEMDecoder {
      * @throws ClassCastException if {@code tClass} does not represent the PEM type
      * @throws NullPointerException if any input values are {@code null}
      * @throws CryptoException if an error occurs during decryption
-     *
-     * @since 27
      */
     public <S extends BinaryEncodable> S decode(String str, Class<S> tClass) {
         Objects.requireNonNull(str);
@@ -425,8 +419,6 @@ public final class PEMDecoder {
      *
      * @see #decode(InputStream)
      * @see #decode(String, Class)
-     *
-     * @since 27
      */
     public <S extends BinaryEncodable> S decode(InputStream is, Class<S> tClass)
         throws IOException {
@@ -540,8 +532,6 @@ public final class PEMDecoder {
      * @param provider the factory {@code Provider}
      * @return a new {@code PEMDecoder} instance configured with the {@code Provider}
      * @throws NullPointerException if {@code provider} is {@code null}
-     *
-     * @since 27
      */
     public PEMDecoder withFactoriesOf(Provider provider) {
         Objects.requireNonNull(provider);

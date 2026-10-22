@@ -29,6 +29,7 @@
 #include "logging/logMessage.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/diagnosticArgument.hpp"
@@ -46,17 +47,20 @@ using StringFlag = JfrRedactedEvents::StringFlag;
 using StringKeyValueArray = GrowableArray<JfrRedactedEvents::StringKeyValue*>*;
 
 static const char REDACTED[] = "[REDACTED]";
+static const char REDACTED_MARKER = (char)0xFF;
 static const char DELIMITER[] = " ";
+static const char REDACT_ARGUMENT[] = "redact-argument";
 static const char REDACT_ARGUMENT_EQUAL[] = "redact-argument=";
 
 static const size_t REDACTED_LENGTH = sizeof(REDACTED) -1;
 static const size_t DELIMITER_LENGTH = sizeof(DELIMITER) -1;
-static const size_t REDACT_ARGUMENT_EQUAL_LENGTH = sizeof(REDACT_ARGUMENT_EQUAL) -1;
+static const size_t REDACT_ARGUMENT_LENGTH = sizeof(REDACT_ARGUMENT) -1;
 
 String* JfrRedactedEvents::_redacted_java_command_line = nullptr;
 String* JfrRedactedEvents::_redacted_jvm_command_line = nullptr;
 String* JfrRedactedEvents::_redacted_flags_command_line = nullptr;
 String* JfrRedactedEvents::_redacted_flight_recorder_options = nullptr;
+String* JfrRedactedEvents::_redacted_flight_recorder_options_with_marker = nullptr;
 
 StringKeyValueArray JfrRedactedEvents::_initial_environment_variables = nullptr;
 StringKeyValueArray JfrRedactedEvents::_initial_system_properties = nullptr;
@@ -71,6 +75,10 @@ bool JfrRedactedEvents::_initialized = false;
 bool JfrRedactedEvents::set_argument_filter(const char* filters) {
   assert (_argument_filters == nullptr, "invariant");
   assert (filters != nullptr, "invariant");
+  if (strcmp(filters, "*") != 0 && strcmp(filters, "none") != 0) {
+    _redacted_arguments = new StringArray();
+    _redacted_arguments->add(filters);
+  }
   _argument_filters = new StringArray();
   return append_filters(_argument_filters, true, filters);
 }
@@ -139,9 +147,8 @@ bool JfrRedactedEvents::append_filters(StringArray* target, bool argument, const
   }
   if (filters[0] == '\0') {
     LogMessage(jfr, redact) msg;
-    msg.warning("Default redaction filters are replaced. Specify:");
-    msg.warning("-XX:FlightRecorderOptions:%s=none to disable filters without a warning.", option_name);
-    return true;
+    msg.error("Specify -XX:FlightRecorderOptions:%s=none to disable filters completely.", option_name);
+    return false;
   }
   if (strcmp(filters, "none") == 0) {
     return true;
@@ -187,6 +194,67 @@ char* JfrRedactedEvents::new_redacted_text() {
   return result;
 }
 
+void JfrRedactedEvents::redact(String* scratch_string, const char* target, const String* redaction) {
+  if (strchr(redaction->text(), REDACTED_MARKER)) {
+    return;
+  }
+  const char* position = target;
+  while (true) {
+    const char* sensitive = strstr(position, redaction->text());
+    if (sensitive == nullptr) {
+      return;
+    }
+    size_t index = (size_t)(sensitive - target);
+    for (size_t i = 0; i < redaction->length(); i++) {
+      scratch_string->set(index + i, REDACTED_MARKER);
+    }
+    position = sensitive + 1;
+  }
+}
+
+String* JfrRedactedEvents::redact_environment_variable_value(const char* value) {
+  if (strchr(value, REDACTED_MARKER)) {
+    return new String(REDACTED);
+  }
+  bool changed = false;
+  String* input = new String(value);
+  if (_redacted_flight_recorder_options_with_marker != nullptr) {
+    size_t length = strlen(FlightRecorderOptions);
+    while (const char* start = strstr(input->text(), FlightRecorderOptions)) {
+      changed = true;
+      const char* end = start + length;
+      stringStream s;
+      s.write(input->text(), start - input->text());
+      s.write(_redacted_flight_recorder_options_with_marker->text(), _redacted_flight_recorder_options_with_marker->length());
+      s.write(end, strlen(end));
+      String* result = new String(s.base());
+      delete input;
+      input = result;
+    }
+  }
+  String* scratch_string = new String(input->text());
+  for (int i = 0; i < _redacted_arguments->length(); i++) {
+    redact(scratch_string, input->text(), _redacted_arguments->at(i));
+  }
+  stringStream result;
+  bool inside_redaction = false;
+  for (size_t i = 0; i < scratch_string->length(); i++) {
+    if (scratch_string->at(i) == REDACTED_MARKER) {
+      changed = true;
+      if (!inside_redaction) {
+        result.print(REDACTED);
+      }
+      inside_redaction = true;
+    } else {
+      result.put(scratch_string->at(i));
+      inside_redaction = false;
+    }
+  }
+  delete scratch_string;
+  delete input;
+  return changed ? new String(result.base()) : nullptr;
+}
+
 bool JfrRedactedEvents::emit_initial_environment_variables(bool log) {
   if (_initial_environment_variables == nullptr) {
     ensure_initialized();
@@ -206,6 +274,16 @@ bool JfrRedactedEvents::emit_initial_environment_variables(bool log) {
           value = REDACTED;
           if (log) {
             log_debug(jfr, redact)("Redacted initial environment variable named '%s'", key->text());
+          }
+        } else {
+          String* redacted_value = redact_environment_variable_value(value);
+          if (redacted_value != nullptr) {
+            if (log) {
+              log_debug(jfr, redact)("Redacted argument in initial environment variable value named '%s'", key->text());
+            }
+            _initial_environment_variables->append(new StringKeyValue(key, redacted_value->text()));
+            delete redacted_value;
+            continue;
           }
         }
         _initial_environment_variables->append(new StringKeyValue(key, value));
@@ -261,6 +339,9 @@ void JfrRedactedEvents::emit_initial_system_properties(bool log) {
 bool JfrRedactedEvents::match_flag(const char* flag_name, const char* arg) {
   if (flag_name == nullptr || arg == nullptr) {
     return false;
+  }
+  if (strncmp(arg, "-XX:", 4) == 0) {
+    arg += 4;
   }
   while (*flag_name) {
     if (*arg != *flag_name) {
@@ -346,6 +427,34 @@ void JfrRedactedEvents::emit_jvm_information(bool log) {
   }
 }
 
+// Method assumes that FlightRecorderOptions has been successfully parsed during startup
+String* JfrRedactedEvents::redact_flight_recorder_options(const char* option, bool marker) {
+  JavaThread* THREAD = JavaThread::current();
+  const size_t length = strlen(option);
+  DCmdArgIter iterator(option, length, ',');
+  while (iterator.next(THREAD)) {
+    if (strncmp(iterator.key_addr(), REDACT_ARGUMENT, REDACT_ARGUMENT_LENGTH) == 0) {
+      const char* start = iterator.value_addr();
+      const char* end = start + iterator.value_length();
+      stringStream result;
+      result.write(option, start - option);
+      if (marker) {
+        result.put(REDACTED_MARKER);
+      } else {
+        result.write(REDACTED, REDACTED_LENGTH);
+      }
+      result.write(end, option + length - end);
+      return new String(result.base());
+    }
+  }
+  if (HAS_PENDING_EXCEPTION) {
+    DEBUG_ONLY(ShouldNotReachHere();)
+    CLEAR_PENDING_EXCEPTION;
+    return new String(REDACTED);
+  }
+  return nullptr;
+}
+
 void JfrRedactedEvents::ensure_initialized() {
   if (_initialized) {
     return;
@@ -359,31 +468,12 @@ void JfrRedactedEvents::ensure_initialized() {
       add_default_filters(_argument_filters, true);
   }
   if (FlightRecorderOptions != nullptr) {
-    if (strstr(FlightRecorderOptions, REDACT_ARGUMENT_EQUAL) != nullptr) {
-      DCmdIter iterator(FlightRecorderOptions, ',');
-      stringStream result;
-      size_t pos = 0;
-      while(iterator.has_next()) {
-        CmdLine line = iterator.next();
-        const char* start = line.cmd_addr();
-        if (strncmp(start, REDACT_ARGUMENT_EQUAL, REDACT_ARGUMENT_EQUAL_LENGTH) == 0) {
-          result.print(REDACT_ARGUMENT_EQUAL);
-          result.print(REDACTED);
-          // Preserve ',' if there are more tokens
-          pos = iterator.has_next() ? iterator.cursor() - 1 : iterator.cursor();
-        }
-        while (pos < iterator.cursor()) {
-          result.write(FlightRecorderOptions + pos, 1);
-          pos++;
-        }
-      }
-      _redacted_flight_recorder_options = new String(result.base());
-    } else {
-      _redacted_flight_recorder_options = new String(FlightRecorderOptions);
-    }
+    _redacted_flight_recorder_options = redact_flight_recorder_options(FlightRecorderOptions, false);
+    _redacted_flight_recorder_options_with_marker = redact_flight_recorder_options(FlightRecorderOptions, true);
   }
-
-  _redacted_arguments = new StringArray();
+  if (_redacted_arguments == nullptr) {
+    _redacted_arguments = new StringArray();
+  }
 
   StringArray* java_args = make_java_args_array();
   _redacted_java_command_line = redact_command_line(java_args);
@@ -396,7 +486,6 @@ void JfrRedactedEvents::ensure_initialized() {
   StringArray* flags_args = make_jvm_args_array(Arguments::jvm_flags_array(), Arguments::num_jvm_flags());
   _redacted_flags_command_line = redact_command_line(flags_args);
   delete flags_args;
-
   _initialized = true;
 }
 
@@ -422,8 +511,8 @@ String* JfrRedactedEvents::redact_command_line(StringArray* arguments) {
       for (int j = arg_index; j < next_index; j++) {
         result->add(REDACTED);
         const char* arg = arguments->at(j)->text();
-        if (arg != nullptr && strncmp(arg, "-XX:", 4) == 0) {
-          _redacted_arguments->add(arg + 4);
+        if (arg != nullptr) {
+          _redacted_arguments->add(arg);
         }
       }
       arg_index = next_index;
@@ -504,15 +593,23 @@ StringArray* JfrRedactedEvents::make_jvm_args_array(char** jvm_args_array, int a
     return nullptr;
   }
   StringArray* result = new StringArray(array_length);
-  for(int i = 0; i < array_length; i++) {
+  for (int i = 0; i < array_length; i++) {
     char* argument = jvm_args_array[i];
-    if (_redacted_flight_recorder_options != nullptr &&
-        strncmp(argument, "-XX:FlightRecorderOptions", 25) == 0) {
-      const char* text = _redacted_flight_recorder_options->text();
-      size_t length = _redacted_flight_recorder_options->length();
-      // Length must be at least 26 or the JVM will not start.
-      result->add(new String(argument, 26, text, length));
-      continue;
+    if (strncmp(argument, "-XX:FlightRecorderOptions", 25) == 0) {
+      size_t length = strlen(argument);
+      if (length > 25 &&
+          _redacted_flight_recorder_options != nullptr &&
+          strcmp(argument + 26, FlightRecorderOptions) == 0) {
+        const char* text = _redacted_flight_recorder_options->text();
+        // Length must be at least 26 or the JVM will not start.
+        result->add(new String(argument, 26, text, _redacted_flight_recorder_options->length()));
+        continue;
+      }
+      if (strstr(argument, REDACT_ARGUMENT_EQUAL) != nullptr) {
+        _redacted_arguments->add(argument);
+        result->add("-XX:FlightRecorderOptions:[REDACTED]");
+        continue;
+      }
     }
     if (strncmp(argument, "-D", 2) == 0) {
       const char* key_start = argument + 2;
@@ -523,6 +620,7 @@ StringArray* JfrRedactedEvents::make_jvm_args_array(char** jvm_args_array, int a
         bool redact = match_key(_key_filters, key_tmp->text());
         delete key_tmp;
         if (redact) {
+          _redacted_arguments->add(argument);
           size_t unsensitive_length = (size_t)(eq - argument) + 1;
           result->add(new String(argument, unsensitive_length, REDACTED, REDACTED_LENGTH));
           continue;
@@ -609,6 +707,9 @@ bool JfrRedactedEvents::match_key(StringArray* filters, const char* text) {
 }
 
 bool JfrRedactedEvents::read_file(StringArray* target, const char* filename) {
+  if (!is_valid_redaction_file(filename)) {
+    return false;
+  }
   FILE* file = os::fopen(filename, "r");
   if (file == nullptr) {
     log_error(jfr, redact)("Failed to open redaction file: %s", filename);
@@ -660,4 +761,22 @@ StringArray* JfrRedactedEvents::split(const char* text, char separator) {
     result->add(last, strlen(last));
   }
   return result;
+}
+
+bool JfrRedactedEvents::is_valid_redaction_file(const char* filename) {
+  struct stat st;
+  int ret = os::stat(filename, &st);
+  if (ret != 0) {
+    log_error(jfr, redact)("Failed to access redaction file %s", filename);
+    return false;
+  }
+  if ((st.st_mode & S_IFMT) != S_IFREG) {
+    log_error(jfr, redact)("Redaction file %s is not a regular file", filename);
+    return false;
+  }
+  if (st.st_size > 1024*1024) {
+    log_error(jfr, redact)("Redaction file %s is too large (1024 KB).", filename);
+    return false;
+  }
+  return true;
 }

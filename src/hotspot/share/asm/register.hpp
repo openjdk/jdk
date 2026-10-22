@@ -78,7 +78,7 @@ template <class RegImpl> class ReverseRegSetIterator;
 template <class RegImpl>
 class AbstractRegSet {
 #ifndef ARM
-  STATIC_ASSERT(RegImpl::number_of_registers <= 64);
+  static_assert(RegImpl::number_of_registers <= 64);
 #endif
   uint64_t _bitset;
 

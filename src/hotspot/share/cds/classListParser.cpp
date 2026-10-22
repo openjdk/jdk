@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "cds/unregisteredClasses.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -772,9 +773,6 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
     id2klass_table()->put_if_absent(id, ik, &created);
     if (!created) {
       error("Duplicated ID %d for class %s", id, _class_name);
-    }
-    if (id2klass_table()->maybe_grow()) {
-      log_info(aot, hashtables)("Expanded id2klass_table() to %d", id2klass_table()->table_size());
     }
   }
 

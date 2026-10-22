@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,11 +156,13 @@ void NewTypeArrayStub::emit_code(LIR_Assembler* ce) {
 
 // Implementation of NewObjectArrayStub
 
-NewObjectArrayStub::NewObjectArrayStub(LIR_Opr klass_reg, LIR_Opr length, LIR_Opr result, CodeEmitInfo* info) {
+NewObjectArrayStub::NewObjectArrayStub(LIR_Opr klass_reg, LIR_Opr length, LIR_Opr result,
+                                       CodeEmitInfo* info, bool is_null_free) {
   _klass_reg = klass_reg;
   _result = result;
   _length = length;
   _info = new CodeEmitInfo(info);
+  _is_null_free = is_null_free; // unimplemented
 }
 
 
@@ -422,6 +424,33 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   ce->add_call_info_here(info());
   ce->verify_oop_map(info());
   __ b(_continuation);
+}
+
+// Implementation of SubstitutabilityCheckStub
+SubstitutabilityCheckStub::SubstitutabilityCheckStub(LIR_Opr left, LIR_Opr right, CodeEmitInfo* info) {
+  Unimplemented();
+}
+
+void SubstitutabilityCheckStub::emit_code(LIR_Assembler* ce) {
+  Unimplemented();
+}
+
+LoadFlattenedArrayStub::LoadFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr result, CodeEmitInfo* info) {
+  Unimplemented();
+}
+
+void LoadFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
+  Unimplemented();
+}
+
+// Implementation of StoreFlattenedArrayStub
+
+StoreFlattenedArrayStub::StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr value, CodeEmitInfo* info) {
+  Unimplemented();
+}
+
+void StoreFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
+  Unimplemented();
 }
 
 #undef __

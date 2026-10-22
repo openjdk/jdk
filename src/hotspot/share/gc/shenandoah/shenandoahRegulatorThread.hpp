@@ -61,7 +61,6 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
   // These return true if a cycle was started.
   bool start_old_cycle() const;
   bool start_young_cycle() const;
-  bool start_global_cycle() const;
 
   // The generational mode can only unload classes in a global cycle. The regulator
   // thread itself will trigger a global cycle if metaspace is out of memory.
@@ -82,7 +81,6 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
   // duration of planned regulator sleep period, in ms
   uint _sleep;
   double _most_recent_wake_time;
-  double _most_recent_period;
   double _last_sleep_adjust_time;
 };
 

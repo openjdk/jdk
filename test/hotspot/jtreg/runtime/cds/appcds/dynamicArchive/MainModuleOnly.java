@@ -117,7 +117,7 @@ public class MainModuleOnly extends DynamicArchiveTestBase {
             "--module-path", moduleDir.toString(),
             "-m", TEST_MODULE1)
             .assertNormalExit(output -> {
-                    output.shouldContain("[class,load] com.simple.Main source: shared objects file")
+                    output.shouldMatch("\\[class,load *\\] com\\.simple\\.Main source: shared objects file")
                           .shouldHaveExitValue(0);
                 });
 

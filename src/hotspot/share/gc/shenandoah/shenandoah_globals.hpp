@@ -179,7 +179,7 @@
           "GC mode to use.  Among other things, this defines which "        \
           "barriers are in in use. Possible values are:"                    \
           " satb - snapshot-at-the-beginning concurrent GC (three pass mark-evac-update);"  \
-          " passive - stop the world GC only (either degenerated or full);" \
+          " passive - stop the world full GC only (diagnostic mode);"       \
           " generational - generational concurrent GC")                     \
                                                                             \
   product(ccstr, ShenandoahGCHeuristics, "adaptive",                        \
@@ -233,7 +233,7 @@
           "heap or generation, trigger a learning cycle if we are "         \
           "in learning mode.  Learning mode happens during initialization " \
           "and following a drastic state change, such as following a "      \
-          "degenerated or Full GC cycle.  In percents of soft max "         \
+          "System.GC call or a Full GC cycle.  In percents of soft max "    \
           "heap size.")                                                     \
           range(0,100)                                                      \
                                                                             \
@@ -275,6 +275,7 @@
           "margin of error for the average cycle time and average "         \
           "allocation rate. Increasing this value will cause the "          \
           "heuristic to initiate more concurrent cycles." )                 \
+          range(0.319,3.291)                                                \
                                                                             \
   product(uintx, ShenandoahGuaranteedGCInterval, 5*60*1000, EXPERIMENTAL,   \
           "Many heuristics would guarantee a concurrent GC cycle at "       \
@@ -423,31 +424,18 @@
                                                                             \
   product(uintx, ShenandoahCriticalFreeThreshold, 1, EXPERIMENTAL,          \
           "How much of the heap needs to be free after recovery cycles, "   \
-          "either Degenerated or Full GC to be claimed successful. If this "\
-          "much space is not available, next recovery step would be "       \
-          "triggered.")                                                     \
+          "for a Full GC to be claimed successful. If this much space is "  \
+          "not available, next recovery step would be triggered.")          \
           range(0, 100)                                                     \
                                                                             \
-  product(bool, ShenandoahDegeneratedGC, true, DIAGNOSTIC,                  \
-          "Enable Degenerated GC as the graceful degradation step. "        \
-          "Disabling this option leads to degradation to Full GC instead. " \
-          "When running in passive mode, this can be toggled to measure "   \
-          "either Degenerated GC or Full GC costs.")                        \
-                                                                            \
-  product(uintx, ShenandoahFullGCThreshold, 3, EXPERIMENTAL,                \
-          "How many back-to-back Degenerated GCs should happen before "     \
-          "going to a Full GC.")                                            \
+  product(uintx, ShenandoahFullGCThreshold, 2, EXPERIMENTAL,                \
+          "How many consecutive concurrent GCs a thread will wait for "     \
+          "before going to a Full GC.")                                     \
                                                                             \
   product(uintx, ShenandoahNoProgressThreshold, 5, EXPERIMENTAL,            \
           "After this number of consecutive Full GCs fail to make "         \
           "progress, Shenandoah will raise out of memory errors. Note "     \
           "that progress is determined by ShenandoahCriticalFreeThreshold") \
-                                                                            \
-  product(bool, ShenandoahImplicitGCInvokesConcurrent, false, EXPERIMENTAL, \
-          "Should internally-caused GC requests invoke concurrent cycles, " \
-          "should they do the stop-the-world (Degenerated / Full GC)? "     \
-          "Many heuristics automatically enable this. This option is "      \
-          "similar to global ExplicitGCInvokesConcurrent.")                 \
                                                                             \
   product(bool, ShenandoahHumongousMoves, true, DIAGNOSTIC,                 \
           "Allow moving humongous regions. This makes GC more resistant "   \
@@ -461,6 +449,12 @@
   product(bool, ShenandoahAllocFailureALot, false, DIAGNOSTIC,              \
           "Testing: make lots of artificial allocation failures.")          \
                                                                             \
+  product(uintx, ShenandoahPinRegionRate, 0, DIAGNOSTIC,                    \
+          "Testing: rate at which to artificially pin regions. Expressed "  \
+          "as N in 1000 chances for a region to be randomly pinned per "    \
+          "injection attempt.")                                             \
+          range(0, 1000)                                                    \
+                                                                            \
   product(uintx, ShenandoahCoalesceChance, 0, DIAGNOSTIC,                   \
           "Testing: Abandon remaining mixed collections with this "         \
           "likelihood. Following each mixed collection, abandon all "       \
@@ -469,11 +463,6 @@
           "cause the old regions to be made parsable, rather than being "   \
           "evacuated.")                                                     \
           range(0, 100)                                                     \
-                                                                            \
-  product(intx, ShenandoahMarkScanPrefetch, 32, EXPERIMENTAL,               \
-          "How many objects to prefetch ahead when traversing mark bitmaps."\
-          "Set to 0 to disable prefetching.")                               \
-          range(0, 256)                                                     \
                                                                             \
   product(uintx, ShenandoahMarkLoopStride, 1000, EXPERIMENTAL,              \
           "How many items to process during one marking iteration before "  \
@@ -528,10 +517,6 @@
   product(bool, ShenandoahAllowOldMarkingPreemption, true, DIAGNOSTIC,      \
           "Allow young generation collections to suspend concurrent"        \
           " marking in the old generation.")                                \
-                                                                            \
-  product(uintx, ShenandoahAgingCyclePeriod, 1, EXPERIMENTAL,               \
-          "With generational mode, increment the age of objects and"        \
-          "regions each time this many young-gen GC cycles are completed.") \
                                                                             \
   develop(bool, ShenandoahEnableCardStats, false,                           \
           "Enable statistics collection related to clean & dirty cards")    \

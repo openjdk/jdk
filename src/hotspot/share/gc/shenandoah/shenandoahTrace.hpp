@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 
 class ShenandoahCollectionSet;
+class ShenandoahInPlacePromotionPlanner;
 
 class ShenandoahTracer : public GCTracer, public CHeapObj<mtGC> {
 public:
@@ -39,9 +40,7 @@ public:
     size_t free_regions, size_t regions_immediate, size_t immediate_size);
 
   // Sends a JFR event summarizing in-place promotion activity (generational mode only)
-  static void report_promotion_info(const ShenandoahCollectionSet* cset,
-    size_t regions_promoted_humongous, size_t humongous_promoted_garbage, size_t humongous_promoted_free,
-    size_t regions_promoted_regular, size_t regular_promoted_garbage, size_t regular_promoted_free);
+  static void report_promotion_info(const ShenandoahCollectionSet* cset, const ShenandoahInPlacePromotionPlanner& planner);
 };
 
 #endif

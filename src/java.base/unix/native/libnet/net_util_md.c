@@ -33,7 +33,6 @@
 #if defined(__linux__)
 #include <arpa/inet.h>
 #include <net/route.h>
-#include <sys/utsname.h>
 #endif
 
 #if defined(MACOSX)
@@ -94,20 +93,10 @@ jint  IPv4_supported()
     return JNI_TRUE;
 }
 
-#if defined(DONT_ENABLE_IPV6)
-jint  IPv6_supported()
-{
-    return JNI_FALSE;
-}
-
-#else /* !DONT_ENABLE_IPV6 */
-
 jint  IPv6_supported()
 {
     int fd;
     void *ipv6_fn;
-    SOCKETADDRESS sa;
-    socklen_t sa_len = sizeof(SOCKETADDRESS);
 
     fd = socket(AF_INET6, SOCK_STREAM, 0) ;
     if (fd < 0) {
@@ -151,7 +140,6 @@ jint  IPv6_supported()
         return JNI_TRUE;
     }
 }
-#endif /* DONT_ENABLE_IPV6 */
 
 jint reuseport_supported(int ipv6_available)
 {
@@ -243,11 +231,6 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
         }
         free(buf);
     }
-}
-
-JNIEXPORT jint JNICALL
-NET_EnableFastTcpLoopback(int fd) {
-    return 0;
 }
 
 /**
@@ -397,9 +380,7 @@ NET_GetSockOpt(int fd, int level, int opt, void *result,
     }
 #endif
 
-/* Workaround for Mac OS treating linger value as
- *  signed integer
- */
+/* macOS stores linger values as signed shorts in the kernel. */
 #ifdef MACOSX
     if (level == SOL_SOCKET && opt == SO_LINGER) {
         struct linger* to_cast = (struct linger*)result;
@@ -425,6 +406,16 @@ int
 NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
                int len)
 {
+
+#ifdef _ALLBSD_SOURCE
+    /* macOS and BSD stores linger values as signed shorts in the kernel. */
+    if (level == SOL_SOCKET && opt == SO_LINGER) {
+        struct linger* to_cast = (struct linger*)arg;
+        if (to_cast->l_linger > 32767) {
+            to_cast->l_linger = 32767;
+        }
+    }
+#endif
 
 #ifndef IPTOS_TOS_MASK
 #define IPTOS_TOS_MASK 0x1e
@@ -597,28 +588,11 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
 /*
  * Wrapper for bind system call - performs any necessary pre/post
  * processing to deal with OS specific issues :-
- *
- * Linux allows a socket to bind to 127.0.0.255 which must be
- * caught.
  */
 int
 NET_Bind(int fd, SOCKETADDRESS *sa, int len)
 {
     int rv;
-
-#ifdef __linux__
-    /*
-     * ## get bugId for this issue - goes back to 1.2.2 port ##
-     * ## When IPv6 is enabled this will be an IPv4-mapped
-     * ## with family set to AF_INET6
-     */
-    if (sa->sa.sa_family == AF_INET) {
-        if ((ntohl(sa->sa4.sin_addr.s_addr) & 0x7f0000ff) == 0x7f0000ff) {
-            errno = EADDRNOTAVAIL;
-            return -1;
-        }
-    }
-#endif
 
     rv = bind(fd, &sa->sa, len);
 

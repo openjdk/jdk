@@ -33,8 +33,8 @@
  */
 
 import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
 import static java.util.concurrent.locks.StampedLock.isLockStamp;
 import static java.util.concurrent.locks.StampedLock.isOptimisticReadStamp;
 import static java.util.concurrent.locks.StampedLock.isReadLockStamp;
@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -1527,4 +1528,38 @@ public class StampedLockTest extends JSR166TestCase {
             checkTimedGet(future, null);
     }
 
+        /**
+     * test scenario for JDK-8386085
+     */
+    public void testShortTimeoutAcquisition() throws InterruptedException {
+        final int width = Runtime.getRuntime().availableProcessors();
+        final StampedLock s = new StampedLock();
+        try (var pool = Executors.newFixedThreadPool(width)) {
+            // Setup
+            final AtomicBoolean done = new AtomicBoolean(false);
+            final CountDownLatch waitingToRun = new CountDownLatch(width);
+            final long stamp = s.writeLock();
+            assertTrue(s.validate(stamp));
+            final Callable<Void> c = () -> {
+                waitingToRun.countDown();
+                do {
+                    long lock = s.tryWriteLock(1, MICROSECONDS); // acquisition storm
+                    if (s.validate(lock))
+                        s.unlockWrite(lock);
+                } while (!done.get());
+                return null;
+            };
+
+            // Task creation
+            for(int i = 0; i < width; ++i)
+                pool.submit(c);
+
+            waitingToRun.await();                 // Wait for all tasks to start
+            Thread.sleep(3000);             // Wait a while for acquisitions
+            s.unlockWrite(stamp);                 // Hand out permits
+            Thread.sleep(1000);             // Wait a while for permit acquisitions
+            done.set(true);                       // Ensure that tasks can exit
+        }
+        assertTrue(s.validate(s.writeLockInterruptibly())); // Should succeed
+    }
 }

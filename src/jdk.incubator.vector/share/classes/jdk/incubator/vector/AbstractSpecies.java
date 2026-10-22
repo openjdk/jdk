@@ -25,6 +25,7 @@
 package jdk.incubator.vector;
 
 import java.lang.reflect.Array;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.function.IntUnaryOperator;
@@ -37,7 +38,7 @@ import jdk.internal.vm.annotation.TrustFinalFields;
 abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.VectorSpecies<E>
         implements VectorSpecies<E>
         permits ByteVector.ByteSpecies, DoubleVector.DoubleSpecies, FloatVector.FloatSpecies,
-        IntVector.IntSpecies, LongVector.LongSpecies, ShortVector.ShortSpecies {
+        IntVector.IntSpecies, LongVector.LongSpecies, ShortVector.ShortSpecies, Float16Vector.Float16Species {
     final VectorShape vectorShape;
     final LaneType laneType;
     final int laneCount;
@@ -289,6 +290,53 @@ abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSu
     }
 
     @ForceInline
+    final AbstractVector<E> swapIfNeeded(AbstractSpecies<?> srcSpecies, AbstractVector<E> arg) {
+        int subLanesPerSrc = subLanesToSwap(srcSpecies);
+        if (subLanesPerSrc < 0) {
+            return arg;
+        }
+        VectorShuffle<E> shuffle = normalizeSubLanesForSpecies(this, subLanesPerSrc);
+        return (AbstractVector<E>) arg.rearrange(shuffle);
+    }
+
+    @ForceInline
+    final int subLanesToSwap(AbstractSpecies<?> srcSpecies) {
+        if (AbstractVector.NATIVE_ENDIAN != ByteOrder.BIG_ENDIAN) {
+            return -1;
+        }
+        int sBytes = srcSpecies.elementSize();
+        int tBytes = this.elementSize();
+
+        // No lane reordering needed for same size or widening reinterprets
+        if (sBytes == tBytes || (sBytes % tBytes) != 0) {
+            return -1;
+        }
+        int subLanesPerSrc = sBytes / tBytes;
+        return subLanesPerSrc;
+    }
+
+    @ForceInline
+    static <T> VectorShuffle<T> normalizeSubLanesForSpecies(AbstractSpecies<T> targetSpecies, int subLanesPerSrc) {
+        final int lanes = targetSpecies.laneCount();
+
+        if ((lanes % subLanesPerSrc) != 0) {
+            throw new IllegalArgumentException("laneCount " + lanes + " not divisible by subLanesPerSrc " + subLanesPerSrc);
+        }
+
+        // Each group corresponds to one source lane.
+        // For each group, reverse the lanes inside that group.
+        final int groups = lanes / subLanesPerSrc;
+        int[] map = new int[lanes];
+        for (int g = 0; g < groups; ++g) {
+            int base = g * subLanesPerSrc;
+            for (int j = 0; j < subLanesPerSrc; ++j) {
+                map[base + j] = base + (subLanesPerSrc - 1 - j);
+            }
+        }
+        return VectorShuffle.fromArray(targetSpecies, map, 0);
+    }
+
+    @ForceInline
     /*package-private*/
     AbstractShuffle<Byte> swapBytesShuffle() {
         // This JITs to a constant value:
@@ -424,14 +472,21 @@ abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSu
         Object ia = Array.newInstance(carrierType(), laneCount);
         assert(ia.getClass() == laneType.arrayType);
         checkValue(laneCount-1);  // worst case
-        for (int i = 0; i < laneCount; i++) {
-            if ((byte)i == i)
-                Array.setByte(ia, i, (byte)i);
-            else if ((short)i == i)
-                Array.setShort(ia, i, (short)i);
-            else
-                Array.setInt(ia, i, i);
-            assert(Array.getDouble(ia, i) == i);
+        if (elementType() == Float16.class) {
+            for (int i = 0; i < laneCount; i++) {
+                Array.setShort(ia, i, Float.floatToFloat16((float)i));
+                assert(Float16.shortBitsToFloat16(Array.getShort(ia, i)).intValue() == i);
+            }
+        } else {
+            for (int i = 0; i < laneCount; i++) {
+                if ((byte)i == i)
+                    Array.setByte(ia, i, (byte)i);
+                else if ((short)i == i)
+                    Array.setShort(ia, i, (short)i);
+                else
+                    Array.setInt(ia, i, i);
+                assert(Array.getDouble(ia, i) == i);
+            }
         }
         return ia;
     }
@@ -629,6 +684,8 @@ abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSu
             s = IntVector.species(shape); break;
         case LaneType.SK_LONG:
             s = LongVector.species(shape); break;
+        case LaneType.SK_FLOAT16:
+            s = Float16Vector.species(shape); break;
         }
         if (s == null) {
             // NOTE: The result of this method is guaranteed to be

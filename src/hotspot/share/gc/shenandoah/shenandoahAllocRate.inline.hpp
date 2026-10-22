@@ -27,8 +27,10 @@
 
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
 
+#include "gc/shenandoah/shenandoahStripedCounter.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 
 inline size_t ShenandoahAnticipatedConsumption::baseline_consumption() const {
@@ -56,38 +58,54 @@ void ShenandoahAllocRate<Clock>::update_minimum_sample_size(const size_t availab
 }
 
 template<typename Clock>
-void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
-  size_t unsampled = _allocated_bytes_since_last_sample.add_then_fetch(allocated_bytes);
-  const size_t minimum_sample_size = _minimum_sample_size.load_relaxed();
-  if (unsampled < minimum_sample_size) {
-    // Not enough to sample yet
-    return;
-  }
+uint32_t ShenandoahAllocRate<Clock>::log_per_stripe_threshold_for(const size_t minimum_sample_size) const {
+  // Floor-log2 of the per-stripe share. Clamps to 0 for a 1-byte trigger.
+  const int log_threshold = log2i(minimum_sample_size) - (int) _unsampled.log_num_stripes();
+  return log_threshold > 0 ? (uint32_t) log_threshold : 0u;
+}
 
+template<typename Clock>
+void ShenandoahAllocRate<Clock>::set_minimum_sample_size(const size_t minimum_sample_size) {
+  assert(minimum_sample_size > 0, "minimum sample size must be non-zero");
+  _sample_params.store_relaxed(encode_sample_params(checked_cast<uint32_t>(minimum_sample_size), log_per_stripe_threshold_for(minimum_sample_size)));
+}
+
+template<typename Clock>
+void ShenandoahAllocRate<Clock>::maybe_take_sample(const size_t minimum_sample_size, const size_t striped_unsampled) {
   if (!_sample_lock.try_lock()) {
-    // Another thread has the lock and will take the sample
+    // Another thread has the lock and will take the sample.
     return;
   }
 
-  unsampled = _allocated_bytes_since_last_sample.load_relaxed();
-  if (unsampled < minimum_sample_size) {
-    // Another thread has sampled and reset the allocated bytes under the lock
+  if (unsampled_below_floor(minimum_sample_size, striped_unsampled)) {
+    // Either another thread already sampled and drained, or this thread's stripe crossed its share
+    // while the aggregate is still short (skewed distribution). Wait for more.
     _sample_lock.unlock();
     return;
   }
-
   const jlong now = Clock::elapsed_counter();
   const jlong elapsed = now - _last_sample_time;
-
   if (elapsed <= 0) {
-    // Avoid sampling nonsense allocation rates
+    // Avoid sampling nonsense allocation rates.
     _sample_lock.unlock();
     return;
   }
-
-  take_sample(now, elapsed, unsampled);
-
+  take_sample(now, elapsed, _unsampled.drain());
   _sample_lock.unlock();
+}
+
+template<typename Clock>
+void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
+  const size_t striped_unsampled = _unsampled.add(allocated_bytes);
+  const size_t previous_striped_unsampled = striped_unsampled - allocated_bytes;
+
+  const uint64_t params = _sample_params.load_relaxed();
+  const uint32_t log_per_stripe_threshold = decode_log_per_stripe_threshold(params);
+
+  // Re-arm the trigger at every per-stripe threshold crossing.
+  if (striped_threshold_exceeded(striped_unsampled, previous_striped_unsampled, log_per_stripe_threshold)) {
+    maybe_take_sample(decode_min_sample_size(params), striped_unsampled);
+  }
 }
 
 template<typename Clock>
@@ -97,7 +115,6 @@ void ShenandoahAllocRate<Clock>::force_update() {
     return;
   }
 
-  const size_t unsampled = _allocated_bytes_since_last_sample.load_relaxed();
   const jlong now = Clock::elapsed_counter();
   const jlong elapsed = now - _last_sample_time;
 
@@ -107,20 +124,16 @@ void ShenandoahAllocRate<Clock>::force_update() {
     return;
   }
 
-  take_sample(now, elapsed, unsampled);
+  take_sample(now, elapsed, _unsampled.drain());
 
   _sample_lock.unlock();
 }
 
 template<typename Clock>
 void ShenandoahAllocRate<Clock>::take_sample(jlong now, jlong elapsed, size_t unsampled) {
-  assert(_sample_lock.is_locked(), "Caller must hold lock");
+  assert(_sample_lock.owned_by_self(), "Caller must hold lock");
 
   _last_sample_time = now;
-
-  // We are recording this sample, deduct it from the counter. It may be increased
-  // concurrently by other threads outside the lock, so we still use an atomic access.
-  _allocated_bytes_since_last_sample.sub_then_fetch(unsampled);
 
   const double timestamp = static_cast<double>(_last_sample_time) / Clock::elapsed_frequency();
   const double rate_seconds = static_cast<double>(unsampled) * Clock::elapsed_frequency() / elapsed;

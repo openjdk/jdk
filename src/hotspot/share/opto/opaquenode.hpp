@@ -82,6 +82,7 @@ public:
   BoolTest::mask _loop_entered_mask;
   OpaqueZeroTripGuardNode(Compile* C, Node* n, BoolTest::mask loop_entered_test) :
           Opaque1Node(C, n), _loop_entered_mask(loop_entered_test) {
+    init_class_id(Class_OpaqueZeroTripGuard);
   }
 
   DEBUG_ONLY(CountedLoopNode* guarded_loop() const);
@@ -256,6 +257,19 @@ class OpaqueInitializedAssertionPredicateNode : public Node {
 
   void mark_useless(PhaseIterGVN& igvn);
   NOT_PRODUCT(void dump_spec(outputStream* st) const);
+};
+
+// The node is used during late inlining to limit type propagation between cleanup phases.
+// It avoids type paradoxes caused by divergence between recorded type and IR shapes
+// during successive late inlining attempts.
+class OpaqueParseNode : public TypeNode {
+ public:
+  OpaqueParseNode(Compile* C, Node* n, const Type* t) : TypeNode(t, 2) {
+    init_req(1, n);
+    C->record_for_igvn(this);
+  }
+  virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------ProfileBooleanNode-------------------------------

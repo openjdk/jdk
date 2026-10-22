@@ -60,7 +60,6 @@ public:
 class ParCompactionManager : public CHeapObj<mtGC> {
   friend class MarkFromRootsTask;
   friend class ParallelCompactRefProcProxyTask;
-  friend class ParallelScavengeRefProcProxyTask;
   friend class ParMarkBitMap;
   friend class PSParallelCompact;
   friend class FillDensePrefixAndCompactionTask;
@@ -120,14 +119,14 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
 
   inline PSMarkTaskQueue*  marking_stack() { return &_marking_stack; }
-  void push_objArray(oop obj);
+  void push_objArray(objArrayOop obj);
 
   // To collect per-region live-words in a worker local cache in order to
   // reduce threads contention.
   class MarkingStatsCache : public CHeapObj<mtGC> {
     constexpr static size_t num_entries = 1024;
-    static_assert(is_power_of_2(num_entries), "inv");
-    static_assert(num_entries > 0, "inv");
+    static_assert(is_power_of_2(num_entries));
+    static_assert(num_entries > 0);
 
     constexpr static size_t entry_mask = num_entries - 1;
 

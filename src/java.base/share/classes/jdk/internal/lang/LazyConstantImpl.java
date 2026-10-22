@@ -92,7 +92,7 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
             T t = getAcquire();
             if (t == null) {
                 final Object cf = computingFunctionOrExceptionType;
-                // Don't use pattern matching here in order to improve startup time.
+                // Don't use switch pattern matching here in order to improve startup time.
                 if (cf instanceof Supplier<?> computingFunction) {
                     try {
                         @SuppressWarnings("unchecked")

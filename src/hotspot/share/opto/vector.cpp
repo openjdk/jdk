@@ -29,6 +29,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/vector.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 static bool is_vector_mask(ciKlass* klass) {
@@ -175,14 +176,14 @@ static JVMState* clone_jvms(Compile* C, SafePointNode* sfpt) {
   return new_jvms;
 }
 
-void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
+void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) const {
   Node* vec_value = vec_box->in(VectorBoxNode::Value);
   PhaseGVN& gvn = *C->initial_gvn();
 
   // Process merged VBAs
 
   if (EnableVectorAggressiveReboxing) {
-    Unique_Node_List calls;
+    Unique_Node_List<CallJavaNode> calls;
     for (DUIterator_Fast imax, i = vec_box->fast_outs(imax); i < imax; i++) {
       Node* use = vec_box->fast_out(i);
       if (use->is_CallJava()) {
@@ -194,7 +195,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
     }
 
     while (calls.size() > 0) {
-      CallJavaNode* call = calls.pop()->as_CallJava();
+      CallJavaNode* call = calls.pop();
       // Attach new VBA to the call and use it instead of Phi (VBA ... VBA).
 
       JVMState* jvms = clone_jvms(C, call);
@@ -204,9 +205,25 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
       // Adjust JVMS from post-call to pre-call state: put args on stack
       uint nargs = call->method()->arg_size();
       kit.ensure_stack(kit.sp() + nargs);
-      for (uint i = TypeFunc::Parms; i < call->tf()->domain()->cnt(); i++) {
-        kit.push(call->in(i));
+      uint in_idx = TypeFunc::Parms;  // The index of the call input, using scalarized calling convention.
+      int parm_idx = 0;  // The index of the Java parameter: double/long take one slot
+      for (uint i = 0; i < nargs; i++) {  // The index of the argument on the JVM stack: double/long take two slots
+        const Type* arg_type = call->tf()->domain_sig()->field_at(TypeFunc::Parms + i);
+        if (arg_type->is_valueklassptr() && !call->method()->mismatch() && call->method()->is_scalarized_arg(parm_idx)) {
+          bool nullable = arg_type->maybe_null();
+          ciValueKlass* vk = arg_type->value_klass();
+          ValueTypeNode* it = ValueTypeNode::make_from_multi(&kit, call, vk, in_idx, true, !nullable);
+          kit.push(gvn.transform(it));
+        } else {
+          kit.push(call->in(in_idx));
+          in_idx++;
+        }
+        if (arg_type != Type::HALF) {
+          parm_idx++;
+        }
       }
+      assert(in_idx == call->tf()->domain_cc()->cnt(), "should have processed exactly as many input as the scalarized calling convention; %d vs %d", in_idx, call->tf()->domain_cc()->cnt());
+      assert(parm_idx == (call->method()->is_static() ? 0 : 1) + call->method()->signature()->count(), "should have processed all the parameters; %d vs %d", parm_idx, (call->method()->is_static() ? 0 : 1) + call->method()->signature()->count());
       jvms = kit.sync_jvms();
 
       Node* new_vbox = nullptr;
@@ -236,12 +253,12 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
   }
 
   // Process debug uses at safepoints
-  Unique_Node_List safepoints;
+  Unique_Node_List<SafePointNode> safepoints;
 
-  Unique_Node_List worklist;
+  Unique_Node_List<const Node> worklist;
   worklist.push(vec_box);
   while (worklist.size() > 0) {
-    Node* n = worklist.pop();
+    const Node* n = worklist.pop();
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* use = n->fast_out(i);
       if (use->is_SafePoint()) {
@@ -271,7 +288,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
   }
 
   while (safepoints.size() > 0) {
-    SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
+    SafePointNode* sfpt = safepoints.pop();
 
     uint first_ind = (sfpt->req() - sfpt->jvms()->scloff());
     Node* sobj = new SafePointScalarObjectNode(vec_box->box_type(), vec_box, first_ind, sfpt->jvms()->depth(), n_fields);
@@ -455,11 +472,12 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
       gvn.record_for_igvn(local_mem);
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
       C2OptAccess access(gvn, ctrl, local_mem, decorators, T_OBJECT, obj, addr);
+      vec_field_ld = bs->load_at(access, Type::get_const_basic_type(T_OBJECT));
 
       // For proper aliasing, attach concrete payload type.
       ciKlass* payload_klass = ciTypeArrayKlass::make(bt);
       const Type* payload_type = TypeAryPtr::make_from_klass(payload_klass)->cast_to_ptr_type(TypePtr::NotNull);
-      vec_field_ld = bs->load_at(access, payload_type);
+      vec_field_ld = gvn.transform(new CheckCastPPNode(ctrl, vec_field_ld, payload_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
     }
 
     Node* adr = kit.array_element_address(vec_field_ld, gvn.intcon(0), bt);

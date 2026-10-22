@@ -147,6 +147,9 @@ class ValueNumberingVisitor: public InstructionVisitor {
       kill_memory();
     } else {
       kill_field(x->field(), x->needs_patching());
+      if (x->enclosing_field() != nullptr) {
+        kill_field(x->enclosing_field(), true);
+      }
     }
   }
   void do_StoreIndexed   (StoreIndexed*    x) { kill_array(x->type()); }
@@ -211,6 +214,7 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_ExceptionObject(ExceptionObject* x) { /* nothing to do */ }
   void do_ProfileCall    (ProfileCall*     x) { /* nothing to do */ }
   void do_ProfileReturnType (ProfileReturnType*  x) { /* nothing to do */ }
+  void do_ProfileACmpTypes(ProfileACmpTypes*  x) { /* nothing to do */ }
   void do_ProfileInvoke  (ProfileInvoke*   x) { /* nothing to do */ };
   void do_RuntimeCall    (RuntimeCall*     x) { /* nothing to do */ };
   void do_MemBar         (MemBar*          x) { /* nothing to do */ };

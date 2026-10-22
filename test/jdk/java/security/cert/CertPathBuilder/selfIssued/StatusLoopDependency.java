@@ -33,7 +33,6 @@
  * @summary PIT b61: PKI test suite fails because self signed certificates
  *          are being rejected
  * @modules java.base/sun.security.util
- * @enablePreview
  * @run main/othervm StatusLoopDependency subca
  * @run main/othervm StatusLoopDependency subci
  * @run main/othervm StatusLoopDependency alice

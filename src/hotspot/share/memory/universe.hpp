@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ class Universe: AllStatic {
  private:
   // Known classes in the VM
   static TypeArrayKlass* _typeArrayKlasses[T_LONG+1];
-  static ObjArrayKlass* _objectArrayKlass;
+  static RefArrayKlass* _objectArrayKlass;
   // Special int-Array that represents filler objects that are used by GC to overwrite
   // dead objects. References to them are generally an error.
   static Klass* _fillerArrayKlass;
@@ -129,9 +129,9 @@ class Universe: AllStatic {
   static bool _fully_initialized;                     // true after universe_init and initialize_vtables called
 
   // the array of preallocated errors with backtraces
-  static objArrayOop  preallocated_out_of_memory_errors();
+  static refArrayOop preallocated_out_of_memory_errors();
 
-  static objArrayOop out_of_memory_errors();
+  static refArrayOop out_of_memory_errors();
   // generate an out of memory error; if possible using an error with preallocated backtrace;
   // otherwise return the given default error.
   static oop        gen_out_of_memory_error(oop default_err);
@@ -167,7 +167,7 @@ class Universe: AllStatic {
 
 #if INCLUDE_CDS_JAVA_HEAP
   // Each slot i stores an index that can be used to restore _basic_type_mirrors[i]
-  // from the archive heap using HeapShared::get_root(int)
+  // from the archive heap using AOTHeap::get_root(int)
   static int _archived_basic_type_mirror_indices[T_VOID+1];
 #endif
 
@@ -185,8 +185,8 @@ class Universe: AllStatic {
   static TypeArrayKlass* floatArrayKlass()       { return typeArrayKlass(T_FLOAT); }
   static TypeArrayKlass* doubleArrayKlass()      { return typeArrayKlass(T_DOUBLE); }
 
-  static ObjArrayKlass* objectArrayKlass() {
-    ObjArrayKlass* k = _objectArrayKlass;
+  static RefArrayKlass* objectArrayKlass() {
+    RefArrayKlass* k = _objectArrayKlass;
     assert(k != nullptr, "Object array klass should be initialized; too early?");
     return k;
   }
@@ -248,10 +248,12 @@ class Universe: AllStatic {
   static uintx        the_array_interfaces_bitmap()   { return _the_array_interfaces_bitmap; }
 
   static Method*      finalizer_register_method();
-  static Method*      loader_addClass_method();
   static Method*      throw_illegal_access_error();
   static Method*      throw_no_such_method_error();
   static Method*      do_stack_walk_method();
+
+  static Method*      is_substitutable_method();
+  static Method*      value_object_hash_code_method();
 
   static oop          the_null_sentinel();
   static address      the_null_sentinel_addr()        { return (address) &_the_null_sentinel;  }

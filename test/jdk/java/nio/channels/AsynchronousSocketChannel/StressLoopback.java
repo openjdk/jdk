@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 /* @test
  * @bug 6834246 6842687
  * @summary Stress test connections through the loopback interface
- * @run main StressLoopback
- * @run main/othervm/timeout=480 -Djdk.net.useFastTcpLoopback StressLoopback
  * @key randomness
  */
 

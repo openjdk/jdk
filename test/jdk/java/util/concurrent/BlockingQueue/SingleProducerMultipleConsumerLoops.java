@@ -38,6 +38,15 @@
  * @library /test/lib
  */
 
+/*
+ * @test id=no-lse
+ * @bug 4486658
+ * @summary check ordering for blocking queues with 1 producer and multiple consumers without LSE
+ * @requires os.arch == "aarch64"
+ * @library /test/lib
+ * @run main/othervm -XX:-UseLSE SingleProducerMultipleConsumerLoops
+ */
+
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
