@@ -363,8 +363,12 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   // The 'cmp' got cloned, but CastPP/IIs need to be moved.
   Node *phi_s = nullptr;     // do not construct unless needed
   Node *phi_f = nullptr;     // do not construct unless needed
-  for (DUIterator_Last i2min, i2 = phi->last_outs(i2min); i2 >= i2min; --i2) {
-    Node* v = phi->last_out(i2);// User of the phi
+
+  // About to mutate phi, gradually rewiring every user of it.
+  // We terminate once no users are left.
+  while (phi->outcnt() > 0) {
+    uint old_cnt = phi->outcnt();
+    Node* v = phi->raw_out(phi->outcnt() - 1); // User of the phi
     igvn->rehash_node_delayed(v); // Have to fixup other Phi users
     uint vop = v->Opcode();
     Node *proj = nullptr;
@@ -416,11 +420,35 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
         if( v->in(i) == phi )
           break;
       v->set_req(i, proj_path_data );
-    } else if( v->is_ConstraintCast() ) {
-      v->set_req(0, proj_path_ctrl );
-      v->set_req(1, proj_path_data );
-    } else
+    } else if (v->is_ConstraintCast()) {
+      // When splitting the constraint casts, need to have distinct copies
+      // hooked to relevant projections and phi splits. This would keep constraint
+      // casts close to the control that guards them.
+      Node* cast_c = v->clone();
+      Node* cast_x = v->clone();
+      Node* cast_phi = PhiNode::make_blank(proj_path_ctrl, v);
+
+      cast_c->set_req(0, proj->Opcode() == Op_IfTrue ? iff_c_t : iff_c_f);
+      cast_x->set_req(0, proj->Opcode() == Op_IfTrue ? iff_x_t : iff_x_f);
+      cast_c->set_req(1, phi_c);
+      cast_x->set_req(1, phi_x);
+      cast_phi->init_req(1, cast_c);
+      cast_phi->init_req(2, cast_x);
+
+      cast_c = phase->transform(cast_c);
+      cast_x = phase->transform(cast_x);
+      cast_phi = phase->transform(cast_phi);
+      igvn->replace_node(v, cast_phi);
+    } else {
       ShouldNotReachHere();
+    }
+
+#ifdef ASSERT
+    for (uint i = 1; i < v->req(); i++) {
+      assert(v->in(i) != phi, "Progress: user must disconnect from Phi");
+    }
+    assert(phi->outcnt() < old_cnt, "Progress: Phi should have fewer users");
+#endif
   }
 
   // Now replace the original iff's True/False with region_s/region_t.
