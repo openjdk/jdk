@@ -92,27 +92,26 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
                                         name = klass.getName();
                                         if (name.equals(javaLangThread)) {
                                             writeThread(instance, flatObjects);
-                                            return false;
+                                            break;
                                         }
                                         klass = klass.getSuper();
                                     }
-                                    writeInstance(instance, flatObjects);
+                                    if (klass == null) {
+                                        // instance is not a thread or its inherited class,
+                                        // so it should be dumped here as a normal instance.
+                                        writeInstance(instance, flatObjects);
+                                    }
                                 }
                             } else {
                                 // not-a-Java-visible oop
                                 writeInternalObject(oop);
                             }
                             writeHeapRecordEpilogue();
+                            while (!flatObjects.isEmpty()) {
+                                writeInstance(flatObjects.pop(), flatObjects);
+                            }
                         } catch (IOException exp) {
                             throw new RuntimeException(exp);
-                        } finally {
-                            while (!flatObjects.isEmpty()) {
-                                try {
-                                    writeInstance(flatObjects.pop(), flatObjects);
-                                } catch (IOException exp) {
-                                    throw new RuntimeException(exp);
-                                }
-                            }
                         }
                         return false;
                     }
