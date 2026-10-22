@@ -40,7 +40,8 @@ import static compiler.lib.template_framework.Template.*;
  *          to int for counted loop optimizations - templated correctness tests
  *          covering all comparison operators, swapped operands, multiple strides,
  *          random init values, boundary limits, and zero/one-iteration edge cases.
- * @requires vm.compiler2.enabled
+ *          No hard requirement on C2 enabled. C1 and interpreter should also
+ *          produce expect behaviours.
  * @library /test/lib /
  * @run driver ${test.main.class} default
  */
