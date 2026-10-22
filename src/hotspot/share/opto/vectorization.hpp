@@ -740,7 +740,7 @@ public:
 
   void construct();
   bool independent(Node* s1, Node* s2) const;
-  bool mutually_independent(const Node_List* nodes) const;
+  bool mutually_independent(const Node_List<Node>* nodes) const;
 
 private:
   void add_node(MemNode* n, GrowableArray<int>& strong_memory_edges, GrowableArray<int>& weak_memory_edges);

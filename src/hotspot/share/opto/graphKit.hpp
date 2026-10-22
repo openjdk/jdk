@@ -928,7 +928,7 @@ class GraphKit : public Phase {
     int _sp;
     JVMState* _jvms;
     SafePointNode* _map;
-    Unique_Node_List _ctrl_succ;
+    Unique_Node_List<const Node> _ctrl_succ;
     bool _discarded;
 
   public:

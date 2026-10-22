@@ -1510,7 +1510,7 @@ Node* IfNode::merge_uncommon_traps(IfProjNode* proj, IfProjNode* success, IfProj
 void IfNode::improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGVN* igvn) {
 #ifdef _LP64
   ResourceMark rm;
-  Node_Stack stack(2);
+  Node_Stack<Node> stack(2);
 
   assert(r->Opcode() == Op_LoadRange, "unexpected range check");
   const TypeInt* array_size = igvn->type(r)->is_int();
