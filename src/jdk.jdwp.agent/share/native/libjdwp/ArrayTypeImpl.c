@@ -94,7 +94,10 @@ getComponentClass(JNIEnv *env, jclass arrayClass, char *componentSignature,
         return map2jdwpError(error);
     }
 
-    /* Hidden classes and their arrays are not included in GetClassLoaderClasses. */
+    /*
+     * Hidden classes and their arrays have '.' in their signatures and are
+     * not included in GetClassLoaderClasses.
+     */
     if (strchr(componentSignature, '.') == NULL) {
         error = allClassLoaderClasses(arrayClassLoader, &classes, &count);
         if (error != JVMTI_ERROR_NONE) {
