@@ -3934,7 +3934,7 @@ const Type* StoreNode::Value(PhaseGVN* phase) const {
           return Type::TOP;
         }
       } else if (addr_t->isa_instptr()) {
-        if (offset <= instanceOopDesc::base_offset_in_bytes()) {
+        if (offset < instanceOopDesc::base_offset_in_bytes()) {
           return Type::TOP;
         }
       }
