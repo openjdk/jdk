@@ -41,8 +41,6 @@ import static org.testng.Assert.*;
 
 @Test
 public class ValueClassesReflectionTest {
-    final static int numberOfFields = 2;
-
     value class ValueClass {
         private int i = 0;
         private String s = "";
