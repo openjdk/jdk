@@ -2962,9 +2962,31 @@ Node* Parse::optimize_cmp_with_klass(Node* c) {
   return c;
 }
 
+// TODO: desc
+void Parse::maybe_insert_optimization_delay_nodes() {
+  if (C->stress().random() % 100 >= 1) {
+    return;
+  }
+  // Insert a node for possibly every operand stack slot.
+  for (int i = 0; i < sp(); i++) {
+    Node* n = stack(i);
+    const Type* t = _gvn.type(n);
+    if (n->Opcode() != Op_OptimizationDelay) {
+      if (TraceOptimizationDelay) {
+        tty->print_cr("[OptimizationDelay] bci=%d", bci());
+        n->dump();
+      }
+    }
+  }
+}
+
 //------------------------------do_one_bytecode--------------------------------
 // Parse this bytecode, and alter the Parsers JVM->Node mapping
 void Parse::do_one_bytecode() {
+  if (StressOptimizationDelay) {
+    maybe_insert_optimization_delay_nodes();
+  }
+
   Node *a, *b, *c, *d;          // Handy temps
   BoolTest::mask btest;
   int i;

@@ -153,6 +153,7 @@ class OpaqueInitializedAssertionPredicateNode;
 class OpaqueMultiversioningNode;
 class OpaqueTemplateAssertionPredicateNode;
 class OpaqueZeroTripGuardNode;
+class OptimizationDelayNode;
 class OuterStripMinedLoopNode;
 class OuterStripMinedLoopEndNode;
 class Node;
