@@ -12005,6 +12005,135 @@ instruct vfnma2D(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_dummy);
 %}
 
+// Vector Shift Instructions
+
+instruct vshiftcntL(vecX dst, iRegI cnt) %{
+  match(Set dst (LShiftCntV cnt));
+  ins_encode %{
+    __ z_vlvgb($dst$$VectorRegister, $cnt$$Register, 0); // insert into byte element 0
+    __ z_vrepb($dst$$VectorRegister, $dst$$VectorRegister, 0); // replicate to all 16 bytes
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vshiftcntR(vecX dst, iRegI cnt) %{
+  match(Set dst (RShiftCntV cnt));
+  ins_encode %{
+    __ z_vlvgb($dst$$VectorRegister, $cnt$$Register, 0);
+    __ z_vrepb($dst$$VectorRegister, $dst$$VectorRegister, 0);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vlShift16B(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (LShiftVB src shift));
+  predicate(n->as_Vector()->length() == 16);
+  ins_encode %{
+    __ z_veslvb($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vlShift8S(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (LShiftVS src shift));
+  predicate(n->as_Vector()->length() == 8);
+  ins_encode %{
+    __ z_veslvh($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vlShift4I(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (LShiftVI src shift));
+  predicate(n->as_Vector()->length() == 4);
+  ins_encode %{
+    __ z_veslvf($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vlShift2L(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (LShiftVL src shift));
+  predicate(n->as_Vector()->length() == 2);
+  ins_encode %{
+    __ z_veslvg($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vrShift16B(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (RShiftVB src shift));
+  predicate(n->as_Vector()->length() == 16);
+  ins_encode %{
+    __ z_vesravb($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vrShift8S(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (RShiftVS src shift));
+  predicate(n->as_Vector()->length() == 8);
+  ins_encode %{
+    __ z_vesravh($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vrShift4I(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (RShiftVI src shift));
+  predicate(n->as_Vector()->length() == 4);
+  ins_encode %{
+    __ z_vesravf($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vrShift2L(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (RShiftVL src shift));
+  predicate(n->as_Vector()->length() == 2);
+  ins_encode %{
+    __ z_vesravg($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vurShift16B(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (URShiftVB src shift));
+  predicate(n->as_Vector()->length() == 16);
+  ins_encode %{
+    __ stop("Crah here");
+    __ z_vesrlvb($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vurShift8S(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (URShiftVS src shift));
+  predicate(n->as_Vector()->length() == 8);
+  ins_encode %{
+    __ stop("Crah here");
+    __ z_vesrlvh($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vurShift4I(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (URShiftVI src shift));
+  predicate(n->as_Vector()->length() == 4);
+  ins_encode %{
+    __ z_vesrlvf($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vurShift2L(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (URShiftVL src shift));
+  predicate(n->as_Vector()->length() == 2);
+  ins_encode %{
+    __ z_vesrlvg($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
 
 // Vector Population Count Instructions
 
