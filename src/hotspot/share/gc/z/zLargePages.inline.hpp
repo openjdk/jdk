@@ -38,4 +38,14 @@ inline bool ZLargePages::is_transparent() {
   return _state == Transparent;
 }
 
+inline bool ZLargePages::is_collapse() {
+  return _state == Collapse;
+}
+
+inline bool ZLargePages::should_try_fallocate() {
+  // To use madvise(MADV_HUGEPAGE) we cannot use fallocate as the pages are created before we have
+  // a memory range. When using explict large pages other allocation modes are more efficient.
+  return LINUX_ONLY(!is_transparent() && !is_explicit()) NOT_LINUX(false);
+}
+
 #endif // SHARE_GC_Z_ZLARGEPAGES_INLINE_HPP

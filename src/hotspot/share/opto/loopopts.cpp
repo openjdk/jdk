@@ -1168,8 +1168,10 @@ void PhaseIdealLoop::move_flat_array_check_out_of_loop(Node* n) {
     // Replace memory input and re-compute ctrl to move the check out of the loop
     _igvn.replace_input_of(n, 1, mem);
     set_ctrl_and_loop(n, get_early_ctrl(n));
-    Node* bol = n->unique_out();
-    set_ctrl_and_loop(bol, get_early_ctrl(bol));
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* bol = n->fast_out(i);
+      set_ctrl_and_loop(bol, get_early_ctrl(bol));
+    }
   }
 }
 
@@ -1900,7 +1902,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_OpaqueTemplateAssertionPredicate() &&
       !is_raw_to_oop_cast && // don't extend live ranges of raw oops
       n->Opcode() != Op_CreateEx &&
-      (KillPathsReachableByDeadTypeNode || !n->is_Type())
+      (KillPathsReachableByDeadDataNode || !n->is_Type())
       ) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);
@@ -4571,7 +4573,7 @@ private:
       return false;
     }
 
-    PhaseIdealLoop::LoopExitTest loop_exit(back_control, _loop, _phase);
+    LoopExitTest loop_exit(back_control, loop, _phase);
     loop_exit.build();
     if (!loop_exit.is_valid_with_bt(T_INT)) {
       return false;

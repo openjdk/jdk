@@ -320,6 +320,8 @@ void Compile::identify_useful_nodes(Unique_Node_List &useful) {
   // If 'top' is cached, declare it useful to preserve cached node
   if (cached_top_node())  { useful.push(cached_top_node()); }
 
+  if (dead_path()) { useful.push(dead_path()); }
+
   // Push all useful nodes onto the list, breadthfirst
   for( uint next = 0; next < useful.size(); ++next ) {
     assert( next < unique(), "Unique useful nodes < total nodes");
@@ -396,7 +398,7 @@ void Compile::remove_useless_node(Node* dead) {
   // it reachable by adding use edges. So, we will NOT count Con nodes
   // as dead to be conservative about the dead node count at any
   // given time.
-  if (!dead->is_Con()) {
+  if (!dead->is_Con() && dead != dead_path()) {
     record_dead_node(dead->_idx);
   }
   if (dead->is_macro()) {
@@ -606,7 +608,7 @@ void Compile::print_compile_messages() {
   if( PrintOpto ) {
     if (is_osr_compilation()) {
       tty->print("[OSR]");
-    } else if (env()->task()->is_aot_compile()) {
+    } else if (is_aot_compile()) {
       if (for_aot_preload()) {
         tty->print("[PRE]");
       } else {
@@ -649,9 +651,8 @@ void Compile::print_ideal_ir(const char* compile_phase_name) const {
   NoSafepointVerifier nsv;
   ttyLocker ttyl;
   if (xtty != nullptr) {
-    CompileTask* task = env()->task();
-    bool aot_comp = task->is_aot_load_or_compile();
-    bool aot_preload_comp = task->is_aot_preload_or_compile();
+    bool aot_comp = is_aot_compile();
+    bool aot_preload_comp = for_aot_preload();
     xtty->head("ideal compile_id='%d'%s compile_phase='%s'",
                compile_id(),
                is_osr_compilation() ? " compile_kind='osr'" :
@@ -696,7 +697,6 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _strength_reduction(false),
       _do_cleanup(false),
       _has_reserved_stack_access(target->has_reserved_stack_access()),
-      _has_circular_value_type(false),
 #ifndef PRODUCT
       _igv_idx(0),
       _trace_opto_output(directive->TraceOptoOutputOption),
@@ -730,6 +730,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _node_arena_one(mtCompiler, Arena::Tag::tag_node),
       _node_arena_two(mtCompiler, Arena::Tag::tag_node),
       _node_arena(&_node_arena_one),
+      _dead_path(nullptr),
       _mach_constant_base_node(nullptr),
       _Compile_types(mtCompiler, Arena::Tag::tag_type),
       _initial_gvn(nullptr),
@@ -775,10 +776,6 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   set_print_assembly(false); // must initialize.
 #endif
 
-#ifndef PRODUCT
-  set_parsed_irreducible_loop(false);
-#endif
-
   if (directive->ReplayInlineOption) {
     _replay_inline_data = ciReplay::load_inline_data(method(), entry_bci(), ci_env->comp_level());
   }
@@ -786,7 +783,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   set_print_intrinsics(directive->PrintIntrinsicsOption);
   set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
 
-  if ((ProfileTraps && !ci_env->is_aot_compile()) ||
+  if ((ProfileTraps && !is_aot_compile()) ||
       AOTCodeCache::is_using_code()) {
     // Make sure the method being compiled gets its own MDO,
     // so we can at least track the decompile_count().
@@ -798,6 +795,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   }
 
   Init(/*do_aliasing=*/ true);
+  set_dead_path(new DeadPathNode());
 
   print_compile_messages();
 
@@ -1012,7 +1010,6 @@ Compile::Compile(ciEnv* ci_env,
       _inlining_progress(false),
       _inlining_incrementally(false),
       _has_reserved_stack_access(false),
-      _has_circular_value_type(false),
 #ifndef PRODUCT
       _igv_idx(0),
       _trace_opto_output(directive->TraceOptoOutputOption),
@@ -1037,6 +1034,7 @@ Compile::Compile(ciEnv* ci_env,
       _node_arena_one(mtCompiler, Arena::Tag::tag_node),
       _node_arena_two(mtCompiler, Arena::Tag::tag_node),
       _node_arena(&_node_arena_one),
+      _dead_path(nullptr),
       _mach_constant_base_node(nullptr),
       _Compile_types(mtCompiler, Arena::Tag::tag_type),
       _initial_gvn(nullptr),
@@ -1075,7 +1073,6 @@ Compile::Compile(ciEnv* ci_env,
 
 #ifndef PRODUCT
   set_print_assembly(PrintFrameConverterAssembly);
-  set_parsed_irreducible_loop(false);
 #else
   set_print_assembly(false); // Must initialize.
 #endif
@@ -1295,7 +1292,7 @@ uint Compile::count_live_nodes_by_graph_walk() {
 void Compile::print_missing_nodes() {
 
   // Return if CompileLog is null and PrintIdealNodeCount is false.
-  if ((_log == nullptr) && (! PrintIdealNodeCount)) {
+  if ((_log == nullptr) && !directive()->PrintIdealNodeCountOption) {
     return;
   }
 
@@ -1326,7 +1323,7 @@ void Compile::print_missing_nodes() {
           if (_log != nullptr) {
             _log->elem("mismatched_node_info node_idx='%d' type='both live and dead'", i);
           }
-          if (PrintIdealNodeCount) {
+          if (directive()->PrintIdealNodeCountOption) {
             // Print the log message to tty
               tty->print_cr("mismatched_node idx='%d' both live and dead'", i);
               useful.at(i)->dump();
@@ -1337,7 +1334,7 @@ void Compile::print_missing_nodes() {
         if (_log != nullptr) {
           _log->elem("mismatched_node_info node_idx='%d' type='neither live nor dead'", i);
         }
-        if (PrintIdealNodeCount) {
+        if (directive()->PrintIdealNodeCountOption) {
           // Print the log message to tty
           tty->print_cr("mismatched_node idx='%d' type='neither live nor dead'", i);
         }
@@ -2336,7 +2333,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
     Node* n = wq.at(i);
     if (n->is_Mem()) {
       const TypePtr* adr_type = nullptr;
-      adr_type = get_adr_type(get_alias_index(n->adr_type()));
+      adr_type = get_adr_type(get_alias_index(n->in_adr_type()));
       if (adr_type == TypeAryPtr::INLINES) {
         memnodes.push(n);
       }
@@ -2371,7 +2368,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
   int start_alias = num_alias_types(); // Start of new aliases
   for (uint i = 0; i < memnodes.size(); i++) {
     Node* m = memnodes.at(i);
-    const TypePtr* adr_type = m->adr_type();
+    const TypePtr* adr_type = m->in_adr_type();
 #ifdef ASSERT
     m->as_Mem()->set_adr_type(adr_type);
 #endif // ASSERT
@@ -2401,8 +2398,8 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
       // bottom memory, we pop element off the stack one at a
       // time, in reverse order, and move them to the right slice
       // by changing their memory edges.
-      if ((n->is_Phi() && n->adr_type() != TypePtr::BOTTOM) || n->is_Mem() ||
-          (n->adr_type() == TypeAryPtr::INLINES && !n->is_NarrowMemProj())) {
+      if ((n->is_Phi() && n->out_adr_type() != TypePtr::BOTTOM) || n->is_Mem() ||
+          (n->out_adr_type() == TypeAryPtr::INLINES && !n->is_NarrowMemProj())) {
         assert(!seen.test_set(n->_idx), "");
         // Uses (a load for instance) will need to be moved to the
         // right slice as well and will get a new memory state
@@ -2452,7 +2449,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
           n = n->in(0)->in(TypeFunc::Memory);
         }
       } else {
-        assert(n->adr_type() == TypePtr::BOTTOM || (n->Opcode() == Op_Node && n->_idx >= last) || n->is_NarrowMemProj(), "");
+        assert(n->out_adr_type() == TypePtr::BOTTOM || (n->Opcode() == Op_Node && n->_idx >= last) || n->is_NarrowMemProj(), "");
         // Build a new MergeMem node to carry the new memory state
         // as we build it. IGVN should fold extraneous MergeMem
         // nodes.
@@ -2472,7 +2469,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
 
           Node* base = alloc->in(TypeFunc::Memory);
           assert(base->bottom_type() == Type::MEMORY, "the memory input of AllocateNode must be a memory");
-          assert(base->adr_type() == TypePtr::BOTTOM, "the memory input of AllocateNode must be a bottom memory");
+          assert(base->out_adr_type() == TypePtr::BOTTOM, "the memory input of AllocateNode must be a bottom memory");
           // Must create a MergeMem with base as the base memory, do not clone if base is a
           // MergeMem because it may not be processed yet
           mm = MergeMemNode::make(nullptr);
@@ -2513,7 +2510,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
           uint idx = stack.index();
           if (m->is_Mem()) {
             // Move memory node to its new slice
-            const TypePtr* adr_type = m->adr_type();
+            const TypePtr* adr_type = m->in_adr_type();
             int alias = get_alias_index(adr_type);
             Node* prev = mm->memory_at(alias);
             igvn.replace_input_of(m, MemNode::Memory, prev);
@@ -2560,7 +2557,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
               if (!adr_type->isa_aryptr() || !adr_type->is_flat()) {
                 continue;
               }
-              MemBarNode* mb = new MemBarCPUOrderNode(this, j, nullptr);
+              MemBarNode* mb = new MemBarCPUOrderNode(this, adr_type, adr_type, nullptr);
               igvn.register_new_node_with_optimizer(mb);
               Node* mem = mm->memory_at(j);
               mb->init_req(TypeFunc::Control, ctrl);
@@ -2617,7 +2614,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
   wq.push(root());
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
-    assert(n->adr_type() != TypeAryPtr::INLINES, "should have been removed from the graph");
+    assert(n->out_adr_type() != TypeAryPtr::INLINES && n->in_adr_type() != TypeAryPtr::INLINES, "should have been removed from the graph");
     for (uint j = 0; j < n->req(); j++) {
       Node* m = n->in(j);
       if (m != nullptr) {
@@ -3471,6 +3468,9 @@ void Compile::Optimize() {
    }
  }
 
+  // Unique DeadPath node should not be used anymore
+  _dead_path = nullptr;
+
  print_method(PHASE_OPTIMIZE_FINISHED, 2);
  DEBUG_ONLY(set_phase_optimize_finished();)
 }
@@ -4073,7 +4073,7 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
 
 #ifdef ASSERT
   if( n->is_Mem() ) {
-    int alias_idx = get_alias_index(n->as_Mem()->adr_type());
+    int alias_idx = get_alias_index(n->as_Mem()->in_adr_type());
     assert( n->in(0) != nullptr || alias_idx != Compile::AliasIdxRaw ||
             // oop will be recorded in oop map if load crosses safepoint
             (n->is_Load() && (n->as_Load()->bottom_type()->isa_oopptr() ||
@@ -4165,7 +4165,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     if (!Matcher::match_rule_supported(Op_CallLeafPure)) {
       CallNode* call = n->as_Call();
       CallNode* new_call = new CallLeafNode(call->tf(), call->entry_point(),
-                                            call->_name, TypeRawPtr::BOTTOM);
+                                            call->_name, nullptr, nullptr);
       new_call->init_req(TypeFunc::Control, call->in(TypeFunc::Control));
       new_call->init_req(TypeFunc::I_O, C->top());
       new_call->init_req(TypeFunc::Memory, C->top());
@@ -4786,6 +4786,21 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     break;
   }
 #endif
+  case Op_DeadPath: {
+    // The CFG inputs are dead paths. Replace the DeadPath with a Region and insert a Halt node.
+    assert(n->req() > 1, "why not removed if no input other than itself?");
+    RegionNode* r = new RegionNode(n->req());
+    for (uint i = 1; i < n->req(); ++i) {
+      r->set_req(i, n->in(i));
+    }
+    n->disconnect_inputs(this);
+    Node* frame = start()->proj_out(TypeFunc::FramePtr);
+    stringStream ss;
+    ss.print("dead path discovered by data nodes during igvn");
+    Node* halt = new HaltNode(r, frame, ss.as_string(comp_arena()));
+    root()->set_req(root()->find_edge(n), halt);
+    break;
+  }
   default:
     assert(!n->is_Call(), "");
     assert(!n->is_Mem(), "");
@@ -5359,7 +5374,7 @@ Compile::TracePhase::~TracePhase() {
     return; // timing code, not stressing bailouts.
   }
 #ifdef ASSERT
-  if (PrintIdealNodeCount) {
+  if (_compile->directive()->PrintIdealNodeCountOption) {
     tty->print_cr("phase name='%s' nodes='%d' live='%d' live_graph_walk='%d'",
                   phase_name(), _compile->unique(), _compile->live_nodes(), _compile->count_live_nodes_by_graph_walk());
   }
@@ -6293,7 +6308,7 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
                               Node* parm6) const {
   Node* str_node = gvn->transform(new ConPNode(TypeRawPtr::make(((address) str))));
   const TypeFunc* type = OptoRuntime::debug_print_Type(parm0, parm1, parm2, parm3, parm4, parm5, parm6);
-  Node* call = new CallLeafNode(type, call_addr, "debug_print", TypeRawPtr::BOTTOM);
+  Node* call = new CallLeafNode(type, call_addr, "debug_print", nullptr, nullptr);
 
   // find the most suitable control input
   Unique_Node_List worklist, candidates;

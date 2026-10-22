@@ -30,6 +30,7 @@
 #include "opto/compile.hpp"
 #include "opto/type.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/debug.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -82,6 +83,7 @@ class CountedLoopEndNode;
 class DecodeNarrowPtrNode;
 class DecodeNNode;
 class DecodeNKlassNode;
+class DivModIntegerNode;
 class EncodeNarrowPtrNode;
 class EncodePNode;
 class EncodePKlassNode;
@@ -842,8 +844,9 @@ public:
     DEFINE_CLASS_ID(LShift,   Node, 21)
     DEFINE_CLASS_ID(Neg,      Node, 22)
     DEFINE_CLASS_ID(ReachabilityFence, Node, 23)
+    DEFINE_CLASS_ID(DivModInteger, Node, 24)
 
-    _max_classes  = ClassMask_Neg
+    _max_classes  = ClassMask_DivModInteger
   };
   #undef DEFINE_CLASS_ID
 
@@ -961,6 +964,7 @@ public:
   DEFINE_CLASS_QUERY(DecodeNarrowPtr)
   DEFINE_CLASS_QUERY(DecodeN)
   DEFINE_CLASS_QUERY(DecodeNKlass)
+  DEFINE_CLASS_QUERY(DivModInteger)
   DEFINE_CLASS_QUERY(EncodeNarrowPtr)
   DEFINE_CLASS_QUERY(EncodeP)
   DEFINE_CLASS_QUERY(EncodePKlass)
@@ -1268,12 +1272,28 @@ public:
   // Be sure to do the hash_delete game in the "rehash" variant.
   void raise_bottom_type(const Type* new_type);
 
-  // Get the address type with which this node uses and/or defs memory,
-  // or null if none.  The address type is conservatively wide.
-  // Returns non-null for calls, membars, loads, stores, etc.
-  // Returns TypePtr::BOTTOM if the node touches memory "broadly".
-  virtual const class TypePtr *adr_type() const { return nullptr; }
+  // Get the memory which this node produces.
+  // Generally, if you are unsure whether you need out_adr_type or in_adr_type:
+  // - A Store, a LoadStore, or a Phi must have the same out_adr_type and in_adr_type, this is
+  //   essential in its semantics, so sometimes it is unclear whether out_adr_type or in_adr_type
+  //   should be invoked. For those nodes, calling either is fine correctness-wise.
+  // - A Load has no out_adr_type, combined with the fact that a Store or a LoadStore has the same
+  //   out_adr_type and in_adr_type, it is always correct to use in_adr_type for a Mem or a
+  //   LoadStore (these nodes answer true for is_Mem()).
+  // - For other nodes, it is almost always correct to use out_adr_type, except when we are
+  //   computing a node's anti-dependence, or when we are trying to modify the memory input of a
+  //   node.
+  const TypePtr* out_adr_type() const;
 
+  // Get the memory which this node consumes, it must include the out_adr_type, since if the node
+  // produces some memory, it also kills that memory, which is a form of consuming
+  const TypePtr* in_adr_type() const { return in_adr_type_impl(); }
+
+private:
+  virtual const TypePtr* out_adr_type_impl() const { return nullptr; }
+  virtual const TypePtr* in_adr_type_impl() const { return out_adr_type_impl(); }
+
+public:
   // Return an existing node which computes the same function as this node.
   // The optimistic combined algorithm requires this to return a Node which
   // is a small number of steps away (e.g., one of my inputs).
@@ -1531,6 +1551,10 @@ public:
   uint        _del_tick;               // Bumped when a deletion happens..
   #endif
 #endif
+  void make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str);
+
+  static void create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str);
+  void make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str);
 };
 
 inline bool not_a_node(const Node* n) {
@@ -2229,17 +2253,13 @@ public:
     init_class_id(Class_Type);
   }
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type *bottom_type() const;
   virtual       uint  ideal_reg() const;
 
-  void make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str);
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
   virtual void dump_compact_spec(outputStream *st) const;
 #endif
-  void make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str);
-  void create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str) const;
 };
 
 #include "opto/opcodes.hpp"

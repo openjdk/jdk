@@ -45,8 +45,10 @@
 #include "opto/valuetypenode.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
+#include "utilities/vmError.hpp"
 
 class RegMask;
 // #include "phase.hpp"
@@ -601,6 +603,7 @@ void Node::setup_is_top() {
 //------------------------------~Node------------------------------------------
 // Fancy destructor; eagerly attempt to reclaim Node numberings and storage
 void Node::destruct(PhaseValues* phase) {
+  assert(this != Compile::current()->dead_path(), "we want to keep the unique DeadPath node around");
   Compile* compile = (phase != nullptr) ? phase->C : Compile::current();
   if (phase != nullptr && phase->is_IterGVN()) {
     phase->is_IterGVN()->_worklist.remove(this);
@@ -740,11 +743,14 @@ void Node::out_grow(uint len) {
 //------------------------------is_dead----------------------------------------
 bool Node::is_dead() const {
   // Mach and pinch point nodes may look like dead.
-  if( is_top() || is_Mach() || (Opcode() == Op_Node && _outcnt > 0) )
+  if (is_top() || is_Mach() || (Opcode() == Op_Node && _outcnt > 0) || this == Compile::current()->dead_path()) {
     return false;
-  for( uint i = 0; i < _max; i++ )
-    if( _in[i] != nullptr )
+  }
+  for (uint i = 0; i < _max; i++) {
+    if (_in[i] != nullptr) {
       return false;
+    }
+  }
   return true;
 }
 
@@ -1144,6 +1150,80 @@ void Node::raise_bottom_type(const Type* new_type) {
     }
     n->set_type(new_type);
   }
+}
+
+const TypePtr* Node::out_adr_type() const {
+  const TypePtr* res = out_adr_type_impl();
+
+#ifdef ASSERT
+  if (Node::in_dump() || VMError::is_error_reported()) {
+    return res;
+  }
+
+  // Verify that in_adr_type contains out_adr_type, except for Start, obviously it consumes nothing
+  if (is_Start()) {
+    return res;
+  }
+
+  // Load must have no out_adr_type
+  if (is_Load() && res != nullptr) {
+    stringStream ss;
+    res->dump_on(&ss);
+    assert(false, "Node %s must have no out_adr_type, out: %s", Name(), ss.as_string());
+  }
+
+  const TypePtr* in_type = in_adr_type_impl();
+  // Store, LoadStore, and Phi must have the same out_adr_type and in_adr_type
+  if ((is_Store() || is_LoadStore() || is_Phi()) && res != in_type) {
+    stringStream ss;
+    ss.print(", out: ");
+    if (res == nullptr) {
+      ss.print("nullptr");
+    } else {
+      res->dump_on(&ss);
+    }
+    ss.print(", in: ");
+    if (in_type == nullptr) {
+      ss.print("nullptr");
+    } else {
+      in_type->dump_on(&ss);
+    }
+    assert(false, "Node %s must have the same out_adr_type and in_adr_type%s", Name(), ss.as_string());
+  }
+
+  // For some reasons, Raw can be used as Bot (see GraphKit::set_output_for_allocation for
+  // example), so be lenient here
+  if (res != nullptr && in_type != TypePtr::BOTTOM && in_type != TypeRawPtr::BOTTOM && res != in_type) {
+    stringStream ss;
+    ss.print(", out: ");
+    res->dump_on(&ss);
+    ss.print(", in: ");
+    if (in_type == nullptr) {
+      ss.print("nullptr");
+    } else {
+      in_type->dump_on(&ss);
+    }
+    assert(false, "Node %s: in_adr_type must contain out_adr_type%s", Name(), ss.as_string());
+  }
+
+  // Unless this node is pinned, we must either have no out_adr_type or have the same out_adr_type
+  // and in_adr_type. This is because we DO NOT know how to compute the anti-dependence of any
+  // other node. The exceptions are the intrinsic nodes which are constructed specially to
+  // materialize anti-dependencies as def-use dependencies.
+  bool has_special_anti_dependence_construction = Opcode() == Op_StrCompressedCopy ||
+                                                  Opcode() == Op_StrInflatedCopy ||
+                                                  Opcode() == Op_EncodeISOArray;
+  if (!is_Mach() && !is_CFG() && !pinned() && res != nullptr && res != in_type && !has_special_anti_dependence_construction) {
+    stringStream ss;
+    ss.print(", out: ");
+    res->dump_on(&ss);
+    ss.print(", in: ");
+    in_type->dump_on(&ss);
+    assert(false, "Node %s: cannot compute anti-dependencies%s", Name(), ss.as_string());
+  }
+#endif // ASSERT
+
+  return res;
 }
 
 //------------------------------Identity---------------------------------------
@@ -2634,7 +2714,7 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
     t->dump_on(st);
   } else if (t == Type::MEMORY) {
     st->print("  Memory:");
-    MemNode::dump_adr_type(adr_type(), st);
+    MemNode::dump_adr_type(out_adr_type(), st);
   } else if (Verbose || WizardMode) {
     st->print("  Type:");
     if (t) {
@@ -3204,10 +3284,11 @@ uint TypeNode::ideal_reg() const {
   return _type->ideal_reg();
 }
 
-void TypeNode::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str) {
+void Node::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str) {
   Node* c = ctrl_use->in(j);
-  if (igvn->type(c) != Type::TOP) {
-    igvn->replace_input_of(ctrl_use, j, igvn->C->top());
+  Node* top = igvn->C->top();
+  if (c != top) {
+    igvn->replace_input_of(ctrl_use, j, top);
     create_halt_path(igvn, c, loop, phase_str);
   }
 }
@@ -3219,14 +3300,18 @@ void TypeNode::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ct
 // constant folds and the control flow that leads to the Type node becomes unreachable. There are cases where that
 // doesn't happen, however. They are handled here by following uses of the Type node until a CFG or a Phi to find dead
 // paths. The dead paths are then replaced by a Halt node.
-void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str) {
+void Node::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str) {
   Unique_Node_List wq;
   wq.push(this);
   for (uint i = 0; i < wq.size(); ++i) {
     Node* n = wq.at(i);
+    if (n->is_CFG()) {
+      n->remove_dead_region(igvn, true);
+    }
     for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
       Node* u = n->fast_out(k);
       if (u->is_CFG()) {
+        wq.push(u);
         assert(!u->is_Region(), "Can't reach a Region without going through a Phi");
         make_path_dead(igvn, loop, u, 0, phase_str);
       } else if (u->is_Phi()) {
@@ -3246,7 +3331,7 @@ void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loo
   }
 }
 
-void TypeNode::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str) const {
+void Node::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str) {
   Node* frame = new ParmNode(igvn->C->start(), TypeFunc::FramePtr);
   if (loop == nullptr) {
     igvn->register_new_node_with_optimizer(frame);
@@ -3264,16 +3349,4 @@ void TypeNode::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loo
     loop->register_control(halt, loop->ltree_root(), c);
   }
   igvn->add_input_to(igvn->C->root(), halt);
-}
-
-Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (KillPathsReachableByDeadTypeNode && can_reshape && Value(phase) == Type::TOP) {
-    PhaseIterGVN* igvn = phase->is_IterGVN();
-    Node* top = igvn->C->top();
-    ResourceMark rm;
-    make_paths_from_here_dead(igvn, nullptr, "igvn");
-    return top;
-  }
-
-  return Node::Ideal(phase, can_reshape);
 }

@@ -2516,12 +2516,15 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   case Op_RotateRight:
   case Op_RotateLeft:
   case Op_PopCountI:
+  case Op_PopCountL:
   case Op_ReverseBytesS:
   case Op_ReverseBytesUS:
   case Op_ReverseBytesI:
   case Op_ReverseI:
   case Op_CountLeadingZerosI:
+  case Op_CountLeadingZerosL:
   case Op_CountTrailingZerosI:
+  case Op_CountTrailingZerosL:
   case Op_IsFiniteF:
   case Op_IsFiniteD:
   case Op_IsInfiniteF:
@@ -2684,8 +2687,8 @@ const Type* VLoopTypes::container_type(Node* n) const {
 }
 
 bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
-  return _vloop.phase()->C->get_alias_index(m1->adr_type()) ==
-         _vloop.phase()->C->get_alias_index(m2->adr_type());
+  return _vloop.phase()->C->get_alias_index(m1->in_adr_type()) ==
+         _vloop.phase()->C->get_alias_index(m2->in_adr_type());
 }
 
 LoadNode::ControlDependency SuperWordVTransformBuilder::load_control_dependency(const Node_List* pack) const {
@@ -3198,7 +3201,3 @@ void VLoopBody::print() const {
 bool SuperWord::same_origin_idx(Node* a, Node* b) const {
   return a != nullptr && b != nullptr && _clone_map.same_idx(a->_idx, b->_idx);
 }
-bool SuperWord::same_generation(Node* a, Node* b) const {
-  return a != nullptr && b != nullptr && _clone_map.same_gen(a->_idx, b->_idx);
-}
-

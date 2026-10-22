@@ -223,8 +223,6 @@ private:
 
   void expand_add_sub_i128t_node(Int128TBinaryNode* addsub);
 
-  int replace_input(Node *use, Node *oldref, Node *newref);
-  void migrate_outs(Node *old, Node *target);
   Node* opt_bits_test(Node* ctrl, Node* region, int edge, CmpNode* cmp);
   void copy_predefined_input_for_runtime_call(Node * ctrl, CallNode* oldcall, CallNode* call);
   CallNode* make_slow_call(CallNode *oldcall, const TypeFunc* slow_call_type, address slow_call,

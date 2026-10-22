@@ -116,4 +116,19 @@ inline ZLocker<T>::~ZLocker() {
   }
 }
 
+template <typename T>
+inline ZUnlocker<T>::ZUnlocker(T* lock)
+  : _lock(lock) {
+  if (_lock != nullptr) {
+    _lock->unlock();
+  }
+}
+
+template <typename T>
+inline ZUnlocker<T>::~ZUnlocker() {
+  if (_lock != nullptr) {
+    _lock->lock();
+  }
+}
+
 #endif // SHARE_GC_Z_ZLOCK_INLINE_HPP

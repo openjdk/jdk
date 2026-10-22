@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
+#include "cds/aotHeap.hpp"
 #include "cds/cdsEnumKlass.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
@@ -58,7 +58,7 @@ bool CDSEnumKlass::is_enum_obj(oop orig_obj) {
 // ModuleLayer::EMPTY_LAYER, for example).
 //
 // Instead, we archive all static field of such Enum classes. At runtime,
-// HeapShared::initialize_enum_klass() skips the <clinit> method and instead pulls
+// AOTHeap::initialize_enum_klass() skips the <clinit> method and instead pulls
 // the static fields out of the archived heap.
 void CDSEnumKlass::handle_enum_obj(int level,
                                    KlassSubGraphInfo* subgraph_info,
@@ -101,9 +101,9 @@ void CDSEnumKlass::archive_static_field(int level, KlassSubGraphInfo* subgraph_i
     guarantee(false, "static field %s::%s is of the wrong type",
               ik->external_name(), fd.name()->as_C_string());
   }
-  bool success = HeapShared::archive_reachable_objects_from(level, subgraph_info, oop_field);
+  bool success = AOTHeap::archive_reachable_objects_from(level, subgraph_info, oop_field);
   assert(success, "VM should have exited with unarchivable objects for _level > 1");
-  int root_index = HeapShared::append_root(oop_field);
+  int root_index = AOTHeap::append_root(oop_field);
   log_info(aot, heap)("Archived enum obj @%d %s::%s (" INTPTR_FORMAT ")",
                       root_index, ik->external_name(), fd.name()->as_C_string(),
                       p2i((oopDesc*)oop_field));
@@ -111,7 +111,7 @@ void CDSEnumKlass::archive_static_field(int level, KlassSubGraphInfo* subgraph_i
 }
 
 bool CDSEnumKlass::initialize_enum_klass(InstanceKlass* k, TRAPS) {
-  if (!HeapShared::is_archived_heap_in_use()) {
+  if (!AOTHeap::is_archived_heap_in_use()) {
     return false;
   }
 
@@ -129,7 +129,7 @@ bool CDSEnumKlass::initialize_enum_klass(InstanceKlass* k, TRAPS) {
       int root_index = info->enum_klass_static_field_root_index_at(i++);
       fieldDescriptor& fd = fs.field_descriptor();
       assert(fd.field_type() == T_OBJECT || fd.field_type() == T_ARRAY, "must be");
-      oop root_object = HeapShared::get_root(root_index, /*clear=*/true);
+      oop root_object = AOTHeap::get_root(root_index, /*clear=*/true);
       k->java_mirror()->obj_field_put(fd.offset(), root_object);
     }
   }

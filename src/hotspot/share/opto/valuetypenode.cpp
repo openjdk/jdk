@@ -254,10 +254,6 @@ void ValueTypeNode::set_field_value(uint index, Node* value) {
   set_req(Values + index, value);
 }
 
-void ValueTypeNode::set_field_value_by_offset(int offset, Node* value) {
-  set_field_value(field_index(offset), value);
-}
-
 uint ValueTypeNode::field_index(int offset) const {
   uint i = 0;
   for (; i < field_count() && field(i)->offset_in_bytes() != offset; i++) { }

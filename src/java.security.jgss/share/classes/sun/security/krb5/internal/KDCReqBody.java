@@ -77,9 +77,9 @@ public class KDCReqBody {
     public KerberosTime till;
     public KerberosTime rtime; //optional
     public HostAddresses addresses; //optional
+    public int[] eType = null; //a sequence; not optional
 
     private int nonce;
-    private int[] eType = null; //a sequence; not optional
     private EncryptedData encAuthorizationData; //optional
     private Ticket[] additionalTickets; //optional
 

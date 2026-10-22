@@ -863,7 +863,7 @@ import java.net.URI;
  * <td style="text-align:center">9</td>
  * </tr>
  * <tr>
- * <td id="extensionClassLoader">jdk.xml.extensionClassLoader</td>
+ * <td id="extensionClassLoader">{@systemProperty jdk.xml.extensionClassLoader}</td>
  * <td>Sets a non-null ClassLoader instance to be used for loading XSLTC java
  * extension functions.
  * </td>
@@ -877,7 +877,7 @@ import java.net.URI;
  * <td style="text-align:center">9</td>
  * </tr>
  * <tr>
- * <td id="xpathExprGrpLimit">jdk.xml.xpathExprGrpLimit</td>
+ * <td id="xpathExprGrpLimit">{@systemProperty jdk.xml.xpathExprGrpLimit}</td>
  * <td>Limits the number of groups an XPath expression can contain.
  * </td>
  * <td style="text-align:center" rowspan="3">yes</td>
@@ -894,14 +894,14 @@ import java.net.URI;
  * <td style="text-align:center" rowspan="3">19</td>
  * </tr>
  * <tr>
- * <td id="xpathExprOpLimit">jdk.xml.xpathExprOpLimit</td>
+ * <td id="xpathExprOpLimit">{@systemProperty jdk.xml.xpathExprOpLimit}</td>
  * <td>Limits the number of operators an XPath expression can contain.
  * </td>
  * <td style="text-align:center">100</td>
  * <td style="text-align:center">100</td>
  * </tr>
  * <tr>
- * <td id="xpathTotalOpLimit">jdk.xml.xpathTotalOpLimit</td>
+ * <td id="xpathTotalOpLimit">{@systemProperty jdk.xml.xpathTotalOpLimit}</td>
  * <td>Limits the total number of XPath operators in an XSL Stylesheet.
  * </td>
  * <td style="text-align:center">10000</td>
@@ -909,6 +909,28 @@ import java.net.URI;
  * <td style="text-align:center">
  *     <a href="#Transform">Transform</a><br>
  * </td>
+ * </tr>
+ * <tr>
+ * <td id="allowNonXSLTSysProps">{@systemProperty jdk.xml.allowNonXSLTSysProps}</td>
+ * <td>controls whether XPath's {@code system-property()} function is permitted to
+ * access non-XSLT-defined JVM system properties in addition to the standard XSLT-defined
+ * properties supported by the JDK. Attempts to access non-XSLT-defined properties will
+ * fail with an XPathExpressionException during XPath expression evaluation.
+ * </td>
+ * <td style="text-align:center">yes</td>
+ * <td style="text-align:center">Boolean</td>
+ * <td>
+ * true or false. True allows access to non-XSLT JVM system properties; False
+ * restricts access to only XSLT-defined properties.
+ * </td>
+ * <td style="text-align:center">false</td>
+ * <td style="text-align:center">false</td>
+ * <td style="text-align:center">Yes</td>
+ * <td style="text-align:center">
+ *     <a href="#XPATH">XPath</a>
+ * </td>
+ * <td style="text-align:center"><a href="#Processor">Method 2</a></td>
+ * <td style="text-align:center">27</td>
  * </tr>
  * <tr>
  * <td id="ExtFunc">{@systemProperty jdk.xml.enableExtensionFunctions}</td>
@@ -1039,6 +1061,24 @@ import java.net.URI;
  * <td style="text-align:center">22</td>
  * </tr>
  * <tr>
+ * <td id="templatesImplDeserialization">{@systemProperty jdk.xml.enableTemplatesImplDeserialization}</td>
+ * <td>Enables or disables deserialization of the JDK's implementation of the
+ * {@link javax.xml.transform.Templates} interface.
+ * </td>
+ * <td style="text-align:center">yes</td>
+ * <td style="text-align:center">boolean</td>
+ * <td>true or false. True indicates that deserialization is allowed. False indicates that
+ * deserialization is disallowed.</td>
+ * <td style="text-align:center">false</td>
+ * <td style="text-align:center">false</td>
+ * <td style="text-align:center">Yes</td>
+ * <td style="text-align:center">
+ *     <a href="#Transform">Transform</a>
+ * </td>
+ * <td style="text-align:center"><a href="#Note8">[8]</a></td>
+ * <td style="text-align:center">7</td>
+ * </tr>
+ * <tr>
  * <td id="RES_ACCESS">{@systemProperty jdk.xml.resource.access}</td>
  * <td>Defines allowed access to external resources by specifying a list
  * of URI patterns, each following the syntax: <br><br>
@@ -1130,7 +1170,7 @@ import java.net.URI;
  * </td>
  * <td style="text-align:center">{@code *}</td>
  * <td style="text-align:center">{@code *}</td>
- * <td style="text-align:center">No <a href="#Note8">[8]</a></td>
+ * <td style="text-align:center">No <a href="#Note9">[9]</a></td>
  * <td style="text-align:center">
  *     <a href="#DOM">DOM</a><br>
  *     <a href="#SAX">SAX</a><br>
@@ -1185,7 +1225,11 @@ import java.net.URI;
  * they are set to deny or ignore, other properties that regulate a part or an
  * aspect of DTD shall have no effect.
  * <p id="Note8">
- * <b>[8]</b> In the current release, the state of the {@code jdk.xml.resource.access}
+ * <b>[8]</b> This property can be set only via a system property or in the
+ * <a href="#Conf_CF">JAXP Configuration File</a>. Setting this property
+ * on a transformer factory or on a {@code Transformer} instance has no effect.
+ * <p id="Note9">
+ * <b>[9]</b> In the current release, the state of the {@code jdk.xml.resource.access}
  * property does not change when {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FEATURE_SECURE_PROCESSING}
  * (FSP) is enabled. In future releases, it will transition to a restrictive setting
  * when FSP is enabled.
@@ -1263,7 +1307,7 @@ import java.net.URI;
  * {@code http://www.oracle.com/xml/jaxp/properties/xsltcIsStandalone}</td>
  * </tr>
  * <tr>
- * <td>{@code jdk.xml.extensionClassLoader}</td>
+ * <td>{@systemProperty jdk.xml.extensionClassLoader}</td>
  * <td>{@code jdk.xml.transform.extensionClassLoader}</td>
  * </tr>
  * <tr>
