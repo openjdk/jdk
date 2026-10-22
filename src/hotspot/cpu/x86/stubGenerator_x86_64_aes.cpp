@@ -477,9 +477,16 @@ static address generate_counterModeAES(StubGenerator *stubgen,
   assert(maxParallel <= 6, "");
   assert(maxParallel % 2 == 0, "invalid parallel");
 
+  StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(stubgen, StubId::stubgen_counterMode_AESCrypt_id);
-  address start = __ pc();
+  StubCodeMark mark(stubgen, stub_id);
+  start = __ pc();
   __ enter();
 
   // Save Registers and deal with arguments first
@@ -910,6 +917,10 @@ static address generate_counterModeAES(StubGenerator *stubgen,
   __ pop_ppx(r12);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
+
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   __ ret(0);
   return start;
 }
