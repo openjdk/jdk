@@ -606,7 +606,7 @@ void Compile::print_compile_messages() {
   if( PrintOpto ) {
     if (is_osr_compilation()) {
       tty->print("[OSR]");
-    } else if (env()->task()->is_aot_compile()) {
+    } else if (is_aot_compile()) {
       if (for_aot_preload()) {
         tty->print("[PRE]");
       } else {
@@ -649,9 +649,8 @@ void Compile::print_ideal_ir(const char* compile_phase_name) const {
   NoSafepointVerifier nsv;
   ttyLocker ttyl;
   if (xtty != nullptr) {
-    CompileTask* task = env()->task();
-    bool aot_comp = task->is_aot_load_or_compile();
-    bool aot_preload_comp = task->is_aot_preload_or_compile();
+    bool aot_comp = is_aot_compile();
+    bool aot_preload_comp = for_aot_preload();
     xtty->head("ideal compile_id='%d'%s compile_phase='%s'",
                compile_id(),
                is_osr_compilation() ? " compile_kind='osr'" :
@@ -786,7 +785,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   set_print_intrinsics(directive->PrintIntrinsicsOption);
   set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
 
-  if ((ProfileTraps && !ci_env->is_aot_compile()) ||
+  if ((ProfileTraps && !is_aot_compile()) ||
       AOTCodeCache::is_using_code()) {
     // Make sure the method being compiled gets its own MDO,
     // so we can at least track the decompile_count().
@@ -1295,7 +1294,7 @@ uint Compile::count_live_nodes_by_graph_walk() {
 void Compile::print_missing_nodes() {
 
   // Return if CompileLog is null and PrintIdealNodeCount is false.
-  if ((_log == nullptr) && (! PrintIdealNodeCount)) {
+  if ((_log == nullptr) && !directive()->PrintIdealNodeCountOption) {
     return;
   }
 
@@ -1326,7 +1325,7 @@ void Compile::print_missing_nodes() {
           if (_log != nullptr) {
             _log->elem("mismatched_node_info node_idx='%d' type='both live and dead'", i);
           }
-          if (PrintIdealNodeCount) {
+          if (directive()->PrintIdealNodeCountOption) {
             // Print the log message to tty
               tty->print_cr("mismatched_node idx='%d' both live and dead'", i);
               useful.at(i)->dump();
@@ -1337,7 +1336,7 @@ void Compile::print_missing_nodes() {
         if (_log != nullptr) {
           _log->elem("mismatched_node_info node_idx='%d' type='neither live nor dead'", i);
         }
-        if (PrintIdealNodeCount) {
+        if (directive()->PrintIdealNodeCountOption) {
           // Print the log message to tty
           tty->print_cr("mismatched_node idx='%d' type='neither live nor dead'", i);
         }
@@ -5359,7 +5358,7 @@ Compile::TracePhase::~TracePhase() {
     return; // timing code, not stressing bailouts.
   }
 #ifdef ASSERT
-  if (PrintIdealNodeCount) {
+  if (_compile->directive()->PrintIdealNodeCountOption) {
     tty->print_cr("phase name='%s' nodes='%d' live='%d' live_graph_walk='%d'",
                   phase_name(), _compile->unique(), _compile->live_nodes(), _compile->count_live_nodes_by_graph_walk());
   }

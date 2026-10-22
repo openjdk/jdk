@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,9 @@ package build.tools.blockedcertsconverter;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
-import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.ECPublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,6 +38,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import sun.security.util.CurveDB;
 import sun.security.util.DerInputStream;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
@@ -140,11 +139,8 @@ public class BlockedCertsConverter {
         List<DerValue> algIds = Arrays.asList(seq[1], altAlgId(seq[1]));
 
         List<DerValue> sigs;
-        PublicKey p = c.getPublicKey();
-        if (p instanceof ECPublicKey) {
-            ECPublicKey ep = (ECPublicKey) p;
-            BigInteger mod = ep.getParams().getOrder();
-            sigs = Arrays.asList(seq[2], altSig(mod, seq[2]));
+        if (c.getSigAlgName().contains("ECDSA")) {
+            sigs = Arrays.asList(seq[2], altSig(seq[2]));
         } else {
             sigs = Arrays.asList(seq[2]);
         }
@@ -163,14 +159,27 @@ public class BlockedCertsConverter {
         return result;
     }
 
-    private static DerValue altSig(BigInteger mod, DerValue sig)
+    private static DerValue altSig(DerValue sig)
             throws IOException {
         byte[] sigBits = sig.getBitString();
+        int sigLength = sigBits.length;
         DerInputStream in =
-            new DerInputStream(sigBits, 0, sigBits.length, false);
+            new DerInputStream(sigBits, 0, sigLength, false);
         DerValue[] values = in.getSequence(2);
         BigInteger r = values[0].getBigInteger();
         BigInteger s = values[1].getBigInteger();
+        BigInteger mod;
+        // The following checks cover more than 99.99999% of signature lengths
+        // for the three NIST-P curves. Fail if the length lies outside.
+        if (sigLength >= 100 && sigLength <= 104) {
+            mod = CurveDB.P_384.getOrder();
+        } else if (sigLength >= 68 && sigLength <= 72) {
+            mod = CurveDB.P_256.getOrder();
+        } else if (sigLength >= 135 && sigLength <= 139) {
+            mod = CurveDB.P_521.getOrder();
+        } else {
+            throw new RuntimeException("Unrecognized signature length: " + sigLength);
+        }
         BigInteger s2 = s.negate().mod(mod);
         DerOutputStream out = new DerOutputStream();
         out.putInteger(r);

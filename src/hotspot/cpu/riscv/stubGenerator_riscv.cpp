@@ -2247,10 +2247,12 @@ class StubGenerator: public StubCodeGenerator {
     __ load_klass(t1, dst);
     __ bne(t1, scratch_src_klass, L_failed);
 
-    if (Arguments::is_valhalla_enabled()) {
+    if (UseArrayFlattening) {
       // Check for flat value type array -> return -1
       __ test_flat_array_oop(src, t1, L_failed);
+    }
 
+    if (Arguments::is_valhalla_enabled()) {
       // Check for null-free (non-flat) value type array -> handle as object array
       __ test_null_free_array_oop(src, t1, L_objArray);
     }
@@ -7836,6 +7838,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     __ kernel_crc32(crc, buf, len,
                     c_rarg3, c_rarg4, c_rarg5, c_rarg6, // tmp's for tables
                     c_rarg7, t2, t3, t4, t5, t6);       // misc tmps
+    __ sext(crc, crc, 32);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();
@@ -7873,6 +7876,7 @@ static const int64_t right_3_bits = right_n_bits(3);
                      c_rarg3, c_rarg4,           // byte_table, clmul_table
                      c_rarg5, c_rarg6, c_rarg7,  // accum_hi, k1, k2
                      t2, t3, t4);                // scratch1, scratch2, fold_end
+    __ sext(crc, crc, 32);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();

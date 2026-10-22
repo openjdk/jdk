@@ -3829,11 +3829,13 @@ void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
 }
 
 void MacroAssembler::payload_offset(Register value_klass, Register offset) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   ld(offset, Address(value_klass, ValueKlass::adr_members_offset()));
   lwu(offset, Address(offset, ValueKlass::payload_offset_offset()));
 }
 
 void MacroAssembler::payload_address(Register oop, Register data, Register value_klass) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   assert_different_registers(data, t0);
   // ((address) (void*) o) + vk->payload_offset();
   Register offset = (data == oop) ? t0 : data;
@@ -3932,21 +3934,25 @@ void MacroAssembler::null_check(Register reg, int offset) {
 }
 
 void MacroAssembler::test_field_is_null_free_value_type(Register flags, Register temp_reg, Label& is_null_free_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
   bnez(temp_reg, is_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_not_null_free_value_type(Register flags, Register temp_reg, Label& not_null_free_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
   beqz(temp_reg, not_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label& is_flat) {
+  assert(UseFieldFlattening, "should not be used without field flattening enabled");
   test_bit(temp_reg, flags, ResolvedFieldEntry::is_flat_shift);
   bnez(temp_reg, is_flat);
 }
 
 void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert_different_registers(markword, t1);
   mv(t1, markWord::value_type_pattern_mask);
   andr(markword, markword, t1);
@@ -3955,6 +3961,7 @@ void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_va
 }
 
 void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert_different_registers(tmp, t0);
   if (can_be_null) {
     beqz(object, not_value_type);
@@ -3979,22 +3986,27 @@ void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int
 }
 
 void MacroAssembler::test_flat_array_oop(Register oop, Register temp_reg, Label& is_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, true, is_flat_array);
 }
 
 void MacroAssembler::test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, true, is_null_free_array);
 }
 
 void MacroAssembler::test_non_flat_array_oop(Register oop, Register temp_reg, Label&is_non_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, false, is_non_flat_array);
 }
 
 void MacroAssembler::test_non_null_free_array_oop(Register oop, Register temp_reg, Label&is_non_null_free_array) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, false, is_non_null_free_array);
 }
 
 void MacroAssembler::test_flat_array_layout(Register lh, Label& is_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_bit(t0, lh, exact_log2(Klass::_lh_array_tag_flat_value_bit_inplace));
   bnez(t0, is_flat_array);
 }
@@ -6871,6 +6883,66 @@ void MacroAssembler::float_to_float16_NaN(Register dst, FloatRegister src,
   // 4 bits
   andi(tmp1, dst, 0xf);
   orr(dst, tmp2, tmp1);
+}
+
+// j.l.Float.float16ToFloat
+void MacroAssembler::flt16_to_flt(FloatRegister dst, Register src) {
+  assert_different_registers(src, t0, t1);
+  Label L_NaN_Inf, L_done;
+
+  // On riscv, NaN needs a special process as fcvt does not work in that case.
+  // On riscv, Inf does not need a special process as fcvt can handle it correctly.
+  // but we consider to get the slow path to process NaN and Inf at the same time,
+  // as both of them are rare cases, and if we try to get the slow path to handle
+  // only NaN case it would sacrifise the performance for normal cases,
+  // i.e. non-NaN and non-Inf cases.
+
+  // check whether it's a NaN or +/- Inf.
+  mv(t0, 0x7c00);
+  andr(t1, src, t0);
+  beq(t0, t1, L_NaN_Inf);
+
+  // non-NaN or non-Inf cases, just use built-in instructions.
+  fmv_h_x(dst, src);
+  fcvt_s_h(dst, dst);
+  j(L_done);
+
+  bind(L_NaN_Inf);
+  // construct a NaN in 32 bits from the NaN in 16 bits,
+  // we need the payloads of non-canonical NaNs to be preserved.
+  mv(t1, 0x7f800000);
+  // The upper 16 bits of a short argument are unspecified. Sign-extend the
+  // low 16 bits before shifting so that the float sign bit comes from the
+  // float16 sign bit.
+  sext(t0, src, 16);
+  slli(t0, t0, 13);
+  orr(t1, t0, t1);
+  fmv_w_x(dst, t1);
+
+  bind(L_done);
+}
+
+// j.l.Float.floatToFloat16
+void MacroAssembler::flt_to_flt16(Register dst, FloatRegister src, FloatRegister ftmp) {
+  assert_different_registers(dst, t0, t1);
+  Label L_NaN, L_done;
+
+  // On riscv, NaN needs a special process as fcvt does not work in that case.
+
+  // check whether it's a NaN.
+  // replace fclass with feq as performance optimization.
+  feq_s(t0, src, src);
+  beqz(t0, L_NaN);
+
+  // non-NaN cases, just use built-in instructions.
+  fcvt_h_s(ftmp, src);
+  fmv_x_h(dst, ftmp);
+  j(L_done);
+
+  bind(L_NaN);
+  float_to_float16_NaN(dst, src, t0, t1);
+
+  bind(L_done);
 }
 
 #define FCVT_SAFE(FLOATCVT, FLOATSIG)                                                     \

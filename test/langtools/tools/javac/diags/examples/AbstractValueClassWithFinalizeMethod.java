@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,12 @@
  * questions.
  */
 
-#include "gc/shared/gc_globals.hpp"
-#include "gc/shared/gcLogPrecious.hpp"
-#include "gc/z/zRuntimeWorkers.hpp"
-#include "runtime/java.hpp"
+// key: compiler.err.value.finalize
+// key: compiler.note.preview.filename
+// key: compiler.note.preview.recompile
+// key: compiler.warn.has.been.deprecated.for.removal
+// options: --enable-preview  -source ${jdk.version}
 
-ZRuntimeWorkers::ZRuntimeWorkers()
-  : _workers("RuntimeWorker", ParallelGCThreads) {
-
-  log_info_p(gc, init)("Runtime Workers: %u", _workers.max_workers());
-
-  // Initialize worker threads
-  _workers.initialize_workers();
-  _workers.set_active_workers(_workers.max_workers());
-  if (_workers.active_workers() != _workers.max_workers()) {
-    vm_exit_during_initialization("Failed to create ZRuntimeWorkers");
-  }
-}
-
-WorkerThreads* ZRuntimeWorkers::workers() {
-  return &_workers;
-}
-
-void ZRuntimeWorkers::threads_do(ThreadClosure* tc) const {
-  _workers.threads_do(tc);
+abstract value class AbstractValueClassWithFinalizeMethod {
+    protected void finalize() throws Throwable { }
 }
