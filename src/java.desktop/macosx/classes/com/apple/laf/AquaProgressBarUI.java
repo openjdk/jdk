@@ -219,11 +219,22 @@ public final class AquaProgressBarUI extends ProgressBarUI implements ChangeList
 
         if (image != null) {
             if (!isHorizontal()) {
-                if (progressBar.isStringPainted() && !progressBar.isIndeterminate()) {
+                final boolean paintText = progressBar.isStringPainted()
+                                         && !progressBar.isIndeterminate();
+                final Graphics2D printerGraphics = SwingUtilities2.getGraphics2D(g);
+                if (paintText && printerGraphics == null) {
                     paintString(g2, i.left, i.top, width, height);
                 }
                 g2.dispose();
                 g.drawImage(image, 0, 0, null);
+                if (paintText && printerGraphics != null) {
+                    final Graphics2D textGraphics = (Graphics2D) printerGraphics.create();
+                    try {
+                        paintString(textGraphics, i.left, i.top, width, height);
+                    } finally{
+                        textGraphics.dispose();
+                   }
+               }
             } else {
                 g.drawImage(image, 0, 0, null);
                 g2.dispose();
