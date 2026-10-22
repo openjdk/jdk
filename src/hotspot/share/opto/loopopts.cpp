@@ -4457,7 +4457,7 @@ public:
 
 class DuplicateLoopBackedge : public StackObj {
 public:
-  DuplicateLoopBackedge(IdealLoopTree* loop, PhaseIdealLoop* phase, Node_List &old_new) : _loop(loop), _phase(phase),
+  DuplicateLoopBackedge(IdealLoopTree* loop, PhaseIdealLoop* phase, Node_List<Node> &old_new) : _loop(loop), _phase(phase),
     _old_new(old_new), _path_merge_region(nullptr), _exit_test(nullptr), _selected_path_index(0), _selected_path_prob(PROB_UNKNOWN), _path_merge_region_clone(nullptr),
     _outer_head(nullptr) {
   }
@@ -4529,13 +4529,13 @@ public:
 private:
   IdealLoopTree* _loop;
   PhaseIdealLoop* _phase;
-  Node_List& _old_new;
+  Node_List<Node>& _old_new;
 
   Node* _path_merge_region;
   IfNode* _exit_test;
   uint _selected_path_index;
   float _selected_path_prob;
-  Unique_Node_List _nodes_to_clone;
+  Unique_Node_List<Node> _nodes_to_clone;
   Node* _path_merge_region_clone;
   LoopNode* _outer_head;
 
@@ -4545,7 +4545,7 @@ private:
     LoopNode* head = _loop->_head->as_Loop();
 
     Node* c = head->in(LoopNode::LoopBackControl);
-    Node_List regions;
+    Node_List<Node> regions;
 
     while (c != head) {
       if (c->is_Region()) {
@@ -4768,15 +4768,15 @@ private:
     }
 
     // create control and data nodes for out of loop uses (including region2)
-    Node_List worklist;
+    Node_List<Node> worklist;
     uint new_counter = _phase->C->unique();
     Node* region_idom = _phase->idom(_path_merge_region);
     _phase->fix_ctrl_uses(_nodes_to_clone, _loop, _old_new, PhaseIdealLoop::ControlAroundStripMined, region_idom, nullptr,
                           worklist);
 
-    Node_List* split_if_set = nullptr;
-    Node_List* split_bool_set = nullptr;
-    Node_List* split_cex_set = nullptr;
+    Node_List<Node>* split_if_set = nullptr;
+    Node_List<BoolNode>* split_bool_set = nullptr;
+    Node_List<CreateExNode>* split_cex_set = nullptr;
     _phase->fix_data_uses(_nodes_to_clone, _loop, PhaseIdealLoop::ControlAroundStripMined, _loop->skip_strip_mined(), new_counter,
                           _old_new, worklist,
                           split_if_set, split_bool_set, split_cex_set);
@@ -4819,7 +4819,7 @@ private:
   }
 
   void update_loop_membership() const {
-    Unique_Node_List not_in_loop_anymore;
+    Unique_Node_List<Node> not_in_loop_anymore;
     not_in_loop_anymore.push(_path_merge_region_clone);
     for (uint i = 0; i < not_in_loop_anymore.size(); ++i) {
       Node* c = not_in_loop_anymore.at(i);
@@ -4923,7 +4923,7 @@ private:
   }
 };
 
-bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree* loop, Node_List& old_new) {
+bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree* loop, Node_List<Node>& old_new) {
   DuplicateLoopBackedge dlb(loop, this, old_new);
   return dlb.transform();
 }
