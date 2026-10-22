@@ -119,7 +119,6 @@ public:
   Node*         field_value(uint index) const;
   Node*         field_value_by_offset(int offset, bool recursive) const;
   void      set_field_value(uint index, Node* value);
-  void      set_field_value_by_offset(int offset, Node* value);
   uint          field_index(int offset) const;
 
   // Replace ValueTypeNodes in debug info at safepoints with SafePointScalarObjectNodes

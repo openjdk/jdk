@@ -695,7 +695,6 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _strength_reduction(false),
       _do_cleanup(false),
       _has_reserved_stack_access(target->has_reserved_stack_access()),
-      _has_circular_value_type(false),
 #ifndef PRODUCT
       _igv_idx(0),
       _trace_opto_output(directive->TraceOptoOutputOption),
@@ -772,10 +771,6 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   set_print_assembly(print_opto_assembly || print_assembly);
 #else
   set_print_assembly(false); // must initialize.
-#endif
-
-#ifndef PRODUCT
-  set_parsed_irreducible_loop(false);
 #endif
 
   if (directive->ReplayInlineOption) {
@@ -1011,7 +1006,6 @@ Compile::Compile(ciEnv* ci_env,
       _inlining_progress(false),
       _inlining_incrementally(false),
       _has_reserved_stack_access(false),
-      _has_circular_value_type(false),
 #ifndef PRODUCT
       _igv_idx(0),
       _trace_opto_output(directive->TraceOptoOutputOption),
@@ -1074,7 +1068,6 @@ Compile::Compile(ciEnv* ci_env,
 
 #ifndef PRODUCT
   set_print_assembly(PrintFrameConverterAssembly);
-  set_parsed_irreducible_loop(false);
 #else
   set_print_assembly(false); // Must initialize.
 #endif

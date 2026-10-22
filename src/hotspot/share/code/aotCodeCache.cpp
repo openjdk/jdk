@@ -4499,10 +4499,7 @@ void AOTCodeAddressTable::init_extrs() {
 #if INCLUDE_JFR
   ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::write_checkpoint);
   ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::return_lease);
-  ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::load_barrier);
-  ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::epoch_address());
   ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::epoch_generation_address());
-  ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::signal_address());
   ADD_EXTERNAL_ADDRESS(&VMContinuations)
 #endif
   // For JFR

@@ -2678,7 +2678,7 @@ void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* head, B
   Node* back_control = loop_exit_control(loop);
   assert(back_control != nullptr, "no back control");
 
-  LoopExitTest exit_test(back_control, loop, this);
+  LoopExitTest exit_test(back_control, loop);
   exit_test.build();
   assert(exit_test.is_valid_with_bt(bt), "no exit test");
 
