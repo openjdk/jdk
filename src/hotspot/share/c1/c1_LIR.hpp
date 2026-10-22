@@ -2158,14 +2158,16 @@ class LIR_OpProfileMultipleArrayTypes : public LIR_Op {
   LIR_Opr      _array;
   LIR_Opr      _tmp1;
   LIR_Opr      _tmp2;
+  LIR_Opr      _tmp3;
 public:
-  LIR_OpProfileMultipleArrayTypes(ciMethodData* md, ciArrayLoadData* load, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2)
+  LIR_OpProfileMultipleArrayTypes(ciMethodData* md, ciArrayLoadData* load, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3 = LIR_OprFact::illegalOpr)
     : LIR_Op(lir_profile_multiple_array_types, LIR_OprFact::illegalOpr, nullptr)
       , _md(md)
       , _load(load)
       , _array(array)
       , _tmp1(tmp1)
-      , _tmp2(tmp2) {
+      , _tmp2(tmp2)
+      , _tmp3(tmp3) {
 
   }
   ciMethodData* md()               const            { return _md;                }
@@ -2173,6 +2175,7 @@ public:
   LIR_Opr      array()             const            { return _array;             }
   LIR_Opr      tmp1()              const            { return _tmp1;              }
   LIR_Opr      tmp2()              const            { return _tmp2;              }
+  LIR_Opr      tmp3()              const            { return _tmp3;              }
 
   virtual void emit_code(LIR_Assembler* masm);
   virtual LIR_OpProfileMultipleArrayTypes* as_OpProfileMultipleArrayTypes() { return this; }
@@ -2480,8 +2483,8 @@ class LIR_List: public CompilationResourceObj {
   void profile_value_type(LIR_Address* mdp, LIR_Opr obj, int flag, LIR_Opr tmp, bool not_null) {
     append(new LIR_OpProfileValueType(LIR_OprFact::address(mdp), obj, flag, tmp, not_null));
   }
-  void profile_multiple_array_types(ciMethodData* md, ciArrayLoadData* load, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2) {
-    append(new LIR_OpProfileMultipleArrayTypes(md, load, array, tmp1, tmp2));
+  void profile_multiple_array_types(ciMethodData* md, ciArrayLoadData* load, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3 = LIR_OprFact::illegalOpr) {
+    append(new LIR_OpProfileMultipleArrayTypes(md, load, array, tmp1, tmp2, tmp3));
   }
 
   void xadd(LIR_Opr src, LIR_Opr add, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_xadd, src, add, res, tmp)); }

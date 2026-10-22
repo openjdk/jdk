@@ -993,6 +993,9 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       do_input(opProfileMultipleArrayTypes->_array); do_temp(opProfileMultipleArrayTypes->_array);
       do_temp(opProfileMultipleArrayTypes->_tmp1);
       do_temp(opProfileMultipleArrayTypes->_tmp2);
+      if (opProfileMultipleArrayTypes->_tmp3->is_valid()) {
+        do_temp(opProfileMultipleArrayTypes->_tmp3);
+      }
 
       break;
     }

@@ -3096,7 +3096,7 @@ void LIRGenerator::profile_array_type(AccessIndexed* x, ciMethodData*& md, ciArr
 void LIRGenerator::profile_multiple_array_types(AccessIndexed* x, LIRItem array, ciMethodData* md, ciArrayLoadData* load) {
   assert(compilation()->profile_array_accesses(), "array access profiling is disabled");
 
-  __ profile_multiple_array_types(md, load, array.result(), new_pointer_register(), new_pointer_register());
+  __ profile_multiple_array_types(md, load, array.result(), new_pointer_register(), new_pointer_register(), new_pointer_register());
 }
 
 void LIRGenerator::profile_element_type(Value element, ciMethodData* md, ciArrayLoadData* load_data) {

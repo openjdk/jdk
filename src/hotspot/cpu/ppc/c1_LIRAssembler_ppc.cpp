@@ -3102,6 +3102,7 @@ void LIR_Assembler::emit_profile_multiple_array_types(LIR_OpProfileMultipleArray
   Register array = op->array()->as_pointer_register();
   Register tmp1  = op->tmp1()->as_pointer_register();
   Register tmp2  = op->tmp2()->as_pointer_register();
+  Register tmp3  = op->tmp3()->as_pointer_register();
   ciMethodData* md = op->md();
 
   Register mdo = tmp2;
@@ -3122,7 +3123,7 @@ void LIR_Assembler::emit_profile_multiple_array_types(LIR_OpProfileMultipleArray
     Register klass = tmp1;
     __ load_klass(klass, array);
 
-    __ profile_array_type_at_load(klass, mdo, mdp_offset - mdo_offset_bias, array);
+    __ profile_array_type_at_load(klass, mdo, mdp_offset - mdo_offset_bias, tmp3);
 
     __ b(done);
     __ bind(not_flat);
