@@ -35,23 +35,65 @@ public class TestCCMismatchNativeMethods {
         System.loadLibrary("TestCCMismatchNativeMethods");
     }
 
-    value record V(int x) { }
+    value record V1(int x) { }
+
+    static abstract value class V2 {
+        private int x;
+
+        V2(int x) {
+            this.x = x;
+        }
+        
+        abstract int m1(V1 v);
+    }
+
+    static value class V3 extends V2 {
+        V3(int x) {
+            super(x);
+        }
+
+        native int m1(V1 v);
+    }
+
+    static value class V4 extends V2 {
+        V4(int x) {
+            super(x);
+        }
+
+        int m1(V1 v) {
+            return v.x;
+        }
+    }
+
+    static value class V5 extends V2 {
+        V5(int x) {
+            super(x);
+        }
+
+        int m1(V1 v) {
+            return v.x;
+        }
+    }
 
     static class A {
-        int m(V v1, V v2) {
+        int m1(V1 v1, V1 v2) {
             return v1.x;
         }
     }
 
     static class B extends A {
-        native int m(V v1, V v2);
+        native int m1(V1 v1, V1 v2);
     }
 
     static class C extends A {
     }
     
-    static int test1(A a, V v) {
-        return a.m(v, v);
+    static int test1(A a, V1 v) {
+        return a.m1(v, v);
+    }
+
+    static int test2(V2 v1, V1 v2) {
+        return v1.m1(v2);
     }
 
     public static void main(String[] args) {
@@ -59,9 +101,12 @@ public class TestCCMismatchNativeMethods {
         B b = new B();
         C c = new C();
         for (int i = 0; i < 20_000; i++) {
-            test1(a, new V(42));
-            test1(b, new V(42));
-            test1(c, new V(42));
+            // test1(a, new V1(42));
+            // test1(b, new V1(42));
+            // test1(c, new V1(42));
+            test2(new V3(42), new V1(42));
+            test2(new V4(42), new V1(42));
+            test2(new V5(42), new V1(42));
         }
     }
 }
