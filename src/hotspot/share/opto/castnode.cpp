@@ -28,13 +28,13 @@
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/graphKit.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
+#include "opto/valuetypenode.hpp"
 #include "utilities/checkedCast.hpp"
 
 const ConstraintCastNode::DependencyType ConstraintCastNode::DependencyType::FloatingNarrowing(true, true, "floating narrowing dependency"); // not pinned, narrows type
@@ -115,9 +115,9 @@ Node *ConstraintCastNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return this;
   }
 
-  // Push cast through InlineTypeNode
-  if (in(1)->is_InlineType()) {
-    return ideal_cast_of_inline_type_node(phase);
+  // Push cast through ValueTypeNode
+  if (in(1)->is_ValueType()) {
+    return ideal_cast_of_value_type_node(phase);
   }
 
   if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
@@ -227,8 +227,8 @@ Node* ConstraintCastNode::pin_node_under_control_impl() const {
   return make_cast_for_type(in(0), in(1), bottom_type(), _dependency.with_pinned_dependency(), _extra_types);
 }
 
-Node* ConstraintCastNode::ideal_cast_of_inline_type_node(PhaseGVN* phase) {
-  InlineTypeNode* vt = in(1)->as_InlineType();
+Node* ConstraintCastNode::ideal_cast_of_value_type_node(PhaseGVN* phase) {
+  ValueTypeNode* vt = in(1)->as_ValueType();
   if (type()->isa_rawptr() != nullptr) {
     return nullptr;
   }
@@ -251,7 +251,7 @@ Node* ConstraintCastNode::ideal_cast_of_inline_type_node(PhaseGVN* phase) {
 
   // The only possible case left is that the cast is a cast to not-null
   assert(join == vt->type()->filter(TypePtr::NOTNULL), "must be");
-  InlineTypeNode* res = vt->clone()->as_InlineType();
+  ValueTypeNode* res = vt->clone()->as_ValueType();
   res->set_null_marker(*phase);
 
   // Push the cast to the oop input if possible
@@ -479,7 +479,7 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 //------------------------------Identity---------------------------------------
 // If input is already higher or equal to cast type, then this is an identity.
 Node* CheckCastPPNode::Identity(PhaseGVN* phase) {
-  if (in(1)->is_InlineType() && _type->isa_instptr() && phase->type(in(1))->inline_klass()->is_subtype_of(_type->is_instptr()->instance_klass())) {
+  if (in(1)->is_ValueType() && _type->isa_instptr() && phase->type(in(1))->value_klass()->is_subtype_of(_type->is_instptr()->instance_klass())) {
     return in(1);
   }
   return ConstraintCastNode::Identity(phase);

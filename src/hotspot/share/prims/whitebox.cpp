@@ -27,7 +27,6 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/cdsConstants.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderStats.hpp"
@@ -123,6 +122,12 @@
 #if INCLUDE_SERIALGC
 #include "gc/serial/serialHeap.hpp"
 #endif // INCLUDE_SERIALGC
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#endif // INCLUDE_SHENANDOAHGC
 #if INCLUDE_ZGC
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
@@ -179,6 +184,19 @@ WB_END
 
 WB_ENTRY(jlong, WB_GetVMLargePageSize(JNIEnv* env, jobject o))
   return os::large_page_size();
+WB_END
+
+WB_ENTRY(jstring, WB_PrintObject(JNIEnv* env, jobject wb, jobject o))
+  ResourceMark rm(THREAD);
+  stringStream sb;
+  oop obj = JNIHandles::resolve(o);
+  if (obj == nullptr) {
+    sb.print("null");
+  } else {
+    obj->print_on(&sb);
+  }
+  oop result = java_lang_String::create_oop_from_str(sb.as_string(), THREAD);
+  return (jstring) JNIHandles::make_local(THREAD, result);
 WB_END
 
 WB_ENTRY(jstring, WB_PrintString(JNIEnv* env, jobject wb, jstring str, jint max_length))
@@ -583,7 +601,7 @@ WB_END
 
 WB_ENTRY(jboolean, WB_G1HasRegionsToUncommit(JNIEnv* env, jobject o))
   if (UseG1GC) {
-    return G1CollectedHeap::heap()->has_uncommittable_regions();
+    return G1CollectedHeap::heap()->has_pending_uncommit_regions();
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1HasRegionsToUncommit: G1 GC is not enabled");
 WB_END
@@ -681,6 +699,37 @@ WB_ENTRY(jlongArray, WB_G1GetMixedGCInfo(JNIEnv* env, jobject o, jint liveness))
 WB_END
 
 #endif // INCLUDE_G1GC
+
+#if INCLUDE_SHENANDOAHGC
+
+WB_ENTRY(jint, WB_ShenandoahRegionSize(JNIEnv* env, jobject o))
+  if (UseShenandoahGC) {
+    return ShenandoahHeapRegion::region_size_bytes_jint();
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionSize: Shenandoah GC is not enabled");
+WB_END
+
+WB_ENTRY(jint, WB_ShenandoahRegionCount(JNIEnv* env, jobject o))
+  if (UseShenandoahGC) {
+    return static_cast<jint>(ShenandoahHeap::heap()->num_regions());
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionCount: Shenandoah GC is not enabled");
+WB_END
+
+WB_ENTRY(jlong, WB_ShenandoahOldMarkGC(JNIEnv* env, jobject o, jint timeout_seconds))
+  if (UseShenandoahGC && ShenandoahHeap::heap()->mode()->is_generational()) {
+    if (timeout_seconds < 0) {
+      THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "WB_ShenandoahOldMarkGC: Timeout must be non-negative");
+    }
+    if (ShenandoahGenerationalHeap::heap()->wait_for_old_collection(timeout_seconds)) {
+      return ShenandoahHeap::heap()->old_generation()->completed_gc_id();
+    }
+    THROW_MSG_0(vmSymbols::java_lang_IllegalStateException(), "WB_ShenandoahOldMarkGC: Could not complete old GC cycle");
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahOldMarkGC: Generational mode for Shenandoah GC is not enabled");
+WB_END
+
+#endif // INCLUDE_SHENANDOAHGC
 
 // Alloc memory using the test memory tag so that we can use that to see if
 // NMT picks it up correctly
@@ -1130,7 +1179,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
   bool is_blocking = !matcher.directive_set()->BackgroundCompilationOption;
 
   // Compile method and check result
-  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh->invocation_count(), CompileTask::Reason_Whitebox, CHECK_false);
+  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh->invocation_count(), nullptr, CompileTask::Reason_Whitebox, CHECK_false);
   MutexLocker mu(THREAD, Compile_lock);
   bool is_queued = mh->queued_for_compilation();
   if ((!is_blocking && is_queued) || nm != nullptr) {
@@ -1275,6 +1324,7 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
 
   mh->clear_is_not_c1_compilable();
   mh->clear_is_not_c2_compilable();
+  mh->clear_is_not_c1_osr_compilable();
   mh->clear_is_not_c2_osr_compilable();
   NOT_PRODUCT(mh->set_compiled_invocation_count(0));
   if (mcs != nullptr) {
@@ -1361,7 +1411,7 @@ WB_END
 
 WB_ENTRY(jboolean, WB_IsLockedVMFlag(JNIEnv* env, jobject o, jstring name))
   const JVMFlag* flag = getVMFlag(thread, env, name);
-  return (flag != nullptr) && !(flag->is_unlocked() || flag->is_unlocker());
+  return (flag != nullptr) && !flag->is_unlocked();
 WB_END
 
 WB_ENTRY(jobject, WB_GetBooleanVMFlag(JNIEnv* env, jobject o, jstring name))
@@ -1550,7 +1600,7 @@ CodeHeap* WhiteBox::get_code_heap(CodeBlobType blob_type) {
 
 struct CodeBlobStub {
   CodeBlobStub(const CodeBlob* blob) :
-      name(os::strdup(blob->name())),
+      name(os::strdup(blob->name(), mtInternal)),
       size(blob->size()),
       blob_type(static_cast<jint>(WhiteBox::get_blob_type(blob))),
       address((jlong) blob),
@@ -1614,7 +1664,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   ThreadToNativeFromVM ttn(thread);
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, nullptr);
-  result = env->NewObjectArray(5, clazz, nullptr);
+  result = env->NewObjectArray(6, clazz, nullptr);
   if (result == nullptr) {
     return result;
   }
@@ -1640,6 +1690,10 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   jobject entry_point = longBox(thread, env, (jlong) code->entry_point());
   CHECK_JNI_EXCEPTION_(env, nullptr);
   env->SetObjectArrayElement(result, 4, entry_point);
+
+  jobject has_scoped_access = booleanBox(thread, env, (jboolean) code->has_scoped_access());
+  CHECK_JNI_EXCEPTION_(env, nullptr);
+  env->SetObjectArrayElement(result, 5, has_scoped_access);
 
   return result;
 WB_END
@@ -1691,7 +1745,8 @@ CodeBlob* WhiteBox::allocate_code_blob(int size, CodeBlobType blob_type) {
   }
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = (BufferBlob*) CodeCache::allocate(full_size, blob_type);
+    bool handle_alloc_failure = (blob_type != CodeBlobType::MethodHot);
+    blob = (BufferBlob*) CodeCache::allocate(full_size, blob_type, handle_alloc_failure);
     if (blob != nullptr) {
       ::new (blob) BufferBlob("WB::DummyBlob", CodeBlobKind::Buffer, full_size);
     }
@@ -2045,7 +2100,7 @@ class CollectObjectOops : public BasicOopIterateClosure {
 
   void add_oop(oop o) {
     Handle oh = Handle(Thread::current(), o);
-    if (oh != nullptr && oh->is_inline_type()) {
+    if (oh != nullptr && oh->is_value_type()) {
       oh->oop_iterate(this);
     } else {
       _array->append(oh);
@@ -2191,8 +2246,8 @@ WB_ENTRY(jint, WB_GetMarkWordOffset(JNIEnv* env, jobject o))
   return oopDesc::mark_offset_in_bytes();
 WB_END
 
-WB_ENTRY(jlong, WB_GetInlineTypePattern(JNIEnv* env, jobject o))
-  return markWord::inline_type_pattern;
+WB_ENTRY(jlong, WB_GetValueTypePattern(JNIEnv* env, jobject o))
+  return markWord::value_type_pattern;
 WB_END
 
 WB_ENTRY(jlong, WB_GetNullFreeArrayBitInPlace(JNIEnv* env, jobject o))
@@ -2658,6 +2713,11 @@ WB_ENTRY(jboolean, WB_IsContainerized(JNIEnv* env, jobject o))
   return os::is_containerized();
 WB_END
 
+// Physical memory of the machine (respecting container limits)
+WB_ENTRY(jlong, WB_PhysicalMemory(JNIEnv* env, jobject o))
+  return static_cast<jlong>(os::physical_memory());
+WB_END
+
 // Physical memory of the host machine (including containers)
 WB_ENTRY(jlong, WB_HostPhysicalMemory(JNIEnv* env, jobject o))
   return static_cast<jlong>(os::Machine::physical_memory());
@@ -2961,6 +3021,11 @@ static JNINativeMethod methods[] = {
   {CC"g1MemoryNodeIds",    CC"()[I",                  (void*)&WB_G1MemoryNodeIds },
   {CC"g1GetMixedGCInfo",   CC"(I)[J",                 (void*)&WB_G1GetMixedGCInfo },
 #endif // INCLUDE_G1GC
+#if INCLUDE_SHENANDOAHGC
+  {CC"shenandoahRegionSize",   CC"()I",                   (void*)&WB_ShenandoahRegionSize  },
+  {CC"shenandoahRegionCount",  CC"()I",                   (void*)&WB_ShenandoahRegionCount },
+  {CC"shenandoahOldMarkGC",    CC"(I)J",                  (void*)&WB_ShenandoahOldMarkGC   },
+#endif // INCLUDE_SHENANDOAHGC
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
   {CC"NMTMallocWithPseudoStack", CC"(JI)J",           (void*)&WB_NMTMallocWithPseudoStack},
   {CC"NMTMallocWithPseudoStackAndType", CC"(JII)J",   (void*)&WB_NMTMallocWithPseudoStackAndType},
@@ -3120,7 +3185,7 @@ static JNINativeMethod methods[] = {
   {CC"printClasses0",      CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_printClasses},
   {CC"printMethods0",      CC"(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_printMethods},
   {CC"getMarkWordOffset",          CC"()I",           (void*)&WB_GetMarkWordOffset},
-  {CC"getInlineTypePattern",       CC"()J",           (void*)&WB_GetInlineTypePattern},
+  {CC"getValueTypePattern",        CC"()J",           (void*)&WB_GetValueTypePattern},
   {CC"getNullFreeArrayBitInPlace", CC"()J",           (void*)&WB_GetNullFreeArrayBitInPlace},
   {CC"getFlatArrayBitInPlace",     CC"()J",           (void*)&WB_GetFlatArrayBitInPlace},
   {CC"getMethodBooleanOption",
@@ -3183,6 +3248,7 @@ static JNINativeMethod methods[] = {
   {CC"hostPhysicalSwap",          CC"()J",            (void*)&WB_HostPhysicalSwap },
   {CC"hostAvailableMemory",       CC"()J",            (void*)&WB_HostAvailableMemory },
   {CC"hostCPUs",                  CC"()I",            (void*)&WB_HostCPUs },
+  {CC"physicalMemory",            CC"()J",            (void*)&WB_PhysicalMemory },
   {CC"printOsInfo",               CC"()V",            (void*)&WB_PrintOsInfo },
   {CC"disableElfSectionCache",    CC"()V",            (void*)&WB_DisableElfSectionCache },
   {CC"resolvedMethodItemsCount",  CC"()J",            (void*)&WB_ResolvedMethodItemsCount },
@@ -3212,6 +3278,7 @@ static JNINativeMethod methods[] = {
   {CC"preTouchMemory",  CC"(JJ)V",                    (void*)&WB_PreTouchMemory},
   {CC"cleanMetaspaces", CC"()V",                      (void*)&WB_CleanMetaspaces},
   {CC"rss", CC"()J",                                  (void*)&WB_Rss},
+  {CC"printObject", CC"(Ljava/lang/Object;)Ljava/lang/String;", (void*)&WB_PrintObject},
   {CC"printString", CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_PrintString},
   {CC"lockAndStuckInSafepoint", CC"()V",              (void*)&WB_TakeLockAndHangInSafepoint},
   {CC"getMinimumJavaStackSize", CC"()J",              (void*)&WB_GetMinimumJavaStackSize},

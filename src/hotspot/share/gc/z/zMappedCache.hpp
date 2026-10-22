@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,13 +126,15 @@ private:
 public:
   ZMappedCache();
 
+  size_t size() const;
+
   void insert(const ZVirtualMemory& vmem);
 
   ZVirtualMemory remove_contiguous(size_t size);
   ZVirtualMemory remove_contiguous_power_of_2(size_t min_size, size_t max_size);
   size_t remove_discontiguous(size_t size, ZArray<ZVirtualMemory>* out);
 
-  // ZUncommitter support
+  // Uncommit support
   void reset_min_size_watermark();
   size_t min_size_watermark();
   size_t remove_for_uncommit(size_t size, ZArray<ZVirtualMemory>* out);

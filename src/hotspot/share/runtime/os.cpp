@@ -1339,6 +1339,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 
   // Compressed klass needs to be decoded first.
+  // Todo: questionable for COH - can we do this better?
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
     markWord mw = (markWord)(uintptr_t)(addr);

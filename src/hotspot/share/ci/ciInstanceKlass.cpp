@@ -23,10 +23,10 @@
  */
 
 #include "ci/ciField.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -56,14 +56,21 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   ciKlass(k)
 {
   assert(get_Klass()->is_instance_klass(), "wrong type");
-  assert(get_instanceKlass()->is_loaded(), "must be at least loaded");
+
   InstanceKlass* ik = get_instanceKlass();
+
+#ifdef ASSERT
+  if (!ik->is_loaded()) {
+    ResourceMark rm;
+    assert(false, "must be at least loaded: %s", ik->name()->as_C_string());
+  }
+#endif // ASSERT
 
   AccessFlags access_flags = ik->access_flags();
   _flags = ciFlags(access_flags);
   _has_finalizer = ik->has_finalizer();
   _has_subklass = flags().is_final() ? subklass_false : subklass_unknown;
-  _init_state = ik->init_state();
+  _init_state = compute_init_state(ik);
   _has_nonstatic_fields = ik->has_nonstatic_fields();
   _has_nonstatic_concrete_methods = ik->has_nonstatic_concrete_methods();
   _is_hidden = ik->is_hidden();
@@ -147,9 +154,26 @@ InstanceKlass::ClassState ciInstanceKlass::compute_init_state() {
     // Return cached init state of shared klass
     ciEnv* env = CURRENT_ENV;
     assert(env->task() != nullptr, "only calls from compilation are expected here");
-    return env->get_cached_init_state(ident());
+    if (env->is_aot_compile()) {
+      GUARDED_VM_ENTRY( return env->compute_init_state_for_aot_compile(get_instanceKlass()); )
+    } else {
+      return env->get_cached_init_state(ident());
+    }
   }
   return _init_state;
+}
+
+InstanceKlass::ClassState ciInstanceKlass::compute_init_state(InstanceKlass* ik) {
+  ASSERT_IN_VM;
+#if INCLUDE_CDS
+  ciEnv* env = CURRENT_ENV;
+  if (env != nullptr && env->is_aot_compile()) {
+    return env->compute_init_state_for_aot_compile(ik);
+  } else
+#endif
+  {
+    return ik->init_state();
+  }
 }
 
 // ------------------------------------------------------------------
@@ -455,7 +479,7 @@ int ciInstanceKlass::field_index_by_offset(int offset) {
     }
   }
   assert(best_index >= 0, "field not found");
-  assert(best_offset == offset || declared_nonstatic_field_at(best_index)->type()->is_inlinetype(), "offset should match for non-inline types");
+  assert(best_offset == offset || declared_nonstatic_field_at(best_index)->type()->is_value_klass(), "offset should match for non-value types");
   return best_index;
 }
 
@@ -593,8 +617,8 @@ void ciInstanceKlass::compute_nonstatic_fields_impl(const GrowableArray<ciField*
 
     fieldDescriptor& fd = fs.field_descriptor();
     if (fd.is_flat()) {
-      InlineKlass* k = this_klass->get_inline_type_field_klass(fd.index());
-      ciInlineKlass* vk = CURRENT_ENV->get_klass(k)->as_inline_klass();
+      ValueKlass* k = fd.flat_field_klass();
+      ciValueKlass* vk = CURRENT_ENV->get_klass(k)->as_value_klass();
       field_num += vk->nof_nonstatic_fields();
       field_num += fd.has_null_marker() ? 1 : 0;
     } else {
@@ -630,9 +654,9 @@ void ciInstanceKlass::compute_nonstatic_fields_impl(const GrowableArray<ciField*
 
     if (fd.is_flat()) {
       // Flat fields are embedded
-      Klass* k = get_instanceKlass()->get_inline_type_field_klass(fd.index());
-      ciInlineKlass* vk = CURRENT_ENV->get_klass(k)->as_inline_klass();
-      // Iterate over fields of the flat inline type and copy them to 'this'
+      Klass* k = fd.flat_field_klass();
+      ciValueKlass* vk = CURRENT_ENV->get_klass(k)->as_value_klass();
+      // Iterate over fields of the flat value type and copy them to 'this'
       for (int i = 0; i < vk->nof_nonstatic_fields(); ++i) {
         assert(tmp_fields != nullptr, "should be initialized");
         tmp_fields->append(new (arena) ciField(declared_field, vk->nonstatic_field_at(i)));
@@ -796,16 +820,16 @@ ciInstanceKlass* ciInstanceKlass::implementor() {
   return impl;
 }
 
-bool ciInstanceKlass::can_be_inline_klass(bool is_exact) {
+bool ciInstanceKlass::can_be_value_klass(bool is_exact) {
   if (!Arguments::is_valhalla_enabled()) {
     return false;
   }
-  if (!is_loaded() || is_inlinetype()) {
-    // Not loaded or known to be an inline klass
+  if (!is_loaded() || is_value_klass()) {
+    // Not loaded or known to be a value klass
     return true;
   }
   if (!is_exact) {
-    // Not exact, check if this is a valid super for an inline klass
+    // Not exact, check if this is a valid super for a value klass
     GUARDED_VM_ENTRY(
       return !get_instanceKlass()->access_flags().is_identity_class() || is_java_lang_Object();
     )
@@ -853,10 +877,10 @@ class StaticFinalFieldPrinter : public StaticFieldPrinter {
   }
 };
 
-class InlineTypeFieldPrinter : public StaticFieldPrinter {
+class ValueTypeFieldPrinter : public StaticFieldPrinter {
   oop _obj;
 public:
-  InlineTypeFieldPrinter(outputStream* out, oop obj) :
+  ValueTypeFieldPrinter(outputStream* out, oop obj) :
     StaticFieldPrinter(out), _obj(obj) {
   }
   void do_field(fieldDescriptor* fd) {
@@ -886,7 +910,7 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
     }
     case T_ARRAY:  // fall-through
     case T_OBJECT:
-      if (!fd->is_null_free_inline_type()) {
+      if (!fd->is_null_free_value_type()) {
         _out->print("%s", fd->signature()->as_quoted_ascii());
         oop value =  mirror->obj_field_acquire(fd->offset());
         if (value == nullptr) {
@@ -937,7 +961,7 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
         }
         break;
       } else {
-        // handling of null free inline type
+        // handling of null free value type
         _out->print("%s", fd->signature()->as_quoted_ascii());
         ResetNoHandleMark rnhm;
         Thread* THREAD = Thread::current();
@@ -948,7 +972,7 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
         InstanceKlass* k = SystemDictionary::find_instance_klass(THREAD, name,
                                                                  Handle(THREAD, holder->class_loader()));
         guarantee(k != nullptr && !HAS_PENDING_EXCEPTION, "can resolve klass?");
-        InlineKlass* vk = InlineKlass::cast(k);
+        ValueKlass* vk = ValueKlass::cast(k);
         oop obj;
         if (is_flat) {
           int field_offset = fd->offset() - vk->payload_offset();
@@ -956,7 +980,7 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
         } else {
           obj = mirror->obj_field_acquire(fd->offset());
         }
-        InlineTypeFieldPrinter print_field(_out, obj);
+        ValueTypeFieldPrinter print_field(_out, obj);
         vk->do_nonstatic_fields(&print_field);
         break;
       }

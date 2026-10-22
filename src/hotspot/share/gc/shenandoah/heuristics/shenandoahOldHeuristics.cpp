@@ -28,6 +28,7 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
@@ -413,11 +414,11 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   size_t live_data = 0;
   RegionData* candidates = _region_data;
   for (size_t i = 0; i < num_regions; i++) {
-    ShenandoahHeapRegion* region = heap->get_region(i);
-    if (!region->is_old()) {
+    if (!heap->is_region_old(i)) {
       continue;
     }
 
+    ShenandoahHeapRegion* region = heap->get_region(i);
     size_t garbage = region->garbage();
     size_t live_bytes = region->get_live_data_bytes();
     if (!region->was_promoted_in_place()) {
@@ -847,22 +848,16 @@ void ShenandoahOldHeuristics::adjust_old_garbage_threshold() {
   }
 }
 
-void ShenandoahOldHeuristics::record_success_concurrent() {
+void ShenandoahOldHeuristics::record_concurrent_completion() {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
   clear_triggers();
-  this->ShenandoahHeuristics::record_success_concurrent();
+  this->ShenandoahHeuristics::record_concurrent_completion();
 }
 
-void ShenandoahOldHeuristics::record_degenerated(bool is_generational_global) {
+void ShenandoahOldHeuristics::record_full_gc(GCCause::Cause cause) {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
   clear_triggers();
-  this->ShenandoahHeuristics::record_degenerated(is_generational_global);
-}
-
-void ShenandoahOldHeuristics::record_success_full() {
-  // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
-  clear_triggers();
-  this->ShenandoahHeuristics::record_success_full();
+  this->ShenandoahHeuristics::record_full_gc(cause);
 }
 
 const char* ShenandoahOldHeuristics::name() {

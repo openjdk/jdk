@@ -60,6 +60,8 @@ protected:
   oop     loader()        { return _base_element_klass->loader(); }
   jobject loader_handle() { return _base_element_klass->loader_handle(); }
 
+  static ciObjArrayKlass* get_unloaded_named_klass(ciKlass* element_klass);
+
 public:
   // The one-level type of the array elements.
   ciKlass* element_klass();
@@ -76,8 +78,8 @@ public:
 
   virtual ciKlass* exact_klass();
 
-  virtual bool can_be_inline_array_klass() {
-    return element_klass()->can_be_inline_klass();
+  virtual bool can_be_value_array_klass() {
+    return element_klass()->can_be_value_klass();
   }
 };
 

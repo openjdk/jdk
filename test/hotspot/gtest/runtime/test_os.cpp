@@ -132,7 +132,7 @@ TEST_VM(os, test_print_markword) {
     markWord m0 = vmClasses::Byte_klass()->prototype_header();
     const struct { markWord mw; const char* expected; } patterns[] = {
       { markWord(0), "is null"},
-      { m0, "mark(is_unlocked no_hash age=0) java.lang.Byte" },
+      { m0, "mark(is_lock_neutral no_hash age=0) java.lang.Byte" },
       { m0.set_age(2), "age=2" },
       { m0.copy_set_hash(0x12345), "is an unknown value" }
     };
@@ -158,7 +158,6 @@ static void assert_test_pattern(oop& obj, const char* pattern, bool is_present=t
 }
 
 TEST_VM(os, test_print_location) {
-
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
@@ -167,13 +166,17 @@ TEST_VM(os, test_print_location) {
   {
     // wizard mode off, so don't print markword
     MutexLocker lock(ClassLoaderDataGraph_lock);
-    assert_test_pattern(obj, "is_unlocked no_hash", WizardMode);
+    assert_test_pattern(obj, "is_lock_neutral no_hash", WizardMode);
   }
 
   // WizardMode (not available in release mode) prints details
 #ifndef PRODUCT
   FlagSetting fs(WizardMode, true);
- #endif
+  bool using_wizardMode = true;
+#else
+  bool using_wizardMode = false;
+#endif
+
   HandleMark hm(THREAD);
   Handle h_obj(THREAD, obj);
 
@@ -181,21 +184,33 @@ TEST_VM(os, test_print_location) {
   {
     MutexLocker lock(ClassLoaderDataGraph_lock);
     ObjectLocker ol(h_obj, THREAD);
-    assert_test_pattern(obj, "locked");
-    assert_test_pattern(obj, "is_unlocked", false);
+    if (using_wizardMode) {
+      assert_test_pattern(obj, "locked");
+    } else {
+      assert_test_pattern(obj, "locked", false);
+    }
+    assert_test_pattern(obj, "is_lock_neutral", false);
   }
 
   // Unlocked again
   {
     MutexLocker lock(ClassLoaderDataGraph_lock);
-    assert_test_pattern(obj, "is_unlocked");
+    if (using_wizardMode) {
+      assert_test_pattern(obj, "is_lock_neutral");
+    } else {
+      assert_test_pattern(obj, "is_lock_neutral", false);
+    }
   }
 
   // Hash the object then print it.
   {
     intx hash = h_obj->identity_hash();
     MutexLocker lock(ClassLoaderDataGraph_lock);
-    assert_test_pattern(obj, "is_unlocked hash=");
+    if (using_wizardMode) {
+      assert_test_pattern(obj, "is_lock_neutral hash=");
+    } else {
+      assert_test_pattern(obj, "is_lock_neutral hash=", false);
+    }
   }
 }
 

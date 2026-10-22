@@ -38,7 +38,7 @@ class WorkerTaskDispatcher;
 class WorkerThread;
 
 // An task to be worked on by worker threads
-class WorkerTask : public CHeapObj<mtInternal> {
+class WorkerTask : public CHeapObj<mtGC> {
 private:
   const char* _name;
   const uint _gc_id;
@@ -83,7 +83,7 @@ public:
 };
 
 // A set of worker threads to execute tasks
-class WorkerThreads : public CHeapObj<mtInternal> {
+class WorkerThreads : public CHeapObj<mtGC> {
 private:
   const char* const    _name;
   WorkerThread**       _workers;
