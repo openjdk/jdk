@@ -2757,10 +2757,14 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     });
   }
   // Check for "abs(0-x)" into "abs(x)" conversion
+  // Check for "(0 - x) * (0 - y)" into "x * y" conversion
   if (use->is_Sub()) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
       return u->Opcode() == Op_AbsD || u->Opcode() == Op_AbsF ||
-             u->Opcode() == Op_AbsL || u->Opcode() == Op_AbsI;
+             u->Opcode() == Op_AbsL || u->Opcode() == Op_AbsI ||
+             u->Opcode() == Op_MulI || u->Opcode() == Op_MulL ||
+             u->Opcode() == Op_MulF || u->Opcode() == Op_MulD ||
+             u->Opcode() == Op_MulHF;
     });
   }
   // Check for Max/Min(A, Max/Min(B, C)) where A == B or A == C
