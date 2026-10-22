@@ -34,7 +34,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * Handles parsing of files in Locale Data Markup Language for likelySubtags.xml
+ * Handles parsing of files in Common Locale Data {@literal &} Rules for likelySubtags.xml
  * and produces a map that uses the keys and values of JRE locale data.
  */
 

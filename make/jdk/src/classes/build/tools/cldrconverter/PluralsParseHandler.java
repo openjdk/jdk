@@ -38,7 +38,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * Handles parsing of files in Locale Data Markup Language for
+ * Handles parsing of files in Common Locale Data {@literal &} Rules for
  * plurals.xml
  */
 

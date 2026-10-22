@@ -142,7 +142,7 @@ import java.util.Locale;
  * locale data providers:
  * <ul>
  * <li> "CLDR": A locale data provider based on the Unicode Consortium's
- * <a href="http://cldr.unicode.org/">Common Locale Data Repository (CLDR)</a>.
+ * <a href="http://cldr.unicode.org/">Common Locale Data {@literal &} Rules (CLDR)</a>.
  * <li> "SPI": represents the locale sensitive services implementing the subclasses of
  * this {@code LocaleServiceProvider} class.
  * <li> "HOST": A locale data provider that reflects the user's custom settings in the
@@ -163,7 +163,7 @@ import java.util.Locale;
  * "SPI" in order for the Java runtime to load them from the classpath.
  *
  * @implNote The JDK uses locale data from the Unicode Consortium's
- * <a href="http://cldr.unicode.org/">Common Locale Data Repository (CLDR)</a>
+ * <a href="http://cldr.unicode.org/">Common Locale Data {@literal &} Rules (CLDR)</a>
  * to implement locale-sensitive APIs in the {@code java.util} and
  * {@code java.text} packages. This locale data derives the set of locales
  * supported by the Java runtime environment. The following tables list the

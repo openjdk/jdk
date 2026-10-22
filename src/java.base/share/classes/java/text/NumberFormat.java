@@ -237,7 +237,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * </ul>
  *
  * @spec         https://www.unicode.org/reports/tr35
- *               Unicode Locale Data Markup Language (LDML)
+ *               Unicode Common Locale Data {@literal &} Rules (CLDR)
  * @see          DecimalFormat
  * @see          ChoiceFormat
  * @see          CompactNumberFormat
@@ -700,7 +700,7 @@ public abstract class NumberFormat extends Format  {
      * @param inLocale the desired locale
      * @return the {@code NumberFormat} instance for currency formatting
      *
-     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
+     * @spec https://www.unicode.org/reports/tr35 Unicode Common Locale Data {@literal &} Rules (CLDR)
      */
     public static NumberFormat getCurrencyInstance(Locale inLocale) {
         return getInstance(inLocale, null, CURRENCYSTYLE);

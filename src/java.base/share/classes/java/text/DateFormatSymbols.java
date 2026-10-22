@@ -406,7 +406,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @return the month strings.
      *
      * @spec https://www.unicode.org/reports/tr35
-     *      Unicode Locale Data Markup Language (LDML)
+     *      Unicode Common Locale Data {@literal &} Rules (CLDR)
      */
     public String[] getMonths() {
         return Arrays.copyOf(months, months.length);
@@ -447,7 +447,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @return the short month strings.
      *
      * @spec https://www.unicode.org/reports/tr35
-     *      Unicode Locale Data Markup Language (LDML)
+     *      Unicode Common Locale Data {@literal &} Rules (CLDR)
      */
     public String[] getShortMonths() {
         return Arrays.copyOf(shortMonths, shortMonths.length);

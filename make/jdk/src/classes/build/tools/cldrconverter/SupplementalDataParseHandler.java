@@ -43,7 +43,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * Handles parsing of files in Locale Data Markup Language for supplementalData.xml
+ * Handles parsing of files in Common Locale Data {@literal &} Rules for supplementalData.xml
  * and produces a map that uses the keys and values of JRE locale data.
  */
 

@@ -44,7 +44,7 @@ import org.xml.sax.SAXNotSupportedException;
 
 
 /**
- * Converts locale data from "Locale Data Markup Language" format to
+ * Converts locale data from "Common Locale Data {@literal &} Rules" format to
  * JRE resource bundle format. LDML is the format used by the Common
  * Locale Data Repository maintained by the Unicode Consortium.
  */

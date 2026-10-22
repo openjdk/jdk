@@ -2656,7 +2656,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Returns the calendar type of this {@code Calendar}. Calendar types are
-     * defined by the <em>Unicode Locale Data Markup Language (LDML)</em>
+     * defined by the <em>Unicode Common Locale Data {@literal &} Rules (CLDR)</em>
      * specification.
      *
      * <p>The default implementation of this method returns the class name of

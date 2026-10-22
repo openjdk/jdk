@@ -1537,7 +1537,7 @@ public final class DateTimeFormatterBuilder {
      * @return this, for chaining, not null
      * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
      *
-     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
+     * @spec https://www.unicode.org/reports/tr35 Unicode Common Locale Data {@literal &} Rules (CLDR)
      * @see #appendPattern(String)
      * @since 19
      */
@@ -1622,7 +1622,7 @@ public final class DateTimeFormatterBuilder {
      * @param style the text style to use, not null
      * @return this, for chaining, not null
      *
-     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
+     * @spec https://www.unicode.org/reports/tr35 Unicode Common Locale Data {@literal &} Rules (CLDR)
      * @since 16
      */
     public DateTimeFormatterBuilder appendDayPeriodText(TextStyle style) {
@@ -1894,7 +1894,7 @@ public final class DateTimeFormatterBuilder {
      * Note that the pattern string is similar, but not identical, to
      * {@link java.text.SimpleDateFormat SimpleDateFormat}.
      * The pattern string is also similar, but not identical, to that defined by the
-     * Unicode Common Locale Data Repository (CLDR/LDML).
+     * Unicode Common Locale Data {@literal &} Rules (CLDR/LDML).
      * Pattern letters 'X' and 'u' are aligned with Unicode CLDR/LDML.
      * By contrast, {@code SimpleDateFormat} uses 'u' for the numeric day of week.
      * Pattern letters 'y' and 'Y' parse years of two digits and more than 4 digits differently.
