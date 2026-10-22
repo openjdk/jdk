@@ -1376,6 +1376,7 @@ static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src, Reg
     } __ bind(nope);
     __ step_random(r_profile_rng, temp);
   } else {
+    // We know that this counter is zero. Assume that it will be a rare event.
     __ addptr(dst, src);
   }
   __ block_comment("} increment_mdo");
@@ -3006,8 +3007,6 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj, rscratch1);
 }
 
-long is_zero, is_nonzero;
-
 void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
                                           LIR_Opr freq_opr, LIR_Opr md_reg,
                                           LIR_Opr md_opr, LIR_Opr md_offset_opr,
@@ -3030,6 +3029,9 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
   address md_base_address =
     md_opr->type() == T_METADATA ? (address)md_opr->as_constant_ptr()->as_metadata()
                                  : (address)md_opr->as_constant_ptr()->as_pointer();
+
+  int level = _compilation->env()->comp_level();
+  assert(level > CompLevel_simple, "Shouldn't be here");
 
   LIR_Address *counter_address_opr
     = md_offset_opr->is_constant()
@@ -3062,9 +3064,36 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
 
   auto lambda = [counter_stub, overflow_stub, freq_opr, ratio_shift, step_opr,
                  md_reg, md_opr, md_offset_opr, dest_opr, dest, type,
-                 counter_address_opr, do_decimate, threshold] (LIR_Assembler* ce, LIR_Op* op) {
+                 counter_address_opr, do_decimate, threshold, counter_contents]
+    (LIR_Assembler* ce, LIR_Op* op) {
 
     auto masm = [ce]() { return ce->masm(); };
+
+    if (counter_contents == 0 && counter_stub != nullptr) {
+      // One-shot counter. If a profile counter is zero at codegen
+      // time, at runtime we increment the counter once and patch out
+      // the call to this code.
+      __ block_comment("optimize zero counters 2");
+      __ bind(*counter_stub->alt_entry());
+      // The call instruction to this logic is 4-aligned, so we patch
+      // it out thusly.
+      __ movptr(dest, Address(rsp, 0));
+      __ andptr(dest, -4);
+      __ movl(Address(dest), 0x90669066); // nop; nop
+      // Increment the profile counter and return.
+      ce->const2reg(md_opr, md_reg, lir_patch_none, nullptr);
+      ce->mem2reg(counter_address_opr, dest_opr,
+                  dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
+      if (step_opr->is_constant()) {
+        __ lea(dest, Address(dest, step_opr->as_constant_ptr()->as_jint_bits(),
+                             Address::times_1));
+      } else {
+        __ lea(dest, Address(dest, step_opr->as_register(), Address::times_1));
+      }
+      ce->reg2mem(dest_opr, counter_address_opr,
+                  dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
+      __ ret(0);
+    }
 
     if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
 
@@ -3157,6 +3186,14 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
       reg2mem(dest_opr, counter_address_opr,
               type, lir_patch_none, nullptr, /*wide*/false);
       __ bind(nope);
+    } else if (counter_contents == 0) {
+      __ block_comment("optimize zero counters 1");
+      __ lea(dest, *counter_stub->alt_entry());
+      __ align(4);
+      auto n = __ pc();
+      __ call(dest);
+      __ align(4);
+      guarantee(pc() - n == 4, "must be");
     }
 
     __ cmpl(r_profile_rng, checked_cast<uint32_t>(threshold));
@@ -3219,7 +3256,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 #endif // PRODUCT
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
           increment_mdo(masm(), data_addr, DataLayout::counter_increment,
-                        op->tmp1()->as_register_lo());
+                        op->tmp1()->as_register_lo(), (address)md->constant_encoding());
           goto exit;
         }
       }
