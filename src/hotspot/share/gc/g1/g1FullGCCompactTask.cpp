@@ -138,9 +138,8 @@ void G1FullGCCompactTask::compact_humongous_obj(G1HeapRegion* src_hr) {
 
 void G1FullGCCompactTask::cleanup_humongous_regions(G1HeapRegion* src_hr, uint dest_start_idx, uint num_regions) {
   uint src_start_idx = src_hr->hrm_index();
-  // Free the card set group before overwriting humongous metadata if a moved humongous
-  // object overlaps the new location. Otherwise metadata writing will leak its card set group
-  // in this case.
+  // If the source start region overlaps the destination, release its card set
+  // group explicitly, since it will not be freed by the loop below.
   if (src_hr->rem_set()->has_card_set_group() &&
       (src_start_idx >= dest_start_idx && src_start_idx < (dest_start_idx + num_regions))) {
     src_hr->clear_humongous();
