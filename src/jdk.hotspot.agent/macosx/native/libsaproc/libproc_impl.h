@@ -41,7 +41,6 @@
 #define aarch64 1
 #endif
 
-#ifdef __APPLE__
 #include <inttypes.h>     // for PRIx64, 32, ...
 #include <pthread.h>
 #include <mach-o/loader.h>
@@ -134,10 +133,6 @@ typedef struct thread_command thread_command;
 typedef struct dylib_command dylib_command;
 typedef struct symtab_command symtab_command;
 typedef struct nlist_64 nlist_64;
-#else
-#include <thread_db.h>
-#include "salibelf.h"
-#endif //  __APPLE__
 
 // data structures in this file mimic those of Solaris 8.0 - libproc's Pcontrol.h
 
@@ -236,15 +231,11 @@ lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd,
 sa_thread_info* add_thread_info(struct ps_prochandle* ph, pthread_t pthread_id, lwpid_t lwp_id);
 // a test for ELF signature without using libelf
 
-#ifdef __APPLE__
 // a test for Mach-O signature
 bool is_macho_file(int fd);
 // skip fat head to get image start offset of cpu_type_t
 // return false if any error happens, else value in offset.
 bool get_arch_off(int fd, cpu_type_t cputype, off_t *offset);
-#else
-bool is_elf_file(int fd);
-#endif // __APPLE__
 
 lwpid_t get_lwp_id(struct ps_prochandle* ph, int index);
 bool set_lwp_id(struct ps_prochandle* ph, int index, lwpid_t lwpid);
