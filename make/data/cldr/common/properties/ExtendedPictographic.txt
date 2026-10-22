@@ -1,4 +1,0 @@
-# ExtendedPictographic.txt
-# Date: 2018-10-12
-# © 2016 Unicode®, Inc.
-# As of Emoji 11.0, the ExtendedPictographic property is now in https://unicode.org/Public/emoji/latest/emoji-data.txt
