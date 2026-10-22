@@ -465,10 +465,6 @@ static Node* transform_long_udivide(PhaseGVN* phase, Node* dividend, julong divi
     return new URShiftLNode(dividend, phase->intcon(l));
   }
 
-  if (!Matcher::match_rule_supported(Op_UMulHiL)) {
-    return nullptr; // Don't bother
-  }
-
   julong magic_const;
   bool magic_const_ovf;
   juint shift_const;
@@ -478,6 +474,10 @@ static Node* transform_long_udivide(PhaseGVN* phase, Node* dividend, julong divi
     // If x * c can fit into a u64, use long arithmetic
     Node* mul = phase->transform(new MulLNode(dividend, phase->longcon(magic_const)));
     return new URShiftLNode(mul, phase->intcon(shift_const));
+  }
+
+  if (!Matcher::match_rule_supported(Op_UMulHiL)) {
+    return nullptr;
   }
 
   if (shift_const < W) {
