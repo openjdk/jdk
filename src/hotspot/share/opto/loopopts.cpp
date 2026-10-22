@@ -4573,7 +4573,7 @@ private:
       return false;
     }
 
-    LoopExitTest loop_exit(back_control, loop, _phase);
+    PhaseIdealLoop::LoopExitTest loop_exit(back_control, _loop);
     loop_exit.build();
     if (!loop_exit.is_valid_with_bt(T_INT)) {
       return false;
