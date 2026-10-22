@@ -40,14 +40,16 @@ class InlinePrinter {
 private:
   class IPInlineAttempt {
     InliningResult _result;
+    bool _is_callee_change;
     stringStream* _stream;
 
   public:
-    IPInlineAttempt() : _stream(nullptr) {}
+    IPInlineAttempt() : _is_callee_change(false), _stream(nullptr) {}
 
-    IPInlineAttempt(InliningResult result) : _result(result), _stream(nullptr) {}
+    IPInlineAttempt(InliningResult result, bool is_callee_change) : _result(result), _is_callee_change(is_callee_change), _stream(nullptr) {}
 
     InliningResult result() const { return _result; }
+    bool is_callee_change() const { return _is_callee_change; }
 
     stringStream* make_stream() {
       assert(_stream == nullptr, "stream already exists");
@@ -105,7 +107,7 @@ private:
     // Returned reference is valid until any at_bci is called with non-null callee.
     IPInlineSite& at_bci(int bci, ciMethod* callee);
     // The returned pointer stays valid until InlinePrinter is destructed.
-    outputStream* add(InliningResult result);
+    outputStream* add(InliningResult result, bool is_callee_change = false);
 
     void dump(outputStream* tty, int level) const;
   };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ InlinePrinter::IPInlineSite& InlinePrinter::IPInlineSite::at_bci(int bci, ciMeth
   if (cursor.found()) { // We already saw a call at this site before
     IPInlineSite& child = cursor.node()->val();
     if (callee != nullptr && callee != child._method) {
-      outputStream* stream = child.add(InliningResult::SUCCESS);
+      outputStream* stream = child.add(InliningResult::SUCCESS, /* is_callee_change */ true);
       stream->print("callee changed to ");
       CompileTask::print_inline_inner_method_info(stream, callee);
     }
@@ -95,8 +95,8 @@ InlinePrinter::IPInlineSite& InlinePrinter::IPInlineSite::at_bci(int bci, ciMeth
   return node->val();
 }
 
-outputStream* InlinePrinter::IPInlineSite::add(InliningResult result) {
-  _attempts.push(IPInlineAttempt(result));
+outputStream* InlinePrinter::IPInlineSite::add(InliningResult result, bool is_callee_change) {
+  _attempts.push(IPInlineAttempt(result, is_callee_change));
   return _attempts.last().make_stream();
 }
 
@@ -107,7 +107,12 @@ void InlinePrinter::IPInlineSite::dump(outputStream* tty, int level) const {
     CompileTask::print_inlining_header(tty, _method, level, _bci);
   }
   for (int i = 0; i < _attempts.length(); i++) {
-    CompileTask::print_inlining_inner_message(tty, _attempts.at(i).result(), _attempts.at(i).stream()->base());
+    const IPInlineAttempt& attempt = _attempts.at(i);
+    if (attempt.is_callee_change()) {
+      tty->cr();
+      CompileTask::print_inline_indent(level, tty);
+    }
+    CompileTask::print_inlining_inner_message(tty, attempt.result(), attempt.stream()->base());
   }
   if (_attempts.is_nonempty()) {
     tty->cr();
