@@ -287,6 +287,11 @@ bool JfrThreadSampling::compute_top_frame(const JfrSampleRequest& request, frame
     break;
   }
 
+  if (stream.is_done()) {
+    // No frame above the sampled sp, nothing to trace from.
+    return false;
+  }
+
   in_continuation = is_in_continuation(top_frame, jt);
   return true;
 }
