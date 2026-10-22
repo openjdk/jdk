@@ -70,6 +70,7 @@ class MachNode;
 class MachOper;
 class MachSafePointNode;
 class Node;
+class OptimizationDelayNode;
 template <typename T> class Node_Array;
 template <typename T> class Node_List;
 class Node_Notes;
@@ -404,6 +405,7 @@ class Compile : public Phase {
   CompilationFailureInfo* _first_failure_details; // Details for the first failure happening during compilation
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
+  GrowableArray<OptimizationDelayNode*>  _optimization_delay_nodes; // List of optimization delay nodes
   GrowableArray<ParsePredicateNode*> _parse_predicates; // List of Parse Predicates.
   // List of OpaqueTemplateAssertionPredicateNode nodes for Template Assertion Predicates which can be seen as list
   // of Template Assertion Predicates themselves.
@@ -848,6 +850,9 @@ public:
 
   bool       allow_macro_nodes() { return _allow_macro_nodes;  }
   void reset_allow_macro_nodes() { _allow_macro_nodes = false;  }
+
+  // TODO: add stuff here
+  void remove_optimization_delay_node(OptimizationDelayNode* n);
 
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);

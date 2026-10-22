@@ -51,6 +51,7 @@ public:
     // Yes, otherwise for singletons we immediately collapse the node due to sigleton type.
     // TODO: type assert?
     // TODO: macro flags?
+    //C->add_optimization_delay(this);
   }
 
   static bool can_delay_type(const Type* t) {
