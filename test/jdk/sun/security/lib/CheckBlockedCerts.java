@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,21 +56,19 @@ public class CheckBlockedCerts {
             }
         }
 
-        // All certs in the pem files
-        Set<Certificate> blocked = new HashSet<>();
-
         // Assumes the full src is available
         File blockedCertsFile = new File(System.getProperty("test.src"),
                 "../../../../../src/java.base/share/data/blockedcertsconverter/blocked.certs.pem");
 
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        int expectedCount = 0;
         try (FileInputStream fis = new FileInputStream(blockedCertsFile)) {
             Collection<? extends Certificate> certs
                     = cf.generateCertificates(fis);
             System.out.println(certs.size());
             for (Certificate c: certs) {
-                blocked.add(c);
                 X509Certificate cert = ((X509Certificate)c);
+                expectedCount += cert.getSigAlgName().contains("ECDSA") ? 4 : 2;
                 if (!UntrustedCertificates.isUntrusted(cert)) {
                     System.out.println(cert.getSubjectX500Principal() +
                             " is trusted");
@@ -101,11 +99,11 @@ public class CheckBlockedCerts {
                 failed = true;
             }
             // There are two unique fingerprints for each RSA certificate
-            if (ccount != blocked.size() * 2
-                    && !blocked.isEmpty()) {
+            if (ccount != expectedCount
+                    && expectedCount != 0) {
                 System.out.println("Wrong blocked.certs size: "
-                        + ccount + " fingerprints, "
-                        + blocked.size() + " certs");
+                        + ccount + " fingerprints, expected"
+                        + expectedCount);
                 failed = true;
             }
         }

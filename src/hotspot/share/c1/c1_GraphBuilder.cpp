@@ -1803,14 +1803,24 @@ Value GraphBuilder::make_constant(ciConstant field_value, ciField* field) {
   }
 }
 
-void GraphBuilder::copy_value_content(ciValueKlass* vk, Value src, int src_off, Value dest, int dest_off, ValueStack* state_before, ciField* enclosing_field) {
+void GraphBuilder::copy_value_content(ciValueKlass* vk, Value src, int src_off, Value dest, int dest_off, ValueStack* state_before,
+                                      CopyNullChecks& null_checks, ciField* enclosing_field) {
   for (int i = 0; i < vk->nof_declared_nonstatic_fields(); i++) {
     ciField* field = vk->declared_nonstatic_field_at(i);
     int offset = field->offset_in_bytes() - vk->payload_offset();
     if (field->is_flat()) {
-      copy_value_content(field->type()->as_value_klass(), src, src_off + offset, dest, dest_off + offset, state_before, enclosing_field);
+      copy_value_content(field->type()->as_value_klass(), src, src_off + offset, dest, dest_off + offset, state_before, null_checks, enclosing_field);
       if (!field->is_null_free()) {
         // Nullable, copy the null marker using Unsafe because null markers are not real fields
+        // Unsafe accesses do not perform implicit null checks. Add explicit ones if needed.
+        if (null_checks.needs_dst) {
+          null_check(dest);
+          null_checks.needs_dst = false;
+        }
+        if (null_checks.needs_src) {
+          null_check(src);
+          null_checks.needs_src = false;
+        }
         int null_marker_offset = field->null_marker_offset() - vk->payload_offset();
         Value offset = append(new Constant(new LongConstant(src_off + null_marker_offset)));
         Value nm = append(new UnsafeGet(T_BOOLEAN, src, offset, false));
@@ -1819,9 +1829,11 @@ void GraphBuilder::copy_value_content(ciValueKlass* vk, Value src, int src_off, 
       }
     } else {
       Value value = append(new LoadField(src, src_off + offset, field, false, state_before, false));
+      null_checks.needs_src = false;
       StoreField* store = new StoreField(dest, dest_off + offset, field, value, false, state_before, false);
       store->set_enclosing_field(enclosing_field);
       append(store);
+      null_checks.needs_dst = false;
     }
   }
 }
@@ -2052,9 +2064,10 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
                 NewInstance* buffer = new NewInstance(value_klass, state_before, false, true);
                 _memory->new_instance(buffer);
                 apush(append_split(buffer));
+                CopyNullChecks null_checks = { false, false };
                 copy_value_content(value_klass, pending_field_access()->obj(),
-                                    pending_field_access()->offset() + field->offset_in_bytes() - field->holder()->as_value_klass()->payload_offset(),
-                                    buffer, value_klass->payload_offset(), state_before);
+                                   pending_field_access()->offset() + field->offset_in_bytes() - field->holder()->as_value_klass()->payload_offset(),
+                                   buffer, value_klass->payload_offset(), state_before, null_checks);
                 set_pending_field_access(nullptr);
               } else {
                 if (!field->is_null_free() && !value_klass->is_initialized()) {
@@ -2064,15 +2077,20 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
                   return;
                 }
 
+                CopyNullChecks null_checks = { true, false };
+                if (value_klass->is_empty()) {
+                  // The content copy emits no access that can implicitly null-check the holder.
+                  null_check(obj);
+                  null_checks.needs_src = false;
+                }
+
                 NewInstance* buffer = new NewInstance(value_klass, state_before, false, true);
                 _memory->new_instance(buffer);
                 append_split(buffer);
 
-                if (value_klass->is_initialized() && value_klass->is_empty()) {
-                  // Needs an explicit null check because below code does not perform any actual load if there are no fields
-                  null_check(obj);
-                }
-                copy_value_content(value_klass, obj, field->offset_in_bytes(), buffer, value_klass->payload_offset(), state_before);
+                copy_value_content(value_klass, obj, field->offset_in_bytes(), buffer, value_klass->payload_offset(),
+                                   state_before, null_checks);
+                assert(!null_checks.needs_src && !null_checks.needs_dst, "null checks should have been emitted");
 
                 Instruction* result = buffer;
                 if (!field->is_null_free()) {
@@ -2131,23 +2149,28 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
           append(new StoreField(obj, offset, field, val, false, state_before, needs_patching));
         } else if (field->is_null_free()) {
           assert(!value_klass->is_empty(), "should have been handled");
-          copy_value_content(value_klass, val, value_klass->payload_offset(), obj, offset, state_before, field);
+          CopyNullChecks null_checks = { true, true };
+          copy_value_content(value_klass, val, value_klass->payload_offset(), obj, offset, state_before, null_checks, field);
+          assert(!null_checks.needs_src && !null_checks.needs_dst, "null checks should have been emitted");
         } else {
           if (!value_klass->is_initialized()) {
             // null_reset_value is not available, bailout for now
             bailout("store to an uninitialized nullable non-atomic flat field");
             return;
           }
+          CopyNullChecks null_checks = { false, true };
           if (value_klass->is_empty()) {
-            // Needs an explicit null check because the code below does not emit a store that performs an implicit null check for empty classes.
+            // The content copy emits no access that can implicitly null-check the holder.
             null_check(obj);
+            null_checks.needs_dst = false;
           }
 
           // Store the subfields when field is a nullable non-atomic field
           Value object_null = append(new Constant(objectNull));
           Value null_reset_value = append(new Constant(new ObjectConstant(value_klass->get_null_reset_value().as_object())));
           Value src = append(new IfOp(val, Instruction::neq, object_null, val, null_reset_value, state_before, false));
-          copy_value_content(value_klass, src, value_klass->payload_offset(), obj, offset, state_before);
+          copy_value_content(value_klass, src, value_klass->payload_offset(), obj, offset, state_before, null_checks);
+          assert(!null_checks.needs_src && !null_checks.needs_dst, "null checks should have been emitted");
 
           // Store the null marker
           Value int_one = append(new Constant(new IntConstant(1)));

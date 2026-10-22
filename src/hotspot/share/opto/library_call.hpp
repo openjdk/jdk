@@ -295,14 +295,12 @@ class LibraryCallKit : public GraphKit {
 #endif
 
 #ifdef JFR_HAVE_INTRINSICS
-  bool inline_native_classID();
   bool inline_native_getEventWriter();
   bool inline_native_jvm_commit();
   void extend_setCurrentThread(Node* jt, Node* thread);
   bool inline_native_try_update_epoch();
 #endif
   bool inline_native_Class_query(vmIntrinsics::ID id);
-  bool inline_primitive_Class_conversion(vmIntrinsics::ID id);
   bool inline_native_subtype_check();
   bool inline_native_getLength();
   bool inline_array_copyOf(bool is_copyOfRange);
@@ -420,8 +418,6 @@ private:
   bool inline_profileBoolean();
   bool inline_isCompileConstant();
 
-  bool inline_continuation_do_yield();
-
   // Vector API support
   bool inline_vector_nary_operation(int n);
   bool inline_vector_call(int arity);
@@ -445,8 +441,6 @@ private:
   bool inline_index_vector();
   bool inline_index_partially_in_upper_range();
   bool inline_vector_select_from_two_vectors();
-
-  Node* gen_call_to_vector_math(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2);
 
   enum VectorMaskUseType {
     VecMaskUseLoad  = 1 << 0,
