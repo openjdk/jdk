@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
 #include "pdh_interface.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
+
+PDH_STATUS (WINAPI *PdhDll::_PdhAddEnglishCounter)(HQUERY, LPCWSTR, DWORD_PTR, HCOUNTER*) = nullptr;
+PDH_STATUS (WINAPI *PdhDll::_PdhGetRawCounterValue)(HCOUNTER, LPDWORD, PPDH_RAW_COUNTER) = nullptr;
 
 // PDH API
 typedef PDH_STATUS (WINAPI *PdhAddCounter_Fn)(HQUERY, LPCSTR, DWORD, HCOUNTER*);
@@ -71,6 +74,10 @@ void PdhDll::initialize(void) {
   _PdhLookupPerfNameByIndex    = (PdhLookupPerfNameByIndex_Fn)::GetProcAddress(_hModule, "PdhLookupPerfNameByIndexA");
   _PdhMakeCounterPath          = (PdhMakeCounterPath_Fn)::GetProcAddress(_hModule, "PdhMakeCounterPathA");
   _PdhExpandWildCardPath       = (PdhExpandWildCardPath_Fn)::GetProcAddress(_hModule, "PdhExpandWildCardPathA");
+  _PdhAddEnglishCounter = reinterpret_cast<decltype(_PdhAddEnglishCounter)>(
+      ::GetProcAddress(_hModule, "PdhAddEnglishCounterW"));
+  _PdhGetRawCounterValue = reinterpret_cast<decltype(_PdhGetRawCounterValue)>(
+      ::GetProcAddress(_hModule, "PdhGetRawCounterValue"));
   InterlockedExchange(&_initialized, 1);
 }
 
@@ -82,6 +89,8 @@ bool PdhDll::PdhDetach(void) {
       ret = FreeLibrary(_hModule);
       if (ret) {
         _hModule = nullptr;
+        _PdhAddEnglishCounter = nullptr;
+        _PdhGetRawCounterValue = nullptr;
         _PdhAddCounter = nullptr;
         _PdhOpenQuery = nullptr;
         _PdhCloseQuery = nullptr;
@@ -171,4 +180,14 @@ PDH_STATUS PdhDll::PdhExpandWildCardPath(LPCSTR szDataSource, LPCSTR szWildCardP
 
 bool PdhDll::PdhStatusFail(PDH_STATUS pdhStat) {
   return pdhStat != ERROR_SUCCESS && pdhStat != PDH_MORE_DATA;
+}
+
+PDH_STATUS PdhDll::PdhAddEnglishCounterW(HQUERY query, LPCWSTR path, DWORD_PTR user_data, HCOUNTER* counter) {
+  return _PdhAddEnglishCounter != nullptr
+      ? _PdhAddEnglishCounter(query, path, user_data, counter) : PDH_CSTATUS_NO_COUNTER;
+}
+
+PDH_STATUS PdhDll::PdhGetRawCounterValue(HCOUNTER counter, LPDWORD type, PPDH_RAW_COUNTER value) {
+  return _PdhGetRawCounterValue != nullptr
+      ? _PdhGetRawCounterValue(counter, type, value) : PDH_CSTATUS_NO_COUNTER;
 }
