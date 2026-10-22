@@ -70,11 +70,17 @@ public class TestFlatArrayInitializationProj {
 
     @Run(test = {"testAtomicNullFree",
                  "testNonAtomicNullFree",
-                 "testAtomicNullable"})
+                 "testAtomicNullable",
+                 "testMaybeAtomicNullFree",
+                 "testAtomicMaybeNullFree"})
     public static void run() {
         verify(testAtomicNullFree(), ATOMIC_NULL_FREE);
         verify(testNonAtomicNullFree(), NON_ATOMIC_NULL_FREE);
         verify(testAtomicNullable(), ATOMIC_NULLABLE);
+        verify(testMaybeAtomicNullFree(true), ATOMIC_NULL_FREE);
+        verify(testMaybeAtomicNullFree(false), NON_ATOMIC_NULL_FREE);
+        verify(testAtomicMaybeNullFree(true), ATOMIC_NULL_FREE);
+        verify(testAtomicMaybeNullFree(false), ATOMIC_NULLABLE);
     }
 
     private static void verify(MyValue[] src, MyValue[] dst) {
@@ -116,5 +122,27 @@ public class TestFlatArrayInitializationProj {
                   IRNode.NARROW_MEM_PROJ_OF_ADR_TYPE, "aryptr:flat:", "3"}) // 2 + 1 null marker
     public static MyValue[] testAtomicNullable() {
         return ATOMIC_NULLABLE.clone();
+    }
+
+    @Test
+    // Since we have more than one layout variant, the type is inexact and
+    // we don't add a NarrowMemProj.
+    @IR(phase = CompilePhase.SPLIT_INLINES_ARRAY,
+        counts = {IRNode.NARROW_MEM_PROJ_OF_FIELD, "x", "0",
+                  IRNode.NARROW_MEM_PROJ_OF_FIELD, "y", "0",
+                  IRNode.NARROW_MEM_PROJ_OF_ADR_TYPE, "aryptr:flat:", "0"})
+    public static MyValue[] testMaybeAtomicNullFree(boolean atomic) {
+        return (atomic ? ATOMIC_NULL_FREE : NON_ATOMIC_NULL_FREE).clone();
+    }
+
+    @Test
+    // Since we have more than one layout variant, the type is inexact and
+    // we don't add a NarrowMemProj.
+    @IR(phase = CompilePhase.SPLIT_INLINES_ARRAY,
+        counts = {IRNode.NARROW_MEM_PROJ_OF_FIELD, "x", "0",
+                  IRNode.NARROW_MEM_PROJ_OF_FIELD, "y", "0",
+                  IRNode.NARROW_MEM_PROJ_OF_ADR_TYPE, "aryptr:flat:", "0"})
+    public static MyValue[] testAtomicMaybeNullFree(boolean nullFree) {
+        return (nullFree ? ATOMIC_NULL_FREE : ATOMIC_NULLABLE).clone();
     }
 }
