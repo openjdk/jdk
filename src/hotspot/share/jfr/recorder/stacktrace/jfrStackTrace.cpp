@@ -54,15 +54,13 @@ static inline void copy_frames(JfrStackFrames* lhs_frames, const JfrStackFrames*
   memcpy(lhs_frames->adr_at(0), rhs_frames->adr_at(0), rhs_frames->length() * sizeof(JfrStackFrame));
 }
 
-JfrStackTrace::JfrStackTrace() : JfrStackTrace(JfrOptionSet::stackdepth()) {}
-
-JfrStackTrace::JfrStackTrace(u4 max_frames) :
+JfrStackTrace::JfrStackTrace() :
   _next(nullptr),
-  _frames(new JfrStackFrames(max_frames)), // ResourceArea
+  _frames(new JfrStackFrames(JfrOptionSet::stackdepth())), // ResourceArea
   _id(0),
   _hash(0),
   _count(0),
-  _max_frames(max_frames),
+  _max_frames(JfrOptionSet::stackdepth()),
   _frames_ownership(false),
   _reached_root(false),
   _lineno(false),

@@ -26,13 +26,12 @@
 #define SHARE_JFR_PERIODIC_SAMPLING_JFRCPUTIMETHREADSAMPLER_HPP
 
 #include "jfr/utilities/jfrAllocation.hpp"
-#include "jfr/utilities/jfrTime.hpp"
 
 class JavaThread;
 
 #if defined(LINUX)
 
-#include "jfr/recorder/stacktrace/jfrStackTrace.hpp"
+#include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 
 class JfrCPUSamplerThread;
@@ -68,8 +67,7 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   void handle_timer_signal(siginfo_t* info, void* context);
 
   static void send_empty_event(const JfrTicks& start_time, Tickspan cpu_time_period);
-
-  static void send_event(const JfrTicks& start_time, traceid sid, Tickspan cpu_time_period, bool biased, JfrStackTrace& stacktrace);
+  static void send_event(const JfrTicks& start_time, traceid sid, Tickspan cpu_time_period, bool biased);
   static void send_lost_event(const JfrTicks& time, s4 lost_samples);
 };
 

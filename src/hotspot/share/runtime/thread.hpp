@@ -264,7 +264,7 @@ class Thread: public ThreadShadow {
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_FIELD_JFR;)      // Thread-local data for jfr
 
-  JFR_ONLY(DECLARE_FIELD_STACKWALKER)   // Thread-local data for stack-walking
+  JFR_ONLY(DEFINE_FIELD_STACKWALKER;)           // Thread-local data for stack-walking
 
   JvmtiRawMonitor* _current_pending_raw_monitor; // JvmtiRawMonitor this thread
                                                  // is waiting to lock
@@ -421,7 +421,7 @@ class Thread: public ThreadShadow {
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_ACCESSOR_JFR;)
 
-  JFR_ONLY(DEFINE_ACCESSOR_STACKWALKER)
+  JFR_ONLY(DEFINE_ACCESSOR_STACKWALKER;)
 
   // For tracking the Jvmti raw monitor the thread is pending on.
   JvmtiRawMonitor* current_pending_raw_monitor() {
@@ -592,9 +592,7 @@ protected:
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_OFFSET_JFR;)
 
-  JFR_ONLY(DEFINE_OFFSET_STACKWALKER)
-
-public:
+ public:
   ParkEvent * volatile _ParkEvent;            // for Object monitors, JVMTI raw monitors,
                                               // and ObjectSynchronizer::read_stable_mark
 

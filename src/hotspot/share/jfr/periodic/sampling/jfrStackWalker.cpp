@@ -42,8 +42,6 @@
 #include "runtime/threadSMR.hpp"
 #include "utilities/spinYield.hpp"
 
-volatile u4 JfrStackWalkerRequestQueue::_lost_requests_sum = 0;
-
 u4 JfrStackWalkerRequestQueue::size() const {
   return AtomicAccess::load_acquire(&_head);
 }
@@ -102,12 +100,7 @@ bool JfrStackWalkerRequestQueue::is_empty() const {
   return AtomicAccess::load_acquire(&_head) == 0;
 }
 
-u4 JfrStackWalkerRequestQueue::lost_requests() const {
-  return AtomicAccess::load(&_lost_requests);
-}
-
 void JfrStackWalkerRequestQueue::increment_lost_requests() {
-  AtomicAccess::inc(&_lost_requests_sum);
   AtomicAccess::inc(&_lost_requests);
 }
 
@@ -154,14 +147,6 @@ void JfrStackWalkerRequestQueue::resize_if_needed() {
       set_capacity(new_capacity);
     }
   }
-}
-
-bool JfrStackWalkerThreadLocal::is_enqueue_locked() const {
-  return AtomicAccess::load_acquire(&_lock) == ENQUEUE;
-}
-
-bool JfrStackWalkerThreadLocal::is_dequeue_locked() const {
-  return AtomicAccess::load_acquire(&_lock) == DEQUEUE;
 }
 
 bool JfrStackWalkerThreadLocal::try_acquire_enqueue_lock() {
@@ -475,15 +460,14 @@ static void report_thread(JfrStackWalkRequest& request, const JfrStackWalkerThre
 
   // JfrStackTrace allocates its frames in the ResourceArea.
   ResourceMark rm;
-  JfrStackTrace stack_trace(request.max_frames());
+  JfrStackTrace stack_trace;
   if (!stack_trace.record(jt, top_frame, in_continuation, request.sample_request())) {
     request.callback()->on_failure(jt, compute_tid(jt, in_continuation));
     return;
   }
   const traceid sid = JfrStackTraceRepository::add(stack_trace);
   assert(sid != 0, "invariant");
-  request.callback()->on_stacktrace(jt, sid, compute_tid(jt, in_continuation),
-                                    !stack_trace.full_stacktrace(), biased, stack_trace);
+  request.callback()->on_stacktrace(jt, sid, compute_tid(jt, in_continuation), biased);
 }
 
 /**

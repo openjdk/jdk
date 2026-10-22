@@ -71,14 +71,9 @@
 #define SAMPLING_CRITICAL_SECTION_OFFSET_JFR \
   JfrThreadLocal::sampling_critical_section_offset() + THREAD_LOCAL_OFFSET_JFR
 
-#define DECLARE_FIELD_STACKWALKER JfrStackWalkerThreadLocal _stackwalker_thread_local;
-
-#define THREAD_LOCAL_OFFSET_STACKWALKER Thread::stackwalker_thread_local_offset()
+#define DEFINE_FIELD_STACKWALKER JfrStackWalkerThreadLocal _stackwalker_thread_local
 
 #define DEFINE_ACCESSOR_STACKWALKER \
   JfrStackWalkerThreadLocal& stackwalker_thread_local() { return _stackwalker_thread_local; }
-
-#define DEFINE_OFFSET_STACKWALKER \
-  static ByteSize stackwalker_thread_local_offset() { return byte_offset_of(Thread, _stackwalker_thread_local); }
 
 #endif // SHARE_JFR_SUPPORT_JFRTHREADEXTENSION_HPP

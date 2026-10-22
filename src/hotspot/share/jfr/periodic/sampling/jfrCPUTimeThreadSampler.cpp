@@ -27,13 +27,13 @@
 #include "logging/log.hpp"
 
 #if defined(LINUX)
+#include "jfr/periodic/sampling/jfrStackWalker.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
 #include "runtime/atomicAccess.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
@@ -107,6 +107,7 @@ class JfrCPUSamplerThread : public NonJavaThread {
   volatile u4 _active_signal_handlers;
   volatile bool _warned_about_timer_creation_failure;
   volatile bool _signal_handler_installed;
+
   static const u4 STOP_SIGNAL_BIT = 0x80000000;
 
   JfrCPUSamplerThread(JfrCPUSamplerThrottle& throttle);
@@ -120,6 +121,7 @@ class JfrCPUSamplerThread : public NonJavaThread {
   void recompute_period_if_needed();
 
   void set_throttle(JfrCPUSamplerThrottle& throttle);
+  int64_t get_sampling_period() const { return AtomicAccess::load(&_current_sampling_period_ns); };
 
   bool create_timer_for_thread(JavaThread* thread, timer_t &timerid);
 
@@ -141,11 +143,10 @@ public:
   void on_javathread_create(JavaThread* thread);
   void on_javathread_terminate(JavaThread* thread);
 
+  void handle_timer_signal(siginfo_t* info, void* context);
   bool init_timers();
   void stop_timer();
   virtual void print_on(outputStream* st) const;
-
-  int64_t get_sampling_period() const { return AtomicAccess::load(&_current_sampling_period_ns); };
 };
 
 JfrCPUSamplerThread::JfrCPUSamplerThread(JfrCPUSamplerThrottle& throttle) :
@@ -164,10 +165,10 @@ void JfrCPUSamplerThread::on_javathread_create(JavaThread* thread) {
       !AtomicAccess::load_acquire(&_signal_handler_installed)) {
     return;
   }
+  JfrThreadLocal* tl = thread->jfr_thread_local();
+  assert(tl != nullptr, "invariant");
   timer_t timerid;
   if (create_timer_for_thread(thread, timerid)) {
-    JfrThreadLocal* tl = thread->jfr_thread_local();
-    assert(tl != nullptr, "invariant");
     tl->set_cpu_timer(&timerid);
   } else {
     if (!AtomicAccess::or_then_fetch(&_warned_about_timer_creation_failure, true)) {
@@ -255,7 +256,7 @@ void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, Tick
 
 static volatile size_t biased_count = 0;
 
-void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid sid, Tickspan cpu_time_period, bool biased, JfrStackTrace& stacktrace) {
+void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid sid, Tickspan cpu_time_period, bool biased) {
   EventCPUTimeSample event(UNTIMED);
   event.set_failed(false);
   event.set_starttime(start_time);
@@ -380,6 +381,21 @@ void handle_timer_signal(int signo, siginfo_t* info, void* context) {
   _instance->handle_timer_signal(info, context);
 }
 
+
+void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* context) {
+  if (info->si_code != SI_TIMER) {
+    // not the signal we are interested in
+    return;
+  }
+  assert(_sampler != nullptr, "invariant");
+
+  if (!_sampler->increment_signal_handler_count()) {
+    return;
+  }
+  _sampler->handle_timer_signal(info, context);
+  _sampler->decrement_signal_handler_count();
+}
+
 class JfrCPUTimeJfrStackWalkerCallback : public JfrStackWalkerCallback {
   JfrTicks _sample_ticks;
   Tickspan _cpu_time_period;
@@ -405,12 +421,11 @@ public:
     _cpu_time_period(cpu_time_period) {
   }
 
-  void on_stacktrace(JavaThread* jt, traceid sid, traceid tid, bool truncated, bool biased,
-                     JfrStackTrace& stack_trace) final {
+  void on_stacktrace(JavaThread* jt, traceid sid, traceid tid, bool biased) final {
     Thread* const current = Thread::current();
     JfrThreadLocal::impersonate(current, tid);
     assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
-    JfrCPUTimeThreadSampling::send_event(_sample_ticks, sid, _cpu_time_period, biased, stack_trace);
+    JfrCPUTimeThreadSampling::send_event(_sample_ticks, sid, _cpu_time_period, biased);
 
     if (current == jt) {
       // TODO: Safepoint latency would be better and more generically tracked in the
@@ -437,36 +452,23 @@ public:
     JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), (s4)count);
     JfrThreadLocal::stop_impersonating(current);
   }
-
 };
 
-void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* context) {
-  if (info->si_code != SI_TIMER) {
-    // not the signal we are interested in
-    return;
-  }
-  assert(_sampler != nullptr, "invariant");
-
-  if (!_sampler->increment_signal_handler_count()) {
-    return;
-  }
-
+void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
   JfrTicks now = JfrTicks::now();
-  // The sampling period might be too low for the current Linux configuration
-  // so samples might be skipped and we have to compute the actual period.
-  int64_t period = _sampler->get_sampling_period() * (info->si_overrun + 1);
+  JavaThread* jt = get_java_thread_if_valid();
+  if (jt == nullptr) {
+    return;
+  }
+  // the sampling period might be too low for the current Linux configuration
+  // so samples might be skipped and we have to compute the actual period
+  int64_t period = get_sampling_period() * (info->si_overrun + 1);
   Tickspan cpu_time_period = Ticks(period / 1000000000.0 * JfrTime::frequency()) - Ticks(0);
 
-  JavaThread* current = get_java_thread_if_valid();
-  if (current != nullptr) {
-    JfrStackWalkRequest request;
-    request.set_max_frames(JfrOptionSet::stackdepth());
-    request.construct_callback<JfrCPUTimeJfrStackWalkerCallback>(now, cpu_time_period);
-    JfrStackWalker::request_stack_trace(request, current, context, true /* suspended */);
-  }
-  _sampler->decrement_signal_handler_count();
+  JfrStackWalkRequest request;
+  request.construct_callback<JfrCPUTimeJfrStackWalkerCallback>(now, cpu_time_period);
+  JfrStackWalker::request_stack_trace(request, jt, context, true /* suspended */);
 }
-
 
 static const int SIG = SIGPROF;
 
@@ -649,9 +651,7 @@ JfrCPUTimeThreadSampling& JfrCPUTimeThreadSampling::instance() {
 }
 
 JfrCPUTimeThreadSampling* JfrCPUTimeThreadSampling::create() {
-  if (_instance == nullptr) {
-    _instance = new JfrCPUTimeThreadSampling();
-  }
+  _instance = new JfrCPUTimeThreadSampling();
   return _instance;
 }
 
@@ -677,6 +677,5 @@ void JfrCPUTimeThreadSampling::on_javathread_create(JavaThread* thread) {
 
 void JfrCPUTimeThreadSampling::on_javathread_terminate(JavaThread* thread) {
 }
-
 
 #endif // defined(LINUX) && defined(INCLUDE_JFR)

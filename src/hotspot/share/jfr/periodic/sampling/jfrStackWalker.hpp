@@ -36,7 +36,6 @@
 
 class JavaThread;
 class JfrNativeStackWalkerThread;
-class JfrStackTrace;
 
 class JfrStackWalkerCallback {
 public:
@@ -55,9 +54,7 @@ public:
   // stack-trace repository. `sid` is the assigned stack-trace id; `tid` is
   // the appropriate thread id (vthread id when the sample is in a continuation,
   // jvm thread id otherwise).
-  virtual void on_stacktrace(JavaThread* jt, traceid sid, traceid tid,
-                             bool truncated, bool biased,
-                             JfrStackTrace& stack_trace) = 0;
+  virtual void on_stacktrace(JavaThread* jt, traceid sid, traceid tid, bool biased) = 0;
 
   // Called when no stack-trace could be obtained for the request. `tid` is the
   // jvm thread id of the sampled thread.
@@ -80,16 +77,11 @@ public:
 
 private:
   alignas(CALLBACK_STORAGE_ALIGNMENT) char _callback_storage[CALLBACK_STORAGE_SIZE];
-  u4 _max_frames;
   JfrSampleRequest _sample_request;
 
 public:
   JfrStackWalkRequest() :
-    _max_frames(0),
     _sample_request() {}
-
-  void set_max_frames(u4 max_frames) { _max_frames = max_frames; }
-  u4 max_frames() const { return _max_frames; }
 
   JfrSampleRequest& sample_request() { return _sample_request; }
 
@@ -130,8 +122,6 @@ class JfrStackWalkerRequestQueue {
   volatile u4 _lost_requests;
   volatile u4 _lost_requests_due_to_queue_full;
 
-  static volatile u4 _lost_requests_sum;
-
 public:
   JfrStackWalkerRequestQueue();
 
@@ -148,8 +138,6 @@ public:
   void set_capacity(u4 capacity);
 
   bool is_empty() const;
-
-  u4 lost_requests() const;
 
   void increment_lost_requests();
 
@@ -175,6 +163,12 @@ class JfrStackWalkerThreadLocal {
 
   JfrStackWalkerRequestQueue _queue;
 
+  // The stack-walker lock has three different states:
+  // - ENQUEUE: lock for enqueuing stack-walk requests
+  // - DEQUEUE: lock for dequeuing stack-walk requests
+  // - UNLOCKED: no lock held
+  // This ensures that we can safely enqueue and dequeue stack-walk requests,
+  // without interleaving
   enum JfrStackWalkerLockState {
     UNLOCKED,
     // locked for enqueuing
@@ -206,16 +200,6 @@ public:
   JfrStackWalkerRequestQueue& queue() {
     return _queue;
   }
-
-  // The stack-walker lock has three different states:
-  // - ENQUEUE: lock for enqueuing stack-walk requests
-  // - DEQUEUE: lock for dequeuing stack-walk requests
-  // - UNLOCKED: no lock held
-  // This ensures that we can safely enqueue and dequeue stack-walk requests,
-  // without interleaving
-
-  bool is_enqueue_locked() const;
-  bool is_dequeue_locked() const;
 
   void set_has_requests(bool has_events);
   bool has_requests() const;
@@ -249,9 +233,8 @@ public:
   // Called when a new Java thread is created to initialize its queue.
   static void on_javathread_create(JavaThread* thread);
 
-  // Request a stack trace. The caller must prepare the request by:
-  // 1. Constructing a callback via request.construct_callback<T>(...)
-  // 2. Setting request.set_max_frames()
+  // Request a stack trace. The caller must prepare the request by
+  // constructing a callback via request.construct_callback<T>(...).
   // This API is signal-safe (no allocations).
   static void request_stack_trace(JfrStackWalkRequest& request, JavaThread* jt, const void* context, bool thread_is_suspended);
 

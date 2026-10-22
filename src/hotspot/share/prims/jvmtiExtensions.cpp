@@ -37,9 +37,6 @@
 #if INCLUDE_JFR
 #include "jfr/periodic/sampling/jfrStackWalker.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
-#include "jfr/recorder/service/jfrOptionSet.hpp"
-#include "jfr/recorder/stacktrace/jfrStackTrace.hpp"
-#include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
 #endif
@@ -49,6 +46,7 @@ GrowableArray<jvmtiExtensionFunctionInfo*>* JvmtiExtensions::_ext_functions;
 
 // the list of extension events
 GrowableArray<jvmtiExtensionEventInfo*>* JvmtiExtensions::_ext_events;
+
 
 //
 // Extension Functions
@@ -191,8 +189,7 @@ public:
     _user_data(user_data) {
   }
 
-  void on_stacktrace(JavaThread* jt, traceid sid, traceid tid, bool truncated, bool biased,
-                     JfrStackTrace& stack_trace) final {
+  void on_stacktrace(JavaThread* jt, traceid sid, traceid tid, bool biased) final {
     EventStackTraceRequest event(UNTIMED);
     event.set_starttime(_sample_ticks);
     event.set_eventThread(tid);
@@ -268,7 +265,6 @@ static jvmtiError JNICALL RequestJFRStackTrace(const jvmtiEnv* env, ...) {
     const bool thread_is_suspended = (target == current_jt) || (ucontext != nullptr);
 
     JfrStackWalkRequest request;
-    request.set_max_frames(JfrOptionSet::stackdepth());
     request.construct_callback<JfrStackTraceRequestCallback>(user_data);
     JfrStackWalker::request_stack_trace(request, target, ucontext, thread_is_suspended);
     return JVMTI_ERROR_NONE;
