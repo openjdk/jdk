@@ -26,7 +26,7 @@ package compiler.valhalla.valuetypes;
 /*
  * @test
  * @enablePreview
- * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:CompileOnly=${test.main.class}::test1  ${test.main.class}
+ * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:CompileOnly=${test.main.class}::test*  ${test.main.class}
  */
 
 
@@ -37,76 +37,64 @@ public class TestCCMismatchNativeMethods {
 
     value record V1(int x) { }
 
-    static abstract value class V2 {
-        private int x;
-
-        V2(int x) {
-            this.x = x;
-        }
-        
-        abstract int m1(V1 v);
-    }
-
-    static value class V3 extends V2 {
-        V3(int x) {
-            super(x);
-        }
-
-        native int m1(V1 v);
-    }
-
-    static value class V4 extends V2 {
-        V4(int x) {
-            super(x);
-        }
-
-        int m1(V1 v) {
-            return v.x;
-        }
-    }
-
-    static value class V5 extends V2 {
-        V5(int x) {
-            super(x);
-        }
-
-        int m1(V1 v) {
-            return v.x;
-        }
-    }
-
-    static class A {
+    static class A1 {
         int m1(V1 v1, V1 v2) {
             return v1.x;
         }
     }
 
-    static class B extends A {
+    static class B1 extends A1 {
         native int m1(V1 v1, V1 v2);
     }
 
-    static class C extends A {
+    static class C1 extends A1 {
     }
     
-    static int test1(A a, V1 v) {
+    static class A2 {
+        int m1(V1 v1, V1 v2) {
+            return v1.x;
+        }
+    }
+
+    static class B2 extends A2 {
+    }
+
+    static class C2 extends A2 {
+    }
+
+    static class D2 extends A2 {
+        native int m1(V1 v1, V1 v2);
+    }
+    
+    static int test1(A1 a, V1 v) {
         return a.m1(v, v);
     }
 
-    static int test2(V2 v1, V1 v2) {
-        return v1.m1(v2);
+    static int test2(A2 a, V1 v) {
+        return a.m1(v, v);
     }
 
     public static void main(String[] args) {
-        A a = new A();
-        B b = new B();
-        C c = new C();
+        A1 a1 = new A1();
+        B1 b1 = new B1();
+        C1 c1 = new C1();
+        A2 a2 = new A2();
+        B2 b2 = new B2();
+        C2 c2 = new C2();
         for (int i = 0; i < 20_000; i++) {
-            // test1(a, new V1(42));
-            // test1(b, new V1(42));
-            // test1(c, new V1(42));
-            test2(new V3(42), new V1(42));
-            test2(new V4(42), new V1(42));
-            test2(new V5(42), new V1(42));
+            test1(a1, new V1(42));
+            test1(b1, new V1(42));
+            test1(c1, new V1(42));
+            test2(a2, new V1(42));
+            test2(b2, new V1(42));
+            test2(c2, new V1(42));
+        }
+        D2 d2 = new D2();
+        for (int i = 0; i < 20_000; i++) {
+            test2(a2, new V1(42));
+            test2(b2, new V1(42));
+            test2(c2, new V1(42));
+            test2(d2, new V1(42));
         }
     }
 }
