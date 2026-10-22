@@ -767,9 +767,9 @@ void NullCheckVisitor::do_Throw          (Throw*           x) { nce()->clear_las
 void NullCheckVisitor::do_Base           (Base*            x) {}
 void NullCheckVisitor::do_OsrEntry       (OsrEntry*        x) {}
 void NullCheckVisitor::do_ExceptionObject(ExceptionObject* x) { nce()->handle_ExceptionObject(x); }
-void NullCheckVisitor::do_UnsafeGet      (UnsafeGet*       x) {}
-void NullCheckVisitor::do_UnsafePut      (UnsafePut*       x) {}
-void NullCheckVisitor::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {}
+void NullCheckVisitor::do_UnsafeGet      (UnsafeGet*       x) { nce()->clear_last_explicit_null_check(); }
+void NullCheckVisitor::do_UnsafePut      (UnsafePut*       x) { nce()->clear_last_explicit_null_check(); }
+void NullCheckVisitor::do_UnsafeGetAndSet(UnsafeGetAndSet* x) { nce()->clear_last_explicit_null_check(); }
 void NullCheckVisitor::do_ProfileCall    (ProfileCall*     x) { nce()->clear_last_explicit_null_check();
                                                                 nce()->handle_ProfileCall(x); }
 void NullCheckVisitor::do_ProfileReturnType (ProfileReturnType* x) { nce()->handle_ProfileReturnType(x); }
@@ -1094,6 +1094,7 @@ void NullCheckEliminator::handle_Invoke(Invoke* x) {
 
 
 void NullCheckEliminator::handle_NewInstance(NewInstance* x) {
+  clear_last_explicit_null_check();
   set_put(x);
   if (PrintNullCheckElimination) {
     tty->print_cr("NewInstance %d is non-null", x->id());

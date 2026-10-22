@@ -30,6 +30,7 @@
 #include "opto/compile.hpp"
 #include "opto/type.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/debug.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -496,7 +497,7 @@ public:
     Compile::current()->record_modified_node(this);
   }
   // Find first occurrence of n among my edges:
-  int find_edge(Node* n);
+  int find_edge(const Node* n) const;
   int find_prec_edge(Node* n) {
     for (uint i = req(); i < len(); i++) {
       if (_in[i] == n) return i;
@@ -1268,12 +1269,28 @@ public:
   // Be sure to do the hash_delete game in the "rehash" variant.
   void raise_bottom_type(const Type* new_type);
 
-  // Get the address type with which this node uses and/or defs memory,
-  // or null if none.  The address type is conservatively wide.
-  // Returns non-null for calls, membars, loads, stores, etc.
-  // Returns TypePtr::BOTTOM if the node touches memory "broadly".
-  virtual const class TypePtr *adr_type() const { return nullptr; }
+  // Get the memory which this node produces.
+  // Generally, if you are unsure whether you need out_adr_type or in_adr_type:
+  // - A Store, a LoadStore, or a Phi must have the same out_adr_type and in_adr_type, this is
+  //   essential in its semantics, so sometimes it is unclear whether out_adr_type or in_adr_type
+  //   should be invoked. For those nodes, calling either is fine correctness-wise.
+  // - A Load has no out_adr_type, combined with the fact that a Store or a LoadStore has the same
+  //   out_adr_type and in_adr_type, it is always correct to use in_adr_type for a Mem or a
+  //   LoadStore (these nodes answer true for is_Mem()).
+  // - For other nodes, it is almost always correct to use out_adr_type, except when we are
+  //   computing a node's anti-dependence, or when we are trying to modify the memory input of a
+  //   node.
+  const TypePtr* out_adr_type() const;
 
+  // Get the memory which this node consumes, it must include the out_adr_type, since if the node
+  // produces some memory, it also kills that memory, which is a form of consuming
+  const TypePtr* in_adr_type() const { return in_adr_type_impl(); }
+
+private:
+  virtual const TypePtr* out_adr_type_impl() const { return nullptr; }
+  virtual const TypePtr* in_adr_type_impl() const { return out_adr_type_impl(); }
+
+public:
   // Return an existing node which computes the same function as this node.
   // The optimistic combined algorithm requires this to return a Node which
   // is a small number of steps away (e.g., one of my inputs).
@@ -1463,6 +1480,8 @@ public:
   bool is_memory_phi() const { return is_Phi() && bottom_type() == Type::MEMORY; }
 
   bool is_div_or_mod(BasicType bt) const;
+
+  bool is_boxing_or_unboxing_call() const;
 
 //----------------- Printing, etc
 #ifndef PRODUCT
@@ -1972,7 +1991,7 @@ public:
   }
 
   // Used after parsing to remove useless nodes before Iterative GVN
-  void remove_useless_nodes(VectorSet& useful);
+  void remove_useless_nodes(const VectorSet& useful);
 
   // If the idx of the Nodes change, we must recompute the VectorSet
   void recompute_idx_set() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,14 +251,6 @@ abstract class AbstractDCmd {
             }
         }
         throw new DCmdException("Could not find %s.\n\nUse JFR.check without options to see list of all available recordings.", name);
-    }
-
-    protected final String exampleRepository() {
-        if ("\r\n".equals(System.lineSeparator())) {
-            return "C:\\Repositories";
-        } else {
-            return "/Repositories";
-        }
     }
 
     protected final String exampleFilename() {

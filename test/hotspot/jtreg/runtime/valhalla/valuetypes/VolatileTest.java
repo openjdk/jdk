@@ -30,8 +30,9 @@ package runtime.valhalla.valuetypes;
  *          java.base/jdk.internal.vm.annotation
  * @library /test/lib
  * @enablePreview
+ * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @compile VolatileTest.java
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UseFieldFlattening runtime.valhalla.valuetypes.VolatileTest
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UseFieldFlattening ${test.main.class}
  */
 
 import jdk.internal.misc.Unsafe;

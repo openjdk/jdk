@@ -33,7 +33,6 @@
 #include "gdefs.h"
 
 #include <sys/param.h>
-#include <sys/utsname.h>
 
 #ifdef AIX
 #define dladdr JVM_dladdr
@@ -50,8 +49,6 @@
     }
 
 static void *awtHandle = NULL;
-
-typedef jint JNICALL JNI_OnLoad_type(JavaVM *vm, void *reserved);
 
 /* Initialize the Java VM instance variable when the library is
    first loaded */
@@ -102,10 +99,7 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
     char buf[MAXPATHLEN];
     int32_t len;
     char *p, *tk;
-    JNI_OnLoad_type *JNI_OnLoad_ptr;
-    struct utsname name;
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(vm, JNI_VERSION_1_2);
-    void *v;
 
     if (awtHandle != NULL) {
         /* Avoid several loading attempts */

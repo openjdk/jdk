@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package com.sun.security.sasl.ntlm;
 
 import com.sun.security.ntlm.NTLMException;
 import com.sun.security.ntlm.Server;
+import sun.security.jca.JCAUtil;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.Random;
@@ -67,8 +69,9 @@ import javax.security.sasl.*;
  *    String, the domain of the server, default is server name (fqdn parameter)
  *
  * com.sun.security.sasl.ntlm.random
- *    java.util.Random, the nonce source. Default null, an internal
- *    java.util.Random object will be used
+ *    java.util.Random, the nonce source. Users are encouraged to provide
+ *    a java.security.SecureRandom object. If not provided, then an internal
+ *    SecureRandom object is used.
  *
  * Negotiated Properties:
  *
@@ -123,7 +126,7 @@ final class NTLMServer implements SaslServer {
             version = (String)props.get(NTLM_VERSION);
             rtmp = (Random)props.get(NTLM_RANDOM);
         }
-        random = rtmp != null ? rtmp : new Random();
+        random = rtmp != null ? rtmp : JCAUtil.getDefSecureRandom();
 
         if (version == null) {
             version = System.getProperty("ntlm.version");

@@ -114,10 +114,7 @@ void PhaseCFG::ensure_node_is_at_block_or_above(Node* n, Block* b) {
 // The val is the pointer being checked for nullness or
 // decodeHeapOop_not_null node if it did not fold into address.
 void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allowed_reasons) {
-  // Assume if null check need for 0 offset then always needed
-  // Intel solaris doesn't support any null checks yet and no
-  // mechanism exists (yet) to set the switches at an os_cpu level
-  if( !ImplicitNullChecks || MacroAssembler::needs_explicit_null_check(0)) return;
+  if (!ImplicitNullChecks) return;
 
   // Make sure the ptr-is-null path appears to be uncommon!
   float f = block->end()->as_MachIf()->_prob;
@@ -328,21 +325,30 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       }
     }
 
-    // Check ctrl input to see if the null-check dominates the memory op
     Block *cb = get_block_for_node(mach);
-    cb = cb->_idom;             // Always hoist at least 1 block
-    if( !was_store ) {          // Stores can be hoisted only one block
-      while( cb->_dom_depth > (block->_dom_depth + 1))
-        cb = cb->_idom;         // Hoist loads as far as we want
-      // The non-null-block should dominate the memory op, too. Live
-      // range spilling will insert a spill in the non-null-block if it is
-      // needs to spill the memory op for an implicit null check.
-      if (cb->_dom_depth == (block->_dom_depth + 1)) {
-        if (cb != not_null_block) continue;
-        cb = cb->_idom;
+
+    if (was_store) {
+      // A store can only be moved from the immediate non-null successor.
+      if (cb != not_null_block) {
+        continue;
+      }
+    } else {
+      // A load can be used here only if its block is dominated by the
+      // non-null successor. Check this explicitly because a candidate load
+      // may have been scheduled on the null path instead.
+      // For example, in JDK-8389578, loop opts did not recognize equivalent
+      // oop and value-type null_marker checks, leaving a redundant check.
+      // The load was protected by earlier null checks, but its only use
+      // was in the scalarized debug info of the redundant check's uncommon
+      // trap. This allowed the load to be scheduled on that check's null path.
+      if (!not_null_block->dominates(cb)) {
+        continue;
       }
     }
-    if( cb != block ) continue;
+
+    if (not_null_block->_idom != block) {
+      continue;
+    }
 
     // Found a memory user; see if it can be hoisted to check-block
     uint vidx = 0;              // Capture index of value into memop

@@ -59,7 +59,7 @@ public class AOTCacheConsistency {
 
         // Modify each of the region individually. The production should fail to run
         // with these args;
-        String extraVMArgs[] = {"-XX:+VerifySharedSpaces", "-XX:AOTMode=on"};
+        String extraVMArgs[] = {"-XX:+VerifySharedSpaces", "-XX:AOTMode=required"};
         tester.setCheckExitValue(false);
 
         for (int i = 0; i < regions.length; i++) {
