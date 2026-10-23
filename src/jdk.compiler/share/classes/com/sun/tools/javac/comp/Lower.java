@@ -2275,6 +2275,10 @@ public class Lower extends TreeTranslator {
         // Class is serializable
         return true;
       }
+      if (sym.isValueClass()) {
+          // Omitting enclosing instance field in value classes changes ==
+          return true;
+      }
       return false;
     }
 
