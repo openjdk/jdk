@@ -11713,45 +11713,26 @@ instruct vabs(vecX dst, vecX src) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-// TODO : check the placement for this
-instruct vneg4F_reg(vecX dst, vecX src) %{
+instruct vneg(vecX dst, vecX src) %{
   match(Set dst (NegVF src));
-  format %{ "VFLNSB $dst,$src\t// negate packed4F" %}
-  ins_encode %{
-    __ z_vflnsb($dst$$VectorRegister, $src$$VectorRegister);
-  %}
-  ins_pipe(pipe_class_dummy);
-%}
-
-// TODO : check the placement for this
-instruct vneg4D_reg(vecX dst, vecX src) %{
   match(Set dst (NegVD src));
-  format %{ "VFLNDB $dst,$src\t// negate packed4D" %}
+  size(6);
+  format %{ "VFLN $dst,$src\t// negate packed" %}
   ins_encode %{
-    __ z_vflndb($dst$$VectorRegister, $src$$VectorRegister);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_FLOAT:
+        __ z_vflnsb($dst$$VectorRegister, $src$$VectorRegister);
+        break;
+      case T_DOUBLE:
+        __ z_vflndb($dst$$VectorRegister, $src$$VectorRegister);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
   %}
   ins_pipe(pipe_class_dummy);
 %}
-
-// TODO : Only NegVI and NegVL is defined as valid Opcodes
-// TODO: Find a test case that uses these
-//instruct vnegI_reg(vecX dst, vecX src) %{
-  //match(Set dst (NegVI src));
-  //ins_encode %{
-    //__ stop("Crash here");
-    //__ z_vlcf($dst$$VectorRegister, $src$$VectorRegister);
-  //%}
-  //ins_pipe(pipe_class_dummy);
-//%}
-
-//instruct vabsL_reg(vecX dst, vecX src) %{
-  //match(Set dst (AbsVL src));
-  //ins_encode %{
-    //__ z_vlpg($dst$$VectorRegister, $src$$VectorRegister);
-  //%}
-  //ins_pipe(pipe_class_dummy);
-//%}
-//
 
 // TODO: Find the correct place for it
 instruct vmax_reg(vecX dst, vecX src1, vecX src2) %{
