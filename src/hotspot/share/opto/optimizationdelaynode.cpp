@@ -50,16 +50,30 @@ Node* OptimizationDelayNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-const Type* OptimizationDelayNode::sample_type_between(const Type* t_wide, const Type* t_narrow, Stress& stress) {
-  // TODO: impl
+template<typename CT>
+static const CT* sample_integer_type(const CT* t_wide, const CT* t_narrow, Stress& stress) {
   return t_narrow;
+}
+
+const Type* OptimizationDelayNode::sample_type_between(const Type* t_wide, const Type* t_narrow, Stress& stress) {
+  if (t_wide->isa_int() != nullptr) {
+    return sample_integer_type<TypeInt>(t_wide->is_int(), t_narrow->is_int(), stress);
+  } else if (t_wide->is_long() != nullptr) {
+    return sample_integer_type<TypeLong>(t_wide->is_long(), t_narrow->is_long(), stress);
+  } else {
+    // For all other types just pick one of the two, i.e.
+    // narrow only in 50% of all cases.
+    // TODO: impl some more general idea
+    return stress.random() % 2 == 0 ? t_wide : t_narrow;
+  }
 }
 
 void OptimizationDelayNode::narrow_hold_type(const Type* t_narrow, Stress& stress) {
   if (_stage > Stage::HoldType) { return; }
+
   const Type* t_old = _hold_type;
   _hold_type = sample_type_between(t_old, t_narrow, stress);
-  // TODO: impl, and asserts!
+
   if (TraceOptimizationDelay) {
     tty->print_cr("[OptizationDelay] narrow hold type between:");
     tty->print("  old hold type: "); t_old->dump(); tty->cr();
