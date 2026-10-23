@@ -51,7 +51,7 @@ public:
     // Yes, otherwise for singletons we immediately collapse the node due to sigleton type.
     // TODO: type assert?
     // TODO: macro flags?
-    //C->add_optimization_delay(this);
+    C->add_optimization_delay_node(this);
     init_class_id(Class_OptimizationDelay);
   }
 

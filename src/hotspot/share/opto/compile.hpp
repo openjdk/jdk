@@ -852,6 +852,7 @@ public:
   void reset_allow_macro_nodes() { _allow_macro_nodes = false;  }
 
   // TODO: add stuff here
+  void add_optimization_delay_node(OptimizationDelayNode* n);
   void remove_optimization_delay_node(OptimizationDelayNode* n);
 
   void record_for_post_loop_opts_igvn(Node* n);

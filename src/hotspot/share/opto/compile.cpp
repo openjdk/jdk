@@ -405,7 +405,7 @@ void Compile::remove_useless_node(Node* dead) {
   if (dead->is_macro()) {
     remove_macro_node(dead);
   }
-  if (dead->Opcode() == Op_OptimizationDelay) {
+  if (dead->is_OptimizationDelay()) {
     remove_optimization_delay_node(dead->as_OptimizationDelay());
   }
   if (dead->is_expensive()) {
@@ -1974,6 +1974,14 @@ void Compile::mark_parse_predicate_nodes_useless(PhaseIterGVN& igvn) {
   _parse_predicates.clear();
 }
 
+// TODO: move to hpp?
+void Compile::add_optimization_delay_node(OptimizationDelayNode* n) {
+  assert(n != nullptr, "no nullptr");
+  assert(!_optimization_delay_nodes.contains(n), "duplicate");
+  _optimization_delay_nodes.append(n);
+}
+
+// TODO: move to hpp?
 void Compile::remove_optimization_delay_node(OptimizationDelayNode* n) {
   assert(n != nullptr, "no nullptr");
   _optimization_delay_nodes.remove(n);
