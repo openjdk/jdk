@@ -260,10 +260,10 @@ final class LibFallback {
         static final MemorySegment SINT8_TYPE = MemorySegment.ofAddress(ffi_type_sint8());
         static final MemorySegment UINT16_TYPE = MemorySegment.ofAddress(ffi_type_uint16());
         static final MemorySegment SINT16_TYPE = MemorySegment.ofAddress(ffi_type_sint16());
-        static final MemorySegment SINT32_TYPE = MemorySegment.ofAddress(ffi_type_sint32());
         static final MemorySegment UINT32_TYPE = MemorySegment.ofAddress(ffi_type_uint32());
-        static final MemorySegment SINT64_TYPE = MemorySegment.ofAddress(ffi_type_sint64());
+        static final MemorySegment SINT32_TYPE = MemorySegment.ofAddress(ffi_type_sint32());
         static final MemorySegment UINT64_TYPE = MemorySegment.ofAddress(ffi_type_uint64());
+        static final MemorySegment SINT64_TYPE = MemorySegment.ofAddress(ffi_type_sint64());
         static final MemorySegment FLOAT_TYPE = MemorySegment.ofAddress(ffi_type_float());
         static final MemorySegment DOUBLE_TYPE = MemorySegment.ofAddress(ffi_type_double());
         static final MemorySegment POINTER_TYPE = MemorySegment.ofAddress(ffi_type_pointer());
