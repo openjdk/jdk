@@ -547,11 +547,11 @@ class DataNodesOnPathsToTargets : public StackObj {
   // trivially pass the _node_filter.
   NodeCheck _is_target_node;
   // The resulting node collection of all nodes on paths from source->target(s).
-  Unique_Node_List _collected_nodes;
+  Unique_Node_List<Node> _collected_nodes;
   // List to track all nodes visited on the search for target nodes starting at a start node. These nodes are then used
   // in backtracking to find the nodes actually being on a start->target(s) path. This list also serves as visited set
   // to avoid double visits of a node which could happen with diamonds shapes.
-  Unique_Node_List _nodes_to_visit;
+  Unique_Node_List<const Node> _nodes_to_visit;
 
  public:
   DataNodesOnPathsToTargets(NodeCheck node_filter, NodeCheck is_target_node)
@@ -563,7 +563,7 @@ class DataNodesOnPathsToTargets : public StackObj {
   // the target node predicate to stop discovering more inputs and start backtracking. The implementation is done
   // with two BFS traversal: One to collect the target nodes (if any) and one to backtrack from the target nodes to
   // find all other nodes on the start->target(s) paths.
-  const Unique_Node_List& collect(Node* start_node) {
+  const Unique_Node_List<Node>& collect(Node* start_node) {
     assert(_collected_nodes.size() == 0 && _nodes_to_visit.size() == 0, "should not call this method twice in a row");
     assert(!_is_target_node(start_node), "no trivial paths where start node is also a target node");
 
@@ -582,7 +582,7 @@ class DataNodesOnPathsToTargets : public StackObj {
   void collect_target_nodes(Node* start_node) {
     _nodes_to_visit.push(start_node);
     for (uint i = 0; i < _nodes_to_visit.size(); i++) {
-      Node* next = _nodes_to_visit[i];
+      const Node* next = _nodes_to_visit[i];
       for (uint j = 1; j < next->req(); j++) {
         Node* input = next->in(j);
         if (_is_target_node(input)) {
@@ -623,7 +623,7 @@ TemplateAssertionExpression::clone(const TransformStrategyForOpaqueLoopNodes& tr
   DataNodesOnPathsToTargets data_nodes_on_path_to_targets(TemplateAssertionExpressionNode::is_maybe_in_expression,
                                                           is_opaque_loop_node);
   Node* bool_into_opaque_node = _opaque_node->in(1);
-  const Unique_Node_List& collected_nodes = data_nodes_on_path_to_targets.collect(bool_into_opaque_node);
+  const Unique_Node_List<Node>& collected_nodes = data_nodes_on_path_to_targets.collect(bool_into_opaque_node);
   DataNodeGraph data_node_graph(collected_nodes, _phase);
   const OrigToNewHashtable& orig_to_new = data_node_graph.clone_with_opaque_loop_transform_strategy(transform_strategy,
                                                                                                     new_control);
@@ -659,18 +659,27 @@ TemplateAssertionExpression::clone_and_fold_opaque_loop_nodes(Node* new_control)
   return opaque_initialized_opaque;
 }
 
+static void push_non_cfg_inputs_of(Unique_Node_List<Node>& list, const Node* node) {
+  for (uint i = 1; i < node->req(); i++) {
+    Node* input = node->in(i);
+    if (input != nullptr && !input->is_CFG()) {
+      list.push(input);
+    }
+  }
+}
+
 // Check if this node belongs a Template Assertion Expression (including OpaqueLoop* nodes).
 bool TemplateAssertionExpressionNode::is_in_expression(Node* node) {
   if (is_maybe_in_expression(node)) {
     ResourceMark rm;
-    Unique_Node_List list;
+    Unique_Node_List<Node> list;
     list.push(node);
     for (uint i = 0; i < list.size(); i++) {
       Node* next = list.at(i);
       if (next->is_OpaqueLoopInit() || next->is_OpaqueLoopStride()) {
         return true;
       } else if (is_maybe_in_expression(next)) {
-        list.push_non_cfg_inputs_of(next);
+        push_non_cfg_inputs_of(list, next);
       }
     }
   }
@@ -1346,8 +1355,8 @@ void EliminateUselessPredicates::verify_loop_nodes_of_useless_templates_assertio
   verify_associated_loop_nodes_are_dead(loop_nodes_of_useless_template_assertion_predicates);
 }
 
-Unique_Node_List EliminateUselessPredicates::collect_loop_nodes_of_useless_template_assertion_predicates() const {
-  Unique_Node_List loop_nodes_of_useless_template_assertion_predicates;
+Unique_Node_List<const CountedLoopNode> EliminateUselessPredicates::collect_loop_nodes_of_useless_template_assertion_predicates() const {
+  Unique_Node_List<const CountedLoopNode> loop_nodes_of_useless_template_assertion_predicates;
   for (int i = 0; i < _template_assertion_predicate_opaques.length(); i++) {
     OpaqueTemplateAssertionPredicateNode* opaque_node = _template_assertion_predicate_opaques.at(i);
     if (opaque_node->is_useless()) {
@@ -1358,7 +1367,7 @@ Unique_Node_List EliminateUselessPredicates::collect_loop_nodes_of_useless_templ
 }
 
 void EliminateUselessPredicates::verify_associated_loop_nodes_are_dead(
-    const Unique_Node_List& loop_nodes_of_useless_template_assertion_predicates) const {
+    const Unique_Node_List<const CountedLoopNode>& loop_nodes_of_useless_template_assertion_predicates) const {
   if (loop_nodes_of_useless_template_assertion_predicates.size() == 0) {
     return;
   }
@@ -1366,7 +1375,7 @@ void EliminateUselessPredicates::verify_associated_loop_nodes_are_dead(
     IdealLoopTree* loop = iterator.current();
     Node* loop_head = loop->head();
     if (loop_head->is_CountedLoop()) {
-      assert(!loop_nodes_of_useless_template_assertion_predicates.member(loop_head),
+      assert(!loop_nodes_of_useless_template_assertion_predicates.member(loop_head->as_CountedLoop()),
              "CountedLoopNode should be dead when found in OpaqueTemplateAssertionPredicateNode being marked useless");
     }
   }

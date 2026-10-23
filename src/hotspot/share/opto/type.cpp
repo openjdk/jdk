@@ -230,33 +230,6 @@ BasicType Type::array_element_basic_type() const {
   return bt;
 }
 
-// For two instance arrays of same dimension, return the base element types.
-// Otherwise or if the arrays have different dimensions, return null.
-void Type::get_arrays_base_elements(const Type *a1, const Type *a2,
-                                    const TypeInstPtr **e1, const TypeInstPtr **e2) {
-
-  if (e1) *e1 = nullptr;
-  if (e2) *e2 = nullptr;
-  const TypeAryPtr* a1tap = (a1 == nullptr) ? nullptr : a1->isa_aryptr();
-  const TypeAryPtr* a2tap = (a2 == nullptr) ? nullptr : a2->isa_aryptr();
-
-  if (a1tap != nullptr && a2tap != nullptr) {
-    // Handle multidimensional arrays
-    const TypePtr* a1tp = a1tap->elem()->make_ptr();
-    const TypePtr* a2tp = a2tap->elem()->make_ptr();
-    while (a1tp && a1tp->isa_aryptr() && a2tp && a2tp->isa_aryptr()) {
-      a1tap = a1tp->is_aryptr();
-      a2tap = a2tp->is_aryptr();
-      a1tp = a1tap->elem()->make_ptr();
-      a2tp = a2tap->elem()->make_ptr();
-    }
-    if (a1tp && a1tp->isa_instptr() && a2tp && a2tp->isa_instptr()) {
-      if (e1) *e1 = a1tp->is_instptr();
-      if (e2) *e2 = a2tp->is_instptr();
-    }
-  }
-}
-
 //---------------------------get_typeflow_type---------------------------------
 // Import a type produced by ciTypeFlow.
 const Type* Type::get_typeflow_type(ciType* type) {
