@@ -1228,19 +1228,31 @@ void PhaseIterGVN::optimize(bool deep) {
     shuffle_worklist();
   }
 
-  // Pull from worklist and transform the node.
-  if (drain_worklist()) {
-    return;
-  }
+  // TODO: outer loop: advance delay. Inner loop do revisit.
 
-  if (deep && UseDeepIGVNRevisit) {
-    deep_revisit_converged = deep_revisit();
-    if (C->failing()) {
+  do {
+    // Pull from worklist and transform the node.
+    if (drain_worklist()) {
       return;
     }
-  }
 
-  NOT_PRODUCT(verify_PhaseIterGVN(deep_revisit_converged);)
+    if (deep && UseDeepIGVNRevisit) {
+      deep_revisit_converged = deep_revisit();
+      if (C->failing()) {
+        return;
+      }
+    }
+
+    NOT_PRODUCT(verify_PhaseIterGVN(deep_revisit_converged);)
+
+    // TODO: desc and maybe refactor
+    if (StressOptimizationDelay) {
+      if (!C->advance_optimization_delay_nodes()) { break; }
+    } else {
+      break;
+    }
+  } while (true);
+
   C->print_method(PHASE_AFTER_ITER_GVN, 3);
 }
 

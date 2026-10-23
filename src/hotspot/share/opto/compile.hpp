@@ -856,8 +856,7 @@ public:
   void add_optimization_delay_node(OptimizationDelayNode* n);
   void remove_optimization_delay_node(OptimizationDelayNode* n);
   bool advance_optimization_delay_nodes();
-  // TODO: consider tracing phase below, with statistics.
-  void set_optimization_delay_cleanup_phase() { _optimization_delay_cleanup_phase = true; }
+  void optimization_delay_cleanup(PhaseIterGVN& igvn);
 
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);

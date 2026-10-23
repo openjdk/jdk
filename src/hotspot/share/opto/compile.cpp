@@ -1994,8 +1994,23 @@ bool Compile::advance_optimization_delay_nodes() {
 
   if (_optimization_delay_cleanup_phase) {
     delay->reveal_identity();
+    return true;
   }
   return false;
+}
+
+void Compile::optimization_delay_cleanup(PhaseIterGVN& igvn) {
+  if (TraceOptimizationDelay) {
+    tty->print_cr("[OptizationDelay] Cleanup with %d optimization delay nodes.",
+                  _optimization_delay_nodes.length());
+  }
+  _optimization_delay_cleanup_phase = true;
+  igvn.optimize();
+  if (failing()) return;
+  assert(_optimization_delay_nodes.is_empty(), "must all be released");
+  if (TraceOptimizationDelay) {
+    tty->print_cr("[OptizationDelay] Cleanup done.");
+  }
 }
 
 void Compile::record_for_post_loop_opts_igvn(Node* n) {
@@ -3479,9 +3494,7 @@ void Compile::Optimize() {
   }
 
   if (StressOptimizationDelay) {
-    set_optimization_delay_cleanup_phase();
-    igvn.optimize();
-    if (failing()) return;
+    optimization_delay_cleanup(igvn);
   }
 
   DEBUG_ONLY( _modified_nodes = nullptr; )
