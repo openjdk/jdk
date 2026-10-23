@@ -166,7 +166,8 @@ public:
   bool relocated_remembered_fields_is_concurrently_scanned() const;
   template <typename Function>
   void relocated_remembered_fields_apply_to_published(Function function);
-  bool relocated_remembered_fields_published_contains(volatile zpointer* p);
+  void relocated_remembered_fields_published_sort();
+  bool relocated_remembered_fields_published_contains(volatile zpointer* p, bool is_sorted);
 
   void verify() const;
 };
