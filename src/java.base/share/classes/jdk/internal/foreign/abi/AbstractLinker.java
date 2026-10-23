@@ -38,7 +38,6 @@ import jdk.internal.foreign.abi.s390.linux.LinuxS390Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import jdk.internal.foreign.layout.AbstractLayout;
-import jdk.internal.foreign.layout.ValueLayouts;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
@@ -64,6 +63,11 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                                                                       LinuxPPC64Linker, LinuxPPC64leLinker,
                                                                       LinuxRISCV64Linker, LinuxS390Linker,
                                                                       FallbackLinker {
+
+    public static final ValueLayout.OfByte UBYTE = ValueLayout.JAVA_BYTE.withSign(false);
+    public static final ValueLayout.OfShort USHORT = ValueLayout.JAVA_SHORT.withSign(false);
+    public static final ValueLayout.OfInt UINT = ValueLayout.JAVA_INT.withSign(false);
+    public static final ValueLayout.OfLong ULONG = ValueLayout.JAVA_LONG.withSign(false);
 
     public interface UpcallStubFactory {
         MemorySegment makeStub(MethodHandle target, Arena arena);
@@ -310,8 +314,10 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     }
 
     // overridden by sub classes
-    protected ValueLayout maybeDropExtension(ValueLayout valueLayout) {
-        return ValueLayouts.dropIntegralExtension(valueLayout);
+    protected ValueLayout maybeEraseSign(ValueLayout valueLayout) {
+        return valueLayout instanceof ValueLayout.OfIntegral integral
+                ? integral.withSign(true)
+                : valueLayout;
     }
 
     // Strip info from the layout that's not needed by the linker, such as name.
@@ -331,7 +337,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                     stripped = stripped.withTargetLayout(stripLayout(target.get()));
                 yield stripped;
             }
-            case ValueLayout vl -> maybeDropExtension(vl.withoutName());
+            case ValueLayout vl -> maybeEraseSign(vl.withoutName());
             default -> ml.withoutName(); // PaddingLayout
         };
     }

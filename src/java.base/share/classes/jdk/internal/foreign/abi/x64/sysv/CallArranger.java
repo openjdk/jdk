@@ -299,7 +299,7 @@ public class CallArranger {
                     // unsigned types. This is required by the Mac ABI, and there's a bug in clang
                     // where callee's might be assuming the upper bits of a register are sign/zero-extended
                     // on Linux as well.
-                    bindings.vmStore(storage, carrier, ((ValueLayout) layout).integralExtension());
+                    bindings.vmStore(storage, carrier, SharedUtils.isSigned(layout));
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.VECTOR);

@@ -254,10 +254,9 @@ public class LinuxS390CallArranger {
                     // But we only do it for unsigned values here since this saves
                     // on argument slots for the downcall stub. Signed values will be
                     // sign-extended when being moved into the destination register.
-                    Optional<ValueLayout.IntegralExtension> integralExtension = ((ValueLayout) layout).integralExtension();
-                    if (integralExtension.isPresent() && integralExtension.get() == ValueLayout.IntegralExtension.ZERO_EXTEND
-                            && carrier != long.class) {
-                        bindings.cast(carrier, long.class, integralExtension)
+                    if (layout instanceof  ValueLayout.OfIntegral integral
+                            && !integral.isSigned() && carrier != long.class) {
+                        bindings.cast(carrier, long.class, false)
                                 .vmStore(storage, long.class);
                     } else {
                         bindings.vmStore(storage, carrier);

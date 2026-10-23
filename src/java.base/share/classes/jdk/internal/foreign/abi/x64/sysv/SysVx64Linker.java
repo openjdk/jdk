@@ -36,9 +36,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.Map;
 
-import static java.lang.foreign.ValueLayout.IntegralExtension.ZERO_EXTEND;
-import static jdk.internal.foreign.layout.ValueLayouts.withIntegralExtension;
-
 /**
  * ABI implementation based on System V ABI AMD64 supplement v.0.99.6
  */
@@ -46,7 +43,7 @@ public final class SysVx64Linker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
             SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG,
-                    ValueLayout.JAVA_BYTE, withIntegralExtension(ValueLayout.JAVA_INT, ZERO_EXTEND));
+                    ValueLayout.JAVA_BYTE, UINT);
 
     public static SysVx64Linker getInstance() {
         final class Holder {
@@ -61,10 +58,10 @@ public final class SysVx64Linker extends AbstractLinker {
     }
 
     @Override
-    protected ValueLayout maybeDropExtension(ValueLayout valueLayout) {
+    protected ValueLayout maybeEraseSign(ValueLayout valueLayout) {
         return valueLayout.byteSize() < 4 // smaller than int
             ? valueLayout // keep, if any
-            : super.maybeDropExtension(valueLayout);
+            : super.maybeEraseSign(valueLayout);
     }
 
     @Override

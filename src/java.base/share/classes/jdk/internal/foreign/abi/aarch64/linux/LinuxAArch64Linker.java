@@ -38,9 +38,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.Map;
 
-import static java.lang.foreign.ValueLayout.IntegralExtension.ZERO_EXTEND;
-import static jdk.internal.foreign.layout.ValueLayouts.withIntegralExtension;
-
 /**
  * ABI implementation based on ARM document "Procedure Call Standard for
  * the ARM 64-bit Architecture".
@@ -49,7 +46,7 @@ public final class LinuxAArch64Linker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
             SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG,
-                    withIntegralExtension(ValueLayout.JAVA_BYTE, ZERO_EXTEND), withIntegralExtension(ValueLayout.JAVA_INT, ZERO_EXTEND));
+                    UBYTE, UINT);
 
     public static LinuxAArch64Linker getInstance() {
         final class Holder {

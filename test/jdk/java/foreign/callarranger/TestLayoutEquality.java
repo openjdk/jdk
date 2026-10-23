@@ -51,10 +51,13 @@ public class TestLayoutEquality {
     @ParameterizedTest
     @MethodSource("layoutConstants")
     public void testReconstructedEquality(ValueLayout layout) {
-        ValueLayout newLayout = ValueLayouts.valueLayout(layout.carrier(), layout.order(), layout.integralExtension());
+        ValueLayout newLayout = ValueLayouts.valueLayout(layout.carrier(), layout.order());
         newLayout = newLayout.withByteAlignment(layout.byteAlignment());
         if (layout instanceof AddressLayout addressLayout && addressLayout.targetLayout().isPresent()) {
             newLayout = ((AddressLayout)newLayout).withTargetLayout(addressLayout.targetLayout().get());
+        }
+        if (layout instanceof ValueLayout.OfIntegral integral) {
+            newLayout = ((ValueLayout.OfIntegral) newLayout).withSign(integral.isSigned());
         }
 
         // properties should be equal

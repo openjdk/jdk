@@ -278,7 +278,7 @@ public class LinuxRISCV64CallArranger {
             switch (argumentClass) {
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER);
-                    bindings.vmStore(storage, carrier, ((ValueLayout) layout).integralExtension());
+                    bindings.vmStore(storage, carrier, SharedUtils.isSigned(layout));
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.FLOAT);

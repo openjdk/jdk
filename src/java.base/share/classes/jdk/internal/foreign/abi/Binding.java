@@ -36,10 +36,8 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
-import java.util.Optional;
 
 import static java.lang.foreign.ValueLayout.*;
-import static java.lang.foreign.ValueLayout.IntegralExtension.ZERO_EXTEND;
 
 /**
  * The binding operators defined in the Binding class can be combined into argument and return value processing 'recipes'.
@@ -302,11 +300,10 @@ public sealed interface Binding {
     }
 
     static Binding cast(Class<?> fromType, Class<?> toType) {
-        return cast(fromType, toType, Optional.empty());
+        return cast(fromType, toType, true);
     }
 
-    static Binding cast(Class<?> fromType, Class<?> toType, Optional<IntegralExtension> extendBehaviorOpt) {
-        IntegralExtension extendBehavior = extendBehaviorOpt.orElse(null);
+    static Binding cast(Class<?> fromType, Class<?> toType, boolean isSigned) {
         if (fromType == int.class) {
             if (toType == boolean.class) {
                 return Cast.INT_TO_BOOLEAN;
@@ -317,21 +314,15 @@ public sealed interface Binding {
             } else if (toType == char.class) {
                 return Cast.INT_TO_CHAR;
             } else if (toType == long.class) {
-                return extendBehavior == ZERO_EXTEND
-                        ? Cast.UINT_TO_LONG
-                        : Cast.INT_TO_LONG;
+                return isSigned ? Cast.INT_TO_LONG : Cast.UINT_TO_LONG;
             }
         } else if (toType == int.class) {
             if (fromType == boolean.class) {
                 return Cast.BOOLEAN_TO_INT;
             } else if (fromType == byte.class) {
-                return extendBehavior == ZERO_EXTEND
-                        ? Cast.UBYTE_TO_INT
-                        : Cast.BYTE_TO_INT;
+                return isSigned ? Cast.BYTE_TO_INT : Cast.UBYTE_TO_INT;
             } else if (fromType == short.class) {
-                return extendBehavior == ZERO_EXTEND
-                        ? Cast.USHORT_TO_INT
-                        : Cast.SHORT_TO_INT;
+                return isSigned ? Cast.SHORT_TO_INT : Cast.USHORT_TO_INT;
             } else if (fromType == char.class) {
                 return Cast.CHAR_TO_INT;
             } else if (fromType == long.class) {
@@ -347,13 +338,9 @@ public sealed interface Binding {
             }
         } else if (toType == long.class) {
             if (fromType == byte.class) {
-                return extendBehavior == ZERO_EXTEND
-                        ? Cast.UBYTE_TO_LONG
-                        : Cast.BYTE_TO_LONG;
+                return isSigned ? Cast.BYTE_TO_LONG : Cast.UBYTE_TO_LONG;
             } else if (fromType == short.class) {
-                return extendBehavior == ZERO_EXTEND
-                        ? Cast.USHORT_TO_LONG
-                        : Cast.SHORT_TO_LONG;
+                return isSigned ? Cast.SHORT_TO_LONG : Cast.USHORT_TO_LONG;
             } else if (fromType == char.class) {
                 return Cast.CHAR_TO_LONG;
             }
@@ -377,12 +364,12 @@ public sealed interface Binding {
         }
 
         public Binding.Builder vmStore(VMStorage storage, Class<?> type) {
-            return vmStore(storage, type, Optional.empty());
+            return vmStore(storage, type, true);
         }
 
-        public Binding.Builder vmStore(VMStorage storage, Class<?> type, Optional<IntegralExtension> extendBehavior) {
+        public Binding.Builder vmStore(VMStorage storage, Class<?> type, boolean isSigned) {
             if (isSubIntType(type)) {
-                bindings.add(Binding.cast(type, int.class, extendBehavior));
+                bindings.add(Binding.cast(type, int.class, isSigned));
                 type = int.class;
             }
             bindings.add(Binding.vmStore(storage, type));
@@ -402,11 +389,11 @@ public sealed interface Binding {
         }
 
         public Binding.Builder cast(Class<?> fromType, Class<?> toType) {
-            return cast(fromType, toType, Optional.empty());
+            return cast(fromType, toType, true);
         }
 
-        public Binding.Builder cast(Class<?> fromType, Class<?> toType, Optional<IntegralExtension> extendBehavior) {
-            bindings.add(Binding.cast(fromType, toType, extendBehavior));
+        public Binding.Builder cast(Class<?> fromType, Class<?> toType, boolean isSigned) {
+            bindings.add(Binding.cast(fromType, toType, isSigned));
             return this;
         }
 

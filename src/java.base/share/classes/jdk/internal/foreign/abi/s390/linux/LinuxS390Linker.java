@@ -37,14 +37,11 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.Map;
 
-import static java.lang.foreign.ValueLayout.IntegralExtension.ZERO_EXTEND;
-import static jdk.internal.foreign.layout.ValueLayouts.withIntegralExtension;
-
 public final class LinuxS390Linker extends AbstractLinker {
 
     private static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
             SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG,
-                    withIntegralExtension(ValueLayout.JAVA_BYTE, ZERO_EXTEND), withIntegralExtension(ValueLayout.JAVA_INT, ZERO_EXTEND));
+                    UBYTE, UINT);
 
     public static LinuxS390Linker getInstance() {
         final class Holder {
@@ -59,10 +56,10 @@ public final class LinuxS390Linker extends AbstractLinker {
     }
 
     @Override
-    protected ValueLayout maybeDropExtension(ValueLayout valueLayout) {
+    protected ValueLayout maybeEraseSign(ValueLayout valueLayout) {
         return valueLayout.byteSize() < 8 // smaller than long
                 ? valueLayout // keep, if any
-                : super.maybeDropExtension(valueLayout);
+                : super.maybeEraseSign(valueLayout);
     }
 
     @Override
