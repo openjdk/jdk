@@ -416,7 +416,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
     }
 
     public boolean isInterface() {
-        return (flags_field & INTERFACE) != 0;
+        return (flags() & INTERFACE) != 0;
     }
 
     public boolean isAbstract() {

@@ -111,6 +111,10 @@ size_t G1EvacStats::compute_desired_plab_size() const {
   // what we consider as "used_for_waste_calculation" below). This is not
   // completely fair, but is a conservative assumption because PLABs may be sized
   // flexibly while we cannot adjust inline allocations.
+  //
+  // With a maximum TargetPLABWastePct of 100(%), the natural cap for the amplification
+  // potentially provided by G1LastPLABAverageOccupancy is at 2x used().
+  //
   // Allocation during GC will try to minimize region end waste so this impact
   // should be minimal.
   //
@@ -122,8 +126,9 @@ size_t G1EvacStats::compute_desired_plab_size() const {
   // which is an okay reaction.
   size_t const used_for_waste_calculation = used() > region_end_waste() ? used() - region_end_waste() : 0;
 
-  size_t const total_waste_allowed = used_for_waste_calculation * TargetPLABWastePct;
-  return (size_t)((double)total_waste_allowed / (100 - G1LastPLABAverageOccupancy));
+  double const total_waste_allowed = (double)used_for_waste_calculation * TargetPLABWastePct;
+  return (size_t)MIN2<double>(total_waste_allowed / (100 - G1LastPLABAverageOccupancy),
+                              (double)used() * (100 + TargetPLABWastePct) / 100);
 }
 
 G1EvacStats::G1EvacStats(const char* description, size_t default_per_thread_plab_size, unsigned wt) :

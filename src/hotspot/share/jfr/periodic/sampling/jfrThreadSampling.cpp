@@ -316,6 +316,8 @@ static void record_thread_in_java(const JfrSampleRequest& request, const JfrTick
   }
   assert(sid != 0, "invariant");
   const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
+  JfrThreadLocal::impersonate(current, tid);
+  assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
   send_sample_event<EventExecutionSample>(request._sample_ticks, now, sid, tid);
   if (current == jt) {
     send_safepoint_latency_event(request, now, sid, jt);
@@ -331,11 +333,14 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
   bool biased = false;
   bool in_continuation = false;
   bool could_compute_top_frame = compute_top_frame(request._request, top_frame, in_continuation, jt, biased);
-  const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
   const u4 native_pc_count = request._native_pc_count;
 
+  const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
+  JfrThreadLocal::impersonate(current, tid);
+  assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
+
   if (!could_compute_top_frame && native_pc_count == 0) {
-    JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period);
+    JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, request._cpu_time_period);
     return;
   }
   traceid sid;
@@ -347,15 +352,13 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
     }
     if (could_compute_top_frame && !stacktrace.record(jt, top_frame, in_continuation, request._request)) {
       // Unable to record stacktrace. Fail.
-      JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period);
+      JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, request._cpu_time_period);
       return;
     }
     sid = JfrStackTraceRepository::add(stacktrace);
   }
   assert(sid != 0, "invariant");
-
-
-  JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, tid, request._cpu_time_period, biased);
+  JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, request._cpu_time_period, biased);
   if (current == jt) {
     send_safepoint_latency_event(request._request, now, sid, jt);
   }
@@ -373,6 +376,7 @@ static void drain_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl, Jav
       record_thread_in_java(request, now, tl, jt, current);
     }
     tl->clear_enqueued_requests();
+    JfrThreadLocal::stop_impersonating(current);
   }
   assert(!tl->has_enqueued_requests(), "invariant");
 }
@@ -396,7 +400,11 @@ static void drain_enqueued_cpu_time_requests(const JfrTicks& now, JfrThreadLocal
   assert(queue.is_empty(), "invariant");
   tl->set_has_cpu_time_jfr_requests(false);
   if (queue.lost_samples() > 0) {
-    JfrCPUTimeThreadSampling::send_lost_event( now, JfrThreadLocal::thread_id(jt), queue.get_and_reset_lost_samples());
+    // Lost samples belong to the platform thread that owns the queue.
+    const traceid tid = JfrThreadLocal::jvm_thread_id(jt);
+    JfrThreadLocal::impersonate(current, tid);
+    assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
+    JfrCPUTimeThreadSampling::send_lost_event(now, queue.get_and_reset_lost_samples());
     queue.resize_if_needed();
   }
   if (lock) {
@@ -408,9 +416,9 @@ static void drain_enqueued_cpu_time_requests(const JfrTicks& now, JfrThreadLocal
 // Entry point for a thread that has been sampled in native code and has a pending JFR CPU time request.
 void JfrThreadSampling::process_cpu_time_request(JavaThread* jt, JfrThreadLocal* tl, Thread* current, bool lock) {
   assert(jt != nullptr, "invariant");
-
   const JfrTicks now = JfrTicks::now();
   drain_enqueued_cpu_time_requests(now, tl, jt, current, lock);
+  JfrThreadLocal::stop_impersonating(current);
 }
 
 static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl, JavaThread* jt, Thread* current) {
@@ -420,6 +428,7 @@ static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl,
   drain_enqueued_requests(now, tl, jt, current);
   if (tl->has_cpu_time_jfr_requests()) {
     drain_enqueued_cpu_time_requests(now, tl, jt, current, true);
+    JfrThreadLocal::stop_impersonating(current);
   }
 }
 
@@ -459,12 +468,16 @@ bool JfrThreadSampling::process_native_sample_request(JfrThreadLocal* tl, JavaTh
       }
       sid = JfrStackTraceRepository::add(stacktrace);
     }
-    // Read the tid under the monitor to ensure that if its a virtual thread,
+
+    // Read the tid under the monitor to ensure that if it is a virtual thread,
     // it is not unmounted until we are done with it.
     tid = JfrThreadLocal::thread_id(jt);
+    // Since the sampler thread cannot commit any other event except its next sample,
+    // no explicit cleanup is required; the next processed sample overwrites the alias.
+    JfrThreadLocal::impersonate(sampler_thread, tid);
   }
-
   assert(tl->sample_state() == NO_SAMPLE, "invariant");
+  assert(JfrThreadLocal::thread_id(sampler_thread) == tid, "invariant");
   send_sample_event<EventNativeMethodSample>(start_time, start_time, sid, tid);
   return true;
 }
@@ -499,4 +512,3 @@ void JfrThreadSampling::process_sample_request(JavaThread* jt) {
   }
   drain_all_enqueued_requests(now, tl, jt, jt);
 }
-

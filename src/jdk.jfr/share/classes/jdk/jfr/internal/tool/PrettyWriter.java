@@ -27,7 +27,6 @@ package jdk.jfr.internal.tool;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Array;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;

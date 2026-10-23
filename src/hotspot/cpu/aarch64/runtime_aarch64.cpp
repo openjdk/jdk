@@ -30,6 +30,7 @@
 #include "code/vmreg.hpp"
 #include "interpreter/interpreter.hpp"
 #include "opto/runtime.hpp"
+#include "registerSaver_aarch64.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -75,25 +76,18 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
     return nullptr;
   }
   MacroAssembler* masm = new MacroAssembler(&buffer);
-
-  assert(SimpleRuntimeFrame::framesize % 4 == 0, "sp not 16-byte aligned");
+  OopMap* map = nullptr;
+  int frame_size_in_words;
+  int frame_size_in_bytes;
+  RegisterSaver reg_save(true);
 
   address start = __ pc();
 
-  // Push self-frame.  We get here with a return address in LR
-  // and sp should be 16 byte aligned
-  // push rfp and retaddr by hand
-  __ protect_return_address();
-  __ stp(rfp, lr, Address(__ pre(sp, -2 * wordSize)));
-  // we don't expect an arg reg save area
-#ifndef PRODUCT
-  assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
-#endif
-  // compiler left unloaded_class_index in j_rarg0 move to where the
-  // runtime expects it.
-  if (c_rarg1 != j_rarg0) {
-    __ movw(c_rarg1, j_rarg0);
-  }
+  map = reg_save.save_live_registers(masm, 0, &frame_size_in_words);
+  frame_size_in_bytes = frame_size_in_words * wordSize;
+
+  __ authenticate_return_address();
+  __ ldrw(c_rarg1, Address(lr));
 
   // we need to set the past SP to the stack pointer of the stub frame
   // and the pc to the address where this runtime call will return
@@ -119,7 +113,6 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
 
   // Set an oopmap for the call site
   OopMapSet* oop_maps = new OopMapSet();
-  OopMap* map = new OopMap(SimpleRuntimeFrame::framesize, 0);
 
   // location of rfp is known implicitly by the frame sender code
 
@@ -148,7 +141,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // 3: caller of deopting frame (could be compiled/interpreted).
 
   // Pop self-frame.  We have no frame, and must rely only on r0 and sp.
-  __ add(sp, sp, (SimpleRuntimeFrame::framesize) << LogBytesPerInt); // Epilog!
+  __ add(sp, sp, frame_size_in_bytes);
 
   // Pop deoptimized frame (int)
   __ ldrw(r2, Address(r4,
@@ -212,8 +205,12 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   __ subsw(r3, r3, 1);            // Decrement counter
   __ br(Assembler::GT, loop);
   __ ldr(lr, Address(r2, 0));     // save final return address
+
   // Re-push self-frame
+  uint64_t frame_size_diff = frame_size_in_bytes;
   __ enter();                     // & old rfp & set new rfp
+  frame_size_diff -= 2 * wordSize;
+  __ sub(sp, sp, frame_size_diff);
 
   // Use rfp because the frames look interpreted now
   // Save "the_pc" since it cannot easily be retrieved using the last_java_SP after we aligned SP.
@@ -236,9 +233,9 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames)));
   __ blr(rscratch1);
 
-  // Set an oopmap for the call site
-  // Use the same PC we used for the last java frame
-  oop_maps->add_gc_map(the_pc - start, new OopMap(SimpleRuntimeFrame::framesize, 0));
+  // OopMap frame size is in compiler stack slots (jint) not bytes or words
+  int frame_size_in_slots = frame_size_in_bytes / BytesPerInt;
+  oop_maps->add_gc_map(the_pc - start, new OopMap(frame_size_in_slots, 0));
 
   // Clear fp AND pc
   __ reset_last_Java_frame(true);
@@ -252,7 +249,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Code will be copied. No ICache sync required.
 
   UncommonTrapBlob *ut_blob = UncommonTrapBlob::create(&buffer, oop_maps,
-                                                       SimpleRuntimeFrame::framesize >> 1);
+                                                       frame_size_in_words);
   AOTCodeCache::store_code_blob(*ut_blob, AOTCodeEntry::C2Blob, BlobId::c2_uncommon_trap_id);
   return ut_blob;
 }

@@ -87,10 +87,6 @@ NO_TRANSITION(jstring, jfr_get_pid(JNIEnv* env, jclass jvm))
   return pid_string; // exception pending if null
 NO_TRANSITION_END
 
-NO_TRANSITION(jlong, jfr_elapsed_frequency(JNIEnv* env, jclass jvm))
-  return JfrTime::frequency();
-NO_TRANSITION_END
-
 NO_TRANSITION(jlong, jfr_elapsed_counter(JNIEnv* env, jclass jvm))
   return JfrTicks::now();
 NO_TRANSITION_END

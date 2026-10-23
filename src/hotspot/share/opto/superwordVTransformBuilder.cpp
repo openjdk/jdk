@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ void SuperWordVTransformBuilder::build() {
 
 void SuperWordVTransformBuilder::build_vector_vtnodes_for_packed_nodes() {
   for (int i = 0; i < _packset.length(); i++) {
-    Node_List* pack = _packset.at(i);
+    Node_List<Node>* pack = _packset.at(i);
     VTransformVectorNode* vtn = make_vector_vtnode_for_pack(pack);
     for (uint k = 0; k < pack->size(); k++) {
       map_node_to_vtnode(pack->at(k), vtn);
@@ -78,7 +78,7 @@ void SuperWordVTransformBuilder::build_scalar_vtnodes_for_non_packed_nodes() {
 
 void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_memory_dependencies) {
   for (int i = 0; i < _packset.length(); i++) {
-    Node_List* pack = _packset.at(i);
+    Node_List<Node>* pack = _packset.at(i);
     Node* p0 = pack->at(0);
 
     VTransformVectorNode* vtn = get_vtnode(p0)->isa_Vector();
@@ -177,7 +177,7 @@ void SuperWordVTransformBuilder::build_uses_after_loop() {
 }
 
 // Create a vtnode for each pack. No in/out edges set yet.
-VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(const Node_List* pack) const {
+VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(const Node_List<Node>* pack) const {
   Node* p0 = pack->at(0);
   const VTransformVectorNodeProperties properties = VTransformVectorNodeProperties::make_from_pack(pack, _vloop_analyzer);
   const int sopc     = properties.scalar_opcode();
@@ -189,11 +189,11 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Load());
     const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * vlen));
     const LoadNode::ControlDependency control_dependency = load_control_dependency(pack);
-    vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, properties, vector_p, p0->adr_type(), control_dependency);
+    vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, properties, vector_p, p0->in_adr_type(), control_dependency);
   } else if (p0->is_Store()) {
     const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Store());
     const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * vlen));
-    vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, properties, vector_p, p0->adr_type());
+    vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, properties, vector_p, p0->in_adr_type());
   } else if (p0->is_Cmp()) {
     vtn = new (_vtransform.arena()) VTransformCmpVectorNode(_vtransform, properties);
   } else if (p0->is_Bool()) {
@@ -249,10 +249,10 @@ void SuperWordVTransformBuilder::init_req_with_scalar(Node* n, VTransformNode* v
 
 // Either get the existing vtnode vector input (when input is a pack), or else make a
 // new vector vtnode for the input (e.g. for Replicate or PopulateIndex).
-VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_index(const Node_List* pack, const int index) {
+VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_index(const Node_List<Node>* pack, const int index) {
   Node* p0 = pack->at(0);
 
-  Node_List* pack_in = _packset.pack_input_at_index_or_null(pack, index);
+  Node_List<Node>* pack_in = _packset.pack_input_at_index_or_null(pack, index);
   if (pack_in != nullptr) {
     Node* in_p0 = pack_in->at(0);
     BasicType def_bt = _vloop_analyzer.types().velt_basic_type(in_p0);
@@ -276,11 +276,11 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
   if (VectorNode::is_muladds2i(p0)) {
     assert(_packset.is_muladds2i_pack_with_pack_inputs(pack), "inputs must all be packs");
     // All inputs are strided (stride = 2), either with offset 0 or 1.
-    Node_List* pack_in0 = _packset.strided_pack_input_at_index_or_null(pack, index, 2, 0);
+    Node_List<Node>* pack_in0 = _packset.strided_pack_input_at_index_or_null(pack, index, 2, 0);
     if (pack_in0 != nullptr) {
       return get_vtnode(pack_in0->at(0));
     }
-    Node_List* pack_in1 = _packset.strided_pack_input_at_index_or_null(pack, index, 2, 1);
+    Node_List<Node>* pack_in1 = _packset.strided_pack_input_at_index_or_null(pack, index, 2, 1);
     if (pack_in1 != nullptr) {
       return get_vtnode(pack_in1->at(0));
     }
@@ -354,7 +354,7 @@ VTransformNode* SuperWordVTransformBuilder::get_vtnode_or_wrap_as_outer(Node* n)
   return vtn;
 }
 
-void SuperWordVTransformBuilder::init_req_with_vector(const Node_List* pack, VTransformNode* vtn, int j) {
+void SuperWordVTransformBuilder::init_req_with_vector(const Node_List<Node>* pack, VTransformNode* vtn, int j) {
   VTransformNode* req = get_or_make_vtnode_vector_input_at_index(pack, j);
   vtn->init_req(j, req);
 }
@@ -368,7 +368,7 @@ void SuperWordVTransformBuilder::init_all_req_with_scalars(Node* n, VTransformNo
   }
 }
 
-void SuperWordVTransformBuilder::init_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn) {
+void SuperWordVTransformBuilder::init_all_req_with_vectors(const Node_List<Node>* pack, VTransformNode* vtn) {
   Node* p0 = pack->at(0);
   assert(vtn->req() <= p0->req(), "must have at at most as many reqs");
   // Vectors have no ctrl, so ignore it.
