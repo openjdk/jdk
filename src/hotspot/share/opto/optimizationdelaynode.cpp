@@ -51,7 +51,7 @@ Node* OptimizationDelayNode::Identity(PhaseGVN* phase) {
 }
 
 void OptimizationDelayNode::narrow_hold_type(const Type* t_narrow) {
-  assert(_stage == Stage::HoldType, "must still hold type");
+  if (_stage > Stage::HoldType) { return; }
   const Type* t_old = _hold_type;
   _hold_type = t_narrow;
   // TODO: impl, and asserts!
@@ -64,7 +64,7 @@ void OptimizationDelayNode::narrow_hold_type(const Type* t_narrow) {
 }
 
 void OptimizationDelayNode::reveal_type() {
-  assert(_stage < Stage::RevealType, "only advance stage");
+  if (_stage > Stage::RevealType) { return; }
   _stage = Stage::RevealType;
   if (TraceOptimizationDelay) {
     tty->print_cr("[OptizationDelay] reveal type");
@@ -73,7 +73,7 @@ void OptimizationDelayNode::reveal_type() {
 }
 
 void OptimizationDelayNode::reveal_identity() {
-  assert(_stage < Stage::RevealIdentity, "only advance stage");
+  assert(_stage < Stage::RevealIdentity, "only reveal identity once");
   _stage = Stage::RevealIdentity;
   if (TraceOptimizationDelay) {
     tty->print_cr("[OptizationDelay] reveal identity");
