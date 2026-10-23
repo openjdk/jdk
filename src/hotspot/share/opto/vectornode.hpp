@@ -2185,7 +2185,6 @@ class VectorBoxNode : public Node {
   VectorBoxNode(Compile* C, Node* box, Node* val,
                 const TypeInstPtr* box_type, const TypeVect* vt)
     : Node(nullptr, box, val), _box_type(box_type), _vec_type(vt) {
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 
@@ -2206,7 +2205,6 @@ class VectorBoxAllocateNode : public CallStaticJavaNode {
  public:
   VectorBoxAllocateNode(Compile* C, const TypeInstPtr* vbox_type)
     : CallStaticJavaNode(C, VectorBoxNode::vec_box_type(vbox_type), nullptr, nullptr) {
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 
@@ -2225,7 +2223,6 @@ public:
     : VectorNode(mem, obj, vec_type) {
     init_req(0, ctrl);
     init_class_id(Class_VectorUnbox);
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 
