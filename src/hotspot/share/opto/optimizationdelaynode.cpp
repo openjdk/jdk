@@ -59,3 +59,11 @@ Node* OptimizationDelayNode::Identity(PhaseGVN* phase) {
   }
   return this;
 }
+
+void OptimizationDelayNode::reveal_identity() {
+  _stage = Stage::RevealIdentity;
+  if (TraceOptimizationDelay) {
+    tty->print_cr("[OptizationDelay] reveal identity");
+    this->dump();
+  }
+}

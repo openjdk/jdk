@@ -87,10 +87,7 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
 
-  void reveal_identity() {
-    // TODO: trace?
-    _stage = Stage::RevealIdentity;
-  }
+  void reveal_identity();
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream* st) const {

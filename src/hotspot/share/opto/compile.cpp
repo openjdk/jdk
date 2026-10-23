@@ -1998,11 +1998,13 @@ bool Compile::advance_optimization_delay_nodes(PhaseIterGVN& igvn) {
     delay->dump();
   }
 
-  if (_optimization_delay_nodes_cleanup_phase) {
+  if (_optimization_delay_nodes_cleanup_phase ||
+      stress().random() % 1000 == 0) {
     delay->reveal_identity();
     igvn._worklist.push(delay);
     return true;
   }
+
   return false;
 }
 
