@@ -77,6 +77,7 @@
 #include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/optimizationdelaynode.hpp"
 #include "opto/output.hpp"
 #include "opto/parse.hpp"
 #include "opto/phaseX.hpp"
@@ -404,6 +405,9 @@ void Compile::remove_useless_node(Node* dead) {
   if (dead->is_macro()) {
     remove_macro_node(dead);
   }
+  if (dead->is_OptimizationDelay()) {
+    remove_optimization_delay_node(dead->as_OptimizationDelay());
+  }
   if (dead->is_expensive()) {
     remove_expensive_node(dead);
   }
@@ -481,6 +485,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List<Node>& useful, Unique_No
   // not in the graph anymore.
   worklist.remove_useless_nodes(useful.member_set());
   remove_useless_nodes(_macro_nodes,        useful); // remove useless macro nodes
+  remove_useless_nodes(_optimization_delay_nodes, useful); // remove useless optimization delay nodes
   remove_useless_nodes(_parse_predicates,   useful); // remove useless Parse Predicate nodes
   // Remove useless Template Assertion Predicate opaque nodes
   remove_useless_nodes(_template_assertion_predicate_opaques, useful);
@@ -691,6 +696,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _node_count_inlining_cutoff(NodeCountInliningCutoff),
       _post_loop_opts_phase(false),
       _merge_stores_phase(false),
+      _optimization_delay_nodes_cleanup_phase(false),
       _allow_macro_nodes(true),
       _inlining_progress(false),
       _inlining_incrementally(false),
@@ -711,6 +717,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _first_failure_details(nullptr),
       _intrinsics(comp_arena(), 0, 0, nullptr),
       _macro_nodes(comp_arena(), 8, 0, nullptr),
+      _optimization_delay_nodes(comp_arena(), 0, 0, nullptr),
       _parse_predicates(comp_arena(), 8, 0, nullptr),
       _template_assertion_predicate_opaques(comp_arena(), 8, 0, nullptr),
       _expensive_nodes(comp_arena(), 8, 0, nullptr),
@@ -1006,6 +1013,7 @@ Compile::Compile(ciEnv* ci_env,
       _node_count_inlining_cutoff(NodeCountInliningCutoff),
       _post_loop_opts_phase(false),
       _merge_stores_phase(false),
+      _optimization_delay_nodes_cleanup_phase(false),
       _allow_macro_nodes(true),
       _inlining_progress(false),
       _inlining_incrementally(false),
@@ -1022,6 +1030,7 @@ Compile::Compile(ciEnv* ci_env,
       _directive(directive),
       _log(ci_env->log()),
       _first_failure_details(nullptr),
+      _optimization_delay_nodes(comp_arena(), 0, 0, nullptr),
       _reachability_fences(comp_arena(), 8, 0, nullptr),
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
       _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
@@ -1965,6 +1974,59 @@ void Compile::mark_parse_predicate_nodes_useless(PhaseIterGVN& igvn) {
     parse_predicate->mark_useless(igvn);
   }
   _parse_predicates.clear();
+}
+
+void Compile::add_optimization_delay_node(OptimizationDelayNode* n) {
+  assert(n != nullptr, "no nullptr");
+  assert(!_optimization_delay_nodes.contains(n), "duplicate");
+  _optimization_delay_nodes.append(n);
+}
+
+void Compile::remove_optimization_delay_node(OptimizationDelayNode* n) {
+  assert(n != nullptr, "no nullptr");
+  _optimization_delay_nodes.remove(n);
+}
+
+bool Compile::advance_optimization_delay_nodes(PhaseIterGVN& igvn) {
+  if (_optimization_delay_nodes.is_empty()) { return false; }
+  int r = C->stress().random() % _optimization_delay_nodes.length();
+  OptimizationDelayNode* delay = _optimization_delay_nodes.at(r);
+
+  if (_optimization_delay_nodes_cleanup_phase ||
+      stress().random() % 1000 == 0) {
+    delay->reveal_identity();
+    igvn._worklist.push(delay);
+    return true;
+  }
+
+  if (stress().random() % 100 == 0) {
+    delay->reveal_type();
+    igvn._worklist.push(delay);
+    return true;
+  }
+
+  if (stress().random() % 10 == 0) {
+    const Type* t_in = igvn.type(delay->in(1));
+    delay->narrow_hold_type(t_in, stress());
+    igvn._worklist.push(delay);
+    return true;
+  }
+
+  return false;
+}
+
+void Compile::optimization_delay_nodes_cleanup(PhaseIterGVN& igvn) {
+  if (TraceOptimizationDelay) {
+    tty->print_cr("[OptizationDelay] Cleanup with %d optimization delay nodes.",
+                  _optimization_delay_nodes.length());
+  }
+  _optimization_delay_nodes_cleanup_phase = true;
+  igvn.optimize();
+  if (failing()) return;
+  assert(_optimization_delay_nodes.is_empty(), "must all be released");
+  if (TraceOptimizationDelay) {
+    tty->print_cr("[OptizationDelay] Cleanup done.");
+  }
 }
 
 void Compile::record_for_post_loop_opts_igvn(Node* n) {
@@ -3444,6 +3506,11 @@ void Compile::Optimize() {
   if (C->max_vector_size() > 0) {
     C->optimize_logic_cones(igvn);
     igvn.optimize();
+    if (failing()) return;
+  }
+
+  if (StressOptimizationDelay) {
+    optimization_delay_nodes_cleanup(igvn);
     if (failing()) return;
   }
 

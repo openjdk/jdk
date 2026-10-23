@@ -460,6 +460,9 @@ class Parse : public GraphKit {
   // Parse the current basic block
   void do_one_block();
 
+  // TODO: desc
+  void maybe_insert_optimization_delay_nodes();
+
   // Raise an error if we get a bad ciTypeFlow CFG.
   void handle_missing_successor(int bci);
 

@@ -52,6 +52,13 @@
   product(bool, StressCCP, false, DIAGNOSTIC,                               \
           "Randomize worklist traversal in CCP")                            \
                                                                             \
+  product(bool, StressOptimizationDelay, false, DIAGNOSTIC,                 \
+          "Randomly insert OptimizationDelay nodes to arbitrarily delay"    \
+          "Value, Ideal and Identity optimizations")                        \
+                                                                            \
+  product(bool, TraceOptimizationDelay, false, DIAGNOSTIC,                  \
+          "Trace insertion and removal of OptimizationDelay nodes")         \
+                                                                            \
   product(bool, StressIncrementalInlining, false, DIAGNOSTIC,               \
           "Randomize the incremental inlining decision")                    \
                                                                             \
