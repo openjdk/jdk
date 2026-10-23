@@ -2386,8 +2386,10 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
       assert(md != nullptr, "Sanity");
       data = md->bci_to_data(bci);
       assert(data != nullptr && data->is_ArrayLoadData(), "incorrect profiling entry");
-      ciArrayLoadData* load_data = (ciArrayLoadData*)data;
-      profile_multiple_array_types(x, array, md, load_data);
+      if (UseArrayFlattening || Arguments::is_valhalla_enabled()) {
+        ciArrayLoadData* load_data = (ciArrayLoadData*) data;
+        profile_multiple_array_types(x, array, md, load_data);
+      }
     }
   }
 

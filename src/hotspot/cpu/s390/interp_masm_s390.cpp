@@ -1660,32 +1660,36 @@ void InterpreterMacroAssembler::profile_array_type(Register array,
 void InterpreterMacroAssembler::profile_multiple_array_types(Register array,
                                                              Register tmp1,
                                                              Register tmp2) {
-  if (ProfileInterpreter) {
+  if (ProfileInterpreter && (UseArrayFlattening || Arguments::is_valhalla_enabled())) {
     Label profile_continue;
     assert_different_registers(array, tmp1, tmp2);
 
     // If no method data exists, go to profile_continue.
     test_method_data_pointer(tmp1, profile_continue);
 
-    Label not_flat;
-    test_non_flat_array_oop(array, tmp2, not_flat);
+    if (UseArrayFlattening) {
+      Label not_flat;
+      test_non_flat_array_oop(array, tmp2, not_flat);
 
-    load_klass(tmp2, array);
-    profile_array_type_at_load(tmp2, tmp1, 0, array);
+      load_klass(tmp2, array);
+      profile_array_type_at_load(tmp2, tmp1, 0, array);
 
-    z_bru(profile_continue);
-    bind(not_flat);
+      z_bru(profile_continue);
+      bind(not_flat);
+    }
 
-    Label not_null_free;
-    test_non_null_free_array_oop(array, tmp2, not_null_free);
+    if (Arguments::is_valhalla_enabled()) {
+      Label not_null_free;
+      test_non_null_free_array_oop(array, tmp2, not_null_free);
 
-    add2mem_64(Address(tmp1, in_bytes(ArrayLoadData::not_flat_null_free_count_offset())), DataLayout::counter_increment, tmp2);
+      add2mem_64(Address(tmp1, in_bytes(ArrayLoadData::not_flat_null_free_count_offset())), DataLayout::counter_increment, tmp2);
 
-    z_bru(profile_continue);
+      z_bru(profile_continue);
 
-    bind(not_null_free);
+      bind(not_null_free);
 
-    add2mem_64(Address(tmp1, in_bytes(ArrayLoadData::not_flat_nullable_count_offset())), DataLayout::counter_increment, tmp2);
+      add2mem_64(Address(tmp1, in_bytes(ArrayLoadData::not_flat_nullable_count_offset())), DataLayout::counter_increment, tmp2);
+    }
 
     bind(profile_continue);
   }

@@ -3114,26 +3114,31 @@ void LIR_Assembler::emit_profile_multiple_array_types(LIR_OpProfileMultipleArray
     __ add_const_optimized(mdo, mdo, mdo_offset_bias, R0);
   }
 
-  Label not_flat, done;
-  __ test_non_flat_array_oop(array, tmp1, not_flat);
+  Label done;
+  Label not_flat;
+  if (UseArrayFlattening) {
+    __ test_non_flat_array_oop(array, tmp1, not_flat);
 
-  Register klass = tmp1;
-  __ load_klass(klass, array);
+    Register klass = tmp1;
+    __ load_klass(klass, array);
 
-  __ profile_array_type_at_load(klass, mdo, mdp_offset - mdo_offset_bias, array);
+    __ profile_array_type_at_load(klass, mdo, mdp_offset - mdo_offset_bias, array);
 
-  __ b(done);
-  __ bind(not_flat);
+    __ b(done);
+    __ bind(not_flat);
+  }
 
-  int nullable_off  = md->byte_offset_of_slot(op->load(), ArrayLoadData::not_flat_nullable_count_offset()) - mdo_offset_bias;
-  int null_free_off = md->byte_offset_of_slot(op->load(), ArrayLoadData::not_flat_null_free_count_offset()) - mdo_offset_bias;
+  if (Arguments::is_valhalla_enabled()) {
+    int nullable_off  = md->byte_offset_of_slot(op->load(), ArrayLoadData::not_flat_nullable_count_offset()) - mdo_offset_bias;
+    int null_free_off = md->byte_offset_of_slot(op->load(), ArrayLoadData::not_flat_null_free_count_offset()) - mdo_offset_bias;
 
-  __ ld(tmp1, oopDesc::mark_offset_in_bytes(), array);
-  __ andi_(R0, tmp1, markWord::null_free_array_bit_in_place);
-  __ li(tmp1, null_free_off - nullable_off);
-  __ isel_0(tmp1, CR0, Assembler::equal, tmp1);
-  __ add(mdo, mdo, tmp1);
-  __ increment_mem64(mdo, nullable_off, DataLayout::counter_increment, tmp1);
+    __ ld(tmp1, oopDesc::mark_offset_in_bytes(), array);
+    __ andi_(R0, tmp1, markWord::null_free_array_bit_in_place);
+    __ li(tmp1, null_free_off - nullable_off);
+    __ isel_0(tmp1, CR0, Assembler::equal, tmp1);
+    __ add(mdo, mdo, tmp1);
+    __ increment_mem64(mdo, nullable_off, DataLayout::counter_increment, tmp1);
+  }
 
   __ bind(done);
 }

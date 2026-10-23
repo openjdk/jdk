@@ -3181,39 +3181,42 @@ void LIR_Assembler::emit_profile_multiple_array_types(LIR_OpProfileMultipleArray
   Register tmp2 = op->tmp2()->as_pointer_register();
   ciMethodData* md = op->md();
 
-  Label not_flat, done;
-  __ test_non_flat_array_oop(array, tmp1, not_flat);
-
-  Register klass = tmp1;
-  __ load_klass(klass, array, tmp2);
-
+  Label done;
   Register mdo = tmp2;
+  if (UseArrayFlattening) {
+    Label not_flat;
+    __ test_non_flat_array_oop(array, tmp1, not_flat);
+
+    Register klass = tmp1;
+    __ load_klass(klass, array, tmp2);
+
+    __ mov_metadata(mdo, md->constant_encoding());
+
+    int mdp_offset = md->byte_offset_of_slot(op->load(), in_ByteSize(0));
+    __ profile_array_type_at_load(tmp1, mdo, mdp_offset);
+
+    __ jmp(done);
+    __ bind(not_flat);
+  }
   __ mov_metadata(mdo, md->constant_encoding());
 
-  int mdp_offset = md->byte_offset_of_slot(op->load(), in_ByteSize(0));
-  __ profile_array_type_at_load(tmp1, mdo, mdp_offset);
+  if (Arguments::is_valhalla_enabled()) {
+    Label null_free;
+      __ test_null_free_array_oop(array, tmp1, null_free);
 
-  __ jmp(done);
-  __ bind(not_flat);
-  __ mov_metadata(mdo, md->constant_encoding());
+    {
+      Address counter_addr(mdo, md->byte_offset_of_slot(op->load(), ArrayLoadData::not_flat_nullable_count_offset()));
+      __ addptr(counter_addr, DataLayout::counter_increment);
+    }
 
-  Label null_free;
+    __ jmp(done);
+    __ bind(null_free);
 
-  __ test_null_free_array_oop(array, tmp1, null_free);
-
-  {
-    Address counter_addr(mdo, md->byte_offset_of_slot(op->load(), ArrayLoadData::not_flat_nullable_count_offset()));
-    __ addptr(counter_addr, DataLayout::counter_increment);
+    {
+      Address counter_addr(mdo, md->byte_offset_of_slot(op->load(), ArrayLoadData::not_flat_null_free_count_offset()));
+      __ addptr(counter_addr, DataLayout::counter_increment);
+    }
   }
-
-  __ jmp(done);
-  __ bind(null_free);
-
-  {
-    Address counter_addr(mdo, md->byte_offset_of_slot(op->load(), ArrayLoadData::not_flat_null_free_count_offset()));
-    __ addptr(counter_addr, DataLayout::counter_increment);
-  }
-
   __ bind(done);
 }
 void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {

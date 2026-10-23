@@ -1530,30 +1530,34 @@ void InterpreterMacroAssembler::profile_array_type(Register array,
 void InterpreterMacroAssembler::profile_multiple_array_types(Register array,
                                                              Register tmp1,
                                                              Register tmp2) {
-  if (ProfileInterpreter) {
+  if (ProfileInterpreter && (UseArrayFlattening || Arguments::is_valhalla_enabled())) {
     Label profile_continue;
 
     // If no method data exists, go to profile_continue.
     test_method_data_pointer(profile_continue);
 
-    Label not_flat;
-    test_non_flat_array_oop(array, tmp1, not_flat);
+    if (UseArrayFlattening) {
+      Label not_flat;
+      test_non_flat_array_oop(array, tmp1, not_flat);
 
-    load_klass(tmp1, array);
-    profile_array_type_at_load(tmp1, R28_mdx, 0, tmp2);
-    b(profile_continue);
+      load_klass(tmp1, array);
+      profile_array_type_at_load(tmp1, R28_mdx, 0, tmp2);
+      b(profile_continue);
 
-    bind(not_flat);
+      bind(not_flat);
+    }
 
-    Label not_null_free;
-    test_non_null_free_array_oop(array, tmp1, not_null_free);
+    if (Arguments::is_valhalla_enabled()) {
+      Label not_null_free;
+      test_non_null_free_array_oop(array, tmp1, not_null_free);
 
-    increment_mdp_data_at(in_bytes(ArrayLoadData::not_flat_null_free_count_offset()), tmp1, tmp2);
-    b(profile_continue);
+      increment_mdp_data_at(in_bytes(ArrayLoadData::not_flat_null_free_count_offset()), tmp1, tmp2);
+      b(profile_continue);
 
-    bind(not_null_free);
+      bind(not_null_free);
 
-    increment_mdp_data_at(in_bytes(ArrayLoadData::not_flat_nullable_count_offset()), tmp1, tmp2);
+      increment_mdp_data_at(in_bytes(ArrayLoadData::not_flat_nullable_count_offset()), tmp1, tmp2);
+    }
 
     bind(profile_continue);
   }
