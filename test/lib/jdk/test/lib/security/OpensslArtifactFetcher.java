@@ -132,13 +132,7 @@ public class OpensslArtifactFetcher {
 
     // retrieve the provider directory path from <OPENSSL_HOME>/bin/openssl
     public static Path getProviderPath(String opensslPath) {
-        // This test uses -legacy (RC4/SHA1 PBE). On Linux the system OpenSSL
-        // may be built without the legacy provider (observed on loongarch64,
-        // aarch64 and x64), so skip instead of failing later. Other platforms
-        // use the downloaded bundle and must not be skipped here.
-        if (Platform.isLinux() && !opensslHasProvider(opensslPath, "legacy")) {
-            throw new SkippedException("OpenSSL legacy provider not available");
-        }
+        Path modules = null;
 
         // Prefer the modules directory relative to the openssl binary. This is
         // correct for the downloaded bundle, which is relocatable: "openssl
@@ -148,9 +142,10 @@ public class OpensslArtifactFetcher {
         if (bin != null && bin.getParent() != null) {
             Path root = bin.getParent();
             for (String lib : List.of("lib", "lib64")) {
-                Path modules = root.resolve(lib).resolve("ossl-modules");
-                if (Files.isDirectory(modules)) {
-                    return modules;
+                Path candidate = root.resolve(lib).resolve("ossl-modules");
+                if (Files.isDirectory(candidate)) {
+                    modules = candidate;
+                    break;
                 }
             }
         }
@@ -158,25 +153,39 @@ public class OpensslArtifactFetcher {
         // Fall back to "openssl info -modulesdir", which handles system
         // installs (e.g. distro multiarch layouts) where the modules directory
         // is not a sibling of the openssl binary's parent.
-        try {
-            String dir = ProcessTools.executeCommand(opensslPath, "info", "-modulesdir")
-                    .shouldHaveExitValue(0)
-                    .getStdout().trim();
-            return Path.of(dir);
-        } catch (Exception e) {
-            throw new SkippedException("Could not determine OpenSSL modules directory", e);
+        if (modules == null) {
+            try {
+                String dir = ProcessTools.executeCommand(opensslPath, "info", "-modulesdir")
+                        .shouldHaveExitValue(0)
+                        .getStdout().trim();
+                modules = Path.of(dir);
+            } catch (Exception e) {
+                throw new SkippedException("Could not determine OpenSSL modules directory", e);
+            }
         }
+
+        // This test uses -legacy (RC4/SHA1 PBE). Some OpenSSL builds are made
+        // without the legacy provider (observed on loongarch64, aarch64 and
+        // x64), so skip instead of failing later. This check applies to all
+        // platforms: the downloaded bundle always includes the legacy provider,
+        // so it passes and is never skipped, while a system OpenSSL (set via
+        // test.openssl.path or found in /usr/local/bin) without legacy is
+        // skipped here rather than failing in the test itself.
+        // Note: "openssl list -providers" only reports loaded providers, and
+        // the legacy provider is not loaded by default, so detect it by the
+        // presence of the legacy module file instead.
+        if (!hasLegacyProvider(modules)) {
+            throw new SkippedException("OpenSSL legacy provider not available in " + modules);
+        }
+
+        return modules;
     }
 
-    private static boolean opensslHasProvider(String opensslPath, String provider) {
-        try {
-            return ProcessTools.executeCommand(opensslPath, "list", "-providers")
-                    .shouldHaveExitValue(0)
-                    .getStdout()
-                    .contains(provider);
-        } catch (Exception e) {
-            return false;
-        }
+    // The legacy provider module file name differs per platform.
+    private static boolean hasLegacyProvider(Path modulesDir) {
+        return Files.isRegularFile(modulesDir.resolve("legacy.so"))
+                || Files.isRegularFile(modulesDir.resolve("legacy.dylib"))
+                || Files.isRegularFile(modulesDir.resolve("legacy.dll"));
     }
 
     public static String getTestOpensslBundleVersion() {
