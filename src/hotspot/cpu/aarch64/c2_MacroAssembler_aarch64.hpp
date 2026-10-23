@@ -262,6 +262,7 @@
   void sve_cpy(FloatRegister dst, SIMD_RegVariant T, PRegister pg, int imm8,
                bool isMerge);
   int vector_iota_entry_index(BasicType bt);
+  void neon_load_iota_indices(FloatRegister dst, BasicType bt);
 
   void sve_sdiv_byte(FloatRegister dst_src1, FloatRegister src2, FloatRegister vtmp1,
                      FloatRegister vtmp2, FloatRegister vtmp3, FloatRegister vtmp4);
