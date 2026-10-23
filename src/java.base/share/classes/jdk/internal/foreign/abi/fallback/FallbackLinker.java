@@ -329,7 +329,7 @@ public final class FallbackLinker extends AbstractLinker {
                     Map.entry("long", FFIType.layoutFor(LibFallback.longSize())),
                     Map.entry("unsigned long", withIntegralExtension(FFIType.layoutFor(LibFallback.longSize()), ZERO_EXTEND)),
                     Map.entry("wchar_t", wchartLayout),
-                    // unspecified size dependent layouts
+                    // size/sign-dependent layouts
                     Map.entry("int8_t", ValueLayout.JAVA_BYTE),
                     Map.entry("int16_t", ValueLayout.JAVA_SHORT),
                     Map.entry("int32_t", ValueLayout.JAVA_INT),
