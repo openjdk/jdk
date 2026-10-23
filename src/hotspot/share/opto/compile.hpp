@@ -342,7 +342,7 @@ class Compile : public Phase {
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
   bool                  _merge_stores_phase;    // Phase for merging stores, after post loop opts phase.
   // Phase for iteratively revealing/removing all optimization delay nodes
-  bool                  _optimization_delay_cleanup_phase;
+  bool                  _optimization_delay_nodes_cleanup_phase;
   bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
   /* If major progress is set:
@@ -856,7 +856,7 @@ public:
   void add_optimization_delay_node(OptimizationDelayNode* n);
   void remove_optimization_delay_node(OptimizationDelayNode* n);
   bool advance_optimization_delay_nodes();
-  void optimization_delay_cleanup(PhaseIterGVN& igvn);
+  void optimization_delay_nodes_cleanup();
 
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);

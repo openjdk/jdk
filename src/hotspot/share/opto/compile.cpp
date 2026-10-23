@@ -696,7 +696,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _node_count_inlining_cutoff(NodeCountInliningCutoff),
       _post_loop_opts_phase(false),
       _merge_stores_phase(false),
-      _optimization_delay_cleanup_phase(false),
+      _optimization_delay_nodes_cleanup_phase(false),
       _allow_macro_nodes(true),
       _inlining_progress(false),
       _inlining_incrementally(false),
@@ -1013,7 +1013,7 @@ Compile::Compile(ciEnv* ci_env,
       _node_count_inlining_cutoff(NodeCountInliningCutoff),
       _post_loop_opts_phase(false),
       _merge_stores_phase(false),
-      _optimization_delay_cleanup_phase(false),
+      _optimization_delay_nodes_cleanup_phase(false),
       _allow_macro_nodes(true),
       _inlining_progress(false),
       _inlining_incrementally(false),
@@ -1992,19 +1992,19 @@ bool Compile::advance_optimization_delay_nodes() {
   int r = C->stress().random() % _optimization_delay_nodes.length();
   OptimizationDelayNode* delay = _optimization_delay_nodes.at(r);
 
-  if (_optimization_delay_cleanup_phase) {
+  if (_optimization_delay_nodes_cleanup_phase) {
     delay->reveal_identity();
     return true;
   }
   return false;
 }
 
-void Compile::optimization_delay_cleanup(PhaseIterGVN& igvn) {
+void Compile::optimization_delay_nodes_cleanup(PhaseIterGVN& igvn) {
   if (TraceOptimizationDelay) {
     tty->print_cr("[OptizationDelay] Cleanup with %d optimization delay nodes.",
                   _optimization_delay_nodes.length());
   }
-  _optimization_delay_cleanup_phase = true;
+  _optimization_delay_nodes_cleanup_phase = true;
   igvn.optimize();
   if (failing()) return;
   assert(_optimization_delay_nodes.is_empty(), "must all be released");
@@ -3494,7 +3494,7 @@ void Compile::Optimize() {
   }
 
   if (StressOptimizationDelay) {
-    optimization_delay_cleanup(igvn);
+    optimization_delay_nodes_cleanup(igvn);
   }
 
   DEBUG_ONLY( _modified_nodes = nullptr; )
