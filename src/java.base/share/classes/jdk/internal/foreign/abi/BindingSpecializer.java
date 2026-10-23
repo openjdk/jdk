@@ -796,8 +796,7 @@ public class BindingSpecializer {
                 cb.i2l();
             }
             case USHORT_TO_LONG -> {
-                cb.loadConstant(0xFFFF);
-                cb.iand();
+                cb.i2c();
                 cb.i2l();
             }
             case LONG_TO_BYTE -> { cb.l2i(); cb.i2b(); }
