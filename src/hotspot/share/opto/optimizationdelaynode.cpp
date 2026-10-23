@@ -34,8 +34,9 @@ const Type* OptimizationDelayNode::Value(PhaseGVN* phase) const {
     return t_in;
   }
 
-  // By default, we just hold the type.
   // The idea is that the _hold_type shrowds the t_in.
+  // The meet ensures that we never return a type that
+  // is more precise than either t_in or _hold_type.
   // There are cases where t_in is not contained by _hold_type,
   // for example if CCP did not manage to find t_in as
   // precisely as IGVN did. Because of those cases we need to
@@ -142,22 +143,31 @@ const Type* OptimizationDelayNode::sample_type_between(const Type* wide, const T
   }
 }
 
-void OptimizationDelayNode::narrow_hold_type(const Type* narrow, Stress& stress) {
-  if (_stage > Stage::HoldType || narrow == Type::TOP) { return; }
+void OptimizationDelayNode::narrow_hold_type(const Type* t_in, Stress& stress) {
+  if (_stage > Stage::HoldType) { return; }
 
-  // TODO: why need meet here? Links to ::Value
-  const Type* old = _hold_type->meet(narrow);
-  _hold_type = sample_type_between(old, narrow, stress);
+  // If t_in is TOP, ::Value will return TOP anyway, so no point in narrowing.
+  if (t_in == Type::TOP) { return; }
+
+  // If the input type is not properly contained in _hold_type,
+  // we don't know how to safely narrow. For example, this can
+  // happen when CCP clears the cached types from IGVN, produces
+  // wider types, and then IGVN starts again with wider types
+  // than it had found previously.
+  if (t_in->filter(_hold_type) != t_in) { return; }
+
+  const Type* old = _hold_type;
+  _hold_type = sample_type_between(old, t_in, stress);
 
   if (TraceOptimizationDelay && _hold_type != old) {
     tty->print_cr("[OptizationDelay] narrow hold type between:");
     tty->print("  old hold type: "); old->dump(); tty->cr();
     tty->print("  new hold type: "); _hold_type->dump(); tty->cr();
-    tty->print("  narrower type: "); narrow->dump(); tty->cr();
+    tty->print("  input type:    "); t_in->dump(); tty->cr();
     this->dump();
   }
-  // Now ensure: narrow <= _hold_type <= old
-  assert(narrow->filter(_hold_type) == narrow, "must be between");
+  // Now ensure: t_in <= _hold_type <= old
+  assert(t_in->filter(_hold_type) == t_in, "must be between");
   assert(_hold_type->filter(old) == _hold_type, "must be between");
 }
 
