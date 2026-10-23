@@ -578,8 +578,10 @@ public class JavacElements implements Elements {
                 boolean initializer = kind == ElementKind.CONSTRUCTOR
                     || kind == ElementKind.INSTANCE_INIT
                     || kind == ElementKind.STATIC_INIT;
-                if (!derived || (!initializer && e.isInheritedIn(scope.owner, types)))
+                if (!derived || (!initializer && e.isInheritedIn(scope.owner, types))) {
+                    e.apiComplete();
                     scope.enter(e);
+                }
             }
         }
 
