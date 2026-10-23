@@ -241,6 +241,16 @@
       <setting name="enabled" control="method-sampling-enabled">true</setting>
     </event>
 
+    <event name="jdk.StackTraceRequest">
+      <setting name="enabled">false</setting>
+      <setting name="throttle">300/s</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.StackTraceRequestsLost">
+      <setting name="enabled">false</setting>
+    </event>
+
     <event name="jdk.SafepointBegin">
       <setting name="enabled">true</setting>
       <setting name="threshold">10 ms</setting>

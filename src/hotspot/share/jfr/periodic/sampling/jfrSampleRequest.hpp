@@ -88,11 +88,12 @@ class JfrSampleRequestBuilder : AllStatic {
   static JfrSampleResult build_java_sample_request(const void* ucontext,
                                                    JfrThreadLocal* tl,
                                                    JavaThread* jt);
-  static void build_cpu_time_sample_request(JfrSampleRequest &request,
-                                            void* ucontext,
-                                            JavaThread* jt,
-                                            JfrThreadLocal* tl,
-                                            JfrTicks& now);
+  // Attempts to describe the top frame of jt, first from its last Java frame,
+  // then from ucontext, if provided. Returns false if neither succeeds, in which
+  // case the request is marked as biased.
+  static bool build_unbiased_sample_request(JfrSampleRequest& request,
+                                            const void* ucontext,
+                                            JavaThread* jt);
 };
 
 #endif // SHARE_JFR_PERIODIC_SAMPLING_JFRSAMPLEREQUEST_HPP

@@ -28,8 +28,16 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mountUnmountDisabler.hpp"
+#include "runtime/threadSMR.hpp"
+#include "utilities/macros.hpp"
+
+#if INCLUDE_JFR
+#include "jfr/periodic/sampling/jfrStackTraceRequest.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
+#endif
 
 // the list of extension functions
 GrowableArray<jvmtiExtensionFunctionInfo*>* JvmtiExtensions::_ext_functions;
@@ -167,6 +175,104 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
   return JVMTI_ERROR_NONE;
 }
 
+// Parameters: (const jvmtiEnv* env, jthread thread, void* ucontext, jlong user_data)
+static jvmtiError JNICALL RequestJFRStackTrace(const jvmtiEnv* env, ...) {
+#if !INCLUDE_JFR
+  return JVMTI_ERROR_NOT_AVAILABLE;
+#else
+  jthread thread = nullptr;
+  void* ucontext = nullptr;
+  jlong user_data = 0;
+  va_list ap;
+
+  va_start(ap, env);
+  thread = va_arg(ap, jthread);
+  ucontext = va_arg(ap, void*);
+  user_data = va_arg(ap, jlong);
+  va_end(ap);
+
+  // Use current_or_null_safe() because this is called from a signal handler
+  // and the signal may fire on a thread that is detaching from the VM.
+  Thread* current = Thread::current_or_null_safe();
+  if (current == nullptr || !current->is_Java_thread()) {
+    return JVMTI_ERROR_UNATTACHED_THREAD;
+  }
+
+  if (!JfrRecorder::is_created() || !JfrStackTraceRequest::is_enabled()) {
+    return JVMTI_ERROR_NOT_AVAILABLE;
+  }
+
+  JavaThread* const current_jt = JavaThread::cast(current);
+
+  // Helper that issues the actual request once the target is known and
+  // (when foreign) protected by a live ThreadsListHandle in the caller.
+  auto submit = [&](JavaThread* target) -> jvmtiError {
+    // Filter out threads that are exiting or excluded, matching the JFR
+    // CPU time sampler's get_java_thread_if_valid() checks.
+    if (target->is_exiting()) {
+      return JVMTI_ERROR_THREAD_NOT_ALIVE;
+    }
+    if (target->is_hidden_from_external_view()) {
+      return JVMTI_ERROR_INVALID_THREAD;
+    }
+    if (target->jfr_thread_local()->is_excluded()) {
+      // JFR does not record events for excluded threads.
+      return JVMTI_ERROR_NOT_AVAILABLE;
+    }
+    // The walker can read frame state directly only when the target is the
+    // calling thread (we hold its state by virtue of executing on it) or
+    // when the caller has externally suspended the target and provided a
+    // captured ucontext. Otherwise we queue a biased request, processed at
+    // the target's next safepoint.
+    const bool thread_is_suspended = (target == current_jt) || (ucontext != nullptr);
+
+    if (!JfrStackTraceRequest::request(target, ucontext, thread_is_suspended, user_data)) {
+      // Dropped, e.g. because the thread is in a state that does not permit
+      // stack walking or its request queue is full.
+      return JVMTI_ERROR_ABSENT_INFORMATION;
+    }
+    return JVMTI_ERROR_NONE;
+  };
+
+  if (thread == nullptr) {
+    // Signal-safe path: no JNI handle resolution, no ThreadsListHandle.
+    return submit(current_jt);
+  }
+
+  // Resolving a non-null jthread uses ThreadsListHandle and JNI handle
+  // resolution; the latter requires the calling thread to be in_VM. The
+  // JfrStackWalker submit path, in contrast, requires _thread_in_Java or
+  // _thread_in_native (it would silently drop the request otherwise), so
+  // we scope the in_VM transition narrowly to just the resolution.
+  // ThreadsListHandle stays alive across the submit so the resolved
+  // target JavaThread* cannot be freed underneath us. None of this is
+  // async-signal-safe; the JEP only promises signal-safety for the
+  // current-thread case (thread == nullptr).
+  ThreadsListHandle tlh;
+  JavaThread* target = nullptr;
+  {
+    ThreadInVMfromNative tiv(current_jt);
+    oop thread_oop = nullptr;
+    jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(
+        tlh.list(), thread, &target, &thread_oop);
+    if (err != JVMTI_ERROR_NONE) {
+      // Explicit virtual thread arguments are not supported - vthread
+      // sampling is available via thread=nullptr from within the vthread
+      // itself, where the carrier's walker traverses continuation frames.
+      // cv_external_thread_to_JavaThread reports INVALID_THREAD for any
+      // vthread because java_lang_Thread::thread(vthread_oop) is null;
+      // distinguish that case from "garbage jthread" via thread_oop.
+      if (thread_oop != nullptr
+          && java_lang_VirtualThread::is_instance(thread_oop)) {
+        return JVMTI_ERROR_UNSUPPORTED_OPERATION;
+      }
+      return err;
+    }
+  }
+  return submit(target);
+#endif // !INCLUDE_JFR
+}
+
 // register extension functions and events. In this implementation we
 // have a single extension function (to prove the API) that tests if class
 // unloading is enabled or disabled. We also have a single extension event
@@ -225,9 +331,35 @@ void JvmtiExtensions::register_extensions() {
     errors
   };
 
+  static jvmtiParamInfo func_params_rst[] = {
+    { (char*)"thread",    JVMTI_KIND_IN, JVMTI_TYPE_JTHREAD, JNI_TRUE },
+    { (char*)"ucontext",  JVMTI_KIND_IN_PTR, JVMTI_TYPE_CVOID, JNI_TRUE },
+    { (char*)"user_data", JVMTI_KIND_IN, JVMTI_TYPE_JLONG, JNI_FALSE }
+  };
+
+  static jvmtiError rst_errors[] = {
+    JVMTI_ERROR_NOT_AVAILABLE,
+    JVMTI_ERROR_ABSENT_INFORMATION,
+    JVMTI_ERROR_INVALID_THREAD,
+    JVMTI_ERROR_THREAD_NOT_ALIVE,
+    JVMTI_ERROR_UNSUPPORTED_OPERATION,
+    JVMTI_ERROR_UNATTACHED_THREAD
+  };
+
+  static jvmtiExtensionFunctionInfo ext_func_rst = {
+    (jvmtiExtensionFunction)RequestJFRStackTrace,
+    (char*)"com.sun.hotspot.functions.RequestJFRStackTrace",
+    (char*)"Request an async stack trace of a thread, emitted as a JFR StackTraceRequest event",
+    sizeof(func_params_rst)/sizeof(func_params_rst[0]),
+    func_params_rst,
+    sizeof(rst_errors)/sizeof(jvmtiError),
+    rst_errors
+  };
+
   _ext_functions->append(&ext_func0);
   _ext_functions->append(&ext_func1);
   _ext_functions->append(&ext_func2);
+  _ext_functions->append(&ext_func_rst);
 
   // register our extension event
 
