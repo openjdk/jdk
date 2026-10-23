@@ -56,6 +56,7 @@ static const CT* sample_integer_type(const CT* t_wide, const CT* t_narrow, Stres
 }
 
 const Type* OptimizationDelayNode::sample_type_between(const Type* t_wide, const Type* t_narrow, Stress& stress) {
+  assert(t_narrow->filter(t_wide) == t_narrow, "wide must contain narrow type");
   if (t_wide->isa_int() != nullptr) {
     return sample_integer_type<TypeInt>(t_wide->is_int(), t_narrow->is_int(), stress);
   } else if (t_wide->is_long() != nullptr) {
@@ -83,7 +84,7 @@ void OptimizationDelayNode::narrow_hold_type(const Type* t_narrow, Stress& stres
   }
   // Now ensure: t_narrow <= _hold_type <= t_old
   assert(t_narrow->filter(_hold_type) == t_narrow, "must be between");
-  assert(t_old->filter(_hold_type) == _hold_type, "must be between");
+  assert(_hold_type->filter(t_old) == _hold_type, "must be between");
 }
 
 void OptimizationDelayNode::reveal_type() {
