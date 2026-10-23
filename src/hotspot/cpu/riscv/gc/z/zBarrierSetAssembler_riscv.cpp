@@ -288,7 +288,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     }, ZBarrierRelocationFormatStoreGoodBits);
     __ weak_cmpxchg(rtmp2, zr, rtmp1,
                     Assembler::int64,
-                    Assembler::relaxed /* acquire */, Assembler::relaxed /* release */,
+                    memory_order_relaxed,
                     rtmp3);
     __ beqz(rtmp3, slow_path);
     __ bind(slow_path_continuation);

@@ -594,9 +594,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 #endif
 
 #ifndef PRODUCT
-  if (_flow->has_irreducible_entry()) {
-    C->set_parsed_irreducible_loop(true);
-  }
 
   methods_parsed++;
   // add method size here to guarantee that inlined methods are added too
@@ -1351,8 +1348,7 @@ static int scale_limit(int64_t limit) {
 }
 
 void Parse::count_aot_code_calls() {
-  bool is_aot_compilation = C->env()->is_aot_compile();
-  if (UseAOTCodeCounters && (depth() == 1) && is_aot_compilation) {
+  if (UseAOTCodeCounters && (depth() == 1) && C->is_aot_compile()) {
     // Clear out dead values from the debug info in following runtime call
     kill_dead_locals();
 

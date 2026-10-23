@@ -31,6 +31,7 @@
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
+#include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/memnode.hpp"
 #include "opto/movenode.hpp"
@@ -65,8 +66,6 @@ Matcher::Matcher()
   _dontcare(&_states_arena),
   _reduceOp(reduceOp), _leftOp(leftOp), _rightOp(rightOp),
   _swallowed(swallowed),
-  _begin_inst_chain_rule(_BEGIN_INST_CHAIN_RULE),
-  _end_inst_chain_rule(_END_INST_CHAIN_RULE),
   _must_clone(must_clone),
   _shared_nodes(C->comp_arena()),
 #ifndef PRODUCT
@@ -75,7 +74,6 @@ Matcher::Matcher()
   _reused(C->comp_arena()),
 #endif // !PRODUCT
   _allocation_started(false),
-  _ruleName(ruleName),
   _register_save_policy(register_save_policy),
   _c_reg_save_policy(c_reg_save_policy),
   _register_save_type(register_save_type),
@@ -142,11 +140,11 @@ OptoReg::Name Compile::compute_old_SP() {
 void Matcher::verify_new_nodes_only(Node* xroot) {
   // Make sure that the new graph only references new nodes
   ResourceMark rm;
-  Unique_Node_List worklist;
+  Unique_Node_List<const Node> worklist;
   VectorSet visited;
   worklist.push(xroot);
   while (worklist.size() > 0) {
-    Node* n = worklist.pop();
+    const Node* n = worklist.pop();
     if (visited.test_set(n->_idx)) {
       continue;
     }
@@ -967,15 +965,15 @@ void Matcher::init_spill_mask( Node *ret ) {
 #ifdef ASSERT
 static void match_alias_type(Compile* C, Node* n, Node* m) {
   if (!VerifyAliases)  return;  // do not go looking for trouble by default
-  const TypePtr* nat = n->adr_type();
-  const TypePtr* mat = m->adr_type();
+  const TypePtr* nat = n->out_adr_type();
+  const TypePtr* mat = m->out_adr_type();
   int nidx = C->get_alias_index(nat);
   int midx = C->get_alias_index(mat);
   // Detune the assert for cases like (AndI 0xFF (LoadB p)).
   if (nidx == Compile::AliasIdxTop && midx >= Compile::AliasIdxRaw) {
     for (uint i = 1; i < n->req(); i++) {
       Node* n1 = n->in(i);
-      const TypePtr* n1at = n1->adr_type();
+      const TypePtr* n1at = n1->out_adr_type();
       if (n1at != nullptr) {
         nat = n1at;
         nidx = C->get_alias_index(n1at);
@@ -1073,9 +1071,6 @@ Node *Matcher::xform( Node *n, int max_stack ) {
             m = n->is_SafePoint() ? match_sfpt(n->as_SafePoint()):match_tree(n);
             if (C->failing())  return nullptr;
             if (m == nullptr) { Matcher::soft_match_failure(); return nullptr; }
-            if (n->is_MemBar()) {
-              m->as_MachMemBar()->set_adr_type(n->adr_type());
-            }
           } else {                  // Nothing the matcher cares about
             if (n->is_Proj() && n->in(0) != nullptr && n->in(0)->is_Multi()) {       // Projections?
               if (n->in(0)->is_Initialize() && n->as_Proj()->_con == TypeFunc::Memory) {
@@ -1261,7 +1256,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     else if( mcall->is_MachCallRuntime() ) {
       MachCallRuntimeNode* mach_call_rt = mcall->as_MachCallRuntime();
       mach_call_rt->_name = call->as_CallRuntime()->_name;
-      mach_call_rt->_leaf_no_fp = call->is_CallLeafNoFP();
     }
     msfpt = mcall;
   }
@@ -1275,9 +1269,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     cnt = TypeFunc::Parms;
   }
   msfpt->_has_ea_local_in_scope = sfpt->has_ea_local_in_scope();
-
-  // Advertise the correct memory effects (for anti-dependence computation).
-  msfpt->set_adr_type(sfpt->adr_type());
 
   // Allocate a private array of RegMasks.  These RegMasks are not shared.
   msfpt->_in_rms = NEW_RESOURCE_ARRAY( RegMask, cnt );
@@ -1782,24 +1773,24 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
         m = _mem_node;
         assert(m != nullptr && m->is_Mem(), "expecting memory node");
       }
-      const Type* mach_at = mach->adr_type();
+      const TypePtr* mach_at = mach->in_adr_type();
       // DecodeN node consumed by an address may have different type
       // than its input. Don't compare types for such case.
-      if (m->adr_type() != mach_at &&
+      if (m->in_adr_type() != mach_at &&
           (m->in(MemNode::Address)->is_DecodeNarrowPtr() ||
            (m->in(MemNode::Address)->is_AddP() &&
             m->in(MemNode::Address)->in(AddPNode::Address)->is_DecodeNarrowPtr()) ||
            (m->in(MemNode::Address)->is_AddP() &&
             m->in(MemNode::Address)->in(AddPNode::Address)->is_AddP() &&
             m->in(MemNode::Address)->in(AddPNode::Address)->in(AddPNode::Address)->is_DecodeNarrowPtr()))) {
-        mach_at = m->adr_type();
+        mach_at = m->in_adr_type();
       }
-      if (m->adr_type() != mach_at) {
+      if (m->in_adr_type() != mach_at) {
         m->dump();
         tty->print_cr("mach:");
         mach->dump(1);
       }
-      assert(m->adr_type() == mach_at, "matcher should not change adr type");
+      assert(m->in_adr_type() == mach_at, "matcher should not change adr type");
     }
 #endif
   }
@@ -1854,6 +1845,27 @@ void Matcher::handle_precedence_edges(Node* n, MachNode *mach) {
   }
 }
 
+void Matcher::combine_adr_type(const Node* n, MachNode* mach) const {
+  if (mach->_out_adr_type == TYPE_PTR_SENTINAL) {
+    assert(mach->_in_adr_type == TYPE_PTR_SENTINAL, "must initialize at the same time");
+    mach->_out_adr_type = nullptr;
+    mach->_in_adr_type = nullptr;
+  }
+
+  // Merge the adr_type of all nodes in the subtree into the adr_type of 'mach'
+  if (const TypePtr* leaf_out_adr_type = n->out_adr_type(); leaf_out_adr_type != nullptr) {
+    // Only support a single out_adr_type, there must not be multiple memory-producing nodes
+    assert(mach->_out_adr_type == nullptr, "must only have a single memory-producing node");
+    mach->_out_adr_type = leaf_out_adr_type;
+  }
+  if (const TypePtr* leaf_in_adr_type = n->in_adr_type(); leaf_in_adr_type != nullptr) {
+    // Only support a single in_adr_type, even if there are multiple nodes that consume memory,
+    // they must consume the same memory
+    assert(mach->_in_adr_type == nullptr || mach->_in_adr_type == leaf_in_adr_type, "inconsistent in_adr_type in a subtree");
+    mach->_in_adr_type = leaf_in_adr_type;
+  }
+}
+
 void Matcher::ReduceInst_Chain_Rule(State* s, int rule, Node* &mem, MachNode* mach) {
   // 'op' is what I am expecting to receive
   int op = _leftOp[rule];
@@ -1888,6 +1900,7 @@ void Matcher::ReduceInst_Chain_Rule(State* s, int rule, Node* &mem, MachNode* ma
 
 uint Matcher::ReduceInst_Interior( State *s, int rule, Node *&mem, MachNode *mach, uint num_opnds ) {
   handle_precedence_edges(s->_leaf, mach);
+  combine_adr_type(s->_leaf, mach);
 
   if( s->_leaf->is_Load() ) {
     Node *mem2 = s->_leaf->in(MemNode::Memory);
@@ -1973,6 +1986,7 @@ void Matcher::ReduceOper( State *s, int rule, Node *&mem, MachNode *mach ) {
   }
 
   handle_precedence_edges(s->_leaf, mach);
+  combine_adr_type(s->_leaf, mach);
 
   if( s->_leaf->in(0) && s->_leaf->req() > 1) {
     if( !mach->in(0) )
@@ -2226,22 +2240,6 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_VectorLoadMask:
       set_shared(n); // Force result into register (it will be anyways)
       break;
-    case Op_ConP: {  // Convert pointers above the centerline to NUL
-      TypeNode *tn = n->as_Type(); // Constants derive from type nodes
-      const TypePtr* tp = tn->type()->is_ptr();
-      if (tp->_ptr == TypePtr::AnyNull) {
-        tn->set_type(TypePtr::NULL_PTR);
-      }
-      break;
-    }
-    case Op_ConN: {  // Convert narrow pointers above the centerline to NUL
-      TypeNode *tn = n->as_Type(); // Constants derive from type nodes
-      const TypePtr* tp = tn->type()->make_ptr();
-      if (tp && tp->_ptr == TypePtr::AnyNull) {
-        tn->set_type(TypeNarrowOop::NULL_PTR);
-      }
-      break;
-    }
     case Op_Binary:         // These are introduced in the Post_Visit state.
       ShouldNotReachHere();
       break;
@@ -2723,7 +2721,7 @@ void Matcher::specialize_generic_vector_operands() {
 
   // Replace generic vector operands (vec/legVec) with concrete ones (vec[SDXYZ]/legVec[SDXYZ])
   // and remove reg-to-reg vector moves (MoveVec2Leg and MoveLeg2Vec).
-  Unique_Node_List live_nodes;
+  Unique_Node_List<Node> live_nodes;
   C->identify_useful_nodes(live_nodes);
 
   while (live_nodes.size() > 0) {
@@ -2798,7 +2796,7 @@ bool Matcher::is_encode_and_store_pattern(const Node* n, const Node* m) {
 bool Matcher::verify_after_postselect_cleanup() {
   assert(!C->failing_internal() || C->failure_is_artificial(), "sanity");
   if (supports_generic_vector_operands) {
-    Unique_Node_List useful;
+    Unique_Node_List<Node> useful;
     C->identify_useful_nodes(useful);
     for (uint i = 0; i < useful.size(); i++) {
       MachNode* m = useful.at(i)->isa_Mach();

@@ -36,11 +36,9 @@ import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.util.CoreUtils;
 
-import jtreg.SkippedException;
-
 /**
  * @test
- * @bug 8374482 8376264 8376284 8377395 8391637
+ * @bug 8374482 8376264 8376284 8377395 8390621 8391637
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
@@ -79,17 +77,19 @@ public class TestJhsdbJstackMixedCore {
 
     @SuppressWarnings("restricted")
     public static void main(String... args) throws Throwable {
-        if (Platform.isMusl()) {
-            throw new SkippedException("This test does not work on musl libc.");
+        if (Platform.isMusl() && !Platform.isX64()) {
+            throw new SkippedException("This platform is not supported.");
         }
 
         // Check whether the symbol of signal trampoline is available.
-        // AMD64 needs libc symbols; RISC-V exports its trampoline from the vDSO.
+        // SA distinguishes the frame is signal trampoline if the function is named
+        // "__restore_rt" on x64 or "__vdso_rt_sigreturn" on riscv64.
+        // SA cannot unwind problematic frame from it if the symbol not found.
         if (Platform.isX64()) {
-            // SA distinguishes the frame is signal trampoline if the function
-            // is named "__restore_rt".
-            // SA cannot unwind problematic frame from it if the symbol not found.
             var libc = SATestUtils.getLibCPath();
+            if (Platform.isMusl() && SATestUtils.getDebugInfo(libc) == null) {
+                throw new SkippedException("libc debug info is not available.");
+            }
             if (!SATestUtils.isSymbolAvailable(libc, "__restore_rt")) {
                 throw new SkippedException("Signal trampoline (__restore_rt) not found in libc.");
             }

@@ -25,10 +25,10 @@
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLinker.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/dumpTimeClassInfo.inline.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -44,7 +44,7 @@
 static GrowableArrayCHeap<Klass*, mtClassShared>* _all_cached_classes = nullptr;
 
 // This is a stack that tracks all the AOT-inited classes that are waiting to be passed
-// to HeapShared::copy_and_rescan_aot_inited_mirror().
+// to AOTHeap::copy_and_rescan_aot_inited_mirror().
 static GrowableArrayCHeap<InstanceKlass*, mtClassShared>* _pending_aot_inited_classes = nullptr;
 
 static const int TABLE_SIZE = 15889; // prime number
@@ -99,17 +99,17 @@ void AOTArtifactFinder::find_artifacts() {
       BasicType bt = (BasicType)i;
       if (!is_reference_type(bt)) {
         oop orig_mirror = Universe::java_mirror(bt);
-        oop scratch_mirror = HeapShared::scratch_java_mirror(bt);
-        HeapShared::scan_java_mirror(orig_mirror);
+        oop scratch_mirror = AOTHeap::scratch_java_mirror(bt);
+        AOTHeap::scan_java_mirror(orig_mirror);
         log_trace(aot, heap, mirror)(
             "Archived %s mirror object from " PTR_FORMAT,
             type2name(bt), p2i(scratch_mirror));
-        Universe::set_archived_basic_type_mirror_index(bt, HeapShared::append_root(scratch_mirror));
+        Universe::set_archived_basic_type_mirror_index(bt, AOTHeap::append_root(scratch_mirror));
       }
     }
 
     // Universe::fillerArrayKlass() isn't in the class hierarchy, so handle it specially.
-    HeapShared::scan_java_mirror(Universe::fillerArrayKlass()->java_mirror());
+    AOTHeap::scan_java_mirror(Universe::fillerArrayKlass()->java_mirror());
   }
 #endif
 
@@ -121,7 +121,7 @@ void AOTArtifactFinder::find_artifacts() {
         // This class is loading only by AOT tooling (not as part of the app's training run).
         // Skip this class for now, but it might be added later if
         // - One of its subtypes is included
-        // - One of its instances is found by HeapShared.
+        // - One of its instances is found by AOTHeap.
         skip = true;
       }
     }
@@ -157,7 +157,7 @@ void AOTArtifactFinder::find_artifacts() {
   if (CDSConfig::is_dumping_aot_linked_classes()) {
     while (_pending_aot_inited_classes->length() > 0) {
       InstanceKlass* ik = _pending_aot_inited_classes->pop();
-      HeapShared::copy_and_rescan_aot_inited_mirror(ik);
+      AOTHeap::copy_and_rescan_aot_inited_mirror(ik);
     }
   }
 #endif
@@ -184,7 +184,7 @@ void AOTArtifactFinder::find_artifacts() {
 void AOTArtifactFinder::start_scanning_for_oops() {
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    HeapShared::start_scanning_for_oops();
+    AOTHeap::start_scanning_for_oops();
   }
 #endif
 }
@@ -192,7 +192,7 @@ void AOTArtifactFinder::start_scanning_for_oops() {
 void AOTArtifactFinder::end_scanning_for_oops() {
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    HeapShared::end_scanning_for_oops();
+    AOTHeap::end_scanning_for_oops();
   }
 #endif
 }
@@ -216,7 +216,9 @@ void AOTArtifactFinder::add_aot_inited_class(InstanceKlass* ik) {
         add_aot_inited_class(s);
       }
 
-      Array<InstanceKlass*>* interfaces = ik->local_interfaces();
+      // An uninitialized direct interface may have initialized superinterfaces
+      // that declare default methods. Preserve their initialization state too.
+      Array<InstanceKlass*>* interfaces = ik->transitive_interfaces();
       int len = interfaces->length();
       for (int i = 0; i < len; i++) {
         InstanceKlass* intf = interfaces->at(i);
@@ -306,7 +308,7 @@ void AOTArtifactFinder::add_cached_class(Klass* k) {
 void AOTArtifactFinder::scan_oops_in_instance_class(InstanceKlass* ik) {
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    HeapShared::scan_java_class(ik);
+    AOTHeap::scan_java_class(ik);
     scan_oops_in_array_class(ik->array_klasses());
   }
 #endif
@@ -316,7 +318,7 @@ void AOTArtifactFinder::scan_oops_in_array_class(ArrayKlass* ak) {
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
     while (ak != nullptr) {
-      HeapShared::scan_java_class(ak);
+      AOTHeap::scan_java_class(ak);
       ak = ak->array_klass_or_null();
     }
   }

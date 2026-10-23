@@ -1373,7 +1373,7 @@ bool CallStaticJavaNode::remove_unknown_flat_array_load(PhaseIterGVN* igvn, Node
   }
 
   address call_addr = OptoRuntime::uncommon_trap_blob()->entry_point();
-  CallNode* unc = new CallStaticJavaNode(OptoRuntime::uncommon_trap_Type(), call_addr, "uncommon_trap", nullptr);
+  CallNode* unc = new CallStaticJavaNode(OptoRuntime::uncommon_trap_Type(), call_addr, "uncommon_trap", nullptr, TypePtr::BOTTOM);
   unc->init_req(TypeFunc::Control, call->in(0));
   unc->init_req(TypeFunc::I_O, call->in(TypeFunc::I_O));
   unc->init_req(TypeFunc::Memory, call->in(TypeFunc::Memory));
@@ -1456,7 +1456,7 @@ Node* CallStaticJavaNode::replace_identity_hash_code(PhaseIterGVN* igvn) {
   }
   Node* new_mem = kit.reset_memory();
   assert(in(TypeFunc::Memory) == new_mem, "must not modify memory");
-  return TupleNode::make(tf()->range_cc(), adr_type(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
+  return TupleNode::make(tf()->range_cc(), out_adr_type(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
 }
 
 // Try to replace a runtime call to the substitutability test by either a simple pointer comparison
@@ -1503,7 +1503,7 @@ Node* CallStaticJavaNode::replace_is_substitutable(PhaseIterGVN* igvn) {
   }
   Node* new_mem = kit.reset_memory();
   assert(in(TypeFunc::Memory) == new_mem, "must not modify memory");
-  return TupleNode::make(tf()->range_cc(), adr_type(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
+  return TupleNode::make(tf()->range_cc(), out_adr_type(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
 }
 
 #ifndef PRODUCT
@@ -2090,7 +2090,7 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
                            Node *size, Node *klass_node,
                            Node* initial_test,
                            ValueTypeNode* value_type_node)
-  : CallNode(atype, nullptr, TypeRawPtr::BOTTOM)
+  : CallNode(atype, nullptr, TypeRawPtr::BOTTOM, TypePtr::BOTTOM)
 {
   init_class_id(Class_Allocate);
   init_flags(Flag_is_macro);
@@ -2351,50 +2351,6 @@ bool AbstractLockNode::find_matching_unlock(const Node* ctrl, LockNode* lock,
     }
   }
   return false;
-}
-
-//
-// Find the lock matching an unlock.  Returns null if a safepoint
-// or complicated control is encountered first.
-LockNode *AbstractLockNode::find_matching_lock(UnlockNode* unlock) {
-  LockNode *lock_result = nullptr;
-  // find the matching lock, or an intervening safepoint
-  Node *ctrl = next_control(unlock->in(0));
-  while (1) {
-    assert(ctrl != nullptr, "invalid control graph");
-    assert(!ctrl->is_Start(), "missing lock for unlock");
-    if (ctrl->is_top()) break;  // dead control path
-    if (ctrl->is_Proj()) ctrl = ctrl->in(0);
-    if (ctrl->is_SafePoint()) {
-        break;  // found a safepoint (may be the lock we are searching for)
-    } else if (ctrl->is_Region()) {
-      // Check for a simple diamond pattern.  Punt on anything more complicated
-      if (ctrl->req() == 3 && ctrl->in(1) != nullptr && ctrl->in(2) != nullptr) {
-        Node *in1 = next_control(ctrl->in(1));
-        Node *in2 = next_control(ctrl->in(2));
-        if (((in1->is_IfTrue() && in2->is_IfFalse()) ||
-             (in2->is_IfTrue() && in1->is_IfFalse())) && (in1->in(0) == in2->in(0))) {
-          ctrl = next_control(in1->in(0)->in(0));
-        } else {
-          break;
-        }
-      } else {
-        break;
-      }
-    } else {
-      ctrl = next_control(ctrl->in(0));  // keep searching
-    }
-  }
-  if (ctrl->is_Lock()) {
-    LockNode *lock = ctrl->as_Lock();
-    Node* lock_obj = lock->obj_node();
-    Node* unlock_obj = unlock->obj_node();
-    if (lock_obj->eqv_uncast(unlock_obj) &&
-        BoxLockNode::same_slot(lock->box_node(), unlock->box_node())) {
-      lock_result = lock;
-    }
-  }
-  return lock_result;
 }
 
 // This code corresponds to case 3 above.
