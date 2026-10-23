@@ -3152,7 +3152,7 @@ private:
     for (uint i = 1; i < phi->req(); ++i) {
       assert(casts.size() == 0, "must be cleared");
       Node* n = phi->in(i);
-      if (n == nullptr) {
+      if (n == nullptr || n->is_top()) {
         continue;
       }
       while (should_skip_over(n)) {
