@@ -80,6 +80,7 @@ bool LoopNode::is_valid_counted_loop(BasicType bt) const {
     BaseCountedLoopNode*    l  = as_BaseCountedLoop();
     BaseCountedLoopEndNode* le = l->loopexit_or_null();
     if (le != nullptr &&
+        !le->in(0)->is_top() &&
         le->true_proj_or_null() == l->in(LoopNode::LoopBackControl)) {
       Node* phi  = l->phi();
       IfFalseNode* exit = le->false_proj_or_null();
@@ -794,6 +795,11 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List<Node>& old_
   }
 
   BaseCountedLoopNode* head = x->as_BaseCountedLoop();
+
+  if (head->phi() == nullptr) {
+    return false;
+  }
+
   BasicType bt = x->as_BaseCountedLoop()->bt();
 
   check_counted_loop_shape(loop, x, bt);
@@ -3865,6 +3871,14 @@ Node *LoopNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return RegionNode::Ideal(phase, can_reshape);
 }
 
+const Type* LoopNode::Value(PhaseGVN* phase) const {
+  Node* entry = in(EntryControl);
+  if (entry != nullptr && phase->type(entry) == Type::TOP) {
+    return Type::TOP;
+  }
+  return RegionNode::Value(phase);
+}
+
 #ifdef ASSERT
 void LoopNode::verify_strip_mined(int expect_skeleton) const {
   const OuterStripMinedLoopNode* outer = nullptr;
@@ -4890,10 +4904,10 @@ const TypeInt* CountedLoopConverter::filtered_type_from_dominators(Node* val, No
     while (if_cnt < if_limit) {
       if ((pred->Opcode() == Op_IfTrue || pred->Opcode() == Op_IfFalse)) {
         if_cnt++;
-        const TypeInt* if_t = IfNode::filtered_int_type(&_phase->igvn(), val, pred);
-        if (if_t != nullptr) {
+        const Type* if_t = IfNode::filtered_int_type(&_phase->igvn(), val, pred, T_INT);
+        if (if_t != nullptr && if_t->isa_int()) {
           if (rtn_t == nullptr) {
-            rtn_t = if_t;
+            rtn_t = if_t->is_int();
           } else {
             const Type* join_t = rtn_t->join(if_t);
             if (!join_t->isa_int()) {
@@ -5921,9 +5935,11 @@ void IdealLoopTree::dump_head() {
       tty->print("%d),", cl->limit()->get_int());
     else
       tty->print("int),");
-    int stride_con  = cl->stride_con();
-    if (stride_con > 0) tty->print("+");
-    tty->print("%d", stride_con);
+    if (cl->stride() != nullptr) {
+      int stride_con  = cl->stride_con();
+      if (stride_con > 0) tty->print("+");
+      tty->print("%d", stride_con);
+    }
 
     tty->print(" (%0.f iters) ", cl->profile_trip_cnt());
 
@@ -6515,6 +6531,13 @@ void PhaseIdealLoop::build_and_optimize() {
     C->set_major_progress();
   }
 
+  // Stress loop conditional propagation: run early, run as long as there is progress
+  if (!C->major_progress() && UseLoopConditionalPropagation && LoopConditionalPropagationALot) {
+    visited.clear();
+    int rounds = max_jint;
+    conditional_elimination(visited, nstack, worklist, rounds);
+  }
+
   // Perform loop predication before iteration splitting
   if (UseLoopPredicate && C->has_loops() && !C->major_progress() && (C->parse_predicate_count() > 0)) {
     _ltree_root->_child->loop_predication(this);
@@ -6565,6 +6588,26 @@ void PhaseIdealLoop::build_and_optimize() {
     C->set_major_progress();
   }
 
+  // Standard way of running loop conditional propagation: run only once because it's expensive
+  if (UseLoopConditionalPropagation && !LoopConditionalPropagationALot) {
+    if (!C->major_progress()) {
+      if (C->run_loop_conditional_propagation()) {
+        visited.clear();
+        int rounds = max_jint;
+        conditional_elimination(visited, nstack, worklist, rounds);
+        C->set_run_loop_conditional_propagation(false);
+#ifndef PRODUCT
+        if (C->major_progress()) {
+          AtomicAccess::inc(&PhaseIdealLoop::_loop_conditional_progress);
+        }
+#endif
+      }
+    } else {
+      // If we made some progress since we last tried Loop Conditional Propagation, give it another try
+      C->set_run_loop_conditional_propagation(true);
+    }
+  }
+
   // Auto-vectorize main-loop
   if (C->do_superword() && C->has_loops() && !C->major_progress()) {
     Compile::TracePhase tp(_t_autoVectorize);
@@ -6609,13 +6652,17 @@ volatile int PhaseIdealLoop::_long_loop_candidates=0; // Number of long loops se
 volatile int PhaseIdealLoop::_long_loop_nests=0; // Number of long loops successfully transformed to a nest
 // Number of long loops successfully transformed to a counted loop
 volatile int CountedLoopConverter::_long_loop_counted_loops = 0;
+volatile int PhaseIdealLoop::_loop_conditional_constants = 0;
+volatile int PhaseIdealLoop::_loop_conditional_test = 0;
+volatile int PhaseIdealLoop::_loop_conditional_progress = 0;
 void PhaseIdealLoop::print_statistics() {
-  tty->print_cr("PhaseIdealLoop=%d, sum _unique=%d, long loops=%d/%d/%d",
+  tty->print_cr("PhaseIdealLoop=%d, sum _unique=%d, long loops=%d/%d/%d, conditional=%d/%d/%d",
                 _loop_invokes,
                 _loop_work,
                 CountedLoopConverter::_long_loop_counted_loops,
                 _long_loop_nests,
-                _long_loop_candidates);
+                _long_loop_candidates,
+                _loop_conditional_constants, _loop_conditional_test,  _loop_conditional_progress);
 }
 #endif
 

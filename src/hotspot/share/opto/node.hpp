@@ -1492,6 +1492,9 @@ public:
   bool is_memory_phi() const { return is_Phi() && bottom_type() == Type::MEMORY; }
 
   bool is_div_or_mod(BasicType bt) const;
+  bool is_div_or_mod() const {
+    return is_div_or_mod(T_INT) || is_div_or_mod(T_LONG);
+  }
 
   bool is_boxing_or_unboxing_call() const;
 
