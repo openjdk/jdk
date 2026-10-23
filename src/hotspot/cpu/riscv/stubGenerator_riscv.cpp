@@ -7942,6 +7942,726 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
+  // ML-KEM uses 16-bit Montgomery arithmetic with R = 2^16. The Java fallback
+  // uses R = 2^20, so intermediate results need only be congruent modulo q.
+
+  static const int kyber_n        = 256;    // polynomial degree
+  static const int kyber_qinv     = -3327;  // 0xF301: q * qinv == 1 (mod 2^16)
+  static const int kyber_q        =  3329;  // 0x0D01
+  static const int kyber_bar_mul  = 20159;  // round(2^26 / q)
+  static const int kyber_dim_hinv =   512;  // 0x0200: toMont((n/2)^-1 mod q)
+  static const int kyber_r2       =  1353;  // 0x0549: R^2 mod q = 2^32 mod q
+
+  void kyber_load_montgomery_consts(VectorRegister vqinv, VectorRegister vq,
+                                    Register vl, Register tmp) {
+    __ vsetvli(vl, x0, Assembler::e16, Assembler::m1, Assembler::ma, Assembler::ta);
+    __ li(tmp, kyber_qinv);
+    __ vmv_v_x(vqinv, tmp);
+    __ li(tmp, kyber_q);
+    __ vmv_v_x(vq, tmp);
+  }
+
+  void kyber_load_barrett_const(VectorRegister vbar, Register tmp) {
+    __ li(tmp, kyber_bar_mul);
+    __ vmv_v_x(vbar, tmp);
+  }
+
+  // vd = (vb * vc) * 2^-16 mod q over the current vl.
+  //
+  // vmulh yields the signed high half directly, avoiding widening and LMUL
+  // changes.
+  // vh and vw are scratch and must be distinct from vb, vc, vd, vqinv and vq.
+  void kyber_montmul_vv(VectorRegister vd, VectorRegister vb, VectorRegister vc,
+                        VectorRegister vh, VectorRegister vw,
+                        VectorRegister vqinv, VectorRegister vq) {
+    assert_different_registers(vh, vw, vb, vc, vqinv, vq);
+    assert_different_registers(vd, vh, vw, vqinv, vq);
+    __ vmulh_vv(vh, vb, vc);        // aHigh  = (b*c) >> 16
+    __ vmul_vv(vw, vb, vc);         // aLow   = (b*c) & 0xffff
+    __ vmul_vv(vw, vw, vqinv);      // m      = aLow * qinv   (low 16 bits)
+    __ vmulh_vv(vw, vw, vq);        // n      = (m * q) >> 16
+    __ vsub_vv(vd, vh, vw);         // result = aHigh - n
+  }
+
+  void kyber_montmul_vx(VectorRegister vd, VectorRegister vb, Register c,
+                        VectorRegister vh, VectorRegister vw,
+                        VectorRegister vqinv, VectorRegister vq) {
+    assert_different_registers(vh, vw, vb, vqinv, vq);
+    assert_different_registers(vd, vh, vw, vqinv, vq);
+    __ vmulh_vx(vh, vb, c);
+    __ vmul_vx(vw, vb, c);
+    __ vmul_vv(vw, vw, vqinv);
+    __ vmulh_vv(vw, vw, vq);
+    __ vsub_vv(vd, vh, vw);
+  }
+
+  // vd = vx - ((vx * 20159) >> 26) * q over the current vl.
+  //
+  // vmulh gives (vx*20159)>>16, so one vsra by 10 completes the >>26.
+  void kyber_barrett_vv(VectorRegister vx, VectorRegister vw,
+                        VectorRegister vbar, VectorRegister vq) {
+    assert_different_registers(vx, vw, vbar, vq);
+    __ vmulh_vv(vw, vx, vbar);      // (x * 20159) >> 16
+    __ vsra_vi(vw, vw, 10);         // ... >> 26
+    __ vnmsac_vv(vx, vw, vq);       // x - quotient * q
+  }
+
+  // Barrett-reduce n contiguous shorts in place and advance p by 2*n bytes.
+  void kyber_barrett_run(Register p, int n, Register vl, Register remain, Register adv,
+                         VectorRegister vx, VectorRegister vw,
+                         VectorRegister vbar, VectorRegister vq) {
+    if (n <= MaxVectorSize / 2) {
+      __ vsetivli(x0, n, Assembler::e16, Assembler::m1, Assembler::ma, Assembler::ta);
+      __ vle16_v(vx, p);
+      kyber_barrett_vv(vx, vw, vbar, vq);
+      __ vse16_v(vx, p);
+      __ addi(p, p, n * 2);
+      return;
+    }
+
+    Label L_run;
+    __ li(remain, n);
+    __ vsetvli(vl, remain, Assembler::e16, Assembler::m1, Assembler::ma, Assembler::ta);
+    __ slli(adv, vl, 1);
+    __ bind(L_run);
+    __ vle16_v(vx, p);
+    kyber_barrett_vv(vx, vw, vbar, vq);
+    __ vse16_v(vx, p);
+    __ add(p, p, adv);
+    __ sub(remain, remain, vl);
+    __ bnez(remain, L_run);
+  }
+
+  // Kyber NTT (Seiler).
+  // Implements static int implKyberNtt(short[] poly, short[] ntt_zetas)
+  //
+  // coeffs (short[256]) = c_rarg0
+  // zetas  (short[896]) = c_rarg1, pre-expanded to 128 entries per level with
+  //                       l identical copies per block
+  //
+  // Per butterfly:  tmp = montmul(zeta, hi);  hi = lo - tmp;  lo = lo + tmp
+  // Coefficients grow by at most q per level, so after 7 levels they are
+  // bounded by 8q = 26632 and need no intermediate Barrett reduction.
+  address generate_kyberNtt() {
+    StubId stub_id = StubId::stubgen_kyberNtt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+    __ enter();
+
+    const Register coeffs = c_rarg0;
+    const Register zPtr   = c_rarg1;   // advancing zeta cursor, +128 shorts per level
+    const Register loPtr  = c_rarg2;
+    const Register hiPtr  = c_rarg3;
+    // c_rarg4..c_rarg7 are scratch, and the two level strategies below use them
+    // for different things, so each names its own inside its branch.
+
+    const VectorRegister vlo = v1, vhi = v2, vz = v3, vt = v4;
+    const VectorRegister vh = v5, vw = v6;
+    const VectorRegister vqinv = v7, vq = v8;
+
+    kyber_load_montgomery_consts(vqinv, vq, c_rarg4, t2);
+
+    // The access strategy for each level is selected at stub generation time.
+    const int vlmax16 = MaxVectorSize / 2;
+
+    for (int l = kyber_n / 2; l > 1; l >>= 1) {
+      const int nb = kyber_n / (2 * l);
+      // Ties use contiguous accesses because strided accesses cost more.
+      const int unit_iters   = nb * ((l + vlmax16 - 1) / vlmax16);
+      const int gather_iters = ((nb + vlmax16 - 1) / vlmax16) * l;
+
+      if (gather_iters >= unit_iters) {
+        const Register vl     = c_rarg4;
+        const Register remain = c_rarg5;
+        const Register blocks = c_rarg6;
+        const Register adv    = c_rarg7;
+
+        Label L_block, L_vec;
+        __ mv(loPtr, coeffs);
+        __ addi(hiPtr, loPtr, l * 2);
+        __ li(blocks, nb);
+        __ li(remain, l);
+        __ vsetvli(vl, remain, Assembler::e16, Assembler::m1, Assembler::ma, Assembler::ta);
+        __ slli(adv, vl, 1);
+        __ bind(L_block);
+        __ li(remain, l);
+        __ bind(L_vec);
+        __ vle16_v(vhi, hiPtr);
+        __ vle16_v(vz, zPtr);
+        __ vle16_v(vlo, loPtr);
+        kyber_montmul_vv(vt, vz, vhi, vh, vw, vqinv, vq);
+        __ vadd_vv(vhi, vlo, vt);
+        __ vse16_v(vhi, loPtr);
+        __ vsub_vv(vhi, vlo, vt);
+        __ vse16_v(vhi, hiPtr);
+        __ add(loPtr, loPtr, adv);
+        __ add(hiPtr, hiPtr, adv);
+        __ add(zPtr, zPtr, adv);
+        __ sub(remain, remain, vl);
+        __ bnez(remain, L_vec);
+        // The vector loop left loPtr at the block's hi half; skip it to reach
+        // the next block.  zPtr needs no extra advance: nblocks * l == 128.
+        __ addi(loPtr, loPtr, l * 2);
+        __ addi(hiPtr, hiPtr, l * 2);
+        __ addi(blocks, blocks, -1);
+        __ bnez(blocks, L_block);
+
+      } else {
+        // Process the same position from several blocks with strided accesses.
+        const Register zBase  = c_rarg4;   // chunk start in the zeta array
+        const Register zCur   = c_rarg5;   // zBase + j
+        const Register gVl    = c_rarg6;
+        const Register blkRem = c_rarg7;   // blocks not yet covered in this level
+        const Register cs     = t2;        // byte stride between blocks
+        const Register zs     = t3;        // byte stride between block zetas
+        const Register jCnt   = t4;
+        const Register gTmp   = t5;
+
+        const int log2l = exact_log2(l);
+
+        Label L_chunk, L_j;
+        __ mv(loPtr, coeffs);
+        __ mv(zBase, zPtr);
+        __ li(blkRem, nb);
+        __ li(cs, 2 * l * 2);
+        __ li(zs, l * 2);
+        __ vsetvli(gVl, blkRem, Assembler::e16, Assembler::m1, Assembler::ma, Assembler::ta);
+        __ bind(L_chunk);
+        __ addi(hiPtr, loPtr, l * 2);
+        __ mv(zCur, zBase);
+        __ li(jCnt, l);
+        __ bind(L_j);
+        __ vlse16_v(vhi, hiPtr, cs);
+        __ vlse16_v(vz, zCur, zs);
+        kyber_montmul_vv(vt, vz, vhi, vh, vw, vqinv, vq);
+        __ vlse16_v(vlo, loPtr, cs);
+        __ vadd_vv(vhi, vlo, vt);
+        __ vsse16_v(vhi, loPtr, cs);
+        __ vsub_vv(vhi, vlo, vt);
+        __ vsse16_v(vhi, hiPtr, cs);
+        __ addi(loPtr, loPtr, 2);
+        __ addi(hiPtr, hiPtr, 2);
+        __ addi(zCur, zCur, 2);
+        __ addi(jCnt, jCnt, -1);
+        __ bnez(jCnt, L_j);
+        // loPtr was bumped by l shorts inside the j loop, so it still needs
+        // (gVl*2l - l) shorts to land on the next chunk's first block.
+        __ slli(gTmp, gVl, log2l + 1);
+        __ addi(gTmp, gTmp, -l);
+        __ slli(gTmp, gTmp, 1);
+        __ add(loPtr, loPtr, gTmp);
+        // zBase was not bumped inside the j loop: it advances by gVl*l shorts.
+        __ slli(gTmp, gVl, log2l);
+        __ slli(gTmp, gTmp, 1);
+        __ add(zBase, zBase, gTmp);
+        __ sub(blkRem, blkRem, gVl);
+        __ bnez(blkRem, L_chunk);
+        __ addi(zPtr, zPtr, 128 * 2);   // this level consumed 128 zetas
+      }
+    }
+
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
+  // Kyber inverse NTT (Seiler).
+  // Implements static int implKyberInverseNtt(short[] poly, short[] zetas)
+  //
+  // coeffs (short[256]) = c_rarg0
+  // zetas  (short[896]) = c_rarg1, pre-expanded and pre-negated
+  //
+  // Per butterfly:  tmp = lo;  lo = tmp + hi;  hi = montmul(tmp - hi, zeta)
+  //
+  // Unlike the forward transform the 'lo' (sum) side grows by ~2q per level
+  // and would wrap int16, so two Barrett passes are interleaved at exactly
+  // the index sets the AArch64 stub uses:
+  //   after l=8 : {i : i % 16 < 8}         (128 coeffs)
+  //   after l=64: {0..15} u {128..143}     ( 32 coeffs)
+  // The trailing multiply by toMont(2^-n mod q) matches seilerInverseNTT().
+  address generate_kyberInverseNtt() {
+    StubId stub_id = StubId::stubgen_kyberInverseNtt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+    __ enter();
+
+    const Register coeffs = c_rarg0;
+    const Register zPtr   = c_rarg1;
+    const Register loPtr  = c_rarg2;
+    const Register hiPtr  = c_rarg3;
+    // These registers are also used by the Barrett passes and final scaling.
+    const Register vl     = c_rarg4;
+    const Register remain = c_rarg5;
+    const Register blocks = c_rarg6;
+    const Register adv    = c_rarg7;
+
+    const VectorRegister vlo = v1, vhi = v2, vz = v3, vt = v4;
+    const VectorRegister vh = v5, vw = v6;
+    const VectorRegister vqinv = v7, vq = v8, vbar = v9;
+
+    kyber_load_montgomery_consts(vqinv, vq, vl, t2);
+    kyber_load_barrett_const(vbar, t2);
+
+    const int vlmax16 = MaxVectorSize / 2;
+
+    for (int l = 2; l < kyber_n; l <<= 1) {
+      const int nb = kyber_n / (2 * l);
+      // Fewer vector iterations wins; ties use contiguous accesses.
+      const int unit_iters   = nb * ((l + vlmax16 - 1) / vlmax16);
+      const int gather_iters = ((nb + vlmax16 - 1) / vlmax16) * l;
+
+      if (gather_iters >= unit_iters) {
+        Label L_block, L_vec;
+        __ mv(loPtr, coeffs);
+        __ addi(hiPtr, loPtr, l * 2);
+        __ li(blocks, nb);
+        __ li(remain, l);
+        __ vsetvli(vl, remain, Assembler::e16, Assembler::m1, Assembler::ma, Assembler::ta);
+        __ slli(adv, vl, 1);
+        __ bind(L_block);
+        __ li(remain, l);
+        __ bind(L_vec);
+        __ vle16_v(vlo, loPtr);
+        __ vle16_v(vhi, hiPtr);
+        __ vle16_v(vz, zPtr);
+        __ vsub_vv(vt, vlo, vhi);                 // diff = tmp - hi, before lo is overwritten
+        __ vadd_vv(vhi, vlo, vhi);                // sum  = tmp + hi
+        __ vse16_v(vhi, loPtr);
+        kyber_montmul_vv(vt, vt, vz, vh, vw, vqinv, vq);
+        __ vse16_v(vt, hiPtr);
+        __ add(loPtr, loPtr, adv);
+        __ add(hiPtr, hiPtr, adv);
+        __ add(zPtr, zPtr, adv);
+        __ sub(remain, remain, vl);
+        __ bnez(remain, L_vec);
+        __ addi(loPtr, loPtr, l * 2);
+        __ addi(hiPtr, hiPtr, l * 2);
+        __ addi(blocks, blocks, -1);
+        __ bnez(blocks, L_block);
+
+      } else {
+        // Process the same position from several blocks with strided accesses.
+        const Register zBase  = c_rarg4;   // chunk start in the zeta array
+        const Register zCur   = c_rarg5;   // zBase + j
+        const Register gVl    = c_rarg6;   // blocks covered by this chunk
+        const Register blkRem = c_rarg7;   // blocks not yet covered in this level
+        const Register cs     = t2;        // byte stride between blocks
+        const Register zs     = t3;        // byte stride between block zetas
+        const Register jCnt   = t4;
+        const Register gTmp   = t5;
+
+        const int log2l = exact_log2(l);
+
+        Label L_chunk, L_j;
+        __ mv(loPtr, coeffs);
+        __ mv(zBase, zPtr);
+        __ li(blkRem, nb);
+        __ li(cs, 2 * l * 2);
+        __ li(zs, l * 2);
+        __ vsetvli(gVl, blkRem, Assembler::e16, Assembler::m1, Assembler::ma, Assembler::ta);
+        __ bind(L_chunk);
+        __ addi(hiPtr, loPtr, l * 2);
+        __ mv(zCur, zBase);
+        __ li(jCnt, l);
+        __ bind(L_j);
+        __ vlse16_v(vlo, loPtr, cs);
+        __ vlse16_v(vhi, hiPtr, cs);
+        __ vlse16_v(vz, zCur, zs);
+        __ vsub_vv(vt, vlo, vhi);                 // diff, before lo/hi are overwritten
+        __ vadd_vv(vhi, vlo, vhi);                // sum
+        __ vsse16_v(vhi, loPtr, cs);
+        kyber_montmul_vv(vt, vt, vz, vh, vw, vqinv, vq);
+        __ vsse16_v(vt, hiPtr, cs);
+        __ addi(loPtr, loPtr, 2);
+        __ addi(hiPtr, hiPtr, 2);
+        __ addi(zCur, zCur, 2);
+        __ addi(jCnt, jCnt, -1);
+        __ bnez(jCnt, L_j);
+        __ slli(gTmp, gVl, log2l + 1);            // loPtr needs (gVl*2l - l) more
+        __ addi(gTmp, gTmp, -l);
+        __ slli(gTmp, gTmp, 1);
+        __ add(loPtr, loPtr, gTmp);
+        __ slli(gTmp, gVl, log2l);                // zBase advances by gVl*l
+        __ slli(gTmp, gTmp, 1);
+        __ add(zBase, zBase, gTmp);
+        __ sub(blkRem, blkRem, gVl);
+        __ bnez(blkRem, L_chunk);
+        __ addi(zPtr, zPtr, 128 * 2);
+      }
+
+      if (l == 8) {
+        // Barrett pass A: reduce 8 shorts, skip 8, sixteen times over.
+        Label L_grp;
+        __ mv(loPtr, coeffs);
+        __ li(blocks, 16);
+        __ bind(L_grp);
+        kyber_barrett_run(loPtr, 8, vl, remain, adv, vlo, vw, vbar, vq);
+        __ addi(loPtr, loPtr, 8 * 2);                     // step over the unreduced half
+        __ addi(blocks, blocks, -1);
+        __ bnez(blocks, L_grp);
+      } else if (l == 64) {
+        // Barrett pass B: shorts 0..15 and 128..143.
+        __ mv(loPtr, coeffs);
+        kyber_barrett_run(loPtr, 16, vl, remain, adv, vlo, vw, vbar, vq);
+        __ addi(loPtr, coeffs, 128 * 2);
+        kyber_barrett_run(loPtr, 16, vl, remain, adv, vlo, vw, vbar, vq);
+      }
+    }
+
+    // Final scaling by toMont(2^-n mod q).
+    {
+      Label L_fin;
+      __ mv(loPtr, coeffs);
+      __ li(remain, kyber_n);
+      __ li(t2, kyber_dim_hinv);
+      __ vsetvli(vl, remain, Assembler::e16, Assembler::m1, Assembler::ma, Assembler::ta);
+      __ slli(adv, vl, 1);
+      __ bind(L_fin);
+      __ vle16_v(vlo, loPtr);
+      kyber_montmul_vx(vlo, vlo, t2, vh, vw, vqinv, vq);
+      __ vse16_v(vlo, loPtr);
+      __ add(loPtr, loPtr, adv);
+      __ sub(remain, remain, vl);
+      __ bnez(remain, L_fin);
+    }
+
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
+  // Kyber NTT-domain multiply.
+  // Implements static int implKyberNttMult(short[] result, short[] ntta,
+  //                                        short[] nttb, short[] zetas)
+  //
+  // result (short[256]) = c_rarg0
+  // ntta   (short[256]) = c_rarg1
+  // nttb   (short[256]) = c_rarg2
+  // zetas  (short[128]) = c_rarg3
+  //
+  // Coefficients arrive as interleaved pairs, so for each m in [0,128):
+  //   result[2m]   = montmul(montmul(a0,b0) + montmul(montmul(a1,b1), z[m]), R2)
+  //   result[2m+1] = montmul(montmul(a0,b1) + montmul(a1,b0),                 R2)
+  //
+  // Coefficients are loaded and stored as interleaved pairs.
+  address generate_kyberNttMult() {
+    StubId stub_id = StubId::stubgen_kyberNttMult_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+    __ enter();
+
+    const Register result  = c_rarg0;
+    const Register aPtr    = c_rarg1;
+    const Register bPtr    = c_rarg2;
+    const Register zPtr    = c_rarg3;
+    const Register vl      = c_rarg4;
+    const Register remain  = c_rarg5;
+    const Register pairAdv = c_rarg6;
+    const Register zAdv    = c_rarg7;
+
+    const VectorRegister va0 = v1, va1 = v2, vb0 = v3, vb1 = v4, vz = v5;
+    const VectorRegister vp01 = v6, vp10 = v7;
+    const VectorRegister vh = v8, vw = v9;
+    const VectorRegister vqinv = v10, vq = v11;
+
+    kyber_load_montgomery_consts(vqinv, vq, vl, t5);
+    __ li(t5, kyber_r2);
+    __ li(remain, kyber_n / 2);
+    __ vsetvli(vl, remain, Assembler::e16, Assembler::m1, Assembler::ma, Assembler::ta);
+    __ slli(pairAdv, vl, 2);
+    __ slli(zAdv, vl, 1);
+
+    Label L_loop;
+    __ bind(L_loop);
+    __ vlseg2e16_v(va0, aPtr);
+    __ vlseg2e16_v(vb0, bPtr);
+    __ vle16_v(vz, zPtr);
+
+    kyber_montmul_vv(vp01, va0, vb1, vh, vw, vqinv, vq);   // a0*b1
+    kyber_montmul_vv(vp10, va1, vb0, vh, vw, vqinv, vq);   // a1*b0
+    kyber_montmul_vv(va0, va0, vb0, vh, vw, vqinv, vq);     // a0*b0
+    kyber_montmul_vv(va1, va1, vb1, vh, vw, vqinv, vq);     // a1*b1
+    kyber_montmul_vv(va1, va1, vz, vh, vw, vqinv, vq);      // (a1*b1)*zeta
+
+    __ vadd_vv(va0, va0, va1);
+    __ vadd_vv(va1, vp01, vp10);
+    kyber_montmul_vx(va0, va0, t5, vh, vw, vqinv, vq);
+    kyber_montmul_vx(va1, va1, t5, vh, vw, vqinv, vq);
+
+    __ vsseg2e16_v(va0, result);
+
+    __ add(result, result, pairAdv);
+    __ add(aPtr, aPtr, pairAdv);
+    __ add(bPtr, bPtr, pairAdv);
+    __ add(zPtr, zPtr, zAdv);
+    __ sub(remain, remain, vl);
+    __ bnez(remain, L_loop);
+
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
+  // Kyber add two polynomials.
+  // Implements static int implKyberAddPoly(short[] result, short[] a, short[] b)
+  //   result[m] = a[m] + b[m] + q
+  //
+  // result (short[256]) = c_rarg0
+  // a      (short[256]) = c_rarg1
+  // b      (short[256]) = c_rarg2
+  address generate_kyberAddPoly_2() {
+    StubId stub_id = StubId::stubgen_kyberAddPoly_2_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+    __ enter();
+
+    const Register result = c_rarg0;
+    const Register aPtr   = c_rarg1;
+    const Register bPtr   = c_rarg2;
+    const Register vl     = c_rarg3;
+    const Register remain = c_rarg4;
+    const Register adv    = c_rarg5;
+
+    const VectorRegister va = v1, vb = v2;
+
+    __ li(t2, kyber_q);
+    __ li(remain, kyber_n);
+    __ vsetvli(vl, remain, Assembler::e16, Assembler::m1, Assembler::ma, Assembler::ta);
+    __ slli(adv, vl, 1);
+
+    Label L_loop;
+    __ bind(L_loop);
+    __ vle16_v(va, aPtr);
+    __ vle16_v(vb, bPtr);
+    __ vadd_vv(va, va, vb);
+    __ vadd_vx(va, va, t2);
+    __ vse16_v(va, result);
+    __ add(result, result, adv);
+    __ add(aPtr,   aPtr,   adv);
+    __ add(bPtr,   bPtr,   adv);
+    __ sub(remain, remain, vl);
+    __ bnez(remain, L_loop);
+
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
+  // Kyber add three polynomials.
+  // Implements static int implKyberAddPoly(short[] result, short[] a,
+  //                                        short[] b, short[] c)
+  //   result[m] = a[m] + b[m] + c[m] + 2q
+  //
+  // result (short[256]) = c_rarg0
+  // a      (short[256]) = c_rarg1
+  // b      (short[256]) = c_rarg2
+  // c      (short[256]) = c_rarg3
+  address generate_kyberAddPoly_3() {
+    StubId stub_id = StubId::stubgen_kyberAddPoly_3_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+    __ enter();
+
+    const Register result = c_rarg0;
+    const Register aPtr   = c_rarg1;
+    const Register bPtr   = c_rarg2;
+    const Register cPtr   = c_rarg3;
+    const Register vl     = c_rarg4;
+    const Register remain = c_rarg5;
+    const Register adv    = c_rarg6;
+
+    const VectorRegister va = v1, vb = v2, vc = v3;
+
+    __ li(t2, 2 * kyber_q);           // 6658, fits int16 so one add suffices
+    __ li(remain, kyber_n);
+    __ vsetvli(vl, remain, Assembler::e16, Assembler::m1, Assembler::ma, Assembler::ta);
+    __ slli(adv, vl, 1);
+
+    Label L_loop;
+    __ bind(L_loop);
+    __ vle16_v(va, aPtr);
+    __ vle16_v(vb, bPtr);
+    __ vle16_v(vc, cPtr);
+    __ vadd_vv(va, va, vb);
+    __ vadd_vv(va, va, vc);
+    __ vadd_vx(va, va, t2);
+    __ vse16_v(va, result);
+    __ add(result, result, adv);
+    __ add(aPtr,   aPtr,   adv);
+    __ add(bPtr,   bPtr,   adv);
+    __ add(cPtr,   cPtr,   adv);
+    __ sub(remain, remain, vl);
+    __ bnez(remain, L_loop);
+
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
+  // Kyber unpack 12-bit packed bytes into shorts.
+  // Implements static int implKyber12To16(byte[] condensed, int index,
+  //                                       short[] parsed, int parsedLength)
+  //
+  // condensed (byte[])  = c_rarg0   (array base, NOT yet offset by index)
+  // index       (int)   = c_rarg1
+  // parsed    (short[]) = c_rarg2
+  // parsedLength (int)  = c_rarg3
+  //
+  // Every 3 input bytes (b0,b1,b2) yield 2 output shorts:
+  //   s0 = b0 | ((b1 & 0x0f) << 8)
+  //   s1 = (b1 >> 4) | (b2 << 4)
+  //
+  // Load three interleaved byte fields and store four output byte fields.
+  address generate_kyber12To16() {
+    StubId stub_id = StubId::stubgen_kyber12To16_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+    __ enter();
+
+    const Register srcPtr  = c_rarg0;   // advancing group base
+    const Register dstPtr  = c_rarg2;   // advancing output byte pointer
+    const Register remain  = c_rarg3;   // 3-byte groups left
+    const Register vl      = c_rarg4;
+    const Register adv     = c_rarg5;
+
+    const VectorRegister vb0 = v1, vb1 = v2, vb2 = v3;
+    const VectorRegister vs1hi = v4, tmp = v5;
+
+    __ add(srcPtr, srcPtr, c_rarg1);    // condensed + index
+    __ srli(remain, remain, 1);         // parsedLength / 2 == number of groups
+
+    Label L_loop;
+    __ bind(L_loop);
+    __ vsetvli(vl, remain, Assembler::e8, Assembler::m1, Assembler::ma, Assembler::ta);
+    __ vlseg3e8_v(vb0, srcPtr);
+
+    __ vsrl_vi(vs1hi, vb2, 4);          // s1 hi = b2 >> 4
+    __ vand_vi(tmp, vb2, 15);
+    __ vsll_vi(tmp, tmp, 4);
+    __ vsrl_vi(vb2, vb1, 4);
+    __ vor_vv(vb2, vb2, tmp);           // s1 lo
+    __ vand_vi(vb1, vb1, 15);           // s0 hi
+
+    __ vsseg4e8_v(vb0, dstPtr);
+
+    __ slli(adv, vl, 1);
+    __ add(adv, adv, vl);               // vl * 3 input bytes
+    __ add(srcPtr, srcPtr, adv);
+    __ slli(adv, vl, 2);                // vl * 4 output bytes
+    __ add(dstPtr, dstPtr, adv);
+    __ sub(remain, remain, vl);
+    __ bnez(remain, L_loop);
+
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
+  // Kyber Barrett reduce.
+  // Implements static int implKyberBarrettReduce(short[] coeffs)
+  //
+  // coeffs (short[256]) = c_rarg0
+  //
+  // Accepts arbitrary shorts and leaves every coefficient in [0, q].
+  address generate_kyberBarrettReduce() {
+    StubId stub_id = StubId::stubgen_kyberBarrettReduce_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+    __ enter();
+
+    const Register coeffs = c_rarg0;
+    const VectorRegister vx = v1, vw = v2;
+    const VectorRegister vq = v3, vbar = v4;
+
+    __ vsetvli(c_rarg4, x0, Assembler::e16, Assembler::m1, Assembler::ma, Assembler::ta);
+    __ li(t2, kyber_q);
+    __ vmv_v_x(vq, t2);
+    kyber_load_barrett_const(vbar, t2);
+    kyber_barrett_run(coeffs, kyber_n, c_rarg4, c_rarg5, c_rarg7,
+                      vx, vw, vbar, vq);
+
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
 #undef __
 
   // Initialization
@@ -8126,6 +8846,16 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     if (UseAdler32Intrinsics) {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
+    }
+
+    if (UseKyberIntrinsics) {
+      StubRoutines::_kyberNtt = generate_kyberNtt();
+      StubRoutines::_kyberInverseNtt = generate_kyberInverseNtt();
+      StubRoutines::_kyberNttMult = generate_kyberNttMult();
+      StubRoutines::_kyberAddPoly_2 = generate_kyberAddPoly_2();
+      StubRoutines::_kyberAddPoly_3 = generate_kyberAddPoly_3();
+      StubRoutines::_kyber12To16 = generate_kyber12To16();
+      StubRoutines::_kyberBarrettReduce = generate_kyberBarrettReduce();
     }
 
     generate_compare_long_strings();

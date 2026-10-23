@@ -524,6 +524,18 @@ void VM_Version::c2_initialize() {
       FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
     }
   }
+
+  // The ML-KEM stubs only require the base vector extension.
+  if (UseRVV) {
+    if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+      FLAG_SET_DEFAULT(UseKyberIntrinsics, true);
+    }
+  } else if (UseKyberIntrinsics) {
+    if (!FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+      warning("ML-KEM intrinsics require RVV instructions");
+    }
+    FLAG_SET_DEFAULT(UseKyberIntrinsics, false);
+  }
 }
 
 #endif // COMPILER2
