@@ -72,10 +72,6 @@ inline WorkerThreads* ShenandoahHeap::workers() const {
   return _workers;
 }
 
-inline WorkerThreads* ShenandoahHeap::safepoint_workers() {
-  return _safepoint_workers;
-}
-
 inline void ShenandoahHeap::notify_gc_progress() {
   _gc_no_progress_count.store_relaxed((size_t) 0);
 
@@ -100,49 +96,6 @@ inline ShenandoahHeapRegion* ShenandoahHeap::heap_region_containing(const void* 
   ShenandoahHeapRegion* const result = get_region(index);
   assert(addr >= result->bottom() && addr < result->end(), "Heap region contains the address: " PTR_FORMAT, p2i(addr));
   return result;
-}
-
-template <class T>
-inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
-  T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
-    if (in_collection_set(obj)) {
-      // Corner case: when evacuation fails, there are objects in collection
-      // set that are not really forwarded. We can still go and try and update them
-      // (uselessly) to simplify the common path.
-      shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahForwarding::get_forwardee(obj);
-      shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
-
-      // Unconditionally store the update: no concurrent updates expected.
-      RawAccess<IS_NOT_NULL>::oop_store(p, fwd);
-    }
-  }
-}
-
-template <class T>
-inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
-  T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
-    if (in_collection_set(obj)) {
-      // Corner case: when evacuation fails, there are objects in collection
-      // set that are not really forwarded. We can still go and try CAS-update them
-      // (uselessly) to simplify the common path.
-      shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahForwarding::get_forwardee(obj);
-      shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
-
-      // Sanity check: we should not be updating the cset regions themselves,
-      // unless we are recovering from the evacuation failure.
-      shenandoah_assert_not_in_cset_loc_except(p, !is_in(p) || cancelled_gc());
-
-      // Either we succeed in updating the reference, or something else gets in our way.
-      // We don't care if that is another concurrent GC update, or another mutator update.
-      atomic_update_oop(fwd, p, o);
-    }
-  }
 }
 
 // Atomic updates of heap location. This is only expected to work with updating the same
@@ -246,12 +199,16 @@ inline void ShenandoahHeap::atomic_clear_oop(narrowOop* addr, narrowOop compare)
   AtomicAccess::cmpxchg(addr, compare, narrowOop(), memory_order_relaxed);
 }
 
-inline bool ShenandoahHeap::cancelled_gc() const {
-  return _cancelled_gc.get() != GCCause::_no_gc;
+inline bool ShenandoahHeap::is_stopping() const {
+  return control_thread()->should_terminate();
 }
 
-inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
-  if (sts_active && !cancelled_gc()) {
+inline bool ShenandoahHeap::cancelled_gc() const {
+  return _cancelled_gc.is_set() || is_stopping();
+}
+
+inline bool ShenandoahHeap::check_cancelled_gc_and_yield() {
+  if (!cancelled_gc()) {
     if (SuspendibleThreadSet::should_yield()) {
       SuspendibleThreadSet::yield();
     }
@@ -259,21 +216,9 @@ inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
   return cancelled_gc();
 }
 
-inline GCCause::Cause ShenandoahHeap::cancelled_cause() const {
-  return _cancelled_gc.get();
-}
-
 inline void ShenandoahHeap::clear_cancelled_gc() {
-  _cancelled_gc.set(GCCause::_no_gc);
+  _cancelled_gc.unset();
   reset_cancellation_time();
-}
-
-inline GCCause::Cause ShenandoahHeap::clear_cancellation(const GCCause::Cause expected) {
-  const GCCause::Cause cancellation_cause = _cancelled_gc.cmpxchg(GCCause::_no_gc, expected);
-  if (cancellation_cause == expected) {
-    reset_cancellation_time();
-  }
-  return cancellation_cause;
 }
 
 inline void ShenandoahHeap::reset_cancellation_time() {
@@ -288,8 +233,6 @@ inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size
 
   PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
   if (gclab == nullptr) {
-    assert(!thread->is_Java_thread() && !thread->is_Worker_thread(),
-           "Performance: thread should have GCLAB: %s", thread->name());
     // No GCLABs in this thread, fallback to shared allocation
     return nullptr;
   }
@@ -298,27 +241,6 @@ inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size
     return obj;
   }
   return allocate_from_gclab_slow(thread, size);
-}
-
-void ShenandoahHeap::increase_object_age(oop obj, uint additional_age) {
-  // This operates on new copy of an object. This means that the object's mark-word
-  // is thread-local and therefore safe to access.
-  markWord w = obj->mark();
-  // It is possible that we have copied the object after another thread has
-  // already successfully completed evacuation. While harmless (we would never
-  // publish our copy), don't even attempt to modify the age when that
-  // happens.
-  if (!w.is_marked()) {
-    w = w.set_age(MIN2(markWord::max_age, w.age() + additional_age));
-    obj->set_mark(w);
-  }
-}
-
-uint ShenandoahHeap::get_object_age(oop obj) {
-  markWord w = obj->mark();
-  assert(!w.is_marked(), "must not be forwarded");
-  assert(w.age() <= markWord::max_age, "Impossible!");
-  return w.age();
 }
 
 inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
@@ -504,10 +426,6 @@ inline bool ShenandoahHeap::is_concurrent_weak_root_in_progress() const {
   return is_gc_state(WEAK_ROOTS);
 }
 
-inline bool ShenandoahHeap::is_degenerated_gc_in_progress() const {
-  return _degenerated_gc_in_progress.is_set();
-}
-
 inline bool ShenandoahHeap::is_full_gc_in_progress() const {
   return _full_gc_in_progress.is_set();
 }
@@ -517,7 +435,7 @@ inline bool ShenandoahHeap::is_full_gc_move_in_progress() const {
 }
 
 inline bool ShenandoahHeap::is_stw_gc_in_progress() const {
-  return is_full_gc_in_progress() || is_degenerated_gc_in_progress();
+  return is_full_gc_in_progress();
 }
 
 inline bool ShenandoahHeap::is_concurrent_strong_root_in_progress() const {
@@ -588,7 +506,7 @@ class ShenandoahObjectToOopClosure : public ObjectClosure {
 public:
   ShenandoahObjectToOopClosure(T* cl) : _cl(cl) {}
 
-  void do_object(oop obj) {
+  void do_object(oop obj) override {
     obj->oop_iterate(_cl);
   }
 };
@@ -601,8 +519,21 @@ public:
   ShenandoahObjectToOopBoundedClosure(T* cl, HeapWord* bottom, HeapWord* top) :
     _cl(cl), _bounds(bottom, top) {}
 
-  void do_object(oop obj) {
+  void do_object(oop obj) override {
     obj->oop_iterate(_cl, _bounds);
+  }
+};
+
+template <class T>
+class ShenandoahNonForwardedObjectToOopClosure : public ObjectClosure {
+  T* _cl;
+public:
+  ShenandoahNonForwardedObjectToOopClosure(T* cl) : _cl(cl) {}
+
+  void do_object(oop obj) override {
+    if (!ShenandoahForwarding::is_real_forwarded(obj)) {
+      obj->oop_iterate(_cl);
+    }
   }
 };
 
@@ -616,8 +547,15 @@ inline void ShenandoahHeap::marked_object_oop_iterate(ShenandoahHeapRegion* regi
       marked_object_iterate(region, &objs);
     }
   } else {
-    ShenandoahObjectToOopClosure<T> objs(cl);
-    marked_object_iterate(region, &objs, top);
+    if (region->has_self_forwards()) {
+      assert(region->is_cset(), "Self forwards only allowed in cset region: %zu", region->index());
+      ShenandoahNonForwardedObjectToOopClosure<T> objs(cl);
+      marked_object_iterate(region, &objs, top);
+    } else {
+      assert(!region->is_cset(), "Should not be iterating objects in cset region: %zu", region->index());
+      ShenandoahObjectToOopClosure<T> objs(cl);
+      marked_object_iterate(region, &objs, top);
+    }
   }
 }
 

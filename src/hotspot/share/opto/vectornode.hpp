@@ -1214,15 +1214,19 @@ class LoadVectorNode : public LoadNode {
 #endif
 };
 
-// Load Vector from memory via index map
+// Gather:
+//   indices: int-vector of indices
+//   adr: memory address (e.g. array base plus offset)
+//   output[i] = adr[indices[i]]
+//
+// Note: assumes that indices are all in-bounds, performs no index checking.
 class LoadVectorGatherNode : public LoadVectorNode {
  public:
   LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGather);
     add_req(indices);
-    DEBUG_ONLY(bool is_subword = is_subword_type(vt->element_basic_type()));
-    assert(is_subword || indices->bottom_type()->is_vect(), "indices must be in vector");
+    assert(indices->bottom_type()->is_vect(), "indices must be in vector");
     assert(req() == MemNode::ValueIn + 1, "match_edge expects that index input is in MemNode::ValueIn");
   }
 
@@ -1277,8 +1281,13 @@ class StoreVectorNode : public StoreNode {
 #endif
 };
 
-// Store Vector into memory via index map
- class StoreVectorScatterNode : public StoreVectorNode {
+// Scatter:
+//   indices: int-vector of indices
+//   adr: memory address (e.g. array base plus offset)
+//   adr[indices[i]] = val[i]
+//
+// Note: assumes that indices are all in-bounds, performs no index checking.
+class StoreVectorScatterNode : public StoreVectorNode {
   public:
    enum { Indices = 4 };
    StoreVectorScatterNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* indices)
@@ -1338,7 +1347,12 @@ class LoadVectorMaskedNode : public LoadVectorNode {
   }
 };
 
-// Load Vector from memory via index map under the influence of a predicate register(mask).
+// Masked Gather:
+//   indices: int-vector of indices
+//   adr: memory address (e.g. array base plus offset)
+//   output[i] = mask[i] ? adr[indices[i]] : 0
+//
+// Note: assumes that indices are all in-bounds, performs no index checking.
 class LoadVectorGatherMaskedNode : public LoadVectorNode {
  public:
   LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask)
@@ -1347,7 +1361,7 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
     add_req(indices);
     add_req(mask);
     assert(req() == MemNode::ValueIn + 2, "match_edge expects that last input is in MemNode::ValueIn+1");
-    assert(is_subword_type(vt->element_basic_type()) || indices->bottom_type()->is_vect(), "indices must be in vector");
+    assert(indices->bottom_type()->is_vect(), "indices must be in vector");
   }
 
   virtual int Opcode() const;
@@ -1360,7 +1374,12 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
   }
 };
 
-// Store Vector into memory via index map under the influence of a predicate register(mask).
+// Masked Scatter:
+//   indices: int-vector of indices
+//   adr: memory address (e.g. array base plus offset)
+//   if (mask[i]) { adr[indices[i]] = val[i] }
+//
+// Note: assumes that indices are all in-bounds, performs no index checking.
 class StoreVectorScatterMaskedNode : public StoreVectorNode {
   public:
    enum { Indices = 4,
@@ -1433,11 +1452,10 @@ class VectorMaskGenNode : public TypeNode {
 // be either "BVectMask" or "PVectMask" depending on the platform.
 class VectorMaskOpNode : public TypeNode {
  private:
-  int _mopc;
   const TypeVect* _vect_type;
  public:
-  VectorMaskOpNode(Node* mask, const Type* ty, int mopc):
-    TypeNode(ty, 2), _mopc(mopc), _vect_type(mask->bottom_type()->is_vect()) {
+  VectorMaskOpNode(Node* mask, const Type* ty):
+    TypeNode(ty, 2), _vect_type(mask->bottom_type()->is_vect()) {
     assert(Matcher::has_predicated_vectors() || _vect_type->element_basic_type() == T_BOOLEAN, "");
     init_req(1, mask);
   }
@@ -1447,7 +1465,6 @@ class VectorMaskOpNode : public TypeNode {
   virtual  uint  size_of() const { return sizeof(VectorMaskOpNode); }
   virtual uint  ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  int get_mask_Opcode() const { return _mopc;}
   static Node* make(Node* mask, const Type* ty, int mopc);
 };
 
@@ -1455,7 +1472,7 @@ class VectorMaskOpNode : public TypeNode {
 class VectorMaskTrueCountNode : public VectorMaskOpNode {
  public:
   VectorMaskTrueCountNode(Node* mask, const Type* ty):
-    VectorMaskOpNode(mask, ty, Op_VectorMaskTrueCount) {}
+    VectorMaskOpNode(mask, ty) {}
   virtual int Opcode() const;
 };
 
@@ -1464,7 +1481,7 @@ class VectorMaskTrueCountNode : public VectorMaskOpNode {
 class VectorMaskFirstTrueNode : public VectorMaskOpNode {
  public:
   VectorMaskFirstTrueNode(Node* mask, const Type* ty):
-    VectorMaskOpNode(mask, ty, Op_VectorMaskFirstTrue) {}
+    VectorMaskOpNode(mask, ty) {}
   virtual int Opcode() const;
 };
 
@@ -1473,7 +1490,7 @@ class VectorMaskFirstTrueNode : public VectorMaskOpNode {
 class VectorMaskLastTrueNode : public VectorMaskOpNode {
  public:
   VectorMaskLastTrueNode(Node* mask, const Type* ty):
-    VectorMaskOpNode(mask, ty, Op_VectorMaskLastTrue) {}
+    VectorMaskOpNode(mask, ty) {}
   virtual int Opcode() const;
 };
 
@@ -1484,7 +1501,7 @@ class VectorMaskLastTrueNode : public VectorMaskOpNode {
 class VectorMaskToLongNode : public VectorMaskOpNode {
  public:
   VectorMaskToLongNode(Node* mask, const Type* ty):
-    VectorMaskOpNode(mask, ty, Op_VectorMaskToLong) {}
+    VectorMaskOpNode(mask, ty) {}
   virtual int Opcode() const;
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
   Node* Ideal_MaskAll(PhaseGVN* phase);
@@ -2221,6 +2238,7 @@ public:
 private:
   uint size_of() const { return sizeof(*this); }
   bool depends_only_on_test_impl() const { return false; }
+  const TypePtr* in_adr_type_impl() const final { return TypePtr::BOTTOM; }
 };
 
 // Lane-wise right rotation of the first input by the second input.

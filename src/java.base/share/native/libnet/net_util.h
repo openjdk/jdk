@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,14 +82,6 @@ extern jfieldID ni_addrsID;
 extern jfieldID ni_descID;
 extern jmethodID ni_ctrID;
 
-/* DatagramPacket fields */
-extern jfieldID dp_addressID;
-extern jfieldID dp_portID;
-extern jfieldID dp_bufID;
-extern jfieldID dp_offsetID;
-extern jfieldID dp_lengthID;
-extern jfieldID dp_bufLengthID;
-
 /* Inet6Address fields */
 extern jclass ia6_class;
 extern jfieldID ia6_holder6ID;
@@ -171,9 +163,6 @@ NET_SetSockOpt(int fd, int level, int opt, const void *arg, int len);
 
 JNIEXPORT int JNICALL
 NET_Bind(int fd, SOCKETADDRESS *sa, int len);
-
-JNIEXPORT jint JNICALL
-NET_EnableFastTcpLoopback(int fd);
 
 unsigned short in_cksum(unsigned short *addr, int len);
 

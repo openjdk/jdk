@@ -196,7 +196,8 @@ void CompiledDirectCall::verify() {
   NativeJump*        jump          = nativeJump_at(method_holder->next_instruction_address());
 
   // Verify state.
-  assert(is_clean() || is_call_to_compiled() || is_call_to_interpreted(), "sanity check");
+  assert(is_clean() || is_call_to_compiled() || is_call_to_interpreted() ||
+         CodeCache::find_nmethod(instruction_address())->is_not_installed(), "sanity check");
 }
 
 #endif // !PRODUCT
