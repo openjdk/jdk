@@ -568,7 +568,6 @@ class VerifierSelfTest {
     }
 
     @Test // JDK-8389840
-    @Disabled // Need StackMapFrameInfo.of fix
     void testUninitializedThisOnStackOnly() {
         var testName = "Test";
         var testDesc = ClassDesc.of(testName);
