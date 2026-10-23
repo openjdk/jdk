@@ -211,6 +211,24 @@ instruct zStorePVolatile(indirect mem, iRegP src, iRegPNoSp tmp, rFlagsReg cr)
   ins_pipe(pipe_serial);
 %}
 
+// Store Pointer Volatile Null
+instruct zStorePVolatileNull(indirect mem, immP0 zero, iRegPNoSp tmp, rFlagsReg cr)
+%{
+  predicate(UseZGC && needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
+  match(Set mem (StoreP mem zero));
+  effect(TEMP tmp, KILL cr);
+
+  ins_cost(125); // TODO: check if this needs to be adjusted.
+  format %{ "mov    $tmp, #0\n\t"
+            "stlr   $tmp, $mem\t# ptr" %}
+  ins_encode %{
+    const Address ref_addr = Address($mem$$Register);
+    z_store_barrier(masm, this, ref_addr, noreg, $tmp$$Register, rscratch2, false /* is_atomic */);
+    __ stlr($tmp$$Register, $mem$$Register);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
 instruct zCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp oldval_tmp, iRegPNoSp newval_tmp, rFlagsReg cr) %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
