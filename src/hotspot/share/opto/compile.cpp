@@ -1987,7 +1987,7 @@ void Compile::remove_optimization_delay_node(OptimizationDelayNode* n) {
   _optimization_delay_nodes.remove(n);
 }
 
-bool Compile::advance_optimization_delay_nodes() {
+bool Compile::advance_optimization_delay_nodes(PhaseIterGVN& igvn) {
   if (_optimization_delay_nodes.is_empty()) { return false; }
   int r = C->stress().random() % _optimization_delay_nodes.length();
   OptimizationDelayNode* delay = _optimization_delay_nodes.at(r);
@@ -2000,6 +2000,7 @@ bool Compile::advance_optimization_delay_nodes() {
 
   if (_optimization_delay_nodes_cleanup_phase) {
     delay->reveal_identity();
+    igvn._worklist.push(delay);
     return true;
   }
   return false;

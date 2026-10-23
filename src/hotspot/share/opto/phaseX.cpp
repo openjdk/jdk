@@ -1247,7 +1247,7 @@ void PhaseIterGVN::optimize(bool deep) {
 
     // TODO: desc and maybe refactor
     if (StressOptimizationDelay) {
-      if (!C->advance_optimization_delay_nodes()) { break; }
+      if (!C->advance_optimization_delay_nodes(*this)) { break; }
     } else {
       break;
     }

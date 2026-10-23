@@ -28,9 +28,11 @@
 const Type* OptimizationDelayNode::Value(PhaseGVN* phase) const {
   const Type* t_in = phase->type(in(1));
 
-  tty->print_cr("[OptizationDelay] Value");
-  this->dump();
-  t_in->dump(); tty->cr();
+  if (TraceOptimizationDelay) {
+    tty->print_cr("[OptizationDelay] Value");
+    this->dump();
+    t_in->dump(); tty->cr();
+  }
 
   // We always have to propagate TOP, at least within one IGVN
   // round, otherwise we risk dead data paths with live CFG.
@@ -48,9 +50,12 @@ const Type* OptimizationDelayNode::Value(PhaseGVN* phase) const {
 }
 
 Node* OptimizationDelayNode::Identity(PhaseGVN* phase) {
-  // TODO:: maybe reveal the node
-  // return in(1);
-  tty->print_cr("[OptizationDelay] Identity");
-  this->dump();
+  if (TraceOptimizationDelay) {
+    tty->print_cr("[OptizationDelay] Identity");
+    this->dump();
+  }
+  if (_stage == OptimizationDelayNode::Stage::RevealIdentity) {
+    return in(1);
+  }
   return this;
 }
