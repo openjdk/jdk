@@ -39,18 +39,26 @@
 // 3. We can progressively narrow the type, as long as it is equal to
 //    or wider than the input type.
 class OptimizationDelayNode : public Node {
-  const Type* _type;
+  enum class Stage {
+    HoldType,
+    RevealType,
+    RevealIdentity
+  };
+
+  const Type* const _bottom_type;
+  const Type* _hold_type;
+  Stage _stage;
 
 public:
   OptimizationDelayNode(Compile* C, Node* n, const Type* t)
   : Node(nullptr, n),
-    _type(t)
+    _bottom_type(compute_bottom_type(t)),
+    _hold_type(t),
+    _stage(Stage::HoldType)
   {
     assert(can_delay_type(t), "permissible input type");
     // TODO: what to do with input type? We could widen it.
     // Yes, otherwise for singletons we immediately collapse the node due to sigleton type.
-    // TODO: type assert?
-    // TODO: macro flags?
     C->add_optimization_delay_node(this);
     init_class_id(Class_OptimizationDelay);
   }
@@ -60,18 +68,38 @@ public:
            t->isa_long() != nullptr;
   }
 
+  // TODO: description and improvements
+  static const Type* compute_bottom_type(const Type* t) {
+    return Type::get_const_basic_type(t->basic_type());
+  }
+
   virtual int Opcode() const;
   virtual uint hash() const { return NO_HASH; }
   virtual bool cmp(const Node& n) const { return this == &n; }
-  virtual const Type* bottom_type() const { return _type; } // TODO: change?
+  virtual const Type* bottom_type() const { return _bottom_type; }
   virtual uint size_of() const { return sizeof(OptimizationDelayNode); }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream* st) const {
-    st->print(" type=");
-    _type->dump_on(st);
+    st->print(" bottom_type=");
+    _bottom_type->dump_on(st);
+    st->print(" hold_type=");
+    _hold_type->dump_on(st);
+    switch(_stage) {
+      case Stage::HoldType:
+        st->print(" stage=HoldType");
+        break;
+      case Stage::RevealType:
+        st->print(" stage=RevealType");
+        break;
+      case Stage::RevealIdentity:
+        st->print(" stage=RevealIdentity");
+        break;
+      default:
+        ShouldNotReachHere();
+    }
   }
 #endif
 };

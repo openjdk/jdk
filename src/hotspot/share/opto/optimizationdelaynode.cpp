@@ -28,17 +28,29 @@
 const Type* OptimizationDelayNode::Value(PhaseGVN* phase) const {
   const Type* t_in = phase->type(in(1));
 
+  tty->print_cr("[OptizationDelay] Value");
+  this->dump();
+  t_in->dump(); tty->cr();
+
   // We always have to propagate TOP, at least within one IGVN
   // round, otherwise we risk dead data paths with live CFG.
   if (t_in == Type::TOP) {
     return t_in;
   }
-  return _type;
+  // TODO: do we really need the meet for CCP? Why?
+  // Ah I see. I think we could also return just the hold_type,
+  // since we know it is correct. But if CCP ends up getting a
+  // wider input type, because it is not as good as IGVN, then
+  // this becomes a type assertion. Not sure we want that?
+  // We could also have 2 modes here.
+  return _hold_type->meet(t_in);
   // TODO: something more fancy for the types where we can manage.
 }
 
 Node* OptimizationDelayNode::Identity(PhaseGVN* phase) {
   // TODO:: maybe reveal the node
   // return in(1);
+  tty->print_cr("[OptizationDelay] Identity");
+  this->dump();
   return this;
 }
