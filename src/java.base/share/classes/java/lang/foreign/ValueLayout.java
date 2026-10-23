@@ -106,18 +106,47 @@ public sealed interface ValueLayout extends MemoryLayout
     enum IntegralExtension {
         /**
          * Indicates that values represented by this layout
-         * should be zero extended when widened.
+         * should be sign extended when widened.
+         * <p>
+         * Widening of values with this extension policy
+         * follows the Java language rules for widening
+         * primitive conversions as defined in section {@jls 5.1.2} of
+         * <cite>The Java Language Specification</cite>.
          */
-        ZERO_EXTEND,
+        SIGN_EXTEND,
         /**
          * Indicates that values represented by this layout
-         * should be sign extended when widened.
+         * should be zero extended when widened.
+         * <p>
+         * Widening of values with this extension policy
+         * from a source type {@code S} to a target type {@code T}
+         * follows the specification of the corresponding
+         * {@code toUnsingedT} method in the primitive wrapper
+         * class of {@code S}.
+         *
+         * @see Byte#toUnsignedInt(byte)
+         * @see Byte#toUnsignedLong(byte)
+         * @see Short#toUnsignedInt(short)
+         * @see Short#toUnsignedLong(short)
+         * @see Integer#toUnsignedLong(int)
          */
-        SIGN_EXTEND
+        ZERO_EXTEND
     }
 
     /**
      * {@return the integral extension policy attached to this layout, if any}
+     * <p>
+     * Conventionally, the integral extension policy of the value represented
+     * by a value layout is implied by the {@linkplain #carrier() carrier} attached
+     * to that layout. However, in certain cases the same carrier can be used to
+     * represent either a signed or an unsigned value. For example, a value layout
+     * of type {@link ValueLayout.OfInt} may be used to represent the C type {@code int}
+     * or the C type {@code unsigned int}. The integral extension policy is used
+     * as an additional information channel to disambiguate such cases.
+     * <p>
+     * The integral extension policy indicates whether a value described by this value
+     * layout should to be {@linkplain ValueLayout.IntegralExtension#SIGN_EXTEND sign extended}
+     * or {@linkplain ValueLayout.IntegralExtension#ZERO_EXTEND zero extended}.
      */
     Optional<IntegralExtension> integralExtension();
 
