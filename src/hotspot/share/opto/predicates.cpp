@@ -28,7 +28,10 @@
 #include "opto/loopnode.hpp"
 #include "opto/node.hpp"
 #include "opto/predicates.hpp"
+#include "opto/predicates_enums.hpp"
+#include "opto/rangecheck.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/subnode.hpp"
 #include "runtime/deoptimization.hpp"
 
 // Walk over all Initialized Assertion Predicates and return the entry into the first Initialized Assertion Predicate
@@ -684,27 +687,15 @@ bool TemplateAssertionExpressionNode::is_template_assertion_predicate(const Node
 // This class creates the Assertion Predicate expression to be used for a Template or Initialized Assertion Predicate.
 class AssertionPredicateExpressionCreator : public StackObj {
   PhaseIdealLoop* const _phase;
-  const jint _stride;
-  const int _scale;
-  Node* const _offset;
-  Node* const _range;
-  const bool _upper;
+  const RangeCheckInfo _info;
 
  public:
-  AssertionPredicateExpressionCreator(const int stride, const int scale, Node* offset, Node* range,
-                                      PhaseIdealLoop* phase)
-      : _phase(phase),
-        _stride(stride),
-        _scale(scale),
-        _offset(offset),
-        _range(range),
-        _upper((_stride > 0) != (_scale > 0)) {} // Make sure rc_predicate() chooses the "scale*init + offset" case.
+  AssertionPredicateExpressionCreator(PhaseIdealLoop* phase, RangeCheckInfo info)
+    : _phase(phase), _info(info) {}
 
   // Create the expression for a Template Assertion Predicate with an OpaqueTemplateAssertionPredicate node.
-  OpaqueTemplateAssertionPredicateNode* create_for_template(Node* new_control, Node* operand, CountedLoopNode* loop_node,
-                                                            bool& does_overflow) const {
-    BoolNode* bool_for_expression =  _phase->rc_predicate(new_control, _scale, _offset, operand, nullptr,
-                                                          _stride, _range, _upper, does_overflow);
+  OpaqueTemplateAssertionPredicateNode* create_for_template(Node* new_control, Node* init_iv, Node* last_iv, int stride, bool is_last_iv, CountedLoopNode* loop_node) const {
+    BoolNode* bool_for_expression =  _phase->rc_predicate(new_control, _info, init_iv, last_iv, stride, is_last_iv);
     return create_opaque_for_template(new_control, bool_for_expression, loop_node);
   }
 
@@ -720,10 +711,8 @@ class AssertionPredicateExpressionCreator : public StackObj {
 
  public:
   // Create the expression for an Initialized Assertion Predicate with an OpaqueInitializedAssertionPredicate node.
-  OpaqueInitializedAssertionPredicateNode* create_for_initialized(Node* new_control, Node* operand,
-                                                                  bool& does_overflow) const {
-    BoolNode* bool_for_expression = _phase->rc_predicate(new_control, _scale, _offset, operand, nullptr,
-                                                         _stride, _range, _upper, does_overflow);
+  OpaqueInitializedAssertionPredicateNode* create_for_initialized(Node* new_control, Node* init_iv, Node* last_iv, int stride, bool is_last_iv) const {
+    BoolNode* bool_for_expression = _phase->rc_predicate(new_control, _info, init_iv, last_iv, stride, is_last_iv);
     return create_opaque_for_initialized(new_control, bool_for_expression);
   }
 
@@ -818,18 +807,15 @@ OpaqueLoopInitNode* TemplateAssertionPredicateCreator::create_opaque_init(Node* 
 }
 
 OpaqueTemplateAssertionPredicateNode*
-TemplateAssertionPredicateCreator::create_for_init_value(Node* new_control, OpaqueLoopInitNode* opaque_init,
-                                                         bool& does_overflow) const {
-  AssertionPredicateExpressionCreator expression_creator(_loop_head->stride_con(), _scale, _offset, _range, _phase);
-  return expression_creator.create_for_template(new_control, opaque_init, _loop_head, does_overflow);
+TemplateAssertionPredicateCreator::create_for_init_value(Node* new_control, OpaqueLoopInitNode* opaque_init, Node* last_value) const {
+  AssertionPredicateExpressionCreator expression_creator(_phase, _info);
+  return expression_creator.create_for_template(new_control, opaque_init, last_value, _loop_head->stride_con(), false, _loop_head);
 }
 
 OpaqueTemplateAssertionPredicateNode*
-TemplateAssertionPredicateCreator::create_for_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init,
-                                                         bool& does_overflow) const {
-  Node* last_value = create_last_value(new_control, opaque_init);
-  AssertionPredicateExpressionCreator expression_creator(_loop_head->stride_con(), _scale, _offset, _range, _phase);
-  return expression_creator.create_for_template(new_control, last_value, _loop_head, does_overflow);
+TemplateAssertionPredicateCreator::create_for_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init, Node* last_value) const {
+  AssertionPredicateExpressionCreator expression_creator(_phase, _info);
+  return expression_creator.create_for_template(new_control, opaque_init, last_value, _loop_head->stride_con(), true, _loop_head);
 }
 
 Node* TemplateAssertionPredicateCreator::create_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init) const {
@@ -841,16 +827,16 @@ Node* TemplateAssertionPredicateCreator::create_last_value(Node* new_control, Op
   last_value = new AddINode(opaque_init, last_value);
   _phase->register_new_node(last_value, new_control);
   // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv phi
-  last_value = new CastIINode(new_control, last_value, _loop_head->phi()->bottom_type());
+  last_value = new CastIINode(new_control, last_value, _loop_head->phi()->bottom_type(), ConstraintCastNode::DependencyType::NonFloatingNarrowing);
   _phase->register_new_node(last_value, new_control);
   return last_value;
 }
 
 IfTrueNode* TemplateAssertionPredicateCreator::create_if_node(
     Node* new_control, OpaqueTemplateAssertionPredicateNode* template_assertion_predicate_expression,
-    const bool does_overflow, const AssertionPredicateType assertion_predicate_type) const {
+    const AssertionPredicateType assertion_predicate_type) const {
   AssertionPredicateIfCreator assertion_predicate_if_creator(_phase);
-  return assertion_predicate_if_creator.create_for_template(new_control, does_overflow ? Op_If : Op_RangeCheck,
+  return assertion_predicate_if_creator.create_for_template(new_control, Op_If,
                                                             template_assertion_predicate_expression,
                                                             assertion_predicate_type);
 }
@@ -859,18 +845,18 @@ IfTrueNode* TemplateAssertionPredicateCreator::create_if_node(
 // Returns the success projection of the last value Template Assertion Predicate latter.
 IfTrueNode* TemplateAssertionPredicateCreator::create(Node* new_control) const {
   OpaqueLoopInitNode* opaque_init = create_opaque_init(new_control);
-  bool does_overflow;
-  OpaqueTemplateAssertionPredicateNode* template_assertion_predicate_expression =
-      create_for_init_value(new_control, opaque_init, does_overflow);
-  IfTrueNode* template_predicate_success_proj =
-      create_if_node(new_control, template_assertion_predicate_expression, does_overflow,
-                     AssertionPredicateType::InitValue);
+  Node* last_value = create_last_value(new_control, opaque_init);
+  OpaqueTemplateAssertionPredicateNode* template_assertion_predicate_expression;
+  IfTrueNode* template_predicate_success_proj;
+
+  template_assertion_predicate_expression = create_for_init_value(new_control, opaque_init, last_value);
+  template_predicate_success_proj = create_if_node(new_control, template_assertion_predicate_expression,
+                                                   AssertionPredicateType::InitValue);
   DEBUG_ONLY(TemplateAssertionPredicate::verify(template_predicate_success_proj);)
 
-  template_assertion_predicate_expression = create_for_last_value(template_predicate_success_proj, opaque_init,
-                                                                  does_overflow);
+  template_assertion_predicate_expression = create_for_last_value(template_predicate_success_proj, opaque_init, last_value);
   template_predicate_success_proj = create_if_node(template_predicate_success_proj,
-                                                   template_assertion_predicate_expression, does_overflow,
+                                                   template_assertion_predicate_expression,
                                                    AssertionPredicateType::LastValue);
   DEBUG_ONLY(TemplateAssertionPredicate::verify(template_predicate_success_proj);)
   return template_predicate_success_proj;
@@ -928,15 +914,18 @@ InitializedAssertionPredicate InitializedAssertionPredicateCreator::create_from_
 }
 
 // Create a new Initialized Assertion Predicate directly without a template.
-IfTrueNode* InitializedAssertionPredicateCreator::create(Node* operand, Node* new_control, const jint stride,
-                                                         const int scale, Node* offset, Node* range,
-                                                         const AssertionPredicateType assertion_predicate_type) const {
-  AssertionPredicateExpressionCreator expression_creator(stride, scale, offset, range, _phase);
-  bool does_overflow;
-  OpaqueInitializedAssertionPredicateNode* assertion_expression =
-      expression_creator.create_for_initialized(new_control, operand, does_overflow);
-  IfTrueNode* success_proj = create_control_nodes(new_control, does_overflow ? Op_If : Op_RangeCheck,
-                                                  assertion_expression, assertion_predicate_type);
+IfTrueNode* InitializedAssertionPredicateCreator::create(Node* new_control, const RangeCheckInfo info,
+                                                         Node* init_iv, Node* final_iv, const jint stride) const {
+  AssertionPredicateExpressionCreator expression_creator(_phase, info);
+  OpaqueInitializedAssertionPredicateNode* assertion_expression;
+  IfTrueNode* success_proj;
+
+  assertion_expression = expression_creator.create_for_initialized(new_control, init_iv, final_iv, stride, false);
+  success_proj = create_control_nodes(new_control, Op_If, assertion_expression, AssertionPredicateType::InitValue);
+
+  assertion_expression = expression_creator.create_for_initialized(success_proj, init_iv, final_iv, stride, true);
+  success_proj = create_control_nodes(success_proj, Op_If, assertion_expression, AssertionPredicateType::FinalIv);
+
   DEBUG_ONLY(InitializedAssertionPredicate::verify(success_proj);)
   return success_proj;
 }

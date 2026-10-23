@@ -29,6 +29,7 @@
 #include "opto/cfgnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/predicates_enums.hpp"
+#include "opto/rangecheck.hpp"
 
 class IdealLoopTree;
 class InitializedAssertionPredicate;
@@ -154,10 +155,10 @@ class TemplateAssertionPredicate;
  *                                                   equal. The Initialized Assertion Predicates are always true because
  *                                                   their range is covered by a corresponding Hoisted Check Predicate.
  *                        - Range Check Elimination: A range check is removed from the main-loop by changing the pre
- *                                                   and main-loop iterations. We add two additional Template Assertion
- *                                                   Predicates (see explanation in section above) and one Initialized
- *                                                   Assertion Predicate for the just removed range check. When later
- *                                                   unrolling the main-loop, we create two Initialized Assertion
+ *                                                   and main-loop iterations. We add two Initialized Assertion Predicates
+ *                                                   when |stride| == 1 for verification only. We also add two additional
+ *                                                   Template Assertion Predicates (see explanation in section above).
+ *                                                   When later unrolling the main-loop, we create two Initialized Assertion
  *                                                   Predicates from the Template Assertion Predicates by replacing the
  *                                                   OpaqueLoop* nodes by actual values for the unrolled loop.
  *                                                   The Initialized Assertion Predicates are always true: They are true
@@ -235,10 +236,10 @@ class TemplateAssertionPredicate;
  *   [For Profiled Loop Predicate m: Two Template + two Initialized Assertion Predicates]
  *
  *   (after unrolling, we have two Initialized Assertion Predicates for the Assertion Predicates of Range Check Elimination)
- *   [For Range Check Elimination Check 1: Two Templates + one Initialized Assertion Predicate]
- *   [For Range Check Elimination Check 2: Two Templates + one Initialized Assertion Predicate]
+ *   [For Range Check Elimination Check 1: Two Templates]
+ *   [For Range Check Elimination Check 2: Two Templates]
  *   ...
- *   [For Range Check Elimination Check k: Two Templates + one Initialized Assertion Predicate]
+ *   [For Range Check Elimination Check k: Two Templates]
  * Main Loop Head
  */
 
@@ -647,29 +648,20 @@ class AssertionPredicateIfCreator : public StackObj {
 // This class is used to create a Template Assertion Predicate either with a Halt Node from scratch.
 class TemplateAssertionPredicateCreator : public StackObj {
   CountedLoopNode* const _loop_head;
-  const int _scale;
-  Node* const _offset;
-  Node* const _range;
+  const RangeCheckInfo _info;
   PhaseIdealLoop* const _phase;
 
   OpaqueLoopInitNode* create_opaque_init(Node* new_control) const;
-  OpaqueTemplateAssertionPredicateNode* create_for_init_value(Node* new_control, OpaqueLoopInitNode* opaque_init,
-                                                              bool& does_overflow) const;
-  OpaqueTemplateAssertionPredicateNode* create_for_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init,
-                                                              bool& does_overflow) const;
+  OpaqueTemplateAssertionPredicateNode* create_for_init_value(Node* new_control, OpaqueLoopInitNode* opaque_init, Node* last_value) const;
+  OpaqueTemplateAssertionPredicateNode* create_for_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init, Node* last_value) const;
   Node* create_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init) const;
   IfTrueNode* create_if_node(Node* new_control,
                              OpaqueTemplateAssertionPredicateNode* template_assertion_predicate_expression,
-                             bool does_overflow, AssertionPredicateType assertion_predicate_type) const;
+                             AssertionPredicateType assertion_predicate_type) const;
 
  public:
-  TemplateAssertionPredicateCreator(CountedLoopNode* loop_head, int scale, Node* offset, Node* range,
-                                    PhaseIdealLoop* phase)
-      : _loop_head(loop_head),
-        _scale(scale),
-        _offset(offset),
-        _range(range),
-        _phase(phase) {}
+  TemplateAssertionPredicateCreator(CountedLoopNode* loop_head, RangeCheckInfo info, PhaseIdealLoop* phase)
+      : _loop_head(loop_head), _info(info), _phase(phase) {}
   NONCOPYABLE(TemplateAssertionPredicateCreator);
 
   IfTrueNode* create(Node* new_control) const;
@@ -688,8 +680,7 @@ class InitializedAssertionPredicateCreator : public StackObj {
 
   InitializedAssertionPredicate
   create_from_template_and_insert_below(const TemplateAssertionPredicate& template_assertion_predicate) const;
-  IfTrueNode* create(Node* operand, Node* new_control, jint stride, int scale, Node* offset, Node* range,
-                     AssertionPredicateType assertion_predicate_type) const;
+  IfTrueNode* create(Node* new_control, RangeCheckInfo info, Node* init_iv, Node* final_iv, jint stride) const;
 
  private:
   OpaqueInitializedAssertionPredicateNode* create_assertion_expression_from_template(const IfNode* template_assertion_predicate,

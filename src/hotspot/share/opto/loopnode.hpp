@@ -30,6 +30,7 @@
 #include "opto/node.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/predicates.hpp"
+#include "opto/rangecheck.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
 #include "utilities/checkedCast.hpp"
@@ -1616,8 +1617,8 @@ public:
   }
 
   // Construct a range check for a predicate if
-  BoolNode* rc_predicate(Node* ctrl, int scale, Node* offset, Node* init, Node* limit,
-                         jint stride, Node* range, bool upper, bool& overflow);
+  BoolNode* rc_predicate(Node* ctrl, RangeCheckInfo info,
+                         Node* init_iv, Node* final_iv, jint stride_con, bool is_final_iv);
 
   // Implementation of the loop predication to promote checks outside the loop
   bool loop_predication_impl(IdealLoopTree *loop);
@@ -1641,7 +1642,7 @@ public:
                                         PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
                                         Node_List& if_proj_list);
   IfTrueNode* create_template_assertion_predicate(CountedLoopNode* loop_head, ParsePredicateNode* parse_predicate,
-                                                  IfProjNode* new_control, int scale, Node* offset, Node* range);
+                                                  IfProjNode* new_control, RangeCheckInfo info);
   void eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
 
   // Helper function to collect predicate for eliminating the useless ones
