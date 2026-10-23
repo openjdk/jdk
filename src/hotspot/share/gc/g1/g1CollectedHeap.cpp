@@ -1146,9 +1146,9 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
   size_t aligned_expand_bytes = os::align_up_vm_page_size(expand_bytes);
   aligned_expand_bytes = align_up(aligned_expand_bytes, G1HeapRegion::GrainBytes);
 
-  uint num_regions_to_expand = (uint)(aligned_expand_bytes / G1HeapRegion::GrainBytes);
+  size_t num_regions_to_expand = aligned_expand_bytes / G1HeapRegion::GrainBytes;
 
-  log_debug(gc, ergo, heap)("Heap resize. Requested expansion amount: %zuB aligned expansion amount: %zuB (%u regions)",
+  log_debug(gc, ergo, heap)("Heap resize. Requested expansion amount: %zuB aligned expansion amount: %zuB (%zu regions)",
                             expand_bytes, aligned_expand_bytes, num_regions_to_expand);
 
   if (num_non_active_regions() == 0) {
@@ -1156,7 +1156,8 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
     return false;
   }
 
-  uint expanded_by = _hrm.expand_by(num_regions_to_expand, pretouch_workers);
+  num_regions_to_expand = MIN2<size_t>(num_regions_to_expand, num_non_active_regions());
+  uint expanded_by = _hrm.expand_by(static_cast<uint>(num_regions_to_expand), pretouch_workers);
 
   size_t actual_expand_bytes = expanded_by * G1HeapRegion::GrainBytes;
   assert(actual_expand_bytes <= aligned_expand_bytes, "post-condition");
