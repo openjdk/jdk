@@ -202,7 +202,10 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     assert_different_registers(rnew_zaddress, rnew_zpointer);
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeMov);
     __ movzw(rnew_zpointer, barrier_Relocation::unpatched);
-    __ orr(rnew_zpointer, rnew_zpointer, rnew_zaddress, Assembler::LSL, ZPointerLoadShift);
+
+    if (rnew_zaddress != noreg) {
+      __ orr(rnew_zpointer, rnew_zpointer, rnew_zaddress, Assembler::LSL, ZPointerLoadShift);
+    }
   } else {
     assert(!is_atomic, "atomics outside of nmethods not supported");
     __ lea(rtmp, ref_addr);
