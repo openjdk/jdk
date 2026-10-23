@@ -1999,8 +1999,14 @@ bool Compile::advance_optimization_delay_nodes(PhaseIterGVN& igvn) {
     return true;
   }
 
-  if (stress().random() % 1000 == 0) {
+  if (stress().random() % 100 == 0) {
     delay->reveal_type();
+    igvn._worklist.push(delay);
+    return true;
+  }
+
+  if (stress().random() % 10 == 0) {
+    delay->narrow_hold_type();
     igvn._worklist.push(delay);
     return true;
   }

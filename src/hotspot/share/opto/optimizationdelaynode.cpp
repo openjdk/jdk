@@ -50,6 +50,15 @@ Node* OptimizationDelayNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
+void OptimizationDelayNode::narrow_hold_type() {
+  assert(_stage == Stage::HoldType, "must still hold type");
+  // TODO: impl!
+  if (TraceOptimizationDelay) {
+    tty->print_cr("[OptizationDelay] narrow hold type");
+    this->dump();
+  }
+}
+
 void OptimizationDelayNode::reveal_type() {
   assert(_stage < Stage::RevealType, "only advance stage");
   _stage = Stage::RevealType;
@@ -58,6 +67,7 @@ void OptimizationDelayNode::reveal_type() {
     this->dump();
   }
 }
+
 void OptimizationDelayNode::reveal_identity() {
   assert(_stage < Stage::RevealIdentity, "only advance stage");
   _stage = Stage::RevealIdentity;
