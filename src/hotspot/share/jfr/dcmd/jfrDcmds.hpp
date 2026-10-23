@@ -178,6 +178,7 @@ class JfrConfigureFlightRecorderDCmd : public DCmdWithParser {
   DCmdArgument<char*> _repository_path;
   DCmdArgument<char*> _dump_path;
   DCmdArgument<jlong> _stack_depth;
+  DCmdArgument<jlong> _native_stack_depth;
   DCmdArgument<jlong> _global_buffer_count;
   DCmdArgument<MemorySizeArgument> _global_buffer_size;
   DCmdArgument<MemorySizeArgument> _thread_buffer_size;
@@ -201,7 +202,7 @@ class JfrConfigureFlightRecorderDCmd : public DCmdWithParser {
   static const char* impact() {
     return "Low";
   }
-  static int num_arguments() { return 10; }
+  static int num_arguments() { return 11; }
   static void print_help(outputStream* out, bool startup);
   virtual void execute(DCmdSource source, TRAPS);
   virtual void print_help(const char* name) const;

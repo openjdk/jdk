@@ -333,12 +333,13 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
   bool biased = false;
   bool in_continuation = false;
   bool could_compute_top_frame = compute_top_frame(request._request, top_frame, in_continuation, jt, biased);
+  const u4 native_pc_count = request._native_pc_count;
 
   const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
   JfrThreadLocal::impersonate(current, tid);
   assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
 
-  if (!could_compute_top_frame) {
+  if (!could_compute_top_frame && native_pc_count == 0) {
     JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, request._cpu_time_period);
     return;
   }
@@ -346,7 +347,10 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
   {
     ResourceMark rm(current);
     JfrStackTrace stacktrace;
-    if (!stacktrace.record(jt, top_frame, in_continuation, request._request)) {
+    if (native_pc_count > 0) {
+      stacktrace.record_native_frames(request._native_pcs, native_pc_count);
+    }
+    if (could_compute_top_frame && !stacktrace.record(jt, top_frame, in_continuation, request._request)) {
       // Unable to record stacktrace. Fail.
       JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, request._cpu_time_period);
       return;
@@ -383,15 +387,16 @@ static void drain_enqueued_cpu_time_requests(const JfrTicks& now, JfrThreadLocal
   assert(current != nullptr, "invariant");
 #ifdef LINUX
   tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
-  if (lock) {
-    tl->acquire_cpu_time_jfr_dequeue_lock();
-  }
   JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
-  for (u4 i = 0; i < queue.size(); i++) {
-    record_cpu_time_thread(queue.at(i), now, tl, jt, current);
+  if (lock) {
+    queue.acquire_dequeue_lock();
+  }
+  for (u4 offset = 0; offset < queue.size(); ) {
+    const JfrCPUTimeSampleRequest& request = queue.at(offset);
+    record_cpu_time_thread(request, now, tl, jt, current);
+    offset += request.size();
   }
   queue.clear();
-  assert(queue.is_empty(), "invariant");
   tl->set_has_cpu_time_jfr_requests(false);
   if (queue.lost_samples() > 0) {
     // Lost samples belong to the platform thread that owns the queue.
@@ -402,7 +407,7 @@ static void drain_enqueued_cpu_time_requests(const JfrTicks& now, JfrThreadLocal
     queue.resize_if_needed();
   }
   if (lock) {
-    tl->release_cpu_time_jfr_queue_lock();
+    queue.release_lock();
   }
 #endif
 }
