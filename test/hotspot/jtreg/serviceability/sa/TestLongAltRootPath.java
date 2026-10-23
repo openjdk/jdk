@@ -58,7 +58,7 @@ public class TestLongAltRootPath {
             cmdStringList.addAll(Arrays.asList(launcher.getCommand()));
 
             // Build a long path name to use for SA_ALTROOT that will cause
-            // a crasg if proper length checks are not made.
+            // a crash if proper length checks are not made.
             int saAltRootMaxLen = 2 * 10_000;
             String dirPattern = "/abcdefghij01234567890123456789";
             StringBuilder saAltRoot = new StringBuilder(saAltRootMaxLen);
