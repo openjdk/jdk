@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -343,8 +343,8 @@ eventInstance(EventInfo *evinfo)
 
     error = methodModifiers(method, &modifiers);
 
-    /* fail if error or static (0x8) */
-    if (error == JVMTI_ERROR_NONE && thread!=NULL && (modifiers & 0x8) == 0) {
+    /* fail if error or static */
+    if (error == JVMTI_ERROR_NONE && thread != NULL && (modifiers & MOD_STATIC) == 0) {
         FrameNumber fnum            = 0;
         if (is_version_gte_12x) {
             /* Use new 1.2.x function, GetLocalInstance */
@@ -470,11 +470,12 @@ eventFilterRestricted_passesFilter(JNIEnv *env,
             case JDWP_REQUEST_MODIFIER(InstanceOnly): {
                 jobject eventInst = eventInstance(evinfo);
                 jobject filterInst = filter->u.InstanceOnly.instance;
-                /* if no error and doesn't match, don't pass
-                 * filter
-                 */
-                if (eventInst != NULL &&
-                      !isSameObject(env, eventInst, filterInst)) {
+                if (eventInst == NULL) {
+                  /* if the method is static or we got an error, fail the filter */
+                  return JNI_FALSE;
+                }
+                /* if the instance is not a match, fail the filter */
+                if (!isSameObject(env, eventInst, filterInst)) {
                     return JNI_FALSE;
                 }
                 break;
