@@ -530,8 +530,8 @@ private:
 
   // Null terminated list
   static RVFeatureValue* _feature_list[];
-  static RVExtFeatures* _rv_raw_ext_features;
   static RVExtFeatures* _rv_ext_features;
+  static RVExtFeatures _rv_raw_ext_features;
 
   // Enables features in _feature_list
   static void setup_cpu_available_features();
