@@ -35,18 +35,12 @@ const Type* OptimizationDelayNode::Value(PhaseGVN* phase) const {
   }
 
   // By default, we just hold the type.
-  //
-  // For IGVN, _hold_type should always be wider than t_in,
-  // and so the meet is always the _hold_type. Hence, the
-  // delay ensures we have less information than at the
-  // input node.
-  //
-  // For CCP, t_in will start at TOP, and slowly widen.
-  // As long as t_in is narrower than hold_type, the
-  // meet will deliver a less precise result. Once
-  // t_in is wider than _hold_type, we return t_in
-  // so that the delay node does not encode more
-  // precise information.
+  // The idea is that the _hold_type shrowds the t_in.
+  // There are cases where t_in is not contained by _hold_type,
+  // for example if CCP did not manage to find t_in as
+  // precisely as IGVN did. Because of those cases we need to
+  // return the meet of t_in and _hold_type, to avoid providing
+  // a more precise type than t_in would have delivered.
   return _hold_type->meet(t_in);
 }
 
