@@ -32,6 +32,20 @@
  *      compiler.uncommontrap.TestStackBangMonitorOwned
  */
 
+/*
+ * @test
+ * @bug 8032410
+ * @summary Stack overflow at deoptimization doesn't release owned monitors
+ *
+ * @requires os.arch == "aarch64"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:-BackgroundCompilation -Xss512K -XX:-UseOnStackReplacement
+ *      -XX:CompileCommand=dontinline,compiler.uncommontrap.TestStackBangMonitorOwned::m1
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestStackBangMonitorOwned::m2
+ *      -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
+ *      compiler.uncommontrap.TestStackBangMonitorOwned
+ */
+
 package compiler.uncommontrap;
 
 public class TestStackBangMonitorOwned {

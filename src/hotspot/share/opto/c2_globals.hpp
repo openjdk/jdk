@@ -1015,6 +1015,9 @@
                                                                             \
   product(bool, UseAOTCodeCounters, true, DIAGNOSTIC,                       \
           "Use AOT code counter to trigger JIT compilation")                \
+                                                                            \
+  product(bool, PreferCallBasedUncommonTraps, false, EXPERIMENTAL,          \
+          "Prefer MachCall-based uncommon trap sequences.")                 \
 
 // end of C2_FLAGS
 
