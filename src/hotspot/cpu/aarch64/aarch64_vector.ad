@@ -335,6 +335,11 @@ source %{
           return false;
         }
         break;
+      case Op_VectorSlice:
+        if (length_in_bytes != 8 && length_in_bytes != 16) {
+          return false;
+        }
+        break;
       default:
         break;
     }
@@ -359,6 +364,7 @@ source %{
       case Op_CompressBitsV:
       case Op_ExpandBitsV:
       case Op_VectorBitwiseBlend:
+      case Op_VectorSlice:
       // There is no native SVE divide for BYTE/SHORT elements (these are
       // emulated by widening to 32-bit), so the masked variants are handled
       // by an unpredicated divide combined with a VectorBlend.
@@ -8060,6 +8066,21 @@ instruct vselect_from_two_vectors_23_24(vReg dst, vReg_V23 src1, vReg_V24 src2,
     __ select_from_two_vectors($dst$$FloatRegister, $src1$$FloatRegister,
                                $src2$$FloatRegister, $index$$FloatRegister,
                                $tmp$$FloatRegister, bt, length_in_bytes);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// -------------------------------- VectorSlice --------------------------------
+
+instruct vslice(vReg dst, vReg src1, vReg src2, immI origin) %{
+  predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst (VectorSlice (Binary src1 src2) origin));
+  format %{ "vslice $dst, $src1, $src2, $origin" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    assert(length_in_bytes == 8 || length_in_bytes == 16, "must be");
+    __ ext($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
+           $src1$$FloatRegister, $src2$$FloatRegister, $origin$$constant);
   %}
   ins_pipe(pipe_slow);
 %}
