@@ -815,9 +815,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
       stackmap_index, bci, &current_frame, &stackmap_table,
       no_control_flow, CHECK_VERIFY(this));
 
-
-    bool this_uninit = false;  // Set to true when invokespecial <init> initialized 'this'
-    bool verified_exc_handlers = false;
+    bool verified_exc_handlers = false;   // set this if we check handlers early
 
     // Merge with the next instruction
     {
@@ -857,7 +855,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
       if (Bytecodes::is_store_into_local(opcode) && bci >= ex_min && bci < ex_max) {
         if (was_recursively_verified()) return;
         verify_exception_handler_targets(
-          bci, this_uninit, &current_frame, &stackmap_table, CHECK_VERIFY(this));
+          bci, VerificationType::top_type(), &current_frame, &stackmap_table, CHECK_VERIFY(this));
         verified_exc_handlers = true;
       }
 
@@ -1730,8 +1728,14 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
           verify_field_instructions(
             &bcs, &current_frame, cp, true, CHECK_VERIFY(this));
           no_control_flow = false; break;
-        case Bytecodes::_getfield :
         case Bytecodes::_putfield :
+          // Putfield on a strict field changes the verification state so the exception handler must be verified
+          if (bci >= ex_min && bci < ex_max) {
+            verify_exception_handler_targets(bci, VerificationType::top_type(), &current_frame, &stackmap_table, CHECK_VERIFY(this));
+            if (was_recursively_verified()) return;
+            verified_exc_handlers = true;
+          }
+        case Bytecodes::_getfield :
           // pass FALSE, operand can't be an array type for getfield/putfield.
           verify_field_instructions(
             &bcs, &current_frame, cp, false, CHECK_VERIFY(this));
@@ -1743,7 +1747,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         case Bytecodes::_invokedynamic :
           verify_invoke_instructions(
             &bcs, code_length, &current_frame, (bci >= ex_min && bci < ex_max),
-            &this_uninit, cp, &stackmap_table, CHECK_VERIFY(this));
+            &verified_exc_handlers, cp, &stackmap_table, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_new :
         {
@@ -1847,15 +1851,17 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
     }  // end Merge with the next instruction
 
     // Look for possible jump target in exception handlers and see if it matches
-    // current_frame.  Don't do this check if it has already been done (for
-    // ([a,d,f,i,l]store* opcodes).  This check cannot be done earlier because
-    // opcodes, such as invokespecial, may set the this_uninit flag.
-    assert(!(verified_exc_handlers && this_uninit),
-      "Exception handler targets got verified before this_uninit got set");
+    // current_frame.  Don't do this check if it has been done earlier, as reported
+    // by verified_exc_handlers.  Early checks include [a,d,f,i,l]store* opcodes,
+    // and the special processing of invokespecial <init> in verify_invoke_init,
+    // which makes a special distinction between exception states and normal ones.
+    // For all other bytecodes, the state that must be passed to exception handlers
+    // is simply the current flags and locals (unchanged) plus a reset operand stack.
+    // See StackMapFrame::frame_in_exception_handler for more details.
     if (!verified_exc_handlers && bci >= ex_min && bci < ex_max) {
       if (was_recursively_verified()) return;
       verify_exception_handler_targets(
-        bci, this_uninit, &current_frame, &stackmap_table, CHECK_VERIFY(this));
+        bci, VerificationType::top_type(), &current_frame, &stackmap_table, CHECK_VERIFY(this));
     }
   } // end while
 
@@ -2007,24 +2013,34 @@ u2 ClassVerifier::verify_stackmap_table(u2 stackmap_index, int bci,
   return stackmap_index;
 }
 
+// Find all handlers matching the given bci, and check each one for mergeability.
+// The broken_type (if not top) must be replaced by top in that frame's locals,
+// because an invokespecial <init> is working on a broken object, per JVM Spec.
+// See StackMapFrame::frame_in_exception_handler for details.
 // Since this method references the constant pool, call was_recursively_verified()
 // before calling this method to make sure a prior class load did not cause the
 // current class to get verified.
-void ClassVerifier::verify_exception_handler_targets(int bci, bool this_uninit,
+void ClassVerifier::verify_exception_handler_targets(int bci, VerificationType broken_type,
                                                      StackMapFrame* current_frame,
                                                      StackMapTable* stackmap_table, TRAPS) {
   constantPoolHandle cp (THREAD, _method->constants());
   ExceptionTable exhandlers(_method());
   int exlength = exhandlers.length();
+  u1 flags = current_frame->flags();
+  StackMapFrame* new_frame = nullptr;
+
   for(int i = 0; i < exlength; i++) {
     u2 start_pc = exhandlers.start_pc(i);
     u2 end_pc = exhandlers.end_pc(i);
     u2 handler_pc = exhandlers.handler_pc(i);
     int catch_type_index = exhandlers.catch_type_index(i);
     if(bci >= start_pc && bci < end_pc) {
-      u1 flags = current_frame->flags();
-      if (this_uninit) {  flags |= FLAG_THIS_UNINIT; }
-      StackMapFrame* new_frame = current_frame->frame_in_exception_handler(flags);
+      if (new_frame == nullptr) {
+        new_frame = current_frame->frame_in_exception_handler(broken_type, flags);
+      }
+      // Clear stack for each iteration
+      new_frame->clear_stack();
+      new_frame->set_stack_size(0);
       if (catch_type_index != 0) {
         if (was_recursively_verified()) return;
         // We know that this index refers to a subclass of Throwable
@@ -2491,7 +2507,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
 void ClassVerifier::verify_invoke_init(
     RawBytecodeStream* bcs, u2 ref_class_index, VerificationType ref_class_type,
     StackMapFrame* current_frame, u4 code_length, bool in_try_block,
-    bool *this_uninit, const constantPoolHandle& cp, StackMapTable* stackmap_table,
+    bool *verified_exc_handlers, const constantPoolHandle& cp, StackMapTable* stackmap_table,
     TRAPS) {
   int bci = bcs->bci();
   VerificationType type = current_frame->pop_stack(
@@ -2515,16 +2531,23 @@ void ClassVerifier::verify_invoke_init(
       }
     }
 
-    // If this invokespecial call is done from inside of a TRY block then make
-    // sure that all catch clause paths end in a throw.  Otherwise, this can
-    // result in returning an incomplete object.
+    // If this invokespecial call is done from inside of a TRY block then we will
+    // make an intentionally unsatisfiable exception state, with FLAG_THIS_UNINIT
+    // set even after the UninitializedThis is replaced by top.  This will prevent
+    // catch handler code (of any kind whatsoever) from covering this call.
+    // This indirectly prevents a return which would allow the caller to operate
+    // on a broken object, or any other handler action, including rethrow.
+    // This is what the JVMS is talking about when it says, "In fact, it's not
+    // even possible to express a handler with that type state..."
+    // See frame_in_exception_handler for more details.
     if (in_try_block) {
       // Check the exception handler target stackmaps with the locals from the
       // incoming stackmap (before initialize_object() changes them to outgoing
       // state).
       if (was_recursively_verified()) return;
-      verify_exception_handler_targets(bci, true, current_frame,
-                                       stackmap_table, CHECK_VERIFY(this));
+      guarantee(current_frame->flag_this_uninit(), "flag must already be present");
+      verify_exception_handler_targets(bci, type, current_frame, stackmap_table, CHECK_VERIFY(this));
+      *verified_exc_handlers = true;
     } // in_try_block
 
     // At this point, all unset fields were satisfied, a delegated constructor handled
@@ -2536,7 +2559,6 @@ void ClassVerifier::verify_invoke_init(
     current_frame->set_assert_unset_fields(nullptr);
 
     current_frame->initialize_object(type, current_type());
-    *this_uninit = true;
   } else if (type.is_uninitialized()) {
     u2 new_offset = type.bci();
     address new_bcp = bcs->bcp() - bci + new_offset;
@@ -2594,8 +2616,8 @@ void ClassVerifier::verify_invoke_init(
     // state).
     if (in_try_block) {
       if (was_recursively_verified()) return;
-      verify_exception_handler_targets(bci, *this_uninit, current_frame,
-                                       stackmap_table, CHECK_VERIFY(this));
+      verify_exception_handler_targets(bci, type, current_frame, stackmap_table, CHECK_VERIFY(this));
+      *verified_exc_handlers = true;
     }
     current_frame->initialize_object(type, new_class_type);
   } else {
@@ -2625,7 +2647,7 @@ bool ClassVerifier::is_same_or_direct_interface(
 
 void ClassVerifier::verify_invoke_instructions(
     RawBytecodeStream* bcs, u4 code_length, StackMapFrame* current_frame,
-    bool in_try_block, bool *this_uninit,
+    bool in_try_block, bool *verified_exc_handlers,
     const constantPoolHandle& cp, StackMapTable* stackmap_table, TRAPS) {
   // Make sure the constant pool item is the right type
   u2 index = bcs->get_index_u2();
@@ -2784,7 +2806,7 @@ void ClassVerifier::verify_invoke_instructions(
       opcode != Bytecodes::_invokedynamic) {
     if (method_name == vmSymbols::object_initializer_name()) {  // <init> method
       verify_invoke_init(bcs, index, ref_class_type, current_frame,
-        code_length, in_try_block, this_uninit, cp, stackmap_table,
+        code_length, in_try_block, verified_exc_handlers, cp, stackmap_table,
         CHECK_VERIFY(this));
       if (was_recursively_verified()) return;
     } else {   // other methods

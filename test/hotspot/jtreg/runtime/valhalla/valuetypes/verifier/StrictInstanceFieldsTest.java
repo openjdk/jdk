@@ -43,6 +43,7 @@
  *          EndsInEarlyLarval.jcod
  *          EarlyLarvalNotSubset.jcod
  *          InvalidIndexInEarlyLarval.jcod
+ *          HasStrictField.jasm
  * @compile StrictInstanceFieldsTest.java
  * @run driver jdk.test.lib.helpers.StrictProcessor
  *             StrictInstanceFieldsTest
@@ -51,23 +52,24 @@
  * @run main/othervm -Xlog:verification -Xverify:all StrictInstanceFieldsTest
  */
 
-import java.util.Arrays;
 import java.lang.reflect.Field;
 import jdk.test.lib.helpers.StrictInit;
 
 public class StrictInstanceFieldsTest {
 
-    public static <T> void negativeTest(Class<T> clazz, String msg, boolean... args) throws Exception {
+    public static <T> void negativeTest(Class<T> clazz, String msg, Object... args) throws Exception {
         try {
             Class<?>[] parameters = new Class<?>[args.length];
-            Object[] ctorArgs = new Object[args.length];
-            Arrays.fill(parameters, boolean.class);
-
             for (int i = 0; i < args.length; i++) {
-                ctorArgs[i] = new Boolean(args[i]);
+                // Unwrap booleans
+                if (args[i] instanceof Boolean) {
+                    parameters[i] = boolean.class;
+                } else {
+                    parameters[i] = args[i].getClass();
+                }
             }
 
-            T child = clazz.getDeclaredConstructor(parameters).newInstance(ctorArgs);
+            T child = clazz.getDeclaredConstructor(parameters).newInstance(args);
             System.out.println(child);
             throw new RuntimeException("Should fail verification");
         } catch (java.lang.VerifyError e) {
@@ -161,6 +163,8 @@ public class StrictInstanceFieldsTest {
         negativeTest(LateOrdinaryStrictFrame.class, "Inconsistent stackmap frames at branch target");
 
         negativeTest(StrictFieldNoEarlyLarval.class, "Constructor must call super() or this() before return");
+
+        negativeTest(HasStrictField.class, "Stack map does not match the one at exception handler 8", new Integer(0));
 
         System.out.println("Passed");
     }
