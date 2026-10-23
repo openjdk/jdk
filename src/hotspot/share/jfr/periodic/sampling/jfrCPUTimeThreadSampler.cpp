@@ -87,14 +87,14 @@ JfrCPUTimeTraceQueue::LockState JfrCPUTimeTraceQueue::lock_state() const {
 }
 
 bool JfrCPUTimeTraceQueue::try_acquire_enqueue_lock() {
-  return AtomicAccess::cmpxchg(&_lock, UNLOCKED, ENQUEUE, memory_order_acq_rel) == UNLOCKED;
+  return AtomicAccess::cmpxchg(&_lock, UNLOCKED, ENQUEUE, memory_order_seq_cst) == UNLOCKED;
 }
 
 bool JfrCPUTimeTraceQueue::try_acquire_dequeue_lock() {
   while (true) {
     LockState state = lock_state();
     if (state == UNLOCKED &&
-        AtomicAccess::cmpxchg(&_lock, UNLOCKED, DEQUEUE, memory_order_acq_rel) == UNLOCKED) {
+        AtomicAccess::cmpxchg(&_lock, UNLOCKED, DEQUEUE, memory_order_seq_cst) == UNLOCKED) {
       return true; // successfully locked for dequeuing
     }
     if (state == DEQUEUE) {
@@ -107,7 +107,7 @@ bool JfrCPUTimeTraceQueue::try_acquire_dequeue_lock() {
 void JfrCPUTimeTraceQueue::acquire_dequeue_lock() {
   SpinYield s;
   while (lock_state() != UNLOCKED ||
-         AtomicAccess::cmpxchg(&_lock, UNLOCKED, DEQUEUE, memory_order_acq_rel) != UNLOCKED) {
+         AtomicAccess::cmpxchg(&_lock, UNLOCKED, DEQUEUE, memory_order_seq_cst) != UNLOCKED) {
     s.wait();
   }
 }
