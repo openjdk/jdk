@@ -611,6 +611,8 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
     }
     case VECTOR_OP_COMPRESS_BITS: {
       switch (lt) {
+        case LT_BYTE:
+        case LT_SHORT:
         case LT_INT:
         case LT_LONG: return Op_CompressBits;
         default: return 0;
@@ -619,6 +621,8 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
     }
     case VECTOR_OP_EXPAND_BITS: {
       switch (lt) {
+        case LT_BYTE:
+        case LT_SHORT:
         case LT_INT:
         case LT_LONG: return Op_ExpandBits;
         default: return 0;
