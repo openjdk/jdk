@@ -85,6 +85,26 @@ const RegMask &IfNode::out_RegMask() const {
   return RegMask::EMPTY;
 }
 
+// This is similar to PhaseIdealLoop::pin_nodes_dependent_on
+static void pin_nodes_dependent_on(Node* ctrl, Node* iff, PhaseIterGVN* igvn) {
+  for (DUIterator i = ctrl->outs(); ctrl->has_out(i); i++) {
+    Node* use = ctrl->out(i);
+    if (!use->depends_only_on_test()) {
+      continue;
+    }
+    if (use->is_Load() && (iff->Opcode() != Op_RangeCheck)) {
+      continue;
+    }
+
+    Node* pinned_clone = use->pin_node_under_control();
+    if (pinned_clone != nullptr) {
+      igvn->register_new_node_with_optimizer(pinned_clone, use);
+      igvn->replace_node(use, pinned_clone);
+      --i;
+    }
+  }
+}
+
 //------------------------------split_if---------------------------------------
 // Look for places where we merge constants, then test on the merged value.
 // If the IF test will be constant folded on the path with the constant, we
@@ -363,12 +383,8 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   // The 'cmp' got cloned, but CastPP/IIs need to be moved.
   Node *phi_s = nullptr;     // do not construct unless needed
   Node *phi_f = nullptr;     // do not construct unless needed
-
-  // About to mutate phi, gradually rewiring every user of it.
-  // We terminate once no users are left.
-  while (phi->outcnt() > 0) {
-    uint old_cnt = phi->outcnt();
-    Node* v = phi->raw_out(old_cnt - 1); // User of the phi
+  for (DUIterator_Last i2min, i2 = phi->last_outs(i2min); i2 >= i2min; --i2) {
+    Node* v = phi->last_out(i2);// User of the phi
     igvn->rehash_node_delayed(v); // Have to fixup other Phi users
     uint vop = v->Opcode();
     Node *proj = nullptr;
@@ -420,36 +436,11 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
         if( v->in(i) == phi )
           break;
       v->set_req(i, proj_path_data );
-    } else if (v->is_ConstraintCast()) {
-      // When splitting the constraint casts, need to have distinct copies
-      // hooked to relevant projections and phi splits. This would keep constraint
-      // casts and their users behind the control that guards them.
-      Node* cast_c = v->clone();
-      cast_c->set_req(0, proj->Opcode() == Op_IfTrue ? iff_c_t : iff_c_f);
-      cast_c->set_req(1, phi_c);
-      cast_c = phase->transform(cast_c);
-
-      Node* cast_x = v->clone();
-      cast_x->set_req(0, proj->Opcode() == Op_IfTrue ? iff_x_t : iff_x_f);
-      cast_x->set_req(1, phi_x);
-      cast_x = phase->transform(cast_x);
-
-      Node* cast_phi = PhiNode::make_blank(proj_path_ctrl, v);
-      cast_phi->init_req(1, cast_c);
-      cast_phi->init_req(2, cast_x);
-      cast_phi = phase->transform(cast_phi);
-
-      igvn->replace_node(v, cast_phi);
-    } else {
+    } else if( v->is_ConstraintCast() ) {
+      v->set_req(0, proj_path_ctrl );
+      v->set_req(1, proj_path_data );
+    } else
       ShouldNotReachHere();
-    }
-
-#ifdef ASSERT
-    for (uint i = 1; i < v->req(); i++) {
-      assert(v->in(i) != phi, "Progress: user must disconnect from Phi");
-    }
-    assert(phi->outcnt() < old_cnt, "Progress: Phi should have fewer users");
-#endif
   }
 
   // Now replace the original iff's True/False with region_s/region_t.
@@ -492,6 +483,11 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
 
   // Now remove the bogus extra edges used to keep things alive
   igvn->remove_dead_node(hook, PhaseIterGVN::NodeOrigin::Speculative);
+
+  // Control is updated here to a region, which is not a test, so any node that
+  // depends_only_on_test must be pinned
+  pin_nodes_dependent_on(region_s, iff, igvn);
+  pin_nodes_dependent_on(region_f, iff, igvn);
 
   // Must return either the original node (now dead) or a new node
   // (Do not return a top here, since that would break the uniqueness of top.)
