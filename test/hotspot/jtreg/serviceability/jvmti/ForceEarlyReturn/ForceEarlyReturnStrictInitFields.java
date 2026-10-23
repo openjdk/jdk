@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8387648
+ * @bug 8387648 8394667
  * @summary Test ForceEarlyReturnVoid when the target thread's top frame is the class
  *     initializer, constructor or method of a class with strictly-initialized fields.
  * @enablePreview
@@ -388,7 +388,7 @@ class ForceEarlyReturnStrictInitFields {
      */
     @Nested
     class ValueClassConstructor2 extends ForceEarlyReturnTest {
-        value class TestClass {
+        static value class TestClass {
             TestClass(ForceEarlyReturnTest test, int where) {
                 // before super
                 if (where == 1) {

@@ -21,13 +21,26 @@
  * questions.
  */
 
- /**
+/*
  * @test
  * @bug 8374862
  * @summary Regression test for -XX:+Verbose -XX:+WizardMode -Xlog:deoptimization=debug crash
  * @requires vm.debug
  * @run main/othervm -XX:-DisplayVMOutput
  *                   -XX:+Verbose -XX:+WizardMode -Xlog:deoptimization=debug
+ *                   compiler.uncommontrap.TestDeoptDetailsLockRank
+ */
+
+/*
+ * @test
+ * @bug 8374862
+ * @summary Regression test for -XX:+Verbose -XX:+WizardMode -Xlog:deoptimization=debug crash
+ * @requires vm.debug
+ * @requires os.arch == "aarch64"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:-DisplayVMOutput
+ *                   -XX:+Verbose -XX:+WizardMode -Xlog:deoptimization=debug
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
  *                   compiler.uncommontrap.TestDeoptDetailsLockRank
  */
 

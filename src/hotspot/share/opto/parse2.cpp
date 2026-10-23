@@ -1305,7 +1305,7 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
   i = 0;
   for (SwitchRange* r = lo; r <= hi; r++) {
     for (int64_t j = r->lo(); j <= r->hi(); j++, i++) {
-      Node* input = _gvn.transform(new JumpProjNode(jtn, i, r->dest(), (int)(j - lowval)));
+      Node* input = _gvn.transform(new JumpProjNode(jtn, i, r->dest()));
       {
         PreserveJVMState pjvms(this);
         set_control(input);
