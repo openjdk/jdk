@@ -1462,8 +1462,8 @@ public final class Main {
 
         Date firstDate = getStartDate(startDate);
         Date lastDate = getLastDate(firstDate, validity);
-        CertificateValidity interval = new CertificateValidity(firstDate,
-                                                               lastDate);
+        CertificateValidity interval = new CertificateValidity(firstDate.toInstant(),
+                                                               lastDate.toInstant());
 
         PrivateKey privateKey =
                 (PrivateKey)recoverKey(alias, storePass, keyPass).fst;
@@ -1570,8 +1570,6 @@ public final class Main {
 
         Date firstDate = getStartDate(startDate);
         Date lastDate = getLastDate(firstDate, validity);
-        CertificateValidity interval = new CertificateValidity(firstDate,
-                                                               lastDate);
 
         PrivateKey privateKey =
                 (PrivateKey)recoverKey(alias, storePass, keyPass).fst;
@@ -3248,8 +3246,9 @@ public final class Main {
         // Extend its validity
         Date firstDate = getStartDate(startDate);
         Date lastDate = getLastDate(firstDate, validity);
-        CertificateValidity interval = new CertificateValidity(firstDate,
-                                                               lastDate);
+        CertificateValidity interval =
+                new CertificateValidity(firstDate.toInstant(),
+                        lastDate.toInstant());
         certInfo.setValidity(interval);
 
         // Make new serial number
