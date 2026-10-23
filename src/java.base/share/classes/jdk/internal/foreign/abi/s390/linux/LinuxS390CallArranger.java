@@ -26,6 +26,13 @@
 
 package jdk.internal.foreign.abi.s390.linux;
 
+import java.lang.foreign.AddressLayout;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.*;
+
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
@@ -37,11 +44,6 @@ import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.VMStorage;
 
-import java.lang.foreign.AddressLayout;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.List;
@@ -247,9 +249,19 @@ public class LinuxS390CallArranger {
                     }
                 }
                 case INTEGER -> {
-                    // ABI requires all int types to get extended to 64 bit.
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER, false);
-                    bindings.vmStore(storage, carrier);
+                    // ABI requires all int types to get extended to 64 bit.
+                    // But we only do it for unsigned values here since this saves
+                    // on argument slots for the downcall stub. Signed values will be
+                    // sign-extended when being moved into the destination register.
+                    Optional<ValueLayout.IntegralExtension> integralExtension = ((ValueLayout) layout).integralExtension();
+                    if (integralExtension.isPresent() && integralExtension.get() == ValueLayout.IntegralExtension.ZERO_EXTEND
+                            && carrier != long.class) {
+                        bindings.cast(carrier, long.class, integralExtension)
+                                .vmStore(storage, long.class);
+                    } else {
+                        bindings.vmStore(storage, carrier);
+                    }
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.FLOAT, carrier == float.class);

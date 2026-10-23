@@ -782,13 +782,31 @@ public class BindingSpecializer {
                   .invokestatic(CD_Utils, "byteToBoolean", MTD_BYTE_TO_BOOLEAN);
             }
             case INT_TO_BYTE -> cb.i2b();
-            case INT_TO_CHAR -> cb.i2c();
+            case INT_TO_CHAR, USHORT_TO_INT -> cb.i2c();
             case INT_TO_SHORT -> cb.i2s();
+            case UINT_TO_LONG -> {
+                cb.i2l();
+                cb.loadConstant(0xFFFFFFFFL);
+                cb.land();
+            }
             case BYTE_TO_LONG, CHAR_TO_LONG, SHORT_TO_LONG, INT_TO_LONG -> cb.i2l();
+            case UBYTE_TO_LONG -> {
+                cb.loadConstant(0xFF);
+                cb.iand();
+                cb.i2l();
+            }
+            case USHORT_TO_LONG -> {
+                cb.i2c();
+                cb.i2l();
+            }
             case LONG_TO_BYTE -> { cb.l2i(); cb.i2b(); }
             case LONG_TO_SHORT -> { cb.l2i(); cb.i2s(); }
             case LONG_TO_CHAR -> { cb.l2i(); cb.i2c(); }
             case LONG_TO_INT -> cb.l2i();
+            case UBYTE_TO_INT -> {
+                cb.loadConstant(0xFF);
+                cb.iand();
+            }
             case BOOLEAN_TO_INT, BYTE_TO_INT, CHAR_TO_INT, SHORT_TO_INT -> {
                 // no-op in bytecode
             }

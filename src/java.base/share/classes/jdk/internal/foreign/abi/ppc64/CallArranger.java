@@ -46,6 +46,7 @@ import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.lang.foreign.ValueLayout.IntegralExtension;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.List;
@@ -433,9 +434,19 @@ public abstract class CallArranger {
                     }
                 }
                 case INTEGER -> {
-                    // ABI requires all int types to get extended to 64 bit.
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, false);
-                    bindings.vmStore(storage, carrier);
+                    // ABI requires all int types to get extended to 64 bit.
+                    // But we only do it for unsigned values here since this saves
+                    // on argument slots for the downcall stub. Signed values will be
+                    // sign-extended when being moved into the destination register.
+                    Optional<IntegralExtension> integralExtension = ((ValueLayout) layout).integralExtension();
+                    if (integralExtension.isPresent() && integralExtension.get() == IntegralExtension.ZERO_EXTEND
+                                 && carrier != long.class) {
+                        bindings.cast(carrier, long.class, integralExtension)
+                                .vmStore(storage, long.class);
+                    } else {
+                        bindings.vmStore(storage, carrier);
+                    }
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.FLOAT, carrier == float.class);

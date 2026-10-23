@@ -51,7 +51,7 @@ public class TestLayoutEquality {
     @ParameterizedTest
     @MethodSource("layoutConstants")
     public void testReconstructedEquality(ValueLayout layout) {
-        ValueLayout newLayout = ValueLayouts.valueLayout(layout.carrier(), layout.order());
+        ValueLayout newLayout = ValueLayouts.valueLayout(layout.carrier(), layout.order(), layout.integralExtension());
         newLayout = newLayout.withByteAlignment(layout.byteAlignment());
         if (layout instanceof AddressLayout addressLayout && addressLayout.targetLayout().isPresent()) {
             newLayout = ((AddressLayout)newLayout).withTargetLayout(addressLayout.targetLayout().get());

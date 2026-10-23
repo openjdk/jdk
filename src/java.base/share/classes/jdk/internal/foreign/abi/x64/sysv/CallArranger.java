@@ -295,7 +295,11 @@ public class CallArranger {
                 }
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
-                    bindings.vmStore(storage, carrier);
+                    // we specify the sign-extension behavior here so that we get zero-extension for
+                    // unsigned types. This is required by the Mac ABI, and there's a bug in clang
+                    // where callee's might be assuming the upper bits of a register are sign/zero-extended
+                    // on Linux as well.
+                    bindings.vmStore(storage, carrier, ((ValueLayout) layout).integralExtension());
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.VECTOR);
