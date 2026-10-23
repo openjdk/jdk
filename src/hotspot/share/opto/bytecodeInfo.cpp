@@ -259,6 +259,11 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     return true;
   }
 
+  if (StressExcludeInlining && Stress::should_exclude_inlining(callee_method, compiler_c2)) {
+    set_msg("excluded by StressExcludeInlining");
+    return true;
+  }
+
   if (callee_method->force_inline()) {
     set_msg("force inline by annotation");
     return false;
