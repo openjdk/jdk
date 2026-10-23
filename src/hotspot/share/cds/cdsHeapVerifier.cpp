@@ -377,7 +377,8 @@ void CDSHeapVerifier::do_klass(Klass* k) {
     InstanceKlass* ik = InstanceKlass::cast(k);
 
     if (!ik->is_loaded() || !ik->is_loader_alive()) {
-      // In the training run, we may see some classes that are being loaded or unloaded. Ignore them
+      // In the training run, we may see some classes that are just being created, or
+      // are in the process of being unloaded. Ignore them
       return;
     }
 
