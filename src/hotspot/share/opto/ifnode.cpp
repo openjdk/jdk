@@ -85,21 +85,28 @@ const RegMask &IfNode::out_RegMask() const {
   return RegMask::EMPTY;
 }
 
-// This is similar to PhaseIdealLoop::pin_nodes_dependent_on
-static void pin_nodes_dependent_on(Node* ctrl, Node* iff, PhaseIterGVN* igvn) {
+void IfNode::pin_nodes_dependent_on(Node* ctrl, Node* iff, PhaseIterGVN* igvn, PhaseIdealLoop* loop) {
   for (DUIterator i = ctrl->outs(); ctrl->has_out(i); i++) {
     Node* use = ctrl->out(i);
     if (!use->depends_only_on_test()) {
       continue;
     }
+
+    // When a RangeCheckNode is folded because its condition is a constant, IfProjNode::Identity
+    // returns the control input of the RangeCheckNode. As a result, when the old IfNode is not a
+    // RangeCheckNode, and a Load output of it depends_only_on_test, we don't need to pin the Load.
     if (use->is_Load() && (iff->Opcode() != Op_RangeCheck)) {
       continue;
     }
 
-    Node* pinned_clone = use->pin_node_under_control();
-    if (pinned_clone != nullptr) {
-      igvn->register_new_node_with_optimizer(pinned_clone, use);
-      igvn->replace_node(use, pinned_clone);
+    Node* pinned = use->pin_node_under_control();
+    if (pinned != nullptr) {
+      if (loop != nullptr) {
+        loop->register_new_node_with_ctrl_of(pinned, use);
+      } else {
+        igvn->register_new_node_with_optimizer(pinned, use);
+      }
+      igvn->replace_node(use, pinned);
       --i;
     }
   }
@@ -486,8 +493,8 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
 
   // Control is updated here to a region, which is not a test, so any node that
   // depends_only_on_test must be pinned
-  pin_nodes_dependent_on(region_s, iff, igvn);
-  pin_nodes_dependent_on(region_f, iff, igvn);
+  IfNode::pin_nodes_dependent_on(region_s, iff, igvn, nullptr);
+  IfNode::pin_nodes_dependent_on(region_f, iff, igvn, nullptr);
 
   // Must return either the original node (now dead) or a new node
   // (Do not return a top here, since that would break the uniqueness of top.)
