@@ -2621,10 +2621,12 @@ class StubGenerator: public StubCodeGenerator {
     __ eor(rscratch2, rscratch2, scratch_src_klass);
     __ cbnz(rscratch2, L_failed);
 
-    if (Arguments::is_valhalla_enabled()) {
+    if (UseArrayFlattening) {
       // Check for flat value type array -> return -1
       __ test_flat_array_oop(src, rscratch2, L_failed);
+    }
 
+    if (Arguments::is_valhalla_enabled()) {
       // Check for null-free (non-flat) value type array -> handle as object array
       __ test_null_free_array_oop(src, rscratch2, L_objArray);
     }

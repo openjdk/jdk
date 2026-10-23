@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8334334
+ * @bug 8334334 8394667
  * @summary reflection test for value classes
  * @enablePreview
  * @compile ValueClassesReflectionTest.java
@@ -41,8 +41,6 @@ import static org.testng.Assert.*;
 
 @Test
 public class ValueClassesReflectionTest {
-    final static int numberOfFields = 2;
-
     value class ValueClass {
         private int i = 0;
         private String s = "";
@@ -55,19 +53,21 @@ public class ValueClassesReflectionTest {
 
     class Inner {}
 
+    record ClassNoOfFieldsPair(Class<?> cls, int numberOfFields) {}
+
     @DataProvider(name = "valueClasses")
     public Object[][] valueClassesData() {
         return List.of(
-                ValueClass.class,
-                AValueClass.class,
-                ValueRecord.class
+                new ClassNoOfFieldsPair(ValueClass.class, 3),
+                new ClassNoOfFieldsPair(AValueClass.class, 3),
+                new ClassNoOfFieldsPair(ValueRecord.class, 2)
         ).stream().map(c -> new Object[] {c}).toArray(Object[][]::new);
     }
 
     @Test(dataProvider = "valueClasses")
-    public void testValueClasses(Class<?> cls) {
-        assertTrue(cls.isValue());
-        Set<AccessFlag> accessFlagSet = cls.accessFlags();
+    public void testValueClasses(ClassNoOfFieldsPair pair) {
+        assertTrue(pair.cls.isValue());
+        Set<AccessFlag> accessFlagSet = pair.cls.accessFlags();
         assertTrue(!accessFlagSet.contains(AccessFlag.IDENTITY));
     }
 
@@ -95,10 +95,10 @@ public class ValueClassesReflectionTest {
     }
 
     @Test(dataProvider = "valueClasses")
-    public void testValueClassReflection(Class<?> valueClass) throws ReflectiveOperationException {
-        assertTrue(valueClass.isValue());
-        Field[] fields = valueClass.getDeclaredFields();
-        assertTrue(fields.length == numberOfFields);
+    public void testValueClassReflection(ClassNoOfFieldsPair pair) throws ReflectiveOperationException {
+        assertTrue(pair.cls.isValue());
+        Field[] fields = pair.cls.getDeclaredFields();
+        assertTrue(fields.length == pair.numberOfFields);
         for (Field field : fields) {
             int mod = field.getModifiers();
             assertTrue((mod & Modifier.STRICT) != 0);

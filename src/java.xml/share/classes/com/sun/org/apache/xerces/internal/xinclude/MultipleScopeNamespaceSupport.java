@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,7 +37,7 @@ import java.util.Enumeration;
  *
  * @author Peter McCracken, IBM
  *
- * @LastModified: Oct 2017
+ * @LastModified: June 2026
  */
 public class MultipleScopeNamespaceSupport extends NamespaceSupport {
 
@@ -66,29 +66,7 @@ public class MultipleScopeNamespaceSupport extends NamespaceSupport {
      * @see com.sun.org.apache.xerces.internal.xni.NamespaceContext#getAllPrefixes()
      */
     public Enumeration<String> getAllPrefixes() {
-        int count = 0;
-        if (fPrefixes.length < (fNamespace.length / 2)) {
-            // resize prefix array
-            String[] prefixes = new String[fNamespaceSize];
-            fPrefixes = prefixes;
-        }
-        String prefix = null;
-        boolean unique = true;
-        for (int i = fContext[fScope[fCurrentScope]];
-            i <= (fNamespaceSize - 2);
-            i += 2) {
-            prefix = fNamespace[i];
-            for (int k = 0; k < count; k++) {
-                if (fPrefixes[k] == prefix) {
-                    unique = false;
-                    break;
-                }
-            }
-            if (unique) {
-                fPrefixes[count++] = prefix;
-            }
-            unique = true;
-        }
+        int count = collectPrefixes(fContext[fScope[fCurrentScope]], fNamespaceSize);
         return new Prefixes(fPrefixes, count);
     }
 
@@ -131,10 +109,10 @@ public class MultipleScopeNamespaceSupport extends NamespaceSupport {
             return XMLSymbols.PREFIX_XMLNS;
         }
 
-        // find uri in current context
+        // find uri in the requested context range within the current scope
         for (int i = start; i > end; i -= 2) {
             if (fNamespace[i - 1] == uri) {
-                if (getURI(fNamespace[i - 2]) == uri)
+                if (getURI(fNamespace[i - 2], start, end) == uri)
                     return fNamespace[i - 2];
             }
         }
@@ -152,15 +130,18 @@ public class MultipleScopeNamespaceSupport extends NamespaceSupport {
             return NamespaceContext.XMLNS_URI;
         }
 
-        // find prefix in current context
-        for (int i = start; i > end; i -= 2) {
-            if (fNamespace[i - 2] == prefix) {
-                return fNamespace[i - 1];
-            }
-        }
+        int prefixIndex = getPrefixIndex(prefix, start, end);
+        return prefixIndex != NO_PREVIOUS_DECLARATION
+                ? fNamespace[prefixIndex + 1] : null;
+    }
 
-        // prefix not found
-        return null;
+    private int getPrefixIndex(String prefix, int start, int end) {
+        final Integer active = fNamespaceTable.get(prefix);
+        int prefixIndex = active != null ? active : NO_PREVIOUS_DECLARATION;
+        while (prefixIndex >= start) {
+            prefixIndex = fNamespacePrev[prefixIndex >> 1];
+        }
+        return prefixIndex >= end ? prefixIndex : NO_PREVIOUS_DECLARATION;
     }
 
     /**
@@ -170,6 +151,7 @@ public class MultipleScopeNamespaceSupport extends NamespaceSupport {
     public void reset() {
         fCurrentContext = fScope[fCurrentScope];
         fNamespaceSize = fContext[fCurrentContext];
+        rebuildNamespaceTable();
     }
 
     /**

@@ -635,33 +635,6 @@ instruct g1CompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN newval, iRegPNo
 
 // This pattern is generated automatically from g1_aarch64.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct g1GetAndSetP(indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp preval, rFlagsReg cr)
-%{
-  predicate(UseG1GC && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
-  match(Set preval (GetAndSetP mem newval));
-  effect(TEMP preval, TEMP tmp1, TEMP tmp2, KILL cr);
-  ins_cost(2 * VOLATILE_REF_COST);
-  format %{ "atomic_xchg  $preval, $newval, [$mem]" %}
-  ins_encode %{
-    assert_different_registers($mem$$Register, $newval$$Register);
-    write_barrier_pre(masm, this,
-                      $mem$$Register /* obj */,
-                      $preval$$Register /* pre_val (as a temporary register) */,
-                      $tmp1$$Register /* tmp1 */,
-                      $tmp2$$Register /* tmp2 */,
-                      RegSet::of($mem$$Register, $preval$$Register, $newval$$Register) /* preserve */);
-    __ atomic_xchg($preval$$Register, $newval$$Register, $mem$$Register);
-    write_barrier_post(masm, this,
-                       $mem$$Register /* store_addr */,
-                       $newval$$Register /* new_val */,
-                       $tmp1$$Register /* tmp1 */,
-                       $tmp2$$Register /* tmp2 */);
-  %}
-  ins_pipe(pipe_serial);
-%}
-
-// This pattern is generated automatically from g1_aarch64.m4.
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct g1GetAndSetPAcq(indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp preval, rFlagsReg cr)
 %{
   predicate(UseG1GC && needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
@@ -683,34 +656,6 @@ instruct g1GetAndSetPAcq(indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp t
                        $newval$$Register /* new_val */,
                        $tmp1$$Register /* tmp1 */,
                        $tmp2$$Register /* tmp2 */);
-  %}
-  ins_pipe(pipe_serial);
-%}
-
-// This pattern is generated automatically from g1_aarch64.m4.
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct g1GetAndSetN(indirect mem, iRegN newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegNNoSp preval, rFlagsReg cr)
-%{
-  predicate(UseG1GC && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
-  match(Set preval (GetAndSetN mem newval));
-  effect(TEMP preval, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
-  ins_cost(2 * VOLATILE_REF_COST);
-  format %{ "atomic_xchgw $preval, $newval, [$mem]" %}
-  ins_encode %{
-    assert_different_registers($mem$$Register, $newval$$Register);
-    write_barrier_pre(masm, this,
-                      $mem$$Register /* obj */,
-                      $tmp1$$Register /* pre_val */,
-                      $tmp2$$Register /* tmp1 */,
-                      $tmp3$$Register /* tmp2 */,
-                      RegSet::of($mem$$Register, $preval$$Register, $newval$$Register) /* preserve */);
-    __ atomic_xchgw($preval$$Register, $newval$$Register, $mem$$Register);
-    __ decode_heap_oop($tmp1$$Register, $newval$$Register);
-    write_barrier_post(masm, this,
-                       $mem$$Register /* store_addr */,
-                       $tmp1$$Register /* new_val */,
-                       $tmp2$$Register /* tmp1 */,
-                       $tmp3$$Register /* tmp2 */);
   %}
   ins_pipe(pipe_serial);
 %}
