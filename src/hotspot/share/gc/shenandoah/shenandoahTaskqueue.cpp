@@ -31,8 +31,7 @@
 #include "utilities/stack.inline.hpp"
 
 void ShenandoahObjToScanQueueSet::clear() {
-  uint size = GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>::size();
-  for (uint index = 0; index < size; index ++) {
+  for (uint index = 0, num_queues = size(); index < num_queues; ++index) {
     ShenandoahObjToScanQueue* q = queue(index);
     assert(q != nullptr, "Sanity");
     q->clear();
@@ -40,8 +39,7 @@ void ShenandoahObjToScanQueueSet::clear() {
 }
 
 bool ShenandoahObjToScanQueueSet::is_empty() {
-  uint size = GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>::size();
-  for (uint index = 0; index < size; index ++) {
+  for (uint index = 0, num_queues = size(); index < num_queues; ++index) {
     ShenandoahObjToScanQueue* q = queue(index);
     assert(q != nullptr, "Sanity");
     if (!q->is_empty()) {
@@ -153,6 +151,13 @@ void ShenandoahObjToScanQueueSet::rebalance(size_t target_queues) {
 #endif
 }
 
+bool ShenandoahTerminatorTerminator::can_work() const {
+  // Can work if the thread cannot be cancelled (i.e., STW worker) or the thread has not been retired,
+  // and it is not being held in reserve.
+  return !_cancellable || WorkerThread::worker_id() < _heap->control_thread()->concurrent_worker_count();
+}
+
+// Return true means: withdraw offer to terminate, go back and look for work.
 bool ShenandoahTerminatorTerminator::should_exit_termination() {
   return _heap->cancelled_gc();
 }

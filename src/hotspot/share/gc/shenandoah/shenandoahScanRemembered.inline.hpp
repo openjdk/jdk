@@ -389,7 +389,16 @@ ShenandoahScanRemembered::process_region_slice(ShenandoahHeapRegion *region, siz
   }
 }
 
-inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *assignment) {
+inline bool ShenandoahRegionChunkIterator::has_next() const {
+  return _index.load_relaxed() < _total_chunks;
+}
+
+inline size_t ShenandoahRegionChunkIterator::remaining() const {
+  const size_t index = _index.load_relaxed();
+  return index <= _total_chunks ? _total_chunks - index : 0;
+}
+
+inline bool ShenandoahRegionChunkIterator::next(ShenandoahRegionChunk *assignment) {
   while (true) {
     size_t cur_index = _index.load_relaxed();
     if (cur_index >= _total_chunks) {

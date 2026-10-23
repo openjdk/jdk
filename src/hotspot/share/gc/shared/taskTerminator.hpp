@@ -29,6 +29,7 @@
 #include "memory/padded.hpp"
 #include "runtime/mutex.hpp"
 
+class MonitorLocker;
 class TaskQueueSetSuper;
 class TerminatorTerminator;
 class Thread;
@@ -91,6 +92,9 @@ class TaskTerminator : public CHeapObj<mtGC> {
 
   size_t tasks_in_queue_set() const;
 
+  // Thread is not able to work, but has offered termination
+  bool wait_while_ineligible(MonitorLocker* x, TerminatorTerminator* terminator);
+
   NONCOPYABLE(TaskTerminator);
 
 public:
@@ -118,6 +122,11 @@ public:
   // Same as above but the number of parallel threads is set to the
   // given number.
   void reset_for_reuse(uint n_threads);
+
+  // Wake up all waiting threads. This is intended for waking threads that
+  // have been waiting for admission to the work pool. This may be called by
+  // a mutator.
+  void notify_all();
 };
 
 #endif // SHARE_GC_SHARED_TASKTERMINATOR_HPP

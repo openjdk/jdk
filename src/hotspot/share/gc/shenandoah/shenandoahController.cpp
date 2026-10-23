@@ -52,6 +52,7 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &re
 
   _alloc_stall_count.add_then_fetch(1UL, memory_order_relaxed);
   increase_concurrent_worker_count();
+  _coordinator.increase_workers(concurrent_worker_count());
   ShenandoahHeap::heap()->shenandoah_policy()->record_allocation_stall(get_phase());
   const bool is_humongous = ShenandoahHeapRegion::requires_humongous(req.size());
   const GCCause::Cause cause = is_humongous ? GCCause::_shenandoah_humongous_allocation_failure : GCCause::_allocation_failure;

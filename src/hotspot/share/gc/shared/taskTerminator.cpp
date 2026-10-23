@@ -102,6 +102,11 @@ void TaskTerminator::reset_for_reuse(uint n_threads) {
   _n_threads = n_threads;
 }
 
+void TaskTerminator::notify_all() {
+  MonitorLocker locker(&_blocker, Mutex::_no_safepoint_check_flag);
+  locker.notify_all();
+}
+
 bool TaskTerminator::exit_termination(size_t tasks, TerminatorTerminator* terminator) {
   return tasks > 0 || (terminator != nullptr && terminator->should_exit_termination());
 }
@@ -128,6 +133,29 @@ void TaskTerminator::prepare_for_return(Thread* this_thread, size_t tasks) {
   }
 }
 
+static bool can_work(TerminatorTerminator* terminator) {
+  return terminator == nullptr || terminator->can_work();
+}
+
+bool TaskTerminator::wait_while_ineligible(MonitorLocker* x, TerminatorTerminator* terminator) {
+  assert(_blocker.owned_by_self(), "Must hold _blocker here");
+  while (!can_work(terminator) && !exit_termination(0, terminator)) {
+    x->wait();
+
+    if (_offered_termination == _n_threads) {
+      // all threads terminated
+      return true;
+    }
+
+    if (exit_termination(0, terminator)) {
+      // termination offer withdrawn (cancelled)
+      break;
+    }
+  }
+
+  return false;
+}
+
 bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   assert(_n_threads > 0, "Initialization is incorrect");
   assert(_offered_termination < _n_threads, "Invariant");
@@ -148,6 +176,20 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
     prepare_for_return(the_thread);
     assert_queue_set_empty();
     return true;
+  }
+
+  if (!can_work(terminator)) {
+    if (wait_while_ineligible(&x, terminator)) {
+      // This thread was not admitted
+      prepare_for_return(the_thread);
+      assert_queue_set_empty();
+      return true;
+    }
+
+    // This thread was admitted and can work (or the tasks were cancelled).
+    prepare_for_return(the_thread, 0);
+    _offered_termination--;
+    return false;
   }
 
   for (;;) {

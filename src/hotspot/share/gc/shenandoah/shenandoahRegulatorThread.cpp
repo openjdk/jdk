@@ -126,7 +126,7 @@ void ShenandoahRegulatorThread::regulator_sleep() {
   if (LogTarget(Debug, gc, thread)::is_enabled()) {
     double elapsed = _most_recent_wake_time - before_sleep_time;
     double hiccup = elapsed - double(_sleep) / 1000.0;
-    if (hiccup > 0.001) {
+    if (hiccup > 0.010) {
       log_debug(gc, thread)("Regulator hiccup time: %.3fs", hiccup);
     }
   }

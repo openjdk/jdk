@@ -26,12 +26,12 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTIONSET_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTIONSET_HPP
 
+#include "gc/shared/taskqueue.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
 #include "memory/reservedSpace.hpp"
-#include "memory/virtualspace.hpp"
 #include "runtime/atomic.hpp"
 
 class ShenandoahCollectionSet : public CHeapObj<mtGC> {
@@ -71,6 +71,8 @@ private:
   shenandoah_padding(0);
   Atomic<size_t>        _current_index;
   shenandoah_padding(1);
+  Atomic<size_t>        _claimed;
+  shenandoah_padding(2);
 
 public:
   ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedSpace space, char* heap_base);
@@ -92,6 +94,13 @@ public:
 
   void clear_current_index() {
     _current_index.store_relaxed(0);
+    _claimed.store_relaxed(0);
+  }
+
+  size_t remaining() const {
+    const size_t claimed = _claimed.load_relaxed();
+    assert(claimed <= count(), "claimed %zu exceeds cset count %zu", claimed, count());
+    return count() - claimed;
   }
 
   inline bool is_in(ShenandoahHeapRegion* r) const;
