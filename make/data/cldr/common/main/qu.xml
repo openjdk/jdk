@@ -323,6 +323,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pcm">Pidgin Nigeriano Simi</language>
 			<language type="pis">Pijin Simi</language>
 			<language type="pl">Polaco Simi</language>
+			<language type="pms">Piedmontese</language>
 			<language type="pqm">Maliseet-Passamaquoddy Simi</language>
 			<language type="prg">Prusiano Simi</language>
 			<language type="ps">Pashto Simi</language>
@@ -826,15 +827,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<keys>
 			<key type="calendar">Intiwatana</key>
 			<key type="cf">Imayna Qullqi kaynin</key>
+			<key type="colAlternate">Mana qhawariy Simbolokuna t’aqay</key>
+			<key type="colBackwards">Acento Inverso nisqa t’aqay</key>
+			<key type="colCaseFirst">Hatun/Uchuy qillqakuna Ordenación</key>
+			<key type="colCaseLevel">Caso Sensitivo nisqamanta t’aqay</key>
 			<key type="collation">Ñiqinchana</key>
+			<key type="colNormalization">Ordenación Normalizada nisqa</key>
+			<key type="colNumeric">Yupaykunawan t’aqay</key>
+			<key type="colReorder">Guion/Bloque kaqmanta ordenamiento</key>
+			<key type="colStrength">T’aqay Kallpa</key>
 			<key type="currency">qullqi</key>
+			<key type="d0">Destino nisqaman tikray</key>
+			<key type="dx">Diccionario Break Exclusiones nisqakuna</key>
 			<key type="em">Emoji nisqamanta rikuchiy</key>
+			<key type="fw">First day of week</key>
+			<key type="h0">Mixed-in</key>
 			<key type="hc">Ciclo de Horas (12 vs 24)</key>
+			<key type="i0">Yaykuy ñan</key>
+			<key type="k0">Teclado</key>
+			<key type="kv">Aswan Alto Ignorado</key>
 			<key type="lb">Siqi paway kaynin</key>
 			<key type="lw">Simikuna ukhupi Chiru Pakikuna</key>
+			<key type="m0">Kamachiykunata tikray</key>
 			<key type="ms">Tupuy Kamay</key>
+			<key type="mu">Unidad de Medición nisqa</key>
 			<key type="numbers">Yupaykuna</key>
+			<key type="rg">Región Datos Suplementarios nisqapaq</key>
+			<key type="s0">Pukyuta tikray</key>
+			<key type="sd">Región Subdivisión nisqa</key>
 			<key type="ss">Oración Pakikuy Abbr.</key>
+			<key type="t">Tikray</key>
+			<key type="t0">Maquinawan tikrasqa</key>
+			<key type="timezone">Tiempo nisqa</key>
+			<key type="va">Variante Local nisqa</key>
+			<key type="x">Sapaq-Uso</key>
+			<key type="x0">Sapaq-Uso Transformado nisqa</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Budista Intiwatana</type>
@@ -853,13 +880,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian" scope="core">Gregorian</type>
 			<type key="calendar" type="hebrew">Hebreo Intiwatana</type>
 			<type key="calendar" type="hebrew" scope="core">Hebreo</type>
+			<type key="calendar" type="indian" scope="core">Indio Nacional</type>
 			<type key="calendar" type="islamic">Hijri Intiwatana</type>
 			<type key="calendar" type="islamic" scope="core">Hijri</type>
 			<type key="calendar" type="islamic-civil">Hijri Intiwatana (tabular, epoca civil)</type>
 			<type key="calendar" type="islamic-civil" scope="core">Hijri (tabular, epoca civil)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">Hijri, Arabia Saudita rikusqa</type>
+			<type key="calendar" type="islamic-tbla" scope="core">Hijri (Tabular, Enfoque Astronómico)</type>
 			<type key="calendar" type="islamic-umalqura">Hijri Intiwatana (Umm al-Qura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">Hijri (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601 Intiwatana</type>
+			<type key="calendar" type="iso8601" scope="core">Gregorian</type>
 			<type key="calendar" type="japanese">Japones Intiwatana</type>
 			<type key="calendar" type="japanese" scope="core">Japones</type>
 			<type key="calendar" type="persian">Persa Intiwatana</type>
@@ -870,15 +901,46 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="cf" type="account" scope="core">Accounting</type>
 			<type key="cf" type="standard">Estandar nisqa qullqi imayna kaynin</type>
 			<type key="cf" type="standard" scope="core">Standard</type>
+			<type key="colCaseFirst" type="lower" scope="core">Huch’uy qillqa</type>
+			<type key="colCaseFirst" type="no" scope="core">Huch’uy qillqa</type>
+			<type key="colCaseFirst" type="upper" scope="core">Hatun qillqakuna</type>
+			<type key="collation" type="compat" scope="core">Compatibilidad nisqa</type>
+			<type key="collation" type="dictionary" scope="core">Simi taqi</type>
 			<type key="collation" type="ducet">Ñawpaqchasqa Unicode Nisqa Ñiqinchana</type>
 			<type key="collation" type="ducet" scope="core">Ñawpaqchasqa Unicode</type>
+			<type key="collation" type="emoji" scope="core">Emoji nisqa</type>
+			<type key="collation" type="eor" scope="core">Iwrupapi kamachiykuna</type>
+			<type key="collation" type="phonebook" scope="core">Teléfono nisqa libro</type>
+			<type key="collation" type="phonetic" scope="core">Fonético nisqa</type>
+			<type key="collation" type="pinyin" scope="core">Pinyin</type>
 			<type key="collation" type="search">Llapanpaq maskana</type>
 			<type key="collation" type="search" scope="core">maskana</type>
+			<type key="collation" type="searchjl" scope="core">Corea simipi qallariy kunka</type>
 			<type key="collation" type="standard">Estandar nisqa Ñiqinchana</type>
 			<type key="collation" type="standard" scope="core">Estandar</type>
+			<type key="collation" type="stroke" scope="core">Siqi</type>
+			<type key="collation" type="traditional" scope="core">Costumbre</type>
+			<type key="collation" type="unihan" scope="core">Radical-AVC nisqa</type>
+			<type key="collation" type="zhuyin" scope="core">Z-Tigre Causa</type>
+			<type key="colReorder" type="currency" scope="core">Kunan</type>
+			<type key="colReorder" type="digit" scope="core">Dígitos nisqakuna</type>
+			<type key="colReorder" type="punct" scope="core">Puntuacion</type>
+			<type key="colReorder" type="space" scope="core">Yuraq pampa</type>
+			<type key="colReorder" type="symbol" scope="core">Unancha</type>
+			<type key="colStrength" type="identical" scope="core">Llapan</type>
+			<type key="colStrength" type="primary" scope="core">Base Letrakunalla</type>
+			<type key="colStrength" type="quaternary" scope="core">Base, Acentos, Caso, Variantes, Kana</type>
+			<type key="colStrength" type="secondary" scope="core">Base, Acentos nisqa</type>
+			<type key="colStrength" type="tertiary" scope="core">Base, Acentos, Caso, Variantes</type>
+			<type key="d0" type="fwidth">To Todo Ancho nisqaman</type>
+			<type key="d0" type="hwidth">Kuska Anchokama</type>
 			<type key="em" type="default" scope="core">Default</type>
 			<type key="em" type="emoji" scope="core">Emoji</type>
 			<type key="em" type="text" scope="core">Text</type>
+			<type key="hc" type="c12">12 hora kaynin</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24 hora kaynin</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12 hora kaynin (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 hora kaynin (1–12)</type>
@@ -887,6 +949,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 hora kaynin (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Mayukuna Espaciokuna, puntuacion, llapan siñalkuna</type>
+			<type key="kv" type="punct" scope="core">Espaciokuna cambiay, puntuacion</type>
+			<type key="kv" type="space" scope="core">Espaciokuna cambiay, puntuacion</type>
+			<type key="kv" type="symbol" scope="core">Mayuman tikranapaq espaciokuna, puntuacion, mana qullqiyuq siñalkuna</type>
 			<type key="lb" type="loose">Siqi paway chinkachiy kaynin</type>
 			<type key="lb" type="loose" scope="core">Loose</type>
 			<type key="lb" type="normal">Siqi paway Normal kaynin</type>
@@ -897,6 +963,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="lw" type="keepall" scope="core">Tukuy imata waqaychay</type>
 			<type key="lw" type="normal" scope="core">Normal</type>
 			<type key="lw" type="phrase" scope="core">Frases nisqapi waqaychay</type>
+			<type key="m0" type="bgn">EE.UU. BGN Transliteración nisqa</type>
+			<type key="m0" type="ungegn">Transliteración nisqa</type>
 			<type key="ms" type="metric">Metrico Kamay</type>
 			<type key="ms" type="metric" scope="core">Metrico</type>
 			<type key="ms" type="uksystem">Metrico Ingles Kamay</type>
@@ -905,47 +973,82 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="ms" type="ussystem" scope="core">US</type>
 			<type key="numbers" type="arab">Arabe Sananpakuna</type>
 			<type key="numbers" type="arabext">Arabe Mirachisqa Sananpakuna</type>
+			<type key="numbers" type="arabext" scope="core">Mastarisqa árabe-indico</type>
 			<type key="numbers" type="armn">Armenio Sananpakuna</type>
 			<type key="numbers" type="armnlow">Armenio Uchuy Sananpakuna</type>
+			<type key="numbers" type="armnlow" scope="core">Armenia simipi huch’uy qillqa</type>
 			<type key="numbers" type="beng">Bangla Sananpakuna</type>
 			<type key="numbers" type="cakm">Chakma Sananpakuna</type>
 			<type key="numbers" type="deva">Devanagari Sananpakuna</type>
 			<type key="numbers" type="ethi">Etiope Sananpakuna</type>
+			<type key="numbers" type="finance" scope="core">Finanzas</type>
 			<type key="numbers" type="fullwide">Llapan kinray Sananpakuna</type>
+			<type key="numbers" type="fullwide" scope="core">Tukuy anchoyuq</type>
 			<type key="numbers" type="geor">Gregoriano Yupaykuna</type>
 			<type key="numbers" type="grek">Griego Yupaykuna</type>
 			<type key="numbers" type="greklow">Griego Uchuy Yupaykuna</type>
+			<type key="numbers" type="greklow" scope="core">Griego simipi huch’uy qillqa</type>
 			<type key="numbers" type="gujr">Gujarati Sananpakuna</type>
 			<type key="numbers" type="guru">Gurmukhi Sananpakuna</type>
+			<type key="numbers" type="hanidays" scope="core">Han-character pʼunchaw-killa yupay ñawpaq calendariokunapaq</type>
 			<type key="numbers" type="hanidec">Chunkachasqa Chino Yupaykuna</type>
+			<type key="numbers" type="hanidec" scope="core">Chunkayuq posición nisqa sistema chino yupay ideografía nisqakunata digito hina llamkʼachispa</type>
 			<type key="numbers" type="hans">Uchuyachusqa Chino Yupaypakuna</type>
 			<type key="numbers" type="hansfin">Uchuyachisqa Qullqi Chino Yupaypakuna</type>
+			<type key="numbers" type="hansfin" scope="core">China qullqimanta pisiyachisqa</type>
 			<type key="numbers" type="hant">Kikin Chino Yupaypakuna</type>
 			<type key="numbers" type="hantfin">Kikin Qullqi Chino Yupaypakuna</type>
+			<type key="numbers" type="hantfin" scope="core">Tradicional chino qullqimanta</type>
 			<type key="numbers" type="hebr">Hebreo Yupaykuna</type>
 			<type key="numbers" type="java">Javaneses Yupaykuna</type>
 			<type key="numbers" type="jpan">Japones Yupaykuna</type>
 			<type key="numbers" type="jpanfin">Japones Qullqi Yupaykuna</type>
+			<type key="numbers" type="jpanfin" scope="core">Japón qullqimanta</type>
+			<type key="numbers" type="jpanyear" scope="core">Japonmanta ñawpaq wata Gannen yupay</type>
 			<type key="numbers" type="khmr">Khmer Sananpakuna</type>
 			<type key="numbers" type="knda">Kannada Sananpakuna</type>
+			<type key="numbers" type="lanatham" scope="core">Tai Tham Tham (iglesiastika)</type>
 			<type key="numbers" type="laoo">Lao Sananpakuna</type>
 			<type key="numbers" type="latn">Occidental Sananpakuna</type>
+			<type key="numbers" type="mathbold" scope="core">Mathematical bold</type>
+			<type key="numbers" type="mathdbl" scope="core">Mathematical double-struck</type>
+			<type key="numbers" type="mathmono" scope="core">Mathematical monospace</type>
+			<type key="numbers" type="mathsanb" scope="core">Mathematical sans-serif bold</type>
+			<type key="numbers" type="mathsans" scope="core">Mathematical sans-serif</type>
 			<type key="numbers" type="mlym">Malayalam Sananpakuna</type>
 			<type key="numbers" type="mtei">Meetei Mayek Yupaykuna</type>
 			<type key="numbers" type="mymr">Myanmar Sananpakuna</type>
+			<type key="numbers" type="mymrepka" scope="core">Myanmar Eastern Pwo Karen</type>
+			<type key="numbers" type="mymrpao" scope="core">Myanmar Pao</type>
+			<type key="numbers" type="mymrshan" scope="core">Myanmar Shan</type>
+			<type key="numbers" type="mymrtlng" scope="core">Myanmar Tai Laing</type>
+			<type key="numbers" type="native">Native Digits</type>
+			<type key="numbers" type="native" scope="core">Native digits</type>
 			<type key="numbers" type="olck">Ol Chiki Yupaykuna</type>
 			<type key="numbers" type="orya">Odia Sananpakuna</type>
+			<type key="numbers" type="outlined" scope="core">Outlined</type>
 			<type key="numbers" type="roman">Romano Sananpakuna</type>
+			<type key="numbers" type="roman" scope="core">Romanu hatun qillqa</type>
 			<type key="numbers" type="romanlow">Roman Uchuy Yupaykuna</type>
+			<type key="numbers" type="romanlow" scope="core">Romanu uchuy qillqa</type>
+			<type key="numbers" type="segment" scope="core">Segmentado nisqa</type>
 			<type key="numbers" type="taml">Kikin Tamil Yupaykuna</type>
 			<type key="numbers" type="tamldec">Tamil Sananpakuna</type>
+			<type key="numbers" type="tamldec" scope="core">Kunan pacha tamil simi</type>
 			<type key="numbers" type="telu">Telegu Sananpakuna</type>
 			<type key="numbers" type="thai">Thai Sananpakuna</type>
 			<type key="numbers" type="tibt">Tibetano Sananpakuna</type>
+			<type key="numbers" type="traditional" scope="core">Ñawpa pacha yupaykuna</type>
 			<type key="numbers" type="vaii">Vai Yupaykuna</type>
 			<type key="ss" type="none" scope="core">Off</type>
 			<type key="ss" type="standard" scope="core">On</type>
+			<type key="t0" type="und">Mana nisqa Maquinawan tikray</type>
+			<type key="va" type="posix" scope="core">POSIX variant</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">Off</typeValue>
+			<typeValue type="yes">On</typeValue>
+		</typeValues>
 		<codePatterns>
 			<codePattern type="language">Simi: {0}</codePattern>
 			<codePattern type="script">Qillqa: {0}</codePattern>
@@ -985,6 +1088,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -1016,23 +1122,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMMM y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Md">dd-MM</dateFormatItem>
-						<dateFormatItem id="MEd">E, dd-MM</dateFormatItem>
+						<dateFormatItem id="Md">dd/MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd/MM</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM-y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">dd-MM-y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, dd-MM-y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd/MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd/MM/y GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E, d MMM y G</dateFormatItem>
@@ -1080,12 +1188,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">dd-MM – dd-MM</greatestDifference>
-							<greatestDifference id="M">dd-MM – dd-MM</greatestDifference>
+							<greatestDifference id="d">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="M">dd/MM – dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, dd-MM – E, dd-MM</greatestDifference>
-							<greatestDifference id="M">E, dd-MM – E, dd-MM</greatestDifference>
+							<greatestDifference id="d">E, dd/MM – E, dd/MM</greatestDifference>
+							<greatestDifference id="M">E, dd/MM – E, dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">d–d MMM</greatestDifference>
@@ -1099,18 +1207,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">MM-y – MM-y GGGGG</greatestDifference>
-							<greatestDifference id="y">MM-y – MM-y GGGGG</greatestDifference>
+							<greatestDifference id="M">MM/y – MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y">MM/y – MM/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">dd-MM-y – dd-MM-y GGGGG</greatestDifference>
-							<greatestDifference id="M">dd-MM-y – dd-MM-y GGGGG</greatestDifference>
-							<greatestDifference id="y">dd-MM-y – dd-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="d">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, dd-MM-y – E, dd-MM-y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, dd-MM-y – E, dd-MM-y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, dd-MM-y – E, dd-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, dd/MM/y – E, dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, dd/MM/y – E, dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, dd/MM/y – E, dd/MM/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
@@ -1305,32 +1413,67 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<availableFormats>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="GyMd">G d/M/y</dateFormatItem>
-						<dateFormatItem id="GyMMM">G MMM y</dateFormatItem>
-						<dateFormatItem id="GyMMMd">G d MMM, y</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d MMMM y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">W 'semana' MMMM 'killapa'</dateFormatItem>
-						<dateFormatItem id="yMd">dd-MM-y</dateFormatItem>
-						<dateFormatItem id="yMEd">E, dd-MM-y</dateFormatItem>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d MMM, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d MMMM, y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">w 'semana' Y 'watapa'</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
 							<greatestDifference id="G">MM-y GGGGG – MM-y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y">M/y – M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="G">d/M/y G – d/M/y G</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, d/M/y – E, d/M/y G</greatestDifference>
+							<greatestDifference id="G">E, d/M/y G – E, d/M/y G</greatestDifference>
+							<greatestDifference id="M">E, d/M/y – E, d/M/y G</greatestDifference>
+							<greatestDifference id="y">E, d/M/y – E, d/M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
 							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
@@ -1378,6 +1521,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
 							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d – d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M/y – M/y</greatestDifference>
@@ -1973,9 +2120,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Adís Abeba</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Hora de Verano Británico</daylight>
-				</long>
 				<exemplarCity>Londres</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2001,11 +2145,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Asia/Makassar">
 				<exemplarCity>Macasar</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Hora Estandar de Irlanda</daylight>
-				</long>
 			</zone>
 			<zone type="Europe/Isle_of_Man">
 				<exemplarCity>Isla de Man</exemplarCity>
@@ -2166,6 +2305,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Johannesburg">
 				<exemplarCity>Johannesburgo</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Acre Tiempo</generic>
+					<standard>Acre Tiempo Estándar nisqa</standard>
+					<daylight>Acre Inti raymi pacha</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Hora de Afganistán</standard>
@@ -2341,6 +2487,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Hora de Verano de Brasilia</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>British Tiempo</generic>
+					<daylight>Hora de Verano Británico</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>Hora de Brunei Darussalam</standard>
@@ -2514,6 +2666,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Hora del Meridiano de Greenwich</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Groenlandia pacha</generic>
+					<standard>Groenlandia Tiempo Estándar</standard>
+					<daylight>Groenlandia Inti raymi pacha</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Hora de Groenlandia</generic>
@@ -2540,7 +2699,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Hora Estandar de Hawai-Aleutiano</standard>
+					<standard>Hora de Hawai</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -2601,6 +2760,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Hora de Verano de Irán</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Hora Irlanda</generic>
+					<daylight>Hora Estandar de Irlanda</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Hora de Irkutsk</generic>
@@ -2620,6 +2785,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Hora de Japón</generic>
 					<standard>Hora Estandar de Japón</standard>
 					<daylight>Hora de Verano de Japón</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>Kamchatka Tiempo</generic>
+					<standard>Kamchatka Hora Estándar</standard>
+					<daylight>Kamchatka Verano Tiempo</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -2889,11 +3061,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Hora de Verano de Sakhalin</daylight>
 				</long>
 			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>Samara Tiempo</generic>
+					<standard>Samara Standard Time</standard>
+					<daylight>Samara Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Hora de Samoa</generic>
 					<standard>Hora Estandar de Samoa</standard>
-					<daylight>Hora de Verano de Samoa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -2960,6 +3137,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Hora de Chuuk</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Türkiye Tiempo</generic>
+					<standard>Türkiye Hora Estándar</standard>
+					<daylight>Türkiye Inti raymi pacha</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Hora de Turkmenistán</generic>
@@ -2977,6 +3161,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Hora de Uruguay</generic>
 					<standard>Hora Estandar de Uruguay</standard>
 					<daylight>Hora de Verano de Uruguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Urumqi Tiempo</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -3661,7 +3850,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XCG">
 				<displayName>Caribe guilderkuna</displayName>
-				<displayName count="other">Caribe guilderkuna</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>Franco CFA de África Occidental</displayName>
@@ -3688,10 +3876,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ZWG">
 				<displayName>Zimbabuemanta quri</displayName>
-				<displayName count="other">Zimbabuemanta quri</displayName>
 			</currency>
 		</currencies>
 		<minimalPairs>
+			<pluralMinimalPairs count="other" draft="contributed">{0} punchaw</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">{0}qi yupayta hapiy.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>

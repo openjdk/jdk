@@ -288,6 +288,8 @@ For terms of use, see http://www.unicode.org/copyright.html
         <convertUnit source='hertz' baseUnit='revolution-per-second' systems="si metric prefixable"/>
         
         <!-- force -->
+        <convertUnit source='dyne' baseUnit='kilogram-meter-per-square-second' factor='1/1000*100' systems='metric_adjacent'/>
+        <convertUnit source='poundal' baseUnit='kilogram-meter-per-square-second' factor='lb_to_kg*ft_to_m' systems='ussystem uksystem'/>
         <convertUnit source='newton' baseUnit='kilogram-meter-per-square-second' systems="si metric prefixable"/>
         <convertUnit source='pound-force' baseUnit='kilogram-meter-per-square-second' factor='lb_to_kg * gravity' systems="ussystem uksystem"/>
         <convertUnit source='kilogram-force' baseUnit='kilogram-meter-per-square-second' factor='gravity' systems='metric_adjacent'/>
@@ -542,6 +544,9 @@ For terms of use, see http://www.unicode.org/copyright.html
         <unitPreferences category="power" usage="engine">
             <unitPreference regions="001">kilowatt</unitPreference>
             <unitPreference regions="US GB">horsepower</unitPreference>
+        </unitPreferences>
+         <unitPreferences category="force" usage="default">
+            <unitPreference regions="001">newton</unitPreference>
         </unitPreferences>
         <unitPreferences category="pressure" usage="baromtrc">
             <unitPreference regions="001">hectopascal</unitPreference>

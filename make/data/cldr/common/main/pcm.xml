@@ -333,6 +333,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pcm">Naijíriá Píjin</language>
 			<language type="pis">Píjín Lángwej</language>
 			<language type="pl">Pólánd Lángwej</language>
+			<language type="pms">Píedmọ́ntís Lángwej</language>
 			<language type="pqm">Malisiít Pasamákódí Lángwej</language>
 			<language type="prg">Prúshia</language>
 			<language type="ps">Páshto</language>
@@ -837,15 +838,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<keys>
 			<key type="calendar">Kalẹ́nda</key>
 			<key type="cf">Haú To Arénj Mọní</key>
+			<key type="colAlternate">Ignọ Simbọls Arénjin</key>
+			<key type="colBackwards">Rivás Áksẹnt Arénjin</key>
+			<key type="colCaseFirst">Bíg Lẹ́ta-dẹm/Smọ́l Lẹ́ta-dẹm Arénjin</key>
+			<key type="colCaseLevel">Kés Sénsitív Arénjín</key>
 			<key type="collation">Arénj Tins Wẹl</key>
+			<key type="colNormalization">Nọ́mál Wè To Arénj Tins</key>
+			<key type="colNumeric">Nọ́mba-dém Wè To Arénj Tins</key>
+			<key type="colReorder">Skrípt/Blọk Rearénj</key>
+			<key type="colStrength">Arénj Páwá</key>
 			<key type="currency">Mọní</key>
+			<key type="d0">Tránsfọ́m destinéshọ́n</key>
+			<key type="dx">Díkshọ́narí Brẹk Ẹsklúshọ́n</key>
 			<key type="em">Imọ́ji presentáshọn</key>
+			<key type="fw">Fès dè of wík</key>
+			<key type="h0">Míksd-ín</key>
 			<key type="hc">Awá Saíkul (12 vs 24)</key>
-			<key type="lb">Laín Brẹk Staíl</key>
+			<key type="i0">Inpút mẹthọ́d</key>
+			<key type="k0">Kíbọd</key>
+			<key type="kv">Háyest Ignọd</key>
+			<key type="lb">CJK Laín Brẹk</key>
 			<key type="lw">Laín Brẹks wídin wọds</key>
+			<key type="m0">Tránsfọ́m rúl dém</key>
 			<key type="ms">Sístẹm fọ Mẹ́zhọ́mẹnt</key>
+			<key type="mu">Mẹ́zhọ́mẹnt Unít</key>
 			<key type="numbers">Nọ́mba-dẹm</key>
+			<key type="rg">Éria fọ́ Sọ́plimentál Dátá</key>
+			<key type="s0">Tránsfóm Sós</key>
+			<key type="sd">Éria Subdivishọ́n</key>
 			<key type="ss">Sẹntẹns Brẹk Aftá Abbr</key>
+			<key type="t">Tránsfóm</key>
+			<key type="t0">Máshín Tránslétéd</key>
+			<key type="timezone">Táím zọn</key>
+			<key type="va">Lọkál Variánt</key>
+			<key type="x">Praívét-yúz</key>
+			<key type="x0">Praívét-yúz Tránsfóm</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Búdíst Kalẹ́nda</type>
@@ -864,13 +891,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian" scope="core">Grẹ́górían</type>
 			<type key="calendar" type="hebrew">Híbrú Kalẹ́nda</type>
 			<type key="calendar" type="hebrew" scope="core">Híbrú</type>
+			<type key="calendar" type="indian" scope="core">Índián Náshọ́nál</type>
 			<type key="calendar" type="islamic">Íslám Kalẹ́nda</type>
 			<type key="calendar" type="islamic" scope="core">Íslám</type>
 			<type key="calendar" type="islamic-civil">Íslám Kalẹ́nda (Tébúlá Taip an Sívúl Taip)</type>
 			<type key="calendar" type="islamic-civil" scope="core">Íslám (Tébúlá Taip an Sívúl Taip)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">Íslám Kalẹ́nda, Saúdí Arébiá sáitin</type>
+			<type key="calendar" type="islamic-tbla" scope="core">Íslám Kalẹ́nda (tábulá, ástrọnọmikál ípọk)</type>
 			<type key="calendar" type="islamic-umalqura">Íslám Kalẹ́nda (Úmm al-Kúrá)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">Íslám (Úmm al-Kúrá)</type>
-			<type key="calendar" type="iso8601">ISO-8601 Kalẹ́nda</type>
+			<type key="calendar" type="iso8601">Grẹ́górían Kalẹ́nda (ISO 8601 Wík dẹ́m)</type>
+			<type key="calendar" type="iso8601" scope="core">Grẹ́górían</type>
 			<type key="calendar" type="japanese">Japán Kalẹ́nda</type>
 			<type key="calendar" type="japanese" scope="core">Japánis</type>
 			<type key="calendar" type="persian">Pẹ́shia Kalẹ́nda</type>
@@ -881,15 +912,46 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="cf" type="account" scope="core">Akáunting</type>
 			<type key="cf" type="standard">Nọ́mál Wè To Arénj Mọní</type>
 			<type key="cf" type="standard" scope="core">Nọ́mál</type>
+			<type key="colCaseFirst" type="lower" scope="core">Smọ́l Lẹ́ta-dẹm</type>
+			<type key="colCaseFirst" type="no" scope="core">Smọ́l Lẹ́ta-dẹm</type>
+			<type key="colCaseFirst" type="upper" scope="core">Bíg Lẹ́ta-dẹm</type>
+			<type key="collation" type="compat" scope="core">Kọmpátibílití</type>
+			<type key="collation" type="dictionary" scope="core">Díkshonárí</type>
 			<type key="collation" type="ducet">Yúníkód Mén Wè To Arénj Tins Wẹl</type>
 			<type key="collation" type="ducet" scope="core">Yúníkód Mén</type>
+			<type key="collation" type="emoji" scope="core">Imọ́ji</type>
+			<type key="collation" type="eor" scope="core">Yurópián rúl dém</type>
+			<type key="collation" type="phonebook" scope="core">Fọnbúk</type>
+			<type key="collation" type="phonetic" scope="core">Fọnétik</type>
+			<type key="collation" type="pinyin" scope="core">Pínyín</type>
 			<type key="collation" type="search">Jẹ́nárál Sachin</type>
 			<type key="collation" type="search" scope="core">Sach</type>
+			<type key="collation" type="searchjl" scope="core">Koriá Iníshál Kọ́nsónant</type>
 			<type key="collation" type="standard">Nọ́mál Wè To Arénj Tins Wẹl</type>
 			<type key="collation" type="standard" scope="core">Nọ́mál Wè</type>
+			<type key="collation" type="stroke" scope="core">Strọk</type>
+			<type key="collation" type="traditional" scope="core">Trádishọ́nál</type>
+			<type key="collation" type="unihan" scope="core">Rádikál-Strọk</type>
+			<type key="collation" type="zhuyin" scope="core">Zúyín</type>
+			<type key="colReorder" type="currency" scope="core">Mọní</type>
+			<type key="colReorder" type="digit" scope="core">Nọ́mba-dẹm</type>
+			<type key="colReorder" type="punct" scope="core">Pọnkchuéshọn</type>
+			<type key="colReorder" type="space" scope="core">Waítspes</type>
+			<type key="colReorder" type="symbol" scope="core">Símbọ́l</type>
+			<type key="colStrength" type="identical" scope="core">All</type>
+			<type key="colStrength" type="primary" scope="core">Bẹs lẹtás onlí</type>
+			<type key="colStrength" type="quaternary" scope="core">Bẹs, Aksẹnt dẹm, Kẹs, Váriánt dem, Káná</type>
+			<type key="colStrength" type="secondary" scope="core">Bẹs, Aksẹnt dẹm</type>
+			<type key="colStrength" type="tertiary" scope="core">Bẹs, Aksẹnt dẹm, Kẹs, Váriánt dẹm</type>
+			<type key="d0" type="fwidth">To Fúl-Waid</type>
+			<type key="d0" type="hwidth">To Háf-Waid</type>
 			<type key="em" type="default" scope="core">Mén</type>
 			<type key="em" type="emoji" scope="core">Imọ́ji</type>
 			<type key="em" type="text" scope="core">Tẹxt</type>
+			<type key="hc" type="c12">12 Áwa Sístẹm</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24 Áwa Sístẹm</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12 Áwa Sístẹm (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 Áwa Sístẹm (1–12)</type>
@@ -898,6 +960,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 Áwa Sístẹm (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Shíft spésís, pọnkchuéshọn, ọl símbọls</type>
+			<type key="kv" type="punct" scope="core">Shíft spésís, pọnkchuéshọn</type>
+			<type key="kv" type="space" scope="core">Shíft spésís, pọnkchuéshọn</type>
+			<type key="kv" type="symbol" scope="core">Shíft spésís, pọnkchuéshọn, nọ-mọní símbọl dém</type>
 			<type key="lb" type="loose">Lúz Laín Brẹk Staíl</type>
 			<type key="lb" type="loose" scope="core">Lúz</type>
 			<type key="lb" type="normal">Nọ́mál Laín Brẹk Staíl</type>
@@ -908,6 +974,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="lw" type="keepall" scope="core">Kíp all</type>
 			<type key="lw" type="normal" scope="core">Nọ́mál</type>
 			<type key="lw" type="phrase" scope="core">Kíp in frẹzis</type>
+			<type key="m0" type="bgn">US BGN Translítráshọ́n</type>
+			<type key="m0" type="ungegn">US GEGN Translítráshọ́n</type>
 			<type key="ms" type="metric">Mẹ́trík Sístẹm</type>
 			<type key="ms" type="metric" scope="core">Mẹ́trík</type>
 			<type key="ms" type="uksystem">Impẹ́riál Sístẹm fọ Mẹ́zhọ́mẹnt</type>
@@ -916,47 +984,82 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="ms" type="ussystem" scope="core">US</type>
 			<type key="numbers" type="arab">Arábík Nọ́mba-dẹm</type>
 			<type key="numbers" type="arabext">Ẹstrá Arábík Nọ́mba-dẹm</type>
+			<type key="numbers" type="arabext" scope="core">Ẹstrá Arábík-Índík</type>
 			<type key="numbers" type="armn">Armẹ́niá Nọ́mba-dẹm</type>
 			<type key="numbers" type="armnlow">Smọ́l Taíp Armẹ́niá Nọ́mba-dẹm</type>
+			<type key="numbers" type="armnlow" scope="core">Smọ́l taíp Armẹ́nián lẹ́ta-dẹm</type>
 			<type key="numbers" type="beng">Bánglá Nọ́mba-dẹm</type>
 			<type key="numbers" type="cakm">Chakmá Nọ́mba-dẹm</type>
 			<type key="numbers" type="deva">Dẹvanágári Nọ́mba-dẹm</type>
 			<type key="numbers" type="ethi">Ẹtiópiá Nọ́mba-dẹm</type>
+			<type key="numbers" type="finance" scope="core">Mọní</type>
 			<type key="numbers" type="fullwide">Fúl-Waid Nọ́mba-dẹm</type>
+			<type key="numbers" type="fullwide" scope="core">Fúl-Waid</type>
 			<type key="numbers" type="geor">Jọ́jiá Nọ́mba-dẹm</type>
 			<type key="numbers" type="grek">Grík Nọ́mba-dẹm</type>
 			<type key="numbers" type="greklow">Smọ́l Taíp Grík Nọ́mba-dẹm</type>
+			<type key="numbers" type="greklow" scope="core">Smọ́l taíp Grík lẹ́ta-dẹm</type>
 			<type key="numbers" type="gujr">Gujarátí Nọ́mba-dẹm</type>
 			<type key="numbers" type="guru">Gúrmukhi Nọ́mba-dẹm</type>
+			<type key="numbers" type="hanidays" scope="core">Hán-charácter dáy-of-mọ́nt nọ́mba fọ́ trádishọ́nál káléndá dém</type>
 			<type key="numbers" type="hanidec">Chainíz Nọ́mba-dẹm</type>
+			<type key="numbers" type="hanidec" scope="core">Pọ́zishọ́nál décimál systém yúzin Chainiz nọ́mbá áidiyográfs as nọ́mbá dém</type>
 			<type key="numbers" type="hans">Ízí Chainíz Nọ́mba-dẹm</type>
 			<type key="numbers" type="hansfin">Ízí Chainíz Mọní Nọ́mba-dẹm</type>
+			<type key="numbers" type="hansfin" scope="core">Ízí Chainíz Mọní</type>
 			<type key="numbers" type="hant">Nọ́mál Chainíz Nọ́mba-dẹm</type>
 			<type key="numbers" type="hantfin">Nọ́mál Chainíz Mọní Nọ́mba-dẹm</type>
+			<type key="numbers" type="hantfin" scope="core">Nọ́mál Chainíz Mọní</type>
 			<type key="numbers" type="hebr">Híbru Nọ́mba-dẹm</type>
 			<type key="numbers" type="java">Jává Nọ́mba-dẹm</type>
 			<type key="numbers" type="jpan">Japán Nọ́mba-dẹm</type>
 			<type key="numbers" type="jpanfin">Japán Mọní Nọ́mba-dẹm</type>
+			<type key="numbers" type="jpanfin" scope="core">Japán Mọní</type>
+			<type key="numbers" type="jpanyear" scope="core">Japán fẹs yiẹ Gánnẹn nọ́mba-dẹm</type>
 			<type key="numbers" type="khmr">Kmai Nọ́mba-dẹm</type>
 			<type key="numbers" type="knda">Kánnád Nọ́mba-dẹm</type>
+			<type key="numbers" type="lanatham" scope="core">Táí Thám Thám (éklésíástíkál)</type>
 			<type key="numbers" type="laoo">Lao Nọ́mba-dẹm</type>
 			<type key="numbers" type="latn">Wẹ́stán Nọ́mba-dẹm</type>
+			<type key="numbers" type="mathbold" scope="core">Matimátikal bọ́ld</type>
+			<type key="numbers" type="mathdbl" scope="core">Matimátikal dọ́bul-strọ́k</type>
+			<type key="numbers" type="mathmono" scope="core">Matimátikal mọ́nọ́spés</type>
+			<type key="numbers" type="mathsanb" scope="core">Matimátikal sáns-seríf bọ́ld</type>
+			<type key="numbers" type="mathsans" scope="core">Matimátikal sáns-seríf</type>
 			<type key="numbers" type="mlym">Maléyálam Nọ́mba-dẹm</type>
 			<type key="numbers" type="mtei">Miitẹí Mayẹ́k Nọ́mba-dẹm</type>
 			<type key="numbers" type="mymr">Miánma Nọ́mba-dẹm</type>
+			<type key="numbers" type="mymrepka" scope="core">Miánma Ístán Pwo Káren</type>
+			<type key="numbers" type="mymrpao" scope="core">Miánma Páo</type>
+			<type key="numbers" type="mymrshan" scope="core">Miánma Shán</type>
+			<type key="numbers" type="mymrtlng" scope="core">Miánma Tái Láing</type>
+			<type key="numbers" type="native">Nẹtiv Nọ́mba-dẹm</type>
+			<type key="numbers" type="native" scope="core">Nẹtiv Nọ́mba-dẹm</type>
 			<type key="numbers" type="olck">Ol Chiki Nọ́mba-dẹm</type>
 			<type key="numbers" type="orya">Ódia Nọ́mba-dẹm</type>
+			<type key="numbers" type="outlined" scope="core">Aúsaíd Mak</type>
 			<type key="numbers" type="roman">Rómán Nọ́mba-dẹm</type>
+			<type key="numbers" type="roman" scope="core">Rómán bíg lẹtá-dẹm</type>
 			<type key="numbers" type="romanlow">Smọ́l Taíp Rómán Nọ́mba-dẹm</type>
+			<type key="numbers" type="romanlow" scope="core">Rómán smól lẹtá-dẹm</type>
+			<type key="numbers" type="segment" scope="core">Ségméntéd</type>
 			<type key="numbers" type="taml">Nọ́mál Támíl Nọ́mba-dẹm</type>
 			<type key="numbers" type="tamldec">Támíl Nọ́mba-dẹm</type>
+			<type key="numbers" type="tamldec" scope="core">Mọ́dán Támíl</type>
 			<type key="numbers" type="telu">Tẹ́lúgu Nọ́mba-dẹm</type>
 			<type key="numbers" type="thai">Taí Nọ́mba-dẹm</type>
 			<type key="numbers" type="tibt">Tíbẹt Nọ́mba-dẹm</type>
+			<type key="numbers" type="traditional" scope="core">Trádishọ́nál nọ́mba dém</type>
 			<type key="numbers" type="vaii">Vaí Nọ́mba-dẹm</type>
 			<type key="ss" type="none" scope="core">Off</type>
 			<type key="ss" type="standard" scope="core">On</type>
+			<type key="t0" type="und">Unspécifáid Máshín Tránsléshọ́n</type>
+			<type key="va" type="posix" scope="core">POSIX Variánt</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">Off</typeValue>
+			<typeValue type="yes">On</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Mẹ́trik</measurementSystemName>
 			<measurementSystemName type="UK">Brítish</measurementSystemName>
@@ -1041,6 +1144,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">G y/MM/dd</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -1227,6 +1331,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -1253,15 +1360,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="relative">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="relative">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1274,7 +1375,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Md">d /M</dateFormatItem>
-						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
@@ -1287,6 +1388,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="contributed">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="contributed">EEE, d MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">'Wik' w 'fọ' Y</dateFormatItem>
@@ -2060,9 +2163,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Líbrẹvil</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Brítísh Họ́t Sízin Taim</daylight>
-				</long>
 				<exemplarCity>Lọ́ndọn</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2144,9 +2244,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Jayapúra</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Aírísh Fíksd Taim</daylight>
-				</long>
 				<exemplarCity>Dọ́blin</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -2518,6 +2615,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Barnaul">
 				<exemplarCity>Bárnául</exemplarCity>
 			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>Tọmsk</exemplarCity>
+			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>Novokuznẹ́sk</exemplarCity>
 			</zone>
@@ -2818,6 +2918,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Harare">
 				<exemplarCity>Harárẹ</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Ẹ́ka</generic>
+					<standard>Ẹ́ka Fíksd Taim</standard>
+					<daylight>Ẹ́ka Họ́t Sízin Taim</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Afgánístan Taim</standard>
@@ -2887,9 +2994,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic>Ápia Taim</generic>
-					<standard>Ápia Fíksd Taim</standard>
-					<daylight>Ápia Délaít Taim</daylight>
+					<generic>Wést Samọa Taim</generic>
+					<standard>Wést Samọa Fíksd Taim</standard>
+					<daylight>Wést Samọa Délaít Taim</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -2991,6 +3098,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Brasília Taim</generic>
 					<standard>Brasília Fíksd Taim</standard>
 					<daylight>Brasília Họ́t Sízín Taim</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Brítísh Taim</generic>
+					<daylight>Brítísh Họ́t Sízin Taim</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3166,6 +3279,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Grínwích Mín Taim</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Grínlánd Taim</generic>
+					<standard>Grínlánd Fíksd Taim</standard>
+					<daylight>Grínlánd Họ́t Sízin Taim</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Íist Grínlánd Taim</generic>
@@ -3192,7 +3312,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Hawaií-Elúshián Fíksd Taim</standard>
+					<standard>Hawaií Taim</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3253,6 +3373,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Iran Délaít Taim</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Aírísh Taim</generic>
+					<daylight>Aírísh Fíksd Taim</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Irkútsk Taim</generic>
@@ -3272,6 +3398,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Japan Taim</generic>
 					<standard>Japan Fíksd Taim</standard>
 					<daylight>Japan Délaít Taim</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>Kamchátka Taim</generic>
+					<standard>Kamchátka Fíksd Taim</standard>
+					<daylight>Kamchátka Họ́t Sízin Taim</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -3536,11 +3669,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Sákhalin Họ́t Sízin Taim</daylight>
 				</long>
 			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>Samára Taim</generic>
+					<standard>Samára Fíksd Taim</standard>
+					<daylight>Samára Họ́t Sízin Taim</daylight>
+				</long>
+			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Sámoá Taim</generic>
 					<standard>Sámoá Fíksd Taim</standard>
-					<daylight>Sámoá Délaít Taim</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3607,6 +3745,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Chuk Taim</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Türkiye Taim</generic>
+					<standard>Türkiye Fíksd Taim</standard>
+					<daylight>Türkiye Họ́t Sízin Taim</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Tọkmẹnistan Taim</generic>
@@ -3624,6 +3769,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Yúrugwue Taim</generic>
 					<standard>Yúrugwue Fíksd Taim</standard>
 					<daylight>Yúrugwue Họ́t Sízín Taim</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Ürümqi Taim</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -4448,8 +4598,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XCG">
 				<displayName>Karíbíen Gílda</displayName>
-				<displayName count="one">Karíbíen Gílda</displayName>
-				<displayName count="other">Karíbíen Gílda</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>Wẹ́st Afríká Sẹ́fa Frank</displayName>
@@ -4483,8 +4631,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ZWG">
 				<displayName>Zimbábwẹn Gọ́ld</displayName>
-				<displayName count="one">Zimbábwẹn Gọ́ld</displayName>
-				<displayName count="other">Zimbábwẹn Gọ́ld</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -4492,7 +4638,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</miscPatterns>
 		<minimalPairs>
 			<pluralMinimalPairs count="one">{0} dè</pluralMinimalPairs>
-			<pluralMinimalPairs count="other">{0}?</pluralMinimalPairs>
+			<pluralMinimalPairs count="other" draft="contributed">{0} days</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Take the {0}th right.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
@@ -6216,9 +6362,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} kárá</unitPattern>
 				<unitPattern count="other">{0} kárá</unitPattern>
 			</unit>
-			<unit type="concentr-part">
-				<displayName>párt</displayName>
-			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName>Pfim</displayName>
 			</unit>
@@ -6230,9 +6373,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>‱</displayName>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>glúcọs</displayName>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>

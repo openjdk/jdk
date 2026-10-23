@@ -216,7 +216,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="011">Ostonti Afrika</territory>
 			<territory type="013">Modlo America</territory>
 			<territory type="014">Udenti Afrika</territory>
-			<territory type="015">Ut’tori Amerika</territory>
+			<territory type="015">Ut’tori Afrika</territory>
 			<territory type="017">Modlo Afrika</territory>
 			<territory type="018">Dokxinni Afrika</territory>
 			<territory type="019">Purai Amerika</territory>
@@ -507,6 +507,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">Onollkhi Prant</territory>
 		</territories>
+		<typeValues>
+			<typeValue type="no">bond</typeValue>
+			<typeValue type="yes">chalu</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="UK">Britix</measurementSystemName>
 			<measurementSystemName type="US">Ameriki</measurementSystemName>
@@ -868,14 +872,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="4">4them timhoinallem</quarter>
 						</quarterWidth>
 					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="wide">
-							<quarter type="1">1lem timhoinallem</quarter>
-							<quarter type="2">2rem timhoinallem</quarter>
-							<quarter type="3">3rem timhoinallem</quarter>
-							<quarter type="4">4them timhoinallem</quarter>
-						</quarterWidth>
-					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
@@ -906,13 +902,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight">modhyan</dayPeriod>
-							<dayPeriod type="morning1">sokall</dayPeriod>
-							<dayPeriod type="afternoon1">donpar</dayPeriod>
-							<dayPeriod type="evening1">sanj</dayPeriod>
-							<dayPeriod type="night1">rat</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">md</dayPeriod>
 							<dayPeriod type="morning1">sk</dayPeriod>
@@ -1060,12 +1049,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMd">d MMM, y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d MMM, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d MMMM, y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">Y -'acho' 'suman' w</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y -'acho' 'suman' w</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">B h 'vaztam' – B h 'vaztam'</greatestDifference>
 							<greatestDifference id="h">B h – h 'vaztam'</greatestDifference>
@@ -1204,6 +1200,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="iso8601">
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="Bh">h 'vaztam' B</dateFormatItem>
+						<dateFormatItem id="h">h 'vaztam' a</dateFormatItem>
+						<dateFormatItem id="H">HH'v'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMMM 'suman' W</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMMM 'suman' W</dateFormatItem>
+						<dateFormatItem id="yw" count="one">Y 'suman' w</dateFormatItem>
+						<dateFormatItem id="yw" count="other">Y 'suman' w</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">h 'vaztam' B – h 'vaztam' B</greatestDifference>
+							<greatestDifference id="h">h–h 'vaztam' a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a">h 'vaztam' a – h 'vaztam' a</greatestDifference>
+							<greatestDifference id="h">h–h 'vaztam' a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H">HH–HH'v'</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a">h 'vaztam' a – h 'vaztam' a v</greatestDifference>
+							<greatestDifference id="h">h–h 'vaztam' a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H">HH–HH'v' v</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
 		</calendars>
 		<fields>
 			<field type="era">
@@ -1223,23 +1252,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} vorsam adim</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="year-short">
-				<relative type="-1">porum</relative>
-				<relative type="0">ondum</relative>
-				<relative type="1">fuddlem voros</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} vorsan</relativeTimePattern>
-					<relativeTimePattern count="other">{0} vorsanim</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} voros adim</relativeTimePattern>
-					<relativeTimePattern count="other">{0} vorsam adim</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="year-narrow">
-				<relative type="-1">porum</relative>
-				<relative type="0">ondum</relative>
-				<relative type="1">fuddlem voros</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0}vorsan</relativeTimePattern>
 					<relativeTimePattern count="other">{0}vorsanim</relativeTimePattern>
@@ -1268,10 +1281,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">fattlem timho.</relative>
 				<relative type="0">hem timho.</relative>
 				<relative type="1">fuddlem timho.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} timhoinallean</relativeTimePattern>
-					<relativeTimePattern count="other">{0} timhoinalleanim</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} timho. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} timho. adim</relativeTimePattern>
@@ -1310,10 +1319,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">fattlo mho.</relative>
 				<relative type="0">ho mho.</relative>
 				<relative type="1">fuddlo mho.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} mhoinean</relativeTimePattern>
-					<relativeTimePattern count="other">{0} mhoineanim</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} mho. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} mho. adim</relativeTimePattern>
@@ -1347,12 +1352,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} suman adim</relativeTimePattern>
 				</relativeTime>
 				<relativePeriod>{0} cho suman</relativePeriod>
-			</field>
-			<field type="week-short">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} sumanan</relativeTimePattern>
-					<relativeTimePattern count="other">{0} sumananim</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="week-narrow">
 				<displayName>sum</displayName>
@@ -1389,12 +1388,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} dis adim</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="day-short">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} disan</relativeTimePattern>
-					<relativeTimePattern count="other">{0} disanim</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="day-narrow">
 				<displayName>d</displayName>
 				<relative type="-1">kal</relative>
@@ -1424,12 +1417,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="weekdayOfMonth">
 				<displayName>mhoineant disacho prosong</displayName>
 			</field>
-			<field type="weekdayOfMonth-short">
-				<displayName>mhoineant disacho prosong</displayName>
-			</field>
-			<field type="weekdayOfMonth-narrow">
-				<displayName>mhoineant disacho prosong</displayName>
-			</field>
 			<field type="sun">
 				<relative type="-1">fattlo Aitar</relative>
 				<relative type="0">ho Aitar</relative>
@@ -1447,10 +1434,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">fattlo Ait.</relative>
 				<relative type="0">ho Ait.</relative>
 				<relative type="1">fuddlo Ait.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} Aitaran</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Aitaranim</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} Ait. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Ait. adim</relativeTimePattern>
@@ -1460,10 +1443,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">fattlo Ai</relative>
 				<relative type="0">ho Ai</relative>
 				<relative type="1">fuddlo Ai</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} Aitaran</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Aitaranim</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} Ai adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Ai adim</relativeTimePattern>
@@ -1486,10 +1465,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">fattlo Som.</relative>
 				<relative type="0">ho Som.</relative>
 				<relative type="1">fuddlo Som.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} Somaran</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Somaranim</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} Som. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Som. adim</relativeTimePattern>
@@ -1499,10 +1474,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">fattlo Sm</relative>
 				<relative type="0">ho Sm</relative>
 				<relative type="1">fuddlo Sm</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} Somaran</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Somaranim</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} Sm adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Sm adim</relativeTimePattern>
@@ -1525,10 +1496,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">fattlo Mon.</relative>
 				<relative type="0">ho Mon.</relative>
 				<relative type="1">fuddlo Mon.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} Mongllaran</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Mongllaranim</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} Mon. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Mon. adim</relativeTimePattern>
@@ -1538,10 +1505,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">fattlo Mg</relative>
 				<relative type="0">ho Mg</relative>
 				<relative type="1">fuddlo Mg</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} Mongllaran</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Mongllaranim</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} Mg adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Mg adim</relativeTimePattern>
@@ -1564,10 +1527,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">fattlo Bud.</relative>
 				<relative type="0">ho Bud.</relative>
 				<relative type="1">fuddlo Bud.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} Budhvaran</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Budhvaranim</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} Bud. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Bud. adim</relativeTimePattern>
@@ -1577,10 +1536,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">fattlo Bu</relative>
 				<relative type="0">ho Bu</relative>
 				<relative type="1">fuddlo Bu</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} Budhvaran</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Budhvaranim</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} Bu adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Bu adim</relativeTimePattern>
@@ -1603,10 +1558,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">fattlo Bre.</relative>
 				<relative type="0">ho Bre.</relative>
 				<relative type="1">fuddlo Bre.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} Birestaran</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Birestaranim</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} Bre. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Bre. adim</relativeTimePattern>
@@ -1616,10 +1567,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">fattlo Br</relative>
 				<relative type="0">ho Br</relative>
 				<relative type="1">fuddlo Br</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} Birestaran</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Birestaranim</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} Br adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Br adim</relativeTimePattern>
@@ -1642,10 +1589,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">fattlo Suk.</relative>
 				<relative type="0">ho Suk.</relative>
 				<relative type="1">fuddlo Suk.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} Sukraran</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Sukraranim</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} Suk. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Suk. adim</relativeTimePattern>
@@ -1655,10 +1598,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">fattlo Su</relative>
 				<relative type="0">ho Su</relative>
 				<relative type="1">fuddlo Su</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} Sukraran</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Sukraranim</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} Su adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Su adim</relativeTimePattern>
@@ -1681,10 +1620,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">fattlo Son.</relative>
 				<relative type="0">ho Son.</relative>
 				<relative type="1">fuddlo Son.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} Sonvaran</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Sonvaranim</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} Son. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Son. adim</relativeTimePattern>
@@ -1694,10 +1629,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">fattlo Sn</relative>
 				<relative type="0">ho Sn</relative>
 				<relative type="1">fuddlo Sn</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} Sonvaran</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Sonvaranim</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} Sn adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Sn adim</relativeTimePattern>
@@ -1709,16 +1640,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="hour">
 				<displayName>vor</displayName>
 				<relative type="0">hem vor</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} voran</relativeTimePattern>
-					<relativeTimePattern count="other">{0} voranim</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} vor adim</relativeTimePattern>
-					<relativeTimePattern count="other">{0} voram adim</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="hour-short">
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} voran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} voranim</relativeTimePattern>
@@ -1788,10 +1709,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="second-short">
 				<displayName>sek.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} sekondan</relativeTimePattern>
-					<relativeTimePattern count="other">{0} sekondanim</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} sek. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} sek. adim</relativeTimePattern>
@@ -1955,11 +1872,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}-{1}</compoundUnitPattern>
 			</compoundUnit>
-			<unit type="angle-degree">
-				<displayName>onx</displayName>
-				<unitPattern count="one">{0} onx</unitPattern>
-				<unitPattern count="other">{0} onx</unitPattern>
-			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>choukon kilomiter</displayName>
 				<unitPattern count="one">{0} choukon kilomiter</unitPattern>
@@ -2037,11 +1949,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="digital-kilobit">
 				<unitPattern count="one">{0} kilobit</unitPattern>
 			</unit>
-			<unit type="digital-byte">
-				<displayName>bayt</displayName>
-				<unitPattern count="one">{0} bayt</unitPattern>
-				<unitPattern count="other">{0} bayt</unitPattern>
-			</unit>
 			<unit type="duration-century">
 				<displayName>xekdde</displayName>
 				<unitPattern count="one">{0} xekddo</unitPattern>
@@ -2053,8 +1960,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} doskam</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<unitPattern count="one">{0} voros</unitPattern>
-				<unitPattern count="other">{0} vorsam</unitPattern>
 				<perUnitPattern>dor voros {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
@@ -2108,12 +2013,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} nanosekond</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
-				<displayName>chitr-totvam</displayName>
 				<unitPattern count="one">{0} chitr-totv</unitPattern>
 				<unitPattern count="other">{0} chitr-totvam</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
-				<displayName>mega-chitr-totvam</displayName>
 				<unitPattern count="one">{0} mega-chitr-totv</unitPattern>
 				<unitPattern count="other">{0} mega-chitr-totvam</unitPattern>
 			</unit>
@@ -2171,7 +2074,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} picomiter</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName>mil</displayName>
 				<unitPattern count="one">{0} mil</unitPattern>
 				<unitPattern count="other">{0} mil</unitPattern>
 			</unit>
@@ -2181,7 +2083,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} paund dor choukon inch</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
-				<displayName>onx tapman</displayName>
 				<unitPattern count="one">{0} onx tapman</unitPattern>
 				<unitPattern count="other">{0} onx tapman</unitPattern>
 			</unit>
@@ -2238,8 +2139,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} pondros</unitPattern>
 			</unit>
 			<unit type="duration-night">
-				<unitPattern count="one">{0} rat</unitPattern>
-				<unitPattern count="other">{0} rati</unitPattern>
 				<perUnitPattern>dor rat {0}</perUnitPattern>
 			</unit>
 			<coordinateUnit>
@@ -2394,22 +2293,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</unitLength>
 		<unitLength type="narrow">
 			<unit type="angle-degree">
-				<displayName>onx</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
-			<unit type="digital-petabyte">
-				<displayName>PBayt</displayName>
+			<unit type="digital-terabit">
+				<displayName>Tb</displayName>
 			</unit>
-			<unit type="digital-terabyte">
-				<displayName>TBayt</displayName>
+			<unit type="digital-gigabit">
+				<displayName>Gb</displayName>
 			</unit>
-			<unit type="digital-gigabyte">
-				<displayName>GBayt</displayName>
+			<unit type="digital-megabit">
+				<displayName>Mb</displayName>
 			</unit>
-			<unit type="digital-megabyte">
-				<displayName>MBayt</displayName>
-			</unit>
-			<unit type="digital-kilobyte">
-				<displayName>kBayt</displayName>
+			<unit type="digital-kilobit">
+				<displayName>kb</displayName>
 			</unit>
 			<unit type="digital-byte">
 				<displayName>B</displayName>
@@ -2479,7 +2376,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}nsek</unitPattern>
 			</unit>
 			<unit type="duration-fortnight">
-				<displayName>pondr</displayName>
 				<unitPattern count="one">{0} pondr</unitPattern>
 				<unitPattern count="other">{0} pondr</unitPattern>
 			</unit>
@@ -2488,7 +2384,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}rati</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<displayName>dixa</displayName>
 				<coordinateUnitPattern type="east">{0}UD</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0}UT</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0}DO</coordinateUnitPattern>
@@ -2505,26 +2400,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="end">{0}, vo {1}</listPatternPart>
 			<listPatternPart type="2">{0} vo {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="or-narrow">
-			<listPatternPart type="end">{0}, vo {1}</listPatternPart>
-			<listPatternPart type="2">{0} vo {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or-short">
-			<listPatternPart type="end">{0}, vo {1}</listPatternPart>
-			<listPatternPart type="2">{0} vo {1}</listPatternPart>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="end">{0}, {1}</listPatternPart>
+			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="end">{0}, &amp; {1}</listPatternPart>
 			<listPatternPart type="2">{0} &amp; {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
-			<listPatternPart type="2">{0} ani {1}</listPatternPart>
+			<listPatternPart type="end">{0}, {1}</listPatternPart>
+			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
 			<listPatternPart type="start">{0} {1}</listPatternPart>
 			<listPatternPart type="middle">{0} {1}</listPatternPart>
 			<listPatternPart type="end">{0} {1}</listPatternPart>
 			<listPatternPart type="2">{0} {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="end">{0}, {1}</listPatternPart>
+			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>

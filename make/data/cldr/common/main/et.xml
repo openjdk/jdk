@@ -38,8 +38,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ann">obolo</language>
 			<language type="anp">angika</language>
 			<language type="apc" draft="contributed">Levandi araabia</language>
+			<language type="apw" draft="contributed">lääneapatši</language>
 			<language type="ar">araabia</language>
-			<language type="ar_001">tänapäeva araabia kirjakeel</language>
+			<language type="ar_001">araabia kirjakeel</language>
 			<language type="arc">aramea</language>
 			<language type="arn">mapudunguni</language>
 			<language type="aro">araona</language>
@@ -289,7 +290,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kaa">karakalpaki</language>
 			<language type="kab">kabiili</language>
 			<language type="kac">katšini</language>
-			<language type="kaj">jju</language>
+			<language type="kaj">džuu</language>
 			<language type="kam">kamba</language>
 			<language type="kaw">kaavi</language>
 			<language type="kbd">kabardi-tšerkessi</language>
@@ -297,6 +298,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kcg">tjapi</language>
 			<language type="kde">makonde</language>
 			<language type="kea">kabuverdianu</language>
+			<language type="kek" draft="contributed">kektši</language>
+			<language type="ken" draft="contributed">kenjangi</language>
 			<language type="kfo">koro</language>
 			<language type="kg">kongo</language>
 			<language type="kgp">kaingangi</language>
@@ -360,7 +363,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lou">Louisiana kreoolkeel</language>
 			<language type="loz">lozi</language>
 			<language type="lrc">põhjaluri</language>
-			<language type="lsm">samia</language>
+			<language type="lsm">saamia</language>
 			<language type="lt">leedu</language>
 			<language type="ltg">latgali</language>
 			<language type="lu">Katanga luba</language>
@@ -387,12 +390,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="mfe">Mauritiuse kreoolkeel</language>
 			<language type="mg">malagassi</language>
 			<language type="mga">keskiiri</language>
-			<language type="mgh">makhuwa-meetto</language>
+			<language type="mgh">meeto</language>
 			<language type="mgo">meta</language>
 			<language type="mh">maršalli</language>
 			<language type="mhn" draft="contributed">mohheni</language>
 			<language type="mi">maoori</language>
 			<language type="mic">mikmaki</language>
+			<language type="mid" draft="contributed">manda</language>
 			<language type="min">minangkabau</language>
 			<language type="mk">makedoonia</language>
 			<language type="ml">malajalami</language>
@@ -403,6 +407,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="moh">mohoogi</language>
 			<language type="mos">more</language>
 			<language type="mr">marathi</language>
+			<language type="mrh" draft="contributed">mara</language>
 			<language type="mrj">mäemari</language>
 			<language type="ms">malai</language>
 			<language type="mt">malta</language>
@@ -435,6 +440,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nmg">kwasio</language>
 			<language type="nn">uusnorra</language>
 			<language type="nnh">ngiembooni</language>
+			<language type="nnp" draft="contributed">vantšo</language>
 			<language type="no">norra</language>
 			<language type="nog">nogai</language>
 			<language type="non">vanapõhja</language>
@@ -493,6 +499,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="raj">radžastani</language>
 			<language type="rap">rapanui</language>
 			<language type="rar">rarotonga</language>
+			<language type="rej" draft="contributed">redžangi</language>
 			<language type="rgn">romanja</language>
 			<language type="rhg">rohingja</language>
 			<language type="rif">riifi</language>
@@ -539,6 +546,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="shu">Tšaadi araabia</language>
 			<language type="si">singali</language>
 			<language type="sid">sidamo</language>
+			<language type="sjd" draft="contributed">Kildini saami</language>
+			<language type="sje" draft="contributed">Pite saami</language>
+			<language type="sju" draft="contributed">Ume saami</language>
 			<language type="sk">slovaki</language>
 			<language type="skr" draft="contributed">seraiki</language>
 			<language type="sl">sloveeni</language>
@@ -699,7 +709,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Blis">Blissi sümbolid</script>
 			<script type="Bopo">bopomofo</script>
 			<script type="Brah">braahmi</script>
-			<script type="Brai">punktkiri</script>
+			<script type="Brai">Braille</script>
 			<script type="Bugi">bugi</script>
 			<script type="Buhd">buhidi</script>
 			<script type="Cakm">tšaakma</script>
@@ -737,7 +747,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Gujr">gudžarati</script>
 			<script type="Gukh" draft="contributed">gurungi</script>
 			<script type="Guru">gurmukhi</script>
-			<script type="Hanb">hanbi</script>
+			<script type="Hanb">hani ja bopomofo</script>
 			<script type="Hang">korea</script>
 			<script type="Hani">hani</script>
 			<script type="Hano">hanunoo</script>
@@ -820,6 +830,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Ougr" draft="contributed">vanauiguuri</script>
 			<script type="Palm">Palmyra</script>
 			<script type="Pauc" draft="contributed">Pau Cin Hau</script>
+			<script type="Pcun" draft="contributed">protokiilkiri</script>
 			<script type="Perm">vanapermi</script>
 			<script type="Phag">phakpa</script>
 			<script type="Phli">pahlavi raidkiri</script>
@@ -836,6 +847,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Sara">sarati</script>
 			<script type="Sarb">Lõuna-Araabia</script>
 			<script type="Saur">sauraštra</script>
+			<script type="Seal" draft="contributed">pitserikiri</script>
 			<script type="Sgnw">viipekiri</script>
 			<script type="Shaw">Shaw’ kiri</script>
 			<script type="Shrd">šaarada</script>
@@ -889,7 +901,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Zanb" draft="contributed">Dzanabadzari ruutkiri</script>
 			<script type="Zinh">päritud</script>
 			<script type="Zmth">matemaatiline tähistus</script>
-			<script type="Zsye">emoji</script>
+			<script type="Zsye">emodži</script>
 			<script type="Zsym">sümbolid</script>
 			<script type="Zxxx">kirjakeeleta</script>
 			<script type="Zyyy">üldine</script>
@@ -1234,6 +1246,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="KSCOR">normitud kirjaviis</variant>
 			<variant type="LIPAW">Resia Lipovaz’i murre</variant>
 			<variant type="MONOTON">monotoonne</variant>
+			<variant type="NDYUKA" draft="contributed">ndjuka murre</variant>
 			<variant type="NEDIS">Natisone murre</variant>
 			<variant type="NJIVA">Gniva/Njiva murre</variant>
 			<variant type="OSOJS">Oseacco/Osojane murre</variant>
@@ -1262,18 +1275,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="collation">järjestus</key>
 			<key type="colNormalization">normaliseeritud järjestus</key>
 			<key type="colNumeric">numbrite järjestus</key>
+			<key type="colReorder">skriptide/plokkide ümberjärjestamine</key>
 			<key type="colStrength">järjestuskaalud</key>
 			<key type="currency">vääring</key>
-			<key type="em">Emoji esitlus</key>
+			<key type="d0">sihtkoha teisendamine</key>
+			<key type="dx">sõnastiku katkestuste välistamised</key>
+			<key type="em">emodži esitus</key>
+			<key type="fw">nädala esimene päev</key>
+			<key type="h0">kombineeritud</key>
 			<key type="hc">12 või 24 tunni süsteem</key>
+			<key type="i0">sisestusmeetod</key>
+			<key type="k0">klaviatuur</key>
+			<key type="kv">kõrgeim ignoreeritav</key>
 			<key type="lb">reavahetuse laad</key>
 			<key type="lw">reavahetus sõnade vahel</key>
+			<key type="m0">reeglite muundamine</key>
 			<key type="ms">mõõdustik</key>
+			<key type="mu">mõõtühik</key>
 			<key type="numbers">numbrid</key>
+			<key type="rg">lisaandmete piirkond</key>
+			<key type="s0">teisenduse allikas</key>
+			<key type="sd">piirkonna haldusüksus</key>
 			<key type="ss">lause poolitamine pärast lühendit</key>
+			<key type="t">teisendus</key>
+			<key type="t0">masintõlgitud</key>
 			<key type="timezone">ajavöönd</key>
 			<key type="va">lokaadi variant</key>
 			<key type="x">erakasutus</key>
+			<key type="x0">privaatse kasutuse teisendus</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">budistlik kalender</type>
@@ -1293,15 +1322,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">juudi kalender</type>
 			<type key="calendar" type="hebrew" scope="core">juudi</type>
 			<type key="calendar" type="indian">India rahvuslik kalender</type>
+			<type key="calendar" type="indian" scope="core">india rahvuslik</type>
 			<type key="calendar" type="islamic">hidžra kalender</type>
 			<type key="calendar" type="islamic" scope="core">hidžra</type>
 			<type key="calendar" type="islamic-civil">hidžra kalender (tabelkalender, ilmalik)</type>
 			<type key="calendar" type="islamic-civil" scope="core">hidžra (tabelkalender, ilmalik)</type>
 			<type key="calendar" type="islamic-rgsa" draft="contributed">hidžra kalender (Saudi Araabia, vaatluspõhine)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">hidžra, Saudi Araabia vaatlus</type>
 			<type key="calendar" type="islamic-tbla" draft="contributed">hidžra kalender (tabelkalender, astronoomiline ajastu)</type>
+			<type key="calendar" type="islamic-tbla" scope="core">hidžra (tabulaarne, astronoomiline ajajärk)</type>
 			<type key="calendar" type="islamic-umalqura">hidžra kalender (Umm al-Qurá)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">hidžra (Umm al-Qurá)</type>
-			<type key="calendar" type="iso8601">ISO-8601 kalender</type>
+			<type key="calendar" type="iso8601">Gregoriuse kalender (ISO-8601)</type>
+			<type key="calendar" type="iso8601" scope="core">Gregoriuse</type>
 			<type key="calendar" type="japanese">Jaapani kalender</type>
 			<type key="calendar" type="japanese" scope="core">Jaapani</type>
 			<type key="calendar" type="persian">Pärsia kalender</type>
@@ -1317,43 +1350,72 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colBackwards" type="no">diakriitikud tavajärjestuses</type>
 			<type key="colBackwards" type="yes">diakriitikud pöördjärjestuses</type>
 			<type key="colCaseFirst" type="lower">väiketäht järjestuses eespool</type>
+			<type key="colCaseFirst" type="lower" scope="core">väiketäht</type>
 			<type key="colCaseFirst" type="no">harilik järjestus</type>
+			<type key="colCaseFirst" type="no" scope="core">väiketäht</type>
 			<type key="colCaseFirst" type="upper">suurtäht järjestuses eespool</type>
+			<type key="colCaseFirst" type="upper" scope="core">suurtäht</type>
 			<type key="colCaseLevel" type="no">tõstutundetu järjestus</type>
 			<type key="colCaseLevel" type="yes">tõstutundlik järjestus</type>
 			<type key="collation" type="compat">varasem sortimisjärjestus (ühilduvuse jaoks)</type>
+			<type key="collation" type="compat" scope="core">ühilduvus</type>
 			<type key="collation" type="dictionary">sõnastiku sortimisjärjestus</type>
+			<type key="collation" type="dictionary" scope="core">sõnastik</type>
 			<type key="collation" type="ducet">Unicode’i vaikejärjestus</type>
 			<type key="collation" type="ducet" scope="core">vaike-Unicode</type>
 			<type key="collation" type="emoji">emoji sortimisjärjestus</type>
+			<type key="collation" type="emoji" scope="core">emotikon</type>
 			<type key="collation" type="eor">Euroopa järjestusreeglid</type>
+			<type key="collation" type="eor" scope="core">Euroopa reeglid</type>
 			<type key="collation" type="phonebook">telefoniraamatu sortimisjärjestus</type>
+			<type key="collation" type="phonebook" scope="core">telefoniraamat</type>
 			<type key="collation" type="phonetic">foneetiline sortimisjärjestus</type>
+			<type key="collation" type="phonetic" scope="core">foneetiline</type>
 			<type key="collation" type="pinyin">pinyin’i sortimisjärjestus</type>
+			<type key="collation" type="pinyin" scope="core">pinyin</type>
 			<type key="collation" type="search">üldeesmärgiline otsing</type>
 			<type key="collation" type="search" scope="core">otsing</type>
 			<type key="collation" type="searchjl">otsing korea alguskonsonandi järgi</type>
+			<type key="collation" type="searchjl" scope="core">Korea esikonsonant</type>
 			<type key="collation" type="standard">standardne järjestus</type>
 			<type key="collation" type="standard" scope="core">standardne</type>
 			<type key="collation" type="stroke">kriipsude sortimisjärjestus</type>
+			<type key="collation" type="stroke" scope="core">joonetõmme</type>
 			<type key="collation" type="traditional">traditsiooniline sortimisjärjestus</type>
+			<type key="collation" type="traditional" scope="core">traditsiooniline</type>
 			<type key="collation" type="unihan">võtmete-kriipsude sortimisjärjestus</type>
+			<type key="collation" type="unihan" scope="core">radikaalne joonetõmme</type>
 			<type key="collation" type="zhuyin">zhuyin’i sortimisjärjestus</type>
+			<type key="collation" type="zhuyin" scope="core">zhuyin</type>
 			<type key="colNormalization" type="no">järjesta normaliseerimata</type>
 			<type key="colNormalization" type="yes">järjesta Unicode’i normaliseerimisega</type>
 			<type key="colNumeric" type="no">järjesta numbrid eraldi</type>
 			<type key="colNumeric" type="yes">järjesta numbrid arvuliselt</type>
+			<type key="colReorder" type="currency" scope="core">valuuta</type>
+			<type key="colReorder" type="digit" scope="core">numbrid</type>
+			<type key="colReorder" type="punct" scope="core">kirjavahemärgid</type>
+			<type key="colReorder" type="space" scope="core">tühimärgid</type>
+			<type key="colReorder" type="symbol" scope="core">sümbol</type>
 			<type key="colStrength" type="identical">järjesta kõik</type>
+			<type key="colStrength" type="identical" scope="core">kõik</type>
 			<type key="colStrength" type="primary">järjesta ainult alustähed</type>
+			<type key="colStrength" type="primary" scope="core">ainult põhitähed</type>
 			<type key="colStrength" type="quaternary">järjesta diakriitikud, algustähed, laius ja kana kiri</type>
+			<type key="colStrength" type="quaternary" scope="core">põhitähed, diakriitilised, suurtähestus, variandid, kana</type>
 			<type key="colStrength" type="secondary">järjesta diakriitikud</type>
+			<type key="colStrength" type="secondary" scope="core">põhitähed, diakriitilised</type>
 			<type key="colStrength" type="tertiary">järjesta diakriitikud, algustähed ja laius</type>
+			<type key="colStrength" type="tertiary" scope="core">põhitähed, diakriitilised, suurtähestus, variandid</type>
 			<type key="d0" type="fwidth">täislaius</type>
 			<type key="d0" type="hwidth">poollaius</type>
 			<type key="d0" type="npinyin">Numbriline</type>
 			<type key="em" type="default" scope="core">vaikeväärtus</type>
-			<type key="em" type="emoji" scope="core">Emotikon</type>
+			<type key="em" type="emoji" scope="core">emodži</type>
 			<type key="em" type="text" scope="core">tekst</type>
+			<type key="hc" type="c12">12-tunnine süsteem</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24-tunnine süsteem</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12-tunnine süsteem (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12-tunnine süsteem (1–12)</type>
@@ -1362,6 +1424,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24-tunnine süsteem (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">tühikute nihutamine, kirjavahemärgid, kõik sümbolid</type>
+			<type key="kv" type="punct" scope="core">tühikute nihutamine, kirjavahemärgid</type>
+			<type key="kv" type="space" scope="core">tühikute nihutamine, kirjavahemärgid</type>
+			<type key="kv" type="symbol" scope="core">tühikute nihutamine, kirjavahemärgid, valuutaga mitteseotud sümbolid</type>
 			<type key="lb" type="loose">paindlik reavahetuse laad</type>
 			<type key="lb" type="loose" scope="core">paindlik</type>
 			<type key="lb" type="normal">harilik reavahetuse laad</type>
@@ -1383,8 +1449,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="ahom" draft="contributed">ahomi numbrid</type>
 			<type key="numbers" type="arab">idaaraabia numbrid</type>
 			<type key="numbers" type="arabext">laiendatud idaaraabia numbrid</type>
+			<type key="numbers" type="arabext" scope="core">laiendatud idaaraabia</type>
 			<type key="numbers" type="armn">armeenia numbrid</type>
 			<type key="numbers" type="armnlow">väiketähelised armeenia numbrid</type>
+			<type key="numbers" type="armnlow" scope="core">armeenia väiketähelised</type>
 			<type key="numbers" type="bali">bali numbrid</type>
 			<type key="numbers" type="beng">bengali numbrid</type>
 			<type key="numbers" type="brah">braahmi numbrid</type>
@@ -1395,27 +1463,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="diak" draft="contributed">divehi numbrid</type>
 			<type key="numbers" type="ethi">etioopia numbrid</type>
 			<type key="numbers" type="finance">finantsnumbrid</type>
+			<type key="numbers" type="finance" scope="core">finantsidega seotud</type>
 			<type key="numbers" type="fullwide">täislaiusega numbrid</type>
+			<type key="numbers" type="fullwide" scope="core">täislaiuses</type>
 			<type key="numbers" type="gara" draft="contributed">garai numbrid</type>
 			<type key="numbers" type="geor">gruusia numbrid</type>
 			<type key="numbers" type="gong" draft="contributed">Gūnjāla gondi numbrid</type>
 			<type key="numbers" type="gonm">Masarami gondi numbrid</type>
 			<type key="numbers" type="grek">kreeka numbrid</type>
 			<type key="numbers" type="greklow">väiketähelised kreeka numbrid</type>
+			<type key="numbers" type="greklow" scope="core">kreeka väiketähelised</type>
 			<type key="numbers" type="gujr">gudžarati numbrid</type>
 			<type key="numbers" type="gukh" draft="contributed">gurungi numbrid</type>
 			<type key="numbers" type="guru">gurmukhi numbrid</type>
+			<type key="numbers" type="hanidays" scope="core">traditsiooniliste kalendrite han-märkidega kuupäevasüsteem</type>
 			<type key="numbers" type="hanidec">hiina kümnendnumbrid</type>
+			<type key="numbers" type="hanidec" scope="core">hiina arvumärkidega positsiooniline kümnendsüsteem</type>
 			<type key="numbers" type="hans">lihtsustatud hiina keele numbrid</type>
 			<type key="numbers" type="hansfin">lihtsustatud hiina keele finantsnumbrid</type>
+			<type key="numbers" type="hansfin" scope="core">lihtsustatud hiina keele finantsidega seotud</type>
 			<type key="numbers" type="hant">traditsioonilise hiina keele numbrid</type>
 			<type key="numbers" type="hantfin">traditsioonilise hiina keele finantsnumbrid</type>
+			<type key="numbers" type="hantfin" scope="core">traditsioonilise hiina keele finantsidega seotud</type>
 			<type key="numbers" type="hebr">heebrea numbrid</type>
 			<type key="numbers" type="hmng">phahau-hmongi numbrid</type>
 			<type key="numbers" type="hmnp" draft="contributed">Chervangi numbrid</type>
 			<type key="numbers" type="java">jaava numbrid</type>
 			<type key="numbers" type="jpan">jaapani numbrid</type>
 			<type key="numbers" type="jpanfin">jaapani finantsnumbrid</type>
+			<type key="numbers" type="jpanfin" scope="core">jaapani finants</type>
+			<type key="numbers" type="jpanyear" scope="core">jaapani ajastute algusaasta numbrisüsteem</type>
 			<type key="numbers" type="kali">kaja-lii numbrid</type>
 			<type key="numbers" type="kawi" draft="contributed">kaavi numbrid</type>
 			<type key="numbers" type="khmr">khmeeri numbrid</type>
@@ -1423,29 +1500,46 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="krai" draft="contributed">kirat-rai numbrid</type>
 			<type key="numbers" type="lana" draft="contributed">tai tham hora numbrid</type>
 			<type key="numbers" type="lanatham" draft="contributed">tai tham tham numbrid</type>
+			<type key="numbers" type="lanatham" scope="core">tai-thami thami (sakraalkiri)</type>
 			<type key="numbers" type="laoo">lao numbrid</type>
 			<type key="numbers" type="latn">araabia numbrid</type>
 			<type key="numbers" type="lepc">leptša numbrid</type>
 			<type key="numbers" type="limb">limbu numbrid</type>
+			<type key="numbers" type="mathbold" scope="core">matemaatiline paks kiri</type>
+			<type key="numbers" type="mathdbl" scope="core">matemaatiline topeltkiri</type>
+			<type key="numbers" type="mathmono" scope="core">matemaatiline monospace</type>
+			<type key="numbers" type="mathsanb" scope="core">matemaatiline paks sans-serif</type>
+			<type key="numbers" type="mathsans" scope="core">matemaatiline sans-serif</type>
 			<type key="numbers" type="mlym">malajalami numbrid</type>
 			<type key="numbers" type="modi" draft="contributed">modi numbrid</type>
 			<type key="numbers" type="mong">mongoli numbrid</type>
 			<type key="numbers" type="mroo" draft="contributed">mruu numbrid</type>
 			<type key="numbers" type="mtei">meitei numbrid</type>
 			<type key="numbers" type="mymr">birma numbrid</type>
-			<type key="numbers" type="mymrshan" draft="contributed">myanmari shan numbrid</type>
+			<type key="numbers" type="mymrepka" draft="contributed">birma idapvoo numbrid</type>
+			<type key="numbers" type="mymrepka" scope="core">birma idapvoo</type>
+			<type key="numbers" type="mymrpao" draft="contributed">birma paoo numbrid</type>
+			<type key="numbers" type="mymrpao" scope="core">birma paoo</type>
+			<type key="numbers" type="mymrshan">birma šani numbrid</type>
+			<type key="numbers" type="mymrshan" scope="core">birma šani</type>
 			<type key="numbers" type="mymrtlng" draft="contributed">myanmari tai laing numbrid</type>
+			<type key="numbers" type="mymrtlng" scope="core">birma tailaing</type>
 			<type key="numbers" type="nagm" draft="contributed">Nagi mundari numbrid</type>
 			<type key="numbers" type="native">kohalikud numbrid</type>
+			<type key="numbers" type="native" scope="core">kohalikud numbrid</type>
 			<type key="numbers" type="nkoo">nkoo numbrid</type>
 			<type key="numbers" type="olck">santali numbrid</type>
 			<type key="numbers" type="onao" draft="contributed">bhumidži numbrid</type>
 			<type key="numbers" type="orya">oria numbrid</type>
 			<type key="numbers" type="osma">osmani numbrid</type>
+			<type key="numbers" type="outlined" scope="core">kontuuriga</type>
 			<type key="numbers" type="rohg" draft="contributed">rohingja numbrid</type>
 			<type key="numbers" type="roman">Rooma numbrid</type>
+			<type key="numbers" type="roman" scope="core">Rooma suurtähed</type>
 			<type key="numbers" type="romanlow">väiketähelised Rooma numbrid</type>
+			<type key="numbers" type="romanlow" scope="core">Rooma väiketähed</type>
 			<type key="numbers" type="saur">sauraštra numbrid</type>
+			<type key="numbers" type="segment" scope="core">segmenditud</type>
 			<type key="numbers" type="shrd">šaarada numbrid</type>
 			<type key="numbers" type="sind" draft="contributed">hudavadi numbrid</type>
 			<type key="numbers" type="sinh" draft="contributed">sinhala lithi numbrid</type>
@@ -1456,6 +1550,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="talu">uue tai-lõõ numbrid</type>
 			<type key="numbers" type="taml">traditsioonilised tamili numbrid</type>
 			<type key="numbers" type="tamldec">tamili numbrid</type>
+			<type key="numbers" type="tamldec" scope="core">moodne tamili</type>
 			<type key="numbers" type="telu">telugu numbrid</type>
 			<type key="numbers" type="thai">tai numbrid</type>
 			<type key="numbers" type="tibt">tiibeti numbrid</type>
@@ -1463,12 +1558,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="tnsa" draft="contributed">tase numbrid</type>
 			<type key="numbers" type="tols" draft="contributed">tolong-siki numbrid</type>
 			<type key="numbers" type="traditional">traditsioonilised numbrid</type>
+			<type key="numbers" type="traditional" scope="core">traditsioonilised numbrid</type>
 			<type key="numbers" type="vaii">vai numbrid</type>
 			<type key="numbers" type="wara" draft="contributed">hoo numbrid</type>
 			<type key="numbers" type="wcho" draft="contributed">vantšo numbrid</type>
 			<type key="ss" type="none" scope="core">välja lülitatud</type>
 			<type key="ss" type="standard" scope="core">sisse lülitatud</type>
+			<type key="t0" type="und">määramatu masintõlgitud</type>
+			<type key="va" type="posix" scope="core">POSIX-i variant</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">välja lülitatud</typeValue>
+			<typeValue type="yes">sisse lülitatud</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">meetermõõdustik</measurementSystemName>
 			<measurementSystemName type="UK">inglise mõõdustik</measurementSystemName>
@@ -1542,6 +1644,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</cyclicNameContext>
 					</cyclicNameSet>
 				</cyclicNameSets>
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="contributed">dd.MM.r</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="yyyyMd" draft="contributed">dd.MM.r</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
 			</calendar>
 			<calendar type="generic">
 				<dateFormats>
@@ -1699,6 +1813,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d. MMM – E, d. MMM</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d. MMMM</greatestDifference>
+							<greatestDifference id="M">d. MMMM – d. MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y G</greatestDifference>
@@ -1932,6 +2050,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>.</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -1975,6 +2096,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d. MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d. MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d. MMMM y G</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
@@ -1997,11 +2121,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">d. MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d. MMMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d. MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">w. 'nädal' (Y)</dateFormatItem>
 						<dateFormatItem id="yw" count="other">w. 'nädal' (Y)</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Day-Of-Week">{1}, {0}</appendItem>
+						<appendItem request="Era">{0} {1}</appendItem>
+						<appendItem request="Time-Day-Of-Week">{1}, {0}</appendItem>
+					</appendItems>
 					<intervalFormats>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G">y G – y G</greatestDifference>
@@ -2070,6 +2201,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">E, d. MMM – E, d. MMM</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d. MMMM</greatestDifference>
+							<greatestDifference id="M">d. MMMM – d. MMMM</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">MM.y–MM.y</greatestDifference>
 							<greatestDifference id="y">MM.y–MM.y</greatestDifference>
@@ -2103,6 +2238,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="iso8601">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="contributed">\u002E</numericDateSeparator>
+					</numericSeparators>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
@@ -2644,6 +2786,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<timeZoneNames>
 			<hourFormat>+HH:mm;−HH:mm</hourFormat>
 			<gmtFormat>GMT {0}</gmtFormat>
+			<gmtFormat alt="utc">UTC {0}</gmtFormat>
 			<regionFormat>({0})</regionFormat>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Honolulu</exemplarCity>
@@ -2734,11 +2877,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Paris">
 				<exemplarCity>Pariis</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>Briti suveaeg</daylight>
-				</long>
-			</zone>
 			<zone type="Asia/Tbilisi">
 				<exemplarCity>Thbilisi</exemplarCity>
 			</zone>
@@ -2750,11 +2888,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Hong_Kong">
 				<exemplarCity>Hongkong</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Iiri suveaeg</daylight>
-				</long>
 			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity>Jeruusalemm</exemplarCity>
@@ -2773,9 +2906,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Rome">
 				<exemplarCity>Rooma</exemplarCity>
-			</zone>
-			<zone type="Asia/Tokyo">
-				<exemplarCity>Tōkyō</exemplarCity>
 			</zone>
 			<zone type="Asia/Bishkek">
 				<exemplarCity>Biškek</exemplarCity>
@@ -2816,14 +2946,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Riga">
 				<exemplarCity>Riia</exemplarCity>
 			</zone>
+			<zone type="Asia/Hovd">
+				<exemplarCity>Hovd</exemplarCity>
+			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Macau</exemplarCity>
 			</zone>
 			<zone type="Indian/Maldives">
 				<exemplarCity>Maldiivid</exemplarCity>
-			</zone>
-			<zone type="America/Bahia_Banderas">
-				<exemplarCity>Bahia Banderas</exemplarCity>
 			</zone>
 			<zone type="America/Mexico_City">
 				<exemplarCity>México</exemplarCity>
@@ -2987,13 +3117,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Alaska suveaeg</daylight>
 				</long>
 			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>Almatõ aeg</generic>
-					<standard>Almatõ standardaeg</standard>
-					<daylight>Almatõ suveaeg</daylight>
-				</long>
-			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic>Amazonase aeg</generic>
@@ -3041,20 +3164,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Apia aeg</generic>
 					<standard>Apia standardaeg</standard>
 					<daylight>Apia suveaeg</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>Aktau aeg</generic>
-					<standard>Aktau standardaeg</standard>
-					<daylight>Aktau suveaeg</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>Aktöbe aeg</generic>
-					<standard>Aktöbe standardaeg</standard>
-					<daylight>Aktöbe suveaeg</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3156,6 +3265,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Brasiilia aeg</generic>
 					<standard>Brasiilia standardaeg</standard>
 					<daylight>Brasiilia suveaeg</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Briti aeg</generic>
+					<daylight>Briti suveaeg</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3338,9 +3453,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Greenland">
 				<long>
-					<generic draft="contributed">Gröönimaa aeg</generic>
-					<standard draft="contributed">Gröönimaa standardaeg</standard>
-					<daylight draft="contributed">Gröönimaa suveaeg</daylight>
+					<generic>Gröönimaa aeg</generic>
+					<standard>Gröönimaa standardaeg</standard>
+					<daylight>Gröönimaa suveaeg</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
@@ -3357,11 +3472,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Lääne-Gröönimaa suveaeg</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard>Guami standardaeg</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>Pärsia lahe standardaeg</standard>
@@ -3374,7 +3484,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Hawaii-Aleuudi standardaeg</standard>
+					<standard>Hawaii aeg</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3433,6 +3543,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Iraani aeg</generic>
 					<standard>Iraani standardaeg</standard>
 					<daylight>Iraani suveaeg</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Iiri aeg</generic>
+					<daylight>Iiri suveaeg</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -3502,11 +3618,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Kõrgõzstani aeg</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard draft="contributed">Sri Lanka aeg</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>Line’i saarte aeg</standard>
@@ -3517,13 +3628,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Lord Howe’i aeg</generic>
 					<standard>Lord Howe’i standardaeg</standard>
 					<daylight>Lord Howe’i suveaeg</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic draft="contributed">Macau aeg</generic>
-					<standard draft="contributed">Macau standardaeg</standard>
-					<daylight draft="contributed">Macau suveaeg</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -3641,11 +3745,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Fernando de Noronha suveaeg</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard draft="contributed">Põhja-Mariaani aeg</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>Novosibirski aeg</generic>
@@ -3725,13 +3824,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Pyongyangi aeg</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>Kõzõlorda aeg</generic>
-					<standard>Kõzõlorda standardaeg</standard>
-					<daylight>Kõzõlorda suveaeg</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>Réunioni aeg</standard>
@@ -3758,9 +3850,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samoa aeg</generic>
 					<standard>Samoa standardaeg</standard>
-					<daylight>Samoa suveaeg</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3851,6 +3941,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Uruguay aeg</generic>
 					<standard>Uruguay standardaeg</standard>
 					<daylight>Uruguay suveaeg</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Ürümqi aeg</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -3994,7 +4089,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
 					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
-					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤;(#,##0.00 ¤)</pattern>
@@ -4300,6 +4394,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Šveitsi frank</displayName>
 				<displayName count="one">Šveitsi frank</displayName>
 				<displayName count="other">Šveitsi franki</displayName>
+				<symbol alt="narrow">Fr</symbol>
 			</currency>
 			<currency type="CLE">
 				<displayName>Tšiili eskuudo</displayName>
@@ -4745,7 +4840,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="MGF">
 				<displayName>Madagaskari frank</displayName>
 				<displayName count="one">Madagaskari frank</displayName>
-				<displayName count="other">Madagaskar franki</displayName>
+				<displayName count="other">Madagaskari frank</displayName>
 			</currency>
 			<currency type="MKD">
 				<displayName>Makedoonia dinaar</displayName>
@@ -5604,11 +5699,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} millimool liitri kohta</unitPattern>
 				<unitPattern count="other">{0} millimooli liitri kohta</unitPattern>
 			</unit>
-			<unit type="concentr-part">
-				<displayName>osa</displayName>
-				<unitPattern count="one">{0} osa</unitPattern>
-				<unitPattern count="other">{0} osa</unitPattern>
-			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName>osa miljoni kohta</displayName>
 				<unitPattern count="one">{0} osa miljoni kohta</unitPattern>
@@ -6462,11 +6552,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} veeber</unitPattern>
 				<unitPattern count="other">{0} veebrit</unitPattern>
 			</unit>
-			<unit type="speed-light-speed">
-				<displayName>valgus</displayName>
-				<unitPattern count="one">{0} valgus</unitPattern>
-				<unitPattern count="other">{0} valgust</unitPattern>
-			</unit>
 			<unit type="concentr-part-per-1e9">
 				<displayName>miljardikosa</displayName>
 			</unit>
@@ -7006,20 +7091,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<unit type="area-acre">
-				<unitPattern count="one">{0} aaker</unitPattern>
-				<unitPattern count="other">{0} aakrit</unitPattern>
-			</unit>
-			<unit type="concentr-part">
-				<displayName>osa</displayName>
-				<unitPattern count="one">{0} osa</unitPattern>
-				<unitPattern count="other">{0} osa</unitPattern>
-			</unit>
 			<unit type="concentr-mole">
 				<displayName>mol</displayName>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<unitPattern count="one">{0} l/100km</unitPattern>
@@ -7067,22 +7140,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}kWh/100km</unitPattern>
 				<unitPattern count="other">{0}kWh/100km</unitPattern>
 			</unit>
-			<unit type="length-mile">
-				<unitPattern count="one">{0} miil</unitPattern>
-				<unitPattern count="other">{0} miili</unitPattern>
-			</unit>
-			<unit type="length-yard">
-				<unitPattern count="one">{0} jard</unitPattern>
-				<unitPattern count="other">{0} jardi</unitPattern>
-			</unit>
-			<unit type="length-foot">
-				<unitPattern count="one">{0} jalg</unitPattern>
-				<unitPattern count="other">{0} jalga</unitPattern>
-			</unit>
-			<unit type="length-inch">
-				<unitPattern count="one">{0} toll</unitPattern>
-				<unitPattern count="other">{0} tolli</unitPattern>
-			</unit>
 			<unit type="length-point">
 				<displayName>punktid</displayName>
 			</unit>
@@ -7129,11 +7186,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} qt Imp.</unitPattern>
 				<unitPattern count="other">{0} qt Imp.</unitPattern>
 			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>cal-IT</displayName>
-			</unit>
 			<unit type="speed-light-speed">
-				<displayName>valgus</displayName>
 				<unitPattern count="one">{0} valg.</unitPattern>
 				<unitPattern count="other">{0} valg.</unitPattern>
 			</unit>

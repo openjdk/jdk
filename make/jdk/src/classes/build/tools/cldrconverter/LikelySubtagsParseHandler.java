@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package build.tools.cldrconverter;
 
+import static build.tools.cldrconverter.CLDRConverter.SPPL_LDML_DTD_SYSTEM_ID;
+
 import java.io.File;
 import java.io.IOException;
 import org.xml.sax.Attributes;
@@ -32,7 +34,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * Handles parsing of files in Locale Data Markup Language for likelySubtags.xml
+ * Handles parsing of files in Common Locale Data {@literal &} Rules for likelySubtags.xml
  * and produces a map that uses the keys and values of JRE locale data.
  */
 
@@ -44,7 +46,7 @@ class LikelySubtagsParseHandler extends AbstractLDMLHandler<String> {
     @Override
     public InputSource resolveEntity(String publicID, String systemID) throws IOException, SAXException {
         // avoid HTTP traffic to unicode.org
-        if (systemID.startsWith(CLDRConverter.SPPL_LDML_DTD_SYSTEM_ID)) {
+        if (systemID.startsWith(SPPL_LDML_DTD_SYSTEM_ID)) {
             return new InputSource((new File(CLDRConverter.LOCAL_SPPL_LDML_DTD)).toURI().toString());
         }
         return null;

@@ -280,7 +280,7 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
         ResourceBundle fd = lr.getJavaTimeFormatData();
         var zi = ZoneInfoFile.getZoneInfo(id);
         if (zi == null) {
-            return fd.getString("timezone.gmtZeroFormat");
+            return TimeZoneNameUtility.gmtZeroFormat(l);
         }
         var zr = zi.toZoneId().getRules();
         var now = Instant.now();
@@ -296,7 +296,7 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
                 (daylight ? saving : 0)) / 60;
 
         if (offset == 0) {
-            return fd.getString("timezone.gmtZeroFormat");
+            return TimeZoneNameUtility.gmtZeroFormat(l);
         } else {
             String gmtFormat = fd.getString("timezone.gmtFormat");
             String hourFormat = fd.getString("timezone.hourFormat");

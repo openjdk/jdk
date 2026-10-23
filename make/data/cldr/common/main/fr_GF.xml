@@ -18,6 +18,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>GFT</standard>
 				</short>
 			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<short>
+					<generic>∅∅∅</generic>
+					<standard>∅∅∅</standard>
+					<daylight>∅∅∅</daylight>
+				</short>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 </ldml>

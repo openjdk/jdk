@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2026 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Proper interpretation of these files requires synthesis of missing items, as per
+​https://www.unicode.org/reports/tr35/tr35-general.html#Annotations
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="kbd"/>
+		<territory type="TR"/>
+	</identity>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">щӏышылэм</month>
+							<month type="2">мазаем</month>
+							<month type="3">гъатхэпэм</month>
+							<month type="4">мэлыжьыхьэм</month>
+							<month type="5">накъыгъэм</month>
+							<month type="6">мэкъуауэгъуэм</month>
+							<month type="7">бадзэуэгъуэм</month>
+							<month type="8">шыщхьэӏум</month>
+							<month type="9">фокӏадэм</month>
+							<month type="10">жэпуэгъуэм</month>
+							<month type="11">щакӏуэгъуэм</month>
+							<month type="12">дыгъэгъазэм</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">щӏышылэм</month>
+							<month type="2">мазаем</month>
+							<month type="3">гъатхэпэм</month>
+							<month type="4">мэлыжьыхьэм</month>
+							<month type="5">накъыгъэм</month>
+							<month type="6">мэкъуауэгъуэм</month>
+							<month type="7">бадзэуэгъуэм</month>
+							<month type="8">шыщхьэӏум</month>
+							<month type="9">фокӏадэм</month>
+							<month type="10">жэпуэгъуэм</month>
+							<month type="11">щакӏуэгъуэм</month>
+							<month type="12">дыгъэгъазэм</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<!-- copied from 'abbreviated' as they were different (and wider than base tr) -->
+							<month type="1">щӏышылэм</month>
+							<month type="2">мазаем</month>
+							<month type="3">гъатхэпэм</month>
+							<month type="4">мэлыжьыхьэм</month>
+							<month type="5">накъыгъэм</month>
+							<month type="6">мэкъуауэгъуэм</month>
+							<month type="7">бадзэуэгъуэм</month>
+							<month type="8">шыщхьэӏум</month>
+							<month type="9">фокӏадэм</month>
+							<month type="10">жэпуэгъуэм</month>
+							<month type="11">щакӏуэгъуэм</month>
+							<month type="12">дыгъэгъазэм</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">тхьэмахуэ</day>
+							<day type="mon">блыщхьэ</day>
+							<day type="tue">гъубж</day>
+							<day type="wed">бэрэжей</day>
+							<day type="thu">махуэку</day>
+							<day type="fri">мэрем</day>
+							<day type="sat">щэбэт</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">тхьэмахуэ</day>
+							<day type="mon">блыщхьэ</day>
+							<day type="tue">гъубж</day>
+							<day type="wed">бэрэжей</day>
+							<day type="thu">махуэку</day>
+							<day type="fri">мэрем</day>
+							<day type="sat">щэбэт</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+			</calendar>
+		</calendars>
+	</dates>
+</ldml>

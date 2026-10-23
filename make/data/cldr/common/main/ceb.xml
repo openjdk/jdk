@@ -31,8 +31,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<language type="es_ES">Spanish (Europe)</language>
 			<language type="es_MX">Spanish (Mexico)</language>
 			<language type="fr">French</language>
-			<language type="fr_CA">French (Canada)</language>
-			<language type="fr_CH">French (Switzerland)</language>
 			<language type="hi">Hindi</language>
 			<language type="hi_Latn" alt="variant">Hinglish</language>
 			<language type="id">Indonesian</language>
@@ -43,6 +41,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<language type="nl_BE">Flemish</language>
 			<language type="pl">Polish</language>
 			<language type="pt">Portuguese</language>
+			<language type="pt_PT">Portuguese (Europe)</language>
 			<language type="ru">Russian</language>
 			<language type="th">Thai</language>
 			<language type="tr">Turkish</language>
@@ -387,7 +386,8 @@ the LDML specification (http://unicode.org/reports/tr35/)
 		<types>
 			<type key="calendar" type="gregorian">Gregorian nga Kalendaryo</type>
 			<type key="calendar" type="gregorian" scope="core">Gregorian</type>
-			<type key="calendar" type="iso8601">Gregorian nga Kalendaryo (Tuig Una)</type>
+			<type key="calendar" type="iso8601">Gregorian nga Kalendaryo (pag-ihap sa mga semana sumala sa ISO 8601)</type>
+			<type key="calendar" type="iso8601" scope="core">Gregorian</type>
 			<type key="collation" type="standard">Standard nga Paagi sa Paghan-ay</type>
 			<type key="collation" type="standard" scope="core">Standard</type>
 			<type key="numbers" type="latn">Mga Western Digit</type>
@@ -482,6 +482,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
@@ -490,21 +494,21 @@ the LDML specification (http://unicode.org/reports/tr35/)
 							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">M/y G – M/y G</greatestDifference>
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">M/d/y – M/d/y G</greatestDifference>
 							<greatestDifference id="G">M/d/y GGGGG – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y G</greatestDifference>
 							<greatestDifference id="y">M/d/y – M/d/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="G">E, M/d/y GGGGG – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="G">E, M/d/y G – E, M/d/y G</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
 							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
@@ -544,21 +548,24 @@ the LDML specification (http://unicode.org/reports/tr35/)
 							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
 							<greatestDifference id="M">E, MMM d – E, MMM d</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">MMMM d – d</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
 							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">M/d/y – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y G</greatestDifference>
 							<greatestDifference id="y">M/d/y – M/d/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y G</greatestDifference>
 							<greatestDifference id="y">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
@@ -629,20 +636,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 							<month type="11">N</month>
 							<month type="12">D</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">Enero</month>
-							<month type="2">Pebrero</month>
-							<month type="3">Marso</month>
-							<month type="4">Abril</month>
-							<month type="5">Mayo</month>
-							<month type="6">Hunyo</month>
-							<month type="7">Hulyo</month>
-							<month type="8">Agosto</month>
-							<month type="9">Septiyembre</month>
-							<month type="10">Oktubre</month>
-							<month type="11">Nobyembre</month>
-							<month type="12">Disyembre</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
@@ -686,14 +679,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 							<quarter type="3">Q3</quarter>
 							<quarter type="4">Q4</quarter>
 						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">ika-1 nga quarter</quarter>
-							<quarter type="2">ika-2 nga quarter</quarter>
-							<quarter type="3">ika-3 nga quarter</quarter>
-							<quarter type="4">ika-4 nga quarter</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
 						<quarterWidth type="wide">
 							<quarter type="1">ika-1 nga quarter</quarter>
 							<quarter type="2">ika-2 nga quarter</quarter>
@@ -774,6 +759,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -805,10 +793,14 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
 						<dateFormatItem id="GyMd">M/d/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">MMMM d, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, MMMM d, y G</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
@@ -816,6 +808,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, MMMM d</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">'semana' W 'sa' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">'semana' W 'sa' MMMM</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
@@ -825,12 +818,22 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">MMMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, MMMM d, y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">'semana' w 'sa' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'semana' w 'sa' Y</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Day-Of-Week">{1}, {0}</appendItem>
+						<appendItem request="Era">{0} {1}</appendItem>
+						<appendItem request="Time-Day-Of-Week">{1}, {0}</appendItem>
+					</appendItems>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
@@ -921,6 +924,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
 							<greatestDifference id="M">E, MMM d – E, MMM d</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">MMMM d – d</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y – y</greatestDifference>
 						</intervalFormatItem>
@@ -989,9 +995,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<relative type="1">sunod nga semana</relative>
 				<relativePeriod>sa semana sa {0}</relativePeriod>
 			</field>
-			<field type="week-short">
-				<relativePeriod>sa semana sa {0}</relativePeriod>
-			</field>
 			<field type="week-narrow">
 				<relativePeriod>sa seman sa {0}</relativePeriod>
 			</field>
@@ -1045,19 +1048,16 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<zone type="Etc/Unknown">
 				<exemplarCity>Wala Mailhing Lokasyon</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>British Summer Time</daylight>
-				</long>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Irish Standard Time</daylight>
-				</long>
-			</zone>
 			<zone type="Asia/Saigon">
 				<exemplarCity>Ho Chi Minh City</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Acre Time</generic>
+					<standard>Acre Standard Time</standard>
+					<daylight>Acre Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Oras sa Afghanistan</standard>
@@ -1075,7 +1075,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</metazone>
 			<metazone type="Africa_Southern">
 				<long>
-					<standard>South Africa Standard Time</standard>
+					<standard>Standard nga Oras sa South Africa</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Western">
@@ -1205,8 +1205,8 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<metazone type="Azores">
 				<long>
 					<generic>Oras sa Azores</generic>
-					<standard>Azores Standard Time</standard>
-					<daylight>Azores Summer Time</daylight>
+					<standard>Standard nga Oras sa Azores</standard>
+					<daylight>Oras sa Ting-init sa Azores</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bangladesh">
@@ -1231,6 +1231,12 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					<generic>Oras sa Brasilia</generic>
 					<standard>Brasilia Standard Time</standard>
 					<daylight>Brasilia Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Oras sa Britanya</generic>
+					<daylight>Oras sa Ting-init sa Britanya</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -1267,8 +1273,8 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<metazone type="China">
 				<long>
 					<generic>Oras sa China</generic>
-					<standard>China Standard Time</standard>
-					<daylight>China Daylight Time</daylight>
+					<standard>Standard nga Oras sa China</standard>
+					<daylight>Daylight Time sa China</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
@@ -1332,15 +1338,15 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<metazone type="Europe_Central">
 				<long>
 					<generic>Oras sa Central Europe</generic>
-					<standard>Central European Standard Time</standard>
-					<daylight>Central European Summer Time</daylight>
+					<standard>Standard nga Oras sa Central Europe</standard>
+					<daylight>Oras sa Ting-init sa Central Europe</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Eastern">
 				<long>
 					<generic>Oras sa Eastern Europe</generic>
-					<standard>Eastern European Standard Time</standard>
-					<daylight>Eastern European Summer Time</daylight>
+					<standard>Standard nga Oras sa Eastern Europe</standard>
+					<daylight>Oras sa Ting-init sa Eastern Europe</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Further_Eastern">
@@ -1351,8 +1357,8 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<metazone type="Europe_Western">
 				<long>
 					<generic>Oras sa Western Europe</generic>
-					<standard>Western European Standard Time</standard>
-					<daylight>Western European Summer Time</daylight>
+					<standard>Standard nga Oras sa Western Europe</standard>
+					<daylight>Oras sa Ting-init sa Western Europe</daylight>
 				</long>
 			</metazone>
 			<metazone type="Falkland">
@@ -1406,6 +1412,13 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					<standard>Oras sa Greenwich Mean</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Greenland Time</generic>
+					<standard>Greenland Standard Time</standard>
+					<daylight>Greenland Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Oras sa East Greenland</generic>
@@ -1432,28 +1445,28 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Hawaii-Aleutian Standard Time</standard>
+					<standard>Oras sa Hawaii</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Oras sa Hawaii-Aleutian</generic>
-					<standard>Hawaii-Aleutian Standard Time</standard>
+					<standard>Standard nga Oras saHawaii-Aleutian</standard>
 					<daylight>Hawaii-Aleutian Daylight Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
 					<generic>Oras sa Hong Kong</generic>
-					<standard>Hong Kong Standard Time</standard>
-					<daylight>Hong Kong Summer Time</daylight>
+					<standard>Standard nga Oras sa Hong Kong</standard>
+					<daylight>Oras sa Ting-init sa Hong Kong</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hovd">
 				<long>
 					<generic>Oras sa Hovd</generic>
-					<standard>Khovd Standard Time</standard>
-					<daylight>Khovd Summer Time</daylight>
+					<standard>Standard nga Oras sa Khovd</standard>
+					<daylight>Oras sa Ting-init sa Khovd</daylight>
 				</long>
 			</metazone>
 			<metazone type="India">
@@ -1493,6 +1506,12 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					<daylight>Iran Daylight Time</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Oras sa Ireland</generic>
+					<daylight>Standard nga Oras sa Ireland</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Oras sa Irkutsk</generic>
@@ -1510,8 +1529,15 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<metazone type="Japan">
 				<long>
 					<generic>Oras sa Japan</generic>
-					<standard>Japan Standard Time</standard>
-					<daylight>Japan Daylight Time</daylight>
+					<standard>Standard nga Oras sa Japan</standard>
+					<daylight>Daylight Time sa Japan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>Kamchatka Time</generic>
+					<standard>Kamchatka Standard Time</standard>
+					<daylight>Kamchatka Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -1532,8 +1558,8 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<metazone type="Korea">
 				<long>
 					<generic>Oras sa Korea</generic>
-					<standard>Korean Standard Time</standard>
-					<daylight>Korean Daylight Time</daylight>
+					<standard>Standard nga Oras sa Korea</standard>
+					<daylight>Daylight Time sa Korea</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kosrae">
@@ -1614,8 +1640,8 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<metazone type="Mongolia">
 				<long>
 					<generic>Oras sa Ulaanbaatar</generic>
-					<standard>Ulaanbaatar Standard Time</standard>
-					<daylight>Ulaanbaatar Summer Time</daylight>
+					<standard>Standard nga Oras sa Ulaanbaatar</standard>
+					<daylight>Oras sa Ting-init sa Ulaanbaatar</daylight>
 				</long>
 			</metazone>
 			<metazone type="Moscow">
@@ -1776,11 +1802,16 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					<daylight>Sakhalin Summer Time</daylight>
 				</long>
 			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>Samara Time</generic>
+					<standard>Samara Standard Time</standard>
+					<daylight>Samara Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Oras sa Samoa</generic>
 					<standard>American Samoa Standard Time</standard>
-					<daylight>American Samoa Daylight Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -1821,8 +1852,8 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<metazone type="Taipei">
 				<long>
 					<generic>Oras sa Taiwan</generic>
-					<standard>Taiwan Standard Time</standard>
-					<daylight>Taiwan Daylight Time</daylight>
+					<standard>Standard nga Oras sa Taiwan</standard>
+					<daylight>Daylight Time sa Taiwan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tajikistan">
@@ -1847,6 +1878,13 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					<standard>Oras sa Chuuk</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Oras sa Türkiye</generic>
+					<standard>Standard nga Oras sa Türkiye</standard>
+					<daylight>Oras sa Ting-init sa Türkiye</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Oras sa Turkmenistan</generic>
@@ -1864,6 +1902,11 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					<generic>Oras sa Uruguay</generic>
 					<standard>Uruguay Standard Time</standard>
 					<daylight>Uruguay Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Oras sa Ürümqi</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -2040,7 +2083,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{1} {0}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -2806,8 +2849,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</currency>
 			<currency type="XCG">
 				<displayName>Carribean guilder</displayName>
-				<displayName count="one">Carribean guilder</displayName>
-				<displayName count="other">Carribean guilder</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>West African CFA Franc</displayName>
@@ -2841,8 +2882,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</currency>
 			<currency type="ZWG">
 				<displayName>Zimbabwean Gold</displayName>
-				<displayName count="one">Zimbabwean Gold</displayName>
-				<displayName count="other">Zimbabwean Gold</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">

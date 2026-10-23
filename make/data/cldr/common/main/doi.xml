@@ -329,6 +329,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="provisional">/</numericDateSeparator>
+						<numericTimeSeparator draft="provisional">:</numericTimeSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -373,12 +377,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMd">d, MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d, MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="contributed">d, MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="contributed">EEE, d, MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">Y दा हफ्ता w</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y दा हफ्ता w</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="h">h – h B</greatestDifference>
@@ -790,19 +801,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<standard>तालमेली आलमी समां</standard>
 				</long>
+				<short>
+					<standard>-</standard>
+				</short>
 			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>अनजांता शैह्‌र</exemplarCity>
-			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>ब्रिटिश गर्मियें दा समां</daylight>
-				</long>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>आयरिश मानक समां</daylight>
-				</long>
 			</zone>
 			<metazone type="America_Central">
 				<long>
@@ -839,6 +843,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>अटलांटिक डेलाइट समां</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>ब्रिटिश समां</generic>
+					<daylight>ब्रिटिश गर्मियें दा समां</daylight>
+				</long>
+			</metazone>
 			<metazone type="Europe_Central">
 				<long>
 					<generic>केंदरी यूरोपी समां</generic>
@@ -863,6 +873,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="GMT">
 				<long>
 					<standard>ग्रीनविच मीन टाइम</standard>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>आयरिश समां</generic>
+					<daylight>आयरिश मानक समां</daylight>
 				</long>
 			</metazone>
 		</timeZoneNames>

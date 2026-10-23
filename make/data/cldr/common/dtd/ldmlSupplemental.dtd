@@ -1,5 +1,5 @@
 <!--
-Copyright © 1991-2025 Unicode, Inc.
+Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -12,7 +12,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:any-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "48" >
+<!ATTLIST version cldrVersion CDATA #FIXED "49" >
     <!--@MATCH:version-->
     <!--@VALUE-->
 <!ATTLIST version unicodeVersion CDATA #FIXED "16.0.0" >
@@ -55,7 +55,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@MATCH:range/0~100-->
     <!--@VALUE-->
 <!ATTLIST info cashRounding NMTOKEN #IMPLIED >
-    <!--@MATCH:literal/0, 5, 50-->
+    <!--@MATCH:literal/0, 5, 20, 50-->
     <!--@VALUE-->
 <!ATTLIST info draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->

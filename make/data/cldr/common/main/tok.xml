@@ -116,7 +116,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Java">sitelen Sowa</script>
 			<script type="Jpan">sitelen Nijon</script>
 			<script type="Khmr">sitelen Kame</script>
-			<script type="Kore" draft="unconfirmed">sitelen Anku</script>
+			<script type="Kore">sitelen Koli</script>
 			<script type="Latn">sitelen Lasina</script>
 			<script type="Mymr">sitelen Mijama</script>
 			<script type="Taml" draft="unconfirmed">sitelen Tami</script>
@@ -272,7 +272,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SS" draft="unconfirmed">ma Sasutan</territory>
 			<territory type="SV">ma Sawato</territory>
 			<territory type="SY">ma Suli</territory>
-			<territory type="SZ">ma Suwasi</territory>
+			<territory type="SZ">ma Sawasi</territory>
 			<territory type="TD" draft="unconfirmed">ma Sate</territory>
 			<territory type="TG" draft="unconfirmed">ma Toko</territory>
 			<territory type="TH">ma Tawi</territory>
@@ -311,6 +311,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<key type="numbers">sitelen nanpa</key>
 		</keys>
 		<types>
+			<type key="calendar" type="buddhist">nasin tenpo Puta</type>
+			<type key="calendar" type="buddhist" scope="core">nasin Puta</type>
 			<type key="calendar" type="japanese">nasin tenpo Nijon</type>
 			<type key="calendar" type="japanese" scope="core">nasin Nijon</type>
 			<type key="collation" type="ducet">nasin nimi Juniko</type>
@@ -388,15 +390,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</months>
 				<days>
 					<dayContext type="format">
-						<dayWidth type="narrow">
-							<day type="sun">7</day>
-							<day type="mon">1</day>
-							<day type="tue">2</day>
-							<day type="wed">3</day>
-							<day type="thu">4</day>
-							<day type="fri">5</day>
-							<day type="sat">6</day>
-						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">suno esun #7</day>
 							<day type="mon">suno esun #1</day>
@@ -540,9 +533,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="year-short">
 				<displayName>sike</displayName>
 			</field>
-			<field type="year-narrow">
-				<displayName>sike</displayName>
-			</field>
 			<field type="month">
 				<displayName>tenpo mun</displayName>
 				<relative type="-1">tenpo mun pini</relative>
@@ -556,9 +546,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="month-short">
-				<displayName>mun</displayName>
-			</field>
-			<field type="month-narrow">
 				<displayName>mun</displayName>
 			</field>
 			<field type="week">
@@ -576,9 +563,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="week-short">
 				<displayName>esun</displayName>
 			</field>
-			<field type="week-narrow">
-				<displayName>esun</displayName>
-			</field>
 			<field type="day">
 				<displayName>tenpo suno</displayName>
 				<relative type="-1">tenpo suno pini</relative>
@@ -592,9 +576,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="day-short">
-				<displayName>suno</displayName>
-			</field>
-			<field type="day-narrow">
 				<displayName>suno</displayName>
 			</field>
 			<field type="sun">
@@ -648,7 +629,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 		<timeZoneNames>
 			<gmtFormat>tenpo GMT{0}</gmtFormat>
-			<gmtZeroFormat>tenpo UTC</gmtZeroFormat>
+			<gmtFormat alt="utc">tenpo UTC{0}</gmtFormat>
 			<regionFormat>tenpo pi {0}</regionFormat>
 			<regionFormat type="daylight">tenpo seli suno pi {0}</regionFormat>
 			<regionFormat type="standard">tenpo pi {0}</regionFormat>

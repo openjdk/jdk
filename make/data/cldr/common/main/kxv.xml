@@ -434,6 +434,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="phonebook">pnbhi baga lẽ</type>
 			<type key="collation" type="search">samani udesya parin</type>
 			<type key="collation" type="standard">mānānka baga lẽ</type>
+			<type key="hc" type="c12">12 gṇṭati pddti</type>
+			<type key="hc" type="c24">24 gṇṭati pddti</type>
 			<type key="hc" type="h11">12 gṇṭati pddti (0 - 11)</type>
 			<type key="hc" type="h12">12 gṇṭati pddti (1 - 12)</type>
 			<type key="hc" type="h23">24 gṇṭati pddti (0 - 23)</type>
@@ -860,6 +862,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">Y 'tã' 'vara' w</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
@@ -1452,9 +1459,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>librevill</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>briṭis karã masa belā</daylight>
-				</long>
 				<exemplarCity>lnḍn</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -1545,9 +1549,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>jayapura</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>aairis manaka belā</daylight>
-				</long>
 				<exemplarCity>ḍblin</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -2415,6 +2416,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>brājiliā kār~ā belā</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight>briṭis karã masa belā</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>bruneti dārusālām belā</standard>
@@ -2673,6 +2679,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>irān belā</generic>
 					<standard>irān mānānka belā</standard>
 					<daylight>irān ḍelāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight>aairis manaka belā</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -2960,9 +2971,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>saāmoa belā</generic>
 					<standard>saāmoa mānānka belā</standard>
-					<daylight>saāmoa ḍelāiṭ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">

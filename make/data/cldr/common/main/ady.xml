@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2026 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="ady"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ady">адыгабзэ</language>
+			<language type="ar">арабыбзэ</language>
+			<language type="en">инджылызыбзэ</language>
+			<language type="ru">урысыбзэ</language>
+			<language type="tr">тыркубзэ</language>
+		</languages>
+		<scripts>
+			<script type="Arab">араб</script>
+			<script type="Cyrl">кирил</script>
+		</scripts>
+		<territories>
+			<territory type="JO">Иордание</territory>
+			<territory type="RU">Урысые</territory>
+			<territory type="TR">Тыркуе</territory>
+		</territories>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">метрик</measurementSystemName>
+			<measurementSystemName type="UK">ПЗ</measurementSystemName>
+			<measurementSystemName type="US">ШЗ</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">бзэ: {0}</codePattern>
+			<codePattern type="script">тхэпкъылъэ {0}</codePattern>
+			<codePattern type="territory">чӏыналъэ: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[а б в г {гу} {гъ} {гъу} д {дж} {дз} {дзу} её ж {жъ} {жъу} {жь} з и й к {ку} {къ} {къу} {кӏ} {кӏу} л {лъ} {лӏ} м н о п {пӏ} {пӏу} р с т {тӏ} {тӏу} у ф х {хъ} {хъу} {хь} ц {цу} {цӏ} ч {чъ} {чӏ} ш {шъ} {шъу} {шӏ} {шӏу} щ ъ ы ь э ю я ӏ {ӏу}]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[{гь} {кӏь}]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[_ \- ‑ – , ; \: ! ? . … ' &quot; « » ( ) \[ \] \{ \} @ * / \&amp; # ` ~]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart>«</quotationStart>
+		<quotationEnd>»</quotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">щылэмазэм</month>
+							<month type="2">мэзаем</month>
+							<month type="3">гъэтхапэм</month>
+							<month type="4">мэлылъфэгъум</month>
+							<month type="5">жъоныгъуакӏэм</month>
+							<month type="6">мэкъуогъум</month>
+							<month type="7">бэдзэогъум</month>
+							<month type="8">шышъхьэӏум</month>
+							<month type="9">ӏоныгъум</month>
+							<month type="10">чъэпыогъум</month>
+							<month type="11">шэкӏогъум</month>
+							<month type="12">тыгъэгъазэм</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="wide">
+							<month type="1">щылэмаз</month>
+							<month type="2">мэзай</month>
+							<month type="3">гъэтхапэ</month>
+							<month type="4">мэлылъфэгъу</month>
+							<month type="5">жъоныгъуакӏ</month>
+							<month type="6">мэкъуогъу</month>
+							<month type="7">бэдзэогъу</month>
+							<month type="8">шышъхьэӏу</month>
+							<month type="9">ӏоныгъу</month>
+							<month type="10">чъэпыогъу</month>
+							<month type="11">шэкӏогъу</month>
+							<month type="12">тыгъэгъаз</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun">тхьаумаф</day>
+							<day type="mon">блыпэ</day>
+							<day type="tue">гъубдж</day>
+							<day type="wed">бэрэскэжъый</day>
+							<day type="thu">мэфэкъу</day>
+							<day type="fri">бэрэскэшху</day>
+							<day type="sat">шэмбэт</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="wide">
+							<day type="sun">тхьаумаф</day>
+							<day type="mon">блыпэ</day>
+							<day type="tue">гъубдж</day>
+							<day type="wed">бэрэскэжъый</day>
+							<day type="thu">мэфэкъу</day>
+							<day type="fri">бэрэскэшху</day>
+							<day type="sat">шэмбэт</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="yMd">dd.MM.y</dateFormatItem>
+						<dateFormatItem id="yMMMd">MMM 'и' d, y 'гъэ'</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">MMMM 'и' d, y 'гъэ'</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">MMMM 'и' d, y 'гъэ' E</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="year">
+				<displayName>илъэс</displayName>
+			</field>
+			<field type="month">
+				<displayName>мазэ</displayName>
+			</field>
+			<field type="week">
+				<displayName>тхьамафэ</displayName>
+			</field>
+			<field type="day">
+				<displayName>мафэ</displayName>
+			</field>
+			<field type="hour">
+				<displayName>сыхьат</displayName>
+			</field>
+			<field type="minute">
+				<displayName>такъикъ</displayName>
+			</field>
+			<field type="second">
+				<displayName>нэгъэупӏэпӏэгъу</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<gmtFormat>ГГС {0}</gmtFormat>
+			<gmtFormat alt="utc">ДСЗ {0}</gmtFormat>
+			<regionFormat>{0} сыхьат</regionFormat>
+			<regionFormat type="daylight">{0} гъэмэфэ сыхьат</regionFormat>
+			<regionFormat type="standard">{0} шэпхъэ сыхьат</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Дунэепсэу сыхьат зэтегъэуцуагъ</standard>
+				</long>
+				<short>
+					<standard>ДСЗ</standard>
+				</short>
+			</zone>
+			<metazone type="GMT">
+				<long>
+					<standard>Греенвич гурыт сыхьатыр</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>,</decimal>
+			<group> </group>
+			<approximatelySign>≈</approximatelySign>
+			<nan>пчъагъэп</nan>
+		</symbols>
+	</numbers>
+</ldml>

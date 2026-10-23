@@ -2213,11 +2213,23 @@ public class SimpleDateFormat extends DateFormat {
                             sign = -1;
                         }
                         if (sign == 0) {
-                            // Try parsing a custom time zone "GMT+hh:mm" or "GMT".
-                            if ((c == 'G' || c == 'g')
+                            var upperC = Character.toUpperCase(c);
+                            var gmtZero = TimeZoneNameUtility.gmtZeroFormat(locale);
+                            // Try parsing a custom time zone "GMT+hh:mm" or "GMT",
+                            // or a localized gmt zero format followed by an offset.
+                            String gmtText = null;
+                            if (upperC == 'G'
                                 && (text.length() - start) >= GMT.length()
                                 && text.regionMatches(true, start, GMT, 0, GMT.length())) {
-                                pos.index = start + GMT.length();
+                                gmtText = GMT;
+                            } else if (upperC == Character.toUpperCase(gmtZero.charAt(0))
+                                && (text.length() - start) > gmtZero.length()
+                                && text.regionMatches(true, start, gmtZero, 0, gmtZero.length())
+                                && (text.charAt(start + gmtZero.length()) == '+' || text.charAt(start + gmtZero.length()) == '-')) {
+                                gmtText = gmtZero;
+                            }
+                            if (gmtText != null) {
+                                pos.index = start + gmtText.length();
 
                                 if ((text.length() - pos.index) > 0) {
                                     c = text.charAt(pos.index);

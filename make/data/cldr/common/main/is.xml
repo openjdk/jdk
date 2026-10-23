@@ -415,6 +415,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pi">palí</language>
 			<language type="pis">pijin</language>
 			<language type="pl">pólska</language>
+			<language type="pms">piedmontíska</language>
 			<language type="pon">ponpeiska</language>
 			<language type="pqm">maliseet-passamaquoddy</language>
 			<language type="prg">prússneska</language>
@@ -1027,18 +1028,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="collation">Röðun</key>
 			<key type="colNormalization">Stöðluð röðun</key>
 			<key type="colNumeric">Talnaröðun</key>
+			<key type="colReorder">Endurröðun skrifleturs/sérstafahópa</key>
 			<key type="colStrength">Röðunarstyrkur</key>
 			<key type="currency">Gjaldmiðill</key>
+			<key type="d0">Markmið umbreytingar</key>
+			<key type="dx">Undanþágur frá línuskiptingu úr orðabók</key>
 			<key type="em">Framsetning emoji</key>
+			<key type="fw">Fyrsti dagur viku</key>
+			<key type="h0">Blandað</key>
 			<key type="hc">Tímakerfi (12 eða 24)</key>
+			<key type="i0">Innsláttaraðferð</key>
+			<key type="k0">Lyklaborð</key>
+			<key type="kv">Efri mörk fyrir undanskilið</key>
 			<key type="lb">Línuskipting</key>
 			<key type="lw">Línuskil innan orða</key>
+			<key type="m0">Umbreytingarreglur</key>
 			<key type="ms">Mælingakerfi</key>
+			<key type="mu">Mælieining</key>
 			<key type="numbers">Tölur</key>
+			<key type="rg">Svæði fyrir viðbótargögn</key>
+			<key type="s0">Uppruni umbreytingar</key>
+			<key type="sd">Undirsvæði</key>
 			<key type="ss">Hindranir á línuskiptingu</key>
+			<key type="t">Umbreyting</key>
+			<key type="t0">Vélþýtt</key>
 			<key type="timezone">Tímabelti</key>
 			<key type="va">Landsstaðalsafbrigði</key>
 			<key type="x">Einkanotkun</key>
+			<key type="x0">Umbreyting til einkanota</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Búddískt tímatal</type>
@@ -1058,13 +1075,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">Hebreskt tímatal</type>
 			<type key="calendar" type="hebrew" scope="core">Hebreskt</type>
 			<type key="calendar" type="indian">indverskt dagatal</type>
+			<type key="calendar" type="indian" scope="core">Indverskt þjóðartímatal</type>
 			<type key="calendar" type="islamic">Íslamskt tímatal</type>
 			<type key="calendar" type="islamic" scope="core">Íslamskt tímatal</type>
 			<type key="calendar" type="islamic-civil">Íslamskt borgaradagatal</type>
 			<type key="calendar" type="islamic-civil" scope="core">Íslamskt borgaradagatal</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">Hijri, tungl séð í Sádi-Arabíu</type>
+			<type key="calendar" type="islamic-tbla" scope="core">Hijri (töfluform, stjarnfræðilegt tímabil)</type>
 			<type key="calendar" type="islamic-umalqura">Íslamskt dagatal (Umm al-Qura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">Íslamskt dagatal (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601 tímatal</type>
+			<type key="calendar" type="iso8601" scope="core">Gregorískt</type>
 			<type key="calendar" type="japanese">Japanskt tímatal</type>
 			<type key="calendar" type="japanese" scope="core">Japanskt</type>
 			<type key="calendar" type="persian">Persneskt tímatal</type>
@@ -1080,41 +1101,70 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colBackwards" type="no">Raða áherslum eðlilega</type>
 			<type key="colBackwards" type="yes">Raða öfugt eftir áherslum</type>
 			<type key="colCaseFirst" type="lower">Raða lágstöfum fyrst</type>
+			<type key="colCaseFirst" type="lower" scope="core">Lágstafir</type>
 			<type key="colCaseFirst" type="no">Raða eðlilega eftir hástöfum og lágstöfum</type>
+			<type key="colCaseFirst" type="no" scope="core">Lágstafir</type>
 			<type key="colCaseFirst" type="upper">Raða hástöfum fyrst</type>
+			<type key="colCaseFirst" type="upper" scope="core">Hástafir</type>
 			<type key="colCaseLevel" type="no">Raða óháð hástöfum og lágstöfum</type>
 			<type key="colCaseLevel" type="yes">Raða stafrétt</type>
 			<type key="collation" type="compat">Fyrri röðun, til samræmis</type>
+			<type key="collation" type="compat" scope="core">Samhæfi</type>
 			<type key="collation" type="dictionary">Orðabókarröð</type>
+			<type key="collation" type="dictionary" scope="core">Orðabók</type>
 			<type key="collation" type="ducet">Sjálfgefin Unicode-röðun</type>
 			<type key="collation" type="ducet" scope="core">Sjálfgefin Unicode</type>
+			<type key="collation" type="emoji" scope="core">Emoji</type>
 			<type key="collation" type="eor">Evrópskar reglur um röðun</type>
+			<type key="collation" type="eor" scope="core">Evrópskar reglur</type>
 			<type key="collation" type="phonebook">Símaskráarröðun</type>
+			<type key="collation" type="phonebook" scope="core">Símaskrá</type>
 			<type key="collation" type="phonetic">Hljóðfræðileg röð</type>
+			<type key="collation" type="phonetic" scope="core">Hljóðritun</type>
 			<type key="collation" type="pinyin">Pinyin-röðun</type>
+			<type key="collation" type="pinyin" scope="core">Pinyin</type>
 			<type key="collation" type="search">Almenn leit</type>
 			<type key="collation" type="search" scope="core">Leit</type>
 			<type key="collation" type="searchjl">Leita eftir upphafssamhljóða í Hangul</type>
+			<type key="collation" type="searchjl" scope="core">Kóresk röðun eftir fyrsta samhljóða</type>
 			<type key="collation" type="standard">Stöðluð röðun</type>
 			<type key="collation" type="standard" scope="core">Stöðluð</type>
 			<type key="collation" type="stroke">Strikaröðun</type>
+			<type key="collation" type="stroke" scope="core">Stroka</type>
 			<type key="collation" type="traditional">Hefðbundin</type>
+			<type key="collation" type="traditional" scope="core">Hefðbundin</type>
 			<type key="collation" type="unihan">Röðun eftir grunnstrikum</type>
+			<type key="collation" type="unihan" scope="core">Táknrót-stroka</type>
+			<type key="collation" type="zhuyin" scope="core">Zhuyin</type>
 			<type key="colNormalization" type="no">Raða án stöðlunar</type>
 			<type key="colNormalization" type="yes">Raða Unicode með stöðluðum hætti</type>
 			<type key="colNumeric" type="no">Raða tölustöfum sér</type>
 			<type key="colNumeric" type="yes">Raða tölustöfum tölulega</type>
+			<type key="colReorder" type="currency" scope="core">Gjaldmiðill</type>
+			<type key="colReorder" type="digit" scope="core">Tölustafir</type>
+			<type key="colReorder" type="punct" scope="core">Greinarmerki</type>
+			<type key="colReorder" type="space" scope="core">Bil</type>
+			<type key="colReorder" type="symbol" scope="core">Tákn</type>
 			<type key="colStrength" type="identical">Raða öllu</type>
+			<type key="colStrength" type="identical" scope="core">Allt</type>
 			<type key="colStrength" type="primary">Raða aðeins grunnstöfum</type>
+			<type key="colStrength" type="primary" scope="core">Aðeins grunnstafir</type>
 			<type key="colStrength" type="quaternary">Raða áherslum/hástaf eða lágstaf/breidd/Kana</type>
+			<type key="colStrength" type="quaternary" scope="core">Grunnstafir, áherslutákn, há- og lágstafir, afbrigði, kana</type>
 			<type key="colStrength" type="secondary">Raða áherslum</type>
+			<type key="colStrength" type="secondary" scope="core">Grunnstafir, áherslutákn</type>
 			<type key="colStrength" type="tertiary">Raða áherslum/hástaf eða lágstaf/breidd</type>
+			<type key="colStrength" type="tertiary" scope="core">Grunnstafir, áherslutákn, há- og lágstafir, afbrigði</type>
 			<type key="d0" type="fwidth">Full breidd</type>
 			<type key="d0" type="hwidth">Hálfbreidd</type>
 			<type key="d0" type="npinyin">Tölulegur</type>
 			<type key="em" type="default" scope="core">Staðlað</type>
 			<type key="em" type="emoji" scope="core">Emoji</type>
 			<type key="em" type="text" scope="core">Texti</type>
+			<type key="hc" type="c12">12 tíma kerfi</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24 tíma kerfi</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12 tíma kerfi (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 tíma kerfi (1–12)</type>
@@ -1123,6 +1173,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 tíma kerfi (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Sleppa eyðum, greinarmerkjum, öllum táknum</type>
+			<type key="kv" type="punct" scope="core">Sleppa eyðum, greinarmerkjum</type>
+			<type key="kv" type="space" scope="core">Sleppa eyðum, greinarmerkjum</type>
+			<type key="kv" type="symbol" scope="core">Sleppa eyðum, greinarmerkjum, öllum táknum nema gjaldmiðilstáknum</type>
 			<type key="lb" type="loose">Laus línuskipting</type>
 			<type key="lb" type="loose" scope="core">Laus</type>
 			<type key="lb" type="normal">Venjuleg línuskipting</type>
@@ -1144,51 +1198,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="ahom">ahom-tölur</type>
 			<type key="numbers" type="arab">Arabískar-indverskar tölur</type>
 			<type key="numbers" type="arabext">Auknar arabískar-indverskar tölur</type>
+			<type key="numbers" type="arabext" scope="core">Auknar arabískar-indverskar</type>
 			<type key="numbers" type="armn">Armenskir tölustafir</type>
 			<type key="numbers" type="armnlow">Armenskar lágstafatölur</type>
+			<type key="numbers" type="armnlow" scope="core">Armenskir lágstafir</type>
 			<type key="numbers" type="beng">Bengalskar tölur</type>
 			<type key="numbers" type="cakm">Chakma-tölur</type>
 			<type key="numbers" type="deva">Devanagari tölur</type>
 			<type key="numbers" type="ethi">Eþíópískir tölustafir</type>
 			<type key="numbers" type="finance">Viðskiptafræðileg töluorð</type>
+			<type key="numbers" type="finance" scope="core">Fjármálatölur</type>
 			<type key="numbers" type="fullwide">Tölur í fullri breidd</type>
+			<type key="numbers" type="fullwide" scope="core">Full breidd</type>
 			<type key="numbers" type="geor">Georgískir tölustafir</type>
 			<type key="numbers" type="grek">Grískir tölustafir</type>
 			<type key="numbers" type="greklow">Grískar lágstafatölur</type>
+			<type key="numbers" type="greklow" scope="core">Grískir lágstafir</type>
 			<type key="numbers" type="gujr">Gujarati-tölur</type>
 			<type key="numbers" type="guru">Gurmukhi-tölur</type>
+			<type key="numbers" type="hanidays" scope="core">Tölusetning mánaðardaga með Han-táknum fyrir hefðbundin dagatöl</type>
 			<type key="numbers" type="hanidec">Kínverskir tugatölustafir</type>
+			<type key="numbers" type="hanidec" scope="core">Stöðutugakerfi með kínverskum tölumyndtáknum sem tölustöfum</type>
 			<type key="numbers" type="hans">Einfaldaðir kínverskir tölustafir</type>
 			<type key="numbers" type="hansfin">Einfaldaðar kínverskar fjármálatölur</type>
+			<type key="numbers" type="hansfin" scope="core">Einfaldaðar kínverskar fjármálatölur</type>
 			<type key="numbers" type="hant">Hefðbundnir kínverskir tölustafir</type>
 			<type key="numbers" type="hantfin">Hefðbundnar kínverskar fjármálatölur</type>
+			<type key="numbers" type="hantfin" scope="core">Hefðbundnar kínverskar fjármálatölur</type>
 			<type key="numbers" type="hebr">Hebreskir tölustafir</type>
 			<type key="numbers" type="java">Javanskar tölur</type>
 			<type key="numbers" type="jpan">Japanskir tölustafir</type>
 			<type key="numbers" type="jpanfin">Japanskar fjármálatölur</type>
+			<type key="numbers" type="jpanfin" scope="core">Japanskar fjármálatölur</type>
+			<type key="numbers" type="jpanyear" scope="core">Japönsk Gannen-talning út frá fyrsta ári</type>
 			<type key="numbers" type="khmr">Kmerískar tölur</type>
 			<type key="numbers" type="knda">Kannada-tölur</type>
+			<type key="numbers" type="lanatham" scope="core">Tai Tham Tham (kirkjulegt)</type>
 			<type key="numbers" type="laoo">Lao-tölur</type>
 			<type key="numbers" type="latn">Vestrænar tölur</type>
+			<type key="numbers" type="mathbold" scope="core">Feitletraðar tölur fyrir stærðfræði</type>
+			<type key="numbers" type="mathdbl" scope="core">Tvöfaldar tölur fyrir stærðfræði</type>
+			<type key="numbers" type="mathmono" scope="core">Jafnstafasnið fyrir stærðfræði</type>
+			<type key="numbers" type="mathsanb" scope="core">Blokkstafa feitletur fyrir stærðfræði</type>
+			<type key="numbers" type="mathsans" scope="core">Blokkstafir fyrir stærðfræði</type>
 			<type key="numbers" type="mlym">Malayalam-tölur</type>
 			<type key="numbers" type="mong">Mongólskar tölur</type>
 			<type key="numbers" type="mtei">Meetei mayek-tölur</type>
 			<type key="numbers" type="mymr">Mjanmarskar tölur</type>
+			<type key="numbers" type="mymrepka" scope="core">Mjanmarskar austur Pwo Karen-tölur</type>
+			<type key="numbers" type="mymrpao" scope="core">Mjanmarskar Pao-tölur</type>
+			<type key="numbers" type="mymrshan" scope="core">Mjanmarskar Shan-tölur</type>
+			<type key="numbers" type="mymrtlng" scope="core">Mjanmarskar Tai Laing-tölur</type>
 			<type key="numbers" type="native">Upprunalegir tölustafir</type>
+			<type key="numbers" type="native" scope="core">Upprunalegir tölustafir</type>
 			<type key="numbers" type="olck">Ol chiki-tölur</type>
 			<type key="numbers" type="orya">Odia-tölur</type>
+			<type key="numbers" type="outlined" scope="core">Holar tölur</type>
 			<type key="numbers" type="roman">Rómverskir tölustafir</type>
+			<type key="numbers" type="roman" scope="core">Rómverskir hástafir</type>
 			<type key="numbers" type="romanlow">Rómverskar lágstafatölur</type>
+			<type key="numbers" type="romanlow" scope="core">Rómverskir lágstafir</type>
+			<type key="numbers" type="segment" scope="core">Reiknivélatölustafir</type>
 			<type key="numbers" type="taml">Hefðbundnir tamílskir tölustafir</type>
 			<type key="numbers" type="tamldec">Tamílskar tölur</type>
+			<type key="numbers" type="tamldec" scope="core">Tamílskar nútímatölur</type>
 			<type key="numbers" type="telu">Telúgú-tölur</type>
 			<type key="numbers" type="thai">Tælenskar tölur</type>
 			<type key="numbers" type="tibt">Tíbeskir tölustafir</type>
 			<type key="numbers" type="traditional">Hefðbundin tölutákn</type>
+			<type key="numbers" type="traditional" scope="core">Hefðbundnir tölustafir</type>
 			<type key="numbers" type="vaii">Vai-tölustafir</type>
 			<type key="ss" type="none" scope="core">Slökkt</type>
 			<type key="ss" type="standard" scope="core">Kveikt</type>
+			<type key="t0" type="und">Ótilgreind vélþýðing</type>
+			<type key="va" type="posix" scope="core">POSIX-afbrigði</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">Slökkt</typeValue>
+			<typeValue type="yes">Kveikt</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">metrakerfi</measurementSystemName>
 			<measurementSystemName type="UK">breskt</measurementSystemName>
@@ -1292,7 +1380,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>d.M.y GGGGG</pattern>
+							<pattern>d.M.y G</pattern>
 							<datetimeSkeleton>GGGGGyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -1335,15 +1423,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyM">MM-y G</dateFormatItem>
-						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="GyMEd">E dd-MM-y G</dateFormatItem>
+						<dateFormatItem id="GyM">M.y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d.M.y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d.M.y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d. MMM y G</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hv">HH v</dateFormatItem>
 						<dateFormatItem id="Md">d.M.</dateFormatItem>
 						<dateFormatItem id="MEd">E, d.M.</dateFormatItem>
 						<dateFormatItem id="MMMd">d. MMM</dateFormatItem>
@@ -1371,21 +1458,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">MM.y GGGGG – MM.y GGGGG</greatestDifference>
-							<greatestDifference id="M">MM.y – MM.y GGGGG</greatestDifference>
-							<greatestDifference id="y">MM.y – MM.y GGGGG</greatestDifference>
+							<greatestDifference id="G">M.y G – M.y G</greatestDifference>
+							<greatestDifference id="M">M.–M.y G</greatestDifference>
+							<greatestDifference id="y">M.y–M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">dd.MM.y – dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="G">dd.MM.y GGGGG – dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="M">dd.MM.y – dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="y">dd.MM.y – dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="d">d.–d.M.y G</greatestDifference>
+							<greatestDifference id="G">d.M.y G – d.M.y G</greatestDifference>
+							<greatestDifference id="M">d.M.–d.M.y G</greatestDifference>
+							<greatestDifference id="y">d.M.y–d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E, dd.MM.y – E, dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="G">E, dd.MM.y GGGGG – E, dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, dd.MM.y – E, dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, dd.MM.y – E, dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="G">E, d.M.y G – E, d.M.y G</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="y">E, d.M.y – E, d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
 							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
@@ -1395,11 +1482,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="GyMMMd">
 							<greatestDifference id="d">d.–d. MMM y G</greatestDifference>
 							<greatestDifference id="G">d. MMM y G – d. MMM y G</greatestDifference>
-							<greatestDifference id="M">d. MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d. MMM – d. MMM y G</greatestDifference>
 							<greatestDifference id="y">d. MMM y – d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E, d. MMM – E, d. MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="G">E, d. MMM y G – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="y">E, d. MMM y – E, d. MMM y G</greatestDifference>
@@ -1438,6 +1525,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
 							<greatestDifference id="M">MMMM–MMMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d.–d. MMMM</greatestDifference>
+							<greatestDifference id="M">d. MMMM – d. MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y G</greatestDifference>
@@ -1696,6 +1787,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>.</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -1735,19 +1829,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E, h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E, HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyM">M/y G</dateFormatItem>
-						<dateFormatItem id="GyMd">d/M/y G</dateFormatItem>
-						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
+						<dateFormatItem id="GyM">M.y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d.M.y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d.M.y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d. MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d. MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d. MMMM y G</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="Hmsv">v – HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">v – HH:mm</dateFormatItem>
-						<dateFormatItem id="Hv">HH v</dateFormatItem>
+						<dateFormatItem id="Hv">v HH</dateFormatItem>
 						<dateFormatItem id="Md">d.M.</dateFormatItem>
 						<dateFormatItem id="MEd">E, d.M.</dateFormatItem>
 						<dateFormatItem id="MMMd">d. MMM</dateFormatItem>
@@ -1756,18 +1853,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMMEd">E, d. MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">'viku' W 'í' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">'viku' W 'í' MMMM</dateFormatItem>
-						<dateFormatItem id="yM">M. y</dateFormatItem>
+						<dateFormatItem id="yM">M.y</dateFormatItem>
 						<dateFormatItem id="yMd">d.M.y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d.M.y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMd">d. MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d. MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d. MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d. MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">'viku' w 'af' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'viku' w 'af' Y</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Era">{0} {1}</appendItem>
+					</appendItems>
 					<intervalFormats>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d.–d.</greatestDifference>
@@ -1777,21 +1879,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">MM.y GGGGG – MM.y GGGGG</greatestDifference>
-							<greatestDifference id="M">MM.y – MM.y GGGGG</greatestDifference>
-							<greatestDifference id="y">MM.y – MM.y GGGGG</greatestDifference>
+							<greatestDifference id="G">M.y G – M.y G</greatestDifference>
+							<greatestDifference id="M">M.–M.y G</greatestDifference>
+							<greatestDifference id="y">M.y–M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">dd.MM.y – dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="G">dd.MM.y GGGGG – dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="M">dd.MM.y – dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="y">dd.MM.y – dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="d">d.–d.M.y G</greatestDifference>
+							<greatestDifference id="G">d.M.y G – d.M.y G</greatestDifference>
+							<greatestDifference id="M">d.M.y–d.M.y G</greatestDifference>
+							<greatestDifference id="y">d.M.y–d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E, dd.MM.y – E, dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="G">E, dd.MM.y GGGGG – E, dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, dd.MM.y – E, dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, dd.MM.y – E, dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="G">E, d.M.y G – E, d.M.y G</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="y">E, d.M.y – E, d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
 							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
@@ -1805,7 +1907,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d. MMM y – d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E, d. MMM – E, d. MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="G">E, d. MMM y G – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="y">E, d. MMM y – E, d. MMM y G</greatestDifference>
@@ -1824,11 +1926,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">M.–M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">d.M.–d.M.</greatestDifference>
+							<greatestDifference id="d">d.–d.M.</greatestDifference>
 							<greatestDifference id="M">d.M.–d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d.M. – E, d.M.</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
 							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
@@ -1845,18 +1947,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMM">
 							<greatestDifference id="M">LLLL–LLLL</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d.–d. MMMM</greatestDifference>
+							<greatestDifference id="M">d. MMMM – d. MMMM</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M.y – M.y</greatestDifference>
-							<greatestDifference id="y">M.y – M.y</greatestDifference>
+							<greatestDifference id="M">M.–M.y</greatestDifference>
+							<greatestDifference id="y">M.y–M.y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">d.M.y – d.M.y</greatestDifference>
-							<greatestDifference id="M">d.M.y – d.M.y</greatestDifference>
+							<greatestDifference id="d">d.–d.M.y</greatestDifference>
+							<greatestDifference id="M">d.M.–d.M.y</greatestDifference>
 							<greatestDifference id="y">d.M.y – d.M.y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, d.M.y – E, d.M.y</greatestDifference>
-							<greatestDifference id="M">E, d.M.y – E, d.M.y</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.y</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.y</greatestDifference>
 							<greatestDifference id="y">E, d.M.y – E, d.M.y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
@@ -2593,9 +2699,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>París</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Sumartími í Bretlandi</daylight>
-				</long>
 				<exemplarCity>Lundúnir</exemplarCity>
 			</zone>
 			<zone type="Europe/Gibraltar">
@@ -2627,11 +2730,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Jakarta">
 				<exemplarCity>Djakarta</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Sumartími á Írlandi</daylight>
-				</long>
 			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity>Jerúsalem</exemplarCity>
@@ -2828,6 +2926,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Johannesburg">
 				<exemplarCity>Jóhannesarborg</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Tími í Acre</generic>
+					<standard>Staðaltími í Acre</standard>
+					<daylight>Sumartími í Acre</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Afganistantími</standard>
@@ -2904,9 +3009,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic>Tími í Apía</generic>
-					<standard>Staðaltími í Apía</standard>
-					<daylight>Sumartími í Apía</daylight>
+					<generic>Vestur-Samóatími</generic>
+					<standard>Staðaltími á Vestur-Samóa</standard>
+					<daylight>Sumartími á Vestur-Samóa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3008,6 +3113,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Brasilíutími</generic>
 					<standard>Staðaltími í Brasilíu</standard>
 					<daylight>Sumartími í Brasilíu</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Tími í Bretlandi</generic>
+					<daylight>Sumartími í Bretlandi</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3183,6 +3294,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Greenwich-staðaltími</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Grænlandstími</generic>
+					<standard>Staðaltími á Grænlandi</standard>
+					<daylight>Sumartími á Grænlandi</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Austur-Grænlandstími</generic>
@@ -3209,14 +3327,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Staðaltími á Havaí og Aleúta</standard>
+					<standard>Havaítími</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic>Tími á Havaí og Aleúta</generic>
-					<standard>Staðaltími á Havaí og Aleúta</standard>
-					<daylight>Sumartími á Havaí og Aleúta</daylight>
+					<generic>Tími á Havaí og Aleúteyjum</generic>
+					<standard>Staðaltími á Havaí og Aleúteyjum</standard>
+					<daylight>Sumartími á Havaí og Aleúteyjum</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
@@ -3270,6 +3388,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Sumartími í Íran</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Tími á Írlandi</generic>
+					<daylight>Sumartími á Írlandi</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Tími í Irkutsk</generic>
@@ -3293,9 +3417,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
-					<generic>Tími í Petropavlovsk-Kamchatski</generic>
-					<standard>Staðaltími í Petropavlovsk-Kamchatski</standard>
-					<daylight>Sumartími í Petropavlovsk-Kamchatski</daylight>
+					<generic>Kamtsjatkatími</generic>
+					<standard>Staðaltími á Kamtsjatka</standard>
+					<daylight>Sumartími á Kamtsjatka</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -3569,9 +3693,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samóa-tími</generic>
 					<standard>Staðaltími á Samóa</standard>
-					<daylight>Sumartími á Samóa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3638,6 +3760,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Chuuk-tími</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Tyrklandstími</generic>
+					<standard>Staðaltími í Tyrklandi</standard>
+					<daylight>Sumartími í Tyrklandi</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Túrkmenistan-tími</generic>
@@ -3655,6 +3784,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Úrúgvætími</generic>
 					<standard>Staðaltími í Úrúgvæ</standard>
 					<daylight>Sumartími í Úrúgvæ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Tími í Ürümqi</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -3793,9 +3927,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
-					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
-				</currencyFormat>
-				<currencyFormat type="accounting">
 					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
@@ -4816,8 +4947,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName>Karíbahafsgyllini</displayName>
-				<displayName count="one">Karíbahafsgyllini</displayName>
-				<displayName count="other">Karíbahafsgyllini</displayName>
 				<symbol>XCG</symbol>
 			</currency>
 			<currency type="XDR">
@@ -4882,8 +5011,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName>simbabveskt gold</displayName>
-				<displayName count="one">simbabveskt gold</displayName>
-				<displayName count="other">simbabveskt gold</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -5248,8 +5375,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-part">
 				<displayName>hlutar</displayName>
-				<unitPattern count="one">{0} hluti</unitPattern>
-				<unitPattern count="other">{0} hlutar</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e6">
 				<gender>masculine</gender>
@@ -6617,6 +6742,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-pint-metric">
 				<gender>feminine</gender>
+				<displayName>hálflítrar</displayName>
+				<unitPattern count="one">{0} hálflítri</unitPattern>
+				<unitPattern count="one" case="accusative">{0} hálflítra</unitPattern>
+				<unitPattern count="one" case="dative">{0} hálflítra</unitPattern>
+				<unitPattern count="one" case="genitive">{0} hálflítra</unitPattern>
+				<unitPattern count="other">{0} hálflítrar</unitPattern>
+				<unitPattern count="other" case="accusative">{0} hálflítra</unitPattern>
+				<unitPattern count="other" case="dative">{0} hálflítrum</unitPattern>
+				<unitPattern count="other" case="genitive">{0} hálflítra</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<gender>masculine</gender>
@@ -6642,7 +6776,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} á gallon</perUnitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
-				<displayName>Breskt gallon</displayName>
+				<displayName>breskt gallon</displayName>
 				<unitPattern count="one">{0} breskt gallon</unitPattern>
 				<unitPattern count="other">{0} breskt gallon</unitPattern>
 				<perUnitPattern>{0}/ á breskt gallon</perUnitPattern>
@@ -6766,11 +6900,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>veber</displayName>
 				<unitPattern count="one">{0} veber</unitPattern>
 				<unitPattern count="other">{0} veber</unitPattern>
-			</unit>
-			<unit type="speed-light-speed">
-				<displayName>ljóshraði</displayName>
-				<unitPattern count="one">{0} ljóshraði</unitPattern>
-				<unitPattern count="other">{0} ljóshraðar</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e9">
 				<gender>masculine</gender>
@@ -7470,11 +7599,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}mmól/l</unitPattern>
 				<unitPattern count="other">{0}mmól/l</unitPattern>
 			</unit>
-			<unit type="concentr-part">
-				<displayName>hluti</displayName>
-				<unitPattern count="one">{0} hluti</unitPattern>
-				<unitPattern count="other">{0} hlutar</unitPattern>
-			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0}ppm</unitPattern>
@@ -7487,9 +7611,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>‱</displayName>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100km</displayName>
@@ -7611,11 +7732,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-ounce-troy">
 				<displayName>oz t</displayName>
 			</unit>
-			<unit type="pressure-ofhg">
-				<displayName>af Hg</displayName>
-				<unitPattern count="one">{0} af Hg</unitPattern>
-				<unitPattern count="other">{0} af Hg</unitPattern>
-			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>inHg</displayName>
 				<unitPattern count="one">{0}&quot; Hg</unitPattern>
@@ -7671,16 +7787,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<unitPattern count="one">{0} l.mál</unitPattern>
 				<unitPattern count="other">{0} l.mál</unitPattern>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>kal-IT</displayName>
-				<unitPattern count="one">{0} kal-IT</unitPattern>
-				<unitPattern count="other">{0} kal-IT</unitPattern>
-			</unit>
-			<unit type="speed-light-speed">
-				<displayName>ljóshraði</displayName>
-				<unitPattern count="one">{0} ljóshraði</unitPattern>
-				<unitPattern count="other">{0} ljóshraðar</unitPattern>
 			</unit>
 			<unit type="duration-night">
 				<displayName>n.</displayName>
@@ -7750,7 +7856,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="currency_symbols">gjaldmiðilstákn</characterLabel>
 		<characterLabel type="dash_connector">þankastrik eða samtenging</characterLabel>
 		<characterLabel type="digits">tala</characterLabel>
-		<characterLabel type="divination_symbols">dýrðartákn</characterLabel>
+		<characterLabel type="divination_symbols">spátákn</characterLabel>
 		<characterLabel type="downwards_arrows">niðurör</characterLabel>
 		<characterLabel type="downwards_upwards_arrows">ör niður og upp</characterLabel>
 		<characterLabel type="east_asian_scripts">austur-asískt letur</characterLabel>
@@ -7792,7 +7898,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="paired">parað</characterLabel>
 		<characterLabel type="person">manneskja</characterLabel>
 		<characterLabel type="phonetic_alphabet">hljóðfræðilegt stafróf</characterLabel>
-		<characterLabel type="pictographs">myndrit</characterLabel>
+		<characterLabel type="pictographs">myndtákn</characterLabel>
 		<characterLabel type="place">staður</characterLabel>
 		<characterLabel type="plant">planta</characterLabel>
 		<characterLabel type="punctuation">greinarmerki</characterLabel>
@@ -7826,8 +7932,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="ital" subtype="1">tengiskrift</styleName>
 		<styleName type="opsz" subtype="8">yfirskrift</styleName>
 		<styleName type="opsz" subtype="12">texti</styleName>
-		<styleName type="opsz" subtype="18">titla</styleName>
-		<styleName type="opsz" subtype="72">sýna</styleName>
+		<styleName type="opsz" subtype="18">titill</styleName>
+		<styleName type="opsz" subtype="72">áberandi</styleName>
 		<styleName type="opsz" subtype="144">plakat</styleName>
 		<styleName type="slnt" subtype="-12">öfugt skáletur</styleName>
 		<styleName type="slnt" subtype="0">upprétt</styleName>
@@ -7859,10 +7965,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wdth" subtype="200" alt="extended">óhóflega teygt</styleName>
 		<styleName type="wdth" subtype="200" alt="wide">óhóflega breitt</styleName>
 		<styleName type="wght" subtype="100">þunnt</styleName>
-		<styleName type="wght" subtype="200">mjög ljóst</styleName>
-		<styleName type="wght" subtype="200" alt="ultra">óhóflega ljóst</styleName>
-		<styleName type="wght" subtype="300">ljóst</styleName>
-		<styleName type="wght" subtype="350">hálfljóst</styleName>
+		<styleName type="wght" subtype="200">mjög grannt</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">ofurgrannt</styleName>
+		<styleName type="wght" subtype="300">grannt</styleName>
+		<styleName type="wght" subtype="350">hálfgrannt</styleName>
 		<styleName type="wght" subtype="380">bók</styleName>
 		<styleName type="wght" subtype="400">venjulegt</styleName>
 		<styleName type="wght" subtype="500">miðlungs</styleName>

@@ -283,7 +283,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ksh">ኮሎኝኛ</language>
 			<language type="ku">ኩርድሽ</language>
 			<language type="ku" menu="core">ኩርድሽ</language>
-			<language type="ku" menu="extension">ኩርድሽ</language>
+			<language type="ku" menu="extension">ኩርማንጂ</language>
 			<language type="kum">ኩማይክ</language>
 			<language type="kv">ኮሚ</language>
 			<language type="kw">ኮርኒሽ</language>
@@ -393,7 +393,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pau">ፓሉዋን</language>
 			<language type="pcm">የናይጄሪያ ፒጂን</language>
 			<language type="pis">ፒጂን</language>
-			<language type="pl">ፖሊሽ</language>
+			<language type="pl">ፖሊሽኛ</language>
+			<language type="pms">ፒድሞንቴዝ</language>
 			<language type="pqm">ማሊሴት-ፓሳማኩዎድይ</language>
 			<language type="prg">ፐሩሳንኛ</language>
 			<language type="ps">ፓሽቶ</language>
@@ -952,18 +953,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="collation">አቀማመጥ ደርድር</key>
 			<key type="colNormalization">መደበኛ ድርደራ</key>
 			<key type="colNumeric">የቁጥር ድርደራ</key>
+			<key type="colReorder">የስክሪፕት/ክፍል ዳግም ቅደም ተከተል</key>
 			<key type="colStrength">የድርደራ አቅም</key>
 			<key type="currency">ምንዛሪ</key>
+			<key type="d0">የለውጥ ግብ</key>
+			<key type="dx">የመዝገበ ቃላት መቆራረጥ ማግለያዎች</key>
 			<key type="em">ስሜት ገላጭ ምስል አቀራረብ</key>
+			<key type="fw">የሳምንቱ የመጀመሪያ ቀን</key>
+			<key type="h0">የተቀላቀለ</key>
 			<key type="hc">የሰዓት ዑደት (12 ወይም 24)</key>
+			<key type="i0">የግቤት ስልት</key>
+			<key type="k0">የቁልፍ ሰሌዳ</key>
+			<key type="kv">ከፍተኛ ችላ የተባለ</key>
 			<key type="lb">መስመር መስበሪያ ቅጥ</key>
 			<key type="lw">የመስመር መሰባበር በቃላት ውስጥ</key>
+			<key type="m0">የለውጥ ደንቦች</key>
 			<key type="ms">የመለኪያ ስርዓት</key>
+			<key type="mu">የመለኪያ አሃድ</key>
 			<key type="numbers">ቁጥሮች</key>
+			<key type="rg">ለተጨማሪ መረጃ ክልል</key>
+			<key type="s0">የለውጥ መነሻ</key>
+			<key type="sd">የክልል ንዑስ ክፍል</key>
 			<key type="ss">ከአህጽሮተ ቃል በኋላ የዐረፍተ ነገር መቋረጥ</key>
+			<key type="t">ለውጥ</key>
+			<key type="t0">በማሽን የተተረጎመ</key>
 			<key type="timezone">የሰዓት ሰቅ</key>
 			<key type="va">የአካባቢ አይነት</key>
 			<key type="x">ለግል ጥቅም</key>
+			<key type="x0">የግል አጠቃቀም ለውጥ</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">የቡዲስት ቀን አቆጣጠር</type>
@@ -983,13 +1000,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">የእብራዊያን የቀን አቆጣጠር</type>
 			<type key="calendar" type="hebrew" scope="core">ሂብሩ</type>
 			<type key="calendar" type="indian">የህንድ ብሔራዊ የቀን አቆጣጠር</type>
+			<type key="calendar" type="indian" scope="core">የህንድ ብሔራዊ</type>
 			<type key="calendar" type="islamic">የሂጅራ የቀን አቆጣጠር</type>
 			<type key="calendar" type="islamic" scope="core">ሂጅራ</type>
 			<type key="calendar" type="islamic-civil">የሂጅራ የቀን አቆጣጠር (ታቡላር፣ ሲቪል አፖች)</type>
 			<type key="calendar" type="islamic-civil" scope="core">ሂጅራ (ታቡላር፣ የሲቪል ዘመን)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">ሂጅሪ፣ ሳውዲ ዓረቢያ የሚታይበት ቦታ</type>
+			<type key="calendar" type="islamic-tbla" scope="core">ሂጅሪ (ታቡላር፣ የሥነ ፈለክ አቀራረብ)</type>
 			<type key="calendar" type="islamic-umalqura">የሂጅራ የቀን አቆጣጠር (ኡም አል-ቁራ)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">ሂጅራ (ኡሙ አል-ቁራ)</type>
 			<type key="calendar" type="iso8601">ISO-8601 የቀን አቆጣጠር</type>
+			<type key="calendar" type="iso8601" scope="core">ጆርጂያን</type>
 			<type key="calendar" type="japanese">የጃፓን የቀን አቆጣጠር</type>
 			<type key="calendar" type="japanese" scope="core">ጃፓንኛ</type>
 			<type key="calendar" type="persian">የፐርሽያ የቀን አቆጣጠር</type>
@@ -1005,39 +1026,68 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colBackwards" type="no">የፊደል ጭረቶችን እንደመደበኛ ደርድር</type>
 			<type key="colBackwards" type="yes">የፊደል ጭረቶች በኋሊዮሽ ደርድር</type>
 			<type key="colCaseFirst" type="lower">ንዑስ ሆሄ መጀመሪያ ደርድር</type>
+			<type key="colCaseFirst" type="lower" scope="core">ንዑስ ሆሄ</type>
 			<type key="colCaseFirst" type="no">መደበኛ የመልከፊደል አቀማመጥ ደርድር</type>
+			<type key="colCaseFirst" type="no" scope="core">ንዑስ ሆሄ</type>
 			<type key="colCaseFirst" type="upper">አቢይ ሆሄ መጀመሪያ ደርድር</type>
+			<type key="colCaseFirst" type="upper" scope="core">አቢይ ሆሄ</type>
 			<type key="colCaseLevel" type="no">ያለመልከፊደል ትብ ደርድር</type>
 			<type key="colCaseLevel" type="yes">በመልከፊደል ትብ ደርድር</type>
+			<type key="collation" type="compat" scope="core">ተኳሃኝነት</type>
 			<type key="collation" type="dictionary">የመዝገበ ቃላት የድርድር ቅደም ተከተል</type>
+			<type key="collation" type="dictionary" scope="core">መዝገበ ቃላት</type>
 			<type key="collation" type="ducet">የነባሪ ዩኒኮድ የድርድር ቅደም ተከተል</type>
 			<type key="collation" type="ducet" scope="core">ነባሪ ዩኒኮድ</type>
+			<type key="collation" type="emoji" scope="core">የስሜት ገላጭ ምስል</type>
+			<type key="collation" type="eor" scope="core">የአውሮፓ ደንቦች</type>
 			<type key="collation" type="phonebook">የስልክ ደብተር ድርድር ቅደም ተከተል</type>
+			<type key="collation" type="phonebook" scope="core">የስልክ ማውጫ</type>
 			<type key="collation" type="phonetic">የፎነቲክ ድርደራ ቅደም ተከተል</type>
+			<type key="collation" type="phonetic" scope="core">ፎነቲክ</type>
 			<type key="collation" type="pinyin">ፒንይን የድርድር ቅደም ተከተል</type>
+			<type key="collation" type="pinyin" scope="core">ፒንዪን</type>
 			<type key="collation" type="search">ለጠቅላላ ጉዳይ ፍለጋ</type>
 			<type key="collation" type="search" scope="core">ፍለጋ</type>
 			<type key="collation" type="searchjl">በሃንጉል የመጀመሪያ ተነባቢ ፈልግ</type>
+			<type key="collation" type="searchjl" scope="core">የኮሪያኛ መጀመሪያ ተነባቢ</type>
 			<type key="collation" type="standard">መደበኛ የድርድር ቅደም ተከተል</type>
 			<type key="collation" type="standard" scope="core">መደበኛ</type>
 			<type key="collation" type="stroke">የበትር ድርድር ቅደም ተከተል</type>
+			<type key="collation" type="stroke" scope="core">ጭረት</type>
 			<type key="collation" type="traditional">ባህላዊ የድርድር ቅደም ተከተል</type>
+			<type key="collation" type="traditional" scope="core">ባሕላዊ</type>
 			<type key="collation" type="unihan">የመሰረታዊ በትር ድርድር ቅደም ተከተል</type>
+			<type key="collation" type="unihan" scope="core">ራዲካል-ጭረት</type>
+			<type key="collation" type="zhuyin" scope="core">ዡይን</type>
 			<type key="colNormalization" type="no">ያለመደበኛ ሁኔታ ደርድር</type>
 			<type key="colNormalization" type="yes">ዩኒኮድ በመደበኛ ሁኔታ ደርድር</type>
 			<type key="colNumeric" type="no">አሃዞችን በየግል ደርድር</type>
 			<type key="colNumeric" type="yes">አሃዞች በቁጥር ደርድር</type>
+			<type key="colReorder" type="currency" scope="core">ምንዛሪ</type>
+			<type key="colReorder" type="digit" scope="core">አሃዞች</type>
+			<type key="colReorder" type="punct" scope="core">ስርዓተ ነጥብ</type>
+			<type key="colReorder" type="space" scope="core">ክፍት ቦታ</type>
+			<type key="colReorder" type="symbol" scope="core">ምልክት</type>
 			<type key="colStrength" type="identical">ሁሉንም ደርድር</type>
+			<type key="colStrength" type="identical" scope="core">ሁሉም</type>
 			<type key="colStrength" type="primary">የመሠረት ፊደላት ብቻ ደርድር</type>
+			<type key="colStrength" type="primary" scope="core">የመሠረት ፊደላት ብቻ</type>
 			<type key="colStrength" type="quaternary">የፊደል ጭረቶች/መልከፊደል/ስፋት/ካና ደርድር</type>
+			<type key="colStrength" type="quaternary" scope="core">መሠራት፣ የአነጋገር ዘይቤ፣ የፊደል መጠን፣ ዝርያዎች፣ ቃና</type>
 			<type key="colStrength" type="secondary">የፊደል ጭረቶችን ደርድር</type>
+			<type key="colStrength" type="secondary" scope="core">መሠራት፣ የአነጋገር ዘይቤ</type>
 			<type key="colStrength" type="tertiary">የፊደል ጭረቶች/መልከፊደል/ስፋት ደርድር</type>
+			<type key="colStrength" type="tertiary" scope="core">መሠራት፣ የአነጋገር ዘይቤ፣ የፊደል መጠን፣ ዝርያዎች</type>
 			<type key="d0" type="fwidth">ሙሉ ወርድ</type>
 			<type key="d0" type="hwidth">ግማሽ ወርድ</type>
 			<type key="d0" type="npinyin">አሃዛዊ</type>
 			<type key="em" type="default" scope="core">ነባሪ</type>
 			<type key="em" type="emoji" scope="core">ስሜት ገላጭ ምስል</type>
 			<type key="em" type="text" scope="core">ጽሑፍ</type>
+			<type key="hc" type="c12">የ12 ሰዓት ስርዓት</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">የ24 ሰዓት ስርዓት</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">የ12 ሰዓት ስርዓት (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">የ12 ሰዓት ስርዓት (1–12)</type>
@@ -1046,6 +1096,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">የ24 ሰዓት ስርዓት (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">የShift ቦታዎች፣ የሥርዓተ ነጥብ ምልክቶች፣ ሁሉም ምልክቶች</type>
+			<type key="kv" type="punct" scope="core">የShift ቦታዎች፣ ሥርዓተ ነጥብ</type>
+			<type key="kv" type="space" scope="core">የShift ቦታዎች፣ ሥርዓተ ነጥብ</type>
+			<type key="kv" type="symbol" scope="core">የShift ቦታዎች፣ ሥርዓተ ነጥብ፣ የገንዘብ ያልሆኑ ምልክቶች</type>
 			<type key="lb" type="loose">ላላ ያለ መስመር መስበሪያ ቅጥ</type>
 			<type key="lb" type="loose" scope="core">ልቅ</type>
 			<type key="lb" type="normal">መደበኛ መስመር መስበሪያ ቅጥ</type>
@@ -1066,51 +1120,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="ussystem" scope="core">ዩኤስ</type>
 			<type key="numbers" type="arab">የአረቢክ-ኢንዲክ አሃዞች</type>
 			<type key="numbers" type="arabext">የተራዘሙ የአረቢክ-ኢንዲክ አሃዞች</type>
+			<type key="numbers" type="arabext" scope="core">የተራዘመ ዓረብኛ-ኢንዲክ</type>
 			<type key="numbers" type="armn">የአርመንኛ ቁጥሮች</type>
 			<type key="numbers" type="armnlow">የአሜሪካ ንዑስ ሆሄ አሃዞች</type>
+			<type key="numbers" type="armnlow" scope="core">የአርሜኒያ ንዑስ ሆሄ</type>
 			<type key="numbers" type="beng">የቤንጋሊ አሃዞች</type>
 			<type key="numbers" type="cakm">የቻክማ አሃዞች</type>
 			<type key="numbers" type="deva">የዴቫንጋሪ አሃዞች</type>
 			<type key="numbers" type="ethi">የኢትዮጵያ ቁጥሮች</type>
 			<type key="numbers" type="finance">የፋይናንስ ቁጥሮች</type>
+			<type key="numbers" type="finance" scope="core">ፋይናንስ</type>
 			<type key="numbers" type="fullwide">የሙሉ ወርድ አሃዞች</type>
+			<type key="numbers" type="fullwide" scope="core">ሙሉ ስፋት</type>
 			<type key="numbers" type="geor">የጆርጂያ ቁጥሮች</type>
 			<type key="numbers" type="grek">የግሪክ ቁጥሮች</type>
 			<type key="numbers" type="greklow">የግሪክ ንዑስ ሆሄ ቁጥሮች</type>
+			<type key="numbers" type="greklow" scope="core">የግሪክ ንዑስ ሆሄ</type>
 			<type key="numbers" type="gujr">የጉጃራቲ አሃዞች</type>
 			<type key="numbers" type="guru">የጉርሙኪ አሃዞች</type>
+			<type key="numbers" type="hanidays" scope="core">ለባሕላዊ የቀን መቁጠሪያዎች የሃን-ቁምፊ የወር ቀን ቁጥር</type>
 			<type key="numbers" type="hanidec">የቻይንኛ አስርዮሽ ቁጥሮች</type>
+			<type key="numbers" type="hanidec" scope="core">የቻይንኛ የቁጥር ርዕዮተ ዓለሞችን እንደ አሃዞች በመጠቀም የአቀማመጥ አስርዮሽ ሥርዓት</type>
 			<type key="numbers" type="hans">ቀለል ያሉ የቻይንኛ ቁጥሮች</type>
 			<type key="numbers" type="hansfin">ቀለል ያሉ የቻይንኛ ገንዘብ ነክ ቁጥሮች</type>
+			<type key="numbers" type="hansfin" scope="core">ቀለል ያለ ቻይንኛ ፋይናንስ</type>
 			<type key="numbers" type="hant">የባህላዊ ቻይንኛ ቁጥሮች</type>
 			<type key="numbers" type="hantfin">የባህላዊ ቻይንኛ የገንዘብ ነክ ቁጥሮች</type>
+			<type key="numbers" type="hantfin" scope="core">ባሕላዊ ቻይንኛ የፋይናንስ</type>
 			<type key="numbers" type="hebr">የእብራይስጥ ቁጥሮች</type>
 			<type key="numbers" type="java">የጃቫ አሃዞች</type>
 			<type key="numbers" type="jpan">የጃፓንኛ ቁጥሮች</type>
 			<type key="numbers" type="jpanfin">የጃፓንኛ የገንዘብ ነክ ቁጥሮች</type>
+			<type key="numbers" type="jpanfin" scope="core">የጃፓን ፋይናንስ</type>
+			<type key="numbers" type="jpanyear" scope="core">የጃፓን የመጀመሪያ ዓመት የጋነን ቁጥር</type>
 			<type key="numbers" type="khmr">የክህመር አሃዞች</type>
 			<type key="numbers" type="knda">የካንአዳ አሃዞች</type>
+			<type key="numbers" type="lanatham" scope="core">ታይ ታም ታም (ቤተክርስቲያን)</type>
 			<type key="numbers" type="laoo">የላኦ አሃዞች</type>
 			<type key="numbers" type="latn">ምዕራባዊ አሃዞች</type>
+			<type key="numbers" type="mathbold" scope="core">የሂሳብ ደማቅ</type>
+			<type key="numbers" type="mathdbl" scope="core">የሂሳብ ድርብ-ጭረት</type>
+			<type key="numbers" type="mathmono" scope="core">የሂሳብ አንድ ወጥ ስፋት</type>
+			<type key="numbers" type="mathsanb" scope="core">የሂሳብ ሳንስ-ሰሪፍ ደማቅ</type>
+			<type key="numbers" type="mathsans" scope="core">የሂሳብ ሳንስ-ሰሪፍ</type>
 			<type key="numbers" type="mlym">የማላያላምኛ አሃዞች</type>
 			<type key="numbers" type="mong">የሞንጎልኛ አሃዞች</type>
 			<type key="numbers" type="mtei">ሜቲ ማየክ አሃዞች</type>
 			<type key="numbers" type="mymr">የማያንማር አሃዞች</type>
+			<type key="numbers" type="mymrepka" scope="core">የምያንማር ምስራቃዊ ፕዎ ካረን</type>
+			<type key="numbers" type="mymrpao" scope="core">የምያንማር ፕዎ</type>
+			<type key="numbers" type="mymrshan" scope="core">የምያንማር ሻን</type>
+			<type key="numbers" type="mymrtlng" scope="core">የምያንማር ታይ ላይንግ</type>
 			<type key="numbers" type="native">ሀገር በቀል አሃዞች</type>
+			<type key="numbers" type="native" scope="core">ነባር አሃዞች</type>
 			<type key="numbers" type="olck">ኦይ ቺኪ አሃዞች</type>
 			<type key="numbers" type="orya">የኦዲያ አሃዞች</type>
+			<type key="numbers" type="outlined" scope="core">መስመራዊ</type>
 			<type key="numbers" type="roman">የሮማን ቁጥሮች</type>
+			<type key="numbers" type="roman" scope="core">የሮማውያን አቢይ ሆሄ</type>
 			<type key="numbers" type="romanlow">የሮማን ንዑስ ሆሄ ቁጥሮች</type>
+			<type key="numbers" type="romanlow" scope="core">የሮማውያን ንዑስ ሆሄ</type>
+			<type key="numbers" type="segment" scope="core">የተከፋፈለ</type>
 			<type key="numbers" type="taml">ባህላዊ የታሚል ቁጥሮች</type>
 			<type key="numbers" type="tamldec">የታሚል አሃዞች</type>
+			<type key="numbers" type="tamldec" scope="core">ዘመናዊ ታሚል</type>
 			<type key="numbers" type="telu">የተልጉ አሃዞች</type>
 			<type key="numbers" type="thai">የታይ አሃዞች</type>
 			<type key="numbers" type="tibt">የቲቤት አሃዞች</type>
 			<type key="numbers" type="traditional">ተለምዷዊ ቁጥሮች</type>
+			<type key="numbers" type="traditional" scope="core">ባሕላዊ ቁጥሮች</type>
 			<type key="numbers" type="vaii">የቫይ አሃዞች</type>
 			<type key="ss" type="none" scope="core">ጠፍቷል</type>
 			<type key="ss" type="standard" scope="core">በርቷል</type>
+			<type key="t0" type="und">ያልተገለጸ የማሽን ትርጉም</type>
+			<type key="va" type="posix" scope="core">የPOSIX ተለዋጭ</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">ጠፍቷል</typeValue>
+			<typeValue type="yes">በርቷል</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">ሜትሪክ</measurementSystemName>
 			<measurementSystemName type="UK">ዩኬ</measurementSystemName>
@@ -1143,14 +1231,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyMd">GGGGG y-MM-dd</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">GGGGG y-MM-dd, E</dateFormatItem>
 					</availableFormats>
-					<intervalFormats>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH–HH</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH–HH v</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="chinese">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>-</numericDateSeparator>
+					</numericSeparators>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="coptic">
@@ -1159,6 +1246,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="1" draft="unconfirmed">ዓ/ም</era>
 					</eraAbbr>
 				</eras>
+			</calendar>
+			<calendar type="dangi">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>-</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
 			</calendar>
 			<calendar type="ethiopic">
 				<months>
@@ -1188,14 +1282,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyMd">GGGGG y-MM-dd</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">GGGGG y-MM-dd, E</dateFormatItem>
 					</availableFormats>
-					<intervalFormats>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH–HH</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH–HH v</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="generic">
@@ -1258,10 +1344,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">G y/MM/dd, E</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d፣ y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E MMM d፣ y G</dateFormatItem>
 						<dateFormatItem id="H">H</dateFormatItem>
-						<dateFormatItem id="Hv">H v</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E፣ M/d</dateFormatItem>
 						<dateFormatItem id="MMMEd">E፣ MMM d</dateFormatItem>
@@ -1276,10 +1362,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yyyyM">G y/MM</dateFormatItem>
+						<dateFormatItem id="yyyyMd">G y/MM/dd</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">G y/MM/dd, E</dateFormatItem>
 						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">G y/MM – G y/MM</greatestDifference>
+							<greatestDifference id="M">G y/MM – y/MM</greatestDifference>
+							<greatestDifference id="y">G y/MM – y/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">G y/MM/dd – y/MM/dd</greatestDifference>
+							<greatestDifference id="G">G y/MM/dd – G y/MM/dd</greatestDifference>
+							<greatestDifference id="M">G y/MM/dd – y/MM/dd</greatestDifference>
+							<greatestDifference id="y">G y/MM/dd – y/MM/dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">G y/MM/dd, E – y/MM/dd, E</greatestDifference>
+							<greatestDifference id="G">G y/MM/dd, E – G y/MM/dd, E</greatestDifference>
+							<greatestDifference id="M">G y/MM/dd, E – y/MM/dd, E</greatestDifference>
+							<greatestDifference id="y">G y/MM/dd, E – y/MM/dd, E</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
@@ -1552,6 +1661,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -1595,7 +1707,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="hm">a h:mm</dateFormatItem>
 						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="hv">a h v</dateFormatItem>
-						<dateFormatItem id="Hv">H v</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E፣ d/M</dateFormatItem>
 						<dateFormatItem id="MMMEd">E፣ MMM d</dateFormatItem>
@@ -1609,6 +1720,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">MMM d y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E፣ MMM d y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="contributed">MMMM d y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="contributed">EEE፣ MMMM d y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">የY wኛ ሳምንት</dateFormatItem>
 						<dateFormatItem id="yw" count="other">የY wኛ ሳምንት</dateFormatItem>
 					</availableFormats>
@@ -1766,18 +1879,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} ሩብ በፊት</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ሩብ በፊት</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="quarter-short">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">በ{0} ሩብ</relativeTimePattern>
-					<relativeTimePattern count="other">በ{0} ሩብ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="quarter-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">በ{0} ሩብ</relativeTimePattern>
-					<relativeTimePattern count="other">በ{0} ሩብ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month">
@@ -2080,7 +2181,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<timeZoneNames>
 			<hourFormat>+HHmm;-HHmm</hourFormat>
 			<gmtFormat>ጂ ኤም ቲ{0}</gmtFormat>
-			<gmtZeroFormat>ጂ ኤም ቲ</gmtZeroFormat>
 			<gmtUnknownFormat>ጂ ኤም ቲ+</gmtUnknownFormat>
 			<regionFormat>{0} ሰዓት</regionFormat>
 			<regionFormat type="daylight">{0} የቀን ብርሃን ሰዓት</regionFormat>
@@ -2559,9 +2659,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ሊበርቪል</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>የብሪትሽ የበጋ ሰዓት አቆጣጠር</daylight>
-				</long>
 				<exemplarCity>ለንደን</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2652,9 +2749,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ጃያፑራ</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>የአይሪሽ መደበኛ ሰዓት አቆጣጠር</daylight>
-				</long>
 				<exemplarCity>ደብሊን</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -3350,6 +3444,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Harare">
 				<exemplarCity>ሃራሬ</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>የኤከር ሰዓት አቆጣጠር</generic>
+					<standard>የኤከር መደበኛ ሰዓት አቆጣጠር</standard>
+					<daylight>የኤከር ክረምት ሰዓት አቆጣጠር</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>የአፍጋኒስታን ሰዓት</standard>
@@ -3532,6 +3633,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>የብራዚላ የበጋ ሰዓት አቆጣጠር</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>የብሪትሽ ሰዓት አቆጣጠር</generic>
+					<daylight>የብሪትሽ የበጋ ሰዓት አቆጣጠር</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>የብሩኔይ ዳሩሳላም ሰዓት</standard>
@@ -3702,7 +3809,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard>ግሪንዊች ማዕከላዊ ሰዓት</standard>
+					<standard>ግሪንዊች ማዕከላዊ ሰዓት አቆጣጠር</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>የግሪንላንድ ሰዓት</generic>
+					<standard>የግሪንላንድ መደበኛ ሰዓት</standard>
+					<daylight>የግሪንላንድ ክረምት ሰዓት</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
@@ -3737,7 +3851,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>የሃዋይ አሌኡት ሰዓት አቆጣጠር</generic>
-					<standard>የሃዋይ አሌኡት መደበኛ ሰዓት አቆጣጠር</standard>
+					<standard>የሃዋይ-አሌኡት መደበኛ ሰዓት አቆጣጠር</standard>
 					<daylight>የሃዋይ አሌኡት የቀን ሰዓት አቆጣጠር</daylight>
 				</long>
 			</metazone>
@@ -3790,6 +3904,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>የኢራን ሰዓት</generic>
 					<standard>የኢራን መደበኛ ሰዓት</standard>
 					<daylight>የኢራን የቀን ብርሃን ሰዓት</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>የአይሪሽ ሰዓት አቆጣጠር</generic>
+					<daylight>የአይሪሽ መደበኛ ሰዓት አቆጣጠር</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -4091,9 +4211,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>የሳሞዋ ሰዓት</generic>
 					<standard>የሳሞዋ መደበኛ ሰዓት</standard>
-					<daylight>የሳሞዋ የበጋ ሰዓት</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4160,6 +4278,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>የቹክ ሰዓት</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>የተርኪ ሰዓት አቆጣጠር</generic>
+					<standard>የተርኪ መደበኛ ሰዓት አቆጣጠር</standard>
+					<daylight>የተርኪ ክረምት ሰዓት አቆጣጠር</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>የቱርክመኒስታን ሰዓት</generic>
@@ -4177,6 +4302,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>የኡራጓይ ሰዓት</generic>
 					<standard>የኡራጓይ መደበኛ ሰዓት</standard>
 					<daylight>የኡራጓይ ክረምት ሰዓት</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>የኡሩምኪ ሰዓት አቆጣጠር</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -4868,8 +4998,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName>የካሪቢያን ጊልደር</displayName>
-				<displayName count="one">የካሪቢያን ጊልደር</displayName>
-				<displayName count="other">የካሪቢያን ጊልደር</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>የምዕራብ አፍሪካ ሴፋ ፍራንክ</displayName>
@@ -4897,8 +5025,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName>የዚምባብዌ ወርቅ</displayName>
-				<displayName count="one">የዚምባብዌ ወርቅ</displayName>
-				<displayName count="other">የዚምባብዌ ወርቅ</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -5019,11 +5145,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ንጥሎች</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ንጥሎች</unitPattern>
 			</unit>
-			<unit type="concentr-part">
-				<displayName>ክፍል</displayName>
-				<unitPattern count="one">{0} ክፍል</unitPattern>
-				<unitPattern count="other">{0} ክፍል</unitPattern>
-			</unit>
 			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ክፍል በየሚሊዮን</unitPattern>
@@ -5047,11 +5168,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="accusative">{0} mole</unitPattern>
 				<unitPattern count="other">{0} mol</unitPattern>
 				<unitPattern count="other" case="accusative">{0} moles</unitPattern>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>ግሉኮስ</displayName>
-				<unitPattern count="one">{0} ግሉኮስ</unitPattern>
-				<unitPattern count="other">{0} ግሉኮስ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ሊትሮች በ100 ኪሎሜትሮች</displayName>
@@ -5385,13 +5501,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-katal">
 				<displayName>ካታልስ</displayName>
-				<unitPattern count="one">{0} ካት</unitPattern>
-				<unitPattern count="other">{0} ካት</unitPattern>
 			</unit>
 			<unit type="electric-henry">
 				<displayName>ሄነሪስ</displayName>
-				<unitPattern count="one">{0} ሄ</unitPattern>
-				<unitPattern count="other">{0} ሄ</unitPattern>
 			</unit>
 			<unit type="energy-calorie-it">
 				<displayName>ካሎሪ [IT]</displayName>
@@ -5400,18 +5512,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="force-kilogram-force">
 				<displayName>ኪሎግራም - ኃይል</displayName>
-				<unitPattern count="one">{0} ኪግ-ኃይል</unitPattern>
-				<unitPattern count="other">{0} ኪግ-ኃይል</unitPattern>
 			</unit>
 			<unit type="magnetic-tesla">
 				<displayName>ቴስላስ</displayName>
-				<unitPattern count="one">{0} ቴ</unitPattern>
-				<unitPattern count="other">{0} ቴ</unitPattern>
 			</unit>
 			<unit type="magnetic-weber">
 				<displayName>ዌበርስ</displayName>
-				<unitPattern count="one">{0} ዌበ</unitPattern>
-				<unitPattern count="other">{0} ዌበ</unitPattern>
 			</unit>
 			<unit type="duration-night">
 				<displayName>ለሊት</displayName>
@@ -6366,18 +6472,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ጫማ²</unitPattern>
 				<unitPattern count="other">{0} ጫማ²</unitPattern>
 			</unit>
-			<unit type="concentr-part">
-				<displayName>ክፍል</displayName>
-				<unitPattern count="one">{0} ክፍል</unitPattern>
-				<unitPattern count="other">{0} ክፍል</unitPattern>
-			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>ግሉኮስ</displayName>
-				<unitPattern count="one">{0} ግሉኮስ</unitPattern>
-				<unitPattern count="other">{0} ግሉኮስ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<unitPattern count="one">{0}ሊበ100ኪሜ</unitPattern>
@@ -6474,6 +6570,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ሜፓ</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
+				<displayName>°C</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
@@ -6500,36 +6597,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<unitPattern count="one">{0} ፈመ</unitPattern>
 				<unitPattern count="other">{0} ፈመ</unitPattern>
-			</unit>
-			<unit type="concentr-katal">
-				<displayName>ካት</displayName>
-				<unitPattern count="one">{0} ካት</unitPattern>
-				<unitPattern count="other">{0} ካት</unitPattern>
-			</unit>
-			<unit type="electric-henry">
-				<displayName>ሄ</displayName>
-				<unitPattern count="one">{0} ሄ</unitPattern>
-				<unitPattern count="other">{0} ሄ</unitPattern>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>ካሎሪ-IT</displayName>
-				<unitPattern count="one">{0} ካሎሪ-IT</unitPattern>
-				<unitPattern count="other">{0} ካሎሪ-IT</unitPattern>
-			</unit>
-			<unit type="force-kilogram-force">
-				<displayName>ኪግ-ኃይል</displayName>
-				<unitPattern count="one">{0} ኪግ-ኃይል</unitPattern>
-				<unitPattern count="other">{0} ኪግ-ኃይል</unitPattern>
-			</unit>
-			<unit type="magnetic-tesla">
-				<displayName>ቴ</displayName>
-				<unitPattern count="one">{0} ቴ</unitPattern>
-				<unitPattern count="other">{0} ቴ</unitPattern>
-			</unit>
-			<unit type="magnetic-weber">
-				<displayName>ዌበ</displayName>
-				<unitPattern count="one">{0} ዌበ</unitPattern>
-				<unitPattern count="other">{0} ዌበ</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

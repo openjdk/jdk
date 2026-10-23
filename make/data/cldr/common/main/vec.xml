@@ -1043,6 +1043,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="search">reserca jenèrega</type>
 			<type key="collation" type="standard">òrdane standard</type>
 			<type key="collation" type="standard" scope="core">standard</type>
+			<type key="hc" type="c12">sistema a 12 ore</type>
+			<type key="hc" type="c24">sistema a 24 ore</type>
 			<type key="hc" type="h11">sistema a 12 ore (0–11)</type>
 			<type key="hc" type="h12">sistema a 12 ore (1–12)</type>
 			<type key="hc" type="h23">sistema a 24 ore (0–23)</type>
@@ -1544,6 +1546,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">w'ª' 'setemana' 'de''l' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="h">h – h B</greatestDifference>
 						</intervalFormatItem>
@@ -2314,7 +2321,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 		<timeZoneNames>
 			<gmtFormat>UTC{0}</gmtFormat>
-			<gmtZeroFormat>UTC</gmtZeroFormat>
 			<gmtUnknownFormat>UTC+?</gmtUnknownFormat>
 			<regionFormat>Ora {0}</regionFormat>
 			<regionFormat type="daylight">Ora d’istà {0}</regionFormat>
@@ -2517,9 +2523,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Pariji</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Ora d’istà britànega</daylight>
-				</long>
 				<exemplarCity>Londra</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2557,11 +2560,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Asia/Makassar">
 				<exemplarCity>Makasar</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Ora d’istà irlandeze</daylight>
-				</long>
 			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity>Jeruzaleme</exemplarCity>
@@ -3176,6 +3174,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Ora d’istà de Brazilia</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight>Ora d’istà britànega</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>Ora de’l Brunéi</standard>
@@ -3434,6 +3437,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Ora de l’Iran</generic>
 					<standard>Ora normale de l’Iran</standard>
 					<daylight>Ora d’istà de l’Iran</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight>Ora d’istà irlandeze</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -3721,9 +3729,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Ora de le Ìzole Samòa</generic>
 					<standard>Ora normale de le Ìzole Samòa</standard>
-					<daylight>Ora d’istà de le Ìzole Samòa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4807,8 +4813,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pattern type="range">{0}-{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="one" draft="contributed">{0} pomo</pluralMinimalPairs>
-			<pluralMinimalPairs count="other" draft="contributed">{0} pomi</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Ciapa la {0}ª a dreta</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>

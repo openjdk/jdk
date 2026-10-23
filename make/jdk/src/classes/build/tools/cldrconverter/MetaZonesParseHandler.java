@@ -25,6 +25,8 @@
 
 package build.tools.cldrconverter;
 
+import static build.tools.cldrconverter.CLDRConverter.SPPL_LDML_DTD_SYSTEM_ID;
+
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -58,7 +60,7 @@ class MetaZonesParseHandler extends AbstractLDMLHandler<String> {
     @Override
     public InputSource resolveEntity(String publicID, String systemID) throws IOException, SAXException {
         // avoid HTTP traffic to unicode.org
-        if (systemID.startsWith(CLDRConverter.SPPL_LDML_DTD_SYSTEM_ID)) {
+        if (systemID.startsWith(SPPL_LDML_DTD_SYSTEM_ID)) {
             return new InputSource((new File(CLDRConverter.LOCAL_SPPL_LDML_DTD)).toURI().toString());
         }
         return null;

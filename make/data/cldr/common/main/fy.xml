@@ -1157,6 +1157,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="d0" type="fwidth" draft="contributed">Volledige breedte</type>
 			<type key="d0" type="hwidth" draft="contributed">Halve breedte</type>
 			<type key="d0" type="npinyin" draft="contributed">Numeriek</type>
+			<type key="hc" type="c12" draft="unconfirmed">12-oeresysteem</type>
+			<type key="hc" type="c24" draft="unconfirmed">12-oeresysteem</type>
 			<type key="hc" type="h11" draft="unconfirmed">12-oeresysteem (0-11)</type>
 			<type key="hc" type="h12" draft="unconfirmed">12-oeresysteem (1-12)</type>
 			<type key="hc" type="h23" draft="unconfirmed">12-oeresysteem (0-23)</type>
@@ -1824,12 +1826,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E d MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">'wike' w 'fan' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'wike' w 'fan' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B" draft="unconfirmed">h B – h B</greatestDifference>
 						</intervalFormatItem>
@@ -2637,7 +2646,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<regionFormat type="standard" draft="contributed">Standaardtiid {0}</regionFormat>
 			<zone type="Etc/UTC">
 				<long>
-					<standard draft="unconfirmed">koördinearre wrâldtiid</standard>
+					<standard>Koördinearre Wrâldtiid</standard>
 				</long>
 			</zone>
 			<zone type="Etc/Unknown">
@@ -2743,9 +2752,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity draft="contributed">Parys</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight draft="contributed">Britse simmertiid</daylight>
-				</long>
 				<exemplarCity draft="contributed">Londen</exemplarCity>
 			</zone>
 			<zone type="Europe/Athens">
@@ -2759,11 +2765,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Budapest">
 				<exemplarCity draft="contributed">Boedapest</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight draft="contributed">Ierse simmertiid</daylight>
-				</long>
 			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity draft="contributed">Jeruzalem</exemplarCity>
@@ -2966,13 +2967,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="contributed">Alaska-simmertiid</daylight>
 				</long>
 			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic draft="contributed">Alma-Ata-tiid</generic>
-					<standard draft="contributed">Alma-Ata-standerttiid</standard>
-					<daylight draft="contributed">Alma-Ata-simmertiid</daylight>
-				</long>
-			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic draft="contributed">Amazone-tiid</generic>
@@ -3020,20 +3014,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic draft="unconfirmed">Apia-tiid</generic>
 					<standard draft="unconfirmed">Apia-standerttiid</standard>
 					<daylight draft="unconfirmed">Apia-simmertiid</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic draft="contributed">Aqtau-tiid</generic>
-					<standard draft="contributed">Aqtau-standerttiid</standard>
-					<daylight draft="contributed">Aqtau-simmertiid</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic draft="contributed">Aqtöbe-tiid</generic>
-					<standard draft="contributed">Aqtöbe-standerttiid</standard>
-					<daylight draft="contributed">Aqtöbe-simmertiid</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3135,6 +3115,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic draft="contributed">Brazyljaanske tiid</generic>
 					<standard draft="contributed">Brazyljaanske standerttiid</standard>
 					<daylight draft="contributed">Brazyljaanske simmertiid</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Britse tiid</generic>
+					<daylight draft="contributed">Britse simmertiid</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3339,11 +3325,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="contributed">West-Groenlânske simmertiid</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard draft="contributed">Guamese standerttiid</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard draft="contributed">Golf standerttiid</standard>
@@ -3356,7 +3337,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard draft="contributed">Hawaii-Aleoetyske standerttiid</standard>
+					<standard>Hawaii tiid</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3415,6 +3396,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic draft="contributed">Iraanske tiid</generic>
 					<standard draft="contributed">Iraanske standerttiid</standard>
 					<daylight draft="contributed">Iraanske simmertiid</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Ierse tiid</generic>
+					<daylight draft="contributed">Ierse simmertiid</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -3484,11 +3471,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard draft="contributed">Kirgizyske tiid</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard draft="contributed">Lanka-tiid</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard draft="contributed">Line-eilânske tiid</standard>
@@ -3499,13 +3481,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic draft="contributed">Lord Howe-eilânske tiid</generic>
 					<standard draft="contributed">Lord Howe-eilânske standerttiid</standard>
 					<daylight draft="contributed">Lord Howe-eilânske simmertiid</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic draft="contributed">Macause tiid</generic>
-					<standard draft="contributed">Macause standerttiid</standard>
-					<daylight draft="contributed">Macause simmertiid</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -3623,11 +3598,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="contributed">Fernando de Noronha-simmertiid</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard draft="contributed">Noardlike Mariaanske tiid</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic draft="contributed">Novosibirsk-tiid</generic>
@@ -3707,13 +3677,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard draft="unconfirmed">Pyongyang-tiid</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic draft="contributed">Qyzylorda-tiid</generic>
-					<standard draft="contributed">Qyzylorda-standerttiid</standard>
-					<daylight draft="contributed">Qyzylorda-simmertiid</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard draft="contributed">Réunionse tiid</standard>
@@ -3740,9 +3703,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic draft="contributed">Samoaanske tiid</generic>
 					<standard draft="contributed">Samoaanske standerttiid</standard>
-					<daylight draft="contributed">Samoaanske simmertiid</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">

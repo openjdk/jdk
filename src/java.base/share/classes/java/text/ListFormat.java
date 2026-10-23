@@ -97,7 +97,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *
  * @implSpec This class is immutable and thread-safe
  *
- * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
+ * @spec https://www.unicode.org/reports/tr35 Unicode Common Locale Data {@literal &} Rules (CLDR)
  * @since 22
  */
 public final class ListFormat extends Format {

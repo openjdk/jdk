@@ -15,7 +15,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="de">Jérman</language>
 			<language type="de_AT">Jérman Austria</language>
 			<language type="de_CH">Jérman Swiss Luhur</language>
-			<language type="en">Inggris</language>
+			<language type="en">Basa Inggris</language>
 			<language type="en_AU">Inggris Australia</language>
 			<language type="en_CA">Inggris Kanada</language>
 			<language type="en_GB" alt="short">Inggris UK</language>
@@ -49,7 +49,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hans" alt="stand-alone">Han Sederhana</script>
 			<script type="Hant">Tradisional</script>
 			<script type="Hant" alt="stand-alone">Han Tradisional</script>
-			<script type="Latn">Latin</script>
+			<script type="Latn">Basa Latin</script>
 			<script type="Zxxx">Non-tulisan</script>
 			<script type="Zzzz">Tulisan Teu Dikenal</script>
 		</scripts>
@@ -59,7 +59,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="DE">Jérman</territory>
 			<territory type="FR">Prancis</territory>
 			<territory type="GB">Britania Raya</territory>
-			<territory type="ID">Indonesia</territory>
+			<territory type="ID">Basa Indonesia</territory>
 			<territory type="IN">India</territory>
 			<territory type="IT">Italia</territory>
 			<territory type="JP">Jepang</territory>
@@ -306,6 +306,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="provisional">/</numericDateSeparator>
+						<numericTimeSeparator draft="provisional">.</numericTimeSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -367,6 +371,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMd">d MMM, y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 					</availableFormats>
@@ -592,14 +598,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="consumption-mile-per-gallon-imperial">
 				<unitPattern count="other">{0}m/gUK</unitPattern>
 			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<unitPattern count="other">{0} kWh/100 km</unitPattern>
+			</unit>
 			<unit type="volume-gallon-imperial">
 				<unitPattern count="other">{0}galIm</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
 				<unitPattern count="other">{0}fl oz Im</unitPattern>
-			</unit>
-			<unit type="volume-dessert-spoon-imperial">
-				<unitPattern count="other">{0}dsp-Imp</unitPattern>
 			</unit>
 		</unitLength>
 		<durationUnit type="hm">

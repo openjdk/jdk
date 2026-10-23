@@ -34,7 +34,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MO" alt="short">Macau</territory>
 			<territory type="PM">Saint-Pierre-et-Miquelon</territory>
 			<territory type="PS">Palestinian territories</territory>
-			<territory type="SH">Saint Helena</territory>
+			<territory type="SH">Saint Helena, Ascension &amp; Tristan da Cunha</territory>
+			<territory type="SH" alt="short">Saint Helena</territory>
 			<territory type="SJ">Svalbard and Jan Mayen</territory>
 			<territory type="ST">São Tomé and Príncipe</territory>
 			<territory type="TC">Turks and Caicos Islands</territory>
@@ -82,6 +83,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="fw" type="thu">First day of week is Thursday</type>
 			<type key="fw" type="tue">First day of week is Tuesday</type>
 			<type key="fw" type="wed">First day of week is Wednesday</type>
+			<type key="hc" type="c12">12-hour system</type>
+			<type key="hc" type="c24">24-hour system</type>
 			<type key="hc" type="h11">12-hour system (0–11)</type>
 			<type key="hc" type="h12">12-hour system (1–12)</type>
 			<type key="hc" type="h23">24-hour system (0–23)</type>
@@ -471,6 +474,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>-</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -506,6 +512,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMEd" alt="variant">E, d/M/y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0}–{1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">h B–h B</greatestDifference>
@@ -1142,7 +1152,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol>US$</symbol>
 			</currency>
 			<currency type="XCG">
-				<symbol draft="contributed">Cg</symbol>
+				<symbol>Cg</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>unknown currency</displayName>
@@ -1649,6 +1659,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
 			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>tbsp</displayName>
+				<unitPattern count="one">{0} tbsp</unitPattern>
+				<unitPattern count="other">{0} tbsp</unitPattern>
+			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<displayName>dssp</displayName>
 				<unitPattern count="one">{0} dssp</unitPattern>
@@ -1796,6 +1811,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>fl oz</displayName>
 				<unitPattern count="one">{0}fl oz</unitPattern>
 				<unitPattern count="other">{0}fl oz</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>tbsp</displayName>
+				<unitPattern count="one">{0}tbsp</unitPattern>
+				<unitPattern count="other">{0}tbsp</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<displayName>dsp</displayName>

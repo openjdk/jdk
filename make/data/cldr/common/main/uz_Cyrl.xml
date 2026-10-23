@@ -1008,6 +1008,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">Y, w-'ҳафта'</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -1255,16 +1260,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Etc/Unknown">
 				<exemplarCity>Номаълум</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>Британия ёзги вақти</daylight>
-				</long>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Ирландия ёзги вақти</daylight>
-				</long>
-			</zone>
 			<zone type="America/Lower_Princes">
 				<exemplarCity>Lower Princeʼs Quarter</exemplarCity>
 			</zone>
@@ -1434,6 +1429,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Бразилия вақти</generic>
 					<standard>Бразилия стандарт вақти</standard>
 					<daylight>Бразилия ёзги вақти</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight>Британия ёзги вақти</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -1689,6 +1689,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Эрон вақти</generic>
 					<standard>Эрон стандарт вақти</standard>
 					<daylight>Эрон кундузги вақти</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight>Ирландия ёзги вақти</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -1959,9 +1964,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Самоа вақти</generic>
 					<standard>Самоа стандарт вақти</standard>
-					<daylight>Самоа кундузги вақти</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">

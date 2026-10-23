@@ -877,7 +877,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VN">Vjetnam</territory>
 			<territory type="VU">Vanuatu</territory>
 			<territory type="WF">Wallis- og Futunaoyggjar</territory>
-			<territory type="WS">Samoa</territory>
+			<territory type="WS">Sámoa</territory>
 			<territory type="XA">óekta tónalag</territory>
 			<territory type="XB">óektaður BIDI tekstur</territory>
 			<territory type="XK">Kosovo</territory>
@@ -988,7 +988,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="islamic">islamiskur kalendari</type>
 			<type key="calendar" type="islamic-civil">islamiskur kalendari (talvuskapaður, fólkaligt tíðarskeið)</type>
 			<type key="calendar" type="islamic-umalqura">islamiskur kalendari (Umm al-Qura)</type>
-			<type key="calendar" type="iso8601">ISO-8601 kalendari</type>
+			<type key="calendar" type="iso8601">gregorianskur kalendari (ISO 8601 vikur)</type>
 			<type key="calendar" type="japanese">japanskur kalendari</type>
 			<type key="calendar" type="persian">persiskur kalendari</type>
 			<type key="calendar" type="roc">minguo kalendari</type>
@@ -1002,6 +1002,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="standard" scope="core">vanlig</type>
 			<type key="collation" type="traditional">siðbundin raðskipan</type>
 			<type key="collation" type="zhuyin">zhuyin raðskipan</type>
+			<type key="hc" type="c12">12 tímar klokkuskipan</type>
+			<type key="hc" type="c24">24 tímar klokkuskipan</type>
 			<type key="hc" type="h11">12 tímar klokkuskipan (0–11)</type>
 			<type key="hc" type="h12">12 tímar klokkuskipan (1–12)</type>
 			<type key="hc" type="h23">24 tímar klokkuskipan (0–23)</type>
@@ -1589,6 +1591,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">w. 'vika' 'í' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">h B – h B</greatestDifference>
 						</intervalFormatItem>
@@ -1603,21 +1610,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">MM.y GGGGG – MM.y GGGGG</greatestDifference>
-							<greatestDifference id="M">MM.y–MM.y GGGGG</greatestDifference>
-							<greatestDifference id="y">MM.y–MM.y GGGGG</greatestDifference>
+							<greatestDifference id="G">MM.y G – MM.y G</greatestDifference>
+							<greatestDifference id="M">MM.y–MM.y G</greatestDifference>
+							<greatestDifference id="y">MM.y–MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">dd.MM.y–dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="G">dd.MM.y GGGGG – dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="M">dd.MM.y – dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="y">dd.MM.y – dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="d">dd.MM.y–dd.MM.y G</greatestDifference>
+							<greatestDifference id="G">dd.MM.y G – dd.MM.y G</greatestDifference>
+							<greatestDifference id="M">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="y">dd.MM.y – dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E, dd.MM.y – E, dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="G">E, dd.MM.y GGGGG – E, dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, dd.MM.y – E, dd.MM.y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, dd.MM.y – E, dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, dd.MM.y – E, dd.MM.y G</greatestDifference>
+							<greatestDifference id="G">E, dd.MM.y G – E, dd.MM.y G</greatestDifference>
+							<greatestDifference id="M">E, dd.MM.y – E, dd.MM.y G</greatestDifference>
+							<greatestDifference id="y">E, dd.MM.y – E, dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
 							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
@@ -2266,7 +2273,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</long>
 			</zone>
 			<zone type="Etc/Unknown">
-				<exemplarCity>Ókendur býur</exemplarCity>
+				<exemplarCity>Ókent stað</exemplarCity>
 			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity>Wien</exemplarCity>
@@ -2301,21 +2308,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Atlantic/Faeroe">
 				<exemplarCity>Føroyar</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>Bretsk summartíð</daylight>
-				</long>
-			</zone>
 			<zone type="Europe/Athens">
 				<exemplarCity>Aten</exemplarCity>
 			</zone>
 			<zone type="Atlantic/South_Georgia">
 				<exemplarCity>Suðurgeorgiaoyggjar</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Írsk vanlig tíð</daylight>
-				</long>
 			</zone>
 			<zone type="Asia/Tehran">
 				<exemplarCity>Teheran</exemplarCity>
@@ -2467,9 +2464,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic>Apia tíð</generic>
-					<standard>Apia vanlig tíð</standard>
-					<daylight>Apia summartíð</daylight>
+					<generic>Sámoa tíð</generic>
+					<standard>Sámoa vanlig tíð</standard>
+					<daylight>Sámoa summartíð</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -2573,9 +2570,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Brasilia summartíð</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Bretsk tíð</generic>
+					<daylight>Bretsk summartíð</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
-					<standard>Brunei Darussalam tíð</standard>
+					<standard>Brunei tíð</standard>
 				</long>
 			</metazone>
 			<metazone type="Cape_Verde">
@@ -2649,7 +2652,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="DumontDUrville">
 				<long>
-					<standard>Dumont-d’Urville tíð</standard>
+					<standard>Dumont d’Urville tíð</standard>
 				</long>
 			</metazone>
 			<metazone type="East_Timor">
@@ -2772,7 +2775,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Hawaii-Aleutian vanlig tíð</standard>
+					<standard>Hawaii tíð</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -2791,9 +2794,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hovd">
 				<long>
-					<generic>Hovd tíð</generic>
-					<standard>Hovd vanlig tíð</standard>
-					<daylight>Hovd summartíð</daylight>
+					<generic>Khovd tíð</generic>
+					<standard>Khovd vanlig tíð</standard>
+					<daylight>Khovd summartíð</daylight>
 				</long>
 			</metazone>
 			<metazone type="India">
@@ -2831,6 +2834,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Iran tíð</generic>
 					<standard>Iran vanlig tíð</standard>
 					<daylight>Iran summartíð</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Írsk tíð</generic>
+					<daylight>Írsk vanlig tíð</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -3091,12 +3100,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Ponape">
 				<long>
-					<standard>Ponape tíð</standard>
+					<standard>Pohnpei tíð</standard>
 				</long>
 			</metazone>
 			<metazone type="Pyongyang">
 				<long>
-					<standard>Pyongyang tíð</standard>
+					<standard>Norðurkorea tíð</standard>
 				</long>
 			</metazone>
 			<metazone type="Reunion">
@@ -3118,9 +3127,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samoa tíð</generic>
-					<standard>Samoa vanlig tíð</standard>
-					<daylight>Samoa summartíð</daylight>
+					<standard>Amerikonsk Sámoa vanlig tíð</standard>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3160,9 +3167,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Taipei">
 				<long>
-					<generic>Taipei tíð</generic>
-					<standard>Taipei vanlig tíð</standard>
-					<daylight>Taipei summartíð</daylight>
+					<generic>Taivan tíð</generic>
+					<standard>Taivan vanlig tíð</standard>
+					<daylight>Taivan summartíð</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tajikistan">
@@ -3322,14 +3329,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="1000000" count="other">0 mió'.'</pattern>
 					<pattern type="10000000" count="one">00 mió'.'</pattern>
 					<pattern type="10000000" count="other">00 mió'.'</pattern>
-					<pattern type="100000000" count="one">000 mió'.'</pattern>
-					<pattern type="100000000" count="other">000 mió'.'</pattern>
+					<pattern type="100000000" count="one">000 mió</pattern>
+					<pattern type="100000000" count="other">000 mió</pattern>
 					<pattern type="1000000000" count="one">0 mia'.'</pattern>
 					<pattern type="1000000000" count="other">0 mia'.'</pattern>
 					<pattern type="10000000000" count="one">00 mia'.'</pattern>
 					<pattern type="10000000000" count="other">00 mia'.'</pattern>
-					<pattern type="100000000000" count="one">000 mia'.'</pattern>
-					<pattern type="100000000000" count="other">000 mia'.'</pattern>
+					<pattern type="100000000000" count="one">000 mia</pattern>
+					<pattern type="100000000000" count="other">000 mia</pattern>
 					<pattern type="1000000000000" count="one">0 bió'.'</pattern>
 					<pattern type="1000000000000" count="other">0 bió'.'</pattern>
 					<pattern type="10000000000000" count="one">00 bió'.'</pattern>
@@ -3822,7 +3829,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Paraguai guarani</displayName>
 			</currency>
 			<currency type="QAR">
-				<displayName>Katar rial</displayName>
+				<displayName>Katar rialur</displayName>
+				<displayName count="one">Katar rialur</displayName>
+				<displayName count="other">Katar rialar</displayName>
 			</currency>
 			<currency type="RON">
 				<displayName>Rumenia leu</displayName>

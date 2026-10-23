@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,7 +237,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * </ul>
  *
  * @spec         https://www.unicode.org/reports/tr35
- *               Unicode Locale Data Markup Language (LDML)
+ *               Unicode Common Locale Data {@literal &} Rules (CLDR)
  * @see          DecimalFormat
  * @see          ChoiceFormat
  * @see          CompactNumberFormat
@@ -700,7 +700,7 @@ public abstract class NumberFormat extends Format  {
      * @param inLocale the desired locale
      * @return the {@code NumberFormat} instance for currency formatting
      *
-     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
+     * @spec https://www.unicode.org/reports/tr35 Unicode Common Locale Data {@literal &} Rules (CLDR)
      */
     public static NumberFormat getCurrencyInstance(Locale inLocale) {
         return getInstance(inLocale, null, CURRENCYSTYLE);

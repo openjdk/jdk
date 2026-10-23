@@ -432,6 +432,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pi">Pali</language>
 			<language type="pis">Pijin</language>
 			<language type="pl">Polski</language>
+			<language type="pms">Piemonte</language>
 			<language type="pon">Pohnpeia</language>
 			<language type="pqm">Maliseet-Passamaquoddy</language>
 			<language type="prg">Prusia</language>
@@ -868,7 +869,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="BJ">Benin</territory>
 			<territory type="BL">Saint Barthélemy</territory>
 			<territory type="BM">Bermuda</territory>
-			<territory type="BN">Brunei</territory>
+			<territory type="BN">Brunei Darussalam</territory>
 			<territory type="BO">Bolivia</territory>
 			<territory type="BQ">Belanda Karibia</territory>
 			<territory type="BR">Brasil</territory>
@@ -1196,18 +1197,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="collation">Aturan Pengurutan</key>
 			<key type="colNormalization">Pengurutan Dinormalisasi</key>
 			<key type="colNumeric">Pengurutan Numerik</key>
+			<key type="colReorder">Pengurutan Ulang Aksara/Blok</key>
 			<key type="colStrength">Kekuatan Pengurutan</key>
 			<key type="currency">Mata Uang</key>
+			<key type="d0">Tujuan Transformasi</key>
+			<key type="dx">Pengecualian Pemenggalan Kamus</key>
 			<key type="em">Tampilan Emoji</key>
+			<key type="fw">Hari pertama</key>
+			<key type="h0">Campuran</key>
 			<key type="hc">Siklus Jam (12 vs 24)</key>
+			<key type="i0">Metode Input</key>
+			<key type="k0">Keyboard</key>
+			<key type="kv">Paling Sering Diabaikan</key>
 			<key type="lb">Gaya Pemisah Baris</key>
 			<key type="lw">Pemisah Baris di antara Kata</key>
+			<key type="m0">Aturan Transformasi</key>
 			<key type="ms">Sistem Pengukuran</key>
+			<key type="mu">Unit Pengukuran</key>
 			<key type="numbers">Angka</key>
+			<key type="rg">Wilayah untuk Data Tambahan</key>
+			<key type="s0">Sumber Transformasi</key>
+			<key type="sd">Subdivisi Wilayah</key>
 			<key type="ss">Pemisah Kalimat Setelah Singkatan</key>
+			<key type="t">Transformasi</key>
+			<key type="t0">Diterjemahkan Mesin</key>
 			<key type="timezone">Zona Waktu</key>
 			<key type="va">Varian Lokal</key>
 			<key type="x">Penggunaan Pribadi</key>
+			<key type="x0">Transformasi Penggunaan Pribadi</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Kalender Buddha</type>
@@ -1227,16 +1244,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">Kalender Ibrani</type>
 			<type key="calendar" type="hebrew" scope="core">Ibrani</type>
 			<type key="calendar" type="indian">Kalender Nasional India</type>
+			<type key="calendar" type="indian" scope="core">Nasional India</type>
 			<type key="calendar" type="islamic">Kalender Islam</type>
 			<type key="calendar" type="islamic" scope="core">Hijriah</type>
 			<type key="calendar" type="islamic-civil">Kalender Sipil Islam</type>
 			<type key="calendar" type="islamic-civil" scope="core">Hijri (tabular, epoch sipil)</type>
 			<type key="calendar" type="islamic-rgsa" draft="contributed">Kalender Islam (Arab Saudi, penglihatan)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">Hijriah, pengamatan hilal Arab Saudi</type>
 			<type key="calendar" type="islamic-tbla">Kalender Astronomi Islam</type>
 			<type key="calendar" type="islamic-tbla" scope="core">Hijriah (tabular, epoch astronomi)</type>
 			<type key="calendar" type="islamic-umalqura">Kalender Islam (Umm al-Qura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">Hijriah (tabular, Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Kalender ISO-8601</type>
+			<type key="calendar" type="iso8601" scope="core">Masehi</type>
 			<type key="calendar" type="japanese">Kalender Jepang</type>
 			<type key="calendar" type="japanese" scope="core">Jepang</type>
 			<type key="calendar" type="persian">Kalender Persia</type>
@@ -1252,8 +1272,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colBackwards" type="no">Sortir Aksen Secara Normal</type>
 			<type key="colBackwards" type="yes">Sortir Aksen Terbalik</type>
 			<type key="colCaseFirst" type="lower">Sortir Huruf Kecil Dahulu</type>
+			<type key="colCaseFirst" type="lower" scope="core">Huruf Kecil</type>
 			<type key="colCaseFirst" type="no">Sortir Urutan Ukuran Huruf Normal</type>
+			<type key="colCaseFirst" type="no" scope="core">Huruf Kecil</type>
 			<type key="colCaseFirst" type="upper">Sortir Huruf Besar Dahulu</type>
+			<type key="colCaseFirst" type="upper" scope="core">Huruf Besar</type>
 			<type key="colCaseLevel" type="no">Sortir Tidak Peka Huruf Besar</type>
 			<type key="colCaseLevel" type="yes">Sortir Peka Huruf Besar</type>
 			<type key="collation" type="compat">Aturan Pengurutan Sebelumnya, untuk kompatibilitas</type>
@@ -1263,7 +1286,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="ducet">Aturan Pengurutan Unicode Default</type>
 			<type key="collation" type="ducet" scope="core">Unicode Default</type>
 			<type key="collation" type="emoji" draft="contributed">Urutan Sortir Emoji</type>
+			<type key="collation" type="emoji" scope="core">Emoji</type>
 			<type key="collation" type="eor">Aturan Pengurutan Eropa</type>
+			<type key="collation" type="eor" scope="core">Aturan Eropa</type>
 			<type key="collation" type="phonebook">Aturan Pengurutan Buku Telepon</type>
 			<type key="collation" type="phonebook" scope="core">Buku Telepon</type>
 			<type key="collation" type="phonetic">Aturan Pengurutan Fonetik</type>
@@ -1273,6 +1298,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="search">Pencarian Tujuan Umum</type>
 			<type key="collation" type="search" scope="core">Pencarian</type>
 			<type key="collation" type="searchjl">Pencarian Menurut Konsonan Awal Hangul</type>
+			<type key="collation" type="searchjl" scope="core">Konsonan awal Hangul</type>
 			<type key="collation" type="standard">Aturan Pengurutan Standar</type>
 			<type key="collation" type="standard" scope="core">Standar</type>
 			<type key="collation" type="stroke">Aturan Pengurutan Guratan</type>
@@ -1287,17 +1313,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colNormalization" type="yes">Sortir Unicode Dinormalisasi</type>
 			<type key="colNumeric" type="no">Sortir Digit Satu Per Satu</type>
 			<type key="colNumeric" type="yes">Sortir Digit Secara Numerik</type>
+			<type key="colReorder" type="currency" scope="core">Mata Uang</type>
+			<type key="colReorder" type="digit" scope="core">Digit</type>
+			<type key="colReorder" type="punct" scope="core">Tanda Baca</type>
+			<type key="colReorder" type="space" scope="core">Spasi Kosong</type>
+			<type key="colReorder" type="symbol" scope="core">Simbol</type>
 			<type key="colStrength" type="identical">Sortir Semua</type>
+			<type key="colStrength" type="identical" scope="core">Semua</type>
 			<type key="colStrength" type="primary">Sortir Huruf Dasar Saja</type>
+			<type key="colStrength" type="primary" scope="core">Huruf Dasar Saja</type>
 			<type key="colStrength" type="quaternary">Sortir Aksen/Ukuran Huruf/Lebar/Kana</type>
+			<type key="colStrength" type="quaternary" scope="core">Karakter Dasar, Diakritik, Huruf Besar/Kecil, Varian, Kana</type>
 			<type key="colStrength" type="secondary">Sortir Aksen</type>
+			<type key="colStrength" type="secondary" scope="core">Karakter Dasar, Diakritik</type>
 			<type key="colStrength" type="tertiary">Sortir Aksen/Ukuran Huruf/Lebar</type>
+			<type key="colStrength" type="tertiary" scope="core">Karakter Dasar, Diakritik, Varian</type>
 			<type key="d0" type="fwidth">Lebar penuh</type>
 			<type key="d0" type="hwidth">Lebar separuh</type>
 			<type key="d0" type="npinyin">Angka</type>
 			<type key="em" type="default" scope="core">Bawaan</type>
 			<type key="em" type="emoji" scope="core">Emoji</type>
 			<type key="em" type="text" scope="core">Teks</type>
+			<type key="hc" type="c12">Sistem 12 Jam</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">Sistem 24 Jam</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">Sistem 12 Jam (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">Sistem 12 Jam (1–12)</type>
@@ -1306,6 +1346,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">Sistem 24 Jam (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Shift Spasi, tanda baca, semua simbol</type>
+			<type key="kv" type="punct" scope="core">Shift spasi, tanda baca</type>
+			<type key="kv" type="space" scope="core">Shift spasi, tanda baca</type>
+			<type key="kv" type="symbol" scope="core">Shift spasi, tanda baca, simbol non-mata uang</type>
 			<type key="lb" type="loose">Gaya Pemisah Baris Renggang</type>
 			<type key="lb" type="loose" scope="core">Renggang</type>
 			<type key="lb" type="normal">Gaya Pemisah Baris Normal</type>
@@ -1327,8 +1371,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="ahom" draft="contributed">Angka Ahom</type>
 			<type key="numbers" type="arab">Angka Arab Timur</type>
 			<type key="numbers" type="arabext">Angka Arab Timur Diperluas</type>
+			<type key="numbers" type="arabext" scope="core">Arab Timur Diperluas</type>
 			<type key="numbers" type="armn">Angka Armenia</type>
 			<type key="numbers" type="armnlow">Angka Huruf Kecil Armenia</type>
+			<type key="numbers" type="armnlow" scope="core">Huruf Kecil Armenia</type>
 			<type key="numbers" type="bali">Angka Bali</type>
 			<type key="numbers" type="beng">Angka Bengali</type>
 			<type key="numbers" type="brah" draft="contributed">Angka Brahmi</type>
@@ -1339,56 +1385,80 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="diak" draft="contributed">Angka Dives Akuru</type>
 			<type key="numbers" type="ethi">Angka Etiopia</type>
 			<type key="numbers" type="finance">Angka Finansial</type>
+			<type key="numbers" type="finance" scope="core">Keuangan</type>
 			<type key="numbers" type="fullwide">Angka Lebar Penuh</type>
+			<type key="numbers" type="fullwide" scope="core">Lebar penuh</type>
 			<type key="numbers" type="geor">Angka Georgia</type>
 			<type key="numbers" type="gong" draft="contributed">Angka Gunjala Gondi</type>
 			<type key="numbers" type="gonm" draft="contributed">Angka Masaram Gondi</type>
 			<type key="numbers" type="grek">Angka Yunani</type>
 			<type key="numbers" type="greklow">Angka Yunani Huruf Kecil</type>
+			<type key="numbers" type="greklow" scope="core">Huruf kecil Yunani</type>
 			<type key="numbers" type="gujr">Angka Gujarat</type>
 			<type key="numbers" type="guru">Angka Gurmukhi</type>
+			<type key="numbers" type="hanidays" scope="core">Penomoran tanggal dengan karakter Han untuk kalender tradisional</type>
 			<type key="numbers" type="hanidec">Angka Desimal Tionghoa</type>
+			<type key="numbers" type="hanidec" scope="core">Sistem desimal posisional menggunakan karakter angka Tionghoa sebagai angka</type>
 			<type key="numbers" type="hans">Angka Tionghoa Sederhana</type>
 			<type key="numbers" type="hansfin">Angka Keuangan Tionghoa Sederhana</type>
+			<type key="numbers" type="hansfin" scope="core">Keuangan Tionghoa Sederhana</type>
 			<type key="numbers" type="hant">Angka Tionghoa Tradisional</type>
 			<type key="numbers" type="hantfin">Angka Keuangan Tionghoa Tradisional</type>
+			<type key="numbers" type="hantfin" scope="core">Keuangan Tionghoa Tradisional</type>
 			<type key="numbers" type="hebr">Angka Ibrani</type>
 			<type key="numbers" type="hmng" draft="contributed">Angka Pahawh Hmong</type>
 			<type key="numbers" type="hmnp" draft="contributed">Angka Nyiakeng Puachue Hmong</type>
 			<type key="numbers" type="java">Angka Jawa</type>
 			<type key="numbers" type="jpan">Angka Jepang</type>
 			<type key="numbers" type="jpanfin">Angka Keuangan Jepang</type>
+			<type key="numbers" type="jpanfin" scope="core">Keuangan Jepang</type>
+			<type key="numbers" type="jpanyear" scope="core">Penomoran Gannen untuk tahun pertama Jepang</type>
 			<type key="numbers" type="kali">Angka Kayah Li</type>
 			<type key="numbers" type="khmr">Angka Khmer</type>
 			<type key="numbers" type="knda">Angka Kannada</type>
 			<type key="numbers" type="lana">Angka Tai Tham Hora</type>
 			<type key="numbers" type="lanatham">Angka Tai Tham Tham</type>
+			<type key="numbers" type="lanatham" scope="core">Tai Tham Tham (keagamaan)</type>
 			<type key="numbers" type="laoo">Angka Laos</type>
 			<type key="numbers" type="latn">Angka Latin</type>
 			<type key="numbers" type="lepc">Angka Lepcha</type>
 			<type key="numbers" type="limb">Angka Limbu</type>
 			<type key="numbers" type="mathbold" draft="contributed">Angka Tebal Matematika</type>
+			<type key="numbers" type="mathbold" scope="core">Tebal matematika</type>
 			<type key="numbers" type="mathdbl" draft="contributed">Angka Double-Struck Matematika</type>
+			<type key="numbers" type="mathdbl" scope="core">Double-struck matematika</type>
 			<type key="numbers" type="mathmono" draft="contributed">Angka Monospace Matematika</type>
+			<type key="numbers" type="mathmono" scope="core">Monospace matematika</type>
 			<type key="numbers" type="mathsanb" draft="contributed">Angka Tebal Sans-Serif Matematika</type>
+			<type key="numbers" type="mathsanb" scope="core">Sans-serif matematika tebal</type>
 			<type key="numbers" type="mathsans" draft="contributed">Angka Sans-Serif Matematika</type>
+			<type key="numbers" type="mathsans" scope="core">Sans-serif matematika</type>
 			<type key="numbers" type="mlym">Angka Malayalam</type>
 			<type key="numbers" type="modi" draft="contributed">Angka Modi</type>
 			<type key="numbers" type="mong">Angka Mongolia</type>
 			<type key="numbers" type="mroo" draft="contributed">Angka Mro</type>
 			<type key="numbers" type="mtei">Angka Meetei Mayek</type>
 			<type key="numbers" type="mymr">Angka Myanmar</type>
+			<type key="numbers" type="mymrepka" scope="core">Karen Pwo Timur Myanmar</type>
+			<type key="numbers" type="mymrpao" scope="core">Pao Myanmar</type>
 			<type key="numbers" type="mymrshan">Angka Myanmar Shan</type>
+			<type key="numbers" type="mymrshan" scope="core">Shan Myanmar</type>
 			<type key="numbers" type="mymrtlng" draft="contributed">Angka Myanmar Tai Laing</type>
+			<type key="numbers" type="mymrtlng" scope="core">Tai Laing Myanmar</type>
 			<type key="numbers" type="native">Angka Asli</type>
+			<type key="numbers" type="native" scope="core">Angka Asli</type>
 			<type key="numbers" type="nkoo">Angka N’Ko</type>
 			<type key="numbers" type="olck">Angka Ol Chiki</type>
 			<type key="numbers" type="orya">Angka Oriya</type>
 			<type key="numbers" type="osma" draft="contributed">Angka Osmanya</type>
+			<type key="numbers" type="outlined" scope="core">Hierarkis</type>
 			<type key="numbers" type="rohg" draft="contributed">Angka Hanifi Rohingya</type>
 			<type key="numbers" type="roman">Angka Romawi</type>
+			<type key="numbers" type="roman" scope="core">Huruf besar Romawi</type>
 			<type key="numbers" type="romanlow">Angka Huruf Kecil Romawi</type>
+			<type key="numbers" type="romanlow" scope="core">Huruf kecil Romawi</type>
 			<type key="numbers" type="saur">Angka Saurashtra</type>
+			<type key="numbers" type="segment" scope="core">Tersegmentasi</type>
 			<type key="numbers" type="shrd" draft="contributed">Angka Sharada</type>
 			<type key="numbers" type="sind" draft="contributed">Angka Khudawadi</type>
 			<type key="numbers" type="sinh" draft="contributed">Angka Sinhala Lith</type>
@@ -1398,17 +1468,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="talu">Angka Tai Lue Baru</type>
 			<type key="numbers" type="taml">Angka Tamil Tradisional</type>
 			<type key="numbers" type="tamldec">Angka Tamil</type>
+			<type key="numbers" type="tamldec" scope="core">Tamil Modern</type>
 			<type key="numbers" type="telu">Angka Telugu</type>
 			<type key="numbers" type="thai">Angka Thai</type>
 			<type key="numbers" type="tibt">Angka Tibet</type>
 			<type key="numbers" type="tirh" draft="contributed">Angka Tirhuta</type>
 			<type key="numbers" type="traditional">Angka Tradisional</type>
+			<type key="numbers" type="traditional" scope="core">Angka tradisional</type>
 			<type key="numbers" type="vaii">Angka Vai</type>
 			<type key="numbers" type="wara" draft="contributed">Angka Warang Citi</type>
 			<type key="numbers" type="wcho" draft="contributed">Angka Wancho</type>
 			<type key="ss" type="none" scope="core">Nonaktif</type>
 			<type key="ss" type="standard" scope="core">Aktif</type>
+			<type key="t0" type="und">Terjemahan Mesin Tidak Spesifik</type>
+			<type key="va" type="posix" scope="core">Varian POSIX</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">Nonaktif</typeValue>
+			<typeValue type="yes">Aktif</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metrik</measurementSystemName>
 			<measurementSystemName type="US">AS</measurementSystemName>
@@ -1434,9 +1512,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<exemplarCharacters type="auxiliary">[áàăâåäãā æ ç éèĕêëē íìĭîïī ñ óòŏôöøō œ úùŭûüū ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
-		<parseLenients scope="date" level="lenient">
-			<parseLenient sample=":">[\: ∶]</parseLenient>
-		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
 		</parseLenients>
@@ -1700,7 +1775,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Hm">HH.mm</dateFormatItem>
 						<dateFormatItem id="hms">h.mm.ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH.mm.ss</dateFormatItem>
-						<dateFormatItem id="Hv">HH v</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
@@ -1721,51 +1795,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
+						<intervalFormatFallback>{0}–{1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="h">h – h B</greatestDifference>
+							<greatestDifference id="B">h B–h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h.mm B – h.mm B</greatestDifference>
-							<greatestDifference id="h">h.mm – h.mm B</greatestDifference>
-							<greatestDifference id="m">h.mm – h.mm B</greatestDifference>
+							<greatestDifference id="B">h.mm B–h.mm B</greatestDifference>
+							<greatestDifference id="h">h.mm–h.mm B</greatestDifference>
+							<greatestDifference id="m">h.mm–h.mm B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G – y G</greatestDifference>
-							<greatestDifference id="y">y – y G</greatestDifference>
+							<greatestDifference id="G">y G–y G</greatestDifference>
+							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">M/y G–M/y G</greatestDifference>
+							<greatestDifference id="M">M/y–M/y G</greatestDifference>
+							<greatestDifference id="y">M/y–M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="G">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">d/M/y–d/M/y G</greatestDifference>
+							<greatestDifference id="G">d/M/y G–d/M/y G</greatestDifference>
+							<greatestDifference id="M">d/M/y–d/M/y G</greatestDifference>
+							<greatestDifference id="y">d/M/y–d/M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="G">E, d/M/y GGGGG – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, d/M/y–E, d/M/y G</greatestDifference>
+							<greatestDifference id="G">E, d/M/y G– E, d/M/y G</greatestDifference>
+							<greatestDifference id="M">E, d/M/y–E, d/M/y G</greatestDifference>
+							<greatestDifference id="y">E, d/M/y–E, d/M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="G">MMM y G–MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y–MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">d – d MMM y G</greatestDifference>
-							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+							<greatestDifference id="d">d–d MMM y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G–d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM–d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y–d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
-							<greatestDifference id="G">E, d MMM y G – E, d MMM y G</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
-							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d MMM–E, d MMM y G</greatestDifference>
+							<greatestDifference id="G">E, d MMM y G–E, d MMM y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM–E, d MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y–E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="h" draft="contributed">h – h a</greatestDifference>
@@ -1801,58 +1879,62 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">d/M – d/M</greatestDifference>
-							<greatestDifference id="M">d/M – d/M</greatestDifference>
+							<greatestDifference id="d">d/M–d/M</greatestDifference>
+							<greatestDifference id="M">d/M–d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d/M – E, d/M</greatestDifference>
-							<greatestDifference id="M">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="d">E, d/M–E, d/M</greatestDifference>
+							<greatestDifference id="M">E, d/M–E, d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">d–d MMM</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM–d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="d">E, d MMM–E, d MMM</greatestDifference>
+							<greatestDifference id="M">E, d MMM–E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM–d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y–M/y G</greatestDifference>
+							<greatestDifference id="y">M/y–M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">d/M/y–d/M/y G</greatestDifference>
+							<greatestDifference id="M">d/M/y–d/M/y G</greatestDifference>
+							<greatestDifference id="y">d/M/y–d/M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, d/M/y–E, d/M/y G</greatestDifference>
+							<greatestDifference id="M">E, d/M/y–E, d/M/y G</greatestDifference>
+							<greatestDifference id="y">E, d/M/y–E, d/M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y–MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">d–d MMM y G</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM–d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y–d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
-							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d MMM–E, d MMM y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM–E, d MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y–E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
+							<greatestDifference id="M">MMMM–MMMM y G</greatestDifference>
+							<greatestDifference id="y">MMMM y–MMMM y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -2000,7 +2082,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>dd/MM/yy</pattern>
+							<pattern>d/M/yy</pattern>
 							<datetimeSkeleton>yyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -2028,6 +2110,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+						<numericTimeSeparator>.</numericTimeSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -2089,6 +2175,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d MMMM y G</dateFormatItem>
 						<dateFormatItem id="hm">h.mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH.mm</dateFormatItem>
 						<dateFormatItem id="hms">h.mm.ss a</dateFormatItem>
@@ -2112,59 +2201,68 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'minggu' 'ke'-w Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
+						<intervalFormatFallback>{0}–{1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="h">h – h B</greatestDifference>
+							<greatestDifference id="B">h B–h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h.mm B – h.mm B</greatestDifference>
-							<greatestDifference id="h">h.mm – h.mm B</greatestDifference>
-							<greatestDifference id="m">h.mm – h.mm B</greatestDifference>
+							<greatestDifference id="B">h.mm B–h.mm B</greatestDifference>
+							<greatestDifference id="h">h.mm–h.mm B</greatestDifference>
+							<greatestDifference id="m">h.mm–h.mm B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G – y G</greatestDifference>
-							<greatestDifference id="y">y – y G</greatestDifference>
+							<greatestDifference id="G">y G–y G</greatestDifference>
+							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">M/y GGGGG–M/y G</greatestDifference>
+							<greatestDifference id="M">M/y–M/y G</greatestDifference>
+							<greatestDifference id="y">M/y–M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="G">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">d/M/y–d/M/y G</greatestDifference>
+							<greatestDifference id="G">d/M/y G–d/M/y G</greatestDifference>
+							<greatestDifference id="M">d/M/y–d/M/y G</greatestDifference>
+							<greatestDifference id="y">d/M/y–d/M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="G">E, d/M/y GGGGG – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, d/M/y–E, d/M/y G</greatestDifference>
+							<greatestDifference id="G">E, d/M/y G–E, d/M/y G</greatestDifference>
+							<greatestDifference id="M">E, d/M/y–E, d/M/y G</greatestDifference>
+							<greatestDifference id="y">E, d/M/y–E, d/M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="G">MMM y G–MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y–MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">d – d MMM y G</greatestDifference>
-							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+							<greatestDifference id="d">d–d MMM y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G–d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM–d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y–d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
-							<greatestDifference id="G">E, d MMM y G – E, d MMM y G</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
-							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d MMM–E, d MMM y G</greatestDifference>
+							<greatestDifference id="G">E, d MMM y G–E, d MMM y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM–E, d MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y–E, d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a">h a–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h.mm a – h.mm a</greatestDifference>
+							<greatestDifference id="a">h.mm a–h.mm a</greatestDifference>
 							<greatestDifference id="h">h.mm–h.mm a</greatestDifference>
 							<greatestDifference id="m">h.mm–h.mm a</greatestDifference>
 						</intervalFormatItem>
@@ -2173,7 +2271,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="m">HH.mm–HH.mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h.mm a – h.mm a v</greatestDifference>
+							<greatestDifference id="a">h.mm a–h.mm a v</greatestDifference>
 							<greatestDifference id="h">h.mm–h.mm a v</greatestDifference>
 							<greatestDifference id="m">h.mm–h.mm a v</greatestDifference>
 						</intervalFormatItem>
@@ -2181,62 +2279,66 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="H">HH.mm–HH.mm v</greatestDifference>
 							<greatestDifference id="m">HH.mm–HH.mm v</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a">h a–h a v</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">d/M – d/M</greatestDifference>
-							<greatestDifference id="M">d/M – d/M</greatestDifference>
+							<greatestDifference id="d">d/M–d/M</greatestDifference>
+							<greatestDifference id="M">d/M–d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d/M – E, d/M</greatestDifference>
-							<greatestDifference id="M">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="d">E, d/M–E, d/M</greatestDifference>
+							<greatestDifference id="M">E, d/M–E, d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">d–d MMM</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM–d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="d">E, d MMM–E, d MMM</greatestDifference>
+							<greatestDifference id="M">E, d MMM–E, d MMM</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="y">
-							<greatestDifference id="y">y – y</greatestDifference>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM–d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y</greatestDifference>
-							<greatestDifference id="y">M/y – M/y</greatestDifference>
+							<greatestDifference id="M">M/y–M/y</greatestDifference>
+							<greatestDifference id="y">M/y–M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">d/M/y – d/M/y</greatestDifference>
-							<greatestDifference id="M">d/M/y – d/M/y</greatestDifference>
-							<greatestDifference id="y">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="d">d/M/y–d/M/y</greatestDifference>
+							<greatestDifference id="M">d/M/y–d/M/y</greatestDifference>
+							<greatestDifference id="y">d/M/y–d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, d/M/y – E, d/M/y</greatestDifference>
-							<greatestDifference id="M">E, d/M/y – E, d/M/y</greatestDifference>
-							<greatestDifference id="y">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="d">E, d/M/y–E, d/M/y</greatestDifference>
+							<greatestDifference id="M">E, d/M/y–E, d/M/y</greatestDifference>
+							<greatestDifference id="y">E, d/M/y–E, d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM–MMM y</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y–MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">d–d MMM y</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y</greatestDifference>
+							<greatestDifference id="M">d MMM–d MMM y</greatestDifference>
+							<greatestDifference id="y">d MMM y–d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM y</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM y</greatestDifference>
-							<greatestDifference id="y">E, d MMM y – E, d MMM y</greatestDifference>
+							<greatestDifference id="d">E, d MMM–E, d MMM y</greatestDifference>
+							<greatestDifference id="M">E, d MMM–E, d MMM y</greatestDifference>
+							<greatestDifference id="y">E, d MMM y–E, d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M">MMMM–MMMM y</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y–MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -2333,10 +2435,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
-					<availableFormats>
-						<dateFormatItem id="GyM">M/y G</dateFormatItem>
-						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
-					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="contributed">d – d</greatestDifference>
@@ -2378,58 +2476,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="iso8601">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="contributed">/</numericDateSeparator>
+						<numericTimeSeparator draft="contributed">.</numericTimeSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="japanese">
-				<eras>
-					<eraAbbr>
-						<era type="10" draft="contributed">Tempyō (729–749)</era>
-						<era type="11" draft="contributed">Tempyō-kampō (749-749)</era>
-						<era type="12" draft="contributed">Tempyō-shōhō (749-757)</era>
-						<era type="13" draft="contributed">Tempyō-hōji (757-765)</era>
-						<era type="14" draft="contributed">Temphō-jingo (765-767)</era>
-						<era type="15" draft="contributed">Jingo-keiun (767-770)</era>
-						<era type="17" draft="contributed">Ten-ō (781-782)</era>
-						<era type="25" draft="contributed">Saiko (854–857)</era>
-						<era type="26" draft="contributed">Tennan (857–859)</era>
-						<era type="28" draft="contributed">Genkei (877–885)</era>
-						<era type="30" draft="contributed">Kampyō (889–898)</era>
-						<era type="34" draft="contributed">Shōhei (931–938)</era>
-						<era type="42" draft="contributed">Ten-en (973-976)</era>
-						<era type="47" draft="contributed">Ei-en (987-989)</era>
-						<era type="68" draft="contributed">Eiho (1081–1084)</era>
-						<era type="71" draft="contributed">Kaho (1094–1096)</era>
-						<era type="73" draft="contributed">Shōtoku (1097–1099)</era>
-						<era type="78" draft="contributed">Ten-ei (1110-1113)</era>
-						<era type="80" draft="contributed">Gen-ei (1118-1120)</era>
-						<era type="81" draft="contributed">Hoan (1120–1124)</era>
-						<era type="86" draft="contributed">Hoen (1135–1141)</era>
-						<era type="89" draft="contributed">Tenyō (1144–1145)</era>
-						<era type="93" draft="contributed">Hogen (1156–1159)</era>
-						<era type="99" draft="contributed">Nin-an (1166-1169)</era>
-						<era type="106" draft="contributed">Genryuku (1184–1185)</era>
-						<era type="112" draft="contributed">Ken-ei (1206-1207)</era>
-						<era type="113" draft="contributed">Shōgen (1207–1211)</era>
-						<era type="116" draft="contributed">Shōkyū (1219–1222)</era>
-						<era type="123" draft="contributed">Tempuku (1233–1234)</era>
-						<era type="127" draft="contributed">En-ō (1239-1240)</era>
-						<era type="135" draft="contributed">Bun-ō (1260-1261)</era>
-						<era type="137" draft="contributed">Bun-ei (1264-1275)</era>
-						<era type="146" draft="contributed">Enkei (1308–1311)</era>
-						<era type="151" draft="contributed">Genkyō (1321–1324)</era>
-						<era type="153" draft="contributed">Kareki (1326–1329)</era>
-						<era type="156" draft="contributed">Kemmu (1334–1336)</era>
-						<era type="174" draft="contributed">Bun-an (1444-1449)</era>
-						<era type="190" draft="contributed">Tenmon (1532–1555)</era>
-						<era type="197" draft="contributed">Genwa (1615–1624)</era>
-						<era type="198" draft="contributed">Kan-ei (1624-1644)</era>
-						<era type="201" draft="contributed">Shōō (1652–1655)</era>
-						<era type="202" draft="contributed">Meiryaku (1655–1658)</era>
-						<era type="206" draft="contributed">Tenwa (1681–1684)</era>
-						<era type="215" draft="contributed">Kan-en (1748-1751)</era>
-						<era type="216" draft="contributed">Hōryaku (1751–1764)</era>
-						<era type="218" draft="contributed">An-ei (1772-1781)</era>
-						<era type="228" draft="contributed">Man-en (1860-1861)</era>
-					</eraAbbr>
-				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -2893,6 +2948,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Vienna">
 				<exemplarCity>Wina</exemplarCity>
 			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity>Urumchi</exemplarCity>
+			</zone>
 			<zone type="America/Costa_Rica">
 				<exemplarCity>Kosta Rika</exemplarCity>
 			</zone>
@@ -2917,21 +2975,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Cairo">
 				<exemplarCity>Kairo</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>Waktu Musim Panas Inggris</daylight>
-				</long>
-			</zone>
 			<zone type="Europe/Athens">
 				<exemplarCity>Athena</exemplarCity>
 			</zone>
 			<zone type="Atlantic/South_Georgia">
 				<exemplarCity>Georgia Selatan</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Waktu Standar Irlandia</daylight>
-				</long>
 			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity>Yerusalem</exemplarCity>
@@ -3073,18 +3121,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Waktu Standar Alaska</standard>
 					<daylight>Waktu Musim Panas Alaska</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AKT</generic>
-					<standard draft="contributed">AKST</standard>
-					<daylight draft="contributed">AKDT</daylight>
-				</short>
-			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>Waktu Almaty</generic>
-					<standard>Waktu Standar Almaty</standard>
-					<daylight>Waktu Musim Panas Almaty</daylight>
-				</long>
 			</metazone>
 			<metazone type="Amazon">
 				<long>
@@ -3099,11 +3135,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Waktu Standar Tengah</standard>
 					<daylight>Waktu Musim Panas Tengah</daylight>
 				</long>
-				<short>
-					<generic>CT</generic>
-					<standard draft="contributed">CST</standard>
-					<daylight draft="contributed">CDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
@@ -3111,11 +3142,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Waktu Standar Timur</standard>
 					<daylight>Waktu Musim Panas Timur</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">ET</generic>
-					<standard draft="contributed">EST</standard>
-					<daylight draft="contributed">EDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
@@ -3123,11 +3149,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Waktu Standar Pegunungan</standard>
 					<daylight>Waktu Musim Panas Pegunungan</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">MT</generic>
-					<standard draft="contributed">MST</standard>
-					<daylight draft="contributed">MDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
@@ -3135,11 +3156,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Waktu Standar Pasifik</standard>
 					<daylight>Waktu Musim Panas Pasifik</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">PT</generic>
-					<standard draft="contributed">PST</standard>
-					<daylight draft="contributed">PDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Anadyr">
 				<long>
@@ -3153,20 +3169,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Waktu Apia</generic>
 					<standard>Waktu Standar Apia</standard>
 					<daylight>Waktu Musim Panas Apia</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>Waktu Aqtau</generic>
-					<standard>Waktu Standar Aqtau</standard>
-					<daylight>Waktu Musim Panas Aqtau</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>Waktu Aqtobe</generic>
-					<standard>Waktu Standar Aqtobe</standard>
-					<daylight>Waktu Musim Panas Aqtobe</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3203,11 +3205,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Waktu Standar Atlantik</standard>
 					<daylight>Waktu Musim Panas Atlantik</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AT</generic>
-					<standard draft="contributed">AST</standard>
-					<daylight draft="contributed">ADT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
@@ -3273,6 +3270,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Waktu Brasil</generic>
 					<standard>Waktu Standar Brasil</standard>
 					<daylight>Waktu Musim Panas Brasil</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Waktu Inggris</generic>
+					<daylight>Waktu Musim Panas Inggris</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3348,11 +3351,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Waktu Standar Kuba</standard>
 					<daylight>Waktu Musim Panas Kuba</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">CT (Kuba)</generic>
-					<standard draft="contributed">CST (Kuba)</standard>
-					<daylight draft="contributed">CDT (Kuba)</daylight>
-				</short>
 			</metazone>
 			<metazone type="Davis">
 				<long>
@@ -3455,7 +3453,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard>Greenwich Mean Time</standard>
+					<standard>Waktu Greenwich</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Waktu Greenland</generic>
+					<standard>Waktu Standar Greenland</standard>
+					<daylight>Waktu Musim Panas Greenland</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
@@ -3464,22 +3469,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Waktu Standar Greenland Timur</standard>
 					<daylight>Waktu Musim Panas Greenland Timur</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">EGT</generic>
-					<standard draft="contributed">EGST</standard>
-					<daylight draft="contributed">EGDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
 					<generic>Waktu Greenland Barat</generic>
 					<standard>Waktu Standar Greenland Barat</standard>
 					<daylight>Waktu Musim Panas Greenland Barat</daylight>
-				</long>
-			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard>Waktu Guam</standard>
 				</long>
 			</metazone>
 			<metazone type="Gulf">
@@ -3494,11 +3489,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Waktu Standar Hawaii-Aleutian</standard>
+					<standard>Waktu Hawaii</standard>
 				</long>
-				<short>
-					<standard draft="contributed">HAST</standard>
-				</short>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
@@ -3506,11 +3498,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Waktu Standar Hawaii-Aleutian</standard>
 					<daylight>Waktu Musim Panas Hawaii-Aleutian</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">HAT</generic>
-					<standard draft="contributed">HAST</standard>
-					<daylight draft="contributed">HADT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
@@ -3572,6 +3559,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Waktu Musim Panas Iran</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Waktu Irlandia</generic>
+					<daylight>Waktu Standar Irlandia</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Waktu Irkutsk</generic>
@@ -3595,9 +3588,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
-					<generic>Waktu Petropavlovsk-Kamchatsky</generic>
-					<standard>Waktu Standar Petropavlovsk-Kamchatsky</standard>
-					<daylight>Waktu Musim Panas Petropavlovsk-Kamchatski</daylight>
+					<generic>Waktu Kamchatka</generic>
+					<standard>Waktu Standar Kamchatka</standard>
+					<daylight>Waktu Musim Panas Kamchatka</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -3639,11 +3632,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Waktu Kirgizstan</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard>Waktu Lanka</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>Waktu Kep. Line</standard>
@@ -3654,13 +3642,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Waktu Lord Howe</generic>
 					<standard>Waktu Standar Lord Howe</standard>
 					<daylight>Waktu Musim Panas Lord Howe</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic>Waktu Makau</generic>
-					<standard>Waktu Standar Makau</standard>
-					<daylight>Waktu Musim Panas Makau</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -3758,11 +3739,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Waktu Standar Newfoundland</standard>
 					<daylight>Waktu Musim Panas Newfoundland</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">NT</generic>
-					<standard draft="contributed">NST</standard>
-					<daylight draft="contributed">NDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Niue">
 				<long>
@@ -3781,11 +3757,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Waktu Fernando de Noronha</generic>
 					<standard>Waktu Standar Fernando de Noronha</standard>
 					<daylight>Waktu Musim Panas Fernando de Noronha</daylight>
-				</long>
-			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard>Waktu Kep. Mariana Utara</standard>
 				</long>
 			</metazone>
 			<metazone type="Novosibirsk">
@@ -3851,11 +3822,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Waktu Standar Saint Pierre dan Miquelon</standard>
 					<daylight>Waktu Musim Panas Saint Pierre dan Miquelon</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">PMT</generic>
-					<standard draft="contributed">PMST</standard>
-					<daylight draft="contributed">PMDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Pitcairn">
 				<long>
@@ -3870,13 +3836,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Pyongyang">
 				<long>
 					<standard>Waktu Pyongyang</standard>
-				</long>
-			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>Waktu Qyzylorda</generic>
-					<standard>Waktu Standar Qyzylorda</standard>
-					<daylight>Waktu Musim Panas Qyzylorda</daylight>
 				</long>
 			</metazone>
 			<metazone type="Reunion">
@@ -3905,9 +3864,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Waktu Samoa</generic>
 					<standard>Waktu Standar Samoa</standard>
-					<daylight>Waktu Musim Panas Samoa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3976,9 +3933,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Turkey">
 				<long>
-					<generic>Waktu Turki</generic>
-					<standard>Waktu Standar Turki</standard>
-					<daylight>Waktu Musim Panas Turki</daylight>
+					<generic>Waktu Turkiye</generic>
+					<standard>Waktu Standar Turkiye</standard>
+					<daylight>Waktu Musim Panas Turkiye</daylight>
 				</long>
 			</metazone>
 			<metazone type="Turkmenistan">
@@ -3998,6 +3955,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Waktu Uruguay</generic>
 					<standard>Waktu Standar Uruguay</standard>
 					<daylight>Waktu Musim Panas Uruguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Waktu Urumchi</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -4118,29 +4080,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="other">¤0 rb</pattern>
-					<pattern type="1000" count="other" alt="alphaNextToNumber">¤ 0 rb</pattern>
 					<pattern type="10000" count="other">¤00 rb</pattern>
-					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ 00 rb</pattern>
 					<pattern type="100000" count="other">¤000 rb</pattern>
-					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ 000 rb</pattern>
 					<pattern type="1000000" count="other">¤0 jt</pattern>
-					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤ 0 jt</pattern>
 					<pattern type="10000000" count="other">¤00 jt</pattern>
-					<pattern type="10000000" count="other" alt="alphaNextToNumber">¤ 00 jt</pattern>
 					<pattern type="100000000" count="other">¤000 jt</pattern>
-					<pattern type="100000000" count="other" alt="alphaNextToNumber">¤ 000 jt</pattern>
 					<pattern type="1000000000" count="other">¤0 M</pattern>
-					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0 M</pattern>
 					<pattern type="10000000000" count="other">¤00 M</pattern>
-					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 00 M</pattern>
 					<pattern type="100000000000" count="other">¤000 M</pattern>
-					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 000 M</pattern>
 					<pattern type="1000000000000" count="other">¤0 T</pattern>
-					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 0 T</pattern>
 					<pattern type="10000000000000" count="other">¤00 T</pattern>
-					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 00 T</pattern>
 					<pattern type="100000000000000" count="other">¤000 T</pattern>
-					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000 T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -4975,7 +4925,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName>Guilder Karibia</displayName>
-				<displayName count="other">Guilder Karibia</displayName>
 			</currency>
 			<currency type="XDR">
 				<displayName>Hak Khusus Menggambar</displayName>
@@ -5249,10 +5198,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-millimole-per-liter">
 				<displayName>millimol per liter</displayName>
 				<unitPattern count="other">{0} millimol per liter</unitPattern>
-			</unit>
-			<unit type="concentr-part">
-				<displayName>bagian</displayName>
-				<unitPattern count="other">{0} bagian</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName>bagian per juta</displayName>
@@ -6373,7 +6318,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mmol/L</displayName>
 			</unit>
 			<unit type="concentr-part">
-				<displayName>bagian</displayName>
 				<unitPattern count="other">{0} bagian</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e6">
@@ -6390,7 +6334,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>‱</displayName>
 			</unit>
 			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
+				<unitPattern count="other">{0} Glc</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>
@@ -6518,9 +6462,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>gr</displayName>
 				<unitPattern count="other">{0} gr</unitPattern>
 			</unit>
-			<unit type="pressure-ofhg">
-				<unitPattern count="other">{0} Hg</unitPattern>
-			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>″ Hg</displayName>
 				<unitPattern count="other">{0}″ Hg</unitPattern>
@@ -6574,12 +6515,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<displayName>qt Imp</displayName>
 			</unit>
-			<unit type="angle-steradian">
-				<unitPattern count="other">{0} sr</unitPattern>
+			<unit type="concentr-katal">
+				<unitPattern count="other">{0} kat</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<unitPattern count="other">{0} C</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<unitPattern count="other">{0} F</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<unitPattern count="other">{0} H</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<unitPattern count="other">{0} S</unitPattern>
 			</unit>
 			<unit type="energy-calorie-it">
-				<displayName>kal-IT</displayName>
 				<unitPattern count="other">{0} kal-IT</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<unitPattern count="other">{0} kgf</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<unitPattern count="other">{0} T</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<unitPattern count="other">{0} Wb</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e9">
 				<displayName>bpm</displayName>

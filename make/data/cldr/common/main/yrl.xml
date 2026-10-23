@@ -1114,6 +1114,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="d0" type="fwidth">Turususawa teipausape</type>
 			<type key="d0" type="hwidth">Turususawa pisawera</type>
 			<type key="d0" type="npinyin" draft="contributed">Papasawera</type>
+			<type key="hc" type="c12">Sistẽma 24 húra-ita</type>
+			<type key="hc" type="c24">Sistẽma 24 húra-ita</type>
 			<type key="hc" type="h11">Sistẽma 12 húra-ita (0-11)</type>
 			<type key="hc" type="h12">Sistẽma 24 húra-ita (1-24)</type>
 			<type key="hc" type="h23">Sistẽma 24 húra-ita (0-23)</type>
@@ -1677,6 +1679,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yw" count="other">w'ª' 'sẽmãna' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h – h B</greatestDifference>
@@ -2688,9 +2695,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Riberevili</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Hurariyu Kurasí Ara Biritãniku</daylight>
-				</long>
 				<exemplarCity>Londres</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2778,9 +2782,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Yayapura</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Hurariyu Retewa Irãdei</daylight>
-				</long>
 				<exemplarCity>Dubirĩ</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -3460,13 +3461,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Alasika Kurasí Ara Hurariyu</daylight>
 				</long>
 			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>Aumati Hurariyu</generic>
-					<standard>Aumati Hurariyu Eté</standard>
-					<daylight>Aumati Kurasí Ara Hurariyu</daylight>
-				</long>
-			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic>Amasuna Hurariyu</generic>
@@ -3519,20 +3513,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Apiya Hurariyu</generic>
 					<standard>Apiya Uraruiyu Retewa</standard>
 					<daylight>Apiya Kurasí Ara Hurariyu</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>Akitau Hurariyu</generic>
-					<standard>Akitau Hurariyu Retewa</standard>
-					<daylight>Akitau Kurasí Ara Hurariyu</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>Akitubi Hurariyu</generic>
-					<standard>Akitubi Hurariyu Retewa</standard>
-					<daylight>Akitubi Kurasí Ara Hurariyu</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3640,6 +3620,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>BRT</standard>
 					<daylight>BRST</daylight>
 				</short>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight>Hurariyu Kurasí Ara Biritãniku</daylight>
+				</long>
 			</metazone>
 			<metazone type="Brunei">
 				<long>
@@ -3828,11 +3813,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Guruẽrãdiya Usidẽtawara Kurasí Ara Hurariyu</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard>Guwã Hurariyu Retewa</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>Golfo Hurariyu</standard>
@@ -3906,6 +3886,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Irã Kurasí Ara Hurariyu</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight>Hurariyu Retewa Irãdei</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Irkutisiki Hurariyu</generic>
@@ -3968,11 +3953,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Kirigiretãma Hurariyu</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard>Rãka Hurariyu</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>Kapuã-ita Inĩbu Hurariyu</standard>
@@ -3983,13 +3963,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Lurudi Howe Hurariyu</generic>
 					<standard>Lurudi Howe Hurariyu Retewa</standard>
 					<daylight>Lurudi Howe Kurasí Ara Hurariyu</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic>Makau Hurariyu</generic>
-					<standard>Makau Hurariyu Retewa</standard>
-					<daylight>Makau Kurasí Ara Hurariyu</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -4107,11 +4080,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Fenãdu Nuruyã Kurasí Ara Hurariyu</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard>Kapuã-ita Mariyãna Nuti suí Hurariyu</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>Sibirisiki Pisasú Hurariyu</generic>
@@ -4191,13 +4159,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Piúgiãgi Hurariyu</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>Kisiroda Hurariyu</generic>
-					<standard>Kisiroda Hurariyu Retewa</standard>
-					<daylight>Kisiroda Kurasí Ara Hurariyu</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>Yumuatirisawa Hurariyu</standard>
@@ -4224,9 +4185,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samowa Hurariyu</generic>
 					<standard>Samowa Hurariyu Retewa</standard>
-					<daylight>Samowa Kurasí Ara Hurariyu</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4412,29 +4371,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
 				<decimalFormat>
-					<pattern type="1000" count="one">0 miu</pattern>
 					<pattern type="1000" count="other">0 miu</pattern>
-					<pattern type="10000" count="one">00 miu</pattern>
 					<pattern type="10000" count="other">00 miu</pattern>
-					<pattern type="100000" count="one">000 miu</pattern>
 					<pattern type="100000" count="other">000 miu</pattern>
-					<pattern type="1000000" count="one">0 mi</pattern>
 					<pattern type="1000000" count="other">0 mi</pattern>
-					<pattern type="10000000" count="one">00 mi</pattern>
 					<pattern type="10000000" count="other">00 mi</pattern>
-					<pattern type="100000000" count="one">000 mi</pattern>
 					<pattern type="100000000" count="other">000 mi</pattern>
-					<pattern type="1000000000" count="one">0 bi</pattern>
 					<pattern type="1000000000" count="other">0 bi</pattern>
-					<pattern type="10000000000" count="one">00 bi</pattern>
 					<pattern type="10000000000" count="other">00 bi</pattern>
-					<pattern type="100000000000" count="one">000 bi</pattern>
 					<pattern type="100000000000" count="other">000 bi</pattern>
-					<pattern type="1000000000000" count="one">0 tiri</pattern>
 					<pattern type="1000000000000" count="other">0 tiri</pattern>
-					<pattern type="10000000000000" count="one">00 tiri</pattern>
 					<pattern type="10000000000000" count="other">00 tiri</pattern>
-					<pattern type="100000000000000" count="one">000 tiri</pattern>
 					<pattern type="100000000000000" count="other">000 tiri</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
@@ -4791,11 +4738,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Yuwã Xinawara (offshore)</displayName>
 				<displayName count="one">Yuwã Xinawara (offshore)</displayName>
 				<displayName count="other">Yuwã-ita Xinawara (offshore)</displayName>
-			</currency>
-			<currency type="CNX">
-				<displayName>Dóra Bãku Pupulari Xinawara suí</displayName>
-				<displayName count="one" draft="contributed">Dóra Bãku Pupulari Xinawara suí</displayName>
-				<displayName count="other" draft="contributed">Dóra-ita Bãku Pupulari Xinawara suí</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>Yuwã Xinawara</displayName>
