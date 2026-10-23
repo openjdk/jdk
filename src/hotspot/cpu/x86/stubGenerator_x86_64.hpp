@@ -104,6 +104,8 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_vector_byte_perm_mask();
 
+  address generate_vector_byte_shift_gfni_matrix();
+
   address generate_vector_fp_mask(StubId stub_id, int64_t mask);
 
   address generate_vector_custom_i32(StubId stub_id, Assembler::AvxVectorLen len,
