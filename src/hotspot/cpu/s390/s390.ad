@@ -9953,9 +9953,9 @@ instruct cmpL3_reg_reg(iRegI dst, iRegL src1, iRegL src2, flagsReg cr) %{
   format %{ "CmpL3 $dst,$src1,$src2" %}
   ins_encode %{
     __ z_cgr($src1$$Register, $src2$$Register);
-    __ z_lhi($dst$$Register, 1);
-    __ z_lochi($dst$$Register, 0, Assembler::bcondEqual);
-    __ z_lochi($dst$$Register, -1, Assembler::bcondLow);
+    __ load_const_optimized($dst$$Register, 1);
+    __ load_on_condition_imm_32($dst$$Register, 0, Assembler::bcondEqual);
+    __ load_on_condition_imm_32($dst$$Register, -1, Assembler::bcondLow);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -9968,9 +9968,9 @@ instruct cmpU3_reg_reg(iRegI dst, iRegI src1, iRegI src2, flagsReg cr)%{
   format %{ "cmpU3 $dst,$src1,$src2" %}
   ins_encode %{
     __ z_clr($src1$$Register, $src2$$Register);
-    __ z_lhi($dst$$Register, 1);
-    __ z_lochi($dst$$Register, 0, Assembler::bcondEqual);
-    __ z_lochi($dst$$Register, -1, Assembler::bcondLow);
+    __ load_const_optimized($dst$$Register, 1);
+    __ load_on_condition_imm_32($dst$$Register, 0, Assembler::bcondEqual);
+    __ load_on_condition_imm_32($dst$$Register, -1, Assembler::bcondLow);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -9983,9 +9983,9 @@ instruct cmpUL3_reg_reg(iRegI dst, iRegL src1, iRegL src2, flagsReg cr)%{
   format %{ "cmpUL3 $dst,$src1,$src2" %}
   ins_encode %{
     __ z_clgr($src1$$Register, $src2$$Register);
-    __ z_lhi($dst$$Register, 1);
-    __ z_lochi($dst$$Register, 0, Assembler::bcondEqual);
-    __ z_lochi($dst$$Register, -1, Assembler::bcondLow);
+    __ load_const_optimized($dst$$Register, 1);
+    __ load_on_condition_imm_32($dst$$Register, 0, Assembler::bcondEqual);
+    __ load_on_condition_imm_32($dst$$Register, -1, Assembler::bcondLow);
   %}
   ins_pipe(pipe_class_dummy);
 %}
