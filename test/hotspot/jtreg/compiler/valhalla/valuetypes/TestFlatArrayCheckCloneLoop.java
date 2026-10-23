@@ -29,7 +29,7 @@ import jdk.internal.value.ValueClass;
  * @summary [valhalla] "adr_type for memory phis only" assert failure
  * @enablePreview
  * @modules java.base/jdk.internal.value
- * @run main/othervm -XX:CompileCommand=dontinline, ${test.main.class}::notInlined -XX:-BackgroundCompilation ${test.main.class}
+ * @run main/othervm -XX:CompileCommand=dontinline,${test.main.class}::notInlined -XX:-BackgroundCompilation ${test.main.class}
  * @run main ${test.main.class}
  */
 
