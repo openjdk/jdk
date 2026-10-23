@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,18 +35,21 @@ struct ZMemoryUsageInfo {
   size_t _young_capacity;
   size_t _old_used;
   size_t _old_capacity;
+  size_t _max_capacity;
 };
 
 static ZMemoryUsageInfo compute_memory_usage_info() {
   const size_t capacity = ZHeap::heap()->capacity();
   const size_t old_used = ZHeap::heap()->used_old();
   const size_t young_used = ZHeap::heap()->used_young();
+  const size_t max_capacity = ZHeap::heap()->dynamic_max_capacity();
 
   ZMemoryUsageInfo info;
   info._old_used = MIN2(old_used, capacity);
   info._old_capacity = info._old_used;
   info._young_capacity = capacity - info._old_capacity;
   info._young_used = MIN2(young_used, info._young_capacity);
+  info._max_capacity = MAX2(capacity, max_capacity);
   return info;
 }
 
@@ -143,10 +146,14 @@ MemoryUsage ZServiceabilityMemoryPool::get_memory_usage() {
   const ZMemoryUsageInfo info = compute_memory_usage_info();
 
   if (_generation_id == ZGenerationId::young) {
-    return MemoryUsage(initial_size(), info._young_used, info._young_capacity, max_size());
+    return MemoryUsage(initial_size(), info._young_used, info._young_capacity, info._max_capacity);
   } else {
-    return MemoryUsage(initial_size(), info._old_used, info._old_capacity, max_size());
+    return MemoryUsage(initial_size(), info._old_used, info._old_capacity, info._max_capacity);
   }
+}
+
+size_t ZServiceabilityMemoryPool::max_size() const {
+  return ZHeap::heap()->dynamic_max_capacity();
 }
 
 ZServiceabilityMemoryManager::ZServiceabilityMemoryManager(const char* name,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,7 @@ class KlassInfoEntry: public CHeapObj<mtInternal> {
   int compare(KlassInfoEntry* e1, KlassInfoEntry* e2);
   void print_on(outputStream* st) const;
   const char* name() const;
+  const char* layout() const;
 };
 
 class KlassInfoClosure : public StackObj {
@@ -204,7 +205,7 @@ class KlassInfoClosure;
 
 class HeapInspection : public StackObj {
  public:
-  void heap_inspection(outputStream* st, WorkerThreads* workers) NOT_SERVICES_RETURN;
+  void heap_inspection(outputStream* st, uint num_workers) NOT_SERVICES_RETURN;
   uintx populate_table(KlassInfoTable* cit, BoolObjectClosure* filter, WorkerThreads* workers) NOT_SERVICES_RETURN_(0);
   static void find_instances_at_safepoint(Klass* k, GrowableArray<oop>* result) NOT_SERVICES_RETURN;
 };

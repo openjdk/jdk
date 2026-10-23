@@ -34,6 +34,7 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
+#include "code/aotCodeCache.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -116,8 +117,63 @@ void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
   }
 #endif
 
+  log_ac_region();
+
   log_info(aot, map)("[End of AOT cache map]");
 }
+
+
+static void log_embedded_stub(const intptr_t pointer, const uint size, const uint stub_id, const char* stub_name, const uint entry_id) {
+  log_debug(aot, map)(PTR_FORMAT ": @@ %-17s %d id=%d blob=%d %s",
+    pointer, "EmbeddedStub", size, stub_id, entry_id, stub_name);
+}
+
+void AOTMapLogger::log_ac_region() {
+  ResourceMark rm;
+
+  AOTCodeCache* cache = AOTCodeCache::open_for_dump();
+  if (cache != nullptr) {
+    AOTCodeEntry* entries = cache->_store_entries; // Pointer to latest entry
+    uint code_count = cache->_store_entries_cnt;
+
+    for (int i = code_count - 1; i >= 0; i--) {
+      AOTCodeEntry* entry = &entries[i];
+      if (entry == nullptr || entry->load_fail()) {
+        continue;
+      }
+
+      uint name_offset = entry->offset() + entry->name_offset();
+      const char* name = cache-> _store_buffer + name_offset;
+
+      switch (entry->kind()) {
+      case  AOTCodeEntry::Kind::Nmethod:
+        log_debug(aot, map)(PTR_FORMAT ": @@ %-17s %d level=%d id=%d %s",
+          p2i(entry), AOTCodeCache::get_kind_name(entry->kind()),
+          entry->size(), entry->comp_level(), entry->comp_id(), name);
+        break;
+      case  AOTCodeEntry::Kind::StubGenBlob:
+        {
+          BlobId blob_id = (BlobId) entry->id();
+
+          //First we log the stub blob
+          log_debug(aot, map)(PTR_FORMAT ": @@ %-17s %d id=%d %s",
+            p2i(entry), AOTCodeCache::get_kind_name(entry->kind()),
+            entry->size(), entry->id(), StubInfo::name(blob_id));
+
+          //Now we log each stub embedded inside the blob
+          cache->iterate_embedded_stubs(entry,  log_embedded_stub);
+        }
+        break;
+      default:
+        log_debug(aot, map)(PTR_FORMAT ": @@ %-17s %d id=%d %s",
+          p2i(entry), AOTCodeCache::get_kind_name(entry->kind()),
+          entry->size(), entry->id(), name);
+        break;
+      }
+    }
+  }
+}
+
 
 // This class is used to find the location and type of all the
 // archived metaspace objects.
