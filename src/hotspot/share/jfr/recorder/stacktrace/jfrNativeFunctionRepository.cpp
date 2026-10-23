@@ -25,7 +25,6 @@
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/stacktrace/jfrNativeFunctionRepository.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
-#include "jvm_io.h"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
@@ -138,7 +137,6 @@ traceid JfrNativeFunctionRepository::id_for(uintptr_t pc) {
   JfrNativeAddressRange* range = _addresses->put_if_absent(JfrNativeAddressRange::key(pc), &created);
   if (created) {
     range->_id = _next_range_id++;
-    _addresses->maybe_grow();
   }
   if (range->set(pc)) {
     _unwritten_pcs->append(pc);
@@ -160,8 +158,7 @@ static bool parse_build_id(const dl_phdr_info* info, const ElfW(Phdr)* phdr, cha
     const ElfW(Nhdr)* nhdr = reinterpret_cast<const ElfW(Nhdr)*>(pos);
     const char* name = pos + sizeof(ElfW(Nhdr));
     const char* desc = name + align_up(nhdr->n_namesz, 4);
-    pos = desc + align_up(nhdr->n_descsz, 4);
-    if (pos > end) {
+    if (desc + nhdr->n_descsz > end) {
       return false;
     }
 
@@ -175,6 +172,8 @@ static bool parse_build_id(const dl_phdr_info* info, const ElfW(Phdr)* phdr, cha
       build_id[bytes * 2] = '\0';
       return true;
     }
+
+    pos = desc + align_up(nhdr->n_descsz, 4);
   }
   return false;
 }

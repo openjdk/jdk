@@ -72,7 +72,7 @@ class JfrCPUTimeTraceQueue {
   volatile LockState _lock;
   u1* _data;
   u4 _capacity;
-  u4 _offset;   // byte offset of the next empty slot
+  u4 _head;  // byte offset of the next empty slot
 
   volatile u4 _lost_samples;
   volatile u4 _lost_samples_due_to_queue_full;
@@ -93,7 +93,7 @@ class JfrCPUTimeTraceQueue {
   // request at the given byte offset
   JfrCPUTimeSampleRequest& at(u4 offset) const;
 
-  u4 size() const { return _offset; }
+  u4 size() const;
 
   // deletes all samples in the queue
   void set_capacity(u4 capacity);

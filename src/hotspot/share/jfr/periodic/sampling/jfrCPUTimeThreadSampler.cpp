@@ -73,7 +73,7 @@ static JavaThread* get_java_thread_if_valid() {
 }
 
 JfrCPUTimeTraceQueue::JfrCPUTimeTraceQueue(u4 capacity) :
-   _lock(UNLOCKED), _data(nullptr), _capacity(capacity), _offset(0), _lost_samples(0), _lost_samples_due_to_queue_full(0) {
+   _lock(UNLOCKED), _data(nullptr), _capacity(capacity), _head(0), _lost_samples(0), _lost_samples_due_to_queue_full(0) {
   if (capacity != 0) {
     _data = JfrCHeapObj::new_array<u1>(capacity);
   }
@@ -126,20 +126,20 @@ bool JfrCPUTimeTraceQueue::enqueue(JfrCPUTimeSampleRequest& request) {
   assert(&JavaThread::current()->jfr_thread_local()->cpu_time_jfr_queue() == this, "invariant");
 
   u4 size = request.size();
-  u4 offset = _offset;
+  u4 offset = _head;
   assert(is_aligned(offset, sizeof(address)), "invariant");
   if (offset + size > _capacity) {
     return false;
   }
 
   memcpy(_data + offset, &request, size);
-  _offset = offset + size;
+  _head = offset + size;
   return true;
 }
 
 JfrCPUTimeSampleRequest& JfrCPUTimeTraceQueue::at(u4 offset) const {
   assert(lock_state() == DEQUEUE, "invariant");
-  assert(offset < _offset, "invariant");
+  assert(offset < _head, "invariant");
   assert(is_aligned(offset, sizeof(address)), "invariant");
   return *reinterpret_cast<JfrCPUTimeSampleRequest*>(_data + offset);
 }
@@ -156,7 +156,7 @@ void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
   if (capacity == _capacity) {
     return;
   }
-  _offset = 0;
+  _head = 0;
   if (_data != nullptr) {
     assert(_capacity != 0, "invariant");
     JfrCHeapObj::free(_data, _capacity);
@@ -200,7 +200,7 @@ void JfrCPUTimeTraceQueue::deallocate() {
 
 void JfrCPUTimeTraceQueue::clear() {
   assert(lock_state() == DEQUEUE, "invariant");
-  _offset = 0;
+  _head = 0;
 }
 
 void JfrCPUTimeTraceQueue::resize_if_needed() {
@@ -654,6 +654,7 @@ static bool check_state(JavaThread* thread) {
 
 // Walks the native part of the stack until the topmost Java frame
 // and collects PC addresses of the native frames to the provided array.
+// The native stack trace is truncated when it is deeper than max_frames.
 u4 JfrCPUSamplerThread::walk_native_stack(const void* ucontext, JavaThread* jt, address* pcs, u4 max_frames) {
   assert(max_frames <= MAX_NATIVE_STACK_DEPTH, "invariant");
 
@@ -712,7 +713,7 @@ void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
     request._native_pc_count = walk_native_stack(context, jt, request._native_pcs, native_stack_depth);
   }
 
-  const bool was_empty = queue.is_empty();
+  bool was_empty = queue.size() == 0;
   if (queue.enqueue(request)) {
     if (was_empty) {
       tl->set_has_cpu_time_jfr_requests(true);
