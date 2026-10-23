@@ -47,9 +47,9 @@ class CustomRunTest extends AbstractTest {
     private final List<DeclaredTest> tests;
     private final RunInfo runInfo;
 
-    public CustomRunTest(Method runMethod, Warmup warmUpAnno, Run runSpecification, List<DeclaredTest> tests, boolean skip) {
+    public CustomRunTest(Method runMethod, Warmup warmUpAnno, Run runSpecification, List<DeclaredTest> tests) {
         // Make sure we can also call non-public or public methods in package private classes
-        super(warmUpAnno != null ? warmUpAnno.value() : TestVM.WARMUP_ITERATIONS, skip);
+        super(warmUpAnno != null ? warmUpAnno.value() : TestVM.WARMUP_ITERATIONS);
         TestFormat.checkNoThrow(warmupIterations >= 0, "Cannot have negative value for @Warmup at " + runMethod);
         runMethod.setAccessible(true);
         this.runMethod = runMethod;
@@ -78,9 +78,6 @@ class CustomRunTest extends AbstractTest {
 
     @Override
     public void run() {
-        if (skip) {
-            return;
-        }
         switch (mode) {
             case STANDALONE -> {
                 runInfo.setWarmUpFinished();
