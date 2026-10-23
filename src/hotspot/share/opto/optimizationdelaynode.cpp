@@ -33,12 +33,20 @@ const Type* OptimizationDelayNode::Value(PhaseGVN* phase) const {
   if (t_in == Type::TOP || _stage == OptimizationDelayNode::Stage::RevealType) {
     return t_in;
   }
-  // TODO: do we really need the meet for CCP? Why?
-  // Ah I see. I think we could also return just the hold_type,
-  // since we know it is correct. But if CCP ends up getting a
-  // wider input type, because it is not as good as IGVN, then
-  // this becomes a type assertion. Not sure we want that?
-  // We could also have 2 modes here.
+
+  // By default, we just hold the type.
+  //
+  // For IGVN, _hold_type should always be wider than t_in,
+  // and so the meet is always the _hold_type. Hence, the
+  // delay ensures we have less information than at the
+  // input node.
+  //
+  // For CCP, t_in will start at TOP, and slowly widen.
+  // As long as t_in is narrower than hold_type, the
+  // meet will deliver a less precise result. Once
+  // t_in is wider than _hold_type, we return t_in
+  // so that the delay node does not encode more
+  // precise information.
   return _hold_type->meet(t_in);
 }
 
