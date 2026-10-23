@@ -11972,8 +11972,8 @@ instruct vfnma2D(vecX dst, vecX src1, vecX src2) %{
 instruct vshiftcntL(vecX dst, iRegI cnt) %{
   match(Set dst (LShiftCntV cnt));
   ins_encode %{
-    __ z_vlvgb($dst$$VectorRegister, $cnt$$Register, 0); // insert into byte element 0
-    __ z_vrepb($dst$$VectorRegister, $dst$$VectorRegister, 0); // replicate to all 16 bytes
+    __ z_vlvgf($dst$$VectorRegister, $cnt$$Register, 0); // insert into byte element 0
+    __ z_vrepf($dst$$VectorRegister, $dst$$VectorRegister, 0); // replicate to all 16 bytes
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -11981,8 +11981,8 @@ instruct vshiftcntL(vecX dst, iRegI cnt) %{
 instruct vshiftcntR(vecX dst, iRegI cnt) %{
   match(Set dst (RShiftCntV cnt));
   ins_encode %{
-    __ z_vlvgb($dst$$VectorRegister, $cnt$$Register, 0);
-    __ z_vrepb($dst$$VectorRegister, $dst$$VectorRegister, 0);
+    __ z_vlvgf($dst$$VectorRegister, $cnt$$Register, 0);
+    __ z_vrepf($dst$$VectorRegister, $dst$$VectorRegister, 0);
   %}
   ins_pipe(pipe_class_dummy);
 %}
