@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8395341
+ * @bug 8395341 8391910
  * @summary Conditional moves whose condition is a VectorTest are matched.
  *
  * A diamond controlled by VectorMask.anyTrue()/allTrue() is collapsed into a
@@ -45,9 +45,11 @@
 package compiler.c2.riscv64;
 
 import compiler.lib.ir_framework.CompLevel;
+import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Run;
+import compiler.lib.ir_framework.Scenario;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
 
@@ -65,9 +67,18 @@ public class TestVectorTestCMove {
     private static final long SOME = 1L;  // only lane 0 set  -> anyTrue
     private static final long NONE = 0L;  // no lane set      -> neither
 
+    private static final Object FIRST = new Object();
+    private static final Object SECOND = new Object();
+
+    private static final Object[] ARRAY_SOURCE = {FIRST, SECOND};
+    private static final Object[] ARRAY_RESULT = new Object[1];
+
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
         framework.addFlags("--add-modules=jdk.incubator.vector");
+        framework.addScenarios(
+            new Scenario(0, "-XX:+UseCompressedOops"),
+            new Scenario(1, "-XX:-UseCompressedOops"));
         framework.start();
     }
 
@@ -125,6 +136,42 @@ public class TestVectorTestCMove {
     @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ALLTRUE, ">0"})
     static double allTrueD(long bits, double a, double b) {
         return VectorMask.fromLong(SPECIES, bits).allTrue() ? a : b;
+    }
+
+    @Test(compLevel = CompLevel.C2)
+    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ANYTRUE, ">0"},
+        phase = CompilePhase.FINAL_CODE,
+        applyIf = {"UseCompressedOops", "false"})
+    static Object anyTrueP(long bits, Object first, Object second) {
+        return VectorMask.fromLong(SPECIES, bits).anyTrue() ? first : second;
+    }
+
+    @Test(compLevel = CompLevel.C2)
+    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ALLTRUE, ">0"},
+        phase = CompilePhase.FINAL_CODE,
+        applyIf = {"UseCompressedOops", "false"})
+    static Object allTrueP(long bits, Object first, Object second) {
+        return VectorMask.fromLong(SPECIES, bits).allTrue() ? first : second;
+    }
+
+    @Test(compLevel = CompLevel.C2)
+    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ANYTRUE, ">0"},
+        phase = CompilePhase.FINAL_CODE,
+        applyIf = {"UseCompressedOops", "true"})
+    static void anyTrueN(long bits) {
+        Object first = ARRAY_SOURCE[0];
+        Object second = ARRAY_SOURCE[1];
+        ARRAY_RESULT[0] = VectorMask.fromLong(SPECIES, bits).anyTrue() ? first : second;
+    }
+
+    @Test(compLevel = CompLevel.C2)
+    @IR(counts = {IRNode.RISCV_CMOVE_VTEST_ALLTRUE, ">0"},
+        phase = CompilePhase.FINAL_CODE,
+        applyIf = {"UseCompressedOops", "true"})
+    static void allTrueN(long bits) {
+        Object first = ARRAY_SOURCE[0];
+        Object second = ARRAY_SOURCE[1];
+        ARRAY_RESULT[0] = VectorMask.fromLong(SPECIES, bits).allTrue() ? first : second;
     }
 
     // ---------------- driver ----------------
@@ -187,5 +234,39 @@ public class TestVectorTestCMove {
         Asserts.assertEQ(allTrueD(ALL, 7d, 9d), 7d);
         Asserts.assertEQ(allTrueD(SOME, 7d, 9d), 9d);
         Asserts.assertEQ(allTrueD(NONE, 7d, 9d), 9d);
+    }
+
+    @Run(test = "anyTrueP")
+    public void runAnyTrueP() {
+        Asserts.assertSame(anyTrueP(ALL, FIRST, SECOND), FIRST);
+        Asserts.assertSame(anyTrueP(SOME, FIRST, SECOND), FIRST);
+        Asserts.assertSame(anyTrueP(NONE, FIRST, SECOND), SECOND);
+    }
+
+    @Run(test = "allTrueP")
+    public void runAllTrueP() {
+        Asserts.assertSame(allTrueP(ALL, FIRST, SECOND), FIRST);
+        Asserts.assertSame(allTrueP(SOME, FIRST, SECOND), SECOND);
+        Asserts.assertSame(allTrueP(NONE, FIRST, SECOND), SECOND);
+    }
+
+    @Run(test = "anyTrueN")
+    public void runAnyTrueN() {
+        anyTrueN(ALL);
+        Asserts.assertSame(ARRAY_RESULT[0], FIRST);
+        anyTrueN(SOME);
+        Asserts.assertSame(ARRAY_RESULT[0], FIRST);
+        anyTrueN(NONE);
+        Asserts.assertSame(ARRAY_RESULT[0], SECOND);
+    }
+
+    @Run(test = "allTrueN")
+    public void runAllTrueN() {
+        allTrueN(ALL);
+        Asserts.assertSame(ARRAY_RESULT[0], FIRST);
+        allTrueN(SOME);
+        Asserts.assertSame(ARRAY_RESULT[0], SECOND);
+        allTrueN(NONE);
+        Asserts.assertSame(ARRAY_RESULT[0], SECOND);
     }
 }
