@@ -57,10 +57,6 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#ifndef _WINDOWS
-#include <sys/param.h>
-#endif
-
 #include "jni_util.h"
 
 DEF_STATIC_JNI_OnLoad
