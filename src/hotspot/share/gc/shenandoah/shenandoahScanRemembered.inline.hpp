@@ -323,7 +323,7 @@ template <typename ClosureType>
 inline void
 ShenandoahScanRemembered::process_humongous_clusters(ShenandoahHeapRegion* r, size_t first_cluster, size_t count,
                                                      HeapWord *end_of_range, ClosureType *cl, bool use_write_table) {
-  ShenandoahHeapRegion* start_region = r->humongous_start_region();
+  ShenandoahHeapRegion* start_region = ShenandoahHeap::heap()->get_region(r->humongous_start_region());
   HeapWord* p = start_region->bottom();
   oop obj = cast_to_oop(p);
   assert(r->is_humongous(), "Only process humongous regions here");
@@ -381,7 +381,7 @@ ShenandoahScanRemembered::process_region_slice(ShenandoahHeapRegion *region, siz
   // be fully processed by process_clusters. In no case should we need to scan past end_of_range.
   if (start_of_range < end_of_range) {
     if (region->is_humongous()) {
-      ShenandoahHeapRegion* start_region = region->humongous_start_region();
+      ShenandoahHeapRegion* start_region = ShenandoahHeap::heap()->get_region(region->humongous_start_region());
       process_humongous_clusters(start_region, start_cluster_no, clusters, end_of_range, cl, use_write_table);
     } else {
       process_clusters(start_cluster_no, clusters, end_of_range, cl, use_write_table, worker_id);

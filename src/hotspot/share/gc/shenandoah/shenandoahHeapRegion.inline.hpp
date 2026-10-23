@@ -207,4 +207,11 @@ inline void ShenandoahHeapRegion::record_unpin(size_t value) {
   _critical_pins.sub_then_fetch(value, memory_order_relaxed);
 }
 
+inline uint32_t ShenandoahHeapRegion::humongous_start_region() const {
+  assert(is_humongous(), "Must be part of a humongous object");
+  assert(_humongous_start_region_index != UndefinedRegionIndex, "Bad start region index");
+  return _humongous_start_region_index;
+}
+
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP

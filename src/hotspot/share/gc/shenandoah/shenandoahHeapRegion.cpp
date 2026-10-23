@@ -74,7 +74,8 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _mixed_candidate_garbage_words(0),
   _update_watermark(start),
   _age(0),
-  _needs_bitmap_reset(false) {
+  _needs_bitmap_reset(false),
+  _humongous_start_region_index(UndefinedRegionIndex) {
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
          "invalid space boundaries");
   if (ZapUnusedHeapArea && committed) {
@@ -102,6 +103,7 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
       set_state(_regular);
     case _regular:
     case _pinned:
+      assert(_humongous_start_region_index == UndefinedRegionIndex, "state machine");
       return;
     default:
       report_illegal_transition("regular allocation");
@@ -158,15 +160,21 @@ void ShenandoahHeapRegion::make_regular_bypass() {
       do_commit();
     case _empty_committed:
     case _cset:
+      assert(_humongous_start_region_index == UndefinedRegionIndex, "state machine");
     case _humongous_start:
     case _humongous_cont:
+#ifdef ASSERT
+      _humongous_start_region_index = UndefinedRegionIndex;
+#endif
       set_state(_regular);
       return;
     case _pinned_cset:
       set_state(_pinned);
+      assert(_humongous_start_region_index == UndefinedRegionIndex, "state machine");
       return;
     case _regular:
     case _pinned:
+      assert(_humongous_start_region_index == UndefinedRegionIndex, "state machine");
       return;
     default:
       report_illegal_transition("regular bypass");
@@ -180,6 +188,7 @@ void ShenandoahHeapRegion::make_humongous_start() {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
+      _humongous_start_region_index = index();
       set_state(_humongous_start);
       return;
     default:
@@ -198,6 +207,7 @@ void ShenandoahHeapRegion::make_humongous_start_bypass(ShenandoahAffiliation aff
     case _regular:
     case _humongous_start:
     case _humongous_cont:
+      _humongous_start_region_index = index();
       set_state(_humongous_start);
       return;
     default:
@@ -205,31 +215,35 @@ void ShenandoahHeapRegion::make_humongous_start_bypass(ShenandoahAffiliation aff
   }
 }
 
-void ShenandoahHeapRegion::make_humongous_cont() {
+void ShenandoahHeapRegion::make_humongous_cont(uint32_t start) {
   shenandoah_assert_heaplocked();
   reset_age();
+  assert(ShenandoahHeap::heap()->get_region(start)->is_humongous_start(), "Precondition");
   switch (state()) {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
-     set_state(_humongous_cont);
+      _humongous_start_region_index = start;
+      set_state(_humongous_cont);
       return;
     default:
       report_illegal_transition("humongous continuation allocation");
   }
 }
 
-void ShenandoahHeapRegion::make_humongous_cont_bypass(ShenandoahAffiliation affiliation) {
+void ShenandoahHeapRegion::make_humongous_cont_bypass(ShenandoahAffiliation affiliation, uint32_t start) {
   shenandoah_assert_heaplocked();
   assert (ShenandoahHeap::heap()->is_full_gc_in_progress(), "only for full GC");
   set_affiliation(affiliation);
   // Don't bother to account for affiliated regions during Full GC.  We recompute totals at end.
   reset_age();
+  assert(ShenandoahHeap::heap()->get_region(start)->is_humongous_start(), "Precondition");
   switch (state()) {
     case _empty_committed:
     case _regular:
     case _humongous_start:
     case _humongous_cont:
+      _humongous_start_region_index = start;
       set_state(_humongous_cont);
       return;
     default:
@@ -311,6 +325,9 @@ void ShenandoahHeapRegion::make_trash() {
       // Reclaiming cset regions
     case _regular:
       // Immediate region reclaim
+#ifdef ASSERT
+      _humongous_start_region_index = UndefinedRegionIndex;
+#endif
       set_state(_trash);
       return;
     default:
@@ -530,11 +547,11 @@ size_t get_card_count(size_t words) {
 void ShenandoahHeapRegion::oop_iterate_humongous_slice_dirty(OopIterateClosure* blk,
                                                              HeapWord* start, size_t words, bool write_table) const {
   assert(is_humongous(), "only humongous region here");
-  ShenandoahHeapRegion* r = humongous_start_region();
+  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
+  ShenandoahHeapRegion* r = heap->get_region(humongous_start_region());
   oop obj = cast_to_oop(r->bottom());
   size_t num_cards = get_card_count(words);
 
-  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
   size_t card_index = scanner->card_index_for_addr(start);
   if (write_table) {
@@ -557,28 +574,12 @@ void ShenandoahHeapRegion::oop_iterate_humongous_slice_dirty(OopIterateClosure* 
 void ShenandoahHeapRegion::oop_iterate_humongous_slice_all(OopIterateClosure* cl, HeapWord* start, size_t words) const {
   assert(is_humongous(), "only humongous region here");
 
-  ShenandoahHeapRegion* r = humongous_start_region();
+  ShenandoahHeapRegion* r = ShenandoahHeap::heap()->get_region(humongous_start_region());
   oop obj = cast_to_oop(r->bottom());
 
   // Scan all data, regardless of whether cards are dirty
   obj->oop_iterate(cl, MemRegion(start, start + words));
 }
-
-ShenandoahHeapRegion* ShenandoahHeapRegion::humongous_start_region() const {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  assert(is_humongous(), "Must be a part of the humongous region");
-  size_t i = index();
-  ShenandoahHeapRegion* r = const_cast<ShenandoahHeapRegion*>(this);
-  while (!r->is_humongous_start()) {
-    assert(i > 0, "Sanity");
-    i--;
-    r = heap->get_region(i);
-    assert(r->is_humongous(), "Must be a part of the humongous region");
-  }
-  assert(r->is_humongous_start(), "Must be");
-  return r;
-}
-
 
 void ShenandoahHeapRegion::recycle_internal() {
   assert(_recycling.is_set() && is_trash(), "Wrong state");
