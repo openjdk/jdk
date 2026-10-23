@@ -30,10 +30,18 @@ Java_compiler_valhalla_valuetypes_TestCCMismatchNativeMethods_00024B1_m1(JNIEnv*
   return (*env)->GetIntField(env, vt2, fid);
 }
 
+JNIEXPORT jobject JNICALL
+Java_compiler_valhalla_valuetypes_TestCCMismatchNativeMethods_00024B1_m2(JNIEnv* env, jobject receiver) {
+  jclass cls = (*env)->FindClass(env, "compiler/valhalla/valuetypes/TestCCMismatchNativeMethods$A1");
+  jfieldID fid = (*env)->GetFieldID(env, cls, "x", "I");
+  return (*env)->GetIntField(env, vt2, fid);
+}
+
+
 JNIEXPORT jint JNICALL
 Java_compiler_valhalla_valuetypes_TestCCMismatchNativeMethods_00024D2_m1(JNIEnv* env, jobject receiver, jobject vt1, jobject vt2) {
   jclass cls = (*env)->GetObjectClass(env, vt2);
-  jfieldID fid = (*env)->GetFieldID(env, cls, "x", "I");
-  return (*env)->GetIntField(env, vt2, fid);
+  jfieldID fid = (*env)->GetStaticFieldID(env, cls, "x", "I");
+  return (*env)->GetStaticIntField(env, vt2, fid);
 }
 

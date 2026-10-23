@@ -41,13 +41,20 @@ public class TestCCMismatchNativeMethods {
     value record V1(int x) { }
 
     static class A1 {
+        static V1 fieldV1 = new V1(42);
+
         int m1(V1 v1, V1 v2) {
             return v1.x;
+        }
+
+        V1 m2() {
+            return fieldV1;
         }
     }
 
     static class B1 extends A1 {
         native int m1(V1 v1, V1 v2);
+        native V1 m2();
     }
 
     static class C1 extends A1 {
@@ -77,6 +84,10 @@ public class TestCCMismatchNativeMethods {
         return a.m1(v, v);
     }
 
+    static int test3(A1 a) {
+        return a.m2().x;
+    }
+    
     public static void main(String[] args) {
         A1 a1 = new A1();
         B1 b1 = new B1();
@@ -85,19 +96,48 @@ public class TestCCMismatchNativeMethods {
         B2 b2 = new B2();
         C2 c2 = new C2();
         for (int i = 0; i < 20_000; i++) {
-            test1(a1, new V1(42));
-            test1(b1, new V1(42));
-            test1(c1, new V1(42));
-            test2(a2, new V1(42));
-            test2(b2, new V1(42));
-            test2(c2, new V1(42));
+            if (test1(a1, new V1(42)) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
+            if (test1(b1, new V1(42)) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
+            if (test1(c1, new V1(42)) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
+            if (test2(a2, new V1(42)) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
+            if (test2(b2, new V1(42)) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
+            if (test2(c2, new V1(42)) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
+            if (test3(a1) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
+            if (test3(b1) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
+            if (test3(c1) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
         }
         D2 d2 = new D2();
         for (int i = 0; i < 20_000; i++) {
-            test2(a2, new V1(42));
-            test2(b2, new V1(42));
-            test2(c2, new V1(42));
-            test2(d2, new V1(42));
+            if (test2(a2, new V1(42)) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
+            if (test2(b2, new V1(42)) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
+            if (test2(c2, new V1(42)) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
+            if (test2(d2, new V1(42)) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
         }
     }
 }
