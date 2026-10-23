@@ -67,9 +67,6 @@
 class Scheduling {
 
 private:
-  // Arena to use
-  Arena *_arena;
-
   // Control-Flow Graph info
   PhaseCFG *_cfg;
 
@@ -80,20 +77,20 @@ private:
   uint _node_bundling_limit;
 
   // List of scheduled nodes. Generated in reverse order
-  Node_List _scheduled;
+  Node_List<Node> _scheduled;
 
   // List of nodes currently available for choosing for scheduling
-  Node_List _available;
+  Node_List<Node> _available;
 
   // For each instruction beginning a bundle, the number of following
   // nodes to be bundled with it.
   Bundle *_node_bundling_base;
 
   // Mapping from register to Node
-  Node_List _reg_node;
+  Node_List<Node> _reg_node;
 
   // Free list for pinch nodes.
-  Node_List _pinch_free_list;
+  Node_List<Node> _pinch_free_list;
 
   // Number of uses of this node within the containing basic block.
   short *_uses;
@@ -1919,15 +1916,14 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
       // This output goes directly to the tty, not the compiler log.
       // To enable tools to match it up with the compilation activity,
       // be sure to tag this tty output with the compile ID.
+      bool aot_comp = C->is_aot_compile();
+      bool aot_preload_comp = C->for_aot_preload();
       if (xtty != nullptr) {
-        CompileTask* task = C->env()->task();
-        bool aot_comp = task->is_aot_load_or_compile();
-        bool aot_preload_comp = task->is_aot_preload_or_compile();
         xtty->head("opto_assembly compile_id='%d'%s", C->compile_id(),
                    C->is_osr_compilation() ? " compile_kind='osr'" :
                    (aot_preload_comp ? " compile_kind='AP'" : (aot_comp ? " compile_kind='A'" : "")));
       }
-      const char* is_aot = C->env()->is_aot_compile() ? (C->for_aot_preload() ? "(AP) " : "(A) -") : "-----";
+      const char* is_aot = aot_comp ? (aot_preload_comp ? "(AP) " : "(A) -") : "-----";
       if (C->method() != nullptr) {
         tty->print_cr("----------------------- MetaData before Compile_id = %d %s-------------------", C->compile_id(), is_aot);
         tty->print_raw(method_metadata_str.freeze());
@@ -2046,8 +2042,7 @@ uint Scheduling::_total_instructions_per_bundle[Pipeline::_max_instrs_per_cycle+
 // Initializer for class Scheduling
 
 Scheduling::Scheduling(Arena *arena, Compile &compile)
-        : _arena(arena),
-          _cfg(compile.cfg()),
+        : _cfg(compile.cfg()),
           _regalloc(compile.regalloc()),
           _scheduled(arena),
           _available(arena),

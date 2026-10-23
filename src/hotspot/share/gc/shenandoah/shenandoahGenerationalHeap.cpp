@@ -119,6 +119,11 @@ void ShenandoahGenerationalHeap::initialize_heuristics() {
   _old_generation->initialize_heuristics(mode());
 }
 
+bool ShenandoahGenerationalHeap::wait_for_old_collection(uint timeout_seconds) {
+  const auto gen_ctrl_thread = static_cast<ShenandoahGenerationalControlThread*>(_control_thread);
+  return gen_ctrl_thread->wait_for_gc_cycle(GCCause::_shenandoah_concurrent_gc, old_generation(), timeout_seconds);
+}
+
 void ShenandoahGenerationalHeap::initialize_serviceability() {
   assert(mode()->is_generational(), "Only for the generational mode");
   _young_gen_memory_pool = new ShenandoahYoungGenMemoryPool(this);

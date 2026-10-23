@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,28 +23,27 @@
  * questions.
  */
 
-#include "gc/shared/gc_globals.hpp"
-#include "gc/shared/gcLogPrecious.hpp"
-#include "gc/z/zRuntimeWorkers.hpp"
-#include "runtime/java.hpp"
+#ifndef ExecCommand_h
+#define ExecCommand_h
 
-ZRuntimeWorkers::ZRuntimeWorkers()
-  : _workers("RuntimeWorker", ParallelGCThreads) {
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-  log_info_p(gc, init)("Runtime Workers: %u", _workers.max_workers());
+#define EXEC_CALLBACK_IGNORE 0
+#define EXEC_CALLBACK_USE 1
+#define EXEC_CALLBACK_ERROR 2
 
-  // Initialize worker threads
-  _workers.initialize_workers();
-  _workers.set_active_workers(_workers.max_workers());
-  if (_workers.active_workers() != _workers.max_workers()) {
-    vm_exit_during_initialization("Failed to create ZRuntimeWorkers");
-  }
+typedef int (*ExecCommandCallbackType)(void*, char*);
+
+int execCommand(const char* const       argv[],
+                ExecCommandCallbackType callback,
+                void*                   callbackData);
+
+void closePipeEnd(int* pipefd, int idx);
+
+#ifdef __cplusplus
 }
+#endif
 
-WorkerThreads* ZRuntimeWorkers::workers() {
-  return &_workers;
-}
-
-void ZRuntimeWorkers::threads_do(ThreadClosure* tc) const {
-  _workers.threads_do(tc);
-}
+#endif /* #ifndef ExecCommand_h */

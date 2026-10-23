@@ -1704,6 +1704,7 @@ void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
   __ zext(crc, crc, 32);
   __ update_byte_crc32(crc, val, res);
   __ notr(res, crc); // ~crc
+  __ sext(res, res, 32);
 }
 
 void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
