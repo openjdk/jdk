@@ -247,7 +247,7 @@ private:
 
   // Rarely updated fields
   HeapWord* _new_top;
-  double _empty_time;
+  Atomic<double> _empty_time;
 
   HeapWord* _top_before_promoted;
   HeapWord* _top_at_evac_start;
@@ -294,7 +294,7 @@ public:
   static size_t setup_sizes(size_t max_heap_size);
 
   double empty_time() {
-    return _empty_time;
+    return _empty_time.load_relaxed();
   }
 
   inline static size_t required_regions(size_t bytes) {
