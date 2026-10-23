@@ -851,9 +851,16 @@ public:
   bool       allow_macro_nodes() { return _allow_macro_nodes;  }
   void reset_allow_macro_nodes() { _allow_macro_nodes = false;  }
 
-  // TODO: add stuff here
-  void add_optimization_delay_node(OptimizationDelayNode* n);
-  void remove_optimization_delay_node(OptimizationDelayNode* n);
+  void add_optimization_delay_node(OptimizationDelayNode* n) {
+    assert(n != nullptr, "no nullptr");
+    assert(!_optimization_delay_nodes.contains(n), "duplicate");
+    _optimization_delay_nodes.append(n);
+  }
+
+  void remove_optimization_delay_node(OptimizationDelayNode* n) {
+    assert(n != nullptr, "no nullptr");
+    _optimization_delay_nodes.remove(n);
+  }
 
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);

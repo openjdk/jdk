@@ -1974,19 +1974,6 @@ void Compile::mark_parse_predicate_nodes_useless(PhaseIterGVN& igvn) {
   _parse_predicates.clear();
 }
 
-// TODO: move to hpp?
-void Compile::add_optimization_delay_node(OptimizationDelayNode* n) {
-  assert(n != nullptr, "no nullptr");
-  assert(!_optimization_delay_nodes.contains(n), "duplicate");
-  _optimization_delay_nodes.append(n);
-}
-
-// TODO: move to hpp?
-void Compile::remove_optimization_delay_node(OptimizationDelayNode* n) {
-  assert(n != nullptr, "no nullptr");
-  _optimization_delay_nodes.remove(n);
-}
-
 void Compile::record_for_post_loop_opts_igvn(Node* n) {
   if (!n->for_post_loop_opts_igvn()) {
     assert(!_for_post_loop_igvn.contains(n), "duplicate");
