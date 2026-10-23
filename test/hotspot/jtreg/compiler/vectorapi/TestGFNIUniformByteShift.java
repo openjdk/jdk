@@ -45,7 +45,6 @@ import jdk.incubator.vector.VectorSpecies;
  * @modules jdk.incubator.vector
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @requires vm.cpu.features ~= ".*gfni.*"
  * @run driver ${test.main.class}
  */
 

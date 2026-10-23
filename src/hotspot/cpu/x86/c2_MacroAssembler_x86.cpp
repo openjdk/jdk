@@ -1427,7 +1427,7 @@ void C2_MacroAssembler::vshiftb_gfni(int opcode, XMMRegister dst, XMMRegister sr
   }
   movdl(rtmp, shift);
   andl(rtmp, 7);
-  lea(rbase, ExternalAddress(StubRoutines::x86::vector_byte_shift_gfni_matrix() + kind * 8 * 8));
+  lea(rbase, ExternalAddress(StubRoutines::x86::vector_byte_shift_gfni_matrix() + kind * 8 * BytesPerLong));
   if (vlen_enc == Assembler::AVX_128bit) {
     movddup(dst, Address(rbase, rtmp, Address::times_8));
   } else {
