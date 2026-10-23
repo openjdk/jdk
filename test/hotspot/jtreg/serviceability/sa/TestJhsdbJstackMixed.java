@@ -38,7 +38,7 @@ import jtreg.SkippedException;
 /**
  * @test
  * @key randomness
- * @bug 8208091 8374469 8377710 8390621
+ * @bug 8208091 8374469 8377710 8390621 8391637
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires (os.family == "linux" | os.family == "windows")
