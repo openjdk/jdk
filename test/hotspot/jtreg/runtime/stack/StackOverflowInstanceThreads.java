@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,51 +25,43 @@
  * @test
  * @key stress
  *
- * @summary converted from VM testbase nsk/stress/stack/stack015.
+ * @summary Repeatedly provoke stack overflow with final instance recursion in multiple threads.
  * VM testbase keywords: [stress, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
  *     This test provokes multiple stack overflows in the multiple
- *     threads -- by invoking synchronized virtual recursive method
- *     for the given fixed depth of recursion from within another
- *     recursive method already deeply invoked.
+ *     threads -- by invoking final recursive method for the given
+ *     fixed depth of recursion (though, for a large depth).
  *     This test measures a number of recursive invocations until
  *     stack overflow, and then tries to provoke similar stack overflows
- *     in 10 times in each of 10 threads. Each provocation consists of
+ *     10 times in each of 10 threads. Each provocation consists of
  *     invoking that recursive method for the given fixed depth
  *     of invocations which is 100 times that depth measured before.
  *     The test is deemed passed, if VM have not crashed, and
  *     if exception other than due to stack overflow was not
  *     thrown.
  * COMMENTS
- *     This test crashes HS versions 2.0, 1.3, and 1.4 on Solaris.
- *     However, it passes against all these HS versions on Win32.
+ *     This test crashes HS versions 1.3, 1.4 on Win32, and HS versions
+ *     2.0, 1.3, and 1.4 on Solaris. However, it passes against HS 2.0
+ *     on Win32.
  *     See the bug:
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 Stack015
+ * @run main/othervm/timeout=900 StackOverflowInstanceThreads
  */
 
-public class Stack015 extends Stack015i {
+public class StackOverflowInstanceThreads extends Thread {
     final static int THREADS = 10;
     final static int CYCLES = 10;
-    final static int STEP = 10;
-    final static int RESERVE = 100;
 
     public static void main(String[] args) {
-        //
-        // The test will invoke the particular Stack015.recurse()
-        // method via abstract test.recurse() invocations.
-        //
-        Stack015i test = new Stack015();
-        Stack015i.test = test;
-
+        StackOverflowInstanceThreads test = new StackOverflowInstanceThreads();
         //
         // Measure maximal recursion depth until stack overflow:
         //
         int maxDepth = 0;
-        for (int depth = 0; ; depth += STEP) {
+        for (int depth = 10; ; depth += 10) {
             try {
                 test.recurse(depth);
                 maxDepth = depth;
@@ -82,10 +74,10 @@ public class Stack015 extends Stack015i {
         //
         // Execute multiple threads repeatedly provoking stack overflows:
         //
-        Stack015i threads[] = new Stack015i[THREADS];
+        StackOverflowInstanceThreads threads[] = new StackOverflowInstanceThreads[THREADS];
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new Stack015();
-            threads[i].depthToTry = RESERVE * maxDepth;
+            threads[i] = new StackOverflowInstanceThreads();
+            threads[i].depthToTry = 100 * maxDepth;
             threads[i].start();
         }
         for (int i = 0; i < threads.length; i++) {
@@ -98,7 +90,7 @@ public class Stack015 extends Stack015i {
             }
         }
         //
-        // Check if unexpected exceptions were thrown:
+        // Check if unexpected exceptions were not thrown:
         //
         for (int i = 0; i < threads.length; i++) {
             if (threads[i].thrown != null) {
@@ -108,48 +100,13 @@ public class Stack015 extends Stack015i {
         }
     }
 
-    synchronized void syncRecurse(int depth) {
-        if (depth > 0) {
-            syncRecurse(depth - 1);
-        }
-    }
-}
-
-abstract class Stack015i extends Thread {
-    //
-    // Pure virtual method:
-    //
-    abstract void syncRecurse(int depth);
-
-    void recurse(int depth) {
-        //
-        // Stack overflow must occur here:
-        //
-        syncRecurse(Stack015.STEP);
-        //
-        // If no stack overflow occured, try again with deeper stack:
-        //
-        if (depth > 0) {
-            recurse(depth - 1);
-        }
-    }
-
+    int depthToTry = 0;
     Throwable thrown = null;
-    int depthToTry;
-
-    static Stack015i test;
 
     public void run() {
-        //
-        // Provoke multiple stack overflows:
-        //
-        for (int i = 0; i < Stack015.CYCLES; i++) {
+        for (int i = 0; i < CYCLES; i++) {
             try {
-                //
-                // All threads invoke the same synchronized method:
-                //
-                test.recurse(depthToTry);
-
+                this.recurse(depthToTry);
                 throw new Exception(
                         "TEST_RFE: no stack overflow thrown" +
                                 ", need to try deeper recursion?");
@@ -161,6 +118,12 @@ abstract class Stack015i extends Thread {
                 thrown = throwable;
                 break;
             }
+        }
+    }
+
+    final void recurse(int depth) {
+        if (depth > 0) {
+            recurse(depth - 1);
         }
     }
 }

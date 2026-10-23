@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,13 @@
  * @test
  * @key stress
  *
- * @summary converted from VM testbase nsk/stress/stack/stack016.
+ * @summary Retry infinite recursion from deep overflow handlers in multiple threads.
  * VM testbase keywords: [stress, diehard, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
- *     The test provokes second stack overflow from within the
- *     stack overflow handler -- repeatedly multiple times, and
- *     in multiple threads.
- *     This test measures a number of recursive invocations until
- *     stack overflow, and then tries to provoke similar stack overflows
- *     in 10 times in each of 10 threads. Each provocation consists of
- *     invoking that recursive method for the given fixed depth
- *     of invocations which is 100 times that depth measured before,
- *     and then trying to invoke that recursive method once again
- *     from within the catch clause just caught StackOverflowError.
+ *     The test invokes infinitely recursive method from within stack
+ *     overflow handler  -- repeatedly multiple times, and in multiple
+ *     threads.
  *     The test is deemed passed, if VM have not crashed, and
  *     if exception other than due to stack overflow was not
  *     thrown.
@@ -48,47 +41,40 @@
  *     See the bug:
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
- * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp")
- * @run main/othervm/timeout=900 -Xint -Xss448K Stack016
- * @run main/othervm/timeout=900 -Xcomp -Xss448K Stack016
- * @run main/othervm/timeout=900 -Xcomp -XX:-TieredCompilation -Xss448K Stack016
+ * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp" & vm.pageSize == 4096)
+ * @run main/othervm/timeout=900 -Xss220K StackOverflowInfiniteThreads
  */
 
-public class Stack016 extends Thread {
+public class StackOverflowInfiniteThreads extends Thread {
     private final static int THREADS = 10;
     private final static int CYCLES = 10;
-    private final static int STEP = 10;
-    private final static int RESERVE = 10;
-    private final static int PROBES = STEP * RESERVE;
+    private final static int PROBES = 100;
 
     public static void main(String[] args) {
-        Stack016 test = new Stack016();
+        StackOverflowInfiniteThreads test = new StackOverflowInfiniteThreads();
         test.doRun();
     }
+
+    private static int depthToTry;
 
     private void doRun() {
         //
         // Measure recursive depth before stack overflow:
         //
-        int maxDepth = 0;
-        for (depthToTry = 0; ; depthToTry += STEP) {
-            try {
-                trickyRecurse(depthToTry);
-                maxDepth = depthToTry;
-            } catch (StackOverflowError | OutOfMemoryError ex) {
-                break;
-            }
+        try {
+            recurse(0);
+        } catch (StackOverflowError | OutOfMemoryError err) {
         }
         System.out.println("Maximal recursion depth: " + maxDepth);
+        depthToTry = maxDepth;
 
         //
         // Run the tested threads:
         //
-        Stack016 threads[] = new Stack016[THREADS];
+        StackOverflowInfiniteThreads threads[] = new StackOverflowInfiniteThreads[THREADS];
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new Stack016();
+            threads[i] = new StackOverflowInfiniteThreads();
             threads[i].setName("Thread: " + (i + 1) + "/" + THREADS);
-            threads[i].depthToTry = RESERVE * maxDepth * 10;
             threads[i].start();
         }
         for (int i = 0; i < threads.length; i++) {
@@ -100,7 +86,6 @@ public class Stack016 extends Thread {
                 }
             }
         }
-
         //
         // Check if unexpected exceptions were thrown:
         //
@@ -112,51 +97,45 @@ public class Stack016 extends Thread {
         }
     }
 
-    private int stackTop = 0;
-    private int depthToTry = 0;
-    private Throwable thrown = null;
+    private int maxDepth = 0;
+
+    private void recurse(int depth) {
+        maxDepth = depth;
+        recurse(depth + 1);
+    }
 
     private void trickyRecurse(int depth) {
-        stackTop = depthToTry - depth;
-        if (depth > 0) {
-            try {
-                trickyRecurse(depth - 1);
-            } catch (StackOverflowError | OutOfMemoryError error) {
-                //
-                // Provoke more stack overflow,
-                // if current stack is deep enough:
-                //
-                if (depthToTry - depth < stackTop - PROBES)
-                    throw error;
-                recurse(depthToTry);
-
-                throw new Error("TEST_RFE: try deeper recursion!");
-            }
+        try {
+            maxDepth = depth;
+            trickyRecurse(depth + 1);
+        } catch (StackOverflowError | OutOfMemoryError error) {
+            //
+            // Stack problem caught: provoke it again,
+            // if current stack is enough deep:
+            //
+            if (depth < depthToTry - PROBES)
+                throw error;
+            recurse(depth + 1);
         }
     }
 
-    private static void recurse(int depth) {
-        if (depth > 0) {
-            recurse(depth - 1);
-        }
-    }
+    private Throwable thrown = null;
 
     public void run() {
         String threadName = Thread.currentThread().getName();
-        for (int i = 1; i <= CYCLES; i++) {
+        for (int i = 1; i <= CYCLES; i++)
             try {
-                System.out.println(threadName + ", iteration: " + i + "/" + CYCLES +
-                        ", depthToTry: " + depthToTry);
-                trickyRecurse(depthToTry);
-                throw new Error(
-                        "TEST_BUG: trickyRecursion() must throw an error anyway!");
+                System.out.println(threadName + ", iteration: " + i + "/" + CYCLES);
+                trickyRecurse(0);
+                throw new Exception(
+                        "TEST_BUG: stack overflow was expected!");
 
             } catch (StackOverflowError | OutOfMemoryError err) {
                 // It's OK
             } catch (Throwable throwable) {
+                // It isn't OK!
                 thrown = throwable;
                 break;
             }
-        }
     }
 }

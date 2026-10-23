@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @key stress
  *
- * @summary converted from VM testbase nsk/stress/stack/stack009.
+ * @summary Provoke another stack overflow after the first recursion has unwound.
  * VM testbase keywords: [stress, quick, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
@@ -47,10 +47,10 @@
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 Stack009
+ * @run main/othervm/timeout=900 StackOverflowAfterUnwind
  */
 
-public class Stack009 {
+public class StackOverflowAfterUnwind {
     public static void main(String[] args) {
         for (int depth = 100; ; depth += 100) {
             try {
