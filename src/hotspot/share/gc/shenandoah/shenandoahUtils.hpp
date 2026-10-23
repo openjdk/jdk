@@ -79,8 +79,7 @@ private:
 
   static const char* cycle_end_message(ShenandoahGenerationType type);
 public:
-  ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation,
-                      bool is_degenerated = false, bool is_out_of_cycle = false);
+  ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation);
   ~ShenandoahGCSession();
 };
 
@@ -227,8 +226,7 @@ public:
            type == VM_Operation::VMOp_ShenandoahInitUpdateRefs ||
            type == VM_Operation::VMOp_ShenandoahFinalUpdateRefs ||
            type == VM_Operation::VMOp_ShenandoahFinalVerify ||
-           type == VM_Operation::VMOp_ShenandoahFullGC ||
-           type == VM_Operation::VMOp_ShenandoahDegeneratedGC;
+           type == VM_Operation::VMOp_ShenandoahFullGC;
   }
 };
 
@@ -271,6 +269,15 @@ public:
   ~ShenandoahNoUncommitMark() {
     _heap->allow_uncommit();
   }
+};
+
+// Emit log messages for the beginning and end of an allocation stall.
+class ShenandoahAllocationStallLogger : public StackObj {
+public:
+  ShenandoahAllocationStallLogger();
+  ~ShenandoahAllocationStallLogger();
+private:
+  const double _stall_start_seconds;
 };
 
 // Casting a double that cannot be represented as a size_t may result in undefined behavior.

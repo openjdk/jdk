@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import org.xml.sax.SAXException;
  * This class contains several utility methods used by XPathImpl and
  * XPathExpressionImpl
  *
- * @LastModified: June 2025
+ * @LastModified: June 2026
  */
 class XPathImplUtil {
     XPathFunctionResolver functionResolver;
@@ -94,6 +94,7 @@ class XPathImplUtil {
             xpathSupport = new com.sun.org.apache.xpath.internal.XPathContext();
         }
 
+        xpathSupport.setJdkXmlFeatures(featureManager);
         xpathSupport.setVarStack(new JAXPVariableStack(variableResolver));
         XObject xobj;
 

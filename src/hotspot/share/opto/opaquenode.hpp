@@ -82,6 +82,7 @@ public:
   BoolTest::mask _loop_entered_mask;
   OpaqueZeroTripGuardNode(Compile* C, Node* n, BoolTest::mask loop_entered_test) :
           Opaque1Node(C, n), _loop_entered_mask(loop_entered_test) {
+    init_class_id(Class_OpaqueZeroTripGuard);
   }
 
   DEBUG_ONLY(CountedLoopNode* guarded_loop() const);

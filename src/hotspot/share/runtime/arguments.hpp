@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_ARGUMENTS_HPP
 #define SHARE_RUNTIME_ARGUMENTS_HPP
 
+#include "gc/shared/gcArguments.hpp"
 #include "jni.h"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
