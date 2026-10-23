@@ -325,12 +325,10 @@ public:
 class ShenandoahTerminatorTerminator : public TerminatorTerminator {
   ShenandoahHeap* _heap;
   bool _cancellable;
-  bool _retired;
 public:
   ShenandoahTerminatorTerminator(ShenandoahHeap* const heap, bool cancellable)
-    : _heap(heap), _cancellable(cancellable), _retired(false) { }
+    : _heap(heap), _cancellable(cancellable) { }
 
-  void retire();
   bool can_work() const override;
   bool should_exit_termination() override;
 };

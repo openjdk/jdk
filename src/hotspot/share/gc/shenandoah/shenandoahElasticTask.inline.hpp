@@ -55,11 +55,6 @@ void shenandoah_elastic_loop(ShenandoahHeap* heap, TaskTerminator* terminator, W
         // This thread claimed work and believes there is more remaining.
         continue;
       }
-
-      if (result == ShenandoahWorkResult::Retire) {
-        // This thread can no longer work, though there may be tasks remaining.
-        tt.retire();
-      }
     }
 
     // Thread must leave the suspendible thread set while it waits for termination,
