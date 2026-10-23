@@ -25,7 +25,9 @@ package compiler.loopopts;
 
 import compiler.lib.generators.Generator;
 import compiler.lib.ir_framework.*;
+import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.lib.Asserts;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.foreign.*;
 
@@ -214,13 +216,26 @@ public class TestIntCountedLoopLongLimit {
         return sum;
     }
 
-    private static int recompileRunCount = 0;
-
+    // Verify that after C2 speculative narrowing and out-of-range deoptimization, recompilation no
+    // longer contains narrowing optimization and the trap.
+    // To improve test stability, we use whitebox API to explicitly control compilation instead
+    // relying on warming up through natural tiered compilation thresholds. Otherwise C2 compilation
+    // might not have happened before the out-of-range deopting limit is invoked.
     @Run(test = "testRecompileAfterTrap")
-    @Warmup(20_000)
-    public static void runTestRecompileAfterTrap() {
-        recompileRunCount++;
-        if (recompileRunCount == 10_000) {
+    @Warmup(1)
+    public static void runTestRecompileAfterTrap(RunInfo info) {
+        if (info.isWarmUp()) {
+            for (int i = 0; i < 20_000; i++) {
+                testRecompileAfterTrap(SMALL_INT_RANGE_LONGS.next());
+            }
+
+            WhiteBox wb = WhiteBox.getWhiteBox();
+            wb.enqueueMethodForCompilation(info.getTest(), CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
+            if (!wb.isMethodCompiled(info.getTest())
+                    || wb.getMethodCompilationLevel(info.getTest()) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
+                throw new RuntimeException("should be C2 compiled");
+            }
+
             testRecompileAfterTrap((long) Integer.MAX_VALUE + 1L); // run once to trigger de-opt
         } else {
             testRecompileAfterTrap(SMALL_INT_RANGE_LONGS.next());
