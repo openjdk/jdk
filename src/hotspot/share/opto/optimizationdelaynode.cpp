@@ -148,7 +148,7 @@ void OptimizationDelayNode::narrow_hold_type(const Type* narrow, Stress& stress)
   const Type* old = _hold_type->meet(narrow);
   _hold_type = sample_type_between(old, narrow, stress);
 
-  if (TraceOptimizationDelay) {
+  if (TraceOptimizationDelay && _hold_type != old) {
     tty->print_cr("[OptizationDelay] narrow hold type between:");
     tty->print("  old hold type: "); old->dump(); tty->cr();
     tty->print("  new hold type: "); _hold_type->dump(); tty->cr();
