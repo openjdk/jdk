@@ -57,11 +57,6 @@ public:
     _stage(Stage::HoldType)
   {
     assert(can_delay_type(t), "permissible input type");
-    // TODO: what to do with input type? We could widen it.
-    // Yes, otherwise for singletons we immediately collapse the node due to sigleton type.
-    // TODO: yes, we need some kind of "type picker function" that chooses something between
-    // t and bottom type. We will also need that later when we advance the type from some
-    // wider type to a narrower type closer to the input type.
     C->add_optimization_delay_node(this);
     init_class_id(Class_OptimizationDelay);
   }

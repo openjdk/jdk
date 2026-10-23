@@ -2022,6 +2022,7 @@ void Compile::optimization_delay_nodes_cleanup(PhaseIterGVN& igvn) {
   }
   _optimization_delay_nodes_cleanup_phase = true;
   igvn.optimize();
+  if (failing()) return;
   assert(_optimization_delay_nodes.is_empty(), "must all be released");
   if (TraceOptimizationDelay) {
     tty->print_cr("[OptizationDelay] Cleanup done.");

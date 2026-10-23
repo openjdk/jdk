@@ -40,7 +40,6 @@ const Type* OptimizationDelayNode::Value(PhaseGVN* phase) const {
   // this becomes a type assertion. Not sure we want that?
   // We could also have 2 modes here.
   return _hold_type->meet(t_in);
-  // TODO: something more fancy for the types where we can manage.
 }
 
 Node* OptimizationDelayNode::Identity(PhaseGVN* phase) {
@@ -136,7 +135,7 @@ const Type* OptimizationDelayNode::sample_type_between(const Type* wide, const T
   } else {
     // For all other types just pick one of the two, i.e.
     // narrow only in 50% of all cases.
-    // TODO: impl some more general idea
+    assert(false, "not yet properly implemented");
     return stress.random() % 2 == 0 ? wide : narrow;
   }
 }
