@@ -3782,6 +3782,13 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
           assert(safe_for_replace, "must be");
           obj = null_check(obj);
         }
+        if (!stopped() && toop->is_valueklassptr() && !maybe_larval) {
+          Node* vt = ValueTypeNode::make_from_oop(this, obj, toop->value_klass());
+          if (safe_for_replace) {
+            replace_in_map(obj, vt);
+          }
+          obj = vt;
+        }
         return obj;
       case Compile::SSC_always_false:
         if (null_free) {
