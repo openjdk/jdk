@@ -154,6 +154,8 @@ void OptimizationDelayNode::narrow_hold_type(const Type* t_in, Stress& stress) {
   // happen when CCP clears the cached types from IGVN, produces
   // wider types, and then IGVN starts again with wider types
   // than it had found previously.
+  // Note: ::Value will return a conservative result based on
+  // the meet of t_in and _hold_type anyway.
   if (t_in->filter(_hold_type) != t_in) { return; }
 
   const Type* old = _hold_type;

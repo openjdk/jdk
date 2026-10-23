@@ -27,9 +27,10 @@
 
 #include "opto/node.hpp"
 
-// This node delays optimizations, to verify that different optimization
-// order for IGVN and CCP optimizations does not change the behavior of
-// the resulting code.
+// This node delays IGVN optimizations, to verify that different
+// optimization order for IGVN optimizations does not change the
+// behavior. Since many IGVN optimizations are prerequisite for
+// other optimizations beyond IGVN.
 // This node operates as identity-function, and simply passes on the
 // input as its output. Eventually, it will be removed and replaced
 // by its input node.
