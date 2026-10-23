@@ -59,6 +59,9 @@ public:
     assert(can_delay_type(t), "permissible input type");
     // TODO: what to do with input type? We could widen it.
     // Yes, otherwise for singletons we immediately collapse the node due to sigleton type.
+    // TODO: yes, we need some kind of "type picker function" that chooses something between
+    // t and bottom type. We will also need that later when we advance the type from some
+    // wider type to a narrower type closer to the input type.
     C->add_optimization_delay_node(this);
     init_class_id(Class_OptimizationDelay);
   }
@@ -73,6 +76,9 @@ public:
     return Type::get_const_basic_type(t->basic_type());
   }
 
+  // TODO:
+  //static const Type* sample_type(const Type* t_wide, const Type* t_narrow);
+
   virtual int Opcode() const;
   virtual uint hash() const { return NO_HASH; }
   virtual bool cmp(const Node& n) const { return this == &n; }
@@ -80,6 +86,11 @@ public:
   virtual uint size_of() const { return sizeof(OptimizationDelayNode); }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
+
+  void reveal_identity() {
+    // TODO: trace?
+    _stage = Stage::RevealIdentity;
+  }
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream* st) const {

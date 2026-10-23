@@ -696,6 +696,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _node_count_inlining_cutoff(NodeCountInliningCutoff),
       _post_loop_opts_phase(false),
       _merge_stores_phase(false),
+      _optimization_delay_cleanup_phase(false),
       _allow_macro_nodes(true),
       _inlining_progress(false),
       _inlining_incrementally(false),
@@ -1012,6 +1013,7 @@ Compile::Compile(ciEnv* ci_env,
       _node_count_inlining_cutoff(NodeCountInliningCutoff),
       _post_loop_opts_phase(false),
       _merge_stores_phase(false),
+      _optimization_delay_cleanup_phase(false),
       _allow_macro_nodes(true),
       _inlining_progress(false),
       _inlining_incrementally(false),
@@ -1972,6 +1974,28 @@ void Compile::mark_parse_predicate_nodes_useless(PhaseIterGVN& igvn) {
     parse_predicate->mark_useless(igvn);
   }
   _parse_predicates.clear();
+}
+
+void Compile::add_optimization_delay_node(OptimizationDelayNode* n) {
+  assert(n != nullptr, "no nullptr");
+  assert(!_optimization_delay_nodes.contains(n), "duplicate");
+  _optimization_delay_nodes.append(n);
+}
+
+void Compile::remove_optimization_delay_node(OptimizationDelayNode* n) {
+  assert(n != nullptr, "no nullptr");
+  _optimization_delay_nodes.remove(n);
+}
+
+bool Compile::advance_optimization_delay_nodes() {
+  if (_optimization_delay_nodes.is_empty()) { return false; }
+  int r = C->stress().random() % _optimization_delay_nodes.length();
+  OptimizationDelayNode* delay = _optimization_delay_nodes.at(r);
+
+  if (_optimization_delay_cleanup_phase) {
+    delay->reveal_identity();
+  }
+  return false;
 }
 
 void Compile::record_for_post_loop_opts_igvn(Node* n) {
@@ -3450,6 +3474,12 @@ void Compile::Optimize() {
 
   if (C->max_vector_size() > 0) {
     C->optimize_logic_cones(igvn);
+    igvn.optimize();
+    if (failing()) return;
+  }
+
+  if (StressOptimizationDelay) {
+    set_optimization_delay_cleanup_phase();
     igvn.optimize();
     if (failing()) return;
   }
