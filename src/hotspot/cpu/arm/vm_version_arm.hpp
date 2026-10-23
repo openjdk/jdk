@@ -29,9 +29,6 @@
 #include "runtime/globals_extension.hpp"
 
 class VM_Version: public Abstract_VM_Version {
-  static bool _has_simd;
-  static bool _has_mp_ext;
-
  protected:
   // Are we done with vm version initialization
   static bool _is_initialized;

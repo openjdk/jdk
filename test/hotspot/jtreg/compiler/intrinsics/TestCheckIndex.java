@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, 2026, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,16 +85,16 @@ public class TestCheckIndex {
             throw new RuntimeException("exception not thrown");
         } catch (IndexOutOfBoundsException ioobe) {
         }
-        if (WHITE_BOX.isMethodCompiled(m1)) {
-            throw new RuntimeException("should have deoptimized");
+        if (!WHITE_BOX.isMethodCompiled(m1)) {
+            throw new RuntimeException("should still be compiled");
         }
         try {
             test2(0, -10);
             throw new RuntimeException("exception not thrown");
         } catch (IndexOutOfBoundsException ioobe) {
         }
-        if (WHITE_BOX.isMethodCompiled(m2)) {
-            throw new RuntimeException("should have deoptimized");
+        if (!WHITE_BOX.isMethodCompiled(m2)) {
+            throw new RuntimeException("should still be compiled");
         }
 
         try {
@@ -102,16 +102,16 @@ public class TestCheckIndex {
             throw new RuntimeException("exception not thrown");
         } catch (IndexOutOfBoundsException ioobe) {
         }
-        if (WHITE_BOX.isMethodCompiled(m3)) {
-            throw new RuntimeException("should have deoptimized");
+        if (!WHITE_BOX.isMethodCompiled(m3)) {
+            throw new RuntimeException("should still be compiled");
         }
         try {
             test4(42, 10);
             throw new RuntimeException("exception not thrown");
         } catch (IndexOutOfBoundsException ioobe) {
         }
-        if (WHITE_BOX.isMethodCompiled(m4)) {
-            throw new RuntimeException("should have deoptimized");
+        if (!WHITE_BOX.isMethodCompiled(m4)) {
+            throw new RuntimeException("should still be compiled");
         }
     }
 
