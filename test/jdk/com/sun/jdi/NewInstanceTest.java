@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4419450
+ * @bug 4419450 8343851
  * @summary Test newInstance() for arrays - currently covers
  * only reference type arrays (see bug #4450091).
  * @author Robert Field
@@ -36,6 +36,9 @@ import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
 
+import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Array;
 import java.util.*;
 
     /********** target program **********/
@@ -52,6 +55,17 @@ class NewInstanceTarg {
     static ClsFoo[] clsArray = new ClsFoo[10];
     static IfcFoo[] ifc0Array = new IfcFoo[10];
     static IfcFoo[] ifcArray = {aFoo, aFoo};
+    static int[][] multiIntArray = new int[0][];
+    static Object hiddenArray;
+
+    static {
+        try (InputStream in = ClsFoo.class.getResourceAsStream("ClsFoo.class")) {
+            byte[] bytes = in.readAllBytes();
+            hiddenArray = Array.newInstance(MethodHandles.lookup().defineHiddenClass(bytes, true).lookupClass(), 0);
+        } catch (Exception e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     public static void main(String[] args){
         System.out.println("Howdy!");
@@ -77,10 +91,15 @@ public class NewInstanceTest extends TestScaffold {
     void makeArray(String fieldName) throws Exception {
         println("Making array for field: " + fieldName);
         Field arrayField = targetClass.fieldByName(fieldName);
-        ArrayType arrayType = (ArrayType)arrayField.type();
+        ArrayReference original = (ArrayReference)targetClass.getValue(arrayField);
+        ArrayType arrayType = (ArrayType)original.referenceType();
         println("Type for " + fieldName + " is " + arrayType);
         ArrayReference arrayReference = arrayType.newInstance(20);
-        println("Passed subtest: " + fieldName);
+        if (!arrayReference.referenceType().equals(arrayType) || arrayReference.length() != 20) {
+            failure("Unexpected array type or length for " + fieldName);
+        } else {
+            println("Passed subtest: " + fieldName);
+        }
     }
 
     /********** test core **********/
@@ -97,6 +116,8 @@ public class NewInstanceTest extends TestScaffold {
         makeArray("clsArray");
         makeArray("ifc0Array");
         makeArray("ifcArray");
+        makeArray("hiddenArray");
+        makeArray("multiIntArray");
 
         /*
          * resume the target until end
