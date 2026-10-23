@@ -441,6 +441,7 @@ private:
   bool inline_index_vector();
   bool inline_index_partially_in_upper_range();
   bool inline_vector_select_from_two_vectors();
+  bool inline_vector_dot();
 
   enum VectorMaskUseType {
     VecMaskUseLoad  = 1 << 0,
