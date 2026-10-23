@@ -84,7 +84,7 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
 
-  void narrow_hold_type(const Type* t_narrow, Stress& stress);
+  void narrow_hold_type(const Type* narrow, Stress& stress);
   void reveal_type();
   void reveal_identity();
 
@@ -111,7 +111,7 @@ public:
 #endif
 
 private:
-  static const Type* sample_type_between(const Type* t_wide, const Type* t_narrow, Stress& stress);
+  static const Type* sample_type_between(const Type* wide, const Type* narrow, Stress& stress);
 };
 
 #endif // SHARE_OPTO_OPTIZATIONDELAYNODE_HPP

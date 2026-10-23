@@ -51,57 +51,61 @@ Node* OptimizationDelayNode::Identity(PhaseGVN* phase) {
 }
 
 template<typename CT>
-static const CT* sample_integer_type(const CT* t_wide, const CT* t_narrow, Stress& stress) {
+static const CT* sample_integer_type(const CT* wide, const CT* narrow, Stress& stress) {
   using S = std::remove_const_t<decltype(CT::_lo)>;
   using U = std::remove_const_t<decltype(CT::_ulo)>;
 
-  assert(t_wide->contains(t_narrow), "ordered endpoints");
+  assert(wide->contains(narrow), "ordered endpoints");
 
-  S lo    = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_lo;
-  S hi    = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_hi;
-  U ulo   = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_ulo;
-  U uhi   = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_uhi;
-  U zeros = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_bits._zeros;
-  U ones  = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_bits._ones;
+  // Since each of the below is a constraint, we should bias
+  // each choice towards the constraint from the wider type.
+  S lo    = (stress.random() % 20 == 0 ? narrow : wide)->_lo;
+  S hi    = (stress.random() % 20 == 0 ? narrow : wide)->_hi;
+  U ulo   = (stress.random() % 20 == 0 ? narrow : wide)->_ulo;
+  U uhi   = (stress.random() % 20 == 0 ? narrow : wide)->_uhi;
+  U zeros = (stress.random() % 20 == 0 ? narrow : wide)->_bits._zeros;
+  U ones  = (stress.random() % 20 == 0 ? narrow : wide)->_bits._ones;
+
+  //lo = stress.random() % 20 > 0 ? lo : pick_inclusive(stress, wide->_lo, narrow->_lo):
 
   TypeIntPrototype<S, U> prototype{{lo, hi}, {ulo, uhi}, {zeros, ones}};
-  const CT* t = CT::make(prototype, MAX2(t_wide->_widen, t_narrow->_widen));
-  assert(t_wide->contains(t), "must be between");
-  assert(t->contains(t_narrow), "must be between");
+  const CT* t = CT::make(prototype, MAX2(wide->_widen, narrow->_widen));
+  assert(wide->contains(t), "must be between");
+  assert(t->contains(narrow), "must be between");
   return t;
 }
 
-const Type* OptimizationDelayNode::sample_type_between(const Type* t_wide, const Type* t_narrow, Stress& stress) {
-  assert(t_narrow->filter(t_wide) == t_narrow, "wide must contain narrow type");
-  if (t_wide->isa_int() != nullptr) {
-    return sample_integer_type<TypeInt>(t_wide->is_int(), t_narrow->is_int(), stress);
-  } else if (t_wide->is_long() != nullptr) {
-    return sample_integer_type<TypeLong>(t_wide->is_long(), t_narrow->is_long(), stress);
+const Type* OptimizationDelayNode::sample_type_between(const Type* wide, const Type* narrow, Stress& stress) {
+  assert(narrow->filter(wide) == narrow, "wide must contain narrow type");
+  if (wide->isa_int() != nullptr) {
+    return sample_integer_type<TypeInt>(wide->is_int(), narrow->is_int(), stress);
+  } else if (wide->is_long() != nullptr) {
+    return sample_integer_type<TypeLong>(wide->is_long(), narrow->is_long(), stress);
   } else {
     // For all other types just pick one of the two, i.e.
     // narrow only in 50% of all cases.
     // TODO: impl some more general idea
-    return stress.random() % 2 == 0 ? t_wide : t_narrow;
+    return stress.random() % 2 == 0 ? wide : narrow;
   }
 }
 
-void OptimizationDelayNode::narrow_hold_type(const Type* t_narrow, Stress& stress) {
-  if (_stage > Stage::HoldType || t_narrow == Type::TOP) { return; }
+void OptimizationDelayNode::narrow_hold_type(const Type* narrow, Stress& stress) {
+  if (_stage > Stage::HoldType || narrow == Type::TOP) { return; }
 
   // TODO: why need meet here? Links to ::Value
-  const Type* t_old = _hold_type->meet(t_narrow);
-  _hold_type = sample_type_between(t_old, t_narrow, stress);
+  const Type* old = _hold_type->meet(narrow);
+  _hold_type = sample_type_between(old, narrow, stress);
 
   if (TraceOptimizationDelay) {
     tty->print_cr("[OptizationDelay] narrow hold type between:");
-    tty->print("  old hold type: "); t_old->dump(); tty->cr();
+    tty->print("  old hold type: "); old->dump(); tty->cr();
     tty->print("  new hold type: "); _hold_type->dump(); tty->cr();
-    tty->print("  narrower type: "); t_narrow->dump(); tty->cr();
+    tty->print("  narrower type: "); narrow->dump(); tty->cr();
     this->dump();
   }
-  // Now ensure: t_narrow <= _hold_type <= t_old
-  assert(t_narrow->filter(_hold_type) == t_narrow, "must be between");
-  assert(_hold_type->filter(t_old) == _hold_type, "must be between");
+  // Now ensure: narrow <= _hold_type <= old
+  assert(narrow->filter(_hold_type) == narrow, "must be between");
+  assert(_hold_type->filter(old) == _hold_type, "must be between");
 }
 
 void OptimizationDelayNode::reveal_type() {
