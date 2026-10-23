@@ -34,3 +34,7 @@
 #############################################################################
 
 # Value Objects failures start here:
+
+# jdk_jdi
+
+com/sun/jdi/valhalla/CtorDebuggingTest.java                     8395356  generic-all

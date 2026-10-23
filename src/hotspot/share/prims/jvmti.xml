@@ -5908,8 +5908,7 @@ class C2 extends C1 implements I2 {
         <p/>
         When preview features are enabled, if the local is the "<code>this</code>"
         object and "<code>this</code>" is a value object under construction, the
-        function retrieves a snapshot of the "<code>this</code>" object representing
-        the value object's state at the point the snapshot is taken.
+        function returns <code>JVMTI_ERROR_OPAQUE_FRAME</code>.
         <p/>
         The specified thread must be suspended or must be the current thread.
       </description>
@@ -5942,9 +5941,7 @@ class C2 extends C1 implements I2 {
               On return, points to the variable's value.
               When preview features are enabled, if the local is the "<code>this</code>"
               object and "<code>this</code>" is a value object under construction,
-              <code>value_ptr</code> will point to a snapshot of the "<code>this</code>"
-              object representing the value object's state at the point the snapshot
-              is taken.
+              the function returns <code>JVMTI_ERROR_OPAQUE_FRAME</code>.
             </description>
         </param>
       </parameters>
@@ -5958,7 +5955,9 @@ class C2 extends C1 implements I2 {
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           The implementation is unable to get the frame locals
-          (e.g. the frame at <code>depth</code> is executing a native method).
+          (e.g. the frame at <code>depth</code> is executing a native method)
+          or when preview features are enabled, if the local is the "<code>this</code>"
+          object and "<code>this</code>" is a value object under construction.
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
@@ -5975,10 +5974,8 @@ class C2 extends C1 implements I2 {
         native method frames, whereas <code>GetLocalObject()</code> would
         return <code>JVMTI_ERROR_OPAQUE_FRAME</code> in those cases.
         <p/>
-        When preview features are enabled and the "<code>this</code>" object is
-        a value object under construction, the function retrieves a snapshot of the
-        "<code>this</code>" object that represents the value object's state at
-        the point the snapshot is taken.
+        When preview features are enabled and the "<code>this</code>" object is a value object
+        under construction, the function returns <code>JVMTI_ERROR_OPAQUE_FRAME</code>.
         <p/>
         The specified thread must be suspended or must be the current thread.
       </description>
@@ -6003,16 +6000,16 @@ class C2 extends C1 implements I2 {
           <outptr><jobject/></outptr>
             <description>
               On return, points to the variable's value.
-              When preview features are enabled, and the "<code>this</code>" object is
-              a value object under construction, <code>value_ptr</code> will point to
-              a snapshot of the "<code>this</code>" object representing the value
-              object's state at the point the snapshot is taken.
             </description>
         </param>
       </parameters>
       <errors>
         <error id="JVMTI_ERROR_INVALID_SLOT">
           If the specified frame is a static method frame.
+        </error>
+        <error id="JVMTI_ERROR_OPAQUE_FRAME">
+          When preview features are enabled, and the "<code>this</code>" object is
+          a value object under construction.
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
