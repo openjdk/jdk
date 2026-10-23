@@ -23,54 +23,110 @@
  */
 
 /*
- * @test id=default
+ * @test id=satb-before
  * @bug 8394986
- * @summary Shenandoah can perform heap dumps before and after a full GC
- * @requires vm.gc.Shenandoah & vm.opt.DisableExplicitGC != "true"
+ * @summary Shenandoah performs a heap dump before a full GC
+ * @requires vm.gc.Shenandoah
+ * @requires vm.flagless
  * @library /test/lib
- * @run main/othervm -XX:+UseShenandoahGC -XX:-ExplicitGCInvokesConcurrent
- *                   -XX:+HeapDumpBeforeFullGC -XX:+HeapDumpAfterFullGC
- *                   -XX:HeapDumpPath=dump -Xms64m -Xmx64m TestFullGCHeapDump
+ * @run main/othervm -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb
+ *                   -XX:-ExplicitGCInvokesConcurrent -XX:+HeapDumpBeforeFullGC
+ *                   -XX:HeapDumpPath=dump -Xms64m -Xmx64m TestFullGCHeapDump 1
  */
 
 /*
- * @test id=generational
+ * @test id=satb-after
  * @bug 8394986
- * @summary Generational Shenandoah can perform heap dumps before and after a full GC
- * @requires vm.gc.Shenandoah & vm.opt.DisableExplicitGC != "true"
+ * @summary Shenandoah performs a heap dump after a full GC
+ * @requires vm.gc.Shenandoah
+ * @requires vm.flagless
+ * @library /test/lib
+ * @run main/othervm -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb
+ *                   -XX:-ExplicitGCInvokesConcurrent -XX:+HeapDumpAfterFullGC
+ *                   -XX:HeapDumpPath=dump -Xms64m -Xmx64m TestFullGCHeapDump 1
+ */
+
+/*
+ * @test id=satb-both
+ * @bug 8394986
+ * @summary Shenandoah performs heap dumps before and after a full GC
+ * @requires vm.gc.Shenandoah
+ * @requires vm.flagless
+ * @library /test/lib
+ * @run main/othervm -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb
+ *                   -XX:-ExplicitGCInvokesConcurrent -XX:+HeapDumpBeforeFullGC
+ *                   -XX:+HeapDumpAfterFullGC -XX:HeapDumpPath=dump
+ *                   -Xms64m -Xmx64m TestFullGCHeapDump 2
+ */
+
+/*
+ * @test id=generational-before
+ * @bug 8394986
+ * @summary Generational Shenandoah performs a heap dump before a full GC
+ * @requires vm.gc.Shenandoah
+ * @requires vm.flagless
+ * @library /test/lib
+ * @run main/othervm -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:-ExplicitGCInvokesConcurrent -XX:+HeapDumpBeforeFullGC
+ *                   -XX:HeapDumpPath=dump -Xms64m -Xmx64m TestFullGCHeapDump 1
+ */
+
+/*
+ * @test id=generational-after
+ * @bug 8394986
+ * @summary Generational Shenandoah performs a heap dump after a full GC
+ * @requires vm.gc.Shenandoah
+ * @requires vm.flagless
+ * @library /test/lib
+ * @run main/othervm -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:-ExplicitGCInvokesConcurrent -XX:+HeapDumpAfterFullGC
+ *                   -XX:HeapDumpPath=dump -Xms64m -Xmx64m TestFullGCHeapDump 1
+ */
+
+/*
+ * @test id=generational-both
+ * @bug 8394986
+ * @summary Generational Shenandoah performs heap dumps before and after a full GC
+ * @requires vm.gc.Shenandoah
+ * @requires vm.flagless
  * @library /test/lib
  * @run main/othervm -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
  *                   -XX:-ExplicitGCInvokesConcurrent -XX:+HeapDumpBeforeFullGC
  *                   -XX:+HeapDumpAfterFullGC -XX:HeapDumpPath=dump
- *                   -Xms64m -Xmx64m TestFullGCHeapDump
+ *                   -Xms64m -Xmx64m TestFullGCHeapDump 2
  */
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.hprof.HprofParser;
 
 public class TestFullGCHeapDump {
     public static void main(String[] args) throws Exception {
+        final int expectedFiles = Integer.parseInt(args[0]);
         final String heapDumpPrefix = "java_pid";
         File heapDumpDirectory = new File("dump");
         boolean directoryCreated = heapDumpDirectory.mkdir();
-
         Asserts.assertTrue(directoryCreated, "Directory couldn't be created");
 
-        // This should create two heap dump files.
+        // Create the heap dump file(s).
         System.gc();
 
-        List<File> files = Stream.of(heapDumpDirectory.listFiles())
-                                 .filter(file -> !file.isDirectory())
-                                 .filter(file -> file.getName().startsWith(heapDumpPrefix))
-                                 .collect(Collectors.toList());
+        File[] heapDumpDirectoryFiles = heapDumpDirectory.listFiles();
+        Asserts.assertNotNull(heapDumpDirectoryFiles, "Directory couldn't be listed");
 
-        Asserts.assertEquals(2, files.size(), "Heap dump files: " + files);
-        for (File file : files) {
+        List<File> heapDumpFiles = new ArrayList<>();
+        for (File file : heapDumpDirectoryFiles) {
+            if (!file.isDirectory() && file.getName().startsWith(heapDumpPrefix)) {
+                heapDumpFiles.add(file);
+            }
+        }
+
+        Asserts.assertEquals(expectedFiles, heapDumpFiles.size(), "Heap dump files: " + heapDumpFiles);
+
+        for (File file : heapDumpFiles) {
             HprofParser.parseAndVerify(file);
         }
     }
