@@ -452,6 +452,26 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
   return captured;
 }
 
+bool os::win32::install_stack_guarantee(size_t requested, size_t* effective) {
+  assert(requested <= max_juint, "stack guarantee does not fit in ULONG");
+  ULONG guarantee = static_cast<ULONG>(requested);
+  if (!SetThreadStackGuarantee(&guarantee)) {
+    return false;
+  }
+
+  // Read the configured value, which could be different from the requested
+  // value since Windows enforces it's own minimum stack guarantee.  Windows
+  // guarantees that the configured value will not be smaller than the requested
+  // value.
+  guarantee = 0;
+  if (!SetThreadStackGuarantee(&guarantee)) {
+    return false;
+  }
+
+  *effective = guarantee;
+  return true;
+}
+
 //   Returns the base of the stack, which is the stack's
 //   starting address.  This function must be called
 //   while running on the stack of the thread being queried.
@@ -2686,6 +2706,70 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   return EXCEPTION_CONTINUE_EXECUTION;
 }
 
+static bool grow_windows_stack_to(address target) {
+  PNT_TIB tib = (PNT_TIB)NtCurrentTeb();
+
+  // Touch the page immediately below the current stack limit. Windows handles
+  // this as ordinary stack growth: it commits more stack, lowers StackLimit,
+  // and installs a new moving guard. Re-read StackLimit after every touch
+  // because Windows may grow the stack by more than one page at a time.
+  while (target < (address)tib->StackLimit) {
+    address old_limit = (address)tib->StackLimit;
+    volatile char* probe = reinterpret_cast<volatile char*>(
+        old_limit - os::vm_page_size());
+
+    // Dummy write to trigger an update to the stack limit.
+    *probe = 0;
+
+    if ((address)tib->StackLimit >= old_limit) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+[[noreturn]]
+static void report_fatal_stack_overflow(JavaThread* thread,
+    struct _EXCEPTION_POINTERS* exceptionInfo, address pc,
+    const char* message, bool disable_red_zone) {
+  if (disable_red_zone) {
+    thread->stack_overflow_state()->disable_stack_red_zone();
+  }
+
+  PEXCEPTION_RECORD exception_record = exceptionInfo->ExceptionRecord;
+  tty->print_raw_cr(message);
+  VMError::report_and_die(thread, exception_record->ExceptionCode, pc,
+                          exception_record, exceptionInfo->ContextRecord);
+}
+
+static LONG handle_stack_overflow_in_yellow_zone(JavaThread* thread,
+    struct _EXCEPTION_POINTERS* exceptionInfo, address pc) {
+  StackOverflow* overflow_state = thread->stack_overflow_state();
+  overflow_state->disable_stack_yellow_reserved_zone();
+  JavaThreadState state = thread->thread_state();
+
+  if (state == _thread_in_Java) {
+    address continuation =
+        SharedRuntime::continuation_for_implicit_exception(
+            thread, pc, SharedRuntime::STACK_OVERFLOW);
+    return Handle_Exception(exceptionInfo, continuation);
+  }
+
+  // The yellow zone is for catching stack overflows in Java code.  If a VM or
+  // native execution reaches the yellow zone, we let the execution continue.
+  // If it continues using the stack until it reaches the red zone, then HotSpot
+  // should receive an access violation exception from access to the red page.
+  if (state == _thread_in_vm || state == _thread_in_native) {
+    return EXCEPTION_CONTINUE_EXECUTION;
+  }
+
+  // The thread is in an unexpected state, so terminate out of caution.
+  report_fatal_stack_overflow(thread, exceptionInfo, pc,
+                              "An unrecoverable stack overflow has occurred.",
+                              /* disable red zone */ true);
+}
+
 //-----------------------------------------------------------------------------
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
@@ -2736,33 +2820,68 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     // Handle potential stack overflows up front.
     if (exception_code == EXCEPTION_STACK_OVERFLOW) {
       StackOverflow* overflow_state = thread->stack_overflow_state();
-      if (overflow_state->stack_guards_enabled()) {
-        if (in_java) {
-          frame fr;
-          if (os::win32::get_frame_at_stack_banging_point(thread, exceptionInfo, pc, &fr)) {
-            assert(fr.is_java_frame(), "Must be a Java frame");
-            SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
-          }
-        }
-        // Yellow zone violation.  The o/s has unprotected the first yellow
-        // zone page for us.  Note:  must call disable_stack_yellow_zone to
-        // update the enabled status, even if the zone contains only one page.
-        assert(!in_vm, "Undersized StackShadowPages");
-        overflow_state->disable_stack_yellow_reserved_zone();
-        // If not in java code, return and hope for the best.
-        return in_java
-            ? Handle_Exception(exceptionInfo, SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW))
-            :  EXCEPTION_CONTINUE_EXECUTION;
-      } else {
-        // Fatal red zone violation.
-        overflow_state->disable_stack_red_zone();
-        tty->print_raw_cr("An unrecoverable stack overflow has occurred.");
-        VMError::report_and_die(t, exception_code, pc, exception_record,
-                                exceptionInfo->ContextRecord);
+      if (overflow_state->stack_guard_zone_unused()) {
+        report_fatal_stack_overflow(thread, exceptionInfo, pc,
+                                    "HotSpot needs stack guards to handle stack exceptions.",
+                                    /* disable red zone */ false);
       }
+
+      // A disabled yellow or reserved zone means a previous stack overflow is
+      // still being processed.  Since we cannot safely create another
+      // StackOverflowError exception while still handling the first one, we
+      // fail here with an unrecoverable overflow.
+      if (overflow_state->stack_yellow_reserved_zone_disabled()) {
+        report_fatal_stack_overflow(thread, exceptionInfo, pc,
+                                    "A nested stack overflow error has occurred.",
+                                    /* disable red zone */ true);
+      }
+
+      // If we aren't able to restore the red zone, we probably won't be able to
+      // catch runaway stack accesses, so terminate the execution now, while we
+      // still have some stack space to use.
+      if (!os::guard_memory((char*)thread->stack_end(),
+                            StackOverflow::stack_red_zone_size())) {
+        report_fatal_stack_overflow(thread, exceptionInfo, pc,
+                                    "Unable to restore the fixed Windows red stack zone",
+                                    /* disable red zone */ false);
+      }
+
+      return handle_stack_overflow_in_yellow_zone(thread, exceptionInfo, pc);
     } else if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
+      StackOverflow* overflow_state = thread->stack_overflow_state();
+      address addr = (address)exception_record->ExceptionInformation[1];
+
+      bool in_red = overflow_state->in_stack_red_zone(addr);
+      bool in_yellow = overflow_state->in_stack_yellow_reserved_zone(addr);
+      if ((in_red || in_yellow) && overflow_state->stack_guard_zone_unused()) {
+        report_fatal_stack_overflow(thread, exceptionInfo, pc,
+                                    "HotSpot needs stack guards to handle stack exceptions.",
+                                    /* disable red zone */ false);
+      }
+
+      if (in_red) {
+        report_fatal_stack_overflow(thread, exceptionInfo, pc,
+                                    "An unrecoverable stack overflow has occurred.",
+                                    /* disable red zone */ true);
+      }
+
+      if (in_yellow) {
+        return handle_stack_overflow_in_yellow_zone(thread, exceptionInfo, pc);
+      }
+
+      PNT_TIB tib = (PNT_TIB)NtCurrentTeb();
+      if (addr < (address)tib->StackLimit && thread->is_in_usable_stack(addr)) {
+        address target = align_down(addr, os::vm_page_size());
+        if (grow_windows_stack_to(target)) {
+          return EXCEPTION_CONTINUE_EXECUTION;
+        }
+
+        report_fatal_stack_overflow(thread, exceptionInfo, pc,
+                                    "Unable to expand the Windows thread stack",
+                                    /* disable red zone */ true);
+      }
+
       if (in_java) {
-        // Either stack overflow or null pointer exception.
         address addr = (address) exception_record->ExceptionInformation[1];
         address stack_end = thread->stack_end();
         if (addr < stack_end && addr >= stack_end - os::vm_page_size()) {
@@ -2781,14 +2900,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
             address stub = SharedRuntime::get_poll_stub(pc);
             return Handle_Exception(exceptionInfo, stub);
           }
-        }
-        // If it's a legal stack address map the entire region in
-        if (thread->is_in_usable_stack(addr)) {
-          addr = (address)((uintptr_t)addr &
-                            (~((uintptr_t)os::vm_page_size() - (uintptr_t)1)));
-          os::commit_memory((char *)addr, thread->stack_base() - addr,
-                            !ExecMem);
-          return EXCEPTION_CONTINUE_EXECUTION;
         }
         // Null pointer exception.
         if (MacroAssembler::uses_implicit_null_check((void*)addr)) {
@@ -4052,12 +4163,7 @@ bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
     commit_memory_or_exit(addr, bytes, prot == MEM_PROT_RWX,
                           "cannot commit protection page");
   }
-  // One cannot use os::guard_memory() here, as on Win32 guard page
-  // have different (one-shot) semantics, from MSDN on PAGE_GUARD:
-  //
-  // Pages in the region become guard pages. Any attempt to access a guard page
-  // causes the system to raise a STATUS_GUARD_PAGE exception and turn off
-  // the guard page status. Guard pages thus act as a one-time access alarm.
+
   bool ret;
   if (UseNUMAInterleaving) {
     // If UseNUMAInterleaving is enabled, the pages may have been allocated a chunk at a time,
@@ -4081,7 +4187,7 @@ bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
 
 bool os::guard_memory(char* addr, size_t bytes) {
   DWORD old_status;
-  return VirtualProtect(addr, bytes, PAGE_READWRITE | PAGE_GUARD, &old_status) != 0;
+  return VirtualProtect(addr, bytes, PAGE_NOACCESS, &old_status) != 0;
 }
 
 bool os::unguard_memory(char* addr, size_t bytes) {
@@ -4266,6 +4372,7 @@ int os::current_process_id() {
   return (_initial_pid ? _initial_pid : _getpid());
 }
 
+size_t                    os::win32::_stack_guarantee_size      = 0;
 int                       os::win32::_processor_type            = 0;
 // Processor level is not available on non-NT systems, use vm_version instead
 int                       os::win32::_processor_level           = 0;
@@ -4795,6 +4902,19 @@ size_t os::_os_min_stack_allowed = 64 * K;
 
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
+  const size_t requested = StackOverflow::stack_red_zone_size() +
+      StackOverflow::stack_yellow_zone_size() - vm_page_size();
+
+  size_t actual = 0;
+  if (!win32::install_stack_guarantee(requested, &actual) ||
+      actual < requested || !is_aligned(actual, vm_page_size())) {
+    tty->print_cr("Unable to establish the Windows stack guarantee");
+    return JNI_ERR;
+  }
+
+  assert(win32::_stack_guarantee_size == 0, "already initialized");
+  win32::_stack_guarantee_size = actual;
+
   const char* auto_schedules_message = "Host Windows OS automatically schedules threads across all processor groups.";
   const char* no_auto_schedules_message = "Host Windows OS does not automatically schedule threads across all processor groups.";
 

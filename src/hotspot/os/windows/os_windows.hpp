@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ class os::win32 {
   static bool                      _has_exit_bug;
   static bool                      _processor_group_warning_displayed;
   static bool                      _job_object_processor_group_warning_displayed;
+  static size_t                    _stack_guarantee_size;
 
   static int                       _major_version;
   static int                       _minor_version;
@@ -66,6 +67,11 @@ class os::win32 {
   static bool   is_windows_11_or_greater();
   static bool   is_windows_server_2022_or_greater();
   static bool   request_lock_memory_privilege();
+  static bool   install_stack_guarantee(size_t requested, size_t* effective);
+  static size_t stack_guarantee_size() {
+    assert(_stack_guarantee_size > 0, "stack guarantee size not initialized");
+    return _stack_guarantee_size;
+  }
   static size_t large_page_init_decide_size();
   static int windows_major_version() {
     assert(_major_version > 0, "windows version not initialized.");
