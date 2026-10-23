@@ -50,11 +50,15 @@ Node* OptimizationDelayNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-void OptimizationDelayNode::narrow_hold_type() {
+void OptimizationDelayNode::narrow_hold_type(const Type* t_narrow) {
   assert(_stage == Stage::HoldType, "must still hold type");
-  // TODO: impl!
+  const Type* t_old = _hold_type;
+  _hold_type = t_narrow;
+  // TODO: impl, and asserts!
   if (TraceOptimizationDelay) {
-    tty->print_cr("[OptizationDelay] narrow hold type");
+    tty->print("[OptizationDelay] narrow hold type from: ");
+    t_old->dump();
+    tty->cr();
     this->dump();
   }
 }

@@ -2006,7 +2006,8 @@ bool Compile::advance_optimization_delay_nodes(PhaseIterGVN& igvn) {
   }
 
   if (stress().random() % 10 == 0) {
-    delay->narrow_hold_type();
+    const Type* t_narrow = igvn.type(delay->in(1));
+    delay->narrow_hold_type(t_narrow);
     igvn._worklist.push(delay);
     return true;
   }

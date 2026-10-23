@@ -87,7 +87,7 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
 
-  void narrow_hold_type();
+  void narrow_hold_type(const Type* t_narrow);
   void reveal_type();
   void reveal_identity();
 
