@@ -833,7 +833,7 @@ void PhaseConditionalPropagation::Analyzer::check_for_dead_path(bool &extra_loop
     return;
   }
 
-  Unique_Node_List wq;
+  Unique_Node_List<Node> wq;
 
   auto look_for_top = [&](Node* node, const Type* t, const Type* prev_t) {
     if (node->is_CFG()) {
@@ -1686,7 +1686,7 @@ void PhaseConditionalPropagation::Transformer::pin_uses_if_needed(const Type* t,
         }
       }
     } else if (n->is_Load()) {
-      const TypePtr* adr_type = n->adr_type();
+      const TypePtr* adr_type = n->in_adr_type();
       if (n->in(0) != nullptr && n->in(0) != c && adr_type != nullptr && adr_type->isa_aryptr()) {
         Node* early_ctrl = _phase->compute_early_ctrl(n, _phase->get_ctrl(n));
         if (early_ctrl != c && _phase->is_dominator(early_ctrl, c)) {
@@ -1759,7 +1759,7 @@ Node* PhaseConditionalPropagation::Transformer::transform_helper(Node* c) {
 }
 
 // Compute and cache early control for data nodes
-PhaseConditionalPropagation::Analyzer::EarlyCtrls::EarlyCtrls(Node_Stack& nstack, Analyzer& analyzer)
+PhaseConditionalPropagation::Analyzer::EarlyCtrls::EarlyCtrls(Node_Stack<Node>& nstack, Analyzer& analyzer)
   : _nstack(nstack), _phase(analyzer._phase), _analyzer(analyzer) {
   _node_to_ctrl_table = new NodeToCtrl(8, _phase->C->live_nodes());
 }
@@ -1895,7 +1895,7 @@ void PhaseConditionalPropagation::do_transform(const TypeTable* type_table) {
   transformer.do_transform();
 }
 
-PhaseConditionalPropagation::Analyzer::DominatorTree::DominatorTree(const Node_List& rpo_list, PhaseIdealLoop* phase):
+PhaseConditionalPropagation::Analyzer::DominatorTree::DominatorTree(const Node_List<Node>& rpo_list, PhaseIdealLoop* phase):
   _nodes(nullptr) {
   _nodes = new DomTreeTable(rpo_list.size(), rpo_list.size());
 
@@ -1941,8 +1941,8 @@ PhaseConditionalPropagation::Analyzer::DominatorTree::DominatorTree(const Node_L
   }
 }
 
-PhaseConditionalPropagation::PhaseConditionalPropagation(PhaseIdealLoop* phase, VectorSet &visited, Node_Stack &nstack,
-                                                         Node_List &rpo_list)
+PhaseConditionalPropagation::PhaseConditionalPropagation(PhaseIdealLoop* phase, VectorSet &visited, Node_Stack<Node> &nstack,
+                                                         Node_List<Node> &rpo_list)
   : _phase(phase),
     _visited(visited),
     _nstack(nstack),
@@ -1965,7 +1965,7 @@ PhaseConditionalPropagation::PhaseConditionalPropagation(PhaseIdealLoop* phase, 
   }
 }
 
-void PhaseIdealLoop::conditional_elimination(VectorSet &visited, Node_Stack &nstack, Node_List &rpo_list, int rounds) {
+void PhaseIdealLoop::conditional_elimination(VectorSet &visited, Node_Stack<Node> &nstack, Node_List<Node> &rpo_list, int rounds) {
   Compile::TracePhase tp(Phase::_t_conditionalElim);
   assert(rpo_list.size() == 0, "non empty list as argument");
   rpo(C->root(), nstack, visited, rpo_list);

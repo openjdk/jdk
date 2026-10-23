@@ -250,7 +250,7 @@ public:
       DomTreeTable* _nodes;
 
     public:
-      DominatorTree(const Node_List &rpo_list, PhaseIdealLoop* phase);
+      DominatorTree(const Node_List<Node> &rpo_list, PhaseIdealLoop* phase);
 
       //           n1 (pre =0, post = 13)
       //         /                 \
@@ -271,8 +271,8 @@ public:
     // Utility class: main algorithm needs early control for some nodes. Rather than recompute it, cache the result
     class EarlyCtrls {
     private:
-      Node_Stack &_nstack;
-      Node_List _intermediate_results;
+      Node_Stack<Node> &_nstack;
+      Node_List<Node> _intermediate_results;
       PhaseIdealLoop* _phase;
       Analyzer &_analyzer;
       using NodeToCtrl = ResizeableHashTable<Node*, Node*, AnyObj::RESOURCE_AREA, mtInternal>;
@@ -285,7 +285,7 @@ public:
       Node* update_early_ctrl(Node* early_c, Node* in_c);
 
     public:
-      EarlyCtrls(Node_Stack &nstack, Analyzer &analyzer);
+      EarlyCtrls(Node_Stack<Node> &nstack, Analyzer &analyzer);
 
       Node* get_early_ctrl(Node* u);
     };
@@ -361,7 +361,7 @@ public:
       VectorSet _enqueued;
       // As an optimization, keep track of the current control the main algorithm is analyzing and if a node is enqueued
       // at _current_ctrl, push it on the Unique_Node_List below
-      Unique_Node_List _wq;
+      Unique_Node_List<Node> _wq;
       Node* _current_ctrl;
 
       GrowableArray<Node*>* work_queue_at(Node* c) const {
@@ -419,7 +419,7 @@ public:
     VectorSet &_visited;
     bool _progress;
 #endif
-    Node_List &_rpo_list;
+    Node_List<Node> &_rpo_list;
     WriteableTypeTable* _type_table;
     Node* _current_ctrl;
     VectorSet _dead_paths;
@@ -465,7 +465,7 @@ public:
     // can have its type narrowed at a control that dominates early control for the node. Outside of verification that
     // can't happen. Track nodes for which that happens and make sure they all have the same type during and before
     // verification at early control for the node.
-    Unique_Node_List _verify_wq;
+    Unique_Node_List<Node> _verify_wq;
 
     bool verify_wq_empty() const {
       return _verify_wq.size() == 0;
@@ -475,7 +475,7 @@ public:
     const Type* type_at_current_ctrl(Node* n) const;
 
   public:
-    Analyzer(PhaseConditionalPropagation &conditional_propagation, VectorSet &visited, Node_List &rpo_list,
+    Analyzer(PhaseConditionalPropagation &conditional_propagation, VectorSet &visited, Node_List<Node> &rpo_list,
              DominatorTree &dominator_tree)
       : PhaseIterGVN(&conditional_propagation._phase->igvn()),
         _conditional_propagation(conditional_propagation),
@@ -549,8 +549,8 @@ public:
   private:
     PhaseConditionalPropagation& _conditional_propagation;
     PhaseIdealLoop* _phase;
-    Unique_Node_List _controls;
-    Unique_Node_List _wq;
+    Unique_Node_List<Node> _controls;
+    Unique_Node_List<Node> _wq;
     const TypeTable* _type_table;
     uint _unique;
     VectorSet _constant_folded_ifs;
@@ -584,10 +584,10 @@ public:
 
   PhaseIdealLoop* _phase;
   VectorSet& _visited;
-  Node_Stack& _nstack;
-  Node_List& _rpo_list;
+  Node_Stack<Node>& _nstack;
+  Node_List<Node>& _rpo_list;
 
-  Unique_Node_List _wq;
+  Unique_Node_List<Node> _wq;
   template <class Callback> bool apply_to_cfg_uses(Node* n, Callback callback);
 
   const TypeTable* analyze(int rounds, Analyzer::DominatorTree &dominator_tree);
@@ -596,7 +596,7 @@ public:
   VectorSet _divisor_candidates;
 
 public:
-  PhaseConditionalPropagation(PhaseIdealLoop* phase, VectorSet &visited, Node_Stack &nstack, Node_List &rpo_list);
+  PhaseConditionalPropagation(PhaseIdealLoop* phase, VectorSet &visited, Node_Stack<Node> &nstack, Node_List<Node> &rpo_list);
 
   void analyze_and_transform(int rounds, Analyzer::DominatorTree &dominator_tree);
 

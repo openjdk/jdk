@@ -2104,7 +2104,7 @@ public:
 
   ConNode* zerocon(BasicType bt);
 
-  void conditional_elimination(VectorSet& visited, Node_Stack& nstack, Node_List& rpo_list, int rounds);
+  void conditional_elimination(VectorSet& visited, Node_Stack<Node>& nstack, Node_List<Node>& rpo_list, int rounds);
 };
 
 class CountedLoopConverter {
