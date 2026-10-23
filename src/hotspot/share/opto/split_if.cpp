@@ -791,8 +791,8 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
 
   // Control is updated here to a region, which is not a test, so any node that
   // depends_only_on_test must be pinned
-  IfNode::pin_nodes_dependent_on(new_true, iff, &_igvn, this);
-  IfNode::pin_nodes_dependent_on(new_false, iff, &_igvn, this);
+  IfNode::pin_nodes_dependent_on(new_true, iff->Opcode(), &_igvn, this);
+  IfNode::pin_nodes_dependent_on(new_false, iff->Opcode(), &_igvn, this);
 
   if (new_false_region != nullptr) {
     *new_false_region = new_false;

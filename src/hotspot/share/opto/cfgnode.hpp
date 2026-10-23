@@ -644,7 +644,7 @@ public:
   bool same_condition(const Node* dom, PhaseIterGVN* igvn) const;
   void mark_projections_unsafe_for_fold_compare() const;
 
-  static void pin_nodes_dependent_on(Node* ctrl, Node* iff, PhaseIterGVN* igvn, PhaseIdealLoop* loop);
+  static void pin_nodes_dependent_on(Node* ctrl, int old_iff_opcode, PhaseIterGVN* igvn, PhaseIdealLoop* loop);
 };
 
 class RangeCheckNode : public IfNode {
