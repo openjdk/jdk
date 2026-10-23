@@ -26,15 +26,16 @@
  * @bug 8365978
  * @summary Unsafe::compareAndSetFlatValue crashes with -XX:-UseArrayFlattening
  * @enablePreview
+ * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run main/othervm -XX:CompileCommand=compileonly,compiler.valhalla.valuetypes.PutFlatValueWithoutUseArrayFlattening::test
+ * @run main/othervm -XX:CompileCommand=compileonly,${test.main.class}::test
  *                   -XX:-TieredCompilation -Xcomp
  *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:-UseArrayFlattening -XX:+UseFieldFlattening -XX:+IgnoreUnrecognizedVMOptions -XX:+PreloadClasses
- *                   compiler.valhalla.valuetypes.PutFlatValueWithoutUseArrayFlattening
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UseFieldFlattening -XX:+IgnoreUnrecognizedVMOptions -XX:+PreloadClasses
- *                   compiler.valhalla.valuetypes.PutFlatValueWithoutUseArrayFlattening
+ *                   -XX:-UseArrayFlattening -XX:+UseFieldFlattening -XX:+IgnoreUnrecognizedVMOptions
+ *                   ${test.main.class}
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UseFieldFlattening -XX:+IgnoreUnrecognizedVMOptions
+ *                   ${test.main.class}
  */
 
 package compiler.valhalla.valuetypes;

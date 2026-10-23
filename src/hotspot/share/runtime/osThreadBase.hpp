@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_OSTHREAD_BASE_HPP
-#define SHARE_RUNTIME_OSTHREAD_BASE_HPP
+#ifndef SHARE_RUNTIME_OSTHREADBASE_HPP
+#define SHARE_RUNTIME_OSTHREADBASE_HPP
 
 #include "memory/allocation.hpp"
 
@@ -111,4 +111,4 @@ class OSThreadContendState : public StackObj {
   }
 };
 
-#endif // SHARE_RUNTIME_OSTHREAD_BASE_HPP
+#endif // SHARE_RUNTIME_OSTHREADBASE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,11 +85,7 @@ mlib_status awt_getImagingLib(JNIEnv *env, mlibFnS_t *sMlibFns,
  */
 mlib_status awt_getImagingLib(JNIEnv *env, mlibFnS_t *sMlibFns,
                               mlibSysFnS_t *sMlibSysFns) {
-    int status;
-    jstring jstr = NULL;
     mlibFnS_t *mptr;
-    void *(*vPtr)();
-    int (*intPtr)();
     mlib_status (*fPtr)();
     int i;
     void *handle = NULL;
@@ -97,7 +93,6 @@ mlib_status awt_getImagingLib(JNIEnv *env, mlibFnS_t *sMlibFns,
     static int s_timeIt = 0;
     static int s_verbose = 1;
     mlib_status ret = MLIB_SUCCESS;
-    struct utsname name;
 
     handle = dlopen(JNI_LIB_NAME("mlib_image"), RTLD_LAZY);
 

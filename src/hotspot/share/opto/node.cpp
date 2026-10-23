@@ -886,7 +886,7 @@ void Node::ins_req( uint idx, Node *n ) {
 }
 
 //-----------------------------find_edge---------------------------------------
-int Node::find_edge(Node* n) {
+int Node::find_edge(const Node* n) const {
   for (uint i = 0; i < len(); i++) {
     if (_in[i] == n)  return i;
   }
@@ -1237,6 +1237,10 @@ bool Node::has_special_unique_user() const {
     return true;
   } else if (op == Op_LoadUS && n->Opcode() == Op_LShiftI) {
     // Condition for RShiftI(LShiftI(LoadUS(...), 16), 16) => LoadS(...), see RShiftINode::Ideal
+    return true;
+  } else if ((op == Op_LoadB || op == Op_LoadS) && n->Opcode() == Op_AndI) {
+    // AndINode::Ideal turns AndI(LoadB/S) into AndI(LoadUB/US), if the LoadB
+    // only has a single use.
     return true;
   } else if (op == Op_AddL) {
     // Condition for convL2I(addL(x,y)) ==> addI(convL2I(x),convL2I(y))
@@ -3007,8 +3011,9 @@ bool Node::is_dead_loop_safe() const {
     if (in(0)->is_Allocate()) {
       return false;
     }
-    // MemNode::can_see_stored_value() peeks through the boxing call
-    if (in(0)->is_CallStaticJava() && in(0)->as_CallStaticJava()->is_boxing_method()) {
+    // MemNode::can_see_stored_value() peeks through boxing calls and
+    // ProjNode::Identity() peeks through boxing and unboxing calls.
+    if (in(0)->is_boxing_or_unboxing_call()) {
       return false;
     }
     return true;
@@ -3018,6 +3023,11 @@ bool Node::is_dead_loop_safe() const {
 
 bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || Opcode() == Op_Mod(bt) ||
                                                       Opcode() == Op_UDiv(bt) || Opcode() == Op_UMod(bt); }
+
+bool Node::is_boxing_or_unboxing_call() const {
+  return is_CallStaticJava() && (as_CallStaticJava()->is_boxing_method() ||
+                                 as_CallStaticJava()->is_unboxing_method());
+}
 
 // `maybe_pure_function` is assumed to be the input of `this`. This is a bit redundant,
 // but we already have and need maybe_pure_function in all the call sites, so
@@ -3056,6 +3066,12 @@ bool Node::has_non_debug_uses() const {
     Node* u = fast_out(i);
     if (u->is_SafePoint()) {
       if (u->is_Call() && u->as_Call()->has_non_debug_use(this)) {
+        return true;
+      }
+      if (u->is_StoreFlat() && u->as_StoreFlat()->has_non_debug_use(this)) {
+        return true;
+      }
+      if (u->is_LoadFlat() && u->as_LoadFlat()->has_non_debug_use(this)) {
         return true;
       }
       // Non-call safepoints have only debug uses.

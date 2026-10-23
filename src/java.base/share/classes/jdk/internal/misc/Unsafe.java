@@ -1619,6 +1619,16 @@ public final class Unsafe {
      */
     public static boolean isWritebackEnabled() { return DATA_CACHE_LINE_FLUSH_SIZE != 0; }
 
+    /**
+     * Reports the mask used to fit hashcodes into the cache field of the mark word.
+     */
+    public int hashCodeMask() { return HASH_CODE_MASK; }
+
+    /**
+     * Reports the value used to mark that no hash code has been cached yet.
+     */
+    public int hashCodeNoHash() { return HASH_CODE_NO_HASH; }
+
     //--- random trusted operations from JNI:
 
     /**
@@ -1798,7 +1808,8 @@ public final class Unsafe {
                                                     V expected,
                                                     V x) {
         Object[] array = newSpecialArray(valueType, 2, layout);
-        compareAndSetFlatValueAsBytes(array, o, offset, layout, valueType, expected, x);
+        int containerLayout = arrayLayout(array);
+        compareAndSetFlatValueAsBytes(array, o, offset, containerLayout, valueType, expected, x);
         return array[0];
     }
 

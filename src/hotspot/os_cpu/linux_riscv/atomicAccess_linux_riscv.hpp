@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,14 +30,16 @@
 
 // Implementation of class AtomicAccess
 
-// Note that memory_order_conservative requires a full barrier after atomic stores.
-// See https://patchwork.kernel.org/patch/3575821/
+// Note that memory_order_conservative requires a strong two-way barrier.
+// For 32- and 64-bit add and xchg that barrier is provided by an explicit
+// AMO with .aqrl. Cmpxchg still uses explicit full barriers.
 //
 // Under Ztso, loads and stores have acquire-RCpc and release-RCpc semantics,
 // respectively, while AMOs have acquire-RCsc and release-RCsc semantics.  The
 // latter makes the hardware fences around AMO-based atomic operations
-// redundant, but compiler barriers are still needed.  LR/SC-based operations
-// do not have the same ordering guarantees and still require the full fences.
+// redundant, so for add and xchg under Ztso we emit a bare AMO guarded by
+// compiler barriers instead of the .aqrl form.  LR/SC-based operations do not
+// have the same ordering guarantees and still require the full fences.
 
 #if defined(__clang_major__)
 #define FULL_COMPILER_ATOMIC_SUPPORT
@@ -48,39 +50,50 @@
 template<size_t byte_size>
 struct AtomicAccess::PlatformAdd {
   template<typename D, typename I>
-  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
-
-#ifndef FULL_COMPILER_ATOMIC_SUPPORT
-    // If we add add and fetch for sub word and are using older compiler
-    // it must be added here due to not using lib atomic.
-    static_assert(byte_size >= 4);
-#endif
-
-    if (order != memory_order_relaxed) {
-      if (UseZtso && (byte_size == 4 || byte_size == 8)) {
-        compiler_barrier();
-      } else {
-        FULL_MEM_BARRIER;
-      }
-    }
-
-    D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
-
-    if (order != memory_order_relaxed) {
-      if (UseZtso && (byte_size == 4 || byte_size == 8)) {
-        compiler_barrier();
-      } else {
-        FULL_MEM_BARRIER;
-      }
-    }
-    return res;
-  }
+  D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) const;
 
   template<typename D, typename I>
-  D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) const {
-    return add_then_fetch(dest, add_value, order) - add_value;
+  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
+    D value = fetch_then_add(dest, add_value, order) + add_value;
+    return value;
   }
 };
+
+template<size_t byte_size>
+template<typename D, typename I>
+inline D AtomicAccess::PlatformAdd<byte_size>::fetch_then_add(D volatile* dest, I add_value,
+                                                              atomic_memory_order order) const {
+  static_assert(byte_size == sizeof(D));
+  static_assert(byte_size == sizeof(I));
+  static_assert(byte_size == 4 || byte_size == 8);
+
+  if (order == memory_order_relaxed) {
+    return __atomic_fetch_add(dest, add_value, __ATOMIC_RELAXED);
+  }
+
+  // Under Ztso a bare AMO already has RCsc semantics, so the .aqrl hardware
+  // fence is redundant; a compiler barrier on each side is all that is needed.
+  if (UseZtso) {
+    compiler_barrier();
+    D old_value = __atomic_fetch_add(dest, add_value, __ATOMIC_RELAXED);
+    compiler_barrier();
+    return old_value;
+  }
+
+  D old_value;
+  if constexpr (byte_size == 4) {
+    __asm__ __volatile__ ("amoadd.w.aqrl %0, %2, %1"
+                          : "=r" (old_value), "+A" (*dest)
+                          : "r" (add_value)
+                          : "memory");
+  } else {
+    __asm__ __volatile__ ("amoadd.d.aqrl %0, %2, %1"
+                          : "=r" (old_value), "+A" (*dest)
+                          : "r" (add_value)
+                          : "memory");
+  }
+  return old_value;
+}
 
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
 template<>
@@ -177,24 +190,32 @@ inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
   static_assert(byte_size == sizeof(T));
   static_assert(byte_size == 4 || byte_size == 8);
 
-  if (order != memory_order_relaxed) {
-    if (UseZtso) {
-      compiler_barrier();
-    } else {
-      FULL_MEM_BARRIER;
-    }
+  if (order == memory_order_relaxed) {
+    return __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
   }
 
-  T res = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
-
-  if (order != memory_order_relaxed) {
-    if (UseZtso) {
-      compiler_barrier();
-    } else {
-      FULL_MEM_BARRIER;
-    }
+  // Under Ztso a bare AMO already has RCsc semantics, so the .aqrl hardware
+  // fence is redundant; a compiler barrier on each side is all that is needed.
+  if (UseZtso) {
+    compiler_barrier();
+    T old_value = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
+    compiler_barrier();
+    return old_value;
   }
-  return res;
+
+  T old_value;
+  if constexpr (byte_size == 4) {
+    __asm__ __volatile__ ("amoswap.w.aqrl %0, %2, %1"
+                          : "=r" (old_value), "+A" (*dest)
+                          : "r" (exchange_value)
+                          : "memory");
+  } else {
+    __asm__ __volatile__ ("amoswap.d.aqrl %0, %2, %1"
+                          : "=r" (old_value), "+A" (*dest)
+                          : "r" (exchange_value)
+                          : "memory");
+  }
+  return old_value;
 }
 
 // __attribute__((unused)) on dest is to get rid of spurious GCC warnings.

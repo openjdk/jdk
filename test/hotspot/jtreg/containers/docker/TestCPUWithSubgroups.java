@@ -24,7 +24,7 @@
 /*
  * @test
  * @key cgroups
- * @summary Test that a stricter leaf CPU quota is not replaced by a looser parent quota
+ * @summary Test that the strictest CPU quota is used in a cgroup hierarchy
  * @requires container.support
  * @requires !vm.asan
  * @library /test/lib
@@ -64,6 +64,9 @@ public class TestCPUWithSubgroups {
         DockerTestUtils.buildJdkContainerImage(imageName);
         try {
             testCpuLimitSubgroup(provider);
+            if ("cgroupv2".equals(provider)) {
+                testCpuLimitAtMountRoot();
+            }
         } finally {
             DockerTestUtils.removeDockerImage(imageName);
         }
@@ -98,6 +101,26 @@ public class TestCPUWithSubgroups {
                 "echo '100000 100000' > $CG/leaf/cpu.max; " +
                 "/jdk/bin/java -Xlog:os+container=trace -Xlog:os=trace -version");
         }
+
+        Common.run(opts)
+            .shouldContain("active_processor_count: determined by OSContainer: 1");
+    }
+
+    private static void testCpuLimitAtMountRoot() throws Exception {
+        Common.logNewTestCase("Cgroup V2 mount-root CPU limit");
+
+        DockerRunOptions opts = new DockerRunOptions(imageName, "sh", "-c");
+        opts.javaOpts.clear();
+        opts.appendTestJavaOptions = false;
+        opts.addDockerOpts("--privileged")
+            .addDockerOpts("--user", "root")
+            .addDockerOpts("--cgroupns=private", "--cpus=1");
+        opts.addClassOptions(
+            "set -e; " +
+            "CG=/sys/fs/cgroup/jdk-cpu-hierarchy-test; mkdir -p $CG; " +
+            "echo $$ > $CG/cgroup.procs; " +
+            "echo '+cpu' > /sys/fs/cgroup/cgroup.subtree_control; " +
+            "/jdk/bin/java -Xlog:os+container=trace -Xlog:os=trace -version");
 
         Common.run(opts)
             .shouldContain("active_processor_count: determined by OSContainer: 1");
