@@ -47,7 +47,7 @@ u4 JfrStackWalkerRequestQueue::size() const {
 }
 
 JfrStackWalkerRequestQueue::JfrStackWalkerRequestQueue():
-   _data(nullptr), _capacity(0), _head(0), _lost_requests(0), _lost_requests_due_to_queue_full(0) {
+   _data(nullptr), _capacity(0), _head(0), _lost_requests_due_to_queue_full(0) {
 }
 
 JfrStackWalkerRequestQueue::~JfrStackWalkerRequestQueue() {
@@ -100,16 +100,8 @@ bool JfrStackWalkerRequestQueue::is_empty() const {
   return AtomicAccess::load_acquire(&_head) == 0;
 }
 
-void JfrStackWalkerRequestQueue::increment_lost_requests() {
-  AtomicAccess::inc(&_lost_requests);
-}
-
 void JfrStackWalkerRequestQueue::increment_lost_requests_due_to_queue_full() {
   AtomicAccess::inc(&_lost_requests_due_to_queue_full);
-}
-
-u4 JfrStackWalkerRequestQueue::get_and_reset_lost_requests() {
-  return AtomicAccess::xchg(&_lost_requests, (u4)0);
 }
 
 u4 JfrStackWalkerRequestQueue::get_and_reset_lost_requests_due_to_queue_full() {
@@ -399,18 +391,16 @@ static bool check_state(const JavaThread* thread) {
   }
 }
 
-void JfrStackWalker::request_stack_trace(JfrStackWalkRequest& request, JavaThread* jt, const void* context, bool thread_is_suspended) {
+bool JfrStackWalker::request_stack_trace(JfrStackWalkRequest& request, JavaThread* jt, const void* context, bool thread_is_suspended) {
   JfrStackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
   JfrStackWalkerRequestQueue& queue = tl.queue();
   if (thread_is_suspended && !check_state(jt)) {
-    queue.increment_lost_requests();
-    return;
+    return false;
   }
 
   JfrStackWalkTryEnqueueLocker lock(tl);
   if (!lock.is_locked()) {
-    queue.increment_lost_requests();
-    return;
+    return false;
   }
 
   // When the thread is suspended, we try to build an unbiased request from the
@@ -421,13 +411,13 @@ void JfrStackWalker::request_stack_trace(JfrStackWalkRequest& request, JavaThrea
     JfrSampleRequestBuilder::build_unbiased_sample_request(request.sample_request(), context, jt);
   }
 
-  if (queue.enqueue(request)) {
+  const bool enqueued = queue.enqueue(request);
+  if (enqueued) {
     if (queue.size() == 1) {
       tl.set_has_requests(true);
       SafepointMechanism::arm_local_poll_release(jt);
     }
   } else {
-    queue.increment_lost_requests();
     queue.increment_lost_requests_due_to_queue_full();
   }
 
@@ -439,6 +429,7 @@ void JfrStackWalker::request_stack_trace(JfrStackWalkRequest& request, JavaThrea
   } else {
     tl.set_do_async_processing_of_requests(false);
   }
+  return enqueued;
 }
 
 void JfrStackWalker::trigger_async_processing_of_requests() {
@@ -491,23 +482,31 @@ void JfrStackWalker::process_requests_locked(JavaThread* jt) {
   JfrStackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
   tl.set_do_async_processing_of_requests(false);
   JfrStackWalkerRequestQueue& queue = tl.queue();
-  u4 lost = queue.get_and_reset_lost_requests();
   u4 count = queue.size();
   for (u4 i = 0; i < count; i++) {
     JfrStackWalkRequest& request = queue.at(i);
     report_thread(request, tl, jt, current);
-    // Report lost requests through the last callback before destroying it.
-    if (lost > 0 && i == count - 1) {
-      request.callback()->report_lost_requests(jt, lost);
-    }
     request.destroy_callback();
   }
   queue.clear();
   assert(queue.is_empty(), "invariant");
   tl.set_has_requests(false);
-  if (lost > 0) {
-    queue.resize_if_needed();
+  queue.resize_if_needed();
+}
+
+void JfrStackWalker::on_javathread_terminate(JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  JfrStackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
+  JfrStackWalkDequeueLocker lock(tl);
+  JfrStackWalkerRequestQueue& queue = tl.queue();
+  const u4 count = queue.size();
+  for (u4 i = 0; i < count; i++) {
+    JfrStackWalkRequest& request = queue.at(i);
+    request.callback()->on_dropped(jt);
+    request.destroy_callback();
   }
+  queue.clear();
+  tl.set_has_requests(false);
 }
 
 void JfrStackWalker::process_requests(JavaThread* jt) {

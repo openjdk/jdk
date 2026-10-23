@@ -35,10 +35,8 @@
 #include "utilities/macros.hpp"
 
 #if INCLUDE_JFR
-#include "jfr/periodic/sampling/jfrStackWalker.hpp"
+#include "jfr/periodic/sampling/jfrStackTraceRequest.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
-#include "jfr/utilities/jfrTypes.hpp"
-#include "jfrfiles/jfrEventClasses.hpp"
 #endif
 
 // the list of extension functions
@@ -177,43 +175,6 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
   return JVMTI_ERROR_NONE;
 }
 
-#if INCLUDE_JFR
-
-class JfrStackTraceRequestCallback : public JfrStackWalkerCallback {
-  JfrTicks _sample_ticks;
-  jlong _user_data;
-
-public:
-  JfrStackTraceRequestCallback(jlong user_data) :
-    _sample_ticks(JfrTicks::now()),
-    _user_data(user_data) {
-  }
-
-  void on_stacktrace(JavaThread* jt, traceid sid, traceid tid, bool biased) final {
-    EventStackTraceRequest event(UNTIMED);
-    event.set_starttime(_sample_ticks);
-    event.set_eventThread(tid);
-    event.set_stackTrace(sid);
-    event.set_userData(_user_data);
-    event.set_failed(false);
-    event.set_biased(biased);
-    event.commit();
-  }
-
-  void on_failure(JavaThread* jt, traceid tid) final {
-    EventStackTraceRequest event(UNTIMED);
-    event.set_starttime(_sample_ticks);
-    event.set_eventThread(tid);
-    event.set_stackTrace(0);
-    event.set_userData(_user_data);
-    event.set_failed(true);
-    event.set_biased(false);
-    event.commit();
-  }
-};
-
-#endif // INCLUDE_JFR
-
 // Parameters: (const jvmtiEnv* env, jthread thread, void* ucontext, jlong user_data)
 static jvmtiError JNICALL RequestJFRStackTrace(const jvmtiEnv* env, ...) {
 #if !INCLUDE_JFR
@@ -234,14 +195,10 @@ static jvmtiError JNICALL RequestJFRStackTrace(const jvmtiEnv* env, ...) {
   // and the signal may fire on a thread that is detaching from the VM.
   Thread* current = Thread::current_or_null_safe();
   if (current == nullptr || !current->is_Java_thread()) {
-    return JVMTI_ERROR_WRONG_PHASE;
+    return JVMTI_ERROR_UNATTACHED_THREAD;
   }
 
-  if (!JfrRecorder::is_created()) {
-    return JVMTI_ERROR_WRONG_PHASE;
-  }
-
-  if (!EventStackTraceRequest::is_enabled()) {
+  if (!JfrRecorder::is_created() || !JfrStackTraceRequest::is_enabled()) {
     return JVMTI_ERROR_NOT_AVAILABLE;
   }
 
@@ -252,10 +209,15 @@ static jvmtiError JNICALL RequestJFRStackTrace(const jvmtiEnv* env, ...) {
   auto submit = [&](JavaThread* target) -> jvmtiError {
     // Filter out threads that are exiting or excluded, matching the JFR
     // CPU time sampler's get_java_thread_if_valid() checks.
-    if (target->is_exiting() ||
-        target->is_hidden_from_external_view() ||
-        target->jfr_thread_local()->is_excluded()) {
-      return JVMTI_ERROR_WRONG_PHASE;
+    if (target->is_exiting()) {
+      return JVMTI_ERROR_THREAD_NOT_ALIVE;
+    }
+    if (target->is_hidden_from_external_view()) {
+      return JVMTI_ERROR_INVALID_THREAD;
+    }
+    if (target->jfr_thread_local()->is_excluded()) {
+      // JFR does not record events for excluded threads.
+      return JVMTI_ERROR_NOT_AVAILABLE;
     }
     // The walker can read frame state directly only when the target is the
     // calling thread (we hold its state by virtue of executing on it) or
@@ -264,9 +226,11 @@ static jvmtiError JNICALL RequestJFRStackTrace(const jvmtiEnv* env, ...) {
     // the target's next safepoint.
     const bool thread_is_suspended = (target == current_jt) || (ucontext != nullptr);
 
-    JfrStackWalkRequest request;
-    request.construct_callback<JfrStackTraceRequestCallback>(user_data);
-    JfrStackWalker::request_stack_trace(request, target, ucontext, thread_is_suspended);
+    if (!JfrStackTraceRequest::request(target, ucontext, thread_is_suspended, user_data)) {
+      // Dropped, e.g. because the thread is in a state that does not permit
+      // stack walking or its request queue is full.
+      return JVMTI_ERROR_ABSENT_INFORMATION;
+    }
     return JVMTI_ERROR_NONE;
   };
 
@@ -375,14 +339,17 @@ void JvmtiExtensions::register_extensions() {
 
   static jvmtiError rst_errors[] = {
     JVMTI_ERROR_NOT_AVAILABLE,
+    JVMTI_ERROR_ABSENT_INFORMATION,
+    JVMTI_ERROR_INVALID_THREAD,
+    JVMTI_ERROR_THREAD_NOT_ALIVE,
     JVMTI_ERROR_UNSUPPORTED_OPERATION,
-    JVMTI_ERROR_WRONG_PHASE
+    JVMTI_ERROR_UNATTACHED_THREAD
   };
 
   static jvmtiExtensionFunctionInfo ext_func_rst = {
     (jvmtiExtensionFunction)RequestJFRStackTrace,
     (char*)"com.sun.hotspot.functions.RequestJFRStackTrace",
-    (char*)"Request an async stack trace of the current thread, emitted as a JFR StackTraceRequest event",
+    (char*)"Request an async stack trace of a thread, emitted as a JFR StackTraceRequest event",
     sizeof(func_params_rst)/sizeof(func_params_rst[0]),
     func_params_rst,
     sizeof(rst_errors)/sizeof(jvmtiError),

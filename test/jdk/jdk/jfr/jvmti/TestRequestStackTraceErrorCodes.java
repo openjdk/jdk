@@ -31,7 +31,7 @@ import jdk.test.lib.Asserts;
 /**
  * @test
  * @summary Verify that RequestStackTrace returns the documented JVMTI error
- *          codes for wrong-phase and not-available conditions.
+ *          codes for not-available conditions.
  * @requires vm.hasJFR & os.family != "windows"
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
@@ -44,17 +44,17 @@ public class TestRequestStackTraceErrorCodes {
     private static final String EVENT_NAME = "jdk.StackTraceRequest";
 
     public static void main(String[] args) throws Exception {
-        // Order matters: WRONG_PHASE for "no recorder yet" is only observable
-        // before any recording has been started in this VM.
-        testWrongPhaseNoRecording();
+        // Order matters: "no recorder yet" is only observable before any
+        // recording has been started in this VM.
+        testNotAvailableNoRecording();
         testNotAvailableWhenEventDisabled();
-        testWrongPhaseForExcludedThread();
+        testNotAvailableForExcludedThread();
     }
 
-    private static void testWrongPhaseNoRecording() {
+    private static void testNotAvailableNoRecording() {
         int rc = RequestStackTraceHelper.requestStackTrace(0L);
-        Asserts.assertEquals(RequestStackTraceHelper.JVMTI_ERROR_WRONG_PHASE, rc,
-                "expected WRONG_PHASE before any recording is started, got " + rc);
+        Asserts.assertEquals(RequestStackTraceHelper.JVMTI_ERROR_NOT_AVAILABLE, rc,
+                "expected NOT_AVAILABLE before any recording is started, got " + rc);
     }
 
     private static void testNotAvailableWhenEventDisabled() throws Exception {
@@ -70,7 +70,7 @@ public class TestRequestStackTraceErrorCodes {
         }
     }
 
-    private static void testWrongPhaseForExcludedThread() throws Exception {
+    private static void testNotAvailableForExcludedThread() throws Exception {
         try (Recording r = new Recording()) {
             r.enable(EVENT_NAME).with("throttle", "100/s");
             r.start();
@@ -79,8 +79,8 @@ public class TestRequestStackTraceErrorCodes {
             try {
                 int rc = RequestStackTraceHelper.requestStackTrace(0L);
                 Asserts.assertEquals(
-                        RequestStackTraceHelper.JVMTI_ERROR_WRONG_PHASE, rc,
-                        "expected WRONG_PHASE for excluded thread, got " + rc);
+                        RequestStackTraceHelper.JVMTI_ERROR_NOT_AVAILABLE, rc,
+                        "expected NOT_AVAILABLE for excluded thread, got " + rc);
             } finally {
                 JVM.include(Thread.currentThread());
             }

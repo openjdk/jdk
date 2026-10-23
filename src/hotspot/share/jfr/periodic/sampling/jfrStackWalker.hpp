@@ -60,11 +60,9 @@ public:
   // jvm thread id of the sampled thread.
   virtual void on_failure(JavaThread* jt, traceid tid) = 0;
 
-  // Called to report that requests were lost (e.g., due to lock contention
-  // or a full queue). The count is the number of lost requests since the
-  // last successful drain. Default is a no-op; subclasses that care about
-  // lost request diagnostics (e.g., JFR CPU-time sampling) should override.
-  virtual void report_lost_requests(JavaThread* jt, u4 count) {}
+  // Called instead of the above when a queued request is discarded without
+  // being processed, e.g. because its thread terminates.
+  virtual void on_dropped(JavaThread* jt) = 0;
 };
 
 class JfrStackWalkRequest {
@@ -119,7 +117,6 @@ class JfrStackWalkerRequestQueue {
   // next unfilled index
   volatile u4 _head;
 
-  volatile u4 _lost_requests;
   volatile u4 _lost_requests_due_to_queue_full;
 
 public:
@@ -139,12 +136,7 @@ public:
 
   bool is_empty() const;
 
-  void increment_lost_requests();
-
   void increment_lost_requests_due_to_queue_full();
-
-  // returns the previous lost samples count
-  u4 get_and_reset_lost_requests();
 
   u4 get_and_reset_lost_requests_due_to_queue_full();
 
@@ -233,10 +225,15 @@ public:
   // Called when a new Java thread is created to initialize its queue.
   static void on_javathread_create(JavaThread* thread);
 
+  // Called when a Java thread terminates to discard its pending requests.
+  static void on_javathread_terminate(JavaThread* thread);
+
   // Request a stack trace. The caller must prepare the request by
   // constructing a callback via request.construct_callback<T>(...).
+  // Returns false if the request was dropped, in which case the callback
+  // is never called. Accounting for dropped requests is up to the caller.
   // This API is signal-safe (no allocations).
-  static void request_stack_trace(JfrStackWalkRequest& request, JavaThread* jt, const void* context, bool thread_is_suspended);
+  static bool request_stack_trace(JfrStackWalkRequest& request, JavaThread* jt, const void* context, bool thread_is_suspended);
 
   // Entry point for the runtime to trigger stack-walk processing.
   static inline void check_and_process_requests(JavaThread* jt);

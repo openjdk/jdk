@@ -82,9 +82,11 @@ class JfrThreadLocal {
   bool _notified;
   bool _dead;
   bool _sampling_critical_section;
+  volatile u4 _stack_trace_requests_lost;
 
 #ifdef LINUX
   timer_t* _cpu_timer;
+  volatile u4 _cpu_time_lost_samples;
 #endif
 
   JfrBuffer* install_native_buffer() const;
@@ -353,12 +355,19 @@ class JfrThreadLocal {
   void set_thread_blob(const JfrBlobHandle& handle);
   const JfrBlobHandle& thread_blob() const;
 
+  void increment_stack_trace_requests_lost();
+  // returns the previous lost requests count
+  u4 get_and_reset_stack_trace_requests_lost();
+
   // CPU time sampling
 #ifdef LINUX
   void set_cpu_timer(timer_t* timer);
   void unset_cpu_timer();
   timer_t* cpu_timer() const;
 
+  void increment_cpu_time_lost_samples();
+  // returns the previous lost samples count
+  u4 get_and_reset_cpu_time_lost_samples();
 #endif
 
   // Hooks

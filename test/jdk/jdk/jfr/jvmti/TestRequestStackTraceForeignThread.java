@@ -48,6 +48,7 @@ import jdk.test.lib.jfr.Events;
 public class TestRequestStackTraceForeignThread {
 
     private static final String EVENT_NAME = "jdk.StackTraceRequest";
+    private static final String LOST_EVENT_NAME = "jdk.StackTraceRequestsLost";
     private static final long   USER_DATA  = 0xD00DL;
     private static final int    CALLS      = 500;
     private static final int    MIN_EVENTS = 50;
@@ -57,6 +58,7 @@ public class TestRequestStackTraceForeignThread {
     public static void main(String[] args) throws Exception {
         try (Recording r = new Recording()) {
             r.enable(EVENT_NAME).with("throttle", "100000/s");
+            r.enable(LOST_EVENT_NAME);
             r.start();
 
             Worker worker = new Worker();
@@ -66,15 +68,20 @@ public class TestRequestStackTraceForeignThread {
             // Give the worker a moment to enter its loop.
             Thread.sleep(50);
 
+            int dropped = 0;
             for (int i = 0; i < CALLS; i++) {
                 int rc = RequestStackTraceHelper.requestStackTraceWithThread(
                         workerThread, USER_DATA);
-                Asserts.assertEquals(RequestStackTraceHelper.JVMTI_ERROR_NONE, rc,
-                        "unexpected JVMTI error: " + rc);
                 // Requests for a foreign thread are queued (initial capacity
                 // 20) until the worker reaches a safepoint poll; excess
                 // requests are dropped. Pace the calls so the worker gets a
                 // chance to drain the queue, even on a loaded machine.
+                if (rc == RequestStackTraceHelper.JVMTI_ERROR_ABSENT_INFORMATION) {
+                    dropped++;
+                } else {
+                    Asserts.assertEquals(RequestStackTraceHelper.JVMTI_ERROR_NONE, rc,
+                            "unexpected JVMTI error: " + rc);
+                }
                 if (i % 10 == 9) {
                     Thread.sleep(1);
                 }
@@ -85,10 +92,18 @@ public class TestRequestStackTraceForeignThread {
             r.stop();
 
             long workerId = workerThread.threadId();
-            List<RecordedEvent> events = Events.fromRecording(r).stream()
+            List<RecordedEvent> allEvents = Events.fromRecording(r);
+            List<RecordedEvent> events = allEvents.stream()
                     .filter(e -> e.getEventType().getName().equals(EVENT_NAME))
                     .filter(e -> e.getLong("userData") == USER_DATA)
                     .toList();
+            // Every drop reported synchronously must be accounted for. Requests
+            // can also be lost later, e.g. those still queued when the worker exits.
+            long lost = allEvents.stream()
+                    .filter(e -> e.getEventType().getName().equals(LOST_EVENT_NAME))
+                    .filter(e -> e.getThread() != null && e.getThread().getJavaThreadId() == workerId)
+                    .mapToLong(e -> e.getInt("lostRequests"))
+                    .sum();
 
             int succeeded = 0;
             int failed = 0;
@@ -108,11 +123,15 @@ public class TestRequestStackTraceForeignThread {
                 }
             }
 
-            System.out.println("Issued " + CALLS + " requests; events for worker: "
+            System.out.println("Issued " + CALLS + " requests (" + dropped + " dropped, "
+                    + lost + " reported lost); events for worker: "
                     + (succeeded + failed)
                     + " (" + succeeded + " ok, " + failed + " failed, "
                     + wrongThread + " other-thread); "
                     + containsBusyMethod + " contained worker frame");
+
+            Asserts.assertGreaterThanOrEqual(lost, (long) dropped,
+                    "every dropped request should be reported as lost");
 
             Asserts.assertEquals(0, wrongThread,
                     "no events should be attributed to a different thread");

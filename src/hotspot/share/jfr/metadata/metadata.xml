@@ -1017,6 +1017,12 @@
       description="The sample is safepoint-biased" />
   </Event>
 
+  <Event name="StackTraceRequestsLost" category="Java Virtual Machine, Profiling" label="Stack Trace Requests Lost"
+    description="Records that stack trace requests made via the JVMTI RequestJFRStackTrace extension API were dropped"
+    thread="true" stackTrace="false" startTime="false" experimental="true">
+    <Field type="int" name="lostRequests" label="Lost Requests" />
+  </Event>
+
   <Event name="ThreadDump" category="Java Virtual Machine, Runtime" label="Thread Dump" period="everyChunk">
     <Field type="string" name="result" label="Thread Dump" />
   </Event>

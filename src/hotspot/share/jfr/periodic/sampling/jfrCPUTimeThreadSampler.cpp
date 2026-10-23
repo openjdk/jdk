@@ -185,6 +185,10 @@ void JfrCPUSamplerThread::on_javathread_terminate(JavaThread* thread) {
     return; // no timer was created for this thread
   }
   tl->unset_cpu_timer();
+  const u4 lost_samples = tl->get_and_reset_cpu_time_lost_samples();
+  if (lost_samples > 0) {
+    JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), (s4)lost_samples);
+  }
 }
 
 void JfrCPUSamplerThread::start_thread() {
@@ -416,6 +420,20 @@ class JfrCPUTimeJfrStackWalkerCallback : public JfrStackWalkerCallback {
     }
   }
 
+  static void send_lost_samples_event(JavaThread* jt) {
+    const u4 lost_samples = jt->jfr_thread_local()->get_and_reset_cpu_time_lost_samples();
+    if (lost_samples == 0) {
+      return;
+    }
+    // Lost samples belong to the platform thread that owns the queue.
+    Thread* const current = Thread::current();
+    const traceid tid = JfrThreadLocal::jvm_thread_id(jt);
+    JfrThreadLocal::impersonate(current, tid);
+    assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
+    JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), (s4)lost_samples);
+    JfrThreadLocal::stop_impersonating(current);
+  }
+
 public:
   JfrCPUTimeJfrStackWalkerCallback(JfrTicks sample_ticks, Tickspan cpu_time_period) :
     _sample_ticks(sample_ticks),
@@ -434,6 +452,7 @@ public:
       send_safepoint_latency_event(jt, sid);
     }
     JfrThreadLocal::stop_impersonating(current);
+    send_lost_samples_event(jt);
   }
 
   void on_failure(JavaThread* jt, traceid tid) final {
@@ -442,16 +461,11 @@ public:
     assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
     JfrCPUTimeThreadSampling::send_empty_event(_sample_ticks, _cpu_time_period);
     JfrThreadLocal::stop_impersonating(current);
+    send_lost_samples_event(jt);
   }
 
-  void report_lost_requests(JavaThread* jt, u4 count) final {
-    // Lost samples belong to the platform thread that owns the queue.
-    Thread* const current = Thread::current();
-    const traceid tid = JfrThreadLocal::jvm_thread_id(jt);
-    JfrThreadLocal::impersonate(current, tid);
-    assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
-    JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), (s4)count);
-    JfrThreadLocal::stop_impersonating(current);
+  void on_dropped(JavaThread* jt) final {
+    jt->jfr_thread_local()->increment_cpu_time_lost_samples();
   }
 };
 
@@ -468,7 +482,9 @@ void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
 
   JfrStackWalkRequest request;
   request.construct_callback<JfrCPUTimeJfrStackWalkerCallback>(now, cpu_time_period);
-  JfrStackWalker::request_stack_trace(request, jt, context, true /* suspended */);
+  if (!JfrStackWalker::request_stack_trace(request, jt, context, true /* suspended */)) {
+    jt->jfr_thread_local()->increment_cpu_time_lost_samples();
+  }
 }
 
 static const int SIG = SIGPROF;
