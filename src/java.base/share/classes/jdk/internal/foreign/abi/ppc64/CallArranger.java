@@ -46,6 +46,7 @@ import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.lang.foreign.ValueLayout.IntegralExtension;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.List;
@@ -434,16 +435,18 @@ public abstract class CallArranger {
                 }
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, false);
-                    if (carrier != long.class) {
-                        // ABI requires all int types to get extended to 64 bit.
-                        if (carrier == boolean.class) {
-                            bindings.cast(boolean.class, int.class) // can't go directly to long
-                                    .cast(int.class, long.class, ((ValueLayout) layout).integralExtension());
-                        } else {
-                            bindings.cast(carrier, long.class, ((ValueLayout) layout).integralExtension());
-                        }
+                    // ABI requires all int types to get extended to 64 bit.
+                    // But we only do it for unsigned values here since this saves
+                    // on argument slots for the downcall stub. Signed values will be
+                    // sign-extended when being moved into the destination register.
+                    Optional<IntegralExtension> integralExtension = ((ValueLayout) layout).integralExtension();
+                    if (integralExtension.isPresent() && integralExtension.get() == IntegralExtension.ZERO_EXTEND
+                                 && carrier != long.class) {
+                        bindings.cast(carrier, long.class, integralExtension)
+                                .vmStore(storage, long.class);
+                    } else {
+                        bindings.vmStore(storage, carrier);
                     }
-                    bindings.vmStore(storage, long.class);
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.FLOAT, carrier == float.class);

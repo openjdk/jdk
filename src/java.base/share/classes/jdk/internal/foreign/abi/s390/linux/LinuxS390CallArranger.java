@@ -249,9 +249,19 @@ public class LinuxS390CallArranger {
                     }
                 }
                 case INTEGER -> {
-                    // ABI requires all int types to get extended to 64 bit.
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER, false);
-                    bindings.vmStore(storage, carrier);
+                    // ABI requires all int types to get extended to 64 bit.
+                    // But we only do it for unsigned values here since this saves
+                    // on argument slots for the downcall stub. Signed values will be
+                    // sign-extended when being moved into the destination register.
+                    Optional<ValueLayout.IntegralExtension> integralExtension = ((ValueLayout) layout).integralExtension();
+                    if (integralExtension.isPresent() && integralExtension.get() == ValueLayout.IntegralExtension.ZERO_EXTEND
+                            && carrier != long.class) {
+                        bindings.cast(carrier, long.class, integralExtension)
+                                .vmStore(storage, long.class);
+                    } else {
+                        bindings.vmStore(storage, carrier);
+                    }
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.FLOAT, carrier == float.class);
