@@ -46,6 +46,7 @@ import java.security.KeyPairGenerator;
 import java.security.KeyPairGeneratorSpi;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.ProviderException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -53,14 +54,25 @@ import java.security.spec.*;
 import java.util.Arrays;
 import java.util.Locale;
 
-// The Hybrid class wraps two underlying algorithms (left and right sides)
-// in a single TLS hybrid named group.
-// It implements:
-// - Hybrid KeyPair generation
-// - Hybrid KeyFactory for decoding concatenated hybrid public keys
-// - Hybrid KEM implementation for performing encapsulation and
-//   decapsulation over two underlying algorithms (traditional
-//   algorithm and post-quantum KEM algorithm)
+// The Hybrid class contains internal implementations for the TLS 1.3
+// hybrid key exchange named groups: X25519MLKEM768, SecP256r1MLKEM768,
+// and SecP384r1MLKEM1024. It wraps two underlying algorithms (left and
+// right sides) in a single TLS hybrid named group.
+//
+// These hybrid key exchange algorithms are registered in SunJCE so that
+// SunJSSE can select them. They are not general purpose KEM algorithms.
+// They are exposed through the JCA KeyPairGenerator and KEM APIs so that
+// SunJSSE can use them. Applications must not use them as general purpose
+// KEM algorithms.
+//
+// Their public key encoding is the TLS 1.3 key_share encoding, not an
+// X.509 SubjectPublicKeyInfo encoding, and the algorithms have no object
+// identifiers. Hence, the public key’s getFormat() method must return "RAW",
+// and getEncoded() must return the raw format of key_share encoding.
+//
+// For the negotiated shared secret represented as a SecretKey, getFormat()
+// must return "RAW", and getEncoded() must return the combined key material
+// as a byte array.
 
 public class Hybrid {
 
@@ -81,48 +93,61 @@ public class Hybrid {
         }
     }
 
-    private static KeyPairGenerator getKeyPairGenerator(String name) throws
-            NoSuchAlgorithmException {
+    private static KeyPairGenerator getKeyPairGenerator(String name,
+            Provider provider) throws NoSuchAlgorithmException {
         if (name.startsWith("secp")) {
             name = "EC";
+        }
+        if (name.startsWith("ML-KEM")) {
+            // This internal hybrid implementation must use SunJCE's
+            // ML-KEM service.
+            return KeyPairGenerator.getInstance(name, provider);
         }
         return KeyPairGenerator.getInstance(name);
     }
 
-    private static KeyFactory getKeyFactory(String name) throws
-            NoSuchAlgorithmException {
+    private static KeyFactory getKeyFactory(String name, Provider provider)
+            throws NoSuchAlgorithmException {
         if (name.startsWith("secp")) {
             name = "EC";
+        }
+        if (name.startsWith("ML-KEM")) {
+            // See getKeyPairGenerator(): ML-KEM is part of this SunJCE
+            // implementation, and the classical component uses normal
+            // provider selection.
+            return KeyFactory.getInstance(name, provider);
         }
         return KeyFactory.getInstance(name);
     }
 
-    /**
-     * Returns a KEM instance for each side of the hybrid algorithm.
-     * For traditional key exchange algorithms, we use the DH-based KEM
-     * implementation provided by DHasKEM class.
-     * For ML-KEM post-quantum algorithms, we obtain a KEM instance
-     * with "ML-KEM". This is done to work with 3rd-party providers that
-     * only have "ML-KEM" KEM algorithm.
-     */
-    private static KEM getKEM(String name) throws NoSuchAlgorithmException {
-        if (name.startsWith("secp") || name.equals("X25519")) {
-            return KEM.getInstance("DH", HybridProvider.PROVIDER);
-        } else {
-            return KEM.getInstance("ML-KEM");
-        }
+    private static boolean isClassical(String name) {
+        return name.startsWith("secp") || name.equals("X25519");
     }
 
+    /**
+     * A KeyPairGenerator implementation for a TLS 1.3 hybrid key exchange
+     * named group.
+     *
+     * This implementation is exposed through the JCA KeyPairGenerator API
+     * only so that TLS can obtain a key pair for a hybrid key_share. It is
+     * not a general purpose keypair generator. The generated public key has
+     * RAW format and its encoding is the TLS 1.3 key_share value. It is not
+     * an X.509 SubjectPublicKeyInfo value.
+     */
     public static class KeyPairGeneratorImpl extends KeyPairGeneratorSpi {
         private final KeyPairGenerator left;
         private final KeyPairGenerator right;
         private final AlgorithmParameterSpec leftSpec;
         private final AlgorithmParameterSpec rightSpec;
 
-        public KeyPairGeneratorImpl(String leftAlg, String rightAlg)
+        public KeyPairGeneratorImpl(Provider provider, String leftAlg,
+                String rightAlg)
                 throws NoSuchAlgorithmException  {
-            left = getKeyPairGenerator(leftAlg);
-            right = getKeyPairGenerator(rightAlg);
+            // The provider is SunJCE. It is used for ML-KEM only, and
+            // ECDH/XDH services are selected because they are implemented
+            // by a classical provider.
+            left = getKeyPairGenerator(leftAlg, provider);
+            right = getKeyPairGenerator(rightAlg, provider);
             leftSpec = getSpec(leftAlg);
             rightSpec = getSpec(rightAlg);
         }
@@ -159,10 +184,10 @@ public class Hybrid {
         private final String leftname;
         private final String rightname;
 
-        public KeyFactoryImpl(String left, String right)
+        public KeyFactoryImpl(Provider provider, String left, String right)
                 throws NoSuchAlgorithmException {
-            this.left = getKeyFactory(left);
-            this.right = getKeyFactory(right);
+            this.left = getKeyFactory(left, provider);
+            this.right = getKeyFactory(right, provider);
             this.leftlen = leftPublicLength(left);
             this.leftname = left;
             this.rightname = right;
@@ -277,23 +302,48 @@ public class Hybrid {
         }
     }
 
+    /**
+     * A KEM implementation for a TLS 1.3 hybrid key exchange named group.
+     *
+     * This implementation is exposed through the JCA KEM API only so
+     * that TLS can perform hybrid key exchange.  It is not a general
+     * purpose KEM.  Its encapsulator accepts a public key with RAW
+     * format containing the TLS 1.3 key_share value, and it does not
+     * accept an X.509 SubjectPublicKeyInfo encoding.
+     */
     public static class KEMImpl implements KEMSpi {
+        // A null KEM denotes a classical component. It is handled by the
+        // internal DHasKEM adapter rather than by a public KEM service.
         private final KEM left;
         private final KEM right;
+        private final boolean leftClassical;
+        private final boolean rightClassical;
+        private final KeyFactoryImpl keyFactory;
 
-        public KEMImpl(String left, String right)
+        public KEMImpl(Provider provider, String left, String right)
                 throws NoSuchAlgorithmException {
-            this.left = getKEM(left);
-            this.right = getKEM(right);
+            leftClassical = isClassical(left);
+            rightClassical = isClassical(right);
+            // Only the ML-KEM component is obtained from the SunJCE provider
+            // that instantiated this complete hybrid KEM.
+            this.left = leftClassical ? null :
+                    KEM.getInstance("ML-KEM", provider);
+            this.right = rightClassical ? null :
+                    KEM.getInstance("ML-KEM", provider);
+            this.keyFactory = new KeyFactoryImpl(provider, left, right);
         }
 
         @Override
         public EncapsulatorSpi engineNewEncapsulator(PublicKey publicKey,
                 AlgorithmParameterSpec spec, SecureRandom secureRandom) throws
                 InvalidAlgorithmParameterException, InvalidKeyException {
+            if (!(publicKey instanceof PublicKeyImpl)) {
+                publicKey = (PublicKey) keyFactory.engineTranslateKey(publicKey);
+            }
             if (publicKey instanceof PublicKeyImpl pk) {
-                return new Handler(left.newEncapsulator(pk.left, secureRandom),
-                        right.newEncapsulator(pk.right, secureRandom),
+                return new Handler(newEncapsulator(left, leftClassical,
+                        pk.left, secureRandom), newEncapsulator(right,
+                        rightClassical, pk.right, secureRandom),
                         null, null);
             }
             throw new InvalidKeyException();
@@ -304,10 +354,31 @@ public class Hybrid {
                 AlgorithmParameterSpec spec)
                 throws InvalidAlgorithmParameterException, InvalidKeyException {
             if (privateKey instanceof PrivateKeyImpl pk) {
-                return new Handler(null, null, left.newDecapsulator(pk.left),
-                        right.newDecapsulator(pk.right));
+                return new Handler(null, null, newDecapsulator(left,
+                        leftClassical, pk.left), newDecapsulator(right,
+                        rightClassical, pk.right));
             }
             throw new InvalidKeyException();
+        }
+
+        private static ComponentEncapsulator newEncapsulator(KEM kem,
+                boolean classical, PublicKey publicKey, SecureRandom random)
+                throws InvalidKeyException {
+            // Normalize the internal classical SPI and the public JCA ML-KEM
+            // API behind ComponentEncapsulator for Handler.
+            return classical ? new ClassicalEncapsulator(
+                    DHasKEM.newEncapsulator(publicKey, random)) :
+                    new JcaEncapsulator(kem.newEncapsulator(publicKey, random));
+        }
+
+        private static ComponentDecapsulator newDecapsulator(KEM kem,
+                boolean classical, PrivateKey privateKey)
+                throws InvalidKeyException {
+            // Normalize the internal classical SPI and the public JCA ML-KEM
+            // API behind ComponentDecapsulator for Handler.
+            return classical ? new ClassicalDecapsulator(
+                    DHasKEM.newDecapsulator(privateKey)) :
+                    new JcaDecapsulator(kem.newDecapsulator(privateKey));
         }
     }
 
@@ -325,8 +396,88 @@ public class Hybrid {
         return out;
     }
 
-    private record Handler(KEM.Encapsulator le, KEM.Encapsulator re,
-            KEM.Decapsulator ld, KEM.Decapsulator rd)
+    // Either a public JCA KEM encapsulator or DHasKEM's internal KEMSpi
+    // encapsulator.
+    private interface ComponentEncapsulator {
+        KEM.Encapsulated encapsulate();
+        int secretSize();
+        int encapsulationSize();
+    }
+
+    // Either a public JCA KEM decapsulator or DHasKEM's internal KEMSpi
+    // decapsulator.
+    private interface ComponentDecapsulator {
+        SecretKey decapsulate(byte[] encapsulation, int from, int to,
+                String algorithm) throws DecapsulateException;
+        int secretSize();
+        int encapsulationSize();
+    }
+
+    // Adapter for the public JCA KEM.Encapsulator API used for the
+    // SunJCE ML-KEM component.
+    private record JcaEncapsulator(KEM.Encapsulator delegate)
+            implements ComponentEncapsulator {
+        public KEM.Encapsulated encapsulate() {
+            return delegate.encapsulate();
+        }
+        public int secretSize() {
+            return delegate.secretSize();
+        }
+        public int encapsulationSize() {
+            return delegate.encapsulationSize();
+        }
+    }
+
+    // Adapter for the internal KEMSpi.EncapsulatorSpi from DHasKEM used
+    // for ECDH/XDH component.
+    private record ClassicalEncapsulator(KEMSpi.EncapsulatorSpi delegate)
+            implements ComponentEncapsulator {
+        public KEM.Encapsulated encapsulate() {
+            return delegate.engineEncapsulate(0, secretSize(), "Generic");
+        }
+        public int secretSize() {
+            return delegate.engineSecretSize();
+        }
+        public int encapsulationSize() {
+            return delegate.engineEncapsulationSize();
+        }
+    }
+
+    // Adapter for the public JCA KEM.Decapsulator API used for the
+    // SunJCE ML-KEM component.
+    private record JcaDecapsulator(KEM.Decapsulator delegate)
+            implements ComponentDecapsulator {
+        public SecretKey decapsulate(byte[] encapsulation, int from, int to,
+                String algorithm) throws DecapsulateException {
+            return delegate.decapsulate(encapsulation, from, to, algorithm);
+        }
+        public int secretSize() {
+            return delegate.secretSize();
+        }
+        public int encapsulationSize() {
+            return delegate.encapsulationSize();
+        }
+    }
+
+    // Adapter for the internal KEMSpi.EncapsulatorSpi from DHasKEM used
+    // for ECDH/XDH component.
+    private record ClassicalDecapsulator(KEMSpi.DecapsulatorSpi delegate)
+            implements ComponentDecapsulator {
+        public SecretKey decapsulate(byte[] encapsulation, int from, int to,
+                String algorithm) throws DecapsulateException {
+            return delegate.engineDecapsulate(encapsulation, from, to,
+                    algorithm);
+        }
+        public int secretSize() {
+            return delegate.engineSecretSize();
+        }
+        public int encapsulationSize() {
+            return delegate.engineEncapsulationSize();
+        }
+    }
+
+    private record Handler(ComponentEncapsulator le, ComponentEncapsulator re,
+            ComponentDecapsulator ld, ComponentDecapsulator rd)
             implements KEMSpi.EncapsulatorSpi, KEMSpi.DecapsulatorSpi {
         @Override
         public KEM.Encapsulated engineEncapsulate(int from, int to,
@@ -388,15 +539,39 @@ public class Hybrid {
             var right = Arrays.copyOfRange(encapsulation,
                     ld.encapsulationSize(), encapsulation.length);
             return new SecretKeyImpl(
-                    ld.decapsulate(left),
-                    rd.decapsulate(right)
+                    ld.decapsulate(left, 0, ld.secretSize(), "Generic"),
+                    rd.decapsulate(right, 0, rd.secretSize(), "Generic")
             );
         }
     }
 
     // Package-private
-    record SecretKeyImpl(SecretKey k1, SecretKey k2)
-            implements SecretKey {
+    static final class SecretKeyImpl implements SecretKey {
+        private static final long serialVersionUID = 1L;
+
+        private final byte[] encoded;
+        private boolean destroyed;
+
+        SecretKeyImpl(SecretKey k1, SecretKey k2) {
+            byte[] encoded1 = k1.getEncoded();
+            byte[] encoded2 = k2.getEncoded();
+            try {
+                if (encoded1 == null || encoded2 == null) {
+                    throw new ProviderException(
+                            "Hybrid KEM component secret is not extractable");
+                }
+                this.encoded = concat(encoded1, encoded2);
+            } finally {
+                if (encoded1 != null) {
+                    Arrays.fill(encoded1, (byte) 0);
+                }
+                if (encoded2 != null) {
+                    Arrays.fill(encoded2, (byte) 0);
+                }
+                KeyUtil.destroySecretKeys(k1, k2);
+            }
+        }
+
         @Override
         public String getAlgorithm() {
             return "Generic";
@@ -404,12 +579,28 @@ public class Hybrid {
 
         @Override
         public String getFormat() {
-            return null;
+            return "RAW";
         }
 
         @Override
         public byte[] getEncoded() {
-            return null;
+            if (destroyed) {
+                throw new IllegalStateException("Key has been destroyed");
+            }
+            return encoded.clone();
+        }
+
+        @Override
+        public void destroy() {
+            if (!destroyed) {
+                Arrays.fill(encoded, (byte) 0);
+                destroyed = true;
+            }
+        }
+
+        @Override
+        public boolean isDestroyed() {
+            return destroyed;
         }
     }
 
@@ -464,8 +655,18 @@ public class Hybrid {
      * Hybrid private key combines two underlying private keys (left and right).
      * It is for internal use only. The private keys should never be exported.
      */
-    private record PrivateKeyImpl(String algorithm, PrivateKey left,
-            PrivateKey right) implements PrivateKey {
+    private static final class PrivateKeyImpl implements PrivateKey {
+        private static final long serialVersionUID = 1L;
+
+        private final String algorithm;
+        private final PrivateKey left;
+        private final PrivateKey right;
+
+        PrivateKeyImpl(String algorithm, PrivateKey left, PrivateKey right) {
+            this.algorithm = algorithm;
+            this.left = left;
+            this.right = right;
+        }
 
         @Override
         public String getAlgorithm() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ final class KEMKeyExchange {
                 // For KEM: This receiver side (client) generates a key pair.
                 algName = ((NamedParameterSpec)namedGroup.keAlgParamSpec).
                         getName();
-                Provider provider = namedGroup.getProvider();
+                Provider provider = namedGroup.getKPGProvider();
                 KeyPairGenerator kpg = (provider != null) ?
                         KeyPairGenerator.getInstance(algName, provider) :
                         KeyPairGenerator.getInstance(algName);

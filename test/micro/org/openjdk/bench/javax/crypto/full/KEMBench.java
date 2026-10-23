@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,12 +99,12 @@ public abstract class KEMBench extends CryptoBase {
     }
 
     private static Provider getInternalJce() {
-        try {
-            Class<?> dhClazz = Class.forName("sun.security.ssl.HybridProvider");
-            return (Provider) dhClazz.getField("PROVIDER").get(null);
-        } catch (ReflectiveOperationException exc) {
-            throw new RuntimeException(exc);
+        Provider provider = Security.getProvider("SunJCE");
+        if (provider == null) {
+            throw new RuntimeException("SunJCE provider not found");
         }
+
+        return provider;
     }
 
     @Benchmark

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8325506
+ * @bug 8325506 8385968
  * @library /test/lib
  * @modules java.base/sun.security.util
  * @run main/othervm Deterministic
@@ -50,6 +50,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.DSAParameterSpec;
+import java.security.spec.NamedParameterSpec;
 import java.security.spec.PSSParameterSpec;
 import java.util.Arrays;
 import java.util.Objects;
@@ -206,17 +207,32 @@ public class Deterministic {
 
     static KeyPair generateKeyPair(String alg, int offset) throws Exception {
         var g = KeyPairGenerator.getInstance(alg);
+        var random = new SeededSecureRandom(SEED + offset);
+        if (isTlsHybridGroup(alg)) {
+            g.initialize(new NamedParameterSpec(alg), random);
+            return g.generateKeyPair();
+        }
         var size = switch (g.getAlgorithm()) {
             case "RSA", "RSASSA-PSS", "DSA", "DiffieHellman" -> 1024;
             case "EC" -> 256;
             case "EdDSA", "Ed25519", "XDH", "X25519" -> 255;
             case "Ed448", "X448" -> 448;
             case "ML-KEM", "ML-KEM-768", "ML-KEM-512", "ML-KEM-1024",
-                 "ML-DSA", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87" -> -1;
+                 "ML-DSA", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87",
+                 "X25519MLKEM768", "SecP256r1MLKEM768",
+                 "SecP384r1MLKEM1024" -> -1;
             default -> throw new UnsupportedOperationException(alg);
         };
-        g.initialize(size, new SeededSecureRandom(SEED + offset));
+        g.initialize(size, random);
         return g.generateKeyPair();
+    }
+
+    static boolean isTlsHybridGroup(String alg) {
+        return switch (alg) {
+            case "X25519MLKEM768", "SecP256r1MLKEM768",
+                 "SecP384r1MLKEM1024" -> true;
+            default -> false;
+        };
     }
 
     static void testKeyGenerator(Provider.Service s) throws Exception {
@@ -292,7 +308,7 @@ public class Deterministic {
 
     static String getKeyAlgFromKEM(String algorithm) {
         return switch (algorithm) {
-            case "DHKEM" -> "X25519";
+            case "DHKEM", "DH" -> "X25519";
             case "ECDH" -> "EC";
             default -> algorithm;
         };
