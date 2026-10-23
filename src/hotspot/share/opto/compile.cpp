@@ -1992,6 +1992,12 @@ bool Compile::advance_optimization_delay_nodes() {
   int r = C->stress().random() % _optimization_delay_nodes.length();
   OptimizationDelayNode* delay = _optimization_delay_nodes.at(r);
 
+  if (TraceOptimizationDelay) {
+    tty->print_cr("[OptizationDelay] Advance (count=%d)",
+                  _optimization_delay_nodes.length());
+    delay->dump();
+  }
+
   if (_optimization_delay_nodes_cleanup_phase) {
     delay->reveal_identity();
     return true;
