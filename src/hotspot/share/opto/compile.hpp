@@ -856,7 +856,7 @@ public:
   void add_optimization_delay_node(OptimizationDelayNode* n);
   void remove_optimization_delay_node(OptimizationDelayNode* n);
   bool advance_optimization_delay_nodes();
-  void optimization_delay_nodes_cleanup();
+  void optimization_delay_nodes_cleanup(PhaseIterGVN& igvn);
 
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);
