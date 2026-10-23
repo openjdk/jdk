@@ -67,12 +67,6 @@ static jlong page_size = 0;
 #define MB      (1024UL * 1024UL)
 #else
 
-/* This gets us the new structured proc interfaces of 5.6 & later */
-/* - see comment in <sys/procfs.h> */
-// seems the strange define was for Solaris
-// #define _STRUCTURED_PROC 1
-#include <sys/procfs.h>
-
 #endif /* _ALLBSD_SOURCE */
 
 // true = get available swap in bytes
