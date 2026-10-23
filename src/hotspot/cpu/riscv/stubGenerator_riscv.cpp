@@ -3057,30 +3057,65 @@ class StubGenerator: public StubCodeGenerator {
     __ vaesef_vs(data, rk[14]);
   }
 
+  void aes_decrypt_bulk(VectorRegister data, int first_key, VectorRegister rk[]) {
+    __ vaesz_vs(data, rk[14]);
+    for (int r = 13; r > first_key; r--) {
+      __ vaesdm_vs(data, rk[r]);
+    }
+    __ vaesdf_vs(data, rk[first_key]);
+  }
+
+  void aes_encrypt_bulk(VectorRegister data, int first_key, VectorRegister rk[]) {
+    __ vaesz_vs(data, rk[first_key]);
+    for (int r = first_key + 1; r <= 13; r++) {
+      __ vaesem_vs(data, rk[r]);
+    }
+    __ vaesef_vs(data, rk[14]);
+  }
+
+  void aes_ecb_bulk_loop(Register from, Register to, Register len, Register batch_bytes,
+                         VectorRegister rk[], int first_key, bool encrypt, Label& L_tail) {
+    Label L_loop;
+    __ bind(L_loop);
+    __ bltu(len, batch_bytes, L_tail);
+    __ vle32_v(v20, from);
+    __ add(from, from, batch_bytes);
+    if (encrypt) aes_encrypt_bulk(v20, first_key, rk);
+    else         aes_decrypt_bulk(v20, first_key, rk);
+    __ vse32_v(v20, to);
+    __ add(to, to, batch_bytes);
+    __ sub(len, len, batch_bytes);
+    __ j(L_loop);
+  }
+
   // Generate the ECB loop: an m1/e32 bulk loop with VL = VLMAX followed by a
   // single-block m1 tail. VL comes from the register form vsetvli (rd, x0),
-  // so one loop shape serves every VLEN: each bulk iteration processes
+  // so each key-size-specific loop serves every VLEN. A bulk iteration processes
   // VLEN/128 AES blocks (1 block at VLEN=128, 2 at VLEN=256, 4 at VLEN=512).
   // Round keys are m1 groups applied with the .vs broadcast forms.
   // Clobbers t0 and t2.
   void ecb_loop(Register from, Register to, Register len, Register keylen,
                 VectorRegister rk[], bool encrypt) {
     const Register batch_bytes = t0;
-    Label L_bulk_loop, L_tail, L_tail_loop, L_done;
+    Label L_bulk128, L_bulk192, L_tail, L_tail_loop, L_done;
     // m1/e32 with VL = VLMAX; batch_bytes = VL * 4.
     __ vsetvli(batch_bytes, x0, Assembler::e32, Assembler::m1);
     __ slli(batch_bytes, batch_bytes, 2);
-    BLOCK_COMMENT("ecb bulk loop (m1, VLMAX)");
-    __ bind(L_bulk_loop);
-    __ bltu(len, batch_bytes, L_tail);
-    __ vle32_v(v20, from);
-    __ add(from, from, batch_bytes);
-    if (encrypt) aes_encrypt_all(v20, keylen, rk);
-    else         aes_decrypt_all(v20, keylen, rk);
-    __ vse32_v(v20, to);
-    __ add(to, to, batch_bytes);
-    __ sub(len, len, batch_bytes);
-    __ j(L_bulk_loop);
+
+    __ mv(t2, AES_192_KEYLEN_INTS);
+    __ bltu(keylen, t2, L_bulk128);
+    __ beq(keylen, t2, L_bulk192);
+
+    BLOCK_COMMENT("ecb bulk loop: AES-256 (m1, VLMAX)");
+    aes_ecb_bulk_loop(from, to, len, batch_bytes, rk, 0, encrypt, L_tail);
+
+    __ bind(L_bulk192);
+    BLOCK_COMMENT("ecb bulk loop: AES-192 (m1, VLMAX)");
+    aes_ecb_bulk_loop(from, to, len, batch_bytes, rk, 2, encrypt, L_tail);
+
+    __ bind(L_bulk128);
+    BLOCK_COMMENT("ecb bulk loop: AES-128 (m1, VLMAX)");
+    aes_ecb_bulk_loop(from, to, len, batch_bytes, rk, 4, encrypt, L_tail);
 
     BLOCK_COMMENT("ecb tail: single block (m1)");
     __ bind(L_tail);
