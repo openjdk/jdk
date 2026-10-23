@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -277,10 +277,6 @@ void GCArguments::initialize_heap_flags_and_sizes() {
     if (InitialHeapSize < MinHeapSize) {
       FLAG_SET_ERGO(MinHeapSize, InitialHeapSize);
     }
-  }
-
-  if (FLAG_IS_DEFAULT(SoftMaxHeapSize)) {
-    FLAG_SET_ERGO(SoftMaxHeapSize, MaxHeapSize);
   }
 
   FLAG_SET_ERGO(MinHeapDeltaBytes, align_up(MinHeapDeltaBytes, SpaceAlignment));

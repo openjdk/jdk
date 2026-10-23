@@ -17,8 +17,10 @@ NashornProfile.txt
 **/JTwork/**
 /src/utils/LogCompilation/target/
 /src/utils/LogCompilation/logc.jar
-/.project/
-/.settings/
+**/.classpath
+**/.factorypath
+**/.project
+**/.settings/
 /compile_commands.json
 /.cache
 /.gdbinit

@@ -2275,14 +2275,14 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
 }
 
 // Keep track of MergeMems feeding into other MergeMems
-static void add_mergemem_users_to_worklist(Unique_Node_List& wl, Node* mem) {
+static void add_mergemem_users_to_worklist(Unique_Node_List<MergeMemNode>& wl, Node* mem) {
   if (!mem->is_MergeMem()) {
     return;
   }
   for (SimpleDUIterator i(mem); i.has_next(); i.next()) {
     Node* use = i.get();
     if (use->is_MergeMem()) {
-      wl.push(use);
+      wl.push(use->as_MergeMem());
     }
   }
 }
@@ -2303,7 +2303,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
   // Find all the needed outputs of this call
   CallProjections* callprojs = call->extract_projections(true, do_asserts);
 
-  Unique_Node_List wl;
+  Unique_Node_List<MergeMemNode> wl;
   Node* final_mem = final_state->in(TypeFunc::Memory);
   Node* final_ctl = final_state->in(TypeFunc::Control);
   Node* final_io = final_state->in(TypeFunc::I_O);
@@ -2400,7 +2400,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
   // Clean up any MergeMems that feed other MergeMems since the
   // optimizer doesn't like that.
   while (wl.size() > 0) {
-    Node* old_mem = wl.pop();
+    MergeMemNode* old_mem = wl.pop();
     Node* new_mem = _gvn.transform(old_mem);
     if (old_mem != new_mem) {
       C->gvn_replace_by(old_mem, new_mem);
