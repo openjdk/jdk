@@ -460,8 +460,8 @@ const TypePtr* MachNode::compute_adr_type_from_inputs() const {
   }
 
   if (t->isa_intptr_t() &&
-#if !defined(AARCH64)
-      // AArch64 supports the addressing mode:
+#if !defined(AARCH64) && !defined(RISCV)
+      // AArch64 and RISC-V support the addressing mode:
       // [base, 0], in which [base] is converted from a long value
       offset != 0 &&
 #endif
