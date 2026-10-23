@@ -2007,7 +2007,7 @@ bool Compile::advance_optimization_delay_nodes(PhaseIterGVN& igvn) {
 
   if (stress().random() % 10 == 0) {
     const Type* t_narrow = igvn.type(delay->in(1));
-    delay->narrow_hold_type(t_narrow);
+    delay->narrow_hold_type(t_narrow, stress());
     igvn._worklist.push(delay);
     return true;
   }

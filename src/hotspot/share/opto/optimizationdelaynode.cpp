@@ -50,14 +50,20 @@ Node* OptimizationDelayNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-void OptimizationDelayNode::narrow_hold_type(const Type* t_narrow) {
+const Type* OptimizationDelayNode::sample_type_between(const Type* t_wide, const Type* t_narrow, Stress& stress) {
+  // TODO: impl
+  return t_narrow;
+}
+
+void OptimizationDelayNode::narrow_hold_type(const Type* t_narrow, Stress& stress) {
   if (_stage > Stage::HoldType) { return; }
   const Type* t_old = _hold_type;
-  _hold_type = t_narrow;
+  _hold_type = sample_type_between(t_old, t_narrow, stress);
   // TODO: impl, and asserts!
   if (TraceOptimizationDelay) {
     tty->print_cr("[OptizationDelay] narrow hold type between:");
     tty->print("  old hold type: "); t_old->dump(); tty->cr();
+    tty->print("  new hold type: "); _hold_type->dump(); tty->cr();
     tty->print("  narrower type: "); t_narrow->dump(); tty->cr();
     this->dump();
   }

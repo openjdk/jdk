@@ -76,9 +76,6 @@ public:
     return Type::get_const_basic_type(t->basic_type());
   }
 
-  // TODO:
-  //static const Type* sample_type(const Type* t_wide, const Type* t_narrow);
-
   virtual int Opcode() const;
   virtual uint hash() const { return NO_HASH; }
   virtual bool cmp(const Node& n) const { return this == &n; }
@@ -87,7 +84,8 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
 
-  void narrow_hold_type(const Type* t_narrow);
+  static const Type* sample_type_between(const Type* t_wide, const Type* t_narrow, Stress& stress);
+  void narrow_hold_type(const Type* t_narrow, Stress& stress);
   void reveal_type();
   void reveal_identity();
 
