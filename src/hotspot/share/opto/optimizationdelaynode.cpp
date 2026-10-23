@@ -28,15 +28,9 @@
 const Type* OptimizationDelayNode::Value(PhaseGVN* phase) const {
   const Type* t_in = phase->type(in(1));
 
-  if (TraceOptimizationDelay) {
-    tty->print_cr("[OptizationDelay] Value");
-    this->dump();
-    t_in->dump(); tty->cr();
-  }
-
   // We always have to propagate TOP, at least within one IGVN
   // round, otherwise we risk dead data paths with live CFG.
-  if (t_in == Type::TOP) {
+  if (t_in == Type::TOP || _stage == OptimizationDelayNode::Stage::RevealType) {
     return t_in;
   }
   // TODO: do we really need the meet for CCP? Why?
@@ -50,17 +44,22 @@ const Type* OptimizationDelayNode::Value(PhaseGVN* phase) const {
 }
 
 Node* OptimizationDelayNode::Identity(PhaseGVN* phase) {
-  if (TraceOptimizationDelay) {
-    tty->print_cr("[OptizationDelay] Identity");
-    this->dump();
-  }
   if (_stage == OptimizationDelayNode::Stage::RevealIdentity) {
     return in(1);
   }
   return this;
 }
 
+void OptimizationDelayNode::reveal_type() {
+  assert(_stage < Stage::RevealType, "only advance stage");
+  _stage = Stage::RevealType;
+  if (TraceOptimizationDelay) {
+    tty->print_cr("[OptizationDelay] reveal type");
+    this->dump();
+  }
+}
 void OptimizationDelayNode::reveal_identity() {
+  assert(_stage < Stage::RevealIdentity, "only advance stage");
   _stage = Stage::RevealIdentity;
   if (TraceOptimizationDelay) {
     tty->print_cr("[OptizationDelay] reveal identity");

@@ -87,6 +87,7 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
 
+  void reveal_type();
   void reveal_identity();
 
 #ifndef PRODUCT

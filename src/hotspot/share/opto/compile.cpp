@@ -1992,15 +1992,15 @@ bool Compile::advance_optimization_delay_nodes(PhaseIterGVN& igvn) {
   int r = C->stress().random() % _optimization_delay_nodes.length();
   OptimizationDelayNode* delay = _optimization_delay_nodes.at(r);
 
-  if (TraceOptimizationDelay) {
-    tty->print_cr("[OptizationDelay] Advance (count=%d)",
-                  _optimization_delay_nodes.length());
-    delay->dump();
-  }
-
   if (_optimization_delay_nodes_cleanup_phase ||
       stress().random() % 1000 == 0) {
     delay->reveal_identity();
+    igvn._worklist.push(delay);
+    return true;
+  }
+
+  if (stress().random() % 1000 == 0) {
+    delay->reveal_type();
     igvn._worklist.push(delay);
     return true;
   }
