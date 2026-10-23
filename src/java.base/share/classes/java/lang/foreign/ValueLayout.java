@@ -147,6 +147,12 @@ public sealed interface ValueLayout extends MemoryLayout
      * The integral extension policy indicates whether a value described by this value
      * layout should to be {@linkplain ValueLayout.IntegralExtension#SIGN_EXTEND sign extended}
      * or {@linkplain ValueLayout.IntegralExtension#ZERO_EXTEND zero extended}.
+     * <p>
+     * Not all value layouts feature an integral extension policy. This method returns
+     * an {@link Optional} to reflect this. In particular, value layouts of the type
+     * {@link ValueLayout.OfByte}, {@link ValueLayout.OfShort}, {@link ValueLayout.OfInt},
+     * and {@link ValueLayout.OfLong} <em>always</em> have an integral extension policy
+     * attached to them, while value layouts of other types <em>never</em> do.
      */
     Optional<IntegralExtension> integralExtension();
 
