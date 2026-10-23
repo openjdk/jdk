@@ -72,6 +72,8 @@
     return 0;
   }
 
+  static constexpr bool supports_conditional_zero_arithmetic() { return false; }
+
   // This affects two different things:
   //  - how Decode nodes are matched
   //  - how ImplicitNullCheck opportunities are recognized
