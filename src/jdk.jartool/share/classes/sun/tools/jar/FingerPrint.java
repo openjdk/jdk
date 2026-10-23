@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.lang.classfile.AccessFlags;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.MethodModel;
@@ -174,11 +176,12 @@ final class FingerPrint {
     }
 
     private static ClassAttributes getClassAttributes(byte[] bytes) {
-        var cm = ClassFile.of().parse(bytes);
+        ClassModel cm = ClassFile.of().parse(bytes);
         ClassAttributes attrs = new ClassAttributes(
                 cm.flags(),
                 cm.thisClass().asInternalName(),
                 cm.superclass().map(ClassEntry::asInternalName).orElse(null),
+                cm.interfaces().stream().map(ClassEntry::asInternalName).collect(Collectors.toSet()),
                 cm.majorVersion());
         cm.forEach(attrs);
         return attrs;
@@ -254,6 +257,7 @@ final class FingerPrint {
         private final String name;
         private String outerClassName;
         private final String superName;
+        private final Set<String> interfaceNames;
         private final int majorVersion;
         private final int access;
         private final boolean publicClass;
@@ -261,12 +265,13 @@ final class FingerPrint {
         private final Set<Field> fields = new HashSet<>();
         private final Set<Method> methods = new HashSet<>();
 
-        public ClassAttributes(AccessFlags access, String name, String superName, int majorVersion) {
+        public ClassAttributes(AccessFlags access, String name, String superName, Set<String> interfaceNames, int majorVersion) {
             this.majorVersion = majorVersion; // JDK-8296329: extract major version only
             this.access = access.flagsMask();
             this.name = name;
             this.maybeNestedClass = name.contains("$");
             this.superName = superName;
+            this.interfaceNames = interfaceNames;
             this.publicClass = isPublic(access);
         }
 
@@ -329,6 +334,7 @@ final class FingerPrint {
                     ? superName.equals(clsAttrs.superName) : true;
             return access == clsAttrs.access
                     && superNameOkay
+                    && interfaceNames.equals(clsAttrs.interfaceNames)
                     && fields.equals(clsAttrs.fields)
                     && methods.equals(clsAttrs.methods);
         }
@@ -338,6 +344,7 @@ final class FingerPrint {
             int result = 17;
             result = 37 * result + access;
             result = 37 * result + superName != null ? superName.hashCode() : 0;
+            result = 37 * result + interfaceNames.hashCode();
             result = 37 * result + fields.hashCode();
             result = 37 * result + methods.hashCode();
             return result;
