@@ -33,13 +33,6 @@
 // Note that memory_order_conservative requires a strong two-way barrier.
 // For 32- and 64-bit add and xchg that barrier is provided by an explicit
 // AMO with .aqrl. Cmpxchg still uses explicit full barriers.
-//
-// Under Ztso, loads and stores have acquire-RCpc and release-RCpc semantics,
-// respectively, while AMOs have acquire-RCsc and release-RCsc semantics.  The
-// latter makes the hardware fences around AMO-based atomic operations
-// redundant, so for add and xchg under Ztso we emit a bare AMO guarded by
-// compiler barriers instead of the .aqrl form.  LR/SC-based operations do not
-// have the same ordering guarantees and still require the full fences.
 
 #if defined(__clang_major__)
 #define FULL_COMPILER_ATOMIC_SUPPORT
@@ -69,15 +62,6 @@ inline D AtomicAccess::PlatformAdd<byte_size>::fetch_then_add(D volatile* dest, 
 
   if (order == memory_order_relaxed) {
     return __atomic_fetch_add(dest, add_value, __ATOMIC_RELAXED);
-  }
-
-  // Under Ztso a bare AMO already has RCsc semantics, so the .aqrl hardware
-  // fence is redundant; a compiler barrier on each side is all that is needed.
-  if (UseZtso) {
-    compiler_barrier();
-    D old_value = __atomic_fetch_add(dest, add_value, __ATOMIC_RELAXED);
-    compiler_barrier();
-    return old_value;
   }
 
   D old_value;
@@ -192,15 +176,6 @@ inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
 
   if (order == memory_order_relaxed) {
     return __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
-  }
-
-  // Under Ztso a bare AMO already has RCsc semantics, so the .aqrl hardware
-  // fence is redundant; a compiler barrier on each side is all that is needed.
-  if (UseZtso) {
-    compiler_barrier();
-    T old_value = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
-    compiler_barrier();
-    return old_value;
   }
 
   T old_value;
