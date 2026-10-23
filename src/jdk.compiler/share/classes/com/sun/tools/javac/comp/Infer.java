@@ -383,13 +383,15 @@ public class Infer {
             MethodType mt, InferenceContext inferenceContext) {
         InferenceContext rsInfoInfContext = resultInfo.checkContext.inferenceContext();
         Type from = mt.getReturnType();
-        if (mt.getReturnType().containsAny(inferenceContext.inferencevars) &&
-                rsInfoInfContext != emptyContext) {
-            from = types.capture(from);
-            //add synthetic captured ivars
-            for (Type t : from.getTypeArguments()) {
-                if (t.hasTag(TYPEVAR) && ((TypeVar)t).isCaptured()) {
-                    inferenceContext.addVar((TypeVar)t);
+        if (from.containsAny(inferenceContext.inferencevars)) {
+            Type captured = types.capture(from);
+            if (captured != from) {
+                from = captured;
+                //add synthetic captured ivars
+                for (Type t : from.getTypeArguments()) {
+                    if (t.hasTag(TYPEVAR) && ((TypeVar)t).isCaptured()) {
+                        inferenceContext.addVar((TypeVar)t);
+                    }
                 }
             }
         }

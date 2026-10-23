@@ -1050,9 +1050,17 @@ public class Resolve {
 
         public boolean compatible(Type found, Type req, Warner warn) {
             InferenceContext inferenceContext = deferredAttrContext.inferenceContext;
+            found = inferenceContext.asUndetVar(found);
+            req = inferenceContext.asUndetVar(req);
+            if (!found.hasTag(UNDETVAR) && !inferenceContext.free(found)) {
+                Type capturedFound = types.capture(found);
+                if (capturedFound != found) {
+                    found = capturedFound;
+                }
+            }
             return strict ?
-                    types.isSubtypeUnchecked(inferenceContext.asUndetVar(found), inferenceContext.asUndetVar(req), warn) :
-                    types.isConvertible(inferenceContext.asUndetVar(found), inferenceContext.asUndetVar(req), warn);
+                    types.isSubtypeUnchecked(found, req, warn) :
+                    types.isConvertible(found, req, warn);
         }
 
         public void report(DiagnosticPosition pos, JCDiagnostic details) {
