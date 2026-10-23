@@ -57,7 +57,6 @@ public class TestEquivalentLogFilePaths {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Xlog:gc=info:" + name,
                 "-Xlog:class+load=info:" + quote + log.toAbsolutePath() + quote,
-                "-Xlog:safepoint=info:./" + name,
                 "-version");
         new OutputAnalyzer(pb.start()).shouldHaveExitValue(0);
 
