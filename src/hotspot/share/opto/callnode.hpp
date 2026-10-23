@@ -1310,7 +1310,6 @@ protected:
                                        GrowableArray<AbstractLockNode*> &lock_ops);
   bool find_unlocks_for_region(const RegionNode* region, LockNode* lock,
                                GrowableArray<AbstractLockNode*> &lock_ops);
-  LockNode *find_matching_lock(UnlockNode* unlock);
 
   // Update the counter to indicate that this lock was eliminated.
   void set_eliminated_lock_counter() PRODUCT_RETURN;

@@ -2929,6 +2929,11 @@ Java HotSpot VM.
     some throughput cost. Pause times are independent of what heap size is
     used. Supports heap sizes from 8MB to 16TB.
 
+[`-XX:+ZAdaptiveHeapSizing`]{#-XX__ZAdaptiveHeapSizing}
+:   Enables Adaptive Heap Sizing for ZGC, which dynamically adjusts the heap
+    size based on memory availability and system resources. By default, this
+    option is disabled.
+
 [`-XX:ZAllocationSpikeTolerance=`]{#-XX_ZAllocationSpikeTolerance}*factor*
 :   Sets the allocation spike tolerance for ZGC. By default, this option is
     set to 2.0. This factor describes the level of allocation spikes to expect.
@@ -2944,6 +2949,13 @@ Java HotSpot VM.
     By default, this option is set to 25. Using a lower value will cause the
     heap to be compacted more aggressively, to reclaim more memory at the cost
     of using more CPU time.
+
+[`-XX:ZGCIntensity=`]{#-XX_ZGCIntensity}*intensity*
+:   Configures the trade-off between memory and CPU usage on the system when
+    Adaptive Heap Sizing is enabled with `-XX:+ZAdaptiveHeapSizing`. When
+    enabled, the default value is 5, striking a balance between memory and CPU
+    that is reasonable for most systems. When Adaptive Heap Sizing is disabled,
+    the effective value is 0.
 
 [`-XX:+ZProactive`]{#-XX__ZProactive}
 :   Enables proactive GC cycles when using ZGC. By default, this option is
