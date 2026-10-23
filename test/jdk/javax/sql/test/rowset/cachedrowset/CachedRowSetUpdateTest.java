@@ -29,6 +29,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.sql.rowset.CachedRowSet;
 import javax.sql.rowset.RowSetMetaDataImpl;
 import javax.sql.rowset.RowSetProvider;
 
@@ -43,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class CachedRowSetUpdateTest {
 
     private final List<String> commands = new ArrayList<>();
+    private boolean firstQuery = true;
 
     /*
      * Address a bug where the occurrence of "where" in catalog, schema or a table name
@@ -51,33 +53,54 @@ public class CachedRowSetUpdateTest {
     @Test
     void tableNameWithWhereTest() throws SQLException {
         try (var conn = new TestStubConnection();
-             var rows = RowSetProvider.newFactory().createCachedRowSet()) {
-            RowSetMetaDataImpl metadata = new RowSetMetaDataImpl();
-            metadata.setColumnCount(1);
-            metadata.setColumnType(1, Types.INTEGER);
-            metadata.setColumnName(1, "N");
-            rows.setMetaData(metadata);
+             var rows = createRowSet()) {
+
             // Define the table name that includes "where"
             rows.setTableName("BARWHEREBAZ");
 
+            // Before the fix in 8394143, these SQL statements would have trimmed the
+            // portions after "WHERE" in the table name, so "BAZ" would be missing.
+            rows.acceptChanges(conn);
+            // First update
+            assertTrue(commands.contains("SELECT N, M FROM BARWHEREBAZ WHERE N = ? AND M IS NULL "), commands.toString());
+            assertTrue(commands.contains("UPDATE BARWHEREBAZ SET N = ? , M = ? WHERE N = ? AND M IS NULL "), commands.toString());
+            // Second update
+            assertTrue(commands.contains("SELECT N, M FROM BARWHEREBAZ WHERE N IS NULL AND M = ? "), commands.toString());
+            assertTrue(commands.contains("UPDATE BARWHEREBAZ SET N = ? , M = ? WHERE N IS NULL AND M = ? "), commands.toString());
+        }
+    }
+
+    // 2 rows and 2 cols: M and N. N is updated in the first row and M in the second row.
+    private static CachedRowSet createRowSet() throws SQLException {
+        var rows = RowSetProvider.newFactory().createCachedRowSet();
+        rows.setMetaData(createMetaData());
+        // Apply UPDATE to subsequent cols
+        for (var col : List.of("N", "M")) {
             // Add the data
             rows.moveToInsertRow();
-            rows.updateInt("N", -1);
+            rows.updateInt(col, -1);
+            rows.updateNull(col.equals("N") ? "M" : "N");
             rows.insertRow();
             rows.moveToCurrentRow();
 
             // Update the data
             rows.next();
             rows.setOriginalRow();
-            rows.updateInt("N", 0);
+            rows.updateInt(col, 0);
             rows.updateRow();
-
-            // Before the fix in 8394143, these SQL statements would have trimmed the
-            // portions after "WHERE", so "BAZ" would be missing.
-            rows.acceptChanges(conn);
-            assertTrue(commands.contains("SELECT N FROM BARWHEREBAZ WHERE N = ? "), commands.toString());
-            assertTrue(commands.contains("UPDATE BARWHEREBAZ SET N = ? WHERE N = ? "), commands.toString());
         }
+        return rows;
+    }
+
+    // Matches `createRowSet`
+    private static RowSetMetaDataImpl createMetaData() throws SQLException {
+        var metadata = new RowSetMetaDataImpl();
+        metadata.setColumnCount(2);
+        metadata.setColumnType(1, Types.INTEGER);
+        metadata.setColumnName(1, "N");
+        metadata.setColumnType(2, Types.INTEGER);
+        metadata.setColumnName(2, "M");
+        return metadata;
     }
 
     // All the stub classes implement the minimal methods required to exercise
@@ -111,22 +134,33 @@ public class CachedRowSetUpdateTest {
             super(con);
         }
 
-        // Needs to return an actual result that matches the update query in the test
+        // Needs to return an actual result that matches the update queries in the test.
+        // Fixed ordering to match the query order that the test naturally encounters.
         @Override
         public ResultSet executeQuery() throws SQLException {
-            var metadata = new RowSetMetaDataImpl();
+            String first;
+            String second;
+            if (firstQuery) {
+                firstQuery = false;
+                first = "N";
+                second = "M";
+            } else {
+                second = "N";
+                first = "M";
+            }
             var rows = RowSetProvider.newFactory().createCachedRowSet();
-            metadata.setColumnCount(1);
-            metadata.setColumnType(1, Types.INTEGER);
-            metadata.setColumnName(1, "N");
-            rows.setMetaData(metadata);
+            rows.setMetaData(createMetaData());
             rows.moveToInsertRow();
-            rows.updateInt("N", -1);
+            rows.updateInt(first, -1);
+            rows.updateNull(second);
             rows.insertRow();
             rows.moveToCurrentRow();
             rows.beforeFirst();
             return rows;
         }
+
+        @Override
+        public void setNull(int parameterIndex, int sqlType) {}
 
         @Override
         public void setObject(int parameterIndex, Object x) {}
