@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,16 @@ public interface TypeDescriptor {
          * @return whether this field descriptor describes a primitive type
          */
         boolean isPrimitive();
+
+        /**
+         * {@return {@code true} if and only if this field descriptor describes
+         * a class or interface type}
+         *
+         * @since 28
+         */
+        default boolean isClassOrInterface() {
+            return !isArray() && !isPrimitive();
+        }
 
         /**
          * If this field descriptor describes an array type, return

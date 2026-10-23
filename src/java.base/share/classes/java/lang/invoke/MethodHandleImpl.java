@@ -1054,8 +1054,7 @@ abstract class MethodHandleImpl {
             // it needs to be ensured the handles or interface instances are kept safe and are not passed
             // from the boot layer to untrusted code.
             if (hostClass == null
-                ||    (hostClass.isArray() ||
-                       hostClass.isPrimitive() ||
+                ||    (!hostClass.isClassOrInterface() ||
                        hostClass.getName().startsWith("java.lang.invoke."))) {
                 throw new InternalError();  // does not happen, and should not anyway
             }
