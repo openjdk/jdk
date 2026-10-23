@@ -2853,16 +2853,6 @@ operand immIAdd()
   interface(CONST_INTER);
 %}
 
-// 32 bit integer valid for sub immediate
-operand immISub()
-%{
-  predicate(Assembler::is_simm12(-(int64_t)n->get_int()));
-  match(ConI);
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // 5 bit signed value.
 operand immI5()
 %{
@@ -3031,16 +3021,6 @@ operand immL_M1()
 operand immLAdd()
 %{
   predicate(Assembler::is_simm12(n->get_long()));
-  match(ConL);
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// 64 bit integer valid for sub immediate
-operand immLSub()
-%{
-  predicate(Assembler::is_simm12(-(n->get_long())));
   match(ConL);
   op_cost(0);
   format %{ %}
@@ -7122,23 +7102,6 @@ instruct subI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-// Immediate Subtraction
-instruct subI_reg_imm(iRegINoSp dst, iRegIorL2I src1, immISub src2) %{
-  match(Set dst (SubI src1 src2));
-
-  ins_cost(ALU_COST);
-  format %{ "addiw  $dst, $src1, -$src2\t#@subI_reg_imm" %}
-
-  ins_encode %{
-    // src2 is imm, so actually call the addiw
-    __ subiw(as_Register($dst$$reg),
-             as_Register($src1$$reg),
-             $src2$$constant);
-  %}
-
-  ins_pipe(ialu_reg_imm);
-%}
-
 // Long Subtraction
 instruct subL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
   match(Set dst (SubL src1 src2));
@@ -7152,22 +7115,6 @@ instruct subL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
   %}
 
   ins_pipe(ialu_reg_reg);
-%}
-
-// No constant pool entries requiredLong Immediate Subtraction.
-instruct subL_reg_imm(iRegLNoSp dst, iRegL src1, immLSub src2) %{
-  match(Set dst (SubL src1 src2));
-  ins_cost(ALU_COST);
-  format %{ "addi  $dst, $src1, -$src2\t#@subL_reg_imm" %}
-
-  ins_encode %{
-    // src2 is imm, so actually call the addi
-    __ subi(as_Register($dst$$reg),
-            as_Register($src1$$reg),
-            $src2$$constant);
-  %}
-
-  ins_pipe(ialu_reg_imm);
 %}
 
 // Integer Negation (special case for sub)
