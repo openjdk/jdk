@@ -115,8 +115,8 @@ public:
 
   G1MonotonicArenaMemoryStats card_set_memory_stats() const;
 
-  // The actual # of bytes this hr_remset takes up. Also includes the code
-  // root set.
+  // The actual # of bytes this HRRS takes. Includes the code
+  // root set but not the card set group.
   size_t mem_size() {
     return sizeof(G1HeapRegionRemSet) - sizeof(G1CodeRootSet) + code_roots_mem_size();
   }
