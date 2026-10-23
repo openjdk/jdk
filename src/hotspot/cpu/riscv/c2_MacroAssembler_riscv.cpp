@@ -3298,9 +3298,7 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
 
 void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
                                           VectorRegister src2, VectorRegister tmp,
-                                          int opc, BasicType bt, uint vector_length, VectorMask vm) {
-  assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
-  vsetvli_helper(bt, vector_length);
+                                          int opc, VectorMask vm) {
   vmv_s_x(tmp, src1);
   switch (opc) {
     case Op_AddReductionVI:

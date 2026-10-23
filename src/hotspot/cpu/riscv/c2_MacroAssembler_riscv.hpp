@@ -289,9 +289,8 @@
                        bool is_double, uint vector_length);
 
   void reduce_integral_v(Register dst, Register src1,
-                        VectorRegister src2, VectorRegister tmp,
-                        int opc, BasicType bt, uint vector_length,
-                        VectorMask vm = Assembler::unmasked);
+                         VectorRegister src2, VectorRegister tmp,
+                         int opc, VectorMask vm = Assembler::unmasked);
 
   void reduce_mul_integral_v(Register dst, Register src1, VectorRegister src2,
                              VectorRegister vtmp1, VectorRegister vtmp2, BasicType bt,
