@@ -59,6 +59,8 @@ inline size_t G1CardTable::mark_clean_range_as_from_remset(size_t start_card_ind
     if (value == WordAllClean) {
       *cur_word = WordAllFromRemset;
       result += sizeof(size_t);
+    } else if ((value & WordAlreadyScanned) == 0) {
+      // Do nothing if there is no "Clean" card in it.
     } else {
       // There is a mix of cards in there. Tread slowly.
       CardValue* cur = (CardValue*)cur_word;
