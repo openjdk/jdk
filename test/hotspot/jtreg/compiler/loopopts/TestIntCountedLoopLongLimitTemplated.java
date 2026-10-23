@@ -216,8 +216,9 @@ public class TestIntCountedLoopLongLimitTemplated {
         return template.asToken();
     }
 
-    // != is tested separately here with stride +/-1 and int-range limits only: C2 converts != to </> for unit strides,
-    // and with a long limit outside int range, int i can never equal it (the loop hits MAX_ITERATIONS instead).
+    // != is tested separately here with stride +/-1 only: C2 converts != to </> for unit strides.
+    // Limits outside int range are also covered: int `i` can never equal them (outside int range),
+    // so the exit check is always true and the loop only terminates via the MAX_ITERATIONS guard.
     private static TemplateToken generateNeLoopTest(boolean swap, int stride) {
         if (stride != 1 && stride != -1) {
             throw new IllegalArgumentException("NE exit check conversion only applies to +/-1");
@@ -246,7 +247,7 @@ public class TestIntCountedLoopLongLimitTemplated {
     private static TemplateToken generateRunBodyNeCountingUp() {
         var template = Template.make(() -> scope(
                 """
-                    switch (G.uniformInts(0, 4).next()) {
+                    switch (G.uniformInts(0, 6).next()) {
                         case 0 -> {
                             init = G.uniformInts(-1000, 999).next();
                             limit = (long) init + G.uniformInts(0, 999).next();
@@ -263,6 +264,16 @@ public class TestIntCountedLoopLongLimitTemplated {
                             init = G.uniformInts(-1000, 999).next();
                             limit = init;
                         }
+                        case 4 -> {
+                            // Out of int range: i can never equal the limit, the loop only terminates via
+                            // MAX_ITERATIONS after the speculative narrowing deoptimizes.
+                            init = G.uniformInts(-1000, 999).next();
+                            limit = (long) Integer.MAX_VALUE + G.uniformInts(1, 99).next();
+                        }
+                        case 5 -> {
+                            init = G.uniformInts(-1000, 999).next();
+                            limit = (long) Integer.MIN_VALUE - G.uniformInts(1, 99).next();
+                        }
                         default -> {
                             init = G.uniformInts(-1000, 999).next();
                             limit = (long) init + 1;
@@ -275,7 +286,7 @@ public class TestIntCountedLoopLongLimitTemplated {
     private static TemplateToken generateRunBodyNeCountingDown() {
         var template = Template.make(() -> scope(
                 """
-                    switch (G.uniformInts(0, 4).next()) {
+                    switch (G.uniformInts(0, 6).next()) {
                         case 0 -> {
                             init = G.uniformInts(-1000, 999).next();
                             limit = (long) init - G.uniformInts(0, 999).next();
@@ -291,6 +302,16 @@ public class TestIntCountedLoopLongLimitTemplated {
                         case 3 -> {
                             init = G.uniformInts(-1000, 999).next();
                             limit = init;
+                        }
+                        case 4 -> {
+                            // Out of int range: i can never equal the limit, the loop only terminates via
+                            // MAX_ITERATIONS after the speculative narrowing deoptimizes.
+                            init = G.uniformInts(-1000, 999).next();
+                            limit = (long) Integer.MIN_VALUE - G.uniformInts(1, 99).next();
+                        }
+                        case 5 -> {
+                            init = G.uniformInts(-1000, 999).next();
+                            limit = (long) Integer.MAX_VALUE + G.uniformInts(1, 99).next();
                         }
                         default -> {
                             init = G.uniformInts(-1000, 999).next();
