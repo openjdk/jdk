@@ -53,7 +53,7 @@ public:
   OptimizationDelayNode(Compile* C, Node* n, const Type* t)
   : Node(nullptr, n),
     _bottom_type(compute_bottom_type(t)),
-    _hold_type(t),
+    _hold_type(sample_type_between(_bottom_type, t, C->stress())),
     _stage(Stage::HoldType)
   {
     assert(can_delay_type(t), "permissible input type");
