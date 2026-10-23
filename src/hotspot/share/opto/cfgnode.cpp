@@ -669,7 +669,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         if (outer_sfpt != nullptr && outer_out != nullptr) {
           Node* in = outer_sfpt->in(0);
           igvn->replace_node(outer_out, in);
-          // Now, in has 2 CFG outputs, disconnect it outer_sfpt from it
+          // Now, in has 2 CFG outputs, disconnect outer_sfpt from it
           igvn->replace_input_of(outer_sfpt, 0, igvn->C->top());
           LoopNode* outer = as_CountedLoop()->outer_loop();
           igvn->replace_input_of(outer, LoopNode::LoopBackControl, igvn->C->top());
