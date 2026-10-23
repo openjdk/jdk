@@ -283,8 +283,9 @@ private:
   // This is only read/written by a gc worker to avoid unnecessary bitmap resets
   bool _needs_bitmap_reset;
 
-  // If this is a humongous region, points to the corresponding humongous start region.
-  // If this is not a humongous region, this don't care value should never be fetched.
+  // If this is a humongous region, this index identifies the corresponding humongous start region.
+  // If this is not a humongous region, this field is not used. In debug builds, it is assigned the value
+  // UndefinedRegionIndex to facilitate debugging of state machine.
   uint32_t _humongous_start_region_index;
 
 public:

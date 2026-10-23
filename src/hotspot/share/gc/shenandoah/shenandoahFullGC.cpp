@@ -1082,6 +1082,7 @@ void ShenandoahFullGC::compact_humongous_objects() {
           r->make_regular_bypass();
           r->set_top(r->bottom());
         }
+
         for (size_t c = new_start; c <= new_end; c++) {
           ShenandoahHeapRegion* r = heap->get_region(c);
           if (c == new_start) {

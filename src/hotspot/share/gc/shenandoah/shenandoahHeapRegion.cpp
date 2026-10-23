@@ -103,7 +103,7 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
       set_state(_regular);
     case _regular:
     case _pinned:
-      _humongous_start_region_index = UndefinedRegionIndex;
+      assert(_humongous_start_region_index == UndefinedRegionIndex, "state machine");
       return;
     default:
       report_illegal_transition("regular allocation");
@@ -160,18 +160,21 @@ void ShenandoahHeapRegion::make_regular_bypass() {
       do_commit();
     case _empty_committed:
     case _cset:
+      assert(_humongous_start_region_index == UndefinedRegionIndex, "state machine");
     case _humongous_start:
     case _humongous_cont:
-      set_state(_regular);
+#ifdef ASSERT
       _humongous_start_region_index = UndefinedRegionIndex;
+#endif
+      set_state(_regular);
       return;
     case _pinned_cset:
       set_state(_pinned);
-      _humongous_start_region_index = UndefinedRegionIndex;
+      assert(_humongous_start_region_index == UndefinedRegionIndex, "state machine");
       return;
     case _regular:
     case _pinned:
-      _humongous_start_region_index = UndefinedRegionIndex;
+      assert(_humongous_start_region_index == UndefinedRegionIndex, "state machine");
       return;
     default:
       report_illegal_transition("regular bypass");
@@ -240,8 +243,8 @@ void ShenandoahHeapRegion::make_humongous_cont_bypass(ShenandoahAffiliation affi
     case _regular:
     case _humongous_start:
     case _humongous_cont:
-      set_state(_humongous_cont);
       _humongous_start_region_index = start;
+      set_state(_humongous_cont);
       return;
     default:
       report_illegal_transition("humongous continuation bypass");
@@ -322,8 +325,10 @@ void ShenandoahHeapRegion::make_trash() {
       // Reclaiming cset regions
     case _regular:
       // Immediate region reclaim
-      set_state(_trash);
+#ifdef ASSERT
       _humongous_start_region_index = UndefinedRegionIndex;
+#endif
+      set_state(_trash);
       return;
     default:
       report_illegal_transition("trashing");
