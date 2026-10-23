@@ -62,8 +62,8 @@ void OptimizationDelayNode::narrow_hold_type(const Type* t_narrow) {
     this->dump();
   }
   // Now ensure: t_narrow <= _hold_type <= t_old
-  assert(t_narrow->meet(_hold_type) == _hold_type, "must be between");
-  assert(t_old->meet(_hold_type) == t_old, "must be between");
+  assert(t_narrow->filter(_hold_type) == t_narrow, "must be between");
+  assert(t_old->filter(_hold_type) == _hold_type, "must be between");
 }
 
 void OptimizationDelayNode::reveal_type() {
