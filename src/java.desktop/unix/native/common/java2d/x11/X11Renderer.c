@@ -82,11 +82,14 @@ typedef struct {
         if (_npnts >= (PTR)->maxpoints) {                                   \
             jint newMax = (PTR)->maxpoints*2;                               \
             if ((PTR)->pPoints == (PTR)->dfPoints) {                        \
-                (PTR)->pPoints = (XPoint*)malloc(newMax*sizeof(XPoint));    \
-                if ((PTR)->pPoints != NULL) memcpy((PTR)->pPoints, _pnts, _npnts*sizeof(XPoint));   \
+                XPoint* _newp = (XPoint*)malloc(newMax*sizeof(XPoint));     \
+                if (_newp == NULL) break;                                   \
+                memcpy(_newp, _pnts, _npnts*sizeof(XPoint));                \
+                (PTR)->pPoints = _newp;                                     \
             } else {                                                        \
-                (PTR)->pPoints = (XPoint*)realloc(                          \
-                    _pnts, newMax*sizeof(XPoint));                          \
+                XPoint* _newp = (XPoint*)realloc(_pnts, newMax*sizeof(XPoint)); \
+                if (_newp == NULL) break;                                   \
+                (PTR)->pPoints = _newp;                                     \
             }                                                               \
             _pnts = (PTR)->pPoints;                                         \
             (PTR)->maxpoints = newMax;                                      \
