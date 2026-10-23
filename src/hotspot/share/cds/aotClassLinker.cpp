@@ -171,7 +171,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
 
   // There are no loops in the class hierarchy, and this function is always called single-threaded, so
   // we know ik has not been added yet.
-  assert(CDSConfig::current_thread_is_vm_or_dumper(), "that's why we don't need locks");
+  assert(CDSConfig::in_dumper_thread_or_aot_safepoint(), "that's why we don't need locks");
   add_new_candidate(ik);
 
   return true;
