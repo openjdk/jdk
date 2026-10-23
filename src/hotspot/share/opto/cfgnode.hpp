@@ -115,7 +115,7 @@ public:
   bool is_unreachable_region(const PhaseGVN* phase);
 #ifdef ASSERT
   bool is_in_infinite_subgraph();
-  static bool are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist);
+  static bool are_all_nodes_in_infinite_subgraph(Unique_Node_List<const Node>& worklist);
 #endif //ASSERT
   LoopStatus loop_status() const { return _loop_status; };
   void set_loop_status(LoopStatus status);
@@ -321,8 +321,8 @@ class PhiNode : public TypeNode {
   bool wait_for_region_igvn(PhaseGVN* phase);
   bool is_data_loop(RegionNode* r, Node* uin, const PhaseGVN* phase);
 
-  static Node* clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIterGVN* igvn);
-  static Node* merge_through_phi(Node* root_phi, PhaseIterGVN* igvn);
+  static Node* clone_through_phi(PhiNode* root_phi, const Type* t, uint c, PhaseIterGVN* igvn);
+  static Node* merge_through_phi(PhiNode* root_phi, PhaseIterGVN* igvn);
 
   bool must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const;
 
@@ -883,6 +883,7 @@ public:
   CreateExNode(const Type* t, Node* control, Node* i_o) : TypeNode(t, 2) {
     init_req(0, control);
     init_req(1, i_o);
+    init_class_id(Class_CreateEx);
   }
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);

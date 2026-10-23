@@ -60,6 +60,7 @@ class CallStaticJavaNode;
 class CloneMap;
 class CompilationFailureInfo;
 class ConnectionGraph;
+class DeadPathNode;
 class IdealGraphPrinter;
 class InlineTree;
 class Matcher;
@@ -69,8 +70,8 @@ class MachNode;
 class MachOper;
 class MachSafePointNode;
 class Node;
-class Node_Array;
-class Node_List;
+template <typename T> class Node_Array;
+template <typename T> class Node_List;
 class Node_Notes;
 class NodeHash;
 class NodeCloneInfo;
@@ -98,11 +99,11 @@ class TypeOopPtr;
 class TypeFunc;
 class TypeVect;
 class Type_Array;
-class Unique_Node_List;
+template <typename T> class Unique_Node_List;
 class UnstableIfTrap;
 class ValueTypeNode;
 class nmethod;
-class Node_Stack;
+template <typename T> class Node_Stack;
 struct Final_Reshape_Counts;
 class VerifyMeetJoinResult;
 
@@ -414,7 +415,7 @@ class Compile : public Phase {
   GrowableArray<Node*>  _flat_access_nodes;     // List of LoadFlat and StoreFlat nodes
   GrowableArray<Node*>  _for_merge_stores_igvn; // List of nodes for IGVN merge stores
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
-  GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
+  GrowableArray<Node_List<AbstractLockNode>*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
 
   Stress                _stress;
@@ -430,7 +431,7 @@ class Compile : public Phase {
   uint                  _dead_node_count;       // Number of dead nodes; VectorSet::Size() is O(N).
                                                 // So use this to keep count and make the call O(1).
   VectorSet             _dead_node_list;        // Set of dead nodes
-  DEBUG_ONLY(Unique_Node_List* _modified_nodes;)   // List of nodes which inputs were modified
+  DEBUG_ONLY(Unique_Node_List<Node>* _modified_nodes;)   // List of nodes which inputs were modified
   DEBUG_ONLY(bool       _phase_optimize_finished;) // Used for live node verification while creating new nodes
 
   DEBUG_ONLY(bool       _phase_verify_ideal_loop;) // Are we in PhaseIdealLoop verification?
@@ -452,7 +453,7 @@ public:
 private:
   RootNode*             _root;                  // Unique root of compilation, or null after bail-out.
   Node*                 _top;                   // Unique top node.  (Reset by various phases.)
-
+  DeadPathNode*         _dead_path;             // Unique DeadPath node
   Node*                 _immutable_memory;      // Initial memory state
 
   Node*                 _recent_alloc_obj;
@@ -492,7 +493,7 @@ private:
 
   // Shared worklist for all IGVN rounds. Nodes can be pushed to it at any time.
   // If pushed outside IGVN, the Node is processed in the next IGVN round.
-  Unique_Node_List*     _igvn_worklist;
+  Unique_Node_List<Node>*     _igvn_worklist;
 
   // Shared type array for GVN, IGVN and CCP. It maps node idx -> Type*.
   Type_Array*           _types;
@@ -856,7 +857,7 @@ public:
   void add_value_type(Node* n);
   void remove_value_type(Node* n);
 
-  bool clear_argument_if_only_used_as_buffer_at_calls(Node* result_cast, PhaseIterGVN& igvn);
+  static bool clear_argument_if_only_used_as_buffer_at_calls(const Node* result_cast, PhaseIterGVN& igvn);
 
   void process_value_types(PhaseIterGVN &igvn, bool remove = false);
 
@@ -875,7 +876,7 @@ public:
 
   void record_unstable_if_trap(UnstableIfTrap* trap);
   bool remove_unstable_if_trap(CallStaticJavaNode* unc, bool yield);
-  void remove_useless_unstable_if_traps(Unique_Node_List &useful);
+  void remove_useless_unstable_if_traps(const Unique_Node_List<Node>& useful);
   void process_for_unstable_if_traps(PhaseIterGVN& igvn);
 
   bool     merge_stores_phase() { return _merge_stores_phase;  }
@@ -971,6 +972,12 @@ public:
   Arena*       old_arena()                 { return (&_node_arena_one == _node_arena) ? &_node_arena_two : &_node_arena_one; }
   RootNode*    root() const                { return _root; }
   void         set_root(RootNode* r)       { _root = r; }
+  DeadPathNode* dead_path() const          { return _dead_path; }
+
+  void set_dead_path(DeadPathNode* dead_path) {
+    assert(_dead_path == nullptr, "can only set once");
+    _dead_path = dead_path;
+  }
   StartNode*   start() const;              // (Derived from root.)
   void         verify_start(StartNode* s) const NOT_DEBUG_RETURN;
   Node*        immutable_memory();
@@ -1002,7 +1009,7 @@ public:
   // Record modified nodes to check that they are put on IGVN worklist
   void         record_modified_node(Node* n) NOT_DEBUG_RETURN;
   void         remove_modified_node(Node* n) NOT_DEBUG_RETURN;
-  DEBUG_ONLY( Unique_Node_List*   modified_nodes() const { return _modified_nodes; } )
+  DEBUG_ONLY( Unique_Node_List<Node>*   modified_nodes() const { return _modified_nodes; } )
 
   MachConstantBaseNode*     mach_constant_base_node();
   bool                  has_mach_constant_base_node() const { return _mach_constant_base_node != nullptr; }
@@ -1120,7 +1127,7 @@ public:
 
   // Parsing, optimization
   PhaseGVN*         initial_gvn()               { return _initial_gvn; }
-  Unique_Node_List* igvn_worklist() {
+  Unique_Node_List<Node>* igvn_worklist() {
     assert(_igvn_worklist != nullptr, "must be created in Compile::Compile");
     return _igvn_worklist;
   }
@@ -1141,9 +1148,9 @@ public:
   void gvn_replace_by(Node* n, Node* nn);
 
 
-  void              identify_useful_nodes(Unique_Node_List &useful);
-  void              update_dead_node_list(Unique_Node_List &useful);
-  void disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist, const Unique_Node_List* root_and_safepoints = nullptr);
+  void              identify_useful_nodes(Unique_Node_List<Node>& useful);
+  void              update_dead_node_list(Unique_Node_List<Node>& useful);
+  void disconnect_useless_nodes(Unique_Node_List<Node>& useful, Unique_Node_List<Node>& worklist, const Unique_Node_List<Node>* root_and_safepoints = nullptr);
 
   void              remove_useless_node(Node* dead);
 
@@ -1177,12 +1184,12 @@ public:
   }
 
   template<typename N, ENABLE_IF(std::is_base_of<Node, N>::value)>
-  void remove_useless_nodes(GrowableArray<N*>& node_list, Unique_Node_List& useful);
+  void remove_useless_nodes(GrowableArray<N*>& node_list, const Unique_Node_List<Node>& useful);
 
-  void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
+  void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, const Unique_Node_List<Node>& useful);
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Node* dead);
 
-  void remove_useless_coarsened_locks(Unique_Node_List& useful);
+  void remove_useless_coarsened_locks(const Unique_Node_List<Node>& useful);
 
   void dump_print_inlining();
 
@@ -1327,20 +1334,20 @@ public:
 #endif
   // Function calls made by the public function final_graph_reshaping.
   // No need to be made public as they are not called elsewhere.
-  void final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
-  void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes);
-  void final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
+  void final_graph_reshaping_impl(Node* n, Final_Reshape_Counts& frc, Unique_Node_List<Node>& dead_nodes);
+  void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List<Node>& dead_nodes);
+  void final_graph_reshaping_walk(Node_Stack<Node>& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List<Node>& dead_nodes);
   void handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned);
   void handle_mulhi_mul_op(Node* n, bool is_unsigned);
 
   // Logic cone optimization.
   void optimize_logic_cones(PhaseIterGVN &igvn);
-  void collect_logic_cone_roots(Unique_Node_List& list);
+  void collect_logic_cone_roots(Unique_Node_List<Node>& list);
   void process_logic_cone_root(PhaseIterGVN &igvn, Node* n, VectorSet& visited);
-  bool compute_logic_cone(Node* n, Unique_Node_List& partition, Unique_Node_List& inputs);
-  uint compute_truth_table(Unique_Node_List& partition, Unique_Node_List& inputs);
+  bool compute_logic_cone(Node* n, Unique_Node_List<Node>& partition, Unique_Node_List<Node>& inputs);
+  uint compute_truth_table(const Unique_Node_List<Node>& partition, const Unique_Node_List<Node>& inputs);
   uint eval_macro_logic_op(uint func, uint op1, uint op2, uint op3);
-  Node* xform_to_MacroLogicV(PhaseIterGVN &igvn, const TypeVect* vt, Unique_Node_List& partitions, Unique_Node_List& inputs);
+  Node* xform_to_MacroLogicV(PhaseIterGVN& igvn, const TypeVect* vt, Unique_Node_List<Node>& partitions, Unique_Node_List<Node>& inputs);
   void check_no_dead_use() const NOT_DEBUG_RETURN;
 
  public:
@@ -1377,10 +1384,10 @@ public:
   // reachable from Root's input make this check unsound (can miss inconsistencies)
   // and even incomplete (can make up non-existing problems) if no_dead_code is
   // true.
-  void verify_graph_edges(bool no_dead_code = false, const Unique_Node_List* root_and_safepoints = nullptr) const PRODUCT_RETURN;
+  void verify_graph_edges(bool no_dead_code = false, const Unique_Node_List<Node>* root_and_safepoints = nullptr) const PRODUCT_RETURN;
 
   // Verify bi-directional correspondence of edges
-  void verify_bidirectional_edges(Unique_Node_List& visited, const Unique_Node_List* root_and_safepoints = nullptr) const;
+  void verify_bidirectional_edges(Unique_Node_List<const Node>& visited, const Unique_Node_List<Node>* root_and_safepoints = nullptr) const;
 
   // End-of-run dumps.
   static void print_statistics() PRODUCT_RETURN;
@@ -1392,7 +1399,7 @@ public:
   static void pd_compiler2_init();
 
   // Materialize reachability fences from reachability edges on safepoints.
-  void expand_reachability_edges(Unique_Node_List& safepoints);
+  void expand_reachability_edges(Unique_Node_List<SafePointNode>& safepoints);
 
   // Static parse-time type checking logic for gen_subtype_check:
   enum SubTypeCheckResult { SSC_always_false, SSC_always_true, SSC_easy_test, SSC_full_test };
