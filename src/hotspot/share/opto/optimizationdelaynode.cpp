@@ -52,7 +52,23 @@ Node* OptimizationDelayNode::Identity(PhaseGVN* phase) {
 
 template<typename CT>
 static const CT* sample_integer_type(const CT* t_wide, const CT* t_narrow, Stress& stress) {
-  return t_narrow;
+  using S = std::remove_const_t<decltype(CT::_lo)>;
+  using U = std::remove_const_t<decltype(CT::_ulo)>;
+
+  assert(t_wide->contains(t_narrow), "ordered endpoints");
+
+  S lo    = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_lo;
+  S hi    = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_hi;
+  U ulo   = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_lo;
+  U uhi   = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_hi;
+  U zeros = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_bits._zeros;
+  U ones  = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_bits._ones;
+
+  TypeIntPrototype<S, U> prototype{{lo, hi}, {ulo, uhi}, {zeros, ones}};
+  const CT* t = CT::make(prototype, MAX2(t_wide->_widen, t_narrow->_widen));
+  assert(t_wide->contains(t), "must be between");
+  assert(t->contains(t_narrow), "must be between");
+  return t;
 }
 
 const Type* OptimizationDelayNode::sample_type_between(const Type* t_wide, const Type* t_narrow, Stress& stress) {
