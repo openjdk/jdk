@@ -448,7 +448,7 @@ public:
 
     void merge_with_dominator_types();
 
-    void verify(bool &extra_type_init) PRODUCT_RETURN;
+    void verify(bool &extra_type_init) NOT_DEBUG_RETURN;
 
     struct NodeTypePair {
       Node* _n;

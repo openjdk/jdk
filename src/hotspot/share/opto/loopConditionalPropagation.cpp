@@ -93,14 +93,13 @@
 */
 
 #include "memory/resourceArea.hpp"
-#include "opto/node.hpp"
-#include "opto/loopConditionalPropagation.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
-#include "opto/movenode.hpp"
-#include "opto/predicates.hpp"
-#include "opto/opaquenode.hpp"
 #include "opto/loopConditionalPropagation.hpp"
+#include "opto/movenode.hpp"
+#include "opto/node.hpp"
+#include "opto/opaquenode.hpp"
+#include "opto/predicates.hpp"
 
 #ifdef ASSERT
 void PhaseConditionalPropagation::TypeTable::NodeTypesList::dump() const {
