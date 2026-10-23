@@ -276,6 +276,7 @@ final class TrustStoreManager {
                 ks = loadKeyStore(descriptor);
                 this.descriptor = descriptor;
                 this.ksRef = new WeakReference<>(ks);
+                this.csRef = new WeakReference<>(null);
             } finally {
                 tamLock.unlock();
             }
