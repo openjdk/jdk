@@ -39,6 +39,8 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestUseAOTCacheCpuFeaturesOnlyOption {
     public static void main(String... args) throws Exception {
         Tester tester = new Tester();
+        // This creates AOTCache with a cpu feature (like sse3 on x86) disabled, even though the
+        // cpu supports it.
         tester.runAOTTrainingAndAssemblyWorkflow();
 
         // Production run should fail due to incompatible cpu features, so avoid checking exit value
@@ -99,6 +101,7 @@ public class TestUseAOTCacheCpuFeaturesOnlyOption {
                     out.shouldContain("AOT Code Cache disabled: cpu features are incompatible");
                     out.shouldNotContain("HelloWorld");
                 } else {
+                    out.shouldContain("CPU features turned off by UseAOTCacheCpuFeaturesOnly");
                     out.shouldContain("HelloWorld");
                 }
             }

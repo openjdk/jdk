@@ -755,6 +755,7 @@ private:
   static bool os_supports_avx_vectors();
   static bool os_supports_apx_egprs();
   static void get_processor_features();
+  static void apply_aot_cache_cpu_features();
 
 public:
   // Offsets for cpuid asm stub

@@ -173,8 +173,8 @@
           "Test failure of adapter linking when loading from AOT cache.")   \
                                                                             \
   product(bool, UseAOTCacheCpuFeaturesOnly, false,                          \
-          "Enable only the cpu features cached in AOTCache if the runtime " \
-           "cpu features are a super set of the cached features")            \
+          "Enable only the cpu features recorded in the AOTCache if the"    \
+          "runtime cpu features are a super set of the cached features")    \
 
 
 // end of CDS_FLAGS

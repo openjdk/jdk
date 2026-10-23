@@ -530,10 +530,14 @@ private:
 
   // Null terminated list
   static RVFeatureValue* _feature_list[];
+  static RVExtFeatures* _rv_raw_ext_features;
   static RVExtFeatures* _rv_ext_features;
 
   // Enables features in _feature_list
   static void setup_cpu_available_features();
+
+  static void apply_aot_cache_cpu_features();
+
   // Helper for specific queries
   static void os_aux_features();
   static char* os_uarch_additional_features();
@@ -601,6 +605,10 @@ private:
  private:
   static void print_feature_name(stringStream& ss, RVFeatureValue* feature);
   static void insert_features_names(RVExtFeatures* features, stringStream& ss);
+  static void save_raw_cpu_features() {
+    RVExtFeatures* current = RVExtFeatures::current();
+    _rv_raw_ext_features = *current;
+  }
 };
 
 #endif // CPU_RISCV_VM_VERSION_RISCV_HPP

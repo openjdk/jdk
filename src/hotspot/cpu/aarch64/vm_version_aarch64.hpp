@@ -75,6 +75,9 @@ protected:
   static int set_and_get_current_sve_vector_length(int len);
   static int get_current_sve_vector_length();
 
+private:
+  static void apply_aot_cache_cpu_features();
+
 public:
   // Initialization
   static void initialize();

@@ -391,5 +391,14 @@ const char* Abstract_VM_Version::cpu_description(void) {
 }
 
 void* Abstract_VM_Version::get_aot_cache_cpu_features() {
-  return AOTMetaspace::get_archived_cpu_features();
+  void* archived_cpu_features = nullptr;
+  if (UseAOTCacheCpuFeaturesOnly) {
+    archived_cpu_features = AOTMetaspace::get_archived_cpu_features();
+    if (archived_cpu_features == nullptr) {
+      // If we get nullptr, it means there is a mismatch in cpu feature size, which
+      // is handled later by verification checks in AOTCodeCache. For now silently disable this option.
+      FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+    }
+  }
+  return archived_cpu_features;
 }
