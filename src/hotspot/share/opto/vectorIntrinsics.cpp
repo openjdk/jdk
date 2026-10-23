@@ -2099,8 +2099,7 @@ bool LibraryCallKit::inline_vector_rearrange() {
   }
 
   assert(is_power_of_2(num_elem), "wrapping invalid");
-  Node* wrapping_mask_elem = gvn().makecon(TypeInteger::make(num_elem - 1, num_elem - 1, Type::WidenMin, shuffle_bt == T_LONG ? T_LONG : T_INT));
-  Node* wrapping_mask = gvn().transform(VectorNode::scalar2vector(wrapping_mask_elem, num_elem, shuffle_bt));
+  Node* wrapping_mask = gvn().transform(VectorNode::make_con(&gvn(), num_elem, shuffle_bt, num_elem - 1));
   shuffle = gvn().transform(new AndVNode(shuffle, wrapping_mask, st));
 
   Node* mask = nullptr;
@@ -2265,8 +2264,7 @@ bool LibraryCallKit::inline_vector_select_from() {
 
   // wrap the byte vector lanes to (num_elem - 1) to form the shuffle vector where num_elem is vector length
   // this is a simple AND operation as we come here only for power of two vector length
-  Node* mod_val = gvn().makecon(TypeInteger::make(num_elem - 1, num_elem - 1, Type::WidenMin, shuffle_bt == T_LONG ? T_LONG : T_INT));
-  Node* bcast_mod = gvn().transform(VectorNode::scalar2vector(mod_val, num_elem, shuffle_bt));
+  Node* bcast_mod = gvn().transform(VectorNode::make_con(&gvn(), num_elem, shuffle_bt, num_elem - 1));
   shuffle = gvn().transform(VectorNode::make(Op_AndV, shuffle, bcast_mod, shuffle_vt));
 
   // load the shuffle to use in rearrange
@@ -2938,9 +2936,7 @@ static Node* LowerSelectFromTwoVectorOperation(PhaseGVN& phase, Node* index_vec,
   }
 
   // Wrap indexes into two vector index range [0, VLEN * 2)
-  Node* two_vect_lane_cnt_m1 = phase.makecon(TypeInteger::make(2 * num_elem - 1, 2 * num_elem - 1, Type::WidenMin, shuffle_bt == T_LONG ? T_LONG : T_INT));
-  Node* bcast_two_vect_lane_cnt_m1_vec = phase.transform(VectorNode::scalar2vector(two_vect_lane_cnt_m1, num_elem,
-                                                                                   shuffle_bt, false));
+  Node* bcast_two_vect_lane_cnt_m1_vec = phase.transform(VectorNode::make_con(&phase, num_elem, shuffle_bt, 2 * num_elem - 1));
   index_vec = phase.transform(VectorNode::make(Op_AndV, index_vec, bcast_two_vect_lane_cnt_m1_vec, st));
 
   // Compute the blend mask for merging two independently permitted vectors
@@ -2948,8 +2944,7 @@ static Node* LowerSelectFromTwoVectorOperation(PhaseGVN& phase, Node* index_vec,
   BoolTest::mask pred = BoolTest::le;
   ConINode* pred_node = phase.makecon(TypeInt::make(pred))->as_ConI();
   const TypeVect* vmask_type = TypeVect::makemask(shuffle_bt, num_elem);
-  Node* lane_cnt_m1 = phase.makecon(TypeInteger::make(num_elem - 1, num_elem - 1, Type::WidenMin, shuffle_bt == T_LONG ? T_LONG : T_INT));
-  Node* bcast_lane_cnt_m1_vec = phase.transform(VectorNode::scalar2vector(lane_cnt_m1, num_elem, shuffle_bt, false));
+  Node* bcast_lane_cnt_m1_vec = phase.transform(VectorNode::make_con(&phase, num_elem, shuffle_bt, num_elem - 1));
   Node* mask = phase.transform(new VectorMaskCmpNode(pred, index_vec, bcast_lane_cnt_m1_vec, pred_node, vmask_type));
 
   // Rearrange expects the indexes to lie within single vector index range [0, VLEN).
@@ -3087,8 +3082,7 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
       opd1 = gvn().transform(VectorCastNode::make(cast_vopc, opd1, index_elem_bt, num_elem));
     }
     int indexRangeMask = 2 * num_elem - 1;
-    Node* wrap_mask = gvn().makecon(TypeInteger::make(indexRangeMask, indexRangeMask, Type::WidenMin, index_elem_bt != T_LONG ? T_INT : index_elem_bt));
-    Node* wrap_mask_vec = gvn().transform(VectorNode::scalar2vector(wrap_mask, num_elem, index_elem_bt, false));
+    Node* wrap_mask_vec = gvn().transform(VectorNode::make_con(&gvn(), num_elem, index_elem_bt, indexRangeMask));
     opd1 = gvn().transform(VectorNode::make(Op_AndV, opd1, wrap_mask_vec, opd1->bottom_type()->is_vect()));
     operation = gvn().transform(trace_vector(VectorNode::make(Op_SelectFromTwoVector, opd1, opd2, opd3, vt)));
   }
