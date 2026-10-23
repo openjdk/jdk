@@ -59,8 +59,8 @@ static const CT* sample_integer_type(const CT* t_wide, const CT* t_narrow, Stres
 
   S lo    = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_lo;
   S hi    = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_hi;
-  U ulo   = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_lo;
-  U uhi   = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_hi;
+  U ulo   = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_ulo;
+  U uhi   = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_uhi;
   U zeros = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_bits._zeros;
   U ones  = (stress.random() % 2 == 0 ? t_wide : t_narrow)->_bits._ones;
 
