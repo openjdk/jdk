@@ -115,7 +115,6 @@ bool is_debug() {
   return _libsaproc_debug;
 }
 
-#ifdef __APPLE__
 // get arch offset in file
 bool get_arch_off(int fd, cpu_type_t cputype, off_t *offset) {
   struct fat_header fatheader;
@@ -171,18 +170,10 @@ bool is_macho_file(int fd) {
   return (fhdr.magic == MH_MAGIC_64 || fhdr.magic == MH_CIGAM_64);
 }
 
-#endif //__APPLE__
 
 // initialize libproc
 bool init_libproc(bool debug) {
    _libsaproc_debug = debug;
-#ifndef __APPLE__
-   // initialize the thread_db library
-   if (td_init() != TD_OK) {
-     print_debug("libthread_db's td_init failed\n");
-     return false;
-   }
-#endif // __APPLE__
    return true;
 }
 
@@ -256,7 +247,6 @@ lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd,
     newlib->fd = fd;
   }
 
-#ifdef __APPLE__
   // check whether we have got an Macho file.
   if (is_macho_file(newlib->fd) == false) {
     close(newlib->fd);
@@ -264,15 +254,6 @@ lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd,
     print_debug("not a mach-o file\n");
     return NULL;
   }
-#else
-  // check whether we have got an ELF file. /proc/<pid>/map
-  // gives out all file mappings and not just shared objects
-  if (is_elf_file(newlib->fd) == false) {
-    close(newlib->fd);
-    free(newlib);
-    return NULL;
-  }
-#endif // __APPLE__
 
   newlib->symtab = build_symtab(newlib->fd, &newlib->memsz);
   if (newlib->symtab == NULL) {
@@ -354,61 +335,6 @@ sa_thread_info* add_thread_info(struct ps_prochandle* ph, pthread_t pthread_id, 
   return newthr;
 }
 
-#ifndef __APPLE__
-// struct used for client data from thread_db callback
-struct thread_db_client_data {
-  struct ps_prochandle* ph;
-  thread_info_callback callback;
-};
-
-// callback function for libthread_db
-static int thread_db_callback(const td_thrhandle_t *th_p, void *data) {
-  struct thread_db_client_data* ptr = (struct thread_db_client_data*) data;
-  td_thrinfo_t ti;
-  td_err_e err;
-
-  memset(&ti, 0, sizeof(ti));
-  err = td_thr_get_info(th_p, &ti);
-  if (err != TD_OK) {
-    print_debug("libthread_db : td_thr_get_info failed, can't get thread info\n");
-    return err;
-  }
-
-  print_debug("thread_db : pthread %d (lwp %d)\n", ti.ti_tid, ti.ti_lid);
-
-  if (ptr->callback(ptr->ph, (pthread_t)ti.ti_tid, ti.ti_lid) != true)
-    return TD_ERR;
-
-  return TD_OK;
-}
-
-// read thread_info using libthread_db
-bool read_thread_info(struct ps_prochandle* ph, thread_info_callback cb) {
-  struct thread_db_client_data mydata;
-  td_thragent_t* thread_agent = NULL;
-  if (td_ta_new(ph, &thread_agent) != TD_OK) {
-     print_debug("can't create libthread_db agent\n");
-     return false;
-  }
-
-  mydata.ph = ph;
-  mydata.callback = cb;
-
-  // we use libthread_db iterator to iterate thru list of threads.
-  if (td_ta_thr_iter(thread_agent, thread_db_callback, &mydata,
-                 TD_THR_ANY_STATE, TD_THR_LOWEST_PRIORITY,
-                 TD_SIGNO_MASK, TD_THR_ANY_USER_FLAGS) != TD_OK) {
-     td_ta_delete(thread_agent);
-     return false;
-  }
-
-  // delete thread agent
-  td_ta_delete(thread_agent);
-  return true;
-}
-
-#endif // __APPLE__
-
 // get number of threads
 int get_num_threads(struct ps_prochandle* ph) {
    return ph->num_threads;
@@ -428,7 +354,6 @@ lwpid_t get_lwp_id(struct ps_prochandle* ph, int index) {
   return 0;
 }
 
-#ifdef __APPLE__
 // set lwp_id of n'th thread
 bool set_lwp_id(struct ps_prochandle* ph, int index, lwpid_t lwpid) {
   int count = 0;
@@ -461,8 +386,6 @@ bool get_nth_lwp_regs(struct ps_prochandle* ph, int index, struct reg* regs) {
   }
   return false;
 }
-
-#endif // __APPLE__
 
 // get regs for a given lwp
 bool get_lwp_regs(struct ps_prochandle* ph, lwpid_t lwp_id, struct reg* regs) {
@@ -569,39 +492,3 @@ ps_plog (const char *format, ...)
   vfprintf(stderr, format, alist);
   va_end(alist);
 }
-
-#ifndef __APPLE__
-// ------------------------------------------------------------------------
-// Functions below this point are not yet implemented. They are here only
-// to make the linker happy.
-
-ps_err_e ps_lsetfpregs(struct ps_prochandle *ph, lwpid_t lid, const prfpregset_t *fpregs) {
-  print_debug("ps_lsetfpregs not implemented\n");
-  return PS_OK;
-}
-
-ps_err_e ps_lsetregs(struct ps_prochandle *ph, lwpid_t lid, const prgregset_t gregset) {
-  print_debug("ps_lsetregs not implemented\n");
-  return PS_OK;
-}
-
-ps_err_e  ps_lgetfpregs(struct  ps_prochandle  *ph,  lwpid_t lid, prfpregset_t *fpregs) {
-  print_debug("ps_lgetfpregs not implemented\n");
-  return PS_OK;
-}
-
-ps_err_e ps_lgetregs(struct ps_prochandle *ph, lwpid_t lid, prgregset_t gregset) {
-  print_debug("ps_lgetfpregs not implemented\n");
-  return PS_OK;
-}
-
-ps_err_e ps_lstop(struct ps_prochandle *ph, lwpid_t lid) {
-  print_debug("ps_lstop not implemented\n");
-  return PS_OK;
-}
-
-ps_err_e ps_pcontinue(struct ps_prochandle *ph) {
-  print_debug("ps_pcontinue not implemented\n");
-  return PS_OK;
-}
-#endif // __APPLE__
