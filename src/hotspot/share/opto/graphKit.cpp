@@ -81,8 +81,6 @@ GraphKit::GraphKit(JVMState* jvms, PhaseGVN* gvn)
 #ifdef ASSERT
   if (_gvn.is_IterGVN() != nullptr) {
     assert(_gvn.is_IterGVN()->delay_transform(), "Transformation must be delayed if IterGVN is used");
-    // Save the initial size of _for_igvn worklist for verification (see ~GraphKit)
-    _worklist_size = _gvn.C->igvn_worklist()->size();
   }
 #endif
 }
@@ -1957,41 +1955,48 @@ Node* GraphKit::array_element_address(Node* ary, Node* idx, BasicType elembt,
   return basic_plus_adr(ary, base, scale);
 }
 
-Node* GraphKit::cast_to_flat_array(Node* array, ciValueKlass* elem_vk) {
+// The three methods below, get_flat_array_klass(), get_flat_array_klass_exact() and
+// cast_to_flat_array() break down the processus to cast an array node into a flat array node.
+// The first step involves obtaining the ciObjArrayKlass instance representing the flat array.
+// The second step uses this ciObjArrayKlass instance to implement the cast on the array node.
+// If retrieving the flat array klass fails, the returned ciObjArrayKlass instance is marked
+// as being in an unloaded state, but it retains the array type name; this instance can be used
+// to create an uncommon trap with Reason unloaded.
+ciObjArrayKlass* GraphKit::get_flat_array_klass(ciValueKlass* elem_vk) {
   assert(elem_vk->maybe_flat_in_array(), "no flat array for %s", elem_vk->name()->as_utf8());
   if (!elem_vk->has_null_free_atomic_layout() && !elem_vk->has_nullable_atomic_layout()) {
-    return cast_to_flat_array_exact(array, elem_vk, true, false);
+    return get_flat_array_klass_exact(elem_vk, true, false);
   } else if (!elem_vk->has_nullable_atomic_layout() && !elem_vk->has_null_free_non_atomic_layout()) {
-    return cast_to_flat_array_exact(array, elem_vk, true, true);
+    return get_flat_array_klass_exact(elem_vk, true, true);
   } else if (!elem_vk->has_null_free_atomic_layout() && !elem_vk->has_null_free_non_atomic_layout()) {
-    return cast_to_flat_array_exact(array, elem_vk, false, true);
+    return get_flat_array_klass_exact(elem_vk, false, true);
   }
-
-  ciArrayKlass* array_klass = ciObjArrayKlass::make(elem_vk, false);
-  if (!array_klass->is_loaded()) {
-    return top();
-  }
-
-  const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->isa_aryptr();
-  arytype = arytype->cast_to_flat();
-  if (!elem_vk->has_nullable_atomic_layout()) {
-    arytype = arytype->cast_to_null_free();
-  }
-
-  return _gvn.transform(new CheckCastPPNode(control(), array, arytype, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+  return ciObjArrayKlass::make(elem_vk, false);
 }
 
-Node* GraphKit::cast_to_flat_array_exact(Node* array, ciValueKlass* elem_vk, bool is_null_free, bool is_atomic) {
+ciObjArrayKlass* GraphKit::get_flat_array_klass_exact(ciValueKlass* elem_vk, bool is_null_free, bool is_atomic) {
   assert(is_null_free || is_atomic, "nullable arrays must be atomic");
-  ciArrayKlass* array_klass = ciObjArrayKlass::make(elem_vk, true, is_null_free, is_atomic);
+  return ciObjArrayKlass::make(elem_vk, true, is_null_free, is_atomic);
+}
+
+Node* GraphKit::cast_to_flat_array(Node* array, ciObjArrayKlass* array_klass, bool exact) {
   if (!array_klass->is_loaded()) {
     return top();
   }
+  assert(array_klass->element_klass()->is_value_klass(), "Must be");
+
   const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->isa_aryptr();
-  assert(arytype->klass_is_exact(), "inconsistency");
-  assert(arytype->is_flat(), "inconsistency");
-  assert(arytype->is_null_free() == is_null_free, "inconsistency");
-  assert(arytype->is_not_null_free() == !is_null_free, "inconsistency");
+  if (exact) {
+    assert(arytype->klass_is_exact(), "inconsistency");
+    assert(arytype->is_flat(), "inconsistency");
+    assert(arytype->is_null_free() == array_klass->is_elem_null_free(), "inconsistency");
+    assert(arytype->is_not_null_free() == !array_klass->is_elem_null_free(), "inconsistency");
+  } else {
+    arytype = arytype->cast_to_flat();
+    if (!array_klass->element_klass()->as_value_klass()->has_nullable_atomic_layout()) {
+      arytype = arytype->cast_to_null_free();
+    }
+  }
   return _gvn.transform(new CheckCastPPNode(control(), array, arytype, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
 }
 
@@ -2260,7 +2265,7 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
 
     // Make sure the call advertises its memory effects precisely.
     // This lets us build accurate anti-dependences in gcm.cpp.
-    assert(C->alias_type(call->adr_type()) == C->alias_type(hook_mem),
+    assert(C->alias_type(call->out_adr_type()) == C->alias_type(hook_mem),
            "call node must be constructed correctly");
   } else {
     assert(hook_mem == nullptr, "");
@@ -2270,14 +2275,14 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
 }
 
 // Keep track of MergeMems feeding into other MergeMems
-static void add_mergemem_users_to_worklist(Unique_Node_List& wl, Node* mem) {
+static void add_mergemem_users_to_worklist(Unique_Node_List<MergeMemNode>& wl, Node* mem) {
   if (!mem->is_MergeMem()) {
     return;
   }
   for (SimpleDUIterator i(mem); i.has_next(); i.next()) {
     Node* use = i.get();
     if (use->is_MergeMem()) {
-      wl.push(use);
+      wl.push(use->as_MergeMem());
     }
   }
 }
@@ -2298,7 +2303,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
   // Find all the needed outputs of this call
   CallProjections* callprojs = call->extract_projections(true, do_asserts);
 
-  Unique_Node_List wl;
+  Unique_Node_List<MergeMemNode> wl;
   Node* final_mem = final_state->in(TypeFunc::Memory);
   Node* final_ctl = final_state->in(TypeFunc::Control);
   Node* final_io = final_state->in(TypeFunc::I_O);
@@ -2395,7 +2400,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
   // Clean up any MergeMems that feed other MergeMems since the
   // optimizer doesn't like that.
   while (wl.size() > 0) {
-    Node* old_mem = wl.pop();
+    MergeMemNode* old_mem = wl.pop();
     Node* new_mem = _gvn.transform(old_mem);
     if (old_mem != new_mem) {
       C->gvn_replace_by(old_mem, new_mem);
@@ -2866,7 +2871,7 @@ Node* GraphKit::opt_iff(Node* region, Node* iff) {
 Node* GraphKit::make_runtime_call(int flags,
                                   const TypeFunc* call_type, address call_addr,
                                   const char* call_name,
-                                  const TypePtr* adr_type,
+                                  const TypePtr* out_adr_type,
                                   // The following parms are all optional.
                                   // The first null ends the list.
                                   Node* parm0, Node* parm1,
@@ -2882,34 +2887,35 @@ Node* GraphKit::make_runtime_call(int flags,
     assert(!is_leaf, "must supply name for leaf");
     call_name = OptoRuntime::stub_name(call_addr);
   }
+
+  // Slow path call has no side-effects, uses few values
+  bool wide_in  = !(flags & RC_NARROW_MEM);
+  bool wide_out = (C->get_alias_index(out_adr_type) == Compile::AliasIdxBot);
+
+  const TypePtr* in_adr_type = wide_in ? TypePtr::BOTTOM : out_adr_type;
   CallNode* call;
   if (!is_leaf) {
-    call = new CallStaticJavaNode(call_type, call_addr, call_name, adr_type);
+    call = new CallStaticJavaNode(call_type, call_addr, call_name, out_adr_type, in_adr_type);
   } else if (flags & RC_NO_FP) {
-    call = new CallLeafNoFPNode(call_type, call_addr, call_name, adr_type);
+    call = new CallLeafNoFPNode(call_type, call_addr, call_name, out_adr_type, in_adr_type);
   } else  if (flags & RC_VECTOR){
     uint num_bits = call_type->range_sig()->field_at(TypeFunc::Parms)->is_vect()->length_in_bytes() * BitsPerByte;
-    call = new CallLeafVectorNode(call_type, call_addr, call_name, adr_type, num_bits);
+    call = new CallLeafVectorNode(call_type, call_addr, call_name, out_adr_type, in_adr_type, num_bits);
   } else if (flags & RC_PURE) {
-    assert(adr_type == nullptr, "pure call does not touch memory");
+    assert(out_adr_type == nullptr, "pure call does not touch memory");
     call = new CallLeafPureNode(call_type, call_addr, call_name);
   } else {
-    call = new CallLeafNode(call_type, call_addr, call_name, adr_type);
+    call = new CallLeafNode(call_type, call_addr, call_name, out_adr_type, in_adr_type);
   }
 
   // The following is similar to set_edges_for_java_call,
   // except that the memory effects of the call are restricted to AliasIdxRaw.
-
-  // Slow path call has no side-effects, uses few values
-  bool wide_in  = !(flags & RC_NARROW_MEM);
-  bool wide_out = (C->get_alias_index(adr_type) == Compile::AliasIdxBot);
-
   Node* prev_mem = nullptr;
   if (wide_in) {
     prev_mem = set_predefined_input_for_runtime_call(call);
   } else {
     assert(!wide_out, "narrow in => narrow out");
-    Node* narrow_mem = memory(adr_type);
+    Node* narrow_mem = memory(in_adr_type);
     prev_mem = set_predefined_input_for_runtime_call(call, narrow_mem);
   }
 
@@ -2949,7 +2955,7 @@ Node* GraphKit::make_runtime_call(int flags,
     set_predefined_output_for_runtime_call(call);
   } else {
     // Slow path call has few side-effects, and/or sets few values.
-    set_predefined_output_for_runtime_call(call, prev_mem, adr_type);
+    set_predefined_output_for_runtime_call(call, prev_mem, out_adr_type);
   }
 
   if (has_io) {
@@ -3502,7 +3508,7 @@ void GraphKit::clinit_barrier(ciInstanceKlass* ik, ciMethod* context) {
   } else if (ik->is_initialized()) {
     return; // no barrier needed
   } else {
-    if (C->env()->task()->is_aot_compile()) {
+    if (C->is_aot_compile()) {
       ResourceMark rm;
       log_debug(aot, compilation)("Emitting uncommon trap (clinit barrier) in AOT code for %s", ik->name()->as_klass_external_name());
     }
@@ -4941,7 +4947,7 @@ void GraphKit::memory_effect(Node* res_mem, const TypePtr* src_type, const TypeP
   if (src_type != dst_type) {
     Node* all_mem = reset_memory();
     set_all_memory(all_mem);
-    Node* membar = new MemBarCPUOrderNode(C, C->get_alias_index(src_type), nullptr);
+    Node* membar = new MemBarCPUOrderNode(C, src_type, TypePtr::BOTTOM, nullptr);
     membar->init_req(TypeFunc::Control, control());
     membar->init_req(TypeFunc::Memory, all_mem);
     membar = _gvn.transform(membar);
@@ -4968,7 +4974,7 @@ void GraphKit::inflate_string(Node* src, Node* dst, const TypeAryPtr* dst_type, 
   const TypePtr* src_type = TypeAryPtr::BYTES;
   const TypePtr* adr_type;
   Node* mem = capture_memory(adr_type, src_type, dst_type);
-  StrInflatedCopyNode* str = new StrInflatedCopyNode(control(), mem, adr_type, src, dst, count);
+  StrInflatedCopyNode* str = new StrInflatedCopyNode(control(), mem, dst_type, adr_type, src, dst, count);
   Node* res_mem = _gvn.transform(str);
   memory_effect(res_mem, src_type, dst_type);
 }
