@@ -31,7 +31,6 @@
  */
 
 import jdk.test.lib.containers.cgroup.MetricsTester;
-import jdk.internal.platform.Metrics;
 
 public class TestCgroupMetrics {
 
