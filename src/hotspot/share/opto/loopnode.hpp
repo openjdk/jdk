@@ -2070,8 +2070,6 @@ public:
 
   bool can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x);
 
-  void pin_nodes_dependent_on(Node* ctrl, bool old_iff_is_rangecheck);
-
   void collect_flat_array_checks(const IdealLoopTree* loop, Node_List<IfNode>& flat_array_checks) const;
 
   Node* ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node);
