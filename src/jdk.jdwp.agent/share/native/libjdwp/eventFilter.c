@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,28 +281,10 @@ patternStringMatch(char *classname, const char *pattern)
     }
 }
 
-static jboolean isVersionGte12x() {
-    jint version;
-    jvmtiError err =
-        JVMTI_FUNC_PTR(gdata->jvmti,GetVersionNumber)(gdata->jvmti, &version);
-
-    if (err == JVMTI_ERROR_NONE) {
-        jint major, minor;
-
-        major = (version & JVMTI_VERSION_MASK_MAJOR)
-                    >> JVMTI_VERSION_SHIFT_MAJOR;
-        minor = (version & JVMTI_VERSION_MASK_MINOR)
-                    >> JVMTI_VERSION_SHIFT_MINOR;
-        return (major > 1 || (major == 1 && minor >= 2)) ? JNI_TRUE : JNI_FALSE;
-    } else {
-        return JNI_FALSE;
-    }
-}
-
 /* Return the object instance in which the event occurred */
 /* Return NULL if static or if an error occurs */
 static jobject
-eventInstance(EventInfo *evinfo)
+eventInstance(EventInfo *evinfo, jboolean *isStatic)
 {
     jobject     object          = NULL;
     jthread     thread          ;
@@ -310,13 +292,7 @@ eventInstance(EventInfo *evinfo)
     jint        modifiers       = 0;
     jvmtiError  error;
 
-    static jboolean got_version = JNI_FALSE;
-    static jboolean is_version_gte_12x = JNI_FALSE;
-
-    if (!got_version) {
-        is_version_gte_12x = isVersionGte12x();
-        got_version = JNI_TRUE;
-    }
+    *isStatic = JNI_FALSE;
 
     switch (evinfo->ei) {
         case EI_SINGLE_STEP:
@@ -338,26 +314,26 @@ eventInstance(EventInfo *evinfo)
             object = evinfo->object;
             return object;
         default:
-            return object; /* NULL */
+            return NULL;
     }
 
     error = methodModifiers(method, &modifiers);
+    if (error != JVMTI_ERROR_NONE) {
+        return NULL;
+    }
 
-    /* fail if error or static (0x8) */
-    if (error == JVMTI_ERROR_NONE && thread!=NULL && (modifiers & 0x8) == 0) {
-        FrameNumber fnum            = 0;
-        if (is_version_gte_12x) {
-            /* Use new 1.2.x function, GetLocalInstance */
-            error = JVMTI_FUNC_PTR(gdata->jvmti,GetLocalInstance)
-                        (gdata->jvmti, thread, fnum, &object);
-        } else {
-            /* get slot zero object "this" */
-            error = JVMTI_FUNC_PTR(gdata->jvmti,GetLocalObject)
-                        (gdata->jvmti, thread, fnum, 0, &object);
-        }
-        if (error != JVMTI_ERROR_NONE) {
-            object = NULL;
-        }
+    *isStatic = (modifiers & MOD_STATIC) != 0;
+    if (*isStatic) {
+        return NULL; // No "this" for static methods
+    }
+
+    JDI_ASSERT(thread != NULL);
+    FrameNumber fnum = 0;
+    error = JVMTI_FUNC_PTR(gdata->jvmti,GetLocalInstance)
+               (gdata->jvmti, thread, fnum, &object);
+    if (error != JVMTI_ERROR_NONE) {
+        *isStatic = JNI_FALSE; // needs to be false to indicate error
+        return NULL;
     }
 
     return object;
@@ -468,13 +444,20 @@ eventFilterRestricted_passesFilter(JNIEnv *env,
                 break;
 
             case JDWP_REQUEST_MODIFIER(InstanceOnly): {
-                jobject eventInst = eventInstance(evinfo);
+                jboolean isStatic;
+                jobject eventInst = eventInstance(evinfo, &isStatic);
                 jobject filterInst = filter->u.InstanceOnly.instance;
-                /* if no error and doesn't match, don't pass
-                 * filter
-                 */
-                if (eventInst != NULL &&
-                      !isSameObject(env, eventInst, filterInst)) {
+                if (eventInst == NULL) {
+                    if (isStatic) {
+                        // for static methods, pass the filter only if the filter instance is NULL
+                        return filterInst == NULL;
+                    } else {
+                        // if not static then there was an error, so fail the filter
+                        return JNI_FALSE;
+                    }
+                }
+                /* if the instance is not a match, fail the filter */
+                if (!isSameObject(env, eventInst, filterInst)) {
                     return JNI_FALSE;
                 }
                 break;
