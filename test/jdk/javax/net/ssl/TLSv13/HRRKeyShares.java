@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,11 @@
 
 /*
  * @test
- * @bug 8247630 8314323
+ * @bug 8247630 8314323 8371736
  * @summary Use two key share entries
  * @library /test/lib
  * @run main/othervm
- *     -Djdk.tls.namedGroups=x25519,secp256r1,secp384r1,X25519MLKEM768,SecP256r1MLKEM768,SecP384r1MLKEM1024
+ *     -Djdk.tls.namedGroups=x25519,secp256r1,secp384r1,X25519MLKEM768,SecP256r1MLKEM768,SecP384r1MLKEM1024,MLKEM512,MLKEM768,MLKEM1024
  *     HRRKeyShares
  */
 
@@ -77,6 +77,9 @@ public class HRRKeyShares {
     private static final int NG_X25519_MLKEM768 = 0x11EC;
     private static final int NG_SECP256R1_MLKEM768 = 0x11EB;
     private static final int NG_SECP384R1_MLKEM1024 = 0x11ED;
+    private static final int NG_MLKEM512 = 0x0200;
+    private static final int NG_MLKEM768 = 0x0201;
+    private static final int NG_MLKEM1024 = 0x0202;
 
     private static final int NG_GC512A = 0x0026;
     private static final int COMP_NONE = 0;
@@ -255,6 +258,18 @@ public class HRRKeyShares {
 
         System.out.println("Test 7: Good HRR exchange using SecP384r1MLKEM1024");
         hrrKeyShareTest(NG_SECP384R1_MLKEM1024, true);
+        System.out.println();
+
+        System.out.println("Test 8: Good HRR exchange using MLKEM512");
+        hrrKeyShareTest(NG_MLKEM512, true);
+        System.out.println();
+
+        System.out.println("Test 9: Good HRR exchange using MLKEM768");
+        hrrKeyShareTest(NG_MLKEM768, true);
+        System.out.println();
+
+        System.out.println("Test 10: Good HRR exchange using MLKEM1024");
+        hrrKeyShareTest(NG_MLKEM1024, true);
         System.out.println();
     }
 
