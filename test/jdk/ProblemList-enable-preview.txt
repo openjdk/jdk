@@ -39,4 +39,4 @@ sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java 8394812 generic-all
 
 # jdk_jdi
 
-com/sun/jdi/valhalla/CtorDebuggingTest.java 8395356 generic-all
+com/sun/jdi/valhalla/CtorDebuggingTest.java        8395763 generic-all
