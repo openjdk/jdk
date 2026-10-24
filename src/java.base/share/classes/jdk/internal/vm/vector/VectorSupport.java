@@ -161,9 +161,9 @@ public class VectorSupport {
 
     /* ============================================================================ */
 
-    public static class VectorSpecies<E> {}
+    public abstract static class VectorSpecies<E> {}
 
-    public static class VectorPayload {
+    public abstract static /*value*/ class VectorPayload {
         private final Object payload; // array of primitives
 
         public VectorPayload(Object payload) {
@@ -175,19 +175,19 @@ public class VectorSupport {
         }
     }
 
-    public static class Vector<E> extends VectorPayload {
+    public abstract static /*value*/ class Vector<E> extends VectorPayload {
         public Vector(Object payload) {
             super(payload);
         }
     }
 
-    public static class VectorShuffle<E> extends VectorPayload {
+    public abstract static /*value*/ class VectorShuffle<E> extends VectorPayload {
         public VectorShuffle(Object payload) {
             super(payload);
         }
     }
 
-    public static class VectorMask<E> extends VectorPayload {
+    public abstract static /*value*/ class VectorMask<E> extends VectorPayload {
         public VectorMask(Object payload) {
             super(payload);
         }
