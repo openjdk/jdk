@@ -1061,7 +1061,7 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(cnt, count);
 
     __ bind(loop_forward);
-    __ vsetvli(vl, cnt, sew, Assembler::m8);
+    __ vsetvli(vl, cnt, sew, Assembler::m4);
     if (is_backward) {
       __ bne(vl, cnt, loop_backward);
     }
