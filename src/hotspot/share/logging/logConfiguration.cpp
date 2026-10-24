@@ -717,6 +717,7 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
 }
 
 void LogConfiguration::rotate_all_outputs() {
+  ConfigurationLock lock;
   // Start from index 2 since neither stdout nor stderr can be rotated.
   for (size_t idx = 2; idx < _n_outputs; idx++) {
     _outputs[idx]->force_rotate();
