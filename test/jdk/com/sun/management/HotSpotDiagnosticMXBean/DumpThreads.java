@@ -275,6 +275,7 @@ class DumpThreads {
                         .findThread(tid)
                         .orElse(null);
                 assertNotNull(ti, "thread not found");
+                assertEquals(Objects.toIdentityString(thread), ti.identity());
                 assertEquals("BLOCKED", ti.state());
                 assertEquals(lockAsString, ti.blockedOn());
                 if (pinned) {
@@ -352,6 +353,7 @@ class DumpThreads {
                                .orElse(null);
                 assertNotNull(ti, "thread not found");
                 assertEquals(ti.isVirtual(), thread.isVirtual());
+                assertEquals(Objects.toIdentityString(thread), ti.identity());
                 assertEquals("WAITING", ti.state());
                 assertFalse(ti.ownedMonitors().values().stream()
                               .flatMap(List::stream)
@@ -444,6 +446,7 @@ class DumpThreads {
                     .orElse(null);
             assertNotNull(ti, "thread not found");
             assertEquals(ti.isVirtual(), thread.isVirtual());
+            assertEquals(Objects.toIdentityString(thread), ti.identity());
 
             // thread should be waiting on the ReentrantLock
             assertEquals("WAITING", ti.state());
@@ -530,6 +533,7 @@ class DumpThreads {
                     .orElse(null);
             assertNotNull(ti, "thread not found");
             assertEquals(ti.isVirtual(), thread.isVirtual());
+            assertEquals(Objects.toIdentityString(thread), ti.identity());
 
             // depth -> list of locks
             Map<Integer, List<String>> ownedMonitors = ti.ownedMonitors();
@@ -607,6 +611,7 @@ class DumpThreads {
                     .orElse(null);
             assertNotNull(ti, "thread not found");
             assertTrue(ti.isVirtual());
+            assertEquals(Objects.toIdentityString(thread), ti.identity());
             long carrierTid = ti.carrier().orElse(-1L);
             assertNotEquals(-1L, carrierTid, "carrier not found");
             assertForkJoinWorkerThread(carrierTid);
@@ -717,14 +722,14 @@ class DumpThreads {
             return null;
         }
 
-        // #3 "main" RUNNABLE 2025-04-18T15:22:12.012450Z
-        // #36 "" virtual WAITING 2025-04-18T15:22:12.012450Z
-        Pattern pattern = Pattern.compile("#(\\d+)\\s+\"([^\"]*)\"\\s+(virtual\\s+)?(\\w+)\\s+(.*)");
+        // #3 "main" <java.lang.Thread@776ec8df> RUNNABLE 2025-04-18T15:22:12.012450Z
+        // #36 "" virtual <java.lang.VirtualThread@cb2303a> WAITING 2025-04-18T15:22:12.012450Z
+        Pattern pattern = Pattern.compile("#(\\d+)\\s+\"([^\"]*)\"\\s+(virtual\\s+)?(?:<([^>]+)>\\s+)?(\\w+)\\s+(.*)");
         Matcher matcher = pattern.matcher(line);
         assertTrue(matcher.matches());
         String name = matcher.group(2);
         boolean isVirtual = "virtual ".equals(matcher.group(3));
-        String state = matcher.group(4);
+        String state = matcher.group(5);
         return new ThreadFields(tid, name, isVirtual, state);
     }
 
