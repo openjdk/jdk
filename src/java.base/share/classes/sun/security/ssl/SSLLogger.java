@@ -29,6 +29,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.invoke.*;
 import java.nio.ByteBuffer;
 import java.security.cert.Certificate;
 import java.security.cert.Extension;
@@ -39,10 +40,12 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+import jdk.internal.logger.dynamic.DormantLogger;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.security.util.HexDumpEncoder;
 import sun.security.util.Debug;
 import sun.security.x509.*;
+import sun.util.logging.PlatformLogger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static sun.security.ssl.Utilities.LINE_SEP;
@@ -59,27 +62,34 @@ import static sun.security.ssl.Utilities.LINE_SEP;
  */
 public final class SSLLogger implements System.Logger {
     private static final System.Logger logger;
-    // High level boolean to track whether logging is active (i.e. all/ssl).
-    // Further checks may be necessary to determine if data is logged.
-    private static final boolean logging;
+    private static final String LOGGER_NAME = "javax.net.ssl";
 
+    private static final MutableCallSite loggingCallSite =
+            new MutableCallSite(MethodHandles.constant(boolean.class, false));
+    private static final MethodHandle isOnHandle = loggingCallSite.dynamicInvoker();
+    private static final MethodHandle loggingTest;
     private final String loggerName;
     private final boolean useCompactFormat;
 
     static {
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        try {
+            loggingTest = lookup.findStatic(SSLLogger.class, "loggingTestImpl",
+                    MethodType.methodType(boolean.class));
+        } catch (IllegalAccessException | NoSuchMethodException e) {
+            throw new ExceptionInInitializerError(e);
+        }
         String p = System.getProperty("javax.net.debug");
         if (p != null) {
             if (p.isEmpty()) {
-                logger = System.getLogger("javax.net.ssl");
+                logger = System.getLogger(LOGGER_NAME);
                 Opt.ALL.on = true;
             } else {
                 p = p.toLowerCase(Locale.ENGLISH);
-                if (p.contains("help")) {
-                    // help option calls exit(0)
+                if (p.equals("help")) {
                     help();
                 }
-                // configure expanded logging mode in constructor
-                logger = new SSLLogger("javax.net.ssl", p);
+                logger = new SSLLogger(LOGGER_NAME, p);
                 if (p.contains("all")) {
                     Opt.ALL.on = true;
                 } else {
@@ -129,10 +139,20 @@ public final class SSLLogger implements System.Logger {
 
             // javax.net.debug would be misconfigured property with respect
             // to logging if value didn't contain "all" or "ssl"
-            logging = Opt.ALL.on || Opt.SSL.on;
+            // keep call site at false if one of these options isn't present
+            if(Opt.ALL.on || Opt.SSL.on) {
+                loggingCallSite.setTarget(
+                        MethodHandles.constant(boolean.class, true));
+                MutableCallSite.syncAll(new MutableCallSite[]{loggingCallSite});
+            }
         } else {
-            logger = null;
-            logging = false;
+            logger = DormantLogger.of(
+                    LOGGER_NAME,
+                    SSLLogger.class.getModule(),
+                    loggingCallSite,
+                    loggingTest);
+            // Logger level will control if events are logged
+            Opt.ALL.on = true;
         }
     }
 
@@ -144,13 +164,23 @@ public final class SSLLogger implements System.Logger {
 
     @ForceInline
     public static boolean isOn() {
-        return logging;
+        try {
+            return (boolean) isOnHandle.invokeExact();
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
+    }
+
+    /**
+     * MutableCallSite used by Dormant Logger
+     */
+    private static boolean loggingTestImpl() {
+        return DormantLogger.getLevel(logger) != PlatformLogger.Level.OFF;
     }
 
     /**
      * Return true if the specific DebugOption is enabled or ALL is enabled
      */
-
     public static boolean isOn(Opt option) {
         return Opt.ALL.on || option.on;
     }
@@ -180,7 +210,13 @@ public final class SSLLogger implements System.Logger {
     }
 
     private static void log0(Level level, String msg, Object... params) {
-        if (logger != null && logger.isLoggable(level)) {
+        // Keep this record's destination stable across configuration changes.
+        final DormantLogger.Output output = DormantLogger.getOutput(logger);
+        if (output != DormantLogger.Output.LOGGER) {
+            logDirect(output, level, msg, params);
+            return;
+        }
+        if (logger.isLoggable(level)) {
             if (params == null || params.length == 0) {
                 logger.log(level, msg);
             } else {
@@ -197,6 +233,26 @@ public final class SSLLogger implements System.Logger {
                     // ignore it, just for debugging.
                 }
             }
+        }
+    }
+
+    private static void logDirect(DormantLogger.Output output,
+            Level level, String msg, Object... params) {
+        if (!DormantLogger.isLoggable(logger, level)) {
+            return;
+        }
+        try {
+            String formatted = SSLSimpleFormatter.format(
+                    new SSLLogger(LOGGER_NAME, "all"), level, msg, params);
+            PrintStream out = switch (output) {
+                case STDOUT -> System.out;
+                case STDERR -> System.err;
+                case LOGGER -> throw new InternalError("unexpected output");
+            };
+            out.write(formatted.getBytes(UTF_8));
+            out.flush();
+        } catch (Exception exp) {
+            // ignore it, just for debugging.
         }
     }
 
@@ -251,7 +307,7 @@ public final class SSLLogger implements System.Logger {
     // Logs a warning message and always returns false. This method
     // can be used as an OR Predicate to add a log in a stream filter.
     static boolean logWarning(Opt option, String s) {
-        if (SSLLogger.isOn() && option.on) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(option)) {
             SSLLogger.warning(s);
         }
         return false;
