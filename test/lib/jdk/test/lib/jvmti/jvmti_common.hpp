@@ -482,6 +482,20 @@ wait_for_state(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jint exp_state) {
   }
 }
 
+static bool
+is_value_object(JNIEnv *jni, jobject obj) {
+  bool is_value = false;
+  if (obj != nullptr) {
+    jclass cklass = jni->FindClass("java/lang/Class");
+    jmethodID method = jni->GetMethodID(cklass, "isValue", "()Z");
+    jclass oklass = jni->GetObjectClass(obj);
+    is_value = jni->CallBooleanMethod(oklass, method);
+    jni->DeleteLocalRef(oklass);
+    jni->DeleteLocalRef(cklass);
+  }
+  return is_value;
+}
+
 #define MAX_FRAME_COUNT_PRINT_STACK_TRACE 200
 
 static void
