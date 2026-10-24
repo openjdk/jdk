@@ -854,7 +854,11 @@ The following options are provided by the standard doclet.
     given list.
 
 <span id="option-sourcetab">`-sourcetab` *tab-length*</span>
-:   Specifies the number of spaces each tab uses in the source.
+:   Specifies the number of spaces to which each tab character in the source
+    code is expanded. This option usually only affects tab characters in
+    documentation comments processed by the `javadoc` tool, but is applied to
+    all sources when the [-linksource option](#option-linksource) is specified.
+    By default, each tab character is expanded to 8 spaces.
 
 <span id="option-spec-base-url">`--spec-base-url` *url*</span>
 :   Specifies the base URL for relative URLs in `@spec` tags, to be used when
