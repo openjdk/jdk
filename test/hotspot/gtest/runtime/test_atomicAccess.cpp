@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,10 +93,17 @@ struct AtomicAccessXchgTestSupport {
   void test() {
     T zero = 0;
     T five = 5;
+    T ten = 10;
     AtomicAccess::store(&_test_value, zero);
     T res = AtomicAccess::xchg(&_test_value, five);
     EXPECT_EQ(zero, res);
     EXPECT_EQ(five, AtomicAccess::load(&_test_value));
+
+    // Also exchange a non-zero value. Some platform implementations use a
+    // cmpxchg loop that needs the compare value after the operation returns.
+    res = AtomicAccess::xchg(&_test_value, ten);
+    EXPECT_EQ(five, res);
+    EXPECT_EQ(ten, AtomicAccess::load(&_test_value));
   }
 };
 
@@ -138,6 +145,15 @@ struct AtomicAccessCmpxchgTestSupport {
 TEST_VM(AtomicAccessCmpxchgTest, int32) {
   using Support = AtomicAccessCmpxchgTestSupport<int32_t>;
   Support().test();
+}
+
+TEST_VM(AtomicAccessCmpxchgTest, uint32_high_bit) {
+  const uint32_t high_bit = 0x80000000u;
+  const uint32_t replacement = 1;
+  volatile uint32_t value = high_bit;
+
+  EXPECT_EQ(high_bit, AtomicAccess::cmpxchg(&value, high_bit, replacement));
+  EXPECT_EQ(replacement, AtomicAccess::load(&value));
 }
 
 TEST_VM(AtomicAccessCmpxchgTest, int64) {
