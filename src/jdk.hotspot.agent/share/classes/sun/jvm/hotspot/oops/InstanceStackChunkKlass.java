@@ -35,6 +35,8 @@ import sun.jvm.hotspot.utilities.Observer;
 // An InstanceKlass is the VM level representation of a Java class.
 
 public class InstanceStackChunkKlass extends InstanceKlass {
+  private static int metadataWordsAtBottom;
+
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -46,6 +48,7 @@ public class InstanceStackChunkKlass extends InstanceKlass {
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     // Just make sure it's there for now
     Type type = db.lookupType("InstanceStackChunkKlass");
+    metadataWordsAtBottom = db.lookupIntConstant("frame::metadata_words_at_bottom").intValue();
   }
 
   public InstanceStackChunkKlass(Address addr) {
@@ -79,5 +82,110 @@ public class InstanceStackChunkKlass extends InstanceKlass {
     long bitsPerWord = vm.getBytesPerWord() * 8L;
     long sizeInBits = stackSizeInWords * (vm.getBytesPerWord() / vm.getHeapOopSize());
     return vm.alignUp(sizeInBits, bitsPerWord);
+  }
+
+  @Override
+  public void iterateNonStaticFields(OopVisitor visitor, Oop obj) {
+    super.iterateNonStaticFields(visitor, obj);
+    iterateStackOops(visitor, obj);
+  }
+
+  // findField only sees the Java fields, this covers the ones injected by the VM.
+  private Field findInjectedField(String name, String sig) {
+    for (int i = getJavaFieldsCount(); i < getAllFieldsCount(); i++) {
+      if (getFieldName(i).equals(name) && getFieldSignature(i).equals(sig)) {
+        return getFieldByIndex(i);
+      }
+    }
+    return null;
+  }
+
+  // Visit the bitmap range below sp to the end of the stack like
+  // oop_oop_iterate_stack in the VM, then the lock stack like iterate_lockstack.
+  public void iterateStackOops(OopVisitor visitor, Oop obj) {
+    if (!hasBitmap(obj)) {
+      return;
+    }
+    VM vm = VM.getVM();
+    long wordSize = vm.getAddressSize();
+    long oopSize = vm.getHeapOopSize();
+    long slotsPerWord = wordSize / oopSize;
+    long stackSizeInWords = ((IntField) findField("size", "I")).getValue(obj);
+    long sp = ((IntField) findField("sp", "I")).getValue(obj);
+    long headerBytes = getSizeHelper() * wordSize;
+    long bitmapBytes = headerBytes + stackSizeInWords * wordSize;
+    long bitsPerWord = wordSize * 8L;
+    long slotCount = stackSizeInWords * slotsPerWord;
+    // the saved frame pointer below sp can hold an oop, so start where the VM starts
+    long firstSlot = (sp - metadataWordsAtBottom) * slotsPerWord;
+    Address base = obj.getHandle();
+    for (long w = firstSlot / bitsPerWord; w * bitsPerWord < slotCount; w++) {
+      long word = base.getCIntegerAt(bitmapBytes + w * wordSize, wordSize, true);
+      if (word == 0) {
+        continue;
+      }
+      for (long b = 0; b < bitsPerWord; b++) {
+        long index = w * bitsPerWord + b;
+        if (index >= slotCount) {
+          break;
+        }
+        if (index < firstSlot || ((word >>> b) & 1) == 0) {
+          continue;
+        }
+        visitStackOop(visitor, index, headerBytes + index * oopSize);
+      }
+    }
+    // lock stack entries sit at the start of the stack, one machine word each
+    int lockStackSize = Byte.toUnsignedInt(((ByteField) findInjectedField("lockStackSize", "B")).getValue(obj));
+    for (int i = 0; i < lockStackSize; i++) {
+      visitStackOop(visitor, i * slotsPerWord, headerBytes + i * wordSize);
+    }
+  }
+
+  public boolean hasBitmap(Oop obj) {
+    byte flags = ((ByteField) findInjectedField("flags", "B")).getValue(obj);
+    return (flags & 0x10) != 0;   // FLAG_HAS_BITMAP, only set once the GC transforms the chunk
+  }
+
+  public boolean isEmpty(Oop obj) {
+    long sp = ((IntField) findField("sp", "I")).getValue(obj);
+    long bottom = ((IntField) findField("bottom", "I")).getValue(obj);
+    return sp >= bottom;
+  }
+
+  private void visitStackOop(OopVisitor visitor, long index, long offset) {
+    FieldIdentifier id = new IndexableFieldIdentifier((int) index);
+    OopField field = VM.getVM().isCompressedOopsEnabled()
+        ? new NarrowSlotField(id, offset) : new SlotField(id, offset);
+    visitor.doOop(field, false);
+  }
+
+  // Stack slots have no field info behind them, so the flat field checks answer here.
+  private static class SlotField extends OopField {
+    SlotField(FieldIdentifier id, long offset) {
+      super(id, offset, false);
+    }
+    @Override
+    public boolean isFlat() {
+      return false;
+    }
+    @Override
+    public boolean hasNullMarker() {
+      return false;
+    }
+  }
+
+  private static class NarrowSlotField extends NarrowOopField {
+    NarrowSlotField(FieldIdentifier id, long offset) {
+      super(id, offset, false);
+    }
+    @Override
+    public boolean isFlat() {
+      return false;
+    }
+    @Override
+    public boolean hasNullMarker() {
+      return false;
+    }
   }
 }
