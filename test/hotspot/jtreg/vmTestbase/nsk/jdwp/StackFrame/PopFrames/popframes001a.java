@@ -41,7 +41,10 @@ public class popframes001a {
     public static final String THREAD_NAME = "testedThread";
 
     // line nunber for breakpoint
-    public static final int BREAKPOINT_LINE_NUMBER = 114;
+    public static final int BREAKPOINT_LINE_NUMBER = 150;
+
+    // line number of the popframes003 breakpoint in stop()
+    public static final int STOP_LINE_NUMBER = 164;
 
     // scaffold objects
     private static volatile ArgumentHandler argumentHandler = null;
@@ -62,6 +65,17 @@ public class popframes001a {
         TestedThreadClass thread = new TestedThreadClass(THREAD_NAME);
         log.display("  ... thread created");
 
+        if (TestedThreadClass.UNMOUNT) {
+            // the thread the tested method joins, it ends once the tested thread is parked in that join.
+            // It is made here so testedMethod has nothing before the join that could deoptimize it
+            Thread tested = thread.getThread();
+            TestedThreadClass.parker = Thread.ofVirtual().start(() -> {
+                while (tested.getState() != Thread.State.WAITING) {
+                    Thread.yield();
+                }
+            });
+        }
+
         // start tested thread
         log.display("Starting tested thread");
         thread.start();
@@ -78,6 +92,13 @@ public class popframes001a {
             return popframes001.FAILED;
         }
 
+        // popping only stop() would reach the breakpoint twice as well
+        if (TestedThreadClass.COMPILED_CALLER && TestedThreadClass.invokations != 2) {
+            log.complain("Tested method invoked " + TestedThreadClass.invokations + " times, expected 2");
+            log.display("Debugee FAILED");
+            return popframes001.FAILED;
+        }
+
         log.display("Debugee PASSED");
         return popframes001.PASSED;
     }
@@ -88,15 +109,19 @@ public class popframes001a {
         // number of invokations of tested method
         public static volatile int invokations = 0;
 
+        // popframes002 and popframes003 run this debuggee with these set
+        private static final boolean UNMOUNT = Boolean.getBoolean("popframes001.unmount");
+        private static final boolean COMPILED_CALLER = Boolean.getBoolean("popframes001.compiledCaller");
+
+        // joined by the tested method when UNMOUNT is set, started in runIt
+        public static Thread parker = null;
+
         public TestedThreadClass(String name) {
             super(name);
         }
 
-        // invoke tested method
+        // invoke tested method, nothing before the call that could deoptimize this frame
         public void run() {
-            log.display("Tested thread: started");
-
-            // invoke tested method
             int foo = 100;
             foo = testedMethod(foo);
 
@@ -106,15 +131,37 @@ public class popframes001a {
         // tested method to pop frames
         public int testedMethod(int arg) {
             invokations++;
-            log.display("Tested method invoked " + invokations + " time");
             int boo = 0;
+
+            if (UNMOUNT) {
+                // the first join unmounts a virtual tested thread, so the frame below is frozen when popped,
+                // the parker is gone by the second one. Nothing before this join may deoptimize this frame
+                // or the thaw brings the caller out with it
+                try {
+                    parker.join();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            log.display("Tested method invoked " + invokations + " time");
 
             log.display("Breakpoint line reached");
             // next line is for breakpoint
             boo = arg * 2; // BREAKPOINT_LINE_NUMBER
             log.display("Breakpoint line passed");
 
+            if (COMPILED_CALLER) {
+                // popframes003 breaks in stop() and pops this frame together with it
+                stop();
+            }
+
             return boo;
+        }
+
+        // breakpoint method for popframes003
+        public void stop() {
+            // next line is for breakpoint
+            log.display("Stop line reached"); // STOP_LINE_NUMBER
         }
     }
 }
