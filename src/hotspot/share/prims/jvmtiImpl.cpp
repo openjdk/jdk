@@ -620,7 +620,7 @@ void VM_BaseGetOrSetLocal::doit() {
 
           if (Arguments::is_valhalla_enabled()) {
             bool is_ctor = _jvf->method()->is_object_constructor();
-            if (is_ctor && _index == 0 && obj != nullptr && obj->is_value()) {
+            if (is_ctor && _index == 0 && _jvf->method()->method_holder()->has_strict_instance_fields_in_hierarchy()) {
               _result = JVMTI_ERROR_OPAQUE_FRAME; // no support for THIS value object during construction
               return;
             }
