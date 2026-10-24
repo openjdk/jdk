@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
         super(b);
     }
 
+    @Override
     public SynthContext getContext(JComponent c) {
         return new SynthContext(c, Region.FILE_CHOOSER, style,
                                 getComponentState(c));
@@ -128,11 +129,13 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
         }
     }
 
+    @Override
     public void installUI(JComponent c) {
         super.installUI(c);
         SwingUtilities.replaceUIActionMap(c, createActionMap());
     }
 
+    @Override
     public void installComponents(JFileChooser fc) {
         SynthContext context = getContext(fc, ENABLED);
 
@@ -152,21 +155,26 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
 
     }
 
+    @Override
     public void uninstallComponents(JFileChooser fc) {
         fc.removeAll();
     }
 
+    @Override
     protected void installListeners(JFileChooser fc) {
         super.installListeners(fc);
 
         getModel().addListDataListener(new ListDataListener() {
+            @Override
             public void contentsChanged(ListDataEvent e) {
                 // Update the selection after JList has been updated
                 new DelayedSelectionUpdater();
             }
+            @Override
             public void intervalAdded(ListDataEvent e) {
                 new DelayedSelectionUpdater();
             }
+            @Override
             public void intervalRemoved(ListDataEvent e) {
             }
         });
@@ -178,6 +186,7 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
             SwingUtilities.invokeLater(this);
         }
 
+        @Override
         public void run() {
             updateFileNameCompletion();
         }
@@ -186,11 +195,13 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
     protected abstract ActionMap createActionMap();
 
 
+    @Override
     protected void installDefaults(JFileChooser fc) {
         super.installDefaults(fc);
         updateStyle(fc);
     }
 
+    @Override
     protected void uninstallDefaults(JFileChooser fc) {
         super.uninstallDefaults(fc);
         if (fc.getFont() instanceof UIResource) {
@@ -202,10 +213,12 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
         style = null;
     }
 
+    @Override
     protected void installIcons(JFileChooser fc) {
         // The icons are installed in updateStyle, not here
     }
 
+    @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -219,9 +232,11 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
         paint(context, g);
     }
 
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x, int y, int w, int h) {
     }
 
+    @Override
     public void paint(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -231,7 +246,9 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
     protected void paint(SynthContext context, Graphics g) {
     }
 
+    @Override
     public abstract void setFileName(String fileName);
+    @Override
     public abstract String getFileName();
 
     protected void doSelectedFileChanged(PropertyChangeEvent e) {
@@ -266,11 +283,13 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
     protected void doAncestorChanged(PropertyChangeEvent e) {
     }
 
+    @Override
     public PropertyChangeListener createPropertyChangeListener(JFileChooser fc) {
         return new SynthFCPropertyChangeListener();
     }
 
     private class SynthFCPropertyChangeListener implements PropertyChangeListener {
+        @Override
         public void propertyChange(PropertyChangeEvent e) {
             String prop = e.getPropertyName();
             if (prop.equals(JFileChooser.FILE_SELECTION_MODE_CHANGED_PROPERTY)) {
@@ -312,6 +331,7 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
             super("fileNameCompletion");
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             JFileChooser chooser = getFileChooser();
 
@@ -499,6 +519,7 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
             this.pattern = Pattern.compile(new String(rPat, 0, j), Pattern.CASE_INSENSITIVE);
         }
 
+        @Override
         public boolean accept(File f) {
             if (f == null) {
                 return false;
@@ -509,6 +530,7 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
             return pattern.matcher(f.getName()).matches();
         }
 
+        @Override
         public String getDescription() {
             return globPattern;
         }
@@ -529,6 +551,7 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
     }
 
 
+    @Override
     protected JButton getApproveButton(JFileChooser fc) {
         return approveButton;
     }
@@ -539,6 +562,7 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
 
 
     // Overload to do nothing.   We don't have and icon cache.
+    @Override
     public void clearIconCache() { }
 
     // Copied as SynthBorder is package private in synth
@@ -555,6 +579,7 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
             }
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
             if (!(c instanceof JComponent)) {
@@ -569,6 +594,7 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
             }
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets) {
             if (insets == null) {
                 insets = new Insets(0, 0, 0, 0);
@@ -584,6 +610,7 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
             }
             return insets;
         }
+        @Override
         public boolean isBorderOpaque() {
             return false;
         }

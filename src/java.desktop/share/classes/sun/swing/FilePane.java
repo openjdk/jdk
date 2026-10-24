@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,6 +204,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
          * as the prefix with appropriate number of the same letters followed
          * by first typed another letter.
          */
+        @Override
         public void keyTyped(KeyEvent e) {
             BasicDirectoryModel model = getModel();
             int rowCount = model.getSize();
@@ -294,6 +295,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     };
 
     private FocusListener editorFocusListener = new FocusAdapter() {
+        @Override
         public void focusLost(FocusEvent e) {
             if (! e.isTemporary()) {
                 applyEdit();
@@ -302,10 +304,12 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     };
 
     private static FocusListener repaintListener = new FocusListener() {
+        @Override
         public void focusGained(FocusEvent fe) {
             repaintSelection(fe.getSource());
         }
 
+        @Override
         public void focusLost(FocusEvent fe) {
             repaintSelection(fe.getSource());
         }
@@ -487,6 +491,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             putValue(Action.ACTION_COMMAND_KEY, cmd);
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             setViewType(viewType);
         }
@@ -561,6 +566,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                     putValue(Action.ACTION_COMMAND_KEY, cmd);
                 }
 
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     String cmd = (String)getValue(Action.ACTION_COMMAND_KEY);
 
@@ -584,6 +590,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                     }
                 }
 
+                @Override
                 public boolean isEnabled() {
                     String cmd = (String)getValue(Action.ACTION_COMMAND_KEY);
                     if (cmd == ACTION_CANCEL) {
@@ -660,6 +667,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         final JFileChooser fileChooser = getFileChooser();
 
         final JList<Object> list = new JList<Object>() {
+            @Override
             public int getNextMatch(String prefix, int startIndex, Position.Bias bias) {
                 ListModel<?> model = getModel();
                 int max = model.getSize();
@@ -690,12 +698,15 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         updateListRowCount(list);
 
         getModel().addListDataListener(new ListDataListener() {
+            @Override
             public void intervalAdded(ListDataEvent e) {
                 updateListRowCount(list);
             }
+            @Override
             public void intervalRemoved(ListDataEvent e) {
                 updateListRowCount(list);
             }
+            @Override
             public void contentsChanged(ListDataEvent e) {
                 if (isShowing()) {
                     clearSelection();
@@ -742,19 +753,23 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             getRowSorter().addRowSorterListener(this);
         }
 
+        @Override
         public int getSize() {
             return getModel().getSize();
         }
 
+        @Override
         public Object getElementAt(int index) {
             // JList doesn't support RowSorter so far, so we put it into the list model
             return getModel().getElementAt(getRowSorter().convertRowIndexToModel(index));
         }
 
+        @Override
         public void tableChanged(TableModelEvent e) {
             fireContentsChanged(this, 0, getSize());
         }
 
+        @Override
         public void sorterChanged(RowSorterEvent e) {
             fireContentsChanged(this, 0, getSize());
         }
@@ -832,14 +847,17 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             }
         }
 
+        @Override
         public int getRowCount() {
             return directoryModel.getSize();
         }
 
+        @Override
         public int getColumnCount() {
             return columns.length;
         }
 
+        @Override
         public Object getValueAt(int row, int col) {
             // Note: It is very important to avoid getting info on drives, as
             // this will trigger "No disk in A:" and similar dialogs.
@@ -855,6 +873,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                     : ShellFolder.getFolderColumnValue(f, columnMap[col]);
         }
 
+        @Override
         public void setValueAt(Object value, int row, int col) {
             if (col == COLUMN_FILENAME) {
                 final JFileChooser chooser = getFileChooser();
@@ -887,6 +906,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                                     // is editing. Postpone file selection to be sure that edit mode of the JTable
                                     // is completed
                                     SwingUtilities.invokeLater(new Runnable() {
+                                        @Override
                                         public void run() {
                                             if (chooser.isMultiSelectionEnabled()) {
                                                 chooser.setSelectedFiles(new File[]{f2});
@@ -909,17 +929,20 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             }
         }
 
+        @Override
         public boolean isCellEditable(int row, int column) {
             File currentDirectory = getFileChooser().getCurrentDirectory();
             return (!readOnly && column == COLUMN_FILENAME && canWrite(currentDirectory));
         }
 
+        @Override
         public void contentsChanged(ListDataEvent e) {
             // Update the selection after the model has been updated
             new DelayedSelectionUpdater();
             fireTableDataChanged();
         }
 
+        @Override
         public void intervalAdded(ListDataEvent e) {
             int i0 = e.getIndex0();
             int i1 = e.getIndex1();
@@ -933,6 +956,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
             fireTableRowsInserted(e.getIndex0(), e.getIndex1());
         }
+        @Override
         public void intervalRemoved(ListDataEvent e) {
             fireTableRowsDeleted(e.getIndex0(), e.getIndex1());
         }
@@ -1014,6 +1038,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         @Override
         public void sort() {
             ShellFolder.invoke(new Callable<Void>() {
+                @Override
                 public Void call() {
                     DetailsTableRowSorter.super.sort();
                     return null;
@@ -1021,28 +1046,34 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             });
         }
 
+        @Override
         public void modelStructureChanged() {
             super.modelStructureChanged();
             updateComparators(detailsTableModel.getColumns());
         }
 
         private class SorterModelWrapper extends ModelWrapper<TableModel, Integer> {
+            @Override
             public TableModel getModel() {
                 return getDetailsTableModel();
             }
 
+            @Override
             public int getColumnCount() {
                 return getDetailsTableModel().getColumnCount();
             }
 
+            @Override
             public int getRowCount() {
                 return getDetailsTableModel().getRowCount();
             }
 
+            @Override
             public Object getValueAt(int row, int column) {
                 return FilePane.this.getModel().getElementAt(row);
             }
 
+            @Override
             public Integer getIdentifier(int row) {
                 return row;
             }
@@ -1063,6 +1094,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             this.comparator = (Comparator<Object>)comparator;
         }
 
+        @Override
         public int compare(File f1, File f2) {
             if (f1 != null && f2 != null) {
                 boolean traversable1 = getFileChooser().isTraversable(f1);
@@ -1107,6 +1139,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             tf.addFocusListener(editorFocusListener);
         }
 
+        @Override
         public Component getTableCellEditorComponent(JTable table, Object value,
                                                      boolean isSelected, int row, int column) {
             Component comp = super.getTableCellEditorComponent(table, value,
@@ -1134,6 +1167,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             nf.setMinimumFractionDigits(1);
         }
 
+        @Override
         public void setBounds(int x, int y, int width, int height) {
         if (getHorizontalAlignment() == SwingConstants.LEADING &&
                     !fullRowSelection) {
@@ -1146,6 +1180,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         }
 
 
+        @Override
         public Insets getInsets(Insets i) {
             // Provide some space between columns
             i = super.getInsets(i);
@@ -1154,6 +1189,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             return i;
         }
 
+        @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                               boolean isSelected, boolean hasFocus, int row, int column) {
 
@@ -1265,6 +1301,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
         final JTable detailsTable = new JTable(getDetailsTableModel()) {
             // Handle Escape key events here
+            @Override
             protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE && getCellEditor() == null) {
                     // We are not editing, forward to filechooser.
@@ -1274,6 +1311,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                 return super.processKeyBinding(ks, e, condition, pressed);
             }
 
+            @Override
             public void tableChanged(TableModelEvent e) {
                 super.tableChanged(e);
 
@@ -1329,6 +1367,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         // Adjust width of first column so the table fills the viewport when
         // first displayed (temporary listener).
         scrollpane.addComponentListener(new ComponentAdapter() {
+            @Override
             public void componentResized(ComponentEvent e) {
                 JScrollPane sp = (JScrollPane)e.getComponent();
                 fixNameColumnWidth(sp.getViewport().getSize().width);
@@ -1341,6 +1380,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         // event is not dispatched to the Table MouseListener but to the
         // scrollpane.  Listen for that here so we can clear the selection.
         scrollpane.addMouseListener(new MouseAdapter() {
+            @Override
             public void mousePressed(MouseEvent e) {
                 JScrollPane jsp = ((JScrollPane)e.getComponent());
                 JTable table = (JTable)jsp.getViewport().getView();
@@ -1377,6 +1417,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             this.wrappedRenderer = wrappedRenderer;
         }
 
+        @Override
         public Component getTableCellRendererComponent(
                                 JTable table, Object value, boolean isSelected,
                                 boolean hasFocus, int row, int column) {
@@ -1422,6 +1463,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             }
         }
 
+        @Override
         public void run() {
             setFileSelected();
             if (editFile != null) {
@@ -1520,6 +1562,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
 
     class EditActionListener implements ActionListener {
+        @Override
         public void actionPerformed(ActionEvent e) {
             applyEdit();
         }
@@ -1590,6 +1633,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                     }
                 }
 
+                @Override
                 public void actionPerformed(ActionEvent ev) {
                     if (basicNewFolderAction == null) {
                         basicNewFolderAction = fileChooserUIAccessor.getNewFolderAction();
@@ -1610,6 +1654,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     @SuppressWarnings("serial") // JDK-implementation class
     protected class FileRenderer extends DefaultListCellRenderer  {
 
+        @Override
         public Component getListCellRendererComponent(JList<?> list, Object value,
                                                       int index, boolean isSelected,
                                                       boolean cellHasFocus) {
@@ -1798,6 +1843,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
      * Listen for filechooser property changes, such as
      * the selected file changing, or the type of the dialog changing.
      */
+    @Override
     public void propertyChange(PropertyChangeEvent e) {
             if (viewType == -1) {
                 setViewType(VIEWTYPE_LIST);
@@ -1895,6 +1941,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         }
     }
 
+    @Override
     public JPopupMenu getComponentPopupMenu() {
         JPopupMenu popupMenu = getFileChooser().getComponentPopupMenu();
         if (popupMenu != null) {
@@ -1944,6 +1991,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     private class Handler implements MouseListener {
         private MouseListener doubleClickListener;
 
+        @Override
         @SuppressWarnings("deprecation")
         public void mouseClicked(MouseEvent evt) {
             JComponent source = (JComponent)evt.getSource();
@@ -2021,6 +2069,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             }
         }
 
+        @Override
         public void mouseEntered(MouseEvent evt) {
             JComponent source = (JComponent)evt.getSource();
             if (source instanceof JTable) {
@@ -2044,6 +2093,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             }
         }
 
+        @Override
         public void mouseExited(MouseEvent evt) {
             if (evt.getSource() instanceof JList) {
                 // Forward event to Basic
@@ -2053,6 +2103,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             }
         }
 
+        @Override
         public void mousePressed(MouseEvent evt) {
             if (evt.getSource() instanceof JList) {
                 // Forward event to Basic
@@ -2062,6 +2113,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             }
         }
 
+        @Override
         public void mouseReleased(MouseEvent evt) {
             if (evt.getSource() instanceof JList) {
                 // Forward event to Basic

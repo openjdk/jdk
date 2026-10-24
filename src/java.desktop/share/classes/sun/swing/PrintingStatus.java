@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ public class PrintingStatus {
 
     // the action that will abort printing
     private final Action abortAction = new AbstractAction() {
+        @Override
         public void actionPerformed(ActionEvent ae) {
             if (!isAborted.get()) {
                 isAborted.set(true);
@@ -81,6 +82,7 @@ public class PrintingStatus {
     };
 
     private final WindowAdapter closeListener = new WindowAdapter() {
+        @Override
         public void windowClosing(WindowEvent we) {
             abortAction.actionPerformed(null);
         }
@@ -172,6 +174,7 @@ public class PrintingStatus {
         } else {
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
+                    @Override
                     public void run() {
                         showModalOnEDT(isModal);
                     }
@@ -213,6 +216,7 @@ public class PrintingStatus {
             disposeOnEDT();
         } else {
             SwingUtilities.invokeLater(new Runnable() {
+                @Override
                 public void run() {
                     disposeOnEDT();
                 }
@@ -266,6 +270,7 @@ public class PrintingStatus {
             this.printDelegatee = delegatee;
         }
 
+        @Override
         public int print(final Graphics graphics,
                          final PageFormat pageFormat, final int pageIndex)
                 throws PrinterException {
@@ -277,6 +282,7 @@ public class PrintingStatus {
                     updateStatusOnEDT(pageIndex);
                 } else {
                     SwingUtilities.invokeLater(new Runnable() {
+                        @Override
                         public void run() {
                             updateStatusOnEDT(pageIndex);
                         }

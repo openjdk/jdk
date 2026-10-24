@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
         this.data = data;
     }
 
+    @Override
     public Color getColor(SynthContext context, ColorType type) {
         return getColor(context.getComponent(), context.getRegion(),
                         context.getComponentState(), type);
@@ -173,6 +174,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
         return color;
     }
 
+    @Override
     protected Color getColorForState(SynthContext context, ColorType type) {
         return getColorForState(context.getComponent(), context.getRegion(),
                                 context.getComponentState(), type);
@@ -214,6 +216,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
         this.font = font;
     }
 
+    @Override
     public Font getFont(SynthContext state) {
         return getFont(state.getComponent(), state.getRegion(),
                        state.getComponentState());
@@ -259,6 +262,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
         return this.font;
     }
 
+    @Override
     protected Font getFontForState(SynthContext context) {
         return getFontForState(context.getComponent(), context.getRegion(),
                                context.getComponentState());
@@ -279,6 +283,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
      * @param context SynthContext identifying requestor
      * @return SynthGraphicsUtils
      */
+    @Override
     public SynthGraphicsUtils getGraphicsUtils(SynthContext context) {
         if (synthGraphics == null) {
             return super.getGraphicsUtils(context);
@@ -304,6 +309,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
      * @param to Where to place Insets
      * @return Insets.
      */
+    @Override
     public Insets getInsets(SynthContext state, Insets to) {
         if (to == null) {
             to = new Insets(0, 0, 0, 0);
@@ -335,6 +341,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
      * @param ss SynthContext identifying requestor
      * @return Painter for the border
      */
+    @Override
     public SynthPainter getPainter(SynthContext ss) {
         return painter;
     }
@@ -356,6 +363,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
      * @param ss SynthContext identifying requestor
      * @return opaque Whether or not the JComponent is opaque.
      */
+    @Override
     public boolean isOpaque(SynthContext ss) {
         return opaque;
     }
@@ -386,6 +394,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
      * @param key Property being requested.
      * @return Value of the named property
      */
+    @Override
     public Object get(SynthContext state, Object key) {
         // Look for the best match
         StateInfo si = getStateInfo(state.getComponentState());
@@ -448,6 +457,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
      *
      * @return Clone of this style
      */
+    @Override
     public Object clone() {
         DefaultSynthStyle style;
         try {
@@ -663,6 +673,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
     }
 
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
@@ -878,10 +889,12 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
          *
          * @return Copy of this StateInfo.
          */
+        @Override
         public Object clone() {
             return new StateInfo(this);
         }
 
+        @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
 
