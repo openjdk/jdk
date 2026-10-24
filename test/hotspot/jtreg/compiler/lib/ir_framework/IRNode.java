@@ -3591,6 +3591,23 @@ public class IRNode {
         anyStoreOfNodes(STORE_OF_ANY_KLASS, ANY_KLASS);
     }
 
+    public static final String NARROW_MEM_PROJ = PREFIX + "NARROW_MEM_PROJ" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(NARROW_MEM_PROJ, "NarrowMemProj");
+    }
+
+    public static final String NARROW_MEM_PROJ_OF_FIELD = COMPOSITE_PREFIX + "NARROW_MEM_PROJ_OF_FIELD" + POSTFIX;
+    static {
+        String regex = START + "NarrowMemProj" + MID + "Memory: @.*name=" + IS_REPLACED + ",.*" + END;
+        beforeMatching(NARROW_MEM_PROJ_OF_FIELD, regex);
+    }
+
+    public static final String NARROW_MEM_PROJ_OF_ADR_TYPE = COMPOSITE_PREFIX + "NARROW_MEM_PROJ_OF_ADR_TYPE" + POSTFIX;
+    static {
+        String regex = START + "NarrowMemProj" + MID + "Memory: @" + IS_REPLACED + ".*" + END;
+        beforeMatching(NARROW_MEM_PROJ_OF_ADR_TYPE, regex);
+    }
+
     /*
      * Utility methods to set up IR_NODE_MAPPINGS.
      */
