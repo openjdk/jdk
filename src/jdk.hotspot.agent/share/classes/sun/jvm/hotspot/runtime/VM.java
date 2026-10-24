@@ -100,6 +100,7 @@ public class VM {
   private int          logBytesPerWord;
   private int          objectAlignmentInBytes;
   private int          minObjAlignmentInBytes;
+  private int          minObjAlignmentInBytesMask;
   private int          logMinObjAlignmentInBytes;
   private int          heapWordSize;
   private int          heapOopSize;
@@ -506,6 +507,7 @@ public class VM {
     }
 
     logMinObjAlignmentInBytes = Integer.numberOfTrailingZeros(minObjAlignmentInBytes);
+    minObjAlignmentInBytesMask = minObjAlignmentInBytes - 1;
 
     if (isCompressedOopsEnabled()) {
       // Size info for oops within java objects is fixed
@@ -693,6 +695,10 @@ public class VM {
   }
   public int getLogMinObjAlignmentInBytes() {
     return logMinObjAlignmentInBytes;
+  }
+
+  public int getMinObjAlignmentInBytesMask() {
+    return minObjAlignmentInBytesMask;
   }
 
   public int getHeapWordSize() {

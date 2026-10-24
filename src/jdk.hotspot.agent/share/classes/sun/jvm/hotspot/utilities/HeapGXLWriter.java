@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,9 @@ public class HeapGXLWriter extends AbstractHeapGraphWriter {
         refFields = null;
     }
 
-    protected void writeObjectArray(ObjArray array) throws IOException {
+    @Override
+    protected void writeObjectArray(ObjArray array, Deque<AbstractHeapGraphWriter.DumperFlatObject> flatObjects) throws IOException {
+        // TODO: flatObject should be handled.
         writeObjectHeader(array);
         writeArrayLength(array);
         writeObjectFields(array);
@@ -162,7 +164,9 @@ public class HeapGXLWriter extends AbstractHeapGraphWriter {
         writeObjectFooter(array);
     }
 
-    protected void writeClass(Instance instance) throws IOException  {
+    @Override
+    protected void writeClass(Instance instance, Deque<DumperFlatObject> flatObjects) throws IOException  {
+        // TODO: flatObject should be handled.
         writeObjectHeader(instance);
         Klass reflectedType = java_lang_Class.asKlass(instance);
         boolean isInstanceKlass = (reflectedType instanceof InstanceKlass);
