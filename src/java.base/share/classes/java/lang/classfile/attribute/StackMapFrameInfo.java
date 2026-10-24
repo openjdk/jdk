@@ -124,9 +124,7 @@ public sealed interface StackMapFrameInfo
      * @param unsetFields the complete list of unset fields
      * @throws IllegalArgumentException if the number of elements in {@code locals},
      *         {@code stack}, or {@code unsetFields} exceeds the limit of
-     *         {@link java.lang.classfile##u2 u2}; or if unset fields has
-     *         elements, but no {@link SimpleVerificationTypeInfo#UNINITIALIZED_THIS
-     *         uninitializedThis} is present in {@code locals}
+     *         {@link java.lang.classfile##u2 u2}
      * @since 28
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STRICT_FIELDS, reflective = true)
