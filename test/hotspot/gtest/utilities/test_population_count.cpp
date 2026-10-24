@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "cppstdlib/limits.hpp"
-#include "runtime/os.hpp"
+#include "gtestRandom.hpp"
 #include "utilities/population_count.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -59,7 +59,7 @@ static void sparse() {
   // approach used historically
   T step = T(1) << ((sizeof(T) * 8) - 7);
 
-  for (T value = os::random() % step; value < max_val - step; value += step) {
+  for (T value = GtestRandom::random() % step; value < max_val - step; value += step) {
     uint64_t v = (uint64_t)value;
     unsigned lookup = 0u;
     for (unsigned i = 0u; i < sizeof(T); i++) {
