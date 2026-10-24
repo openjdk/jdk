@@ -2200,8 +2200,6 @@ class MethodData : public Metadata {
   // Cached hint for bci_to_dp and bci_to_data
   int _hint_di;
 
-  Mutex* volatile _extra_data_lock;
-
   MethodData(const methodHandle& method);
 public:
   MethodData();
