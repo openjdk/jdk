@@ -114,7 +114,14 @@ inline D AtomicAccess::PlatformAdd<8>::fetch_then_add(D volatile* dest, I add_va
 }
 
 template<>
-struct AtomicAccess::PlatformXchg<1> : AtomicAccess::XchgUsingCmpxchg<1> {};
+template<typename T>
+inline T AtomicAccess::PlatformXchg<1>::operator()(T volatile* dest,
+                                                   T exchange_value,
+                                                   atomic_memory_order order) const {
+  static_assert(1 == sizeof(T));
+  T old_value = atomic_fastcall(aarch64_atomic_xchg_1_impl, dest, exchange_value);
+  return old_value;
+}
 
 template<>
 template<typename T>
@@ -128,7 +135,8 @@ inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
 
 template<>
 template<typename T>
-inline T AtomicAccess::PlatformXchg<8>::operator()(T volatile* dest, T exchange_value,
+inline T AtomicAccess::PlatformXchg<8>::operator()(T volatile* dest,
+                                                   T exchange_value,
                                                    atomic_memory_order order) const {
   static_assert(8 == sizeof(T));
   T old_value = atomic_fastcall(aarch64_atomic_xchg_8_impl, dest, exchange_value);

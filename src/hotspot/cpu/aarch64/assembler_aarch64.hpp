@@ -1339,7 +1339,7 @@ public:
 
   // 8.1 Compare and swap extensions
   void lse_cas(Register Rs, Register Rt, Register Rn,
-                        enum operand_size sz, bool a, bool r, bool not_pair) {
+               enum operand_size sz, bool a, bool r, bool not_pair) {
     starti;
     if (! not_pair) { // Pair
       assert(sz == word || sz == xword, "invalid size");

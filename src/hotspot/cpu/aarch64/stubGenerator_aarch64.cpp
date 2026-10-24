@@ -12377,6 +12377,7 @@ class StubGenerator: public StubCodeGenerator {
       aarch64_atomic_fetch_add_8_impl = (aarch64_atomic_stub_t)entries.at(idx++);
       aarch64_atomic_fetch_add_4_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
       aarch64_atomic_fetch_add_8_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_xchg_1_impl = (aarch64_atomic_stub_t)entries.at(idx++);
       aarch64_atomic_xchg_4_impl = (aarch64_atomic_stub_t)entries.at(idx++);
       aarch64_atomic_xchg_8_impl = (aarch64_atomic_stub_t)entries.at(idx++);
       aarch64_atomic_cmpxchg_1_impl = (aarch64_atomic_stub_t)entries.at(idx++);
@@ -12400,10 +12401,10 @@ class StubGenerator: public StubCodeGenerator {
     {
     // ADD, memory_order_conservative
     AtomicStubMark mark_fetch_add_4(_masm, &aarch64_atomic_fetch_add_4_impl);
-    gen_ldadd_entry(Assembler::word, memory_order_conservative);
+    gen_ldadd_entry(MacroAssembler::word, memory_order_conservative);
 
     AtomicStubMark mark_fetch_add_8(_masm, &aarch64_atomic_fetch_add_8_impl);
-    gen_ldadd_entry(Assembler::xword, memory_order_conservative);
+    gen_ldadd_entry(MacroAssembler::xword, memory_order_conservative);
 
     // ADD, memory_order_relaxed
     AtomicStubMark mark_fetch_add_4_relaxed
@@ -12415,11 +12416,14 @@ class StubGenerator: public StubCodeGenerator {
     gen_ldadd_entry(MacroAssembler::xword, memory_order_relaxed);
 
     // XCHG, memory_order_conservative
+    AtomicStubMark mark_xchg_1(_masm, &aarch64_atomic_xchg_1_impl);
+    gen_swpal_entry(MacroAssembler::byte);
+
     AtomicStubMark mark_xchg_4(_masm, &aarch64_atomic_xchg_4_impl);
-    gen_swpal_entry(Assembler::word);
+    gen_swpal_entry(MacroAssembler::word);
 
     AtomicStubMark mark_xchg_8(_masm, &aarch64_atomic_xchg_8_impl);
-    gen_swpal_entry(Assembler::xword);
+    gen_swpal_entry(MacroAssembler::xword);
 
     // CAS, memory_order_conservative
     AtomicStubMark mark_cmpxchg_1(_masm, &aarch64_atomic_cmpxchg_1_impl);
@@ -12473,6 +12477,7 @@ class StubGenerator: public StubCodeGenerator {
     entries.append((address)aarch64_atomic_fetch_add_8_impl);
     entries.append((address)aarch64_atomic_fetch_add_4_relaxed_impl);
     entries.append((address)aarch64_atomic_fetch_add_8_relaxed_impl);
+    entries.append((address)aarch64_atomic_xchg_1_impl);
     entries.append((address)aarch64_atomic_xchg_4_impl);
     entries.append((address)aarch64_atomic_xchg_8_impl);
     entries.append((address)aarch64_atomic_cmpxchg_1_impl);
@@ -14132,6 +14137,7 @@ DEFAULT_ATOMIC_OP(fetch_add, 4, )
 DEFAULT_ATOMIC_OP(fetch_add, 8, )
 DEFAULT_ATOMIC_OP(fetch_add, 4, _relaxed)
 DEFAULT_ATOMIC_OP(fetch_add, 8, _relaxed)
+DEFAULT_ATOMIC_OP(xchg, 1, )
 DEFAULT_ATOMIC_OP(xchg, 4, )
 DEFAULT_ATOMIC_OP(xchg, 8, )
 DEFAULT_ATOMIC_OP(cmpxchg, 1, )
