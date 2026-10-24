@@ -229,6 +229,25 @@ public class TestCRC32 {
         return bytes;
     }
 
+    static void verifyArrayUpdate(int offset, int size) throws Exception {
+        byte[] bytes = initializedBytes(size, offset);
+        long crcReference = update_byteLoop(0, bytes, offset, size);
+        CRC32 crc = new CRC32();
+        crc.update(bytes, offset, size);
+        check(crc, crcReference);
+    }
+
+    static void verifyDirectByteBufferUpdate(int offset, int size) throws Exception {
+        byte[] bytes = initializedBytes(size, offset);
+        long crcReference = update_byteLoop(0, bytes, offset, size);
+        CRC32 crc = new CRC32();
+        ByteBuffer buffer = ByteBuffer.allocateDirect(size);
+        buffer.put(bytes, offset, size);
+        buffer.flip();
+        crc.update(buffer);
+        check(crc, crcReference);
+    }
+
     private static void test_multi(int iters) throws Exception {
         int len1 = 8;    // the  8B/iteration loop
         int len2 = 32;   // the 32B/iteration loop
