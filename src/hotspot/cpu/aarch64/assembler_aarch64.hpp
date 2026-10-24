@@ -3796,6 +3796,17 @@ public:
     f(sh, 13), sf(imm8, 12, 5), rf(Zd, 0);
   }
 
+  // SVE broadcast indexed vector element to vector elements (unpredicated)
+  void sve_dup(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, int index) {
+    starti;
+    assert(T != Q, "invalid size");
+    assert(index >= 0 && index < (64 >> T), "invalid index");
+    const int imm7 = (index << (T + 1)) | (1 << T);
+    f(0b00000101, 31, 24), f(imm7 >> 5, 23, 22), f(0b1, 21);
+    f(imm7 & 0b11111, 20, 16), f(0b001000, 15, 10);
+    rf(Zn, 5), rf(Zd, 0);
+  }
+
   // SVE predicate test
   void sve_ptest(PRegister Pg, PRegister Pn) {
     starti;

@@ -3354,11 +3354,12 @@ instruct replicate$1(vReg dst, $2 src) %{
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
-dnl REPLICATE_FP($1,   $2  )
-dnl REPLICATE_FP(type, size)
+dnl REPLICATE_FP($1,   $2,       $3,   $4,      )
+dnl REPLICATE_FP(type, arg_type, size, predicate)
 define(`REPLICATE_FP', `
-instruct replicate$1(vReg dst, vReg$1 src) %{
-  match(Set dst (Replicate src));
+dnl
+instruct replicate$1(vReg dst, vReg$2 src) %{
+$4  match(Set dst (Replicate src));
   format %{ "replicate$1 $dst, $src" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
@@ -3366,7 +3367,7 @@ instruct replicate$1(vReg dst, vReg$1 src) %{
       __ dup($dst$$FloatRegister, get_arrangement(this), $src$$FloatRegister);
     } else {
       assert(UseSVE > 0, "must be sve");
-      __ sve_cpy($dst$$FloatRegister, __ $2, ptrue, $src$$FloatRegister);
+      __ sve_dup($dst$$FloatRegister, __ $3, $src$$FloatRegister, 0);
     }
   %}
   ins_pipe(pipe_slow);
@@ -3375,25 +3376,10 @@ dnl
 // replicate from reg
 REPLICATE_INT(I, iRegIorL2I)
 REPLICATE_INT(L, iRegL)
-REPLICATE_FP(F, S, T_FLOAT )
-REPLICATE_FP(D, D, T_DOUBLE)
-
-// Replicate a half-precision float value held in a floating point register
-instruct replicateHF(vReg dst, vRegF src) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_SHORT);
-  match(Set dst (Replicate src));
-  format %{ "replicateHF $dst, $src\t# replicate half-precision float" %}
-  ins_encode %{
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
-      __ dup($dst$$FloatRegister, get_arrangement(this), $src$$FloatRegister);
-    } else { // length_in_bytes must be > 16 and SVE should be enabled
-      assert(UseSVE > 0, "must be sve");
-      __ sve_cpy($dst$$FloatRegister, __ H, ptrue, $src$$FloatRegister);
-    }
-  %}
-  ins_pipe(pipe_slow);
-%}
+REPLICATE_FP(F,  F, S)
+REPLICATE_FP(D,  D, D)
+REPLICATE_FP(HF, F, H, `  predicate(Matcher::vector_element_basic_type(n) == T_SHORT);
+')
 
 // replicate from imm
 
