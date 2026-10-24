@@ -518,10 +518,11 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
                  (uint)mach->as_MachUncommonTrap()->ret_addr_offset() < mach->size(C->regalloc()),
                  "Safepoint address should be offset from the first instruction and should not point after the node");
         } else if (mach->is_MachCall()) {
-          // add size information for trampoline stub
           // class CallStubImpl is platform-specific and defined in the *.ad files.
           stub_size  += CallStubImpl::size_call_trampoline();
           reloc_size += CallStubImpl::reloc_call_trampoline();
+          stub_size  += CallStubImpl::size_call_address_stub();
+          reloc_size += CallStubImpl::reloc_call_address_stub();
 
           MachCallNode *mcall = mach->as_MachCall();
           // This destination address is NOT PC-relative

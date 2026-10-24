@@ -2829,6 +2829,16 @@ class CallStubImpl {
   static uint reloc_call_trampoline() {
     return 0; // no call trampolines on this platform
   }
+
+  // Size of call address stub.
+  static uint size_call_address_stub() {
+    return 0; // no call address stubs on this platform
+  }
+
+  // number of relocations needed by a call address stub
+  static uint reloc_call_address_stub() {
+    return 0; // no call address stubs on this platform
+  }
 };
 
 class HandlerImpl {
