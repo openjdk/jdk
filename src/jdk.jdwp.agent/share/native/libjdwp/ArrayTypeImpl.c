@@ -156,7 +156,7 @@ writeNewObjectArray(JNIEnv *env, PacketOutputStream *out,
                 outStream_setError(out, JDWP_ERROR(OUT_OF_MEMORY));
             } else {
                 (void)outStream_writeByte(out, specificTypeKey(env, array));
-                (void)outStream_writeObjectRef(env, out, array);
+                (void)outStream_writeObjectRefPin(env, out, array);
             }
 
         }
@@ -220,8 +220,8 @@ writeNewPrimitiveArray(JNIEnv *env, PacketOutputStream *out,
             outStream_setError(out, JDWP_ERROR(OUT_OF_MEMORY));
         } else {
             (void)outStream_writeByte(out, specificTypeKey(env, array));
-            (void)outStream_writeObjectRef(env, out, array);
-        }
+            (void)outStream_writeObjectRefPin(env, out, array);
+       }
 
     } END_WITH_LOCAL_REFS(env);
 }
