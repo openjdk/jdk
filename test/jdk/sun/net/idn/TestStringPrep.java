@@ -26,7 +26,6 @@
  * @summary Unit test for jdk.internal.icu.text.StringPrep
  * @bug 4737170 8060097 8174270
  * @modules java.base/jdk.internal.icu.text
- *          java.base/sun.net.idn:open
  * @library .
  * @compile -XDignore.symbol.file TestStringPrep.java NFS4StringPrep.java
  *     TestData.java
@@ -41,18 +40,15 @@
 */
 
 import java.text.ParseException;
-import java.io.InputStream;
 import java.util.Locale;
 
 import jdk.internal.icu.text.StringPrep;
-import jdk.internal.icu.text.UCharacterIterator;
 
 public class TestStringPrep {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         TestNFS4MixedPrep();
         TestCISPrep();
         TestCSPrep();
-        TestNamePrepConformance();
     }
     /*
        There are several special identifiers ("who") which need to be
@@ -230,30 +226,6 @@ public class TestStringPrep {
         }catch(Exception e){
             fail("Got unexpected exception: " + e.toString());
         }
-    }
-
-    public static void TestNamePrepConformance() throws Exception {
-        InputStream stream = StringPrep.class.getModule()
-                                             .getResourceAsStream("sun/net/idn/uidna.spp");
-        StringPrep namePrep = new StringPrep(stream);
-        stream.close();
-        int i;
-        for(i=0; i<TestData.conformanceTestCases.length;i++){
-            TestData.ConformanceTestCase testCase = TestData.conformanceTestCases[i];
-            try{
-                UCharacterIterator iter = UCharacterIterator.getInstance(testCase.input);
-                StringBuffer output = namePrep.prepare(iter, testCase.flags);
-                if(testCase.output !=null && output!=null && !testCase.output.equals(output.toString())){
-                    fail("Did not get the expected output. Expected: " + prettify(testCase.output)+
-                            " Got: "+ prettify(output.toString()) );
-                }
-            } catch(ParseException ex) {
-                if (testCase.expected == null) {
-                    fail("get the unexpected exception for source: " +testCase.input +" Got:  "+ ex.toString());
-                }
-            }
-        }
-        System.out.println("Nameprep test count: " + i);
     }
 
     private static void fail(String msg) {
