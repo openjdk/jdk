@@ -24,6 +24,7 @@
  *
  */
 
+#include "cntvctss_aarch64.hpp"
 #include "logging/log.hpp"
 #include "pauth_aarch64.hpp"
 #include "register_aarch64.hpp"
@@ -671,6 +672,8 @@ void VM_Version::initialize() {
 #endif
 
   _spin_wait = get_spin_wait_desc();
+
+  Cntvctss::ergonomics();
 
   check_virtualizations();
 
