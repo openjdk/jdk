@@ -610,11 +610,11 @@ public final class Module implements AnnotatedElement {
                 }
             }
 
-            if (VM.isBooted()) {
+            if (VM.isModuleSystemInited()) {
                 // add reflective read
                 ReflectionData.reads.putIfAbsent(this, other, Boolean.TRUE);
             } else {
-                // --add-reads or a dynamic module created during startup
+                // --add-reads
                 Set<Module> reads = this.reads;
                 if (reads == null) {
                     this.reads = Set.of(other);
@@ -1055,7 +1055,7 @@ public final class Module implements AnnotatedElement {
      * @apiNote Used by Proxy and other dynamic modules.
      */
     void implAddExports(String pn) {
-        implAddExportsOrOpens(pn, Module.EVERYONE_MODULE, false, true, true);
+        implAddExportsOrOpens(pn, Module.EVERYONE_MODULE, false, true);
     }
 
     /**
@@ -1064,7 +1064,7 @@ public final class Module implements AnnotatedElement {
      * @apiNote Used by addExports, Instrumentation::redefineModule, and --add-exports
      */
     void implAddExports(String pn, Module other) {
-        implAddExportsOrOpens(pn, other, false, VM.isBooted(), true);
+        implAddExportsOrOpens(pn, other, false, true);
     }
 
     /**
@@ -1074,27 +1074,27 @@ public final class Module implements AnnotatedElement {
      * an executable JAR file has the "Add-Exports" attribute in its main manifest.
      */
     void implAddExportsToAllUnnamed(String pn) {
-        implAddExportsOrOpens(pn, Module.ALL_UNNAMED_MODULE, false, false, true);
+        implAddExportsOrOpens(pn, Module.ALL_UNNAMED_MODULE, false, true);
     }
 
     /**
-     * Updates this export to export a package unconditionally without
+     * Updates this module to export a package unconditionally without
      * notifying the VM.
      *
      * @apiNote This method is for VM white-box testing.
      */
     void implAddExportsNoSync(String pn) {
-        implAddExportsOrOpens(pn.replace('/', '.'), Module.EVERYONE_MODULE, false, true, false);
+        implAddExportsOrOpens(pn.replace('/', '.'), Module.EVERYONE_MODULE, false, false);
     }
 
     /**
-     * Updates a module to export a package to another module without
+     * Updates this module to export a package to another module without
      * notifying the VM.
      *
      * @apiNote This method is for VM white-box testing.
      */
     void implAddExportsNoSync(String pn, Module other) {
-        implAddExportsOrOpens(pn.replace('/', '.'), other, false, true, false);
+        implAddExportsOrOpens(pn.replace('/', '.'), other, false, false);
     }
 
     /**
@@ -1103,7 +1103,7 @@ public final class Module implements AnnotatedElement {
      * @apiNote This method is for JDK tests only.
      */
     void implAddOpens(String pn) {
-        implAddExportsOrOpens(pn, Module.EVERYONE_MODULE, true, true, true);
+        implAddExportsOrOpens(pn, Module.EVERYONE_MODULE, true, true);
     }
 
     /**
@@ -1112,7 +1112,7 @@ public final class Module implements AnnotatedElement {
      * @apiNote Used by addOpens, Instrumentation::redefineModule, and --add-opens
      */
     void implAddOpens(String pn, Module other) {
-        implAddExportsOrOpens(pn, other, true, VM.isBooted(), true);
+        implAddExportsOrOpens(pn, other, true, true);
     }
 
     /**
@@ -1122,21 +1122,19 @@ public final class Module implements AnnotatedElement {
      * an executable JAR file has the "Add-Opens" attribute in its main manifest.
      */
     void implAddOpensToAllUnnamed(String pn) {
-        implAddExportsOrOpens(pn, Module.ALL_UNNAMED_MODULE, true, false, true);
+        implAddExportsOrOpens(pn, Module.ALL_UNNAMED_MODULE, true, true);
     }
 
     /**
-     * Updates a module to export or open a module to another module.
+     * Updates this module to export or open a package to another module.
      * @param pn package name
      * @param other the module to export/open the package to
      * @param open true to open, false to export
-     * @param reflectively true if exported/opened reflectively
      * @param syncVM true to update the VM
      */
     private void implAddExportsOrOpens(String pn,
                                        Module other,
                                        boolean open,
-                                       boolean reflectively,
                                        boolean syncVM) {
         Objects.requireNonNull(other);
         Objects.requireNonNull(pn);
@@ -1166,7 +1164,10 @@ public final class Module implements AnnotatedElement {
             }
         }
 
-        if (reflectively) {
+        // use ReflectionData if module system already initialized and
+        // exporting/opening to a specific module (which may be a different layer)
+        if (VM.isModuleSystemInited()
+                && (other != EVERYONE_MODULE) && (other != ALL_UNNAMED_MODULE)) {
             // add package name to ReflectionData.exports if absent
             Map<String, Boolean> map = ReflectionData.exports
                 .computeIfAbsent(this, other,
@@ -1176,8 +1177,12 @@ public final class Module implements AnnotatedElement {
             } else {
                 map.putIfAbsent(pn, Boolean.FALSE);
             }
-        } else {
-            // export/open packages during startup (--add-exports and --add-opens)
+            return;
+        }
+
+        // export/open packages during startup (--add-exports and --add-opens)
+        // Also executable JAR Add-Exports and Add-Opens
+        synchronized (this) {
             Map<String, Set<Module>> packageToTargets = (open) ? openPackages : exportedPackages;
             if (packageToTargets != null) {
                 // copy existing map

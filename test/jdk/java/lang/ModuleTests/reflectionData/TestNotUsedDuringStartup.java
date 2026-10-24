@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 1234567
+ * @bug 8393235
  * @summary Tests command line options and deployments that augment the readability and
  *    export/uses graphs. The test checks that these additions are not recorded as
  *    reflective updates.
