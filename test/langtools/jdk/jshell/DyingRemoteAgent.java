@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,13 @@
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import jdk.jshell.JShell;
 import jdk.jshell.execution.JdiExecutionControlProvider;
 import jdk.jshell.execution.RemoteExecutionControl;
 import jdk.jshell.spi.ExecutionControlProvider;
+
+import jdk.test.lib.Utils;
 
 class DyingRemoteAgent extends RemoteExecutionControl {
 
@@ -47,6 +50,7 @@ class DyingRemoteAgent extends RemoteExecutionControl {
         pm.put(JdiExecutionControlProvider.PARAM_REMOTE_AGENT, DyingRemoteAgent.class.getName());
         pm.put(JdiExecutionControlProvider.PARAM_HOST_NAME, host==null? "" : host);
         pm.put(JdiExecutionControlProvider.PARAM_LAUNCH, ""+isLaunch);
+        pm.put(JdiExecutionControlProvider.PARAM_TIMEOUT, Long.toString(Utils.adjustTimeout(5000)));
         // turn on logging of launch failures
         Logger.getLogger("jdk.jshell.execution").setLevel(Level.ALL);
         return JShell.builder()
