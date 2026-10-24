@@ -24,7 +24,9 @@
 package jdk.jfr.event.gc.heapsummary;
 
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
@@ -60,23 +62,23 @@ public class HeapSummaryEventAllGcs {
         Asserts.assertFalse(events.isEmpty(), "Expected at least one event.");
         Asserts.assertEquals(events.size() % 2, 0, "Events should come in pairs");
 
-        int lastHeapGcId = -1;
-        int lastPSGcId = -1;
-        int lastMetaspaceGcId = -1;
+        GcIdState heapState = new GcIdState();
+        GcIdState psState = new GcIdState();
+        GcIdState metaspaceState = new GcIdState();
 
         for (RecordedEvent event : events) {
             final String eventName = event.getEventType().getName();
             switch (eventName) {
                 case EventNames.GCHeapSummary:
-                    lastHeapGcId = checkGcId(event, lastHeapGcId);
+                    checkGcId(event, heapState);
                     checkHeapEventContent(event);
                     break;
                 case EventNames.PSHeapSummary:
-                    lastPSGcId = checkGcId(event, lastPSGcId);
+                    checkGcId(event, psState);
                     checkPSEventContent(event);
                     break;
                 case EventNames.MetaspaceSummary:
-                    lastMetaspaceGcId = checkGcId(event, lastMetaspaceGcId);
+                    checkGcId(event, metaspaceState);
                     checkMetaspaceEventContent(event);
                     break;
                 default:
@@ -86,7 +88,11 @@ public class HeapSummaryEventAllGcs {
         }
 
         // Sanity check. Not complete.
-        Asserts.assertEquals(lastHeapGcId, lastMetaspaceGcId, "Should have gotten perm gen events for all GCs");
+        Asserts.assertEquals(heapState.lastBeforeGcId, metaspaceState.lastBeforeGcId,
+                "Should have gotten perm gen events for all GCs");
+        Asserts.assertTrue(heapState.pendingBeforeGcIds.isEmpty(), "Unmatched GCHeapSummary Before events");
+        Asserts.assertTrue(psState.pendingBeforeGcIds.isEmpty(), "Unmatched PSHeapSummary Before events");
+        Asserts.assertTrue(metaspaceState.pendingBeforeGcIds.isEmpty(), "Unmatched MetaspaceSummary Before events");
     }
 
     private static void checkMetaspaceEventContent(RecordedEvent event) {
@@ -107,15 +113,22 @@ public class HeapSummaryEventAllGcs {
         Asserts.assertEquals(dataReserved + classReserved, totalReserved, "Wrong reserved memory");
     }
 
-    private static int checkGcId(RecordedEvent event, int currGcId) {
+    private static void checkGcId(RecordedEvent event, GcIdState state) {
         int gcId = Events.assertField(event, "gcId").getValue();
         String when = Events.assertField(event, "when").notEmpty().getValue();
         if ("Before GC".equals(when)) {
-            Asserts.assertGreaterThan(gcId, currGcId, "gcId should be increasing");
+            Asserts.assertGreaterThan(gcId, state.lastBeforeGcId, "gcId should be increasing");
+            Asserts.assertTrue(state.pendingBeforeGcIds.add(gcId), "Duplicate Before event for gcId: " + gcId);
+            state.lastBeforeGcId = gcId;
         } else {
-            Asserts.assertEquals(gcId, currGcId, "After should have same gcId as last Before event");
+            Asserts.assertTrue(state.pendingBeforeGcIds.remove(gcId),
+                    "After should have a matching Before event with same gcId");
         }
-        return gcId;
+    }
+
+    private static class GcIdState {
+        private int lastBeforeGcId = -1;
+        private final Set<Integer> pendingBeforeGcIds = new HashSet<>();
     }
 
     private static void checkHeapEventContent(RecordedEvent event) {
