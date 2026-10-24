@@ -3767,8 +3767,7 @@ class StubGenerator: public StubCodeGenerator {
     if (bs_asm->nmethod_patching_type() == NMethodPatchingType::conc_instruction_and_data_patch) {
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
       Address thread_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()) + 4);
-      __ la(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
-      __ lwu(t1, t1);
+      __ lwu(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
       __ sw(t1, thread_epoch_addr);
       // There are two ways this can work:
       // - The writer did system icache shootdown after the instruction stream update.
@@ -5427,8 +5426,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(preemption_cancelled);
     __ sb(zr, Address(xthread, JavaThread::preemption_cancelled_offset()));
     __ la(fp, Address(sp, checked_cast<int32_t>(ContinuationEntry::size() + 2 * wordSize)));
-    __ la(t1, ExternalAddress(ContinuationEntry::thaw_call_pc_address()));
-    __ ld(t1, Address(t1));
+    __ ld(t1, ExternalAddress(ContinuationEntry::thaw_call_pc_address()));
     __ jr(t1);
 
     // record the stub start and end
@@ -7838,6 +7836,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     __ kernel_crc32(crc, buf, len,
                     c_rarg3, c_rarg4, c_rarg5, c_rarg6, // tmp's for tables
                     c_rarg7, t2, t3, t4, t5, t6);       // misc tmps
+    __ sext(crc, crc, 32);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();
@@ -7875,6 +7874,7 @@ static const int64_t right_3_bits = right_n_bits(3);
                      c_rarg3, c_rarg4,           // byte_table, clmul_table
                      c_rarg5, c_rarg6, c_rarg7,  // accum_hi, k1, k2
                      t2, t3, t4);                // scratch1, scratch2, fold_end
+    __ sext(crc, crc, 32);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();

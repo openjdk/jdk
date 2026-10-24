@@ -62,11 +62,10 @@ void ShenandoahSTWMarkTask::work(uint worker_id) {
   _mark->finish_mark(worker_id);
 }
 
-ShenandoahSTWMark::ShenandoahSTWMark(ShenandoahGeneration* generation, bool full_gc) :
+ShenandoahSTWMark::ShenandoahSTWMark(ShenandoahGeneration* generation) :
   ShenandoahMark(generation),
-  _root_scanner(full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_mark),
-  _terminator(ShenandoahHeap::heap()->workers()->active_workers(), task_queues()),
-  _full_gc(full_gc) {
+  _root_scanner(ShenandoahPhaseTimings::full_gc_mark),
+  _terminator(ShenandoahHeap::heap()->workers()->active_workers(), task_queues()) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a Shenandoah safepoint");
 }
 
@@ -134,13 +133,9 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
       _root_scanner.roots_do(&init_mark, worker_id);
       break;
     }
-    case YOUNG: {
-      ShenandoahMarkRefsClosure<YOUNG> init_mark(queue, rp, nullptr);
-      _root_scanner.roots_do(&init_mark, worker_id);
-      break;
-    }
+    case YOUNG:
     case OLD:
-      // We never exclusively mark the old generation on a safepoint. This would be encompassed
+      // We never exclusively mark the old or young generation on a safepoint. This would be encompassed
       // by a 'global' collection. Note that both GLOBAL and NON_GEN mark the entire heap, but
       // the GLOBAL closure is specialized for the generational mode.
     default:
@@ -149,7 +144,7 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
 }
 
 void ShenandoahSTWMark::finish_mark(uint worker_id) {
-  ShenandoahPhaseTimings::Phase phase = _full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_mark;
+  ShenandoahPhaseTimings::Phase phase = ShenandoahPhaseTimings::full_gc_mark;
   ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::Work, worker_id);
 
   mark_loop(worker_id, &_terminator, _generation->type(), false /* not cancellable */);

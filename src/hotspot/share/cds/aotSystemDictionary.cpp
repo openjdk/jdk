@@ -26,8 +26,10 @@
 #include "cds/aotClassFilter.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotCompressedPointers.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
@@ -37,7 +39,6 @@
 #include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/runTimeClassInfo.hpp"
@@ -50,7 +51,6 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verificationType.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -80,14 +80,14 @@
 #include "utilities/hashTable.hpp"
 #include "utilities/stringUtils.hpp"
 
-SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_info_for_static_archive;
-SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_info_for_dynamic_archive;
-SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_info_for_dumping;
+AOTSystemDictionary::ArchiveInfo AOTSystemDictionary::_info_for_static_archive;
+AOTSystemDictionary::ArchiveInfo AOTSystemDictionary::_info_for_dynamic_archive;
+AOTSystemDictionary::ArchiveInfo AOTSystemDictionary::_info_for_dumping;
 
-DumpTimeSharedClassTable* SystemDictionaryShared::_dumptime_table = nullptr;
+DumpTimeSharedClassTable* AOTSystemDictionary::_dumptime_table = nullptr;
 
 // Used by NoClassLoadingMark
-DEBUG_ONLY(bool SystemDictionaryShared::_class_loading_may_happen = true;)
+DEBUG_ONLY(bool AOTSystemDictionary::_class_loading_may_happen = true;)
 
 #ifdef ASSERT
 static void check_klass_after_loading(const Klass* k) {
@@ -97,7 +97,7 @@ static void check_klass_after_loading(const Klass* k) {
 }
 #endif
 
-InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
+InstanceKlass* AOTSystemDictionary::load_shared_class_for_builtin_loader(
                  Symbol* class_name, Handle class_loader, TRAPS) {
   assert(CDSConfig::is_using_archive(), "must be");
   InstanceKlass* ik = find_builtin_class(class_name);
@@ -116,7 +116,7 @@ InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
 }
 
 // This function is called for loading only UNREGISTERED classes
-InstanceKlass* SystemDictionaryShared::lookup_from_stream(Symbol* class_name,
+InstanceKlass* AOTSystemDictionary::lookup_from_stream(Symbol* class_name,
                                                           Handle class_loader,
                                                           Handle protection_domain,
                                                           const ClassFileStream* cfs,
@@ -153,7 +153,7 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(Symbol* class_name,
                                           THREAD);
 }
 
-InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
+InstanceKlass* AOTSystemDictionary::acquire_class_for_current_thread(
                    InstanceKlass *ik,
                    Handle class_loader,
                    Handle protection_domain,
@@ -192,19 +192,19 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
 
 // Guaranteed to return non-null value for non-shared classes.
 // k must not be a shared class.
-DumpTimeClassInfo* SystemDictionaryShared::get_info(InstanceKlass* k) {
+DumpTimeClassInfo* AOTSystemDictionary::get_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   return get_info_locked(k);
 }
 
-DumpTimeClassInfo* SystemDictionaryShared::get_info_locked(InstanceKlass* k) {
+DumpTimeClassInfo* AOTSystemDictionary::get_info_locked(InstanceKlass* k) {
   assert_lock_strong(DumpTimeTable_lock);
   DumpTimeClassInfo* info = _dumptime_table->get_info(k);
   assert(info != nullptr, "must be");
   return info;
 }
 
-void SystemDictionaryShared::check_code_source(InstanceKlass* ik, const ClassFileStream* cfs) {
+void AOTSystemDictionary::check_code_source(InstanceKlass* ik, const ClassFileStream* cfs) {
   if (CDSConfig::is_dumping_preimage_static_archive() && !is_builtin_loader(ik->class_loader_data())) {
     if (cfs == nullptr || cfs->source() == nullptr || strncmp(cfs->source(), "file:", 5) != 0) {
       // AOT cache filtering:
@@ -212,13 +212,13 @@ void SystemDictionaryShared::check_code_source(InstanceKlass* ik, const ClassFil
       // we can avoid caching dynamically generated classes that are likely to change from
       // run to run. This is similar to the filtering in ClassListWriter::write_to_stream()
       // for the classic CDS static archive.
-      SystemDictionaryShared::log_exclusion(ik, "Not loaded from \"file:\" code source");
-      SystemDictionaryShared::set_excluded(ik);
+      AOTSystemDictionary::log_exclusion(ik, "Not loaded from \"file:\" code source");
+      AOTSystemDictionary::set_excluded(ik);
     }
   }
 }
 
-bool SystemDictionaryShared::should_be_excluded_impl(InstanceKlass* k, DumpTimeClassInfo* info) {
+bool AOTSystemDictionary::should_be_excluded_impl(InstanceKlass* k, DumpTimeClassInfo* info) {
   assert_lock_strong(DumpTimeTable_lock);
 
   if (!info->has_checked_exclusion()) {
@@ -232,7 +232,7 @@ bool SystemDictionaryShared::should_be_excluded_impl(InstanceKlass* k, DumpTimeC
 // <func> returns bool and takes a single parameter of Symbol*
 // The return value indicates whether we want to keep on iterating or not.
 template<typename Function>
-void SystemDictionaryShared::iterate_verification_constraint_names(InstanceKlass* k, DumpTimeClassInfo* info, Function func) {
+void AOTSystemDictionary::iterate_verification_constraint_names(InstanceKlass* k, DumpTimeClassInfo* info, Function func) {
   int n = info->num_verifier_constraints();
   bool cont; // continue iterating?
   for (int i = 0; i < n; i++) {
@@ -251,7 +251,7 @@ void SystemDictionaryShared::iterate_verification_constraint_names(InstanceKlass
 }
 
 // This is a table of classes that need to be checked for exclusion.
-class SystemDictionaryShared::ExclusionCheckCandidates
+class AOTSystemDictionary::ExclusionCheckCandidates
   : public HashTable<InstanceKlass*, DumpTimeClassInfo*, 15889> {
   void add_candidate(InstanceKlass* k) {
     if (contains(k)) {
@@ -261,7 +261,7 @@ class SystemDictionaryShared::ExclusionCheckCandidates
       return;
     }
 
-    DumpTimeClassInfo* info = SystemDictionaryShared::get_info_locked(k);
+    DumpTimeClassInfo* info = AOTSystemDictionary::get_info_locked(k);
     if (info->has_checked_exclusion()) {
       // We have check exclusion of k and all of its dependencies, so there's no need to check again.
       return;
@@ -291,7 +291,7 @@ class SystemDictionaryShared::ExclusionCheckCandidates
     }
 
     if (CDSConfig::is_preserving_verification_constraints()) {
-      SystemDictionaryShared::iterate_verification_constraint_names(k, info, [&] (Symbol* constraint_class_name) {
+      AOTSystemDictionary::iterate_verification_constraint_names(k, info, [&] (Symbol* constraint_class_name) {
         Klass* constraint_bottom_class = find_verification_constraint_bottom_class(k, constraint_class_name);
         if (constraint_bottom_class != nullptr && constraint_bottom_class->is_instance_klass()) {
           add_candidate(InstanceKlass::cast(constraint_bottom_class));
@@ -329,7 +329,7 @@ public:
 //         when verifying ik's bytecodes.
 //
 // This method ensure that exclusion check is performed on X and all of its exclusion dependencies.
-void SystemDictionaryShared::check_exclusion_for_self_and_dependencies(InstanceKlass* ik) {
+void AOTSystemDictionary::check_exclusion_for_self_and_dependencies(InstanceKlass* ik) {
   assert_lock_strong(DumpTimeTable_lock);
   ResourceMark rm;
 
@@ -380,7 +380,7 @@ void SystemDictionaryShared::check_exclusion_for_self_and_dependencies(InstanceK
   });
 }
 
-void SystemDictionaryShared::log_exclusion(InstanceKlass* k, const char* reason, bool is_warning) {
+void AOTSystemDictionary::log_exclusion(InstanceKlass* k, const char* reason, bool is_warning) {
   ResourceMark rm;
   if (is_warning) {
     aot_log_warning(aot)("Skipping %s: %s", k->name()->as_C_string(), reason);
@@ -389,7 +389,7 @@ void SystemDictionaryShared::log_exclusion(InstanceKlass* k, const char* reason,
   }
 }
 
-bool SystemDictionaryShared::is_jfr_event_class(InstanceKlass *k) {
+bool AOTSystemDictionary::is_jfr_event_class(InstanceKlass *k) {
   while (k) {
     if (k->name()->equals("jdk/internal/event/Event")) {
       return true;
@@ -399,7 +399,7 @@ bool SystemDictionaryShared::is_jfr_event_class(InstanceKlass *k) {
   return false;
 }
 
-bool SystemDictionaryShared::check_self_exclusion(InstanceKlass* k) {
+bool AOTSystemDictionary::check_self_exclusion(InstanceKlass* k) {
   bool log_warning = false;
   const char* error = check_self_exclusion_helper(k, log_warning);
   if (error != nullptr) {
@@ -410,7 +410,7 @@ bool SystemDictionaryShared::check_self_exclusion(InstanceKlass* k) {
   }
 }
 
-const char* SystemDictionaryShared::check_self_exclusion_helper(InstanceKlass* k, bool& log_warning) {
+const char* AOTSystemDictionary::check_self_exclusion_helper(InstanceKlass* k, bool& log_warning) {
   assert_lock_strong(DumpTimeTable_lock);
   if (CDSConfig::is_dumping_final_static_archive() && k->defined_by_other_loaders()
       && k->in_aot_cache()) {
@@ -493,7 +493,7 @@ const char* SystemDictionaryShared::check_self_exclusion_helper(InstanceKlass* k
 }
 
 // Returns true if DumpTimeClassInfo::is_excluded() is true for at least one of k's exclusion dependencies.
-bool SystemDictionaryShared::check_dependencies_exclusion(InstanceKlass* k, DumpTimeClassInfo* info) {
+bool AOTSystemDictionary::check_dependencies_exclusion(InstanceKlass* k, DumpTimeClassInfo* info) {
   InstanceKlass* super = k->java_super();
   if (super != nullptr && is_dependency_excluded(k, super, "super")) {
     return true;
@@ -550,7 +550,7 @@ bool SystemDictionaryShared::check_dependencies_exclusion(InstanceKlass* k, Dump
   return false;
 }
 
-bool SystemDictionaryShared::is_dependency_excluded(InstanceKlass* k, InstanceKlass* dependency, const char* type) {
+bool AOTSystemDictionary::is_dependency_excluded(InstanceKlass* k, InstanceKlass* dependency, const char* type) {
   if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache(dependency)) {
     return false;
   }
@@ -563,7 +563,7 @@ bool SystemDictionaryShared::is_dependency_excluded(InstanceKlass* k, InstanceKl
   return false;
 }
 
-bool SystemDictionaryShared::check_verification_constraint_exclusion(InstanceKlass* k, Symbol* constraint_class_name) {
+bool AOTSystemDictionary::check_verification_constraint_exclusion(InstanceKlass* k, Symbol* constraint_class_name) {
   Klass* constraint_bottom_class = find_verification_constraint_bottom_class(k, constraint_class_name);
   if (constraint_bottom_class == nullptr) {
     // We don't have a bottom class (constraint_class_name is a type array), or constraint_class_name
@@ -584,7 +584,7 @@ bool SystemDictionaryShared::check_verification_constraint_exclusion(InstanceKla
   return false;
 }
 
-Klass* SystemDictionaryShared::find_verification_constraint_bottom_class(InstanceKlass* k, Symbol* constraint_class_name) {
+Klass* AOTSystemDictionary::find_verification_constraint_bottom_class(InstanceKlass* k, Symbol* constraint_class_name) {
   Thread* current = Thread::current();
   Handle loader(current, k->class_loader());
   Klass* constraint_class = SystemDictionary::find_instance_or_array_klass(current, constraint_class_name, loader);
@@ -600,14 +600,14 @@ Klass* SystemDictionaryShared::find_verification_constraint_bottom_class(Instanc
   return constraint_class;
 }
 
-bool SystemDictionaryShared::is_builtin_loader(ClassLoaderData* loader_data) {
+bool AOTSystemDictionary::is_builtin_loader(ClassLoaderData* loader_data) {
   oop class_loader = loader_data->class_loader();
   return (class_loader == nullptr ||
           SystemDictionary::is_system_class_loader(class_loader) ||
           SystemDictionary::is_platform_class_loader(class_loader));
 }
 
-bool SystemDictionaryShared::has_platform_or_app_classes() {
+bool AOTSystemDictionary::has_platform_or_app_classes() {
   if (FileMapInfo::current_info()->has_platform_or_app_classes()) {
     return true;
   }
@@ -620,7 +620,7 @@ bool SystemDictionaryShared::has_platform_or_app_classes() {
 
 // The following stack shows how this code is reached:
 //
-//   [0] SystemDictionaryShared::find_or_load_shared_class()
+//   [0] AOTSystemDictionary::find_or_load_shared_class()
 //   [1] JVM_FindLoadedClass
 //   [2] java.lang.ClassLoader.findLoadedClass0()
 //   [3] java.lang.ClassLoader.findLoadedClass()
@@ -643,7 +643,7 @@ bool SystemDictionaryShared::has_platform_or_app_classes() {
 //     was loaded by the same class loader during dump time.
 //
 // Given these assumptions, we intercept the findLoadedClass() call to invoke
-// SystemDictionaryShared::find_or_load_shared_class() to load the shared class from
+// AOTSystemDictionary::find_or_load_shared_class() to load the shared class from
 // the archive for the 2 built-in class loaders. This way,
 // we can improve start-up because we avoid decoding the classfile,
 // and avoid delegating to the parent loader.
@@ -651,7 +651,7 @@ bool SystemDictionaryShared::has_platform_or_app_classes() {
 // NOTE: there's a lot of assumption about the Java code. If any of that change, this
 // needs to be redesigned.
 
-InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
+InstanceKlass* AOTSystemDictionary::find_or_load_shared_class(
                  Symbol* name, Handle class_loader, TRAPS) {
   InstanceKlass* k = nullptr;
   if (CDSConfig::is_using_archive()) {
@@ -697,7 +697,7 @@ class UnregisteredClassesTable : public HashTable<
 static UnregisteredClassesTable* _unregistered_classes_table = nullptr;
 
 // true == class was successfully added; false == a duplicated class (with the same name) already exists.
-bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKlass* klass) {
+bool AOTSystemDictionary::add_unregistered_class(Thread* current, InstanceKlass* klass) {
   // We don't allow duplicated unregistered classes with the same name.
   // We only archive the first class with that name that succeeds putting
   // itself into the table.
@@ -715,7 +715,7 @@ bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKla
   return (klass == *v);
 }
 
-InstanceKlass* SystemDictionaryShared::get_unregistered_class(Symbol* name) {
+InstanceKlass* AOTSystemDictionary::get_unregistered_class(Symbol* name) {
   assert(CDSConfig::is_dumping_archive() || ClassListWriter::is_enabled(), "sanity");
   if (_unregistered_classes_table == nullptr) {
     return nullptr;
@@ -724,7 +724,7 @@ InstanceKlass* SystemDictionaryShared::get_unregistered_class(Symbol* name) {
   return k != nullptr ? *k : nullptr;
 }
 
-void SystemDictionaryShared::copy_unregistered_class_size_and_crc32(InstanceKlass* klass) {
+void AOTSystemDictionary::copy_unregistered_class_size_and_crc32(InstanceKlass* klass) {
   precond(CDSConfig::is_dumping_final_static_archive());
   precond(klass->in_aot_cache());
 
@@ -739,7 +739,7 @@ void SystemDictionaryShared::copy_unregistered_class_size_and_crc32(InstanceKlas
   info->_clsfile_crc32 = record->crc()->_clsfile_crc32;
 }
 
-void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs) {
+void AOTSystemDictionary::set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(!is_builtin(k), "must be unregistered class");
   DumpTimeClassInfo* info = get_info(k);
@@ -747,31 +747,31 @@ void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassF
   info->_clsfile_crc32 = ClassLoader::crc32(0, (const char*)cfs->buffer(), cfs->length());
 }
 
-void SystemDictionaryShared::initialize() {
+void AOTSystemDictionary::initialize() {
   if (CDSConfig::is_dumping_archive()) {
     _dumptime_table = new (mtClass) DumpTimeSharedClassTable;
     LambdaProxyClassDictionary::dumptime_init();
     if (CDSConfig::is_dumping_heap()) {
-      HeapShared::init_dumping();
+      AOTHeap::init_dumping();
     }
   }
 }
 
-void SystemDictionaryShared::init_dumptime_info(InstanceKlass* k) {
+void AOTSystemDictionary::init_dumptime_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  assert(SystemDictionaryShared::class_loading_may_happen(), "sanity");
+  assert(AOTSystemDictionary::class_loading_may_happen(), "sanity");
   DumpTimeClassInfo* info = _dumptime_table->allocate_info(k);
   if (AOTClassFilter::is_aot_tooling_class(k)) {
     info->set_is_aot_tooling_class();
   }
 }
 
-void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
+void AOTSystemDictionary::remove_dumptime_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   _dumptime_table->remove(k);
 }
 
-void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
+void AOTSystemDictionary::handle_class_unloading(InstanceKlass* klass) {
   if (CDSConfig::is_dumping_archive()) {
     remove_dumptime_info(klass);
   }
@@ -797,7 +797,7 @@ void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
   }
 }
 
-void SystemDictionaryShared::init_dumptime_info_from_preimage(InstanceKlass* k) {
+void AOTSystemDictionary::init_dumptime_info_from_preimage(InstanceKlass* k) {
   init_dumptime_info(k);
   copy_verification_info_from_preimage(k);
   copy_linking_constraints_from_preimage(k);
@@ -810,7 +810,7 @@ void SystemDictionaryShared::init_dumptime_info_from_preimage(InstanceKlass* k) 
 }
 
 // Check if a class or any of its supertypes has been redefined.
-bool SystemDictionaryShared::has_been_redefined(InstanceKlass* k) {
+bool AOTSystemDictionary::has_been_redefined(InstanceKlass* k) {
   if (k->has_been_redefined()) {
     return true;
   }
@@ -828,7 +828,7 @@ bool SystemDictionaryShared::has_been_redefined(InstanceKlass* k) {
 }
 
 // k is a class before relocating by ArchiveBuilder
-void SystemDictionaryShared::validate_before_archiving(InstanceKlass* k) {
+void AOTSystemDictionary::validate_before_archiving(InstanceKlass* k) {
   ResourceMark rm;
   const char* name = k->name()->as_C_string();
   DumpTimeClassInfo* info = _dumptime_table->get(k);
@@ -857,7 +857,7 @@ public:
   UnregisteredClassesDuplicationChecker() : _thread(Thread::current()) {}
 
   void do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
-    if (!SystemDictionaryShared::is_builtin(k)) {
+    if (!AOTSystemDictionary::is_builtin(k)) {
       _list.append(k);
     }
   }
@@ -882,16 +882,16 @@ public:
     _list.sort(compare_by_loader);
     for (int i = 0; i < _list.length(); i++) {
       InstanceKlass* k = _list.at(i);
-      bool i_am_first = SystemDictionaryShared::add_unregistered_class(_thread, k);
+      bool i_am_first = AOTSystemDictionary::add_unregistered_class(_thread, k);
       if (!i_am_first) {
-        SystemDictionaryShared::log_exclusion(k, "Duplicated unregistered class");
-        SystemDictionaryShared::set_excluded_locked(k);
+        AOTSystemDictionary::log_exclusion(k, "Duplicated unregistered class");
+        AOTSystemDictionary::set_excluded_locked(k);
       }
     }
   }
 };
 
-void SystemDictionaryShared::link_all_exclusion_check_candidates(InstanceKlass* ik) {
+void AOTSystemDictionary::link_all_exclusion_check_candidates(InstanceKlass* ik) {
   bool need_to_link = false;
   {
     MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
@@ -917,7 +917,7 @@ void SystemDictionaryShared::link_all_exclusion_check_candidates(InstanceKlass* 
 // AOTConstantPoolResolver before or after we enter the CDS safepoint.
 // When called before the safepoint, we need to link the class so that
 // it can be checked by should_be_excluded_impl().
-bool SystemDictionaryShared::should_be_excluded(Klass* k) {
+bool AOTSystemDictionary::should_be_excluded(Klass* k) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   // This method could be called during AOT compilation from compiler thread.
 
@@ -972,7 +972,7 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
   }
 }
 
-void SystemDictionaryShared::finish_exclusion_checks() {
+void AOTSystemDictionary::finish_exclusion_checks() {
   assert_at_safepoint();
   if (CDSConfig::is_dumping_dynamic_archive() || CDSConfig::is_dumping_preimage_static_archive()) {
     // Do this first -- if a base class is excluded due to duplication,
@@ -984,7 +984,7 @@ void SystemDictionaryShared::finish_exclusion_checks() {
   }
 
   _dumptime_table->iterate_all_live_classes([&] (InstanceKlass* k, DumpTimeClassInfo& info) {
-    SystemDictionaryShared::should_be_excluded_impl(k, &info);
+    AOTSystemDictionary::should_be_excluded_impl(k, &info);
   });
 
   _dumptime_table->update_counts();
@@ -993,7 +993,7 @@ void SystemDictionaryShared::finish_exclusion_checks() {
   }
 }
 
-bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
+bool AOTSystemDictionary::is_excluded_class(InstanceKlass* k) {
   assert(!class_loading_may_happen(), "class loading must be disabled");
   assert_lock_strong(DumpTimeTable_lock);
   assert(CDSConfig::is_dumping_archive(), "sanity");
@@ -1001,37 +1001,37 @@ bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
   return p->is_excluded();
 }
 
-void SystemDictionaryShared::set_excluded_locked(InstanceKlass* k) {
+void AOTSystemDictionary::set_excluded_locked(InstanceKlass* k) {
   assert_lock_strong(DumpTimeTable_lock);
   assert(CDSConfig::is_dumping_archive(), "sanity");
   DumpTimeClassInfo* info = get_info_locked(k);
   info->set_excluded();
 }
 
-void SystemDictionaryShared::set_excluded(InstanceKlass* k) {
+void AOTSystemDictionary::set_excluded(InstanceKlass* k) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   DumpTimeClassInfo* info = get_info(k);
   info->set_excluded();
 }
 
-void SystemDictionaryShared::set_class_has_failed_verification(InstanceKlass* ik) {
+void AOTSystemDictionary::set_class_has_failed_verification(InstanceKlass* ik) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   DumpTimeClassInfo* p = get_info(ik);
   p->set_failed_verification();
 }
 
-bool SystemDictionaryShared::has_class_failed_verification(InstanceKlass* ik) {
+bool AOTSystemDictionary::has_class_failed_verification(InstanceKlass* ik) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   DumpTimeClassInfo* p = _dumptime_table->get(ik);
   return (p == nullptr) ? false : p->failed_verification();
 }
 
-void SystemDictionaryShared::set_from_class_file_load_hook(InstanceKlass* ik) {
+void AOTSystemDictionary::set_from_class_file_load_hook(InstanceKlass* ik) {
   log_exclusion(ik, "From ClassFileLoadHook");
   set_excluded(ik);
 }
 
-void SystemDictionaryShared::dumptime_classes_do(MetaspaceClosure* it) {
+void AOTSystemDictionary::dumptime_classes_do(MetaspaceClosure* it) {
   assert_lock_strong(DumpTimeTable_lock);
 
   auto do_klass = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
@@ -1059,7 +1059,7 @@ void SystemDictionaryShared::dumptime_classes_do(MetaspaceClosure* it) {
 // The meaning of (*skip_assignability_check):
 //     true:  is_reference_assignable_from() should SKIP the assignability check
 //     false: is_reference_assignable_from() should COMPLETE the assignability check
-void SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbol* name,
+void AOTSystemDictionary::add_verification_constraint(InstanceKlass* k, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object,
          bool* skip_assignability_check) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
@@ -1092,19 +1092,19 @@ void SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbo
 // When the old verifier is verifying the class <ik> at dump time, it tries to resolve a
 // class with the given <name>. For the verification result to be valid at run time, we must
 // ensure that <name> resolves to the exact same Klass as in dump time.
-void SystemDictionaryShared::add_old_verification_constraint(Thread* current, InstanceKlass* ik, Symbol* name) {
+void AOTSystemDictionary::add_old_verification_constraint(Thread* current, InstanceKlass* ik, Symbol* name) {
   precond(CDSConfig::is_preserving_verification_constraints());
   DumpTimeClassInfo* info = get_info(ik);
   info->add_verification_constraint(name);
 }
 
-void SystemDictionaryShared::add_enum_klass_static_field(InstanceKlass* ik, int root_index) {
+void AOTSystemDictionary::add_enum_klass_static_field(InstanceKlass* ik, int root_index) {
   assert(CDSConfig::is_dumping_heap(), "sanity");
   DumpTimeClassInfo* info = get_info_locked(ik);
   info->add_enum_klass_static_field(root_index);
 }
 
-void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass,
+void AOTSystemDictionary::check_verification_constraints(InstanceKlass* klass,
                                                             TRAPS) {
   assert(CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   RunTimeClassInfo* record = RunTimeClassInfo::get_for(klass);
@@ -1147,7 +1147,7 @@ void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass
   }
 }
 
-void SystemDictionaryShared::copy_verification_info_from_preimage(InstanceKlass* klass) {
+void AOTSystemDictionary::copy_verification_info_from_preimage(InstanceKlass* klass) {
   assert(CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   DumpTimeClassInfo* dt_info = get_info(klass);
   RunTimeClassInfo* rt_info = RunTimeClassInfo::get_for(klass); // from preimage
@@ -1179,7 +1179,7 @@ static oop get_class_loader_by(char type) {
 // Record class loader constraints that are checked inside
 // InstanceKlass::link_class(), so that these can be checked quickly
 // at runtime without laying out the vtable/itables.
-void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKlass* klass,
+void AOTSystemDictionary::record_linking_constraint(Symbol* name, InstanceKlass* klass,
                                                     Handle loader1, Handle loader2) {
   // A linking constraint check is executed when:
   //   - klass extends or implements type S
@@ -1235,7 +1235,7 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
 
 // returns true IFF there's no need to re-initialize the i/v-tables for klass for
 // the purpose of checking class loader constraints.
-bool SystemDictionaryShared::check_linking_constraints(Thread* current, InstanceKlass* klass) {
+bool AOTSystemDictionary::check_linking_constraints(Thread* current, InstanceKlass* klass) {
   assert(CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   LogTarget(Info, class, loader, constraints) log;
   if (klass->defined_by_boot_loader()) {
@@ -1282,7 +1282,7 @@ bool SystemDictionaryShared::check_linking_constraints(Thread* current, Instance
   return false;
 }
 
-void SystemDictionaryShared::copy_linking_constraints_from_preimage(InstanceKlass* klass) {
+void AOTSystemDictionary::copy_linking_constraints_from_preimage(InstanceKlass* klass) {
   assert(CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   JavaThread* current = JavaThread::current();
   if (klass->defined_by_platform_loader() || klass->defined_by_app_loader()) {
@@ -1300,18 +1300,18 @@ void SystemDictionaryShared::copy_linking_constraints_from_preimage(InstanceKlas
   }
 }
 
-unsigned int SystemDictionaryShared::hash_for_shared_dictionary(address ptr) {
+unsigned int AOTSystemDictionary::hash_for_shared_dictionary(address ptr) {
   if (ArchiveBuilder::is_active() && ArchiveBuilder::current()->is_in_buffer_space(ptr)) {
     uintx offset = ArchiveBuilder::current()->any_to_offset(ptr);
     unsigned int hash = primitive_hash<uintx>(offset);
     DEBUG_ONLY({
         if (AOTMetaspace::in_aot_cache(ptr)) {
-          assert(hash == SystemDictionaryShared::hash_for_shared_dictionary_quick(ptr), "must be");
+          assert(hash == AOTSystemDictionary::hash_for_shared_dictionary_quick(ptr), "must be");
         }
       });
     return hash;
   } else {
-    return SystemDictionaryShared::hash_for_shared_dictionary_quick(ptr);
+    return AOTSystemDictionary::hash_for_shared_dictionary_quick(ptr);
   }
 }
 
@@ -1333,7 +1333,7 @@ public:
       unsigned int hash;
       Symbol* name = info._klass->name();
       name = ArchiveBuilder::current()->get_buffered_addr(name);
-      hash = SystemDictionaryShared::hash_for_shared_dictionary((address)name);
+      hash = AOTSystemDictionary::hash_for_shared_dictionary((address)name);
       if (_is_builtin && info._klass->is_hidden()) {
         // skip
       } else {
@@ -1351,7 +1351,7 @@ public:
   }
 };
 
-void SystemDictionaryShared::write_dictionary(RunTimeSharedDictionary* dictionary,
+void AOTSystemDictionary::write_dictionary(RunTimeSharedDictionary* dictionary,
                                               bool is_builtin) {
   CompactHashtableStats stats;
   dictionary->reset();
@@ -1362,7 +1362,7 @@ void SystemDictionaryShared::write_dictionary(RunTimeSharedDictionary* dictionar
   writer.dump(dictionary, is_builtin ? "builtin dictionary" : "unregistered dictionary");
 }
 
-void SystemDictionaryShared::write_to_archive(bool is_static_archive) {
+void AOTSystemDictionary::write_to_archive(bool is_static_archive) {
   ArchiveInfo* archive = get_archive(is_static_archive, /*is_dumping=*/true);
 
   write_dictionary(&archive->_builtin_dictionary, true);
@@ -1374,7 +1374,7 @@ void SystemDictionaryShared::write_to_archive(bool is_static_archive) {
   }
 }
 
-void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
+void AOTSystemDictionary::serialize_dictionary_headers(SerializeClosure* soc,
                                                           bool is_static_archive) {
   ArchiveInfo* archive = get_archive(is_static_archive, soc->writing());
 
@@ -1383,20 +1383,20 @@ void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
   LambdaProxyClassDictionary::serialize(soc, is_static_archive);
 }
 
-void SystemDictionaryShared::serialize_vm_classes(SerializeClosure* soc) {
+void AOTSystemDictionary::serialize_vm_classes(SerializeClosure* soc) {
   for (auto id : EnumRange<vmClassID>{}) {
     soc->do_ptr(vmClasses::klass_addr_at(id));
   }
 }
 
 const RunTimeClassInfo*
-SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTimeSharedDictionary* dynamic_dict, Symbol* name) {
+AOTSystemDictionary::find_record(RunTimeSharedDictionary* static_dict, RunTimeSharedDictionary* dynamic_dict, Symbol* name) {
   if (!CDSConfig::is_using_archive() || !name->in_aot_cache()) {
     // The names of all shared classes must also be a shared Symbol.
     return nullptr;
   }
 
-  unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(name);
+  unsigned int hash = AOTSystemDictionary::hash_for_shared_dictionary_quick(name);
   const RunTimeClassInfo* record = nullptr;
   if (DynamicArchive::is_mapped()) {
     // Use the regenerated holder classes in the dynamic archive as they
@@ -1422,7 +1422,7 @@ SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTim
   return record;
 }
 
-InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
+InstanceKlass* AOTSystemDictionary::find_builtin_class(Symbol* name) {
   const RunTimeClassInfo* record = find_record(&_info_for_static_archive._builtin_dictionary,
                                                &_info_for_dynamic_archive._builtin_dictionary,
                                                name);
@@ -1440,13 +1440,13 @@ InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
   }
 }
 
-void SystemDictionaryShared::update_shared_entry(InstanceKlass* k, int id) {
+void AOTSystemDictionary::update_shared_entry(InstanceKlass* k, int id) {
   assert(CDSConfig::is_dumping_static_archive(), "class ID is used only for static dump (from classlist)");
   DumpTimeClassInfo* info = get_info(k);
   info->_id = id;
 }
 
-const char* SystemDictionaryShared::loader_type_for_shared_class(Klass* k) {
+const char* AOTSystemDictionary::loader_type_for_shared_class(Klass* k) {
   assert(k != nullptr, "Sanity");
   assert(k->in_aot_cache(), "Must be");
   assert(k->is_instance_klass(), "Must be");
@@ -1464,7 +1464,7 @@ const char* SystemDictionaryShared::loader_type_for_shared_class(Klass* k) {
   }
 }
 
-void SystemDictionaryShared::get_all_archived_classes(bool is_static_archive, GrowableArray<Klass*>* classes) {
+void AOTSystemDictionary::get_all_archived_classes(bool is_static_archive, GrowableArray<Klass*>* classes) {
   ArchiveInfo* archive = get_archive(is_static_archive, /*is_dumping=*/false);
   archive->_builtin_dictionary.iterate_all([&] (const RunTimeClassInfo* record) {
       classes->append(record->klass());
@@ -1484,7 +1484,7 @@ public:
   void do_value(const RunTimeClassInfo* record) {
     ResourceMark rm;
     _st->print_cr("%4d: %s %s", _index++, record->klass()->external_name(),
-        SystemDictionaryShared::loader_type_for_shared_class(record->klass()));
+        AOTSystemDictionary::loader_type_for_shared_class(record->klass()));
     if (record->klass()->array_klasses() != nullptr) {
       record->klass()->array_klasses()->cds_print_value_on(_st);
       _st->cr();
@@ -1493,7 +1493,7 @@ public:
   int index() const { return _index; }
 };
 
-void SystemDictionaryShared::ArchiveInfo::print_on(const char* prefix,
+void AOTSystemDictionary::ArchiveInfo::print_on(const char* prefix,
                                                    outputStream* st,
                                                    bool is_static_archive) {
   st->print_cr("%sShared Dictionary", prefix);
@@ -1505,7 +1505,7 @@ void SystemDictionaryShared::ArchiveInfo::print_on(const char* prefix,
   LambdaProxyClassDictionary::print_on(prefix, st, p.index(), is_static_archive);
 }
 
-void SystemDictionaryShared::ArchiveInfo::print_table_statistics(const char* prefix,
+void AOTSystemDictionary::ArchiveInfo::print_table_statistics(const char* prefix,
                                                                  outputStream* st,
                                                                  bool is_static_archive) {
   st->print_cr("%sArchve Statistics", prefix);
@@ -1514,7 +1514,7 @@ void SystemDictionaryShared::ArchiveInfo::print_table_statistics(const char* pre
   LambdaProxyClassDictionary::print_statistics(st, is_static_archive);
 }
 
-void SystemDictionaryShared::print_shared_archive(outputStream* st, bool is_static) {
+void AOTSystemDictionary::print_shared_archive(outputStream* st, bool is_static) {
   if (CDSConfig::is_using_archive()) {
     if (is_static) {
       _info_for_static_archive.print_on("", st, true);
@@ -1526,12 +1526,12 @@ void SystemDictionaryShared::print_shared_archive(outputStream* st, bool is_stat
   }
 }
 
-void SystemDictionaryShared::print_on(outputStream* st) {
+void AOTSystemDictionary::print_on(outputStream* st) {
   print_shared_archive(st, true);
   print_shared_archive(st, false);
 }
 
-void SystemDictionaryShared::print_table_statistics(outputStream* st) {
+void AOTSystemDictionary::print_table_statistics(outputStream* st) {
   if (CDSConfig::is_using_archive()) {
     _info_for_static_archive.print_table_statistics("Static ", st, true);
     if (DynamicArchive::is_mapped()) {
@@ -1540,7 +1540,7 @@ void SystemDictionaryShared::print_table_statistics(outputStream* st) {
   }
 }
 
-bool SystemDictionaryShared::is_dumptime_table_empty() {
+bool AOTSystemDictionary::is_dumptime_table_empty() {
   assert_lock_strong(DumpTimeTable_lock);
   _dumptime_table->update_counts();
   if (_dumptime_table->count_of(true) == 0 && _dumptime_table->count_of(false) == 0){

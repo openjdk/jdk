@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,19 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZRUNTIMEWORKERS_HPP
-#define SHARE_GC_Z_ZRUNTIMEWORKERS_HPP
+#include <jni.h>
 
-#include "gc/shared/workerThread.hpp"
+JNIEXPORT jint JNICALL
+Java_compiler_valhalla_valuetypes_TestCCMismatchNativeMethods_00024B1_m1(JNIEnv* env, jobject receiver, jobject vt1, jobject vt2) {
+  jclass cls = (*env)->GetObjectClass(env, vt2);
+  jfieldID fid = (*env)->GetFieldID(env, cls, "x", "I");
+  return (*env)->GetIntField(env, vt2, fid);
+}
 
-class ThreadClosure;
+JNIEXPORT jint JNICALL
+Java_compiler_valhalla_valuetypes_TestCCMismatchNativeMethods_00024D2_m1(JNIEnv* env, jobject receiver, jobject vt1, jobject vt2) {
+  jclass cls = (*env)->GetObjectClass(env, vt2);
+  jfieldID fid = (*env)->GetFieldID(env, cls, "x", "I");
+  return (*env)->GetIntField(env, vt2, fid);
+}
 
-class ZRuntimeWorkers {
-private:
-  WorkerThreads _workers;
-
-public:
-  ZRuntimeWorkers();
-
-  WorkerThreads* workers();
-
-  void threads_do(ThreadClosure* tc) const;
-};
-
-#endif // SHARE_GC_Z_ZRUNTIMEWORKERS_HPP

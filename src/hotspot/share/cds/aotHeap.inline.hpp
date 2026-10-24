@@ -22,10 +22,10 @@
  *
  */
 
-#ifndef SHARE_CDS_HEAPSHARED_INLINE_HPP
-#define SHARE_CDS_HEAPSHARED_INLINE_HPP
+#ifndef SHARE_CDS_AOTHEAP_INLINE_HPP
+#define SHARE_CDS_AOTHEAP_INLINE_HPP
 
-#include "cds/heapShared.hpp"
+#include "cds/aotHeap.hpp"
 
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/regeneratedClasses.hpp"
@@ -34,37 +34,37 @@
 
 #if INCLUDE_CDS_JAVA_HEAP
 
-inline bool HeapShared::is_loading() {
+inline bool AOTHeap::is_loading() {
   return _heap_load_mode != HeapArchiveMode::_uninitialized;
 }
 
-inline bool HeapShared::is_loading_streaming_mode() {
+inline bool AOTHeap::is_loading_streaming_mode() {
   assert(_heap_load_mode != HeapArchiveMode::_uninitialized, "not initialized yet");
   return _heap_load_mode == HeapArchiveMode::_streaming;
 }
 
-inline bool HeapShared::is_loading_mapping_mode() {
+inline bool AOTHeap::is_loading_mapping_mode() {
   assert(_heap_load_mode != HeapArchiveMode::_uninitialized, "not initialized yet");
   return _heap_load_mode == HeapArchiveMode::_mapping;
 }
 
-inline bool HeapShared::is_writing() {
+inline bool AOTHeap::is_writing() {
   return _heap_write_mode != HeapArchiveMode::_uninitialized;
 }
 
-inline bool HeapShared::is_writing_streaming_mode() {
+inline bool AOTHeap::is_writing_streaming_mode() {
   assert(_heap_write_mode != HeapArchiveMode::_uninitialized, "not initialized yet");
   return _heap_write_mode == HeapArchiveMode::_streaming;
 }
 
-inline bool HeapShared::is_writing_mapping_mode() {
+inline bool AOTHeap::is_writing_mapping_mode() {
   assert(_heap_write_mode != HeapArchiveMode::_uninitialized, "not initialized yet");
   return _heap_write_mode == HeapArchiveMode::_mapping;
 }
 
 // Keep the knowledge about which objects have what metadata in one single place
 template <typename T>
-void HeapShared::do_metadata_offsets(oop src_obj, T callback) {
+void AOTHeap::do_metadata_offsets(oop src_obj, T callback) {
   if (java_lang_Class::is_instance(src_obj)) {
     assert(java_lang_Class::klass_offset() < java_lang_Class::array_klass_offset(),
            "metadata offsets must be sorted");
@@ -75,7 +75,7 @@ void HeapShared::do_metadata_offsets(oop src_obj, T callback) {
   }
 }
 
-inline void HeapShared::remap_loaded_metadata(oop src_obj) {
+inline void AOTHeap::remap_loaded_metadata(oop src_obj) {
   do_metadata_offsets(src_obj, [&](int offset) {
     Metadata* metadata = src_obj->metadata_field(offset);
     if (metadata != nullptr) {
@@ -85,7 +85,7 @@ inline void HeapShared::remap_loaded_metadata(oop src_obj) {
   });
 }
 
-inline oop HeapShared::maybe_remap_referent(bool is_java_lang_ref, size_t field_offset, oop referent) {
+inline oop AOTHeap::maybe_remap_referent(bool is_java_lang_ref, size_t field_offset, oop referent) {
   if (referent == nullptr) {
     return nullptr;
   }
@@ -99,7 +99,7 @@ inline oop HeapShared::maybe_remap_referent(bool is_java_lang_ref, size_t field_
     // When the source object points to a "real" mirror, the buffered object should point
     // to the "scratch" mirror, which has all unarchivable fields scrubbed (to be reinstated
     // at run time).
-    referent = HeapShared::scratch_java_mirror(referent);
+    referent = AOTHeap::scratch_java_mirror(referent);
     assert(referent != nullptr, "must be");
   }
 
@@ -108,4 +108,4 @@ inline oop HeapShared::maybe_remap_referent(bool is_java_lang_ref, size_t field_
 
 #endif // INCLUDE_CDS_JAVA_HEAP
 
-#endif // SHARE_CDS_HEAPSHARED_INLINE_HPP
+#endif // SHARE_CDS_AOTHEAP_INLINE_HPP
