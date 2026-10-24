@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,5 +102,14 @@ class ClassLoaderHelper {
         paths[psCount] = (pathStart < ldLen) ?
                 ldPath.substring(pathStart, ldLen) : ".";
         return paths;
+    }
+
+    /**
+     * Add a dot to the end of the library file name ultimately passed to
+     * <code>LoadLibrary</code>. This prevents <code>LoadLibrary</code> from
+     * automatically inferring a .DLL extension.
+     */
+    static String mapToNativeLibraryName(String name) {
+        return name.regionMatches(true, name.length() - 4, ".dll", 0, 4) ? name : name + ".";
     }
 }
