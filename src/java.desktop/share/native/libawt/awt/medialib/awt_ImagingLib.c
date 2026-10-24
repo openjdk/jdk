@@ -47,8 +47,6 @@
 /***************************************************************************
  *                               Definitions                               *
  ***************************************************************************/
-#define jio_fprintf fprintf
-
 #ifndef TRUE
 #define TRUE 1
 #endif /* TRUE */
@@ -57,21 +55,12 @@
 #define FALSE 0
 #endif /* FALSE */
 
-#define TYPE_CUSTOM         java_awt_image_BufferedImage_TYPE_CUSTOM
 #define TYPE_INT_RGB        java_awt_image_BufferedImage_TYPE_INT_RGB
 #define TYPE_INT_ARGB       java_awt_image_BufferedImage_TYPE_INT_ARGB
 #define TYPE_INT_ARGB_PRE   java_awt_image_BufferedImage_TYPE_INT_ARGB_PRE
 #define TYPE_INT_BGR        java_awt_image_BufferedImage_TYPE_INT_BGR
 #define TYPE_4BYTE_ABGR     java_awt_image_BufferedImage_TYPE_4BYTE_ABGR
 #define TYPE_4BYTE_ABGR_PRE java_awt_image_BufferedImage_TYPE_4BYTE_ABGR_PRE
-
-/* (alpha*color)>>nbits + alpha>>(nbits-1) */
-#define BLEND(color, alpha, alphaNbits) \
-    ((((alpha)*(color))>>(alphaNbits)) + ((alpha) >> ((alphaNbits)-1)))
-
-    /* ((color - (alpha>>(nBits-1)))<<nBits)/alpha */
-#define UNBLEND(color, alpha, alphaNbits) \
-    ((((color)-((alpha)>>((alphaNbits)-1)))<<(alphaNbits))/(alpha))
 
 /* Enumeration of all of the mlib functions used */
 typedef enum {
@@ -194,6 +183,8 @@ static mlib_stop_timer stop_timer = NULL;
  *                          Debugging Definitions                          *
  ***************************************************************************/
 #ifdef DEBUG
+
+#define jio_fprintf fprintf
 
 static void
 printMedialibError(int status) {

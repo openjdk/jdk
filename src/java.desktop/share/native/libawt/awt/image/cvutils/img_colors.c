@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,9 @@ extern JavaVM *jvm;
 #endif
 #include "img_colors.h"
 
+#ifdef DEBUG
 #define jio_fprintf fprintf
+#endif
 
 #define TRUE 1
 #define FALSE 0
@@ -83,7 +85,10 @@ static float Lscale = 10.0f;
 static float Weight = 250.0f;
 
 #define WEIGHT_DIST(d,l)   (Weight*(d)/(Weight+(l)))
+
+#ifdef STATS
 #define UNWEIGHT_DIST(d,l) ((Weight+(l))*(d)/Weight)
+#endif
 
 #if 0
 #define WEIGHT_DIST(d,l) (d)

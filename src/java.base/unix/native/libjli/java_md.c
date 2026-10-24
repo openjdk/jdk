@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -701,9 +701,6 @@ CallJavaMainInNewThread(jlong stack_size, void* args) {
     pthread_attr_destroy(&attr);
     return rslt;
 }
-
-/* Coarse estimation of number of digits assuming the worst case is a 64-bit pid. */
-#define MAX_PID_STR_SZ   20
 
 int
 JVMInit(InvocationFunctions* ifn, jlong threadStackSize,

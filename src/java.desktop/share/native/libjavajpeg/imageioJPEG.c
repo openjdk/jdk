@@ -372,10 +372,6 @@ static void unpinPixelBuffer(JNIEnv *env, pixelBufferPtr pb, int pixelReleaseMod
 #define JPEG_BAND_SIZE 8
 #define NUM_BAND_VALUES (1<<JPEG_BAND_SIZE)
 #define MAX_JPEG_BAND_VALUE (NUM_BAND_VALUES-1)
-#define HALF_MAX_JPEG_BAND_VALUE (MAX_JPEG_BAND_VALUE>>1)
-
-/* The number of possible incoming values to be scaled. */
-#define NUM_INPUT_VALUES (1 << 16)
 
 /*
  * The principal imageioData object, opaque to I/O direction.
@@ -1162,8 +1158,6 @@ imageio_term_source(j_decompress_ptr cinfo)
 #define ICC_MARKER  (JPEG_APP0 + 2)     /* JPEG marker code for ICC */
 #define ICC_OVERHEAD_LEN  14            /* size of non-profile data in APP2 */
 #define MAX_BYTES_IN_MARKER  65533      /* maximum data len of a JPEG marker */
-#define MAX_DATA_BYTES_IN_ICC_MARKER  (MAX_BYTES_IN_MARKER - ICC_OVERHEAD_LEN)
-
 
 /*
  * Handy subroutine to test whether a saved marker is an ICC profile marker.

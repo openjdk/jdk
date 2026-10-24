@@ -172,9 +172,7 @@ enum {
 #define UNKNOWN_RET_INSTRUCTION -1
 
 #undef MAX
-#undef MIN
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 #define BITS_PER_INT   (CHAR_BIT * sizeof(int)/sizeof(char))
 #define SET_BIT(flags, i)  (flags[(i)/BITS_PER_INT] |= \
@@ -448,8 +446,6 @@ static jclass object_fullinfo_to_classclass(context_type *, fullinfo_type);
 
 #define NEW(type, count) \
         ((type *)CCalloc(context, (count)*(sizeof(type)), JNI_FALSE))
-#define ZNEW(type, count) \
-        ((type *)CCalloc(context, (count)*(sizeof(type)), JNI_TRUE))
 
 static void CCinit(context_type *context);
 static void CCreinit(context_type *context);

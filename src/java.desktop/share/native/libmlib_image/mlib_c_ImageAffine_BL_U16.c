@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,12 +67,6 @@
 
 /***************************************************************/
 #define DTYPE  mlib_u16
-#define FTYPE  mlib_d64
-
-/***************************************************************/
-#define TTYPE    mlib_s32
-#define I2F(x)   (x)
-#define ROUND(x) (x)
 
 #define FUN_NAME(CHAN) mlib_ImageAffine_u16_##CHAN##_bl
 

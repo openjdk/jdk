@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,10 @@ OGLBlendRule StdBlendRules[] = {
 };
 
 /** Evaluates to "front" or "back", depending on the value of buf. */
+#ifdef DEBUG
 #define OGLC_ACTIVE_BUFFER_NAME(buf) \
     (buf == GL_FRONT || buf == GL_COLOR_ATTACHMENT0_EXT) ? "front" : "back"
+#endif
 
 /**
  * Initializes the viewport and projection matrix, effectively positioning

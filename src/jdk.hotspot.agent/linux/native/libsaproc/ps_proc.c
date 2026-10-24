@@ -137,14 +137,6 @@ static bool process_get_lwp_regs(struct ps_prochandle* ph, pid_t pid, struct use
   // we have already attached to all thread 'pid's, just use ptrace call
   // to get regset now. Note that we don't cache regset upfront for processes.
 
-#if defined(_LP64) && defined(PTRACE_GETREGS64)
-#define PTRACE_GETREGS_REQ PTRACE_GETREGS64
-#elif defined(PTRACE_GETREGS)
-#define PTRACE_GETREGS_REQ PTRACE_GETREGS
-#elif defined(PT_GETREGS)
-#define PTRACE_GETREGS_REQ PT_GETREGS
-#endif
-
 #if defined(PTRACE_GETREGSET)
   struct iovec iov;
   iov.iov_base = user;
@@ -154,7 +146,17 @@ static bool process_get_lwp_regs(struct ps_prochandle* ph, pid_t pid, struct use
     return false;
   }
   return true;
-#elif defined(PTRACE_GETREGS_REQ)
+#else
+
+#if defined(_LP64) && defined(PTRACE_GETREGS64)
+#define PTRACE_GETREGS_REQ PTRACE_GETREGS64
+#elif defined(PTRACE_GETREGS)
+#define PTRACE_GETREGS_REQ PTRACE_GETREGS
+#elif defined(PT_GETREGS)
+#define PTRACE_GETREGS_REQ PT_GETREGS
+#endif
+
+#if defined(PTRACE_GETREGS_REQ)
  if (ptrace(PTRACE_GETREGS_REQ, pid, NULL, user) < 0) {
    print_warning("ptrace(PTRACE_GETREGS, ...) failed for lwp(%d) errno(%d) \"%s\"\n", pid,
                errno, strerror(errno));
@@ -165,7 +167,7 @@ static bool process_get_lwp_regs(struct ps_prochandle* ph, pid_t pid, struct use
  print_warning("ptrace(PTRACE_GETREGS, ...) not supported\n");
  return false;
 #endif
-
+#endif
 }
 
 static bool ptrace_continue(pid_t pid, int signal) {

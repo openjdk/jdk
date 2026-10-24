@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,9 +279,7 @@
 #define CALC_MAX(MAX, X) ((MAX)=((X)>(MAX))?(X):(MAX))
 #define CALC_MIN(MIN, X) ((MIN)=((X)<(MIN))?(X):(MIN))
 #define MAX(MAX, X) (((X)>(MAX))?(X):(MAX))
-#define MIN(MIN, X) (((X)<(MIN))?(X):(MIN))
 #define ABS32(X) (((X)^((X)>>31))-((X)>>31))
-#define SIGN32(X) ((X) >> 31) | ((juint)(-(X)) >> 31)
 
 /* Boundaries used for clipping large path segments (those are inside
  * [UPPER/LOWER]_BND boundaries)
@@ -1730,9 +1728,6 @@ jboolean ProcessPath(ProcessHandler* hnd,
 
 #define ALLOC(ptr, type, n) \
     ptr = (type *)malloc((n)*sizeof(type))
-#define REALLOC(ptr, type, n) \
-    ptr = (type *)realloc(ptr, (n)*sizeof(type))
-
 
 struct _Edge;
 
@@ -1829,8 +1824,6 @@ typedef struct {
     do {                                                                    \
         (PTR)->plgPnts[(PTR)->plgSize - 1].lastPoint = JNI_TRUE;            \
     } while(0)
-
-#define PFD(HND) ((FillData*)(HND)->pData)
 
 /* Bubble sorting in the ascending order of the linked list. This
  * implementation stops processing the list if there were no changes during the

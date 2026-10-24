@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 #include "sizecalc.h"
 
 #define GIF_TRANSPARENT     0x01
-#define GIF_USER_INPUT      0x02
 #define GIF_DISPOSE_MASK    0x07
 #define GIF_DISPOSE_SHIFT   2
 

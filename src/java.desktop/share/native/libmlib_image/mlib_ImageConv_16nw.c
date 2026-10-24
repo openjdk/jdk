@@ -95,21 +95,6 @@
 #define D2I(x) CLAMP_S32((x) SAT_OFF)
 
 /***************************************************************/
-#ifdef _LITTLE_ENDIAN
-
-#define STORE2(res0, res1)                                      \
-  dp[0    ] = res1;                                             \
-  dp[chan1] = res0
-
-#else
-
-#define STORE2(res0, res1)                                      \
-  dp[0    ] = res0;                                             \
-  dp[chan1] = res1
-
-#endif /* _LITTLE_ENDIAN */
-
-/***************************************************************/
 #ifdef _NO_LONGLONG
 
 #define LOAD_BUFF(buff)                                         \
