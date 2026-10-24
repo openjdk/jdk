@@ -38,8 +38,8 @@ class G1NUMA: public CHeapObj<mtGC> {
   // the range from [0, {# of nodes-1}].
   // For invalid node id, return UnknownNodeIndex.
   uint* _node_id_to_index_map;
-  // Length of _num_active_node_ids_id to index map.
-  uint _len_node_id_to_index_map;
+  // Maximum number of (OS) NUMA nodes.
+  uint _max_num_nodes;
 
   // Current active node ids.
   uint* _node_ids;
@@ -58,7 +58,6 @@ class G1NUMA: public CHeapObj<mtGC> {
   size_t page_size() const;
 
   // Returns node index of the given node id.
-  // Precondition: node_id is an active node id.
   inline uint index_of_node_id(uint node_id) const;
 
   static G1NUMA* _inst;
