@@ -802,6 +802,11 @@ void CDSConfig::setup_compiler_args() {
     FLAG_SET_ERGO(AOTRecordTraining, false);
     AOTCodeCache::disable_caching();
   }
+  // Explicitly disable UseAOTCacheCpuFeaturesOnly in scenarios where it should not be specified,
+  // for example during training or assembly phase.
+  if (!CDSConfig::is_using_archive() || !AOTCodeCache::is_caching_enabled() || CDSConfig::is_dumping_final_static_archive()) {
+    FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+  }
 }
 
 void CDSConfig::prepare_for_dumping() {

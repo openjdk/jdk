@@ -419,6 +419,31 @@ private:
       }
       return true;
     }
+
+    // Is this a super set of features_to_test?
+    bool super_set_of(RVExtFeatures* features_to_test) {
+      for (int i = 0; i < element_count(); i++) {
+        if ((_features_bitmap[i] | features_to_test->_features_bitmap[i]) != _features_bitmap[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // Returns features present in this but not is features_to_test
+    RVExtFeatures features_not_in(RVExtFeatures* features_to_test) {
+      RVExtFeatures result;
+      for (int i = 0; i < element_count(); i++) {
+        result._features_bitmap[i] = _features_bitmap[i] & (~(features_to_test->_features_bitmap[i]));
+      }
+      return result;
+    }
+
+    void clear_features(RVExtFeatures* features_to_clear) {
+      for (int i = 0; i < element_count(); i++) {
+        _features_bitmap[i] &= (~(features_to_clear->_features_bitmap[i]));
+      }
+    }
   };
 
   // enable extensions based on profile, current supported profiles:
@@ -502,9 +527,13 @@ private:
   // Null terminated list
   static RVFeatureValue* _feature_list[];
   static RVExtFeatures* _rv_ext_features;
+  static RVExtFeatures _rv_raw_ext_features;
 
   // Enables features in _feature_list
   static void setup_cpu_available_features();
+
+  static void apply_aot_cache_cpu_features();
+
   // Helper for specific queries
   static void os_aux_features();
   static char* os_uarch_additional_features();
@@ -582,6 +611,10 @@ private:
  private:
   static void print_feature_name(stringStream& ss, RVFeatureValue* feature);
   static void insert_features_names(RVExtFeatures* features, stringStream& ss);
+  static void save_raw_cpu_features() {
+    RVExtFeatures* current = RVExtFeatures::current();
+    _rv_raw_ext_features = *current;
+  }
 };
 
 #endif // CPU_RISCV_VM_VERSION_RISCV_HPP

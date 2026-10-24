@@ -105,6 +105,33 @@ static bool has_neoverse_n1_errata_1542419() {
            (major_rev_num == 4 && minor_rev_num == 0)));
 }
 
+void VM_Version::apply_aot_cache_cpu_features() {
+  uint64_t* aot_cache_cpu_features = (uint64_t*)get_aot_cache_cpu_features();
+  if (aot_cache_cpu_features != nullptr) {
+    assert(UseAOTCacheCpuFeaturesOnly, "UseAOTCacheCpuFeaturesOnly must be true");
+    if (!super_set_of(_features, *aot_cache_cpu_features)) {
+      if (!FLAG_IS_DEFAULT(UseAOTCacheCpuFeaturesOnly)) {
+        warning("UseAOTCacheCpuFeaturesOnly is ignored: one or more cpu features recorded in AOT cache are not supported by this CPU");
+      }
+      FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+    }
+    uint64_t features_to_clear = features_not_in(_features, *aot_cache_cpu_features);
+    _features = clear_features(_features, features_to_clear);
+    LogTarget(Info, aot) aot_log;
+    LogTarget(Info, os, cpu) os_cpu_log;
+    if (os_cpu_log.is_enabled() || aot_log.is_enabled()) {
+      ResourceMark rm;
+      stringStream ss;
+      insert_features_names(features_to_clear, ss);
+      if (os_cpu_log.is_enabled()) {
+        os_cpu_log.print("CPU features turned off by UseAOTCacheCpuFeaturesOnly: %s", ss.as_string());
+      } else if (aot_log.is_enabled()) {
+        aot_log.print("CPU features turned off by UseAOTCacheCpuFeaturesOnly: %s", ss.as_string());
+      }
+    }
+  }
+}
+
 void VM_Version::initialize() {
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
@@ -117,6 +144,8 @@ void VM_Version::initialize() {
 
   get_os_cpu_info();
   _cpu_features = _features;
+
+  apply_aot_cache_cpu_features();
 
   int dcache_line = dcache_line_size();
 

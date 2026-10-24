@@ -93,6 +93,7 @@ public:
   static void initialize_runtime_shared_and_meta_spaces() NOT_CDS_RETURN;
   static void post_initialize(TRAPS) NOT_CDS_RETURN;
   static void get_aot_code_region_size() NOT_CDS_RETURN;
+  static char* get_archived_cpu_features() NOT_CDS_RETURN_(nullptr);
 
   static void print_on(outputStream* st);
 

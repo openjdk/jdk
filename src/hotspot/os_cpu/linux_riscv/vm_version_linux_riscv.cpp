@@ -120,6 +120,34 @@ void VM_Version::RVNonExtFeatureValue::log_enabled() {
   log_info(os, cpu)("Enabled RV64 feature \"%s\" (%ld)", pretty(), value());
 }
 
+void VM_Version::apply_aot_cache_cpu_features() {
+  RVExtFeatures* archived_cpu_features = (RVExtFeatures*)get_aot_cache_cpu_features();
+  if (archived_cpu_features != nullptr) {
+    assert(UseAOTCacheCpuFeaturesOnly, "UseAOTCacheCpuFeaturesOnly must be true");
+    RVExtFeatures* rt_features = RVExtFeatures::current();
+    if (!rt_features->super_set_of(archived_cpu_features)) {
+      if (!FLAG_IS_DEFAULT(UseAOTCacheCpuFeaturesOnly)) {
+        warning("UseAOTCacheCpuFeaturesOnly is ignored: one or more cpu features recorded in AOT cache are not supported by this CPU");
+      }
+      FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+    }
+    RVExtFeatures features_to_clear = rt_features->features_not_in(archived_cpu_features);
+    rt_features->clear_features(&features_to_clear);
+    LogTarget(Info, aot) aot_log;
+    LogTarget(Info, os, cpu) os_cpu_log;
+    if (os_cpu_log.is_enabled() || aot_log.is_enabled()) {
+      ResourceMark rm;
+      stringStream ss;
+      insert_features_names(features_to_clear, ss);
+      if (os_cpu_log.is_enabled()) {
+        os_cpu_log.print("CPU features turned off by UseAOTCacheCpuFeaturesOnly: %s", ss.as_string());
+      } else if (aot_log.is_enabled()) {
+        aot_log.print("CPU features turned off by UseAOTCacheCpuFeaturesOnly: %s", ss.as_string());
+      }
+    }
+  }
+}
+
 void VM_Version::setup_cpu_available_features() {
 
   assert(ext_i.feature_bit() == HWCAP_ISA_I, "Bit for I must follow Linux HWCAP");
@@ -138,6 +166,10 @@ void VM_Version::setup_cpu_available_features() {
 
   char* uarch = os_uarch_additional_features();
   vendor_features();
+  save_raw_cpu_features();
+
+  apply_aot_cache_cpu_features();
+
 
   char buf[1024] = {};
   if (uarch != nullptr && strcmp(uarch, "") != 0) {
