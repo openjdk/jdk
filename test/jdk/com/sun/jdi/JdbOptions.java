@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8234808
+ * @bug 8234808 8282988
  *
  * @requires vm.flagless
  * @library /test/lib
@@ -86,6 +86,16 @@ public class JdbOptions {
     private static final String targ = JbdOptionsTarg.class.getName();
 
     public static void main(String[] args) throws Exception {
+        // Set the options before Utils caches them when Jdb is initialized.
+        System.setProperty("test.vm.opts", System.getProperty("test.vm.opts", "") + " -Dtest.jdb.vm.opts=vm");
+        System.setProperty("test.java.opts", System.getProperty("test.java.opts", "") + " -Dtest.jdb.java.opts=java");
+        try (Jdb jdb = new Jdb("-J-Xlog:arguments=info:stdout")) {
+            jdb.waitForSimplePrompt(1024, false);
+            new OutputAnalyzer(jdb.getJdbOutput())
+                    .shouldContain("-Dtest.jdb.vm.opts=vm")
+                    .shouldNotContain("-Dtest.jdb.java.opts=java");
+        }
+
         // the simplest case
         test("-connect",
                 "com.sun.jdi.CommandLineLaunch:vmexec=java,options=-client -XX:+PrintVMOptions"
