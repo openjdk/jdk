@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4312961
+ * @bug 4312961 8395702
  * @summary Verify that an instance filter on a MethodEntryRequest works
  *  properly.
  * @author Robert Field/Jim Holmlund
