@@ -48,7 +48,7 @@ struct G1CardSetGroupItem {
 
 using G1CardSetGroupIterator = GrowableArrayIterator<G1CardSetGroupItem>;
 
-// G1CardSetGroup groups regions that share a single G1CardSet.
+// G1CardSetGroup groups regions that share a single G1CardSet and its state.
 //
 // Applications of this grouping are
 // * all young gen regions
@@ -59,6 +59,20 @@ using G1CardSetGroupIterator = GrowableArrayIterator<G1CardSetGroupItem>;
 // The shared card set records remembered set entries for all regions in the group
 // as a whole. No references between these regions are recorded. This saves memory,
 // but requires reclamation of multi-region card set groups together as a single unit.
+//
+// The region's card set state is the state of its card set group (via G1HeapRegionRemSet).
+// A region without a card set group is implicitly untracked. Regions have a backlink
+// to their card set group.
+//
+// During young collection, the backlinks for the collection sets' groups are removed,
+// while the card set groups retain their region lists. The G1CollectedHeap's heap region
+// attribute table contains remembered set state during that time.
+//
+// After the evacuation, evacuation failed regions get new card set groups,
+// and collection set card set groups are either reused for survivor regions (young
+// generation card set group) or deleted (everything else).
+//
+// Verify() checks backlinks, so it will fail during the evacuation.
 class G1CardSetGroup : public CHeapObj<mtGCCardSet>{
   GrowableArray<G1CardSetGroupItem> _items;
 
@@ -79,8 +93,33 @@ public:
   static constexpr uint FirstNonYoungId = YoungId + 1;
   static constexpr uint InvalidId = UINT_MAX;
 
-  G1CardSetGroup();
-  G1CardSetGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id);
+  enum State {
+    Updating,
+    Complete
+  };
+
+private:
+  State _state;
+
+  static const char* _state_strings[];
+  static const char* _short_state_strings[];
+
+public:
+  const char* get_state_str() const { return _state_strings[_state]; }
+  const char* get_short_state_str() const { return _short_state_strings[_state]; }
+
+  State state() const { return _state; }
+
+  bool is_updating() const { return state() == Updating; }
+  bool is_complete() const { return state() == Complete; }
+
+  void set_complete() {
+    precond(_state == State::Updating);
+    _state = State::Complete;
+  }
+
+  G1CardSetGroup(State state);
+  G1CardSetGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id, State state);
   ~G1CardSetGroup() {
     assert(num_regions() == 0, "post condition!");
   }
@@ -116,10 +155,17 @@ public:
     return _card_set.occupied();
   }
 
+  bool has_cards() const {
+    return cards_occupied() != 0;
+  }
+
   // Clear the group-owned card set.
   void clear_card_set();
 
-  void clear(bool uninstall_card_set_group = false);
+  // Clear the card set and region list, preserving the state.
+  // If clear_backlinks is true, also clear the backlinks; if false
+  // the backlinks must not refer to this group any more.
+  void clear(bool clear_backlinks = false);
 
   G1CardSetGroupIterator begin() const {
     return _items.begin();
@@ -138,6 +184,9 @@ public:
   // The passed closure must be a CardOrRangeVisitor.
   template <class CardOrRangeVisitor>
   inline void iterate_for_merge(CardOrRangeVisitor& cl);
+
+  // Verifies backlinks. During GC pause the backlinks are temporarily removed.
+  void verify();
 };
 
 using G1CardSetGroupListIterator = GrowableArrayIterator<G1CardSetGroup*>;
@@ -152,18 +201,20 @@ public:
 
   // Delete all groups from the list. The card set group uninstall for regions within
   // the groups could have been done elsewhere (e.g. when adding groups to the
-  // collection set or to the retained card set group list). The uninstall_card_set_group
-  // parameter should be set to true if the card set groups must be uninstalled from
-  // the regions, and their state set to Untracked.
-  void clear(bool uninstall_card_set_group = false);
+  // collection set or to the retained card set group list). The clear_backlinks
+  // parameter should be set to true if the card set groups must be uninstalled (their
+  // backlinks cleared) from the regions.
+  void clear(bool clear_backlinks);
 
-  G1CardSetGroup* at(uint index);
+  G1CardSetGroup* at(uint index) const;
 
   uint length() const { return (uint)_groups.length(); }
 
   uint num_regions() const { return _num_regions.load_relaxed(); }
 
-  void remove_selected(uint count, uint num_regions);
+  // Remove all card set groups from this list without deleting the groups or clearing
+  // the associated card sets.
+  void remove_all();
 
   // Removes any card set groups stored in this and in the other list. The other
   // list may only contain card set groups in this list, sorted by gc efficiency. The
@@ -176,11 +227,7 @@ public:
 
   void sort_by_efficiency();
 
-  GrowableArray<G1CardSetGroup*>*  groups() {
-    return &_groups;
-  }
-
-  void verify() const PRODUCT_RETURN;
+  void verify() const;
 
   G1CardSetGroupListIterator begin() const {
     return _groups.begin();
@@ -192,6 +239,9 @@ public:
 
   template<typename Func>
   void iterate(Func&& f) const;
+
+  template<typename Func>
+  void iterate_regions(Func&& f) const;
 };
 
 #endif /* SHARE_GC_G1_G1CARDSETGROUP_HPP */

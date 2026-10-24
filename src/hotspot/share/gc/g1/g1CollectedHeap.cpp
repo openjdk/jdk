@@ -253,10 +253,6 @@ void G1CollectedHeap::set_humongous_metadata(G1HeapRegion* first_hr,
   first_hr->hr_clear(false /* clear_space */);
   first_hr->set_starts_humongous(obj_top, words_fillable);
 
-  if (update_remsets) {
-    _policy->remset_tracker()->update_at_allocate(first_hr);
-  }
-
   // Indices of first and last regions in the series.
   uint first = first_hr->hrm_index();
   uint last = first + num_regions - 1;
@@ -266,11 +262,12 @@ void G1CollectedHeap::set_humongous_metadata(G1HeapRegion* first_hr,
     hr = region_at(i);
     hr->hr_clear(false /* clear_space */);
     hr->set_continues_humongous(first_hr);
-    if (update_remsets) {
-      _policy->remset_tracker()->update_at_allocate(hr);
-    }
   }
 
+  if (update_remsets) {
+    ConditionalMutexLocker x(G1RareEvent_lock, SafepointSynchronize::is_at_safepoint(), Mutex::_safepoint_check_flag);
+    G1CollectedHeap::heap()->humongous_card_set_groups()->add_newly_allocated(first_hr);
+  }
   // Up to this point no concurrent thread would have been able to
   // do any scanning on any region in this series. All the top
   // fields still point to bottom, so the intersection between
@@ -2583,7 +2580,9 @@ void G1CollectedHeap::verify_region_attr_is_remset_tracked() {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
       G1HeapRegionAttr attr = g1h->region_attr(r->bottom());
       bool const is_remset_tracked = attr.is_remset_tracked();
-      assert((r->rem_set()->is_tracked() == is_remset_tracked) ||
+       // Card set is tracked in the region attribute table, backlinks were already removed for collection set regions.
+      assert((r->in_collection_set() && !r->rem_set()->has_card_set_group() && is_remset_tracked) ||
+             (r->rem_set()->is_tracked() == is_remset_tracked) ||
              (attr.is_new_survivor() && is_remset_tracked),
              "Region %u (%s) remset tracking status (%s) different to region attribute (%s)",
              r->hrm_index(), r->get_type_str(), BOOL_TO_STR(r->rem_set()->is_tracked()), BOOL_TO_STR(is_remset_tracked));
@@ -2888,7 +2887,6 @@ void G1CollectedHeap::free_region(G1HeapRegion* hr, G1FreeRegionList* free_list)
   // Reset region metadata to allow reuse.
   hr->hr_clear(true /* clear_space */);
   concurrent_mark()->reset_region_marking_state(hr);
-  _policy->remset_tracker()->update_at_free(hr);
 
   if (free_list != nullptr) {
     free_list->add_ordered(hr);
@@ -3195,9 +3193,8 @@ G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegio
       register_new_survivor_region_with_region_attr(new_alloc_region);
     } else {
       new_alloc_region->set_old();
-      // Update remembered set state.
-      _policy->remset_tracker()->update_at_allocate(new_alloc_region);
-      // Synchronize with region attribute table.
+      // Old regions do not get a card set group assigned by default. Synchronize with
+      // region attribute table.
       update_region_attr(new_alloc_region);
     }
 
