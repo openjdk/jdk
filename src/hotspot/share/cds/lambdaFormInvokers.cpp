@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,9 @@
  */
 
 #include "cds/aotClassFilter.hpp"
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
@@ -31,10 +33,10 @@
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/klassFactory.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
@@ -52,7 +54,7 @@
 #include "runtime/mutexLocker.hpp"
 
 GrowableArrayCHeap<char*, mtClassShared>* LambdaFormInvokers::_lambdaform_lines = nullptr;
-Array<u4>*  LambdaFormInvokers::_static_archive_invokers = nullptr;
+Array<AOTCompressedPointers::narrowPtr>*  LambdaFormInvokers::_static_archive_invokers = nullptr;
 static bool _stop_appending = false;
 
 #define NUM_FILTER 4
@@ -142,7 +144,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
 
   HandleMark hm(THREAD);
   int len = _lambdaform_lines->length();
-  objArrayHandle list_lines = oopFactory::new_objArray_handle(vmClasses::String_klass(), len, CHECK);
+  refArrayHandle list_lines = oopFactory::new_refArray_handle(vmClasses::String_klass(), len, CHECK);
   for (int i = 0; i < len; i++) {
     Handle h_line = java_lang_String::create_from_str(_lambdaform_lines->at(i), CHECK);
     list_lines->obj_at_put(i, h_line());
@@ -171,7 +173,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
     return;
   }
 
-  objArrayHandle h_array(THREAD, (objArrayOop)result.get_oop());
+  refArrayHandle h_array(THREAD, oop_cast<refArrayOop>(result.get_oop()));
   int sz = h_array->length();
   assert(sz % 2 == 0 && sz >= 2, "Must be even size of length");
   for (int i = 0; i < sz; i+= 2) {
@@ -192,7 +194,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
         // Fake it, so that it will be included into the archive.
         klass->set_shared_classpath_index(0);
         // Set the "generated" bit, so it won't interfere with JVMTI.
-        // See SystemDictionaryShared::find_builtin_class().
+        // See AOTSystemDictionary::find_builtin_class().
         klass->set_is_aot_generated_class();
       }
     } else {
@@ -222,6 +224,9 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
                                                    cl_info,
                                                    CHECK);
 
+  // The result InstanceKlass* is never used during the JVM process lifetime.
+  // We create it only for writing to the CDS archive, and so it need not be monitored by JVMTI or JFR.
+
   assert(result->java_mirror() != nullptr, "must be");
   RegeneratedClasses::add_class(InstanceKlass::cast(klass), result);
 
@@ -234,7 +239,7 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
   result->set_is_aot_generated_class();
   if (!klass->in_aot_cache()) {
     log_info(aot, lambda)("regenerate_class excluding klass %s %s", class_name, klass->name()->as_C_string());
-    SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
+    AOTSystemDictionary::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
   }
   log_info(aot, lambda)("Regenerated class %s, old: " INTPTR_FORMAT " new: " INTPTR_FORMAT,
                  class_name, p2i(klass), p2i(result));
@@ -252,7 +257,7 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
       }
     }
     if (count > 0) {
-      _static_archive_invokers = ArchiveBuilder::new_ro_array<u4>(count);
+      _static_archive_invokers = ArchiveBuilder::new_ro_array<narrowPtr>(count);
       int index = 0;
       for (int i = 0; i < len; i++) {
         char* str = _lambdaform_lines->at(i);
@@ -261,7 +266,7 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
           Array<char>* line = ArchiveBuilder::new_ro_array<char>((int)str_len);
           strncpy(line->adr_at(0), str, str_len);
 
-          _static_archive_invokers->at_put(index, ArchiveBuilder::current()->any_to_offset_u4(line));
+          _static_archive_invokers->at_put(index, AOTCompressedPointers::encode_not_null(line));
           index++;
         }
       }
@@ -274,8 +279,8 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
 void LambdaFormInvokers::read_static_archive_invokers() {
   if (_static_archive_invokers != nullptr) {
     for (int i = 0; i < _static_archive_invokers->length(); i++) {
-      u4 offset = _static_archive_invokers->at(i);
-      Array<char>* line = ArchiveUtils::offset_to_archived_address<Array<char>*>(offset);
+      narrowPtr encoded = _static_archive_invokers->at(i);
+      Array<char>* line = AOTCompressedPointers::decode_not_null<Array<char>*>(encoded);
       char* str = line->adr_at(0);
       append(str);
     }

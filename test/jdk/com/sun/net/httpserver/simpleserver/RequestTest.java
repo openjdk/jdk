@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Tests for Request
- * @run testng RequestTest
+ * @run junit RequestTest
  */
 
 import java.io.InputStream;
@@ -35,9 +35,10 @@ import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
 import com.sun.net.httpserver.*;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
 
 public class RequestTest {
 
@@ -46,8 +47,8 @@ public class RequestTest {
         var headers = new Headers();
         Request request = new TestHttpExchange(headers);
         request = request.with("Foo", List.of("Bar"));
-        assertEquals(request.getRequestHeaders().size(), 1);
-        assertEquals(request.getRequestHeaders().get("Foo"), List.of("Bar"));
+        assertEquals(1, request.getRequestHeaders().size());
+        assertEquals(List.of("Bar"), request.getRequestHeaders().get("Foo"));
         assertReadOnly(request.getRequestHeaders());
     }
 
@@ -57,9 +58,9 @@ public class RequestTest {
         headers.add("Foo", "Bar");
         Request request = new TestHttpExchange(headers);
         request = request.with("X-Foo", List.of("Bar"));
-        assertEquals(request.getRequestHeaders().size(), 2);
-        assertEquals(request.getRequestHeaders().get("Foo"), List.of("Bar"));
-        assertEquals(request.getRequestHeaders().get("X-Foo"), List.of("Bar"));
+        assertEquals(2, request.getRequestHeaders().size());
+        assertEquals(List.of("Bar"), request.getRequestHeaders().get("Foo"));
+        assertEquals(List.of("Bar"), request.getRequestHeaders().get("X-Foo"));
         assertReadOnly(request.getRequestHeaders());
     }
 
@@ -70,8 +71,8 @@ public class RequestTest {
         headers.add(headerName, "Bar");
         Request request = new TestHttpExchange(headers);
         request = request.with(headerName, List.of("blahblahblah"));
-        assertEquals(request.getRequestHeaders().size(), 1);
-        assertEquals(request.getRequestHeaders().get(headerName), List.of("Bar"));
+        assertEquals(1, request.getRequestHeaders().size());
+        assertEquals(List.of("Bar"), request.getRequestHeaders().get(headerName));
         assertReadOnly(request.getRequestHeaders());
     }
 
@@ -83,11 +84,11 @@ public class RequestTest {
         request = request.with("Larry", List.of("a"))
                          .with("Curly", List.of("b"))
                          .with("Moe",   List.of("c"));
-        assertEquals(request.getRequestHeaders().size(), 4);
-        assertEquals(request.getRequestHeaders().getFirst("Foo"), "Bar");
-        assertEquals(request.getRequestHeaders().getFirst("Larry"), "a");
-        assertEquals(request.getRequestHeaders().getFirst("Curly"), "b");
-        assertEquals(request.getRequestHeaders().getFirst("Moe"  ), "c");
+        assertEquals(4, request.getRequestHeaders().size());
+        assertEquals("Bar", request.getRequestHeaders().getFirst("Foo"));
+        assertEquals("a", request.getRequestHeaders().getFirst("Larry"));
+        assertEquals("b", request.getRequestHeaders().getFirst("Curly"));
+        assertEquals("c", request.getRequestHeaders().getFirst("Moe"  ));
         assertReadOnly(request.getRequestHeaders());
     }
 

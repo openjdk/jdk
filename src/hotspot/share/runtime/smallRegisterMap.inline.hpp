@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,26 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_SMALLREGISTERMAP_HPP
-#define SHARE_RUNTIME_SMALLREGISTERMAP_HPP
+#ifndef SHARE_RUNTIME_SMALLREGISTERMAP_INLINE_HPP
+#define SHARE_RUNTIME_SMALLREGISTERMAP_INLINE_HPP
 
 #include "utilities/macros.hpp"
 
 #include CPU_HEADER_INLINE(smallRegisterMap)
 
-#endif // SHARE_RUNTIME_SMALLREGISTERMAP_HPP
+typedef SmallRegisterMapType<false> SmallRegisterMapNoArgs;
+typedef SmallRegisterMapType<true>  SmallRegisterMapWithArgs;
+
+class SmallRegisterMap : AllStatic {
+public:
+  static const SmallRegisterMapNoArgs* instance_no_args() {
+    static constexpr SmallRegisterMapNoArgs the_instance{};
+    return &the_instance;
+  }
+  static const SmallRegisterMapWithArgs* instance_with_args() {
+    static constexpr SmallRegisterMapWithArgs the_instance_with_args{};
+    return &the_instance_with_args;
+  }
+};
+
+#endif // SHARE_RUNTIME_SMALLREGISTERMAP_INLINE_HPP

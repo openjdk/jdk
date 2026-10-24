@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8171319 8177569 8182879 8172404
+ * @bug 8171319 8177569 8182879 8172404 8353749
  * @summary keytool should print out warnings when reading or generating
   *         cert/cert req using weak algorithms
  * @library /test/lib
@@ -226,7 +226,8 @@ public class WeakAlg {
 
         // No warning for cacerts, all certs
         kt0("-cacerts -list -storepass changeit")
-                .shouldNotContain("proprietary format");
+                .shouldNotContain("outdated cryptographic algorithms")
+                .shouldNotContain("keytool -importkeystore -srckeystore");
 
         rm("ks");
         rm("ks2");
@@ -242,7 +243,10 @@ public class WeakAlg {
 
         // warn if migrating to JKS
         importkeystore("ks", "ks2", "-deststoretype jks")
-                .shouldContain("JKS keystore uses a proprietary format");
+                .shouldContain("JKS uses outdated cryptographic algorithms" +
+                        " and will be removed")
+                .shouldMatch("keytool -importkeystore -srckeystore." +
+                        "*-destkeystore.*-deststoretype pkcs12");
 
         rm("ks");
         rm("ks2");
@@ -252,17 +256,35 @@ public class WeakAlg {
         kt("-importcert -alias b -file a.crt -storetype jks -noprompt")
                 .shouldNotContain("Warning:");
         kt("-genkeypair -keyalg DSA -alias a -dname CN=A")
-                .shouldContain("JKS keystore uses a proprietary format");
+                .shouldContain("JKS uses outdated cryptographic algorithms" +
+                        " and will be removed")
+                .shouldMatch("keytool -importkeystore -srckeystore." +
+                        "*-destkeystore.*-deststoretype pkcs12");
         kt("-list")
-                .shouldContain("JKS keystore uses a proprietary format");
+                .shouldContain("JKS uses outdated cryptographic algorithms" +
+                        " and will be removed")
+                .shouldMatch("keytool -importkeystore -srckeystore." +
+                        "*-destkeystore.*-deststoretype pkcs12");
         kt("-list -storetype pkcs12") // warn if JKS used as PKCS12
-                .shouldContain("JKS keystore uses a proprietary format");
+                .shouldContain("JKS uses outdated cryptographic algorithms" +
+                        " and will be removed")
+                .shouldMatch("keytool -importkeystore -srckeystore." +
+                        "*-destkeystore.*-deststoretype pkcs12");
         kt("-exportcert -alias a -file a.crt")
-                .shouldContain("JKS keystore uses a proprietary format");
+                .shouldContain("JKS uses outdated cryptographic algorithms" +
+                        " and will be removed")
+                .shouldMatch("keytool -importkeystore -srckeystore." +
+                        "*-destkeystore.*-deststoretype pkcs12");
         kt("-printcert -file a.crt") // warning since -keystore option is supported
-                .shouldContain("JKS keystore uses a proprietary format");
+                .shouldContain("JKS uses outdated cryptographic algorithms" +
+                        " and will be removed")
+                .shouldMatch("keytool -importkeystore -srckeystore." +
+                        "*-destkeystore.*-deststoretype pkcs12");
         kt("-certreq -alias a -file a.req")
-                .shouldContain("JKS keystore uses a proprietary format");
+                .shouldContain("JKS uses outdated cryptographic algorithms" +
+                        " and will be removed")
+                .shouldMatch("keytool -importkeystore -srckeystore." +
+                        "*-destkeystore.*-deststoretype pkcs12");
         kt("-printcertreq -file a.req") // no warning if keystore not touched
                 .shouldNotContain("Warning:");
 
@@ -276,21 +298,42 @@ public class WeakAlg {
         rm("ks");
 
         kt("-genkeypair -keyalg DSA -alias a -dname CN=A -storetype jceks")
-                .shouldContain("JCEKS keystore uses a proprietary format");
+                .shouldContain("JCEKS uses outdated cryptographic algorithms" +
+                        " and will be removed")
+                .shouldMatch("keytool -importkeystore -srckeystore." +
+                        "*-destkeystore.*-deststoretype pkcs12");
         kt("-list")
-                .shouldContain("JCEKS keystore uses a proprietary format");
+                .shouldContain("JCEKS uses outdated cryptographic algorithms" +
+                        " and will be removed")
+                .shouldMatch("keytool -importkeystore -srckeystore." +
+                        "*-destkeystore.*-deststoretype pkcs12");
         kt("-importcert -alias b -file a.crt -noprompt")
-                .shouldContain("JCEKS keystore uses a proprietary format");
+                .shouldContain("JCEKS uses outdated cryptographic algorithms" +
+                        " and will be removed")
+                .shouldMatch("keytool -importkeystore -srckeystore." +
+                        "*-destkeystore.*-deststoretype pkcs12");
         kt("-exportcert -alias a -file a.crt")
-                .shouldContain("JCEKS keystore uses a proprietary format");
+                .shouldContain("JCEKS uses outdated cryptographic algorithms" +
+                        " and will be removed")
+                .shouldMatch("keytool -importkeystore -srckeystore." +
+                        "*-destkeystore.*-deststoretype pkcs12");
         kt("-printcert -file a.crt") // warning since -keystore option is supported
-                .shouldContain("JCEKS keystore uses a proprietary format");
+                .shouldContain("JCEKS uses outdated cryptographic algorithms" +
+                        " and will be removed")
+                .shouldMatch("keytool -importkeystore -srckeystore." +
+                        "*-destkeystore.*-deststoretype pkcs12");
         kt("-certreq -alias a -file a.req")
-                .shouldContain("JCEKS keystore uses a proprietary format");
+                .shouldContain("JCEKS uses outdated cryptographic algorithms" +
+                        " and will be removed")
+                .shouldMatch("keytool -importkeystore -srckeystore." +
+                        "*-destkeystore.*-deststoretype pkcs12");
         kt("-printcertreq -file a.req")
                 .shouldNotContain("Warning:");
         kt("-genseckey -alias c -keyalg AES -keysize 128")
-                .shouldContain("JCEKS keystore uses a proprietary format");
+                .shouldContain("JCEKS uses outdated cryptographic algorithms" +
+                        " and will be removed")
+                .shouldMatch("keytool -importkeystore -srckeystore." +
+                        "*-destkeystore.*-deststoretype pkcs12");
     }
 
     static void checkImportKeyStore() throws Exception {
@@ -336,7 +379,10 @@ public class WeakAlg {
         // Migration
         importkeystore("ks", "ks", "-deststoretype jks")
                 .shouldContain("Warning:")
-                .shouldContain("JKS keystore uses a proprietary format")
+                .shouldContain("JKS uses outdated cryptographic algorithms" +
+                        " and will be removed")
+                .shouldMatch("keytool -importkeystore -srckeystore." +
+                        "*-destkeystore.*-deststoretype pkcs12")
                 .shouldMatch("Migrated.*JKS.*PKCS12.*ks.old5");
 
         Asserts.assertEQ(
@@ -346,7 +392,9 @@ public class WeakAlg {
 
         importkeystore("ks", "ks", "-srcstoretype PKCS12")
                 .shouldContain("Warning:")
-                .shouldNotContain("proprietary format")
+                .shouldNotContain("outdated cryptographic algorithms")
+                .shouldNotMatch("keytool -importkeystore -srckeystore." +
+                        "*-destkeystore.*-deststoretype pkcs12")
                 .shouldMatch("Migrated.*PKCS12.*JKS.*ks.old6");
 
         Asserts.assertEQ(
@@ -702,7 +750,7 @@ public class WeakAlg {
             oa.shouldNotContain("Warning");
         } else {
             oa.shouldContain("Warning")
-                    .shouldMatch("The certificate.*" + bad + ".*is disabled");
+                    .shouldMatch("uses.*" + bad + ".*is disabled");
         }
 
         // With cert content
@@ -722,7 +770,7 @@ public class WeakAlg {
         } else {
             oa.shouldContain("Warning")
                     .shouldContain(bad + " (disabled)")
-                    .shouldMatch("The certificate.*" + bad + ".*is disabled");
+                    .shouldMatch("uses.*" + bad + ".*is disabled");
         }
     }
 
@@ -796,11 +844,11 @@ public class WeakAlg {
                 break;
             case "SHA1withRSA":
                 oa.shouldContain("Warning")
-                        .shouldMatch("The certificate.*" + bad + ".*considered a security risk");
+                        .shouldMatch("uses.*" + bad + ".*considered a security risk");
                 break;
             case "1024-bit RSA key":
                 oa.shouldContain("Warning")
-                        .shouldMatch("The certificate.*" + bad + ".*will be disabled");
+                        .shouldMatch("uses.*" + bad + ".*will be disabled");
                 break;
         }
 
@@ -831,12 +879,12 @@ public class WeakAlg {
             case "SHA1withRSA":
                 oa.shouldContain("Warning")
                         .shouldContain(bad + " (weak)")
-                        .shouldMatch("The certificate.*" + bad + ".*considered a security risk");
+                        .shouldMatch("uses.*" + bad + ".*considered a security risk");
                 break;
             case "1024-bit RSA key":
                 oa.shouldContain("Warning")
                         .shouldContain(bad + " (weak)")
-                        .shouldMatch("The certificate.*" + bad + ".*will be disabled");
+                        .shouldMatch("uses.*" + bad + ".*will be disabled");
                 break;
         }
     }

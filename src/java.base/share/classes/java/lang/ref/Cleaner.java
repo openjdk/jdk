@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,9 +218,11 @@ public final class Cleaner {
      * @param obj   the object to monitor
      * @param action a {@code Runnable} to invoke when the object becomes phantom reachable
      * @return a {@code Cleanable} instance
+     * @throws IdentityException if the object is not an
+     *         {@link java.util.Objects#hasIdentity(Object) identity object}
      */
     public Cleanable register(@jdk.internal.RequiresIdentity Object obj, Runnable action) {
-        Objects.requireNonNull(obj, "obj");
+        Objects.requireIdentity(obj, "obj");
         Objects.requireNonNull(action, "action");
         return new CleanerImpl.PhantomCleanableRef(obj, this, action);
     }

@@ -65,7 +65,7 @@
 			<!-- The following have not yet made it to Basic -->
 			<variable id='$languageNonTcLtBasic' type='choice'>
 				 aa ab agq ak an ann apc arn asa
-				 ba bal bas bem bew bez bgn blt bm bo bss byn
+				 ba bal bas bem bew bez bgn blt bm bo bqi bss byn bua
 				 cad cch ccp ce cgg cho cic ckb co cop cu
 				 dav dje dua dv dyo dz
 				 ebu ee ewo
@@ -74,15 +74,15 @@
 				 haw hnj ht
 				 ii io iu
 				 jbo jgo jmc
-				 kaa kab kaj kam kcg kde ken khq ki kkj kl kln kpe ksb ksf ksh kw
-				 la lag lg lkt lld ln lrc ltg lu luo luy
-				 mas mdf mer mfe mhn mg mgh mgo mic moh mua mus myv mzn
-				 naq nb nd nmg nnh nr nso nus nv ny nyn om
-				 os osa
-				 pap pis
+				 kaa kab kaj kam kcg kde kek ken khq ki kkj kl kln kpe ksb ksf ksh kw
+				 la lag lg lkt lld ln lrc ltg lu luo luy lzz
+				 mas mdf mer mfe mhn mg mgh mgo mic moh mua mus mww myv mzn
+				 nan naq nb nd nmg nnh nr nso nus nv ny nyn om
+				 oka os osa
+				 pap pi pis pms
 				 quc
 				 rhg rif rn rof rw rwk
-				 saq sbp scn sdh se seh ses sg shi shn sid skr sma smj smn sms sn ss ssy st
+				 saq sbp scn sdh se seh ses sg sgs shi shn sid skr sma smj smn sms sn ss ssy st suz
 				 teo tig tn tok tpi trv trw ts twq tyv tzm
 				 vai ve vo vun
 				 wa wae wal wbp
@@ -146,7 +146,7 @@
 				Maldivian Mongolian Oriya Pashto Persian Pinyin Russian Serbian Simplified Syriac Tamil Telugu Thai ThaiLogical Turkmen Ukrainian Uzbek az ch cs
 				cs_FONIPA dsb el es es_419 es_FONIPA it ja_Latn la lt nl pl pl_FONIPA ro ro_FONIPA ru sk sk_FONIPA tlh tr ug uz_Cyrl yo zh_Latn_PINYIN ASCII
 				Accents Armenian Bengali Bopomofo CanadianAboriginal ConjoiningJamo Devanagari Ethiopic Gujarati Gurmukhi Halfwidth Hangul InterIndic Jamo Kannada
-				Katakana Latin Lower Malayalam NumericPinyin Oriya Publishing Spacedhan Tamil Telugu Thaana Thai ThaiLogical ThaiSemi Title Traditional Upper
+				Katakana Latin Lower Malayalam NumericPinyin Oriya Publishing Spacedhan Sunuwar Tamil Telugu Thaana Thai ThaiLogical ThaiSemi Title Traditional Upper
 				XSampa am ch_FONIPA cs_FONIPA dsb_FONIPA es_419_FONIPA es_FONIPA ja ko la_FONIPA pl_FONIPA ro_FONIPA ru sk_FONIPA tlh_FONIPA uz_Latn yo_BJ zh</variable>
 			<attributeValues attributes='alt' type='choice'>$alt</attributeValues>
 			<attributeValues attributes='_q' type='choice'>$integer</attributeValues>
@@ -193,7 +193,6 @@
 			<attributeValues dtds='supplementalData' elements='info' attributes='rounding' type='regex'>[0-9]+</attributeValues>
 			<attributeValues dtds='ldml' elements='key' attributes='type'>$_bcp47_keys</attributeValues>
 			<attributeValues dtds='supplementalData' elements='language' attributes='scripts' type='list'>$_script</attributeValues>
-			<attributeValues dtds='supplementalData' elements='language' attributes='territories' type='list'>$_region</attributeValues>
 			<attributeValues dtds='ldml' elements='language' attributes='type'>$localeOrDeprecated</attributeValues>
 			<attributeValues dtds='supplementalData' elements='language' attributes='variants'>$_variant</attributeValues>
 			<attributeValues dtds='supplementalData' elements='languageAlias' attributes='replacement' type='locale'/>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,16 @@
  *
  */
 
-#include "cds/archiveHeapLoader.hpp"
+#include "cds/aotHeap.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/cppVtables.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -58,6 +58,10 @@
 #include "utilities/rotate_bits.hpp"
 #include "utilities/stack.inline.hpp"
 
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
+
 void Klass::set_java_mirror(Handle m) {
   assert(!m.is_null(), "New mirror should never be null.");
   assert(_java_mirror.is_empty(), "should only be used to initialize mirror");
@@ -67,17 +71,6 @@ void Klass::set_java_mirror(Handle m) {
 bool Klass::is_cloneable() const {
   return _misc_flags.is_cloneable_fast() ||
          is_subtype_of(vmClasses::Cloneable_klass());
-}
-
-void Klass::set_is_cloneable() {
-  if (name() == vmSymbols::java_lang_invoke_MemberName()) {
-    assert(is_final(), "no subclasses allowed");
-    // MemberName cloning should not be intrinsified and always happen in JVM_Clone.
-  } else if (is_instance_klass() && InstanceKlass::cast(this)->reference_type() != REF_NONE) {
-    // Reference cloning should not be intrinsified and always happen in JVM_Clone.
-  } else {
-    _misc_flags.set_is_cloneable_fast(true);
-  }
 }
 
 uint8_t Klass::compute_hash_slot(Symbol* n) {
@@ -142,7 +135,7 @@ void Klass::set_name(Symbol* n) {
   }
 
   if (CDSConfig::is_dumping_archive() && is_instance_klass()) {
-    SystemDictionaryShared::init_dumptime_info(InstanceKlass::cast(this));
+    AOTSystemDictionary::init_dumptime_info(InstanceKlass::cast(this));
   }
 }
 
@@ -252,6 +245,10 @@ void Klass::initialize(TRAPS) {
   ShouldNotReachHere();
 }
 
+void Klass::initialize_preemptable(TRAPS) {
+  ShouldNotReachHere();
+}
+
 Klass* Klass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
 #ifdef ASSERT
   tty->print_cr("Error: find_field called on a klass oop."
@@ -274,20 +271,6 @@ Method* Klass::uncached_lookup_method(const Symbol* name, const Symbol* signatur
   return nullptr;
 }
 
-static markWord make_prototype(const Klass* kls) {
-  markWord prototype = markWord::prototype();
-#ifdef _LP64
-  if (UseCompactObjectHeaders) {
-    // With compact object headers, the narrow Klass ID is part of the mark word.
-    // We therefore seed the mark word with the narrow Klass ID.
-    precond(CompressedKlassPointers::is_encodable(kls));
-    const narrowKlass nk = CompressedKlassPointers::encode(const_cast<Klass*>(kls));
-    prototype = prototype.set_narrow_klass(nk);
-  }
-#endif
-  return prototype;
-}
-
 void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
   return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
 }
@@ -300,9 +283,9 @@ Klass::Klass() : _kind(UnknownKlassKind) {
 // which zeros out memory - calloc equivalent.
 // The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
-Klass::Klass(KlassKind kind) : _kind(kind),
-                               _prototype_header(make_prototype(this)),
+Klass::Klass(KlassKind kind, markWord prototype_header) : _kind(kind),
                                _shared_class_path_index(-1) {
+  set_prototype_header(make_prototype_header(this, prototype_header));
   CDS_ONLY(_aot_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
   _primary_supers[0] = this;
@@ -315,12 +298,12 @@ jint Klass::array_layout_helper(BasicType etype) {
   int  hsize = arrayOopDesc::base_offset_in_bytes(etype);
   int  esize = type2aelembytes(etype);
   bool isobj = (etype == T_OBJECT);
-  int  tag   =  isobj ? _lh_array_tag_obj_value : _lh_array_tag_type_value;
-  int lh = array_layout_helper(tag, hsize, etype, exact_log2(esize));
+  int  tag   =  isobj ? _lh_array_tag_ref_value : _lh_array_tag_type_value;
+  int lh = array_layout_helper(tag, false, hsize, etype, exact_log2(esize));
 
   assert(lh < (int)_lh_neutral_value, "must look like an array layout");
   assert(layout_helper_is_array(lh), "correct kind");
-  assert(layout_helper_is_objArray(lh) == isobj, "correct kind");
+  assert(layout_helper_is_refArray(lh) == isobj, "correct kind");
   assert(layout_helper_is_typeArray(lh) == !isobj, "correct kind");
   assert(layout_helper_header_size(lh) == hsize, "correct decode");
   assert(layout_helper_element_type(lh) == etype, "correct decode");
@@ -843,9 +826,9 @@ void Klass::remove_java_mirror() {
         assert(InstanceKlass::cast(k)->defined_by_other_loaders(), "sanity");
       }
     } else {
-      oop scratch_mirror = HeapShared::scratch_java_mirror(orig_mirror);
+      oop scratch_mirror = AOTHeap::scratch_java_mirror(orig_mirror);
       if (scratch_mirror != nullptr) {
-        _archived_mirror_index = HeapShared::append_root(scratch_mirror);
+        _archived_mirror_index = AOTHeap::append_root(scratch_mirror);
       }
     }
   }
@@ -859,7 +842,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   assert(is_klass(), "ensure C++ vtable is restored");
   assert(in_aot_cache(), "must be set");
   assert(secondary_supers()->length() >= (int)population_count(_secondary_supers_bitmap), "must be");
-  JFR_ONLY(RESTORE_ID(this);)
+  JFR_ONLY(Jfr::on_restoration(this, THREAD);)
   if (log_is_enabled(Trace, aot, unshareable)) {
     ResourceMark rm(THREAD);
     oop class_loader = loader_data->class_loader();
@@ -873,6 +856,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   if (class_loader_data() == nullptr) {
     set_class_loader_data(loader_data);
   }
+
   // Add to class loader list first before creating the mirror
   // (same order as class file parsing)
   loader_data->add_class(this);
@@ -896,7 +880,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);
     log_debug(aot, mirror)("%s has raw archived mirror", external_name());
-    if (ArchiveHeapLoader::is_in_use()) {
+    if (AOTHeap::is_archived_heap_in_use()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
                                                               protection_domain,
                                                               CHECK);
@@ -924,12 +908,12 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
 #if INCLUDE_CDS_JAVA_HEAP
 oop Klass::archived_java_mirror() {
   assert(has_archived_mirror_index(), "must have archived mirror");
-  return HeapShared::get_root(_archived_mirror_index);
+  return AOTHeap::get_root(_archived_mirror_index);
 }
 
 void Klass::clear_archived_mirror_index() {
   if (_archived_mirror_index >= 0) {
-    HeapShared::clear_root(_archived_mirror_index);
+    AOTHeap::clear_root(_archived_mirror_index);
   }
   _archived_mirror_index = -1;
 }
@@ -1019,8 +1003,6 @@ void Klass::print_on(outputStream* st) const {
   st->cr();
 }
 
-#define BULLET  " - "
-
 // Caller needs ResourceMark
 void Klass::oop_print_on(oop obj, outputStream* st) {
   // print title
@@ -1031,16 +1013,14 @@ void Klass::oop_print_on(oop obj, outputStream* st) {
      // print header
      obj->mark().print_on(st);
      st->cr();
-     if (UseCompactObjectHeaders) {
-       st->print(BULLET"prototype_header: " INTPTR_FORMAT, _prototype_header.value());
-       st->cr();
-     }
+     st->print(" - prototype_header: " INTPTR_FORMAT, _prototype_header.value());
+     st->cr();
   }
 
   // print class
-  st->print(BULLET"klass: ");
+  st->print(" - klass: ");
   obj->klass()->print_value_on(st);
-  st->print(BULLET"flags: "); _misc_flags.print_on(st); st->cr();
+  st->print(" - flags: "); _misc_flags.print_on(st); st->cr();
   st->cr();
 }
 
@@ -1057,14 +1037,8 @@ void Klass::verify_on(outputStream* st) {
 
   // This can be expensive, but it is worth checking that this klass is actually
   // in the CLD graph but not in production.
-#ifdef ASSERT
-  if (UseCompressedClassPointers) {
-    // Stricter checks for both correct alignment and placement
-    CompressedKlassPointers::check_encodable(this);
-  } else {
-    assert(Metaspace::contains((address)this), "Should be");
-  }
-#endif // ASSERT
+  // Stricter checks for both correct alignment and placement
+  DEBUG_ONLY(CompressedKlassPointers::check_encodable(this));
 
   guarantee(this->is_klass(),"should be klass");
 
@@ -1092,6 +1066,40 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(obj->klass()->is_klass(), "klass field is not a klass");
 }
 
+#ifdef ASSERT
+void Klass::validate_array_description(const ArrayDescription& ad) {
+  if (is_identity_class() || is_array_klass() || is_interface() ||
+      (is_instance_klass() && InstanceKlass::cast(this)->access_flags().is_abstract())) {
+    assert(ad._layout_kind == LayoutKind::REFERENCE, "Cannot support flattening");
+    assert(ad._kind == KlassKind::RefArrayKlassKind, "Must be a reference array");
+  } else {
+    assert(is_value_klass(), "Must be");
+    ValueKlass* vk = ValueKlass::cast(this);
+    switch(ad._layout_kind) {
+      case LayoutKind::BUFFERED:
+        fatal("Invalid layout for an array");
+        break;
+      case LayoutKind::NULL_FREE_ATOMIC_FLAT:
+        assert(vk->has_null_free_atomic_layout(), "Sanity check");
+        break;
+      case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
+        assert(vk->has_null_free_non_atomic_layout(), "Sanity check");
+        break;
+      case LayoutKind::NULLABLE_ATOMIC_FLAT:
+        assert(vk->has_nullable_atomic_layout(), "Sanity check");
+        break;
+      case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
+        assert(vk->has_nullable_non_atomic_layout(), "Sanity check)");
+        break;
+      case LayoutKind::REFERENCE:
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  }
+}
+#endif // ASSERT
+
 // Note: this function is called with an address that may or may not be a Klass.
 // The point is not to assert it is but to check if it could be.
 bool Klass::is_valid(Klass* k) {
@@ -1104,6 +1112,23 @@ bool Klass::is_valid(Klass* k) {
   if (!Symbol::is_valid(k->name())) return false;
   return ClassLoaderDataGraph::is_valid(k->class_loader_data());
 }
+
+#if INCLUDE_CDS
+// Check that this pointer is valid by checking that the vtbl pointer matches
+bool Klass::is_valid_aot_klass(const Klass* k) {
+  if (k == nullptr) {
+    return false;
+  } else if (!is_aligned(k, sizeof(MetaWord))) {
+    // Quick sanity check on pointer.
+    return false;
+  } else if (!os::is_readable_range(k, k + 1)) {
+    return false;
+  } else if (!k->in_aot_cache()) {
+    return false;
+  }
+  return CppVtables::is_valid_shared_klass(k);
+}
+#endif
 
 Method* Klass::method_at_vtable(int index)  {
 #ifndef PRODUCT

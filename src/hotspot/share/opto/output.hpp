@@ -90,7 +90,6 @@ private:
   Bundle*                _node_bundling_base;    // Information for instruction bundling
 
   // For deopt
-  int                    _orig_pc_slot;
   int                    _orig_pc_slot_offset_in_bytes;
 
   ConstantTable          _constant_table;        // The constant table for this compilation unit.
@@ -109,7 +108,6 @@ public:
   // Convert Nodes to instruction bits and pass off to the VM
   void Output();
   bool need_stack_bang(int frame_size_in_bytes) const;
-  bool need_register_stack_bang() const;
   void compute_loop_first_inst_sizes();
 
   void install_code(ciMethod*         target,
@@ -169,7 +167,6 @@ public:
   // Scratch buffer
   BufferBlob*       scratch_buffer_blob()       { return _scratch_buffer_blob; }
   void         init_scratch_buffer_blob(int const_size);
-  void        clear_scratch_buffer_blob();
   void          set_scratch_buffer_blob(BufferBlob* b) { _scratch_buffer_blob = b; }
   relocInfo*        scratch_locs_memory()       { return _scratch_locs_memory; }
   void          set_scratch_locs_memory(relocInfo* b)  { _scratch_locs_memory = b; }

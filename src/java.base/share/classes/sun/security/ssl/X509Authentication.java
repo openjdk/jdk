@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,9 @@ enum X509Authentication implements SSLAuthentication {
     // Require EC public key
     EC          ("EC",          "EC"),
     // Edwards-Curve key
-    EDDSA       ("EdDSA",       "EdDSA");
+    EDDSA       ("EdDSA",       "EdDSA"),
+    // Require ML-DSA public key
+    MLDSA       ("ML-DSA",      "ML-DSA");
 
     final String keyAlgorithm;
     final String[] keyTypes;
@@ -201,7 +203,7 @@ enum X509Authentication implements SSLAuthentication {
     private static SSLPossession createClientPossession(
             ClientHandshakeContext chc, String[] keyTypes) {
         X509ExtendedKeyManager km = chc.sslContext.getX509KeyManager();
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
             SSLLogger.finest("X509KeyManager class: " +
                     km.getClass().getName());
         }
@@ -243,7 +245,7 @@ enum X509Authentication implements SSLAuthentication {
         }
 
         if (clientAlias == null) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.finest("No X.509 cert selected for "
                         + Arrays.toString(keyTypes));
             }
@@ -252,7 +254,7 @@ enum X509Authentication implements SSLAuthentication {
 
         PrivateKey clientPrivateKey = km.getPrivateKey(clientAlias);
         if (clientPrivateKey == null) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.finest(
                         clientAlias + " is not a private key entry");
             }
@@ -261,7 +263,7 @@ enum X509Authentication implements SSLAuthentication {
 
         X509Certificate[] clientCerts = km.getCertificateChain(clientAlias);
         if ((clientCerts == null) || (clientCerts.length == 0)) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.finest(clientAlias +
                         " is a private key entry with no cert chain stored");
             }
@@ -270,7 +272,7 @@ enum X509Authentication implements SSLAuthentication {
 
         String privateKeyAlgorithm = clientPrivateKey.getAlgorithm();
         if (!Arrays.asList(keyTypes).contains(privateKeyAlgorithm)) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.fine(
                         clientAlias + " private key algorithm " +
                                 privateKeyAlgorithm + " not in request list");
@@ -280,7 +282,7 @@ enum X509Authentication implements SSLAuthentication {
 
         String publicKeyAlgorithm = clientCerts[0].getPublicKey().getAlgorithm();
         if (!privateKeyAlgorithm.equals(publicKeyAlgorithm)) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.fine(
                         clientAlias + " private or public key is not of " +
                                 "same algorithm: " +
@@ -296,7 +298,7 @@ enum X509Authentication implements SSLAuthentication {
     private static SSLPossession createServerPossession(
             ServerHandshakeContext shc, String[] keyTypes) {
         X509ExtendedKeyManager km = shc.sslContext.getX509KeyManager();
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
             SSLLogger.finest("X509KeyManager class: " +
                     km.getClass().getName());
         }
@@ -337,7 +339,7 @@ enum X509Authentication implements SSLAuthentication {
             }
 
             if (serverAlias == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.finest("No X.509 cert selected for " + keyType);
                 }
                 continue;
@@ -345,7 +347,7 @@ enum X509Authentication implements SSLAuthentication {
 
             PrivateKey serverPrivateKey = km.getPrivateKey(serverAlias);
             if (serverPrivateKey == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.finest(
                             serverAlias + " is not a private key entry");
                 }
@@ -354,7 +356,7 @@ enum X509Authentication implements SSLAuthentication {
 
             X509Certificate[] serverCerts = km.getCertificateChain(serverAlias);
             if ((serverCerts == null) || (serverCerts.length == 0)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.finest(
                             serverAlias + " is not a certificate entry");
                 }
@@ -364,7 +366,7 @@ enum X509Authentication implements SSLAuthentication {
             PublicKey serverPublicKey = serverCerts[0].getPublicKey();
             if ((!serverPrivateKey.getAlgorithm().equals(keyType))
                     || (!serverPublicKey.getAlgorithm().equals(keyType))) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.fine(
                             serverAlias + " private or public key is not of " +
                                     keyType + " algorithm");
@@ -379,7 +381,7 @@ enum X509Authentication implements SSLAuthentication {
             if (!shc.negotiatedProtocol.useTLS13PlusSpec() &&
                     keyType.equals("EC")) {
                 if (!(serverPublicKey instanceof ECPublicKey)) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                         SSLLogger.warning(serverAlias +
                                 " public key is not an instance of ECPublicKey");
                     }
@@ -398,7 +400,8 @@ enum X509Authentication implements SSLAuthentication {
                         ((shc.clientRequestedNamedGroups != null) &&
                                 !shc.clientRequestedNamedGroups.contains(namedGroup))) {
 
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                         SSLLogger.warning(
                                 "Unsupported named group (" + namedGroup +
                                         ") used in the " + serverAlias + " certificate");

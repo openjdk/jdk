@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ import compiler.lib.ir_framework.test.TestVM;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /*
@@ -44,7 +46,7 @@ import java.util.stream.Stream;
 public class TestBasics {
     private static boolean wasExecuted = false;
     private boolean lastToggleBoolean = true;
-    private final static int[] executed = new int[100];
+    private final static HashMap<String, Integer> executed = HashMap.newHashMap(100);
     private final static int[] executedOnce = new int[5];
     private long[] nonFloatingRandomNumbers = new long[10];
     private double[] floatingRandomNumbers = new double[10];
@@ -60,12 +62,12 @@ public class TestBasics {
         if (wasExecuted) {
             throw new RuntimeException("Executed non @Test method or a method that was not intended to be run");
         }
-        for (int i = 0; i < executed.length; i++) {
-            int value = executed[i];
+        for (Map.Entry<String, Integer> entry : executed.entrySet()) {
+            int value = entry.getValue();
             if (value != TestVM.WARMUP_ITERATIONS + 1) {
                 // Warmups + 1 C2 compiled invocation
-                throw new RuntimeException("Test " + i + "  was executed " + value + " times instead stead of "
-                                           + (TestVM.WARMUP_ITERATIONS + 1) + " times." );
+                throw new RuntimeException("Test " + entry.getKey() + "  was executed " + value + " times instead stead of "
+                        + (TestVM.WARMUP_ITERATIONS + 1) + " times." );
             }
         }
 
@@ -88,12 +90,6 @@ public class TestBasics {
         randomBooleans = new Boolean[64];
     }
 
-    // Base test, no arguments, directly invoked.
-    @Test
-    public void test() {
-        executed[0]++;
-    }
-
     // Not a test
     public void noTest() {
         wasExecuted = true;
@@ -109,24 +105,19 @@ public class TestBasics {
         wasExecuted = true;
     }
 
-    // Can overload a @Test if it is not a @Test itself.
-    public static void test(double i) {
-        wasExecuted = true;
-    }
-
     @Test
     public static void staticTest() {
-        executed[1]++;
+        executed.merge("staticTest", 1, Integer::sum);
     }
 
     @Test
     public final void finalTest() {
-        executed[2]++;
+        executed.merge("finalTest", 1, Integer::sum);
     }
 
     @Test
     public int returnValueTest() {
-        executed[3]++;
+        executed.merge("returnValueTest", 1, Integer::sum);
         return 4;
     }
 
@@ -135,7 +126,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.DEFAULT)
     public void byteDefaultArgument(byte x) {
-        executed[4]++;
+        executed.merge("byteDefaultArgument", 1, Integer::sum);
         if (x != 0) {
             throw new RuntimeException("Must be 0");
         }
@@ -144,7 +135,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.DEFAULT)
     public void shortDefaultArgument(short x) {
-        executed[5]++;
+        executed.merge("shortDefaultArgument", 1, Integer::sum);
         if (x != 0) {
             throw new RuntimeException("Must be 0");
         }
@@ -153,7 +144,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.DEFAULT)
     public void intDefaultArgument(int x) {
-        executed[6]++;
+        executed.merge("intDefaultArgument", 1, Integer::sum);
         if (x != 0) {
             throw new RuntimeException("Must be 0");
         }
@@ -162,7 +153,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.DEFAULT)
     public void longDefaultArgument(long x) {
-        executed[7]++;
+        executed.merge("longDefaultArgument", 1, Integer::sum);
         if (x != 0L) {
             throw new RuntimeException("Must be 0");
         }
@@ -171,7 +162,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.DEFAULT)
     public void floatDefaultArgument(float x) {
-        executed[8]++;
+        executed.merge("floatDefaultArgument", 1, Integer::sum);
         if (x != 0.0f) {
             throw new RuntimeException("Must be 0.0");
         }
@@ -180,7 +171,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.DEFAULT)
     public void doubleDefaultArgument(double x) {
-        executed[9]++;
+        executed.merge("doubleDefaultArgument", 1, Integer::sum);
         if (x != 0.0f) {
             throw new RuntimeException("Must be 0.0");
         }
@@ -189,7 +180,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.DEFAULT)
     public void charDefaultArgument(char x) {
-        executed[10]++;
+        executed.merge("charDefaultArgument", 1, Integer::sum);
         if (x != '\u0000') {
             throw new RuntimeException("Must be \u0000");
         }
@@ -198,7 +189,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.DEFAULT)
     public void booleanDefaultArgument(boolean x) {
-        executed[11]++;
+        executed.merge("booleanDefaultArgument", 1, Integer::sum);
         if (x) {
             throw new RuntimeException("Must be false");
         }
@@ -207,7 +198,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.DEFAULT)
     public void stringObjectDefaultArgument(String x) {
-        executed[12]++;
+        executed.merge("stringObjectDefaultArgument", 1, Integer::sum);
         if (x == null || x.length() != 0) {
             throw new RuntimeException("Default string object must be non-null and having a length of zero");
         }
@@ -216,7 +207,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.DEFAULT)
     public void defaultObjectDefaultArgument(DefaultObject x) {
-        executed[13]++;
+        executed.merge("defaultObjectDefaultArgument", 1, Integer::sum);
         if (x == null || x.i != 4) {
             throw new RuntimeException("Default object must not be null and its i field must be 4");
         }
@@ -225,7 +216,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.NUMBER_42)
     public void byte42(byte x) {
-        executed[14]++;
+        executed.merge("byte42", 1, Integer::sum);
         if (x != 42) {
             throw new RuntimeException("Must be 42");
         }
@@ -234,7 +225,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.NUMBER_42)
     public void short42(short x) {
-        executed[15]++;
+        executed.merge("short42", 1, Integer::sum);
         if (x != 42) {
             throw new RuntimeException("Must be 42");
         }
@@ -243,7 +234,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.NUMBER_42)
     public void int42(int x) {
-        executed[16]++;
+        executed.merge("int42", 1, Integer::sum);
         if (x != 42) {
             throw new RuntimeException("Must be 42");
         }
@@ -252,7 +243,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.NUMBER_42)
     public void long42(long x) {
-        executed[17]++;
+        executed.merge("long42", 1, Integer::sum);
         if (x != 42) {
             throw new RuntimeException("Must be 42");
         }
@@ -261,7 +252,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.NUMBER_42)
     public void float42(float x) {
-        executed[18]++;
+        executed.merge("float42", 1, Integer::sum);
         if (x != 42.0) {
             throw new RuntimeException("Must be 42");
         }
@@ -270,7 +261,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.NUMBER_42)
     public void double42(double x) {
-        executed[19]++;
+        executed.merge("double42", 1, Integer::sum);
         if (x != 42.0) {
             throw new RuntimeException("Must be 42");
         }
@@ -279,7 +270,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.FALSE)
     public void booleanFalse(boolean x) {
-        executed[20]++;
+        executed.merge("booleanFalse", 1, Integer::sum);
         if (x) {
             throw new RuntimeException("Must be false");
         }
@@ -288,7 +279,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.TRUE)
     public void booleanTrue(boolean x) {
-        executed[21]++;
+        executed.merge("booleanTrue", 1, Integer::sum);
         if (!x) {
             throw new RuntimeException("Must be true");
         }
@@ -297,37 +288,37 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.RANDOM_ONCE)
     public void randomByte(byte x) {
-        executed[22]++;
+        executed.merge("randomByte", 1, Integer::sum);
     }
 
     @Test
     @Arguments(values = Argument.RANDOM_ONCE)
     public void randomShort(short x) {
-        executed[23]++;
+        executed.merge("randomShort", 1, Integer::sum);
     }
 
     @Test
     @Arguments(values = Argument.RANDOM_ONCE)
     public void randomInt(int x) {
-        executed[24]++;
+        executed.merge("randomInt", 1, Integer::sum);
     }
 
     @Test
     @Arguments(values = Argument.RANDOM_ONCE)
     public void randomLong(long x) {
-        executed[25]++;
+        executed.merge("randomLong", 1, Integer::sum);
     }
 
     @Test
     @Arguments(values = Argument.RANDOM_ONCE)
     public void randomFloat(float x) {
-        executed[26]++;
+        executed.merge("randomFloat", 1, Integer::sum);
     }
 
     @Test
     @Arguments(values = Argument.RANDOM_ONCE)
     public void randomDouble(double x) {
-        executed[27]++;
+        executed.merge("randomDouble", 1, Integer::sum);
     }
 
     // Not executed
@@ -338,13 +329,13 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.RANDOM_ONCE)
     public void randomBoolean(boolean x) {
-        executed[28]++;
+        executed.merge("randomBoolean", 1, Integer::sum);
     }
 
     @Test
     @Arguments(values = Argument.BOOLEAN_TOGGLE_FIRST_FALSE)
     public void booleanToggleFirstFalse(boolean x) {
-        if (executed[29] == 0) {
+        if (!executed.containsKey("booleanToggleFirstFalse")) {
             // First invocation
             if (x) {
                 throw new RuntimeException("BOOLEAN_TOGGLE_FIRST_FALSE must be false on first invocation");
@@ -353,63 +344,63 @@ public class TestBasics {
             throw new RuntimeException("BOOLEAN_TOGGLE_FIRST_FALSE did not toggle");
         }
         lastToggleBoolean = x;
-        executed[29]++;
+        executed.merge("booleanToggleFirstFalse", 1, Integer::sum);
     }
 
     @Test
     @Arguments(values = Argument.RANDOM_EACH)
     public void randomEachByte(byte x) {
-        checkNonFloatingRandomNumber(x, executed[30]);
-        executed[30]++;
+        checkNonFloatingRandomNumber(x, executed.getOrDefault("randomEachByte", 0));
+        executed.merge("randomEachByte", 1, Integer::sum);
     }
 
     @Test
     @Arguments(values = Argument.RANDOM_EACH)
     public void randomEachShort(short x) {
-        checkNonFloatingRandomNumber(x, executed[31]);
-        executed[31]++;
+        checkNonFloatingRandomNumber(x, executed.getOrDefault("randomEachShort", 0));
+        executed.merge("randomEachShort", 1, Integer::sum);
     }
 
     @Test
     @Arguments(values = Argument.RANDOM_EACH)
     public void randomEachInt(int x) {
-        checkNonFloatingRandomNumber(x, executed[32]);
-        executed[32]++;
+        checkNonFloatingRandomNumber(x, executed.getOrDefault("randomEachInt", 0));
+        executed.merge("randomEachInt", 1, Integer::sum);
     }
 
     @Test
     @Arguments(values = Argument.RANDOM_EACH)
     public void randomEachLong(long x) {
-        checkNonFloatingRandomNumber(x, executed[33]);
-        executed[33]++;
+        checkNonFloatingRandomNumber(x, executed.getOrDefault("randomEachLong", 0));
+        executed.merge("randomEachLong", 1, Integer::sum);
     }
 
     @Test
     @Arguments(values = Argument.RANDOM_EACH)
     public void randomEachChar(char x) {
-        checkNonFloatingRandomNumber(x, executed[34]);
-        executed[34]++;
+        checkNonFloatingRandomNumber(x, executed.getOrDefault("randomEachChar", 0));
+        executed.merge("randomEachChar", 1, Integer::sum);
     }
 
     @Test
     @Arguments(values = Argument.RANDOM_EACH)
     public void randomEachFloat(float x) {
-        checkFloatingRandomNumber(x, executed[35]);
-        executed[35]++;
+        checkFloatingRandomNumber(x, executed.getOrDefault("randomEachFloat", 0));
+        executed.merge("randomEachFloat", 1, Integer::sum);
     }
 
     @Test
     @Arguments(values = Argument.RANDOM_EACH)
     public void randomEachDouble(double x) {
-        checkFloatingRandomNumber(x, executed[36]);
-        executed[36]++;
+        checkFloatingRandomNumber(x, executed.getOrDefault("randomEachDouble", 0));
+        executed.merge("randomEachDouble", 1, Integer::sum);
     }
 
     @Test
     @Arguments(values = Argument.RANDOM_EACH)
     public void randomEachBoolean(boolean x) {
-        checkRandomBoolean(x, executed[37]);
-        executed[37]++;
+        checkRandomBoolean(x, executed.getOrDefault("randomEachBoolean", 0));
+        executed.merge("randomEachBoolean", 1, Integer::sum);
     }
 
     private void checkNonFloatingRandomNumber(long x, int invocationCount) {
@@ -461,7 +452,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.NUMBER_MINUS_42)
     public void byteMinus42(byte x) {
-        executed[38]++;
+        executed.merge("byteMinus42", 1, Integer::sum);
         if (x != -42) {
             throw new RuntimeException("Must be -42");
         }
@@ -470,7 +461,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.NUMBER_MINUS_42)
     public void shortMinus42(short x) {
-        executed[39]++;
+        executed.merge("shortMinus42", 1, Integer::sum);
         if (x != -42) {
             throw new RuntimeException("Must be -42");
         }
@@ -479,7 +470,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.NUMBER_MINUS_42)
     public void intMinus42(int x) {
-        executed[40]++;
+        executed.merge("intMinus42", 1, Integer::sum);
         if (x != -42) {
             throw new RuntimeException("Must be -42");
         }
@@ -488,7 +479,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.NUMBER_MINUS_42)
     public void longMinus42(long x) {
-        executed[41]++;
+        executed.merge("longMinus42", 1, Integer::sum);
         if (x != -42) {
             throw new RuntimeException("Must be -42");
         }
@@ -497,7 +488,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.NUMBER_MINUS_42)
     public void floatMinus42(float x) {
-        executed[42]++;
+        executed.merge("floatMinus42", 1, Integer::sum);
         if (x != -42.0) {
             throw new RuntimeException("Must be -42");
         }
@@ -506,7 +497,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.NUMBER_MINUS_42)
     public void doubleMinus42(double x) {
-        executed[43]++;
+        executed.merge("doubleMinus42", 1, Integer::sum);
         if (x != -42.0) {
             throw new RuntimeException("Must be -42");
         }
@@ -515,7 +506,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.MIN)
     public void byteMin(byte x) {
-        executed[79]++;
+        executed.merge("byteMin", 1, Integer::sum);
         if (x != Byte.MIN_VALUE) {
             throw new RuntimeException("Must be MIN_VALUE");
         }
@@ -524,7 +515,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.MIN)
     public void charMin(char x) {
-        executed[80]++;
+        executed.merge("charMin", 1, Integer::sum);
         if (x != Character.MIN_VALUE) {
             throw new RuntimeException("Must be MIN_VALUE");
         }
@@ -533,7 +524,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.MIN)
     public void shortMin(short x) {
-        executed[81]++;
+        executed.merge("shortMin", 1, Integer::sum);
         if (x != Short.MIN_VALUE) {
             throw new RuntimeException("Must be MIN_VALUE");
         }
@@ -542,7 +533,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.MIN)
     public void intMin(int x) {
-        executed[82]++;
+        executed.merge("intMin", 1, Integer::sum);
         if (x != Integer.MIN_VALUE) {
             throw new RuntimeException("Must be MIN_VALUE");
         }
@@ -551,7 +542,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.MIN)
     public void longMin(long x) {
-        executed[83]++;
+        executed.merge("longMin", 1, Integer::sum);
         if (x != Long.MIN_VALUE) {
             throw new RuntimeException("Must be MIN_VALUE");
         }
@@ -560,7 +551,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.MIN)
     public void floatMin(float x) {
-        executed[84]++;
+        executed.merge("floatMin", 1, Integer::sum);
         if (x != Float.MIN_VALUE) {
             throw new RuntimeException("Must be MIN_VALUE");
         }
@@ -569,7 +560,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.MIN)
     public void doubleMin(double x) {
-        executed[85]++;
+        executed.merge("doubleMin", 1, Integer::sum);
         if (x != Double.MIN_VALUE) {
             throw new RuntimeException("Must be MIN_VALUE");
         }
@@ -578,7 +569,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.MAX)
     public void byteMax(byte x) {
-        executed[86]++;
+        executed.merge("byteMax", 1, Integer::sum);
         if (x != Byte.MAX_VALUE) {
             throw new RuntimeException("Must be MAX_VALUE");
         }
@@ -587,7 +578,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.MAX)
     public void charMax(char x) {
-        executed[87]++;
+        executed.merge("charMax", 1, Integer::sum);
         if (x != Character.MAX_VALUE) {
             throw new RuntimeException("Must be MAX_VALUE");
         }
@@ -596,7 +587,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.MAX)
     public void shortMax(short x) {
-        executed[88]++;
+        executed.merge("shortMax", 1, Integer::sum);
         if (x != Short.MAX_VALUE) {
             throw new RuntimeException("Must be MAX_VALUE");
         }
@@ -605,7 +596,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.MAX)
     public void intMax(int x) {
-        executed[89]++;
+        executed.merge("intMax", 1, Integer::sum);
         if (x != Integer.MAX_VALUE) {
             throw new RuntimeException("Must be MAX_VALUE");
         }
@@ -614,7 +605,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.MAX)
     public void longMax(long x) {
-        executed[90]++;
+        executed.merge("longMax", 1, Integer::sum);
         if (x != Long.MAX_VALUE) {
             throw new RuntimeException("Must be MAX_VALUE");
         }
@@ -623,7 +614,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.MAX)
     public void floatMax(float x) {
-        executed[91]++;
+        executed.merge("floatMax", 1, Integer::sum);
         if (x != Float.MAX_VALUE) {
             throw new RuntimeException("Must be MAX_VALUE");
         }
@@ -632,7 +623,7 @@ public class TestBasics {
     @Test
     @Arguments(values = Argument.MAX)
     public void doubleMax(double x) {
-        executed[78]++;
+        executed.merge("doubleMax", 1, Integer::sum);
         if (x != Double.MAX_VALUE) {
             throw new RuntimeException("Must be MAX_VALUE");
         }
@@ -641,7 +632,7 @@ public class TestBasics {
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
     public void twoArgsDefault1(byte x, short y) {
-        executed[44]++;
+        executed.merge("twoArgsDefault1", 1, Integer::sum);
         if (x != 0 || y != 0) {
             throw new RuntimeException("Both must be 0");
         }
@@ -650,7 +641,7 @@ public class TestBasics {
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
     public void twoArgsDefault2(int x, short y) {
-        executed[45]++;
+        executed.merge("twoArgsDefault2", 1, Integer::sum);
         if (x != 0 || y != 0) {
             throw new RuntimeException("Both must be 0");
         }
@@ -659,7 +650,7 @@ public class TestBasics {
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
     public void twoArgsDefault3(short x, long y) {
-        executed[46]++;
+        executed.merge("twoArgsDefault3", 1, Integer::sum);
         if (x != 0 || y != 0) {
             throw new RuntimeException("Both must be 0");
         }
@@ -668,7 +659,7 @@ public class TestBasics {
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
     public void twoArgsDefault4(float x, boolean y) {
-        executed[47]++;
+        executed.merge("twoArgsDefault4", 1, Integer::sum);
         if (x != 0.0 || y) {
             throw new RuntimeException("Must be 0 and false");
         }
@@ -677,7 +668,7 @@ public class TestBasics {
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
     public void twoArgsDefault5(boolean x, char y) {
-        executed[48]++;
+        executed.merge("twoArgsDefault5", 1, Integer::sum);
         if (x || y != '\u0000') {
             throw new RuntimeException("Must be false and \u0000");
         }
@@ -686,7 +677,7 @@ public class TestBasics {
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
     public void twoArgsDefault6(char x, byte y) {
-        executed[49]++;
+        executed.merge("twoArgsDefault6", 1, Integer::sum);
         if (x != '\u0000' || y != 0) {
             throw new RuntimeException("Must be\u0000 and 0");
         }
@@ -695,7 +686,7 @@ public class TestBasics {
     @Test
     @Arguments(values = {Argument.RANDOM_ONCE, Argument.RANDOM_ONCE})
     public void twoArgsRandomOnce(char x, byte y) {
-        executed[50]++;
+        executed.merge("twoArgsRandomOnce", 1, Integer::sum);
     }
 
     @Test
@@ -707,7 +698,7 @@ public class TestBasics {
         if (Stream.of(a, b, c, d, e, f, g, h).allMatch(i -> i == a)) {
             throw new RuntimeException("RANDOM_ONCE does not produce random values for different arguments");
         }
-        executed[51]++;
+        executed.merge("checkRandomOnceDifferentArgs", 1, Integer::sum);
     }
 
     @Test
@@ -716,7 +707,7 @@ public class TestBasics {
                 Argument.RANDOM_ONCE, Argument.RANDOM_ONCE,
                 Argument.RANDOM_ONCE, Argument.RANDOM_ONCE})
     public void checkMixedRandoms1(byte a, short b, int c, long d, char e, boolean f, float g, double h) {
-        executed[52]++;
+        executed.merge("checkMixedRandoms1", 1, Integer::sum);
     }
 
     @Test
@@ -725,7 +716,7 @@ public class TestBasics {
                 Argument.RANDOM_EACH, Argument.RANDOM_EACH,
                 Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     public void checkMixedRandoms2(byte a, short b, int c, long d, char e, boolean f, float g, double h) {
-        executed[53]++;
+        executed.merge("checkMixedRandoms2", 1, Integer::sum);
     }
 
     @Test
@@ -734,7 +725,7 @@ public class TestBasics {
                 Argument.RANDOM_ONCE, Argument.RANDOM_EACH,
                 Argument.RANDOM_EACH, Argument.RANDOM_ONCE})
     public void checkMixedRandoms3(byte a, short b, int c, long d, char e, boolean f, float g, double h) {
-        executed[54]++;
+        executed.merge("checkMixedRandoms3", 1, Integer::sum);
     }
 
     @Test
@@ -745,7 +736,7 @@ public class TestBasics {
         if (a != 42 || b != 42 || c != 42 || d != 42 || e != 42.0 || f != 42.0) {
             throw new RuntimeException("Must all be 42");
         }
-        executed[55]++;
+        executed.merge("check42Mix1", 1, Integer::sum);
     }
 
     @Test
@@ -756,7 +747,7 @@ public class TestBasics {
         if (a != -42 || b != -42 || c != -42 || d != -42 || e != -42.0 || f != -42.0) {
             throw new RuntimeException("Must all be -42");
         }
-        executed[56]++;
+        executed.merge("check42Mix2", 1, Integer::sum);
     }
 
     @Test
@@ -767,14 +758,14 @@ public class TestBasics {
         if (a != -42 || b != 42 || c != -42 || d != -42 || e != 42.0 || f != -42.0) {
             throw new RuntimeException("Do not match the right 42 version");
         }
-        executed[57]++;
+        executed.merge("check42Mix3", 1, Integer::sum);
     }
 
 
     @Test
     @Arguments(values = Argument.BOOLEAN_TOGGLE_FIRST_TRUE)
     public void booleanToggleFirstTrue(boolean x) {
-        if (executed[58] == 0) {
+        if (executed.getOrDefault("booleanToggleFirstTrue", 0) == 0) {
             // First invocation
             if (!x) {
                 throw new RuntimeException("BOOLEAN_TOGGLE_FIRST_FALSE must be false on first invocation");
@@ -783,13 +774,13 @@ public class TestBasics {
             throw new RuntimeException("BOOLEAN_TOGGLE_FIRST_FALSE did not toggle");
         }
         lastToggleBoolean = x;
-        executed[58]++;
+        executed.merge("booleanToggleFirstTrue", 1, Integer::sum);
     }
 
     @Test
     @Arguments(values = {Argument.BOOLEAN_TOGGLE_FIRST_FALSE, Argument.BOOLEAN_TOGGLE_FIRST_TRUE})
     public void checkTwoToggles(boolean b1, boolean b2) {
-        if (executed[59] == 0) {
+        if (executed.getOrDefault("checkTwoToggles", 0) == 0) {
             // First invocation
             if (b1 || !b2) {
                 throw new RuntimeException("BOOLEAN_TOGGLES have wrong initial value");
@@ -800,14 +791,14 @@ public class TestBasics {
             throw new RuntimeException("Booleans did not toggle");
         }
         lastToggleBoolean = b1;
-        executed[59]++;
+        executed.merge("checkTwoToggles", 1, Integer::sum);
     }
 
     @Test
     @Arguments(values = {Argument.BOOLEAN_TOGGLE_FIRST_FALSE, Argument.FALSE,
                 Argument.TRUE, Argument.BOOLEAN_TOGGLE_FIRST_TRUE})
     public void booleanMix(boolean b1, boolean b2, boolean b3, boolean b4) {
-        if (executed[60] == 0) {
+        if (executed.getOrDefault("booleanMix", 0) == 0) {
             // First invocation
             if (b1 || b2 || !b3 || !b4) {
                 throw new RuntimeException("BOOLEAN_TOGGLES have wrong initial value");
@@ -818,7 +809,7 @@ public class TestBasics {
             throw new RuntimeException("Booleans did not toggle");
         }
         lastToggleBoolean = b1;
-        executed[60]++;
+        executed.merge("booleanMix", 1, Integer::sum);
     }
 
     /*
@@ -827,19 +818,19 @@ public class TestBasics {
 
     @Test
     public int testCheck() {
-        executed[63]++;
+        executed.merge("testCheck", 1, Integer::sum);
         return 1;
     }
 
     // Checked test. Check invoked after invoking "testCheck". Perform some more things after invocation.
     @Check(test = "testCheck")
     public void checkTestCheck() {
-        executed[64]++; // Executed on each invocation
+        executed.merge("checkTestCheck", 1, Integer::sum); // Executed on each invocation
     }
 
     @Test
     public int testCheckReturn() {
-        executed[65]++;
+        executed.merge("testCheckReturn", 1, Integer::sum);
         return 2;
     }
 
@@ -849,13 +840,13 @@ public class TestBasics {
         if (returnValue != 2) {
             throw new RuntimeException("Must be 2");
         }
-        executed[66]++; // Executed on each invocation
+        executed.merge("checkTestCheckReturn", 1, Integer::sum); // Executed on each invocation
     }
 
     @Test
     @Arguments(values = Argument.NUMBER_42)
     public short testCheckWithArgs(short x) {
-        executed[94]++;
+        executed.merge("testCheckWithArgs", 1, Integer::sum);
         return x;
     }
 
@@ -864,25 +855,25 @@ public class TestBasics {
         if (returnValue != 42) {
             throw new RuntimeException("Must be 42");
         }
-        executed[95]++; // Executed on each invocation
+        executed.merge("checkTestCheckWithArgs", 1, Integer::sum); // Executed on each invocation
     }
 
     @Test
     public int testCheckTestInfo() {
-        executed[67]++;
+        executed.merge("testCheckTestInfo", 1, Integer::sum);
         return 3;
     }
 
     // Checked test with info object about test.
     @Check(test = "testCheckTestInfo")
     public void checkTestCheckTestInfo(TestInfo testInfo) {
-        executed[68]++; // Executed on each invocation
+        executed.merge("checkTestCheckTestInfo(TestInfo)", 1, Integer::sum); // Executed on each invocation
     }
 
 
     @Test
     public int testCheckBoth() {
-        executed[69]++;
+        executed.merge("testCheckBoth", 1, Integer::sum);
         return 4;
     }
 
@@ -892,12 +883,12 @@ public class TestBasics {
         if (returnValue != 4) {
             throw new RuntimeException("Must be 4");
         }
-        executed[70]++; // Executed on each invocation
+        executed.merge("checkTestCheckTestInfo(int, TestInfo)", 1, Integer::sum); // Executed on each invocation
     }
 
     @Test
     public int testCheckOnce() {
-        executed[71]++;
+        executed.merge("testCheckOnce", 1, Integer::sum);
         return 1;
     }
 
@@ -909,7 +900,7 @@ public class TestBasics {
 
     @Test
     public int testCheckReturnOnce() {
-        executed[72]++;
+        executed.merge("testCheckReturnOnce", 1, Integer::sum);
         return 2;
     }
 
@@ -923,7 +914,7 @@ public class TestBasics {
 
     @Test
     public int testCheckTestInfoOnce() {
-        executed[73]++;
+        executed.merge("testCheckTestInfoOnce", 1, Integer::sum);
         return 3;
     }
 
@@ -934,7 +925,7 @@ public class TestBasics {
 
     @Test
     public int testCheckBothOnce() {
-        executed[74]++;
+        executed.merge("testCheckBothOnce", 1, Integer::sum);
         return 4;
     }
 
@@ -947,41 +938,8 @@ public class TestBasics {
     }
 
     @Test
-    public void sameName() {
-        executed[76]++;
-    }
-
-    // Allowed to overload test method if not test method itself
-    public void sameName(boolean a) {
-        wasExecuted = true;
-    }
-
-    // Allowed to overload test method if not test method itself
-    @Check(test = "sameName")
-    public void sameName(TestInfo info) {
-        executed[77]++;
-    }
-
-
-    /*
-     * Custom run tests.
-     */
-
-    @Test
-    public void sameName2() {
-        executed[92]++;
-    }
-
-    // Allowed to overload test method if not test method itself
-    @Run(test = "sameName2")
-    public void sameName2(RunInfo info) {
-        executed[93]++;
-        sameName2();
-    }
-
-    @Test
     public void testRun() {
-        executed[61]++;
+        executed.merge("testRun", 1, Integer::sum);
     }
 
     // Custom run test. This method is invoked each time instead of @Test method. This method responsible for calling
@@ -993,7 +951,7 @@ public class TestBasics {
 
     @Test
     public void testRunNoTestInfo(int i) { // Argument allowed when run by @Run
-        executed[62]++;
+        executed.merge("testRunNoTestInfo", 1, Integer::sum);
     }
 
     @Run(test = "testRunNoTestInfo")
@@ -1025,7 +983,7 @@ public class TestBasics {
 
     @Test
     public void testRunOnce2() {
-        executed[75]++;
+        executed.merge("testRunOnce2", 1, Integer::sum);
     }
 
     @Run(test = "testRunOnce2", mode = RunMode.STANDALONE)
@@ -1037,12 +995,12 @@ public class TestBasics {
 
     @Test
     public void testRunMultiple() {
-        executed[96]++;
+        executed.merge("testRunMultiple", 1, Integer::sum);
     }
 
     @Test
     public void testRunMultiple2() {
-        executed[97]++;
+        executed.merge("testRunMultiple2", 1, Integer::sum);
     }
 
     @Test
@@ -1059,12 +1017,12 @@ public class TestBasics {
 
     @Test
     public void testRunMultiple3() {
-        executed[98]++;
+        executed.merge("testRunMultiple3", 1, Integer::sum);
     }
 
     @Test
     public void testRunMultiple4() {
-        executed[99]++;
+        executed.merge("testRunMultiple4", 1, Integer::sum);
     }
 
     @Test

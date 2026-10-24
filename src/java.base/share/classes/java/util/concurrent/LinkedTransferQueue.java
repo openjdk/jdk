@@ -388,6 +388,10 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             ITEM.set(this, this);
         }
 
+        final Thread getVolatileWaiter() {
+            return (Thread)WAITER.getVolatile(this);
+        }
+
         /** The number of times to spin when eligible */
         private static final int SPINS = 1 << 7;
 
@@ -486,12 +490,14 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         // VarHandle mechanics
         static final VarHandle ITEM;
         static final VarHandle NEXT;
+        static final VarHandle WAITER;
         static {
             try {
                 Class<?> tn = DualNode.class;
                 MethodHandles.Lookup l = MethodHandles.lookup();
                 ITEM = l.findVarHandle(tn, "item", Object.class);
                 NEXT = l.findVarHandle(tn, "next", tn);
+                WAITER = l.findVarHandle(tn, "waiter", Thread.class);
             } catch (ReflectiveOperationException e) {
                 throw new ExceptionInInitializerError(e);
             }
@@ -588,13 +594,15 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             do {
                 m = p.item;
                 q = p.next;
-                if (p.isData != haveData && haveData != (m != null) &&
-                    p.cmpExItem(m, e) == m) {
-                    Thread w = p.waiter;    // matched complementary node
-                    if (p != h && h == cmpExHead(h, (q == null) ? p : q))
-                        h.next = h;         // advance head; self-link old
-                    LockSupport.unpark(w);
-                    return m;
+                if (p.isData != haveData && haveData != (m != null)) {
+                    if (p.cmpExItem(m, e) == m) {
+                        Thread w = p.getVolatileWaiter(); // matched complementary node
+                        if (p != h && h == cmpExHead(h, (q == null) ? p : q))
+                            h.next = h;     // advance head; self-link old
+                        LockSupport.unpark(w);
+                        return m;
+                    }
+                    continue restart;
                 } else if (q == null) {
                     if (ns == 0L)           // try to append unless immediate
                         break restart;

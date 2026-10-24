@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,6 @@
  * questions.
  */
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -31,18 +28,22 @@ import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.util.Map;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 /*
  * @test
  * @bug 8278087
  * @summary Test that an invalid pattern value for the jdk.serialFilter system property causes an
  * exception to be thrown when an attempt is made to use the filter or deserialize.
  * A subset of invalid filter patterns is tested.
- * @run testng/othervm -Djdk.serialFilter=.* InvalidGlobalFilterTest
- * @run testng/othervm -Djdk.serialFilter=! InvalidGlobalFilterTest
- * @run testng/othervm -Djdk.serialFilter=/ InvalidGlobalFilterTest
+ * @run junit/othervm -Djdk.serialFilter=.* InvalidGlobalFilterTest
+ * @run junit/othervm -Djdk.serialFilter=! InvalidGlobalFilterTest
+ * @run junit/othervm -Djdk.serialFilter=/ InvalidGlobalFilterTest
  *
  */
-@Test
 public class InvalidGlobalFilterTest {
     private static final String serialPropName = "jdk.serialFilter";
     private static final String serialFilter = System.getProperty(serialPropName);
@@ -64,13 +65,13 @@ public class InvalidGlobalFilterTest {
                     "java.base/", "Invalid jdk.serialFilter: class or package missing in: \"java.base/\"",
                     "/", "Invalid jdk.serialFilter: module name is missing in: \"/\"");
 
-    @DataProvider(name = "MethodsToCall")
-    private Object[][] cases() {
+    // Test cases for exceptions
+    private static Object[][] cases() {
         return new Object[][] {
-                {serialFilter, "getSerialFilter", (Assert.ThrowingRunnable) () -> ObjectInputFilter.Config.getSerialFilter()},
-                {serialFilter, "setSerialFilter", (Assert.ThrowingRunnable) () -> ObjectInputFilter.Config.setSerialFilter(new NoopFilter())},
-                {serialFilter, "new ObjectInputStream(is)", (Assert.ThrowingRunnable) () -> new ObjectInputStream(new ByteArrayInputStream(new byte[0]))},
-                {serialFilter, "new OISSubclass()", (Assert.ThrowingRunnable) () -> new OISSubclass()},
+                {serialFilter, "getSerialFilter", (Executable) () -> ObjectInputFilter.Config.getSerialFilter()},
+                {serialFilter, "setSerialFilter", (Executable) () -> ObjectInputFilter.Config.setSerialFilter(new NoopFilter())},
+                {serialFilter, "new ObjectInputStream(is)", (Executable) () -> new ObjectInputStream(new ByteArrayInputStream(new byte[0]))},
+                {serialFilter, "new OISSubclass()", (Executable) () -> new OISSubclass()},
         };
     }
 
@@ -78,18 +79,19 @@ public class InvalidGlobalFilterTest {
      * Test each method that should throw IllegalStateException based on
      * the invalid arguments it was launched with.
      */
-    @Test(dataProvider = "MethodsToCall")
-    public void initFaultTest(String pattern, String method, Assert.ThrowingRunnable runnable) {
+    @ParameterizedTest
+    @MethodSource("cases")
+    public void initFaultTest(String pattern, String method, Executable runnable) {
 
-        IllegalStateException ex = Assert.expectThrows(IllegalStateException.class,
+        IllegalStateException ex = Assertions.assertThrows(IllegalStateException.class,
                 runnable);
 
         String expected = invalidMessages.get(serialFilter);
         if (expected == null) {
-            Assert.fail("No expected message for filter: " + serialFilter);
+            Assertions.fail("No expected message for filter: " + serialFilter);
         }
         System.out.println(ex.getMessage());
-        Assert.assertEquals(ex.getMessage(), expected, "wrong message");
+        Assertions.assertEquals(expected, ex.getMessage(), "wrong message");
     }
 
     private static class NoopFilter implements ObjectInputFilter {

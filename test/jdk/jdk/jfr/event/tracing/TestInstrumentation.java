@@ -93,6 +93,8 @@ public class TestInstrumentation {
         assertMethod(map, "exception", 2);
         assertMethod(map, "switchExpression", 3);
         assertMethod(map, "recursive", 4);
+        assertMethod(map, "deepException", 1);
+        assertMethod(map, "whileTrue", 1);
         assertMethod(map, "multipleReturns", 5);
         if (!map.isEmpty()) {
             throw new Exception("Found unexpected methods " + map.keySet());
@@ -105,6 +107,8 @@ public class TestInstrumentation {
         assertMethod(map, "exception", 2);
         assertMethod(map, "switchExpression", 3);
         assertMethod(map, "recursive", 4);
+        assertMethod(map, "deepException", 1);
+        assertMethod(map, "whileTrue", 1);
         assertMethod(map, "multipleReturns", 5);
         for (var entry : map.entrySet()) {
             long invocations = entry.getValue();

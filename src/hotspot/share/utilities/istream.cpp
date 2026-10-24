@@ -265,7 +265,7 @@ bool inputStream::expand_buffer(size_t new_length) {
   } else {
     // realloc
     COV(EXB_R);
-    new_buf = REALLOC_C_HEAP_ARRAY(char, _buffer, new_length, mtInternal);
+    new_buf = REALLOC_C_HEAP_ARRAY(_buffer, new_length, mtInternal);
     assert(new_buf != nullptr, "would have exited VM if OOM");
   }
 

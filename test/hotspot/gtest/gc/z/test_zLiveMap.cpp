@@ -24,9 +24,9 @@
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLiveMap.inline.hpp"
-#include "unittest.hpp"
+#include "zunittest.hpp"
 
-class ZLiveMapTest : public ::testing::Test {
+class ZLiveMapTest : public ZTest {
 private:
   // Setup and tear down
   ZHeap*            _old_heap;
@@ -36,7 +36,6 @@ private:
 public:
 
   virtual void SetUp() {
-    ZGlobalsPointers::initialize();
     _old_heap = ZHeap::_heap;
     ZHeap::_heap = (ZHeap*)os::malloc(sizeof(ZHeap), mtTest);
 
@@ -84,6 +83,6 @@ protected:
   }
 };
 
-TEST_F(ZLiveMapTest, strongly_live_for_large_zpage) {
+TEST_VM_F(ZLiveMapTest, strongly_live_for_large_zpage) {
   strongly_live_for_large_zpage();
 }

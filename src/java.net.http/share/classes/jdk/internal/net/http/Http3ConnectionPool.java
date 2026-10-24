@@ -155,23 +155,34 @@ class Http3ConnectionPool {
         assert key.equals(c.key());
         var altService = c.connection().getSourceAltService().orElse(null);
         if (altService != null && altService.wasAdvertised()) {
-            return advertised.putIfAbsent(key, c);
+            final var prev = advertised.putIfAbsent(key, c);
+            if (prev == null) {
+                c.setPooled(true); // mark the newly pooled connection as pooled
+            }
+            return prev;
         }
         assert altService == null || altService.originHasSameAuthority();
-        return unadvertised.putIfAbsent(key, c);
+        final var prev = unadvertised.putIfAbsent(key, c);
+        if (prev == null) {
+            c.setPooled(true); // mark the newly pooled connection as pooled
+        }
+        return prev;
     }
 
-    Http3Connection put(String key, Http3Connection c) {
+    void put(String key, Http3Connection c) {
         Objects.requireNonNull(key);
         Objects.requireNonNull(c);
         assert key.equals(c.key()) : "key mismatch %s -> %s"
                 .formatted(key, c.key());
         var altService = c.connection().getSourceAltService().orElse(null);
         if (altService != null && altService.wasAdvertised()) {
-            return advertised.put(key, c);
+            advertised.put(key, c);
+            c.setPooled(true);
+            return;
         }
         assert altService == null || altService.originHasSameAuthority();
-        return unadvertised.put(key, c);
+        unadvertised.put(key, c);
+        c.setPooled(true);
     }
 
     boolean remove(String key, Http3Connection c) {
@@ -189,11 +200,17 @@ class Http3ConnectionPool {
         }
 
         assert altService == null || altService.originHasSameAuthority();
-        return unadvertised.remove(key, c);
+        final boolean removed = unadvertised.remove(key, c);
+        if (removed) {
+            c.setPooled(false);
+        }
+        return removed;
     }
 
     void clear() {
+        advertised.values().forEach((c) -> c.setPooled(false));
         advertised.clear();
+        unadvertised.values().forEach((c) -> c.setPooled(false));
         unadvertised.clear();
     }
 

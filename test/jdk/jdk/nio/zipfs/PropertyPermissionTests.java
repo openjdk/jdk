@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,6 @@
  * questions.
  */
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -33,13 +30,18 @@ import java.nio.file.Paths;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Map;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+
 /**
  * @test
  * @bug 8210469
  * @summary Verify ZIP FileSystem works with a Security Manager
  * @modules jdk.zipfs
  * @compile PropertyPermissionTests.java
- * @run testng/othervm PropertyPermissionTests
+ * @run junit/othervm PropertyPermissionTests
  */
 public class PropertyPermissionTests {
 
@@ -55,8 +57,8 @@ public class PropertyPermissionTests {
     /**
      * Create the JAR files used by the tests
      */
-    @BeforeClass
-    public void setUp()  throws Exception {
+    @BeforeAll
+    public static void setUp() throws Exception {
         jarFile = Utils.createJarFile("basic.jar",
                 "META-INF/services/java.nio.file.spi.FileSystemProvider");
     }
@@ -64,8 +66,8 @@ public class PropertyPermissionTests {
     /**
      * Remove JAR files used by test as part of clean-up
      */
-    @AfterClass
-    public void tearDown() throws Exception {
+    @AfterAll
+    public static void tearDown() throws Exception {
         Files.deleteIfExists(jarFile);
     }
 

@@ -134,51 +134,25 @@
 //           be responsible for processing the portion of the object
 //           in this cluster.
 //
-// Though an initial division of labor between marking threads may
-// assign equal numbers of clusters to be scanned by each thread, it
-// should be expected that some threads will finish their assigned
-// work before others.  Therefore, some amount of the full remembered
-// set scanning effort should be held back and assigned incrementally
-// to the threads that end up with excess capacity.  Consider the
-// following strategy for dividing labor:
-//
-//        1. Assume there are 8 marking threads and 1024 remembered
-//           set clusters to be scanned.
-//        2. Assign each thread to scan 64 clusters.  This leaves
-//           512 (1024 - (8*64)) clusters to still be scanned.
-//        3. As the 8 server threads complete previous cluster
-//           scanning assignments, issue each of the next 8 scanning
-//           assignments as units of 32 additional cluster each.
-//           In the case that there is high variance in effort
-//           associated with previous cluster scanning assignments,
-//           multiples of these next assignments may be serviced by
-//           the server threads that were previously assigned lighter
-//           workloads.
-//        4. Make subsequent scanning assignments as follows:
-//             a) 8 assignments of size 16 clusters
-//             b) 8 assignments of size 8 clusters
-//             c) 16 assignments of size 4 clusters
-//
-//    When there is no more remembered set processing work to be
-//    assigned to a newly idled worker thread, that thread can move
-//    on to work on other tasks associated with root scanning until such
-//    time as all clusters have been examined.
+// Each work assignment represents the same number of spanned bytes.
+// Because some spans are easier to scan than others, it is expected
+// that some workers will process more work assignments than others.
 //
 // Remembered set scanning is designed to run concurrently with
 // mutator threads, with multiple concurrent workers. Furthermore, the
 // current implementation of remembered set scanning never clears a
 // card once it has been marked.
-//
-// These limitations will be addressed in future enhancements to the
-// existing implementation.
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/iterator.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 class ShenandoahReferenceProcessor;
 class ShenandoahConcurrentMark;
@@ -233,16 +207,17 @@ public:
   inline bool is_write_card_dirty(size_t card_index) const;
   inline void mark_card_as_dirty(size_t card_index);
   inline void mark_range_as_dirty(size_t card_index, size_t num_cards);
-  inline void mark_card_as_clean(size_t card_index);
-  inline void mark_range_as_clean(size_t card_index, size_t num_cards);
   inline bool is_card_dirty(HeapWord* p) const;
   inline bool is_write_card_dirty(HeapWord* p) const;
-  inline void mark_card_as_dirty(HeapWord* p);
+  inline void mark_card_as_dirty(HeapWord* p) const;
+
   inline void mark_range_as_dirty(HeapWord* p, size_t num_heap_words);
   inline void mark_range_as_clean(HeapWord* p, size_t num_heap_words);
 
   // See comment in ShenandoahScanRemembered
   inline void mark_read_table_as_clean();
+
+  inline void mark_write_table_as_clean();
 
   // Merge any dirty values from write table into the read table, while leaving
   // the write table unchanged.
@@ -351,6 +326,7 @@ class ShenandoahCardCluster: public CHeapObj<mtGC> {
 
 private:
   ShenandoahDirectCardMarkRememberedSet* _rs;
+  const HeapWord* _end_of_heap;
 
 public:
   static const size_t CardsPerCluster = 64;
@@ -366,9 +342,7 @@ private:
   static const uint8_t FirstStartBits           = 0x7f;
 
   // Check that we have enough bits to store the largest possible offset into a card for an object start.
-  // The value for maximum card size is based on the constraints for GCCardSizeInBytes in gc_globals.hpp.
-  static const int MaxCardSize = NOT_LP64(512) LP64_ONLY(1024);
-  STATIC_ASSERT((MaxCardSize / HeapWordSize) - 1 <= FirstStartBits);
+  static_assert((MaxGCCardSizeInBytes / HeapWordSize) - 1 <= FirstStartBits);
 
   crossing_info* _object_starts;
 
@@ -404,6 +378,7 @@ public:
 
   ShenandoahCardCluster(ShenandoahDirectCardMarkRememberedSet* rs) {
     _rs = rs;
+    _end_of_heap = ShenandoahHeap::heap()->end();
     _object_starts = NEW_C_HEAP_ARRAY(crossing_info, rs->total_cards() + 1, mtGC); // the +1 is to account for card table guarding entry
     for (size_t i = 0; i < rs->total_cards(); i++) {
       _object_starts[i].short_word = 0;
@@ -411,7 +386,7 @@ public:
   }
 
   ~ShenandoahCardCluster() {
-    FREE_C_HEAP_ARRAY(crossing_info, _object_starts);
+    FREE_C_HEAP_ARRAY(_object_starts);
     _object_starts = nullptr;
   }
 
@@ -601,6 +576,9 @@ public:
   // as address.
   void register_object_without_lock(HeapWord* address);
 
+  // Dirty cards and register objects for the given range in memory.
+  void update_card_table(HeapWord* start, HeapWord* end);
+
   // During the reference updates phase of GC, we walk through each old-gen memory region that was
   // not part of the collection set and we invalidate all unmarked objects.  As part of this effort,
   // we coalesce neighboring dead objects in order to make future remembered set scanning more
@@ -650,12 +628,31 @@ public:
   size_t get_last_start(size_t card_index) const;
 
 
-  // Given a card_index, return the starting address of the first block in the heap
-  // that straddles into the card. If the card is co-initial with an object, then
-  // this would return the starting address of the heap that this card covers.
-  // Expects to be called for a card affiliated with the old generation in
-  // generational mode.
-  HeapWord* block_start(size_t card_index) const;
+  // Given a card_index, return the starting address of the first live object in the heap
+  // that intersects with or follows this card. This must be a valid, parsable object, and must
+  // be the first such object that intersects with this card. The object may start before,
+  // at, or after the start of the card identified by card_index, and may end in or after the card.
+  //
+  // The tams argument represents top for the enclosing region at the start of the most recently
+  // initiated concurrent old marking effort.  If ctx is non-null, we use the marking context to identify
+  // marked objects below tams.  Above tams, we know that every object is marked and that the memory is
+  // parsable (so we can add an object's size to its address to find the next object).  If ctx is null,
+  // we use crossing maps to find where object's start, and use object sizes to walk individual objects.
+  // The region must be parsable if ctx is null.
+  //
+  // The end_range_of_interest pointer argument represents an upper bound on how far we look in the forward direction
+  // for the first object in the heap that intersects or follows this card.  If there are no live objects found at
+  // an address less than end_range_of_interest returns nullptr.
+  //
+  // Expects to be called for a card in a region affiliated with the old generation of the
+  // generational heap, otherwise behavior is undefined.
+  //
+  // If not null, ctx holds the complete marking context of the old generation. If null,
+  // we expect that the marking context isn't available and the crossing maps are valid.
+  // Note that crossing maps may be invalid following class unloading and before dead
+  // or unloaded objects have been coalesced and filled.  Coalesce and fill updates the crossing maps.
+  HeapWord* first_object_start(size_t card_index, const ShenandoahMarkingContext* const ctx,
+                               HeapWord* tams, HeapWord* end_range_of_interest) const;
 };
 
 // ShenandoahScanRemembered is a concrete class representing the
@@ -709,8 +706,8 @@ public:
     _scc = new ShenandoahCardCluster(rs);
 
     // We allocate ParallelGCThreads worth even though we usually only
-    // use up to ConcGCThreads, because degenerate collections may employ
-    // ParallelGCThreads for remembered set scanning.
+    // use up to ConcGCThreads, because allocation stalls may push the
+    // number of concurrent threads up to the parallel thread count.
     if (ShenandoahEnableCardStats) {
       _card_stats = NEW_C_HEAP_ARRAY(HdrSeq*, ParallelGCThreads, mtGC);
       for (uint i = 0; i < ParallelGCThreads; i++) {
@@ -725,9 +722,9 @@ public:
     delete _scc;
     if (ShenandoahEnableCardStats) {
       for (uint i = 0; i < ParallelGCThreads; i++) {
-        delete _card_stats[i];
+        delete[] _card_stats[i];
       }
-      FREE_C_HEAP_ARRAY(HdrSeq*, _card_stats);
+      FREE_C_HEAP_ARRAY(_card_stats);
       _card_stats = nullptr;
     }
     assert(_card_stats == nullptr, "Error");
@@ -758,7 +755,8 @@ public:
   bool is_write_card_dirty(size_t card_index);
   bool is_card_dirty(HeapWord* p);
   bool is_write_card_dirty(HeapWord* p);
-  void mark_card_as_dirty(HeapWord* p);
+  inline void mark_card_as_dirty(HeapWord* p) const;
+
   void mark_range_as_dirty(HeapWord* p, size_t num_heap_words);
   void mark_range_as_clean(HeapWord* p, size_t num_heap_words);
 
@@ -768,6 +766,8 @@ public:
   // concurrently operate on the "read" table while mutators effect changes on
   // the "write" table.
   void mark_read_table_as_clean();
+
+  void mark_write_table_as_clean();
 
   // Swaps read and write card tables pointers in effect setting a clean card
   // table for the next GC cycle.
@@ -789,6 +789,10 @@ public:
     } else {
       return nullptr;
     }
+  }
+
+  void update_card_table(HeapWord* start, HeapWord* end) const {
+    _scc->update_card_table(start, end);
   }
 
   // Return true iff this object is "properly" registered.
@@ -888,119 +892,60 @@ struct ShenandoahRegionChunk {
 // that are assigned one at a time to worker threads. (Here, we use the terms `assignments` and `chunks`
 // interchangeably.) Note that the effort required to scan a range of memory is not necessarily a linear
 // function of the size of the range.  Some memory ranges hold only a small number of live objects.
-// Some ranges hold primarily primitive (non-pointer) data.  We start with larger chunk sizes because larger chunks
-// reduce coordination overhead.  We expect that the GC worker threads that receive more difficult assignments
-// will work longer on those chunks.  Meanwhile, other worker threads will repeatedly accept and complete multiple
-// easier chunks.  As the total amount of work remaining to be completed decreases, we decrease the size of chunks
-// given to individual threads.  This reduces the likelihood of significant imbalance between worker thread assignments
-// when there is less meaningful work to be performed by the remaining worker threads while they wait for
-// worker threads with difficult assignments to finish, reducing the overall duration of the phase.
-
+// Some ranges hold primarily primitive (non-pointer) data.
 class ShenandoahRegionChunkIterator : public StackObj {
 private:
-  // The largest chunk size is 4 MiB, measured in words.  Otherwise, remembered set scanning may become too unbalanced.
-  // If the largest chunk size is too small, there is too much overhead sifting out assignments to individual worker threads.
-  static const size_t _maximum_chunk_size_words = (4 * 1024 * 1024) / HeapWordSize;
-  static const size_t _clusters_in_smallest_chunk = 4;
-
-  size_t _largest_chunk_size_words;
-
-  // smallest_chunk_size is 4 clusters.  Each cluster spans 128 KiB.
-  // This is computed from CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
-  static size_t smallest_chunk_size_words() {
-      return _clusters_in_smallest_chunk * CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
+  // The number of clusters in a chunk is chosen empirically: larger values would require less synchronization at the risk
+  // of less even distribution of work between cooperating worker threads. The value must be a power of two.
+  static const size_t _clusters_in_chunk = 8;
+  static size_t chunk_size_words() {
+    size_t max_size = ShenandoahHeapRegion::region_size_words();
+    // In default configuration, the standard work assignment is:
+    //      8 (clusters) * 64 (words/card) * 64 (cards/Cluster) = 32K words = 256K bytes.
+    size_t planned_size = _clusters_in_chunk * CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
+    static_assert(is_power_of_2(_clusters_in_chunk), "Precondition");
+    if (planned_size > max_size) {
+      planned_size = max_size;
+    }
+    assert(is_power_of_2(planned_size), "Invariant");
+    return planned_size;
   }
-
-  // The total remembered set scanning effort is divided into chunks of work that are assigned to individual worker tasks.
-  // The chunks of assigned work are divided into groups, where the size of the typical group (_regular_group_size) is half the
-  // total number of regions.  The first group may be larger than
-  // _regular_group_size in the case that the first group's chunk
-  // size is less than the region size.  The last group may be larger
-  // than _regular_group_size because no group is allowed to
-  // have smaller assignments than _smallest_chunk_size, which is 128 KB.
-
-  // Under normal circumstances, no configuration needs more than _maximum_groups (default value of 16).
-  // The first group "effectively" processes chunks of size 1 MiB (or smaller for smaller region sizes).
-  // The last group processes chunks of size 128 KiB.  There are four groups total.
-
-  // group[ 0] is 4 MiB chunk size (_maximum_chunk_size_words)
-  // group[ 1] is 2 MiB chunk size
-  // group[ 2] is 1 MiB chunk size
-  // group[ 3] is 512 KiB chunk size
-  // group[ 4] is 256 KiB chunk size
-  // group[ 5] is 128 KiB chunk size
-  // group[ 6] is  64 KiB chunk size
-  // group[ 7] is  32 KiB chunk size
-  // group[ 8] is  16 KiB chunk size
-  // group[ 9] is   8 KiB chunk size
-  // group[10] is   4 KiB chunk size
-  //   Note: 4 KiB is smallest possible chunk_size, computed from:
-  //         _clusters_in_smallest_chunk * MinimumCardSizeInWords * ShenandoahCardCluster::CardsPerCluster, which is
-  //         4 * 16 * 64 = 4096
-
-  // We set aside arrays to represent the maximum number of groups that may be required for any heap configuration
-  static const size_t _maximum_groups = 11;
 
   const ShenandoahHeap* _heap;
 
-  const size_t _regular_group_size;                        // Number of chunks in each group
-  const size_t _first_group_chunk_size_b4_rebalance;
-  const size_t _num_groups;                        // Number of groups in this configuration
-  size_t _adjusted_num_groups;                     // Rebalancing may coalesce groups
+  const size_t _chunk_size;
+  const size_t _chunk_shift;
+  // Total chunks is HeapSizeWords / chunk_size_words()
   const size_t _total_chunks;
 
   shenandoah_padding(0);
-  volatile size_t _index;
+  Atomic<size_t> _index;
   shenandoah_padding(1);
-
-  size_t _region_index[_maximum_groups];           // The region index for the first region spanned by this group
-  size_t _group_offset[_maximum_groups];           // The offset at which group begins within first region spanned by this group
-  size_t _group_chunk_size[_maximum_groups];       // The size of each chunk within this group
-  size_t _group_entries[_maximum_groups];          // Total chunks spanned by this group and the ones before it.
 
   // No implicit copying: iterators should be passed by reference to capture the state
   NONCOPYABLE(ShenandoahRegionChunkIterator);
 
-  // Makes use of _heap.
-  size_t calc_regular_group_size();
-
-  // Makes use of _regular_group_size, which must be initialized before call.
-  size_t calc_first_group_chunk_size_b4_rebalance();
-
-  // Makes use of _regular_group_size and _first_group_chunk_size_b4_rebalance, both of which must be initialized before call.
-  size_t calc_num_groups();
-
-  // Makes use of _regular_group_size, _first_group_chunk_size_b4_rebalance, which must be initialized before call.
   size_t calc_total_chunks();
 
 public:
-  ShenandoahRegionChunkIterator(size_t worker_count);
-  ShenandoahRegionChunkIterator(ShenandoahHeap* heap, size_t worker_count);
-
-  // Reset iterator to default state
-  void reset();
+  ShenandoahRegionChunkIterator(ShenandoahHeap* heap);
 
   // Fills in assignment with next chunk of work and returns true iff there is more work.
-  // Otherwise, returns false.  This is multi-thread-safe.
+  // Otherwise, returns false.  This is multi-thread-safe. Chunk assignments pertain only to
+  // memory affiliated with the Old generation.
   inline bool next(struct ShenandoahRegionChunk* assignment);
-
-  // This is *not* MT safe. However, in the absence of multithreaded access, it
-  // can be used to determine if there is more work to do.
-  inline bool has_next() const;
 };
 
 
 class ShenandoahScanRememberedTask : public WorkerTask {
  private:
   ShenandoahObjToScanQueueSet* _queue_set;
-  ShenandoahObjToScanQueueSet* _old_queue_set;
   ShenandoahReferenceProcessor* _rp;
   ShenandoahRegionChunkIterator* _work_list;
   bool _is_concurrent;
 
  public:
   ShenandoahScanRememberedTask(ShenandoahObjToScanQueueSet* queue_set,
-                               ShenandoahObjToScanQueueSet* old_queue_set,
                                ShenandoahReferenceProcessor* rp,
                                ShenandoahRegionChunkIterator* work_list,
                                bool is_concurrent);

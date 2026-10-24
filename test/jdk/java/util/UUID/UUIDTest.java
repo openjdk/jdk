@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ public class UUIDTest {
         randomUUIDTest();
         randomUUIDTest_Multi();
         nameUUIDFromBytesTest();
+        testOfEpochMillisTimestamp();
         stringTest();
         versionTest();
         variantTest();
@@ -146,6 +147,44 @@ public class UUIDTest {
         }
     }
 
+    private static void testOfEpochMillisTimestamp() {
+        // Should not throw for valid currentTimeMillis() timestamp
+        long timestamp = System.currentTimeMillis();
+        try {
+            UUID u = UUID.ofEpochMillis(timestamp);
+            if (u == null) {
+                throw new AssertionError("Generated UUID should not be null for timestamp: " + timestamp);
+            }
+        } catch (Exception e) {
+            throw new AssertionError("Unexpected exception with timestamp " + timestamp, e);
+        }
+
+        // Should not throw for the 48-bit long
+        long value = 0xFEDCBA987654L;
+        try {
+            UUID u = UUID.ofEpochMillis(value);
+            if (u == null) {
+                throw new AssertionError("Generated UUID should not be null for 48-bit long: " + value);
+            }
+        } catch (Exception e) {
+            throw new AssertionError("Unexpected exception with 48-bit long " + value, e);
+        }
+
+        // Should throw for negative timestamp
+        value = -0xFEDCBA987654L;
+        try {
+            UUID.ofEpochMillis(value);
+            throw new AssertionError("Expected IllegalArgumentException with negative timestamp: " + value);
+        } catch (IllegalArgumentException expected) {}
+
+        // Should throw for timestamp > 48 bits
+        value = 1L << 48;
+        try {
+            UUID.ofEpochMillis(value);
+            throw new AssertionError("Expected IllegalArgumentException with timestamp > 48 bits: " + value);
+        } catch (IllegalArgumentException expected) {}
+    }
+
     private static void stringTest() throws Exception {
         for (int i = 0; i < COUNT; i++) {
             UUID u1 = UUID.randomUUID();
@@ -185,6 +224,15 @@ public class UUIDTest {
         test = UUID.nameUUIDFromBytes(someBytes);
         if (test.version() != 3) {
             throw new Exception("nameUUIDFromBytes not type 3: " + test);
+        }
+
+        long timestamp = System.currentTimeMillis();
+        test = UUID.ofEpochMillis(timestamp);
+        if (test.version() != 7) {
+            throw new Exception("ofEpochMillis not type 7: " + test);
+        }
+        if (test.variant() != 2) {
+            throw new Exception("ofEpochMillis not variant 2: " + test);
         }
 
         test = UUID.fromString("9835451d-e2e0-1e41-8a5a-be785f17dcda");

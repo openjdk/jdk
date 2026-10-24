@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -384,17 +384,6 @@ GetJavaProperties(JNIEnv *env)
     /* patches/service packs installed */
     sprops.patch_level = NULL;      // leave it undefined
 
-#ifdef SI_ISALIST
-    /* supported instruction sets */
-    {
-        char list[258];
-        sysinfo(SI_ISALIST, list, sizeof(list));
-        sprops.cpu_isalist = strdup(list);
-    }
-#else
-    sprops.cpu_isalist = NULL;
-#endif
-
     /* endianness of platform */
     {
         unsigned int endianTest = 0xff000000;
@@ -438,7 +427,7 @@ GetJavaProperties(JNIEnv *env)
 
     /* Determine the language, country, variant, and encoding from the host,
      * and store these in the user.language, user.country, user.variant and
-     * file.encoding system properties. */
+     * native.encoding system properties. */
     setlocale(LC_ALL, "");
     if (ParseLocale(env, LC_CTYPE,
                     &(sprops.format_language),

@@ -55,6 +55,7 @@ import jdk.internal.net.http.http3.ConnectionSettings;
 import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.http3.frames.SettingsFrame;
 import jdk.internal.net.quic.QuicTLSContext;
+import jdk.internal.net.quic.QuicTransportErrors;
 import jdk.internal.net.quic.QuicVersion;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -261,7 +262,23 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
                 handler.handle(exchange);
             } catch (Throwable failure) {
                 System.err.println("Failed to handle exchange: " + failure);
-                failure.printStackTrace();
+                boolean noError = false;
+                if (exchange instanceof Http3ServerExchange http3ServerExchange) {
+                    var quicConnection = http3ServerExchange.http3Connection().quicConnection();
+                    var cause = quicConnection.terminationCause();
+                    if (cause != null) {
+                        var code = cause.getCloseCode();
+                        noError = cause.isAppLayer()
+                                ? Http3Error.isNoError(code)
+                                : code == QuicTransportErrors.NO_ERROR.code();
+                    }
+                }
+                // don't print the full stack trace if the connection
+                // is terminated with no error, in order to avoid
+                // cluttering the log.
+                if (!noError) {
+                    failure.printStackTrace();
+                }
                 final var ioException = (failure instanceof IOException)
                         ? (IOException) failure
                         : new IOException(failure);

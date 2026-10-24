@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,8 @@
  */
 package test.java.time;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -68,18 +68,18 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test fixed clock.
  */
-@Test
 public class TestClock_Fixed {
 
     private static final ZoneId PARIS = ZoneId.of("Europe/Paris");
     private static final Instant INSTANT = LocalDateTime.of(2008, 6, 30, 11, 30, 10, 500).atZone(ZoneOffset.ofHours(2)).toInstant();
 
     //-------------------------------------------------------------------------
+    @Test
     public void test_withZone_same() {
         Clock test = Clock.fixed(INSTANT, PARIS);
         Clock changed = test.withZone(PARIS);
@@ -87,9 +87,10 @@ public class TestClock_Fixed {
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_toString() {
         Clock test = Clock.fixed(INSTANT, PARIS);
-        assertEquals(test.toString(), "FixedClock[2008-06-30T09:30:10.000000500Z,Europe/Paris]");
+        assertEquals("FixedClock[2008-06-30T09:30:10.000000500Z,Europe/Paris]", test.toString());
     }
 
 }

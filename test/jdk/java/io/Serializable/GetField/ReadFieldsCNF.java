@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @summary Verify that ObjectInputStream ReadFields correctly reports ClassNotFoundException
  *    while getting the field value. The test uses Vector that calls ReadFields from its readObject.
  * @library /test/lib
- * @run testng ReadFieldsCNF
- * @run testng/othervm -Djdk.serialGetFieldCnfeReturnsNull=true ReadFieldsCNF
+ * @run junit ReadFieldsCNF
+ * @run junit/othervm -Djdk.serialGetFieldCnfeReturnsNull=true ReadFieldsCNF
  */
 
 import java.io.ByteArrayInputStream;
@@ -41,11 +41,11 @@ import java.io.StreamCorruptedException;
 import java.nio.charset.StandardCharsets;
 import java.util.Vector;
 
-import org.testng.annotations.Test;
-import org.testng.Assert;
-
 import jdk.test.lib.hexdump.HexPrinter;
 import jdk.test.lib.hexdump.ObjectStreamPrinter;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class ReadFieldsCNF {
 
@@ -58,7 +58,7 @@ public class ReadFieldsCNF {
      * @throws IOException If any other exception occurs
      */
     @Test
-    private static void testVectorWithRole() throws IOException {
+    void testVectorWithRole() throws IOException {
         System.out.println("Property GETFIELD_CNFE_RETURNS_NULL: " + GETFIELD_CNFE_RETURNS_NULL);
 
         Role role = new Role();
@@ -75,7 +75,7 @@ public class ReadFieldsCNF {
         System.out.printf("Role offset: %d (0x%x) : %s%n", off, off, Role.class.getName());
         if (off < 0) {
             HexPrinter.simple().formatter(ObjectStreamPrinter.formatter()).format(bytes);
-            Assert.fail("classname not found");
+            Assertions.fail("classname not found");
         }
 
         bytes[off] = (byte) 'X';  // replace R with X -> Class not found
@@ -85,18 +85,18 @@ public class ReadFieldsCNF {
         try {
             Object obj = in.readObject();
             System.out.println("Read: " + obj);
-            Assert.fail("Should not reach here, an exception should always occur");
+            Assertions.fail("Should not reach here, an exception should always occur");
         } catch (ClassNotFoundException cnfe) {
             // Expected ClassNotFoundException
             String expected = "XeadFieldsCNF$Role";
-            Assert.assertEquals(expected, cnfe.getMessage(), "Wrong classname");
+            Assertions.assertEquals(expected, cnfe.getMessage(), "Wrong classname");
             if (GETFIELD_CNFE_RETURNS_NULL) {
-                Assert.fail("Expected IOException got ClassNotFoundException", cnfe);
+                Assertions.fail("Expected IOException got ClassNotFoundException", cnfe);
             }
             System.out.println("Normal:  OIS.readObject: " + cnfe);
         } catch (StreamCorruptedException ioe) {
             if (!GETFIELD_CNFE_RETURNS_NULL) {
-                Assert.fail("Expected ClassNotFoundException got StreamCorruptedException ", ioe);
+                Assertions.fail("Expected ClassNotFoundException got StreamCorruptedException ", ioe);
             }
             System.out.println("Normal: " + ioe);
         }
@@ -108,7 +108,7 @@ public class ReadFieldsCNF {
      * @throws IOException If any other exception occurs
      */
     @Test
-    private static void testHolderWithRole() throws IOException {
+    void testHolderWithRole() throws IOException {
         System.out.println("Property GETFIELD_CNFE_RETURNS_NULL: " + GETFIELD_CNFE_RETURNS_NULL);
         Role role = new Role();
         Holder holder = new Holder(role);
@@ -123,7 +123,7 @@ public class ReadFieldsCNF {
         System.out.printf("Role offset: %d (0x%x)%n", off, off);
         if (off < 0) {
             HexPrinter.simple().formatter(ObjectStreamPrinter.formatter()).format(bytes);
-            Assert.fail("classname found at index: " + off + " (0x" + Integer.toHexString(off) + ")");
+            Assertions.fail("classname found at index: " + off + " (0x" + Integer.toHexString(off) + ")");
         }
 
         bytes[off] = (byte) 'X';  // replace R with X -> Class not found
@@ -133,15 +133,15 @@ public class ReadFieldsCNF {
         try {
             Holder obj = (Holder)in.readObject();
             System.out.println("Read: " + obj);
-            Assert.fail("Should not reach here, an exception should always occur");
+            Assertions.fail("Should not reach here, an exception should always occur");
         } catch (ClassNotFoundException cnfe) {
             // Expected ClassNotFoundException
             String expected = "XeadFieldsCNF$Role";
-            Assert.assertEquals(expected, cnfe.getMessage(), "Wrong classname");
+            Assertions.assertEquals(expected, cnfe.getMessage(), "Wrong classname");
             System.out.println("Normal: OIS.readObject: " + cnfe);
         } catch (StreamCorruptedException ioe) {
             if (!GETFIELD_CNFE_RETURNS_NULL) {
-                Assert.fail("Expected ClassNotFoundException got StreamCorruptedException ", ioe);
+                Assertions.fail("Expected ClassNotFoundException got StreamCorruptedException ", ioe);
             }
             System.out.println("Normal: " + ioe);
         }

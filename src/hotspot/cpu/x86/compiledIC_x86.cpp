@@ -61,8 +61,7 @@ address CompiledDirectCall::emit_to_interp_stub(MacroAssembler *masm, address ma
 #undef __
 
 int CompiledDirectCall::to_interp_stub_size() {
-  return NOT_LP64(10)    // movl; jmp
-         LP64_ONLY(15);  // movq (1+1+8); jmp (1+4)
+  return 15;  // movq (1+1+8); jmp (1+4)
 }
 
 int CompiledDirectCall::to_trampoline_stub_size() {

@@ -27,13 +27,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
-import jdk.jpackage.internal.util.PathUtils;
+import java.util.TreeMap;
 
 
 public final class FileAssociations {
@@ -44,7 +42,7 @@ public final class FileAssociations {
     }
 
     private void createFile() {
-        Map<String, String> entries = new HashMap<>(Map.of(
+        Map<String, String> entries = new TreeMap<>(Map.of(
             "extension", suffixName,
             "mime-type", getMime()
         ));
@@ -76,13 +74,6 @@ public final class FileAssociations {
         return this;
     }
 
-    Path getLinuxIconFileName() {
-        if (icon == null) {
-            return null;
-        }
-        return Path.of(getMime().replace('/', '-') + PathUtils.getSuffix(icon));
-    }
-
     Path getPropertiesFile() {
         return file;
     }
@@ -93,6 +84,10 @@ public final class FileAssociations {
 
     String getMime() {
         return "application/x-jpackage-" + suffixName;
+    }
+
+    boolean hasIcon() {
+        return icon != null;
     }
 
     public void applyTo(PackageTest test) {

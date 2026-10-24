@@ -23,6 +23,7 @@
 
 package jdk.jpackage.internal.util;
 
+import static jdk.jpackage.internal.util.XmlUtils.initDocumentBuilder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -30,6 +31,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +44,7 @@ import java.util.stream.Stream;
 import javax.xml.parsers.ParserConfigurationException;
 import jdk.jpackage.internal.util.PListReader.Raw;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
@@ -277,12 +281,49 @@ public class PListReaderTest {
         assertEquals("A", actualValue);
     }
 
-    @Test
-    public void test_toMap() {
+    @ParameterizedTest
+    @MethodSource("parsedPLists")
+    public void test_toMap(ParsedPList data) {
+        testSpec().xml(data.xml()).expect(data.xmlAsMap()).queryType(QueryType.TO_MAP_RECURSIVE).create().test();
+    }
 
-        var builder = testSpec();
+    @ParameterizedTest
+    @MethodSource("parsedPLists")
+    public void test_toConsumer(ParsedPList data, @TempDir Path workDir) throws IOException, SAXException {
+        var node = createXml(data.xml);
 
-        builder.xml(
+        var srcPList = new PListReader(node);
+
+        var sink = workDir.resolve("sink.xml");
+
+        XmlUtils.createXml(sink, xml -> {
+            PListWriter.writePList(xml, srcPList.toXmlConsumer());
+        });
+
+        try (var in = Files.newInputStream(sink)) {
+            var dstPList = new PListReader(initDocumentBuilder().parse(in));
+
+            var src = srcPList.toMap(true);
+            var dst = dstPList.toMap(true);
+
+            assertEquals(data.xmlAsMap(), src);
+            assertEquals(data.xmlAsMap(), dst);
+        }
+    }
+
+    private record ParsedPList(Map<String, Object> xmlAsMap, String... xml) {
+        ParsedPList {
+            Objects.requireNonNull(xmlAsMap);
+        }
+
+        ParsedPList(Map<String, Object> xmlAsMap, List<String> xml) {
+            this(xmlAsMap, xml.toArray(String[]::new));
+        }
+    }
+
+    private static Stream<ParsedPList> parsedPLists() {
+
+        var xml = List.of(
                 "<key>AppName</key>",
                 "<string>Hello</string>",
                 "<!-- Application version -->",
@@ -367,7 +408,7 @@ public class PListReaderTest {
                 )
         );
 
-        builder.expect(expected).queryType(QueryType.TO_MAP_RECURSIVE).create().test();
+        return Stream.of(new ParsedPList(expected, xml));
     }
 
     private static List<TestSpec> test() {

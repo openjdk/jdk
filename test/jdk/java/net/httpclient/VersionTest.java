@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @modules java.net.http java.logging jdk.httpserver
  * @library /lib/testlibrary/ /
  * @build ProxyServer
- * @run main/othervm -Djdk.httpclient.HttpClient.log=errors,requests,headers,trace VersionTest
+ * @run main/othervm -Djdk.httpclient.HttpClient.log=errors,requests,headers,trace ${test.main.class}
  */
 
 import com.sun.net.httpserver.Headers;

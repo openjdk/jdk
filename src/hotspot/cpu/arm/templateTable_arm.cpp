@@ -888,6 +888,7 @@ void TemplateTable::aaload() {
 
   index_check(Rarray, Rindex);
   do_oop_load(_masm, R0_tos, get_array_elem_addr_same_base(T_OBJECT, Rarray, Rindex, Rtemp), IS_ARRAY);
+  __ profile_array_load(Rarray);
 }
 
 
@@ -1229,6 +1230,8 @@ void TemplateTable::aastore() {
 
   index_check_without_pop(Rarray_3, Rindex_4);
 
+  __ profile_array_store(R0_tmp);
+
   // Compute the array base
   __ add(Raddr_1, Rarray_3, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
 
@@ -1241,7 +1244,8 @@ void TemplateTable::aastore() {
   __ load_klass(Rtemp, Rarray_3);
   __ ldr(Rsuper_LR, Address(Rtemp, ObjArrayKlass::element_klass_offset()));
 
-  __ gen_subtype_check(Rsub_5, Rsuper_LR, throw_array_store, R0_tmp, R3_tmp);
+  // Already called profile_array_store above, no profiling required.
+  __ gen_subtype_check(Rsub_5, Rsuper_LR, throw_array_store, R0_tmp, R3_tmp, /* profile = */ false);
   // Come here on success
 
   // Store value
@@ -1254,14 +1258,11 @@ void TemplateTable::aastore() {
   __ bind(throw_array_store);
 
   // Come here on failure of subtype check
-  __ profile_typecheck_failed(R0_tmp);
-
   // object is at TOS
   __ b(Interpreter::_throw_ArrayStoreException_entry);
 
   // Have a null in Rvalue_2, store null at array[index].
   __ bind(is_null);
-  __ profile_null_seen(R0_tmp);
 
   // Store a null
   do_oop_store(_masm, Address::indexed_oop(Raddr_1, Rindex_4), Rvalue_2, Rtemp, R0_tmp, R3_tmp, true, IS_ARRAY);
@@ -2213,7 +2214,7 @@ void TemplateTable::if_acmp(Condition cc) {
   __ b(not_taken, convNegCond(cc));
   branch(false, false);
   __ bind(not_taken);
-  __ profile_not_taken_branch(R0_tmp);
+  __ profile_not_taken_branch(R0_tmp, /* acmp = */ true);
 }
 
 
@@ -3468,6 +3469,10 @@ void TemplateTable::fast_storefield(TosState state) {
   Address addr = Address(Robj, Roffset);
   // access field
   switch (bytecode()) {
+    case Bytecodes::_fast_vputfield:
+      // field is flat
+      __ stop("Should not reach here");
+      break;
     case Bytecodes::_fast_zputfield:
       __ access_store_at(T_BOOLEAN, IN_HEAP, addr, R0_tos, noreg, noreg, noreg, false);
       break;
@@ -3553,6 +3558,10 @@ void TemplateTable::fast_accessfield(TosState state) {
   Address addr = Address(Robj, Roffset);
   // access field
   switch (bytecode()) {
+    case Bytecodes::_fast_vgetfield:
+      // field is flat
+      __ stop("Should not reach here");
+      break;
     case Bytecodes::_fast_bgetfield:
       __ access_load_at(T_BYTE, IN_HEAP, addr, R0_tos, noreg, noreg, noreg);
       break;

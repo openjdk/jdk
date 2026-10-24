@@ -28,6 +28,7 @@
 
 #include "logging/logFileStreamOutput.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
 /**
  * This provides the following in JVMStat:
@@ -46,7 +47,7 @@
  *   0 = idle, 1 = marking, 2 = evacuating, 3 = updating refs
  *
  *   For mode:
- *   0 = concurrent, 1 = degenerated, 2 = full
+ *   0 = concurrent, 1 = evacuation failures, 2 = full
  *
  * two variable counters per region, with $max_regions (see above) counters:
  * - sun.gc.shenandoah.regions.region.$i.data
@@ -88,7 +89,7 @@ private:
   PerfLongVariable** _regions_data;
   PerfLongVariable* _timestamp;
   PerfLongVariable* _status;
-  volatile jlong _last_sample_millis;
+  Atomic<jlong> _last_sample_millis;
 
   void write_snapshot(PerfLongVariable** regions,
                       PerfLongVariable* ts,

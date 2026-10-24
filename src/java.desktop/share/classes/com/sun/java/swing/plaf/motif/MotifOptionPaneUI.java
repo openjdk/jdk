@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.java.swing.plaf.motif;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -56,6 +57,7 @@ public class MotifOptionPaneUI extends BasicOptionPaneUI
      * Creates and returns a Container containing the buttons. The buttons
      * are created by calling <code>getButtons</code>.
      */
+    @Override
     protected Container createButtonArea() {
         Container          b = super.createButtonArea();
 
@@ -68,17 +70,21 @@ public class MotifOptionPaneUI extends BasicOptionPaneUI
     /**
      * Returns null, CDE/Motif does not impose a minimum size.
      */
+    @Override
     public Dimension getMinimumOptionPaneSize() {
         return null;
     }
 
+    @Override
     protected Container createSeparator() {
         return new JPanel() {
 
+            @Override
             public Dimension getPreferredSize() {
                 return new Dimension(10, 2);
             }
 
+            @Override
             public void paint(Graphics g) {
                 int width = getWidth();
                 g.setColor(Color.darkGray);
@@ -94,6 +100,7 @@ public class MotifOptionPaneUI extends BasicOptionPaneUI
      * <code>getIcon</code> to <code>top</code>. This is messaged from
      * <code>createMessageArea</code>
      */
+    @Override
     protected void addIcon(Container top) {
         /* Create the icon. */
         Icon                  sideIcon = getIcon();
@@ -102,7 +109,7 @@ public class MotifOptionPaneUI extends BasicOptionPaneUI
             JLabel            iconLabel = new JLabel(sideIcon);
 
             iconLabel.setVerticalAlignment(SwingConstants.CENTER);
-            top.add(iconLabel, "West");
+            top.add(iconLabel, BorderLayout.BEFORE_LINE_BEGINS);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,12 @@ import jdk.internal.net.http.http3.frames.PushPromiseFrame;
 import jdk.internal.net.http.http3.streams.Http3Streams;
 import jdk.internal.net.http.qpack.Encoder;
 import jdk.internal.net.http.quic.QuicConnectionImpl;
+import jdk.internal.net.http.quic.TerminationCause;
 import jdk.internal.net.http.quic.VariableLengthEncoder;
+import jdk.internal.net.http.quic.streams.QuicReceiverStream;
+import jdk.internal.net.http.quic.streams.QuicReceiverStream.ReceivingStreamState;
 import jdk.internal.net.http.quic.streams.QuicSenderStream;
+import jdk.internal.net.http.quic.streams.QuicSenderStream.SendingStreamState;
 import jdk.internal.net.http.quic.streams.QuicStreamReader;
 import jdk.internal.net.http.quic.streams.QuicStreamWriter;
 
@@ -108,6 +112,11 @@ public final class Http3ServerExchange implements Http2TestExchange {
         rspheadersBuilder = new HttpHeadersBuilder();
     }
 
+    Http3ServerConnection http3Connection() {
+        return serverConn;
+    }
+
+
     String connectionTag() {
         return serverConn.quicConnection().logTag();
     }
@@ -146,6 +155,14 @@ public final class Http3ServerExchange implements Http2TestExchange {
         return sslSession;
     }
 
+    public SendingStreamState sendingStreamState() {
+        return serverStream.stream.sendingState();
+    }
+
+    public ReceivingStreamState receivingStreamState() {
+        return serverStream.stream.receivingState();
+    }
+
     @Override
     public void close() {
         try {
@@ -170,7 +187,7 @@ public final class Http3ServerExchange implements Http2TestExchange {
             }
             serverStream.writer.reset(Http3Error.H3_INTERNAL_ERROR.code());
         }
-        is.close(io);
+        is.resetStream(io);
         os.closeInternal();
         close();
     }
@@ -582,6 +599,15 @@ public final class Http3ServerExchange implements Http2TestExchange {
             return serverConn.getPushPromise(pushId);
         });
         return promise;
+    }
+
+    public void sendGoAway() throws IOException {
+        serverConn.sendGoAway();
+    }
+
+    public void sendConnectionClose() {
+        TerminationCause tc = TerminationCause.appLayerClose(Http3Error.H3_NO_ERROR.code());
+        serverConn.quicConnection().connectionTerminator().terminate(tc);
     }
 
     @Override

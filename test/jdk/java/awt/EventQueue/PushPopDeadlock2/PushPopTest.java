@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class PushPopTest {
             };
         InvocationEvent ie = new InvocationEvent(eq2, runnable, null, false);
 //        System.err.println(ie);
-        SunToolkit.postEvent(SunToolkit.targetToAppContext(frame), ie);
+        SunToolkit.postEvent(ie);
         eq1.pop();
         frame.dispose();
     }
@@ -94,7 +94,7 @@ class MyEventQueue2 extends EventQueue {
                                 }
                              };
                         InvocationEvent ie = new InvocationEvent(MyEventQueue2.this, runnable, null, false);
-                        SunToolkit.postEvent(SunToolkit.targetToAppContext(PushPopTest.frame), ie);
+                        SunToolkit.postEvent(ie);
                         postEvent(ie);
                     }
                 });

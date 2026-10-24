@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/perfData.inline.hpp"
 #include "utilities/defaultStream.hpp"
 
@@ -78,7 +77,8 @@ ShenandoahHeapRegionCounters::ShenandoahHeapRegionCounters() :
 }
 
 ShenandoahHeapRegionCounters::~ShenandoahHeapRegionCounters() {
-  if (_name_space != nullptr) FREE_C_HEAP_ARRAY(char, _name_space);
+  if (_name_space != nullptr) FREE_C_HEAP_ARRAY(_name_space);
+  if (_regions_data != nullptr) FREE_C_HEAP_ARRAY(_regions_data);
 }
 
 void ShenandoahHeapRegionCounters::write_snapshot(PerfLongVariable** regions,
@@ -106,8 +106,8 @@ void ShenandoahHeapRegionCounters::write_snapshot(PerfLongVariable** regions,
 void ShenandoahHeapRegionCounters::update() {
   if (ShenandoahRegionSampling) {
     jlong current = nanos_to_millis(os::javaTimeNanos());
-    jlong last = _last_sample_millis;
-    if (current - last > ShenandoahRegionSamplingRate && AtomicAccess::cmpxchg(&_last_sample_millis, last, current) == last) {
+    jlong last = _last_sample_millis.load_relaxed();
+    if (current - last > ShenandoahRegionSamplingRate && _last_sample_millis.compare_exchange(last, current) == last) {
 
       ShenandoahHeap* heap = ShenandoahHeap::heap();
       _status->set_value(encode_heap_status(heap));
@@ -191,9 +191,10 @@ jlong ShenandoahHeapRegionCounters::encode_heap_status(ShenandoahHeap* heap) {
                           generation->name(), phase, BOOL_TO_STR(heap->is_concurrent_old_mark_in_progress()), status);
   }
 
-  if (heap->is_degenerated_gc_in_progress()) {
+  if (heap->has_self_forwarded_objects()) {
     status |= (1 << 6);
   }
+
   if (heap->is_full_gc_in_progress()) {
     status |= (1 << 7);
   }

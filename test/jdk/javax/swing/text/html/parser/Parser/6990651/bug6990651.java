@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
    @bug 6990651
    @summary Regression: NPE when refreshing embedded window since 6u22-b01
    @author Pavel Porvatov
-   @modules java.desktop/sun.awt
 */
-import sun.awt.SunToolkit;
 
 import javax.swing.*;
 
@@ -43,7 +41,6 @@ public class bug6990651 {
 
         Thread thread = new Thread(new ThreadGroup("Some ThreadGroup"), new Runnable() {
             public void run() {
-                SunToolkit.createNewAppContext();
 
                 try {
                     SwingUtilities.invokeAndWait(new Runnable() {

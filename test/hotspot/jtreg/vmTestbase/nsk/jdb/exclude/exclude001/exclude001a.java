@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jdb.exclude.exclude001;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdb.*;
@@ -35,8 +36,13 @@ import java.util.*;
 /* This is debuggee aplication */
 public class exclude001a {
     public static void main(String args[]) {
-       exclude001a _exclude001a = new exclude001a();
-       System.exit(exclude001.JCK_STATUS_BASE + _exclude001a.runIt(args, System.out));
+        // The following will cause intialization of a bunch of classes before we
+        // enable MethoEntry/Exit events, which would otherwise result in long test runs.
+        // See JDK-8375062. Also see MyThread.run() below, which is where this came from.
+        String caltype = GregorianCalendar.getInstance().getCalendarType();
+
+        exclude001a _exclude001a = new exclude001a();
+        System.exit(exclude001.JCK_STATUS_BASE + _exclude001a.runIt(args, System.out));
     }
 
     static void lastBreak () {}
@@ -57,7 +63,7 @@ public class exclude001a {
         Thread holder [] = new Thread[numThreads];
 
         for (int i = 0; i < numThreads ; i++) {
-            holder[i] = new MyThread(MYTHREAD + "-" + i);
+            holder[i] = new MyThread(MYTHREAD + "-" + i).getThread();
             holder[i].start();
             try {
                 holder[i].join();
@@ -75,7 +81,7 @@ public class exclude001a {
 }
 
 
-class MyThread extends Thread {
+class MyThread extends ThreadWrapper {
     String name;
 
     public MyThread (String s) {

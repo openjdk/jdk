@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package javax.swing.text.html.parser;
 import java.io.Serializable;
 import java.util.BitSet;
 import java.util.Map;
-import sun.awt.AppContext;
 
 /**
  * An element as described in a DTD using the ELEMENT construct.
@@ -107,17 +106,14 @@ public final class Element implements DTDConstants, Serializable {
         this.name = name;
         this.index = index;
         if (index > getMaxIndex()) {
-            AppContext.getAppContext().put(MAX_INDEX_KEY, index);
+            maxIndex = index;
         }
     }
 
-    private static final Object MAX_INDEX_KEY = new Object();
+    private static int maxIndex = 0;
 
     static int getMaxIndex() {
-        Integer value = (Integer) AppContext.getAppContext().get(MAX_INDEX_KEY);
-        return (value != null)
-                ? value.intValue()
-                : 0;
+        return maxIndex;
     }
 
     /**

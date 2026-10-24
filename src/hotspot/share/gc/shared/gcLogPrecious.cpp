@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/ostream.hpp"
 
 stringStream* GCLogPrecious::_lines = nullptr;
@@ -67,7 +68,7 @@ void GCLogPrecious::vwrite_and_debug(LogTargetHandle log,
   {
     MutexLocker locker(_lock, Mutex::_no_safepoint_check_flag);
     vwrite_inner(log, format, args);
-    DEBUG_ONLY(debug_message = os::strdup(_temp->base()));
+    DEBUG_ONLY(debug_message = os::strdup(_temp->base(), mtGC));
   }
 
   // report error outside lock scope, since report_vm_error will call print_on_error
@@ -83,7 +84,8 @@ void GCLogPrecious::print_on_error(outputStream* st) {
     return;
   }
 
-  if (!_lock->try_lock_without_rank_check()) {
+  if (Thread::current_or_null_safe() == nullptr ||
+      !_lock->try_lock_without_rank_check()) {
     st->print_cr("<Skipped>\n");
     return;
   }

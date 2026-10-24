@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8251496 8333590
  * @summary Test that UnmodifiableHeaders is in fact immutable
  * @modules jdk.httpserver/sun.net.httpserver:+open
- * @run testng/othervm UnmodifiableHeadersTest
+ * @run junit/othervm UnmodifiableHeadersTest
  */
 
 import java.io.InputStream;
@@ -36,73 +36,75 @@ import java.net.URI;
 import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpPrincipal;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import sun.net.httpserver.UnmodifiableHeaders;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class UnmodifiableHeadersTest {
 
     @Test
-    public static void testEquality() {
+    public void testEquality() {
         var headers = new Headers();
         var unmodifiableHeaders1 = new UnmodifiableHeaders(headers);
-        assertEquals(unmodifiableHeaders1, headers);
-        assertEquals(unmodifiableHeaders1.hashCode(), headers.hashCode());
-        assertEquals(unmodifiableHeaders1.get("Foo"), headers.get("Foo"));
+        assertEquals(headers, unmodifiableHeaders1);
+        assertEquals(headers.hashCode(), unmodifiableHeaders1.hashCode());
+        assertEquals(headers.get("Foo"), unmodifiableHeaders1.get("Foo"));
 
         headers.add("Foo", "Bar");
         var unmodifiableHeaders2 = new UnmodifiableHeaders(headers);
-        assertEquals(unmodifiableHeaders2, headers);
-        assertEquals(unmodifiableHeaders2.hashCode(), headers.hashCode());
-        assertEquals(unmodifiableHeaders2.get("Foo"), headers.get("Foo"));
+        assertEquals(headers, unmodifiableHeaders2);
+        assertEquals(headers.hashCode(), unmodifiableHeaders2.hashCode());
+        assertEquals(headers.get("Foo"), unmodifiableHeaders2.get("Foo"));
     }
 
-    @DataProvider
-    public Object[][] headers() {
+    public static Stream<Headers> headers() {
         var headers = new Headers();
         headers.add("Foo", "Bar");
         var exchange = new TestHttpExchange(headers);
 
-        return new Object[][] {
-                { exchange.getRequestHeaders() },
-                { Headers.of("Foo", "Bar") },
-                { Headers.of(Map.of("Foo", List.of("Bar"))) },
-        };
+        return Stream.of(exchange.getRequestHeaders(),
+                Headers.of("Foo", "Bar"),
+                Headers.of(Map.of("Foo", List.of("Bar"))));
     }
 
-    @Test(dataProvider = "headers")
-    public static void testUnmodifiableHeaders(Headers headers) {
+    @ParameterizedTest
+    @MethodSource("headers")
+    public void testUnmodifiableHeaders(Headers headers) {
         assertUnsupportedOperation(headers);
         assertUnmodifiableCollection(headers);
         assertUnmodifiableList(headers);
     }
 
-    @DataProvider
-    public Object[][] toStringHeaders() {
+    public static Stream<Headers> toStringHeaders() {
         final Headers headers = new Headers();
         headers.add("hello", "World");
-        return new Object[][] {
-                { headers },
-                { Headers.of("abc", "XYZ") },
-                { Headers.of(Map.of("foo", List.of("Bar"))) },
-                { Headers.of(Map.of("Hello", List.of())) },
-                { Headers.of(Map.of("one", List.of("two", "THREE"))) },
-        };
+        return Stream.of(
+                headers,
+                Headers.of("abc", "XYZ"),
+                Headers.of(Map.of("foo", List.of("Bar"))),
+                Headers.of(Map.of("Hello", List.of())),
+                Headers.of(Map.of("one", List.of("two", "THREE")))
+        );
     }
 
     /*
      * Verify that the String returned by Headers.toString() contains the expected
      * key/value(s)
      */
-    @Test(dataProvider = "toStringHeaders")
+    @ParameterizedTest
+    @MethodSource("toStringHeaders")
     public void testToString(final Headers headers) {
         final Headers copy = Headers.of(headers);
         assertNotNull(copy, "Headers.of() returned null");

@@ -76,6 +76,9 @@ public:
   // Returns true if given uid is root.
   static bool is_root(uid_t uid);
 
+  // Returns true if the current user is root.
+  static bool is_current_user_root();
+
   // Returns true if given uid is effective or root uid.
   static bool matches_effective_uid_or_root(uid_t uid);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
@@ -30,7 +31,6 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/moduleEntry.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -49,7 +49,7 @@ void ClassListWriter::init() {
     _classlist_file->print_cr("# This file is generated via the -XX:DumpLoadedClassList=<class_list_file> option");
     _classlist_file->print_cr("# and is used at CDS archive dump time (see -Xshare:dump).");
     _classlist_file->print_cr("#");
-    FREE_C_HEAP_ARRAY(char, list_name);
+    FREE_C_HEAP_ARRAY(list_name);
   }
 }
 
@@ -107,7 +107,7 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
   assert_locked();
 
   ClassLoaderData* loader_data = k->class_loader_data();
-  bool is_builtin_loader = SystemDictionaryShared::is_builtin_loader(loader_data);
+  bool is_builtin_loader = AOTSystemDictionary::is_builtin_loader(loader_data);
   if (!is_builtin_loader) {
     // class may be loaded from shared archive
     if (!k->in_aot_cache()) {
@@ -122,7 +122,7 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
       // Shared unregistered classes are skipped since their real source are not recorded in shared space.
       return;
     }
-    if (!SystemDictionaryShared::add_unregistered_class(Thread::current(), (InstanceKlass*)k)) {
+    if (!AOTSystemDictionary::add_unregistered_class(Thread::current(), (InstanceKlass*)k)) {
       return;
     }
   }
@@ -224,7 +224,7 @@ void ClassListWriter::write_resolved_constants() {
 }
 
 void ClassListWriter::write_resolved_constants_for(InstanceKlass* ik) {
-  if (!SystemDictionaryShared::is_builtin_loader(ik->class_loader_data()) ||
+  if (!AOTSystemDictionary::is_builtin_loader(ik->class_loader_data()) ||
       ik->is_hidden()) {
     return;
   }
@@ -277,7 +277,9 @@ void ClassListWriter::write_resolved_constants_for(InstanceKlass* ik) {
     if (field_entries != nullptr) {
       for (int i = 0; i < field_entries->length(); i++) {
         ResolvedFieldEntry* rfe = field_entries->adr_at(i);
-        if (rfe->is_resolved(Bytecodes::_getfield) ||
+        if (rfe->is_resolved(Bytecodes::_getstatic) ||
+            rfe->is_resolved(Bytecodes::_putstatic) ||
+            rfe->is_resolved(Bytecodes::_getfield) ||
             rfe->is_resolved(Bytecodes::_putfield)) {
           list.at_put(rfe->constant_pool_index(), true);
           print = true;
@@ -292,6 +294,7 @@ void ClassListWriter::write_resolved_constants_for(InstanceKlass* ik) {
         if (rme->is_resolved(Bytecodes::_invokevirtual) ||
             rme->is_resolved(Bytecodes::_invokespecial) ||
             rme->is_resolved(Bytecodes::_invokeinterface) ||
+            rme->is_resolved(Bytecodes::_invokestatic) ||
             rme->is_resolved(Bytecodes::_invokehandle)) {
           list.at_put(rme->constant_pool_index(), true);
           print = true;

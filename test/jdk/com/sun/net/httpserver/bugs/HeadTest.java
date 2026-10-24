@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 public class HeadTest {
 
@@ -65,7 +66,7 @@ public class HeadTest {
                             if (msg.getRequestMethod().equals("HEAD")) {
                                 msg.getRequestBody().close();
                                 msg.getResponseHeaders().add("Transfer-encoding", "chunked");
-                                msg.sendResponseHeaders(200, -1);
+                                msg.sendResponseHeaders(200, RSPBODY_EMPTY);
                             }
                         } catch(IOException ioe) {
                             ioe.printStackTrace();
@@ -84,7 +85,7 @@ public class HeadTest {
                             if (msg.getRequestMethod().equals("HEAD")) {
                                 msg.getRequestBody().close();
                                 msg.getResponseHeaders().add("Content-length", "1024");
-                                msg.sendResponseHeaders(200, -1);
+                                msg.sendResponseHeaders(200, RSPBODY_EMPTY);
                             }
                         } catch(IOException ioe) {
                             ioe.printStackTrace();

@@ -217,11 +217,11 @@ jint ciKlass::modifier_flags() {
 }
 
 // ------------------------------------------------------------------
-// ciKlass::access_flags
-jint ciKlass::access_flags() {
+// ciKlass::prototype_header
+markWord ciKlass::prototype_header() const {
   assert(is_loaded(), "not loaded");
   GUARDED_VM_ENTRY(
-    return get_Klass()->access_flags().as_unsigned_short();
+    return get_Klass()->prototype_header();
   )
 }
 
@@ -242,6 +242,11 @@ void ciKlass::print_impl(outputStream* st) {
   st->print(" name=");
   print_name_on(st);
   st->print(" loaded=%s", (is_loaded() ? "true" : "false"));
+  GUARDED_VM_ENTRY(
+    if (is_flat_array_klass()) {
+      st->print(" layout_kind=%d", (int)((FlatArrayKlass*)get_Klass())->layout_kind());
+    }
+  )
 }
 
 // ------------------------------------------------------------------

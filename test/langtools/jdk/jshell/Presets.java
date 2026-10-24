@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,23 @@ import java.net.InetAddress;
 import java.util.*;
 
 public class Presets {
+    private static final int TEST_TIMEOUT = 20_000;
+
     public static final String TEST_DEFAULT_EXECUTION;
     public static final String TEST_STANDARD_EXECUTION;
+    public static final String TEST_JDI_EXECUTION;
 
     static {
         String loopback = InetAddress.getLoopbackAddress().getHostAddress();
 
         TEST_DEFAULT_EXECUTION = "failover:0(jdi:hostname(" + loopback + "))," +
-                                 "1(jdi:launch(true)), 2(jdi), 3(local)";
+                                 "1(jdi:launch(true))," +
+                                 "2(jdi:timeout(" + TEST_TIMEOUT + "))," +
+                                 "3(local)";
         TEST_STANDARD_EXECUTION = "failover:0(jdi:hostname(" + loopback + "))," +
-                                  "1(jdi:launch(true)), 2(jdi)";
+                                  "1(jdi:launch(true))," +
+                                  "2(jdi:timeout(" + TEST_TIMEOUT + "))";
+        TEST_JDI_EXECUTION = "jdi:timeout(" + TEST_TIMEOUT + ")";
     }
 
     public static String[] addExecutionIfMissing(String[] args) {

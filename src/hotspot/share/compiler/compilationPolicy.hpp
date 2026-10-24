@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ class CompilationPolicy : AllStatic {
   typedef CompilationPolicyUtils::Queue<InstanceKlass> TrainingReplayQueue;
 
   static int64_t _start_time;
-  static int _c1_count, _c2_count;
+  static int _c1_count, _c2_count, _ac1_count, _ac2_count;
   static double _increase_threshold_at_ratio;
   static TrainingReplayQueue _training_replay_queue;
 
@@ -263,14 +263,15 @@ class CompilationPolicy : AllStatic {
   static CompLevel common(const methodHandle& method, CompLevel cur_level, JavaThread* THREAD, bool disable_feedback = false);
 
   template<typename Predicate>
-  static CompLevel transition_from_none(const methodHandle& method, CompLevel cur_level, bool delay_profiling, bool disable_feedback);
+  static CompLevel transition_from_none(const methodHandle& method, CompLevel cur_level, bool disable_feedback);
   template<typename Predicate>
-  static CompLevel transition_from_limited_profile(const methodHandle& method, CompLevel cur_level, bool delay_profiling, bool disable_feedback);
+  static CompLevel transition_from_limited_profile(const methodHandle& method, CompLevel cur_level, bool disable_feedback);
   template<typename Predicate>
   static CompLevel transition_from_full_profile(const methodHandle& method, CompLevel cur_level);
   template<typename Predicate>
-  static CompLevel standard_transition(const methodHandle& method, CompLevel cur_level, bool delayprof, bool disable_feedback);
+  static CompLevel standard_transition(const methodHandle& method, CompLevel cur_level, bool disable_feedback);
 
+  static bool should_delay_standard_transition(const methodHandle& method, CompLevel cur_level, MethodTrainingData* mtd);
   static CompLevel trained_transition_from_none(const methodHandle& method, CompLevel cur_level, MethodTrainingData* mtd, JavaThread* THREAD);
   static CompLevel trained_transition_from_limited_profile(const methodHandle& method, CompLevel cur_level, MethodTrainingData* mtd, JavaThread* THREAD);
   static CompLevel trained_transition_from_full_profile(const methodHandle& method, CompLevel cur_level, MethodTrainingData* mtd, JavaThread* THREAD);
@@ -284,7 +285,7 @@ class CompilationPolicy : AllStatic {
   // level.
   static CompLevel loop_event(const methodHandle& method, CompLevel cur_level, JavaThread* THREAD);
   static void print_counters_on(outputStream* st, const char* prefix, Method* m);
-  static void print_training_data_on(outputStream* st, const char* prefix, Method* method);
+  static void print_training_data_on(outputStream* st, const char* prefix, Method* method, CompLevel cur_level);
   // Has a method been long around?
   // We don't remove old methods from the compile queue even if they have
   // very low activity (see select_task()).
@@ -296,6 +297,7 @@ class CompilationPolicy : AllStatic {
   inline static double weight(Method* method);
   // Apply heuristics and return true if x should be compiled before y
   inline static bool compare_methods(Method* x, Method* y);
+  inline static bool compare_tasks(CompileTask* x, CompileTask* y);
   // Compute event rate for a given method. The rate is the number of event (invocations + backedges)
   // per millisecond.
   inline static void update_rate(int64_t t, const methodHandle& method);
@@ -312,6 +314,8 @@ class CompilationPolicy : AllStatic {
 
   static void set_c1_count(int x) { _c1_count = x;    }
   static void set_c2_count(int x) { _c2_count = x;    }
+  static void set_ac1_count(int x) { _ac1_count = x;    }
+  static void set_ac2_count(int x) { _ac2_count = x;    }
 
   enum EventType { CALL, LOOP, COMPILE, FORCE_COMPILE, FORCE_RECOMPILE, REMOVE_FROM_QUEUE, UPDATE_IN_QUEUE, REPROFILE, MAKE_NOT_ENTRANT };
   static void print_event_on(outputStream *st, EventType type, Method* m, Method* im, int bci, CompLevel level);
@@ -321,8 +325,6 @@ class CompilationPolicy : AllStatic {
   // Simple methods are as good being compiled with C1 as C2.
   // This function tells if it's such a function.
   inline static bool is_trivial(const methodHandle& method);
-  // Force method to be compiled at CompLevel_simple?
-  inline static bool force_comp_at_level_simple(const methodHandle& method);
 
   // Get a compilation level for a given method.
   static CompLevel comp_level(Method* method);
@@ -337,12 +339,14 @@ class CompilationPolicy : AllStatic {
 
   // m must be compiled before executing it
   static bool must_be_compiled(const methodHandle& m, int comp_level = CompLevel_any);
-  static void maybe_compile_early(const methodHandle& m, TRAPS);
+  static void maybe_compile_early(const methodHandle& m, MethodTrainingData* mtd, TRAPS);
   static void replay_training_at_init_impl(InstanceKlass* klass, JavaThread* current);
  public:
   static int min_invocations() { return Tier4MinInvocationThreshold; }
   static int c1_count() { return _c1_count; }
   static int c2_count() { return _c2_count; }
+  static int ac1_count() { return _ac1_count; }
+  static int ac2_count() { return _ac2_count; }
   static int compiler_count(CompLevel comp_level);
   // If m must_be_compiled then request a compilation from the CompileBroker.
   // This supports the -Xcomp option.
@@ -357,7 +361,6 @@ class CompilationPolicy : AllStatic {
   static bool can_be_osr_compiled(const methodHandle& m, int comp_level = CompLevel_any);
   static bool is_compilation_enabled();
 
-  static CompileTask* select_task_helper(CompileQueue* compile_queue);
   // Return initial compile level to use with Xcomp (depends on compilation mode).
   static void reprofile(ScopeDesc* trap_scope, bool is_osr);
   static nmethod* event(const methodHandle& method, const methodHandle& inlinee,
@@ -374,7 +377,6 @@ class CompilationPolicy : AllStatic {
   static CompLevel initial_compile_level(const methodHandle& method);
   // Return highest level possible
   static CompLevel highest_compile_level();
-  static void dump();
 };
 
 #endif // SHARE_COMPILER_COMPILATIONPOLICY_HPP

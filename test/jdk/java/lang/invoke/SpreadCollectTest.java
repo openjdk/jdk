@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @bug 8139885
  * @bug 8143798
- * @run testng/othervm -ea -esa test.java.lang.invoke.SpreadCollectTest
+ * @run junit/othervm -ea -esa test.java.lang.invoke.SpreadCollectTest
  */
 
 package test.java.lang.invoke;
@@ -39,9 +39,11 @@ import java.util.*;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import static org.testng.AssertJUnit.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import org.testng.annotations.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for the new asSpreader/asCollector API added in JEP 274.
@@ -51,14 +53,14 @@ public class SpreadCollectTest {
     static final Lookup LOOKUP = MethodHandles.lookup();
 
     @Test
-    public static void testAsSpreader() throws Throwable {
+    public void testAsSpreader() throws Throwable {
         MethodHandle spreader = SpreadCollect.MH_forSpreading.asSpreader(1, int[].class, 3);
         assertEquals(SpreadCollect.MT_spreader, spreader.type());
         assertEquals("A456B", (String) spreader.invoke("A", new int[]{4, 5, 6}, "B"));
     }
 
     @Test
-    public static void testAsSpreaderExample() throws Throwable {
+    public void testAsSpreaderExample() throws Throwable {
         // test the JavaDoc asSpreader-with-pos example
         MethodHandle compare = LOOKUP.findStatic(Objects.class, "compare", methodType(int.class, Object.class, Object.class, Comparator.class));
         MethodHandle compare2FromArray = compare.asSpreader(0, Object[].class, 2);
@@ -66,49 +68,43 @@ public class SpreadCollectTest {
         Comparator<Integer> cmp = (a, b) -> a - b;
         assertTrue((int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 0, 2), cmp) < 0);
         assertTrue((int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 1, 3), cmp) > 0);
-        assertTrue((int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 2, 4), cmp) == 0);
+        assertEquals(0, (int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 2, 4), cmp));
     }
 
-    @DataProvider
     static Object[][] asSpreaderIllegalPositions() {
         return new Object[][]{{-7}, {3}, {19}};
     }
 
-    @Test(dataProvider = "asSpreaderIllegalPositions")
-    public static void testAsSpreaderIllegalPos(int p) throws Throwable {
-        boolean caught = false;
-        try {
-            SpreadCollect.MH_forSpreading.asSpreader(p, Object[].class, 3);
-        } catch (IllegalArgumentException iae) {
-            assertEquals("bad spread position", iae.getMessage());
-            caught = true;
-        }
-        assertTrue(caught);
-    }
-
-    @Test(expectedExceptions = {WrongMethodTypeException.class})
-    public static void testAsSpreaderIllegalMethodType() {
-        MethodHandle h = MethodHandles.dropArguments(MethodHandles.constant(String.class, ""), 0, int.class, int.class);
-        MethodHandle s = h.asSpreader(String[].class, 1);
-    }
-
-    @Test(expectedExceptions = {NullPointerException.class})
-    public static void testAsSpreaderNullArrayType() {
-        SpreadCollect.MH_forSpreading.asSpreader(null, 0);
-    }
-
-    @Test(expectedExceptions = {NullPointerException.class})
-    public static void testAsSpreaderNullArrayNonZeroLength() {
-        SpreadCollect.MH_forSpreading.asSpreader(null, 1);
-    }
-
-    @Test(expectedExceptions = {IllegalArgumentException.class})
-    public static void testAsSpreaderTooManyParams() throws Throwable {
-        SpreadCollect.MH_forSpreading.asSpreader(1, int[].class, 6);
+    @ParameterizedTest
+    @MethodSource("asSpreaderIllegalPositions")
+    public void testAsSpreaderIllegalPos(int p) throws Throwable {
+        var iae = assertThrows(IllegalArgumentException.class, () -> SpreadCollect.MH_forSpreading.asSpreader(p, Object[].class, 3));
+        assertEquals("bad spread position", iae.getMessage());
     }
 
     @Test
-    public static void testAsCollector() throws Throwable {
+    public void testAsSpreaderIllegalMethodType() {
+        MethodHandle h = MethodHandles.dropArguments(MethodHandles.constant(String.class, ""), 0, int.class, int.class);
+        assertThrows(WrongMethodTypeException.class, () -> h.asSpreader(String[].class, 1));
+    }
+
+    @Test
+    public void testAsSpreaderNullArrayType() {
+        assertThrows(NullPointerException.class, () -> SpreadCollect.MH_forSpreading.asSpreader(null, 0));
+    }
+
+    @Test
+    public void testAsSpreaderNullArrayNonZeroLength() {
+        assertThrows(NullPointerException.class, () -> SpreadCollect.MH_forSpreading.asSpreader(null, 1));
+    }
+
+    @Test
+    public void testAsSpreaderTooManyParams() throws Throwable {
+        assertThrows(IllegalArgumentException.class, () -> SpreadCollect.MH_forSpreading.asSpreader(1, int[].class, 6));
+    }
+
+    @Test
+    public void testAsCollector() throws Throwable {
         MethodHandle collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 1);
         assertEquals(SpreadCollect.MT_collector1, collector.type());
         assertEquals("A4B", (String) collector.invoke("A", 4, "B"));
@@ -121,7 +117,7 @@ public class SpreadCollectTest {
     }
 
     @Test
-    public static void testAsCollectorInvokeWithArguments() throws Throwable {
+    public void testAsCollectorInvokeWithArguments() throws Throwable {
         MethodHandle collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 1);
         assertEquals(SpreadCollect.MT_collector1, collector.type());
         assertEquals("A4B", (String) collector.invokeWithArguments("A", 4, "B"));
@@ -134,7 +130,7 @@ public class SpreadCollectTest {
     }
 
     @Test
-    public static void testAsCollectorLeading() throws Throwable {
+    public void testAsCollectorLeading() throws Throwable {
         MethodHandle collector = SpreadCollect.MH_forCollectingLeading.asCollector(0, int[].class, 1);
         assertEquals(SpreadCollect.MT_collectorLeading1, collector.type());
         assertEquals("7Q", (String) collector.invoke(7, "Q"));
@@ -147,7 +143,7 @@ public class SpreadCollectTest {
     }
 
     @Test
-    public static void testAsCollectorLeadingInvokeWithArguments() throws Throwable {
+    public void testAsCollectorLeadingInvokeWithArguments() throws Throwable {
         MethodHandle collector = SpreadCollect.MH_forCollectingLeading.asCollector(0, int[].class, 1);
         assertEquals(SpreadCollect.MT_collectorLeading1, collector.type());
         assertEquals("7Q", (String) collector.invokeWithArguments(7, "Q"));
@@ -160,31 +156,25 @@ public class SpreadCollectTest {
     }
 
     @Test
-    public static void testAsCollectorNone() throws Throwable {
+    public void testAsCollectorNone() throws Throwable {
         MethodHandle collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 0);
         assertEquals(SpreadCollect.MT_collector0, collector.type());
         assertEquals("AB", (String) collector.invoke("A", "B"));
     }
 
-    @DataProvider
     static Object[][] asCollectorIllegalPositions() {
         return new Object[][]{{-1}, {17}};
     }
 
-    @Test(dataProvider = "asCollectorIllegalPositions")
-    public static void testAsCollectorIllegalPos(int p) {
-        boolean caught = false;
-        try {
-            SpreadCollect.MH_forCollecting.asCollector(p, int[].class, 0);
-        } catch (IllegalArgumentException iae) {
-            assertEquals("bad collect position", iae.getMessage());
-            caught = true;
-        }
-        assertTrue(caught);
+    @ParameterizedTest
+    @MethodSource("asCollectorIllegalPositions")
+    public void testAsCollectorIllegalPos(int p) {
+        var iae = assertThrows(IllegalArgumentException.class, () -> SpreadCollect.MH_forCollecting.asCollector(p, int[].class, 0));
+        assertEquals("bad collect position", iae.getMessage());
     }
 
     @Test
-    public static void testAsCollectorExample() throws Throwable {
+    public void testAsCollectorExample() throws Throwable {
         // test the JavaDoc asCollector-with-pos example
         StringWriter swr = new StringWriter();
         MethodHandle swWrite = LOOKUP.

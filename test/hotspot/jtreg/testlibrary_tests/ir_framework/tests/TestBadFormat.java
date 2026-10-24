@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ public class TestBadFormat {
         expectTestFormatException(BadRunTests.class);
         expectTestFormatException(BadSetupTest.class);
         expectTestFormatException(BadCheckTest.class);
+        expectTestFormatException(BadSkip.class);
         expectTestFormatException(BadIRAnnotationBeforeFlagVM.class);
         expectTestFormatException(BadIRAnnotations.class);
         expectTestFormatException(BadIRAnnotationsAfterTestVM.class);
@@ -276,9 +277,10 @@ class BadArgumentsAnnotation {
     }
 }
 
+// Since all the methods are failing, the class doesn't specify any @Test methods, which is another failure.
+@ClassFail
 class BadOverloadedMethod {
 
-    @FailCount(0) // Combined with both sameName() below
     @Test
     public void sameName() {}
 
@@ -776,6 +778,43 @@ class BadCheckTest {
     public void invalidRunWithArgAnnotation(TestInfo info) {}
 }
 
+class BadSkip {
+    @NoFail
+    @Test
+    public void test() {}
+
+    @NoFail
+    @Test
+    public void test2() {}
+
+    @Skip
+    public void noTest() {}
+
+    @Run(test = "test")
+    @Skip
+    public void noTest2() {}
+
+    @Check(test = "test2")
+    @Skip
+    public void noTest3() {}
+
+    @Setup
+    @Skip
+    public void noTest4() {}
+
+    @NoFail
+    @Test
+    @Skip
+    public static void testSkipOnlyOneTestWithRunMultiple1() {}
+
+    @FailCount(0) // Combined with runTestSkipOnlyOneTestWithRunMultiple() below
+    @Test
+    public static void testSkipOnlyOneTestWithRunMultiple2() {}
+
+    @Run(test = {"testSkipOnlyOneTestWithRunMultiple1",
+                 "testSkipOnlyOneTestWithRunMultiple2"})
+    public static void runTestSkipOnlyOneTestWithRunMultiple() {}
+}
 
 class BadIRAnnotationBeforeFlagVM {
 
@@ -843,12 +882,11 @@ class BadIRAnnotations {
     public void mustSpecifyAtLeastOneConstraint3() {
     }
 
-    @FailCount(3)
+    @FailCount(2)
     @Test
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "50"}, applyIfNot = {"UseTLAB", "true"})
     @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"},
         applyIfOr = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"})
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "50"}, applyIfNot = {"TLABRefillWasteFraction", "50"},
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "50"},
         applyIfAnd = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"},
         applyIfOr = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"})
     public void onlyOneApply() {}
@@ -888,43 +926,6 @@ class BadIRAnnotations {
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "=<34"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "<"})
     public void applyIfFaultyComparator() {}
-
-    @FailCount(3)
-    @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "50", "UseTLAB"})
-    public void applyIfNotTooManyFlags() {}
-
-    @FailCount(2)
-    @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"Bla"})
-    public void applyIfNotMissingValue() {}
-
-    @FailCount(2)
-    @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"PrintIdealGraphFilee", "true"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"Bla", "foo"})
-    public void applyIfNotUnknownFlag() {}
-
-    @FailCount(5)
-    @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"PrintIdealGraphFile", ""})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"UseTLAB", ""})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"", "true"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"", ""})
-    @IR(failOn = IRNode.CALL, applyIfNot = {" ", " "})
-    public void applyIfNotEmptyValue() {}
-
-    @FailCount(5)
-    @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "! 34"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "!== 34"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "<<= 34"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "=<34"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "<"})
-    public void applyIfNotFaultyComparator() {}
-
 
     @FailCount(2)
     @Test

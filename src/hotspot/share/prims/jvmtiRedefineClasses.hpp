@@ -363,11 +363,16 @@ class VM_RedefineClasses: public VM_Operation {
   int                         _index_map_count;
   intArray *                  _index_map_p;
 
-  // _operands_index_map_count is just an optimization for knowing if
-  // _operands_index_map_p contains any entries.
-  int                         _operands_cur_length;
-  int                         _operands_index_map_count;
-  intArray *                  _operands_index_map_p;
+  // _bsm_index_map_count is just an optimization for knowing if
+  // _bsm_index_map_p contains any entries.
+  int                         _bsm_index_map_count;
+  intArray *                  _bsm_index_map_p;
+
+  // After merge_constant_pools "Pass 0", the BSMAttribute entries of merge_cp_p will have been expanded to fit
+  // scratch_cp's BSMAttribute entries as well.
+  // However, the newly acquired space will not have been filled in yet.
+  // To append to this new space, the iterator is used.
+  BSMAttributeEntries::InsertionIterator _bsmae_iter;
 
   // ptr to _class_count scratch_classes
   InstanceKlass**             _scratch_classes;
@@ -429,17 +434,18 @@ class VM_RedefineClasses: public VM_Operation {
   // Support for constant pool merging (these routines are in alpha order):
   void append_entry(const constantPoolHandle& scratch_cp, int scratch_i,
     constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
-  void append_operand(const constantPoolHandle& scratch_cp, int scratch_bootstrap_spec_index,
+  // Returns the index of the appended BSM
+  int append_bsm_entry(const constantPoolHandle& scratch_cp, int scratch_bootstrap_spec_index,
     constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
-  void finalize_operands_merge(const constantPoolHandle& merge_cp, TRAPS);
+  void finalize_bsm_entries_merge(const constantPoolHandle& merge_cp, TRAPS);
   u2 find_or_append_indirect_entry(const constantPoolHandle& scratch_cp, int scratch_i,
     constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
-  int find_or_append_operand(const constantPoolHandle& scratch_cp, int scratch_bootstrap_spec_index,
+  int find_or_append_bsm_entry(const constantPoolHandle& scratch_cp, int scratch_bootstrap_spec_index,
     constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
   u2 find_new_index(int old_index);
-  int find_new_operand_index(int old_bootstrap_spec_index);
+  int find_new_bsm_index(int old_bootstrap_spec_index);
   void map_index(const constantPoolHandle& scratch_cp, int old_index, int new_index);
-  void map_operand_index(int old_bootstrap_spec_index, int new_bootstrap_spec_index);
+  void map_bsm_index(int old_bootstrap_spec_index, int new_bootstrap_spec_index);
   bool merge_constant_pools(const constantPoolHandle& old_cp,
     const constantPoolHandle& scratch_cp, constantPoolHandle& merge_cp_p,
     int& merge_cp_length_p, TRAPS);
@@ -471,6 +477,7 @@ class VM_RedefineClasses: public VM_Operation {
   bool rewrite_cp_refs_in_nest_attributes(InstanceKlass* scratch_class);
   bool rewrite_cp_refs_in_record_attribute(InstanceKlass* scratch_class);
   bool rewrite_cp_refs_in_permitted_subclasses_attribute(InstanceKlass* scratch_class);
+  bool rewrite_cp_refs_in_loadable_descriptors_attribute(InstanceKlass* scratch_class);
 
   void rewrite_cp_refs_in_method(methodHandle method,
     methodHandle * new_method_p, TRAPS);
@@ -487,6 +494,10 @@ class VM_RedefineClasses: public VM_Operation {
   void rewrite_cp_refs_in_verification_type_info(
          address& stackmap_addr_ref, address stackmap_end, u2 frame_i,
          u1 frame_size);
+  void rewrite_cp_refs_in_early_larval_stackmaps(
+         address& stackmap_p_ref, address stackmap_end, u2 frame_i,
+         u1 frame_type);
+
   void set_new_constant_pool(ClassLoaderData* loader_data,
          InstanceKlass* scratch_class,
          constantPoolHandle scratch_cp, int scratch_cp_length, TRAPS);

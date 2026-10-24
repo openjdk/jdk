@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8262891 8269146 8269113 8348928
  * @summary Verify errors related to pattern switches.
- * @compile/fail/ref=SwitchErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW SwitchErrors.java
+ * @compile/fail/ref=SwitchErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW -XDexhaustivityMaxBaseChecks=0 SwitchErrors.java
  */
 
 public class SwitchErrors {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -544,7 +544,7 @@ public abstract class SctpMultiChannel
      * contain the complete message, then an invocation of {@link
      * MessageInfo#isComplete isComplete} on the returned {@code
      * MessageInfo} will return {@code false}, and more invocations of this
-     * method will be necessary to completely consume the messgae. Only
+     * method will be necessary to completely consume the message. Only
      * one message at a time will be partially delivered in any stream. The
      * socket option {@link SctpStandardSocketOptions#SCTP_FRAGMENT_INTERLEAVE
      * SCTP_FRAGMENT_INTERLEAVE} controls various aspects of what interlacing of
@@ -596,7 +596,7 @@ public abstract class SctpMultiChannel
      *          If another thread interrupts the current thread
      *          while the read operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  NotYetBoundException
      *          If this channel is not yet bound
@@ -682,7 +682,7 @@ public abstract class SctpMultiChannel
      *          If another thread interrupts the current thread
      *          while the read operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  IOException
      *          If some other I/O error occurs

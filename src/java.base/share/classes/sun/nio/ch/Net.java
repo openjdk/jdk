@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@ import java.nio.channels.UnresolvedAddressException;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Enumeration;
 import java.util.Objects;
+import java.lang.LazyConstant;
+import java.util.function.Supplier;
 
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.IPAddressUtil;
@@ -65,8 +67,6 @@ public class Net {
     // set to true if exclusive binding is on for Windows
     private static final boolean EXCLUSIVE_BIND;
 
-    // set to true if the fast tcp loopback should be enabled on Windows
-    private static final boolean FAST_LOOPBACK;
 
     // -- Miscellaneous utilities --
 
@@ -94,13 +94,14 @@ public class Net {
         return EXCLUSIVE_BIND;
     }
 
-    private static final StableValue<Boolean> SHUTDOWN_WRITE_BEFORE_CLOSE = StableValue.of();
+    private static final LazyConstant<Boolean> SHUTDOWN_WRITE_BEFORE_CLOSE = LazyConstant.of(new Supplier<Boolean>() {
+        @Override  public Boolean get() { return shouldShutdownWriteBeforeClose0(); }});
 
     /**
      * Tells whether a TCP connection should be shutdown for writing before closing.
      */
     static boolean shouldShutdownWriteBeforeClose() {
-        return SHUTDOWN_WRITE_BEFORE_CLOSE.orElseSet(Net::shouldShutdownWriteBeforeClose0);
+        return SHUTDOWN_WRITE_BEFORE_CLOSE.get();
     }
 
     /**
@@ -455,11 +456,6 @@ public class Net {
         }
     }
 
-    private static boolean isFastTcpLoopbackRequested() {
-        String loopbackProp = System.getProperty("jdk.net.useFastTcpLoopback", "false");
-        return loopbackProp.isEmpty() || Boolean.parseBoolean(loopbackProp);
-    }
-
     // -- Socket operations --
 
     private static native boolean isIPv6Available0();
@@ -488,7 +484,7 @@ public class Net {
     static FileDescriptor socket(ProtocolFamily family, boolean stream) throws IOException {
         boolean preferIPv6 = isIPv6Available() &&
             (family != StandardProtocolFamily.INET);
-        return IOUtil.newFD(socket0(preferIPv6, stream, false, FAST_LOOPBACK));
+        return IOUtil.newFD(socket0(preferIPv6, stream, false));
     }
 
     static FileDescriptor serverSocket() {
@@ -498,12 +494,11 @@ public class Net {
     static FileDescriptor serverSocket(ProtocolFamily family) {
         boolean preferIPv6 = isIPv6Available() &&
             (family != StandardProtocolFamily.INET);
-        return IOUtil.newFD(socket0(preferIPv6, true, true, FAST_LOOPBACK));
+        return IOUtil.newFD(socket0(preferIPv6, true, true));
     }
 
     // Due to oddities SO_REUSEADDR on Windows reuse is ignored
-    private static native int socket0(boolean preferIPv6, boolean stream, boolean reuse,
-                                      boolean fastLoopback);
+    private static native int socket0(boolean preferIPv6, boolean stream, boolean reuse);
 
     public static void bind(FileDescriptor fd, InetAddress addr, int port)
         throws IOException
@@ -793,8 +788,6 @@ public class Net {
         } else {
             EXCLUSIVE_BIND = false;
         }
-
-        FAST_LOOPBACK = isFastTcpLoopbackRequested();
 
         IPV6_AVAILABLE = isIPv6Available0();
         SO_REUSEPORT_AVAILABLE = isReusePortAvailable0();

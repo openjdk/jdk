@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,23 +110,23 @@ class VM_GC_Operation: public VM_Heap_Sync_Operation {
   uint           _full_gc_count_before;    // full gc count before acquiring the Heap_lock
   bool           _full;                    // whether a "full" collection
   bool           _prologue_succeeded;      // whether doit_prologue succeeded
+  bool           _is_shutting_down;        // whether the operation found that the GC is shutting down
   GCCause::Cause _gc_cause;                // the putative cause for this gc op
 
   virtual bool skip_operation() const;
 
  public:
   VM_GC_Operation(uint gc_count_before,
-                  GCCause::Cause _cause,
+                  GCCause::Cause cause,
                   uint full_gc_count_before,
-                  bool full) : VM_Heap_Sync_Operation() {
-    _full = full;
-    _prologue_succeeded = false;
-    _gc_count_before    = gc_count_before;
-
-    _gc_cause           = _cause;
-
-    _full_gc_count_before = full_gc_count_before;
-  }
+                  bool full)
+    : VM_Heap_Sync_Operation(),
+      _gc_count_before(gc_count_before),
+      _full_gc_count_before(full_gc_count_before),
+      _full(full),
+      _prologue_succeeded(false),
+      _is_shutting_down(false),
+      _gc_cause(cause) {}
 
   virtual const char* cause() const;
 
@@ -138,6 +138,14 @@ class VM_GC_Operation: public VM_Heap_Sync_Operation {
 
   virtual bool allow_nested_vm_operations() const  { return true; }
   virtual bool gc_succeeded() const { return _prologue_succeeded; }
+
+  // This function returns the value of CollectedHeap::is_shutting_down() that
+  // was recorded in the prologue. Unlike CollectedHeap::is_shutting_down(),
+  // this function can be called without acquiring the Heap_lock.
+  //
+  // This function exists so that code that tries to schedule a GC operation
+  // can check if it was refused because the JVM is about to shut down.
+  bool is_shutting_down() const { return _is_shutting_down; }
 
   static void notify_gc_begin(bool full = false);
   static void notify_gc_end();
@@ -214,8 +222,7 @@ class VM_CollectForMetadataAllocation: public VM_GC_Collect_Operation {
                                   size_t size,
                                   Metaspace::MetadataType mdtype,
                                   uint gc_count_before,
-                                  uint full_gc_count_before,
-                                  GCCause::Cause gc_cause);
+                                  uint full_gc_count_before);
 
   virtual VMOp_Type type() const { return VMOp_CollectForMetadataAllocation; }
   virtual void doit();

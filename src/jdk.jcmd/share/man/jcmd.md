@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,12 @@ jcmd - send diagnostic command requests to a running Java Virtual Machine
 
 The `jcmd` utility is used to send diagnostic command requests to the JVM. It
 must be used on the same machine on which the JVM is running, and have the same
-effective user and group identifiers that were used to launch the JVM. Each
-diagnostic command has its own set of options and arguments. To display the description,
+effective user and group identifiers that were used to launch the JVM. Both must
+use the same temporary file location for communication; this is true by default
+but also see the [`-XX:AltTempDir`](./java.html#-XX_AltTempDir) option that can be
+set for the JVM.
+
+Each diagnostic command has its own set of options and arguments. To display the description,
 syntax, and a list of available options and arguments for a diagnostic command, use the
 name of the command as the argument. For example:
 
@@ -133,6 +137,16 @@ The following commands are available:
     *options*:
 
     -   `-all`: (Optional) Show help for all commands (BOOLEAN, false) .
+
+`AOT.end_recording`
+:   Ends an in-progress AOT training and records the results to the file(s) specified by `-XX:AOTConfiguration` and/or `-XX:AOTCacheOutput`.
+
+    Impact: Low
+
+    **Note:**
+
+    The JVM must be started in AOT training mode using command-line arguments such as `-XX:AOTMode=record` or `-XX:AOTCacheOutput=<file>`.
+    The results of the AOT training can be an AOT configuration file, an AOT cache file, or both.
 
 `Compiler.CodeHeap_Analytics`  \[*function*\] \[*granularity*\]
 :   Print CodeHeap analytics
@@ -495,7 +509,7 @@ The following commands are available:
     **Note:**
 
     The *options* must be specified using either *key* or *key*`=`*value*
-    syntax. If no parameters are entered, then no recording is stopped.
+    syntax.
 
     *options*:
 
@@ -505,7 +519,8 @@ The following commands are available:
         timestamp, respectively. If no path is provided, the data from the
         recording is discarded. (FILE, no default value)
 
-    -   `name`: (Optional) Name of the recording (STRING, no default value)
+    -   `name`: Name of the recording. Use `JFR.check` to list the names of
+        the running recordings. (STRING, no default value)
 
 
 `JFR.view` \[*options*\]
@@ -704,7 +719,7 @@ The following commands are available:
     Impact: Low
 
 `Thread.dump_to_file` \[*options*\] *filepath*
-:   Dump threads, with stack traces, to a file in plain text or JSON format.
+:   Dump all threads, with stack traces, to a file in plain text or JSON format.
 
     Impact: Medium: Depends on the number of threads.
 
@@ -723,7 +738,8 @@ The following commands are available:
     -   *filepath*:  The file path to the output file.  If %p is specified in the filename, it is expanded to the JVM's PID.  (FILE, no default value)
 
 `Thread.print` \[*options*\]
-:   Prints all threads with stacktraces.
+:   Print all platform threads, and mounted virtual threads, with stack traces.
+    The Thread.dump_to_file command will print all threads to a file.
 
     Impact: Medium --- depends on the number of threads.
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Frame;
+import java.awt.Robot;
 
 /*
  * @test
@@ -35,57 +36,65 @@ import java.awt.Frame;
 
 public class FrameSetMinimumSizeTest {
     private static Frame f;
-    private static volatile boolean passed;
-
+    private static Robot robot;
     public static void main(String[] args) throws Exception {
-        EventQueue.invokeAndWait(() -> {
-            try {
-                createAndShowUI();
+        robot = new Robot();
+        try {
+            EventQueue.invokeAndWait(FrameSetMinimumSizeTest::createAndShowUI);
+            robot.waitForIdle();
+            robot.delay(500);
 
-                f.setSize(200, 200);
-                passed = verifyFrameSize(new Dimension(300, 300));
-                isFrameSizeOk(passed);
+            test(
+                new Dimension(200, 200),
+                new Dimension(300, 300)
+            );
 
-                f.setSize(200, 400);
-                passed = verifyFrameSize(new Dimension(300, 400));
-                isFrameSizeOk(passed);
+            test(
+                new Dimension(200, 400),
+                new Dimension(300, 400)
+            );
 
-                f.setSize(400, 200);
-                passed = verifyFrameSize(new Dimension(400, 300));
-                isFrameSizeOk(passed);
+            test(
+                new Dimension(400, 200),
+                new Dimension(400, 300)
+            );
 
-                f.setMinimumSize(null);
-
-                f.setSize(200, 200);
-                passed = verifyFrameSize(new Dimension(200, 200));
-                isFrameSizeOk(passed);
-            } finally {
+            EventQueue.invokeAndWait(() -> f.setMinimumSize(null));
+            test(
+                new Dimension(200, 200),
+                new Dimension(200, 200)
+            );
+        } finally {
+            EventQueue.invokeAndWait(() -> {
                 if (f != null) {
                     f.dispose();
                 }
-            }
-        });
+            });
+        }
+    }
+
+    private static void test(Dimension size, Dimension expected) throws Exception {
+        robot.waitForIdle();
+        robot.delay(250);
+        EventQueue.invokeAndWait(() -> f.setSize(size));
+        robot.waitForIdle();
+        EventQueue.invokeAndWait(() -> verifyFrameSize(expected));
     }
 
     private static void createAndShowUI() {
         f = new Frame("Minimum Size Test");
         f.setSize(300, 300);
         f.setMinimumSize(new Dimension(300, 300));
+        f.setLocationRelativeTo(null);
         f.setVisible(true);
     }
 
-    private static boolean verifyFrameSize(Dimension expected) {
-
+    private static void verifyFrameSize(Dimension expected) {
         if (f.getSize().width != expected.width || f.getSize().height != expected.height) {
-            return false;
-        }
-        return true;
-    }
-
-    private static void isFrameSizeOk(boolean passed) {
-        if (!passed) {
-            throw new RuntimeException("Frame's setMinimumSize not honoured for the" +
-                    " frame size: " + f.getSize());
+            String message =
+                    "Frame's setMinimumSize not honoured for the frame size: %s. Expected %s"
+                            .formatted(f.getSize(), expected);
+            throw new RuntimeException(message);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,11 +195,18 @@ import java.util.Objects;
  * {@code ZonedDateTime} and {@code Duration}.
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
- * The {@code equals} method should be used for comparisons.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization or
+ * with {@linkplain java.lang.ref.Reference object references}.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code Instant} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
  *
  * @implSpec
  * This class is immutable and thread-safe.
@@ -207,7 +214,8 @@ import java.util.Objects;
  * @since 1.8
  */
 @jdk.internal.ValueBased
-public final class Instant
+// See doc/value-class-preview.md for an overview of value class generation
+public final /*value*/ class Instant
         implements Temporal, TemporalAdjuster, Comparable<Instant>, Serializable {
 
     /**
@@ -786,6 +794,32 @@ public final class Instant
     @Override
     public Instant plus(TemporalAmount amountToAdd) {
         return (Instant) amountToAdd.addTo(this);
+    }
+
+    /**
+     * Returns a copy of this instant with the specified duration added, with
+     * saturated semantics.
+     * <p>
+     * If the result is "earlier" than {@link Instant#MIN}, this method returns
+     * {@code MIN}. If the result is "later" than {@link Instant#MAX}, it
+     * returns {@code MAX}. Otherwise it returns {@link #plus(TemporalAmount) plus(duration)}.
+     *
+     * @apiNote This method can be used to calculate a deadline from
+     * this instant and a timeout. Unlike {@code plus(duration)},
+     * this method never throws {@link ArithmeticException} or {@link DateTimeException}
+     * due to numeric overflow or {@code Instant} range violation.
+     *
+     * @param duration the duration to add, not null
+     * @return an {@code Instant} based on this instant with the addition made, not null
+     *
+     * @since 26
+     */
+    public Instant plusSaturating(Duration duration) {
+        if (duration.isNegative()) {
+            return until(Instant.MIN).compareTo(duration) >= 0 ? Instant.MIN : plus(duration);
+        } else {
+            return until(Instant.MAX).compareTo(duration) <= 0 ? Instant.MAX : plus(duration);
+        }
     }
 
     /**
@@ -1404,6 +1438,7 @@ public final class Instant
      * @throws InvalidObjectException always
      */
     @java.io.Serial
+    @SuppressWarnings("serial") // this method is not invoked for value classes
     private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }

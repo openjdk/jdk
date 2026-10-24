@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,6 +137,16 @@ public class US_ASCII
 
         public boolean canEncode(char c) {
             return c < 0x80;
+        }
+
+        public boolean canEncode(CharSequence cs) {
+            int length = cs.length();
+            for (int i = 0; i < length; i++) {
+                if (!canEncode(cs.charAt(i))) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public boolean isLegalReplacement(byte[] repl) {

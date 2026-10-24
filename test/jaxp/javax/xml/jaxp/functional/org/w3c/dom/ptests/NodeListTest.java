@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,31 @@
  */
 package org.w3c.dom.ptests;
 
-import static org.testng.Assert.assertEquals;
-import static org.w3c.dom.ptests.DOMTestUtil.createDOM;
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.w3c.dom.ptests.DOMTestUtil.createDOM;
+
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.w3c.dom.ptests.NodeListTest
+ * @run junit/othervm org.w3c.dom.ptests.NodeListTest
  * @summary Verifies a bug found in jaxp1.0.1 and 1.1FCS. After going out of
  * bound, the last element of a NodeList returns null. The bug has been fixed
  * in jaxp 1.1.1 build.
  */
 public class NodeListTest {
 
-    @DataProvider(name = "xml")
-    public Object[][] getTestData() {
+    public static Object[][] getTestData() {
         return new Object[][] { { "nodelist.xml", "document" }, { "Node01.xml", "body" } };
     }
 
-    @Test(dataProvider = "xml")
+    @ParameterizedTest
+    @MethodSource("getTestData")
     public void lastItemTest(String xmlFileName, String nodeName) throws Exception {
         Document document = createDOM(xmlFileName);
 
@@ -56,8 +56,7 @@ public class NodeListTest {
         Element elem1 = (Element) nl.item(n - 1);
         nl.item(n);
         Element elem3 = (Element) nl.item(n - 1);
-        assertEquals(elem3, elem1);
-
+        assertEquals(elem1, elem3);
     }
 
 }

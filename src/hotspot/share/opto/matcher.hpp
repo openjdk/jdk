@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@
 class Compile;
 class Node;
 class MachNode;
-class MachTypeNode;
 class MachOper;
 
 //---------------------------Matcher-------------------------------------------
@@ -55,7 +54,7 @@ public:
                     Alt_Post_Visit   // alternative post-visit path
   };
 
-  class MStack: public Node_Stack {
+  class MStack: public Node_Stack<Node> {
   public:
     MStack(int size) : Node_Stack(size) { }
 
@@ -83,7 +82,7 @@ private:
   ResourceArea _states_arena;
 
   // Map old nodes to new nodes
-  Node_List   _new_nodes;
+  Node_List<Node> _new_nodes;
 
   VectorSet   _visited;         // Visit bits
 
@@ -109,10 +108,6 @@ private:
   // Map dense opcode number to info on when rule is swallowed constant.
   const bool *_swallowed;
 
-  // Map dense rule number to determine if this is an instruction chain rule
-  const uint _begin_inst_chain_rule;
-  const uint _end_inst_chain_rule;
-
   // We want to clone constants and possible CmpI-variants.
   // If we do not clone CmpI, then we can have many instances of
   // condition codes alive at once.  This is OK on some chips and
@@ -134,13 +129,13 @@ private:
 
   Node *transform( Node *dummy );
 
-  Node_List _projection_list;        // For Machine nodes killing many values
+  Node_List<MachProjNode> _projection_list;        // For Machine nodes killing many values
 
-  Node_Array _shared_nodes;
+  Node_Array<MachNode> _shared_nodes;
 
 #ifndef PRODUCT
-  Node_Array _old2new_map;    // Map roots of ideal-trees to machine-roots
-  Node_Array _new2old_map;    // Maps machine nodes back to ideal
+  Node_Array<const Node> _old2new_map;    // Map roots of ideal-trees to machine-roots
+  Node_Array<Node> _new2old_map;    // Maps machine nodes back to ideal
   VectorSet _reused;          // Ideal IGV identifiers reused by machine nodes
 #endif // !PRODUCT
 
@@ -170,6 +165,7 @@ private:
   MachNode* _mach_null;
 
   void handle_precedence_edges(Node* n, MachNode *mach);
+  void combine_adr_type(const Node* n, MachNode* mach) const;
 
 public:
   int LabelRootDepth;
@@ -179,7 +175,6 @@ public:
   RegMask *idealreg2debugmask  [_last_machine_leaf];
   void init_spill_mask( Node *ret );
   // Convert machine register number to register mask
-  static uint mreg2regmask_max;
   static RegMask mreg2regmask[];
   static RegMask STACK_ONLY_mask;
   static RegMask caller_save_regmask;
@@ -205,8 +200,6 @@ public:
   static const char *regName[];
   // Machine register encodings
   static const unsigned char _regEncode[];
-  // Machine Node names
-  const char **_ruleName;
   // Rules that are cheaper to rematerialize than to spill
   static const uint _begin_rematerialize;
   static const uint _end_rematerialize;
@@ -221,12 +214,12 @@ public:
   // Convert a machine register to a machine register type, so-as to
   // properly match spill code.
   const int *_register_save_type;
+  #ifdef ASSERT
   // Maps from machine register to boolean; true if machine register can
   // be holding a call argument in some signature.
   static bool can_be_java_arg( int reg );
-  // Maps from machine register to boolean; true if machine register holds
-  // a spillable argument.
-  static bool is_spillable_arg( int reg );
+  #endif
+
   // Number of integer live ranges that constitute high register pressure
   static uint int_pressure_limit();
   // Number of float live ranges that constitute high register pressure
@@ -234,24 +227,20 @@ public:
 
   // List of IfFalse or IfTrue Nodes that indicate a taken null test.
   // List is valid in the post-matching space.
-  Node_List _null_check_tests;
+  Node_List<Node> _null_check_tests;
   void collect_null_checks( Node *proj, Node *orig_proj );
   void validate_null_checks( );
 
   Matcher();
 
   // Get a projection node at position pos
-  Node* get_projection(uint pos) {
+  MachProjNode* get_projection(uint pos) {
     return _projection_list[pos];
   }
 
   // Push a projection node onto the projection list
-  void push_projection(Node* node) {
+  void push_projection(MachProjNode* node) {
     _projection_list.push(node);
-  }
-
-  Node* pop_projection() {
-    return _projection_list.pop();
   }
 
   // Number of nodes in the projection list
@@ -264,6 +253,8 @@ public:
 
   // Helper for match
   OptoReg::Name warp_incoming_stk_arg( VMReg reg );
+
+  RegMask* return_values_mask(const TypeFunc* tf) const;
 
   // Transform, then walk.  Does implicit DCE while walking.
   // Name changed from "transform" to avoid it being virtual.
@@ -327,11 +318,23 @@ public:
   // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
   static bool match_rule_supported_vector(int opcode, int vlen, BasicType bt);
 
+  // Returns true if the platform efficiently implements the given masked vector
+  // operation using predicate features, false otherwise.
   static bool match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt);
 
+  // Determines if a vector operation needs to be partially implemented with a mask
+  // controlling only the lanes in range [0, vector_length) are processed. This applies
+  // to operations whose vector length is less than the hardware-supported maximum
+  // vector length. Returns true if the operation requires masking, false otherwise.
   static bool vector_needs_partial_operations(Node* node, const TypeVect* vt);
 
   static bool vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen);
+
+  // Identify if a vector mask operation prefers the input/output mask to be
+  // saved with a predicate type or not.
+  // - Return true if it prefers a predicate type (i.e. TypePVectMask).
+  // - Return false if it prefers a general vector type (i.e. TypeVectA to TypeVectZ).
+  static bool mask_op_prefers_predicate(int opcode, const TypeVect* vt);
 
   static const RegMask* predicate_reg_mask(void);
 
@@ -402,24 +405,20 @@ public:
   // Return value register.  On Intel it is EAX.
   static OptoRegPair   return_value(uint ideal_reg);
   static OptoRegPair c_return_value(uint ideal_reg);
-  RegMask                     _return_value_mask;
+  RegMask*            _return_values_mask;
   // Inline Cache Register
   static OptoReg::Name  inline_cache_reg();
   static int            inline_cache_reg_encode();
 
-  // Register for DIVI projection of divmodI
-  static RegMask divI_proj_mask();
-  // Register for MODI projection of divmodI
-  static RegMask modI_proj_mask();
+  // Register for the first projection of an int pair
+  static const RegMask& firstI_proj_mask();
+  // Register for the second projection of an int pair
+  static const RegMask& secondI_proj_mask();
 
-  // Register for DIVL projection of divmodL
-  static RegMask divL_proj_mask();
-  // Register for MODL projection of divmodL
-  static RegMask modL_proj_mask();
-
-  // Use hardware DIV instruction when it is faster than
-  // a code which use multiply for division by constant.
-  static bool use_asm_for_ldiv_by_con( jlong divisor );
+  // Register for the first projection of a long pair
+  static const RegMask& firstL_proj_mask();
+  // Register for the second projection of a long pair
+  static const RegMask& secondL_proj_mask();
 
   // Java-Interpreter calling convention
   // (what you use when calling between compiled-Java and Interpreted-Java
@@ -430,9 +429,6 @@ public:
 
   // The Method-klass-holder may be passed in the inline_cache_reg
   // and then expanded into the inline_cache_reg and a method_ptr register
-
-  // Interpreter's Frame Pointer Register
-  static OptoReg::Name  interpreter_frame_pointer_reg();
 
   // Java-Native calling convention
   // (what you use when intercalling between Java and C++ code)
@@ -506,6 +502,8 @@ public:
   DEBUG_ONLY( bool verify_after_postselect_cleanup(); )
 
  public:
+  static bool is_register_biasing_candidate(const MachNode* mdef, int oper_index);
+
   // This routine is run whenever a graph fails to match.
   // If it returns, the compiler should bailout to interpreter without error.
   // In non-product mode, SoftMatchFailure is false to detect non-canonical

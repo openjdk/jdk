@@ -31,7 +31,7 @@
 
 void ShenandoahGenerationalMode::initialize_flags() const {
 
-#if !(defined AARCH64 || defined AMD64 || defined IA32 || defined PPC64 || defined RISCV64)
+#if !(defined AARCH64 || defined AMD64 || defined PPC64 || defined RISCV64)
   vm_exit_during_initialization("Shenandoah Generational GC is not supported on this platform.");
 #endif
 
@@ -49,7 +49,6 @@ void ShenandoahGenerationalMode::initialize_flags() const {
 
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(GCTimeRatio, 70);
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
-  SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 
   // This helps most multi-core hardware hosts, enable by default
   SHENANDOAH_ERGO_ENABLE_FLAG(UseCondCardMark);
@@ -57,7 +56,6 @@ void ShenandoahGenerationalMode::initialize_flags() const {
   // Final configuration checks
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahLoadRefBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahSATBBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahCASBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCardBarrier);
 }

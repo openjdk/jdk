@@ -31,6 +31,7 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/vmError.hpp"
 
@@ -79,7 +80,7 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
     ss.print_cr("%3s marked strong",              ctx->is_marked_strong(obj) ? "" : "not");
     ss.print_cr("%3s marked weak",                ctx->is_marked_weak(obj) ? "" : "not");
     ss.print_cr("%3s in collection set",          heap->in_collection_set(obj) ? "" : "not");
-    if (heap->mode()->is_generational() && !obj->is_forwarded()) {
+    if (heap->mode()->is_generational() && !ShenandoahForwarding::is_forwarded(obj)) {
       ss.print_cr("age: %d", obj->age());
     }
     ss.print_raw("mark: ");
@@ -166,27 +167,31 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
   msg.append("\n");
 
   if (level >= _safe_oop) {
-    oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
     msg.append("Forwardee:\n");
-    if (obj != fwd) {
+    if (ShenandoahForwarding::is_real_forwarded(obj)) {
+      oop fwd = ShenandoahForwarding::forwardee_raw(obj);
       if (level >= _safe_oop_fwd && os::is_readable_pointer(fwd)) {
         print_obj(msg, fwd);
       } else {
         print_obj_safe(msg, fwd);
       }
+    } else if (ShenandoahForwarding::is_self_forwarded(obj)) {
+      msg.append("  (self forwarded)");
     } else {
-      msg.append("  (the object itself)");
+      msg.append("  (not forwarded)");
     }
     msg.append("\n");
   }
 
   if (level >= _safe_oop_fwd) {
-    oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
-    oop fwd2 = ShenandoahForwarding::get_forwardee_raw_unchecked(fwd);
-    if (fwd != fwd2) {
-      msg.append("Second forwardee:\n");
-      print_obj_safe(msg, fwd2);
-      msg.append("\n");
+    if (ShenandoahForwarding::is_real_forwarded(obj)) {
+      oop fwd = ShenandoahForwarding::forwardee_raw(obj);
+      if (ShenandoahForwarding::is_forwarded(fwd)) {
+        oop fwd2 = ShenandoahForwarding::forwardee_raw(fwd);
+        msg.append("Second forwardee:\n");
+        print_obj_safe(msg, fwd2);
+        msg.append("\n");
+      }
     }
   }
 
@@ -236,9 +241,10 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                   file, line);
   }
 
-  oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
+  oop fwd = obj;
+  if (ShenandoahForwarding::is_real_forwarded(obj)) {
+    fwd = ShenandoahForwarding::forwardee_raw(obj);
 
-  if (obj != fwd) {
     // When Full GC moves the objects, we cannot trust fwdptrs. If we got here, it means something
     // tries fwdptr manipulation when Full GC is running. The only exception is using the fwdptr
     // that still points to the object itself.
@@ -275,8 +281,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
     }
 
     // Step 4. Check for multiple forwardings
-    oop fwd2 = ShenandoahForwarding::get_forwardee_raw_unchecked(fwd);
-    if (fwd != fwd2) {
+    if (ShenandoahForwarding::is_forwarded(fwd)) {
       print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                     "Multiple forwardings",
                     file, line);
@@ -372,9 +377,8 @@ void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, co
 
 void ShenandoahAsserts::assert_forwarded(void* interior_loc, oop obj, const char* file, int line) {
   assert_correct(interior_loc, obj, file, line);
-  oop fwd =   ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
-  if (obj == fwd) {
+  if (!ShenandoahForwarding::is_forwarded(obj)) {
     print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_forwarded failed",
                   "Object should be forwarded",
                   file, line);
@@ -383,9 +387,8 @@ void ShenandoahAsserts::assert_forwarded(void* interior_loc, oop obj, const char
 
 void ShenandoahAsserts::assert_not_forwarded(void* interior_loc, oop obj, const char* file, int line) {
   assert_correct(interior_loc, obj, file, line);
-  oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
-  if (obj != fwd) {
+  if (ShenandoahForwarding::is_forwarded(obj)) {
     print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_not_forwarded failed",
                   "Object should not be forwarded",
                   file, line);
@@ -425,6 +428,25 @@ void ShenandoahAsserts::assert_marked_strong(void *interior_loc, oop obj, const 
   }
 }
 
+void ShenandoahAsserts::assert_bitmap_clear_above_top(ShenandoahHeapRegion* region) {
+  ShenandoahMarkingContext* const ctx = ShenandoahHeap::heap()->marking_context();
+  const HeapWord* top_bitmap = ctx->top_bitmap(region);
+  // Make sure that top is loaded before any of the marks from the bitmap are loaded. If another
+  // thread has cleared the bitmap we must not allow any stale reads.
+  OrderAccess::loadload();
+  assert(ctx->is_bitmap_range_within_region_clear(top_bitmap, region->end()), "Bitmap above top_bitmap() must be clear");
+}
+
+void ShenandoahAsserts::assert_mark_complete(HeapWord* obj, const char* file, int line) {
+  const ShenandoahHeap* heap = ShenandoahHeap::heap();
+  const ShenandoahHeapRegion* region = heap->heap_region_containing(obj);
+  const ShenandoahGeneration* generation = heap->generation_for(region->affiliation());
+  if (!generation->is_mark_complete()) {
+    ShenandoahMessageBuffer msg("Marking should be complete for object " PTR_FORMAT " in the %s generation", p2i(obj), generation->name());
+    report_vm_error(file, line, msg.buffer());
+  }
+}
+
 void ShenandoahAsserts::assert_in_cset(void* interior_loc, oop obj, const char* file, int line) {
   assert_correct(interior_loc, obj, file, line);
 
@@ -452,6 +474,17 @@ void ShenandoahAsserts::assert_not_in_cset_loc(void* interior_loc, const char* f
   if (heap->in_collection_set_loc(interior_loc)) {
     print_failure(_safe_unknown, nullptr, interior_loc, nullptr, "Shenandoah assert_not_in_cset_loc failed",
                   "Interior location should not be in collection set",
+                  file, line);
+  }
+}
+
+void ShenandoahAsserts::assert_in_young(void* interior_loc, oop obj, const char* file, int line) {
+  assert_correct(interior_loc, obj, file, line);
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (!heap->heap_region_containing(obj)->is_young()) {
+    print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_in_young failed",
+                  "Object should be in young region",
                   file, line);
   }
 }
@@ -542,23 +575,6 @@ void ShenandoahAsserts::assert_control_or_vm_thread_at_safepoint(bool at_safepoi
   report_vm_error(file, line, msg.buffer());
 }
 
-void ShenandoahAsserts::assert_generations_reconciled(const char* file, int line) {
-  if (!ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
-    // Only shenandoah safepoint operations participate in the active/gc generation scheme
-    return;
-  }
-
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahGeneration* ggen = heap->gc_generation();
-  ShenandoahGeneration* agen = heap->active_generation();
-  if (agen == ggen) {
-    return;
-  }
-
-  ShenandoahMessageBuffer msg("Active(%s) & GC(%s) Generations aren't reconciled", agen->name(), ggen->name());
-  report_vm_error(file, line, msg.buffer());
-}
-
 bool ShenandoahAsserts::extract_klass_safely(oop obj, narrowKlass& nk, const Klass*& k) {
   nk = 0;
   k = nullptr;
@@ -566,26 +582,24 @@ bool ShenandoahAsserts::extract_klass_safely(oop obj, narrowKlass& nk, const Kla
   if (!os::is_readable_pointer(obj)) {
     return false;
   }
-  if (UseCompressedClassPointers) {
-    if (UseCompactObjectHeaders) { // look in forwardee
-      markWord mark = obj->mark();
-      if (mark.is_marked()) {
-        oop fwd = cast_to_oop(mark.clear_lock_bits().to_pointer());
-        if (!os::is_readable_pointer(fwd)) {
-          return false;
-        }
-        mark = fwd->mark();
+
+  if (UseCompactObjectHeaders) { // look in forwardee
+    markWord mark = obj->mark();
+    if (mark.is_marked()) {
+      oop fwd = cast_to_oop(mark.clear_lock_bits().to_pointer());
+      if (!os::is_readable_pointer(fwd)) {
+        return false;
       }
-      nk = mark.narrow_klass();
-    } else {
-      nk = obj->narrow_klass();
+      mark = fwd->mark();
     }
-    if (!CompressedKlassPointers::is_valid_narrow_klass_id(nk)) {
-      return false;
-    }
-    k = CompressedKlassPointers::decode_not_null_without_asserts(nk);
+    nk = mark.narrow_klass();
   } else {
-    k = obj->klass();
+    nk = obj->narrow_klass();
   }
+  if (!CompressedKlassPointers::is_valid_narrow_klass_id(nk)) {
+    return false;
+  }
+  k = CompressedKlassPointers::decode_not_null_without_asserts(nk);
+
   return k != nullptr;
 }

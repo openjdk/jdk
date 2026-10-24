@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,9 @@ public final class EventFileStream extends AbstractEventStream {
 
     @Override
     public void close() {
-        closeParser();
+        if (!closeParser()) {
+            return;
+        }
         dispatcher().runCloseActions();
         try {
             input.close();
@@ -127,6 +129,10 @@ public final class EventFileStream extends AbstractEventStream {
                 cacheSorted[index++] = event;
             }
             dispatchOrdered(c, index);
+            if (index > 100_000 && 4 * index < cacheSorted.length) {
+                cacheSorted = new RecordedEvent[2 * index];
+            }
+            onFlush();
             index = 0;
         }
     }
@@ -136,8 +142,8 @@ public final class EventFileStream extends AbstractEventStream {
         Arrays.sort(cacheSorted, 0, index, EVENT_COMPARATOR);
         for (int i = 0; i < index; i++) {
             c.dispatch(cacheSorted[i]);
+            cacheSorted[i] = null;
         }
-        onFlush();
     }
 
     private void processUnordered(Dispatcher c) throws IOException {

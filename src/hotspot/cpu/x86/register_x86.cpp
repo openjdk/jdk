@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,10 @@ const KRegister::KRegisterImpl         all_KRegisterImpls    [KRegister::number_
 
 const char * Register::RegisterImpl::name() const {
   static const char *const names[number_of_registers] = {
-#ifdef _LP64
     "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi",
     "r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15",
     "r16", "r17", "r18", "r19", "r20", "r21", "r22", "r23",
     "r24", "r25", "r26", "r27", "r28", "r29", "r30", "r31"
-#else
-    "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"
-#endif // _LP64
   };
   return is_valid() ? names[encoding()] : "noreg";
 }
@@ -54,11 +50,9 @@ const char* FloatRegister::FloatRegisterImpl::name() const {
 const char* XMMRegister::XMMRegisterImpl::name() const {
   static const char *const names[number_of_registers] = {
     "xmm0",    "xmm1",  "xmm2",  "xmm3",  "xmm4",  "xmm5",  "xmm6",  "xmm7"
-#ifdef _LP64
     ,"xmm8",   "xmm9",  "xmm10", "xmm11", "xmm12", "xmm13", "xmm14", "xmm15"
     ,"xmm16",  "xmm17", "xmm18", "xmm19", "xmm20", "xmm21", "xmm22", "xmm23"
     ,"xmm24",  "xmm25", "xmm26", "xmm27", "xmm28", "xmm29", "xmm30", "xmm31"
-#endif // _LP64
   };
   return is_valid() ? names[encoding()] : "xnoreg";
 }

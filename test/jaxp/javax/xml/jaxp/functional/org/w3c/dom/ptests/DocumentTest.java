@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,35 @@
  */
 package org.w3c.dom.ptests;
 
-import static javax.xml.XMLConstants.XMLNS_ATTRIBUTE_NS_URI;
-import static javax.xml.XMLConstants.XML_NS_URI;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.fail;
-import static org.w3c.dom.DOMException.NAMESPACE_ERR;
-import static org.w3c.dom.ptests.DOMTestUtil.DOMEXCEPTION_EXPECTED;
-import static org.w3c.dom.ptests.DOMTestUtil.createDOMWithNS;
-import static org.w3c.dom.ptests.DOMTestUtil.createNewDocument;
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import static javax.xml.XMLConstants.XMLNS_ATTRIBUTE_NS_URI;
+import static javax.xml.XMLConstants.XML_NS_URI;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.w3c.dom.DOMException.NAMESPACE_ERR;
+import static org.w3c.dom.ptests.DOMTestUtil.DOMEXCEPTION_EXPECTED;
+import static org.w3c.dom.ptests.DOMTestUtil.createDOMWithNS;
+import static org.w3c.dom.ptests.DOMTestUtil.createNewDocument;
+
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.w3c.dom.ptests.DocumentTest
+ * @run junit/othervm org.w3c.dom.ptests.DocumentTest
  * @summary Test createAttributeNS, getElementsByTagNameNS and createElementNS method of Document
  */
 public class DocumentTest {
 
-    @DataProvider(name = "invalid-nsuri")
-    public Object[][] getInvalidNamespaceURI() {
+    public static Object[][] getInvalidNamespaceURI() {
         return new Object[][] {
                 { " ", "xml:novel" }, //blank
                 { "hello", "xml:novel" }, //unqualified
@@ -61,14 +62,14 @@ public class DocumentTest {
      * Test for createAttributeNS method: verifies that DOMException is thrown
      * if reserved prefixes are used with an arbitrary namespace name.
      */
-    @Test(dataProvider = "invalid-nsuri", expectedExceptions = DOMException.class)
+    @ParameterizedTest
+    @MethodSource("getInvalidNamespaceURI")
     public void testCreateAttributeNSNeg(String namespaceURI, String name) throws Exception {
         Document document = createDOMWithNS("DocumentTest01.xml");
-        document.createAttributeNS(namespaceURI, name);
+        assertThrows(DOMException.class, () -> document.createAttributeNS(namespaceURI, name));
     }
 
-    @DataProvider(name = "valid-nsuri")
-    public Object[][] getValidNamespaceURI() {
+    public static Object[][] getValidNamespaceURI() {
         return new Object[][] {
                 { XML_NS_URI, "xml:novel" },
                 { XMLNS_ATTRIBUTE_NS_URI, "xmlns:novel" },
@@ -79,16 +80,16 @@ public class DocumentTest {
     /*
      * Verify the Attr from createAttributeNS.
      */
-    @Test(dataProvider = "valid-nsuri")
+    @ParameterizedTest
+    @MethodSource("getValidNamespaceURI")
     public void testCreateAttributeNS(String namespaceURI, String name) throws Exception {
         Document document = createDOMWithNS("DocumentTest01.xml");
         Attr attr = document.createAttributeNS(namespaceURI, name);
-        assertEquals(attr.getNamespaceURI(), namespaceURI);
-        assertEquals(attr.getName(), name);
+        assertEquals(namespaceURI, attr.getNamespaceURI());
+        assertEquals(name, attr.getName());
     }
 
-    @DataProvider(name = "elementName")
-    public Object[][] getElementName() {
+    public static Object[][] getElementName() {
         return new Object[][] {
                 { "author", 1 },
                 { "b:author", 0 } };
@@ -97,25 +98,27 @@ public class DocumentTest {
     /*
      * Verify the NodeList from getElementsByTagNameNS.
      */
-    @Test(dataProvider = "elementName")
-    public void testGetElementsByTagNameNS(String localName, int number) throws Exception {
+    @ParameterizedTest
+    @MethodSource("getElementName")
+    public void testGetElementsByTagNameNS(String localName, int expectedLength) throws Exception {
         Document document = createDOMWithNS("DocumentTest01.xml");
         NodeList nodeList = document.getElementsByTagNameNS("urn:BooksAreUs.org:BookInfo", localName);
-        assertEquals(nodeList.getLength(), number);
+        assertEquals(expectedLength, nodeList.getLength());
     }
 
     /*
      * Test for createElementNS method: verifies that DOMException is thrown
      * if reserved prefixes are used with an arbitrary namespace name.
      */
-    @Test(dataProvider = "invalid-nsuri")
+    @ParameterizedTest
+    @MethodSource("getInvalidNamespaceURI")
     public void testCreateElementNSNeg(String namespaceURI, String name) throws Exception {
         Document document = createDOMWithNS("DocumentTest01.xml");
         try {
             document.createElementNS(namespaceURI, name);
             fail(DOMEXCEPTION_EXPECTED);
         } catch (DOMException e) {
-            assertEquals(e.code, NAMESPACE_ERR);
+            assertEquals(NAMESPACE_ERR, e.code);
         }
     }
 
@@ -129,9 +132,9 @@ public class DocumentTest {
         final String localName = "novel";
         Document document = createDOMWithNS("DocumentTest01.xml");
         Element element = document.createElementNS(nsURI, name);
-        assertEquals(element.getNamespaceURI(), nsURI);
-        assertEquals(element.getNodeName(), name);
-        assertEquals(element.getLocalName(), localName);
+        assertEquals(nsURI, element.getNamespaceURI());
+        assertEquals(name, element.getNodeName());
+        assertEquals(localName, element.getLocalName());
     }
 
     /*
@@ -166,9 +169,9 @@ public class DocumentTest {
     /*
      * Test createElement with unqualified xml name.
      */
-    @Test(expectedExceptions = DOMException.class)
+    @Test
     public void testCreateElementNeg() throws Exception {
         Document doc = createNewDocument();
-        doc.createElement("!nc$%^*(!");
+        assertThrows(DOMException.class, () -> doc.createElement("!nc$%^*(!"));
     }
 }

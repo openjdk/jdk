@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  */
 
 /* @test
- * @bug 8139885
- * @run testng/othervm -ea -esa test.java.lang.invoke.FoldTest
+ * @bug 8139885 8367022
+ * @run junit/othervm -ea -esa test.java.lang.invoke.FoldTest
  */
 
 package test.java.lang.invoke;
@@ -36,9 +36,12 @@ import java.lang.invoke.MethodType;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import static org.testng.AssertJUnit.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import org.testng.annotations.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for the new fold method handle combinator added in JEP 274.
@@ -48,7 +51,7 @@ public class FoldTest {
     static final Lookup LOOKUP = MethodHandles.lookup();
 
     @Test
-    public static void testFold0a() throws Throwable {
+    public void testFold0a() throws Throwable {
         // equivalence to foldArguments(MethodHandle,MethodHandle)
         MethodHandle fold = MethodHandles.foldArguments(Fold.MH_multer, 0, Fold.MH_adder);
         assertEquals(Fold.MT_folded1, fold.type());
@@ -56,7 +59,7 @@ public class FoldTest {
     }
 
     @Test
-    public static void testFold1a() throws Throwable {
+    public void testFold1a() throws Throwable {
         // test foldArguments for folding position 1
         MethodHandle fold = MethodHandles.foldArguments(Fold.MH_multer, 1, Fold.MH_adder1);
         assertEquals(Fold.MT_folded1, fold.type());
@@ -64,7 +67,7 @@ public class FoldTest {
     }
 
     @Test
-    public static void testFold0b() throws Throwable {
+    public void testFold0b() throws Throwable {
         // test foldArguments equivalence with multiple types
         MethodHandle fold = MethodHandles.foldArguments(Fold.MH_str, 0, Fold.MH_comb);
         assertEquals(Fold.MT_folded2, fold.type());
@@ -72,7 +75,7 @@ public class FoldTest {
     }
 
     @Test
-    public static void testFold1b() throws Throwable {
+    public void testFold1b() throws Throwable {
         // test folgArguments for folding position 1, with multiple types
         MethodHandle fold = MethodHandles.foldArguments(Fold.MH_str, 1, Fold.MH_comb2);
         assertEquals(Fold.MT_folded3, fold.type());
@@ -81,7 +84,7 @@ public class FoldTest {
     }
 
     @Test
-    public static void testFoldArgumentsExample() throws Throwable {
+    public void testFoldArgumentsExample() throws Throwable {
         // test the JavaDoc foldArguments-with-pos example
         StringWriter swr = new StringWriter();
         MethodHandle trace = LOOKUP.findVirtual(StringWriter.class, "write", methodType(void.class, String.class)).bindTo(swr);
@@ -90,6 +93,35 @@ public class FoldTest {
         MethodHandle catTrace = MethodHandles.foldArguments(cat, 1, trace);
         assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         assertEquals("jum", swr.toString());
+    }
+
+    static Object[][] invalidFoldPositions() {
+        return new Object[][] {
+                {-1},
+                {Integer.MIN_VALUE},
+                {Fold.MH_multer.type().parameterCount()},
+                {Integer.MAX_VALUE}
+        };
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidFoldPositions")
+    public void testInvalidFoldPositions(int pos) {
+        MethodHandle voidCombiner = MethodHandles.empty(methodType(void.class, int.class));
+        assertThrows(IllegalArgumentException.class,
+                () -> MethodHandles.foldArguments(Fold.MH_multer, pos, Fold.MH_adder1));
+        assertThrows(IllegalArgumentException.class,
+                () -> MethodHandles.foldArguments(Fold.MH_multer, pos, voidCombiner));
+    }
+
+    @Test
+    public void testVoidFoldAtEnd() throws Throwable {
+        MethodHandle voidCombiner = MethodHandles.empty(methodType(void.class));
+        int position = Fold.MH_multer.type().parameterCount();
+        MethodHandle fold = MethodHandles.foldArguments(Fold.MH_multer, position, voidCombiner);
+
+        assertEquals(Fold.MT_multer, fold.type());
+        assertEquals(120, (int) fold.invoke(2, 3, 4, 5));
     }
 
     static class Fold {

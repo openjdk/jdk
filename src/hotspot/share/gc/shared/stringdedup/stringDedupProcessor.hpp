@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "services/cpuTimeUsage.hpp"
 #include "utilities/macros.hpp"
 
@@ -51,7 +52,7 @@ class StringDedup::Processor : public CHeapObj<mtGC> {
   NONCOPYABLE(Processor);
 
   static OopStorage* _storages[2];
-  static StorageUse* volatile _storage_for_requests;
+  static Atomic<StorageUse*> _storage_for_requests;
   static StorageUse* _storage_for_processing;
 
   JavaThread* _thread;

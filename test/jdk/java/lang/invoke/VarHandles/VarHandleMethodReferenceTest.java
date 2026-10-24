@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,12 @@
  * @test
  * @bug 8195650
  * @summary Test linking of method references to VarHandle access methods.
- * @run testng VarHandleMethodReferenceTest
+ * @run junit VarHandleMethodReferenceTest
  */
 
-import org.testng.annotations.Test;
 
 import java.lang.invoke.*;
+import org.junit.jupiter.api.Test;
 
 public class VarHandleMethodReferenceTest {
 

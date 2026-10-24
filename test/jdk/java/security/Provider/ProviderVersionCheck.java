@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,11 @@ public class ProviderVersionCheck {
 
         for (Provider p: Security.getProviders()) {
             System.out.print(p.getName() + " ");
+            if (p.getName().equals(System.getProperty("test.provider.name"))) {
+                // Version numbers of non JDK-providers do not match JDK version number.
+                continue;
+            }
+
             String specVersion = System.getProperty("java.specification.version");
             if (p.getVersion() != Double.parseDouble(specVersion)) {
                 System.out.println("failed. " + "Version received was " +

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,8 +231,7 @@ class JfrCPUSamplerThread : public NonJavaThread {
   volatile bool _is_async_processing_of_cpu_time_jfr_requests_triggered;
   volatile bool _warned_about_timer_creation_failure;
   volatile bool _signal_handler_installed;
-  DEBUG_ONLY(volatile bool _out_of_stack_walking_enabled;)
-  DEBUG_ONLY(volatile u8 _out_of_stack_walking_iterations;)
+  DEBUG_ONLY(volatile bool _out_of_stack_walking_enabled = true;)
 
   static const u4 STOP_SIGNAL_BIT = 0x80000000;
 
@@ -283,10 +283,6 @@ public:
   void set_out_of_stack_walking_enabled(bool runnable) {
     AtomicAccess::release_store(&_out_of_stack_walking_enabled, runnable);
   }
-
-  u8 out_of_stack_walking_iterations() const {
-    return AtomicAccess::load(&_out_of_stack_walking_iterations);
-  }
   #endif
 };
 
@@ -337,7 +333,7 @@ void JfrCPUSamplerThread::on_javathread_terminate(JavaThread* thread) {
   tl->deallocate_cpu_time_jfr_queue();
   s4 lost_samples = tl->cpu_time_jfr_queue().lost_samples();
   if (lost_samples > 0) {
-    JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), JfrThreadLocal::thread_id(thread), lost_samples);
+    JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), lost_samples);
   }
   tl->release_cpu_time_jfr_queue_lock();
 }
@@ -394,7 +390,6 @@ void JfrCPUSamplerThread::run() {
     }
     DEBUG_ONLY(if (AtomicAccess::load_acquire(&_out_of_stack_walking_enabled)) {)
       if (AtomicAccess::cmpxchg(&_is_async_processing_of_cpu_time_jfr_requests_triggered, true, false)) {
-        DEBUG_ONLY(AtomicAccess::inc(&_out_of_stack_walking_iterations);)
         stackwalk_threads_in_native();
       }
     DEBUG_ONLY(})
@@ -428,11 +423,10 @@ void JfrCPUSamplerThread::stackwalk_threads_in_native() {
 
 static volatile size_t count = 0;
 
-void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, traceid tid, Tickspan cpu_time_period) {
+void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, Tickspan cpu_time_period) {
   EventCPUTimeSample event(UNTIMED);
   event.set_failed(true);
   event.set_starttime(start_time);
-  event.set_eventThread(tid);
   event.set_stackTrace(0);
   event.set_samplingPeriod(cpu_time_period);
   event.set_biased(false);
@@ -442,11 +436,10 @@ void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, trac
 
 static volatile size_t biased_count = 0;
 
-void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased) {
+void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid sid, Tickspan cpu_time_period, bool biased) {
   EventCPUTimeSample event(UNTIMED);
   event.set_failed(false);
   event.set_starttime(start_time);
-  event.set_eventThread(tid);
   event.set_stackTrace(sid);
   event.set_samplingPeriod(cpu_time_period);
   event.set_biased(biased);
@@ -460,14 +453,13 @@ void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid si
   }
 }
 
-void JfrCPUTimeThreadSampling::send_lost_event(const JfrTicks &time, traceid tid, s4 lost_samples) {
+void JfrCPUTimeThreadSampling::send_lost_event(const JfrTicks &time, s4 lost_samples) {
   if (!EventCPUTimeSamplesLost::is_enabled()) {
     return;
   }
   EventCPUTimeSamplesLost event(UNTIMED);
   event.set_starttime(time);
   event.set_lostSamples(lost_samples);
-  event.set_eventThread(tid);
   event.commit();
 }
 
@@ -588,17 +580,13 @@ void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* contex
 }
 
 #ifdef ASSERT
-void JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(bool runnable) {
+bool JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(bool runnable) {
   if (_instance != nullptr && _instance->_sampler != nullptr) {
     _instance->_sampler->set_out_of_stack_walking_enabled(runnable);
+    return true;
+  } else {
+    return false;
   }
-}
-
-u8 JfrCPUTimeThreadSampling::out_of_stack_walking_iterations() {
-  if (_instance != nullptr && _instance->_sampler != nullptr) {
-    return _instance->_sampler->out_of_stack_walking_iterations();
-  }
-  return 0;
 }
 #endif
 
@@ -872,8 +860,9 @@ void JfrCPUTimeThreadSampling::on_javathread_terminate(JavaThread* thread) {
 }
 
 #ifdef ASSERT
-static void set_out_of_stack_walking_enabled(bool runnable) {
+bool JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(bool runnable) {
   warn();
+  return false;
 }
 #endif
 

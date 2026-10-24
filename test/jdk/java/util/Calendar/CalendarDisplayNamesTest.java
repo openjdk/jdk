@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,21 @@
  * questions.
  */
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.Map;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @test
  * @bug 8262108 8174269
  * @summary Verify the results returned by Calendar.getDisplayNames() API
  * @comment Locale providers: CLDR,SPI
- * @run testng/othervm -Djava.locale.providers=CLDR,SPI CalendarDisplayNamesTest
+ * @run junit/othervm -Djava.locale.providers=CLDR,SPI CalendarDisplayNamesTest
  * @comment Locale providers: default
- * @run testng CalendarDisplayNamesTest
+ * @run junit CalendarDisplayNamesTest
  */
 public class CalendarDisplayNamesTest {
 
@@ -55,7 +55,7 @@ public class CalendarDisplayNamesTest {
                     continue;
                 }
                 for (final Integer fieldValue : names.values()) {
-                    Assert.assertTrue(fieldValue == Calendar.AM || fieldValue == Calendar.PM,
+                    Assertions.assertTrue(fieldValue == Calendar.AM || fieldValue == Calendar.PM,
                             "Invalid field value " + fieldValue + " for calendar field AM_PM, in locale "
                                     + locale + " with style " + style);
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,31 +35,40 @@
 #include <libgen.h>
 #include "JvmLauncher.h"
 #include "LinuxPackage.h"
+#include "ExecCommand.h"
 
 
 #define STATUS_FAILURE 1
 
-typedef JvmlLauncherHandle (*JvmlLauncherAPI_CreateFunType)(int argc, char *argv[]);
+typedef JvmlLauncherHandle (*JvmlLauncherAPI_CreateFunType)(
+        const PackageDesc*  pkg,
+        int                 argc,
+        char*               argv[]);
 
 static int appArgc;
 static char **appArgv;
 
 
 static JvmlLauncherData* initJvmlLauncherData(int* size) {
-    char* launcherLibPath = 0;
+    JvmLauncherDesc* jvmLauncherDesc = 0;
+    PackageDesc pkg;
     void* jvmLauncherLibHandle = 0;
     JvmlLauncherAPI_GetAPIFunc getApi = 0;
-    JvmlLauncherAPI_CreateFunType createJvmlLauncher = 0;
+    JvmlLauncherAPI_CreateFunType createJvmLauncher = 0;
     JvmlLauncherAPI* api = 0;
     JvmlLauncherHandle jvmLauncherHandle = 0;
     JvmlLauncherData* result = 0;
 
-    launcherLibPath = getJvmLauncherLibPath();
-    if (!launcherLibPath) {
+    jvmLauncherDesc = getJvmLauncherDesc();
+    if (!jvmLauncherDesc) {
         goto cleanup;
     }
 
-    jvmLauncherLibHandle = dlopen(launcherLibPath, RTLD_NOW | RTLD_LOCAL);
+    pkg.name = jvmLauncherDesc->packageName;
+    pkg.type = jvmLauncherDesc->packageType;
+
+    jvmLauncherLibHandle = dlopen(  jvmLauncherDesc->jvmLauncherLibPath,
+                                    RTLD_NOW | RTLD_LOCAL);
     if (!jvmLauncherLibHandle) {
         JP_LOG_ERRMSG(dlerror());
         goto cleanup;
@@ -77,13 +86,13 @@ static JvmlLauncherData* initJvmlLauncherData(int* size) {
         goto cleanup;
     }
 
-    createJvmlLauncher = dlsym(jvmLauncherLibHandle, "jvmLauncherCreate");
-    if (!createJvmlLauncher) {
+    createJvmLauncher = dlsym(jvmLauncherLibHandle, "jvmLauncherCreate");
+    if (!createJvmLauncher) {
         JP_LOG_ERRMSG(dlerror());
         goto cleanup;
     }
 
-    jvmLauncherHandle = (*createJvmlLauncher)(appArgc, appArgv);
+    jvmLauncherHandle = (*createJvmLauncher)(&pkg, appArgc, appArgv);
     if (!jvmLauncherHandle) {
         goto cleanup;
     }
@@ -99,7 +108,7 @@ cleanup:
     if (jvmLauncherLibHandle) {
         dlclose(jvmLauncherLibHandle);
     }
-    free(launcherLibPath);
+    freeJvmLauncherDesc(jvmLauncherDesc);
 
     return result;
 }
@@ -133,11 +142,41 @@ cleanup:
 }
 
 
-static void closePipeEnd(int* pipefd, int idx) {
-    if (pipefd[idx] >= 0) {
-        close(pipefd[idx]);
-        pipefd[idx] = -1;
+static ssize_t readFully(const int fd, void* buf, const size_t len) {
+    size_t nRead = 0;
+    ssize_t n;
+
+    while (nRead < len) {
+        n = read(fd, (char*)buf + nRead, len - nRead);
+        if (n == -1) {
+            if (errno == EINTR) {
+                continue;
+            }
+            return -1;
+        }
+        if (n == 0) {
+            break;
+        }
+        nRead += (size_t)n;
     }
+    return (ssize_t)nRead;
+}
+
+static ssize_t writeFully(const int fd, const void* buf, const size_t len) {
+    size_t nWritten = 0;
+    ssize_t n;
+
+    while (nWritten < len) {
+        n = write(fd, (const char*)buf + nWritten, len - nWritten);
+        if (n == -1) {
+            if (errno == EINTR) {
+                continue;
+            }
+            return -1;
+        }
+        nWritten += (size_t)n;
+    }
+    return (ssize_t)nWritten;
 }
 
 
@@ -190,21 +229,24 @@ int main(int argc, char *argv[]) {
         jvmLauncherData = initJvmlLauncherData(&jvmLauncherDataBufferSize);
         if (jvmLauncherData) {
             /* Buffer size */
-            if (write(pipefd[1], &jvmLauncherDataBufferSize,
-                                    sizeof(jvmLauncherDataBufferSize)) == -1) {
+            if (writeFully(pipefd[1], &jvmLauncherDataBufferSize,
+                      sizeof(jvmLauncherDataBufferSize)) !=
+                sizeof(jvmLauncherDataBufferSize)) {
                 JP_LOG_ERRNO;
                 goto cleanup;
             }
             if (jvmLauncherDataBufferSize) {
                 /* Buffer address */
-                if (write(pipefd[1], &jvmLauncherData,
-                                            sizeof(jvmLauncherData)) == -1) {
+                if (writeFully(pipefd[1], &jvmLauncherData,
+                          sizeof(jvmLauncherData)) !=
+                    sizeof(jvmLauncherData)) {
                     JP_LOG_ERRNO;
                     goto cleanup;
                 }
                 /* Buffer data */
-                if (write(pipefd[1], jvmLauncherData,
-                                            jvmLauncherDataBufferSize) == -1) {
+                if (writeFully(pipefd[1], jvmLauncherData,
+                                jvmLauncherDataBufferSize) !=
+                    jvmLauncherDataBufferSize) {
                     JP_LOG_ERRNO;
                     goto cleanup;
                 }
@@ -218,8 +260,9 @@ int main(int argc, char *argv[]) {
         /* Close unused write end */
         closePipeEnd(pipefd, 1);
 
-        if (read(pipefd[0], &jvmLauncherDataBufferSize,
-                                sizeof(jvmLauncherDataBufferSize)) == -1) {
+        if (readFully(pipefd[0], &jvmLauncherDataBufferSize,
+                 sizeof(jvmLauncherDataBufferSize)) !=
+            sizeof(jvmLauncherDataBufferSize)) {
             JP_LOG_ERRNO;
             goto cleanup;
         }
@@ -229,7 +272,8 @@ int main(int argc, char *argv[]) {
             goto cleanup;
         }
 
-        if (read(pipefd[0], &baseAddress, sizeof(baseAddress)) == -1) {
+        if (readFully(pipefd[0], &baseAddress, sizeof(baseAddress)) !=
+            sizeof(baseAddress)) {
             JP_LOG_ERRNO;
             goto cleanup;
         }
@@ -240,8 +284,8 @@ int main(int argc, char *argv[]) {
             goto cleanup;
         }
 
-        if (read(pipefd[0], jvmLauncherData,
-                                        jvmLauncherDataBufferSize) == -1) {
+        if (readFully(pipefd[0], jvmLauncherData, jvmLauncherDataBufferSize) !=
+            jvmLauncherDataBufferSize) {
             JP_LOG_ERRNO;
             goto cleanup;
         }

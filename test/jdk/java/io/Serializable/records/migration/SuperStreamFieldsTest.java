@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,20 +28,23 @@
  * @library /test/lib
  * @modules jdk.compiler
  * @compile AssignableFrom.java Point.java DefaultValues.java SuperStreamFields.java
- * @run testng SuperStreamFieldsTest
+ * @run junit SuperStreamFieldsTest
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
-import static org.testng.Assert.assertEquals;
+
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  *  Tests that superclass fields in the stream are discarded.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SuperStreamFieldsTest extends AbstractTest {
 
-    @DataProvider(name = "plainInstances")
     public Object[][] plainInstances() {
         return new Object[][] {
             new Object[] { newPlainSuperStreamFields("cat", new int[] { 1 },    1)   },
@@ -51,7 +54,8 @@ public class SuperStreamFieldsTest extends AbstractTest {
     }
 
     /** Serializes non-record (plain) instance, deserializes as a record. */
-    @Test(dataProvider = "plainInstances")
+    @ParameterizedTest
+    @MethodSource("plainInstances")
     public void testPlainToRecord(SuperStreamFields objToSerialize) throws Exception {
         assert !objToSerialize.getClass().isRecord();
         out.println("serialize   : " + objToSerialize);
@@ -60,12 +64,11 @@ public class SuperStreamFieldsTest extends AbstractTest {
         assert objDeserialized.getClass().isRecord();
         out.println("deserialized: " + objDeserialized);
 
-        assertEquals(objToSerialize.str(), objDeserialized.str());
-        assertEquals(objToSerialize.x(),   objDeserialized.x());
-        assertEquals(objToSerialize.y(),   objDeserialized.y());
+        assertEquals(objDeserialized.str(), objToSerialize.str());
+        Assertions.assertArrayEquals(objDeserialized.x(), objToSerialize.x());
+        assertEquals(objDeserialized.y(), objToSerialize.y());
     }
 
-    @DataProvider(name = "recordInstances")
     public Object[][] recordInstances() {
         return new Object[][] {
             new Object[] { newRecordSuperStreamFields("goat",   new int[] { 56 },     66)   },
@@ -75,7 +78,8 @@ public class SuperStreamFieldsTest extends AbstractTest {
     }
 
     /** Serializes record instance, deserializes as non-record (plain). */
-    @Test(dataProvider = "recordInstances")
+    @ParameterizedTest
+    @MethodSource("recordInstances")
     public void testRecordToPlain(SuperStreamFields objToSerialize) throws Exception {
         assert objToSerialize.getClass().isRecord();
         out.println("serialize   : " + objToSerialize);
@@ -84,9 +88,9 @@ public class SuperStreamFieldsTest extends AbstractTest {
         assert !objDeserialized.getClass().isRecord();
         out.println("deserialized: " + objDeserialized);
 
-        assertEquals(objToSerialize.str(), objDeserialized.str());
-        assertEquals(objToSerialize.x(),   objDeserialized.x());
-        assertEquals(objToSerialize.y(),   objDeserialized.y());
+        assertEquals(objDeserialized.str(), objToSerialize.str());
+        Assertions.assertArrayEquals(objDeserialized.x(), objToSerialize.x());
+        assertEquals(objDeserialized.y(), objToSerialize.y());
 
     }
 

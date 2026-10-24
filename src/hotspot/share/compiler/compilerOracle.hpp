@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_COMPILER_COMPILERORACLE_HPP
 #define SHARE_COMPILER_COMPILERORACLE_HPP
 
+#include "compiler/compilerDirectives.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/istream.hpp"
@@ -49,19 +50,21 @@ class methodHandle;
   option(Help,  "help",  Unknown) \
   option(Quiet, "quiet", Unknown) \
   option(Log, "log", Bool) \
-  option(Print, "print", Bool) \
+  option(Print, "print", Intx) \
   option(Inline,  "inline", Bool) \
+  option(DelayInline,  "delayinline", Bool) \
   option(DontInline,  "dontinline", Bool) \
   option(Blackhole,  "blackhole", Bool) \
-  option(CompileOnly, "compileonly", Bool)\
-  option(Exclude, "exclude", Bool) \
-  option(Break, "break", Bool) \
+  option(CompileOnly, "compileonly", Intx) \
+  option(Exclude, "exclude", Intx) \
+  option(Break, "break", Intx) \
   option(BreakAtExecute, "BreakAtExecute", Bool) \
   option(BreakAtCompile, "BreakAtCompile", Bool) \
   option(MemLimit, "MemLimit", Intx) \
   option(MemStat, "MemStat", Uintx) \
   option(PrintAssembly, "PrintAssembly", Bool) \
   option(PrintCompilation, "PrintCompilation", Bool) \
+  option(PrintCompilation2, "PrintCompilation2", Bool) \
   option(PrintInlining, "PrintInlining", Bool) \
   option(PrintIntrinsics, "PrintIntrinsics", Bool) \
   option(PrintNMethods, "PrintNMethods", Bool)   \
@@ -92,6 +95,10 @@ NOT_PRODUCT(option(TraceMergeStores, "TraceMergeStores", Ccstrlist)) \
   option(CloneMapDebug, "CloneMapDebug", Bool) \
   option(IncrementalInlineForceCleanup, "IncrementalInlineForceCleanup", Bool) \
   option(MaxNodeLimit, "MaxNodeLimit", Intx)  \
+NOT_PRODUCT(option(PrintIdealNodeCount, "PrintIdealNodeCount", Bool)) \
+  option(DontAOTCompile, "DontAOTCompile", Bool) \
+  option(DontPreload, "DontPreload", Bool) \
+  option(IgnoreAOTCompiled, "IgnoreAOTCompiled", Bool) \
 NOT_PRODUCT(option(TestOptionInt,    "TestOptionInt",    Intx)) \
 NOT_PRODUCT(option(TestOptionUint,   "TestOptionUint",   Uintx)) \
 NOT_PRODUCT(option(TestOptionBool,   "TestOptionBool",   Bool)) \
@@ -127,11 +134,13 @@ class CompilerOracle : AllStatic {
  private:
   static bool _quiet;
   static void print_parse_error(char* error_msg, char* original_line);
-  static void print_command(CompileCommandEnum option, const char* name, enum OptionType type);
 
   // The core parser.
   static bool parse_from_input(inputStream::Input* input,
                                parse_from_line_fn_t* parse_from_line);
+
+  static bool has_exclude(const methodHandle& method, CompLevel level);
+  static bool applies_to_comp_level(const methodHandle& method, CompileCommandEnum command, CompLevel current_level);
 
  public:
   // True if the command file has been specified or is implicit
@@ -141,26 +150,31 @@ class CompilerOracle : AllStatic {
   static bool parse_from_file();
 
   // Tells whether we to exclude compilation of method
-  static bool should_exclude(const methodHandle& method);
+  static bool should_exclude(const methodHandle & method, CompLevel level);
+
   static bool be_quiet() { return _quiet; }
 
   // Tells whether we want to inline this method
   static bool should_inline(const methodHandle& method);
 
   // Tells whether we want to disallow inlining of this method
-  static bool should_not_inline(const methodHandle& method);
+  static bool should_not_inline(const methodHandle& method, CompLevel level);
+
+  // Tells whether we want to delay inlining of this method
+  static bool should_delay_inline(const methodHandle& method);
 
   // Tells whether this method changes Thread.currentThread()
   static bool changes_current_thread(const methodHandle& method);
 
   // Tells whether we should print the assembly for this method
-  static bool should_print(const methodHandle& method);
+  // If level == CompLevel_none or CompLevel_any, returns true if there is a print command with any mask
+  static bool should_print(const methodHandle& method, CompLevel level);
 
   // Tells whether we should log the compilation data for this method
   static bool should_log(const methodHandle& method);
 
   // Tells whether to break when compiling method
-  static bool should_break_at(const methodHandle& method);
+  static bool should_break_at(const methodHandle& method, CompLevel level);
 
   // Tells whether there are any methods to print for print_method_statistics()
   static bool should_print_methods();

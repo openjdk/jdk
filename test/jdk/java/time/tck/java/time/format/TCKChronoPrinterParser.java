@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@
  */
 package tck.java.time.format;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.text.ParsePosition;
 import java.time.chrono.Chronology;
@@ -72,39 +72,41 @@ import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.util.Locale;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test formatter chrono.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKChronoPrinterParser {
     // this test assumes ISO, ThaiBuddhist and Japanese are available
 
     private DateTimeFormatterBuilder builder;
     private ParsePosition pos;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         builder = new DateTimeFormatterBuilder();
         pos = new ParsePosition(0);
     }
 
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions=IndexOutOfBoundsException.class)
+    @Test
     public void test_parse_negativePosition() {
-        builder.appendChronologyId().toFormatter().parseUnresolved("ISO", new ParsePosition(-1));
+        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> builder.appendChronologyId().toFormatter().parseUnresolved("ISO", new ParsePosition(-1)));
     }
 
-    @Test(expectedExceptions=IndexOutOfBoundsException.class)
+    @Test
     public void test_parse_offEndPosition() {
-        builder.appendChronologyId().toFormatter().parseUnresolved("ISO", new ParsePosition(4));
+        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> builder.appendChronologyId().toFormatter().parseUnresolved("ISO", new ParsePosition(4)));
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="parseValid")
     Object[][] data_parseValid() {
         return new Object[][] {
                 {"ISO", IsoChronology.INSTANCE},
@@ -117,35 +119,37 @@ public class TCKChronoPrinterParser {
         };
     }
 
-    @Test(dataProvider="parseValid")
+    @ParameterizedTest
+    @MethodSource("data_parseValid")
     public void test_parseValid_caseSensitive(String text, Chronology expected) {
         builder.appendChronologyId();
         TemporalAccessor parsed = builder.toFormatter().parseUnresolved(text, pos);
-        assertEquals(pos.getIndex(), expected.getId().length());
-        assertEquals(pos.getErrorIndex(), -1);
-        assertEquals(parsed.query(TemporalQueries.chronology()), expected);
+        assertEquals(expected.getId().length(), pos.getIndex());
+        assertEquals(-1, pos.getErrorIndex());
+        assertEquals(expected, parsed.query(TemporalQueries.chronology()));
     }
 
-    @Test(dataProvider="parseValid")
+    @ParameterizedTest
+    @MethodSource("data_parseValid")
     public void test_parseValid_caseSensitive_lowercaseRejected(String text, Chronology expected) {
         builder.appendChronologyId();
         TemporalAccessor parsed = builder.toFormatter().parseUnresolved(text.toLowerCase(Locale.ENGLISH), pos);
-        assertEquals(pos.getIndex(), 0);
-        assertEquals(pos.getErrorIndex(), 0);
-        assertEquals(parsed, null);
+        assertEquals(0, pos.getIndex());
+        assertEquals(0, pos.getErrorIndex());
+        assertEquals(null, parsed);
     }
 
-    @Test(dataProvider="parseValid")
+    @ParameterizedTest
+    @MethodSource("data_parseValid")
     public void test_parseValid_caseInsensitive(String text, Chronology expected) {
         builder.parseCaseInsensitive().appendChronologyId();
         TemporalAccessor parsed = builder.toFormatter().parseUnresolved(text.toLowerCase(Locale.ENGLISH), pos);
-        assertEquals(pos.getIndex(), expected.getId().length());
-        assertEquals(pos.getErrorIndex(), -1);
-        assertEquals(parsed.query(TemporalQueries.chronology()), expected);
+        assertEquals(expected.getId().length(), pos.getIndex());
+        assertEquals(-1, pos.getErrorIndex());
+        assertEquals(expected, parsed.query(TemporalQueries.chronology()));
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="parseInvalid")
     Object[][] data_parseInvalid() {
         return new Object[][] {
                 {"Rubbish"},
@@ -155,13 +159,14 @@ public class TCKChronoPrinterParser {
         };
     }
 
-    @Test(dataProvider="parseInvalid")
+    @ParameterizedTest
+    @MethodSource("data_parseInvalid")
     public void test_parseInvalid(String text) {
         builder.appendChronologyId();
         TemporalAccessor parsed = builder.toFormatter().parseUnresolved(text, pos);
-        assertEquals(pos.getIndex(), 0);
-        assertEquals(pos.getErrorIndex(), 0);
-        assertEquals(parsed, null);
+        assertEquals(0, pos.getIndex());
+        assertEquals(0, pos.getErrorIndex());
+        assertEquals(null, parsed);
     }
 
 }

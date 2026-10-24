@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,8 @@ class TestFrame extends Frame implements ItemListener {
                               pt.y + choice.getHeight()*3/4);
             // testing that ItemEvent doesn't generated on a simple
             // mouse click when the dropdown appears under mouse : 6425067
+            robot.waitForIdle();
+            robot.delay(250);
             stateChanged = false;
             openChoice();
             closeChoice();

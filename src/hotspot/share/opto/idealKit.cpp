@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ IdealKit::IdealKit(GraphKit* gkit, bool delay_all_transforms, bool has_declarati
   _cvstate = nullptr;
   // We can go memory state free or else we need the entire memory state
   assert(_initial_memory == nullptr || _initial_memory->Opcode() == Op_MergeMem, "memory must be pre-split");
-  assert(!_gvn.is_IterGVN(), "IdealKit can't be used during Optimize phase");
   int init_size = 5;
   _pending_cvstates = new (C->node_arena()) GrowableArray<Node*>(C->node_arena(), init_size, 0, nullptr);
   DEBUG_ONLY(_state = new (C->node_arena()) GrowableArray<int>(C->node_arena(), init_size, 0, 0));
@@ -79,10 +78,13 @@ void IdealKit::if_then(Node* left, BoolTest::mask relop,
       assert(left->bottom_type()->isa_long() != nullptr, "what else?");
       bol = Bool(CmpL(left, right), relop);
     }
-
   } else {
     bol = Bool(CmpP(left, right), relop);
   }
+  if_then(bol, prob, cnt, push_new_state);
+}
+
+void IdealKit::if_then(Node* bol, float prob, float cnt, bool push_new_state) {
   // Delay gvn.transform on if-nodes until construction is finished
   // to prevent a constant bool input from discarding a control output.
   IfNode* iff = delay_transform(new IfNode(ctrl(), bol, prob, cnt))->as_If();
@@ -293,7 +295,7 @@ Node* IdealKit::transform(Node* n) {
     return delay_transform(n);
   } else {
     n = gvn().transform(n);
-    C->record_for_igvn(n);
+    gvn().record_for_igvn(n);
     return n;
   }
 }
@@ -302,14 +304,16 @@ Node* IdealKit::transform(Node* n) {
 Node* IdealKit::delay_transform(Node* n) {
   // Delay transform until IterativeGVN
   gvn().set_type(n, n->bottom_type());
-  C->record_for_igvn(n);
+  gvn().record_for_igvn(n);
   return n;
 }
 
 //-----------------------------new_cvstate-----------------------------------
 Node* IdealKit::new_cvstate() {
   uint sz = _var_ct + first_var;
-  return new Node(sz);
+  Node* state = new Node(sz);
+  C->record_for_igvn(state);
+  return state;
 }
 
 //-----------------------------copy_cvstate-----------------------------------
@@ -357,6 +361,17 @@ Node* IdealKit::load(Node* ctl,
   DEBUG_ONLY(adr_type = C->get_adr_type(adr_idx));
   Node* mem = memory(adr_idx);
   Node* ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, control_dependency, require_atomic_access);
+  return transform(ld);
+}
+
+// Load AOT runtime constant
+Node* IdealKit::load_aot_const(Node* adr, const Type* t) {
+  BasicType bt = t->basic_type();
+  const TypePtr* adr_type = nullptr; // debug-mode-only argument
+  DEBUG_ONLY(adr_type = C->get_adr_type(Compile::AliasIdxRaw));
+  Node* ctl = (Node*)C->root(); // Raw memory access needs control
+  Node* ld = LoadNode::make(_gvn, ctl, C->immutable_memory(), adr, adr_type, t, bt, MemNode::unordered,
+                            LoadNode::DependsOnlyOnTest, false, false, false, false, 0);
   return transform(ld);
 }
 
@@ -470,7 +485,7 @@ Node* IdealKit::make_leaf_call(const TypeFunc *slow_call_type,
   uint adr_idx = C->get_alias_index(adr_type);
 
   // Slow-path leaf call
-  CallNode *call =  (CallNode*)new CallLeafNode( slow_call_type, slow_call, leaf_name, adr_type);
+  CallNode* call = new CallLeafNode(slow_call_type, slow_call, leaf_name, adr_type, adr_type);
 
   // Set fixed predefined input arguments
   call->init_req( TypeFunc::Control, ctrl() );
@@ -499,11 +514,12 @@ Node* IdealKit::make_leaf_call(const TypeFunc *slow_call_type,
   // Set the RawPtr memory state only.
   set_memory(mem, adr_idx);
 
-  assert(C->alias_type(call->adr_type()) == C->alias_type(adr_type),
+  assert(C->alias_type(call->out_adr_type()) == C->alias_type(adr_type) &&
+         C->alias_type(call->in_adr_type()) == C->alias_type(adr_type),
          "call node must be constructed correctly");
   Node* res = nullptr;
-  if (slow_call_type->range()->cnt() > TypeFunc::Parms) {
-    assert(slow_call_type->range()->cnt() == TypeFunc::Parms+1, "only one return value");
+  if (slow_call_type->range_sig()->cnt() > TypeFunc::Parms) {
+    assert(slow_call_type->range_sig()->cnt() == TypeFunc::Parms+1, "only one return value");
     res = transform(new ProjNode(call, TypeFunc::Parms));
   }
   return res;
@@ -522,7 +538,7 @@ void IdealKit::make_leaf_call_no_fp(const TypeFunc *slow_call_type,
   uint adr_idx = C->get_alias_index(adr_type);
 
   // Slow-path leaf call
-  CallNode *call =  (CallNode*)new CallLeafNoFPNode( slow_call_type, slow_call, leaf_name, adr_type);
+  CallNode* call = new CallLeafNoFPNode(slow_call_type, slow_call, leaf_name, adr_type, adr_type);
 
   // Set fixed predefined input arguments
   call->init_req( TypeFunc::Control, ctrl() );
@@ -551,6 +567,7 @@ void IdealKit::make_leaf_call_no_fp(const TypeFunc *slow_call_type,
   // Set the RawPtr memory state only.
   set_memory(mem, adr_idx);
 
-  assert(C->alias_type(call->adr_type()) == C->alias_type(adr_type),
+  assert(C->alias_type(call->out_adr_type()) == C->alias_type(adr_type) &&
+         C->alias_type(call->in_adr_type()) == C->alias_type(adr_type),
          "call node must be constructed correctly");
 }

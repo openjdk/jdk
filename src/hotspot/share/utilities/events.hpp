@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@
 // crash time.  This is a very generic interface that is mainly here
 // for completeness.  Normally the templated EventLogBase would be
 // subclassed to provide different log types.
-class EventLog : public CHeapObj<mtInternal> {
+class EventLog : public CHeapObj<mtLogging> {
   friend class Events;
 
  private:
@@ -79,7 +79,7 @@ class EventLog : public CHeapObj<mtInternal> {
 // semantics aren't appropriate.  The name is used as the label of the
 // log when it is dumped during a crash.
 template <class T> class EventLogBase : public EventLog {
-  template <class X> class EventRecord : public CHeapObj<mtInternal> {
+  template <class X> class EventRecord : public CHeapObj<mtLogging> {
    public:
     double  timestamp;
     Thread* thread;
@@ -214,10 +214,7 @@ class ExceptionsEventLog : public ExtendedStringEventLog {
 
 
 class Events : AllStatic {
-  friend class EventLog;
-
  private:
-  static EventLog* _logs;
 
   // A log for generic messages that aren't well categorized.
   static StringEventLog* _messages;

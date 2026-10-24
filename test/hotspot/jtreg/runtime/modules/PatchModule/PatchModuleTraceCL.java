@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Make sure -Xlog:class+load=info works properly with "modules" jimage,
             --patch-module, and with -Xbootclasspath/a
  * @requires vm.flagless
+ * @requires !jdk.explodedImage
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile PatchModuleMain.java
@@ -59,11 +60,11 @@ public class PatchModuleTraceCL {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         // "modules" jimage case.
-        output.shouldContain("[class,load] java.lang.Thread source: jrt:/java.base");
+        output.shouldMatch("\\[class,load *\\] java\\.lang\\.Thread source: jrt:/java.base");
         // --patch-module case.
-        output.shouldContain("[class,load] javax.naming.spi.NamingManager source: mods/java.naming");
+        output.shouldMatch("\\[class,load *\\] javax\\.naming\\.spi\\.NamingManager source: mods/java.naming");
         // -cp case.
-        output.shouldContain("[class,load] PatchModuleMain source: file");
+        output.shouldMatch("\\[class,load *\\] PatchModuleMain source: file");
 
         // Test -Xlog:class+load=info output for -Xbootclasspath/a
         source = "package PatchModuleTraceCL_pkg; "                 +
@@ -81,7 +82,7 @@ public class PatchModuleTraceCL {
              "-Xlog:class+load=info", "PatchModuleMain", "PatchModuleTraceCL_pkg.ItIsI");
         output = new OutputAnalyzer(pb.start());
         // -Xbootclasspath/a case.
-        output.shouldContain("[class,load] PatchModuleTraceCL_pkg.ItIsI source: xbcp");
+        output.shouldMatch("\\[class,load *\\] PatchModuleTraceCL_pkg\\.ItIsI source: xbcp");
         output.shouldHaveExitValue(0);
     }
 }

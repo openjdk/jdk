@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -476,7 +476,7 @@ bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
         return true;          // Found 1st use!
       }
     }
-    if (!n->out_RegMask().is_Empty()) {
+    if (!n->out_RegMask().is_empty()) {
       return false;
     }
   }
@@ -534,6 +534,11 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
     }
   }
 
+  if (static_cast<uint64_t>(spill_cnt) * _cfg.number_of_blocks() > RegSplitLimit) {
+    C->record_method_not_compilable("PhaseChaitin::Split requires too much memory");
+    return 0;
+  }
+
   // Create side arrays for propagating reaching defs info.
   // Each block needs a node pointer for each spilling live range for the
   // Def which is live into the block.  Phi nodes handle multiple input
@@ -570,8 +575,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   }
 
   // Keep track of DEFS & Phis for later passes
-  Node_List defs(split_arena, 8);
-  Node_List phis(split_arena, 16);
+  Node_List<Node> defs(split_arena, 8);
+  Node_List<PhiNode> phis(split_arena, 16);
 
   //----------PASS 1----------
   //----------Propagation & Node Insertion Code----------
@@ -1038,7 +1043,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             // bound use if we can't rematerialize the def, or if we need the
             // split to form a misaligned pair.
             if (!umask.is_infinite_stack() &&
-                (int)umask.Size() <= lrgs(useidx).num_regs() &&
+                (int)umask.size() <= lrgs(useidx).num_regs() &&
                 (!def->rematerialize() ||
                  (!is_vect && umask.is_misaligned_pair()))) {
               // These need a Split regardless of overlap or pressure
@@ -1128,7 +1133,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                 if( n->is_SpillCopy() ) {
                   ResourceMark rm(C->regmask_arena());
                   RegMask tmp_rm(umask, C->regmask_arena());
-                  tmp_rm.SUBTRACT(Matcher::STACK_ONLY_mask);
+                  tmp_rm.subtract(Matcher::STACK_ONLY_mask);
                   if( dmask.overlap(tmp_rm) ) {
                     if( def != n->in(inpidx) ) {
                       n->set_req(inpidx, def);
@@ -1323,8 +1328,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   // Walk the phis list to patch inputs, split phis, and name phis
   uint lrgs_before_phi_split = maxlrg;
   for( insidx = 0; insidx < phis.size(); insidx++ ) {
-    Node *phi = phis.at(insidx);
-    assert(phi->is_Phi(),"This list must only contain Phi Nodes");
+    PhiNode* phi = phis.at(insidx);
     Block *b = _cfg.get_block_for_node(phi);
     // Grab the live range number
     uint lidx = _lrg_map.find_id(phi);

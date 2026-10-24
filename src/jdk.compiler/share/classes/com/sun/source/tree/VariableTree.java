@@ -65,10 +65,13 @@ public interface VariableTree extends StatementTree {
      */
     ExpressionTree getNameExpression();
 
-    /**
-     * Returns the type of the variable being declared.
-     * @return the type
-     */
+    /// {@return the type of the variable being declared.}
+    ///
+    /// @apiNote
+    /// The type of the variable can be one of the following:
+    /// - if the variable is declared using {@code var}, then the returned value is a {@link VarTypeTree},
+    /// - if the variable is a lambda parameter declared without a type (i.e. relying on type inferrence), then the returned value is {@code null},
+    /// - otherwise, the variable is declared with an explicit type, and the returned value is that type.
     Tree getType();
 
     /**

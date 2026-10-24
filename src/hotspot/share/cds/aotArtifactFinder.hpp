@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,10 @@ class TypeArrayKlass;
 // It also decides what Klasses must be cached in aot-initialized state.
 //
 // ArchiveBuilder uses [1] as roots to scan for all MetaspaceObjs that need to be cached.
-// ArchiveHeapWriter uses [2] to create an image of the archived heap.
+// AOTHeap uses [2] to create an image of the archived heap.
 //
 // [1] is stored in _all_cached_classes in aotArtifactFinder.cpp.
-// [2] is stored in HeapShared::archived_object_cache().
+// [2] is stored in AOTHeap::archived_object_cache().
 //
 // Although many Klasses and heap objects are created in the assembly phase, we only store a subset of them into
 // the AOT cache. For example:
@@ -68,9 +68,9 @@ class TypeArrayKlass;
 //      turn discover more Klasses and java heap objects.
 //    - The scanning continues until we reach a steady state.
 //
-// Note1: See TODO comments in HeapShared::archive_object() for exceptions to this rule.
+// Note1: See TODO comments in AOTHeap::archive_object() for exceptions to this rule.
 //
-// Note2: The scanning of Java objects is done in heapShared.cpp. Please see calls into the HeapShared class
+// Note2: The scanning of Java objects is done in heapShared.cpp. Please see calls into the AOTHeap class
 //        from AOTArtifactFinder.
 
 class AOTArtifactFinder : AllStatic {
@@ -81,12 +81,14 @@ class AOTArtifactFinder : AllStatic {
   static void add_cached_type_array_class(TypeArrayKlass* tak);
   static void add_cached_instance_class(InstanceKlass* ik);
   static void append_to_all_cached_classes(Klass* k);
+  static void check_critical_class(InstanceKlass* ik);
 public:
   static void initialize();
   static void find_artifacts();
   static void add_cached_class(Klass* k);
   static void add_aot_inited_class(InstanceKlass* ik);
   static void all_cached_classes_do(MetaspaceClosure* it);
+  static void check_critical_classes();
   static void dispose();
 };
 

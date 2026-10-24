@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ class       AllocateArrayNode;
 class     AbstractLockNode;
 class       LockNode;
 class       UnlockNode;
-class FastLockNode;
 
 //------------------------------StartNode--------------------------------------
 // The method start node
@@ -71,17 +70,20 @@ public:
   virtual int Opcode() const;
   virtual bool pinned() const { return true; };
   virtual const Type *bottom_type() const;
-  virtual const TypePtr *adr_type() const { return TypePtr::BOTTOM; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual void  calling_convention( BasicType* sig_bt, VMRegPair *parm_reg, uint length ) const;
   virtual const RegMask &in_RegMask(uint) const;
-  virtual Node *match( const ProjNode *proj, const Matcher *m );
+  virtual Node* match(const ProjNode* proj, const Matcher* m);
   virtual uint ideal_reg() const { return 0; }
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
   virtual void  dump_compact_spec(outputStream *st) const;
 #endif
+
+private:
+  const TypePtr* out_adr_type_impl() const final { return TypePtr::BOTTOM; }
+  const TypePtr* in_adr_type_impl() const final { return nullptr; }
 };
 
 //------------------------------StartOSRNode-----------------------------------
@@ -90,7 +92,6 @@ class StartOSRNode : public StartNode {
 public:
   StartOSRNode( Node *root, const TypeTuple *domain ) : StartNode(root, domain) {}
   virtual int   Opcode() const;
-  static  const TypeTuple *osr_domain();
 };
 
 
@@ -120,7 +121,6 @@ public:
   virtual int Opcode() const;
   virtual bool  is_CFG() const { return true; }
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
-  virtual bool depends_only_on_test() const { return false; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
@@ -128,6 +128,10 @@ public:
 #ifndef PRODUCT
   virtual void dump_req(outputStream *st = tty, DumpConfig* dc = nullptr) const;
 #endif
+
+private:
+  const TypePtr* out_adr_type_impl() const final { return nullptr; }
+  const TypePtr* in_adr_type_impl() const final { return TypePtr::BOTTOM; }
 };
 
 
@@ -141,7 +145,6 @@ class RethrowNode : public Node {
   virtual int Opcode() const;
   virtual bool  is_CFG() const { return true; }
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
-  virtual bool depends_only_on_test() const { return false; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual uint match_edge(uint idx) const;
@@ -149,6 +152,10 @@ class RethrowNode : public Node {
 #ifndef PRODUCT
   virtual void dump_req(outputStream *st = tty, DumpConfig* dc = nullptr) const;
 #endif
+
+private:
+  const TypePtr* out_adr_type_impl() const final { return nullptr; }
+  const TypePtr* in_adr_type_impl() const final { return TypePtr::BOTTOM; }
 };
 
 
@@ -344,7 +351,8 @@ protected:
   // Many calls take *all* of memory as input,
   // but some produce a limited subset of that memory as output.
   // The adr_type reports the call's behavior as a store, not a load.
-  const TypePtr*  _adr_type;  // What type of memory does this node produce?
+  const TypePtr*  _out_adr_type;   // What type of memory does this node produce?
+  const TypePtr*  _in_adr_type;    // What type of memory does this node consume?
   ReplacedNodes   _replaced_nodes; // During parsing: list of pair of nodes from calls to GraphKit::replace_in_map()
   bool            _has_ea_local_in_scope; // NoEscape or ArgEscape objects in JVM States
 
@@ -354,11 +362,14 @@ protected:
   }
 public:
   SafePointNode(uint edges, JVMState* jvms,
-                // A plain safepoint advertises no memory effects (null):
-                const TypePtr* adr_type = nullptr)
-    : MultiNode( edges ),
+                // A plain safepoint advertises no memory effects (null)
+                const TypePtr* out_adr_type = nullptr,
+                // A plain safepoint reads all memory
+                const TypePtr* in_adr_type = TypePtr::BOTTOM)
+    : MultiNode(edges),
       _jvms(jvms),
-      _adr_type(adr_type),
+      _out_adr_type(out_adr_type),
+      _in_adr_type(in_adr_type),
       _has_ea_local_in_scope(false)
   {
     init_class_id(Class_SafePoint);
@@ -405,11 +416,11 @@ public:
     verify_input(jvms, arg_idx);
     return in(jvms->argoff() + idx);
   }
-  Node* monitor_box(const JVMState* jvms, uint idx) const {
+  BoxLockNode* monitor_box(const JVMState* jvms, uint idx) const {
     assert(verify_jvms(jvms), "jvms must match");
     uint mon_box_idx = jvms->monitor_box_offset(idx);
     assert(jvms->is_monitor_box(mon_box_idx), "not a monitor box offset");
-    return in(mon_box_idx);
+    return in(mon_box_idx)->as_BoxLock();
   }
   Node* monitor_obj(const JVMState* jvms, uint idx) const {
     assert(verify_jvms(jvms), "jvms must match");
@@ -435,10 +446,10 @@ public:
   }
   void grow_stack(JVMState* jvms, uint grow_by);
   // Handle monitor stack
-  void push_monitor( const FastLockNode *lock );
-  void pop_monitor ();
-  Node *peek_monitor_box() const;
-  Node *peek_monitor_obj() const;
+  void push_monitor(BoxLockNode* box, Node* obj);
+  void pop_monitor();
+  BoxLockNode* peek_monitor_box() const;
+  Node*        peek_monitor_obj() const;
   // Peek Operand Stacks, JVMS 2.6.2
   Node* peek_operand(uint off = 0) const;
 
@@ -505,6 +516,66 @@ public:
     return _has_ea_local_in_scope;
   }
 
+  // A temporary storge for node edges.
+  // Intended for a single use.
+  class NodeEdgeTempStorage : public StackObj {
+    friend class SafePointNode;
+
+    PhaseIterGVN& _igvn;
+    Node*         _node_hook;
+
+#ifdef ASSERT
+    enum State { state_initial, state_populated, state_processed };
+
+    State _state; // monotonically transitions from initial to processed state.
+#endif // ASSERT
+
+    bool is_empty() const {
+      return _node_hook == nullptr || _node_hook->req() == 1;
+    }
+    void push(Node* n) {
+      assert(n != nullptr, "");
+      if (_node_hook == nullptr) {
+        _node_hook = new Node(nullptr);
+      }
+      _node_hook->add_req(n);
+    }
+    Node* pop() {
+      assert(!is_empty(), "");
+      int idx = _node_hook->req()-1;
+      Node* r = _node_hook->in(idx);
+      _node_hook->del_req(idx);
+      assert(r != nullptr, "");
+      return r;
+    }
+
+  public:
+    NodeEdgeTempStorage(PhaseIterGVN &igvn) : _igvn(igvn), _node_hook(nullptr)
+                                              DEBUG_ONLY(COMMA _state(state_initial)) {
+      assert(is_empty(), "");
+    }
+
+    ~NodeEdgeTempStorage() {
+      assert(_state == state_processed, "not processed");
+      assert(is_empty(), "");
+      if (_node_hook != nullptr) {
+        _node_hook->destruct(&_igvn);
+      }
+    }
+
+    void remove_edge_if_present(Node* n) {
+      if (!is_empty()) {
+        int idx = _node_hook->find_edge(n);
+        if (idx > 0) {
+          _node_hook->del_req(idx);
+        }
+      }
+    }
+  };
+
+  void remove_non_debug_edges(NodeEdgeTempStorage& non_debug_edges);
+  void restore_non_debug_edges(NodeEdgeTempStorage& non_debug_edges);
+
   void disconnect_from_root(PhaseIterGVN *igvn);
 
   // Standard Node stuff
@@ -512,8 +583,7 @@ public:
   virtual bool           pinned() const { return true; }
   virtual const Type*    Value(PhaseGVN* phase) const;
   virtual const Type*    bottom_type() const { return Type::CONTROL; }
-  virtual const TypePtr* adr_type() const { return _adr_type; }
-  void set_adr_type(const TypePtr* adr_type) { _adr_type = adr_type; }
+  void set_out_adr_type(const TypePtr* out_adr_type) { _out_adr_type = out_adr_type; }
   virtual Node          *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual Node*          Identity(PhaseGVN* phase);
   virtual uint           ideal_reg() const { return 0; }
@@ -524,6 +594,10 @@ public:
 #ifndef PRODUCT
   virtual void           dump_spec(outputStream *st) const;
 #endif
+
+private:
+  const TypePtr* out_adr_type_impl() const final { return _out_adr_type; }
+  const TypePtr* in_adr_type_impl() const final { return _in_adr_type; }
 };
 
 //------------------------------SafePointScalarObjectNode----------------------
@@ -666,7 +740,7 @@ public:
 
 // Simple container for the outgoing projections of a call.  Useful
 // for serious surgery on calls.
-class CallProjections : public StackObj {
+class CallProjections {
 public:
   Node* fallthrough_proj;
   Node* fallthrough_catchproj;
@@ -675,8 +749,26 @@ public:
   Node* catchall_catchproj;
   Node* catchall_memproj;
   Node* catchall_ioproj;
-  Node* resproj;
   Node* exobj;
+  uint nb_resproj;
+  Node* resproj[1]; // at least one projection
+
+  CallProjections(uint nbres) {
+    fallthrough_proj      = nullptr;
+    fallthrough_catchproj = nullptr;
+    fallthrough_memproj   = nullptr;
+    fallthrough_ioproj    = nullptr;
+    catchall_catchproj    = nullptr;
+    catchall_memproj      = nullptr;
+    catchall_ioproj       = nullptr;
+    exobj                 = nullptr;
+    nb_resproj            = nbres;
+    resproj[0]            = nullptr;
+    for (uint i = 1; i < nb_resproj; i++) {
+      resproj[i]          = nullptr;
+    }
+  }
+
 };
 
 class CallGenerator;
@@ -687,7 +779,7 @@ class CallGenerator;
 class CallNode : public SafePointNode {
 
 protected:
-  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase);
+  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase) const;
 
 public:
   const TypeFunc* _tf;          // Function type
@@ -696,8 +788,8 @@ public:
   CallGenerator*  _generator;   // corresponding CallGenerator for some late inline calls
   const char*     _name;        // Printable name, if _method is null
 
-  CallNode(const TypeFunc* tf, address addr, const TypePtr* adr_type, JVMState* jvms = nullptr)
-    : SafePointNode(tf->domain()->cnt(), jvms, adr_type),
+  CallNode(const TypeFunc* tf, address addr, const TypePtr* out_adr_type, const TypePtr* in_adr_type, JVMState* jvms = nullptr)
+    : SafePointNode(tf->domain_cc()->cnt(), jvms, out_adr_type, in_adr_type),
       _tf(tf),
       _entry_point(addr),
       _cnt(COUNT_UNKNOWN),
@@ -730,33 +822,39 @@ public:
   // for some macro nodes whose expansion does not have a safepoint on the fast path.
   virtual bool        guaranteed_safepoint()  { return true; }
   // For macro nodes, the JVMState gets modified during expansion. If calls
-  // use MachConstantBase, it gets modified during matching. So when cloning
-  // the node the JVMState must be deep cloned. Default is to shallow clone.
-  virtual bool needs_deep_clone_jvms(Compile* C) { return C->needs_deep_clone_jvms(); }
+  // use MachConstantBase, it gets modified during matching. If the call is
+  // late inlined, it also needs the full JVMState. So when cloning the
+  // node the JVMState must be deep cloned. Default is to shallow clone.
+  virtual bool needs_deep_clone_jvms(Compile* C) { return _generator != nullptr || C->needs_deep_clone_jvms(); }
 
   // Returns true if the call may modify n
-  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase);
+  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const;
   // Does this node have a use of n other than in debug information?
-  bool                has_non_debug_use(Node* n);
+  bool                has_non_debug_use(const Node* n);
+  bool                has_debug_use(const Node* n) const;
   // Returns the unique CheckCastPP of a call
   // or result projection is there are several CheckCastPP
   // or returns null if there is no one.
   Node* result_cast();
   // Does this node returns pointer?
   bool returns_pointer() const {
-    const TypeTuple* r = tf()->range();
-    return (r->cnt() > TypeFunc::Parms &&
+    const TypeTuple* r = tf()->range_sig();
+    return (!tf()->returns_value_type_as_fields() &&
+            r->cnt() > TypeFunc::Parms &&
             r->field_at(TypeFunc::Parms)->isa_ptr());
   }
 
   // Collect all the interesting edges from a call for use in
   // replacing the call by something else.  Used by macro expansion
   // and the late inlining support.
-  void extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts = true) const;
+  CallProjections* extract_projections(bool separate_io_proj,
+                                       bool do_asserts = true,
+                                       bool allow_handlers = false) const;
 
   virtual uint match_edge(uint idx) const;
 
   bool is_call_to_arraycopystub() const;
+  bool is_call_to_multianewarray_stub() const;
 
   virtual void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt) {}
 
@@ -781,8 +879,8 @@ protected:
   bool    _override_symbolic_info; // Override symbolic call site info from bytecode
   bool    _arg_escape;             // ArgEscape in parameter list
 public:
-  CallJavaNode(const TypeFunc* tf , address addr, ciMethod* method)
-    : CallNode(tf, addr, TypePtr::BOTTOM),
+  CallJavaNode(const TypeFunc* tf , address addr, ciMethod* method, const TypePtr* out_adr_type, const TypePtr* in_adr_type)
+    : CallNode(tf, addr, out_adr_type, in_adr_type),
       _method(method),
       _optimized_virtual(false),
       _override_symbolic_info(false),
@@ -816,22 +914,39 @@ public:
 // calls and optimized virtual calls, plus calls to wrappers for run-time
 // routines); generates static stub.
 class CallStaticJavaNode : public CallJavaNode {
+  // If this is an uncommon trap guarded by some condition, is it safe to change the condition to a narrower condition?
+  // See comment in PhaseIdealLoop::do_split_if()
+  bool _safe_for_fold_compare;
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
+
+  bool remove_unknown_flat_array_load(PhaseIterGVN* igvn, Node* ctl, Node* mem, Node* unc_arg);
+  Node* replace_is_substitutable(PhaseIterGVN* igvn);
+  Node* replace_identity_hash_code(PhaseIterGVN* igvn);
+
 public:
   CallStaticJavaNode(Compile* C, const TypeFunc* tf, address addr, ciMethod* method)
-    : CallJavaNode(tf, addr, method) {
+    : CallJavaNode(tf, addr, method, TypePtr::BOTTOM, TypePtr::BOTTOM), _safe_for_fold_compare(true) {
     init_class_id(Class_CallStaticJava);
-    if (C->eliminate_boxing() && (method != nullptr) && method->is_boxing_method()) {
+    if (C->eliminate_boxing() && (method != nullptr) && (method->is_boxing_method() || method->is_unboxing_method())) {
+      init_flags(Flag_is_macro);
+      C->add_macro_node(this);
+    }
+    const TypeTuple *r = tf->range_sig();
+    if (ValueTypeReturnedAsFields &&
+        method != nullptr &&
+        method->is_method_handle_intrinsic() &&
+        r->cnt() > TypeFunc::Parms &&
+        r->field_at(TypeFunc::Parms)->isa_oopptr() &&
+        r->field_at(TypeFunc::Parms)->is_oopptr()->can_be_value_type()) {
+      // Make sure this call is processed by PhaseMacroExpand::expand_mh_intrinsic_return
       init_flags(Flag_is_macro);
       C->add_macro_node(this);
     }
   }
-  CallStaticJavaNode(const TypeFunc* tf, address addr, const char* name, const TypePtr* adr_type)
-    : CallJavaNode(tf, addr, nullptr) {
+  CallStaticJavaNode(const TypeFunc* tf, address addr, const char* name, const TypePtr* out_adr_type, const TypePtr* in_adr_type)
+    : CallJavaNode(tf, addr, nullptr, out_adr_type, in_adr_type), _safe_for_fold_compare(true) {
     init_class_id(Class_CallStaticJava);
-    // This node calls a runtime stub, which often has narrow memory effects.
-    _adr_type = adr_type;
     _name = name;
   }
 
@@ -843,14 +958,27 @@ public:
   bool is_boxing_method() const {
     return is_macro() && (method() != nullptr) && method()->is_boxing_method();
   }
+
+  bool is_unboxing_method() const {
+    return is_macro() && (method() != nullptr) && method()->is_unboxing_method();
+  }
+
   // Late inlining modifies the JVMState, so we need to deep clone it
   // when the call node is cloned (because it is macro node).
   virtual bool needs_deep_clone_jvms(Compile* C) {
-    return is_boxing_method() || CallNode::needs_deep_clone_jvms(C);
+    return is_boxing_method() || is_unboxing_method() || CallNode::needs_deep_clone_jvms(C);
   }
 
   virtual int         Opcode() const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
+  void clear_safe_for_fold_compare() {
+    _safe_for_fold_compare = false;
+  }
+
+  bool safe_for_fold_compare() const {
+    return _safe_for_fold_compare;
+  }
 
 #ifndef PRODUCT
   virtual void        dump_spec(outputStream *st) const;
@@ -865,7 +993,7 @@ class CallDynamicJavaNode : public CallJavaNode {
   virtual uint size_of() const; // Size is bigger
 public:
   CallDynamicJavaNode(const TypeFunc* tf , address addr, ciMethod* method, int vtable_index)
-    : CallJavaNode(tf,addr,method), _vtable_index(vtable_index) {
+    : CallJavaNode(tf, addr, method, TypePtr::BOTTOM, TypePtr::BOTTOM), _vtable_index(vtable_index) {
     init_class_id(Class_CallDynamicJava);
   }
 
@@ -891,8 +1019,8 @@ protected:
   virtual uint size_of() const; // Size is bigger
 public:
   CallRuntimeNode(const TypeFunc* tf, address addr, const char* name,
-                  const TypePtr* adr_type, JVMState* jvms = nullptr)
-    : CallNode(tf, addr, adr_type, jvms)
+                  const TypePtr* out_adr_type, const TypePtr* in_adr_type, JVMState* jvms = nullptr)
+    : CallNode(tf, addr, out_adr_type, in_adr_type, jvms)
   {
     init_class_id(Class_CallRuntime);
     _name = name;
@@ -912,8 +1040,8 @@ public:
 class CallLeafNode : public CallRuntimeNode {
 public:
   CallLeafNode(const TypeFunc* tf, address addr, const char* name,
-               const TypePtr* adr_type)
-    : CallRuntimeNode(tf, addr, name, adr_type)
+               const TypePtr* out_adr_type, const TypePtr* in_adr_type)
+    : CallRuntimeNode(tf, addr, name, out_adr_type, in_adr_type)
   {
     init_class_id(Class_CallLeaf);
   }
@@ -942,13 +1070,14 @@ protected:
   TupleNode* make_tuple_of_input_state_and_top_return_values(const Compile* C) const;
 
 public:
-  CallLeafPureNode(const TypeFunc* tf, address addr, const char* name,
-                   const TypePtr* adr_type)
-      : CallLeafNode(tf, addr, name, adr_type) {
+  CallLeafPureNode(const TypeFunc* tf, address addr, const char* name)
+      : CallLeafNode(tf, addr, name, nullptr, nullptr) {
     init_class_id(Class_CallLeafPure);
   }
   int Opcode() const override;
   Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
+
+  CallLeafPureNode* inline_call_leaf_pure_node(Node* control = nullptr) const;
 };
 
 //------------------------------CallLeafNoFPNode-------------------------------
@@ -957,12 +1086,13 @@ public:
 class CallLeafNoFPNode : public CallLeafNode {
 public:
   CallLeafNoFPNode(const TypeFunc* tf, address addr, const char* name,
-                   const TypePtr* adr_type)
-    : CallLeafNode(tf, addr, name, adr_type)
+                   const TypePtr* out_adr_type, const TypePtr* in_adr_type)
+    : CallLeafNode(tf, addr, name, out_adr_type, in_adr_type)
   {
     init_class_id(Class_CallLeafNoFP);
   }
   virtual int   Opcode() const;
+  virtual uint match_edge(uint idx) const;
 };
 
 //------------------------------CallLeafVectorNode-------------------------------
@@ -975,8 +1105,8 @@ protected:
   virtual uint size_of() const; // Size is bigger
 public:
   CallLeafVectorNode(const TypeFunc* tf, address addr, const char* name,
-                   const TypePtr* adr_type, uint num_bits)
-    : CallLeafNode(tf, addr, name, adr_type), _num_bits(num_bits)
+                     const TypePtr* out_adr_type, const TypePtr* in_adr_type, uint num_bits)
+    : CallLeafNode(tf, addr, name, out_adr_type, in_adr_type), _num_bits(num_bits)
   {
   }
   virtual int   Opcode() const;
@@ -1005,6 +1135,9 @@ public:
     InitialTest,                      // slow-path test (may be constant)
     ALength,                          // array length (or TOP if none)
     ValidLengthTest,
+    ValueType,                        // ValueTypeNode if this is a value type allocation
+    InitValue,                        // Init value for null-free value type arrays
+    RawInitValue,                     // Same as above but as raw machine word
     ParmLimit
   };
 
@@ -1015,6 +1148,9 @@ public:
     fields[InitialTest] = TypeInt::BOOL;
     fields[ALength]     = t;  // length (can be a bad length)
     fields[ValidLengthTest] = TypeInt::BOOL;
+    fields[ValueType] = Type::BOTTOM;
+    fields[InitValue] = TypeInstPtr::NOTNULL;
+    fields[RawInitValue] = TypeX_X;
 
     const TypeTuple *domain = TypeTuple::make(ParmLimit, fields);
 
@@ -1035,7 +1171,8 @@ public:
 
   virtual uint size_of() const; // Size is bigger
   AllocateNode(Compile* C, const TypeFunc *atype, Node *ctrl, Node *mem, Node *abio,
-               Node *size, Node *klass_node, Node *initial_test);
+               Node *size, Node *klass_node, Node *initial_test,
+               ValueTypeNode* value_type_node = nullptr);
   // Expansion modifies the JVMState, so we need to deep clone it
   virtual bool needs_deep_clone_jvms(Compile* C) { return true; }
   virtual int Opcode() const;
@@ -1043,7 +1180,7 @@ public:
   virtual bool        guaranteed_safepoint()  { return false; }
 
   // allocations do not modify their arguments
-  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) { return false;}
+  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const { return false; }
 
   // Pattern-match a possible usage of AllocateNode.
   // Return null if no allocation is recognized.
@@ -1100,9 +1237,12 @@ public:
   void compute_MemBar_redundancy(ciMethod* initializer);
   bool is_allocation_MemBar_redundant() { return _is_allocation_MemBar_redundant; }
 
-  Node* make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem);
+  Node* make_ideal_mark(PhaseGVN* phase, Node* control, Node* mem);
 
-  NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
+#ifndef PRODUCT
+  ciKlass* allocation_klass() const;
+  virtual void dump_spec(outputStream *st) const;
+#endif // !PRODUCT
 };
 
 //------------------------------AllocateArray---------------------------------
@@ -1112,14 +1252,18 @@ public:
 class AllocateArrayNode : public AllocateNode {
 public:
   AllocateArrayNode(Compile* C, const TypeFunc* atype, Node* ctrl, Node* mem, Node* abio, Node* size, Node* klass_node,
-                    Node* initial_test, Node* count_val, Node* valid_length_test)
+                    Node* initial_test, Node* count_val, Node* valid_length_test,
+                    Node* init_value, Node* raw_init_value)
     : AllocateNode(C, atype, ctrl, mem, abio, size, klass_node,
                    initial_test)
   {
     init_class_id(Class_AllocateArray);
-    set_req(AllocateNode::ALength,        count_val);
+    set_req(AllocateNode::ALength, count_val);
     set_req(AllocateNode::ValidLengthTest, valid_length_test);
+    init_req(AllocateNode::InitValue, init_value);
+    init_req(AllocateNode::RawInitValue, raw_init_value);
   }
+  virtual uint size_of() const { return sizeof(*this); }
   virtual int Opcode() const;
 
   // Dig the length operand out of a array allocation site.
@@ -1166,14 +1310,13 @@ protected:
                                        GrowableArray<AbstractLockNode*> &lock_ops);
   bool find_unlocks_for_region(const RegionNode* region, LockNode* lock,
                                GrowableArray<AbstractLockNode*> &lock_ops);
-  LockNode *find_matching_lock(UnlockNode* unlock);
 
   // Update the counter to indicate that this lock was eliminated.
   void set_eliminated_lock_counter() PRODUCT_RETURN;
 
 public:
-  AbstractLockNode(const TypeFunc *tf)
-    : CallNode(tf, nullptr, TypeRawPtr::BOTTOM),
+  AbstractLockNode(const TypeFunc *tf, const TypePtr* out_adr_type, const TypePtr* in_adr_type)
+    : CallNode(tf, nullptr, out_adr_type, in_adr_type),
       _kind(Regular)
   {
 #ifndef PRODUCT
@@ -1181,10 +1324,9 @@ public:
 #endif
   }
   virtual int Opcode() const = 0;
-  Node *   obj_node() const       {return in(TypeFunc::Parms + 0); }
-  Node *   box_node() const       {return in(TypeFunc::Parms + 1); }
-  Node *   fastlock_node() const  {return in(TypeFunc::Parms + 2); }
-  void     set_box_node(Node* box) { set_req(TypeFunc::Parms + 1, box); }
+  Node*   obj_node() const       { return in(TypeFunc::Parms + 0); }
+  Node*   box_node() const       { return in(TypeFunc::Parms + 1); }
+  void    set_box_node(Node* box) { set_req(TypeFunc::Parms + 1, box); }
 
   const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
 
@@ -1207,7 +1349,7 @@ public:
   bool is_balanced();
 
   // locking does not modify its arguments
-  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase){ return false; }
+  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const { return false; }
 
 #ifndef PRODUCT
   void create_lock_counter(JVMState* s);
@@ -1221,10 +1363,9 @@ public:
 // High-level lock operation
 //
 // This is a subclass of CallNode because it is a macro node which gets expanded
-// into a code sequence containing a call.  This node takes 3 "parameters":
-//    0  -  object to lock
-//    1 -   a BoxLockNode
-//    2 -   a FastLockNode
+// into a code sequence containing a call.  This node takes two "parameters":
+//    0 - object to lock
+//    1 - a BoxLockNode
 //
 class LockNode : public AbstractLockNode {
   static const TypeFunc* _lock_type_Type;
@@ -1237,12 +1378,12 @@ public:
 
   static void initialize_lock_Type() {
     assert(_lock_type_Type == nullptr, "should be called once");
-    // create input type (domain)
-    const Type **fields = TypeTuple::fields(3);
+    int argcnt = 2;
+
+    const Type** fields = TypeTuple::fields(argcnt);
     fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
     fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM;    // Address of stack location for lock
-    fields[TypeFunc::Parms+2] = TypeInt::BOOL;         // FastLock
-    const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+3,fields);
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
 
     // create result type (range)
     fields = TypeTuple::fields(0);
@@ -1254,7 +1395,7 @@ public:
 
   virtual int Opcode() const;
   virtual uint size_of() const; // Size is bigger
-  LockNode(Compile* C, const TypeFunc *tf) : AbstractLockNode( tf ) {
+  LockNode(Compile* C, const TypeFunc* tf) : AbstractLockNode(tf, TypeRawPtr::BOTTOM, TypePtr::BOTTOM) {
     init_class_id(Class_Lock);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
@@ -1279,7 +1420,7 @@ private:
 public:
   virtual int Opcode() const;
   virtual uint size_of() const; // Size is bigger
-  UnlockNode(Compile* C, const TypeFunc *tf) : AbstractLockNode( tf )
+  UnlockNode(Compile* C, const TypeFunc* tf) : AbstractLockNode(tf, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM)
 #ifdef ASSERT
     , _dbg_jvms(nullptr)
 #endif
@@ -1300,4 +1441,19 @@ public:
   JVMState* dbg_jvms() const { return nullptr; }
 #endif
 };
+
+//------------------------------PowDNode--------------------------------------
+class PowDNode : public CallLeafPureNode {
+  TupleNode* make_tuple_of_input_state_and_result(PhaseIterGVN* phase, Node* result, Node* control = nullptr);
+
+public:
+  PowDNode(Compile* C, Node* base, Node* exp);
+  int Opcode() const override;
+  const Type* Value(PhaseGVN* phase) const override;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
+
+  Node* base() const { return in(TypeFunc::Parms + 0); }
+  Node* exp() const  { return in(TypeFunc::Parms + 2); }
+};
+
 #endif // SHARE_OPTO_CALLNODE_HPP

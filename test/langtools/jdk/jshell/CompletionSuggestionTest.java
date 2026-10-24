@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  *          jdk.jshell/jdk.jshell:open
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build KullaTesting TestingInputStream Compiler
- * @run junit/timeout=480 CompletionSuggestionTest
+ * @run junit/othervm/timeout=480 --enable-final-field-mutation=ALL-UNNAMED CompletionSuggestionTest
  */
 
 import java.io.IOException;
@@ -44,6 +44,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
@@ -781,13 +782,13 @@ public class CompletionSuggestionTest extends KullaTesting {
             throw new IllegalStateException(ex);
         }
 
-        try {
-            Field availableSources = getAnalysis().getClass().getDeclaredField("availableSources");
-            availableSources.setAccessible(true);
-            availableSources.set(getAnalysis(), Arrays.asList(srcZip));
-        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException ex) {
-            throw new IllegalStateException(ex);
-        }
+        setJDKSourcesOverride(List.of(srcZip));
+    }
+
+    @Override
+    public void tearDown() {
+        setJDKSourcesOverride(null);
+        super.tearDown();
     }
 
     private void dontReadParameterNamesFromClassFile() throws Exception {
@@ -901,7 +902,7 @@ public class CompletionSuggestionTest extends KullaTesting {
 
     @Test
     public void testAnnotation() {
-        assertCompletion("@Deprec|", "Deprecated");
+        assertCompletion("@Deprec|", "@Deprecated(");
         assertCompletion("@Deprecated(|", "forRemoval = ", "since = ");
         assertCompletion("@Deprecated(forRemoval = |", true, "false", "true");
         assertCompletion("@Deprecated(forRemoval = true, |", "since = ");
@@ -946,9 +947,32 @@ public class CompletionSuggestionTest extends KullaTesting {
     public void testMultiSnippet() {
         assertCompletion("String s = \"\"; s.len|", true, "length()");
         assertCompletion("String s() { return \"\"; } s().len|", true, "length()");
-        assertCompletion("String s() { return \"\"; } import java.util.List; List.o|", true, "of(");
+        assertCompletion("String s() { return \"\"; } import java.util.List; List.o|", true, "of(", "ofLazy(");
         assertCompletion("String s() { return \"\"; } import java.ut| ", true, "util.");
         assertCompletion("class S { public int length() { return 0; } } new S().len|", true, "length()");
         assertSignature("void f() { } f(|", "void f()");
+    }
+
+    private static void setJDKSourcesOverride(List<Path> paths) throws IllegalStateException {
+        try {
+            //to ensure test stability, don't use JDK's src.zip:
+            Field availableSources = Class.forName("jdk.jshell.SourceCodeAnalysisImpl").getDeclaredField("jdkSourcesOverride");
+            availableSources.setAccessible(true);
+            availableSources.set(null, paths);
+        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException | ClassNotFoundException ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
+    static {
+        try {
+            //disable reading of paramater names, to improve stability:
+            Class<?> analysisClass = Class.forName("jdk.jshell.SourceCodeAnalysisImpl");
+            Field params = analysisClass.getDeclaredField("COMPLETION_EXTRA_PARAMETERS");
+            params.setAccessible(true);
+            params.set(null, List.of());
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 }

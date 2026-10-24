@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import com.sun.net.httpserver.*;
 import java.net.*;
 import java.io.*;
 import java.util.concurrent.*;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_CHUNKED;
 
 public class B6421581 {
 
@@ -59,7 +61,7 @@ public class B6421581 {
                     /* close output stream without opening inpustream */
                     /* chunked encoding */
                     try {
-                        msg.sendResponseHeaders(200, 0);
+                        msg.sendResponseHeaders(200, RSPBODY_CHUNKED);
                         OutputStream out = msg.getResponseBody();
                         out.write("hello".getBytes());
                         out.close();
@@ -86,7 +88,7 @@ public class B6421581 {
                 case 3:
                     /* close exchange without opening any stream */
                     try {
-                        msg.sendResponseHeaders(200, -1);
+                        msg.sendResponseHeaders(200, RSPBODY_EMPTY);
                         msg.close();
                     } catch(Exception e) {
                         error = true;

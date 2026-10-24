@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,17 +59,16 @@
  */
 package test.java.time;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.time.Period;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test.
  */
-@Test
 public class TestPeriod extends AbstractTest {
 
     @Test
@@ -98,10 +97,10 @@ public class TestPeriod extends AbstractTest {
         Period test6 = Period.ofDays(6);
         Period test5M = Period.ofMonths(5);
         Period test5Y = Period.ofYears(5);
-        assertEquals(test5.hashCode() == test5.hashCode(), true);
-        assertEquals(test5.hashCode() == test6.hashCode(), false);
-        assertEquals(test5.hashCode() == test5M.hashCode(), false);
-        assertEquals(test5.hashCode() == test5Y.hashCode(), false);
+        assertEquals(true, test5.hashCode() == test5.hashCode());
+        assertEquals(false, test5.hashCode() == test6.hashCode());
+        assertEquals(false, test5.hashCode() == test5M.hashCode());
+        assertEquals(false, test5.hashCode() == test5Y.hashCode());
     }
 
 }

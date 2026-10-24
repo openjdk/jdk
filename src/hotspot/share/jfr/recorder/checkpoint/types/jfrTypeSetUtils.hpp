@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ /*
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,14 +135,22 @@ class SymbolPredicate {
 
 template <bool leakp>
 class MethodFlagPredicate {
-  bool _current_epoch;
+  const bool _previous_epoch;
+  const bool _class_unload;
  public:
-  MethodFlagPredicate(bool current_epoch) : _current_epoch(current_epoch) {}
+  MethodFlagPredicate(bool previous_epoch, bool class_unload) : _previous_epoch(previous_epoch), _class_unload(class_unload)  {}
   bool operator()(const Method* method) {
-    if (_current_epoch) {
-      return leakp ? METHOD_IS_LEAKP(method) : METHOD_FLAG_USED_THIS_EPOCH(method);
+    if (leakp) {
+      return METHOD_IS_LEAKP(method);
     }
-    return leakp ? METHOD_IS_LEAKP(method) : METHOD_FLAG_USED_PREVIOUS_EPOCH(method);
+    if (_previous_epoch) {
+      assert(!_class_unload, "invariant");
+      return METHOD_FLAG_USED_PREVIOUS_EPOCH(method);
+    }
+    if (_class_unload) {
+      return METHOD_FLAG_USED_THIS_EPOCH(method) || METHOD_FLAG_USED_PREVIOUS_EPOCH(method);
+    }
+    return METHOD_FLAG_USED_THIS_EPOCH(method);
   }
 };
 
@@ -207,12 +215,12 @@ class JfrArtifactSet : public JfrCHeapObj {
   typedef JfrSet<JfrArtifactSetConfig> JfrKlassSet;
 
  private:
-  JfrSymbolTable* _symbol_table;
   JfrKlassSet* _klass_set;
   JfrKlassSet* _klass_loader_set;
   JfrKlassSet* _klass_loader_leakp_set;
   size_t _total_count;
   bool _class_unload;
+  bool _previous_epoch;
 
  public:
   JfrArtifactSet(bool class_unload, bool previous_epoch);
@@ -222,32 +230,20 @@ class JfrArtifactSet : public JfrCHeapObj {
   void initialize(bool class_unload, bool previous_epoch);
   void clear();
 
-  traceid mark(uintptr_t hash, const Symbol* sym, bool leakp);
   traceid mark(const Klass* klass, bool leakp);
   traceid mark(const Symbol* symbol, bool leakp);
-  traceid mark(uintptr_t hash, const char* const str, bool leakp);
-  traceid mark_hidden_klass_name(const Klass* klass, bool leakp);
   traceid bootstrap_name(bool leakp);
-
-  const JfrSymbolTable::SymbolEntry* map_symbol(const Symbol* symbol) const;
-  const JfrSymbolTable::SymbolEntry* map_symbol(uintptr_t hash) const;
-  const JfrSymbolTable::StringEntry* map_string(uintptr_t hash) const;
 
   bool has_klass_entries() const;
   size_t total_count() const;
   void register_klass(const Klass* k);
   bool should_do_cld_klass(const Klass* k, bool leakp);
-  void increment_checkpoint_id();
 
   template <typename T>
-  void iterate_symbols(T& functor) {
-    _symbol_table->iterate_symbols(functor);
-  }
+  void iterate_symbols(T& functor);
 
   template <typename T>
-  void iterate_strings(T& functor) {
-    _symbol_table->iterate_strings(functor);
-  }
+  void iterate_strings(T& functor);
 
   template <typename Writer>
   void tally(Writer& writer) {

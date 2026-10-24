@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ typedef ZValue<ZPerNUMAStorage, ZPartition> ZPerNUMAZPartition;
   nonstatic_field(ZPage,                        _virtual,             const ZVirtualMemory)          \
   volatile_nonstatic_field(ZPage,               _top,                 zoffset_end)                   \
                                                                                                      \
-  nonstatic_field(ZPageAllocator,               _max_capacity,        const size_t)                  \
+  nonstatic_field(ZPageAllocator,               _static_max_capacity, const size_t)                  \
   nonstatic_field(ZPageAllocator,               _partitions,          ZPerNUMAZPartition)            \
                                                                                                      \
   static_field(ZNUMA,                           _count,               uint32_t)                      \
@@ -111,7 +111,6 @@ typedef ZValue<ZPerNUMAStorage, ZPartition> ZPerNUMAZPartition;
                                                                                                      \
   nonstatic_field(ZForwarding,                  _virtual,             const ZVirtualMemory)          \
   nonstatic_field(ZForwarding,                  _object_alignment_shift, const size_t)               \
-  volatile_nonstatic_field(ZForwarding,         _ref_count,           int)                           \
   nonstatic_field(ZForwarding,                  _entries,             const ZAttachedArrayForForwarding) \
   nonstatic_field(ZForwardingEntry,             _entry,               uint64_t)                      \
   nonstatic_field(ZAttachedArrayForForwarding,  _length,              const size_t)

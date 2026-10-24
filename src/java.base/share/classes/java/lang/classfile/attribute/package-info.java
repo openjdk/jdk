@@ -32,9 +32,8 @@
  * including {@link Attribute}, {@link AttributedElement}, {@link AttributeMapper}, and {@link CustomAttribute}, which
  * do not reside in this package.
  * <p>
- * Unless otherwise specified, passing {@code null} or an array or collection containing a {@code null} element as an
- * argument to a constructor or method of any Class-File API class or interface will cause a {@link NullPointerException}
- * to be thrown.
+ * APIs in this package perform {@linkplain java.lang.classfile##checks null and unrepresentable argument checks},
+ * unless otherwise noted.
  *
  * <h2 id="reading">Reading Attributes</h2>
  * The general way to obtain attributes is through {@link AttributedElement}.  In addition to that, many attributes
@@ -62,7 +61,7 @@
  * <h2 id="writing">Writing Attributes</h2>
  * Most attributes implement at least one of {@link ClassElement}, {@link FieldElement}, {@link MethodElement}, or
  * {@link CodeElement}, so they can be sent to the respective {@link ClassFileBuilder} to be written as part of those
- * structure.  Attributes define if they can {@linkplain AttributeMapper#allowMultiple() appear multiple times} in one
+ * structures.  Attributes define if they can {@linkplain AttributeMapper#allowMultiple() appear multiple times} in one
  * structure; if they cannot, the last attribute instance supplied to the builder is the one written to the final
  * structure.  Some attributes, such as {@link BootstrapMethodsAttribute}, implement none of those interfaces.  They are
  * created through other means, specified in the modeling interface for each of the attributes.  Attributes for a {@link
@@ -70,7 +69,7 @@
  * <p>
  * The attribute factories generally have two sets of factory methods: one that accepts symbolic information
  * representing the uses, and another that accepts constant pool entries.  Most of time, the symbolic factories are
- * sufficent, but the constant pool entry ones can be used for fine-grained control over {@code class} file generation;
+ * sufficient, but the constant pool entry ones can be used for fine-grained control over {@code class} file generation;
  * see "{@linkplain java.lang.classfile.constantpool##writing Writing the constant pool entries}" for more details.
  * <p>
  * Many attributes can be bulk-copied if the data it depends on does not change; this information is exposed in {@link

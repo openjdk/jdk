@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -30,25 +30,44 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 
 #include <ctype.h>
 
-uint32_t VM_Version::_initial_vector_length = 0;
+// The Zalasr (Table A.7 / RCsc) sequences emitted by the JIT for volatile
+// accesses only interoperate with C++ code compiled using the psABI atomics
+// mapping (A6S: seq_cst stores carry a trailing full fence), i.e.
+// gcc >= 13.3 or clang >= 19. libjvm itself and the bundled JDK native
+// libraries are the closest such C++ code, so gate UseZalasr on the
+// toolchain that built this VM. See riscv-elf-psabi-doc,
+// "RISC-V Atomics Mappings" (note 3: do not combine with older mappings).
+static constexpr bool toolchain_uses_psabi_atomics() {
+#if defined(__clang_major__)
+  return __clang_major__ >= 19;
+#elif defined(__GNUC__)
+  return (__GNUC__ > 13) || (__GNUC__ == 13 && __GNUC_MINOR__ >= 3);
+#else
+  return false;
+#endif
+}
 
-#define DEF_RV_EXT_FEATURE(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF) \
-VM_Version::NAME##RVExtFeatureValue VM_Version::NAME;
+uint32_t VM_Version::_initial_vector_length = 0;
+bool VM_Version::_use_zalasr_atomics = false;
+
+#define DEF_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+VM_Version::ext_##PRETTY##RVExtFeatureValue VM_Version::ext_##PRETTY;
 RV_EXT_FEATURE_FLAGS(DEF_RV_EXT_FEATURE)
 #undef DEF_RV_EXT_FEATURE
 
-#define DEF_RV_NON_EXT_FEATURE(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF) \
-VM_Version::NAME##RVNonExtFeatureValue VM_Version::NAME;
+#define DEF_RV_NON_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+VM_Version::PRETTY##RVNonExtFeatureValue VM_Version::PRETTY;
 RV_NON_EXT_FEATURE_FLAGS(DEF_RV_NON_EXT_FEATURE)
 #undef DEF_RV_NON_EXT_FEATURE
 
-#define ADD_RV_EXT_FEATURE_IN_LIST(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF) \
-     &VM_Version::NAME,
-#define ADD_RV_NON_EXT_FEATURE_IN_LIST(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF) \
-     &VM_Version::NAME,
+#define ADD_RV_EXT_FEATURE_IN_LIST(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+     &VM_Version::ext_##PRETTY,
+#define ADD_RV_NON_EXT_FEATURE_IN_LIST(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+     &VM_Version::PRETTY,
  VM_Version::RVFeatureValue* VM_Version::_feature_list[] = {
  RV_EXT_FEATURE_FLAGS(ADD_RV_EXT_FEATURE_IN_LIST)
  RV_NON_EXT_FEATURE_FLAGS(ADD_RV_NON_EXT_FEATURE_IN_LIST)
@@ -85,14 +104,6 @@ void VM_Version::common_initialize() {
 
   setup_cpu_available_features();
 
-  // check if satp.mode is supported, currently supports up to SV48(RV64)
-  if (satp_mode.value() > VM_SV48 || satp_mode.value() < VM_MBARE) {
-    vm_exit_during_initialization(
-      err_msg(
-         "Unsupported satp mode: SV%d. Only satp modes up to sv48 are supported for now.",
-         (int)satp_mode.value()));
-  }
-
   if (UseRVA20U64) {
     useRVA20U64Profile();
   }
@@ -101,17 +112,6 @@ void VM_Version::common_initialize() {
   }
   if (UseRVA23U64) {
     useRVA23U64Profile();
-  }
-
-  // Enable vendor specific features
-
-  if (mvendorid.enabled()) {
-    // Rivos
-    if (mvendorid.value() == RIVOS) {
-      if (FLAG_IS_DEFAULT(UseConservativeFence)) {
-        FLAG_SET_DEFAULT(UseConservativeFence, false);
-      }
-    }
   }
 
   if (UseZic64b) {
@@ -148,7 +148,7 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
   }
 
-  if (UseRVC && !ext_C.enabled()) {
+  if (UseRVC && !ext_c.enabled()) {
     warning("RVC is not supported on this CPU");
     FLAG_SET_DEFAULT(UseRVC, false);
 
@@ -156,6 +156,20 @@ void VM_Version::common_initialize() {
       warning("UseRVA20U64 is not supported on this CPU");
       FLAG_SET_DEFAULT(UseRVA20U64, false);
     }
+  }
+
+  if (UseZalasr && !toolchain_uses_psabi_atomics()) {
+    // A JVM built by a pre-psABI toolchain contains C++ atomics whose mapping
+    // is incompatible with the Zalasr sequences the JIT would emit; mixing them
+    // can break Java volatile semantics. Only warn when Zalasr was asked for
+    // explicitly: where the extension is detected it is enabled by default, and
+    // a plain start-up should stay quiet.
+    if (!FLAG_IS_DEFAULT(UseZalasr)) {
+      warning("UseZalasr requires a JVM built with a toolchain using the "
+              "psABI atomics mapping (gcc >= 13.3 or clang >= 19); "
+              "disabling Zalasr");
+    }
+    FLAG_SET_DEFAULT(UseZalasr, false);
   }
 
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
@@ -178,11 +192,6 @@ void VM_Version::common_initialize() {
       (unaligned_scalar.value() == MISALIGNED_SCALAR_FAST));
   }
 
-  if (FLAG_IS_DEFAULT(AlignVector)) {
-    FLAG_SET_DEFAULT(AlignVector,
-      unaligned_vector.value() != MISALIGNED_VECTOR_FAST);
-  }
-
 #ifdef __riscv_ztso
   // Hotspot is compiled with TSO support, it will only run on hardware which
   // supports Ztso
@@ -190,6 +199,22 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UseZtso, true);
   }
 #endif
+
+  // Zalasr and Ztso are mutually exclusive. Under Ztso the acquire and release fences
+  // are elided anyway, see MacroAssembler::membar(), so all Zalasr would still buy is
+  // eliding the trailing StoreLoad fence of a volatile store, which is a separate
+  // optimization. Ztso takes precedence for now, so Zalasr is turned off.
+  if (UseZtso && UseZalasr) {
+    if (!FLAG_IS_DEFAULT(UseZalasr)) {
+      warning("UseZalasr is not supported together with UseZtso, disabling Zalasr.");
+    }
+    FLAG_SET_DEFAULT(UseZalasr, false);
+  }
+
+  // Latch the native AtomicAccess dispatch flag only after every UseZalasr
+  // adjustment above has settled. See the comment on _use_zalasr_atomics in
+  // vm_version_riscv.hpp.
+  _use_zalasr_atomics = UseZalasr;
 
   if (UseZbb) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
@@ -199,7 +224,7 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
-  if (UseZicboz && zicboz_block_size.enabled() && zicboz_block_size.value() > 0) {
+  if (UseZicboz && zicboz_block_size.value() > 0) {
     assert(is_power_of_2(zicboz_block_size.value()), "Sanity");
     if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
       FLAG_SET_DEFAULT(UseBlockZeroing, true);
@@ -225,14 +250,29 @@ void VM_Version::common_initialize() {
     }
   } else {
     if (!FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
-      warning("CRC32 intrinsic are not available on this CPU.");
+      warning("CRC32 intrinsic is not available on this CPU.");
     }
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
-  if (UseCRC32CIntrinsics) {
-    warning("CRC32C intrinsics are not available on this CPU.");
-    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
+  if (UseZbc) {
+    if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
+      FLAG_SET_DEFAULT(UseCRC32CIntrinsics, true);
+    }
+  } else {
+    if (UseCRC32CIntrinsics) {
+      warning("CRC32C intrinsic is not available on this CPU.");
+      FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
+    }
+  }
+
+  if (ValueTypePassFieldsAsArgs) {
+    warning("ValueTypePassFieldsAsArgs is not supported on this CPU");
+    FLAG_SET_DEFAULT(ValueTypePassFieldsAsArgs, false);
+  }
+  if (ValueTypeReturnedAsFields) {
+    warning("ValueTypeReturnedAsFields is not supported on this CPU");
+    FLAG_SET_DEFAULT(ValueTypeReturnedAsFields, false);
   }
 }
 
@@ -251,6 +291,11 @@ void VM_Version::c2_initialize() {
       UseRVV = false;
       FLAG_SET_DEFAULT(MaxVectorSize, 0);
     }
+  }
+
+  if (FLAG_IS_DEFAULT(AlignVector)) {
+    FLAG_SET_DEFAULT(AlignVector,
+      unaligned_vector.value() != MISALIGNED_VECTOR_FAST);
   }
 
   // NOTE: Make sure codes dependent on UseRVV are put after MaxVectorSize initialize,
@@ -431,11 +476,6 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
-  // UseSHA
-  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA3Intrinsics || UseSHA512Intrinsics)) {
-    FLAG_SET_DEFAULT(UseSHA, false);
-  }
-
   // AES
   if (UseZvkn) {
     UseAES = UseAES || FLAG_IS_DEFAULT(UseAES);
@@ -444,6 +484,15 @@ void VM_Version::c2_initialize() {
     if (UseAESIntrinsics && !UseAES) {
       warning("UseAESIntrinsics enabled, but UseAES not, enabling");
       UseAES = true;
+    }
+
+    if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics) && UseZbb) {
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, true);
+    }
+
+    if (UseAESCTRIntrinsics && !UseZbb) {
+      warning("Cannot enable UseAESCTRIntrinsics on cpu without UseZbb support.");
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     }
   } else {
     if (UseAES) {
@@ -454,11 +503,26 @@ void VM_Version::c2_initialize() {
       warning("AES intrinsics are not available on this CPU");
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
     }
+    if (UseAESCTRIntrinsics) {
+      warning("Cannot enable UseAESCTRIntrinsics on cpu without UseZvkn support.");
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+    }
   }
 
-  if (UseAESCTRIntrinsics) {
-    warning("AES/CTR intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+  if (UseZvkg) {
+    if (FLAG_IS_DEFAULT(UseGHASHIntrinsics) && UseZvbb) {
+      FLAG_SET_DEFAULT(UseGHASHIntrinsics, true);
+    }
+
+    if (UseGHASHIntrinsics && !UseZvbb) {
+      warning("Cannot enable UseGHASHIntrinsics on cpu without UseZvbb support");
+      FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+    }
+  } else {
+    if (UseGHASHIntrinsics) {
+      warning("Cannot enable UseGHASHIntrinsics on cpu without UseZvkg support");
+      FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+    }
   }
 }
 
@@ -491,4 +555,63 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
     break;
   }
   return true;
+}
+
+int VM_Version::cpu_features_size() {
+  return sizeof(RVExtFeatures);
+}
+
+void VM_Version::store_cpu_features(void* buf) {
+  memcpy(buf, RVExtFeatures::current(), sizeof(RVExtFeatures));
+}
+
+bool VM_Version::verify_aot_code_cache_features(void* features_buffer) {
+  RVExtFeatures* features_to_test = (RVExtFeatures*)features_buffer;
+  return RVExtFeatures::current()->verify_aot_code_cache_features(features_to_test);
+}
+
+// Print one feature using the same spelling as features_string(): single letter
+// extensions appear as "rvc"/"rvv" and multi-character extensions with a lower
+// case leading character ("Zba" -> "zba"). Must stay in sync with the feature
+// string built in VM_Version::setup_cpu_available_features().
+void VM_Version::print_feature_name(stringStream& ss, RVFeatureValue* feature) {
+  const char* pretty = feature->pretty();
+  if (strlen(pretty) == 1) {
+    ss.print("rv%s", pretty);
+  } else {
+    ss.print("%c%s", (char)tolower(pretty[0]), &pretty[1]);
+  }
+}
+
+void VM_Version::insert_features_names(RVExtFeatures* features, stringStream& ss) {
+  const char* sep = "";
+  int i = 0;
+  while (i < RVExtFeatures::MAX_CPU_FEATURE_INDEX) {
+    if (features->support_feature(i)) {
+      ss.print("%s", sep);
+      print_feature_name(ss, _feature_list[i]);
+      sep = ", ";
+    }
+    i += 1;
+  }
+}
+
+void VM_Version::get_cpu_features_name(void* features_buffer, stringStream& ss) {
+  RVExtFeatures* features = (RVExtFeatures*)features_buffer;
+  insert_features_names(features, ss);
+}
+
+void VM_Version::get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss) {
+  RVExtFeatures* rv_ext_features_set1 = (RVExtFeatures*)features_set1;
+  RVExtFeatures* rv_ext_features_set2 = (RVExtFeatures*)features_set2;
+  const char* sep = "";
+  int i = 0;
+  while (i < RVExtFeatures::MAX_CPU_FEATURE_INDEX) {
+    if (rv_ext_features_set1->support_feature(i) && !rv_ext_features_set2->support_feature(i)) {
+      ss.print("%s", sep);
+      print_feature_name(ss, _feature_list[i]);
+      sep = ", ";
+    }
+    i += 1;
+  }
 }

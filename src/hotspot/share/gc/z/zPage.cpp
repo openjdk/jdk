@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,9 @@ ZPage::ZPage(ZPageType type, ZPageAge age, const ZVirtualMemory& vmem, ZMultiPar
     _top(to_zoffset_end(start())),
     _livemap(object_max_count()),
     _remembered_set(),
-    _multi_partition_tracker(multi_partition_tracker) {
+    _multi_partition_tracker(multi_partition_tracker),
+    _relocate_promoted(false),
+    _relocation_target_ref_count(0) {
   assert(!_virtual.is_null(), "Should not be null");
   assert((_type == ZPageType::small && size() == ZPageSizeSmall) ||
          (_type == ZPageType::medium && ZPageSizeMediumMin <= size() && size() <= ZPageSizeMediumMax) ||
@@ -62,12 +64,22 @@ ZPage::ZPage(ZPageType type, ZPageAge age, const ZVirtualMemory& vmem, ZMultiPar
 
 ZPage* ZPage::clone_for_promotion() const {
   assert(_age != ZPageAge::old, "must be used for promotion");
+  assert(_relocation_target_ref_count == 0, "Invalid ref count");
+
   // Only copy type and memory layouts, and also update _top. Let the rest be
   // lazily reconstructed when needed.
   ZPage* const page = new ZPage(_type, ZPageAge::old, _virtual, _multi_partition_tracker, _single_partition_id);
   page->_top = _top;
 
   return page;
+}
+
+bool ZPage::allows_raw_null() const {
+  return is_young() && !AtomicAccess::load(&_relocate_promoted);
+}
+
+void ZPage::set_is_relocate_promoted() {
+  AtomicAccess::store(&_relocate_promoted, true);
 }
 
 ZGeneration* ZPage::generation() {
@@ -92,6 +104,8 @@ void ZPage::remset_alloc() {
 }
 
 ZPage* ZPage::reset(ZPageAge age) {
+  assert(_relocation_target_ref_count == 0, "Invalid ref count");
+
   _age = age;
 
   _generation_id = age == ZPageAge::old

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1007,7 +1007,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                                                      curFrame.getFP(),
                                                      anno));
             } else {
-              // For C2, which has null frame pointers on x86/amd64/aarch64
+              // For C2, which has null frame pointers on amd64/aarch64
               CodeBlob cb = VM.getVM().getCodeCache().findBlob(curFrame.getPC());
               Address sp = curFrame.getSP();
               if (Assert.ASSERTS_ENABLED) {

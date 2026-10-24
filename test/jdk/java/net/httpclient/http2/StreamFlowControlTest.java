@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8342075 8343855
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm  -Djdk.internal.httpclient.debug=true
+ * @run junit/othervm  -Djdk.internal.httpclient.debug=true
  *                      -Djdk.httpclient.connectionWindowSize=65535
  *                      -Djdk.httpclient.windowsize=16384
  *                      StreamFlowControlTest
@@ -65,27 +65,30 @@ import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.SettingsFrame;
 import jdk.test.lib.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class StreamFlowControlTest {
 
-    SSLContext sslContext;
-    HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
-    String http2URI;
-    String https2URI;
-    final AtomicInteger reqid = new AtomicInteger();
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    private static HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static String http2URI;
+    private static String https2URI;
+    private static final AtomicInteger reqid = new AtomicInteger();
+    final static int WINDOW =
+            Integer.getInteger("jdk.httpclient.windowsize", 2 * 16 * 1024);
 
 
-    @DataProvider(name = "variants")
-    public Object[][] variants() {
+
+    public static Object[][] variants() {
         return new Object[][] {
                 { http2URI,  false },
                 { https2URI, false },
@@ -108,7 +111,8 @@ public class StreamFlowControlTest {
     }
 
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     void test(String uri,
               boolean sameClient)
         throws Exception
@@ -139,7 +143,7 @@ public class StreamFlowControlTest {
                     if (sameClient) {
                         String key = response.headers().firstValue("X-Connection-Key").get();
                         if (label == null) label = key;
-                        assertEquals(key, label, "Unexpected key for " + query);
+                        assertEquals(label, key, "Unexpected key for " + query);
                     }
                     sent.join();
                     // we have to pull to get the exception, but slow enough
@@ -147,7 +151,11 @@ public class StreamFlowControlTest {
                     // the window is exceeded...
                     long wait = uri.startsWith("https://") ? 800 : 500;
                     try (InputStream is = response.body()) {
-                        sleep(wait);
+                        byte[] discard = new byte[WINDOW/4];
+                        for (int j=0; j<2; j++) {
+                            sleep(wait);
+                            if (is.read(discard) < 0) break;
+                        }
                         is.readAllBytes();
                     }
                     // we could fail here if we haven't waited long enough
@@ -168,7 +176,8 @@ public class StreamFlowControlTest {
 
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testAsync(String uri,
                    boolean sameClient)
     {
@@ -200,12 +209,16 @@ public class StreamFlowControlTest {
                     if (sameClient) {
                         String key = response.headers().firstValue("X-Connection-Key").get();
                         if (label == null) label = key;
-                        assertEquals(key, label, "Unexpected key for " + query);
+                        assertEquals(label, key, "Unexpected key for " + query);
                     }
                     sent.join();
                     long wait = uri.startsWith("https://") ? 800 : 350;
                     try (InputStream is = response.body()) {
-                        sleep(wait);
+                        byte[] discard = new byte[WINDOW/4];
+                        for (int j=0; j<2; j++) {
+                            sleep(wait);
+                            if (is.read(discard) < 0) break;
+                        }
                         is.readAllBytes();
                     }
                     // we could fail here if we haven't waited long enough
@@ -253,42 +266,38 @@ public class StreamFlowControlTest {
         }
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
+    @BeforeAll
+    public static void setup() throws Exception {
+        var http2TestServerImpl = new Http2TestServer("localhost", false, 0);
+        http2TestServerImpl.addHandler(new Http2TestHandler(), "/http2/");
+        http2TestServer = HttpTestServer.of(http2TestServerImpl);
+        http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/x";
 
-        var http2TestServer = new Http2TestServer("localhost", false, 0);
-        http2TestServer.addHandler(new Http2TestHandler(), "/http2/");
-        this.http2TestServer = HttpTestServer.of(http2TestServer);
-        http2URI = "http://" + this.http2TestServer.serverAuthority() + "/http2/x";
-
-        var https2TestServer = new Http2TestServer("localhost", true, sslContext);
-        https2TestServer.addHandler(new Http2TestHandler(), "/https2/");
-        this.https2TestServer = HttpTestServer.of(https2TestServer);
-        this.https2TestServer.addHandler(new HttpHeadOrGetHandler(), "/https2/head/");
-        https2URI = "https://" + this.https2TestServer.serverAuthority() + "/https2/x";
-        String h2Head = "https://" + this.https2TestServer.serverAuthority() + "/https2/head/z";
+        var https2TestServerImpl = new Http2TestServer("localhost", true, sslContext);
+        https2TestServerImpl.addHandler(new Http2TestHandler(), "/https2/");
+        https2TestServer = HttpTestServer.of(https2TestServerImpl);
+        https2TestServer.addHandler(new HttpHeadOrGetHandler(), "/https2/head/");
+        https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/x";
+        String h2Head = "https://" + https2TestServer.serverAuthority() + "/https2/head/z";
 
         // Override the default exchange supplier with a custom one to enable
         // particular test scenarios
-        http2TestServer.setExchangeSupplier(FCHttp2TestExchange::new);
-        https2TestServer.setExchangeSupplier(FCHttp2TestExchange::new);
+        http2TestServerImpl.setExchangeSupplier(FCHttp2TestExchange::new);
+        https2TestServerImpl.setExchangeSupplier(FCHttp2TestExchange::new);
 
-        this.http2TestServer.start();
-        this.https2TestServer.start();
+        http2TestServer.start();
+        https2TestServer.start();
 
         // warmup to eliminate delay due to SSL class loading and initialization.
         try (var client = HttpClient.newBuilder().sslContext(sslContext).build()) {
             var request = HttpRequest.newBuilder(URI.create(h2Head)).HEAD().build();
             var resp = client.send(request, BodyHandlers.discarding());
-            assertEquals(resp.statusCode(), 200);
+            assertEquals(200, resp.statusCode());
         }
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         http2TestServer.stop();
         https2TestServer.stop();
     }
@@ -316,17 +325,16 @@ public class StreamFlowControlTest {
                     bytes = "no request body!"
                             .repeat(100).getBytes(StandardCharsets.UTF_8);
                 }
-                int window = Integer.getInteger("jdk.httpclient.windowsize", 2 * 16 * 1024);
                 final int maxChunkSize;
                 if (t instanceof FCHttp2TestExchange fct) {
-                    maxChunkSize = Math.min(window, fct.conn.getMaxFrameSize());
+                    maxChunkSize = Math.min(WINDOW, fct.conn.getMaxFrameSize());
                 } else {
-                    maxChunkSize = Math.min(window, SettingsFrame.MAX_FRAME_SIZE);
+                    maxChunkSize = Math.min(WINDOW, SettingsFrame.MAX_FRAME_SIZE);
                 }
                 byte[] resp = bytes.length <= maxChunkSize
                         ? bytes
                         : Arrays.copyOfRange(bytes, 0, maxChunkSize);
-                int max = (window / resp.length) + 2;
+                int max = (WINDOW / resp.length) + 2;
                 // send in chunks
                 t.sendResponseHeaders(200, 0);
                 for (int i = 0; i <= max; i++) {

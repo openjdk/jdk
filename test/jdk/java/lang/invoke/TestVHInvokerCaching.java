@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,8 @@
 
 /* @test
  * @bug 8265079
- * @run testng/othervm -Xverify:all TestVHInvokerCaching
+ * @run junit/othervm -Xverify:all TestVHInvokerCaching
  */
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -37,12 +34,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.invoke.MethodHandles.lookup;
-import static org.testng.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class TestVHInvokerCaching {
 
-    @Test(dataProvider = "testHandles")
-    public static void testVHIInvokerCaching(VarHandle testHandle) throws Throwable {
+    @ParameterizedTest
+    @MethodSource("testHandles")
+    public void testVHIInvokerCaching(VarHandle testHandle) throws Throwable {
         for (VarHandle.AccessMode mode : VarHandle.AccessMode.values()) {
             MethodHandle handle1 = MethodHandles.varHandleInvoker(mode, testHandle.accessModeType(mode));
             MethodHandle handle2 = MethodHandles.varHandleInvoker(mode, testHandle.accessModeType(mode));
@@ -56,7 +57,6 @@ public class TestVHInvokerCaching {
         }
     }
 
-    @DataProvider
     public static Object[][] testHandles() throws NoSuchFieldException, IllegalAccessException {
         List<VarHandle> testHandles = new ArrayList<>();
 
@@ -74,13 +74,15 @@ public class TestVHInvokerCaching {
 
         MethodHandles.Lookup lookup = lookup();
 
-        for (Field field : Holder.class.getFields()) {
+        for (Field field : Holder.class.getDeclaredFields()) {
             String fieldName = field.getName();
             Class<?> fieldType = field.getType();
 
             testHandles.add(MethodHandles.arrayElementVarHandle(fieldType.arrayType()));
             testHandles.add(lookup.findVarHandle(Holder.class, fieldName, fieldType));
         }
+
+        assertFalse(testHandles.isEmpty());
 
         return testHandles.stream().map(vh -> new Object[]{ vh }).toArray(Object[][]::new);
     }

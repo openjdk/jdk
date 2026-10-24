@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ class JvmtiFramePop {
 // It records what frames on a threads stack should post frame_pop events when they're exited.
 //
 
-class JvmtiFramePops : public CHeapObj<mtInternal> {
+class JvmtiFramePops : public CHeapObj<mtServiceability> {
  private:
   GrowableArray<int>* _pops;
 
@@ -108,7 +108,7 @@ class JvmtiFramePops : public CHeapObj<mtInternal> {
 // 3: Location of last executed instruction, used to filter out duplicate
 //    events due to instruction rewriting.
 
-class JvmtiEnvThreadState : public CHeapObj<mtInternal> {
+class JvmtiEnvThreadState : public CHeapObj<mtServiceability> {
 private:
   friend class JvmtiEnv;
   JvmtiThreadState  *_state;
@@ -170,8 +170,6 @@ public:
 
   inline JvmtiThreadState* jvmti_thread_state() { return _state; }
 
-  // use _thread_saved if cthread is detached from JavaThread
-  JavaThread *get_thread_or_saved();
   JavaThread *get_thread();
   inline JvmtiEnv *get_env() { return _env; }
 

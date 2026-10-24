@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,9 +30,11 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.File;
+import java.lang.foreign.Arena;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.security.cert.Certificate;
@@ -308,22 +310,11 @@ public abstract class ClassLoader {
     // Shared among all packages with unsigned classes
     private static final Certificate[] nocerts = new Certificate[0];
 
-    // The classes loaded by this class loader. The only purpose of this table
-    // is to keep the classes from being GC'ed until the loader is GC'ed.
-    private final ArrayList<Class<?>> classes = new ArrayList<>();
-
     // The "default" domain. Set as the default ProtectionDomain on newly
     // created classes.
     private final ProtectionDomain defaultDomain =
         new ProtectionDomain(new CodeSource(null, (Certificate[]) null),
                              null, this, null);
-
-    // Invoked by the VM to record every loaded class with this loader.
-    void addClass(Class<?> c) {
-        synchronized (classes) {
-            classes.add(c);
-        }
-    }
 
     // The packages defined in this class loader.  Each package name is
     // mapped to its corresponding NamedPackage object.
@@ -1037,7 +1028,7 @@ public abstract class ClassLoader {
      *
      * @since  1.5
      */
-    protected final Class<?> defineClass(String name, java.nio.ByteBuffer b,
+    protected final Class<?> defineClass(String name, ByteBuffer b,
                                          ProtectionDomain protectionDomain)
         throws ClassFormatError
     {
@@ -1057,13 +1048,26 @@ public abstract class ClassLoader {
             }
         }
 
-        protectionDomain = preDefineClass(name, protectionDomain);
-        String source = defineClassSourceLocation(protectionDomain);
+        boolean trusted = this instanceof BuiltinClassLoader;
+        if (trusted) {
+            return defineClass(name, b, len, protectionDomain);
+        } else {
+            // make copy from input byte buffer
+            try (var arena = Arena.ofConfined()) {
+                ByteBuffer bb = arena.allocate(len).asByteBuffer();
+                bb.put(0, b, b.position(), len);
+                return defineClass(name, bb, len, protectionDomain);
+            }
+        }
+    }
 
+    private Class<?> defineClass(String name, ByteBuffer b, int len, ProtectionDomain pd) {
+        pd = preDefineClass(name, pd);
+        String source = defineClassSourceLocation(pd);
         SharedSecrets.getJavaNioAccess().acquireSession(b);
         try {
-            Class<?> c = defineClass2(this, name, b, b.position(), len, protectionDomain, source);
-            postDefineClass(c, protectionDomain);
+            Class<?> c = defineClass2(this, name, b, b.position(), len, pd, source);
+            postDefineClass(c, pd);
             return c;
         } finally {
             SharedSecrets.getJavaNioAccess().releaseSession(b);
@@ -2631,8 +2635,6 @@ public abstract class ClassLoader {
         }
 
         reinitObjectField("package2certs", new ConcurrentHashMap<>());
-        classes.clear();
-        classes.trimToSize();
         classLoaderValueMap = null;
     }
 }

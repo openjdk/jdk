@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -629,4 +629,53 @@ void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer)
   intptr_t load_const_bytes = (*(intptr_t*)code_buffer) & 0xffffffffffff0000L;
   *(intptr_t*)instr_addr = load_const_bytes | bytes_after_jump;
   ICache::invalidate_range(instr_addr, 6);
+}
+
+void NativeDeoptInstruction::verify() {
+}
+
+bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
+  if (((oopmap_slot & 0xff) != oopmap_slot) || ((cb_offset & 0xffffff) != cb_offset)) {
+    return false; // cannot encode
+  }
+  uint32_t data = ((uint32_t)oopmap_slot << 24) | (uint32_t)cb_offset;
+  assert(data != 0, "must be");
+  // Write the 4-byte payload into the imm32 field of the CLFI instruction
+  // (bytes 2..5). s390 is big-endian so a direct 32-bit write is correct.
+  *(uint32_t*) addr_at(displacement_offset) = data;
+  ICache::invalidate_range(addr_at(0), instruction_size);
+
+  int32_t oopmap_slot_dec, cb_offset_dec;
+  assert(check(), "pcn not recognized after patch");
+  assert(decode(oopmap_slot_dec, cb_offset_dec), "encoding failed");
+  assert(oopmap_slot == oopmap_slot_dec, "oopmap slot encoding is wrong");
+  assert(cb_offset   == cb_offset_dec,   "cb offset encoding is wrong");
+
+  return true; // successfully encoded
+}
+
+void NativePostCallNop::make_deopt() {
+  NativeDeoptInstruction::insert(addr_at(0));
+}
+
+void NativeDeoptInstruction::insert(address code_pos) {
+  ResourceMark rm;
+  int code_size = 2; // z_illtrap is of 2 bytes
+  CodeBuffer cb(code_pos, code_size + 1);
+  MacroAssembler* a = new MacroAssembler(&cb);
+  a->z_illtrap();
+  // forcing CPU to reload these 2 bytes of instruction by setting current range invalid
+  ICache::invalidate_range(code_pos, code_size);
+}
+
+bool NativeDeoptInstruction::is_deopt_at(address instr){
+  // Check if the instruction is an illtrap (illegal instruction used for deoptimization)
+  if (!Assembler::is_z_illtrap(instr)) return false;
+
+  // Verify the instruction belongs to an nmethod
+  CodeBlob* cb = CodeCache::find_blob(instr);
+  if (cb == nullptr || !cb->is_nmethod()) {
+    return false;
+  }
+  return true;
 }

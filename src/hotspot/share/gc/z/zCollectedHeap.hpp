@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zInitialize.hpp"
-#include "gc/z/zRuntimeWorkers.hpp"
 #include "memory/metaspace.hpp"
 #include "services/memoryUsage.hpp"
 
@@ -48,7 +47,6 @@ private:
   ZDriverMajor*     _driver_major;
   ZDirector*        _director;
   ZStat*            _stat;
-  ZRuntimeWorkers   _runtime_workers;
 
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,
@@ -83,10 +81,10 @@ public:
   void collect_as_vm_thread(GCCause::Cause cause) override;
   void do_full_collection(bool clear_all_soft_refs) override;
 
-  size_t tlab_capacity(Thread* thr) const override;
-  size_t tlab_used(Thread* thr) const override;
+  size_t tlab_capacity() const override;
+  size_t tlab_used() const override;
   size_t max_tlab_size() const override;
-  size_t unsafe_max_tlab_alloc(Thread* thr) const override;
+  size_t unsafe_max_tlab_alloc() const override;
 
   MemoryUsage memory_usage() override;
   GrowableArray<GCMemoryManager*> memory_managers() override;
@@ -101,7 +99,7 @@ public:
   void unregister_nmethod(nmethod* nm) override;
   void verify_nmethod(nmethod* nmethod) override;
 
-  WorkerThreads* safepoint_workers() override;
+  bool supports_parallel_object_iteration() const override;
 
   void gc_threads_do(ThreadClosure* tc) const override;
 
@@ -114,6 +112,8 @@ public:
 
   void pin_object(JavaThread* thread, oop obj) override;
   void unpin_object(JavaThread* thread, oop obj) override;
+
+  size_t bootstrap_max_memory() const override;
 
   void print_heap_on(outputStream* st) const override;
   void print_gc_on(outputStream* st) const override;

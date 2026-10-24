@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public class TIFFCIELabColorConverter extends TIFFColorConverter {
         }
     }
 
+    @Override
     public void fromRGB(float r, float g, float b, float[] result) {
         float X =  0.412453f*r + 0.357580f*g + 0.180423f*b;
         float Y =  0.212671f*r + 0.715160f*g + 0.072169f*b;
@@ -100,6 +101,7 @@ public class TIFFCIELabColorConverter extends TIFFColorConverter {
         result[2] = clamp2(bStar);
     }
 
+    @Override
     public void toRGB(float x0, float x1, float x2, float[] rgb) {
         float LStar = x0*100.0f/255.0f;
         float aStar = (x1 > 128.0f) ? (x1 - 256.0f) : x1;

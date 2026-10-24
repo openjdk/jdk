@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,6 @@
  * questions.
  */
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -32,13 +30,15 @@ import java.util.jar.Manifest;
 import java.util.List;
 import java.util.ArrayList;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @test
  * @bug 8066619 8351567
- * @run testng ValueUtf8Coding
+ * @run junit ValueUtf8Coding
  * @summary Tests encoding and decoding manifest header values to and from
  * UTF-8 with the complete Unicode character set.
  */ /*
@@ -187,11 +187,11 @@ public class ValueUtf8Coding {
             String value = values.get(i);
             Name name = azName(i);
 
-            assertEquals(mf.getMainAttributes().getValue(name), value,
+            assertEquals(value, mf.getMainAttributes().getValue(name),
                     "main attributes header value");
             Attributes attributes = mf.getAttributes(value);
             assertNotNull(attributes, "named section");
-            assertEquals(attributes.getValue(name), value,
+            assertEquals(value, attributes.getValue(name),
                     "named section attributes value");
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,9 @@
  * @test
  * @bug 8012650
  * @summary Unit test for setAll, parallelSetAll variants
- * @run testng SetAllTest
+ * @library /test/lib
+ * @run junit SetAllTest
  */
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.function.IntFunction;
@@ -37,12 +35,18 @@ import java.util.function.IntToDoubleFunction;
 import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.fail;
+import jdk.test.lib.valueclass.AsValueClass;
 
-@Test
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SetAllTest {
     private static final IntFunction<String> toString = i -> "N" + Integer.valueOf(i);
     private static final IntFunction<String> fillString = i -> "X";
@@ -93,52 +97,71 @@ public class SetAllTest {
         { "fill", 3, fillDouble, new double[] { 3.14, 3.14, 3.14 }}
     };
 
-    @DataProvider(name="string")
+    @AsValueClass
+    record Point(int x, int y) { }
+
+    private static final IntFunction<Point> toPoint = i -> new Point(i, i * 2);
+    private static final IntFunction<Point> fillPoint = i -> new Point(0, 0);
+    private static final Point[] pr0  = {};
+    private static final Point[] pr1  = { new Point(0, 0) };
+    private static final Point[] pr10 = { new Point(0,0), new Point(1, 2), new Point(2, 4),
+            new Point(3, 6), new Point(4, 8), new Point(5, 10), new Point(6, 12),
+            new Point(7, 14), new Point(8, 16), new Point(9, 18) };
+
+    private Object[][] pointData = new Object[][] {
+            { "empty", 0, toPoint, pr0 },
+            { "one",   1, toPoint, pr1 },
+            { "ten",  10, toPoint, pr10 },
+            { "fill",  3, fillPoint, new Point[] { new Point(0,0), new Point(0,0), new Point(0,0) }}
+    };
+
     public Object[][] stringTests() { return stringData; }
 
-    @DataProvider(name="int")
     public Object[][] intTests() { return intData; }
 
-    @DataProvider(name="long")
     public Object[][] longTests() { return longData; }
 
-    @DataProvider(name="double")
     public Object[][] doubleTests() { return doubleData; }
 
-    @Test(dataProvider = "string")
+    public Object[][] pointTests() { return pointData; }
+
+    @ParameterizedTest(name = "{0}, size={1}, data={3}")
+    @MethodSource("stringTests")
     public void testSetAllString(String name, int size, IntFunction<String> generator, String[] expected) {
         String[] result = new String[size];
         Arrays.setAll(result, generator);
-        assertEquals(result, expected, "setAll(String[], IntFunction<String>) case " + name + " failed.");
+        Assertions.assertArrayEquals(expected, result, "setAll(String[], IntFunction<String>) case " + name + " failed.");
 
         // ensure fresh array
         result = new String[size];
         Arrays.parallelSetAll(result, generator);
-        assertEquals(result, expected, "parallelSetAll(String[], IntFunction<String>) case " + name + " failed.");
+        Assertions.assertArrayEquals(expected, result, "parallelSetAll(String[], IntFunction<String>) case " + name + " failed.");
     }
 
-    @Test(dataProvider = "int")
+    @ParameterizedTest(name = "{0}, size={1}, data={3}")
+    @MethodSource("intTests")
     public void testSetAllInt(String name, int size, IntUnaryOperator generator, int[] expected) {
         int[] result = new int[size];
         Arrays.setAll(result, generator);
-        assertEquals(result, expected, "setAll(int[], IntUnaryOperator) case " + name + " failed.");
+        Assertions.assertArrayEquals(expected, result, "setAll(int[], IntUnaryOperator) case " + name + " failed.");
 
         // ensure fresh array
         result = new int[size];
         Arrays.parallelSetAll(result, generator);
-        assertEquals(result, expected, "parallelSetAll(int[], IntUnaryOperator) case " + name + " failed.");
+        Assertions.assertArrayEquals(expected, result, "parallelSetAll(int[], IntUnaryOperator) case " + name + " failed.");
     }
 
-    @Test(dataProvider = "long")
+    @ParameterizedTest(name = "{0}, size={1}, data={3}")
+    @MethodSource("longTests")
     public void testSetAllLong(String name, int size, IntToLongFunction generator, long[] expected) {
         long[] result = new long[size];
         Arrays.setAll(result, generator);
-        assertEquals(result, expected, "setAll(long[], IntToLongFunction) case " + name + " failed.");
+        Assertions.assertArrayEquals(expected, result, "setAll(long[], IntToLongFunction) case " + name + " failed.");
 
         // ensure fresh array
         result = new long[size];
         Arrays.parallelSetAll(result, generator);
-        assertEquals(result, expected, "parallelSetAll(long[], IntToLongFunction) case " + name + " failed.");
+        Assertions.assertArrayEquals(expected, result, "parallelSetAll(long[], IntToLongFunction) case " + name + " failed.");
     }
 
     private void assertDoubleArrayEquals(double[] actual, double[] expected, double delta, String msg) {
@@ -151,7 +174,8 @@ public class SetAllTest {
         }
     }
 
-    @Test(dataProvider = "double")
+    @ParameterizedTest(name = "{0}, size={1}, data={3}")
+    @MethodSource("doubleTests")
     public void testSetAllDouble(String name, int size, IntToDoubleFunction generator, double[] expected) {
         double[] result = new double[size];
         Arrays.setAll(result, generator);
@@ -161,6 +185,18 @@ public class SetAllTest {
         result = new double[size];
         Arrays.parallelSetAll(result, generator);
         assertDoubleArrayEquals(result, expected, 0.05, "setAll(double[], IntToDoubleFunction) case " + name + " failed.");
+    }
+
+    @ParameterizedTest(name = "{0}, size={1}, data={3}")
+    @MethodSource("pointTests")
+    public void testSetAllPoint(String name, int size, IntFunction<Point> generator, Point[] expected) {
+        Point[] result = new Point[size];
+        Arrays.setAll(result, generator);
+        Assertions.assertArrayEquals(expected, result, "setAll(Point[], IntFunction<Point>) case " + name + " failed.");
+
+        result = new Point[size];
+        Arrays.parallelSetAll(result, generator);
+        Assertions.assertArrayEquals(expected, result, "parallelSetAll(Point[], IntFunction<Point>) case " + name + " failed.");
     }
 
     @Test
@@ -277,5 +313,19 @@ public class SetAllTest {
         } catch (NullPointerException npe) {
             // expected
         }
+    }
+
+    @Test
+    public void testPointSetNulls() {
+        Point[] ar = new Point[2];
+
+        assertThrows(NullPointerException.class, () -> Arrays.setAll(
+            (Point[]) null, (IntFunction<Point>) i -> new Point(i, i)));
+        assertThrows(NullPointerException.class, () -> Arrays.parallelSetAll(
+            (Point[]) null, (IntFunction<Point>) i -> new Point(i, i)));
+        assertThrows(NullPointerException.class, () -> Arrays.setAll(
+            ar, (IntFunction<Point>) null));
+        assertThrows(NullPointerException.class, () -> Arrays.parallelSetAll(
+            ar, (IntFunction<Point>) null));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,14 @@
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLinker.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/dumpTimeClassInfo.inline.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/regeneratedClasses.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/instanceKlass.hpp"
@@ -43,7 +44,7 @@
 static GrowableArrayCHeap<Klass*, mtClassShared>* _all_cached_classes = nullptr;
 
 // This is a stack that tracks all the AOT-inited classes that are waiting to be passed
-// to HeapShared::copy_and_rescan_aot_inited_mirror().
+// to AOTHeap::copy_and_rescan_aot_inited_mirror().
 static GrowableArrayCHeap<InstanceKlass*, mtClassShared>* _pending_aot_inited_classes = nullptr;
 
 static const int TABLE_SIZE = 15889; // prime number
@@ -76,7 +77,7 @@ void AOTArtifactFinder::find_artifacts() {
   //
   // Note, if a class is not excluded, it does NOT mean it will be automatically included
   // into the AOT cache -- that will be decided by the code below.
-  SystemDictionaryShared::finish_exclusion_checks();
+  AOTSystemDictionary::finish_exclusion_checks();
   AOTReferenceObjSupport::init_keep_alive_objs_table();
 
   start_scanning_for_oops();
@@ -98,26 +99,34 @@ void AOTArtifactFinder::find_artifacts() {
       BasicType bt = (BasicType)i;
       if (!is_reference_type(bt)) {
         oop orig_mirror = Universe::java_mirror(bt);
-        oop scratch_mirror = HeapShared::scratch_java_mirror(bt);
-        HeapShared::scan_java_mirror(orig_mirror);
+        oop scratch_mirror = AOTHeap::scratch_java_mirror(bt);
+        AOTHeap::scan_java_mirror(orig_mirror);
         log_trace(aot, heap, mirror)(
             "Archived %s mirror object from " PTR_FORMAT,
             type2name(bt), p2i(scratch_mirror));
-        Universe::set_archived_basic_type_mirror_index(bt, HeapShared::append_root(scratch_mirror));
+        Universe::set_archived_basic_type_mirror_index(bt, AOTHeap::append_root(scratch_mirror));
       }
     }
 
     // Universe::fillerArrayKlass() isn't in the class hierarchy, so handle it specially.
-    HeapShared::scan_java_mirror(Universe::fillerArrayKlass()->java_mirror());
+    AOTHeap::scan_java_mirror(Universe::fillerArrayKlass()->java_mirror());
   }
 #endif
 
   // Add all the InstanceKlasses (and their array classes) that are always included.
-  SystemDictionaryShared::dumptime_table()->iterate_all_live_classes([&] (InstanceKlass* ik, DumpTimeClassInfo& info) {
-    // Skip "AOT tooling classes" in this block. They will be included in the AOT cache only if
-    // - One of their subtypes is included
-    // - One of their instances is found by HeapShared.
-    if (!info.is_excluded() && !info.is_aot_tooling_class()) {
+  AOTSystemDictionary::dumptime_table()->iterate_all_live_classes([&] (InstanceKlass* ik, DumpTimeClassInfo& info) {
+    bool skip = info.is_excluded();
+    if (!(ik->is_initialized() && ik->has_aot_safe_initializer())) {
+      if (info.is_aot_tooling_class()) {
+        // This class is loading only by AOT tooling (not as part of the app's training run).
+        // Skip this class for now, but it might be added later if
+        // - One of its subtypes is included
+        // - One of its instances is found by AOTHeap.
+        skip = true;
+      }
+    }
+
+    if (!skip) {
       bool add = false;
       if (!ik->is_hidden()) {
         // All non-hidden classes are always included into the AOT cache
@@ -145,16 +154,16 @@ void AOTArtifactFinder::find_artifacts() {
 
 #if INCLUDE_CDS_JAVA_HEAP
   // Keep scanning until we discover no more class that need to be AOT-initialized.
-  if (CDSConfig::is_initing_classes_at_dump_time()) {
+  if (CDSConfig::is_dumping_aot_linked_classes()) {
     while (_pending_aot_inited_classes->length() > 0) {
       InstanceKlass* ik = _pending_aot_inited_classes->pop();
-      HeapShared::copy_and_rescan_aot_inited_mirror(ik);
+      AOTHeap::copy_and_rescan_aot_inited_mirror(ik);
     }
   }
 #endif
 
   // Exclude all the (hidden) classes that have not been discovered by the code above.
-  SystemDictionaryShared::dumptime_table()->iterate_all_live_classes([&] (InstanceKlass* k, DumpTimeClassInfo& info) {
+  AOTSystemDictionary::dumptime_table()->iterate_all_live_classes([&] (InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded() && _seen_classes->get(k) == nullptr) {
       info.set_excluded();
       info.set_has_checked_exclusion();
@@ -169,12 +178,13 @@ void AOTArtifactFinder::find_artifacts() {
   end_scanning_for_oops();
 
   TrainingData::cleanup_training_data();
+  check_critical_classes();
 }
 
 void AOTArtifactFinder::start_scanning_for_oops() {
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    HeapShared::start_scanning_for_oops();
+    AOTHeap::start_scanning_for_oops();
   }
 #endif
 }
@@ -182,13 +192,13 @@ void AOTArtifactFinder::start_scanning_for_oops() {
 void AOTArtifactFinder::end_scanning_for_oops() {
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    HeapShared::end_scanning_for_oops();
+    AOTHeap::end_scanning_for_oops();
   }
 #endif
 }
 
 void AOTArtifactFinder::add_aot_inited_class(InstanceKlass* ik) {
-  if (CDSConfig::is_initing_classes_at_dump_time()) {
+  if (CDSConfig::is_dumping_aot_linked_classes()) {
     if (RegeneratedClasses::is_regenerated_object(ik)) {
       precond(RegeneratedClasses::get_original_object(ik)->is_initialized());
     } else {
@@ -206,7 +216,9 @@ void AOTArtifactFinder::add_aot_inited_class(InstanceKlass* ik) {
         add_aot_inited_class(s);
       }
 
-      Array<InstanceKlass*>* interfaces = ik->local_interfaces();
+      // An uninitialized direct interface may have initialized superinterfaces
+      // that declare default methods. Preserve their initialization state too.
+      Array<InstanceKlass*>* interfaces = ik->transitive_interfaces();
       int len = interfaces->length();
       for (int i = 0; i < len; i++) {
         InstanceKlass* intf = interfaces->at(i);
@@ -219,7 +231,7 @@ void AOTArtifactFinder::add_aot_inited_class(InstanceKlass* ik) {
 }
 
 void AOTArtifactFinder::append_to_all_cached_classes(Klass* k) {
-  precond(!SystemDictionaryShared::should_be_excluded(k));
+  precond(!AOTSystemDictionary::should_be_excluded(k));
   _all_cached_classes->append(k);
 }
 
@@ -233,6 +245,7 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
   bool created;
   _seen_classes->put_if_absent(ik, &created);
   if (created) {
+    check_critical_class(ik);
     append_to_all_cached_classes(ik);
 
     // All super types must be added.
@@ -257,8 +270,15 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
       // The following are not appliable to unregistered classes
       return;
     }
+    ConstantPoolCache* cpCache = ik->constants()->cache();
+    if (cpCache != nullptr) {
+      // Resolved{Field,Indy,Method}Entries in cpCache are not walked by MetaspaceClosure,
+      // because only some of the resolved entries are archivable. The following call will
+      // discover the anonymous classes that are reachable only from the archivable entries.
+      cpCache->record_classes_in_archivable_entries();
+    }
     scan_oops_in_instance_class(ik);
-    if (ik->is_hidden() && CDSConfig::is_initing_classes_at_dump_time()) {
+    if (ik->is_hidden() && CDSConfig::is_dumping_aot_linked_classes()) {
       bool succeed = AOTClassLinker::try_add_candidate(ik);
       guarantee(succeed, "All cached hidden classes must be aot-linkable");
       add_aot_inited_class(ik);
@@ -288,7 +308,7 @@ void AOTArtifactFinder::add_cached_class(Klass* k) {
 void AOTArtifactFinder::scan_oops_in_instance_class(InstanceKlass* ik) {
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    HeapShared::scan_java_class(ik);
+    AOTHeap::scan_java_class(ik);
     scan_oops_in_array_class(ik->array_klasses());
   }
 #endif
@@ -298,7 +318,7 @@ void AOTArtifactFinder::scan_oops_in_array_class(ArrayKlass* ak) {
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
     while (ak != nullptr) {
-      HeapShared::scan_java_class(ak);
+      AOTHeap::scan_java_class(ak);
       ak = ak->array_klass_or_null();
     }
   }
@@ -310,3 +330,25 @@ void AOTArtifactFinder::all_cached_classes_do(MetaspaceClosure* it) {
     it->push(_all_cached_classes->adr_at(i));
   }
 }
+
+void AOTArtifactFinder::check_critical_classes() {
+  if (CDSConfig::is_dumping_static_archive()) {
+    // vmClasses are store in the AOT cache (or AOT config file, or static archive).
+    // If any of the vmClasses is excluded, (usually due to incompatible JVMTI agent),
+    // the resulting cache/config/archive is unusable.
+    for (auto id : EnumRange<vmClassID>{}) {
+      check_critical_class(vmClasses::klass_at(id));
+    }
+  }
+}
+
+void AOTArtifactFinder::check_critical_class(InstanceKlass* ik) {
+  if (AOTSystemDictionary::is_excluded_class(ik)) {
+    ResourceMark rm;
+    const char* msg = err_msg("Critical class %s has been excluded. %s cannot be written.",
+                              ik->external_name(),
+                              CDSConfig::type_of_archive_being_written());
+    AOTMetaspace::unrecoverable_writing_error(msg);
+  }
+}
+

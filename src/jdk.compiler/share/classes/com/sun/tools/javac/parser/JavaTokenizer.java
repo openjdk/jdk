@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.*;
 
@@ -177,7 +176,7 @@ public class JavaTokenizer extends UnicodeReader {
             lexError(pos, feature.error(source.name));
         } else if (preview.isPreview(feature)) {
             //use of preview feature, warn
-            preview.warnPreview(pos, feature);
+            preview.warnPreview(DiagnosticFlag.SYNTAX, pos, feature);
         }
     }
 
@@ -1001,7 +1000,7 @@ public class JavaTokenizer extends UnicodeReader {
                             scanIdent();
                         } else if (digit(pos, 10) >= 0) {
                             scanNumber(pos, 10);
-                        } else if (is((char)EOI) || !isAvailable()) {
+                        } else if (is((char)EOI) && position() + 1 == length() || !isAvailable()) {
                             tk = TokenKind.EOF;
                             pos = position();
                         } else {
@@ -1041,10 +1040,10 @@ public class JavaTokenizer extends UnicodeReader {
                     // Verify that the incidental indentation is consistent.
                     Set<TextBlockSupport.WhitespaceChecks> checks = TextBlockSupport.checkWhitespace(string);
                     if (checks.contains(TextBlockSupport.WhitespaceChecks.INCONSISTENT)) {
-                        log.warning(pos, LintWarnings.InconsistentWhiteSpaceIndentation);
+                        log.warning(DiagnosticFlag.SYNTAX, pos, LintWarnings.InconsistentWhiteSpaceIndentation);
                     }
                     if (checks.contains(TextBlockSupport.WhitespaceChecks.TRAILING)) {
-                        log.warning(pos, LintWarnings.TrailingWhiteSpaceWillBeRemoved);
+                        log.warning(DiagnosticFlag.SYNTAX, pos, LintWarnings.TrailingWhiteSpaceWillBeRemoved);
                     }
                     // Remove incidental indentation.
                     try {
@@ -1215,7 +1214,7 @@ public class JavaTokenizer extends UnicodeReader {
             this.cs = cs;
             this.pos = new SimpleDiagnosticPosition(pos) {
                 @Override
-                public int getEndPosition(EndPosTable endPosTable) {
+                public int getEndPosition() {
                     return endPos;
                 }
             };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 package jdk.jpackage.test;
 
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 import static jdk.jpackage.internal.util.function.ThrowingBiConsumer.toBiConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
@@ -39,7 +39,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,6 +60,7 @@ import java.util.stream.StreamSupport;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import jdk.jpackage.test.JPackageCommand.ActionRole;
 
 
 /**
@@ -143,7 +143,7 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
-    private PackageTest addInitializer(ThrowingConsumer<JPackageCommand> v, String id) {
+    private PackageTest addInitializer(ThrowingConsumer<JPackageCommand, ? extends Exception> v, String id) {
         Objects.requireNonNull(v);
         if (id != null) {
             if (namedInitializers.contains(id)) {
@@ -156,11 +156,11 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
-    private PackageTest addRunOnceInitializer(ThrowingRunnable v, String id) {
+    private PackageTest addRunOnceInitializer(ThrowingRunnable<? extends Exception> v, String id) {
         Objects.requireNonNull(v);
-        return addInitializer(new ThrowingConsumer<JPackageCommand>() {
+        return addInitializer(new ThrowingConsumer<JPackageCommand, Exception>() {
             @Override
-            public void accept(JPackageCommand unused) throws Throwable {
+            public void accept(JPackageCommand unused) throws Exception {
                 if (!executed) {
                     executed = true;
                     v.run();
@@ -171,21 +171,21 @@ public final class PackageTest extends RunnablePackageTest {
         }, id);
     }
 
-    public PackageTest addInitializer(ThrowingConsumer<JPackageCommand> v) {
+    public PackageTest addInitializer(ThrowingConsumer<JPackageCommand, ? extends Exception> v) {
         return addInitializer(v, null);
     }
 
-    public PackageTest addRunOnceInitializer(ThrowingRunnable v) {
+    public PackageTest addRunOnceInitializer(ThrowingRunnable<? extends Exception> v) {
         return addRunOnceInitializer(v, null);
     }
 
-    public PackageTest addBundleVerifier(ThrowingBiConsumer<JPackageCommand, Executor.Result> v) {
+    public PackageTest addBundleVerifier(ThrowingBiConsumer<JPackageCommand, Executor.Result, ? extends Exception> v) {
         Objects.requireNonNull(v);
         currentTypes.forEach(type -> handlers.get(type).addBundleVerifier(toBiConsumer(v)));
         return this;
     }
 
-    public PackageTest addBundleVerifier(ThrowingConsumer<JPackageCommand> v) {
+    public PackageTest addBundleVerifier(ThrowingConsumer<JPackageCommand, ? extends Exception> v) {
         Objects.requireNonNull(v);
         return addBundleVerifier((cmd, unused) -> toConsumer(v).accept(cmd));
     }
@@ -222,15 +222,24 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
-    public PackageTest addInstallVerifier(ThrowingConsumer<JPackageCommand> v) {
+    public PackageTest addInstallVerifier(ThrowingConsumer<JPackageCommand, ? extends Exception> v) {
         currentTypes.forEach(type -> handlers.get(type).addInstallVerifier(
                 toConsumer(v)));
         return this;
     }
 
-    public PackageTest addUninstallVerifier(ThrowingConsumer<JPackageCommand> v) {
+    public PackageTest addUninstallVerifier(ThrowingConsumer<JPackageCommand, ? extends Exception> v) {
         currentTypes.forEach(type -> handlers.get(type).addUninstallVerifier(
                 toConsumer(v)));
+        return this;
+    }
+
+    public PackageTest usePredefinedAppImage(JPackageCommand appImageCmd) {
+        appImageCmd.verifyIsOfType(PackageType.IMAGE);
+        addInitializer(cmd -> {
+            cmd.usePredefinedAppImage(appImageCmd.outputBundle());
+        });
+        appImageCmd.getVerifyActionsWithRole(ActionRole.LAUNCHER_VERIFIER).forEach(this::addInstallVerifier);
         return this;
     }
 
@@ -250,7 +259,7 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     static void withFileAssociationsTestRuns(FileAssociations fa,
-            ThrowingBiConsumer<FileAssociations.TestRun, List<Path>> consumer) {
+            ThrowingBiConsumer<FileAssociations.TestRun, List<Path>, ? extends Exception> consumer) {
         Objects.requireNonNull(consumer);
         for (var testRun : fa.getTestRuns()) {
             TKit.withTempDirectory("fa-test-files", tempDir -> {
@@ -318,6 +327,11 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
+    public PackageTest mutate(Consumer<PackageTest> mutator) {
+        mutator.accept(this);
+        return this;
+    }
+
     public PackageTest forTypes(Collection<PackageType> types, Runnable action) {
         final var oldTypes = Set.of(currentTypes.toArray(PackageType[]::new));
         try {
@@ -334,7 +348,11 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     public PackageTest forTypes(PackageType type, Consumer<PackageTest> action) {
-        return forTypes(List.of(type), () -> action.accept(this));
+        return forTypes(List.of(type), action);
+    }
+
+    public PackageTest forTypes(Collection<PackageType> types, Consumer<PackageTest> action) {
+        return forTypes(types, () -> action.accept(this));
     }
 
     public PackageTest notForTypes(Collection<PackageType> types, Runnable action) {
@@ -348,7 +366,11 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     public PackageTest notForTypes(PackageType type, Consumer<PackageTest> action) {
-        return notForTypes(List.of(type), () -> action.accept(this));
+        return notForTypes(List.of(type), action);
+    }
+
+    public PackageTest notForTypes(Collection<PackageType> types, Consumer<PackageTest> action) {
+        return notForTypes(types, () -> action.accept(this));
     }
 
     public PackageTest configureHelloApp() {
@@ -704,12 +726,30 @@ public final class PackageTest extends RunnablePackageTest {
                 }
 
                 case CREATE -> {
-                    Executor.Result result = cmd.execute(expectedJPackageExitCode);
+                    var nullableOutputBundle = cmd.nullableOutputBundle();
+
+                    var oldOutputBundleSnapshot = nullableOutputBundle
+                            .filter(Files::exists)
+                            .filter(_ -> {
+                                return !cmd.isRemoveOldOutputBundle();
+                            })
+                            .map(TKit.PathSnapshot::new);
+
+                    var result = cmd.execute(expectedJPackageExitCode);
+
                     if (expectedJPackageExitCode == 0) {
                         TKit.assertFileExists(cmd.outputBundle());
                     } else {
-                        cmd.nullableOutputBundle().ifPresent(outputBundle -> {
-                            TKit.assertPathExists(outputBundle, false);
+                        nullableOutputBundle.ifPresent(outputBundle -> {
+                            oldOutputBundleSnapshot.ifPresentOrElse(snapshot -> {
+                                // jpackage failed, but the output bundle exists.
+                                // This output bundle existed before the jpackage was invoked.
+                                // Verify jpackage didn't modify it.
+                                new TKit.PathSnapshot(outputBundle).assertEquals(snapshot, String.format(
+                                        "Check jpackage didn't modify the old output bundle [%s]", outputBundle));
+                            }, () -> {
+                                TKit.assertPathExists(outputBundle, false);
+                            });
                         });
                     }
                     verifyPackageBundle(cmd, result, expectedJPackageExitCode);
@@ -772,7 +812,7 @@ public final class PackageTest extends RunnablePackageTest {
                 }
 
                 if (isOfType(cmd, LINUX)) {
-                    LinuxHelper.verifyDesktopFiles(cmd, true);
+                    LinuxHelper.verifyDesktopIntegrationFiles(cmd, true);
                 }
             }
 
@@ -780,7 +820,7 @@ public final class PackageTest extends RunnablePackageTest {
                 LauncherAsServiceVerifier.verify(cmd);
             }
 
-            cmd.assertAppLayout();
+            cmd.runStandardAsserts();
 
             installVerifiers.forEach(v -> v.accept(cmd));
         }
@@ -838,7 +878,7 @@ public final class PackageTest extends RunnablePackageTest {
                                 "Check the package has %d top installation directories",
                                 expectedRootCount));
             } catch (IOException ex) {
-                rethrowUnchecked(ex);
+                throw toUnchecked(ex);
             }
         }
 
@@ -853,7 +893,7 @@ public final class PackageTest extends RunnablePackageTest {
                 }
 
                 if (isOfType(cmd, LINUX)) {
-                    LinuxHelper.verifyDesktopFiles(cmd, false);
+                    LinuxHelper.verifyDesktopIntegrationFiles(cmd, false);
                 }
             }
 

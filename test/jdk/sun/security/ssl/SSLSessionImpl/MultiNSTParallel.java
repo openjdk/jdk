@@ -30,7 +30,6 @@
  * @run main/othervm MultiNSTParallel 10 -Djdk.tls.client.protocols=TLSv1.3
  */
 
-import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -116,8 +115,7 @@ public class MultiNSTParallel {
             System.out.println("test.java.opts: " +
                 System.getProperty("test.java.opts"));
 
-            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                Utils.addTestJavaOpts("MultiNSTParallel", "p"));
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("MultiNSTParallel", "p");
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,76 +35,12 @@ public class Compiler {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     /**
-     * Check if C2 or JVMCI were included in the VM build
+     * Check if C2 was included in the VM build
      *
-     * @return true if either C2 or JVMCI were included in the VM build.
+     * @return true if C2 was included in the VM build.
      */
-    public static boolean isC2OrJVMCIIncluded() {
-        return WB.isC2OrJVMCIIncluded();
-    }
-
-    /**
-     * Check if JVMCI is enabled.
-     *
-     * @return true if JVMCI is enabled
-     */
-    public static boolean isJVMCIEnabled() {
-        Boolean enableJvmci = WB.getBooleanVMFlag("EnableJVMCI");
-        if (enableJvmci == null || !enableJvmci) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Check if Graal is used as JIT compiler.
-     *
-     * Graal is enabled if following conditions are true:
-     * - we are not in Interpreter mode
-     * - UseJVMCICompiler flag is true
-     * - TieredCompilation is not used or TieredStopAtLevel is greater than 3
-     * No need to check client mode because it set UseJVMCICompiler to false.
-     *
-     * @return true if Graal is used as JIT compiler.
-     */
-    public static boolean isGraalEnabled() {
-        Boolean useCompiler = WB.getBooleanVMFlag("UseCompiler");
-        if (useCompiler == null || !useCompiler) {
-            return false;
-        }
-        Boolean useJvmciComp = WB.getBooleanVMFlag("UseJVMCICompiler");
-        if (useJvmciComp == null || !useJvmciComp) {
-            return false;
-        }
-
-        Boolean tieredCompilation = WB.getBooleanVMFlag("TieredCompilation");
-        Long compLevel = WB.getIntxVMFlag("TieredStopAtLevel");
-        // if TieredCompilation is enabled and compilation level is <= 3 then no Graal is used
-        if (tieredCompilation != null && tieredCompilation &&
-            compLevel != null && compLevel <= 3) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Check if libgraal is used as JIT compiler.
-     *
-     * libraal JIT is enabled if isGraalEnabled is true and:
-     * - UseJVMCINativeLibrary flag is true
-     *
-     * @return true if libgraal is used as JIT compiler.
-     */
-    public static boolean isLibgraalJIT() {
-        if (!isGraalEnabled()) {
-            return false;
-        }
-        Boolean useJvmciNativeLibrary = WB.getBooleanVMFlag("UseJVMCINativeLibrary");
-        if (useJvmciNativeLibrary == null || !useJvmciNativeLibrary) {
-            return false;
-        }
-        return true;
+    public static boolean isC2Included() {
+        return WB.isC2Included();
     }
 
     /**
@@ -114,7 +50,6 @@ public class Compiler {
      * - we are not in Interpreter mode
      * - we are in Server compilation mode
      * - TieredCompilation is not used or TieredStopAtLevel is greater than 3
-     * - Graal is not used
      *
      * @return true if C2 is used as JIT compiler.
      */
@@ -130,13 +65,9 @@ public class Compiler {
 
         Boolean tieredCompilation = WB.getBooleanVMFlag("TieredCompilation");
         Long compLevel = WB.getIntxVMFlag("TieredStopAtLevel");
-        // if TieredCompilation is enabled and compilation level is <= 3 then no Graal is used
+        // if TieredCompilation is enabled and compilation level is <= 3 then C2 is not used
         if (tieredCompilation != null && tieredCompilation &&
             compLevel != null && compLevel <= 3) {
-            return false;
-        }
-
-        if (isGraalEnabled()) {
             return false;
         }
 

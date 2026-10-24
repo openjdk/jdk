@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -408,27 +408,6 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   AC_MSG_CHECKING([if Boot JDK is 32 or 64 bits])
   AC_MSG_RESULT([$BOOT_JDK_BITS])
 
-  # Try to enable CDS
-  AC_MSG_CHECKING([for local Boot JDK Class Data Sharing (CDS)])
-  BOOT_JDK_CDS_ARCHIVE=$CONFIGURESUPPORT_OUTPUTDIR/classes.jsa
-  UTIL_ADD_JVM_ARG_IF_OK([-XX:+UnlockDiagnosticVMOptions -XX:-VerifySharedSpaces -XX:SharedArchiveFile=$BOOT_JDK_CDS_ARCHIVE],boot_jdk_cds_args,[$JAVA])
-
-  if test "x$boot_jdk_cds_args" != x; then
-    # Try creating a CDS archive
-    $JAVA $boot_jdk_cds_args -Xshare:dump > /dev/null 2>&1
-    if test $? -eq 0; then
-      BOOTJDK_USE_LOCAL_CDS=true
-      AC_MSG_RESULT([yes, created])
-    else
-      # Generation failed, don't use CDS.
-      BOOTJDK_USE_LOCAL_CDS=false
-      AC_MSG_RESULT([no, creation failed])
-    fi
-  else
-    BOOTJDK_USE_LOCAL_CDS=false
-    AC_MSG_RESULT([no, -XX:SharedArchiveFile not supported])
-  fi
-
   BOOTJDK_SETUP_CLASSPATH
 ])
 
@@ -444,13 +423,8 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
   # Force en-US environment
   UTIL_ADD_JVM_ARG_IF_OK([-Duser.language=en -Duser.country=US],boot_jdk_jvmargs,[$JAVA])
 
-  if test "x$BOOTJDK_USE_LOCAL_CDS" = xtrue; then
-    # Use our own CDS archive
-    UTIL_ADD_JVM_ARG_IF_OK([$boot_jdk_cds_args -Xshare:auto],boot_jdk_jvmargs,[$JAVA])
-  else
-    # Otherwise optimistically use the system-wide one, if one is present
-    UTIL_ADD_JVM_ARG_IF_OK([-Xshare:auto],boot_jdk_jvmargs,[$JAVA])
-  fi
+  UTIL_ADD_JVM_ARG_IF_OK([-Xlog:all=off:stdout],boot_jdk_jvmargs,[$JAVA])
+  UTIL_ADD_JVM_ARG_IF_OK([-Xlog:all=warning:stderr],boot_jdk_jvmargs,[$JAVA])
 
   # Finally append user provided options to allow them to override.
   UTIL_ADD_JVM_ARG_IF_OK([$USER_BOOT_JDK_OPTIONS],boot_jdk_jvmargs,[$JAVA])
@@ -507,8 +481,6 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
 
   AC_MSG_CHECKING([flags for boot jdk java command for small workloads])
 
-  # Use serial gc for small short lived tools if possible
-  UTIL_ADD_JVM_ARG_IF_OK([-XX:+UseSerialGC],boot_jdk_jvmargs_small,[$JAVA])
   UTIL_ADD_JVM_ARG_IF_OK([-Xms32M],boot_jdk_jvmargs_small,[$JAVA])
   UTIL_ADD_JVM_ARG_IF_OK([-Xmx512M],boot_jdk_jvmargs_small,[$JAVA])
   UTIL_ADD_JVM_ARG_IF_OK([-XX:TieredStopAtLevel=1],boot_jdk_jvmargs_small,[$JAVA])
@@ -518,8 +490,6 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
   JAVA_FLAGS_SMALL=$boot_jdk_jvmargs_small
   AC_SUBST(JAVA_FLAGS_SMALL)
 
-  # Don't presuppose SerialGC is present in the buildjdk. Also, we cannot test
-  # the buildjdk, but on the other hand we know what it will support.
   BUILD_JAVA_FLAGS_SMALL="-Xms32M -Xmx512M -XX:TieredStopAtLevel=1"
   AC_SUBST(BUILD_JAVA_FLAGS_SMALL)
 

@@ -25,18 +25,27 @@
 
 package java.lang.ref;
 
-import jdk.internal.vm.annotation.AOTRuntimeSetup;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.access.JavaLangRefAccess;
 import jdk.internal.access.SharedSecrets;
 
+import java.util.Objects;
+
 /**
  * Abstract base class for reference objects.  This class defines the
  * operations common to all reference objects.  Because reference objects are
  * implemented in close cooperation with the garbage collector, this class may
  * not be subclassed directly.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          The referent must have {@linkplain Objects#hasIdentity(Object) object identity}.
+ *          When preview features are enabled, attempts to create a reference
+ *          to a {@linkplain Class#isValue value object} result in an {@link IdentityException}.
+ *      </div>
+ * </div>
  * @param <T> the type of the referent
  *
  * @author   Mark Reinhold
@@ -291,11 +300,6 @@ public abstract sealed class Reference<@jdk.internal.RequiresIdentity T>
     }
 
     static {
-        runtimeSetup();
-    }
-
-    @AOTRuntimeSetup
-    private static void runtimeSetup() {
         // provide access in SharedSecrets
         SharedSecrets.setJavaLangRefAccess(new JavaLangRefAccess() {
             @Override
@@ -535,6 +539,9 @@ public abstract sealed class Reference<@jdk.internal.RequiresIdentity T>
     }
 
     Reference(T referent, ReferenceQueue<? super T> queue) {
+        if (referent != null) {
+            Objects.requireIdentity(referent);
+        }
         this.referent = referent;
         this.queue = (queue == null) ? ReferenceQueue.NULL_QUEUE : queue;
     }
@@ -650,12 +657,9 @@ public abstract sealed class Reference<@jdk.internal.RequiresIdentity T>
      * {@code null}, this method has no effect.
      * @since 9
      */
-    @ForceInline
+    @IntrinsicCandidate
     public static void reachabilityFence(Object ref) {
-        // Does nothing. This method is annotated with @ForceInline to eliminate
-        // most of the overhead that using @DontInline would cause with the
-        // HotSpot JVM, when this fence is used in a wide variety of situations.
-        // HotSpot JVM retains the ref and does not GC it before a call to
-        // this method, because the JIT-compilers do not have GC-only safepoints.
+        // Does nothing. HotSpot JVM retains the ref and does not GC it before a call to this method.
+        // Using an intrinsic allows JIT-compilers to further optimize it while retaining the correct semantics.
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,7 +355,16 @@ public class ExceptionEvents extends TestScaffold {
         if (event.request() == request) {
             try {
                 System.out.print("ExceptionEvent: ");
-                System.out.print("" + event.exception().referenceType().name());
+                try {
+                    System.out.print("" + event.exception().referenceType().name());
+                } catch (ObjectCollectedException e) {
+                    if (event.request().suspendPolicy() == EventRequest.SUSPEND_NONE) {
+                        // Since the thread was not suspended, the exception object can be collected.
+                        System.out.print("<exception object collected>");
+                    } else {
+                        throw e;
+                    }
+                }
                 Location loc = event.location();
                 System.out.print(" @ " + loc.method().name());
                 System.out.print(":" + loc.lineNumber());
@@ -420,7 +429,6 @@ public class ExceptionEvents extends TestScaffold {
         request.addClassExclusionFilter("com.oracle.*");
         request.addClassExclusionFilter("oracle.*");
         request.addClassExclusionFilter("jdk.internal.*");
-        request.addClassExclusionFilter("jdk.vm.ci.hotspot.*");
         request.setSuspendPolicy(suspendPolicy);
         request.enable();
 

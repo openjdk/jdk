@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8246774
  * @summary Checks that the appropriate default value is given to the canonical ctr
- * @run testng AbsentStreamValuesTest
+ * @run junit AbsentStreamValuesTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -34,16 +34,20 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.io.ObjectStreamConstants.*;
 import static java.lang.System.out;
-import static org.testng.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Basic test to check that default primitive / reference values are presented
  * to the record's canonical constructor, for fields not in the stream.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AbsentStreamValuesTest {
 
     record R01(boolean  x) implements Serializable { }
@@ -61,7 +65,6 @@ public class AbsentStreamValuesTest {
     record R13(R12      x) implements Serializable { }
     record R14(R13[]    x) implements Serializable { }
 
-    @DataProvider(name = "recordTypeAndExpectedValue")
     public Object[][] recordTypeAndExpectedValue() {
         return new Object[][] {
                 new Object[] { R01.class, false    },
@@ -81,7 +84,8 @@ public class AbsentStreamValuesTest {
         };
     }
 
-    @Test(dataProvider = "recordTypeAndExpectedValue")
+    @ParameterizedTest
+    @MethodSource("recordTypeAndExpectedValue")
     public void testWithDifferentTypes(Class<?> clazz, Object expectedXValue)
         throws Exception
     {
@@ -92,7 +96,7 @@ public class AbsentStreamValuesTest {
         Object obj = deserialize(bytes);
         out.println("deserialized: " + obj);
         Object actualXValue = clazz.getDeclaredMethod("x").invoke(obj);
-        assertEquals(actualXValue, expectedXValue);
+        assertEquals(expectedXValue, actualXValue);
     }
 
     // --- all together
@@ -107,18 +111,18 @@ public class AbsentStreamValuesTest {
 
         R15 obj = (R15)deserialize(bytes);
         out.println("deserialized: " + obj);
-        assertEquals(obj.a, false);
-        assertEquals(obj.b, 0);
-        assertEquals(obj.c, 0);
-        assertEquals(obj.d, '\u0000');
-        assertEquals(obj.e, 0);
-        assertEquals(obj.f, 0l);
-        assertEquals(obj.g, 0f);
-        assertEquals(obj.h, 0d);
-        assertEquals(obj.i, null);
-        assertEquals(obj.j, null);
-        assertEquals(obj.k, null);
-        assertEquals(obj.l, null);
+        assertEquals(false, obj.a);
+        assertEquals(0, obj.b);
+        assertEquals(0, obj.c);
+        assertEquals('\u0000', obj.d);
+        assertEquals(0, obj.e);
+        assertEquals(0l, obj.f);
+        assertEquals(0f, obj.g);
+        assertEquals(0d, obj.h);
+        assertEquals(null, obj.i);
+        assertEquals(null, obj.j);
+        assertEquals(null, obj.k);
+        assertEquals(null, obj.l);
     }
 
     // --- generic type
@@ -132,8 +136,8 @@ public class AbsentStreamValuesTest {
 
         R16 obj = (R16)deserialize(bytes);
         out.println("deserialized: " + obj);
-        assertEquals(obj.t, null);
-        assertEquals(obj.u, null);
+        assertEquals(null, obj.t);
+        assertEquals(null, obj.u);
     }
 
     // --- infra

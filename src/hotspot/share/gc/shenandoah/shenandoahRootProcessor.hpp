@@ -33,6 +33,8 @@
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/threads.hpp"
 
 template <bool CONCURRENT>
 class ShenandoahVMWeakRoots {
@@ -72,7 +74,7 @@ private:
   ThreadsListHandle             _threads;
   uint const                    _length;
   uint const                    _stride;
-  volatile uint                 _claimed;
+  Atomic<uint>                  _claimed;
   ShenandoahPhaseTimings::Phase _phase;
 
   uint claim();
@@ -87,10 +89,10 @@ public:
 class ShenandoahThreadRoots {
 private:
   ShenandoahPhaseTimings::Phase _phase;
-  const bool _is_par;
+  const bool                    _is_par;
+  ThreadsClaimTokenScope        _threads_claim_token_scope;
 public:
   ShenandoahThreadRoots(ShenandoahPhaseTimings::Phase phase, bool is_par);
-  ~ShenandoahThreadRoots();
 
   void oops_do(OopClosure* oops_cl, NMethodClosure* code_cl, uint worker_id);
   void threads_do(ThreadClosure* tc, uint worker_id);
@@ -191,22 +193,6 @@ public:
   ShenandoahHeapIterationRootScanner(uint n_workers);
 
   void roots_do(OopClosure* cl);
-};
-
-// Update all roots at a safepoint
-class ShenandoahRootUpdater : public ShenandoahRootProcessor {
-private:
-  ShenandoahVMRoots<false /*concurrent*/>                   _vm_roots;
-  ShenandoahClassLoaderDataRoots<false /*concurrent*/>      _cld_roots;
-  ShenandoahThreadRoots                                     _thread_roots;
-  ShenandoahVMWeakRoots<false /*concurrent*/>               _weak_roots;
-  ShenandoahCodeCacheRoots                                  _code_roots;
-
-public:
-  ShenandoahRootUpdater(uint n_workers, ShenandoahPhaseTimings::Phase phase);
-
-  template<typename IsAlive, typename KeepAlive>
-  void roots_do(uint worker_id, IsAlive* is_alive, KeepAlive* keep_alive);
 };
 
 // Adjuster all roots at a safepoint during full gc

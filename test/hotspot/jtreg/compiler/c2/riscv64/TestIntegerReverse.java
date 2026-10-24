@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,7 @@
  *
  * @library /test/lib /
  * @requires os.arch == "riscv64" & vm.cpu.features ~= ".*zbkb.*"
- * @run main/othervm compiler.c2.riscv64.TestIntegerReverse
+ * @run driver ${test.main.class}
  */
 
 package compiler.c2.riscv64;

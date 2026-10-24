@@ -37,7 +37,6 @@
  * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true
  */
 
-import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -77,8 +76,7 @@ public class MultiNSTClient {
             System.out.println("test.java.opts: " +
                 System.getProperty("test.java.opts"));
 
-            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                Utils.addTestJavaOpts("MultiNSTClient", "p"));
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("MultiNSTClient", "p");
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             boolean pass = true;

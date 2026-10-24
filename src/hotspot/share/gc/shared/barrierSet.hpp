@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,9 +281,9 @@ public:
     }
 
     template <typename T>
-    static bool oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
-                                      arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
-                                      size_t length);
+    static OopCopyResult oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
+                                               arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
+                                               size_t length);
 
     // Off-heap oop accesses. These accessors get resolved when
     // IN_HEAP is not set (e.g. when using the NativeAccess API), it is
@@ -311,6 +311,14 @@ public:
     // Clone barrier support
     static void clone_in_heap(oop src, oop dst, size_t size) {
       Raw::clone(src, dst, size);
+    }
+
+    static void value_copy_in_heap(const ValuePayload& src, const ValuePayload& dst) {
+      Raw::value_copy(src, dst);
+    }
+
+    static void value_store_null_in_heap(const ValuePayload& dst) {
+      Raw::value_store_null(dst);
     }
   };
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,15 +112,15 @@ import sun.util.calendar.Gregorian;
  * <pre><code>
  *      // Base GMT offset: -8:00
  *      // DST starts:      at 2:00am in standard time
- *      //                  on the first Sunday in April
+ *      //                  on the second Sunday in March
  *      // DST ends:        at 2:00am in daylight time
- *      //                  on the last Sunday in October
+ *      //                  on the first Sunday in November
  *      // Save:            1 hour
  *      SimpleTimeZone(-28800000,
  *                     "America/Los_Angeles",
- *                     Calendar.APRIL, 1, -Calendar.SUNDAY,
+ *                     Calendar.MARCH, 8, -Calendar.SUNDAY,
  *                     7200000,
- *                     Calendar.OCTOBER, -1, Calendar.SUNDAY,
+ *                     Calendar.NOVEMBER, 1, -Calendar.SUNDAY,
  *                     7200000,
  *                     3600000)
  *
@@ -863,13 +863,24 @@ public class SimpleTimeZone extends TimeZone {
     }
 
     /**
-     * Generates the hash code for the SimpleDateFormat object.
+     * Generates the hash code for the SimpleTimeZone object.
      * @return the hash code for this object
      */
     public int hashCode()
     {
-        return startMonth ^ startDay ^ startDayOfWeek ^ startTime ^
-            endMonth ^ endDay ^ endDayOfWeek ^ endTime ^ rawOffset;
+        int hash = 31 * getID().hashCode() + rawOffset;
+        hash = 31 * hash + Boolean.hashCode(useDaylight);
+        if (useDaylight) {
+            hash = 31 * hash + startMonth;
+            hash = 31 * hash + startDay;
+            hash = 31 * hash + startDayOfWeek;
+            hash = 31 * hash + startTime;
+            hash = 31 * hash + endMonth;
+            hash = 31 * hash + endDay;
+            hash = 31 * hash + endDayOfWeek;
+            hash = 31 * hash + endTime;
+        }
+        return hash;
     }
 
     /**

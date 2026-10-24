@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.util.Arrays;
-import java.util.Objects;
 
 /// A base class for all `KEM` implementations that can be
 /// configured with a named parameter set. See [NamedKeyPairGenerator]
@@ -50,21 +49,19 @@ import java.util.Objects;
 public abstract class NamedKEM implements KEMSpi {
 
     private final String fname; // family name
-    private final String[] pnames; // allowed parameter set name (at least one)
+    private final NamedKeyFactory fac;
 
     /// Creates a new `NamedKEM` object.
     ///
     /// @param fname the family name
-    /// @param pnames the standard parameter set names, at least one is needed.
-    protected NamedKEM(String fname, String... pnames) {
+    /// @param fac the `KeyFactory` used to translate foreign keys and
+    ///         perform key validation
+    protected NamedKEM(String fname, NamedKeyFactory fac) {
         if (fname == null) {
             throw new AssertionError("fname cannot be null");
         }
-        if (pnames == null || pnames.length == 0) {
-            throw new AssertionError("pnames cannot be null or empty");
-        }
         this.fname = fname;
-        this.pnames = pnames;
+        this.fac = fac;
     }
 
     @Override
@@ -76,8 +73,7 @@ public abstract class NamedKEM implements KEMSpi {
                     "The " + fname + " algorithm does not take any parameters");
         }
         // translate also check the key
-        var nk = (NamedX509Key) new NamedKeyFactory(fname, pnames)
-                .engineTranslateKey(publicKey);
+        var nk = (NamedX509Key) fac.toNamedKey(publicKey);
         var pk = nk.getRawBytes();
         return getKeyConsumerImpl(this, nk.getParams(), pk,
                 implCheckPublicKey(nk.getParams().getName(), pk), secureRandom);
@@ -92,16 +88,15 @@ public abstract class NamedKEM implements KEMSpi {
                     "The " + fname + " algorithm does not take any parameters");
         }
         // translate also check the key
-        var nk = (NamedPKCS8Key) new NamedKeyFactory(fname, pnames)
-                .engineTranslateKey(privateKey);
-        var sk = nk.getRawBytes();
+        var nk = (NamedPKCS8Key) fac.toNamedKey(privateKey);
+        var sk = nk.getExpanded();
         return getKeyConsumerImpl(this, nk.getParams(), sk,
                 implCheckPrivateKey(nk.getParams().getName(), sk), null);
     }
 
     // We don't have a flag on whether key is public key or private key.
     // The correct method should always be called.
-    private record KeyConsumerImpl(NamedKEM kem, String name, int sslen,
+    private record KeyConsumerImpl(NamedKEM kem, String pname, int sslen,
             int clen, byte[] key, Object k2, SecureRandom sr)
             implements KEMSpi.EncapsulatorSpi, KEMSpi.DecapsulatorSpi {
         @Override
@@ -110,7 +105,7 @@ public abstract class NamedKEM implements KEMSpi {
             if (encapsulation.length != clen) {
                 throw new DecapsulateException("Invalid key encapsulation message length");
             }
-            var ss = kem.implDecapsulate(name, key, k2, encapsulation);
+            var ss = kem.implDecapsulate(pname, key, k2, encapsulation);
             try {
                 return new SecretKeySpec(ss,
                         from, to - from, algorithm);
@@ -121,7 +116,7 @@ public abstract class NamedKEM implements KEMSpi {
 
         @Override
         public KEM.Encapsulated engineEncapsulate(int from, int to, String algorithm) {
-            var enc = kem.implEncapsulate(name, key, k2, sr);
+            var enc = kem.implEncapsulate(pname, key, k2, sr);
             try {
                 return new KEM.Encapsulated(
                         new SecretKeySpec(enc[1],
@@ -146,46 +141,46 @@ public abstract class NamedKEM implements KEMSpi {
 
     private static KeyConsumerImpl getKeyConsumerImpl(NamedKEM kem,
             NamedParameterSpec nps, byte[] key, Object k2, SecureRandom sr) {
-        String name = nps.getName();
-        return new KeyConsumerImpl(kem, name, kem.implSecretSize(name), kem.implEncapsulationSize(name),
+        String pname = nps.getName();
+        return new KeyConsumerImpl(kem, pname, kem.implSecretSize(pname), kem.implEncapsulationSize(pname),
                 key, k2, sr);
     }
 
     /// User-defined encap function.
     ///
-    /// @param name parameter name
+    /// @param pname parameter name
     /// @param pk public key in raw bytes
     /// @param pk2 parsed public key, `null` if none. See [#implCheckPublicKey].
     /// @param sr SecureRandom object, `null` if not initialized
     /// @return the key encapsulation message and the shared key (in this order)
     /// @throws ProviderException if there is an internal error
-    protected abstract byte[][] implEncapsulate(String name, byte[] pk, Object pk2, SecureRandom sr);
+    protected abstract byte[][] implEncapsulate(String pname, byte[] pk, Object pk2, SecureRandom sr);
 
     /// User-defined decap function.
     ///
-    /// @param name parameter name
+    /// @param pname parameter name
     /// @param sk private key in raw bytes
     /// @param sk2 parsed private key, `null` if none. See [#implCheckPrivateKey].
     /// @param encap the key encapsulation message
     /// @return the shared key
     /// @throws ProviderException if there is an internal error
     /// @throws DecapsulateException if there is another error
-    protected abstract byte[] implDecapsulate(String name, byte[] sk, Object sk2, byte[] encap)
+    protected abstract byte[] implDecapsulate(String pname, byte[] sk, Object sk2, byte[] encap)
             throws DecapsulateException;
 
     /// User-defined function returning shared secret key length.
     ///
-    /// @param name parameter name
+    /// @param pname parameter name
     /// @return shared secret key length
     /// @throws ProviderException if there is an internal error
-    protected abstract int implSecretSize(String name);
+    protected abstract int implSecretSize(String pname);
 
     /// User-defined function returning key encapsulation message length.
     ///
-    /// @param name parameter name
+    /// @param pname parameter name
     /// @return key encapsulation message length
     /// @throws ProviderException if there is an internal error
-    protected abstract int implEncapsulationSize(String name);
+    protected abstract int implEncapsulationSize(String pname);
 
     /// User-defined function to validate a public key.
     ///
@@ -196,11 +191,11 @@ public abstract class NamedKEM implements KEMSpi {
     ///
     /// The default implementation returns `null`.
     ///
-    /// @param name parameter name
+    /// @param pname parameter name
     /// @param pk public key in raw bytes
     /// @return a parsed key, `null` if none.
     /// @throws InvalidKeyException if the key is invalid
-    protected Object implCheckPublicKey(String name, byte[] pk) throws InvalidKeyException {
+    protected Object implCheckPublicKey(String pname, byte[] pk) throws InvalidKeyException {
         return null;
     }
 
@@ -213,11 +208,11 @@ public abstract class NamedKEM implements KEMSpi {
     ///
     /// The default implementation returns `null`.
     ///
-    /// @param name parameter name
+    /// @param pname parameter name
     /// @param sk private key in raw bytes
     /// @return a parsed key, `null` if none.
     /// @throws InvalidKeyException if the key is invalid
-    protected Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
+    protected Object implCheckPrivateKey(String pname, byte[] sk) throws InvalidKeyException {
         return null;
     }
 }

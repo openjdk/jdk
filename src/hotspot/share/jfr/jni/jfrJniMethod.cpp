@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,10 +66,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
-#ifdef LINUX
-#include "os_linux.hpp"
-#include "osContainer_linux.hpp"
-#endif
 
 #define NO_TRANSITION(result_type, header) extern "C" { result_type JNICALL header {
 #define NO_TRANSITION_END } }
@@ -89,10 +85,6 @@ NO_TRANSITION(jstring, jfr_get_pid(JNIEnv* env, jclass jvm))
   jio_snprintf(pid_buf, sizeof(pid_buf), "%d", os::current_process_id());
   jstring pid_string = env->NewStringUTF(pid_buf);
   return pid_string; // exception pending if null
-NO_TRANSITION_END
-
-NO_TRANSITION(jlong, jfr_elapsed_frequency(JNIEnv* env, jclass jvm))
-  return JfrTime::frequency();
 NO_TRANSITION_END
 
 NO_TRANSITION(jlong, jfr_elapsed_counter(JNIEnv* env, jclass jvm))
@@ -364,8 +356,7 @@ JVM_ENTRY_NO_ENV(void, jfr_set_force_instrumentation(JNIEnv* env, jclass jvm, jb
 JVM_END
 
 NO_TRANSITION(void, jfr_emit_old_object_samples(JNIEnv* env, jclass jvm, jlong cutoff_ticks, jboolean emit_all, jboolean skip_bfs))
-  JfrRecorderService service;
-  service.emit_leakprofiler_events(cutoff_ticks, emit_all == JNI_TRUE, skip_bfs == JNI_TRUE);
+  JfrRecorderService::emit_leakprofiler_events(cutoff_ticks, emit_all == JNI_TRUE, skip_bfs == JNI_TRUE);
 NO_TRANSITION_END
 
 JVM_ENTRY_NO_ENV(void, jfr_exclude_thread(JNIEnv* env, jclass jvm, jobject t))
@@ -401,33 +392,27 @@ JVM_ENTRY_NO_ENV(jboolean, jfr_is_class_instrumented(JNIEnv* env, jclass jvm, jc
 JVM_END
 
 JVM_ENTRY_NO_ENV(jboolean, jfr_is_containerized(JNIEnv* env, jclass jvm))
-#ifdef LINUX
-  return OSContainer::is_containerized();
-#else
-  return false;
-#endif
+  return os::is_containerized();
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_host_total_memory(JNIEnv* env, jclass jvm))
-#ifdef LINUX
-  // We want the host memory, not the container limit.
-  // os::physical_memory() would return the container limit.
-  return static_cast<jlong>(os::Linux::physical_memory());
-#else
-  return static_cast<jlong>(os::physical_memory());
-#endif
+  return static_cast<jlong>(os::Machine::physical_memory());
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_host_total_swap_memory(JNIEnv* env, jclass jvm))
-#ifdef LINUX
-  // We want the host swap memory, not the container value.
-  return os::Linux::host_swap();
-#else
   physical_memory_size_type total_swap_space = 0;
   // Return value ignored - defaulting to 0 on failure.
-  (void)os::total_swap_space(total_swap_space);
+  (void)os::Machine::total_swap_space(total_swap_space);
   return static_cast<jlong>(total_swap_space);
-#endif
+JVM_END
+
+JVM_ENTRY_NO_ENV(jlong, jfr_host_memory_usage(JNIEnv* env, jclass jvm))
+  physical_memory_size_type memory_usage = 0;
+  if (!os::Machine::used_memory(memory_usage)) {
+    // Return -1 to signal failure to get memory usage.
+    return static_cast<jlong>(-1);
+  }
+  return static_cast<jlong>(memory_usage);
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes))
@@ -460,4 +445,9 @@ JVM_END
 
 JVM_ENTRY_NO_ENV(jlongArray, jfr_drain_stale_method_tracer_ids(JNIEnv* env, jclass jvm))
   return JfrMethodTracer::drain_stale_class_ids(thread);
+JVM_END
+
+JVM_ENTRY_NO_ENV(jboolean, jfr_try_update_epoch(JNIEnv * env, jclass jvm, jobject obj))
+  oop oop = JfrJavaSupport::resolve_non_null(obj);
+  return JfrTraceIdEpoch::try_update(oop) ? JNI_TRUE : JNI_FALSE;
 JVM_END

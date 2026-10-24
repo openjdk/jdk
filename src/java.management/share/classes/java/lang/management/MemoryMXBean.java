@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,6 +268,42 @@ public interface MemoryMXBean extends PlatformManagedObject {
     public MemoryUsage getNonHeapMemoryUsage();
 
     /**
+     * Returns the approximate accumulated time, in nanoseconds,
+     * spent in garbage collection (GC).
+     *
+     * <p> The time spent in spent in GC is the CPU time used by
+     * all GC activity, including any overhead, which means the
+     * result may be non-zero even if no GC has occurred.
+     *
+     * This method returns {@code -1} if the platform does
+     * not support this operation or the information is not
+     * available.
+     *
+     * @apiNote
+     * May be used in conjunction with {@code jdk.management/com.sun.management.OperatingSystemMXBean#getProcessCpuTime()}
+     * for calculating the GC's usage of CPU time as a whole.
+     *
+     * @implNote The specifics on what constitutes the time spent
+     * in GC are highly implementation dependent. In the HotSpot
+     * Virtual Machine, this time includes relevant
+     * implementation-specific details such as driver threads,
+     * workers, VM Operations and string deduplication (if
+     * enabled). Driver threads may be created by a GC to
+     * orchestrate its work. The return value can be -1 if called
+     * when measurement is not possible, such as during shutdown.
+     *
+     * @implSpec The default implementation returns {@code -1}.
+     *
+     * @return the total accumulated CPU time for GC in
+     * nanoseconds, or {@code -1}.
+     *
+     * @since 26
+     */
+    default public long getTotalGcCpuTime() {
+        return -1;
+    }
+
+    /**
      * Tests if verbose output for the memory system is enabled.
      *
      * @return {@code true} if verbose output for the memory
@@ -302,5 +338,4 @@ public interface MemoryMXBean extends PlatformManagedObject {
      * @see     java.lang.System#gc()
      */
     public void gc();
-
 }

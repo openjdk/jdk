@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,9 +41,9 @@
  *                   -XX:-AllowParallelDefineClass
  *                   test.DefineClass defineClassParallel
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -Djdk.attach.allowAttachSelf test.DefineClass redefineClass
+ *                   -XX:+EnableDynamicAgentLoading -Djdk.attach.allowAttachSelf test.DefineClass redefineClass
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -Djdk.attach.allowAttachSelf test.DefineClass redefineClassWithError
+ *                   -XX:+EnableDynamicAgentLoading -Djdk.attach.allowAttachSelf test.DefineClass redefineClassWithError
  * @author volker.simonis@gmail.com
  */
 
@@ -193,7 +193,7 @@ public class DefineClass {
 
     private static int getStringIndex(String needle, byte[] buf, int offset) {
         outer:
-        for (int i = offset; i < buf.length - offset - needle.length(); i++) {
+        for (int i = offset; i <= buf.length - needle.length(); i++) {
             for (int j = 0; j < needle.length(); j++) {
                 if (buf[i + j] != (byte)needle.charAt(j)) continue outer;
             }

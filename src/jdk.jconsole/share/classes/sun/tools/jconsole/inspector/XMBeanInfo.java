@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,10 @@ public class XMBeanInfo extends JPanel {
     private static class MBeanInfoTableCellRenderer
             extends DefaultTableCellRenderer {
 
+        public MBeanInfoTableCellRenderer() {
+            putClientProperty("html.disable", Boolean.TRUE);
+        }
+
         @Override
         public Component getTableCellRendererComponent(
                 JTable table, Object value, boolean isSelected,
@@ -128,6 +132,13 @@ public class XMBeanInfo extends JPanel {
         // Use the grid layout to display the two tables
         //
         super(new GridLayout(2, 1));
+
+        putClientProperty("html.disable", Boolean.TRUE);
+        infoTable.putClientProperty("html.disable", Boolean.TRUE);
+        descTable.putClientProperty("html.disable", Boolean.TRUE);
+        infoBorderPanel.putClientProperty("html.disable", Boolean.TRUE);
+        descBorderPanel.putClientProperty("html.disable", Boolean.TRUE);
+
         // MBean*Info table
         //
         infoTable.setModel(new ReadOnlyDefaultTableModel());

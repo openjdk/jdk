@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,10 @@ inline Tickspan G1ParScanThreadState::trim_ticks() const {
 
 inline void G1ParScanThreadState::reset_trim_ticks() {
   _trim_ticks = Tickspan();
+}
+
+inline void G1ParScanThreadState::remember_nmethod_into_region(G1HeapRegion* r, nmethod* nm) {
+  _code_root_pairs.push(G1CodeRootPair{r->hrm_index(), nm});
 }
 
 template <typename T>
@@ -151,13 +155,15 @@ template <class T> void G1ParScanThreadState::mark_card_if_tracked(G1HeapRegionA
 
 #ifdef ASSERT
   G1HeapRegion* const hr_obj = _g1h->heap_region_containing(o);
-  assert(region_attr.remset_is_tracked() == hr_obj->rem_set()->is_tracked(),
-         "State flag indicating remset tracking disagrees (%s) with actual remembered set (%s) for region %u",
-         BOOL_TO_STR(region_attr.remset_is_tracked()),
+  assert((region_attr.is_remset_tracked() == hr_obj->rem_set()->is_tracked()) ||
+         (region_attr.is_new_survivor() && region_attr.is_remset_tracked()),
+         "State flag indicating remset tracking disagrees (%s) with actual remembered set (%s) for region %u (%s)",
+         BOOL_TO_STR(region_attr.is_remset_tracked()),
          BOOL_TO_STR(hr_obj->rem_set()->is_tracked()),
-         hr_obj->hrm_index());
+         hr_obj->hrm_index(),
+         hr_obj->get_type_str());
 #endif
-  if (!region_attr.remset_is_tracked()) {
+  if (!region_attr.is_remset_tracked()) {
     return;
   }
   bool into_survivor = region_attr.is_new_survivor();

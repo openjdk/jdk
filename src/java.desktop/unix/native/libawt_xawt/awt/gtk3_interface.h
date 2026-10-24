@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,6 +193,7 @@ typedef void GtkMenuShell;
 typedef void GtkWidgetClass;
 typedef void PangoFontDescription;
 typedef void GtkSettings;
+typedef void GSettings;
 typedef void GtkStyleProvider;
 typedef void cairo_pattern_t;
 typedef void cairo_t;
@@ -633,6 +634,10 @@ static char* (*fp_pango_font_description_to_string)(
         const PangoFontDescription* fd);
 static GtkSettings* (*fp_gtk_settings_get_default)();
 static GtkSettings* (*fp_gtk_widget_get_settings)(GtkWidget *widget);
+
+static GSettings *(*fp_g_settings_new)(const gchar *schema_id);
+static gchar *(*fp_g_settings_get_string)(GSettings *settings, const gchar *key);
+
 static GType        (*fp_gtk_border_get_type)();
 static void (*fp_gtk_arrow_set)(GtkWidget* arrow,
                                 GtkArrowType arrow_type,
@@ -750,6 +755,10 @@ static const gchar *(*fp_g_variant_get_string)(GVariant *value,
 
 static guint32 (*fp_g_variant_get_uint32)(GVariant *value);
 
+static const gchar *(*fp_g_variant_get_type_string)(GVariant *value);
+
+static gboolean (*fp_g_variant_is_of_type)(GVariant *value, const GVariantType *type);
+
 static gboolean (*fp_g_variant_lookup)(GVariant *dictionary,
                                        const gchar *key,
                                        const gchar *format_string,
@@ -810,5 +819,7 @@ static void (*fp_g_error_free)(GError *error);
 static gint (*fp_g_unix_fd_list_get)(GUnixFDList *list,
                                      gint index_,
                                      GError **error);
+
+static gint (*fp_g_unix_fd_list_get_length)(GUnixFDList* list);
 
 #endif /* !_GTK3_INTERFACE_H */

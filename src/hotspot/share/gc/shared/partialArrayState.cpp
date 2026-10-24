@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,33 +22,33 @@
  *
  */
 
+#include "cppstdlib/new.hpp"
 #include "gc/shared/partialArrayState.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
 #include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-#include <new>
-
-PartialArrayState::PartialArrayState(oop src, oop dst,
+PartialArrayState::PartialArrayState(objArrayOop array,
                                      size_t index, size_t length,
-                                     size_t initial_refcount)
-  : _source(src),
-    _destination(dst),
+                                     size_t chunk_size)
+  : _array(array),
     _length(length),
+    _chunk_size(chunk_size),
     _index(index),
-    _refcount(initial_refcount)
+    _refcount(1)
 {
   assert(index <= length, "precondition");
+  assert(chunk_size > 0, "precondition");
+  assert((length - index) % chunk_size == 0, "whole chunks remain");
 }
 
 void PartialArrayState::add_references(size_t count) {
-  size_t new_count = AtomicAccess::add(&_refcount, count, memory_order_relaxed);
+  size_t new_count = _refcount.add_then_fetch(count, memory_order_relaxed);
   assert(new_count >= count, "reference count overflow");
 }
 
@@ -76,10 +76,10 @@ PartialArrayStateAllocator::~PartialArrayStateAllocator() {
   _manager->release_allocator();
 }
 
-PartialArrayState* PartialArrayStateAllocator::allocate(oop src, oop dst,
+PartialArrayState* PartialArrayStateAllocator::allocate(objArrayOop array,
                                                         size_t index,
                                                         size_t length,
-                                                        size_t initial_refcount) {
+                                                        size_t chunk_size) {
   void* p;
   FreeListEntry* head = _free_list;
   if (head == nullptr) {
@@ -89,17 +89,17 @@ PartialArrayState* PartialArrayStateAllocator::allocate(oop src, oop dst,
     head->~FreeListEntry();
     p = head;
   }
-  return ::new (p) PartialArrayState(src, dst, index, length, initial_refcount);
+  return ::new (p) PartialArrayState(array, index, length, chunk_size);
 }
 
 void PartialArrayStateAllocator::release(PartialArrayState* state) {
-  size_t refcount = AtomicAccess::sub(&state->_refcount, size_t(1), memory_order_release);
+  size_t refcount = state->_refcount.sub_then_fetch(1u, memory_order_release);
   if (refcount != 0) {
     assert(refcount + 1 != 0, "refcount underflow");
   } else {
     OrderAccess::acquire();
     // Don't need to call destructor; can't if not destructible.
-    static_assert(!std::is_destructible<PartialArrayState>::value, "expected");
+    static_assert(!std::is_destructible<PartialArrayState>::value);
     _free_list = ::new (state) FreeListEntry(_free_list);
   }
 }
@@ -113,29 +113,30 @@ PartialArrayStateManager::PartialArrayStateManager(uint max_allocators)
 
 PartialArrayStateManager::~PartialArrayStateManager() {
   reset();
-  FREE_C_HEAP_ARRAY(Arena, _arenas);
+  FREE_C_HEAP_ARRAY(_arenas);
 }
 
 Arena* PartialArrayStateManager::register_allocator() {
-  uint idx = AtomicAccess::fetch_then_add(&_registered_allocators, 1u, memory_order_relaxed);
+  assert(_released_allocators.load_relaxed() == 0, "allocator destruction has begun");
+  uint idx = _registered_allocators.fetch_then_add(1u, memory_order_relaxed);
   assert(idx < _max_allocators, "exceeded configured max number of allocators");
   return ::new (&_arenas[idx]) Arena(mtGC);
 }
 
 #ifdef ASSERT
 void PartialArrayStateManager::release_allocator() {
-  uint old = AtomicAccess::fetch_then_add(&_released_allocators, 1u, memory_order_relaxed);
-  assert(old < AtomicAccess::load(&_registered_allocators), "too many releases");
+  uint old = _released_allocators.fetch_then_add(1u, memory_order_relaxed);
+  assert(old < _registered_allocators.load_relaxed(), "too many releases");
 }
 #endif // ASSERT
 
 void PartialArrayStateManager::reset() {
-  uint count = AtomicAccess::load(&_registered_allocators);
-  assert(count == AtomicAccess::load(&_released_allocators),
+  uint count = _registered_allocators.load_relaxed();
+  assert(count == _released_allocators.load_relaxed(),
          "some allocators still active");
   for (uint i = 0; i < count; ++i) {
     _arenas[i].~Arena();
   }
-  AtomicAccess::store(&_registered_allocators, 0u);
-  DEBUG_ONLY(AtomicAccess::store(&_released_allocators, 0u);)
+  _registered_allocators.store_relaxed(0u);
+  DEBUG_ONLY(_released_allocators.store_relaxed(0u);)
 }

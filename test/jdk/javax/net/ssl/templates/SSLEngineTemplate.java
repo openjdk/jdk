@@ -54,6 +54,18 @@ import java.nio.ByteBuffer;
  * produced.
  */
 public class SSLEngineTemplate extends SSLContextTemplate {
+
+    /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=all
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
+
     protected final SSLEngine clientEngine;     // client Engine
     protected final ByteBuffer clientOut;       // write side of clientEngine
     protected final ByteBuffer clientIn;        // read side of clientEngine
@@ -139,6 +151,10 @@ public class SSLEngineTemplate extends SSLContextTemplate {
     }
 
     public static void main(String[] args) throws Exception {
+        if (debug) {
+            System.setProperty("javax.net.debug", "all");
+        }
+
         new SSLEngineTemplate().runTest();
     }
 

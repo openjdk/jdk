@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -209,7 +210,10 @@ public class KullaTesting {
         analysis = null;
         allSnippets = null;
         idToSnippet = null;
+        tearDownDone();
     }
+
+    protected void tearDownDone() {}
 
     public ClassLoader createAndRunFromModule(String moduleName, Path modPath) {
         ModuleFinder finder = ModuleFinder.of(modPath);
@@ -969,11 +973,21 @@ public class KullaTesting {
     }
 
     public void assertSignature(String code, String... expected) {
+        assertSignature(code, false, expected);
+    }
+
+    public void assertSignature(String code, boolean includeActive, String... expected) {
         int cursor =  code.indexOf('|');
         code = code.replace("|", "");
         assertTrue(cursor > -1, "'|' expected, but not found in: " + code);
         List<Documentation> documentation = getAnalysis().documentation(code, cursor, false);
-        Set<String> docSet = documentation.stream().map(doc -> doc.signature()).collect(Collectors.toSet());
+        Function<Documentation, String> convert;
+        if (includeActive) {
+            convert = doc -> doc.signature() + ":" + doc.activeParameterIndex();
+        } else {
+            convert = doc -> doc.signature();
+        }
+        Set<String> docSet = documentation.stream().map(convert).collect(Collectors.toSet());
         Set<String> expectedSet = Stream.of(expected).collect(Collectors.toSet());
         assertEquals(expectedSet, docSet, "Input: " + code);
     }

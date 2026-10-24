@@ -346,6 +346,19 @@ public final class NumericShaper implements java.io.Serializable {
             return index < NUM_KEYS ? Range.values()[index] : null;
         }
 
+        private static int toRangeHash(Set<Range> ranges) {
+            int m = 0;
+            for (Range range : ranges) {
+                int index = range.ordinal();
+                if (index < NUM_KEYS) {
+                    m |= 1 << index;
+                } else {
+                    m |=  (1 << NUM_KEYS) + index;
+                }
+            }
+            return m;
+        }
+
         private static int toRangeMask(Set<Range> ranges) {
             int m = 0;
             for (Range range : ranges) {
@@ -576,7 +589,7 @@ public final class NumericShaper implements java.io.Serializable {
     // and a linear probe is ok.
 
     private static int ctCache = 0;
-    private static int ctCacheLimit = contexts.length - 2;
+    private static final int ctCacheLimit = contexts.length - 2;
 
     // warning, synchronize access to this as it modifies state
     private static int getContextKey(char c) {
@@ -1428,6 +1441,9 @@ public final class NumericShaper implements java.io.Serializable {
      * EUROPEAN digits are encountered before any strong directional
      * text in the string, the context is presumed to be EUROPEAN, and
      * so the digits will not shape.
+     * Any bit set in the {@code ranges} bitmask which is not a
+     * recognised value is discarded. Similarly if two bits are
+     * specified where one takes precedence, the lesser one is discarded.
      * @param ranges the specified Unicode ranges
      * @return a shaper for the specified ranges
      */
@@ -1446,6 +1462,9 @@ public final class NumericShaper implements java.io.Serializable {
      * is, if EUROPEAN digits are encountered before any strong
      * directional text in the string, the context is presumed to be
      * EUROPEAN, and so the digits will not shape.
+     *
+     * If two ranges are specified where one takes precedence over the
+     * other the lesser range is discarded.
      *
      * @param ranges the specified Unicode ranges
      * @return a contextual shaper for the specified ranges
@@ -1486,6 +1505,9 @@ public final class NumericShaper implements java.io.Serializable {
      * range is one of the provided ranges. The shaper uses {@code
      * defaultContext} as the starting context.
      *
+     * If two ranges are specified where one takes precedence over the
+     * other the lesser range is discarded.
+     *
      * @param ranges the specified Unicode ranges
      * @param defaultContext the starting context, such as
      *                       {@code NumericShaper.Range.EUROPEAN}
@@ -1509,7 +1531,10 @@ public final class NumericShaper implements java.io.Serializable {
      */
     private NumericShaper(int key, int mask) {
         this.key = key;
-        this.mask = mask;
+        this.mask = mask & (CONTEXTUAL_MASK | ALL_RANGES);
+        if (((this.mask & ARABIC) != 0) && ((this.mask & EASTERN_ARABIC) != 0)) {
+            this.mask &= ~ARABIC;
+        }
     }
 
     private NumericShaper(Range defaultContext, Set<Range> ranges) {
@@ -1795,15 +1820,7 @@ public final class NumericShaper implements java.io.Serializable {
      * @see java.lang.Object#hashCode
      */
     public int hashCode() {
-        int hash = mask;
-        if (rangeSet != null) {
-            // Use the CONTEXTUAL_MASK bit only for the enum-based
-            // NumericShaper. A deserialized NumericShaper might have
-            // bit masks.
-            hash &= CONTEXTUAL_MASK;
-            hash ^= rangeSet.hashCode();
-        }
-        return hash;
+        return (rangeSet != null) ? Range.toRangeHash(rangeSet) : (mask & ~CONTEXTUAL_MASK);
     }
 
     /**

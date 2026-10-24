@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,9 @@ class SupplementalMetadataParseHandler extends AbstractLDMLHandler<Object> {
 
     public Stream<String> deprecatedMap() {
         return keySet().stream()
-                .map(k -> String.format("        \"%s\", \"%s\",", k, get(k)))
+                .map(k -> "        \"%s\", \"%s\",".formatted(
+                        CLDRConverter.escape(k),
+                        CLDRConverter.escape((String)get(k))))
                 .sorted();
     }
     Map<String, String> getLanguageAliasData() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,20 +40,18 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
            NOT_PRODUCT(COMMA is_trace_superword_packset())
            NOT_PRODUCT(COMMA is_trace_superword_rejections())
            ),
-  _mem_ref_for_main_loop_alignment(nullptr),
+  _vpointer_for_main_loop_alignment(nullptr),
   _aw_for_main_loop_alignment(0),
-  _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
-  _num_work_vecs(0),                                        // amount of vector work we have
-  _num_reductions(0)                                        // amount of reduction work we have
+  _do_vector_loop(phase()->C->do_vector_loop())             // whether to do vectorization/simd style
 {
 }
 
 // Collect ignored loop nodes during VPointer parsing.
 class SuperWordUnrollingAnalysisIgnoredNodes : public MemPointerParserCallback {
 private:
-  const VLoop&     _vloop;
-  const Node_List& _body;
-  bool*            _ignored;
+  const VLoop& _vloop;
+  const Node_List<Node>& _body;
+  bool* _ignored;
 
 public:
   SuperWordUnrollingAnalysisIgnoredNodes(const VLoop& vloop) :
@@ -75,8 +73,7 @@ public:
 
   void set_ignored(Node* n) {
     // Only consider nodes in the loop.
-    Node* ctrl = _vloop.phase()->get_ctrl(n);
-    if (_vloop.lpt()->is_member(_vloop.phase()->get_loop(ctrl))) {
+    if (_vloop.phase()->ctrl_is_member(_vloop.lpt(), n)) {
       // Find the index in the loop.
       for (uint j = 0; j < _body.size(); j++) {
         if (n == _body.at(j)) {
@@ -455,11 +452,16 @@ bool SuperWord::transform_loop() {
 //
 // 8) The pairs are combined into vector sized packs.
 //
-// 9) Reorder the memory slices to co-locate members of the memory packs.
+// 9) The packs are split and filtered, to ensure correctness and that
+//    all packs have corresponding vector nodes implemented in the backend.
 //
-// 10) Generate ideal vector nodes for the final set of packs and where necessary,
-//    inserting scalar promotion, vector creation from multiple scalars, and
-//    extraction of scalar values from vectors.
+// 10) VTransform (see vtransform.hpp)
+//     - construct from PackSet
+//     - schedule (detect circles)
+//     - apply
+//       - align main loop
+//       - add runtime checks (aliasing and alignment)
+//       - build new loop with vector C2 nodes
 //
 // Runtime Checks:
 //   Some required properties cannot be proven statically, and require a
@@ -498,7 +500,7 @@ bool SuperWord::SLP_extract() {
   DEBUG_ONLY(verify_packs();)
   DEBUG_ONLY(verify_no_extract());
 
-  return schedule_and_apply();
+  return do_vtransform();
 }
 
 int SuperWord::MemOp::cmp_by_group(MemOp* a, MemOp* b) {
@@ -660,39 +662,9 @@ void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<Mem
   }
 }
 
-void VLoopMemorySlices::find_memory_slices() {
-  assert(_heads.is_empty(), "not yet computed");
-  assert(_tails.is_empty(), "not yet computed");
-  CountedLoopNode* cl = _vloop.cl();
-
-  // Iterate over all memory phis
-  for (DUIterator_Fast imax, i = cl->fast_outs(imax); i < imax; i++) {
-    PhiNode* phi = cl->fast_out(i)->isa_Phi();
-    if (phi != nullptr && _vloop.in_bb(phi) && phi->is_memory_phi()) {
-      Node* phi_tail = phi->in(LoopNode::LoopBackControl);
-      if (phi_tail != phi->in(LoopNode::EntryControl)) {
-        _heads.push(phi);
-        _tails.push(phi_tail->as_Mem());
-      }
-    }
-  }
-
-  NOT_PRODUCT( if (_vloop.is_trace_memory_slices()) { print(); } )
-}
-
-#ifndef PRODUCT
-void VLoopMemorySlices::print() const {
-  tty->print_cr("\nVLoopMemorySlices::print: %s",
-                heads().length() > 0 ? "" : "NONE");
-  for (int m = 0; m < heads().length(); m++) {
-    tty->print("%6d ", m);  heads().at(m)->dump();
-    tty->print("       ");  tails().at(m)->dump();
-  }
-}
-#endif
-
 // Get all memory nodes of a slice, in reverse order
 void VLoopMemorySlices::get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*> &slice) const {
+  assert(head != nullptr && tail != nullptr, "must be slice with memory state loop");
   assert(slice.is_empty(), "start empty");
   Node* n = tail;
   Node* prev = nullptr;
@@ -841,10 +813,10 @@ bool VLoopDependencyGraph::independent(Node* s1, Node* s2) const {
   bool speculate_away_weak_edges = _vloop.use_speculative_aliasing_checks();
 
   ResourceMark rm;
-  Unique_Node_List worklist;
+  Unique_Node_List<const Node> worklist;
   worklist.push(deep);
   for (uint i = 0; i < worklist.size(); i++) {
-    Node* n = worklist.at(i);
+    const Node* n = worklist.at(i);
     for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
       if (speculate_away_weak_edges && preds.is_current_weak_memory_edge()) { continue; }
       Node* pred = preds.current();
@@ -867,9 +839,9 @@ bool VLoopDependencyGraph::independent(Node* s1, Node* s2) const {
 // is the smallest depth of all nodes from the nodes list. Once we have
 // traversed all those nodes, and have not found another node from the
 // nodes list, we know that all nodes in the nodes list are independent.
-bool VLoopDependencyGraph::mutually_independent(const Node_List* nodes) const {
+bool VLoopDependencyGraph::mutually_independent(const Node_List<Node>* nodes) const {
   ResourceMark rm;
-  Unique_Node_List worklist;
+  Unique_Node_List<const Node> worklist;
   VectorSet nodes_set;
   int min_d = depth(nodes->at(0));
   for (uint k = 0; k < nodes->size(); k++) {
@@ -885,7 +857,7 @@ bool VLoopDependencyGraph::mutually_independent(const Node_List* nodes) const {
   bool speculate_away_weak_edges = _vloop.use_speculative_aliasing_checks();
 
   for (uint i = 0; i < worklist.size(); i++) {
-    Node* n = worklist.at(i);
+    const Node* n = worklist.at(i);
     for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
       if (speculate_away_weak_edges && preds.is_current_weak_memory_edge()) { continue; }
       Node* pred = preds.current();
@@ -1109,10 +1081,12 @@ SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Nod
   if (is_marked_reduction(use1) && is_marked_reduction(use2)) {
     Node* use1_in2 = use1->in(2);
     if (use1_in2->is_Phi() || is_marked_reduction(use1_in2)) {
+      igvn().rehash_node_delayed(use1);
       use1->swap_edges(1, 2);
     }
     Node* use2_in2 = use2->in(2);
     if (use2_in2->is_Phi() || is_marked_reduction(use2_in2)) {
+      igvn().rehash_node_delayed(use2);
       use2->swap_edges(1, 2);
     }
     return PairOrderStatus::Ordered;
@@ -1128,14 +1102,17 @@ SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Nod
     if (i1 != i2) {
       if ((i1 == (3-i2)) && (use2->is_Add() || use2->is_Mul())) {
         // 2. Commutative: swap edges, and hope the other position matches too.
+        igvn().rehash_node_delayed(use2);
         use2->swap_edges(i1, i2);
       } else if (VectorNode::is_muladds2i(use2) && use1 != use2) {
         // 3.a/b: MulAddS2I.
         if (i1 == 5 - i2) { // ((i1 == 3 && i2 == 2) || (i1 == 2 && i2 == 3) || (i1 == 1 && i2 == 4) || (i1 == 4 && i2 == 1))
+          igvn().rehash_node_delayed(use2);
           use2->swap_edges(1, 2);
           use2->swap_edges(3, 4);
         }
         if (i1 == 3 - i2 || i1 == 7 - i2) { // ((i1 == 1 && i2 == 2) || (i1 == 2 && i2 == 1) || (i1 == 3 && i2 == 4) || (i1 == 4 && i2 == 3))
+          igvn().rehash_node_delayed(use2);
           use2->swap_edges(2, 3);
           use2->swap_edges(1, 4);
         }
@@ -1146,6 +1123,7 @@ SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Nod
       }
     } else if (i1 == i2 && VectorNode::is_muladds2i(use2) && use1 != use2) {
       // 3.c: MulAddS2I.
+      igvn().rehash_node_delayed(use2);
       use2->swap_edges(1, 3);
       use2->swap_edges(2, 4);
       return PairOrderStatus::Unknown;
@@ -1219,13 +1197,13 @@ void SuperWord::combine_pairs_to_longer_packs() {
 #endif
 
   // Iterate pair-chain by pair-chain, each from left-most to right-most.
-  Node_List* pack = nullptr;
+  Node_List<Node>* pack = nullptr;
   for (PairSetIterator pair(_pairset); !pair.done(); pair.next()) {
     Node* left  = pair.left();
     Node* right = pair.right();
     if (_pairset.is_left_in_a_left_most_pair(left)) {
       assert(pack == nullptr, "no unfinished pack");
-      pack = new (arena()) Node_List(arena());
+      pack = new (arena()) Node_List<Node>(arena());
       pack->push(left);
     }
     assert(pack != nullptr, "must have unfinished pack");
@@ -1248,7 +1226,7 @@ void SuperWord::combine_pairs_to_longer_packs() {
 }
 
 SplitStatus PackSet::split_pack(const char* split_name,
-                                Node_List* pack,
+                                Node_List<Node>* pack,
                                 SplitTask task)
 {
   uint pack_size = pack->size();
@@ -1332,7 +1310,7 @@ SplitStatus PackSet::split_pack(const char* split_name,
 
   // We will have two packs
   assert(old_size >= 2 && new_size >= 2, "implied");
-  Node_List* new_pack = new Node_List(new_size);
+  Node_List<Node>* new_pack = new Node_List<Node>(new_size);
 
   for (uint i = 0; i < new_size; i++) {
     Node* n = pack->at(old_size + i);
@@ -1357,13 +1335,13 @@ void PackSet::split_packs(const char* split_name,
     changed = false;
     int new_packset_length = 0;
     for (int i = 0; i < _packs.length(); i++) {
-      Node_List* pack = _packs.at(i);
+      Node_List<Node>* pack = _packs.at(i);
       assert(pack != nullptr && pack->size() >= 2, "no nullptr, at least size 2");
       SplitTask task = strategy(pack);
       SplitStatus status = split_pack(split_name, pack, task);
       changed |= !status.is_unchanged();
-      Node_List* first_pack = status.first_pack();
-      Node_List* second_pack = status.second_pack();
+      Node_List<Node>* first_pack = status.first_pack();
+      Node_List<Node>* second_pack = status.second_pack();
       _packs.at_put(i, nullptr); // take out pack
       if (first_pack != nullptr) {
         // The first pack can be put at the current position
@@ -1388,7 +1366,7 @@ void PackSet::split_packs(const char* split_name,
 
 // Split packs at boundaries where left and right have different use or def packs.
 void SuperWord::split_packs_at_use_def_boundaries() {
-  auto split_strategy = [&](const Node_List* pack) {
+  auto split_strategy = [&](const Node_List<Node>* pack) {
     uint pack_size = pack->size();
     uint boundary = find_use_def_boundary(pack);
     assert(boundary < pack_size, "valid boundary %d", boundary);
@@ -1403,7 +1381,7 @@ void SuperWord::split_packs_at_use_def_boundaries() {
 // Split packs that are only implemented with a smaller pack size. Also splits packs
 // such that they eventually have power of 2 size.
 void SuperWord::split_packs_only_implemented_with_smaller_size() {
-  auto split_strategy = [&](const Node_List* pack) {
+  auto split_strategy = [&](const Node_List<Node>* pack) {
     uint pack_size = pack->size();
     uint implemented_size = max_implemented_size(pack);
     if (implemented_size == 0)  {
@@ -1420,7 +1398,7 @@ void SuperWord::split_packs_only_implemented_with_smaller_size() {
 
 // Split packs that have a mutual dependency, until all packs are mutually_independent.
 void SuperWord::split_packs_to_break_mutual_dependence() {
-  auto split_strategy = [&](const Node_List* pack) {
+  auto split_strategy = [&](const Node_List<Node>* pack) {
     uint pack_size = pack->size();
     assert(is_power_of_2(pack_size), "ensured by earlier splits %d", pack_size);
     if (!is_marked_reduction(pack->at(0)) &&
@@ -1438,7 +1416,7 @@ template <typename FilterPredicate>
 void PackSet::filter_packs(const char* filter_name,
                              const char* rejection_message,
                              FilterPredicate filter) {
-  auto split_strategy = [&](const Node_List* pack) {
+  auto split_strategy = [&](const Node_List<Node>* pack) {
     if (filter(pack)) {
       return SplitTask::make_unchanged();
     } else {
@@ -1449,7 +1427,7 @@ void PackSet::filter_packs(const char* filter_name,
 }
 
 void SuperWord::filter_packs_for_power_of_2_size() {
-  auto filter = [&](const Node_List* pack) {
+  auto filter = [&](const Node_List<Node>* pack) {
     return is_power_of_2(pack->size());
   };
   _packset.filter_packs("SuperWord::filter_packs_for_power_of_2_size",
@@ -1477,7 +1455,7 @@ void SuperWord::filter_packs_for_power_of_2_size() {
 // for (int i ...) { v[i] = v[i + 1] + 5; }
 // for (int i ...) { v[i - 1] = v[i] + 5; }
 void SuperWord::filter_packs_for_mutual_independence() {
-  auto filter = [&](const Node_List* pack) {
+  auto filter = [&](const Node_List<Node>* pack) {
     // reductions are trivially connected
     return is_marked_reduction(pack->at(0)) ||
            mutually_independent(pack);
@@ -1487,7 +1465,7 @@ void SuperWord::filter_packs_for_mutual_independence() {
 }
 
 // Find the set of alignment solutions for load/store pack.
-const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List* pack) {
+const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List<Node>* pack) const {
   assert(pack != nullptr && (pack->at(0)->is_Load() || pack->at(0)->is_Store()), "only load/store packs");
 
   const MemNode* mem_ref = pack->at(0)->as_Mem();
@@ -1529,7 +1507,7 @@ void SuperWord::filter_packs_for_alignment() {
   int mem_ops_count = 0;
   int mem_ops_rejected = 0;
 
-  auto filter = [&](const Node_List* pack) {
+  auto filter = [&](const Node_List<Node>* pack) {
     // Only memops need to be aligned.
     if (!pack->at(0)->is_Load() &&
         !pack->at(0)->is_Store()) {
@@ -1574,16 +1552,16 @@ void SuperWord::filter_packs_for_alignment() {
     // Solution is constrained (not trivial)
     // -> must change pre-limit to achieve alignment
     MemNode const* mem = current->as_constrained()->mem_ref();
-    Node_List* pack = get_pack(mem);
+    Node_List<Node>* pack = get_pack(mem);
     assert(pack != nullptr, "memop of final solution must still be packed");
-    _mem_ref_for_main_loop_alignment = mem;
+    _vpointer_for_main_loop_alignment = &vpointer(mem);
     _aw_for_main_loop_alignment = pack->size() * mem->memory_size();
   }
 }
 
 // Remove packs that are not implemented
 void SuperWord::filter_packs_for_implemented() {
-  auto filter = [&](const Node_List* pack) {
+  auto filter = [&](const Node_List<Node>* pack) {
     return implemented(pack, pack->size());
   };
   _packset.filter_packs("SuperWord::filter_packs_for_implemented",
@@ -1592,20 +1570,8 @@ void SuperWord::filter_packs_for_implemented() {
 
 // Remove packs that are not profitable.
 void SuperWord::filter_packs_for_profitable() {
-  // Count the number of reductions vs other vector ops, for the
-  // reduction profitability heuristic.
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* pack = _packset.at(i);
-    Node* n = pack->at(0);
-    if (is_marked_reduction(n)) {
-      _num_reductions++;
-    } else {
-      _num_work_vecs++;
-    }
-  }
-
   // Remove packs that are not profitable
-  auto filter = [&](const Node_List* pack) {
+  auto filter = [&](const Node_List<Node>* pack) {
     return profitable(pack);
   };
   _packset.filter_packs("Superword::filter_packs_for_profitable",
@@ -1613,38 +1579,14 @@ void SuperWord::filter_packs_for_profitable() {
 }
 
 // Can code be generated for the pack, restricted to size nodes?
-bool SuperWord::implemented(const Node_List* pack, const uint size) const {
+bool SuperWord::implemented(const Node_List<Node>* pack, const uint size) const {
   assert(size >= 2 && size <= pack->size() && is_power_of_2(size), "valid size");
   bool retValue = false;
   Node* p0 = pack->at(0);
   if (p0 != nullptr) {
     int opc = p0->Opcode();
     if (is_marked_reduction(p0)) {
-      const Type *arith_type = p0->bottom_type();
-      // This heuristic predicts that 2-element reductions for INT/LONG are not
-      // profitable. This heuristic was added in JDK-8078563. The argument
-      // was that reductions are not just a single instruction, but multiple, and
-      // hence it is not directly clear that they are profitable. If we only have
-      // two elements per vector, then the performance gains from non-reduction
-      // vectors are at most going from 2 scalar instructions to 1 vector instruction.
-      // But a 2-element reduction vector goes from 2 scalar instructions to
-      // 3 instructions (1 shuffle and two reduction ops).
-      // However, this optimization assumes that these reductions stay in the loop
-      // which may not be true any more in most cases after the introduction of:
-      // PhaseIdealLoop::move_unordered_reduction_out_of_loop
-      // Hence, this heuristic has room for improvement.
-      bool is_two_element_int_or_long_reduction = (size == 2) &&
-                                                  (arith_type->basic_type() == T_INT ||
-                                                   arith_type->basic_type() == T_LONG);
-      if (is_two_element_int_or_long_reduction && AutoVectorizationOverrideProfitability != 2) {
-#ifndef PRODUCT
-        if (is_trace_superword_rejections()) {
-          tty->print_cr("\nPerformance heuristic: 2-element INT/LONG reduction not profitable.");
-          tty->print_cr("  Can override with AutoVectorizationOverrideProfitability=2");
-        }
-#endif
-        return false;
-      }
+      const Type* arith_type = p0->bottom_type();
       retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
     } else if (VectorNode::is_convert_opcode(opc)) {
       retValue = VectorCastNode::implemented(opc, size, velt_basic_type(p0->in(1)), velt_basic_type(p0));
@@ -1674,7 +1616,7 @@ bool SuperWord::implemented(const Node_List* pack, const uint size) const {
 }
 
 // Find the maximal implemented size smaller or equal to the packs size
-uint SuperWord::max_implemented_size(const Node_List* pack) {
+uint SuperWord::max_implemented_size(const Node_List<Node>* pack) const {
   uint size = round_down_power_of_2(pack->size());
   if (implemented(pack, size)) {
     return size;
@@ -1690,7 +1632,7 @@ uint SuperWord::max_implemented_size(const Node_List* pack) {
 }
 
 // If the j-th input for all nodes in the pack is the same input: return it, else nullptr.
-Node* PackSet::same_inputs_at_index_or_null(const Node_List* pack, const int index) const {
+Node* PackSet::same_inputs_at_index_or_null(const Node_List<Node>* pack, const int index) {
   Node* p0_in = pack->at(0)->in(index);
   for (uint i = 1; i < pack->size(); i++) {
     if (pack->at(i)->in(index) != p0_in) {
@@ -1700,7 +1642,7 @@ Node* PackSet::same_inputs_at_index_or_null(const Node_List* pack, const int ind
   return p0_in;
 }
 
-VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
+VTransformBoolTest PackSet::get_bool_test(const Node_List<Node>* bool_pack) const {
   BoolNode* bol = bool_pack->at(0)->as_Bool();
   BoolTest::mask mask = bol->_test._test;
   bool is_negated = false;
@@ -1723,7 +1665,9 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
   CmpNode* cmp0 = bol->in(1)->as_Cmp();
   assert(get_pack(cmp0) != nullptr, "Bool must have matching Cmp pack");
 
-  if (cmp0->Opcode() == Op_CmpF || cmp0->Opcode() == Op_CmpD) {
+  switch (cmp0->Opcode()) {
+  case Op_CmpF:
+  case Op_CmpD:
     // If we have a Float or Double comparison, we must be careful with
     // handling NaN's correctly. CmpF and CmpD have a return code, as
     // they are based on the java bytecodes fcmpl/dcmpl:
@@ -1767,14 +1711,31 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
       mask = bol->_test.negate();
       is_negated = true;
     }
-  }
+    break;
+  case Op_CmpU:
+  case Op_CmpUL:
+    // When we have CmpU->Bool, the mask of the Bool has no unsigned-ness information,
+    // but the mask is implicitly unsigned only because of the CmpU. Since we will replace
+    // the CmpU->Bool with a single VectorMaskCmp, we need to now make the unsigned-ness
+    // explicit.
+    mask = BoolTest::unsigned_mask(mask);
+    break;
+  case Op_CmpI:
+  case Op_CmpL:
+    // The mask of signed int/long scalar comparisons has the same semantics
+    // as the mask for vector elementwise int/long comparison with VectorMaskCmp.
+    break;
+  default:
+    // Other Cmp ops are not expected to get here.
+    ShouldNotReachHere();
+  } // switch
 
   return VTransformBoolTest(mask, is_negated);
 }
 
 //------------------------------profitable---------------------------
 // For pack p, are all operands and all uses (with in the block) vector?
-bool SuperWord::profitable(const Node_List* p) const {
+bool SuperWord::profitable(const Node_List<Node>* p) const {
   Node* p0 = p->at(0);
   uint start, end;
   VectorNode::vector_operands(p0, &start, &end);
@@ -1792,30 +1753,10 @@ bool SuperWord::profitable(const Node_List* p) const {
   // Check if reductions are connected
   if (is_marked_reduction(p0)) {
     Node* second_in = p0->in(2);
-    Node_List* second_pk = get_pack(second_in);
+    Node_List<Node>* second_pk = get_pack(second_in);
     if (second_pk == nullptr) {
       // The second input has to be the vector we wanted to reduce,
       // but it was not packed.
-      return false;
-    } else if (_num_work_vecs == _num_reductions && AutoVectorizationOverrideProfitability != 2) {
-      // This heuristic predicts that the reduction is not profitable.
-      // Reduction vectors can be expensive, because they require multiple
-      // operations to fold all the lanes together. Hence, vectorizing the
-      // reduction is not profitable on its own. Hence, we need a lot of
-      // other "work vectors" that deliver performance improvements to
-      // balance out the performance loss due to reductions.
-      // This heuristic is a bit simplistic, and assumes that the reduction
-      // vector stays in the loop. But in some cases, we can move the
-      // reduction out of the loop, replacing it with a single vector op.
-      // See: PhaseIdealLoop::move_unordered_reduction_out_of_loop
-      // Hence, this heuristic has room for improvement.
-#ifndef PRODUCT
-        if (is_trace_superword_rejections()) {
-          tty->print_cr("\nPerformance heuristic: not enough vectors in the loop to make");
-          tty->print_cr("  reduction profitable.");
-          tty->print_cr("  Can override with AutoVectorizationOverrideProfitability=2");
-        }
-#endif
       return false;
     } else if (second_pk->size() != p->size()) {
       return false;
@@ -1825,7 +1766,7 @@ bool SuperWord::profitable(const Node_List* p) const {
     // For now, return false if shift count is vector or not scalar promotion
     // case (different shift counts) because it is not supported yet.
     Node* cnt = p0->in(2);
-    Node_List* cnt_pk = get_pack(cnt);
+    Node_List<Node>* cnt_pk = get_pack(cnt);
     if (cnt_pk != nullptr || _packset.same_inputs_at_index_or_null(p, 2) == nullptr) {
       return false;
     }
@@ -1895,7 +1836,7 @@ void SuperWord::verify_packs() const {
 
   // All packs must be:
   for (int i = 0; i < _packset.length(); i++) {
-    Node_List* pack = _packset.at(i);
+    Node_List<Node>* pack = _packset.at(i);
 
     // 1. Mutually independent (or a reduction).
     if (!is_marked_reduction(pack->at(0)) &&
@@ -1924,9 +1865,9 @@ void SuperWord::verify_packs() const {
 void PackSet::verify() const {
   // Verify all nodes in packset have pack set correctly.
   ResourceMark rm;
-  Unique_Node_List processed;
+  Unique_Node_List<const Node> processed;
   for (int i = 0; i < _packs.length(); i++) {
-    Node_List* p = _packs.at(i);
+    Node_List<Node>* p = _packs.at(i);
     for (uint k = 0; k < p->size(); k++) {
       Node* n = p->at(k);
       assert(_vloop.in_bb(n), "only nodes in bb can be in packset");
@@ -1946,7 +1887,9 @@ void PackSet::verify() const {
 }
 #endif
 
-bool SuperWord::schedule_and_apply() const {
+// Build VTransform from SuperWord Packset, and eventually apply it (create new vectorized C2 loop).
+// See description at top of "vtransform.hpp".
+bool SuperWord::do_vtransform() const {
   if (_packset.is_empty()) { return false; }
 
   // Make an empty transform.
@@ -1959,7 +1902,7 @@ bool SuperWord::schedule_and_apply() const {
                         is_trace_superword_info());
 #endif
   VTransform vtransform(_vloop_analyzer,
-                        _mem_ref_for_main_loop_alignment,
+                        _vpointer_for_main_loop_alignment,
                         _aw_for_main_loop_alignment
                         NOT_PRODUCT(COMMA trace)
                         );
@@ -1970,24 +1913,61 @@ bool SuperWord::schedule_and_apply() const {
     SuperWordVTransformBuilder builder(_packset, vtransform);
   }
 
+  vtransform.optimize();
+
   if (!vtransform.schedule()) { return false; }
-  if (vtransform.has_store_to_load_forwarding_failure()) { return false; }
+
+  if (!vtransform.is_profitable()) { return false; }
+
+  vtransform.apply();
+  return true;
+}
+
+// Check Cost-Model, and other heuristics.
+// Can be overridden with AutoVectorizationOverrideProfitability.
+bool VTransform::is_profitable() const {
+  assert(_graph.is_scheduled(), "must already be scheduled");
 
   if (AutoVectorizationOverrideProfitability == 0) {
 #ifndef PRODUCT
-    if (is_trace_superword_any()) {
+    if (_trace._info) {
       tty->print_cr("\nForced bailout of vectorization (AutoVectorizationOverrideProfitability=0).");
     }
 #endif
     return false;
   }
 
-  vtransform.apply();
-  return true;
+  if (AutoVectorizationOverrideProfitability == 2) {
+#ifndef PRODUCT
+    if (_trace._info) {
+      tty->print_cr("\nForced vectorization, ignoring profitability (AutoVectorizationOverrideProfitability=2).");
+    }
+#endif
+    return true;
+  }
+
+  // Note: currently we only do throughput-based cost-modeling. In the future, we could
+  //       also implement latency-based cost-modeling and take store-to-load-forwarding
+  //       failures into account as the latency between the load and store. This would
+  //       allow a more precise tradeoff between the forwarding failure penalty versus
+  //       the vectorization gains.
+  if (has_store_to_load_forwarding_failure()) { return false; }
+
+  // Cost-model
+  float scalar_cost = _vloop_analyzer.cost_for_scalar_loop();
+  float vector_cost = cost_for_vector_loop();
+#ifndef PRODUCT
+  if (_trace._info) {
+    tty->print_cr("\nVTransform: scalar_cost = %.2f vs vector_cost = %.2f",
+                  scalar_cost, vector_cost);
+  }
+#endif
+  return vector_cost < scalar_cost;
 }
 
 // Apply the vectorization, i.e. we irreversibly edit the C2 graph. At this point, all
 // correctness and profitability checks have passed, and the graph was successfully scheduled.
+// See description at top of "vtransform.hpp".
 void VTransform::apply() {
 #ifndef PRODUCT
   if (_trace._info || TraceLoopOpts) {
@@ -2002,9 +1982,6 @@ void VTransform::apply() {
   Compile* C = phase()->C;
   C->print_method(PHASE_AUTO_VECTORIZATION1_BEFORE_APPLY, 4, cl());
 
-  _graph.apply_memops_reordering_with_schedule();
-  C->print_method(PHASE_AUTO_VECTORIZATION2_AFTER_REORDER, 4, cl());
-
   adjust_pre_loop_limit_to_align_main_loop_vectors();
   C->print_method(PHASE_AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, 4, cl());
 
@@ -2016,102 +1993,11 @@ void VTransform::apply() {
   C->print_method(PHASE_AUTO_VECTORIZATION5_AFTER_APPLY, 4, cl());
 }
 
-// We prepare the memory graph for the replacement of scalar memops with vector memops.
-// We reorder all slices in parallel, ensuring that the memops inside each slice are
-// ordered according to the _schedule. This means that all packed memops are consecutive
-// in the memory graph after the reordering.
-void VTransformGraph::apply_memops_reordering_with_schedule() const {
-#ifndef PRODUCT
-  assert(is_scheduled(), "must be already scheduled");
-  if (_trace._info) {
-    print_memops_schedule();
-  }
-#endif
-
-  ResourceMark rm;
-  int max_slices = phase()->C->num_alias_types();
-  // When iterating over the schedule, we keep track of the current memory state,
-  // which is the Phi or a store in the loop.
-  GrowableArray<Node*> current_state_in_slice(max_slices, max_slices, nullptr);
-  // The memory state after the loop is the last store inside the loop. If we reorder the
-  // loop we may have a different last store, and we need to adjust the uses accordingly.
-  GrowableArray<Node*> old_last_store_in_slice(max_slices, max_slices, nullptr);
-
-  const GrowableArray<PhiNode*>& mem_slice_head = _vloop_analyzer.memory_slices().heads();
-
-  // (1) Set up the initial memory state from Phi. And find the old last store.
-  for (int i = 0; i < mem_slice_head.length(); i++) {
-    Node* phi  = mem_slice_head.at(i);
-    assert(phi->is_Phi(), "must be phi");
-    int alias_idx = phase()->C->get_alias_index(phi->adr_type());
-    current_state_in_slice.at_put(alias_idx, phi);
-
-    // If we have a memory phi, we have a last store in the loop, find it over backedge.
-    StoreNode* last_store = phi->in(2)->as_Store();
-    old_last_store_in_slice.at_put(alias_idx, last_store);
-  }
-
-  // (2) Walk over schedule, append memops to the current state
-  //     of that slice. If it is a Store, we take it as the new state.
-  for_each_memop_in_schedule([&] (MemNode* n) {
-    assert(n->is_Load() || n->is_Store(), "only loads or stores");
-    int alias_idx = phase()->C->get_alias_index(n->adr_type());
-    Node* current_state = current_state_in_slice.at(alias_idx);
-    if (current_state == nullptr) {
-      // If there are only loads in a slice, we never update the memory
-      // state in the loop, hence there is no phi for the memory state.
-      // We just keep the old memory state that was outside the loop.
-      assert(n->is_Load() && !in_bb(n->in(MemNode::Memory)),
-             "only loads can have memory state from outside loop");
-    } else {
-      igvn().replace_input_of(n, MemNode::Memory, current_state);
-      if (n->is_Store()) {
-        current_state_in_slice.at_put(alias_idx, n);
-      }
-    }
-  });
-
-  // (3) For each slice, we add the current state to the backedge
-  //     in the Phi. Further, we replace uses of the old last store
-  //     with uses of the new last store (current_state).
-  GrowableArray<Node*> uses_after_loop;
-  for (int i = 0; i < mem_slice_head.length(); i++) {
-    Node* phi  = mem_slice_head.at(i);
-    int alias_idx = phase()->C->get_alias_index(phi->adr_type());
-    Node* current_state = current_state_in_slice.at(alias_idx);
-    assert(current_state != nullptr, "slice is mapped");
-    assert(current_state != phi, "did some work in between");
-    assert(current_state->is_Store(), "sanity");
-    igvn().replace_input_of(phi, 2, current_state);
-
-    // Replace uses of old last store with current_state (new last store)
-    // Do it in two loops: first find all the uses, and change the graph
-    // in as second loop so that we do not break the iterator.
-    Node* last_store = old_last_store_in_slice.at(alias_idx);
-    assert(last_store != nullptr, "we have a old last store");
-    uses_after_loop.clear();
-    for (DUIterator_Fast kmax, k = last_store->fast_outs(kmax); k < kmax; k++) {
-      Node* use = last_store->fast_out(k);
-      if (!in_bb(use)) {
-        uses_after_loop.push(use);
-      }
-    }
-    for (int k = 0; k < uses_after_loop.length(); k++) {
-      Node* use = uses_after_loop.at(k);
-      for (uint j = 0; j < use->req(); j++) {
-        Node* def = use->in(j);
-        if (def == last_store) {
-          igvn().replace_input_of(use, j, current_state);
-        }
-      }
-    }
-  }
-}
-
 void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width) const {
   ResourceMark rm;
   VTransformApplyState apply_state(_vloop_analyzer, _vtnodes.length());
 
+  // Apply: transform the node and connect with inputs (no backedges).
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
     VTransformApplyResult result = vtn->apply(apply_state);
@@ -2121,6 +2007,16 @@ void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_lengt
     max_vector_length = MAX2(max_vector_length, result.vector_length());
     max_vector_width  = MAX2(max_vector_width,  result.vector_width());
   }
+
+  // Cleanup: connect backedges
+  for (int i = 0; i < _schedule.length(); i++) {
+    VTransformNode* vtn = _schedule.at(i);
+    vtn->apply_backedge(apply_state);
+  }
+
+  // Memory uses after the loop: used to connect to old last store,
+  // now need to connect to new last store.
+  apply_state.fix_memory_state_uses_after_loop();
 }
 
 // We call "apply" on every VTransformNode, which replaces the packed scalar nodes with vector nodes.
@@ -2169,7 +2065,7 @@ void VTransform::apply_vectorization() const {
 // which are proper vector uses of def.
 void SuperWord::verify_no_extract() {
   for (int i = 0; i < _packset.length(); i++) {
-    Node_List* p_def = _packset.at(i);
+    Node_List<Node>* p_def = _packset.at(i);
 
     // A vector store has no uses
     if (p_def->at(0)->is_Store()) { continue; }
@@ -2183,7 +2079,7 @@ void SuperWord::verify_no_extract() {
         for (uint k = 0; k < use->req(); k++) {
           Node* maybe_def = use->in(k);
           if (def == maybe_def) {
-            Node_List* p_use = get_pack(use);
+            Node_List<Node>* p_use = get_pack(use);
             if (is_marked_reduction(def)) { continue; }
             assert(p_use != nullptr && is_vector_use(use, k), "all uses must be vector uses");
           }
@@ -2196,13 +2092,13 @@ void SuperWord::verify_no_extract() {
 
 // Check if n_super's pack uses are a superset of n_sub's pack uses.
 bool SuperWord::has_use_pack_superset(const Node* n_super, const Node* n_sub) const {
-  Node_List* pack = get_pack(n_super);
+  Node_List<Node>* pack = get_pack(n_super);
   assert(pack != nullptr && pack == get_pack(n_sub), "must have the same pack");
 
   // For all uses of n_sub that are in a pack (use_sub) ...
   for (DUIterator_Fast jmax, j = n_sub->fast_outs(jmax); j < jmax; j++) {
     Node* use_sub = n_sub->fast_out(j);
-    Node_List* pack_use_sub = get_pack(use_sub);
+    Node_List<Node>* pack_use_sub = get_pack(use_sub);
     if (pack_use_sub == nullptr) { continue; }
 
     // ... and all input edges: use_sub->in(i) == n_sub.
@@ -2215,7 +2111,7 @@ bool SuperWord::has_use_pack_superset(const Node* n_super, const Node* n_sub) co
       bool found = false;
       for (DUIterator_Fast kmax, k = n_super->fast_outs(kmax); k < kmax; k++) {
         Node* use_super = n_super->fast_out(k);
-        Node_List* pack_use_super = get_pack(use_super);
+        Node_List<Node>* pack_use_super = get_pack(use_super);
         if (pack_use_sub != pack_use_super) { continue; }
 
         // ... and where there is an edge use_super->in(i) == n_super.
@@ -2241,7 +2137,7 @@ bool SuperWord::has_use_pack_superset(const Node* n_super, const Node* n_sub) co
 // Find a boundary in the pack, where left and right have different pack uses and defs.
 // This is a natural boundary to split a pack, to ensure that use and def packs match.
 // If no boundary is found, return zero.
-uint SuperWord::find_use_def_boundary(const Node_List* pack) const {
+uint SuperWord::find_use_def_boundary(const Node_List<Node>* pack) const {
   Node* p0 = pack->at(0);
   Node* p1 = pack->at(1);
 
@@ -2285,7 +2181,7 @@ uint SuperWord::find_use_def_boundary(const Node_List* pack) const {
 //------------------------------is_vector_use---------------------------
 // Is use->in(u_idx) a vector use?
 bool SuperWord::is_vector_use(Node* use, int u_idx) const {
-  Node_List* u_pk = get_pack(use);
+  Node_List<Node>* u_pk = get_pack(use);
   if (u_pk == nullptr) return false;
 
   // Reduction: first input is internal connection.
@@ -2299,7 +2195,7 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
   }
 
   Node* def = use->in(u_idx);
-  Node_List* d_pk = get_pack(def);
+  Node_List<Node>* d_pk = get_pack(def);
   if (d_pk == nullptr) {
     Node* n = u_pk->at(0)->in(u_idx);
     if (n == iv()) {
@@ -2324,7 +2220,7 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
     return true;
   }
 
-  if (!is_velt_basic_type_compatible_use_def(use, def)) {
+  if (!is_velt_basic_type_compatible_use_def(use, def, d_pk->size())) {
     return false;
   }
 
@@ -2355,14 +2251,14 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
 // and (b0, b1) in the other input pack. Thus, both a and b are strided,
 // with stride = 2. Further, a0 and b0 have offset 0, whereas a1 and b1
 // have offset 1.
-bool PackSet::is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const {
+bool PackSet::is_muladds2i_pack_with_pack_inputs(const Node_List<Node>* pack) const {
   assert(VectorNode::is_muladds2i(pack->at(0)), "must be MulAddS2I");
 
   bool pack1_has_offset_0 = (strided_pack_input_at_index_or_null(pack, 1, 2, 0) != nullptr);
-  Node_List* pack1 = strided_pack_input_at_index_or_null(pack, 1, 2, pack1_has_offset_0 ? 0 : 1);
-  Node_List* pack2 = strided_pack_input_at_index_or_null(pack, 2, 2, pack1_has_offset_0 ? 0 : 1);
-  Node_List* pack3 = strided_pack_input_at_index_or_null(pack, 3, 2, pack1_has_offset_0 ? 1 : 0);
-  Node_List* pack4 = strided_pack_input_at_index_or_null(pack, 4, 2, pack1_has_offset_0 ? 1 : 0);
+  Node_List<Node>* pack1 = strided_pack_input_at_index_or_null(pack, 1, 2, pack1_has_offset_0 ? 0 : 1);
+  Node_List<Node>* pack2 = strided_pack_input_at_index_or_null(pack, 2, 2, pack1_has_offset_0 ? 0 : 1);
+  Node_List<Node>* pack3 = strided_pack_input_at_index_or_null(pack, 3, 2, pack1_has_offset_0 ? 1 : 0);
+  Node_List<Node>* pack4 = strided_pack_input_at_index_or_null(pack, 4, 2, pack1_has_offset_0 ? 1 : 0);
 
   return pack1 != nullptr &&
          pack2 != nullptr &&
@@ -2372,10 +2268,10 @@ bool PackSet::is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const {
           (pack1 == pack4 && pack2 == pack3));  // case 2 or 4
 }
 
-Node_List* PackSet::strided_pack_input_at_index_or_null(const Node_List* pack, const int index, const int stride, const int offset) const {
+Node_List<Node>* PackSet::strided_pack_input_at_index_or_null(const Node_List<Node>* pack, const int index, const int stride, const int offset) const {
   Node* def0 = pack->at(0)->in(index);
 
-  Node_List* pack_in = get_pack(def0);
+  Node_List<Node>* pack_in = get_pack(def0);
   if (pack_in == nullptr || pack->size() * stride != pack_in->size()) {
     return nullptr; // size mismatch
   }
@@ -2390,7 +2286,7 @@ Node_List* PackSet::strided_pack_input_at_index_or_null(const Node_List* pack, c
 
 // Check if the output type of def is compatible with the input type of use, i.e. if the
 // types have the same size.
-bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def) const {
+bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def, const uint pack_size) const {
   assert(in_bb(def) && in_bb(use), "both use and def are in loop");
 
   // Conversions are trivially compatible.
@@ -2416,8 +2312,17 @@ bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def) cons
            type2aelembytes(use_bt) == 4;
   }
 
-  // Default case: input size of use equals output size of def.
-  return type2aelembytes(use_bt) == type2aelembytes(def_bt);
+  // Input size of use equals output size of def
+  if (type2aelembytes(use_bt) == type2aelembytes(def_bt)) {
+    return true;
+  }
+
+  // Subword cast: Element sizes differ, but the platform supports a cast to change the def shape to the use shape.
+  if (VectorCastNode::is_supported_subword_cast(def_bt, use_bt, pack_size)) {
+    return true;
+  }
+
+  return false;
 }
 
 // Return nullptr if success, else failure message
@@ -2588,7 +2493,12 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   }
 
   // Vector nodes should not truncate.
-  if (type->isa_vect() != nullptr || type->isa_vectmask() != nullptr || in->is_Reduction()) {
+  if (type->isa_vect() != nullptr || type->isa_pvectmask() != nullptr || in->is_Reduction()) {
+    return false;
+  }
+
+  // Since casts specifically change the type of a node, stay on the safe side and do not truncate them.
+  if (in->is_ConstraintCast()) {
     return false;
   }
 
@@ -2596,7 +2506,9 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   switch (opc) {
   case Op_AbsI:
   case Op_DivI:
+  case Op_UDivI:
   case Op_ModI:
+  case Op_UModI:
   case Op_MinI:
   case Op_MaxI:
   case Op_CMoveI:
@@ -2604,10 +2516,15 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   case Op_RotateRight:
   case Op_RotateLeft:
   case Op_PopCountI:
+  case Op_PopCountL:
+  case Op_ReverseBytesS:
+  case Op_ReverseBytesUS:
   case Op_ReverseBytesI:
   case Op_ReverseI:
   case Op_CountLeadingZerosI:
+  case Op_CountLeadingZerosL:
   case Op_CountTrailingZerosI:
+  case Op_CountTrailingZerosL:
   case Op_IsFiniteF:
   case Op_IsFiniteD:
   case Op_IsInfiniteF:
@@ -2770,14 +2687,14 @@ const Type* VLoopTypes::container_type(Node* n) const {
 }
 
 bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
-  return _vloop.phase()->C->get_alias_index(m1->adr_type()) ==
-         _vloop.phase()->C->get_alias_index(m2->adr_type());
+  return _vloop.phase()->C->get_alias_index(m1->in_adr_type()) ==
+         _vloop.phase()->C->get_alias_index(m2->in_adr_type());
 }
 
-LoadNode::ControlDependency VTransformLoadVectorNode::control_dependency() const {
+LoadNode::ControlDependency SuperWordVTransformBuilder::load_control_dependency(const Node_List<Node>* pack) {
   LoadNode::ControlDependency dep = LoadNode::DependsOnlyOnTest;
-  for (int i = 0; i < nodes().length(); i++) {
-    Node* n = nodes().at(i);
+  for (uint i = 0; i < pack->size(); i++) {
+    Node* n = pack->at(i);
     assert(n->is_Load(), "only meaningful for loads");
     if (!n->depends_only_on_test()) {
       if (n->as_Load()->has_unknown_control_dependency() &&
@@ -2795,22 +2712,24 @@ LoadNode::ControlDependency VTransformLoadVectorNode::control_dependency() const
 
 // Find the memop pack with the maximum vector width, unless they were already
 // determined (e.g. by SuperWord::filter_packs_for_alignment()).
-void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
-  if (_mem_ref_for_main_loop_alignment != nullptr) {
-    assert(VLoop::vectors_should_be_aligned(), "mem_ref only set if filtered for alignment");
+void VTransform::determine_vpointer_and_aw_for_main_loop_alignment() {
+  if (_vpointer_for_main_loop_alignment != nullptr) {
+    assert(VLoop::vectors_should_be_aligned(), "vpointer_for_main_loop_alignment only set if filtered for alignment");
     return;
   }
 
-  MemNode const* mem_ref = nullptr;
+  VPointer const* vpointer = nullptr;
   int max_aw = 0;
+  bool vpointer_is_load = false;
 
   const GrowableArray<VTransformNode*>& vtnodes = _graph.vtnodes();
   for (int i = 0; i < vtnodes.length(); i++) {
     VTransformMemVectorNode* vtn = vtnodes.at(i)->isa_MemVector();
     if (vtn == nullptr) { continue; }
-    MemNode* p0 = vtn->nodes().at(0)->as_Mem();
 
-    int vw = p0->memory_size() * vtn->nodes().length();
+    int vw = vtn->vpointer().size();
+    bool vtn_is_load = vtn->is_load_in_loop();
+
     // Generally, we prefer to align with the largest memory op (load or store).
     // If there are multiple, then SuperWordAutomaticAlignment determines if we
     // prefer loads or stores.
@@ -2820,15 +2739,16 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
     // it is worse if a store is split, and less bad if a load is split.
     // By default, we have SuperWordAutomaticAlignment=1, i.e. we align with a
     // store if possible, to avoid splitting that store.
-    bool prefer_store = mem_ref != nullptr && SuperWordAutomaticAlignment == 1 && mem_ref->is_Load() && p0->is_Store();
-    bool prefer_load  = mem_ref != nullptr && SuperWordAutomaticAlignment == 2 && mem_ref->is_Store() && p0->is_Load();
+    bool prefer_store = SuperWordAutomaticAlignment == 1 &&  vpointer_is_load && !vtn_is_load;
+    bool prefer_load  = SuperWordAutomaticAlignment == 2 && !vpointer_is_load &&  vtn_is_load;
     if (vw > max_aw || (vw == max_aw && (prefer_load || prefer_store))) {
+      vpointer = &vtn->vpointer();
       max_aw = vw;
-      mem_ref = p0;
+      vpointer_is_load = vtn_is_load;
     }
   }
-  assert(mem_ref != nullptr && max_aw > 0, "found mem_ref and aw");
-  _mem_ref_for_main_loop_alignment = mem_ref;
+  assert(vpointer != nullptr && max_aw > 0, "found vpointer and aw");
+  _vpointer_for_main_loop_alignment = vpointer;
   _aw_for_main_loop_alignment = max_aw;
 }
 
@@ -2842,13 +2762,17 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
 }                                       \
 
 // Ensure that the main loop vectors are aligned by adjusting the pre loop limit. We memory-align
-// the address of "_mem_ref_for_main_loop_alignment" to "_aw_for_main_loop_alignment", which is a
+// the address of "_vpointer_for_main_loop_alignment" to "_aw_for_main_loop_alignment", which is a
 // sufficiently large alignment width. We adjust the pre-loop iteration count by adjusting the
 // pre-loop limit.
 void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
-  determine_mem_ref_and_aw_for_main_loop_alignment();
-  const MemNode* align_to_ref = _mem_ref_for_main_loop_alignment;
-  const int aw                = _aw_for_main_loop_alignment;
+  determine_vpointer_and_aw_for_main_loop_alignment();
+
+  assert(cl()->is_main_loop(), "can only do alignment for main loop");
+  assert(_vpointer_for_main_loop_alignment != nullptr &&
+         _vpointer_for_main_loop_alignment->is_valid() &&
+         _aw_for_main_loop_alignment > 0,
+         "must have alignment reference and aw");
 
   if (!VLoop::vectors_should_be_aligned() && SuperWordAutomaticAlignment == 0) {
 #ifdef ASSERT
@@ -2859,8 +2783,8 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     return;
   }
 
-  assert(align_to_ref != nullptr && aw > 0, "must have alignment reference and aw");
-  assert(cl()->is_main_loop(), "can only do alignment for main loop");
+  const VPointer& p = *_vpointer_for_main_loop_alignment;
+  const int aw      = _aw_for_main_loop_alignment;
 
   // The opaque node for the limit, where we adjust the input
   Opaque1Node* pre_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
@@ -2875,10 +2799,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* orig_limit = pre_opaq->original_loop_limit();
   assert(orig_limit != nullptr && igvn().type(orig_limit) != Type::TOP, "");
 
-  const VPointer& p = vpointer(align_to_ref);
-  assert(p.is_valid(), "sanity");
-
-  // For the main-loop, we want the address of align_to_ref to be memory aligned
+  // For the main-loop, we want the address of vpointer p to be memory aligned
   // with some alignment width (aw, a power of 2). When we enter the main-loop,
   // we know that iv is equal to the pre-loop limit. If we adjust the pre-loop
   // limit by executing adjust_pre_iter many extra iterations, we can change the
@@ -3013,9 +2934,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 #ifdef ASSERT
   if (_trace._align_vector) {
     tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors:");
-    tty->print("  align_to_ref:");
-    align_to_ref->dump();
-    tty->print("  ");
+    tty->print("  vpointer_for_main_loop_alignment");
     p.print_on(tty);
     tty->print_cr("  aw:        %d", aw);
     tty->print_cr("  iv_stride: %d", iv_stride);
@@ -3246,7 +3165,7 @@ void PackSet::print() const {
   tty->print_cr("\nPackSet::print: %d packs", _packs.length());
   for (int i = 0; i < _packs.length(); i++) {
     tty->print_cr(" Pack: %d", i);
-    Node_List* pack = _packs.at(i);
+    Node_List<Node>* pack = _packs.at(i);
     if (pack == nullptr) {
       tty->print_cr("  nullptr");
     } else {
@@ -3255,7 +3174,7 @@ void PackSet::print() const {
   }
 }
 
-void PackSet::print_pack(Node_List* pack) {
+void PackSet::print_pack(const Node_List<Node>* pack) {
   for (uint i = 0; i < pack->size(); i++) {
     tty->print("  %3d: ", i);
     pack->at(i)->dump();
@@ -3282,7 +3201,3 @@ void VLoopBody::print() const {
 bool SuperWord::same_origin_idx(Node* a, Node* b) const {
   return a != nullptr && b != nullptr && _clone_map.same_idx(a->_idx, b->_idx);
 }
-bool SuperWord::same_generation(Node* a, Node* b) const {
-  return a != nullptr && b != nullptr && _clone_map.same_gen(a->_idx, b->_idx);
-}
-

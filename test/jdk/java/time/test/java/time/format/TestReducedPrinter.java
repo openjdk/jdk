@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,9 @@
 package test.java.time.format;
 
 import static java.time.temporal.ChronoField.YEAR;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.DateTimeException;
 import java.time.LocalDate;
@@ -70,14 +71,18 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.TemporalField;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import test.java.time.temporal.MockFieldValue;
 
 /**
  * Test ReducedPrinterParser.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestReducedPrinter extends AbstractTestPrinterParser {
 
     private DateTimeFormatter getFormatter0(TemporalField field, int width, int baseValue) {
@@ -93,20 +98,20 @@ public class TestReducedPrinter extends AbstractTestPrinterParser {
     }
 
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test
     public void test_print_emptyCalendrical() throws Exception {
-        getFormatter0(YEAR, 2, 2010).formatTo(EMPTY_DTA, buf);
+        Assertions.assertThrows(DateTimeException.class, () -> getFormatter0(YEAR, 2, 2010).formatTo(EMPTY_DTA, buf));
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_print_append() throws Exception {
         buf.append("EXISTING");
         getFormatter0(YEAR, 2, 2010).formatTo(LocalDate.of(2012, 1, 1), buf);
-        assertEquals(buf.toString(), "EXISTING12");
+        assertEquals("EXISTING12", buf.toString());
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="Pivot")
     Object[][] provider_pivot() {
         return new Object[][] {
             {1, 1, 2010, 2010, "0"},
@@ -175,34 +180,36 @@ public class TestReducedPrinter extends AbstractTestPrinterParser {
         };
     }
 
-    @Test(dataProvider="Pivot")
+    @ParameterizedTest
+    @MethodSource("provider_pivot")
     public void test_pivot(int minWidth, int maxWidth, int baseValue, int value, String result) throws Exception {
         try {
             getFormatter0(YEAR, minWidth, maxWidth, baseValue).formatTo(new MockFieldValue(YEAR, value), buf);
             if (result == null) {
                 fail("Expected exception");
             }
-            assertEquals(buf.toString(), result);
+            assertEquals(result, buf.toString());
         } catch (DateTimeException ex) {
             if (result == null || value < 0) {
-                assertEquals(ex.getMessage().contains(YEAR.toString()), true);
+                assertEquals(true, ex.getMessage().contains(YEAR.toString()));
             } else {
                 throw ex;
             }
         }
     }
 
-    @Test(dataProvider="Pivot")
+    @ParameterizedTest
+    @MethodSource("provider_pivot")
     public void test_pivot_baseDate(int minWidth, int maxWidth, int baseValue, int value, String result) throws Exception {
         try {
             getFormatterBaseDate(YEAR, minWidth, maxWidth, baseValue).formatTo(new MockFieldValue(YEAR, value), buf);
             if (result == null) {
                 fail("Expected exception");
             }
-            assertEquals(buf.toString(), result);
+            assertEquals(result, buf.toString());
         } catch (DateTimeException ex) {
             if (result == null || value < 0) {
-                assertEquals(ex.getMessage().contains(YEAR.toString()), true);
+                assertEquals(true, ex.getMessage().contains(YEAR.toString()));
             } else {
                 throw ex;
             }
@@ -210,49 +217,51 @@ public class TestReducedPrinter extends AbstractTestPrinterParser {
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_minguoChrono_fixedWidth() throws Exception {
         // ISO 2021 is Minguo 110
         DateTimeFormatter f = getFormatterBaseDate(YEAR, 2, 2, 2021);
         MinguoDate date = MinguoDate.of(109, 6, 30);
-        assertEquals(f.format(date), "09");
+        assertEquals("09", f.format(date));
         date = MinguoDate.of(110, 6, 30);
-        assertEquals(f.format(date), "10");
+        assertEquals("10", f.format(date));
         date = MinguoDate.of(199, 6, 30);
-        assertEquals(f.format(date), "99");
+        assertEquals("99", f.format(date));
         date = MinguoDate.of(200, 6, 30);
-        assertEquals(f.format(date), "00");
+        assertEquals("00", f.format(date));
         date = MinguoDate.of(209, 6, 30);
-        assertEquals(f.format(date), "09");
+        assertEquals("09", f.format(date));
         date = MinguoDate.of(210, 6, 30);
-        assertEquals(f.format(date), "10");
+        assertEquals("10", f.format(date));
     }
 
+    @Test
     public void test_minguoChrono_extendedWidth() throws Exception {
         // ISO 2021 is Minguo 110
         DateTimeFormatter f = getFormatterBaseDate(YEAR, 2, 4, 2021);
         MinguoDate date = MinguoDate.of(109, 6, 30);
-        assertEquals(f.format(date), "109");
+        assertEquals("109", f.format(date));
         date = MinguoDate.of(110, 6, 30);
-        assertEquals(f.format(date), "10");
+        assertEquals("10", f.format(date));
         date = MinguoDate.of(199, 6, 30);
-        assertEquals(f.format(date), "99");
+        assertEquals("99", f.format(date));
         date = MinguoDate.of(200, 6, 30);
-        assertEquals(f.format(date), "00");
+        assertEquals("00", f.format(date));
         date = MinguoDate.of(209, 6, 30);
-        assertEquals(f.format(date), "09");
+        assertEquals("09", f.format(date));
         date = MinguoDate.of(210, 6, 30);
-        assertEquals(f.format(date), "210");
+        assertEquals("210", f.format(date));
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_toString() throws Exception {
-        assertEquals(getFormatter0(YEAR, 2, 2, 2005).toString(), "ReducedValue(Year,2,2,2005)");
+        assertEquals("ReducedValue(Year,2,2,2005)", getFormatter0(YEAR, 2, 2, 2005).toString());
     }
 
     //-----------------------------------------------------------------------
     // Cases and values in adjacent parsing mode
     //-----------------------------------------------------------------------
-    @DataProvider(name="PrintAdjacent")
     Object[][] provider_printAdjacent() {
         return new Object[][] {
             // general
@@ -265,7 +274,8 @@ public class TestReducedPrinter extends AbstractTestPrinterParser {
         };
     }
 
-    @Test(dataProvider="PrintAdjacent")
+    @ParameterizedTest
+    @MethodSource("provider_printAdjacent")
     public void test_printAdjacent(String pattern, String text, int year, int month, int day) {
         builder = new DateTimeFormatterBuilder();
         builder.appendPattern(pattern);
@@ -273,7 +283,7 @@ public class TestReducedPrinter extends AbstractTestPrinterParser {
 
         LocalDate ld = LocalDate.of(year, month, day);
         String actual = dtf.format(ld);
-        assertEquals(actual, text, "formatter output: " + dtf);
+        assertEquals(text, actual, "formatter output: " + dtf);
     }
 
 }

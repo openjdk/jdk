@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,10 @@
  * questions.
  */
 
+import java.util.ArrayList;
 import java.util.List;
+
+import jdk.internal.misc.PreviewFeatures;
 
 import sun.jvm.hotspot.HotSpotAgent;
 import sun.jvm.hotspot.utilities.SystemDictionaryHelper;
@@ -42,6 +45,7 @@ import jdk.test.lib.Utils;
  * @test
  * @library /test/lib
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @modules java.base/jdk.internal.misc
  *          jdk.hotspot.agent/sun.jvm.hotspot
@@ -104,17 +108,21 @@ public class TestInstanceKlassSizeForInterface {
                             String[] instanceKlassNames,
                             int lingeredAppPid) throws Exception {
         // Start a new process to attach to the LingeredApp process to get SA info
-        ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "--add-modules=jdk.hotspot.agent",
-            "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
-            "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED",
-            "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED",
-            "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED",
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+WhiteBoxAPI",
-            "-Xbootclasspath/a:.",
-            "TestInstanceKlassSizeForInterface",
-            Integer.toString(lingeredAppPid));
+        List<String> args = new ArrayList<>();
+        if (PreviewFeatures.isEnabled()) {
+            args.add("--enable-preview");
+        }
+        args.add("--add-modules=jdk.hotspot.agent");
+        args.add("--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED");
+        args.add("--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED");
+        args.add("--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED");
+        args.add("--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED");
+        args.add("-XX:+UnlockDiagnosticVMOptions");
+        args.add("-XX:+WhiteBoxAPI");
+        args.add("-Xbootclasspath/a:.");
+        args.add("TestInstanceKlassSizeForInterface");
+        args.add(Integer.toString(lingeredAppPid));
+        ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(args);
         SATestUtils.addPrivilegesIfNeeded(processBuilder);
         OutputAnalyzer SAOutput = ProcessTools.executeProcess(processBuilder);
         SAOutput.shouldHaveExitValue(0);

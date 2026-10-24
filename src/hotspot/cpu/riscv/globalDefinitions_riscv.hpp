@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -44,11 +44,17 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORTS_NATIVE_CX8
 
-#define SUPPORT_MONITOR_COUNT
-
 #define SUPPORT_RESERVED_STACK_AREA
 
 #define USE_POINTERS_TO_REGISTER_IMPL_ARRAY
+
+// A reloc call keeps its destination in an address stub, so the trampoline
+// relocation has to be able to read and write it. Note that we deliberately do
+// not define USE_TRAMPOLINE_STUB_FIX_OWNER: the call site reaches its stub with
+// an auipc pair inside the same blob and so stays in range after a move, and
+// NativeCall::set_destination() already picks jal or jalr through
+// optimize_call() according to the distance to the final destination.
+#define USE_TRAMPOLINE_STUB_DESTINATION
 
 // auipc useable for all cc -> cc calls and jumps
 #define CODE_CACHE_SIZE_LIMIT ((2*G)-(2*K))

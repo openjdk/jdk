@@ -71,7 +71,7 @@ public class TestIHOPErgo {
         "-Xlog:gc+ihop=debug,gc+ihop+ergo=debug,gc+ergo=debug",
         "-XX:+AlwaysTenure",
         "-XX:G1AdaptiveIHOPNumInitialSamples=1",
-        "-XX:InitiatingHeapOccupancyPercent=30"
+        "-XX:G1IHOP=30"
     };
 
     public static void main(String[] args) throws Throwable {

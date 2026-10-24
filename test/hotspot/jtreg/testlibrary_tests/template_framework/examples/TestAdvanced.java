@@ -43,7 +43,7 @@ import compiler.lib.generators.RestrictableGenerator;
 
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.Template;
-import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.scope;
 import static compiler.lib.template_framework.Template.let;
 
 /**
@@ -96,7 +96,7 @@ public class TestAdvanced {
         // - The GOLD value is computed at the beginning, hopefully by the interpreter.
         // - The test method is eventually compiled, and the values are verified by the
         //   check method.
-        var testTemplate = Template.make("typeName", "operator", "generator", (String typeName, String operator, MyGenerator generator) -> body(
+        var testTemplate = Template.make("typeName", "operator", "generator", (String typeName, String operator, MyGenerator generator) -> scope(
             let("con1", generator.next()),
             let("con2", generator.next()),
             """
@@ -116,7 +116,7 @@ public class TestAdvanced {
         ));
 
         // Template for the Class.
-        var classTemplate = Template.make("types", (List<Type> types) -> body(
+        var classTemplate = Template.make("types", (List<Type> types) -> scope(
             let("classpath", comp.getEscapedClassPathOfCompiledClasses()),
             """
             package p.xyz;

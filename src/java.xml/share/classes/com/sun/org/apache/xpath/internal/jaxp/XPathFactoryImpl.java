@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -35,7 +35,7 @@ import jdk.xml.internal.*;
  *
  * @author  Ramesh Mandava
  *
- * @LastModified: May 2025
+ * @LastModified: June 2026
  */
 public  class XPathFactoryImpl extends XPathFactory {
 
@@ -72,6 +72,7 @@ public  class XPathFactoryImpl extends XPathFactory {
          * The XML security manager
          */
         private XMLSecurityManager _xmlSecMgr;
+        private XMLSecurityPropertyManager _xmlSecPropMgr;
 
         /**
          * javax.xml.xpath.XPathFactory implementation.
@@ -80,6 +81,7 @@ public  class XPathFactoryImpl extends XPathFactory {
             JdkXmlConfig config = JdkXmlConfig.getInstance(false);
             _xmlSecMgr = config.getXMLSecurityManager(true);
             _featureManager = config.getXMLFeatures(true);
+            _xmlSecPropMgr = config.getXMLSecurityPropertyManager(true);
         }
 
         /**
@@ -129,7 +131,7 @@ public  class XPathFactoryImpl extends XPathFactory {
          */
         public javax.xml.xpath.XPath newXPath() {
             return new XPathImpl(xPathVariableResolver, xPathFunctionResolver,
-                    !_isNotSecureProcessing, _featureManager, _xmlSecMgr);
+                    !_isNotSecureProcessing, _featureManager, _xmlSecMgr, _xmlSecPropMgr);
         }
 
         /**
@@ -183,6 +185,9 @@ public  class XPathFactoryImpl extends XPathFactory {
                 if (value && _featureManager != null) {
                     _featureManager.setFeature(JdkXmlFeatures.XmlFeature.ENABLE_EXTENSION_FUNCTION,
                             JdkProperty.State.FSP, false);
+                    _featureManager.setFeature(JdkXmlFeatures.XmlFeature.JDK_XPATH_SYSTEM_PROPERTY,
+                            JdkProperty.State.FSP, false);
+                    _xmlSecMgr.setSecureProcessing(value);
                 }
 
                 // all done processing feature
@@ -338,8 +343,7 @@ public  class XPathFactoryImpl extends XPathFactory {
             throw new NullPointerException(fmsg);
          }
 
-        if (_xmlSecMgr != null &&
-                _xmlSecMgr.setLimit(name, JdkProperty.State.APIPROPERTY, value)) {
+        if (JdkXmlUtils.setProperty(_xmlSecMgr, _xmlSecPropMgr, name, value)) {
             return;
         }
 

@@ -725,6 +725,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
     // Implement Cloneable, but restrict access
 
+    @Override
     protected Object clone() {
         JPEGMetadata newGuy = null;
         try {
@@ -755,6 +756,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
     // Tree methods
 
+    @Override
     public Node getAsTree(String formatName) {
         if (formatName == null) {
             throw new IllegalArgumentException("null formatName!");
@@ -810,6 +812,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
     // Standard tree node methods
 
+    @Override
     protected IIOMetadataNode getStandardChromaNode() {
         hasAlpha = false;  // Unless we find otherwise
 
@@ -950,6 +953,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
         return chroma;
     }
 
+    @Override
     protected IIOMetadataNode getStandardCompressionNode() {
 
         IIOMetadataNode compression = new IIOMetadataNode("Compression");
@@ -980,6 +984,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
         return compression;
     }
 
+    @Override
     protected IIOMetadataNode getStandardDimensionNode() {
         // If we have a JFIF marker segment, we know a little
         // otherwise all we know is the orientation, which is always normal
@@ -1055,6 +1060,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
         return doc;
     }
 
+    @Override
     protected IIOMetadataNode getStandardTextNode() {
         IIOMetadataNode text = null;
         // Add a text entry for each COM Marker Segment
@@ -1073,6 +1079,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
         return text;
     }
 
+    @Override
     protected IIOMetadataNode getStandardTransparencyNode() {
         IIOMetadataNode trans = null;
         if (hasAlpha == true) {
@@ -1086,10 +1093,12 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
     // Editing
 
+    @Override
     public boolean isReadOnly() {
         return false;
     }
 
+    @Override
     public void mergeTree(String formatName, Node root)
         throws IIOInvalidTreeException {
         if (formatName == null) {
@@ -2160,6 +2169,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
     }
 
 
+    @Override
     public void setFromTree(String formatName, Node root)
         throws IIOInvalidTreeException {
         if (formatName == null) {
@@ -2404,6 +2414,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
     //// End of writer support
 
+    @Override
     public void reset() {
         if (resetSequence != null) {  // Otherwise no need to reset
             markerSequence = resetSequence;

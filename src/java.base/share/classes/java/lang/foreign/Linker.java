@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,15 +83,17 @@ import java.util.function.Consumer;
  *
  * {@snippet lang = java:
  * Linker linker = Linker.nativeLinker();
+ * MemoryLayout C_SIZE_T = linker.canonicalLayouts().get("size_t");
+ * MemoryLayout C_POINTER = linker.canonicalLayouts().get("void*");
  * MethodHandle strlen = linker.downcallHandle(
  *     linker.defaultLookup().findOrThrow("strlen"),
- *     FunctionDescriptor.of(JAVA_LONG, ADDRESS)
+ *     FunctionDescriptor.of(C_SIZE_T, C_POINTER)
  * );
  * }
  *
  * Note how the native linker also provides access, via its {@linkplain #defaultLookup() default lookup},
  * to the native functions defined by the C libraries loaded with the Java runtime.
- * Above, the default lookup is used to search the address of the {@code strlen} native
+ * Above, the default lookup is used to search for the address of the {@code strlen} native
  * function. That address is then passed, along with a <em>platform-dependent description</em>
  * of the signature of the function expressed as a {@link FunctionDescriptor} (more on
  * that below) to the native linker's {@link #downcallHandle(MemorySegment, FunctionDescriptor, Option...)}
@@ -129,7 +131,7 @@ import java.util.function.Consumer;
  * {@linkplain AddressLayout#targetLayout() target layout}. For instance, a pointer that
  * is known to point to a C {@code int[2]} array can be modeled as an address layout
  * whose target layout is a sequence layout whose element count is 2, and whose
- * element type is {@link ValueLayout#JAVA_INT}.
+ * element type is the canonical layout for {@code int}.
  * <p>
  * All native linker implementations are guaranteed to provide canonical layouts for the
  * following set of types:
@@ -147,18 +149,17 @@ import java.util.function.Consumer;
  *     <li>{@code void*}</li>
  * </ul>
  * As noted above, the specific canonical layout associated with each type can vary,
- * depending on the data model supported by a given ABI. For instance, the C type
- * {@code long} maps to the layout constant {@link ValueLayout#JAVA_LONG} on Linux/x64,
- * but maps to the layout constant {@link ValueLayout#JAVA_INT} on Windows/x64.
- * Similarly, the C type {@code size_t} maps to the layout constant
- * {@link ValueLayout#JAVA_LONG} on 64-bit platforms, but maps to the layout constant
- * {@link ValueLayout#JAVA_INT} on 32-bit platforms.
+ * depending on the data model supported by a given ABI. For instance, the canonical
+ * layout for the C type {@code long} is a {@link ValueLayout.OfLong} on Linux/x64,
+ * and a {@link ValueLayout.OfInt} on Windows/x64.
+ * Similarly, the canonical layout for the C type {@code size_t} is a
+ * {@link ValueLayout.OfLong} on 64-bit platforms, and a {@link ValueLayout.OfInt}
+ * on 32-bit platforms.
  * <p>
  * A native linker typically does not provide canonical layouts for C's unsigned integral
  * types. Instead, they are modeled using the canonical layouts associated with their
  * corresponding signed integral types. For instance, the C type {@code unsigned long}
- * maps to the layout constant {@link ValueLayout#JAVA_LONG} on Linux/x64, but maps to
- * the layout constant {@link ValueLayout#JAVA_INT} on Windows/x64.
+ * maps to the canonical layout for {@code long}.
  * <p>
  * The following table shows some examples of how C types are modeled in Linux/x64
  * according to the "System V Application Binary Interface"
@@ -169,71 +170,98 @@ import java.util.function.Consumer;
  * <thead>
  * <tr>
  *     <th scope="col">C type</th>
- *     <th scope="col">Layout</th>
+ *     <th scope="col">Layout type</th>
  *     <th scope="col">Java type</th>
+ *     <th scope="col">Canonical layout name</th>
+ *     <th scope="col">Alias in examples</th>
  * </tr>
  * </thead>
  * <tbody>
  * <tr><th scope="row" style="font-weight:normal">{@code bool}</th>
- *     <td style="text-align:center;">{@link ValueLayout#JAVA_BOOLEAN}</td>
+ *     <td style="text-align:center;">{@link ValueLayout.OfBoolean}</td>
  *     <td style="text-align:center;">{@code boolean}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code char} <br> {@code unsigned char}</th>
- *     <td style="text-align:center;">{@link ValueLayout#JAVA_BYTE}</td>
+ *     <td style="text-align:center;">{@code bool}</td>
+ *     <td style="text-align:center;">{@code C_BOOL}</td>
+ * <tr><th scope="row" style="font-weight:normal">{@code char}</th>
+ *     <td style="text-align:center;">{@link ValueLayout.OfByte}</td>
  *     <td style="text-align:center;">{@code byte}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code short} <br> {@code unsigned short}</th>
- *     <td style="text-align:center;">{@link ValueLayout#JAVA_SHORT}</td>
+ *     <td style="text-align:center;">{@code char}</td>
+ *     <td style="text-align:center;">{@code C_CHAR}</td>
+ * <tr><th scope="row" style="font-weight:normal">{@code short}</th>
+ *     <td style="text-align:center;">{@link ValueLayout.OfShort}</td>
  *     <td style="text-align:center;">{@code short}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code int} <br> {@code unsigned int}</th>
- *     <td style="text-align:center;">{@link ValueLayout#JAVA_INT}</td>
+ *     <td style="text-align:center;">{@code short}</td>
+ *     <td style="text-align:center;">{@code C_SHORT}</td>
+ * <tr><th scope="row" style="font-weight:normal">{@code int}</th>
+ *     <td style="text-align:center;">{@link ValueLayout.OfInt}</td>
  *     <td style="text-align:center;">{@code int}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code long} <br> {@code unsigned long}</th>
- *     <td style="text-align:center;">{@link ValueLayout#JAVA_LONG}</td>
+ *     <td style="text-align:center;">{@code int}</td>
+ *     <td style="text-align:center;">{@code C_INT}</td>
+ * <tr><th scope="row" style="font-weight:normal">{@code long}</th>
+ *     <td style="text-align:center;">{@link ValueLayout.OfLong}</td>
  *     <td style="text-align:center;">{@code long}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code long long} <br> {@code unsigned long long}</th>
- *     <td style="text-align:center;">{@link ValueLayout#JAVA_LONG}</td>
  *     <td style="text-align:center;">{@code long}</td>
+ *     <td style="text-align:center;">{@code C_LONG}</td>
+ * <tr><th scope="row" style="font-weight:normal">{@code long long} </th>
+ *     <td style="text-align:center;">{@link ValueLayout.OfLong}</td>
+ *     <td style="text-align:center;">{@code long}</td>
+ *     <td style="text-align:center;">{@code long long}</td>
+ *     <td style="text-align:center;">{@code C_LONG_LONG}</td>
  * <tr><th scope="row" style="font-weight:normal">{@code float}</th>
- *     <td style="text-align:center;">{@link ValueLayout#JAVA_FLOAT}</td>
+ *     <td style="text-align:center;">{@link ValueLayout.OfFloat}</td>
  *     <td style="text-align:center;">{@code float}</td>
+ *     <td style="text-align:center;">{@code float}</td>
+ *     <td style="text-align:center;">{@code C_FLOAT}</td>
  * <tr><th scope="row" style="font-weight:normal">{@code double}</th>
- *     <td style="text-align:center;">{@link ValueLayout#JAVA_DOUBLE}</td>
+ *     <td style="text-align:center;">{@link ValueLayout.OfDouble}</td>
  *     <td style="text-align:center;">{@code double}</td>
+ *     <td style="text-align:center;">{@code double}</td>
+ *     <td style="text-align:center;">{@code C_DOUBLE}</td>
  <tr><th scope="row" style="font-weight:normal">{@code size_t}</th>
- *     <td style="text-align:center;">{@link ValueLayout#JAVA_LONG}</td>
+ *     <td style="text-align:center;">{@link ValueLayout.OfLong}</td>
  *     <td style="text-align:center;">{@code long}</td>
+ *     <td style="text-align:center;">{@code size_t}</td>
+ *     <td style="text-align:center;">{@code C_SIZE_T}</td>
  * <tr><th scope="row" style="font-weight:normal">{@code char*}, {@code int**}, {@code struct Point*}</th>
- *     <td style="text-align:center;">{@link ValueLayout#ADDRESS}</td>
+ *     <td style="text-align:center;">{@link AddressLayout}</td>
  *     <td style="text-align:center;">{@link MemorySegment}</td>
+ *     <td style="text-align:center;">{@code void*}</td>
+ *     <td style="text-align:center;">{@code C_POINTER}</td>
  * <tr><th scope="row" style="font-weight:normal">{@code int (*ptr)[10]}</th>
  *     <td style="text-align:left;">
  * <pre>
- * ValueLayout.ADDRESS.withTargetLayout(
- *     MemoryLayout.sequenceLayout(10,
- *         ValueLayout.JAVA_INT)
+ * C_POINTER.withTargetLayout(
+ *     MemoryLayout.sequenceLayout(10, C_INT)
  * );
  * </pre>
  *     <td style="text-align:center;">{@link MemorySegment}</td>
+ *     <td style="text-align:center;">N/A</td>
+ *     <td style="text-align:center;">N/A</td>
  * <tr><th scope="row" style="font-weight:normal"><code>struct Point { int x; long y; };</code></th>
  *     <td style="text-align:left;">
  * <pre>
  * MemoryLayout.structLayout(
- *     ValueLayout.JAVA_INT.withName("x"),
+ *     C_INT.withName("x"),
  *     MemoryLayout.paddingLayout(4),
- *     ValueLayout.JAVA_LONG.withName("y")
+ *     C_LONG.withName("y")
  * );
  * </pre>
  *     </td>
  *     <td style="text-align:center;">{@link MemorySegment}</td>
+ *     <td style="text-align:center;">N/A</td>
+ *     <td style="text-align:center;">N/A</td>
  * <tr><th scope="row" style="font-weight:normal"><code>union Choice { float a; int b; }</code></th>
  *     <td style="text-align:left;">
  * <pre>
  * MemoryLayout.unionLayout(
- *     ValueLayout.JAVA_FLOAT.withName("a"),
- *     ValueLayout.JAVA_INT.withName("b")
+ *     C_FLOAT.withName("a"),
+ *     C_INT.withName("b")
  * );
  * </pre>
  *     </td>
  *     <td style="text-align:center;">{@link MemorySegment}</td>
+ *     <td style="text-align:center;">N/A</td>
+ *     <td style="text-align:center;">N/A</td>
  * </tbody>
  * </table></blockquote>
  * <p>
@@ -293,13 +321,13 @@ import java.util.function.Consumer;
  * Linker linker = Linker.nativeLinker();
  * MethodHandle qsort = linker.downcallHandle(
  *     linker.defaultLookup().findOrThrow("qsort"),
- *         FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG, ADDRESS)
+ *         FunctionDescriptor.ofVoid(C_POINTER, C_SIZE_T, C_SIZE_T, C_POINTER)
  * );
  * }
  *
- * As before, we use {@link ValueLayout#JAVA_LONG} to map the C type {@code size_t} type,
- * and {@link ValueLayout#ADDRESS} for both the first pointer parameter (the array
- * pointer) and the last parameter (the function pointer).
+ * We use the canonical layout for {@code "size_t"}, and the canonical layout for
+ * {@code "void*"} for both the first pointer parameter (the array pointer) and
+ * the last parameter (the function pointer).
  * <p>
  * To invoke the {@code qsort} downcall handle obtained above, we need a function pointer
  * to be passed as the last parameter. That is, we need to create a function pointer out
@@ -309,7 +337,7 @@ import java.util.function.Consumer;
  * {@snippet lang = java:
  * class Qsort {
  *     static int qsortCompare(MemorySegment elem1, MemorySegment elem2) {
- *         return Integer.compare(elem1.get(JAVA_INT, 0), elem2.get(JAVA_INT, 0));
+ *         return Integer.compare(elem1.get(C_INT, 0), elem2.get(C_INT, 0));
  *     }
  * }
  * }
@@ -317,9 +345,9 @@ import java.util.function.Consumer;
  * Now let's create a method handle for the comparator method defined above:
  *
  * {@snippet lang = java:
- * FunctionDescriptor comparDesc = FunctionDescriptor.of(JAVA_INT,
- *                                                       ADDRESS.withTargetLayout(JAVA_INT),
- *                                                       ADDRESS.withTargetLayout(JAVA_INT));
+ * FunctionDescriptor comparDesc = FunctionDescriptor.of(C_INT,
+ *                                                       C_POINTER.withTargetLayout(C_INT),
+ *                                                       C_POINTER.withTargetLayout(C_INT));
  * MethodHandle comparHandle = MethodHandles.lookup()
  *                                          .findStatic(Qsort.class, "qsortCompare",
  *                                                      comparDesc.toMethodType());
@@ -327,7 +355,7 @@ import java.util.function.Consumer;
  *
  * First, we create a function descriptor for the function pointer type. Since we know
  * that the parameters passed to the comparator method will be pointers to elements of
- * a C {@code int[]} array, we can specify {@link ValueLayout#JAVA_INT} as the target
+ * a C {@code int[]} array, we can specify the canonical layout for {@code "int"} as the target
  * layout for the address layouts of both parameters. This will allow the comparator
  * method to access the contents of the array elements to be compared. We then
  * {@linkplain FunctionDescriptor#toMethodType() turn} that function descriptor into
@@ -339,9 +367,9 @@ import java.util.function.Consumer;
  * {@snippet lang = java:
  * try (Arena arena = Arena.ofConfined()) {
  *     MemorySegment comparFunc = linker.upcallStub(comparHandle, comparDesc, arena);
- *     MemorySegment array = arena.allocateFrom(JAVA_INT, 0, 9, 3, 4, 6, 5, 1, 8, 2, 7);
+ *     MemorySegment array = arena.allocateFrom(C_INT, 0, 9, 3, 4, 6, 5, 1, 8, 2, 7);
  *     qsort.invokeExact(array, 10L, 4L, comparFunc);
- *     int[] sorted = array.toArray(JAVA_INT); // [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
+ *     int[] sorted = array.toArray(C_INT); // [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
  * }
  * }
  *
@@ -384,12 +412,12 @@ import java.util.function.Consumer;
  *
  * MethodHandle malloc = linker.downcallHandle(
  *     linker.defaultLookup().findOrThrow("malloc"),
- *     FunctionDescriptor.of(ADDRESS, JAVA_LONG)
+ *     FunctionDescriptor.of(C_POINTER, C_SIZE_T)
  * );
  *
  * MethodHandle free = linker.downcallHandle(
  *     linker.defaultLookup().findOrThrow("free"),
- *     FunctionDescriptor.ofVoid(ADDRESS)
+ *     FunctionDescriptor.ofVoid(C_POINTER)
  * );
  * }
  *
@@ -517,7 +545,7 @@ import java.util.function.Consumer;
  * Linker linker = Linker.nativeLinker();
  * MethodHandle printf = linker.downcallHandle(
  *     linker.defaultLookup().findOrThrow("printf"),
- *         FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, JAVA_INT, JAVA_INT),
+ *         FunctionDescriptor.of(C_INT, C_POINTER, C_INT, C_INT, C_INT),
  *         Linker.Option.firstVariadicArg(1) // first int is variadic
  * );
  * }
@@ -551,8 +579,7 @@ import java.util.function.Consumer;
  * upcall is typically executed in the context of a downcall method handle invocation.
  *
  * @implSpec
- * Implementations of this interface are immutable, thread-safe and
- * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
+ * Implementations of this interface are immutable, thread-safe.
  *
  * @since 22
  */
@@ -633,11 +660,8 @@ public sealed interface Linker permits AbstractLinker {
      *     <li>The invocation occurs in a thread {@code T} such that
      *         {@code A.isAccessibleBy(T) == true}.
      *         Otherwise, the invocation throws {@link WrongThreadException}; and</li>
-     *     <li>{@code A} is kept alive during the invocation. For instance,
-     *         if {@code A} has been obtained using a {@linkplain Arena#ofShared() shared arena},
-     *         any attempt to {@linkplain Arena#close() close} the arena while the
-     *         downcall method handle is still executing will result in an
-     *         {@link IllegalStateException}.</li>
+     *     <li>{@code A} is {@linkplain MemorySegment##keep-alive kept alive}
+     *         during the invocation.
      *</ul>
      * <p>
      * Moreover, if the provided function descriptor's return layout is an
@@ -813,25 +837,28 @@ public sealed interface Linker permits AbstractLinker {
         }
 
         /**
-         * {@return a linker option used to save portions of the execution state
-         *          immediately after calling a foreign function associated with a
-         *          downcall method handle, before it can be overwritten by the Java
-         *          runtime, or read through conventional means}
+         * {@return a linker option used to initialize portions of the execution
+         *          state immediately before, and save portions of the execution
+         *          state immediately after calling a foreign function associated
+         *          with a downcall method handle, before it can be overwritten by the
+         *          Java runtime, or read through conventional means}
          * <p>
-         * Execution state is captured by a downcall method handle on invocation, by
-         * writing it to a native segment provided by the user to the downcall method
-         * handle. For this purpose, a downcall method handle linked with this option
-         * will feature an additional {@link MemorySegment} parameter directly following
-         * the target address, and optional {@link SegmentAllocator} parameters. This
-         * parameter, the <em>capture state segment</em>, represents the native segment
-         * into which the captured state is written.
+         * Execution state is initialized from, or saved to a native segment provided by
+         * the user to the downcall method handle. For this purpose, a downcall method
+         * handle linked with this option will feature an additional {@link MemorySegment}
+         * parameter directly following the target address, and optional {@link SegmentAllocator}
+         * parameters. This parameter, the <em>capture state segment</em>, represents the
+         * native segment from which the capture state is initialized, and into which the
+         * capture state is saved.
          * <p>
          * The capture state segment must have size and alignment compatible with the
          * layout returned by {@linkplain #captureStateLayout}. This layout is a struct
          * layout which has a named field for each captured value.
          * <p>
-         * Captured state can be retrieved from the capture state segment by constructing
-         * var handles from the {@linkplain #captureStateLayout capture state layout}.
+         * Captured state can be stored in, or retrieved from the capture state segment by
+         * constructing var handles from the {@linkplain #captureStateLayout capture state layout}.
+         * Some functions require this state to be initialized to a particular value before
+         * invoking the downcall.
          * <p>
          * The following example demonstrates the use of this linker option:
          * {@snippet lang = "java":
@@ -843,6 +870,7 @@ public sealed interface Linker permits AbstractLinker {
          * VarHandle errnoHandle = capturedStateLayout.varHandle(PathElement.groupElement("errno"));
          * try (Arena arena = Arena.ofConfined()) {
          *     MemorySegment capturedState = arena.allocate(capturedStateLayout);
+         *     errnoHandle.set(capturedState, 0L, 0); // set errno to 0
          *     handle.invoke(capturedState);
          *     int errno = (int) errnoHandle.get(capturedState, 0L);
          *     // use errno
@@ -862,10 +890,10 @@ public sealed interface Linker permits AbstractLinker {
             return new LinkerOptions.CaptureCallState(mask);
         }
 
-         /**
+        /**
          * {@return a struct layout that represents the layout of the capture state
-          *         segment that is passed to a downcall handle linked with
-          *         {@link #captureCallState(String...)}}
+         *         segment that is passed to a downcall handle linked with
+         *         {@link #captureCallState(String...)}}
          * <p>
          * The capture state layout is <em>platform-dependent</em> but is guaranteed to be
          * a {@linkplain StructLayout struct layout} containing only {@linkplain ValueLayout value layouts}

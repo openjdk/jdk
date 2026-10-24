@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,11 +49,13 @@
                                   const int STUB_THRESHOLD, Label *STUB, Label *DONE);
 
  public:
-  // Code used by cmpFastLockLightweight and cmpFastUnlockLightweight mach instructions in .ad file.
-  void fast_lock_lightweight(Register object, Register box,
-                             Register tmp1, Register tmp2, Register tmp3, Register tmp4);
-  void fast_unlock_lightweight(Register object, Register box,
-                               Register tmp1, Register tmp2, Register tmp3);
+  void entry_barrier();
+
+  // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
+  void fast_lock(Register object, Register box,
+                 Register tmp1, Register tmp2, Register tmp3, Register tmp4);
+  void fast_unlock(Register object, Register box,
+                   Register tmp1, Register tmp2, Register tmp3);
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
@@ -62,6 +64,7 @@
 
   void string_indexof_char_short(Register str1, Register cnt1,
                                  Register ch, Register result,
+                                 Register start_index,
                                  bool isL);
 
   void string_indexof_char(Register str1, Register cnt1,
@@ -128,9 +131,38 @@
                  Register op1, Register op2,
                  Register dst, Register src);
 
+  void enc_cmove_zero_one(int cmpFlag,
+                          Register op1, Register op2, Register dst);
+
   void enc_cmove_cmp_fp(int cmpFlag,
                         FloatRegister op1, FloatRegister op2,
                         Register dst, Register src, bool is_single);
+
+  void enc_cmove_fp_cmp(int cmpFlag, Register op1, Register op2,
+                        FloatRegister dst, FloatRegister src, bool is_single);
+
+  void enc_cmove_fp_cmp_fp(int cmpFlag, FloatRegister op1, FloatRegister op2,
+                           FloatRegister dst, FloatRegister src,
+                           bool cmp_single, bool cmov_single);
+
+  void enc_cmove_cmp_fp_zero_one(int cmpFlag,
+                                 FloatRegister op1, FloatRegister op2,
+                                 Register dst);
+
+  void compress_bits_v(VectorRegister dst, VectorRegister src, VectorRegister bit_mask,
+                       VectorRegister src_tmp, VectorRegister mask_tmp,
+                       VectorRegister tmp1, VectorRegister tmp2,
+                       BasicType bt, uint vector_length,
+                       VectorMask vm = Assembler::unmasked);
+
+  void expand_bits_v(VectorRegister dst, VectorRegister src, VectorRegister bit_mask,
+                     VectorRegister src_tmp, VectorRegister mask_tmp,
+                     VectorRegister mask_move1, VectorRegister mask_move2,
+                     VectorRegister mask_move3, VectorRegister mask_move4,
+                     VectorRegister mask_move5, VectorRegister mask_move6,
+                     VectorRegister tmp1, VectorRegister tmp2,
+                     BasicType bt, uint vector_length,
+                     VectorMask vm = Assembler::unmasked);
 
   void spill(Register r, bool is64, int offset) {
     is64 ? sd(r, Address(sp, offset))
@@ -252,6 +284,10 @@
                           bool is_double, bool is_min, uint vector_length,
                           VectorMask vm = Assembler::unmasked);
 
+  void reduce_mul_fp_v(FloatRegister dst, FloatRegister src1, VectorRegister src2,
+                       VectorRegister vtmp1, VectorRegister vtmp2,
+                       bool is_double, uint vector_length);
+
   void reduce_integral_v(Register dst, Register src1,
                         VectorRegister src2, VectorRegister tmp,
                         int opc, BasicType bt, uint vector_length,
@@ -289,7 +325,16 @@
 
   void vfcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
 
-  void extract_v(Register dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
-  void extract_fp_v(FloatRegister dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
+  void extract_v(Register dst, VectorRegister src,
+                 BasicType bt, int idx, VectorRegister vtmp);
+
+  void extract_v(Register dst, VectorRegister src,
+                 BasicType bt, Register idx, VectorRegister vtmp);
+
+  void extract_fp_v(FloatRegister dst, VectorRegister src,
+                    BasicType bt, int idx, VectorRegister vtmp);
+
+  void slidedown_v(VectorRegister dst, VectorRegister src,
+                   uint32_t offset, Register tmp = t0);
 
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP

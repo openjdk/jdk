@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Test ServiceLoader caches
- * @run testng CachingTest
+ * @run junit CachingTest
  */
 
 import java.nio.file.Files;
@@ -38,9 +38,9 @@ import java.util.ServiceLoader.Provider;
 import java.util.Spliterator;
 import java.util.stream.Collectors;
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class CachingTest {
 
@@ -52,17 +52,17 @@ public class CachingTest {
 
     public static class S2 implements S { }
 
-    private ClassLoader testClassLoader;
+    private static ClassLoader testClassLoader;
 
     // creates the services configuration file and sets the ClassLoader
-    @BeforeClass
-    void setup() throws Exception {
+    @BeforeAll
+    static void setup() throws Exception {
         String classes = System.getProperty("test.classes");
         Path dir = Paths.get(classes, "META-INF", "services");
         Files.createDirectories(dir);
         Path config = dir.resolve(S.class.getName());
         Files.write(config, List.of(S1.class.getName(), S2.class.getName()));
-        this.testClassLoader = CachingTest.class.getClassLoader();
+        testClassLoader = CachingTest.class.getClassLoader();
     }
 
     private void checkLists(List<?> list1, List<?> list2) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, 2024, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,6 +23,7 @@
  *
  */
 
+#include "cppstdlib/cstdlib.hpp"
 #include "jvm.h"
 #include "libperfstat_aix.hpp"
 #include "memory/allocation.inline.hpp"
@@ -46,7 +47,6 @@
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <stdlib.h>
 #include <unistd.h>
 
 typedef struct {
@@ -141,12 +141,6 @@ static OSReturn get_jvm_load(double* jvm_uload, double* jvm_sload) {
   }
 
   return OS_OK;
-}
-
-static void update_prev_time(jvm_time_store_t* from, jvm_time_store_t* to) {
-  if (from && to) {
-    memcpy(to, from, sizeof(jvm_time_store_t));
-  }
 }
 
 static void update_prev_ticks(cpu_tick_store_t* from, cpu_tick_store_t* to) {
@@ -264,10 +258,10 @@ bool CPUPerformanceInterface::CPUPerformance::initialize() {
 
 CPUPerformanceInterface::CPUPerformance::~CPUPerformance() {
   if (_lcpu_names) {
-    FREE_C_HEAP_ARRAY(perfstat_id_t, _lcpu_names);
+    FREE_C_HEAP_ARRAY(_lcpu_names);
   }
   if (_prev_ticks) {
-    FREE_C_HEAP_ARRAY(cpu_tick_store_t, _prev_ticks);
+    FREE_C_HEAP_ARRAY(_prev_ticks);
   }
 }
 
@@ -517,12 +511,12 @@ CPUInformationInterface::~CPUInformationInterface() {
   if (_cpu_info != nullptr) {
     if (_cpu_info->cpu_name() != nullptr) {
       const char* cpu_name = _cpu_info->cpu_name();
-      FREE_C_HEAP_ARRAY(char, cpu_name);
+      FREE_C_HEAP_ARRAY(cpu_name);
       _cpu_info->set_cpu_name(nullptr);
     }
     if (_cpu_info->cpu_description() != nullptr) {
        const char* cpu_desc = _cpu_info->cpu_description();
-       FREE_C_HEAP_ARRAY(char, cpu_desc);
+       FREE_C_HEAP_ARRAY(cpu_desc);
       _cpu_info->set_cpu_description(nullptr);
     }
     delete _cpu_info;
@@ -582,7 +576,7 @@ int NetworkPerformanceInterface::NetworkPerformance::network_utilization(Network
 
   // check for error
   if (n_records < 0) {
-    FREE_C_HEAP_ARRAY(perfstat_netinterface_t, net_stats);
+    FREE_C_HEAP_ARRAY(net_stats);
     return OS_ERR;
   }
 
@@ -599,7 +593,7 @@ int NetworkPerformanceInterface::NetworkPerformance::network_utilization(Network
     *network_interfaces = new_interface;
   }
 
-  FREE_C_HEAP_ARRAY(perfstat_netinterface_t, net_stats);
+  FREE_C_HEAP_ARRAY(net_stats);
   return OS_OK;
 }
 

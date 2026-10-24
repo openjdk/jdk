@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import sun.jvm.hotspot.debugger.ppc64.*;
 import sun.jvm.hotspot.debugger.linux.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
+import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.runtime.ppc64.*;
 
 public final class LinuxPPC64CFrame extends BasicCFrame {
   // package/class internals only
@@ -69,6 +71,12 @@ public final class LinuxPPC64CFrame extends BasicCFrame {
       return null;
     }
     return new LinuxPPC64CFrame(dbg, nextSP, nextPC, address_size);
+  }
+
+  @Override
+  public Frame toFrame() {
+    // 2nd arg (raw_fp) would be derived from sp in c'tor of PPC64Frame.
+    return new PPC64Frame(sp, null, pc);
   }
 
   public static int PPC64_STACK_BIAS = 0;

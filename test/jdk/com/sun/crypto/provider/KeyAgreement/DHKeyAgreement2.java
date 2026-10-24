@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,8 @@ import jdk.test.lib.security.SecurityUtils;
 
 public class DHKeyAgreement2 {
 
-    private static final String SUNJCE = "SunJCE";
+    private static final String PROVIDER_NAME = System.getProperty(
+                                            "test.provider.name", "SunJCE");
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX_FORMATTER = HexFormat.ofDelimiter(":").withUpperCase();
@@ -90,7 +91,7 @@ public class DHKeyAgreement2 {
             // Some central authority creates new DH parameters
             System.err.println("Creating Diffie-Hellman parameters ...");
             AlgorithmParameterGenerator paramGen
-                = AlgorithmParameterGenerator.getInstance("DH", SUNJCE);
+                = AlgorithmParameterGenerator.getInstance("DH", PROVIDER_NAME);
             paramGen.init(primeSize);
             AlgorithmParameters params = paramGen.generateParameters();
             dhParameterSpec = (DHParameterSpec)params.getParameterSpec
@@ -108,7 +109,7 @@ public class DHKeyAgreement2 {
          * above
          */
         System.err.println("ALICE: Generate DH keypair ...");
-        KeyPairGenerator aliceKpairGen = KeyPairGenerator.getInstance("DH", SUNJCE);
+        KeyPairGenerator aliceKpairGen = KeyPairGenerator.getInstance("DH", PROVIDER_NAME);
         aliceKpairGen.initialize(dhParameterSpec);
         KeyPair aliceKpair = aliceKpairGen.generateKeyPair();
         System.out.println("Alice DH public key:\n" +
@@ -117,14 +118,14 @@ public class DHKeyAgreement2 {
                            aliceKpair.getPrivate().toString());
         DHParameterSpec dhParamSpec =
             ((DHPublicKey)aliceKpair.getPublic()).getParams();
-        AlgorithmParameters algParams = AlgorithmParameters.getInstance("DH", SUNJCE);
+        AlgorithmParameters algParams = AlgorithmParameters.getInstance("DH", PROVIDER_NAME);
         algParams.init(dhParamSpec);
         System.out.println("Alice DH parameters:\n"
                            + algParams.toString());
 
         // Alice executes Phase1 of her version of the DH protocol
         System.err.println("ALICE: Execute PHASE1 ...");
-        KeyAgreement aliceKeyAgree = KeyAgreement.getInstance("DH", SUNJCE);
+        KeyAgreement aliceKeyAgree = KeyAgreement.getInstance("DH", PROVIDER_NAME);
         aliceKeyAgree.init(aliceKpair.getPrivate());
 
         // Alice encodes her public key, and sends it over to Bob.
@@ -135,7 +136,7 @@ public class DHKeyAgreement2 {
          * in encoded format.
          * He instantiates a DH public key from the encoded key material.
          */
-        KeyFactory bobKeyFac = KeyFactory.getInstance("DH", SUNJCE);
+        KeyFactory bobKeyFac = KeyFactory.getInstance("DH", PROVIDER_NAME);
         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec
             (alicePubKeyEnc);
         PublicKey alicePubKey = bobKeyFac.generatePublic(x509KeySpec);
@@ -149,7 +150,7 @@ public class DHKeyAgreement2 {
 
         // Bob creates his own DH key pair
         System.err.println("BOB: Generate DH keypair ...");
-        KeyPairGenerator bobKpairGen = KeyPairGenerator.getInstance("DH", SUNJCE);
+        KeyPairGenerator bobKpairGen = KeyPairGenerator.getInstance("DH", PROVIDER_NAME);
         bobKpairGen.initialize(dhParamSpec);
         KeyPair bobKpair = bobKpairGen.generateKeyPair();
         System.out.println("Bob DH public key:\n" +
@@ -159,7 +160,7 @@ public class DHKeyAgreement2 {
 
         // Bob executes Phase1 of his version of the DH protocol
         System.err.println("BOB: Execute PHASE1 ...");
-        KeyAgreement bobKeyAgree = KeyAgreement.getInstance("DH", SUNJCE);
+        KeyAgreement bobKeyAgree = KeyAgreement.getInstance("DH", PROVIDER_NAME);
         bobKeyAgree.init(bobKpair.getPrivate());
 
         // Bob encodes his public key, and sends it over to Alice.
@@ -171,7 +172,7 @@ public class DHKeyAgreement2 {
          * Before she can do so, she has to instanticate a DH public key
          * from Bob's encoded key material.
          */
-        KeyFactory aliceKeyFac = KeyFactory.getInstance("DH", SUNJCE);
+        KeyFactory aliceKeyFac = KeyFactory.getInstance("DH", PROVIDER_NAME);
         x509KeySpec = new X509EncodedKeySpec(bobPubKeyEnc);
         PublicKey bobPubKey = aliceKeyFac.generatePublic(x509KeySpec);
         System.err.println("ALICE: Execute PHASE2 ...");

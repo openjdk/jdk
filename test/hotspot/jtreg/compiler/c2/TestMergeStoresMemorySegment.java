@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.lang.foreign.*;
 /*
  * @test id=byte-array
  * @bug 8335392
+ * @key randomness
  * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment ByteArray
@@ -42,6 +43,7 @@ import java.lang.foreign.*;
 /*
  * @test id=char-array
  * @bug 8335392
+ * @key randomness
  * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment CharArray
@@ -50,6 +52,7 @@ import java.lang.foreign.*;
 /*
  * @test id=short-array
  * @bug 8335392
+ * @key randomness
  * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment ShortArray
@@ -58,6 +61,7 @@ import java.lang.foreign.*;
 /*
  * @test id=int-array
  * @bug 8335392
+ * @key randomness
  * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment IntArray
@@ -66,6 +70,7 @@ import java.lang.foreign.*;
 /*
  * @test id=long-array
  * @bug 8335392
+ * @key randomness
  * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment LongArray
@@ -74,6 +79,7 @@ import java.lang.foreign.*;
 /*
  * @test id=float-array
  * @bug 8335392
+ * @key randomness
  * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment FloatArray
@@ -82,6 +88,7 @@ import java.lang.foreign.*;
 /*
  * @test id=double-array
  * @bug 8335392
+ * @key randomness
  * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment DoubleArray
@@ -90,6 +97,7 @@ import java.lang.foreign.*;
 /*
  * @test id=byte-buffer
  * @bug 8335392
+ * @key randomness
  * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment ByteBuffer
@@ -98,6 +106,7 @@ import java.lang.foreign.*;
 /*
  * @test id=byte-buffer-direct
  * @bug 8335392
+ * @key randomness
  * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment ByteBufferDirect
@@ -106,6 +115,7 @@ import java.lang.foreign.*;
 /*
  * @test id=native
  * @bug 8335392
+ * @key randomness
  * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment Native

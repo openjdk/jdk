@@ -22,13 +22,11 @@
  */
 package jdk.jpackage.test;
 
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import static jdk.jpackage.test.LauncherShortcut.LINUX_SHORTCUT;
 import static jdk.jpackage.test.LauncherShortcut.WIN_DESKTOP_SHORTCUT;
 import static jdk.jpackage.test.LauncherShortcut.WIN_START_MENU_SHORTCUT;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,9 +37,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import jdk.jpackage.internal.util.Slot;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.LauncherShortcut.StartupDirectory;
@@ -101,6 +99,11 @@ public final class AdditionalLauncher {
         return this;
     }
 
+    public AdditionalLauncher removeProperty(String name) {
+        rawProperties.remove(Objects.requireNonNull(name));
+        return this;
+    }
+
     public AdditionalLauncher setShortcuts(boolean menu, boolean desktop) {
         if (TKit.isLinux()) {
             setShortcut(LINUX_SHORTCUT, desktop);
@@ -149,7 +152,7 @@ public final class AdditionalLauncher {
     }
 
     public AdditionalLauncher setPersistenceHandler(
-            ThrowingBiConsumer<Path, Collection<Map.Entry<String, String>>> handler) {
+            ThrowingBiConsumer<Path, Collection<Map.Entry<String, String>>, ? extends Exception> handler) {
         if (handler != null) {
             createFileHandler = ThrowingBiConsumer.toBiConsumer(handler);
         } else {
@@ -160,7 +163,7 @@ public final class AdditionalLauncher {
 
     public void applyTo(JPackageCommand cmd) {
         cmd.addPrerequisiteAction(this::initialize);
-        cmd.addVerifyAction(createVerifierAsConsumer());
+        cmd.addVerifyAction(createVerifierAsConsumer(), JPackageCommand.ActionRole.LAUNCHER_VERIFIER);
     }
 
     public void applyTo(PackageTest test) {
@@ -179,7 +182,7 @@ public final class AdditionalLauncher {
                 Optional.ofNullable(defaultArguments), Optional.ofNullable(icon), rawProperties);
     }
 
-    private ThrowingConsumer<JPackageCommand> createVerifierAsConsumer() {
+    private ThrowingConsumer<JPackageCommand, ? extends Exception> createVerifierAsConsumer() {
         return cmd -> {
             createVerifier().verify(cmd, verifyActions.stream().sorted(Comparator.comparing(Action::ordinal)).toArray(Action[]::new));
         };
@@ -198,17 +201,15 @@ public final class AdditionalLauncher {
         }
     }
 
-    static PropertyFile getAdditionalLauncherProperties(
+    public static PropertyFile getAdditionalLauncherProperties(
             JPackageCommand cmd, String launcherName) {
-        PropertyFile shell[] = new PropertyFile[1];
+        var result = Slot.<PropertyFile>createEmpty();
         forEachAdditionalLauncher(cmd, (name, propertiesFilePath) -> {
             if (name.equals(launcherName)) {
-                shell[0] = toSupplier(() -> {
-                    return new PropertyFile(propertiesFilePath);
-                }).get();
+                result.set(new PropertyFile(propertiesFilePath));
             }
         });
-        return Objects.requireNonNull(shell[0]);
+        return result.get();
     }
 
     private void initialize(JPackageCommand cmd) throws IOException {
@@ -238,32 +239,6 @@ public final class AdditionalLauncher {
         properties.putAll(rawProperties);
 
         createFileHandler.accept(propsFile, properties.entrySet());
-    }
-
-    public static final class PropertyFile {
-
-        PropertyFile(Map<String, String> data) {
-            this.data = new Properties();
-            this.data.putAll(data);
-        }
-
-        PropertyFile(Path path) throws IOException {
-            data = new Properties();
-            try (var reader = Files.newBufferedReader(path)) {
-                data.load(reader);
-            }
-        }
-
-        public Optional<String> findProperty(String name) {
-            Objects.requireNonNull(name);
-            return Optional.ofNullable(data.getProperty(name));
-        }
-
-        public Optional<Boolean> findBooleanProperty(String name) {
-            return findProperty(name).map(Boolean::parseBoolean);
-        }
-
-        private final Properties data;
     }
 
     private List<String> javaOptions;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public class JdkXmlUtils {
             return xsm.setLimit(property, JdkProperty.State.APIPROPERTY, value);
 
         } else if (xspm != null && xspm.find(property) != null) {
-            return xspm.setValue(property, FeaturePropertyBase.State.APIPROPERTY, value);
+            return xspm.setValue(property, JdkProperty.State.APIPROPERTY, value);
         }
         return false;
     }
@@ -445,6 +445,20 @@ public class JdkXmlUtils {
      * @return a DocumentBuilderFactory instance.
      */
     public static DocumentBuilderFactory getDOMFactory(boolean overrideDefaultParser) {
+        return getDOMFactory(overrideDefaultParser, null, null);
+    }
+
+    /**
+     * {@return a DocumentBuilderFactory instance}
+     *
+     * @param overrideDefaultParser a flag indicating whether the system-default
+     * implementation may be overridden. If the system property of the
+     * DOM factory ID is set, override is always allowed.
+     * @param xsm XMLSecurityManager
+     * @param xspm XMLSecurityPropertyManager
+     */
+    public static DocumentBuilderFactory getDOMFactory(boolean overrideDefaultParser,
+            XMLSecurityManager xsm, XMLSecurityPropertyManager xspm) {
         boolean override = overrideDefaultParser;
         String spDOMFactory = SecuritySupport.getJAXPSystemProperty(DOM_FACTORY_ID);
 
@@ -453,7 +467,7 @@ public class JdkXmlUtils {
         }
         DocumentBuilderFactory dbf
                 = !override
-                        ? new DocumentBuilderFactoryImpl()
+                        ? new DocumentBuilderFactoryImpl(xsm, xspm)
                         : DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
         // false is the default setting. This step here is for compatibility

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,7 +27,7 @@
 #define CPU_PPC_GC_G1_G1BARRIERSETASSEMBLER_PPC_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "gc/shared/modRefBarrierSetAssembler.hpp"
+#include "gc/shared/cardTableBarrierSetAssembler.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef COMPILER2
@@ -36,10 +36,10 @@
 
 class LIR_Assembler;
 class StubAssembler;
-class G1PreBarrierStub;
+class G1PreBarrierStubC1;
 class G1PreBarrierStubC2;
 
-class G1BarrierSetAssembler: public ModRefBarrierSetAssembler {
+class G1BarrierSetAssembler: public CardTableBarrierSetAssembler {
 protected:
   virtual void gen_write_ref_array_pre_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                Register from, Register to, Register count,
@@ -80,7 +80,7 @@ public:
                                 bool decode_new_val);
 #endif
 #ifdef COMPILER1
-  void gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub);
+  void gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStubC1* stub);
 
   void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
 

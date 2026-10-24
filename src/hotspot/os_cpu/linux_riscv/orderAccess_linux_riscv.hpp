@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,12 +41,25 @@ inline void OrderAccess::storeload()  { fence(); }
 #define READ_MEM_BARRIER  __atomic_thread_fence(__ATOMIC_ACQUIRE);
 #define WRITE_MEM_BARRIER __atomic_thread_fence(__ATOMIC_RELEASE);
 
+// A compiler barrier, forcing the C++ compiler to invalidate all memory assumptions
+static inline void compiler_barrier() {
+  __asm__ volatile ("" : : : "memory");
+}
+
 inline void OrderAccess::acquire() {
-  READ_MEM_BARRIER;
+  if (UseZtso) {
+    compiler_barrier();
+  } else {
+    READ_MEM_BARRIER;
+  }
 }
 
 inline void OrderAccess::release() {
-  WRITE_MEM_BARRIER;
+  if (UseZtso) {
+    compiler_barrier();
+  } else {
+    WRITE_MEM_BARRIER;
+  }
 }
 
 inline void OrderAccess::fence() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ public class MotifScrollBarUI extends BasicScrollBarUI
         return new MotifScrollBarUI();
     }
 
+    @Override
     public Dimension getPreferredSize(JComponent c) {
         Insets insets = c.getInsets();
         int dx = insets.left + insets.right;
@@ -61,19 +62,23 @@ public class MotifScrollBarUI extends BasicScrollBarUI
             : new Dimension(dx + 33, dy + 11);
     }
 
+    @Override
     protected JButton createDecreaseButton(int orientation) {
         return new MotifScrollBarButton(orientation);
     }
 
+    @Override
     protected JButton createIncreaseButton(int orientation) {
         return new MotifScrollBarButton(orientation);
     }
 
+    @Override
     public void paintTrack(Graphics g, JComponent c, Rectangle trackBounds)  {
         g.setColor(trackColor);
         g.fillRect(trackBounds.x, trackBounds.y, trackBounds.width, trackBounds.height);
     }
 
+    @Override
     public void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds) {
         if (thumbBounds.isEmpty() || !scrollbar.isEnabled()) {
             return;

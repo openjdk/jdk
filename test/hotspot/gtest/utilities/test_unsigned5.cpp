@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,6 +221,46 @@ TEST_VM(unsigned5, reader) {
     ASSERT_EQ(x, y) << i;
   }
   ASSERT_TRUE(i < LEN);
+
+  { // Begin try_skip() test.
+    i = 0;
+    int skipped = 0;
+    r1.set_position(0);
+    // Skip from beginning to ith position.
+    for (; i < LEN; i++) {
+      skipped = r1.try_skip(i);
+      ASSERT_EQ(i, skipped);
+      const int x = r1.next_uint();
+      const int y = ints[i];
+      ASSERT_EQ(x, y) << i;
+      r1.set_position(0);
+    }
+    // Perform incremental skips.
+    int skipped_total = 0;
+    while (true) {
+      const int skip = skipped_total % 9;
+      skipped = r1.try_skip(skip);
+      skipped_total += skipped;
+      if (skipped_total > LEN - 1) {
+        r1.set_position(0);
+        break;
+      }
+      ASSERT_EQ(skip, skipped);
+      const int x = r1.next_uint();
+      const int y = ints[skipped_total];
+      ASSERT_EQ(x, y) << skipped_total;
+      // Update skipped_total because reader
+      // moved one position when reading x.
+      ++skipped_total;
+    }
+    // Underflow.
+    skipped = r1.try_skip(-1);
+    ASSERT_EQ(0, skipped) << skipped;
+    // Overflow.
+    skipped = r1.try_skip(LEN + 1);
+    ASSERT_EQ(LEN, skipped) << skipped;
+  } // End try_skip() test.
+
   // copy from reader to writer
   UNSIGNED5::Reader<char*,int> r3(buf);
   int array_limit = 1;

@@ -85,8 +85,8 @@ template<>
 template<typename D, typename I>
 inline D AtomicAccess::PlatformAdd<4>::fetch_then_add(D volatile* dest, I add_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(4 == sizeof(I));
-  STATIC_ASSERT(4 == sizeof(D));
+  static_assert(4 == sizeof(I));
+  static_assert(4 == sizeof(D));
   aarch64_atomic_stub_t stub;
   switch (order) {
   case memory_order_relaxed:
@@ -101,8 +101,8 @@ template<>
 template<typename D, typename I>
 inline D AtomicAccess::PlatformAdd<8>::fetch_then_add(D volatile* dest, I add_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(8 == sizeof(I));
-  STATIC_ASSERT(8 == sizeof(D));
+  static_assert(8 == sizeof(I));
+  static_assert(8 == sizeof(D));
   aarch64_atomic_stub_t stub;
   switch (order) {
   case memory_order_relaxed:
@@ -114,11 +114,14 @@ inline D AtomicAccess::PlatformAdd<8>::fetch_then_add(D volatile* dest, I add_va
 }
 
 template<>
+struct AtomicAccess::PlatformXchg<1> : AtomicAccess::XchgUsingCmpxchg<1> {};
+
+template<>
 template<typename T>
 inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
                                                    T exchange_value,
                                                    atomic_memory_order order) const {
-  STATIC_ASSERT(4 == sizeof(T));
+  static_assert(4 == sizeof(T));
   T old_value = atomic_fastcall(aarch64_atomic_xchg_4_impl, dest, exchange_value);
   return old_value;
 }
@@ -127,7 +130,7 @@ template<>
 template<typename T>
 inline T AtomicAccess::PlatformXchg<8>::operator()(T volatile* dest, T exchange_value,
                                                    atomic_memory_order order) const {
-  STATIC_ASSERT(8 == sizeof(T));
+  static_assert(8 == sizeof(T));
   T old_value = atomic_fastcall(aarch64_atomic_xchg_8_impl, dest, exchange_value);
   return old_value;
 }
@@ -138,7 +141,7 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
                                                       T compare_value,
                                                       T exchange_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(1 == sizeof(T));
+  static_assert(1 == sizeof(T));
   aarch64_atomic_stub_t stub;
   switch (order) {
   case memory_order_relaxed:
@@ -156,7 +159,7 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                       T compare_value,
                                                       T exchange_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(4 == sizeof(T));
+  static_assert(4 == sizeof(T));
   aarch64_atomic_stub_t stub;
   switch (order) {
   case memory_order_relaxed:
@@ -179,7 +182,7 @@ inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                       T compare_value,
                                                       T exchange_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(8 == sizeof(T));
+  static_assert(8 == sizeof(T));
   aarch64_atomic_stub_t stub;
   switch (order) {
   case memory_order_relaxed:

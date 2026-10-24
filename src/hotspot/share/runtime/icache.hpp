@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,6 +127,29 @@ class ICacheStubGenerator : public StubCodeGenerator {
   // the StubCodeMark destructor is invoked.
 
   void generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub);
+};
+
+class DefaultICacheInvalidationContext : StackObj {
+ public:
+  NONCOPYABLE(DefaultICacheInvalidationContext);
+
+  DefaultICacheInvalidationContext() {}
+
+  ~DefaultICacheInvalidationContext() {}
+
+  void set_has_modified_code() {}
+};
+
+#ifndef PD_ICACHE_INVALIDATION_CONTEXT
+#define PD_ICACHE_INVALIDATION_CONTEXT DefaultICacheInvalidationContext
+#endif // PD_ICACHE_INVALIDATION_CONTEXT
+
+class ICacheInvalidationContext final : public PD_ICACHE_INVALIDATION_CONTEXT {
+ private:
+  NONCOPYABLE(ICacheInvalidationContext);
+
+ public:
+  using PD_ICACHE_INVALIDATION_CONTEXT::PD_ICACHE_INVALIDATION_CONTEXT;
 };
 
 #endif // SHARE_RUNTIME_ICACHE_HPP

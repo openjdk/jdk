@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ class outputStream;
   LOG_TAG(aot) \
   LOG_TAG(arguments) \
   LOG_TAG(array) \
+  LOG_TAG(asan) \
   LOG_TAG(attach) \
   LOG_TAG(barrier) \
   LOG_TAG(blocks) \
@@ -89,11 +90,13 @@ class outputStream;
   LOG_TAG(freelist) \
   LOG_TAG(gc) \
   NOT_PRODUCT(LOG_TAG(generate)) \
+  LOG_TAG(generateoopmap) \
   LOG_TAG(handshake) \
   LOG_TAG(hashtables) \
   LOG_TAG(heap) \
   LOG_TAG(heapdump) \
   NOT_PRODUCT(LOG_TAG(heapsampling)) \
+  COMPILER2_PRESENT(LOG_TAG(hotcode)) \
   LOG_TAG(humongous) \
   LOG_TAG(ihop) \
   LOG_TAG(iklass) \
@@ -108,7 +111,6 @@ class outputStream;
   LOG_TAG(jit) \
   LOG_TAG(jmethod) \
   LOG_TAG(jni) \
-  LOG_TAG(jvmci) \
   LOG_TAG(jvmti) \
   LOG_TAG(lambda) \
   LOG_TAG(library) \
@@ -133,7 +135,6 @@ class outputStream;
   LOG_TAG(module) \
   LOG_TAG(monitorinflation) \
   LOG_TAG(monitormismatch) \
-  LOG_TAG(monitortable) \
   LOG_TAG(native) \
   LOG_TAG(nestmates) \
   LOG_TAG(nmethod) \
@@ -161,17 +162,20 @@ class outputStream;
   LOG_TAG(plab) \
   LOG_TAG(placeholders) \
   LOG_TAG(preempt) \
+  LOG_TAG(preload)   /* Trace successful class preloading */ \
   LOG_TAG(preorder)  /* Trace all classes loaded in order referenced (not loaded) */ \
   LOG_TAG(preview)   /* Trace loading of preview feature types */ \
   LOG_TAG(promotion) \
   LOG_TAG(ptrqueue) \
   LOG_TAG(purge) \
   LOG_TAG(record) \
+  LOG_TAG(redact) \
   LOG_TAG(redefine) \
   LOG_TAG(ref) \
   LOG_TAG(refine) \
   LOG_TAG(region) \
   LOG_TAG(reloc) \
+  LOG_TAG(relocator) \
   LOG_TAG(remset) \
   LOG_TAG(resolve) \
   LOG_TAG(safepoint) \
@@ -215,6 +219,7 @@ class outputStream;
   NOT_PRODUCT(LOG_TAG(upcall)) \
   LOG_TAG(update) \
   LOG_TAG(valuebasedclasses) \
+  LOG_TAG(valuetypes) \
   LOG_TAG(verification) \
   LOG_TAG(verify) \
   LOG_TAG(vmatree) \

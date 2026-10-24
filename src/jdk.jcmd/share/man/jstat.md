@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,11 @@ statistical output.
 All options and their functionality are subject to change or removal in future
 releases.
 
+If the target JVM is started with an alternate temporary file location, `jstat` must
+use the same temporary file location for communication; this is true by default
+but see the [`-XX:AltTempDir`](./java.html#-XX_AltTempDir) option.
+
+
 ## General Options
 
 If you specify one of the general options, then you can't specify any other
@@ -125,7 +130,7 @@ Don't write scripts to parse the `jstat` command's output because the format
 might change in future releases. If you write scripts that parse the `jstat`
 command output, then expect to modify them for future releases of this tool.
 
-`-statOption`
+[`-statOption`]{#option-statOption}
 :   Determines the statistics information that the `jstat` command displays.
     The following lists the available options. Use the `-options` general
     option to display the list of options for a particular platform
@@ -161,7 +166,7 @@ command output, then expect to modify them for future releases of this tool.
 
     `printcompilation`: Displays Java HotSpot VM compilation method statistics.
 
-`-J`*javaOption*
+[`-J`]{#option-J}*javaOption*
 :   Passes *javaOption* to the Java application launcher. For example,
     `-J-Xms48m` sets the startup memory to 48 MB. For a complete list of
     options, see [java](java.html).
@@ -171,7 +176,7 @@ command output, then expect to modify them for future releases of this tool.
 The following information summarizes the columns that the `jstat` command
 outputs for each *statOption*.
 
-`-class` *option*
+[`-class`]{#option-class} *option*
 :   Class loader statistics.
 
     `Loaded`: Number of classes loaded.
@@ -184,7 +189,7 @@ outputs for each *statOption*.
 
     `Time`: Time spent performing class loading and unloading operations.
 
-`-compiler` *option*
+[`-compiler`]{#option-compiler} *option*
 :   Java HotSpot VM Just-in-Time compiler statistics.
 
     `Compiled`: Number of compilation tasks performed.
@@ -199,7 +204,7 @@ outputs for each *statOption*.
 
     `FailedMethod`: Class name and method of the last failed compilation.
 
-`-gc` *option*
+[`-gc`]{#option-gc} *option*
 :   Garbage collected heap statistics.
 
     `S0C`: Current survivor space 0 capacity (KB).
@@ -236,7 +241,7 @@ outputs for each *statOption*.
 
     `GCT`: Total garbage collection time.
 
-`-gccapacity` *option*
+[`-gccapacity`]{#option-gccapacity} *option*
 :   Memory pool generation and space capacities.
 
     `NGCMN`: Minimum new generation capacity (KB).
@@ -275,7 +280,7 @@ outputs for each *statOption*.
 
     `FGC`: Number of full GC events.
 
-`-gccause` *option*
+[`-gccause`]{#option-gccause} *option*
 :   This option displays the same summary of garbage collection statistics as
     the `-gcutil` option, but includes the causes of the last garbage
     collection event and (when applicable), the current garbage collection
@@ -286,7 +291,7 @@ outputs for each *statOption*.
 
     `GCC`: Cause of current garbage collection
 
-`-gcnew` *option*
+[`-gcnew`]{#option-gcnew} *option*
 :   New generation statistics.
 
     `S0C`: Current survivor space 0 capacity (KB).
@@ -311,7 +316,7 @@ outputs for each *statOption*.
 
     `YGCT`: Young generation garbage collection time.
 
-`-gcnewcapacity` *option*
+[`-gcnewcapacity`]{#option-gcnewcapacity} *option*
 :   New generation space size statistics.
 
     `NGCMN`: Minimum new generation capacity (KB).
@@ -336,7 +341,7 @@ outputs for each *statOption*.
 
     `FGC`: Number of full GC events.
 
-`-gcold` *option*
+[`-gcold`]{#option-gcold} *option*
 :   Old generation size statistics.
 
     `MC`: Metaspace Committed Size (KB).
@@ -359,7 +364,7 @@ outputs for each *statOption*.
 
     `GCT`: Total garbage collection time.
 
-`-gcoldcapacity` *option*
+[`-gcoldcapacity`]{#option-gcoldcapacity} *option*
 :   Old generation statistics.
 
     `OGCMN`: Minimum old generation capacity (KB).
@@ -378,7 +383,7 @@ outputs for each *statOption*.
 
     `GCT`: Total garbage collection time.
 
-`-gcmetacapacity` *option*
+[`-gcmetacapacity`]{#option-gcmetacapacity} *option*
 :   Metaspace size statistics.
 
     `MCMN`: Minimum metaspace capacity (KB).
@@ -399,7 +404,7 @@ outputs for each *statOption*.
 
     `GCT`: Total garbage collection time.
 
-`-gcutil` *option*
+[`-gcutil`]{#option-gcutil} *option*
 :   Summary of garbage collection statistics.
 
     `S0`: Survivor space 0 utilization as a percentage of the space's current
@@ -427,7 +432,7 @@ outputs for each *statOption*.
 
     `GCT`: Total garbage collection time.
 
-`-printcompilation` *option*
+[`-printcompilation`]{#option-printcompilation} *option*
 :   Java HotSpot VM compiler method statistics.
 
     `Compiled`: Number of compilation tasks performed by the most recently

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,24 +29,26 @@
  * @modules jdk.compiler
  * @compile AssignableFrom.java Point.java
  *          DefaultValues.java SuperStreamFields.java
- * @run testng AssignableFromTest
+ * @run junit AssignableFromTest
  */
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
-import static org.testng.Assert.assertEquals;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Basic test to check that stream field values that are not the exact
  * declared param/field type, but assignable to a declared supertype,
  * are bound/assigned correctly.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AssignableFromTest extends AbstractTest {
 
-    @DataProvider(name = "plainInstances")
     public Object[][] plainInstances() {
         return new Object[][] {
             new Object[] { newPlainAssignableFrom(Byte.valueOf((byte)11))   },
@@ -59,7 +61,8 @@ public class AssignableFromTest extends AbstractTest {
     }
 
     /** Serialize non-record (plain) instances, deserialize as a record. */
-    @Test(dataProvider = "plainInstances")
+    @ParameterizedTest
+    @MethodSource("plainInstances")
     public void testPlainToRecord(AssignableFrom objToSerialize) throws Exception {
         assert !objToSerialize.getClass().isRecord();
         out.println("serialize   : " + objToSerialize);
@@ -68,13 +71,12 @@ public class AssignableFromTest extends AbstractTest {
         assert objDeserialized.getClass().isRecord();
         out.println("deserialized: " + objDeserialized);
 
-        assertEquals(objToSerialize.number(), objDeserialized.number());
         assertEquals(objDeserialized.number(), objToSerialize.number());
+        assertEquals(objToSerialize.number(), objDeserialized.number());
         assertEquals(objDeserialized.number().getClass(), objDeserialized.number().getClass());
 
     }
 
-    @DataProvider(name = "recordInstances")
     public Object[][] recordInstances() {
         return new Object[][] {
             new Object[] { newRecordAssignableFrom(Byte.valueOf((byte)21))   },
@@ -87,7 +89,8 @@ public class AssignableFromTest extends AbstractTest {
     }
 
     /** Serialize record instances, deserialize as non-record (plain). */
-    @Test(dataProvider = "recordInstances")
+    @ParameterizedTest
+    @MethodSource("recordInstances")
     public void testRecordToPlain(AssignableFrom objToSerialize) throws Exception {
         assert objToSerialize.getClass().isRecord();
         out.println("serialize   : " + objToSerialize);
@@ -96,8 +99,8 @@ public class AssignableFromTest extends AbstractTest {
         assert !objDeserialized.getClass().isRecord();
         out.println("deserialized: " + objDeserialized);
 
-        assertEquals(objToSerialize.number(), objDeserialized.number());
         assertEquals(objDeserialized.number(), objToSerialize.number());
+        assertEquals(objToSerialize.number(), objDeserialized.number());
         assertEquals(objDeserialized.number().getClass(), objDeserialized.number().getClass());
     }
 

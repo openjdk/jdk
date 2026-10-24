@@ -63,6 +63,7 @@ public:
 
   uint _risk_bias;              // Index of LRG which we want to avoid color
   uint _copy_bias;              // Index of LRG which we want to share color
+  uint _copy_bias2;             // Index of second LRG which we want to share color
 
   uint _next;                   // Index of next LRG in linked list
   uint _prev;                   // Index of prev LRG in linked list
@@ -103,11 +104,11 @@ public:
 
 private:
   RegMask _mask;                // Allowed registers for this LRG
-  uint _mask_size;              // cache of _mask.Size();
+  uint _mask_size;              // cache of _mask.size();
 public:
-  int compute_mask_size() const { return _mask.is_infinite_stack() ? INFINITE_STACK_SIZE : _mask.Size(); }
+  int compute_mask_size() const { return _mask.is_infinite_stack() ? INFINITE_STACK_SIZE : _mask.size(); }
   void set_mask_size( int size ) {
-    assert((size == (int)INFINITE_STACK_SIZE) || (size == (int)_mask.Size()), "");
+    assert((size == (int)INFINITE_STACK_SIZE) || (size == (int)_mask.size()), "");
     _mask_size = size;
 #ifdef ASSERT
     _msize_valid=1;
@@ -128,22 +129,22 @@ public:
   // count of bits in the current mask.
   int get_invalid_mask_size() const { return _mask_size; }
   const RegMask &mask() const { return _mask; }
-  void set_mask( const RegMask &rm ) { _mask = rm; DEBUG_ONLY(_msize_valid=0;)}
+  void set_mask(const RegMask& rm) { _mask.assignFrom(rm); DEBUG_ONLY(_msize_valid = 0;) }
   void init_mask(Arena* arena) { new (&_mask) RegMask(arena); }
-  void AND( const RegMask &rm ) { _mask.AND(rm); DEBUG_ONLY(_msize_valid=0;)}
-  void SUBTRACT( const RegMask &rm ) { _mask.SUBTRACT(rm); DEBUG_ONLY(_msize_valid=0;)}
-  void SUBTRACT_inner(const RegMask& rm) { _mask.SUBTRACT_inner(rm); DEBUG_ONLY(_msize_valid = 0;) }
-  void Clear()   { _mask.Clear()  ; DEBUG_ONLY(_msize_valid=1); _mask_size = 0; }
-  void Set_All() { _mask.Set_All(); DEBUG_ONLY(_msize_valid = 1); _mask_size = _mask.rm_size_in_bits(); }
+  void and_with( const RegMask &rm ) { _mask.and_with(rm); DEBUG_ONLY(_msize_valid=0;)}
+  void subtract( const RegMask &rm ) { _mask.subtract(rm); DEBUG_ONLY(_msize_valid=0;)}
+  void subtract_inner(const RegMask& rm) { _mask.subtract_inner(rm); DEBUG_ONLY(_msize_valid = 0;) }
+  void clear()   { _mask.clear()  ; DEBUG_ONLY(_msize_valid=1); _mask_size = 0; }
+  void set_all() { _mask.set_all(); DEBUG_ONLY(_msize_valid = 1); _mask_size = _mask.rm_size_in_bits(); }
   bool rollover() { DEBUG_ONLY(_msize_valid = 1); _mask_size = _mask.rm_size_in_bits(); return _mask.rollover(); }
 
-  void Insert( OptoReg::Name reg ) { _mask.Insert(reg);  DEBUG_ONLY(_msize_valid=0;) }
-  void Remove( OptoReg::Name reg ) { _mask.Remove(reg);  DEBUG_ONLY(_msize_valid=0;) }
+  void insert( OptoReg::Name reg ) { _mask.insert(reg);  DEBUG_ONLY(_msize_valid=0;) }
+  void remove( OptoReg::Name reg ) { _mask.remove(reg);  DEBUG_ONLY(_msize_valid=0;) }
   void clear_to_sets()  { _mask.clear_to_sets(_num_regs); DEBUG_ONLY(_msize_valid=0;) }
 
 private:
   // Number of registers this live range uses when it colors
-  uint16_t _num_regs;           // 2 for Longs and Doubles, 1 for all else
+  uint16_t _num_regs;           // byte size of the value divided by slot size which is 4
                                 // except _num_regs is kill count for fat_proj
 
   // For scalable register, num_regs may not be the actual physical register size.
@@ -352,7 +353,8 @@ public:
     return _names.at(idx);
   }
 
-  uint live_range_id(const Node *node) const {
+  uint live_range_id(const Node* node) const {
+    precond(node != nullptr);
     return _names.at(node->_idx);
   }
 
@@ -476,8 +478,6 @@ class PhaseChaitin : public PhaseRegAlloc {
   void insert_proj( Block *b, uint i, Node *spill, uint maxlrg );
 
   bool is_high_pressure( Block *b, LRG *lrg, uint insidx );
-
-  uint _oldphi;                 // Node index which separates pre-allocation nodes
 
   Block **_blks;                // Array of blocks sorted by frequency for coalescing
 
@@ -624,7 +624,7 @@ private:
       void check_pressure_at_fatproj(uint fatproj_location, RegMask& fatproj_mask) {
         // this pressure is only valid at this instruction, i.e. we don't need to lower
         // the register pressure since the fat proj was never live before (going backwards)
-        uint new_pressure = current_pressure() + fatproj_mask.Size();
+        uint new_pressure = current_pressure() + fatproj_mask.size();
         if (new_pressure > final_pressure()) {
           _final_pressure = new_pressure;
         }
@@ -703,6 +703,8 @@ private:
   OptoReg::Name choose_color(LRG& lrg);
   // Helper function which implements biasing heuristic
   OptoReg::Name bias_color(LRG& lrg);
+  // Helper function which implements color biasing
+  OptoReg::Name select_bias_lrg_color(LRG& lrg);
 
   // Split uncolorable live ranges
   // Return new number of live ranges
@@ -720,27 +722,27 @@ private:
   Node *skip_copies( Node *c );
   // Replace the old node with the current live version of that value
   // and yank the old value if it's dead.
-  int replace_and_yank_if_dead( Node *old, OptoReg::Name nreg,
-      Block *current_block, Node_List& value, Node_List& regnd ) {
+  int replace_and_yank_if_dead(Node* old, OptoReg::Name nreg,
+      Block* current_block, Node_List<Node>& value, Node_List<Node>& regnd) {
     Node* v = regnd[nreg];
     assert(v->outcnt() != 0, "no dead values");
     old->replace_by(v);
     return yank_if_dead(old, current_block, &value, &regnd);
   }
 
-  int yank_if_dead( Node *old, Block *current_block, Node_List *value, Node_List *regnd ) {
+  int yank_if_dead(Node* old, Block* current_block, Node_List<Node>* value, Node_List<Node>* regnd) {
     return yank_if_dead_recurse(old, old, current_block, value, regnd);
   }
-  int yank_if_dead_recurse(Node *old, Node *orig_old, Block *current_block,
-      Node_List *value, Node_List *regnd);
-  int yank( Node *old, Block *current_block, Node_List *value, Node_List *regnd );
-  int elide_copy( Node *n, int k, Block *current_block, Node_List *value, Node_List *regnd, bool can_change_regs );
-  int use_prior_register( Node *copy, uint idx, Node *def, Block *current_block, Node_List *value, Node_List *regnd );
+  int yank_if_dead_recurse(Node* old, Node* orig_old, Block* current_block,
+      Node_List<Node>* value, Node_List<Node>* regnd);
+  int yank(Node* old, Block* current_block, Node_List<Node>* value, Node_List<Node>* regnd);
+  int elide_copy(Node* n, int k, Block* current_block, Node_List<Node>* value, Node_List<Node>* regnd, bool can_change_regs);
+  int use_prior_register(Node* copy, uint idx, Node* def, Block* current_block, Node_List<Node>* value, Node_List<Node>* regnd);
   bool may_be_copy_of_callee( Node *def ) const;
 
   // If nreg already contains the same constant as val then eliminate it
   bool eliminate_copy_of_constant(Node* val, Node* n,
-      Block *current_block, Node_List& value, Node_List &regnd,
+      Block* current_block, Node_List<Node>& value, Node_List<Node>& regnd,
       OptoReg::Name nreg, OptoReg::Name nreg2);
   // Extend the node to LRG mapping
   void add_reference( const Node *node, const Node *old_node);
@@ -773,12 +775,9 @@ private:
 
 private:
 
-  static int _final_loads, _final_stores, _final_copies, _final_memoves;
-  static double _final_load_cost, _final_store_cost, _final_copy_cost, _final_memove_cost;
-  static int _conserv_coalesce, _conserv_coalesce_pair;
-  static int _conserv_coalesce_trie, _conserv_coalesce_quad;
+  static int _conserv_coalesce;
   static int _post_alloc;
-  static int _lost_opp_pp_coalesce, _lost_opp_cflow_coalesce;
+  static int _lost_opp_cflow_coalesce;
   static int _used_cisc_instructions, _unused_cisc_instructions;
   static int _allocator_attempts, _allocator_successes;
 

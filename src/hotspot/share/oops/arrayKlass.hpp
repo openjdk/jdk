@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 #ifndef SHARE_OOPS_ARRAYKLASS_HPP
 #define SHARE_OOPS_ARRAYKLASS_HPP
 
+#include "oops/arrayProperties.hpp"
 #include "oops/klass.hpp"
+#include "oops/layoutKind.hpp"
 
 class fieldDescriptor;
 class klassVtable;
@@ -35,35 +37,43 @@ class ObjArrayKlass;
 
 class ArrayKlass: public Klass {
   friend class VMStructs;
+
+ public:
+  static ArrayProperties array_properties_from_layout(LayoutKind lk);
+
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to ArrayKlass::metaspace_pointers_do().
-  int      _dimension;         // This is n'th-dimensional array.
+  int                     _dimension;         // This is n'th-dimensional array.
   ObjArrayKlass* volatile _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
   ArrayKlass* volatile    _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
+
+  const ArrayProperties   _properties;
 
  protected:
   // Constructors
   // The constructor with the Symbol argument does the real array
   // initialization, the other is a dummy
-  ArrayKlass(Symbol* name, KlassKind kind);
+  ArrayKlass(int n, Symbol* name, KlassKind kind, ArrayProperties props);
   ArrayKlass();
 
  public:
   // Testing operation
-  DEBUG_ONLY(bool is_array_klass_slow() const { return true; })
+  DEBUG_ONLY(bool is_array_klass_slow() const override { return true; })
 
   // Returns the ObjArrayKlass for n'th dimension.
-  ArrayKlass* array_klass(int n, TRAPS);
-  ArrayKlass* array_klass_or_null(int n);
+  ArrayKlass* array_klass(int n, TRAPS) override;
+  ArrayKlass* array_klass_or_null(int n) override;
 
   // Returns the array class with this class as element type.
-  ArrayKlass* array_klass(TRAPS);
-  ArrayKlass* array_klass_or_null();
+  ArrayKlass* array_klass(TRAPS) override;
+  ArrayKlass* array_klass_or_null() override;
 
   // Instance variables
   int dimension() const                 { return _dimension;      }
-  void set_dimension(int dimension)     { _dimension = dimension; }
+
+  ArrayProperties properties() const    { return _properties; }
+  static ByteSize properties_offset()   { return byte_offset_of(ArrayKlass, _properties); }
 
   ObjArrayKlass* higher_dimension() const     { return _higher_dimension; }
   inline ObjArrayKlass* higher_dimension_acquire() const; // load with acquire semantics
@@ -79,7 +89,7 @@ class ArrayKlass: public Klass {
   // type of elements (T_OBJECT for both oop arrays and array-arrays)
   BasicType element_type() const        { return layout_helper_element_type(layout_helper()); }
 
-  virtual InstanceKlass* java_super() const;
+  InstanceKlass* java_super() const override;
 
   // Allocation
   // Sizes points to the first dimension of the array, subsequent dimensions
@@ -87,13 +97,13 @@ class ArrayKlass: public Klass {
   virtual oop multi_allocate(int rank, jint* sizes, TRAPS);
 
   // find field according to JVM spec 5.4.3.2, returns the klass in which the field is defined
-  Klass* find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const;
+  Klass* find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const override;
 
   // Lookup operations
   Method* uncached_lookup_method(const Symbol* name,
                                  const Symbol* signature,
                                  OverpassLookupMode overpass_mode,
-                                 PrivateLookupMode private_mode = PrivateLookupMode::find) const;
+                                 PrivateLookupMode private_mode = PrivateLookupMode::find) const override;
 
   static ArrayKlass* cast(Klass* k) {
     return const_cast<ArrayKlass*>(cast(const_cast<const Klass*>(k)));
@@ -105,38 +115,97 @@ class ArrayKlass: public Klass {
   }
 
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
-                                                  Array<InstanceKlass*>* transitive_interfaces);
+                                                  Array<InstanceKlass*>* transitive_interfaces) override;
+
+  oop component_mirror() const;
 
   // Sizing
   static int static_size(int header_size);
 
-  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
+  void metaspace_pointers_do(MetaspaceClosure* iter) override;
 
   // Return a handle.
   static void     complete_create_array_klass(ArrayKlass* k, Klass* super_klass, ModuleEntry* module, TRAPS);
 
   // JVMTI support
-  jint jvmti_class_status() const;
+  jint jvmti_class_status() const override;
 
 #if INCLUDE_CDS
   // CDS support - remove and restore oops from metadata. Oops are not shared.
-  virtual void remove_unshareable_info();
-  virtual void remove_java_mirror();
+  void remove_unshareable_info() override;
+  void remove_java_mirror() override;
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
   void cds_print_value_on(outputStream* st) const;
 #endif
 
   void log_array_class_load(Klass* k);
   // Printing
-  void print_on(outputStream* st) const;
-  void print_value_on(outputStream* st) const;
+  void print_on(outputStream* st) const override;
+  void print_value_on(outputStream* st) const override;
 
-  void oop_print_on(oop obj, outputStream* st);
+  void oop_print_on(oop obj, outputStream* st) override;
 
   // Verification
-  void verify_on(outputStream* st);
+  void verify_on(outputStream* st) override;
 
-  void oop_verify_on(oop obj, outputStream* st);
+  void oop_verify_on(oop obj, outputStream* st) override;
+};
+
+class ArrayDescription : public StackObj {
+  // Layout for uint32_t encoding
+  //
+  // 31             24 23            16 15                           0
+  // +----------------+----------------+-----------------------------+
+  // |   KlassKind    |   LayoutKind   |      ArrayProperties        |
+  // +----------------+----------------+-----------------------------+
+  //      8 bits           8 bits                16 bits
+  static constexpr uint32_t _layout_kind_shift = 16;
+  static constexpr uint32_t _kind_shift = 24;
+
+  static constexpr uint32_t _properties_mask = (1u << _layout_kind_shift) - 1;
+  static constexpr uint32_t _layout_kind_mask = (1u << (_kind_shift - _layout_kind_shift)) - 1;
+  static constexpr uint32_t _kind_mask = (1u << (32 - _kind_shift)) - 1;
+
+public:
+  Klass::KlassKind _kind;
+  ArrayProperties  _properties;
+  LayoutKind       _layout_kind;
+
+  ArrayDescription(Klass::KlassKind k, ArrayProperties p, LayoutKind lk) {
+    _kind = k;
+    _layout_kind = lk;
+    assert(lk == LayoutKind::REFERENCE || k != Klass::KlassKind::RefArrayKlassKind, "Sanity check");
+    assert(lk != LayoutKind::UNKNOWN, "Sanity check");
+
+    // Atomicity depends on the layout kind, which might be different than what
+    // the given properties says
+    const bool non_atomic = lk != LayoutKind::REFERENCE && !LayoutKindHelper::is_atomic_flat(lk);
+    _properties = p.with_non_atomic(non_atomic);
+  }
+
+  uint32_t value() const {
+    assert((_properties.value() & ~_properties_mask) == 0, "array properties do not fit into encoding");
+
+    uint32_t layout_kind_value = static_cast<uint32_t>(_layout_kind);
+    assert((layout_kind_value & ~_layout_kind_mask) == 0, "layout kind does not fit into encoding");
+
+    uint32_t kind_value = static_cast<uint32_t>(_kind);
+    assert((kind_value & ~_kind_mask) == 0, "klass kind does not fit into encoding");
+
+    return _properties.value() | (layout_kind_value << _layout_kind_shift) | (kind_value << _kind_shift);
+  }
+
+  static ArrayDescription from_value(uint32_t value) {
+    ArrayProperties properties(value & _properties_mask);
+
+    uint32_t layout_kind_value = (value >> _layout_kind_shift) & _layout_kind_mask;
+    LayoutKind layout_kind = static_cast<LayoutKind>(layout_kind_value);
+
+    uint32_t kind_value = (value >> _kind_shift) & _kind_mask;
+    Klass::KlassKind kind = static_cast<Klass::KlassKind>(kind_value);
+
+    return ArrayDescription(kind, properties, layout_kind);
+  }
 };
 
 #endif // SHARE_OOPS_ARRAYKLASS_HPP

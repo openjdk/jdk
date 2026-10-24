@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -53,12 +53,18 @@ class PollsetPoller extends Poller {
     }
 
     @Override
+    void close() {
+        Pollset.pollsetDestroy(setid);
+        Pollset.freePollArray(pollBuffer);
+    }
+
+    @Override
     int fdVal() {
         return setid;
     }
 
     @Override
-    void implRegister(int fd) throws IOException {
+    void implStartPoll(int fd) throws IOException {
         int ret = Pollset.pollsetCtl(setid, Pollset.PS_MOD, fd, Pollset.PS_POLLPRI | event);
         if (ret != 0) {
             throw new IOException("Unable to register fd " + fd);
@@ -66,7 +72,7 @@ class PollsetPoller extends Poller {
     }
 
     @Override
-    void implDeregister(int fd, boolean polled) {
+    void implStopPoll(int fd, boolean polled) {
         int ret = Pollset.pollsetCtl(setid, Pollset.PS_DELETE, fd, 0);
         assert ret == 0;
     }

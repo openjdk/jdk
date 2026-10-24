@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+#include <winsock2.h>
+#include <mstcpip.h>
 #include "net_util.h"
 
 #include "java_net_InetAddress.h"
 #include "java_net_SocketOptions.h"
-
-// Taken from mstcpip.h in Windows SDK 8.0 or newer.
-#define SIO_LOOPBACK_FAST_PATH              _WSAIOW(IOC_VENDOR,16)
 
 #ifndef IPTOS_TOS_MASK
 #define IPTOS_TOS_MASK 0x1e
@@ -36,9 +35,6 @@
 #ifndef IPTOS_PREC_MASK
 #define IPTOS_PREC_MASK 0xe0
 #endif
-
-/* true if SO_RCVTIMEO is supported */
-jboolean isRcvTimeoutSupported = JNI_TRUE;
 
 /*
  * Table of Windows Sockets errors, the specific exception we
@@ -140,13 +136,6 @@ NET_ThrowNew(JNIEnv *env, int errorNum, char *msg)
     }
 
     /*
-     * Default message text if not provided
-     */
-    if (!msg) {
-        msg = "no further information";
-    }
-
-    /*
      * Check table for known winsock errors
      */
     i=0;
@@ -163,13 +152,22 @@ NET_ThrowNew(JNIEnv *env, int errorNum, char *msg)
      */
     if (i < table_size) {
         excP = (char *)winsock_errors[i].exc;
-        jio_snprintf(fullMsg, sizeof(fullMsg), "%s: %s",
-                     (char *)winsock_errors[i].errString, msg);
+        if (msg == NULL) {
+            jio_snprintf(fullMsg, sizeof(fullMsg), "%s",
+                         (char *)winsock_errors[i].errString);
+        } else {
+            jio_snprintf(fullMsg, sizeof(fullMsg), "%s: %s",
+                         (char *)winsock_errors[i].errString, msg);
+        }
     } else {
-        jio_snprintf(fullMsg, sizeof(fullMsg),
-                     "Unrecognized Windows Sockets error: %d: %s",
-                     errorNum, msg);
-
+        if (msg == NULL) {
+            jio_snprintf(fullMsg, sizeof(fullMsg),
+                         "Unrecognized Windows Sockets error: %d", errorNum);
+        } else {
+            jio_snprintf(fullMsg, sizeof(fullMsg),
+                         "Unrecognized Windows Sockets error: %d: %s",
+                         errorNum, msg);
+        }
     }
 
     /*
@@ -285,17 +283,7 @@ JNIEXPORT int JNICALL
 NET_GetSockOpt(int s, int level, int optname, void *optval,
                int *optlen)
 {
-    int rv;
-
-    if (level == IPPROTO_IPV6 && optname == IPV6_TCLASS) {
-        int *intopt = (int *)optval;
-        *intopt = 0;
-        *optlen = sizeof(*intopt);
-        return 0;
-    }
-
-    rv = getsockopt(s, level, optname, optval, optlen);
-
+    int rv = getsockopt(s, level, optname, optval, optlen);
 
     /*
      * IPPROTO_IP/IP_TOS is not supported on some Windows
@@ -390,25 +378,6 @@ void dumpAddr (char *str, void *addr) {
         printf ("%04x", ntohs(in->s6_words[7]));
         printf (" scope %d\n", a->sin6_scope_id);
     }
-}
-
-/**
- * Enables SIO_LOOPBACK_FAST_PATH
- */
-JNIEXPORT jint JNICALL
-NET_EnableFastTcpLoopback(int fd) {
-    int enabled = 1;
-    DWORD result_byte_count = -1;
-    int result = WSAIoctl(fd,
-                          SIO_LOOPBACK_FAST_PATH,
-                          &enabled,
-                          sizeof(enabled),
-                          NULL,
-                          0,
-                          &result_byte_count,
-                          NULL,
-                          NULL);
-    return result == SOCKET_ERROR ? WSAGetLastError() : 0;
 }
 
 int
@@ -513,7 +482,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
     } else {
         jint address;
         if (family != java_net_InetAddress_IPv4) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Protocol family unavailable");
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "IPv6 protocol family unavailable");
             return -1;
         }
         address = getInetAddress_addr(env, iaObj);

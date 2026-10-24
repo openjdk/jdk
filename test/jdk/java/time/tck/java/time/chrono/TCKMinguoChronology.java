@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,11 +54,11 @@
  */
 package tck.java.time.chrono;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.Clock;
 import java.time.DateTimeException;
@@ -94,14 +94,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKMinguoChronology {
 
     private static final ZoneOffset OFFSET_PTWO = ZoneOffset.ofHours(2);
@@ -114,16 +116,15 @@ public class TCKMinguoChronology {
     public void test_chrono_byName() {
         Chronology c = MinguoChronology.INSTANCE;
         Chronology test = Chronology.of("Minguo");
-        Assert.assertNotNull(test, "The Minguo calendar could not be found byName");
-        Assert.assertEquals(test.getId(), "Minguo", "ID mismatch");
-        Assert.assertEquals(test.getCalendarType(), "roc", "Type mismatch");
-        Assert.assertEquals(test, c);
+        Assertions.assertNotNull(test, "The Minguo calendar could not be found byName");
+        assertEquals("Minguo", test.getId(), "ID mismatch");
+        assertEquals("roc", test.getCalendarType(), "Type mismatch");
+        assertEquals(c, test);
     }
 
     //-----------------------------------------------------------------------
     // creation, toLocalDate()
     //-----------------------------------------------------------------------
-    @DataProvider(name="samples")
     Object[][] data_samples() {
         return new Object[][] {
             {MinguoChronology.INSTANCE.date(1, 1, 1), LocalDate.of(1 + YDIFF, 1, 1)},
@@ -158,50 +159,55 @@ public class TCKMinguoChronology {
         };
     }
 
-    @Test(dataProvider="samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_toLocalDate(MinguoDate minguo, LocalDate iso) {
-        assertEquals(LocalDate.from(minguo), iso);
+        assertEquals(iso, LocalDate.from(minguo));
     }
 
-    @Test(dataProvider="samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_fromCalendrical(MinguoDate minguo, LocalDate iso) {
-        assertEquals(MinguoChronology.INSTANCE.date(iso), minguo);
-        assertEquals(MinguoDate.from(iso), minguo);
+        assertEquals(minguo, MinguoChronology.INSTANCE.date(iso));
+        assertEquals(minguo, MinguoDate.from(iso));
     }
 
-    @Test(dataProvider="samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_isEqual(MinguoDate minguo, LocalDate iso) {
         assertTrue(minguo.isEqual(iso));
     }
 
-    @Test(dataProvider="samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_date_equals(MinguoDate minguo, LocalDate iso) {
         assertFalse(minguo.equals(iso));
-        assertNotEquals(minguo.hashCode(), iso.hashCode());
+        assertNotEquals(iso.hashCode(), minguo.hashCode());
     }
 
     @Test
     public void test_dateNow(){
-        assertEquals(MinguoChronology.INSTANCE.dateNow(), MinguoDate.now()) ;
-        assertEquals(MinguoChronology.INSTANCE.dateNow(), MinguoDate.now(ZoneId.systemDefault())) ;
-        assertEquals(MinguoChronology.INSTANCE.dateNow(), MinguoDate.now(Clock.systemDefaultZone())) ;
-        assertEquals(MinguoChronology.INSTANCE.dateNow(), MinguoDate.now(Clock.systemDefaultZone().getZone())) ;
+        assertEquals(MinguoDate.now(), MinguoChronology.INSTANCE.dateNow()) ;
+        assertEquals(MinguoDate.now(ZoneId.systemDefault()), MinguoChronology.INSTANCE.dateNow()) ;
+        assertEquals(MinguoDate.now(Clock.systemDefaultZone()), MinguoChronology.INSTANCE.dateNow()) ;
+        assertEquals(MinguoDate.now(Clock.systemDefaultZone().getZone()), MinguoChronology.INSTANCE.dateNow()) ;
 
-        assertEquals(MinguoChronology.INSTANCE.dateNow(), MinguoChronology.INSTANCE.dateNow(ZoneId.systemDefault())) ;
-        assertEquals(MinguoChronology.INSTANCE.dateNow(), MinguoChronology.INSTANCE.dateNow(Clock.systemDefaultZone())) ;
-        assertEquals(MinguoChronology.INSTANCE.dateNow(), MinguoChronology.INSTANCE.dateNow(Clock.systemDefaultZone().getZone())) ;
+        assertEquals(MinguoChronology.INSTANCE.dateNow(ZoneId.systemDefault()), MinguoChronology.INSTANCE.dateNow()) ;
+        assertEquals(MinguoChronology.INSTANCE.dateNow(Clock.systemDefaultZone()), MinguoChronology.INSTANCE.dateNow()) ;
+        assertEquals(MinguoChronology.INSTANCE.dateNow(Clock.systemDefaultZone().getZone()), MinguoChronology.INSTANCE.dateNow()) ;
 
         ZoneId zoneId = ZoneId.of("Europe/Paris");
-        assertEquals(MinguoChronology.INSTANCE.dateNow(zoneId), MinguoChronology.INSTANCE.dateNow(Clock.system(zoneId))) ;
-        assertEquals(MinguoChronology.INSTANCE.dateNow(zoneId), MinguoChronology.INSTANCE.dateNow(Clock.system(zoneId).getZone())) ;
-        assertEquals(MinguoChronology.INSTANCE.dateNow(zoneId), MinguoDate.now(Clock.system(zoneId))) ;
-        assertEquals(MinguoChronology.INSTANCE.dateNow(zoneId), MinguoDate.now(Clock.system(zoneId).getZone())) ;
+        assertEquals(MinguoChronology.INSTANCE.dateNow(Clock.system(zoneId)), MinguoChronology.INSTANCE.dateNow(zoneId)) ;
+        assertEquals(MinguoChronology.INSTANCE.dateNow(Clock.system(zoneId).getZone()), MinguoChronology.INSTANCE.dateNow(zoneId)) ;
+        assertEquals(MinguoDate.now(Clock.system(zoneId)), MinguoChronology.INSTANCE.dateNow(zoneId)) ;
+        assertEquals(MinguoDate.now(Clock.system(zoneId).getZone()), MinguoChronology.INSTANCE.dateNow(zoneId)) ;
 
-        assertEquals(MinguoChronology.INSTANCE.dateNow(ZoneId.of(ZoneOffset.UTC.getId())), MinguoChronology.INSTANCE.dateNow(Clock.systemUTC())) ;
+        assertEquals(MinguoChronology.INSTANCE.dateNow(Clock.systemUTC()), MinguoChronology.INSTANCE.dateNow(ZoneId.of(ZoneOffset.UTC.getId()))) ;
     }
 
     @SuppressWarnings("unused")
-    @Test(dataProvider="samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_MinguoDate(MinguoDate minguoDate, LocalDate iso) {
         MinguoDate hd = minguoDate;
         ChronoLocalDateTime<MinguoDate> hdt = hd.atTime(LocalTime.NOON);
@@ -229,7 +235,6 @@ public class TCKMinguoChronology {
         ChronoZonedDateTime<MinguoDate> h4 = h3.atZone(ZoneOffset.UTC);
     }
 
-    @DataProvider(name="badDates")
     Object[][] data_badDates() {
         return new Object[][] {
             {1912, 0, 0},
@@ -256,15 +261,15 @@ public class TCKMinguoChronology {
             };
     }
 
-    @Test(dataProvider="badDates", expectedExceptions=DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("data_badDates")
     public void test_badDates(int year, int month, int dom) {
-        MinguoChronology.INSTANCE.date(year, month, dom);
+        Assertions.assertThrows(DateTimeException.class, () -> MinguoChronology.INSTANCE.date(year, month, dom));
     }
 
     //-----------------------------------------------------------------------
     // prolepticYear() and is LeapYear()
     //-----------------------------------------------------------------------
-    @DataProvider(name="prolepticYear")
     Object[][] data_prolepticYear() {
         return new Object[][] {
             {1, MinguoEra.ROC, 1912 - YDIFF, 1912 - YDIFF, true},
@@ -290,25 +295,27 @@ public class TCKMinguoChronology {
         };
     }
 
-    @Test(dataProvider="prolepticYear")
+    @ParameterizedTest
+    @MethodSource("data_prolepticYear")
     public void test_prolepticYear(int eraValue, Era  era, int yearOfEra, int expectedProlepticYear, boolean isLeapYear) {
         Era eraObj = MinguoChronology.INSTANCE.eraOf(eraValue);
         assertTrue(MinguoChronology.INSTANCE.eras().contains(eraObj));
-        assertEquals(eraObj, era);
-        assertEquals(MinguoChronology.INSTANCE.prolepticYear(era, yearOfEra), expectedProlepticYear);
+        assertEquals(era, eraObj);
+        assertEquals(expectedProlepticYear, MinguoChronology.INSTANCE.prolepticYear(era, yearOfEra));
     }
 
-    @Test(dataProvider="prolepticYear")
+    @ParameterizedTest
+    @MethodSource("data_prolepticYear")
     public void test_isLeapYear(int eraValue, Era  era, int yearOfEra, int expectedProlepticYear, boolean isLeapYear) {
-        assertEquals(MinguoChronology.INSTANCE.isLeapYear(expectedProlepticYear), isLeapYear);
-        assertEquals(MinguoChronology.INSTANCE.isLeapYear(expectedProlepticYear), Year.of(expectedProlepticYear + YDIFF).isLeap());
+        assertEquals(isLeapYear, MinguoChronology.INSTANCE.isLeapYear(expectedProlepticYear));
+        assertEquals(Year.of(expectedProlepticYear + YDIFF).isLeap(), MinguoChronology.INSTANCE.isLeapYear(expectedProlepticYear));
 
         MinguoDate minguo = MinguoDate.now();
         minguo = minguo.with(ChronoField.YEAR, expectedProlepticYear).with(ChronoField.MONTH_OF_YEAR, 2);
         if (isLeapYear) {
-            assertEquals(minguo.lengthOfMonth(), 29);
+            assertEquals(29, minguo.lengthOfMonth());
         } else {
-            assertEquals(minguo.lengthOfMonth(), 28);
+            assertEquals(28, minguo.lengthOfMonth());
         }
     }
 
@@ -359,14 +366,14 @@ public class TCKMinguoChronology {
     public void test_adjust1() {
         MinguoDate base = MinguoChronology.INSTANCE.date(2012, 10, 29);
         MinguoDate test = base.with(TemporalAdjusters.lastDayOfMonth());
-        assertEquals(test, MinguoChronology.INSTANCE.date(2012, 10, 31));
+        assertEquals(MinguoChronology.INSTANCE.date(2012, 10, 31), test);
     }
 
     @Test
     public void test_adjust2() {
         MinguoDate base = MinguoChronology.INSTANCE.date(1728, 12, 2);
         MinguoDate test = base.with(TemporalAdjusters.lastDayOfMonth());
-        assertEquals(test, MinguoChronology.INSTANCE.date(1728, 12, 31));
+        assertEquals(MinguoChronology.INSTANCE.date(1728, 12, 31), test);
     }
 
     //-----------------------------------------------------------------------
@@ -376,13 +383,15 @@ public class TCKMinguoChronology {
     public void test_adjust_toLocalDate() {
         MinguoDate minguo = MinguoChronology.INSTANCE.date(99, 1, 4);
         MinguoDate test = minguo.with(LocalDate.of(2012, 7, 6));
-        assertEquals(test, MinguoChronology.INSTANCE.date(101, 7, 6));
+        assertEquals(MinguoChronology.INSTANCE.date(101, 7, 6), test);
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test
     public void test_adjust_toMonth() {
-        MinguoDate minguo = MinguoChronology.INSTANCE.date(1726, 1, 4);
-        minguo.with(Month.APRIL);
+        Assertions.assertThrows(DateTimeException.class, () -> {
+            MinguoDate minguo = MinguoChronology.INSTANCE.date(1726, 1, 4);
+            minguo.with(Month.APRIL);
+        });
     }
 
     //-----------------------------------------------------------------------
@@ -392,20 +401,19 @@ public class TCKMinguoChronology {
     public void test_LocalDate_adjustToMinguoDate() {
         MinguoDate minguo = MinguoChronology.INSTANCE.date(101, 10, 29);
         LocalDate test = LocalDate.MIN.with(minguo);
-        assertEquals(test, LocalDate.of(2012, 10, 29));
+        assertEquals(LocalDate.of(2012, 10, 29), test);
     }
 
     @Test
     public void test_LocalDateTime_adjustToMinguoDate() {
         MinguoDate minguo = MinguoChronology.INSTANCE.date(101, 10, 29);
         LocalDateTime test = LocalDateTime.MIN.with(minguo);
-        assertEquals(test, LocalDateTime.of(2012, 10, 29, 0, 0));
+        assertEquals(LocalDateTime.of(2012, 10, 29, 0, 0), test);
     }
 
     //-----------------------------------------------------------------------
     // localDateTime()
     //-----------------------------------------------------------------------
-    @DataProvider(name="localDateTime")
     Object[][] data_localDateTime() {
         return new Object[][] {
             {LocalDateTime.of(2012, 2, 29, 2, 7), MinguoChronology.INSTANCE.date(MinguoEra.ROC, 2012 - YDIFF, 2, 29), LocalTime.of(2, 7), null},
@@ -419,13 +427,14 @@ public class TCKMinguoChronology {
         };
     }
 
-    @Test(dataProvider="localDateTime")
+    @ParameterizedTest
+    @MethodSource("data_localDateTime")
     public void test_localDateTime(TemporalAccessor accessor,  MinguoDate expectedDate, LocalTime expectedTime, Class<?> expectedEx) {
         if (expectedEx == null) {
             ChronoLocalDateTime<MinguoDate> result = MinguoChronology.INSTANCE.localDateTime(accessor);
-            assertEquals(result.toLocalDate(), expectedDate);
-            assertEquals(MinguoDate.from(accessor), expectedDate);
-            assertEquals(result.toLocalTime(), expectedTime);
+            assertEquals(expectedDate, result.toLocalDate());
+            assertEquals(expectedDate, MinguoDate.from(accessor));
+            assertEquals(expectedTime, result.toLocalTime());
         } else {
             try {
                 ChronoLocalDateTime<MinguoDate> result = MinguoChronology.INSTANCE.localDateTime(accessor);
@@ -439,7 +448,6 @@ public class TCKMinguoChronology {
     //-----------------------------------------------------------------------
     // zonedDateTime(TemporalAccessor)
     //-----------------------------------------------------------------------
-    @DataProvider(name="zonedDateTime")
     Object[][] data_zonedDateTime() {
         return new Object[][] {
             {ZonedDateTime.of(2012, 2, 29, 2, 7, 1, 1, ZONE_PARIS), MinguoChronology.INSTANCE.date(MinguoEra.ROC, 2012 - YDIFF, 2, 29), LocalTime.of(2, 7, 1, 1), null},
@@ -453,13 +461,14 @@ public class TCKMinguoChronology {
         };
     }
 
-    @Test(dataProvider="zonedDateTime")
+    @ParameterizedTest
+    @MethodSource("data_zonedDateTime")
     public void test_zonedDateTime(TemporalAccessor accessor,  MinguoDate expectedDate, LocalTime expectedTime, Class<?> expectedEx) {
         if (expectedEx == null) {
             ChronoZonedDateTime<MinguoDate> result = MinguoChronology.INSTANCE.zonedDateTime(accessor);
-            assertEquals(result.toLocalDate(), expectedDate);
-            assertEquals(MinguoDate.from(accessor), expectedDate);
-            assertEquals(result.toLocalTime(), expectedTime);
+            assertEquals(expectedDate, result.toLocalDate());
+            assertEquals(expectedDate, MinguoDate.from(accessor));
+            assertEquals(expectedTime, result.toLocalTime());
 
         } else {
             try {
@@ -480,12 +489,12 @@ public class TCKMinguoChronology {
         ZonedDateTime zonedDateTime = ZonedDateTime.of(2012, 2, 29, 2, 7, 1, 1, ZONE_PARIS);
 
         ChronoZonedDateTime<MinguoDate> result = MinguoChronology.INSTANCE.zonedDateTime(offsetDateTime.toInstant(), offsetDateTime.getOffset());
-        assertEquals(result.toLocalDate(), MinguoChronology.INSTANCE.date(MinguoEra.ROC, 2012 - YDIFF, 2, 29));
-        assertEquals(result.toLocalTime(), LocalTime.of(2, 7, 1, 1));
+        assertEquals(MinguoChronology.INSTANCE.date(MinguoEra.ROC, 2012 - YDIFF, 2, 29), result.toLocalDate());
+        assertEquals(LocalTime.of(2, 7, 1, 1), result.toLocalTime());
 
         result = MinguoChronology.INSTANCE.zonedDateTime(zonedDateTime.toInstant(), zonedDateTime.getOffset());
-        assertEquals(result.toLocalDate(), MinguoChronology.INSTANCE.date(MinguoEra.ROC, 2012 - YDIFF, 2, 29));
-        assertEquals(result.toLocalTime(), LocalTime.of(2, 7, 1, 1));
+        assertEquals(MinguoChronology.INSTANCE.date(MinguoEra.ROC, 2012 - YDIFF, 2, 29), result.toLocalDate());
+        assertEquals(LocalTime.of(2, 7, 1, 1), result.toLocalTime());
     }
 
     //-----------------------------------------------------------------------
@@ -496,7 +505,7 @@ public class TCKMinguoChronology {
         MinguoDate mdate1 = MinguoDate.of(1970, 1, 1);
         MinguoDate mdate2 = MinguoDate.of(1971, 2, 2);
         ChronoPeriod period = mdate1.until(mdate2);
-        assertEquals(period, MinguoChronology.INSTANCE.period(1, 1, 1));
+        assertEquals(MinguoChronology.INSTANCE.period(1, 1, 1), period);
     }
 
     @Test
@@ -504,7 +513,7 @@ public class TCKMinguoChronology {
         MinguoDate mdate1 = MinguoDate.of(1970, 1, 1);
         MinguoDate mdate2 = MinguoDate.of(1971, 2, 2);
         long months = mdate1.until(mdate2, ChronoUnit.MONTHS);
-        assertEquals(months, 13);
+        assertEquals(13, months);
     }
 
     @Test
@@ -513,13 +522,12 @@ public class TCKMinguoChronology {
         MinguoDate mdate2 = MinguoDate.of(1971, 2, 2);
         ThaiBuddhistDate ldate2 = ThaiBuddhistChronology.INSTANCE.date(mdate2);
         ChronoPeriod period = mdate1.until(ldate2);
-        assertEquals(period, MinguoChronology.INSTANCE.period(1, 1, 1));
+        assertEquals(MinguoChronology.INSTANCE.period(1, 1, 1), period);
     }
 
     //-----------------------------------------------------------------------
     // toString()
     //-----------------------------------------------------------------------
-    @DataProvider(name="toString")
     Object[][] data_toString() {
         return new Object[][] {
             {MinguoChronology.INSTANCE.date(1, 1, 1), "Minguo ROC 1-01-01"},
@@ -530,9 +538,10 @@ public class TCKMinguoChronology {
         };
     }
 
-    @Test(dataProvider="toString")
+    @ParameterizedTest
+    @MethodSource("data_toString")
     public void test_toString(MinguoDate minguo, String expected) {
-        assertEquals(minguo.toString(), expected);
+        assertEquals(expected, minguo.toString());
     }
 
     //-----------------------------------------------------------------------
@@ -550,7 +559,6 @@ public class TCKMinguoChronology {
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "resolve_yearOfEra")
     Object[][] data_resolve_yearOfEra() {
         return new Object[][] {
                 // era only
@@ -615,7 +623,8 @@ public class TCKMinguoChronology {
         };
     }
 
-    @Test(dataProvider = "resolve_yearOfEra")
+    @ParameterizedTest
+    @MethodSource("data_resolve_yearOfEra")
     public void test_resolve_yearOfEra(ResolverStyle style, Integer e, Integer yoe, Integer y, ChronoField field, Integer expected) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         if (e != null) {
@@ -629,9 +638,9 @@ public class TCKMinguoChronology {
         }
         if (field != null) {
             MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, style);
-            assertEquals(date, null);
-            assertEquals(fieldValues.get(field), (Long) expected.longValue());
-            assertEquals(fieldValues.size(), 1);
+            assertEquals(null, date);
+            assertEquals((Long) expected.longValue(), fieldValues.get(field));
+            assertEquals(1, fieldValues.size());
         } else {
             try {
                 MinguoChronology.INSTANCE.resolveDate(fieldValues, style);
@@ -644,7 +653,6 @@ public class TCKMinguoChronology {
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "resolve_ymd")
     Object[][] data_resolve_ymd() {
         return new Object[][] {
                 {2012 - YDIFF, 1, -365, date(2010 - YDIFF, 12, 31), false, false},
@@ -703,18 +711,20 @@ public class TCKMinguoChronology {
         };
     }
 
-    @Test(dataProvider = "resolve_ymd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymd")
     public void test_resolve_ymd_lenient(int y, int m, int d, MinguoDate expected, Object smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
         fieldValues.put(ChronoField.MONTH_OF_YEAR, (long) m);
         fieldValues.put(ChronoField.DAY_OF_MONTH, (long) d);
         MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.LENIENT);
-        assertEquals(date, expected);
-        assertEquals(fieldValues.size(), 0);
+        assertEquals(expected, date);
+        assertEquals(0, fieldValues.size());
     }
 
-    @Test(dataProvider = "resolve_ymd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymd")
     public void test_resolve_ymd_smart(int y, int m, int d, MinguoDate expected, Object smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -722,11 +732,11 @@ public class TCKMinguoChronology {
         fieldValues.put(ChronoField.DAY_OF_MONTH, (long) d);
         if (Boolean.TRUE.equals(smart)) {
             MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else if (smart instanceof MinguoDate) {
             MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
-            assertEquals(date, smart);
+            assertEquals(smart, date);
         } else {
             try {
                 MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
@@ -737,7 +747,8 @@ public class TCKMinguoChronology {
         }
     }
 
-    @Test(dataProvider = "resolve_ymd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymd")
     public void test_resolve_ymd_strict(int y, int m, int d, MinguoDate expected, Object smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -745,8 +756,8 @@ public class TCKMinguoChronology {
         fieldValues.put(ChronoField.DAY_OF_MONTH, (long) d);
         if (strict) {
             MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
@@ -759,7 +770,6 @@ public class TCKMinguoChronology {
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "resolve_yd")
     Object[][] data_resolve_yd() {
         return new Object[][] {
                 {2012 - YDIFF, -365, date(2010 - YDIFF, 12, 31), false, false},
@@ -787,25 +797,27 @@ public class TCKMinguoChronology {
         };
     }
 
-    @Test(dataProvider = "resolve_yd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_yd")
     public void test_resolve_yd_lenient(int y, int d, MinguoDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
         fieldValues.put(ChronoField.DAY_OF_YEAR, (long) d);
         MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.LENIENT);
-        assertEquals(date, expected);
-        assertEquals(fieldValues.size(), 0);
+        assertEquals(expected, date);
+        assertEquals(0, fieldValues.size());
     }
 
-    @Test(dataProvider = "resolve_yd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_yd")
     public void test_resolve_yd_smart(int y, int d, MinguoDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
         fieldValues.put(ChronoField.DAY_OF_YEAR, (long) d);
         if (smart) {
             MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
@@ -816,15 +828,16 @@ public class TCKMinguoChronology {
         }
     }
 
-    @Test(dataProvider = "resolve_yd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_yd")
     public void test_resolve_yd_strict(int y, int d, MinguoDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
         fieldValues.put(ChronoField.DAY_OF_YEAR, (long) d);
         if (strict) {
             MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
@@ -837,7 +850,6 @@ public class TCKMinguoChronology {
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "resolve_ymaa")
     Object[][] data_resolve_ymaa() {
         return new Object[][] {
                 {2012 - YDIFF, 1, 1, -365, date(2010 - YDIFF, 12, 31), false, false},
@@ -894,7 +906,8 @@ public class TCKMinguoChronology {
         };
     }
 
-    @Test(dataProvider = "resolve_ymaa")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymaa")
     public void test_resolve_ymaa_lenient(int y, int m, int w, int d, MinguoDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -902,11 +915,12 @@ public class TCKMinguoChronology {
         fieldValues.put(ChronoField.ALIGNED_WEEK_OF_MONTH, (long) w);
         fieldValues.put(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH, (long) d);
         MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.LENIENT);
-        assertEquals(date, expected);
-        assertEquals(fieldValues.size(), 0);
+        assertEquals(expected, date);
+        assertEquals(0, fieldValues.size());
     }
 
-    @Test(dataProvider = "resolve_ymaa")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymaa")
     public void test_resolve_ymaa_smart(int y, int m, int w, int d, MinguoDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -915,8 +929,8 @@ public class TCKMinguoChronology {
         fieldValues.put(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH, (long) d);
         if (smart) {
             MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
@@ -927,7 +941,8 @@ public class TCKMinguoChronology {
         }
     }
 
-    @Test(dataProvider = "resolve_ymaa")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymaa")
     public void test_resolve_ymaa_strict(int y, int m, int w, int d, MinguoDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -936,8 +951,8 @@ public class TCKMinguoChronology {
         fieldValues.put(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH, (long) d);
         if (strict) {
             MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);

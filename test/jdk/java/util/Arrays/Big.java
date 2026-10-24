@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 5045582
  * @summary arrays larger than 1<<30
  * @author Martin Buchholz
+ * @library /test/lib
  */
 
 // A proper regression test for 5045582 requires too much memory.
@@ -34,7 +35,17 @@
 
 import java.util.*;
 
+import jdk.test.lib.valueclass.AsValueClass;
+
 public class Big {
+
+    @AsValueClass
+    record Point(int x, int y) implements Comparable<Point> {
+        public int compareTo(Point o) {
+            int c = Integer.compare(x, o.x);
+            return c != 0 ? c : Integer.compare(y, o.y);
+        }
+    }
 
     private static void realMain(String[] args) throws Throwable {
         final int shift = intArg(args, 0, 10); // "30" is real test
@@ -93,6 +104,34 @@ public class Big {
             equal(a[n-2],  44);
             equal(a[n-3],  43);
             equal(a[n-4],   0);
+        }
+
+        // To test value record arrays larger than 1<<30, you need ~25GB. Run like:
+        // java --enable-preview -Xms25g -Xmx25g Big 30 4
+        if ((tasks & 0x4) != 0) {
+            System.out.println("Point[]");
+            System.gc();
+            Point[] a = new Point[n];
+            Point ZERO = new Point(0, 0);
+            Arrays.fill(a, ZERO);
+            a[0]   = new Point(-44, -44);
+            a[1]   = new Point(-43, -43);
+            a[n-2] = new Point(+43, +43);
+            a[n-1] = new Point(+44, +44);
+            for (int i : new int[] { 0, 1, n-2, n-1 })
+                try { equal(i, Arrays.binarySearch(a, a[i])); }
+                catch (Throwable t) { unexpected(t); }
+            for (int i : new int[] { n-2, n-1 })
+                try { equal(i, Arrays.binarySearch(a, n-5, n, a[i])); }
+                catch (Throwable t) { unexpected(t); }
+
+            a[n-19] = new Point(45, 45);
+            try { Arrays.sort(a, n-29, n); }
+            catch (Throwable t) { unexpected(t); }
+            equal(a[n-1], new Point(45, 45));
+            equal(a[n-2], new Point(44, 44));
+            equal(a[n-3], new Point(43, 43));
+            equal(a[n-4], new Point(0, 0));
         }
     }
 

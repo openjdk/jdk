@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@ import jdk.test.lib.process.ProcessTools;
  * @summary Test -DScenarios property flag. Run with othervm which should not be done when writing tests using the framework.
  * @library /test/lib /
  * @run main/othervm -DScenarios=1,5,10 ir_framework.tests.TestDScenarios test
- * @run main/othervm -DScenarios=1,4 ir_framework.tests.TestDScenarios test
- * @run main/othervm -DScenarios=3,4,9 ir_framework.tests.TestDScenarios test
+ * @run main/othervm -DScenario=1,4 ir_framework.tests.TestDScenarios test
+ * @run main/othervm -Dscenarios=3,4,9 ir_framework.tests.TestDScenarios test
  * @run driver ir_framework.tests.TestDScenarios test2
  * @run driver ir_framework.tests.TestDScenarios
  */

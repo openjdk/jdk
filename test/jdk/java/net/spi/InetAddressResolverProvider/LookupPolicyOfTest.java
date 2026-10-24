@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
  * @test
  * @summary check if LookupPolicy.of correctly handles valid and illegal
  * combinations of characteristics bit mask flags.
- * @run testng LookupPolicyOfTest
+ * @run junit LookupPolicyOfTest
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.net.spi.InetAddressResolver.LookupPolicy;
 import java.util.List;
@@ -38,21 +38,23 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV4;
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV4_FIRST;
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6;
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class LookupPolicyOfTest {
 
-    @Test(dataProvider = "validCharacteristics")
+    @ParameterizedTest
+    @MethodSource("validCharacteristicValue")
     public void testValidCharacteristicCombinations(List<Integer> validCombination) {
         LookupPolicy.of(bitFlagsToCharacteristicsValue(validCombination));
     }
 
-    @Test(dataProvider = "invalidCharacteristics", expectedExceptions = IllegalArgumentException.class)
-    public void testInvalidCharacteristicCombinations(List<Integer> invalidCombination) {
-        LookupPolicy.of(bitFlagsToCharacteristicsValue(invalidCombination));
+    @ParameterizedTest
+    @MethodSource("illegalCharacteristicValue")
+    public void testInvalidCharacteristicCombination(List<Integer> invalidCombination) {
+        assertThrows(IllegalArgumentException.class, () -> LookupPolicy.of(bitFlagsToCharacteristicsValue(invalidCombination)));
     }
 
-    @DataProvider(name = "validCharacteristics")
-    public Object[][] validCharacteristicValue() {
+    public static Object[][] validCharacteristicValue() {
         return new Object[][]{
                 {List.of(IPV4)},
                 {List.of(IPV4, IPV4_FIRST)},
@@ -68,8 +70,7 @@ public class LookupPolicyOfTest {
         };
     }
 
-    @DataProvider(name = "invalidCharacteristics")
-    public Object[][] illegalCharacteristicValue() {
+    public static Object[][] illegalCharacteristicValue() {
         return new Object[][]{
                 {List.of()},
                 {List.of(IPV4_FIRST)},

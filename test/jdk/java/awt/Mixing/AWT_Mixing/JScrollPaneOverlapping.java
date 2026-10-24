@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@ public class JScrollPaneOverlapping extends OverlappingTestBase {
         });
 
         f.getContentPane().add(scrollPane);
+        f.setLocationRelativeTo(null);
         f.setVisible(true);
         propagateAWTControls(p);
 //        JButton b = new JButton("Space extender");

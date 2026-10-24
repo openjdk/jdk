@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import static jdk.jpackage.internal.LinuxSystemEnvironment.mixin;
 
 import jdk.jpackage.internal.util.Result;
 
-public interface LinuxRpmSystemEnvironment extends LinuxSystemEnvironment, LinuxRpmSystemEnvironmentMixin {
+interface LinuxRpmSystemEnvironment extends LinuxSystemEnvironment, LinuxRpmSystemEnvironmentMixin {
 
     static Result<LinuxRpmSystemEnvironment> create(Result<LinuxSystemEnvironment> base) {
         return mixin(LinuxRpmSystemEnvironment.class, base, LinuxRpmSystemEnvironmentMixin::create);

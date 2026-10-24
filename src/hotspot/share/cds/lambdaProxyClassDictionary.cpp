@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,20 @@
  */
 
 #include "cds/aotClassFilter.hpp"
+#include "cds/aotCompressedPointers.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 DumpTimeLambdaProxyClassInfo::~DumpTimeLambdaProxyClassInfo() {
   if (_proxy_klasses != nullptr) {
@@ -41,19 +45,19 @@ DumpTimeLambdaProxyClassInfo::~DumpTimeLambdaProxyClassInfo() {
 }
 
 unsigned int LambdaProxyClassKey::hash() const {
-  return SystemDictionaryShared::hash_for_shared_dictionary((address)_caller_ik) +
-         SystemDictionaryShared::hash_for_shared_dictionary((address)_invoked_name) +
-         SystemDictionaryShared::hash_for_shared_dictionary((address)_invoked_type) +
-         SystemDictionaryShared::hash_for_shared_dictionary((address)_method_type) +
-         SystemDictionaryShared::hash_for_shared_dictionary((address)_instantiated_method_type);
+  return AOTSystemDictionary::hash_for_shared_dictionary((address)_caller_ik) +
+         AOTSystemDictionary::hash_for_shared_dictionary((address)_invoked_name) +
+         AOTSystemDictionary::hash_for_shared_dictionary((address)_invoked_type) +
+         AOTSystemDictionary::hash_for_shared_dictionary((address)_method_type) +
+         AOTSystemDictionary::hash_for_shared_dictionary((address)_instantiated_method_type);
 }
 
 unsigned int RunTimeLambdaProxyClassKey::hash() const {
-  return primitive_hash<u4>(_caller_ik) +
-         primitive_hash<u4>(_invoked_name) +
-         primitive_hash<u4>(_invoked_type) +
-         primitive_hash<u4>(_method_type) +
-         primitive_hash<u4>(_instantiated_method_type);
+  return primitive_hash<u4>(cast_to_u4(_caller_ik)) +
+         primitive_hash<u4>(cast_to_u4(_invoked_name)) +
+         primitive_hash<u4>(cast_to_u4(_invoked_type)) +
+         primitive_hash<u4>(cast_to_u4(_method_type)) +
+         primitive_hash<u4>(cast_to_u4(_instantiated_method_type));
 }
 
 #ifndef PRODUCT
@@ -71,12 +75,12 @@ void LambdaProxyClassKey::print_on(outputStream* st) const {
 void RunTimeLambdaProxyClassKey::print_on(outputStream* st) const {
   ResourceMark rm;
   st->print_cr("LambdaProxyClassKey       : " INTPTR_FORMAT " hash: %0x08x", p2i(this), hash());
-  st->print_cr("_caller_ik                : %d", _caller_ik);
-  st->print_cr("_instantiated_method_type : %d", _instantiated_method_type);
-  st->print_cr("_invoked_name             : %d", _invoked_name);
-  st->print_cr("_invoked_type             : %d", _invoked_type);
-  st->print_cr("_member_method            : %d", _member_method);
-  st->print_cr("_method_type              : %d", _method_type);
+  st->print_cr("_caller_ik                : %d", cast_to_u4(_caller_ik));
+  st->print_cr("_instantiated_method_type : %d", cast_to_u4(_instantiated_method_type));
+  st->print_cr("_invoked_name             : %d", cast_to_u4(_invoked_name));
+  st->print_cr("_invoked_type             : %d", cast_to_u4(_invoked_type));
+  st->print_cr("_member_method            : %d", cast_to_u4(_member_method));
+  st->print_cr("_method_type              : %d", cast_to_u4(_method_type));
 }
 
 void RunTimeLambdaProxyClassInfo::print_on(outputStream* st) const {
@@ -91,6 +95,7 @@ void RunTimeLambdaProxyClassInfo::init(LambdaProxyClassKey& key, DumpTimeLambdaP
 }
 
 DumpTimeLambdaProxyClassDictionary* LambdaProxyClassDictionary::_dumptime_table = nullptr;
+LambdaProxyClassDictionary LambdaProxyClassDictionary::_runtime_table_for_dumping;
 LambdaProxyClassDictionary LambdaProxyClassDictionary::_runtime_static_table; // for static CDS archive
 LambdaProxyClassDictionary LambdaProxyClassDictionary::_runtime_dynamic_table; // for dynamic CDS archive
 
@@ -174,10 +179,10 @@ void LambdaProxyClassDictionary::add_lambda_proxy_class(InstanceKlass* caller_ik
   InstanceKlass* nest_host = caller_ik->nest_host(CHECK);
   assert(nest_host != nullptr, "unexpected nullptr nest_host");
 
-  DumpTimeClassInfo* info = SystemDictionaryShared::get_info_locked(lambda_ik);
+  DumpTimeClassInfo* info = AOTSystemDictionary::get_info_locked(lambda_ik);
   if (info != nullptr && !lambda_ik->is_non_strong_hidden() &&
-      SystemDictionaryShared::is_builtin(lambda_ik) &&
-      SystemDictionaryShared::is_builtin(caller_ik)
+      AOTSystemDictionary::is_builtin(lambda_ik) &&
+      AOTSystemDictionary::is_builtin(caller_ik)
       // Don't include the lambda proxy if its nest host is not in the "linked" state.
       && nest_host->is_linked()) {
     // Set _is_registered_lambda_proxy in DumpTimeClassInfo so that the lambda_ik
@@ -196,7 +201,7 @@ void LambdaProxyClassDictionary::add_lambda_proxy_class(InstanceKlass* caller_ik
 }
 
 bool LambdaProxyClassDictionary::is_registered_lambda_proxy_class(InstanceKlass* ik) {
-  DumpTimeClassInfo* info = SystemDictionaryShared::get_info_locked(ik);
+  DumpTimeClassInfo* info = AOTSystemDictionary::get_info_locked(ik);
   bool result = (info != nullptr) ? info->_is_registered_lambda_proxy : false;
   if (result) {
     assert(CDSConfig::is_dumping_lambdas_in_legacy_mode(), "only used in legacy lambda proxy support");
@@ -205,7 +210,7 @@ bool LambdaProxyClassDictionary::is_registered_lambda_proxy_class(InstanceKlass*
 }
 
 void LambdaProxyClassDictionary::reset_registered_lambda_proxy_class(InstanceKlass* ik) {
-  DumpTimeClassInfo* info = SystemDictionaryShared::get_info_locked(ik);
+  DumpTimeClassInfo* info = AOTSystemDictionary::get_info_locked(ik);
   if (info != nullptr) {
     info->_is_registered_lambda_proxy = false;
     info->set_excluded();
@@ -316,6 +321,9 @@ InstanceKlass* LambdaProxyClassDictionary::find_lambda_proxy_class(const RunTime
 
 InstanceKlass* LambdaProxyClassDictionary::load_and_init_lambda_proxy_class(InstanceKlass* lambda_ik,
                                                                             InstanceKlass* caller_ik, TRAPS) {
+
+  EventClassLoad class_load_event;
+
   Handle class_loader(THREAD, caller_ik->class_loader());
   Handle protection_domain;
   PackageEntry* pkg_entry = caller_ik->package();
@@ -357,19 +365,21 @@ InstanceKlass* LambdaProxyClassDictionary::load_and_init_lambda_proxy_class(Inst
   InstanceKlass* nest_host = caller_ik->nest_host(THREAD);
   assert(nest_host == shared_nest_host, "mismatched nest host");
 
-  EventClassLoad class_load_start_event;
+  JFR_ONLY(Jfr::on_definition(lambda_ik, THREAD);)
 
   // Add to class hierarchy, and do possible deoptimizations.
   lambda_ik->add_to_hierarchy(THREAD);
+  assert(lambda_ik->is_loaded(), "Must be in at least loaded state");
   // But, do not add to dictionary.
+
+  if (class_load_event.should_commit()) {
+    JFR_ONLY(SystemDictionary::post_class_load_event(&class_load_event, lambda_ik, ClassLoaderData::class_loader_data(class_loader()));)
+  }
 
   lambda_ik->link_class(CHECK_NULL);
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
     JvmtiExport::post_class_load(THREAD, lambda_ik);
-  }
-  if (class_load_start_event.should_commit()) {
-    SystemDictionary::post_class_load_event(&class_load_start_event, lambda_ik, ClassLoaderData::class_loader_data(class_loader()));
   }
 
   lambda_ik->initialize(CHECK_NULL);
@@ -418,14 +428,13 @@ public:
         (RunTimeLambdaProxyClassInfo*)ArchiveBuilder::ro_region_alloc(byte_size);
     runtime_info->init(key, info);
     unsigned int hash = runtime_info->hash();
-    u4 delta = _builder->any_to_offset_u4((void*)runtime_info);
-    _writer->add(hash, delta);
+    _writer->add(hash, AOTCompressedPointers::encode_not_null(runtime_info));
     return true;
   }
 };
 
 void LambdaProxyClassDictionary::write_dictionary(bool is_static_archive) {
-  LambdaProxyClassDictionary* dictionary = is_static_archive ? &_runtime_static_table : &_runtime_dynamic_table;
+  LambdaProxyClassDictionary* dictionary = &_runtime_table_for_dumping;
   CompactHashtableStats stats;
   dictionary->reset();
   CompactHashtableWriter writer(_dumptime_table->_count, &stats);
@@ -471,12 +480,12 @@ class LambdaProxyClassDictionary::CleanupDumpTimeLambdaProxyClassTable: StackObj
 
     // If the caller class and/or nest_host are excluded, the associated lambda proxy
     // must also be excluded.
-    bool always_exclude = SystemDictionaryShared::should_be_excluded(caller_ik) ||
-                          SystemDictionaryShared::should_be_excluded(nest_host);
+    bool always_exclude = AOTSystemDictionary::should_be_excluded(caller_ik) ||
+                          AOTSystemDictionary::should_be_excluded(nest_host);
 
     for (int i = info._proxy_klasses->length() - 1; i >= 0; i--) {
       InstanceKlass* ik = info._proxy_klasses->at(i);
-      if (always_exclude || SystemDictionaryShared::should_be_excluded(ik)) {
+      if (always_exclude || AOTSystemDictionary::should_be_excluded(ik)) {
         LambdaProxyClassDictionary::reset_registered_lambda_proxy_class(ik);
         info._proxy_klasses->remove_at(i);
       }
@@ -503,7 +512,7 @@ public:
       Klass* k = record->proxy_klass_head();
       while (k != nullptr) {
         _st->print_cr("%4d: %s %s", _index++, k->external_name(),
-                      SystemDictionaryShared::loader_type_for_shared_class(k));
+                      AOTSystemDictionary::loader_type_for_shared_class(k));
         k = k->next_link();
       }
     }
@@ -518,7 +527,7 @@ void LambdaProxyClassDictionary::print_on(const char* prefix,
   if (!dictionary->empty()) {
     st->print_cr("%sShared Lambda Dictionary", prefix);
     SharedLambdaDictionaryPrinter ldp(st, start_index);
-    dictionary->iterate(&ldp);
+    dictionary->iterate_all(&ldp);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,34 +25,33 @@
 #ifndef SHARE_GC_SHARED_WORKERUTILS_HPP
 #define SHARE_GC_SHARED_WORKERUTILS_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
 #include "metaprogramming/enableIf.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include <type_traits>
 
 // A class that acts as a synchronisation barrier. Workers enter
 // the barrier and must wait until all other workers have entered
 // before any of them may leave.
 
 class WorkerThreadsBarrierSync : public StackObj {
-protected:
   Monitor _monitor;
-  uint    _n_workers;
-  uint    _n_completed;
+  uint    _num_workers;
+  uint    _num_completed;
   bool    _should_reset;
   bool    _aborted;
 
   Monitor* monitor()        { return &_monitor; }
-  uint     n_workers()      { return _n_workers; }
-  uint     n_completed()    { return _n_completed; }
+  uint     num_workers()      { return _num_workers; }
+  uint     num_completed()    { return _num_completed; }
   bool     should_reset()   { return _should_reset; }
   bool     aborted()        { return _aborted; }
 
-  void     zero_completed() { _n_completed = 0; }
-  void     inc_completed()  { _n_completed++; }
+  void     zero_completed() { _num_completed = 0; }
+  void     inc_completed()  { _num_completed++; }
   void     set_aborted()    { _aborted = true; }
   void     set_should_reset(bool v) { _should_reset = v; }
 
@@ -61,7 +60,7 @@ public:
 
   // Set the number of workers that will use the barrier.
   // Must be called before any of the workers start running.
-  void set_n_workers(uint n_workers);
+  void set_num_workers(uint num_workers);
 
   // Enter the barrier. A worker that enters the barrier will
   // not be allowed to leave until all other threads have
@@ -71,7 +70,7 @@ public:
 
   // Aborts the barrier and wakes up any threads waiting for
   // the barrier to complete. The barrier will remain in the
-  // aborted state until the next call to set_n_workers().
+  // aborted state until the next call to set_num_workers().
   void abort();
 };
 
@@ -79,12 +78,12 @@ public:
 // subtasks will be identified by integer indices, usually elements of an
 // enumeration type.
 
-class SubTasksDone: public CHeapObj<mtInternal> {
-  volatile bool* _tasks;
-  uint _n_tasks;
+class SubTasksDone: public CHeapObj<mtGC> {
+  Atomic<bool>* _tasks;
+  uint _num_tasks;
 
   // make sure verification logic is run exactly once to avoid duplicate assertion failures
-  DEBUG_ONLY(volatile bool _verification_done = false;)
+  DEBUG_ONLY(Atomic<bool> _verification_done;)
   void all_tasks_claimed_impl(uint skipped[], size_t skipped_size) NOT_DEBUG_RETURN;
 
   NONCOPYABLE(SubTasksDone);
@@ -125,10 +124,10 @@ public:
 // partitioned tasks (like striding in the parallel remembered
 // set scanning).
 
-class SequentialSubTasksDone : public CHeapObj<mtInternal> {
+class SequentialSubTasksDone : public CHeapObj<mtGC> {
 
   uint _num_tasks;     // Total number of tasks available.
-  volatile uint _num_claimed;   // Number of tasks claimed.
+  Atomic<uint> _num_claimed;    // Number of tasks claimed.
 
   NONCOPYABLE(SequentialSubTasksDone);
 
@@ -136,7 +135,8 @@ public:
   SequentialSubTasksDone(uint num_tasks) : _num_tasks(num_tasks), _num_claimed(0) { }
   ~SequentialSubTasksDone() {
     // Claiming may try to claim more tasks than there are.
-    assert(_num_claimed >= _num_tasks, "Claimed %u tasks of %u", _num_claimed, _num_tasks);
+    assert(_num_claimed.load_relaxed() >= _num_tasks,
+           "Claimed %u tasks of %u", _num_claimed.load_relaxed(), _num_tasks);
   }
 
   // Attempt to claim the next unclaimed task in the sequence,

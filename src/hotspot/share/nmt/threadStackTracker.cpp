@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, 2024, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,6 @@ void ThreadStackTracker::delete_thread_stack(void* base, size_t size) {
   assert(base != nullptr, "Should have been filtered");
   align_thread_stack_boundaries_inward(base, size);
 
-  MemTracker::NmtVirtualMemoryLocker nvml;
   MemTracker::record_virtual_memory_release((address)base, size);
   _thread_count--;
 }

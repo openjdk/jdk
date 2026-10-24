@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,8 @@
  */
 package test.java.time;
 
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -69,23 +69,25 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test OffsetDateTime.
  *
  * @bug 8211990
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestOffsetDateTime extends AbstractTest {
 
     private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);
     private static final ZoneOffset OFFSET_PTWO = ZoneOffset.ofHours(2);
     private OffsetDateTime TEST_2008_6_30_11_30_59_000000500;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         TEST_2008_6_30_11_30_59_000000500 = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59, 500), OFFSET_PONE);
     }
@@ -98,7 +100,6 @@ public class TestOffsetDateTime extends AbstractTest {
     //-----------------------------------------------------------------------
     // basics
     //-----------------------------------------------------------------------
-    @DataProvider(name="sampleTimes")
     Object[][] provider_sampleTimes() {
         return new Object[][] {
             {2008, 6, 30, 11, 30, 20, 500, OFFSET_PONE},
@@ -108,7 +109,8 @@ public class TestOffsetDateTime extends AbstractTest {
         };
     }
 
-    @Test(dataProvider="sampleTimes")
+    @ParameterizedTest
+    @MethodSource("provider_sampleTimes")
     public void test_get_same(int y, int o, int d, int h, int m, int s, int n, ZoneOffset offset) {
         LocalDate localDate = LocalDate.of(y, o, d);
         LocalTime localTime = LocalTime.of(h, m, s, n);
@@ -329,6 +331,6 @@ public class TestOffsetDateTime extends AbstractTest {
         OffsetDateTime start = OffsetDateTime.MAX
                                 .withOffsetSameLocal(ZoneOffset.ofHours(-17));
         OffsetDateTime end = OffsetDateTime.MAX;
-        assertEquals(Duration.between(start, end), Duration.ofHours(1));
+        assertEquals(Duration.ofHours(1), Duration.between(start, end));
     }
 }

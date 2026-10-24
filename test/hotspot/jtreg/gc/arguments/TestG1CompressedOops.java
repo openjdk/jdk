@@ -27,6 +27,7 @@ package gc.arguments;
 /*
  * @test TestG1CompressedOops
  * @bug 8354145
+ * @requires vm.bits == 64
  * @requires vm.flagless
  * @summary Verify that the flag UseCompressedOops is updated properly
  * @library /test/lib

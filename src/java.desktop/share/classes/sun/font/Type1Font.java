@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,8 +168,8 @@ public class Type1Font extends FileFont {
                 Disposer.addObjectRecord(bufferRef, ref);
                 bufferRef = null;
             }
-            if (t instanceof FontFormatException) {
-                throw (FontFormatException)t;
+            if (t instanceof FontFormatException ffe) {
+                throw ffe;
             } else {
                 throw new FontFormatException("Unexpected runtime exception.");
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,17 +225,11 @@ final class MemoryContext {
         var memoryConfig = parentLayer.configuration().resolveAndBind(memoryFinder, ModuleFinder.of(), Set.of(applicationModule.name()));
         var memoryClassLoader = new MemoryClassLoader(inMemoryClasses, parentLoader, applicationModule, descriptor, this::compileJavaFileByName);
         var memoryController = ModuleLayer.defineModules(memoryConfig, List.of(parentLayer), __ -> memoryClassLoader);
-        var memoryLayer = memoryController.layer();
-
-        // Make application class accessible from the calling (unnamed) module, that loaded this class.
-        var module = memoryLayer.findModule(applicationModule.name()).orElseThrow();
-        var mainClassNamePackageName = mainClassName.substring(0, lastDotInMainClassName);
-        memoryController.addOpens(module, mainClassNamePackageName, getClass().getModule());
 
         // Configure native access for the modular application.
         enableNativeAccess(memoryController, true);
 
-        return memoryLayer.findLoader(applicationModule.name());
+        return memoryClassLoader;
     }
 
     private static ModuleFinder createModuleFinderFromModulePath() {

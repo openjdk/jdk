@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,7 +366,6 @@ private:
 
   // Balances reference queues.
   void balance_queues(DiscoveredList refs_lists[]);
-  bool need_balance_queues(DiscoveredList refs_lists[]);
 
   // If there is need to balance the given queue, do it.
   void maybe_balance_queues(DiscoveredList refs_lists[]);

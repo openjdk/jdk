@@ -128,11 +128,6 @@ public final class ThreadLocalRandom extends Random {
      * Implementations of non-core methods are mostly the same as in
      * SplittableRandom, that were in part derived from a previous
      * version of this class.
-     *
-     * This implementation of ThreadLocalRandom overrides the
-     * definition of the nextGaussian() method in the class Random,
-     * and instead uses the ziggurat-based algorithm that is the
-     * default for the RandomGenerator interface.
      */
 
     private static int mix32(long z) {
@@ -500,6 +495,23 @@ public final class ThreadLocalRandom extends Random {
     }
 
     /**
+     * Returns a {@code double} value pseudorandomly chosen from a Gaussian
+     * (normal) distribution whose mean is 0 and whose standard deviation is 1.
+     *
+     * @return a {@code double} value pseudorandomly chosen from a
+     *         Gaussian distribution
+     *
+     * @implNote This implementation invokes the default implementation of
+     *           {@link java.util.random.RandomGenerator#nextGaussian()},
+     *           and so it uses McFarland's fast modified ziggurat algorithm
+     *           rather than the polar method described in the superclass.
+     */
+    @Override
+    public double nextGaussian() {
+        return RandomSupport.computeNextGaussian(this);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -510,7 +522,6 @@ public final class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote {@inheritDoc}
      *
      * @since 17
      */
@@ -522,7 +533,6 @@ public final class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote {@inheritDoc}
      *
      * @since 17
      */
@@ -542,7 +552,6 @@ public final class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote {@inheritDoc}
      */
     @Override
     public double nextDouble(double bound) {
@@ -552,7 +561,6 @@ public final class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote {@inheritDoc}
      */
     @Override
     public double nextDouble(double origin, double bound) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 package tck.java.time.format;
 
-import static org.testng.AssertJUnit.assertEquals;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -32,9 +31,11 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Testing DateTimeFormatter Parsing with 4 different test conditions:
@@ -44,7 +45,7 @@ import org.testng.annotations.Test;
  * 4. When Zone is not provided and Offset is provided
  */
 
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKDTFParsedInstant {
 
     private static final ZoneId EUROPE_BERLIN = ZoneId.of("Europe/Berlin");
@@ -55,12 +56,11 @@ public class TCKDTFParsedInstant {
     private LocalDateTime ldt1;
     private OffsetDateTime odt1;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() throws Exception {
         dtFormatter = DateTimeFormatter.ISO_ZONED_DATE_TIME;
     }
 
-    @DataProvider(name="parseWithoutZoneWithoutOffset")
     Object[][] data_parse_WithoutOffset_WithoutZone() {
         return new Object[][] {
             {"1966-12-31T00:01:10", LocalDateTime.of(1966, 12, 31, 0, 1, 10)},
@@ -70,14 +70,14 @@ public class TCKDTFParsedInstant {
         };
     }
 
-    @Test(dataProvider="parseWithoutZoneWithoutOffset")
+    @ParameterizedTest
+    @MethodSource("data_parse_WithoutOffset_WithoutZone")
     public void testWithoutZoneWithoutOffset(String ldtString, LocalDateTime expectedLDT) {
         dtFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
         ldt1 = LocalDateTime.parse(ldtString, dtFormatter);
-        assertEquals(expectedLDT, ldt1);
+        Assertions.assertEquals(expectedLDT, ldt1);
     }
 
-    @DataProvider(name="parseWithZoneWithOffset")
     Object[][] data_parse_WithZone_WithOffset() {
         return new Object[][] {
             {"2012-10-28T01:45:00-02:30[Europe/Berlin]",
@@ -168,15 +168,15 @@ public class TCKDTFParsedInstant {
         };
     }
 
-    @Test(dataProvider="parseWithZoneWithOffset")
+    @ParameterizedTest
+    @MethodSource("data_parse_WithZone_WithOffset")
     public void testWithZoneWithOffset(String zdtString, LocalDateTime ldt, ZoneOffset offset, ZoneId zone) {
         dtFormatter = DateTimeFormatter.ISO_ZONED_DATE_TIME;
         zdt1 = ZonedDateTime.ofInstant(ldt, offset, zone);
         zdt2 = ZonedDateTime.parse(zdtString, dtFormatter);
-        assertEquals(zdt1, zdt2);
+        Assertions.assertEquals(zdt1, zdt2);
     }
 
-    @DataProvider(name="parseWithZoneWithoutOffset")
     Object[][] data_parse_WithZone_WithoutOffset() {
         return new Object[][] {
             {"28 Oct 00:45:00 2012 Europe/Berlin", ZonedDateTime.of(2012, 10, 28, 0, 45, 0, 0, EUROPE_BERLIN)},
@@ -193,14 +193,14 @@ public class TCKDTFParsedInstant {
         };
     }
 
-    @Test(dataProvider="parseWithZoneWithoutOffset")
+    @ParameterizedTest
+    @MethodSource("data_parse_WithZone_WithoutOffset")
     public void testWithZoneWithoutOffset(String withZoneWithoutOffset, ZonedDateTime expectedZDT) {
         dtFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm:ss uuuu VV").withLocale(Locale.ENGLISH);
         zdt1 = ZonedDateTime.parse(withZoneWithoutOffset, dtFormatter);
-        assertEquals(expectedZDT, zdt1);
+        Assertions.assertEquals(expectedZDT, zdt1);
     }
 
-    @DataProvider(name="parseWithOffsetWithoutZone")
     Object[][] data_parse_WithOffset_WithoutZone() {
         return new Object[][] {
             {"2015-12-14T00:45:00-11:30", OffsetDateTime.of(2015, 12, 14, 0, 45, 0, 0, ZoneOffset.of("-11:30"))},
@@ -212,10 +212,11 @@ public class TCKDTFParsedInstant {
         };
     }
 
-    @Test(dataProvider="parseWithOffsetWithoutZone")
+    @ParameterizedTest
+    @MethodSource("data_parse_WithOffset_WithoutZone")
     public void testWithOffsetWithoutZone(String odtString, OffsetDateTime expectedOTD) {
         dtFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
         odt1 = OffsetDateTime.parse(odtString, dtFormatter);
-        assertEquals(expectedOTD, odt1);
+        Assertions.assertEquals(expectedOTD, odt1);
     }
 }

@@ -87,6 +87,8 @@ int jdk_internal_vm_StackChunk::_bottom_offset;
 int jdk_internal_vm_StackChunk::_flags_offset;
 int jdk_internal_vm_StackChunk::_maxThawingSize_offset;
 int jdk_internal_vm_StackChunk::_lockStackSize_offset;
+int jdk_internal_vm_StackChunk::_atKlassInit_offset;
+int jdk_internal_vm_StackChunk::_hasArgsAtTop_offset;
 int jdk_internal_vm_StackChunk::_cont_offset;
 
 #define STACKCHUNK_FIELDS_DO(macro) \

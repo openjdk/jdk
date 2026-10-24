@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,9 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.StructuredTaskScope.Joiner;
 import java.util.concurrent.StructuredTaskScope.Subtask;
+import java.util.concurrent.StructuredTaskScope.CancelledByTimeoutException;
+import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 import jdk.internal.invoke.MhUtil;
 
 /**
@@ -64,29 +65,36 @@ class Joiners {
     }
 
     /**
-     * A joiner that returns a stream of all subtasks when all subtasks complete
+     * A joiner that returns a list of all results when all subtasks complete
      * successfully. Cancels the scope if any subtask fails.
      */
-    static final class AllSuccessful<T> implements Joiner<T, Stream<Subtask<T>>> {
+    static final class AllSuccessful<T, R_X extends Throwable> implements Joiner<T, List<T>, R_X> {
         private static final VarHandle FIRST_EXCEPTION =
                 MhUtil.findVarHandle(MethodHandles.lookup(), "firstException", Throwable.class);
 
-        // list of forked subtasks, only accessed by owner thread
-        private final List<Subtask<T>> subtasks = new ArrayList<>();
+        private final Function<Throwable, R_X> esf;
+
+        // list of forked subtasks, created lazily, only accessed by owner thread
+        private List<Subtask<T>> subtasks;
 
         private volatile Throwable firstException;
 
+        AllSuccessful(Function<Throwable, R_X> esf) {
+            this.esf = Objects.requireNonNull(esf);
+        }
+
         @Override
-        public boolean onFork(Subtask<? extends T> subtask) {
+        public boolean onFork(Subtask<T> subtask) {
             ensureUnavailable(subtask);
-            @SuppressWarnings("unchecked")
-            var s = (Subtask<T>) subtask;
-            subtasks.add(s);
+            if (subtasks == null) {
+                subtasks = new ArrayList<>();
+            }
+            subtasks.add(subtask);
             return false;
         }
 
         @Override
-        public boolean onComplete(Subtask<? extends T> subtask) {
+        public boolean onComplete(Subtask<T> subtask) {
             Subtask.State state = ensureCompleted(subtask);
             return (state == Subtask.State.FAILED)
                     && (firstException == null)
@@ -94,12 +102,26 @@ class Joiners {
         }
 
         @Override
-        public Stream<Subtask<T>> result() throws Throwable {
+        public List<T> result() throws R_X {
             Throwable ex = firstException;
-            if (ex != null) {
-                throw ex;
-            } else {
-                return subtasks.stream();
+            try {
+                if (ex != null) {
+                    throw esf.apply(ex);
+                }
+                return (subtasks != null)
+                        ? subtasks.stream().map(Subtask::get).toList()
+                        : List.of();
+            } finally {
+                subtasks = null;  // allow subtasks to be GC'ed
+            }
+        }
+
+        @Override
+        public List<T> timeout() throws R_X {
+            try {
+                throw esf.apply(new CancelledByTimeoutException());
+            } finally {
+                subtasks = null;  // allow subtasks to be GC'ed
             }
         }
     }
@@ -108,15 +130,21 @@ class Joiners {
      * A joiner that returns the result of the first subtask to complete successfully.
      * Cancels the scope if any subtasks succeeds.
      */
-    static final class AnySuccessful<T> implements Joiner<T, T> {
+    static final class AnySuccessful<T, R_X extends Throwable> implements Joiner<T, T, R_X> {
         private static final VarHandle SUBTASK =
                 MhUtil.findVarHandle(MethodHandles.lookup(), "subtask", Subtask.class);
+
+        private final Function<Throwable, R_X> esf;
 
         // UNAVAILABLE < FAILED < SUCCESS
         private static final Comparator<Subtask.State> SUBTASK_STATE_COMPARATOR =
                 Comparator.comparingInt(AnySuccessful::stateToInt);
 
         private volatile Subtask<T> subtask;
+
+        AnySuccessful(Function<Throwable, R_X> esf) {
+            this.esf = Objects.requireNonNull(esf);
+        }
 
         /**
          * Maps a Subtask.State to an int that can be compared.
@@ -130,7 +158,7 @@ class Joiners {
         }
 
         @Override
-        public boolean onComplete(Subtask<? extends T> subtask) {
+        public boolean onComplete(Subtask<T> subtask) {
             Subtask.State state = ensureCompleted(subtask);
             Subtask<T> s;
             while (((s = this.subtask) == null)
@@ -143,16 +171,21 @@ class Joiners {
         }
 
         @Override
-        public T result() throws Throwable {
+        public T result() throws R_X {
             Subtask<T> subtask = this.subtask;
             if (subtask == null) {
-                throw new NoSuchElementException("No subtasks completed");
+                throw esf.apply(new NoSuchElementException("No subtasks completed"));
             }
             return switch (subtask.state()) {
                 case SUCCESS -> subtask.get();
-                case FAILED  -> throw subtask.exception();
+                case FAILED  -> throw esf.apply(subtask.exception());
                 default      -> throw new InternalError();
             };
+        }
+
+        @Override
+        public T timeout() throws R_X {
+            throw esf.apply(new CancelledByTimeoutException());
         }
     }
 
@@ -160,13 +193,19 @@ class Joiners {
      * A joiner that that waits for all successful subtasks. Cancels the scope if any
      * subtask fails.
      */
-    static final class AwaitSuccessful<T> implements Joiner<T, Void> {
+    static final class AwaitSuccessful<T, R_X extends Throwable> implements Joiner<T, Void, R_X> {
         private static final VarHandle FIRST_EXCEPTION =
                 MhUtil.findVarHandle(MethodHandles.lookup(), "firstException", Throwable.class);
+
+        private final Function<Throwable, R_X> esf;
         private volatile Throwable firstException;
 
+        AwaitSuccessful(Function<Throwable, R_X> esf) {
+            this.esf = Objects.requireNonNull(esf);
+        }
+
         @Override
-        public boolean onComplete(Subtask<? extends T> subtask) {
+        public boolean onComplete(Subtask<T> subtask) {
             Subtask.State state = ensureCompleted(subtask);
             return (state == Subtask.State.FAILED)
                     && (firstException == null)
@@ -174,47 +213,64 @@ class Joiners {
         }
 
         @Override
-        public Void result() throws Throwable {
+        public Void result() throws R_X {
             Throwable ex = firstException;
             if (ex != null) {
-                throw ex;
+                throw esf.apply(ex);
             } else {
                 return null;
             }
         }
+
+        @Override
+        public Void timeout() throws R_X {
+            throw esf.apply(new CancelledByTimeoutException());
+        }
     }
 
     /**
-     * A joiner that returns a stream of all subtasks.
+     * A joiner that returns a list of all subtasks.
      */
-    static final class AllSubtasks<T> implements Joiner<T, Stream<Subtask<T>>> {
-        private final Predicate<Subtask<? extends T>> isDone;
+    static final class AllSubtasks<T> implements Joiner<T, List<Subtask<T>>, RuntimeException> {
+        private final Predicate<? super Subtask<T>> isDone;
 
-        // list of forked subtasks, only accessed by owner thread
-        private final List<Subtask<T>> subtasks = new ArrayList<>();
+        // list of forked subtasks, created lazily, only accessed by owner thread
+        private List<Subtask<T>> subtasks;
 
-        AllSubtasks(Predicate<Subtask<? extends T>> isDone) {
+        AllSubtasks(Predicate<? super Subtask<T>> isDone) {
             this.isDone = Objects.requireNonNull(isDone);
         }
 
         @Override
-        public boolean onFork(Subtask<? extends T> subtask) {
+        public boolean onFork(Subtask<T> subtask) {
             ensureUnavailable(subtask);
-            @SuppressWarnings("unchecked")
-            var s = (Subtask<T>) subtask;
-            subtasks.add(s);
+            if (subtasks == null) {
+                subtasks = new ArrayList<>();
+            }
+            subtasks.add(subtask);
             return false;
         }
 
         @Override
-        public boolean onComplete(Subtask<? extends T> subtask) {
+        public boolean onComplete(Subtask<T> subtask) {
             ensureCompleted(subtask);
             return isDone.test(subtask);
         }
 
         @Override
-        public Stream<Subtask<T>> result() {
-            return subtasks.stream();
+        public List<Subtask<T>> result() {
+            if (subtasks != null) {
+                List<Subtask<T>> result = List.copyOf(subtasks);
+                subtasks = null;  // allow subtasks to be GC'ed
+                return result;
+            } else {
+                return List.of();
+            }
+        }
+
+        @Override
+        public List<Subtask<T>> timeout() {
+            return result();
         }
     }
 }

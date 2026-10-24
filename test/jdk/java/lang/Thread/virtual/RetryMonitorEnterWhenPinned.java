@@ -23,13 +23,13 @@
 
 /*
  * @test
- * @summary Test that a virtual thread waiting to enter a monitor, while pinning its
- *   carrier, will retry until it enters the monitor. This avoids starvation when the
+ * @summary Test that a virtual thread waiting to enter/reenter a monitor, while pinning
+ *   its carrier, will retry until it enters the monitor. This avoids starvation when the
  *   monitor is exited, an unmounted thread is the chosen successor, and the successor
  *   can't continue because there are no carriers available.
  * @modules java.base/java.lang:+open
  * @library /test/lib
- * @run main/othervm/native/timeout=480 --enable-native-access=ALL-UNNAMED RetryMonitorEnterWhenPinned
+ * @run junit/othervm/native/timeout=480 --enable-native-access=ALL-UNNAMED RetryMonitorEnterWhenPinned
  */
 
 import java.time.Duration;
@@ -38,18 +38,23 @@ import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import jdk.test.lib.thread.VThreadPinner;
+import jdk.test.lib.thread.VThreadRunner;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class RetryMonitorEnterWhenPinned {
-    public static void main(String[] args) throws Exception {
-        int iterations = (args.length > 0) ? Integer.parseInt(args[0]) : 10;
-        for (int i = 1; i <= iterations; i++) {
-            System.out.printf("%s -- iteration %d --%n", Instant.now(), i);
-            run();
-            System.out.println();
-        }
+
+    @BeforeAll
+    static void setup() {
+        // need >=2 carriers for testing pinning when main thread is a virtual thread
+        VThreadRunner.ensureParallelism(2);
     }
 
-    static void run() throws Exception {
+    @RepeatedTest(10)
+    void testMonitorEnter() throws Exception {
         var threads = new ArrayList<Thread>();
 
         Object lock = new Object();
@@ -99,6 +104,94 @@ public class RetryMonitorEnterWhenPinned {
             }
 
         } // exit monitor
+
+        // wait for all threads to terminate
+        int threadsRemaining = threads.size();
+        while (threadsRemaining > 0) {
+            System.out.printf("%s waiting for %d threads to terminate%n",
+                    Instant.now(), threadsRemaining);
+            int terminated = 0;
+            for (Thread t : threads) {
+                if (t.join(Duration.ofSeconds(1))) {
+                    terminated++;
+                }
+            }
+            threadsRemaining = threads.size() - terminated;
+        }
+        System.out.printf("%s done%n", Instant.now());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = { 0, 30000, Integer.MAX_VALUE })
+    void testMonitorReenter(int timeout) throws Exception {
+        var threads = new ArrayList<Thread>();
+
+        Object lock = new Object();
+
+        // start virtual threads that wait on Object.wait
+        for (int i = 0; i < 100; i++) {
+            var started = new CountDownLatch(1);
+            Thread thread = Thread.startVirtualThread(() -> {
+                try {
+                    synchronized (lock) {
+                        started.countDown();
+                        if (timeout > 0) {
+                            lock.wait(timeout);
+                        } else {
+                            lock.wait();
+                        }
+                    }
+                } catch (InterruptedException e) { }
+            });
+
+            // wait for thread to start and wait
+            started.await();
+            await(thread, timeout > 0 ? Thread.State.TIMED_WAITING : Thread.State.WAITING);
+            threads.add(thread);
+        }
+
+        // start virtual threads that wait on Object.wait while pinnned
+        int carriersAvailable = Runtime.getRuntime().availableProcessors();
+        if (Thread.currentThread().isVirtual()) {
+            carriersAvailable--;
+        }
+        for (int i = 0; i < 100; i++) {
+            var started = new CountDownLatch(1);
+            boolean hasCarrier = carriersAvailable > 0;
+            Thread thread = Thread.startVirtualThread(() -> {
+                VThreadPinner.runPinned(() -> {
+                    try {
+                        synchronized (lock) {
+                            started.countDown();
+                            if (!hasCarrier) {
+                                // This thread will run at the very
+                                // end and won't be notified.
+                                lock.wait(1);
+                            } else if (timeout > 0) {
+                                lock.wait(timeout);
+                            } else {
+                                lock.wait();
+                            }
+                        }
+                    } catch (InterruptedException e) { }
+                });
+            });
+
+            // if there are carriers available when wait until the thread blocks.
+            if (hasCarrier) {
+                System.out.printf("%s waiting for thread #%d to block%n",
+                        Instant.now(), thread.threadId());
+                started.await();
+                await(thread, timeout > 0 ? Thread.State.TIMED_WAITING : Thread.State.WAITING);
+                carriersAvailable--;
+            }
+            threads.add(thread);
+        }
+
+        // wakeup all threads
+        synchronized (lock) {
+            lock.notifyAll();
+        }
 
         // wait for all threads to terminate
         int threadsRemaining = threads.size();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,6 @@ import java.util.stream.Collectors;
 import javax.accessibility.AccessibilityProvider;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.HeadlessToolkit;
 import sun.awt.PeerEvent;
 import sun.awt.PlatformGraphicsInfo;
@@ -2046,8 +2045,6 @@ public abstract class Toolkit {
     @SuppressWarnings("serial")
     private static class DesktopPropertyChangeSupport extends PropertyChangeSupport {
 
-        private static final StringBuilder PROP_CHANGE_SUPPORT_KEY =
-                new StringBuilder("desktop property change support key");
         private final Object source;
 
         public DesktopPropertyChangeSupport(Object sourceBean) {
@@ -2055,16 +2052,14 @@ public abstract class Toolkit {
             source = sourceBean;
         }
 
+        private static PropertyChangeSupport pcs;
         @Override
         public synchronized void addPropertyChangeListener(
                 String propertyName,
                 PropertyChangeListener listener)
         {
-            PropertyChangeSupport pcs = (PropertyChangeSupport)
-                    AppContext.getAppContext().get(PROP_CHANGE_SUPPORT_KEY);
             if (null == pcs) {
                 pcs = new PropertyChangeSupport(source);
-                AppContext.getAppContext().put(PROP_CHANGE_SUPPORT_KEY, pcs);
             }
             pcs.addPropertyChangeListener(propertyName, listener);
         }
@@ -2074,8 +2069,6 @@ public abstract class Toolkit {
                 String propertyName,
                 PropertyChangeListener listener)
         {
-            PropertyChangeSupport pcs = (PropertyChangeSupport)
-                    AppContext.getAppContext().get(PROP_CHANGE_SUPPORT_KEY);
             if (null != pcs) {
                 pcs.removePropertyChangeListener(propertyName, listener);
             }
@@ -2084,8 +2077,6 @@ public abstract class Toolkit {
         @Override
         public synchronized PropertyChangeListener[] getPropertyChangeListeners()
         {
-            PropertyChangeSupport pcs = (PropertyChangeSupport)
-                    AppContext.getAppContext().get(PROP_CHANGE_SUPPORT_KEY);
             if (null != pcs) {
                 return pcs.getPropertyChangeListeners();
             } else {
@@ -2096,8 +2087,6 @@ public abstract class Toolkit {
         @Override
         public synchronized PropertyChangeListener[] getPropertyChangeListeners(String propertyName)
         {
-            PropertyChangeSupport pcs = (PropertyChangeSupport)
-                    AppContext.getAppContext().get(PROP_CHANGE_SUPPORT_KEY);
             if (null != pcs) {
                 return pcs.getPropertyChangeListeners(propertyName);
             } else {
@@ -2107,19 +2096,14 @@ public abstract class Toolkit {
 
         @Override
         public synchronized void addPropertyChangeListener(PropertyChangeListener listener) {
-            PropertyChangeSupport pcs = (PropertyChangeSupport)
-                    AppContext.getAppContext().get(PROP_CHANGE_SUPPORT_KEY);
             if (null == pcs) {
                 pcs = new PropertyChangeSupport(source);
-                AppContext.getAppContext().put(PROP_CHANGE_SUPPORT_KEY, pcs);
             }
             pcs.addPropertyChangeListener(listener);
         }
 
         @Override
         public synchronized void removePropertyChangeListener(PropertyChangeListener listener) {
-            PropertyChangeSupport pcs = (PropertyChangeSupport)
-                    AppContext.getAppContext().get(PROP_CHANGE_SUPPORT_KEY);
             if (null != pcs) {
                 pcs.removePropertyChangeListener(listener);
             }
@@ -2131,33 +2115,16 @@ public abstract class Toolkit {
          */
         @Override
         public void firePropertyChange(final PropertyChangeEvent evt) {
+            if (pcs == null) {
+                return;
+            }
             Object oldValue = evt.getOldValue();
             Object newValue = evt.getNewValue();
             String propertyName = evt.getPropertyName();
             if (oldValue != null && newValue != null && oldValue.equals(newValue)) {
                 return;
             }
-            Runnable updater = new Runnable() {
-                public void run() {
-                    PropertyChangeSupport pcs = (PropertyChangeSupport)
-                            AppContext.getAppContext().get(PROP_CHANGE_SUPPORT_KEY);
-                    if (null != pcs) {
-                        pcs.firePropertyChange(evt);
-                    }
-                }
-            };
-            final AppContext currentAppContext = AppContext.getAppContext();
-            for (AppContext appContext : AppContext.getAppContexts()) {
-                if (null == appContext || appContext.isDisposed()) {
-                    continue;
-                }
-                if (currentAppContext == appContext) {
-                    updater.run();
-                } else {
-                    final PeerEvent e = new PeerEvent(source, updater, PeerEvent.ULTIMATE_PRIORITY_EVENT);
-                    SunToolkit.postEvent(appContext, e);
-                }
-            }
+            pcs.firePropertyChange(evt);
         }
     }
 

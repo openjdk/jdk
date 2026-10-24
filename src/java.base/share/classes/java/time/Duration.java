@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,11 +119,18 @@ import java.util.regex.Pattern;
  * See {@link Instant} for a discussion as to the meaning of the second and time-scales.
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
- * The {@code equals} method should be used for comparisons.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization or
+ * with {@linkplain java.lang.ref.Reference object references}.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code Duration} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
  *
  * @implSpec
  * This class is immutable and thread-safe.
@@ -131,13 +138,45 @@ import java.util.regex.Pattern;
  * @since 1.8
  */
 @jdk.internal.ValueBased
-public final class Duration
+// See doc/value-class-preview.md for an overview of value class generation
+public final /*value*/ class Duration
         implements TemporalAmount, Comparable<Duration>, Serializable {
 
     /**
      * Constant for a duration of zero.
      */
     public static final Duration ZERO = new Duration(0, 0);
+    /**
+     * The minimum supported {@code Duration}, which is {@link Long#MIN_VALUE}
+     * seconds.
+     *
+     * @apiNote This constant represents the smallest possible instance of
+     * {@code Duration}. Since {@code Duration} is directed, the smallest
+     * possible duration is negative.
+     *
+     * The constant is intended to be used as a sentinel value or in tests.
+     * Care should be taken when performing arithmetic on {@code MIN} as there
+     * is a high risk that {@link ArithmeticException} or {@link DateTimeException}
+     * will be thrown.
+     *
+     * @since 26
+     */
+    public static final Duration MIN = new Duration(Long.MIN_VALUE, 0);
+    /**
+     * The maximum supported {@code Duration}, which is {@link Long#MAX_VALUE}
+     * seconds and {@code 999,999,999} nanoseconds.
+     *
+     * @apiNote This constant represents the largest possible instance of
+     * {@code Duration}.
+     *
+     * The constant is intended to be used as a sentinel value or in tests.
+     * Care should be taken when performing arithmetic on {@code MAX} as there
+     * is a high risk that {@link ArithmeticException} or {@link DateTimeException}
+     * will be thrown.
+     *
+     * @since 26
+     */
+    public static final Duration MAX = new Duration(Long.MAX_VALUE, 999_999_999);
     /**
      * Serialization version.
      */
@@ -1559,6 +1598,7 @@ public final class Duration
      * @throws InvalidObjectException always
      */
     @java.io.Serial
+    @SuppressWarnings("serial") // this method is not invoked for value classes
     private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }

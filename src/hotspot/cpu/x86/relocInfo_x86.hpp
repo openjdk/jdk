@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,8 @@
     offset_unit        =  1,
 
     // Encodes Assembler::disp32_operand vs. Assembler::imm32_operand.
-#ifndef AMD64
-    format_width       =  1
-#else
     // vs Assembler::narrow_oop_operand and ZGC barrier encodings.
     format_width       =  3
-#endif
   };
 
  public:

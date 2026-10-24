@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2358,8 +2358,9 @@ public class Logger {
 
         synchronized (treeLock) {
 
-            // Remove ourself from any previous parent.
+            // Remove ourselves from any previous parent.
             LogManager.LoggerWeakRef ref = null;
+            Logger parent = this.parent;
             if (parent != null) {
                 // assert parent.kids != null;
                 for (Iterator<LogManager.LoggerWeakRef> iter = parent.kids.iterator(); iter.hasNext(); ) {
@@ -2372,11 +2373,11 @@ public class Logger {
                         ref = null;
                     }
                 }
-                // We have now removed ourself from our parents' kids.
+                // We have now removed ourselves from our parents' kids.
             }
 
             // Set our new parent.
-            parent = newParent;
+            this.parent = parent = newParent;
             if (parent.kids == null) {
                 parent.kids = new ArrayList<>(2);
             }

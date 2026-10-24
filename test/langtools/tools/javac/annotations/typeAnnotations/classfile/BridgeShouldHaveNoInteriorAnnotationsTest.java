@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class BridgeShouldHaveNoInteriorAnnotationsTest
     };
 
 
-    // Expected output can't be directly encoded into NestedLambdasCastedTest !!!
+    // Expected output can't be directly encoded into BridgeShouldHaveNoInteriorAnnotationsTest !!!
     static class OutputExpectedOnceHolder {
         public String[] outputs = {
             "0: #120(): CAST, offset=1, type_index=0, location=[TYPE_ARGUMENT(0)]",

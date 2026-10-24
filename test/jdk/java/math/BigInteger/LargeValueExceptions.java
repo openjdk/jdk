@@ -26,13 +26,16 @@
  * @bug 8200698
  * @summary Tests that exceptions are thrown for ops which would overflow
  * @requires (sun.arch.data.model == "64" & os.maxMemory >= 4g)
- * @run testng/othervm/timeout=480 -Xmx4g LargeValueExceptions
+ * @run junit/othervm/timeout=480 -Xmx4g LargeValueExceptions
  */
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
 import java.math.BigInteger;
+
 import static java.math.BigInteger.ONE;
-import org.testng.ITestResult;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.Test;
 
 //
 // The intent of this test is to probe the boundaries between overflow and
@@ -64,47 +67,48 @@ public class LargeValueExceptions {
     // Half BigInteger.MAX_MAG_LENGTH
     private static final int MAX_INTS_HALF = MAX_INTS / 2;
 
-    // Print the run time of each sub-test in milliseconds
-    @AfterMethod
-    public void getRunTime(ITestResult tr) {
-        long time = tr.getEndMillis() - tr.getStartMillis();
-        System.out.printf("Run time: %d ms%n", time);
-    }
-
     // --- squaring ---
 
     // Largest no overflow determined by examining data lengths alone.
-    @Test(enabled=false)
+    @Test
+    @Disabled
     public void squareNoOverflow() {
         BigInteger x = ONE.shiftLeft(16*MAX_INTS - 1).subtract(ONE);
         BigInteger y = x.multiply(x);
     }
 
     // Smallest no overflow determined by extra calculations.
-    @Test(enabled=false)
+    @Test
+    @Disabled
     public void squareIndefiniteOverflowSuccess() {
         BigInteger x = ONE.shiftLeft(16*MAX_INTS - 1);
         BigInteger y = x.multiply(x);
     }
 
     // Largest overflow detected by extra calculations.
-    @Test(expectedExceptions=ArithmeticException.class,enabled=false)
+    @Test
+    @Disabled
     public void squareIndefiniteOverflowFailure() {
-        BigInteger x = ONE.shiftLeft(16*MAX_INTS).subtract(ONE);
-        BigInteger y = x.multiply(x);
+        Assertions.assertThrows(ArithmeticException.class, () -> {
+            BigInteger x = ONE.shiftLeft(16*MAX_INTS).subtract(ONE);
+            BigInteger y = x.multiply(x);
+        });
     }
 
     // Smallest overflow detected by examining data lengths alone.
-    @Test(expectedExceptions=ArithmeticException.class)
+    @Test
     public void squareDefiniteOverflow() {
-        BigInteger x = ONE.shiftLeft(16*MAX_INTS);
-        BigInteger y = x.multiply(x);
+        Assertions.assertThrows(ArithmeticException.class, () -> {
+            BigInteger x = ONE.shiftLeft(16*MAX_INTS);
+            BigInteger y = x.multiply(x);
+        });
     }
 
     // --- multiplication ---
 
     // Largest no overflow determined by examining data lengths alone.
-    @Test(enabled=false)
+    @Test
+    @Disabled
     public void multiplyNoOverflow() {
         final int halfMaxBits = MAX_INTS_HALF << 5;
 
@@ -114,7 +118,8 @@ public class LargeValueExceptions {
     }
 
     // Smallest no overflow determined by extra calculations.
-    @Test(enabled=false)
+    @Test
+    @Disabled
     public void multiplyIndefiniteOverflowSuccess() {
         BigInteger x = ONE.shiftLeft((int)(MAX_BITS/2) - 1);
         long m = MAX_BITS - x.bitLength();
@@ -130,68 +135,83 @@ public class LargeValueExceptions {
     }
 
     // Largest overflow detected by extra calculations.
-    @Test(expectedExceptions=ArithmeticException.class,enabled=false)
+    @Test
+    @Disabled
     public void multiplyIndefiniteOverflowFailure() {
-        BigInteger x = ONE.shiftLeft((int)(MAX_BITS/2)).subtract(ONE);
-        long m = MAX_BITS - x.bitLength();
+        Assertions.assertThrows(ArithmeticException.class, () -> {
+            BigInteger x = ONE.shiftLeft((int)(MAX_BITS/2)).subtract(ONE);
+            long m = MAX_BITS - x.bitLength();
 
-        BigInteger y = ONE.shiftLeft((int)(MAX_BITS/2)).subtract(ONE);
-        long n = MAX_BITS - y.bitLength();
+            BigInteger y = ONE.shiftLeft((int)(MAX_BITS/2)).subtract(ONE);
+            long n = MAX_BITS - y.bitLength();
 
-        if (m + n != MAX_BITS) {
-            throw new RuntimeException("Unexpected leading zero sum");
-        }
+            if (m + n != MAX_BITS) {
+                throw new RuntimeException("Unexpected leading zero sum");
+            }
 
-        BigInteger z = x.multiply(y);
+            BigInteger z = x.multiply(y);
+        });
     }
 
     // Smallest overflow detected by examining data lengths alone.
-    @Test(expectedExceptions=ArithmeticException.class)
+    @Test
     public void multiplyDefiniteOverflow() {
-        // multiply by 4 as MAX_INTS_HALF refers to ints
-        byte[] xmag = new byte[4*MAX_INTS_HALF];
-        xmag[0] = (byte)0xff;
-        BigInteger x = new BigInteger(1, xmag);
+        Assertions.assertThrows(ArithmeticException.class, () -> {
+            // multiply by 4 as MAX_INTS_HALF refers to ints
+            byte[] xmag = new byte[4*MAX_INTS_HALF];
+            xmag[0] = (byte)0xff;
+            BigInteger x = new BigInteger(1, xmag);
 
-        byte[] ymag = new byte[4*MAX_INTS_HALF + 1];
-        ymag[0] = (byte)0xff;
-        BigInteger y = new BigInteger(1, ymag);
+            byte[] ymag = new byte[4*MAX_INTS_HALF + 1];
+            ymag[0] = (byte)0xff;
+            BigInteger y = new BigInteger(1, ymag);
 
-        BigInteger z = x.multiply(y);
+            BigInteger z = x.multiply(y);
+        });
     }
 
     // --- exponentiation ---
 
-    @Test(expectedExceptions=ArithmeticException.class)
+    @Test
     public void powOverflow() {
-        BigInteger.TEN.pow(Integer.MAX_VALUE);
+        Assertions.assertThrows(ArithmeticException.class, () -> {
+            BigInteger.TEN.pow(Integer.MAX_VALUE);
+        });
     }
 
-    @Test(expectedExceptions=ArithmeticException.class)
+    @Test
     public void powOverflow1() {
-        int shift = 20;
-        int exponent = 1 << shift;
-        BigInteger x = ONE.shiftLeft((int)(MAX_BITS / exponent));
-        BigInteger y = x.pow(exponent);
+        Assertions.assertThrows(ArithmeticException.class, () -> {
+            int shift = 20;
+            int exponent = 1 << shift;
+            BigInteger x = ONE.shiftLeft((int)(MAX_BITS / exponent));
+            BigInteger y = x.pow(exponent);
+        });
     }
 
-    @Test(expectedExceptions=ArithmeticException.class)
+    @Test
     public void powOverflow2() {
-        int shift = 20;
-        int exponent = 1 << shift;
-        BigInteger x = ONE.shiftLeft((int)(MAX_BITS / exponent)).add(ONE);
-        BigInteger y = x.pow(exponent);
+        Assertions.assertThrows(ArithmeticException.class, () -> {
+            int shift = 20;
+            int exponent = 1 << shift;
+            BigInteger x = ONE.shiftLeft((int)(MAX_BITS / exponent)).add(ONE);
+            BigInteger y = x.pow(exponent);
+        });
     }
 
-    @Test(expectedExceptions=ArithmeticException.class,enabled=false)
+    @Test
+    @Disabled
     public void powOverflow3() {
-        int shift = 20;
-        int exponent = 1 << shift;
-        BigInteger x = ONE.shiftLeft((int)(MAX_BITS / exponent)).subtract(ONE);
-        BigInteger y = x.pow(exponent);
+        Assertions.assertThrows(ArithmeticException.class, () -> {
+            int shift = 20;
+            int exponent = 1 << shift;
+            BigInteger x = ONE.shiftLeft((int)(MAX_BITS / exponent)).subtract(ONE);
+            BigInteger y = x.pow(exponent);
+        });
     }
 
-    @Test(enabled=false)
+    @Test
+    @Disabled
     public void powOverflow4() {
         int shift = 20;
         int exponent = 1 << shift;

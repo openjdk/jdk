@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@
  */
 package test.java.time.chrono;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDate;
 import java.time.chrono.ThaiBuddhistChronology;
@@ -65,19 +65,19 @@ import java.util.Calendar;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestThaiBuddhistChronoImpl {
 
     /**
      * Range of years to check consistency with java.util.Calendar
      */
-    @DataProvider(name="RangeVersusCalendar")
     Object[][] provider_rangeVersusCalendar() {
         return new Object[][] {
             {LocalDate.of(1583, 1, 1), LocalDate.of(2100, 1, 1)},
@@ -87,12 +87,13 @@ public class TestThaiBuddhistChronoImpl {
     //-----------------------------------------------------------------------
     // Verify  ThaiBuddhist Calendar matches java.util.Calendar for range
     //-----------------------------------------------------------------------
-    @Test(dataProvider="RangeVersusCalendar")
+    @ParameterizedTest
+    @MethodSource("provider_rangeVersusCalendar")
     public void test_ThaiBuddhistChrono_vsCalendar(LocalDate isoStartDate, LocalDate isoEndDate) {
         Locale locale = Locale.forLanguageTag("th-TH--u-ca-buddhist");
-        assertEquals(locale.toString(), "th_TH", "Unexpected locale");
+        assertEquals("th_TH", locale.toString(), "Unexpected locale");
         Calendar cal = java.util.Calendar.getInstance(locale);
-        assertEquals(cal.getCalendarType(), "buddhist", "Unexpected calendar type");
+        assertEquals("buddhist", cal.getCalendarType(), "Unexpected calendar type");
 
         ThaiBuddhistDate thaiDate = ThaiBuddhistChronology.INSTANCE.date(isoStartDate);
 
@@ -102,9 +103,9 @@ public class TestThaiBuddhistChronoImpl {
         cal.set(Calendar.DAY_OF_MONTH, thaiDate.get(ChronoField.DAY_OF_MONTH));
 
         while (thaiDate.isBefore(isoEndDate)) {
-            assertEquals(thaiDate.get(ChronoField.DAY_OF_MONTH), cal.get(Calendar.DAY_OF_MONTH), "Day mismatch in " + thaiDate + ";  cal: " + cal);
-            assertEquals(thaiDate.get(ChronoField.MONTH_OF_YEAR), cal.get(Calendar.MONTH) + 1, "Month mismatch in " + thaiDate);
-            assertEquals(thaiDate.get(ChronoField.YEAR_OF_ERA), cal.get(Calendar.YEAR), "Year mismatch in " + thaiDate);
+            assertEquals(cal.get(Calendar.DAY_OF_MONTH), thaiDate.get(ChronoField.DAY_OF_MONTH), "Day mismatch in " + thaiDate + ";  cal: " + cal);
+            assertEquals(cal.get(Calendar.MONTH) + 1, thaiDate.get(ChronoField.MONTH_OF_YEAR), "Month mismatch in " + thaiDate);
+            assertEquals(cal.get(Calendar.YEAR), thaiDate.get(ChronoField.YEAR_OF_ERA), "Year mismatch in " + thaiDate);
 
             thaiDate = thaiDate.plus(1, ChronoUnit.DAYS);
             cal.add(Calendar.DAY_OF_MONTH, 1);

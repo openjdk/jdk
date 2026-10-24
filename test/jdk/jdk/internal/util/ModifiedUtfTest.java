@@ -104,19 +104,6 @@ public class ModifiedUtfTest {
         } catch (UTFDataFormatException e) {
         }
 
-        BufWriterImpl bufWriter = new BufWriterImpl(ConstantPoolBuilder.of(), (ClassFileImpl) ClassFile.of());
-        Method writeUtfEntry = bufWriter.getClass().getDeclaredMethod("writeUtfEntry", String.class);
-        writeUtfEntry.setAccessible(true);
-        try {
-            writeUtfEntry.invoke(bufWriter, largeString);
-            throw new RuntimeException("Expected IllegalArgumentException was not thrown.");
-        } catch (InvocationTargetException e) {
-            Throwable cause = e.getCause();
-            if (!(cause instanceof IllegalArgumentException)) {
-                throw new RuntimeException("Expected IllegalArgumentException was not thrown.");
-            }
-        }
-
         /**
          * In the writeUTF function, utfLen is used to calculate the length of the string to be written
          * and store it in the stream header. This test uses the HeaderCaptureOutputStream inner class

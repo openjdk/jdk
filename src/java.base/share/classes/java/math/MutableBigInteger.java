@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -384,24 +384,6 @@ class MutableBigInteger {
     }
 
     /**
-     * Return the int in use in this MutableBigInteger at the specified
-     * index. This method is not used because it is not inlined on all
-     * platforms.
-     */
-    private final int getInt(int index) {
-        return value[offset+index];
-    }
-
-    /**
-     * Return a long which is equal to the unsigned value of the int in
-     * use in this MutableBigInteger at the specified index. This method is
-     * not used because it is not inlined on all platforms.
-     */
-    private final long getLong(int index) {
-        return value[offset+index] & LONG_MASK;
-    }
-
-    /**
      * Ensure that the MutableBigInteger is in normal form, specifically
      * making sure that there are no leading zeros, and that if the
      * magnitude is zero, then intLen is zero.
@@ -424,18 +406,6 @@ class MutableBigInteger {
         int numZeros = index - offset;
         intLen -= numZeros;
         offset = (intLen == 0 ?  0 : offset+numZeros);
-    }
-
-    /**
-     * If this MutableBigInteger cannot hold len words, increase the size
-     * of the value array to len words.
-     */
-    private final void ensureCapacity(int len) {
-        if (value.length < len) {
-            value = new int[len];
-            offset = 0;
-            intLen = len;
-        }
     }
 
     /**
@@ -1906,7 +1876,7 @@ class MutableBigInteger {
      * @param n the root degree
      * @return the integer {@code n}th root of {@code this} and the remainder
      */
-    MutableBigInteger[] nthRootRem(int n) {
+    MutableBigInteger[] rootnRem(int n) {
         // Special cases.
         if (this.isZero() || this.isOne())
             return new MutableBigInteger[] { this, new MutableBigInteger() };
@@ -1923,7 +1893,7 @@ class MutableBigInteger {
         if (bitLength <= Long.SIZE) {
             // Initial estimate is the root of the unsigned long value.
             final long x = this.toLong();
-            long sLong = (long) nthRootApprox(Math.nextUp(x >= 0 ? x : x + 0x1p64), n) + 1L;
+            long sLong = (long) rootnApprox(Math.nextUp(x >= 0 ? x : x + 0x1p64), n) + 1L;
             /* The integer-valued recurrence formula in the algorithm of Brent&Zimmermann
              * simply discards the fraction part of the real-valued Newton recurrence
              * on the function f discussed in the referenced work.
@@ -1996,7 +1966,7 @@ class MutableBigInteger {
                 // Use the root of the shifted value as an estimate.
                 // rad ≤ 2^ME, so Math.nextUp(rad) < Double.MAX_VALUE
                 rad = Math.nextUp(rad);
-                approx = nthRootApprox(rad, n);
+                approx = rootnApprox(rad, n);
             } else { // fp arithmetic gives too few correct bits
                 // Set the root shift to the root's bit length minus 1
                 // The initial estimate will be 2^rootLen == 2 << (rootLen - 1)
@@ -2050,7 +2020,7 @@ class MutableBigInteger {
                     MutableBigInteger x = new MutableBigInteger(this);
                     x.rightShift(rootSh * n);
 
-                    newtonRecurrenceNthRoot(x, s, n, s.toBigInteger().pow(n - 1));
+                    newtonRecurrenceRootn(x, s, n, s.toBigInteger().pow(n - 1));
                     s.add(ONE); // round up to ensure s is an upper bound of the root
                 }
 
@@ -2060,7 +2030,7 @@ class MutableBigInteger {
         }
 
         // Do the 1st iteration outside the loop to ensure an overestimate
-        newtonRecurrenceNthRoot(this, s, n, s.toBigInteger().pow(n - 1));
+        newtonRecurrenceRootn(this, s, n, s.toBigInteger().pow(n - 1));
         // Refine the estimate.
         do {
             BigInteger sBig = s.toBigInteger();
@@ -2069,18 +2039,18 @@ class MutableBigInteger {
             if (rem.subtract(this) <= 0)
                 return new MutableBigInteger[] { s, rem };
 
-            newtonRecurrenceNthRoot(this, s, n, sToN1);
+            newtonRecurrenceRootn(this, s, n, sToN1);
         } while (true);
     }
 
-    private static double nthRootApprox(double x, int n) {
+    private static double rootnApprox(double x, int n) {
         return Math.nextUp(n == 3 ? Math.cbrt(x) : Math.pow(x, Math.nextUp(1.0 / n)));
     }
 
     /**
      * Computes {@code ((n-1)*s + x/sToN1)/n} and places the result in {@code s}.
      */
-    private static void newtonRecurrenceNthRoot(
+    private static void newtonRecurrenceRootn(
             MutableBigInteger x, MutableBigInteger s, int n, BigInteger sToN1) {
         MutableBigInteger dividend = new MutableBigInteger();
         s.mul(n - 1, dividend);

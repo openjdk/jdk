@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "utilities/powerOfTwo.hpp"
 
 G1CardTableClaimTable::G1CardTableClaimTable(uint chunks_per_region) :
-  _max_reserved_regions(0),
+  _max_num_regions(0),
   _card_claims(nullptr),
   _cards_per_chunk(checked_cast<uint>(G1HeapRegion::CardsPerRegion / chunks_per_region))
 {
@@ -39,37 +39,36 @@ G1CardTableClaimTable::G1CardTableClaimTable(uint chunks_per_region) :
 }
 
 G1CardTableClaimTable::~G1CardTableClaimTable() {
-  FREE_C_HEAP_ARRAY(uint, _card_claims);
+  FREE_C_HEAP_ARRAY(_card_claims);
 }
 
-void G1CardTableClaimTable::initialize(uint max_reserved_regions) {
+void G1CardTableClaimTable::initialize(uint max_num_regions) {
   assert(_card_claims == nullptr, "Must not be initialized twice");
-  _card_claims = NEW_C_HEAP_ARRAY(uint, max_reserved_regions, mtGC);
-  _max_reserved_regions = max_reserved_regions;
+  _card_claims = NEW_C_HEAP_ARRAY(Atomic<uint>, max_num_regions, mtGC);
+  _max_num_regions = max_num_regions;
   reset_all_to_unclaimed();
 }
 
 void G1CardTableClaimTable::reset_all_to_unclaimed() {
-  for (uint i = 0; i < _max_reserved_regions; i++) {
-    _card_claims[i] = 0;
+  for (uint i = 0; i < _max_num_regions; i++) {
+    _card_claims[i].store_relaxed(0);
   }
 }
 
 void G1CardTableClaimTable::reset_all_to_claimed() {
-  for (uint i = 0; i < _max_reserved_regions; i++) {
-    _card_claims[i] = (uint)G1HeapRegion::CardsPerRegion;
+  for (uint i = 0; i < _max_num_regions; i++) {
+    _card_claims[i].store_relaxed((uint)G1HeapRegion::CardsPerRegion);
   }
 }
 
 void G1CardTableClaimTable::heap_region_iterate_from_worker_offset(G1HeapRegionClosure* cl, uint worker_id, uint max_workers) {
   // Every worker will actually look at all regions, skipping over regions that
   // are completed.
-  const size_t n_regions = _max_reserved_regions;
-  const uint start_index = (uint)(worker_id * n_regions / max_workers);
+  const uint start_index = (uint)((uint64_t)worker_id * max_num_regions() / max_workers);
 
-  for (uint count = 0; count < n_regions; count++) {
-    const uint index = (start_index + count) % n_regions;
-    assert(index < n_regions, "sanity");
+  for (uint count = 0; count < max_num_regions(); count++) {
+    const uint index = (start_index + count) % max_num_regions();
+    assert(index < max_num_regions(), "sanity");
     // Skip over fully processed regions
     if (!has_unclaimed_cards(index)) {
       continue;

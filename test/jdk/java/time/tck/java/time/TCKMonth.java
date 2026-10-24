@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,8 @@
 package tck.java.time;
 
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
-import static org.testng.Assert.assertEquals;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.DateTimeException;
 import java.time.LocalDate;
@@ -80,13 +81,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test Month.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKMonth extends AbstractDateTimeTest {
 
     private static final int MAX_LENGTH = 12;
@@ -121,34 +125,34 @@ public class TCKMonth extends AbstractDateTimeTest {
     public void test_factory_int_singleton() {
         for (int i = 1; i <= MAX_LENGTH; i++) {
             Month test = Month.of(i);
-            assertEquals(test.getValue(), i);
+            assertEquals(i, test.getValue());
         }
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test
     public void test_factory_int_tooLow() {
-        Month.of(0);
+        Assertions.assertThrows(DateTimeException.class, () -> Month.of(0));
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test
     public void test_factory_int_tooHigh() {
-        Month.of(13);
+        Assertions.assertThrows(DateTimeException.class, () -> Month.of(13));
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_factory_CalendricalObject() {
-        assertEquals(Month.from(LocalDate.of(2011, 6, 6)), Month.JUNE);
+        assertEquals(Month.JUNE, Month.from(LocalDate.of(2011, 6, 6)));
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test
     public void test_factory_CalendricalObject_invalid_noDerive() {
-        Month.from(LocalTime.of(12, 30));
+        Assertions.assertThrows(DateTimeException.class, () -> Month.from(LocalTime.of(12, 30)));
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_factory_CalendricalObject_null() {
-        Month.from((TemporalAccessor) null);
+        Assertions.assertThrows(NullPointerException.class, () -> Month.from((TemporalAccessor) null));
     }
 
     //-----------------------------------------------------------------------
@@ -156,37 +160,37 @@ public class TCKMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_isSupported_TemporalField() {
-        assertEquals(Month.AUGUST.isSupported((TemporalField) null), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.NANO_OF_SECOND), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.NANO_OF_DAY), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.MICRO_OF_SECOND), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.MICRO_OF_DAY), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.MILLI_OF_SECOND), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.MILLI_OF_DAY), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.SECOND_OF_MINUTE), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.SECOND_OF_DAY), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.MINUTE_OF_HOUR), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.MINUTE_OF_DAY), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.HOUR_OF_AMPM), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.CLOCK_HOUR_OF_AMPM), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.HOUR_OF_DAY), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.CLOCK_HOUR_OF_DAY), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.AMPM_OF_DAY), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.DAY_OF_WEEK), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.DAY_OF_MONTH), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.DAY_OF_YEAR), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.EPOCH_DAY), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.ALIGNED_WEEK_OF_MONTH), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.ALIGNED_WEEK_OF_YEAR), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.MONTH_OF_YEAR), true);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.PROLEPTIC_MONTH), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.YEAR), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.YEAR_OF_ERA), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.ERA), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.INSTANT_SECONDS), false);
-        assertEquals(Month.AUGUST.isSupported(ChronoField.OFFSET_SECONDS), false);
+        assertEquals(false, Month.AUGUST.isSupported((TemporalField) null));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.NANO_OF_SECOND));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.NANO_OF_DAY));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.MICRO_OF_SECOND));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.MICRO_OF_DAY));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.MILLI_OF_SECOND));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.MILLI_OF_DAY));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.SECOND_OF_MINUTE));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.SECOND_OF_DAY));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.MINUTE_OF_HOUR));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.MINUTE_OF_DAY));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.HOUR_OF_AMPM));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.CLOCK_HOUR_OF_AMPM));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.HOUR_OF_DAY));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.CLOCK_HOUR_OF_DAY));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.AMPM_OF_DAY));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.DAY_OF_WEEK));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.DAY_OF_MONTH));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.DAY_OF_YEAR));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.EPOCH_DAY));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.ALIGNED_WEEK_OF_MONTH));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.ALIGNED_WEEK_OF_YEAR));
+        assertEquals(true, Month.AUGUST.isSupported(ChronoField.MONTH_OF_YEAR));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.PROLEPTIC_MONTH));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.YEAR));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.YEAR_OF_ERA));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.ERA));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.INSTANT_SECONDS));
+        assertEquals(false, Month.AUGUST.isSupported(ChronoField.OFFSET_SECONDS));
     }
 
     //-----------------------------------------------------------------------
@@ -194,18 +198,17 @@ public class TCKMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_get_TemporalField() {
-        assertEquals(Month.JULY.get(ChronoField.MONTH_OF_YEAR), 7);
+        assertEquals(7, Month.JULY.get(ChronoField.MONTH_OF_YEAR));
     }
 
     @Test
     public void test_getLong_TemporalField() {
-        assertEquals(Month.JULY.getLong(ChronoField.MONTH_OF_YEAR), 7);
+        assertEquals(7, Month.JULY.getLong(ChronoField.MONTH_OF_YEAR));
     }
 
     //-----------------------------------------------------------------------
     // query(TemporalQuery)
     //-----------------------------------------------------------------------
-    @DataProvider(name="query")
     Object[][] data_query() {
         return new Object[][] {
                 {Month.JUNE, TemporalQueries.chronology(), IsoChronology.INSTANCE},
@@ -218,19 +221,21 @@ public class TCKMonth extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider="query")
+    @ParameterizedTest
+    @MethodSource("data_query")
     public <T> void test_query(TemporalAccessor temporal, TemporalQuery<T> query, T expected) {
-        assertEquals(temporal.query(query), expected);
+        assertEquals(expected, temporal.query(query));
     }
 
-    @Test(dataProvider="query")
+    @ParameterizedTest
+    @MethodSource("data_query")
     public <T> void test_queryFrom(TemporalAccessor temporal, TemporalQuery<T> query, T expected) {
-        assertEquals(query.queryFrom(temporal), expected);
+        assertEquals(expected, query.queryFrom(temporal));
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_query_null() {
-        Month.JUNE.query(null);
+        Assertions.assertThrows(NullPointerException.class, () -> Month.JUNE.query(null));
     }
 
     //-----------------------------------------------------------------------
@@ -238,23 +243,22 @@ public class TCKMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_getText() {
-        assertEquals(Month.JANUARY.getDisplayName(TextStyle.SHORT, Locale.US), "Jan");
+        assertEquals("Jan", Month.JANUARY.getDisplayName(TextStyle.SHORT, Locale.US));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_getText_nullStyle() {
-        Month.JANUARY.getDisplayName(null, Locale.US);
+        Assertions.assertThrows(NullPointerException.class, () -> Month.JANUARY.getDisplayName(null, Locale.US));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_getText_nullLocale() {
-        Month.JANUARY.getDisplayName(TextStyle.FULL, null);
+        Assertions.assertThrows(NullPointerException.class, () -> Month.JANUARY.getDisplayName(TextStyle.FULL, null));
     }
 
     //-----------------------------------------------------------------------
     // plus(long), plus(long,unit)
     //-----------------------------------------------------------------------
-    @DataProvider(name="plus")
     Object[][] data_plus() {
         return new Object[][] {
             {1, -13, 12},
@@ -313,15 +317,15 @@ public class TCKMonth extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider="plus")
+    @ParameterizedTest
+    @MethodSource("data_plus")
     public void test_plus_long(int base, long amount, int expected) {
-        assertEquals(Month.of(base).plus(amount), Month.of(expected));
+        assertEquals(Month.of(expected), Month.of(base).plus(amount));
     }
 
     //-----------------------------------------------------------------------
     // minus(long), minus(long,unit)
     //-----------------------------------------------------------------------
-    @DataProvider(name="minus")
     Object[][] data_minus() {
         return new Object[][] {
             {1, -13, 2},
@@ -354,9 +358,10 @@ public class TCKMonth extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider="minus")
+    @ParameterizedTest
+    @MethodSource("data_minus")
     public void test_minus_long(int base, long amount, int expected) {
-        assertEquals(Month.of(base).minus(amount), Month.of(expected));
+        assertEquals(Month.of(expected), Month.of(base).minus(amount));
     }
 
     //-----------------------------------------------------------------------
@@ -364,34 +369,34 @@ public class TCKMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_length_boolean_notLeapYear() {
-        assertEquals(Month.JANUARY.length(false), 31);
-        assertEquals(Month.FEBRUARY.length(false), 28);
-        assertEquals(Month.MARCH.length(false), 31);
-        assertEquals(Month.APRIL.length(false), 30);
-        assertEquals(Month.MAY.length(false), 31);
-        assertEquals(Month.JUNE.length(false), 30);
-        assertEquals(Month.JULY.length(false), 31);
-        assertEquals(Month.AUGUST.length(false), 31);
-        assertEquals(Month.SEPTEMBER.length(false), 30);
-        assertEquals(Month.OCTOBER.length(false), 31);
-        assertEquals(Month.NOVEMBER.length(false), 30);
-        assertEquals(Month.DECEMBER.length(false), 31);
+        assertEquals(31, Month.JANUARY.length(false));
+        assertEquals(28, Month.FEBRUARY.length(false));
+        assertEquals(31, Month.MARCH.length(false));
+        assertEquals(30, Month.APRIL.length(false));
+        assertEquals(31, Month.MAY.length(false));
+        assertEquals(30, Month.JUNE.length(false));
+        assertEquals(31, Month.JULY.length(false));
+        assertEquals(31, Month.AUGUST.length(false));
+        assertEquals(30, Month.SEPTEMBER.length(false));
+        assertEquals(31, Month.OCTOBER.length(false));
+        assertEquals(30, Month.NOVEMBER.length(false));
+        assertEquals(31, Month.DECEMBER.length(false));
     }
 
     @Test
     public void test_length_boolean_leapYear() {
-        assertEquals(Month.JANUARY.length(true), 31);
-        assertEquals(Month.FEBRUARY.length(true), 29);
-        assertEquals(Month.MARCH.length(true), 31);
-        assertEquals(Month.APRIL.length(true), 30);
-        assertEquals(Month.MAY.length(true), 31);
-        assertEquals(Month.JUNE.length(true), 30);
-        assertEquals(Month.JULY.length(true), 31);
-        assertEquals(Month.AUGUST.length(true), 31);
-        assertEquals(Month.SEPTEMBER.length(true), 30);
-        assertEquals(Month.OCTOBER.length(true), 31);
-        assertEquals(Month.NOVEMBER.length(true), 30);
-        assertEquals(Month.DECEMBER.length(true), 31);
+        assertEquals(31, Month.JANUARY.length(true));
+        assertEquals(29, Month.FEBRUARY.length(true));
+        assertEquals(31, Month.MARCH.length(true));
+        assertEquals(30, Month.APRIL.length(true));
+        assertEquals(31, Month.MAY.length(true));
+        assertEquals(30, Month.JUNE.length(true));
+        assertEquals(31, Month.JULY.length(true));
+        assertEquals(31, Month.AUGUST.length(true));
+        assertEquals(30, Month.SEPTEMBER.length(true));
+        assertEquals(31, Month.OCTOBER.length(true));
+        assertEquals(30, Month.NOVEMBER.length(true));
+        assertEquals(31, Month.DECEMBER.length(true));
     }
 
     //-----------------------------------------------------------------------
@@ -399,18 +404,18 @@ public class TCKMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_minLength() {
-        assertEquals(Month.JANUARY.minLength(), 31);
-        assertEquals(Month.FEBRUARY.minLength(), 28);
-        assertEquals(Month.MARCH.minLength(), 31);
-        assertEquals(Month.APRIL.minLength(), 30);
-        assertEquals(Month.MAY.minLength(), 31);
-        assertEquals(Month.JUNE.minLength(), 30);
-        assertEquals(Month.JULY.minLength(), 31);
-        assertEquals(Month.AUGUST.minLength(), 31);
-        assertEquals(Month.SEPTEMBER.minLength(), 30);
-        assertEquals(Month.OCTOBER.minLength(), 31);
-        assertEquals(Month.NOVEMBER.minLength(), 30);
-        assertEquals(Month.DECEMBER.minLength(), 31);
+        assertEquals(31, Month.JANUARY.minLength());
+        assertEquals(28, Month.FEBRUARY.minLength());
+        assertEquals(31, Month.MARCH.minLength());
+        assertEquals(30, Month.APRIL.minLength());
+        assertEquals(31, Month.MAY.minLength());
+        assertEquals(30, Month.JUNE.minLength());
+        assertEquals(31, Month.JULY.minLength());
+        assertEquals(31, Month.AUGUST.minLength());
+        assertEquals(30, Month.SEPTEMBER.minLength());
+        assertEquals(31, Month.OCTOBER.minLength());
+        assertEquals(30, Month.NOVEMBER.minLength());
+        assertEquals(31, Month.DECEMBER.minLength());
     }
 
     //-----------------------------------------------------------------------
@@ -418,18 +423,18 @@ public class TCKMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_maxLength() {
-        assertEquals(Month.JANUARY.maxLength(), 31);
-        assertEquals(Month.FEBRUARY.maxLength(), 29);
-        assertEquals(Month.MARCH.maxLength(), 31);
-        assertEquals(Month.APRIL.maxLength(), 30);
-        assertEquals(Month.MAY.maxLength(), 31);
-        assertEquals(Month.JUNE.maxLength(), 30);
-        assertEquals(Month.JULY.maxLength(), 31);
-        assertEquals(Month.AUGUST.maxLength(), 31);
-        assertEquals(Month.SEPTEMBER.maxLength(), 30);
-        assertEquals(Month.OCTOBER.maxLength(), 31);
-        assertEquals(Month.NOVEMBER.maxLength(), 30);
-        assertEquals(Month.DECEMBER.maxLength(), 31);
+        assertEquals(31, Month.JANUARY.maxLength());
+        assertEquals(29, Month.FEBRUARY.maxLength());
+        assertEquals(31, Month.MARCH.maxLength());
+        assertEquals(30, Month.APRIL.maxLength());
+        assertEquals(31, Month.MAY.maxLength());
+        assertEquals(30, Month.JUNE.maxLength());
+        assertEquals(31, Month.JULY.maxLength());
+        assertEquals(31, Month.AUGUST.maxLength());
+        assertEquals(30, Month.SEPTEMBER.maxLength());
+        assertEquals(31, Month.OCTOBER.maxLength());
+        assertEquals(30, Month.NOVEMBER.maxLength());
+        assertEquals(31, Month.DECEMBER.maxLength());
     }
 
     //-----------------------------------------------------------------------
@@ -437,34 +442,34 @@ public class TCKMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_firstDayOfYear_notLeapYear() {
-        assertEquals(Month.JANUARY.firstDayOfYear(false), 1);
-        assertEquals(Month.FEBRUARY.firstDayOfYear(false), 1 + 31);
-        assertEquals(Month.MARCH.firstDayOfYear(false), 1 + 31 + 28);
-        assertEquals(Month.APRIL.firstDayOfYear(false), 1 + 31 + 28 + 31);
-        assertEquals(Month.MAY.firstDayOfYear(false), 1 + 31 + 28 + 31 + 30);
-        assertEquals(Month.JUNE.firstDayOfYear(false), 1 + 31 + 28 + 31 + 30 + 31);
-        assertEquals(Month.JULY.firstDayOfYear(false), 1 + 31 + 28 + 31 + 30 + 31 + 30);
-        assertEquals(Month.AUGUST.firstDayOfYear(false), 1 + 31 + 28 + 31 + 30 + 31 + 30 + 31);
-        assertEquals(Month.SEPTEMBER.firstDayOfYear(false), 1 + 31 + 28 + 31 + 30 + 31 + 30 + 31 + 31);
-        assertEquals(Month.OCTOBER.firstDayOfYear(false), 1 + 31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30);
-        assertEquals(Month.NOVEMBER.firstDayOfYear(false), 1 + 31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31);
-        assertEquals(Month.DECEMBER.firstDayOfYear(false), 1 + 31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30);
+        assertEquals(1, Month.JANUARY.firstDayOfYear(false));
+        assertEquals(1 + 31, Month.FEBRUARY.firstDayOfYear(false));
+        assertEquals(1 + 31 + 28, Month.MARCH.firstDayOfYear(false));
+        assertEquals(1 + 31 + 28 + 31, Month.APRIL.firstDayOfYear(false));
+        assertEquals(1 + 31 + 28 + 31 + 30, Month.MAY.firstDayOfYear(false));
+        assertEquals(1 + 31 + 28 + 31 + 30 + 31, Month.JUNE.firstDayOfYear(false));
+        assertEquals(1 + 31 + 28 + 31 + 30 + 31 + 30, Month.JULY.firstDayOfYear(false));
+        assertEquals(1 + 31 + 28 + 31 + 30 + 31 + 30 + 31, Month.AUGUST.firstDayOfYear(false));
+        assertEquals(1 + 31 + 28 + 31 + 30 + 31 + 30 + 31 + 31, Month.SEPTEMBER.firstDayOfYear(false));
+        assertEquals(1 + 31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30, Month.OCTOBER.firstDayOfYear(false));
+        assertEquals(1 + 31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31, Month.NOVEMBER.firstDayOfYear(false));
+        assertEquals(1 + 31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30, Month.DECEMBER.firstDayOfYear(false));
     }
 
     @Test
     public void test_firstDayOfYear_leapYear() {
-        assertEquals(Month.JANUARY.firstDayOfYear(true), 1);
-        assertEquals(Month.FEBRUARY.firstDayOfYear(true), 1 + 31);
-        assertEquals(Month.MARCH.firstDayOfYear(true), 1 + 31 + 29);
-        assertEquals(Month.APRIL.firstDayOfYear(true), 1 + 31 + 29 + 31);
-        assertEquals(Month.MAY.firstDayOfYear(true), 1 + 31 + 29 + 31 + 30);
-        assertEquals(Month.JUNE.firstDayOfYear(true), 1 + 31 + 29 + 31 + 30 + 31);
-        assertEquals(Month.JULY.firstDayOfYear(true), 1 + 31 + 29 + 31 + 30 + 31 + 30);
-        assertEquals(Month.AUGUST.firstDayOfYear(true), 1 + 31 + 29 + 31 + 30 + 31 + 30 + 31);
-        assertEquals(Month.SEPTEMBER.firstDayOfYear(true), 1 + 31 + 29 + 31 + 30 + 31 + 30 + 31 + 31);
-        assertEquals(Month.OCTOBER.firstDayOfYear(true), 1 + 31 + 29 + 31 + 30 + 31 + 30 + 31 + 31 + 30);
-        assertEquals(Month.NOVEMBER.firstDayOfYear(true), 1 + 31 + 29 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31);
-        assertEquals(Month.DECEMBER.firstDayOfYear(true), 1 + 31 + 29 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30);
+        assertEquals(1, Month.JANUARY.firstDayOfYear(true));
+        assertEquals(1 + 31, Month.FEBRUARY.firstDayOfYear(true));
+        assertEquals(1 + 31 + 29, Month.MARCH.firstDayOfYear(true));
+        assertEquals(1 + 31 + 29 + 31, Month.APRIL.firstDayOfYear(true));
+        assertEquals(1 + 31 + 29 + 31 + 30, Month.MAY.firstDayOfYear(true));
+        assertEquals(1 + 31 + 29 + 31 + 30 + 31, Month.JUNE.firstDayOfYear(true));
+        assertEquals(1 + 31 + 29 + 31 + 30 + 31 + 30, Month.JULY.firstDayOfYear(true));
+        assertEquals(1 + 31 + 29 + 31 + 30 + 31 + 30 + 31, Month.AUGUST.firstDayOfYear(true));
+        assertEquals(1 + 31 + 29 + 31 + 30 + 31 + 30 + 31 + 31, Month.SEPTEMBER.firstDayOfYear(true));
+        assertEquals(1 + 31 + 29 + 31 + 30 + 31 + 30 + 31 + 31 + 30, Month.OCTOBER.firstDayOfYear(true));
+        assertEquals(1 + 31 + 29 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31, Month.NOVEMBER.firstDayOfYear(true));
+        assertEquals(1 + 31 + 29 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30, Month.DECEMBER.firstDayOfYear(true));
     }
 
     //-----------------------------------------------------------------------
@@ -472,18 +477,18 @@ public class TCKMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_firstMonthOfQuarter() {
-        assertEquals(Month.JANUARY.firstMonthOfQuarter(), Month.JANUARY);
-        assertEquals(Month.FEBRUARY.firstMonthOfQuarter(), Month.JANUARY);
-        assertEquals(Month.MARCH.firstMonthOfQuarter(), Month.JANUARY);
-        assertEquals(Month.APRIL.firstMonthOfQuarter(), Month.APRIL);
-        assertEquals(Month.MAY.firstMonthOfQuarter(), Month.APRIL);
-        assertEquals(Month.JUNE.firstMonthOfQuarter(), Month.APRIL);
-        assertEquals(Month.JULY.firstMonthOfQuarter(), Month.JULY);
-        assertEquals(Month.AUGUST.firstMonthOfQuarter(), Month.JULY);
-        assertEquals(Month.SEPTEMBER.firstMonthOfQuarter(), Month.JULY);
-        assertEquals(Month.OCTOBER.firstMonthOfQuarter(), Month.OCTOBER);
-        assertEquals(Month.NOVEMBER.firstMonthOfQuarter(), Month.OCTOBER);
-        assertEquals(Month.DECEMBER.firstMonthOfQuarter(), Month.OCTOBER);
+        assertEquals(Month.JANUARY, Month.JANUARY.firstMonthOfQuarter());
+        assertEquals(Month.JANUARY, Month.FEBRUARY.firstMonthOfQuarter());
+        assertEquals(Month.JANUARY, Month.MARCH.firstMonthOfQuarter());
+        assertEquals(Month.APRIL, Month.APRIL.firstMonthOfQuarter());
+        assertEquals(Month.APRIL, Month.MAY.firstMonthOfQuarter());
+        assertEquals(Month.APRIL, Month.JUNE.firstMonthOfQuarter());
+        assertEquals(Month.JULY, Month.JULY.firstMonthOfQuarter());
+        assertEquals(Month.JULY, Month.AUGUST.firstMonthOfQuarter());
+        assertEquals(Month.JULY, Month.SEPTEMBER.firstMonthOfQuarter());
+        assertEquals(Month.OCTOBER, Month.OCTOBER.firstMonthOfQuarter());
+        assertEquals(Month.OCTOBER, Month.NOVEMBER.firstMonthOfQuarter());
+        assertEquals(Month.OCTOBER, Month.DECEMBER.firstMonthOfQuarter());
     }
 
     //-----------------------------------------------------------------------
@@ -491,18 +496,18 @@ public class TCKMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_toString() {
-        assertEquals(Month.JANUARY.toString(), "JANUARY");
-        assertEquals(Month.FEBRUARY.toString(), "FEBRUARY");
-        assertEquals(Month.MARCH.toString(), "MARCH");
-        assertEquals(Month.APRIL.toString(), "APRIL");
-        assertEquals(Month.MAY.toString(), "MAY");
-        assertEquals(Month.JUNE.toString(), "JUNE");
-        assertEquals(Month.JULY.toString(), "JULY");
-        assertEquals(Month.AUGUST.toString(), "AUGUST");
-        assertEquals(Month.SEPTEMBER.toString(), "SEPTEMBER");
-        assertEquals(Month.OCTOBER.toString(), "OCTOBER");
-        assertEquals(Month.NOVEMBER.toString(), "NOVEMBER");
-        assertEquals(Month.DECEMBER.toString(), "DECEMBER");
+        assertEquals("JANUARY", Month.JANUARY.toString());
+        assertEquals("FEBRUARY", Month.FEBRUARY.toString());
+        assertEquals("MARCH", Month.MARCH.toString());
+        assertEquals("APRIL", Month.APRIL.toString());
+        assertEquals("MAY", Month.MAY.toString());
+        assertEquals("JUNE", Month.JUNE.toString());
+        assertEquals("JULY", Month.JULY.toString());
+        assertEquals("AUGUST", Month.AUGUST.toString());
+        assertEquals("SEPTEMBER", Month.SEPTEMBER.toString());
+        assertEquals("OCTOBER", Month.OCTOBER.toString());
+        assertEquals("NOVEMBER", Month.NOVEMBER.toString());
+        assertEquals("DECEMBER", Month.DECEMBER.toString());
     }
 
     //-----------------------------------------------------------------------
@@ -510,8 +515,8 @@ public class TCKMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_enum() {
-        assertEquals(Month.valueOf("JANUARY"), Month.JANUARY);
-        assertEquals(Month.values()[0], Month.JANUARY);
+        assertEquals(Month.JANUARY, Month.valueOf("JANUARY"));
+        assertEquals(Month.JANUARY, Month.values()[0]);
     }
 
 }

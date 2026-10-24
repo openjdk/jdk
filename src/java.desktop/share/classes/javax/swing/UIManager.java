@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,9 @@ import sun.awt.OSInfo;
 import sun.swing.SwingUtilities2;
 import java.util.HashMap;
 import java.util.Objects;
-import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
 
+import sun.swing.SwingAccessor;
 
 /**
  * {@code UIManager} manages the current look and feel, the set of
@@ -158,6 +158,42 @@ import sun.awt.AWTAccessor;
  * expects certain defaults, so that in general
  * a {@code ComponentUI} provided by one look and feel will not
  * work with another look and feel.
+ *
+ * <h2>System Look and Feels</h2>
+ *
+ * [The terms "System", "Native" and "Platform" may be used interchangeably in this context].
+ * <p>
+ * A System Look And Feel is intended to implement the native Look and Feel of the desktop.
+ * <p>
+ * There is no requirement for the standard Java Look And Feel to be the default,
+ * therefore the System Look and Feel may be the default.
+ * <p>
+ * A desktop may not have a consistent Look and Feel, for example if there are
+ * multiple platform-native toolkits provided to create applications for the desktop.
+ * Swing may elect any one of these to be its native Look and Feel.
+ * <p>
+ * Installation of the native Look and Feel may depend on platform resources being available.
+ * In the event that required resources are not available, Swing may be unable to install
+ * the System Look and Feel.
+ * <p>
+ * Swing's emulation of the native Look and Feel takes precedence over any component-specific
+ * indication of rendering.
+ * This means that a native Look and Feel should render in a way that is consistent with the platform,
+ * even if it contradicts component setting-specific documentation.
+ * Examples include
+ * <ul>
+ * <li>specified rendering of painted borders may be ignored
+ * <li>specified rendering of highlighting effects may be ignored
+ * <li>specified rendering of painted backgrounds and foregrounds may be ignored
+ * <li>specified rendering of selected vs unselected components may be ignored
+ * <li>specified rendering of enabled vs disabled components may be ignored
+ * </ul>
+ * These are just examples. Not an exhaustive list.
+ * <p>
+ * These caveats must not be construed as an excuse to arbitrarily ignore these properties.
+ * They are intended to support the requirement that the platform Look and Feel be as
+ * consistent with the native rendering as is practical.
+ *
  * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with
@@ -178,10 +214,7 @@ public class UIManager implements Serializable
     /**
      * This class defines the state managed by the <code>UIManager</code>.  For
      * Swing applications the fields in this class could just as well
-     * be static members of <code>UIManager</code> however we give them
-     * "AppContext"
-     * scope instead so that potentially multiple lightweight
-     * applications running in a single VM have their own state.
+     * be static members of <code>UIManager</code>.
      */
     private static class LAFState
     {
@@ -205,8 +238,8 @@ public class UIManager implements Serializable
         void setSystemDefaults(UIDefaults x) { tables[1] = x; }
 
         /**
-         * Returns the SwingPropertyChangeSupport for the current
-         * AppContext.  If <code>create</code> is a true, a non-null
+         * Returns the SwingPropertyChangeSupport instance.
+         * If <code>create</code> is a true, a non-null
          * <code>SwingPropertyChangeSupport</code> will be returned, if
          * <code>create</code> is false and this has not been invoked
          * with true, null will be returned.
@@ -233,8 +266,9 @@ public class UIManager implements Serializable
      */
     public UIManager() {}
 
+    private static final LAFState LAF_STATE = new LAFState();
     /**
-     * Return the <code>LAFState</code> object, lazily create one if necessary.
+     * Return the <code>LAFState</code> object.
      * All access to the <code>LAFState</code> fields is done via this method,
      * for example:
      * <pre>
@@ -242,22 +276,18 @@ public class UIManager implements Serializable
      * </pre>
      */
     private static LAFState getLAFState() {
-        LAFState rv = (LAFState)SwingUtilities.appContextGet(
-                SwingUtilities2.LAF_STATE_KEY);
-        if (rv == null) {
-            synchronized (classLock) {
-                rv = (LAFState)SwingUtilities.appContextGet(
-                        SwingUtilities2.LAF_STATE_KEY);
-                if (rv == null) {
-                    SwingUtilities.appContextPut(
-                            SwingUtilities2.LAF_STATE_KEY,
-                            (rv = new LAFState()));
-                }
-            }
+        synchronized (classLock) {
+            return LAF_STATE;
         }
-        return rv;
     }
 
+    static {
+        SwingAccessor.setLAFStateAccessor(UIManager::isLafStateInitialized);
+    }
+
+    private static boolean isLafStateInitialized() {
+        return LAF_STATE.initialized;
+    }
 
     /* Keys used in the <code>swing.properties</code> properties file.
      * See loadUserProperties(), initialize().
@@ -1368,31 +1398,13 @@ public class UIManager implements Serializable
             return;
         }
 
-        // Try to get default LAF from system property, then from AppContext
-        // (6653395), then use cross-platform one by default.
-        String lafName = null;
-        @SuppressWarnings("unchecked")
-        HashMap<Object, String> lafData =
-                (HashMap) AppContext.getAppContext().remove("swing.lafdata");
-        if (lafData != null) {
-            lafName = lafData.remove("defaultlaf");
-        }
-        if (lafName == null) {
-            lafName = getCrossPlatformLookAndFeelClassName();
-        }
+        String lafName = getCrossPlatformLookAndFeelClassName();
         lafName = swingProps.getProperty(defaultLAFKey, lafName);
 
         try {
             setLookAndFeel(lafName);
         } catch (Exception e) {
             throw new Error("Cannot load " + lafName);
-        }
-
-        // Set any properties passed through AppContext (6653395).
-        if (lafData != null) {
-            for (Object key: lafData.keySet()) {
-                UIManager.put(key, lafData.get(key));
-            }
         }
     }
 
@@ -1453,8 +1465,8 @@ public class UIManager implements Serializable
 
     /*
      * This method is called before any code that depends on the
-     * <code>AppContext</code> specific LAFState object runs.
-     * In some AppContext cases, it's possible for this method
+     * LAFState object runs.
+     * In some cases, it's possible for this method
      * to be re-entered, which is why we grab a lock before calling
      * initialize().
      */

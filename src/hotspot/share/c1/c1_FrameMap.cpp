@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,7 +193,7 @@ bool FrameMap::finalize_frame(int nof_slots) {
   assert(_framesize == -1, "should only be calculated once");
   _framesize =  align_up(in_bytes(sp_offset_for_monitor_base(0)) +
                          _num_monitors * (int)sizeof(BasicObjectLock) +
-                         (int)sizeof(intptr_t) +                        // offset of deopt orig pc
+                         (int)sizeof(intptr_t) +                             // offset of deopt orig pc
                          frame_pad_in_bytes,
                          StackAlignmentInBytes) / 4;
   int java_index = 0;

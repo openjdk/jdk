@@ -27,7 +27,6 @@ package java.util.jar;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaUtilZipFileAccess;
-import jdk.internal.misc.ThreadTracker;
 import sun.security.util.ManifestEntryVerifier;
 import sun.security.util.SignatureFileVerifier;
 
@@ -212,6 +211,9 @@ public class JarFile extends ZipFile {
      * able to skip this entry.
      */
     static final String INDEX_NAME = "META-INF/INDEX.LIST";
+
+    // this will be set when the thread is initializing a JAR verifier
+    private static final ScopedValue<Boolean> IN_VERIFIER_INIT = ScopedValue.newInstance();
 
     /**
      * Returns the version that represents the unversioned configuration of a
@@ -1025,36 +1027,30 @@ public class JarFile extends ZipFile {
         }
     }
 
-    private static class ThreadTrackHolder {
-        static final ThreadTracker TRACKER = new ThreadTracker();
-    }
-
-    private static Object beginInit() {
-        return ThreadTrackHolder.TRACKER.begin();
-    }
-
-    private static void endInit(Object key) {
-        ThreadTrackHolder.TRACKER.end(key);
-    }
-
     synchronized void ensureInitialization() {
         try {
             maybeInstantiateVerifier();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        if (jv != null && !jvInitialized) {
-            Object key = beginInit();
-            try {
+        if (jv == null || jvInitialized) {
+            return;
+        }
+        // mark the current thread as initializing
+        // the JAR verifier
+        ScopedValue.where(IN_VERIFIER_INIT, true).run(new Runnable() {
+            @Override
+            public void run() {
                 initializeVerifier();
                 jvInitialized = true;
-            } finally {
-                endInit(key);
             }
-        }
+        });
     }
 
+    /**
+     * {@return true if the current thread is initializing a JAR verifier, false otherwise}
+     */
     static boolean isInitializing() {
-        return ThreadTrackHolder.TRACKER.contains(Thread.currentThread());
+        return IN_VERIFIER_INIT.isBound();
     }
 }

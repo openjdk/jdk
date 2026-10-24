@@ -84,6 +84,8 @@ define CreateFromTemplate
 	$(SED) -e 's!{{TOPDIR}}!$(call SedEscape,$(call FixPath,$(TOPDIR)))!g' \
 	    -e 's!{{TOPDIR_RELATIVE}}!$(call SedEscape,$(call FixPath,$(strip \
 	        $(call RelativePath,$(OUTPUTDIR),$(TOPDIR)))))!g' \
+	    -e 's!{{TOPDIR_BASE}}!$(notdir $(TOPDIR))!g' \
+	    -e 's!{{OUTPUT_BASE}}!$(notdir $(OUTPUTDIR))!g' \
 	    -e 's!{{WORKSPACE_ROOT}}!$(call SedEscape,$(call FixPath,$(WORKSPACE_ROOT)))!g' \
 	    -e 's!{{OUTPUTDIR}}!$(call SedEscape,$(call FixPath,$(OUTPUTDIR)))!g' \
 	    -e 's!{{CONF_NAME}}!$(CONF_NAME)!g' \

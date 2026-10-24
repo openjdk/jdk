@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,6 +31,7 @@
  * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.platform
  *          java.management
  * @build jdk.test.whitebox.WhiteBox PrintContainerInfo
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
@@ -41,32 +42,25 @@ import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Container;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
 public class TestPids {
     private static final String imageName = Common.imageName("pids");
-    private static final boolean IS_PODMAN = Container.ENGINE_COMMAND.contains("podman");
-    private static final int UNLIMITED_PIDS_PODMAN = 0;
-    private static final int UNLIMITED_PIDS_DOCKER = -1;
+    private static final int UNLIMITED_PIDS = -1;
 
     static final String warning_kernel_no_pids_support = "WARNING: Your kernel does not support pids limit capabilities";
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
+        DockerTestUtils.checkCanUseResourceLimits();
         Common.prepareWhiteBox();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {
             testPids();
         } finally {
-            if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
-                DockerTestUtils.removeDockerImage(imageName);
-            }
+            DockerTestUtils.removeDockerImage(imageName);
         }
     }
 
@@ -80,7 +74,7 @@ public class TestPids {
 
     private static DockerRunOptions commonOpts() {
         DockerRunOptions opts = new DockerRunOptions(imageName, "/jdk/bin/java", "PrintContainerInfo");
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z");
         opts.addJavaOpts("-Xlog:os+container=trace", "-cp", "/test-classes/");
         Common.addWhiteBoxOpts(opts);
         return opts;
@@ -115,8 +109,8 @@ public class TestPids {
                 Asserts.assertEquals(parts.length, 2);
                 String actual = parts[1].replaceAll("\\s","");
                 if (expectedValue.equals("max")) {
-                    // Unlimited pids accept max or -1
-                    if (actual.equals("max") || actual.equals("-1")) {
+                    // Unlimited pids accept max/-1/unlimited
+                    if (actual.equals("max") || actual.equals("-1") || actual.equals("unlimited")) {
                         System.out.println("Found expected " + actual + " for unlimited pids value.");
                     } else {
                         try {
@@ -140,22 +134,21 @@ public class TestPids {
         Asserts.assertTrue(lineMarkerFound);
     }
 
-    private static void testPids(String value) throws Exception {
-        Common.logNewTestCase("pids controller test, limiting value = " + value);
+    private static void testPids(String pidsLimit) throws Exception {
+        Common.logNewTestCase("pids controller test, limiting value = " + pidsLimit);
 
         DockerRunOptions opts = commonOpts();
-        if (value.equals("Unlimited")) {
-            int unlimited = IS_PODMAN ? UNLIMITED_PIDS_PODMAN : UNLIMITED_PIDS_DOCKER;
-            opts.addDockerOpts("--pids-limit=" + unlimited);
+        if (pidsLimit.equals("Unlimited")) {
+            opts.addDockerOpts("--pids-limit=" + UNLIMITED_PIDS);
         } else {
-            opts.addDockerOpts("--pids-limit="+value);
+            opts.addDockerOpts("--pids-limit=" + pidsLimit);
         }
 
         List<String> lines = Common.run(opts).asLines();
-        if (value.equals("Unlimited")) {
+        if (pidsLimit.equals("Unlimited")) {
             checkResult(lines, "Maximum number of tasks is: ", "max");
         } else {
-            checkResult(lines, "Maximum number of tasks is: ", value);
+            checkResult(lines, "Maximum number of tasks is: ", pidsLimit);
         }
         // current number of tasks value is hard to predict, so better expect no value
         checkResult(lines, "Current number of tasks is: ", "any_integer");

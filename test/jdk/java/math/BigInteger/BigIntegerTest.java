@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4181191 4161971 4227146 4194389 4823171 4624738 4812225 4837946 4026465
- *      8074460 8078672 8032027 8229845 8077587 8367365
+ *      8074460 8078672 8032027 8229845 8077587 8367365 8370628
  * @summary tests methods in BigInteger (use -Dseed=X to set PRNG seed)
  * @key randomness
  * @library /test/lib
@@ -232,7 +232,7 @@ public class BigIntegerTest {
                 failCount1++;
 
             failCount1 += checkResult(x.signum() < 0 && power % 2 == 0 ? x.negate() : x,
-                    y.nthRoot(power), "BigInteger.pow() inconsistent with BigInteger.nthRoot()");
+                    y.rootn(power), "BigInteger.pow() inconsistent with BigInteger.rootn()");
         }
         report("pow for " + order + " bits", failCount1);
     }
@@ -414,7 +414,7 @@ public class BigIntegerTest {
             BigInteger.valueOf(x)).collect(Collectors.summingInt(g)));
     }
 
-    private static void nthRootSmall() {
+    private static void rootnSmall() {
         int failCount = 0;
 
         // A non-positive degree should cause an exception.
@@ -422,10 +422,10 @@ public class BigIntegerTest {
         BigInteger x = BigInteger.ONE;
         BigInteger s;
         try {
-            s = x.nthRoot(n);
-            // If nthRoot() does not throw an exception that is a failure.
+            s = x.rootn(n);
+            // If rootn() does not throw an exception that is a failure.
             failCount++;
-            printErr("nthRoot() of non-positive degree did not throw an exception");
+            printErr("rootn() of non-positive degree did not throw an exception");
         } catch (ArithmeticException expected) {
             // Not a failure
         }
@@ -434,41 +434,41 @@ public class BigIntegerTest {
         n = 4;
         x = BigInteger.valueOf(-1);
         try {
-            s = x.nthRoot(n);
-            // If nthRoot() does not throw an exception that is a failure.
+            s = x.rootn(n);
+            // If rootn() does not throw an exception that is a failure.
             failCount++;
-            printErr("nthRoot() of negative number and even degree did not throw an exception");
+            printErr("rootn() of negative number and even degree did not throw an exception");
         } catch (ArithmeticException expected) {
             // Not a failure
         }
 
-        // A negative value with odd degree should return -nthRoot(-x, n)
+        // A negative value with odd degree should return -rootn(-x, n)
         n = 3;
         x = BigInteger.valueOf(-8);
-        failCount += checkResult(x.negate().nthRoot(n).negate(), x.nthRoot(n),
-                "nthRoot(" + x + ", " + n + ") != -nthRoot(" + x.negate() + ", " + n + ")");
+        failCount += checkResult(x.negate().rootn(n).negate(), x.rootn(n),
+                "rootn(" + x + ", " + n + ") != -rootn(" + x.negate() + ", " + n + ")");
 
         // A zero value should return BigInteger.ZERO.
-        failCount += checkResult(BigInteger.ZERO, BigInteger.ZERO.nthRoot(n),
-                "nthRoot(0, " + n + ") != 0");
+        failCount += checkResult(BigInteger.ZERO, BigInteger.ZERO.rootn(n),
+                "rootn(0, " + n + ") != 0");
 
         // A one degree should return x.
         x = BigInteger.TWO;
-        failCount += checkResult(x, x.nthRoot(1), "nthRoot(" + x + ", 1) != " + x);
+        failCount += checkResult(x, x.rootn(1), "rootn(" + x + ", 1) != " + x);
 
         n = 8;
         // 1 <= value < 2^n should return BigInteger.ONE.
         int end = 1 << n;
         for (int i = 1; i < end; i++) {
             failCount += checkResult(BigInteger.ONE,
-                    BigInteger.valueOf(i).nthRoot(n), "nthRoot(" + i + ", " + n + ") != 1");
+                    BigInteger.valueOf(i).rootn(n), "rootn(" + i + ", " + n + ") != 1");
         }
 
-        report("nthRootSmall", failCount);
+        report("rootnSmall", failCount);
     }
 
-    public static void nthRoot() {
-        nthRootSmall();
+    public static void rootn() {
+        rootnSmall();
 
         ToIntFunction<BigInteger> f = (x) -> {
             int n = random.nextInt(x.bitLength()) + 2;
@@ -476,28 +476,28 @@ public class BigIntegerTest {
 
             // nth root of x^n -> x
             BigInteger xN = x.pow(n);
-            failCount += checkResult(x, xN.nthRoot(n), "nthRoot() x^n -> x");
+            failCount += checkResult(x, xN.rootn(n), "rootn() x^n -> x");
 
             // nth root of x^n + 1 -> x
             BigInteger xNup = xN.add(BigInteger.ONE);
-            failCount += checkResult(x, xNup.nthRoot(n), "nthRoot() x^n + 1 -> x");
+            failCount += checkResult(x, xNup.rootn(n), "rootn() x^n + 1 -> x");
 
             // nth root of (x + 1)^n - 1 -> x
             BigInteger up =
                 x.add(BigInteger.ONE).pow(n).subtract(BigInteger.ONE);
-            failCount += checkResult(x, up.nthRoot(n), "nthRoot() (x + 1)^n - 1 -> x");
+            failCount += checkResult(x, up.rootn(n), "rootn() (x + 1)^n - 1 -> x");
 
-            // nthRoot(x, n)^n <= x
-            BigInteger r = x.nthRoot(n);
+            // rootn(x, n)^n <= x
+            BigInteger r = x.rootn(n);
             if (r.pow(n).compareTo(x) > 0) {
                 failCount++;
-                printErr("nthRoot(x, n)^n > x for x = " + x + ", n = " + n);
+                printErr("rootn(x, n)^n > x for x = " + x + ", n = " + n);
             }
 
-            // (nthRoot(x, n) + 1)^n > x
+            // (rootn(x, n) + 1)^n > x
             if (r.add(BigInteger.ONE).pow(n).compareTo(x) <= 0) {
                 failCount++;
-                printErr("(nthRoot(x, n) + 1)^n <= x for x = " + x + ", n = " + n);
+                printErr("(rootn(x, n) + 1)^n <= x for x = " + x + ", n = " + n);
             }
 
             return failCount;
@@ -513,52 +513,52 @@ public class BigIntegerTest {
         }
         sb.add((new BigDecimal(Double.MAX_VALUE)).toBigInteger());
         sb.add((new BigDecimal(Double.MAX_VALUE)).toBigInteger().add(BigInteger.ONE));
-        report("nthRoot for 2^N, 2^N - 1 and 2^N + 1, 1 <= N <= " + maxExponent,
+        report("rootn for 2^N, 2^N - 1 and 2^N + 1, 1 <= N <= " + maxExponent,
             sb.build().collect(Collectors.summingInt(f)));
 
         IntStream ints = random.ints(SIZE, 2, Integer.MAX_VALUE);
-        report("nthRoot for int", ints.mapToObj(x ->
+        report("rootn for int", ints.mapToObj(x ->
             BigInteger.valueOf(x)).collect(Collectors.summingInt(f)));
 
         LongStream longs = random.longs(SIZE, Integer.MAX_VALUE + 1L, Long.MAX_VALUE);
-        report("nthRoot for long", longs.mapToObj(x ->
+        report("rootn for long", longs.mapToObj(x ->
             BigInteger.valueOf(x)).collect(Collectors.summingInt(f)));
 
         DoubleStream doubles = random.doubles(SIZE, 0x1p63, Math.scalb(1.0, maxExponent));
-        report("nthRoot for double", doubles.mapToObj(x ->
+        report("rootn for double", doubles.mapToObj(x ->
             BigDecimal.valueOf(x).toBigInteger()).collect(Collectors.summingInt(f)));
     }
 
-    public static void nthRootAndRemainder() {
+    public static void rootnAndRemainder() {
         ToIntFunction<BigInteger> g = (x) -> {
             int failCount = 0;
             int n = random.nextInt(x.bitLength()) + 2;
             BigInteger xN = x.pow(n);
 
             // nth root of x^n -> x
-            BigInteger[] actual = xN.nthRootAndRemainder(n);
-            failCount += checkResult(x, actual[0], "nthRootAndRemainder()[0]");
-            failCount += checkResult(BigInteger.ZERO, actual[1], "nthRootAndRemainder()[1]");
+            BigInteger[] actual = xN.rootnAndRemainder(n);
+            failCount += checkResult(x, actual[0], "rootnAndRemainder()[0]");
+            failCount += checkResult(BigInteger.ZERO, actual[1], "rootnAndRemainder()[1]");
 
             // nth root of x^n + 1 -> x
             BigInteger xNup = xN.add(BigInteger.ONE);
-            actual = xNup.nthRootAndRemainder(n);
-            failCount += checkResult(x, actual[0], "nthRootAndRemainder()[0]");
-            failCount += checkResult(BigInteger.ONE, actual[1], "nthRootAndRemainder()[1]");
+            actual = xNup.rootnAndRemainder(n);
+            failCount += checkResult(x, actual[0], "rootnAndRemainder()[0]");
+            failCount += checkResult(BigInteger.ONE, actual[1], "rootnAndRemainder()[1]");
 
             // nth root of (x + 1)^n - 1 -> x
             BigInteger up =
                 x.add(BigInteger.ONE).pow(n).subtract(BigInteger.ONE);
-            actual = up.nthRootAndRemainder(n);
-            failCount += checkResult(x, actual[0], "nthRootAndRemainder()[0]");
+            actual = up.rootnAndRemainder(n);
+            failCount += checkResult(x, actual[0], "rootnAndRemainder()[0]");
             BigInteger r = up.subtract(xN);
-            failCount += checkResult(r, actual[1], "nthRootAndRemainder()[1]");
+            failCount += checkResult(r, actual[1], "rootnAndRemainder()[1]");
 
             return failCount;
         };
 
         IntStream bits = random.ints(SIZE, 3, Short.MAX_VALUE);
-        report("nthRootAndRemainder", bits.mapToObj(x ->
+        report("rootnAndRemainder", bits.mapToObj(x ->
             BigInteger.valueOf(x)).collect(Collectors.summingInt(g)));
     }
 
@@ -1472,8 +1472,8 @@ public class BigIntegerTest {
             squareRoot();
             squareRootAndRemainder();
 
-            nthRoot();
-            nthRootAndRemainder();
+            rootn();
+            rootnAndRemainder();
         }
 
         if (failure)

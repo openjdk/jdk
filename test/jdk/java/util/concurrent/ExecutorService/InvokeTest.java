@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,7 +284,7 @@ class InvokeTest {
     }
 
     /**
-     * Test invokeAny with interrupt status set.
+     * Test invokeAny with interrupted status set.
      */
     @ParameterizedTest
     @MethodSource("executors")
@@ -530,7 +530,7 @@ class InvokeTest {
     }
 
     /**
-     * Test invokeAll with interrupt status set.
+     * Test invokeAll with interrupted status set.
      */
     @ParameterizedTest
     @MethodSource("executors")
@@ -555,7 +555,7 @@ class InvokeTest {
     }
 
     /**
-     * Test timed-invokeAll with interrupt status set.
+     * Test timed-invokeAll with interrupted status set.
      */
     @ParameterizedTest
     @MethodSource("executors")

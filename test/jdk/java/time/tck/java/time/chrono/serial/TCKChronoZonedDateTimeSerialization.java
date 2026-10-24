@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,20 +64,22 @@ import java.time.chrono.IsoChronology;
 import java.time.chrono.JapaneseChronology;
 import java.time.chrono.MinguoChronology;
 import java.time.chrono.ThaiBuddhistChronology;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import tck.java.time.AbstractTCKTest;
 
 /**
  * Test assertions that must be true for all built-in chronologies.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKChronoZonedDateTimeSerialization extends AbstractTCKTest {
 
     //-----------------------------------------------------------------------
     // regular data factory for names and descriptions of available calendars
     //-----------------------------------------------------------------------
-    @DataProvider(name = "calendars")
     Chronology[][] data_of_calendars() {
         return new Chronology[][]{
                     {HijrahChronology.INSTANCE},
@@ -91,7 +93,8 @@ public class TCKChronoZonedDateTimeSerialization extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // Test Serialization of ISO via chrono API
     //-----------------------------------------------------------------------
-    @Test( dataProvider="calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_ChronoZonedDateTimeSerialization(Chronology chrono) throws Exception {
         ZonedDateTime ref = LocalDate.of(2013, 1, 5).atTime(12, 1, 2, 3).atZone(ZoneId.of("GMT+01:23"));
         ChronoZonedDateTime<?> original = chrono.date(ref).atTime(ref.toLocalTime()).atZone(ref.getZone());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
 
   ResolutionErrorKey key(pool(), cp_index);
   ResolutionErrorEntry *entry = new ResolutionErrorEntry(error, message, cause, cause_msg);
-  _resolution_error_table->put(key, entry);
+  _resolution_error_table->put_when_absent(key, entry);
 }
 
 // create new nest host error entry
@@ -85,7 +85,7 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
 
   ResolutionErrorKey key(pool(), cp_index);
   ResolutionErrorEntry *entry = new ResolutionErrorEntry(message);
-  _resolution_error_table->put(key, entry);
+  _resolution_error_table->put_when_absent(key, entry);
 }
 
 // find entry in the table
@@ -99,9 +99,9 @@ ResolutionErrorEntry* ResolutionErrorTable::find_entry(const constantPoolHandle&
 ResolutionErrorEntry::ResolutionErrorEntry(Symbol* error, const char* message,
                                            Symbol* cause, const char* cause_msg):
         _error(error),
-        _message(message != nullptr ? os::strdup(message) : nullptr),
+        _message(message != nullptr ? os::strdup(message, mtClass) : nullptr),
         _cause(cause),
-        _cause_msg(cause_msg != nullptr ? os::strdup(cause_msg) : nullptr),
+        _cause_msg(cause_msg != nullptr ? os::strdup(cause_msg, mtClass) : nullptr),
         _nest_host_error(nullptr) {
 
   Symbol::maybe_increment_refcount(_error);
@@ -114,17 +114,24 @@ ResolutionErrorEntry::~ResolutionErrorEntry() {
   Symbol::maybe_decrement_refcount(_cause);
 
   if (_message != nullptr) {
-    FREE_C_HEAP_ARRAY(char, _message);
+    FREE_C_HEAP_ARRAY(_message);
   }
 
   if (_cause_msg != nullptr) {
-    FREE_C_HEAP_ARRAY(char, _cause_msg);
+    FREE_C_HEAP_ARRAY(_cause_msg);
   }
 
   if (nest_host_error() != nullptr) {
-    FREE_C_HEAP_ARRAY(char, nest_host_error());
+    FREE_C_HEAP_ARRAY(nest_host_error());
   }
 }
+
+void ResolutionErrorEntry::set_nest_host_error(const char* message) {
+  assert(_nest_host_error == nullptr, "caller should have checked");
+  assert_lock_strong(SystemDictionary_lock);
+  _nest_host_error = message;
+}
+
 
 class ResolutionErrorDeleteIterate : StackObj {
   ConstantPool* p;

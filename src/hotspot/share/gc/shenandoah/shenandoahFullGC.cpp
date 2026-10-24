@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2014, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,10 @@
  *
  */
 
-
+#include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
 #include "compiler/oopMap.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/continuationGCSupport.hpp"
 #include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -49,6 +51,7 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahMetrics.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
@@ -57,6 +60,7 @@
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -68,6 +72,7 @@
 #include "utilities/growableArray.hpp"
 
 ShenandoahFullGC::ShenandoahFullGC() :
+  ShenandoahGC(ShenandoahHeap::heap()->global_generation()),
   _gc_timer(ShenandoahHeap::heap()->gc_timer()),
   _preserved_marks(new PreservedMarksSet(true)) {}
 
@@ -104,21 +109,18 @@ void ShenandoahFullGC::entry_full(GCCause::Cause cause) {
 }
 
 void ShenandoahFullGC::op_full(GCCause::Cause cause) {
-  ShenandoahMetricsSnapshot metrics;
-  metrics.snap_before();
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+
+  ShenandoahMetricsSnapshot metrics(heap->free_set());
 
   // Perform full GC
-  do_it(cause);
-
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  do_it();
 
   if (heap->mode()->is_generational()) {
     ShenandoahGenerationalFullGC::handle_completion(heap);
   }
 
-  metrics.snap_after();
-
-  if (metrics.is_good_progress(heap->global_generation())) {
+  if (metrics.is_good_progress()) {
     heap->notify_gc_progress();
   } else {
     // Nothing to do. Tell the allocation path that we have failed to make
@@ -126,9 +128,22 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
     heap->notify_gc_no_progress();
   }
 
-  // Regardless if progress was made, we record that we completed a "successful" full GC.
-  heap->global_generation()->heuristics()->record_success_full();
-  heap->shenandoah_policy()->record_success_full();
+  // Regardless if progress was made, we record that we completed a full GC.
+  if (heap->mode()->is_generational()) {
+    // In generational mode, the young heuristics are responsible for this failure
+    heap->young_generation()->heuristics()->record_full_gc(cause);
+  } else {
+    _generation->heuristics()->record_full_gc(cause);
+  }
+
+  if (cause == GCCause::_shenandoah_upgrade_to_full_gc) {
+    heap->shenandoah_policy()->record_alloc_failure_to_full();
+  }
+
+  heap->shenandoah_policy()->record_success_full(heap->control_thread()->get_gc_id());
+
+  // Leaving full GC, we need to flip barriers back to idle.
+  CodeCache::arm_all_nmethods();
 
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::full_gc_propagate_gc_state);
@@ -136,25 +151,26 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
   }
 }
 
-void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
+void ShenandoahFullGC::do_it() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+  heap->release_injected_pins();
 
   if (heap->mode()->is_generational()) {
     ShenandoahGenerationalFullGC::prepare();
   }
 
+  guarantee(heap->is_idle(), "Full GC should not be running from incomplete cycle");
+  guarantee(!heap->has_forwarded_objects(), "Concurrent cycle should have finished update references");
+  guarantee(!heap->is_concurrent_mark_in_progress(), "Cannot be marking now");
+  guarantee(!heap->has_self_forwarded_objects(), "Self forwarded objects should be cleared by concurrent cycle.");
+
   if (ShenandoahVerify) {
-    heap->verifier()->verify_before_fullgc();
+    heap->verifier()->verify_before_fullgc(_generation);
   }
 
   if (VerifyBeforeGC) {
     Universe::verify();
   }
-
-  // Degenerated GC may carry concurrent root flags when upgrading to
-  // full GC. We need to reset it before mutators resume.
-  heap->set_concurrent_strong_root_in_progress(false);
-  heap->set_concurrent_weak_root_in_progress(false);
 
   heap->set_full_gc_in_progress(true);
 
@@ -168,39 +184,8 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
   {
     ShenandoahGCPhase prepare_phase(ShenandoahPhaseTimings::full_gc_prepare);
-    // Full GC is supposed to recover from any GC state:
 
-    // a0. Remember if we have forwarded objects
-    bool has_forwarded_objects = heap->has_forwarded_objects();
-
-    // a1. Cancel evacuation, if in progress
-    if (heap->is_evacuation_in_progress()) {
-      heap->set_evacuation_in_progress(false);
-    }
-    assert(!heap->is_evacuation_in_progress(), "sanity");
-
-    // a2. Cancel update-refs, if in progress
-    if (heap->is_update_refs_in_progress()) {
-      heap->set_update_refs_in_progress(false);
-    }
-    assert(!heap->is_update_refs_in_progress(), "sanity");
-
-    // b. Cancel all concurrent marks, if in progress
-    if (heap->is_concurrent_mark_in_progress()) {
-      heap->cancel_concurrent_mark();
-    }
-    assert(!heap->is_concurrent_mark_in_progress(), "sanity");
-
-    // c. Update roots if this full GC is due to evac-oom, which may carry from-space pointers in roots.
-    if (has_forwarded_objects) {
-      update_roots(true /*full_gc*/);
-    }
-
-    // d. Abandon reference discovery and clear all discovered references.
-    ShenandoahReferenceProcessor* rp = heap->global_generation()->ref_processor();
-    rp->abandon_partial_discovery();
-
-    // e. Sync pinned region status from the CP marks
+    // Sync pinned region status from the CP marks
     heap->sync_pinned_region_status();
 
     if (heap->mode()->is_generational()) {
@@ -209,8 +194,6 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
     // The rest of prologue:
     _preserved_marks->init(heap->workers()->active_workers());
-
-    assert(heap->has_forwarded_objects() == has_forwarded_objects, "This should not change");
   }
 
   if (UseTLAB) {
@@ -223,11 +206,6 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
   phase1_mark_heap();
 
-  // Once marking is done, which may have fixed up forwarded objects, we can drop it.
-  // Coming out of Full GC, we would not have any forwarded objects.
-  // This also prevents resolves with fwdptr from kicking in while adjusting pointers in phase3.
-  heap->set_has_forwarded_objects(false);
-
   heap->set_full_gc_move_in_progress(true);
 
   // Setup workers for the rest
@@ -239,7 +217,6 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     worker_slices[i] = new ShenandoahHeapRegionSet();
   }
 
-  ShenandoahGenerationalHeap::TransferResult result;
   {
     // The rest of code performs region moves, where region status is undefined
     // until all phases run together.
@@ -253,15 +230,9 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
     phase4_compact_objects(worker_slices);
 
-    result = phase5_epilog();
+    phase5_epilog();
   }
-  if (heap->mode()->is_generational()) {
-    LogTarget(Info, gc, ergo) lt;
-    if (lt.is_enabled()) {
-      LogStream ls(lt);
-      result.print_on("Full GC", &ls);
-    }
-  }
+  heap->start_idle_span();
 
   // Resize metaspace
   MetaspaceGC::compute_new_size();
@@ -270,13 +241,13 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   for (uint i = 0; i < heap->max_workers(); i++) {
     delete worker_slices[i];
   }
-  FREE_C_HEAP_ARRAY(ShenandoahHeapRegionSet*, worker_slices);
+  FREE_C_HEAP_ARRAY(worker_slices);
 
   heap->set_full_gc_move_in_progress(false);
   heap->set_full_gc_in_progress(false);
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_after_fullgc();
+    heap->verifier()->verify_after_fullgc(_generation);
   }
 
   if (VerifyAfterGC) {
@@ -295,23 +266,99 @@ void ShenandoahFullGC::phase1_mark_heap() {
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  heap->global_generation()->reset_mark_bitmap<true, true>();
+  _generation->reset_mark_bitmap<true, true>();
   assert(heap->marking_context()->is_bitmap_clear(), "sanity");
-  assert(!heap->global_generation()->is_mark_complete(), "sanity");
+  assert(!_generation->is_mark_complete(), "sanity");
 
-  heap->set_unload_classes(heap->global_generation()->heuristics()->can_unload_classes());
+  heap->set_unload_classes(_generation->heuristics()->can_unload_classes());
 
-  ShenandoahReferenceProcessor* rp = heap->global_generation()->ref_processor();
+  ShenandoahReferenceProcessor* rp = _generation->ref_processor();
   // enable ("weak") refs discovery
   rp->set_soft_reference_policy(true); // forcefully purge all soft references
 
-  ShenandoahSTWMark mark(heap->global_generation(), true /*full_gc*/);
+  ShenandoahSTWMark mark(_generation);
   mark.mark();
-  heap->parallel_cleaning(true /* full_gc */);
+  parallel_cleaning(_generation);
 
-  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+  if (heap->mode()->is_generational()) {
     ShenandoahGenerationalFullGC::log_live_in_old(heap);
   }
+}
+
+void ShenandoahFullGC::parallel_cleaning(ShenandoahGeneration* generation) const {
+  assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
+  assert(ShenandoahHeap::heap()->is_stw_gc_in_progress(), "Only for Full GC");
+  ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_purge);
+  stw_weak_refs(generation);
+  stw_process_weak_roots();
+  stw_unload_classes();
+}
+
+void ShenandoahFullGC::stw_weak_refs(ShenandoahGeneration* generation) {
+  // Weak refs processing
+  ShenandoahPhaseTimings::Phase phase = ShenandoahPhaseTimings::full_gc_weakrefs;
+  ShenandoahTimingsTracker t(phase);
+  ShenandoahGCWorkerPhase worker_phase(phase);
+  generation->ref_processor()->process_references(phase, ShenandoahHeap::heap()->workers(), false /* concurrent */);
+}
+
+// Weak roots are either pre-evacuated (final mark) or updated (final update refs),
+// so they should not have forwarded oops.
+// However, we do need to "null" dead oops in the roots, if it cannot be done
+// in concurrent cycles.
+void ShenandoahFullGC::stw_process_weak_roots() const {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  uint num_workers = heap->workers()->active_workers();
+  ShenandoahPhaseTimings::Phase timing_phase = ShenandoahPhaseTimings::full_gc_purge_weak_par;
+  ShenandoahGCPhase phase(timing_phase);
+  ShenandoahGCWorkerPhase worker_phase(timing_phase);
+  // Cleanup weak roots
+  ShenandoahIsAliveClosure is_alive;
+#ifdef ASSERT
+  ShenandoahAssertNotForwardedClosure verify_cl;
+  ShenandoahParallelWeakRootsCleaningTask cleaning_task(timing_phase, &is_alive, &verify_cl, num_workers);
+#else
+  ShenandoahParallelWeakRootsCleaningTask cleaning_task(timing_phase, &is_alive, &do_nothing_cl, num_workers);
+#endif
+  heap->workers()->run_task(&cleaning_task);
+}
+
+void ShenandoahFullGC::stw_unload_classes() const {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (!heap->unload_classes()) return;
+  ClassUnloadingContext ctx(heap->workers()->active_workers(),
+                            true /* unregister_nmethods_during_purge */,
+                            false /* lock_nmethod_free_separately */);
+
+  // Unload classes and purge SystemDictionary.
+  {
+    ShenandoahPhaseTimings::Phase phase = ShenandoahPhaseTimings::full_gc_purge_class_unload;
+    ShenandoahIsAliveSelector is_alive;
+    {
+      CodeCache::UnlinkingScope scope(is_alive.is_alive_closure());
+      ShenandoahGCPhase gc_phase(phase);
+      ShenandoahGCWorkerPhase worker_phase(phase);
+      bool unloading_occurred = SystemDictionary::do_unloading(_gc_timer);
+
+      ShenandoahClassUnloadingTask unlink_task(phase, unloading_occurred);
+      heap->workers()->run_task(&unlink_task);
+    }
+    // Release unloaded nmethods's memory.
+    ClassUnloadingContext::context()->purge_and_free_nmethods();
+  }
+
+  {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_purge_cldg);
+    ClassLoaderDataGraph::purge(true /* at_safepoint */);
+  }
+  // Resize and verify metaspace
+  MetaspaceGC::compute_new_size();
+
+  if (heap->mode()->is_generational()) {
+    heap->old_generation()->set_parsable(false);
+  }
+
+  DEBUG_ONLY(MetaspaceUtils::verify();)
 }
 
 class ShenandoahPrepareForCompactionObjectClosure : public ObjectClosure {
@@ -353,10 +400,12 @@ public:
     return _empty_regions_pos;
   }
 
-  void do_object(oop p) {
+  void do_object(oop p) override {
+    shenandoah_assert_mark_complete(cast_from_oop<HeapWord*>(p));
     assert(_from_region != nullptr, "must set before work");
-    assert(_heap->gc_generation()->complete_marking_context()->is_marked(p), "must be marked");
-    assert(!_heap->gc_generation()->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
+    assert(_heap->global_generation()->is_mark_complete(), "marking must be finished");
+    assert(_heap->marking_context()->is_marked(p), "must be marked");
+    assert(!_heap->marking_context()->allocated_after_mark_start(p), "must be truly marked");
 
     size_t obj_size = p->size();
     if (_compact_point + obj_size > _to_region->end()) {
@@ -526,14 +575,11 @@ void ShenandoahFullGC::calculate_target_humongous_objects() {
 }
 
 class ShenandoahEnsureHeapActiveClosure: public ShenandoahHeapRegionClosure {
-private:
-  ShenandoahHeap* const _heap;
-
 public:
-  ShenandoahEnsureHeapActiveClosure() : _heap(ShenandoahHeap::heap()) {}
-  void heap_region_do(ShenandoahHeapRegion* r) {
+  void heap_region_do(ShenandoahHeapRegion* r) override {
     if (r->is_trash()) {
       r->try_recycle_under_lock();
+      // No need to adjust_interval_for_recycled_old_region.  That will be taken care of during freeset rebuild.
     }
     if (r->is_cset()) {
       // Leave affiliation unchanged
@@ -698,7 +744,7 @@ void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices
     }
   }
 
-  FREE_C_HEAP_ARRAY(size_t, live);
+  FREE_C_HEAP_ARRAY(live);
 
 #ifdef ASSERT
   ResourceBitMap map(n_regions);
@@ -763,7 +809,6 @@ void ShenandoahFullGC::phase2_calculate_target_addresses(ShenandoahHeapRegionSet
 
 class ShenandoahAdjustPointersClosure : public MetadataVisitingOopIterateClosure {
 private:
-  ShenandoahHeap* const _heap;
   ShenandoahMarkingContext* const _ctx;
 
   template <class T>
@@ -781,8 +826,7 @@ private:
 
 public:
   ShenandoahAdjustPointersClosure() :
-    _heap(ShenandoahHeap::heap()),
-    _ctx(ShenandoahHeap::heap()->gc_generation()->complete_marking_context()) {}
+    _ctx(ShenandoahHeap::heap()->global_generation()->complete_marking_context()) {}
 
   void do_oop(oop* p)       { do_oop_work(p); }
   void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -792,15 +836,12 @@ public:
 
 class ShenandoahAdjustPointersObjectClosure : public ObjectClosure {
 private:
-  ShenandoahHeap* const _heap;
   ShenandoahAdjustPointersClosure _cl;
 
 public:
-  ShenandoahAdjustPointersObjectClosure() :
-    _heap(ShenandoahHeap::heap()) {
-  }
-  void do_object(oop p) {
-    assert(_heap->gc_generation()->complete_marking_context()->is_marked(p), "must be marked");
+  void do_object(oop p) override {
+    assert(ShenandoahHeap::heap()->global_generation()->is_mark_complete(), "marking must be complete");
+    assert(ShenandoahHeap::heap()->marking_context()->is_marked(p), "must be marked");
     p->oop_iterate(&_cl);
   }
 };
@@ -816,7 +857,7 @@ public:
     _heap(ShenandoahHeap::heap()) {
   }
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahAdjustPointersObjectClosure obj_cl;
     ShenandoahHeapRegion* r = _regions.next();
@@ -842,7 +883,7 @@ public:
     _rp(rp),
     _preserved_marks(preserved_marks) {}
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahAdjustPointersClosure cl;
     _rp->roots_do(worker_id, &cl);
@@ -859,15 +900,15 @@ void ShenandoahFullGC::phase3_update_references() {
   WorkerThreads* workers = heap->workers();
   uint nworkers = workers->active_workers();
   {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     DerivedPointerTable::clear();
-#endif
+#endif // COMPILER2
     ShenandoahRootAdjuster rp(nworkers, ShenandoahPhaseTimings::full_gc_adjust_roots);
     ShenandoahAdjustRootPointersTask task(&rp, _preserved_marks);
     workers->run_task(&task);
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     DerivedPointerTable::update_pointers();
-#endif
+#endif // COMPILER2
   }
 
   ShenandoahAdjustPointersTask adjust_pointers_task;
@@ -876,15 +917,15 @@ void ShenandoahFullGC::phase3_update_references() {
 
 class ShenandoahCompactObjectsClosure : public ObjectClosure {
 private:
-  ShenandoahHeap* const _heap;
-  uint            const _worker_id;
+  uint const _worker_id;
 
 public:
-  ShenandoahCompactObjectsClosure(uint worker_id) :
-    _heap(ShenandoahHeap::heap()), _worker_id(worker_id) {}
+  explicit ShenandoahCompactObjectsClosure(uint worker_id) :
+    _worker_id(worker_id) {}
 
-  void do_object(oop p) {
-    assert(_heap->gc_generation()->complete_marking_context()->is_marked(p), "must be marked");
+  void do_object(oop p) override {
+    assert(ShenandoahHeap::heap()->global_generation()->is_mark_complete(), "marking must be finished");
+    assert(ShenandoahHeap::heap()->marking_context()->is_marked(p), "must be marked");
     size_t size = p->size();
     if (FullGCForwarding::is_forwarded(p)) {
       HeapWord* compact_from = cast_from_oop<HeapWord*>(p);
@@ -893,8 +934,11 @@ public:
       Copy::aligned_conjoint_words(compact_from, compact_to, size);
       oop new_obj = cast_to_oop(compact_to);
 
-      ContinuationGCSupport::relativize_stack_chunk(new_obj);
+      // Restore the mark word before relativizing the stack chunk. The copy's
+      // mark word contains the full GC forwarding encoding, which would cause
+      // is_stackChunk() to read garbage (especially with compact headers).
       new_obj->init_mark();
+      ContinuationGCSupport::relativize_stack_chunk(new_obj);
     }
   }
 };
@@ -911,7 +955,7 @@ public:
     _worker_slices(worker_slices) {
   }
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahHeapRegionSetIterator slice(_worker_slices[worker_id]);
 
@@ -948,7 +992,7 @@ public:
     _heap->free_set()->clear();
   }
 
-  void heap_region_do(ShenandoahHeapRegion* r) {
+  void heap_region_do(ShenandoahHeapRegion* r) override {
     assert (!r->is_cset(), "cset regions should have been demoted already");
 
     // Need to reset the complete-top-at-mark-start pointer here because
@@ -957,7 +1001,7 @@ public:
     // NOTE: See blurb at ShenandoahMCResetCompleteBitmapTask on why we need to skip
     // pinned regions.
     if (!r->is_pinned()) {
-      _heap->gc_generation()->complete_marking_context()->reset_top_at_mark_start(r);
+      _heap->marking_context()->reset_top_at_mark_start(r);
     }
 
     size_t live = r->used();
@@ -983,6 +1027,7 @@ public:
     if (r->is_trash()) {
       live = 0;
       r->try_recycle_under_lock();
+      // No need to adjust_interval_for_recycled_old_region.  That will be taken care of during freeset rebuild.
     } else {
       if (r->is_old()) {
         ShenandoahGenerationalFullGC::account_for_region(r, _old_regions, _old_usage, _old_humongous_waste);
@@ -992,23 +1037,6 @@ public:
     }
     r->set_live_data(live);
     r->reset_alloc_metadata();
-  }
-
-  void update_generation_usage() {
-    if (_is_generational) {
-      _heap->old_generation()->establish_usage(_old_regions, _old_usage, _old_humongous_waste);
-      _heap->young_generation()->establish_usage(_young_regions, _young_usage, _young_humongous_waste);
-    } else {
-      assert(_old_regions == 0, "Old regions only expected in generational mode");
-      assert(_old_usage == 0, "Old usage only expected in generational mode");
-      assert(_old_humongous_waste == 0, "Old humongous waste only expected in generational mode");
-    }
-
-    // In generational mode, global usage should be the sum of young and old. This is also true
-    // for non-generational modes except that there are no old regions.
-    _heap->global_generation()->establish_usage(_old_regions + _young_regions,
-                                                _old_usage + _young_usage,
-                                                _old_humongous_waste + _young_humongous_waste);
   }
 };
 
@@ -1082,7 +1110,7 @@ void ShenandoahFullGC::compact_humongous_objects() {
 // we need to remain able to walk pinned regions.
 // Since pinned region do not move and don't get compacted, we will get holes with
 // unreachable objects in them (which may have pointers to unloaded Klasses and thus
-// cannot be iterated over using oop->size(). The only way to safely iterate over those is using
+// cannot be iterated over using oop->size()). The only way to safely iterate over those is using
 // a valid marking bitmap and valid TAMS pointer. This class only resets marking
 // bitmaps for un-pinned regions, and later we only reset TAMS for unpinned regions.
 class ShenandoahMCResetCompleteBitmapTask : public WorkerTask {
@@ -1094,11 +1122,12 @@ public:
     WorkerTask("Shenandoah Reset Bitmap") {
   }
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahHeapRegion* region = _regions.next();
     ShenandoahHeap* heap = ShenandoahHeap::heap();
-    ShenandoahMarkingContext* const ctx = heap->gc_generation()->complete_marking_context();
+    ShenandoahMarkingContext* const ctx = heap->marking_context();
+    assert(heap->global_generation()->is_mark_complete(), "Marking must be complete");
     while (region != nullptr) {
       if (heap->is_bitmap_slice_committed(region) && !region->is_pinned() && region->has_live()) {
         ctx->clear_bitmap(region);
@@ -1128,10 +1157,9 @@ void ShenandoahFullGC::phase4_compact_objects(ShenandoahHeapRegionSet** worker_s
   }
 }
 
-ShenandoahGenerationalHeap::TransferResult ShenandoahFullGC::phase5_epilog() {
+void ShenandoahFullGC::phase5_epilog() {
   GCTraceTime(Info, gc, phases) time("Phase 5: Full GC epilog", _gc_timer);
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahGenerationalHeap::TransferResult result;
 
   // Reset complete bitmap. We're about to reset the complete-top-at-mark-start pointer
   // and must ensure the bitmap is in sync.
@@ -1146,39 +1174,29 @@ ShenandoahGenerationalHeap::TransferResult ShenandoahFullGC::phase5_epilog() {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_copy_objects_rebuild);
     ShenandoahPostCompactClosure post_compact;
     heap->heap_region_iterate(&post_compact);
-    post_compact.update_generation_usage();
-
-    if (heap->mode()->is_generational()) {
-      ShenandoahGenerationalFullGC::balance_generations_after_gc(heap);
-    }
-
     heap->collection_set()->clear();
-    size_t young_cset_regions, old_cset_regions;
-    size_t first_old, last_old, num_old;
-    heap->free_set()->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
-
-    // We also do not expand old generation size following Full GC because we have scrambled age populations and
-    // no longer have objects separated by age into distinct regions.
-    if (heap->mode()->is_generational()) {
-      ShenandoahGenerationalFullGC::compute_balances();
+    {
+      ShenandoahFreeSet* free_set = heap->free_set();
+      size_t young_trashed_regions, old_trashed_regions, first_old, last_old, num_old;
+      free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old, last_old, num_old);
+      // We also do not expand old generation size following Full GC because we have scrambled age populations and
+      // no longer have objects separated by age into distinct regions.
+      if (heap->mode()->is_generational()) {
+        ShenandoahGenerationalFullGC::compute_balances();
+      }
+      heap->free_set()->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
     }
-
-    heap->free_set()->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
 
     // Set mark incomplete because the marking bitmaps have been reset except pinned regions.
-    heap->global_generation()->set_mark_incomplete();
+    _generation->set_mark_incomplete();
 
-    heap->clear_cancelled_gc(true /* clear oom handler */);
+    heap->clear_cancelled_gc();
   }
 
   _preserved_marks->restore(heap->workers());
   _preserved_marks->reclaim();
 
-  // We defer generation resizing actions until after cset regions have been recycled.  We do this even following an
-  // abbreviated cycle.
   if (heap->mode()->is_generational()) {
-    result = ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set();
     ShenandoahGenerationalFullGC::rebuild_remembered_set(heap);
   }
-  return result;
 }

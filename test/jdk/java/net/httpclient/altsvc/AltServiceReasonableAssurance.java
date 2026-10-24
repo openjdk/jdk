@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @run junit/othervm  -Djdk.net.hosts.file=${test.src}/altsvc-dns-hosts.txt
  *                     -Djdk.internal.httpclient.debug=true -Djavax.net.debug=all
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
- *                      AltServiceReasonableAssurance
+ *                      ${test.main.class}
  */
 public class AltServiceReasonableAssurance implements HttpServerAdapters {
 

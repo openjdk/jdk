@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,17 +77,20 @@ class GTKPainter extends SynthPainter {
                context.getComponent().getName();
     }
 
+    @Override
     public void paintCheckBoxBackground(SynthContext context,
             Graphics g, int x, int y, int w, int h) {
         paintRadioButtonBackground(context, g, x, y, w, h);
     }
 
+    @Override
     public void paintCheckBoxMenuItemBackground(SynthContext context,
             Graphics g, int x, int y, int w, int h) {
         paintRadioButtonMenuItemBackground(context, g, x, y, w, h);
     }
 
     // FORMATTED_TEXT_FIELD
+    @Override
     public void paintFormattedTextFieldBackground(SynthContext context,
                                           Graphics g, int x, int y,
                                           int w, int h) {
@@ -97,6 +100,7 @@ class GTKPainter extends SynthPainter {
     //
     // TOOL_BAR_DRAG_WINDOW
     //
+    @Override
     public void paintToolBarDragWindowBackground(SynthContext context,
                                      Graphics g, int x, int y,
                                      int w, int h) {
@@ -107,6 +111,7 @@ class GTKPainter extends SynthPainter {
     //
     // TOOL_BAR
     //
+    @Override
     public void paintToolBarBackground(SynthContext context,
                                      Graphics g, int x, int y,
                                      int w, int h) {
@@ -126,6 +131,7 @@ class GTKPainter extends SynthPainter {
         }
     }
 
+    @Override
     public void paintToolBarContentBackground(SynthContext context,
                                               Graphics g,
                                               int x, int y, int w, int h) {
@@ -144,6 +150,7 @@ class GTKPainter extends SynthPainter {
     //
     // PASSWORD_FIELD
     //
+    @Override
     public void paintPasswordFieldBackground(SynthContext context,
                                      Graphics g, int x, int y,
                                      int w, int h) {
@@ -153,6 +160,7 @@ class GTKPainter extends SynthPainter {
     //
     // TEXT_FIELD
     //
+    @Override
     public void paintTextFieldBackground(SynthContext context, Graphics g,
                                          int x, int y, int w, int h) {
         if (getName(context) == "Tree.cellEditor") {
@@ -166,6 +174,7 @@ class GTKPainter extends SynthPainter {
     // RADIO_BUTTON
     //
     // NOTE: this is called for JCheckBox too
+    @Override
     public void paintRadioButtonBackground(SynthContext context,
                                      Graphics g, int x, int y,
                                      int w, int h) {
@@ -204,6 +213,7 @@ class GTKPainter extends SynthPainter {
     // RADIO_BUTTON_MENU_ITEM
     //
     // NOTE: this is called for JCheckBoxMenuItem too
+    @Override
     public void paintRadioButtonMenuItemBackground(SynthContext context,
                                      Graphics g, int x, int y,
                                      int w, int h) {
@@ -218,6 +228,7 @@ class GTKPainter extends SynthPainter {
     //
     // LABEL
     //
+    @Override
     public void paintLabelBackground(SynthContext context,
                                      Graphics g, int x, int y,
                                      int w, int h) {
@@ -247,6 +258,7 @@ class GTKPainter extends SynthPainter {
     //
     // INTERNAL_FRAME
     //
+    @Override
     public void paintInternalFrameBorder(SynthContext context,
                                       Graphics g, int x, int y,
                                       int w, int h) {
@@ -256,6 +268,7 @@ class GTKPainter extends SynthPainter {
     //
     // DESKTOP_PANE
     //
+    @Override
     public void paintDesktopPaneBackground(SynthContext context,
                                            Graphics g, int x, int y,
                                            int w, int h) {
@@ -266,12 +279,14 @@ class GTKPainter extends SynthPainter {
     //
     // DESKTOP_ICON
     //
+    @Override
     public void paintDesktopIconBorder(SynthContext context,
                                            Graphics g, int x, int y,
                                            int w, int h) {
         Metacity.INSTANCE.paintFrameBorder(context, g, x, y, w, h);
     }
 
+    @Override
     public void paintButtonBackground(SynthContext context, Graphics g,
                                       int x, int y, int w, int h) {
         String name = getName(context);
@@ -388,6 +403,7 @@ class GTKPainter extends SynthPainter {
     //
     // ARROW_BUTTON
     //
+    @Override
     public void paintArrowButtonForeground(SynthContext context, Graphics g,
                                            int x, int y, int w, int h,
                                            int direction) {
@@ -437,6 +453,7 @@ class GTKPainter extends SynthPainter {
         }
     }
 
+    @Override
     public void paintArrowButtonBackground(SynthContext context,
             Graphics g, int x, int y, int w, int h) {
         Region id = context.getRegion();
@@ -515,12 +532,14 @@ class GTKPainter extends SynthPainter {
     //
     // LIST
     //
+    @Override
     public void paintListBackground(SynthContext context, Graphics g,
                                     int x, int y, int w, int h) {
         // Does not call into ENGINE for better performance
         fillArea(context, g, x, y, w, h, GTKColorType.TEXT_BACKGROUND);
     }
 
+    @Override
     public void paintMenuBarBackground(SynthContext context, Graphics g,
                                        int x, int y, int w, int h) {
         Region id = context.getRegion();
@@ -544,6 +563,7 @@ class GTKPainter extends SynthPainter {
     //
     // MENU
     //
+    @Override
     public void paintMenuBackground(SynthContext context,
                                      Graphics g,
                                      int x, int y, int w, int h) {
@@ -551,6 +571,7 @@ class GTKPainter extends SynthPainter {
     }
 
     // This is called for both MENU and MENU_ITEM
+    @Override
     public void paintMenuItemBackground(SynthContext context,
                                      Graphics g,
                                      int x, int y, int w, int h) {
@@ -561,6 +582,7 @@ class GTKPainter extends SynthPainter {
         }
     }
 
+    @Override
     public void paintPopupMenuBackground(SynthContext context, Graphics g,
                                         int x, int y, int w, int h) {
         Region id = context.getRegion();
@@ -604,6 +626,7 @@ class GTKPainter extends SynthPainter {
         }
     }
 
+    @Override
     public void paintProgressBarBackground(SynthContext context,
                                             Graphics g,
                                             int x, int y, int w, int h) {
@@ -618,6 +641,7 @@ class GTKPainter extends SynthPainter {
         }
     }
 
+    @Override
     public void paintProgressBarForeground(SynthContext context, Graphics g,
                                             int x, int y, int w, int h,
                                             int orientation) {
@@ -637,6 +661,7 @@ class GTKPainter extends SynthPainter {
         }
     }
 
+    @Override
     public void paintViewportBorder(SynthContext context, Graphics g,
                                            int x, int y, int w, int h) {
         Region id = context.getRegion();
@@ -650,6 +675,7 @@ class GTKPainter extends SynthPainter {
         }
     }
 
+    @Override
     public void paintSeparatorBackground(SynthContext context,
                                           Graphics g,
                                           int x, int y, int w, int h,
@@ -768,6 +794,7 @@ class GTKPainter extends SynthPainter {
         }
     }
 
+    @Override
     public void paintSliderTrackBackground(SynthContext context,
                                        Graphics g,
                                        int x, int y, int w,int h) {
@@ -830,6 +857,7 @@ class GTKPainter extends SynthPainter {
         }
     }
 
+    @Override
     public void paintSliderThumbBackground(SynthContext context,
             Graphics g, int x, int y, int w, int h, int dir) {
         Region id = context.getRegion();
@@ -856,6 +884,7 @@ class GTKPainter extends SynthPainter {
     //
     // SPINNER
     //
+    @Override
     public void paintSpinnerBackground(SynthContext context,
                                         Graphics g,
                                         int x, int y, int w, int h) {
@@ -865,6 +894,7 @@ class GTKPainter extends SynthPainter {
     //
     // SPLIT_PANE_DIVIDER
     //
+    @Override
     public void paintSplitPaneDividerBackground(SynthContext context,
                                        Graphics g,
                                        int x, int y, int w, int h) {
@@ -886,12 +916,14 @@ class GTKPainter extends SynthPainter {
         }
     }
 
+    @Override
     public void paintSplitPaneDragDivider(SynthContext context,
                                        Graphics g,int x, int y, int w, int h,
                                        int orientation) {
         paintSplitPaneDividerForeground(context, g, x, y, w, h, orientation);
     }
 
+    @Override
     public void paintTabbedPaneContentBackground(SynthContext context,
                                       Graphics g, int x, int y, int w, int h) {
         JTabbedPane pane = (JTabbedPane)context.getComponent();
@@ -931,6 +963,7 @@ class GTKPainter extends SynthPainter {
         }
     }
 
+    @Override
     public void paintTabbedPaneTabBackground(SynthContext context,
                                            Graphics g,
                                            int x, int y, int w, int h,
@@ -958,6 +991,7 @@ class GTKPainter extends SynthPainter {
     //
     // TEXT_PANE
     //
+    @Override
     public void paintTextPaneBackground(SynthContext context, Graphics g,
                                         int x, int y, int w, int h) {
         paintTextAreaBackground(context, g, x, y, w, h);
@@ -966,6 +1000,7 @@ class GTKPainter extends SynthPainter {
     //
     // EDITOR_PANE
     //
+    @Override
     public void paintEditorPaneBackground(SynthContext context, Graphics g,
                                           int x, int y, int w, int h) {
         paintTextAreaBackground(context, g, x, y, w, h);
@@ -974,6 +1009,7 @@ class GTKPainter extends SynthPainter {
     //
     // TEXT_AREA
     //
+    @Override
     public void paintTextAreaBackground(SynthContext context, Graphics g,
                                         int x, int y, int w, int h) {
         // Does not call into ENGINE for better performance
@@ -1076,6 +1112,7 @@ class GTKPainter extends SynthPainter {
     //
     // ROOT_PANE
     //
+    @Override
     public void paintRootPaneBackground(SynthContext context, Graphics g,
                                         int x, int y, int w, int h) {
         // Does not call into ENGINE for better performance
@@ -1085,6 +1122,7 @@ class GTKPainter extends SynthPainter {
     //
     // TOGGLE_BUTTON
     //
+    @Override
     public void paintToggleButtonBackground(SynthContext context,
                                             Graphics g,
                                             int x, int y, int w, int h) {
@@ -1103,6 +1141,7 @@ class GTKPainter extends SynthPainter {
     //
     // SCROLL_BAR
     //
+    @Override
     public void paintScrollBarBackground(SynthContext context,
                                           Graphics g,
                                           int x, int y, int w,int h) {
@@ -1148,6 +1187,7 @@ class GTKPainter extends SynthPainter {
     //
     // SCROLL_BAR_THUMB
     //
+    @Override
     public void paintScrollBarThumbBackground(SynthContext context,
             Graphics g, int x, int y, int w, int h, int dir) {
         Region id = context.getRegion();
@@ -1206,6 +1246,7 @@ class GTKPainter extends SynthPainter {
     //
     // TOOL_TIP
     //
+    @Override
     public void paintToolTipBackground(SynthContext context, Graphics g,
                                         int x, int y, int w,int h) {
         Region id = context.getRegion();
@@ -1224,6 +1265,7 @@ class GTKPainter extends SynthPainter {
     //
     // TREE_CELL
     //
+    @Override
     public void paintTreeCellBackground(SynthContext context, Graphics g,
                                         int x, int y, int w, int h) {
         Region id = context.getRegion();
@@ -1243,6 +1285,7 @@ class GTKPainter extends SynthPainter {
         }
     }
 
+    @Override
     public void paintTreeCellFocus(SynthContext context, Graphics g,
                                     int x, int y, int w, int h) {
         Region id = Region.TREE_CELL;
@@ -1254,6 +1297,7 @@ class GTKPainter extends SynthPainter {
     //
     // TREE
     //
+    @Override
     public void paintTreeBackground(SynthContext context, Graphics g,
                                     int x, int y, int w, int h) {
         // As far as I can tell, these don't call into the ENGINE.
@@ -1264,6 +1308,7 @@ class GTKPainter extends SynthPainter {
     //
     // VIEWPORT
     //
+    @Override
     public void paintViewportBackground(SynthContext context, Graphics g,
                                         int x, int y, int w, int h) {
         // As far as I can tell, these don't call into the ENGINE.
@@ -1509,6 +1554,7 @@ class GTKPainter extends SynthPainter {
             return context;
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int w, int h) {
             if (focusedCell) {
@@ -1523,6 +1569,7 @@ class GTKPainter extends SynthPainter {
             }
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets i) {
             SynthContext context = getContext(c);
 
@@ -1533,6 +1580,7 @@ class GTKPainter extends SynthPainter {
             return i;
         }
 
+        @Override
         public boolean isBorderOpaque() {
             return true;
         }
@@ -1542,6 +1590,7 @@ class GTKPainter extends SynthPainter {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class TitledBorder extends AbstractBorder implements UIResource {
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int w, int h) {
             SynthContext context = getContext((JComponent)c);
@@ -1559,11 +1608,13 @@ class GTKPainter extends SynthPainter {
             }
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets i) {
             SynthContext context = getContext((JComponent)c);
             return context.getStyle().getInsets(context, i);
         }
 
+        @Override
         public boolean isBorderOpaque() {
             return true;
         }

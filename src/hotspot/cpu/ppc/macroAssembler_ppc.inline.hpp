@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,16 +65,12 @@ inline void MacroAssembler::round_to(Register r, int modulus) {
 }
 
 // Move register if destination register and target register are different.
-inline void MacroAssembler::mr_if_needed(Register rd, Register rs) {
+inline void MacroAssembler::mr_if_needed(Register rd, Register rs, bool allow_noreg) {
+  if (allow_noreg && (rs == noreg)) return;
   if (rs != rd) mr(rd, rs);
 }
 inline void MacroAssembler::fmr_if_needed(FloatRegister rd, FloatRegister rs) {
   if (rs != rd) fmr(rd, rs);
-}
-inline void MacroAssembler::endgroup_if_needed(bool needed) {
-  if (needed) {
-    endgroup();
-  }
 }
 
 inline void MacroAssembler::membar(int bits) {
@@ -141,7 +137,7 @@ inline bool MacroAssembler::is_calculate_address_from_global_toc_at(address a, a
 
 #ifdef _LP64
 // Detect narrow oop constants.
-inline bool MacroAssembler::is_set_narrow_oop(address a, address bound) {
+inline bool MacroAssembler::is_set_narrow_oop(address a, address lower_bound) {
   const address inst2_addr = a;
   const int inst2 = *(int *)a;
   // The relocation points to the second instruction, the ori.
@@ -151,15 +147,11 @@ inline bool MacroAssembler::is_set_narrow_oop(address a, address bound) {
   const int dst = inv_rta_field(inst2);
   if (inv_rs_field(inst2) != dst) return false;
 
-  // Now, find the preceding addis which writes to dst.
-  int inst1 = 0;
-  address inst1_addr = inst2_addr - BytesPerInstWord;
-  while (inst1_addr >= bound) {
-    inst1 = *(int *) inst1_addr;
-    if (is_lis(inst1) && inv_rs_field(inst1) == dst) return true;
-    inst1_addr -= BytesPerInstWord;
-  }
-  return false;
+  // The preceding instruction must be the lis which writes dst.
+  const address inst1_addr = inst2_addr - BytesPerInstWord;
+  if (inst1_addr < lower_bound) return false;
+  const int inst1 = *(int *) inst1_addr;
+  return is_lis(inst1) && inv_rs_field(inst1) == dst;
 }
 #endif
 
@@ -239,13 +231,13 @@ inline bool MacroAssembler::is_bc_far_variant3_at(address instruction_addr) {
   // Variant 3, far cond branch to the next instruction, already patched to nops:
   //
   //    nop
-  //    endgroup
+  //    nop
   //  SKIP/DEST:
   //
   const int instruction_1 = *(int*)(instruction_addr);
   const int instruction_2 = *(int*)(instruction_addr + 4);
   return is_nop(instruction_1) &&
-         is_endgroup(instruction_2);
+         is_nop(instruction_2);
 }
 
 // set dst to -1, 0, +1 as follows: if CR0bi is "greater than", dst is set to 1,

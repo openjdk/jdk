@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Basic shared string test with large pages
- * @requires vm.cds.write.archived.java.heap
- * @requires vm.gc == null
+ * @requires vm.cds.write.mapped.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build HelloString
  * @run driver LargePages

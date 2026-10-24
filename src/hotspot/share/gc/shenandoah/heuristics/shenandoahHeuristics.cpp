@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2026, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,14 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahTrace.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "runtime/globals_extension.hpp"
@@ -46,9 +51,10 @@ int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
 }
 
 ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
+  _most_recent_trigger_evaluation_time(os::elapsedTime()),
+  _most_recent_planned_sleep_interval(0.0),
   _start_gc_is_pending(false),
   _declined_trigger_count(0),
-  _most_recent_declined_trigger_count(0),
   _space_info(space_info),
   _region_data(nullptr),
   _guaranteed_gc_interval(0),
@@ -56,7 +62,6 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
   _last_cycle_end(0),
   _gc_times_learned(0),
   _gc_time_penalties(0),
-  _gc_cycle_time_history(new TruncatedSeq(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor)),
   _metaspace_oom()
 {
   size_t num_regions = ShenandoahHeap::heap()->num_regions();
@@ -69,16 +74,13 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
 }
 
 ShenandoahHeuristics::~ShenandoahHeuristics() {
-  FREE_C_HEAP_ARRAY(RegionGarbage, _region_data);
+  FREE_C_HEAP_ARRAY(_region_data);
 }
 
 void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
-  assert(collection_set->is_empty(), "Must be empty");
-
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  // Check all pinned regions have updated status before choosing the collection set.
-  heap->assert_pinned_region_status();
+  assert(collection_set->is_empty(), "Must be empty");
 
   // Step 1. Build up the region candidates we care about, rejecting losers and accepting winners right away.
 
@@ -97,8 +99,11 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   size_t free_regions = 0;
 
   for (size_t i = 0; i < num_regions; i++) {
-    ShenandoahHeapRegion* region = heap->get_region(i);
+    if (!_space_info->contains(heap->region_affiliation(i))) {
+      continue;
+    }
 
+    ShenandoahHeapRegion* region = heap->get_region(i);
     size_t garbage = region->garbage();
     total_garbage += garbage;
 
@@ -113,18 +118,14 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
         region->make_trash_immediate();
       } else {
         // This is our candidate for later consideration.
+        assert(region->get_top_before_promote() == nullptr,
+               "Cannot add region %zu scheduled for in-place-promotion to the collection set", i);
         candidates[cand_idx].set_region_and_garbage(region, garbage);
         cand_idx++;
       }
     } else if (region->is_humongous_start()) {
       // Reclaim humongous regions here, and count them as the immediate garbage
-#ifdef ASSERT
-      bool reg_live = region->has_live();
-      bool bm_live = heap->gc_generation()->complete_marking_context()->is_marked(cast_to_oop(region->bottom()));
-      assert(reg_live == bm_live,
-             "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: %zu",
-             BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());
-#endif
+      DEBUG_ONLY(assert_humongous_mark_consistency(region));
       if (!region->has_live()) {
         heap->trash_humongous_region_at(region);
 
@@ -133,7 +134,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
         immediate_garbage += garbage;
       }
     } else if (region->is_trash()) {
-      // Count in just trashed collection set, during coalesced CM-with-UR
+      // Count in just trashed humongous continuation regions
       immediate_regions++;
       immediate_garbage += garbage;
     }
@@ -141,32 +142,45 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   // Step 2. Look back at garbage statistics, and decide if we want to collect anything,
   // given the amount of immediately reclaimable garbage. If we do, figure out the collection set.
+  assert(immediate_garbage <= total_garbage,
+         "Cannot have more immediate garbage than total garbage: " PROPERFMT " vs " PROPERFMT,
+         PROPERFMTARGS(immediate_garbage), PROPERFMTARGS(total_garbage));
 
-  assert (immediate_garbage <= total_garbage,
-          "Cannot have more immediate garbage than total garbage: %zu%s vs %zu%s",
-          byte_size_in_proper_unit(immediate_garbage), proper_unit_for_byte_size(immediate_garbage),
-          byte_size_in_proper_unit(total_garbage),     proper_unit_for_byte_size(total_garbage));
-
-  size_t immediate_percent = (total_garbage == 0) ? 0 : (immediate_garbage * 100 / total_garbage);
+  const size_t immediate_percent = (total_garbage == 0) ? 0 : (immediate_garbage * 100 / total_garbage);
 
   if (immediate_percent <= ShenandoahImmediateThreshold) {
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
+  } else {
+    prepare_for_abbreviated_cycle();
   }
 
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
+  ShenandoahTracer::report_evacuation_info(collection_set, free_regions, immediate_regions, immediate_garbage);
+}
+
+void ShenandoahHeuristics::start_idle_span() {
+  // do nothing
 }
 
 void ShenandoahHeuristics::record_cycle_start() {
   _cycle_start = os::elapsedTime();
+  cancel_trigger_request();
+  log_debug(gc, ergo)("Declined trigger count at start: %zu", _declined_trigger_count.load_relaxed());
 }
 
 void ShenandoahHeuristics::record_cycle_end() {
   _last_cycle_end = os::elapsedTime();
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (!heap->mode()->is_generational()) {
+    const size_t available = _space_info->soft_mutator_available();
+    heap->alloc_rate().update_minimum_sample_size(available);
+  }
 }
 
 bool ShenandoahHeuristics::should_start_gc() {
-  if (_start_gc_is_pending) {
-    log_trigger("GC start is already pending");
+  if (_start_gc_is_pending.load_relaxed()) {
+    log_info(gc, ergo)("GC start is already pending");
     return true;
   }
   // Perform GC to cleanup metaspace
@@ -180,8 +194,8 @@ bool ShenandoahHeuristics::should_start_gc() {
   if (_guaranteed_gc_interval > 0) {
     double last_time_ms = (os::elapsedTime() - _last_cycle_end) * 1000;
     if (last_time_ms > _guaranteed_gc_interval) {
-      log_trigger("Time since last GC (%.0f ms) is larger than guaranteed interval (%zu ms)",
-                   last_time_ms, _guaranteed_gc_interval);
+      log_trigger("Guaranteed Interval. %.0f ms since last GC, above %zu ms guaranteed interval",
+                  last_time_ms, _guaranteed_gc_interval);
       accept_trigger();
       return true;
     }
@@ -190,34 +204,15 @@ bool ShenandoahHeuristics::should_start_gc() {
   return false;
 }
 
-bool ShenandoahHeuristics::should_degenerate_cycle() {
-  return ShenandoahHeap::heap()->shenandoah_policy()->consecutive_degenerated_gc_count() <= ShenandoahFullGCThreshold;
-}
-
 void ShenandoahHeuristics::adjust_penalty(intx step) {
-  assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
-         "In range before adjustment: %zd", _gc_time_penalties);
-
-  if ((_most_recent_declined_trigger_count <= Penalty_Free_Declinations) && (step > 0)) {
-    // Don't penalize if heuristics are not responsible for a negative outcome.  Allow Penalty_Free_Declinations following
-    // previous GC for self calibration without penalty.
-    step = 0;
+  const intx adjusted = clamp(_gc_time_penalties + step, Min_Penalty, Max_Penalty);
+  if (adjusted != _gc_time_penalties) {
+    _gc_time_penalties = adjusted;
+    log_info(gc, ergo)("Adjusted heuristic penalty: %zd", _gc_time_penalties);
   }
-
-  intx new_val = _gc_time_penalties + step;
-  if (new_val < 0) {
-    new_val = 0;
-  }
-  if (new_val > 100) {
-    new_val = 100;
-  }
-  _gc_time_penalties = new_val;
-
-  assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
-         "In range after adjustment: %zd", _gc_time_penalties);
 }
 
-void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
+void ShenandoahHeuristics::log_trigger(const char* fmt, ...) const {
   LogTarget(Info, gc) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
@@ -235,29 +230,40 @@ void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
   }
 }
 
-void ShenandoahHeuristics::record_success_concurrent() {
-  _gc_cycle_time_history->add(elapsed_cycle_time());
+ShenandoahHeuristics::PenaltyData ShenandoahHeuristics::consume_penalty_data() {
+  const size_t declines = _declined_trigger_count.exchange(0, memory_order_relaxed);
+  const bool stalls = _allocation_stalls.exchange(false, memory_order_relaxed);
+  log_debug(gc, ergo)("Declined trigger count at end: %zu", declines);
+  return { declines, stalls };
+}
+
+void ShenandoahHeuristics::record_concurrent_completion() {
   _gc_times_learned++;
-
-  adjust_penalty(Concurrent_Adjust);
+  const PenaltyData data = consume_penalty_data();
+  if (!data.stalls) {
+    adjust_penalty(Concurrent_Adjust);
+  } else if (data.declined_triggers > Penalty_Free_Declinations) {
+    // There were stalls _and_ the trigger was lazy, penalize it.
+    adjust_penalty(Stall_Penalty);
+  }
 }
 
-void ShenandoahHeuristics::record_success_degenerated() {
-  adjust_penalty(Degenerated_Penalty);
+void ShenandoahHeuristics::record_allocation_stall() {
+  _allocation_stalls.store_relaxed(true);
 }
 
-void ShenandoahHeuristics::record_success_full() {
-  adjust_penalty(Full_Penalty);
-}
-
-void ShenandoahHeuristics::record_allocation_failure_gc() {
-  // Do nothing.
+void ShenandoahHeuristics::record_full_gc(GCCause::Cause cause) {
+  const PenaltyData data = consume_penalty_data();
+  if (cause == GCCause::_shenandoah_upgrade_to_full_gc) {
+    adjust_penalty(Full_Penalty);
+  } else if (data.stalls && data.declined_triggers > Penalty_Free_Declinations) {
+    // There were stalls _and_ the trigger was lazy, penalize it.
+    adjust_penalty(Stall_Penalty);
+  }
 }
 
 void ShenandoahHeuristics::record_requested_gc() {
-  // Assume users call System.gc() when external state changes significantly,
-  // which forces us to re-learn the GC timings and allocation rates.
-  _gc_times_learned = 0;
+  // Do nothing.
 }
 
 bool ShenandoahHeuristics::can_unload_classes() {
@@ -274,6 +280,23 @@ void ShenandoahHeuristics::initialize() {
   // Nothing to do by default.
 }
 
+void ShenandoahHeuristics::post_initialize() {
+  // Nothing to do by default.
+}
+
 double ShenandoahHeuristics::elapsed_cycle_time() const {
   return os::elapsedTime() - _cycle_start;
 }
+
+#ifdef ASSERT
+void ShenandoahHeuristics::assert_humongous_mark_consistency(ShenandoahHeapRegion* region) {
+  assert(region->is_humongous(), "Region %zu must be humongous", region->index());
+  const oop humongous_oop = cast_to_oop(region->bottom());
+  ShenandoahGeneration* generation = ShenandoahHeap::heap()->generation_for(region->affiliation());
+  const bool bm_live = generation->complete_marking_context()->is_marked(humongous_oop);
+  const bool reg_live = region->has_live();
+  assert(reg_live == bm_live,
+         "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: %zu",
+         BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());
+}
+#endif

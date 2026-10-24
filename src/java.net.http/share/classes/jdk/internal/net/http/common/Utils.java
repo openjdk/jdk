@@ -39,6 +39,7 @@ import java.lang.System.Logger.Level;
 import java.net.ConnectException;
 import java.net.Inet6Address;
 import java.net.InetSocketAddress;
+import java.net.ProtocolException;
 import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
 import java.net.Proxy;
@@ -174,15 +175,20 @@ public final class Utils {
     public static final int SLICE_THRESHOLD = 32;
 
     /**
-     * Allocated buffer size. Must never be higher than 16K. But can be lower
-     * if smaller allocation units preferred. HTTP/2 mandates that all
-     * implementations support frame payloads of at least 16K.
+     * The capacity of ephemeral {@link ByteBuffer}s allocated to pass data to and from the client.
+     * It is ensured to have a value between 1 and 2^14 (16,384).
      */
-    private static final int DEFAULT_BUFSIZE = 16 * 1024;
-
     public static final int BUFSIZE = getIntegerNetProperty(
-            "jdk.httpclient.bufsize", DEFAULT_BUFSIZE
-    );
+            "jdk.httpclient.bufsize", 1,
+            // We cap at 2^14 (16,384) for two main reasons:
+            // - The initial frame size is 2^14 (RFC 9113)
+            // - SSL record layer fragments data in chunks of 2^14 bytes or less (RFC 5246)
+            1 << 14,
+            // We choose 2^14 (16,384) as the default, because:
+            // 1. It maximizes throughput within the limits described above
+            // 2. It is small enough to not create a GC bottleneck when it is partially filled
+            1 << 14,
+            true);
 
     public static final BiPredicate<String,String> ACCEPT_ALL = (x,y) -> true;
 
@@ -236,6 +242,15 @@ public final class Utils {
                 }
                 return true;
             };
+
+    public enum UseVTForSelector { ALWAYS, NEVER, DEFAULT }
+
+    public static UseVTForSelector useVTForSelector(String property, String defval) {
+        String useVtForSelector = System.getProperty(property, defval);
+        return Stream.of(UseVTForSelector.values())
+                .filter((v) -> v.name().equalsIgnoreCase(useVtForSelector))
+                .findFirst().orElse(UseVTForSelector.DEFAULT);
+    }
 
     public static <T extends Throwable> T addSuppressed(T x, Throwable suppressed) {
         if (x != suppressed && suppressed != null) {
@@ -1339,6 +1354,47 @@ public final class Utils {
         return hdrs.build();
     }
     // -- toAsciiString-like support to encode path and query URI segments
+
+    public static int readStatusCode(HttpHeaders headers, String errorPrefix) throws ProtocolException {
+        var s = headers.firstValue(":status").orElse(null);
+        if (s == null) {
+            throw new ProtocolException(errorPrefix + "missing status code");
+        }
+        Throwable t = null;
+        int i = 0;
+        try {
+            i = Integer.parseInt(s);
+        } catch (NumberFormatException nfe) {
+            t = nfe;
+        }
+        if (t != null || i < 100 || i > 999) {
+            var pe = new ProtocolException(errorPrefix + "invalid status code: " + s);
+            pe.initCause(t);
+            throw pe;
+        }
+        return i;
+    }
+
+    public static long readContentLength(HttpHeaders headers, String errorPrefix, long defaultIfMissing) throws ProtocolException {
+        var k = "Content-Length";
+        var s = headers.firstValue(k).orElse(null);
+        if (s == null) {
+            return defaultIfMissing;
+        }
+        Throwable t = null;
+        long i = 0;
+        try {
+            i = Long.parseLong(s);
+        } catch (NumberFormatException nfe) {
+            t = nfe;
+        }
+        if (t != null || i < 0) {
+            var pe = new ProtocolException("%sinvalid \"%s\": %s".formatted(errorPrefix, k, s));
+            pe.initCause(t);
+            throw pe;
+        }
+        return i;
+    }
 
     // Encodes all characters >= \u0080 into escaped, normalized UTF-8 octets,
     // assuming that s is otherwise legal

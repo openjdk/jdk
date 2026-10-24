@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -943,7 +943,7 @@ public class BasicTreeUI extends TreeUI
         lineTypeDashed = UIManager.getBoolean("Tree.lineTypeDashed");
 
         Long l = (Long)UIManager.get("Tree.timeFactor");
-        timeFactor = (l!=null) ? l.longValue() : 1000L;
+        timeFactor = (l != null) ? l.longValue() : 1000L;
 
         Object showsRootHandles = UIManager.get("Tree.showsRootHandles");
         if (showsRootHandles != null) {

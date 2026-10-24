@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.awt.PopupMenu;
 import java.awt.Menu;
 import java.awt.MenuItem;
 import java.awt.Toolkit;
-import sun.awt.AppContext;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InvocationEvent;
@@ -177,9 +176,8 @@ class ExecutableInputMethodManager extends InputMethodManager
                                     lock,
                                     true);
 
-        AppContext requesterAppContext = SunToolkit.targetToAppContext(requester);
         synchronized (lock) {
-            SunToolkit.postEvent(requesterAppContext, event);
+            SunToolkit.postEvent(event);
             while (!event.isDispatched()) {
                 lock.wait();
             }
