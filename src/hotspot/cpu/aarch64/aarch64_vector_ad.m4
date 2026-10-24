@@ -2252,31 +2252,30 @@ REDUCE_ADD_INT_NEON_SVE_PAIRWISE(L, iRegL)
 
 // reduction addF
 
-instruct reduce_non_strict_order_add2F_neon(vRegF dst, vRegF fsrc, vReg vsrc) %{
+instruct reduce_non_strict_order_add2F_neon(vRegF dst, immF0 zero, vReg vsrc) %{
   // Non-strictly ordered floating-point add reduction for a 64-bits-long vector. This rule is
-  // intended for the VectorAPI (which allows for non-strictly ordered add reduction).
+  // intended for the Vector API (which allows for non-strictly ordered add reduction).
+  // The immediate $zero contains the identity scalar.
   predicate(Matcher::vector_length(n->in(2)) == 2 && !n->as_Reduction()->requires_strict_order());
-  match(Set dst (AddReductionVF fsrc vsrc));
-  effect(TEMP_DEF dst);
-  format %{ "reduce_non_strict_order_add2F_neon $dst, $fsrc, $vsrc" %}
+  match(Set dst (AddReductionVF zero vsrc));
+  format %{ "reduce_non_strict_order_add2F_neon $dst, $zero, $vsrc" %}
   ins_encode %{
     __ faddp($dst$$FloatRegister, $vsrc$$FloatRegister, __ S);
-    __ fadds($dst$$FloatRegister, $dst$$FloatRegister, $fsrc$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_non_strict_order_add4F_neon(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
+instruct reduce_non_strict_order_add4F_neon(vRegF dst, immF0 zero, vReg vsrc, vReg tmp) %{
   // Non-strictly ordered floating-point add reduction for 128-bits-long vector. This rule is
-  // intended for the VectorAPI (which allows for non-strictly ordered add reduction).
+  // intended for the Vector API (which allows for non-strictly ordered add reduction).
+  // The immediate $zero contains the identity scalar.
   predicate(Matcher::vector_length(n->in(2)) == 4 && !n->as_Reduction()->requires_strict_order());
-  match(Set dst (AddReductionVF fsrc vsrc));
-  effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "reduce_non_strict_order_add4F_neon $dst, $fsrc, $vsrc\t# KILL $tmp" %}
+  match(Set dst (AddReductionVF zero vsrc));
+  effect(TEMP tmp);
+  format %{ "reduce_non_strict_order_add4F_neon $dst, $zero, $vsrc\t# KILL $tmp" %}
   ins_encode %{
     __ faddp($tmp$$FloatRegister, __ T4S, $vsrc$$FloatRegister, $vsrc$$FloatRegister);
     __ faddp($dst$$FloatRegister, $tmp$$FloatRegister, __ S);
-    __ fadds($dst$$FloatRegister, $dst$$FloatRegister, $fsrc$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2334,16 +2333,15 @@ REDUCE_ADD_FP_SVE(F,  S)
 
 // reduction addD
 
-instruct reduce_non_strict_order_add2D_neon(vRegD dst, vRegD dsrc, vReg vsrc) %{
+instruct reduce_non_strict_order_add2D_neon(vRegD dst, immD0 zero, vReg vsrc) %{
   // Non-strictly ordered floating-point add reduction for doubles. This rule is
-  // intended for the VectorAPI (which allows for non-strictly ordered add reduction).
-  predicate(!n->as_Reduction()->requires_strict_order());
-  match(Set dst (AddReductionVD dsrc vsrc));
-  effect(TEMP_DEF dst);
-  format %{ "reduce_non_strict_order_add2D_neon $dst, $dsrc, $vsrc\t# 2D" %}
+  // intended for the Vector API (which allows for non-strictly ordered add reduction).
+  // The immediate $zero contains the identity scalar.
+  predicate(Matcher::vector_length(n->in(2)) == 2 && !n->as_Reduction()->requires_strict_order());
+  match(Set dst (AddReductionVD zero vsrc));
+  format %{ "reduce_non_strict_order_add2D_neon $dst, $zero, $vsrc\t# 2D" %}
   ins_encode %{
     __ faddp($dst$$FloatRegister, $vsrc$$FloatRegister, __ D);
-    __ faddd($dst$$FloatRegister, $dst$$FloatRegister, $dsrc$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
