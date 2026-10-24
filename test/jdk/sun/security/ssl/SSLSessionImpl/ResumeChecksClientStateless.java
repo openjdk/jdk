@@ -26,7 +26,8 @@
  * @bug 8211018
  * @summary ensure that client only resumes a session if certain properties
  *    of the session are compatible with the new connection
- * @library /javax/net/ssl/templates
+ * @library /javax/net/ssl/templates /test/lib
+ * @build jdk.test.lib.util.ForceGC
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=false -Djdk.tls.client.enableSessionTicketExtension=false ResumeChecksClient BASIC
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=false ResumeChecksClient BASIC
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true ResumeChecksClient BASIC

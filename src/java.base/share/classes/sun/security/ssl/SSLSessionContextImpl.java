@@ -385,6 +385,11 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     }
 
     private boolean isTimedout(SSLSession sess) {
+        // Return true if the session is not valid.
+        if (sess instanceof SSLSessionImpl s && s.isInvalid()) {
+            return true;
+        }
+
         if (timeout == 0) {
             return false;
         }
