@@ -765,6 +765,8 @@ class LinearScanWalker : public IntervalWalker {
   void combine_spilled_intervals(Interval* cur);
   bool is_move(LIR_Op* op, Interval* from, Interval* to);
 
+  void stress_spilling();
+
   bool activate_current();
 
  public:
