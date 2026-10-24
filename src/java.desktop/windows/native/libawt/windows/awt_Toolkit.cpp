@@ -547,7 +547,6 @@ void AwtToolkit::InitTouchKeyboardExeFilePath() {
 
         // Verify that a file with the path 'm_touchKbrdExeFilePath' exists.
         DWORD fileAttrs = ::GetFileAttributes(m_touchKbrdExeFilePath);
-        DWORD err = ::GetLastError();
         if ((fileAttrs == INVALID_FILE_ATTRIBUTES) ||
             (fileAttrs & FILE_ATTRIBUTE_DIRECTORY)) {
             delete[] m_touchKbrdExeFilePath;
@@ -1878,7 +1877,6 @@ BOOL AwtToolkit::PreProcessKeyMsg(AwtComponent* p, MSG& msg)
 }
 
 void *AwtToolkit::SyncCall(void *(*ftn)(void *), void *param) {
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     if (!IsMainThread()) {
         CriticalSection::Lock l(GetSyncCS());
         return (*ftn)(param);
@@ -1888,7 +1886,6 @@ void *AwtToolkit::SyncCall(void *(*ftn)(void *), void *param) {
 }
 
 void AwtToolkit::SyncCall(void (*ftn)(void *), void *param) {
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     if (!IsMainThread()) {
         CriticalSection::Lock l(GetSyncCS());
         (*ftn)(param);
@@ -1898,7 +1895,6 @@ void AwtToolkit::SyncCall(void (*ftn)(void *), void *param) {
 }
 
 void *AwtToolkit::SyncCall(void *(*ftn)(void)) {
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     if (!IsMainThread()) {
         CriticalSection::Lock l(GetSyncCS());
         return (*ftn)();
@@ -1908,7 +1904,6 @@ void *AwtToolkit::SyncCall(void *(*ftn)(void)) {
 }
 
 void AwtToolkit::SyncCall(void (*ftn)(void)) {
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     if (!IsMainThread()) {
         CriticalSection::Lock l(GetSyncCS());
         (*ftn)();

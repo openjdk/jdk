@@ -441,7 +441,6 @@ void AwtDropTarget::_RegisterTarget(void* param) {
  */
 
 void AwtDropTarget::RegisterTarget(WORD show) {
-    JNIEnv* env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     HRESULT res;
 
     if (!AwtToolkit::IsMainThread()) {
@@ -1021,7 +1020,6 @@ const unsigned int AwtDropTarget::CACHE_INCR = 16;
 
 void AwtDropTarget::LoadCache(IDataObject* pDataObj) {
     JNIEnv*      env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    unsigned int cnt = 0;
     HRESULT      res;
     IEnumFORMATETC* pEnumFormatEtc = NULL;
 
@@ -1255,8 +1253,6 @@ AwtDropTarget::call_dTCgetis(JNIEnv* env, jlong istream) {
  */
 
 WDTCPIStreamWrapper::WDTCPIStreamWrapper(STGMEDIUM* stgmedium) {
-    JNIEnv* env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-
     m_stgmedium = *stgmedium;
     m_istream   = stgmedium->pstm;
     m_istream->AddRef();

@@ -661,7 +661,7 @@ void AwtMenuItem::DoCommand()
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     // peer is sun.awt.windows.WMenuItemPeer
-    jobject peer = GetPeer(env);
+    GetPeer(env);
 
     if (IsCheckbox()) {
         UINT nState = ::GetMenuState(GetMenuContainer()->GetHMenu(),
@@ -772,8 +772,6 @@ void AwtMenuItem::_SetLabel(void *param) {
 
         SetLabelStruct *sls = (SetLabelStruct *)param;
         jobject self = sls->menuitem;
-
-        int badAlloc = 0;
         AwtMenuItem *m = NULL;
 
         PDATA pData;
