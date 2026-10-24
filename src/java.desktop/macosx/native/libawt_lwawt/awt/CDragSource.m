@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,8 @@ static BOOL sIsJavaDragging;
 }
 @end
 
-static jclass DataTransfererClass = NULL;
-static jclass CDragSourceContextPeerClass =  NULL;
+DECLARE_CLASS_ONLY(DataTransfererClass);
+DECLARE_CLASS_ONLY(CDragSourceContextPeerClass);
 
 #define GET_DT_CLASS() \
     GET_CLASS(DataTransfererClass, "sun/awt/datatransfer/DataTransferer");

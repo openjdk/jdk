@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,33 +51,34 @@
 // If the value is >=0, it's an index
 
 // GET* macros defined in JavaAccessibilityUtilities.h, so they can be shared.
-static jclass sjc_CAccessibility = NULL;
+DECLARE_CLASS_ONLY(sjc_CAccessibility);
 
-static jmethodID sjm_getAccessibleName = NULL;
+DECLARE_METHOD_ONLY(sjm_getAccessibleName);
 #define GET_ACCESSIBLENAME_METHOD_RETURN(ret) \
     GET_CACCESSIBILITY_CLASS_RETURN(ret); \
     GET_STATIC_METHOD_RETURN(sjm_getAccessibleName, sjc_CAccessibility, "getAccessibleName", \
                      "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljava/lang/String;", ret);
 
-static jmethodID jm_getChildrenAndRoles = NULL;
+DECLARE_METHOD_ONLY(jm_getChildrenAndRoles);
+
 #define GET_CHILDRENANDROLES_METHOD_RETURN(ret) \
     GET_CACCESSIBILITY_CLASS_RETURN(ret); \
     GET_STATIC_METHOD_RETURN(jm_getChildrenAndRoles, sjc_CAccessibility, "getChildrenAndRoles",\
                       "(Ljavax/accessibility/Accessible;Ljava/awt/Component;IZ)[Ljava/lang/Object;", ret);
 
-static jmethodID sjm_getAccessibleComponent = NULL;
+DECLARE_METHOD_ONLY(sjm_getAccessibleComponent);
 #define GET_ACCESSIBLECOMPONENT_STATIC_METHOD_RETURN(ret) \
     GET_CACCESSIBILITY_CLASS_RETURN(ret); \
     GET_STATIC_METHOD_RETURN(sjm_getAccessibleComponent, sjc_CAccessibility, "getAccessibleComponent", \
            "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljavax/accessibility/AccessibleComponent;", ret);
 
-static jmethodID sjm_getAccessibleIndexInParent = NULL;
+DECLARE_METHOD_ONLY(sjm_getAccessibleIndexInParent);
 #define GET_ACCESSIBLEINDEXINPARENT_STATIC_METHOD_RETURN(ret) \
     GET_CACCESSIBILITY_CLASS_RETURN(ret); \
     GET_STATIC_METHOD_RETURN(sjm_getAccessibleIndexInParent, sjc_CAccessibility, "getAccessibleIndexInParent", \
                              "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)I", ret);
 
-static jclass sjc_CAccessible = NULL;
+DECLARE_CLASS_ONLY(sjc_CAccessible);
 #define GET_CACCESSIBLE_CLASS_RETURN(ret) \
     GET_CLASS_RETURN(sjc_CAccessible, "sun/lwawt/macosx/CAccessible", ret);
 

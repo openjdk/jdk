@@ -32,11 +32,11 @@
 #import "GeomUtilities.h"
 #import "JNIUtilities.h"
 
-static jclass sjc_CPrinterJob = NULL;
-static jclass sjc_PAbortEx = NULL;
+DECLARE_CLASS_ONLY(sjc_CPrinterJob);
+DECLARE_CLASS_ONLY(sjc_PAbortEx);
 #define GET_CPRINTERJOB_CLASS() (sjc_CPrinterJob, "sun/lwawt/macosx/CPrinterJob");
 #define GET_CPRINTERJOB_CLASS_RETURN(ret) GET_CLASS_RETURN(sjc_CPrinterJob, "sun/lwawt/macosx/CPrinterJob", ret);
-#define GET_PRINERABORTEXCEPTION_CLASS(ret) GET_CLASS_RETURN(sjc_PAbortEx, "java/awt/print/PrinterAbortException", ret);
+#define GET_PRINTERABORTEXCEPTION_CLASS(ret) GET_CLASS_RETURN(sjc_PAbortEx, "java/awt/print/PrinterAbortException", ret);
 
 @implementation PrinterView
 
@@ -279,7 +279,7 @@ static jclass sjc_PAbortEx = NULL;
 
     BOOL b = (*env)->CallBooleanMethod(env, fPrinterJob, jm_cancelCheck); // AWT_THREADING Safe (known object)
     if (b) {
-        GET_PRINERABORTEXCEPTION_CLASS(b);
+        GET_PRINTERABORTEXCEPTION_CLASS(b);
         (*env)->ThrowNew(env, sjc_PAbortEx, "Printer Job cancelled");
     } else {
         CHECK_EXCEPTION();

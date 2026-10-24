@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,25 +29,26 @@
 #import "ThreadUtilities.h"
 #import "JNIUtilities.h"
 
-static jclass sjc_CAccessibility = NULL;
+DECLARE_CLASS_ONLY(sjc_CAccessibility);
+
 #define GET_CACCESSIBLITY_CLASS() \
      GET_CLASS(sjc_CAccessibility, "sun/lwawt/macosx/CAccessibility");
 #define GET_CACCESSIBLITY_CLASS_RETURN(ret) \
      GET_CLASS_RETURN(sjc_CAccessibility, "sun/lwawt/macosx/CAccessibility", ret);
 
-static jmethodID sjm_getAccessibleText = NULL;
+DECLARE_METHOD_ONLY(sjm_getAccessibleText);
 #define GET_ACCESSIBLETEXT_METHOD_RETURN(ret) \
     GET_CACCESSIBLITY_CLASS_RETURN(ret); \
     GET_STATIC_METHOD_RETURN(sjm_getAccessibleText, sjc_CAccessibility, "getAccessibleText", \
               "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljavax/accessibility/AccessibleText;", ret);
 
-static jclass sjc_CAccessibleText = NULL;
+DECLARE_CLASS_ONLY(sjc_CAccessibleText);
 #define GET_CACCESSIBLETEXT_CLASS() \
     GET_CLASS(sjc_CAccessibleText, "sun/lwawt/macosx/CAccessibleText");
 #define GET_CACCESSIBLETEXT_CLASS_RETURN(ret) \
     GET_CLASS_RETURN(sjc_CAccessibleText, "sun/lwawt/macosx/CAccessibleText", ret);
 
-static jmethodID sjm_getAccessibleEditableText = NULL;
+DECLARE_METHOD_ONLY(sjm_getAccessibleEditableText);
 #define GET_ACCESSIBLEEDITABLETEXT_METHOD_RETURN(ret) \
     GET_CACCESSIBLETEXT_CLASS_RETURN(ret); \
     GET_STATIC_METHOD_RETURN(sjm_getAccessibleEditableText, sjc_CAccessibleText, "getAccessibleEditableText", \

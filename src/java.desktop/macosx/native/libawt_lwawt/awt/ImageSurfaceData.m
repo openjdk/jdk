@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ static jfieldID        rgbID;
 static jfieldID        mapSizeID;
 static jfieldID        allGrayID;
 
-static jclass jc_OSXOffScreenSurfaceData = NULL;
+DECLARE_CLASS_ONLY(jc_OSXOffScreenSurfaceData);
 #define GET_OSXOSD_CLASS() \
     GET_CLASS(jc_OSXOffScreenSurfaceData, "sun/java2d/OSXOffScreenSurfaceData");
 
@@ -1620,8 +1620,9 @@ JNIEXPORT void JNICALL Java_sun_java2d_OSXOffScreenSurfaceData_initIDs(JNIEnv *e
 //fprintf(stderr, "gColorspaceRGB=%p, gColorspaceGray=%p\n", gColorspaceRGB, gColorspaceGray);
 }
 
-static jclass jc_BufferedImage = NULL;
-static jfieldID jm_SurfaceData = NULL;
+DECLARE_CLASS_ONLY(jc_BufferedImage);
+
+DECLARE_FIELD_ONLY(jm_SurfaceData);
 
 JNIEXPORT jobject JNICALL Java_sun_java2d_OSXOffScreenSurfaceData_getSurfaceData
     (JNIEnv *env, jclass bisd, jobject bufImg)

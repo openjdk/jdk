@@ -41,12 +41,12 @@
 #define TWO_SIDED_LONG_EDGE 1
 #define TWO_SIDED_SHORT_EDGE 2
 
-static jclass sjc_Paper = NULL;
-static jclass sjc_PageFormat = NULL;
-static jclass sjc_CPrinterJob = NULL;
-static jclass sjc_CPrinterDialog = NULL;
-static jmethodID sjm_getNSPrintInfo = NULL;
-static jmethodID sjm_printerJob = NULL;
+DECLARE_CLASS_ONLY(sjc_Paper)
+DECLARE_CLASS_ONLY(sjc_PageFormat)
+DECLARE_CLASS_ONLY(sjc_CPrinterJob)
+DECLARE_CLASS_ONLY(sjc_CPrinterDialog)
+DECLARE_CLASS_ONLY(sjm_getNSPrintInfo)
+DECLARE_CLASS_ONLY(sjm_printerJob)
 
 #define GET_PAPER_CLASS() GET_CLASS(sjc_Paper, "java/awt/print/Paper");
 #define GET_PAGEFORMAT_CLASS() GET_CLASS(sjc_PageFormat, "java/awt/print/PageFormat");
