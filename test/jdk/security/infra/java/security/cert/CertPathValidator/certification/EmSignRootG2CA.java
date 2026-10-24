@@ -25,10 +25,15 @@
  * @test
  * @bug 8319187 8385585
  * @summary Interoperability tests with eMudhra emSign Root CA G2 CS root
+ * @library /test/lib/
  * @build ValidatePathWithParams
  * @run main/othervm/manual -Djava.security.debug=certpath EmSignRootG2CA OCSP
  * @run main/othervm/manual -Djava.security.debug=certpath EmSignRootG2CA CRL
  */
+
+import jtreg.SkippedException;
+
+import java.util.List;
 
 public class EmSignRootG2CA {
 
@@ -187,5 +192,12 @@ public class EmSignRootG2CA {
         pathValidator.validate(new String[]{REVOKED, INT},
                 ValidatePathWithParams.Status.REVOKED,
                 "Sat Sep 05 10:32:30 PDT 2026", System.out);
+
+        final List<String> skippedValidations =
+                pathValidator.getSkippedValidations();
+        if (!skippedValidations.isEmpty()){
+            throw new SkippedException("Some validations/tests were skipped " +
+                                       skippedValidations);
+        }
     }
 }
