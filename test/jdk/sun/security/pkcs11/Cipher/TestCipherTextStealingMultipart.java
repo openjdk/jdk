@@ -25,6 +25,7 @@
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
@@ -41,7 +42,7 @@ import java.util.stream.IntStream;
  * @run main/othervm/timeout=120 TestCipherTextStealingMultipart
  */
 
-public class TestCipherTextStealingMultipart extends PKCS11Test {
+public class TestCipherTextStealingMultipart extends PKCS11Test implements AutoCloseable {
     private static final String LF = System.lineSeparator();
     private static final String ALGORITHM = "AES/CTS/NoPadding";
     private static final int BLOCK_SIZE = 16;
@@ -53,6 +54,16 @@ public class TestCipherTextStealingMultipart extends PKCS11Test {
     private static final StringBuilder chunksDesc = new StringBuilder();
     private static Provider sunPKCS11;
     private static Cipher sunJCECipher;
+
+    private final Arena arena;
+
+    public TestCipherTextStealingMultipart() {
+        arena = Arena.ofConfined();
+    }
+
+    public void close() {
+        arena.close();
+    }
 
     private static byte[][] generateChunks(int totalLength, int[] chunkSizes) {
         chunksDesc.setLength(0);
@@ -105,7 +116,7 @@ public class TestCipherTextStealingMultipart extends PKCS11Test {
 
     private enum CheckType {CIPHERTEXT, PLAINTEXT}
 
-    private enum OutputType {BYTE_ARRAY, DIRECT_BYTE_BUFFER}
+    private enum OutputType {BYTE_ARRAY, DIRECT_BYTE_BUFFER, MEMSEGMENT_BYTE_BUFFER}
 
     private static void check(CheckType checkType, OutputType outputType,
             byte[] expected, ByteBuffer actualBuf) throws Exception {
@@ -123,13 +134,14 @@ public class TestCipherTextStealingMultipart extends PKCS11Test {
             } + " into a " + switch (outputType) {
                 case BYTE_ARRAY -> "byte[]";
                 case DIRECT_BYTE_BUFFER -> "direct ByteBuffer";
+                case MEMSEGMENT_BYTE_BUFFER -> "MemorySegment ByteBuffer";
             } + ", " + checkType.name().toLowerCase() + "s don't match:" + LF +
                     "  Expected: " + repr(expected) + LF +
                     "    Actual: " + repr(actual));
         }
     }
 
-    private static ByteBuffer encryptOrDecryptMultipart(int operation,
+    private ByteBuffer encryptOrDecryptMultipart(int operation,
             OutputType outputType, byte[][] inputChunks, int totalLength)
             throws Exception {
         Cipher cipher = Cipher.getInstance(ALGORITHM, sunPKCS11);
@@ -161,12 +173,26 @@ public class TestCipherTextStealingMultipart extends PKCS11Test {
                 cipher.doFinal(ByteBuffer.allocate(0), tmpOut);
                 tmpOut.position(outOfs);
                 output.put(tmpOut);
+            } case MEMSEGMENT_BYTE_BUFFER -> {
+                output = arena.allocate(totalLength).asByteBuffer();
+                for (byte[] inputChunk : inputChunks) {
+                    output.put(cipher.update(inputChunk));
+                }
+                // Check that the output array offset does not affect the
+                // penultimate block length calculation.
+                ByteBuffer tmpOut =arena.allocate(
+                        cipher.getOutputSize(0) + outOfs)
+                        .asByteBuffer();
+                tmpOut.position(outOfs);
+                cipher.doFinal(ByteBuffer.allocate(0), tmpOut);
+                tmpOut.position(outOfs);
+                output.put(tmpOut);
             }
         }
         return output;
     }
 
-    private static void doMultipart(int... chunkSizes) throws Exception {
+    private void doMultipart(int... chunkSizes) throws Exception {
         int totalLength = IntStream.of(chunkSizes).sum();
         byte[][] plaintextChunks = generateChunks(totalLength, chunkSizes);
         byte[] jointPlaintext = join(plaintextChunks, totalLength);
@@ -208,7 +234,9 @@ public class TestCipherTextStealingMultipart extends PKCS11Test {
 
     public static void main(String[] args) throws Exception {
         initialize();
-        main(new TestCipherTextStealingMultipart(), args);
+        try(TestCipherTextStealingMultipart testClass = new TestCipherTextStealingMultipart()) {
+            main(testClass, args);
+        }
     }
 
     @Override
