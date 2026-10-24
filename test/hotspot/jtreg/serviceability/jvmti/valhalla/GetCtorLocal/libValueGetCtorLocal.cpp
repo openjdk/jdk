@@ -32,7 +32,6 @@ extern "C" {
 #endif
 
 static jvmtiEnv *jvmti = nullptr;
-static jobject cached_this = nullptr;
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
@@ -60,28 +59,25 @@ Java_ValueGetCtorLocal_testCtorThis(JNIEnv *jni, jclass thisClass, jthread threa
 
   jmethodID method = get_frame_method(jvmti, jni, thread, depth);
   char* mname = get_method_name(jvmti, jni, method);
+  jobject obj0 = nullptr;
+  jobject obj_this = nullptr;
+  jvmtiError err;
 
   LOG("\ntestCtorThis: frame method: %s\n", mname);
-  jobject obj0 = get_local_object(jvmti, jni, thread, depth, 0);
-  jobject obj_this = get_local_instance(jvmti, jni, thread, depth);
 
-  // obj0 is expected to be equal to "this"
-  jboolean is_equal = jni->IsSameObject(obj0, obj_this);
-  LOG("testCtorThis: obj0: %p obj_this: %p objects are equal: %d\n",
-      (void*)obj0, (void*)obj_this, is_equal);
+  err = jvmti->GetLocalObject(thread, depth, 0, & obj0);
+  if (err != JVMTI_ERROR_OPAQUE_FRAME) {
+    LOG("Failed: unexpected error from GetLocalObject: %s (%d), expected: JVMTI_ERROR_OPAQUE_FRAME\n", TranslateError(err), err);
+    jni->FatalError("Failed: expected JVMTI_ERROR_OPAQUE_FRAME from JVMTI GetLocalObject for THIS value object in construction");
+  }
+  LOG("Got expected JVMTI_ERROR_OPAQUE_FRAME error code from GetLocalObject for THIS value object in construction\n");
 
-  if (!is_equal) {
-    fatal(jni, "Failed: obj0 != obj_this\n");
+  err = jvmti->GetLocalInstance(thread, depth, & obj_this);
+  if (err != JVMTI_ERROR_OPAQUE_FRAME) {
+    LOG("Failed: unexpected error from GetLocalInstance: %s (%d), expected: JVMTI_ERROR_OPAQUE_FRAME\n", TranslateError(err), err);
+    jni->FatalError("Failed: expected JVMTI_ERROR_OPAQUE_FRAME from JVMTI GetLocalInstance for value object in construction");
   }
-  if (cached_this == nullptr) { // first call to testCtorThis
-    cached_this = jni->NewGlobalRef(obj_this);
-  } else {
-    // cached_this must be a snapshot that does not mutate
-    // when the ctor changes field values
-    if (jni->IsSameObject(cached_this, obj_this)) {
-      fatal(jni, "Failed: unexpected: cached_this == obj_this\n");
-    }
-  }
+  LOG("Got expected JVMTI_ERROR_OPAQUE_FRAME error code from GetLocalInstance for value object in construction\n");
   deallocate(jvmti, jni, (void*)mname);
 }
 

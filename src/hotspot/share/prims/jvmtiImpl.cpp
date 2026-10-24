@@ -334,7 +334,6 @@ VM_BaseGetOrSetLocal::VM_BaseGetOrSetLocal(JavaThread* calling_thread, jint dept
   , _jvf(nullptr)
   , _set(set)
   , _self(self)
-  , _need_clone(false)
   , _result(JVMTI_ERROR_NONE)
 {
 }
@@ -484,34 +483,6 @@ bool VM_BaseGetOrSetLocal::check_slot_type_no_lvt(javaVFrame* jvf) {
   return true;
 }
 
-void VM_BaseGetOrSetLocal::check_and_clone_this_value_object() {
-  oop obj = JNIHandles::resolve(_value.l);
-  HandleMark hm(_calling_thread);
-  Handle obj_h(_calling_thread, obj);
-
-  assert(_type == T_OBJECT, "sanity check");
-  assert(obj != nullptr, "expected non-null oop");
-  assert(obj_h()->is_value(), "expected value oop");
-  assert(_index == 0, "expected slot 0 for THIS object");
-
-  ValueKlass* klass = ValueKlass::cast(obj_h()->klass());
-  valueOop obj_copy = klass->allocate_instance(_calling_thread);
-  if (obj_copy == nullptr) {
-    _result = JVMTI_ERROR_OUT_OF_MEMORY;
-  } else {
-    valueOop thisObj = valueOop(obj_h());
-    // copy object payload into the object snapshot
-    BufferedValuePayload src(thisObj);
-    BufferedValuePayload dst(obj_copy, klass);
-    src.copy_to(dst);
-
-    // Must ensure the content of the buffered value is visible
-    // before publishing the buffered value oop
-    OrderAccess::storestore();
-  }
-  _value.l = JNIHandles::make_local(_calling_thread, obj_copy);
-}
-
 static bool can_be_deoptimized(vframe* vf) {
   return (vf->is_compiled_frame() && vf->fr().can_be_deoptimized());
 }
@@ -649,8 +620,9 @@ void VM_BaseGetOrSetLocal::doit() {
 
           if (Arguments::is_valhalla_enabled()) {
             bool is_ctor = _jvf->method()->is_object_constructor();
-            if (is_ctor && _index == 0 && obj != nullptr && obj->is_value()) {
-              _need_clone = true; // need to allocate an object snapshot in doit_epilogue
+            if (is_ctor && _index == 0 && _jvf->method()->method_holder()->has_strict_instance_fields_in_hierarchy()) {
+              _result = JVMTI_ERROR_OPAQUE_FRAME; // no support for THIS value object during construction
+              return;
             }
           }
           _value.l = JNIHandles::make_local(_calling_thread, obj);
@@ -659,12 +631,6 @@ void VM_BaseGetOrSetLocal::doit() {
         default: ShouldNotReachHere();
       }
     }
-  }
-}
-
-void VM_BaseGetOrSetLocal::doit_epilogue() {
-  if (_need_clone) {
-    check_and_clone_this_value_object();
   }
 }
 
