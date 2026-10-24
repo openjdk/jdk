@@ -1200,7 +1200,7 @@ public class Test {
         // same URI
         URI u1 = URI.create("s://h/../p");
         URI u2 = u1.normalize();
-        eq(u1, u2);
+        eqHashCompBid(u1, u2, "=");
         eqeq(u1, u2);
 
         // Relativization
@@ -1408,18 +1408,102 @@ public class Test {
                     + "  [" + Integer.toHexString(uh) + "]");
     }
 
-    static void cmp0(URI u, URI v, boolean same)
-        throws URISyntaxException
-    {
-        int c = u.compareTo(v);
-        if ((c == 0) != same)
-            throw new RuntimeException("Comparison inconsistent: " + u + " " + v
-                                       + " " + c);
+    /**
+     * Verifies {@link URI#equals(Object)}, {@link URI#hashCode()}, and
+     * {@link URI#compareTo(URI)} are consistent with each other and match the
+     * expected relation.
+     * <p>
+     * This method is bidirectional, i.e., it compares {@code s} against
+     * {@code t}, and also the other way around. See
+     * {@link #eqHashCompUni(Object, Object, String) eqHashCompUni} for the
+     * unidirectional variant.
+     *
+     * @param s Either a URI, or a string to be converted to URI
+     * @param t Either a URI, or a string to be converted to URI
+     * @param expectedRelation One of following relation identifiers: {@code <},
+     * {@code >}, {@code =}, and {@code !=}.
+     */
+    private static void eqHashCompBid(Object s, Object t, String expectedRelation)
+            throws URISyntaxException {
+
+        // Obtain URIs
+        URI u = s instanceof URI ? (URI) s : new URI((String) s);
+        URI v = t instanceof URI ? (URI) t : new URI((String) t);
+
+        // Check `(u, v)`
+        eqHashCompUni(u, v, expectedRelation);
+
+        // Check `(v, u)`
+        final String substitutedRelation;
+        if ("<".equals(expectedRelation)) {
+            substitutedRelation = ">";
+        } else if (">".equals(expectedRelation)) {
+            substitutedRelation = "<";
+        } else {
+            substitutedRelation = expectedRelation;
+        }
+        eqHashCompUni(v, u, substitutedRelation);
+
     }
 
-    static void eq(URI u, URI v) throws URISyntaxException {
-        eq0(u, v);
-        cmp0(u, v, true);
+    /**
+     * Verifies {@link URI#equals(Object)}, {@link URI#hashCode()}, and
+     * {@link URI#compareTo(URI)} are consistent with each other and match the
+     * expected relation.
+     * <p>
+     * This method is unidirectional, i.e., it only compares {@code u} against
+     * {@code v}, not the other way around. See
+     * {@link #eqHashCompBid(Object, Object, String) eqHashCompBid} for the
+     * bidirectional variant.
+     *
+     * @param s Either a URI, or a string to be converted to URI
+     * @param t Either a URI, or a string to be converted to URI
+     * @param expectedRelation One of following relation identifiers: {@code <},
+     * {@code >}, {@code =}, and {@code !=}.
+     */
+    private static void eqHashCompUni(Object s, Object t, String expectedRelation)
+            throws URISyntaxException {
+
+        // Obtain URIs
+        URI u = s instanceof URI ? (URI) s : new URI((String) s);
+        URI v = t instanceof URI ? (URI) t : new URI((String) t);
+
+        // Check `compareTo`
+        testCount++;
+        int comp = u.compareTo(v);
+        final boolean compMatched;
+        if (comp < 0) {
+            compMatched = "<".equals(expectedRelation) || "!=".equals(expectedRelation);
+        } else if (comp > 0) {
+            compMatched = ">".equals(expectedRelation) || "!=".equals(expectedRelation);
+        } else {
+            compMatched = "=".equals(expectedRelation);
+        }
+        if (!compMatched) {
+            throw new AssertionError(
+                    "Expected: %s %s %s, Actual: compareTo(): %s".formatted(
+                            u, expectedRelation, v, comp));
+        }
+
+        // Check `equals`
+        testCount++;
+        boolean eq = u.equals(v);
+        if ("=".equals(expectedRelation) != eq) {
+            throw new AssertionError(
+                    "Expected: %s %s %s, Actual: equals(): %s".formatted(
+                            u, expectedRelation, v, eq));
+        }
+
+        // Check `hashCode`: equal instances require equal hash codes
+        testCount++;
+        int uh = u.hashCode();
+        int vh = v.hashCode();
+        if (eq && uh != vh) {
+            throw new AssertionError(
+                    "Expected: %s %s %s, Actual: hashCode(): %s & %s".formatted(
+                            u, expectedRelation, v, uh, vh));
+        }
+
     }
 
     static void eq(String expected, String actual) {
@@ -1440,54 +1524,6 @@ public class Test {
             throw new RuntimeException("Not ==: " + u + " " + v);
     }
 
-    static void ne0(URI u, URI v) throws URISyntaxException {
-        testCount++;
-        if (u.equals(v))
-            throw new RuntimeException("Equal: " + u + " " + v);
-        out.println();
-        out.println(u + " != " + v
-                    + "  [" + Integer.toHexString(u.hashCode())
-                    + " " + Integer.toHexString(v.hashCode())
-                    + "]");
-    }
-
-    static void ne(URI u, URI v) throws URISyntaxException {
-        ne0(u, v);
-        cmp0(u, v, false);
-    }
-
-    static void lt(URI u, URI v) throws URISyntaxException {
-        ne0(u, v);
-        int c = u.compareTo(v);
-        if (c >= 0) {
-            show(u);
-            show(v);
-            throw new RuntimeException("Not less than: " + u + " " + v
-                                       + " " + c);
-        }
-        out.println(u + " < " + v);
-    }
-
-    static void lt(String s, String t) throws URISyntaxException {
-        lt(new URI(s), new URI(t));
-    }
-
-    static void gt0(URI u, URI v) throws URISyntaxException {
-        ne0(u, v);
-        int c = u.compareTo(v);
-        if (c <= 0) {
-            show(u);
-            show(v);
-            throw new RuntimeException("Not greater than: " + u + " " + v
-                    + " " + c);
-        }
-        out.println(u + " < " + v);
-    }
-
-    static void gt(URI u, URI v) throws URISyntaxException {
-        lt(v, u);
-    }
-
     static void eqHashComp() throws URISyntaxException {
 
         header("Equality, hashing, and comparison");
@@ -1496,46 +1532,49 @@ public class Test {
         URI r = new URI("reg://some%20registry/b/c/d?q#f");
         URI s = new URI("http://jag:cafebabe@java.sun.com:94/b/c/d?q#f");
         URI t = new URI("http://example.com/%5bsegment%5d");
-        eq(o, o);
-        lt(o, r);
-        lt(s, o);
-        lt(s, r);
+        eqHashCompBid(o, o, "=");
+        eqHashCompBid(o, r, "<");
+        eqHashCompBid(s, o, "<");
+        eqHashCompBid(s, r, "<");
 
-        eq(o, new URI("MaILto:foo@bar.com"));
-        gt(o, new URI("mailto:foo@bar.COM"));
-        eq(r, new URI("rEg://some%20registry/b/c/d?q#f"));
-        gt(r, new URI("reg://Some%20Registry/b/c/d?q#f"));
-        gt(r, new URI("reg://some%20registry/b/c/D?q#f"));
-        eq(s, new URI("hTtP://jag:cafebabe@Java.Sun.COM:94/b/c/d?q#f"));
-        gt(s, new URI("http://jag:CafeBabe@java.sun.com:94/b/c/d?q#f"));
-        lt(s, new URI("http://jag:cafebabe@java.sun.com:94/b/c/d?r#f"));
-        lt(s, new URI("http://jag:cafebabe@java.sun.com:94/b/c/d?q#g"));
-        cmp0(t, new URI("http://example.com/%5Bsegment%5D"), true);
-        gt0(t, new URI("http://example.com/%5BSegment%5D"));
-        lt(new URI("http://example.com/%5Asegment%5D"), new URI("http://example.com/%5Bsegment%5D"));
-        eq(new URI("http://host/a%00bcd"), new URI("http://host/a%00bcd"));
-        ne(new URI("http://host/a%00bcd"), new URI("http://host/aZ00bcd"));
-        eq0(new URI("http://host/abc%e2def%C3ghi"),
-            new URI("http://host/abc%E2def%c3ghi"));
+        eqHashCompBid(o, "MaILto:foo@bar.com", "=");
+        eqHashCompBid(o, "mailto:foo@bar.COM", ">");
+        eqHashCompBid(r, "rEg://some%20registry/b/c/d?q#f", "=");
+        eqHashCompBid(r, "reg://Some%20Registry/b/c/d?q#f", ">");
+        eqHashCompBid(r, "reg://some%20registry/b/c/D?q#f", ">");
+        eqHashCompBid(s, "hTtP://jag:cafebabe@Java.Sun.COM:94/b/c/d?q#f", "=");
+        eqHashCompBid(s, "http://jag:CafeBabe@java.sun.com:94/b/c/d?q#f", ">");
+        eqHashCompBid(s, "http://jag:cafebabe@java.sun.com:94/b/c/d?r#f", "<");
+        eqHashCompBid(s, "http://jag:cafebabe@java.sun.com:94/b/c/d?q#g", "<");
+        eqHashCompBid(t, "http://example.com/%5Bsegment%5D", "=");
+        eqHashCompBid(t, "http://example.com/%5BSegment%5D", ">");
+        eqHashCompBid("http://example.com/%5Asegment%5D", "http://example.com/%5Bsegment%5D", "<");
+        eqHashCompBid("http://host/a%00bcd", "http://host/a%00bcd", "=");
+        eqHashCompBid("http://host/a%00bcd", "http://host/aZ00bcd", "!=");
+        eqHashCompBid("http://host/abc%e2def%C3ghi", "http://host/abc%E2def%c3ghi", "=");
 
-        lt("p", "s:p");
-        lt("s:p", "T:p");
-        lt("S:p", "t:p");
-        lt("s:/p", "s:p");
-        lt("s:p", "s:q");
-        lt("s:p#f", "s:p#g");
-        lt("s://u@h:1", "s://v@h:1");
-        lt("s://u@h:1", "s://u@i:1");
-        lt("s://u@h:1", "s://v@h:2");
-        lt("s://a%20b", "s://a%20c");
-        lt("s://a%20b", "s://aab");
-        lt("s://AA", "s://A_");
-        lt("s:/p", "s:/q");
-        lt("s:/p?q", "s:/p?r");
-        lt("s:/p#f", "s:/p#g");
+        eqHashCompBid("p", "s:p", "<");
+        eqHashCompBid("s:p", "T:p", "<");
+        eqHashCompBid("S:p", "t:p", "<");
+        eqHashCompBid("s:/p", "s:p", "<");
+        eqHashCompBid("s:p", "s:q", "<");
+        eqHashCompBid("s:p#f", "s:p#g", "<");
+        eqHashCompBid("s://u@h:1", "s://v@h:1", "<");
+        eqHashCompBid("s://u@h:1", "s://u@i:1", "<");
+        eqHashCompBid("s://u@h:1", "s://v@h:2", "<");
+        eqHashCompBid("s://h", "s://h:0", "<");
+        eqHashCompBid("s://h", "s://h:" + Integer.MAX_VALUE, "<");
+        eqHashCompBid("s://h:0", "s://h:" + Integer.MAX_VALUE, "<");
+        eqHashCompBid("s://h:" + Integer.MAX_VALUE, "s://H:" + Integer.MAX_VALUE, "=");
+        eqHashCompBid("s://a%20b", "s://a%20c", "<");
+        eqHashCompBid("s://a%20b", "s://aab", "<");
+        eqHashCompBid("s://AA", "s://A_", "<");
+        eqHashCompBid("s:/p", "s:/q", "<");
+        eqHashCompBid("s:/p?q", "s:/p?r", "<");
+        eqHashCompBid("s:/p#f", "s:/p#g", "<");
 
-        lt("s://h", "s://h/p");
-        lt("s://h/p", "s://h/p?q");
+        eqHashCompBid("s://h", "s://h/p", "<");
+        eqHashCompBid("s://h/p", "s://h/p?q", "<");
 
     }
 
@@ -1552,7 +1591,7 @@ public class Test {
         ObjectInputStream oi = new ObjectInputStream(bi);
         try {
             Object o = oi.readObject();
-            eq(u, (URI)o);
+            eqHashCompBid(u, (URI)o, "=");
         } catch (ClassNotFoundException x) {
             x.printStackTrace();
             throw new RuntimeException(x.toString());
@@ -1819,13 +1858,13 @@ public class Test {
         throws URISyntaxException {
             URI baseURI = URI.create(base);
             URI targetURI = URI.create(target);
-            eq(URI.create(expected), baseURI.relativize(baseURI.resolve(targetURI)));
+            eqHashCompBid(expected, baseURI.relativize(baseURI.resolve(targetURI)), "=");
     }
     private static void resolveAfterRelativizeTest(String base, String target, String expected)
         throws URISyntaxException {
             URI baseURI = URI.create(base);
             URI targetURI = URI.create(target);
-            eq(URI.create(expected), baseURI.resolve(baseURI.relativize(targetURI)));
+            eqHashCompBid(expected, baseURI.resolve(baseURI.relativize(targetURI)), "=");
     }
 
     // 8272072 - Resolving URI relative path with no "/" may lead to incorrect toString
@@ -1835,12 +1874,12 @@ public class Test {
             URI relativeURI = new URI("test");
             URI resolvedURI = baseURI.resolve(relativeURI);
 
-            eq(new URI("http://example.com/test"), resolvedURI);
+            eqHashCompBid("http://example.com/test", resolvedURI, "=");
 
             baseURI = new URI("relativeBase");
             resolvedURI = baseURI.resolve(relativeURI);
 
-            eq(new URI("test"), resolvedURI);
+            eqHashCompBid("test", resolvedURI, "=");
         } catch (URISyntaxException e) {
             throw new AssertionError("shouldn't ever happen", e);
         }
