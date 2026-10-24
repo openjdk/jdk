@@ -82,6 +82,12 @@ public class CheckSegmentedCodeCache {
         out.shouldHaveExitValue(1);
     }
 
+    private static void failsWithPattern(ProcessBuilder pb, String message) throws Exception {
+        OutputAnalyzer out = new OutputAnalyzer(pb.start());
+        out.shouldMatch(message);
+        out.shouldHaveExitValue(1);
+    }
+
     private static void verifyCodeHeapSize(ProcessBuilder pb, String heapName, long heapSize) throws Exception {
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldHaveExitValue(0);
@@ -253,6 +259,6 @@ public class CheckSegmentedCodeCache {
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+SegmentedCodeCache",
                                                               "-XX:NonNMethodCodeHeapSize=3G",
                                                               "-version");
-        failsWith(pb, "Code cache size exceeds platform limit");
+        failsWithPattern(pb, ".*NonNMethodCodeHeapSize=\\d+ is outside the allowed range.*");
     }
 }
