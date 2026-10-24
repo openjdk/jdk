@@ -121,6 +121,24 @@ public class HtmlSectionTest {
     }
 
     @Test
+    public void appendedFragmentsGetUniqueIds() throws Exception {
+        // two invocations appending to the same file must not
+        // reuse each other's ids
+        Path dir = Files.createTempDirectory("HtmlSectionTest");
+        for (int frag = 1; frag <= 2; frag++) {
+            HtmlPage page = new HtmlPage(dir, "processes.html", true);
+            HtmlSection root = page.getRootSection();
+            HtmlSection s = root.createChildren("jinfo".split("\\."));
+            s.getWriter().println("FRAG-" + frag);
+            root.close();
+            page.close();
+        }
+        String html = Files.readString(dir.resolve("processes.html"));
+        assertUniqueIds(html);
+        Assert.assertNotEquals(sectionIdOf(html, "FRAG-1"), sectionIdOf(html, "FRAG-2"));
+    }
+
+    @Test
     public void adjacentIdenticalCommandsShareSection() throws Exception {
         // adjacent identical commands reuse the open section (existing
         // behavior): one section, both outputs in it
