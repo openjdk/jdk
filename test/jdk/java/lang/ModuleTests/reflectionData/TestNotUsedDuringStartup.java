@@ -27,6 +27,7 @@
  * @summary Tests command line options and deployments that augment the readability and
  *    export/uses graphs. The test checks that these additions are not recorded as
  *    reflective updates.
+ * @modules java.xml
  * @library /test/lib
  * @build java.base/java.lang.ModuleHelper
  * @build p.TestEmpty jdk.test.lib.util.JarUtils
@@ -51,18 +52,20 @@ class TestNotUsedDuringStartup {
     private static final String MAIN_CLASS = "p.TestEmpty";
 
     /**
-     * Test using --add-exports to export a package to all unnamed modules.
+     * Test --add-exports to export a package to a module or to all unnamed modules.
      */
     @Test
     void testAddExports() throws Exception {
+        run("--add-exports", "java.base/jdk.internal.misc=java.xml", MAIN_CLASS);
         run("--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED", MAIN_CLASS);
     }
 
     /**
-     * Test using --add-opens to open a package to all unnamed modules.
+     * Test --add-opens to open a package to a module or all unnamed modules.
      */
     @Test
     void tesAddOpens() throws Exception {
+        run("--add-opens", "java.base/jdk.internal.misc=java.xml", MAIN_CLASS);
         run("--add-opens", "java.base/jdk.internal.misc=ALL-UNNAMED", MAIN_CLASS);
     }
 
@@ -100,10 +103,11 @@ class TestNotUsedDuringStartup {
     }
 
     /**
-     * Test using --add-reads to have java.base read all unnamed modules.
+     * Test --add-reads to have java.base read a module or all unnamed modules.
      */
     @Test
     void testAddReads() throws Exception {
+        run("--add-reads", "java.base=java.xml", MAIN_CLASS);
         run("--add-reads", "java.base=ALL-UNNAMED", MAIN_CLASS);
     }
 

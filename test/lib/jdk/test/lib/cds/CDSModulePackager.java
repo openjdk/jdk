@@ -169,14 +169,17 @@ public class CDSModulePackager {
     public Path createAutomaticModularJar(String moduleName, String... javacOptions) throws Exception {
        return createAutomaticModularJarWithMainClass(moduleName, null, (JarOptions)null, javacOptions);
     }
-  
+
 
     public Path createAutomaticModularJarWithMainClass(String moduleName, String mainClass, String... javacOptions) throws Exception {
         return createAutomaticModularJarWithMainClass(moduleName, mainClass, (JarOptions)null, javacOptions);
     }
 
     // Compile all files under ${this.srcRoot}/${moduleName}.
-    public Path createAutomaticModularJarWithMainClass(String moduleName, String mainClass, JarOptions jarOptions, String... javacOptions) throws Exception {
+    public Path createAutomaticModularJarWithMainClass(String moduleName,
+                                                       String mainClass,
+                                                       JarOptions jarOptions,
+                                                       String... javacOptions) throws Exception {
         Path src = srcRoot.resolve(moduleName);
 
         if (javacOptions == null) {

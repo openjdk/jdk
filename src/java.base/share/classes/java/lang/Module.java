@@ -1180,8 +1180,8 @@ public final class Module implements AnnotatedElement {
             return;
         }
 
-        // export/open packages during startup (--add-exports and --add-opens)
-        // Also executable JAR Add-Exports and Add-Opens
+        // --add-exports and --add-opens (during module system initialization)
+        // JAR Add-Exports and Add-Opens (after VM is fully initialized)
         synchronized (this) {
             Map<String, Set<Module>> packageToTargets = (open) ? openPackages : exportedPackages;
             if (packageToTargets != null) {
