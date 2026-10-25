@@ -8468,9 +8468,9 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_intpoly_assign() {
     // KNOWN Lengths:
-    //   MontgomeryIntPolynP256:  5 = 5 + 0
-    //   IntegerPolynomial1305:   5 = 5 + 0
-    //   IntegerPolynomial25519:  5 = 5 + 0
+    //   MontgomeryIntPolynP256:  5 = 0 + 5
+    //   IntegerPolynomial1305:   5 = 0 + 5
+    //   IntegerPolynomial25519:  5 = 0 + 5
     //   IntegerPolynomialP384:   7 = 6 + 1
     //   IntegerPolynomialP256:  10 = 8 + 2
     //   Curve25519OrderField:   10 = 8 + 2
@@ -8594,34 +8594,34 @@ class StubGenerator: public StubCodeGenerator {
     // Split into 3 neon regs and 1 GPR
     __ BIND(L_Length7);
     {
-      Register a9 = r10;
-      Register b9 = r11;
+      Register a7 = r10;
+      Register b7 = r11;
 
       VSeq<3> a_vec(16);
       VSeq<3> b_vec(20);
 
       int offsets[1] = { 0 };
 
-      __ ldr(a9, Address(aLimbs, 6 * BytesPerLong));
-      __ ldr(b9, Address(bLimbs, 6 * BytesPerLong));
+      __ ldr(a7, Address(aLimbs, 6 * BytesPerLong));
+      __ ldr(b7, Address(bLimbs, 6 * BytesPerLong));
 
       __ ld1(a_vec[0], __ T2D, aLimbs);
       vs_ldpq_indexed(vs_tail(a_vec), aLimbs, 16, offsets);
 
-      __ eor(b9, b9, a9);
+      __ eor(b7, b7, a7);
 
       __ ld1(b_vec[0], __ T2D, bLimbs);
       vs_ldpq_indexed(vs_tail(b_vec), bLimbs, 16, offsets);
 
-      __ andr(b9, b9, mask_scalar);
+      __ andr(b7, b7, mask_scalar);
 
       vs_eor(b_vec, b_vec, a_vec);
 
-      __ eor(a9, a9, b9);
+      __ eor(a7, a7, b7);
 
       vs_andr(b_vec, b_vec, mask_vec);
 
-      __ str(a9, Address(aLimbs, 6 * BytesPerLong));
+      __ str(a7, Address(aLimbs, 6 * BytesPerLong));
 
       vs_eor(a_vec, a_vec, b_vec);
 
