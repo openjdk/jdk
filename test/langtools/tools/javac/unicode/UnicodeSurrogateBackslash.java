@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2026 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -36,15 +35,7 @@ public class UnicodeSurrogateBackslash {
 
     record TestCase(String string, int value1, int value2) {
         void check() {
-            final String expected = new String(new char[] {
-                (char)value1,
-                '\\',
-                'u',
-                Character.forDigit((value2 >> 12) & 0x0f, 16),
-                Character.forDigit((value2 >>  8) & 0x0f, 16),
-                Character.forDigit((value2 >>  4) & 0x0f, 16),
-                Character.forDigit((value2 >>  0) & 0x0f, 16)
-            });
+            final String expected = String.format("%c\\u%04x", (char)value1, value2);
             if (!string.equals(expected))
                 throw new AssertionError(String.format("%s: expected \"%s\"", this, expected));
         }
