@@ -40,8 +40,11 @@ public class TestMinHeapDeltaBytes {
         ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
                                            "-Xms8m", "-Xmx512m",
                                            "-XX:MinHeapDeltaBytes=9223372036854775808",
+                                           "-XX:+PrintFlagsFinal",
                                            Allocation.class.getName())
                     .shouldHaveExitValue(0)
+                    .shouldContain("MinHeapDeltaBytes (9223372036854775808) is greater than MaxHeapSize (536870912)")
+                    .shouldMatch("MinHeapDeltaBytes\\s+:?=\\s+536870912\\s")
                     .shouldContain("Expected allocation failure");
     }
 
