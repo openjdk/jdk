@@ -1087,6 +1087,8 @@ class os: AllStatic {
   static juint cpu_microcode_revision();
 
   static inline jlong rdtsc();
+  static inline jlong cntvctss();
+  static inline jlong cntfrq();
 
   // Used to register dynamic code cache area with the OS
   // Note: Currently only used in 64 bit Windows implementations
