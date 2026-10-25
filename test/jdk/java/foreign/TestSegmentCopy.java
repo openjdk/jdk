@@ -39,7 +39,7 @@ import java.util.function.IntFunction;
 
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
@@ -322,6 +322,15 @@ public class TestSegmentCopy {
         assertThrows(IndexOutOfBoundsException.class, () ->
                 MemorySegment.copy(src, 0, dst, JAVA_BYTE, 0, -1)
         );
+    }
+
+    @Test
+    void testCopyOverflow() {
+        MemorySegment segment = MemorySegment.ofArray(new long[1]);
+        long elementCount = 1L << 61;
+        var x = assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(segment, JAVA_LONG, 0, segment, JAVA_LONG, 0, elementCount));
+        assertEquals("Illegal elementCount for " + JAVA_LONG + ": " + elementCount, x.getMessage());
     }
 
     enum Type {
