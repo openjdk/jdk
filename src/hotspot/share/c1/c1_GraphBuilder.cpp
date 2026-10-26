@@ -1079,16 +1079,16 @@ void GraphBuilder::load_indexed(BasicType type) {
   bool need_membar = false;
   LoadIndexed* load_indexed = nullptr;
   Instruction* result = nullptr;
-  if (array->is_loaded_flat_array()) {
-    ciType* array_type = array->declared_type();
-    ciFlatArrayKlass* array_klass = array_type->as_flat_array_klass();
+  ciFlatArrayKlass* array_klass = array->as_loaded_flat_array_klass_or_null();
+  if (array_klass != nullptr) {
     ciValueKlass* elem_klass = array_klass->element_klass()->as_value_klass();
 
     bool can_delay_access = false;
     ciBytecodeStream s(method());
     s.force_bci(bci());
     s.next();
-    if (s.cur_bc() == Bytecodes::_getfield) {
+    // Only delay the access if the following getfield is in the same basic block
+    if (s.cur_bc() == Bytecodes::_getfield && block_at(s.cur_bci()) == nullptr) {
       bool is_null_free = array_klass->is_elem_null_free();
       bool will_link;
       ciField* next_field = s.get_field(will_link);
@@ -1173,7 +1173,7 @@ void GraphBuilder::store_indexed(BasicType type) {
   }
 
   StoreIndexed* store_indexed = new StoreIndexed(array, index, length, type, value, state_before, check_boolean);
-  if (profile_array_accesses() && is_reference_type(type) && !array->is_loaded_flat_array()) {
+  if (profile_array_accesses() && is_reference_type(type) && array->as_loaded_flat_array_klass_or_null() == nullptr) {
     compilation()->set_would_profile(true);
     store_indexed->set_should_profile(true);
     store_indexed->set_profiled_method(method());
@@ -2015,7 +2015,8 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
               ciBytecodeStream s(method());
               s.force_bci(bci());
               s.next();
-              if (s.cur_bc() == Bytecodes::_getfield && !needs_patching) {
+              // Only delay the access if the following getfield is in the same basic block
+              if (s.cur_bc() == Bytecodes::_getfield && block_at(s.cur_bci()) == nullptr && !needs_patching) {
                 ciField* next_field = s.get_field(will_link);
                 ciInstanceKlass* next_holder = next_field->holder();
                 bool next_needs_patching = !next_holder->is_loaded() ||
