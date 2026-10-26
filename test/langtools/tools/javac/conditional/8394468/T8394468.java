@@ -25,12 +25,18 @@
  * @test
  * @bug 8394468
  * @summary javac crash on constant conditional with null operand
- * @run compile T8394468.java
+ * @compile T8394468.java
+ * @run main T8394468
  */
 
 public class T8394468 {
     public static void main(String[] args) {
-        int n = (true ? null : "abc").length();
-        System.out.println(n);
+        try {
+            int dummy = (true ? null : "abc").length();
+            // if we got here, then there must be a problem
+            throw new RuntimeException("NullPointerException expected");
+        } catch (NullPointerException e) {
+            // expected
+        }
     }
 }
