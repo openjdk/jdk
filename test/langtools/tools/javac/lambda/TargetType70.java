@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 8011028
- * @summary lang/INFR/infr001/infr00101md/infr00101md.java fails to compile after switch to JDK8-b82
- * @compile TargetType70.java
+ * @bug 8011028 8375572
+ * @summary Wildcard function types cannot be derived from dependent bounds
+ * @compile/fail/ref=TargetType70.out -XDrawDiagnostics TargetType70.java
  */
 class TargetType70  {
 
