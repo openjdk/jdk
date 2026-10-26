@@ -162,7 +162,7 @@ void OptimizationDelayNode::narrow_hold_type(const Type* t_in, Stress& stress) {
   _hold_type = sample_type_between(old, t_in, stress);
 
   if (TraceOptimizationDelay && _hold_type != old) {
-    tty->print_cr("[OptizationDelay] narrow hold type between:");
+    tty->print_cr("[OptimizationDelay] narrow hold type between:");
     tty->print("  old hold type: "); old->dump(); tty->cr();
     tty->print("  new hold type: "); _hold_type->dump(); tty->cr();
     tty->print("  input type:    "); t_in->dump(); tty->cr();
@@ -177,7 +177,7 @@ void OptimizationDelayNode::reveal_type() {
   if (_stage > Stage::RevealType) { return; }
   _stage = Stage::RevealType;
   if (TraceOptimizationDelay) {
-    tty->print_cr("[OptizationDelay] reveal type");
+    tty->print_cr("[OptimizationDelay] reveal type");
     this->dump();
   }
 }
@@ -186,7 +186,7 @@ void OptimizationDelayNode::reveal_identity() {
   assert(_stage < Stage::RevealIdentity, "only reveal identity once");
   _stage = Stage::RevealIdentity;
   if (TraceOptimizationDelay) {
-    tty->print_cr("[OptizationDelay] reveal identity");
+    tty->print_cr("[OptimizationDelay] reveal identity");
     this->dump();
   }
 }

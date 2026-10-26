@@ -2017,7 +2017,7 @@ bool Compile::advance_optimization_delay_nodes(PhaseIterGVN& igvn) {
 
 void Compile::optimization_delay_nodes_cleanup(PhaseIterGVN& igvn) {
   if (TraceOptimizationDelay) {
-    tty->print_cr("[OptizationDelay] Cleanup with %d optimization delay nodes.",
+    tty->print_cr("[OptimizationDelay] Cleanup with %d optimization delay nodes.",
                   _optimization_delay_nodes.length());
   }
   _optimization_delay_nodes_cleanup_phase = true;
@@ -2025,7 +2025,7 @@ void Compile::optimization_delay_nodes_cleanup(PhaseIterGVN& igvn) {
   if (failing()) return;
   assert(_optimization_delay_nodes.is_empty(), "must all be released");
   if (TraceOptimizationDelay) {
-    tty->print_cr("[OptizationDelay] Cleanup done.");
+    tty->print_cr("[OptimizationDelay] Cleanup done.");
   }
 }
 
