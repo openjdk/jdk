@@ -58,7 +58,7 @@ static U random_bits(Stress& stress) {
   static_assert(sizeof(U) == 4 || sizeof(U) == 8);
 
   // Out of extra caution, we only trust the lower
-  // two bits of random, so we assemble the result
+  // two bytes of random, so we assemble the result
   // from 2-byte chunks.
   U bits = 0;
   for (uint i = 0; i < sizeof(U) / 2; i++) {
@@ -133,7 +133,7 @@ const Type* OptimizationDelayNode::sample_type_between(const Type* wide, const T
   assert(narrow->filter(wide) == narrow, "wide must contain narrow type");
   if (wide->isa_int() != nullptr) {
     return sample_integer_type<TypeInt>(wide->is_int(), narrow->is_int(), stress);
-  } else if (wide->is_long() != nullptr) {
+  } else if (wide->isa_long() != nullptr) {
     return sample_integer_type<TypeLong>(wide->is_long(), narrow->is_long(), stress);
   } else {
     // For all other types just pick one of the two, i.e.

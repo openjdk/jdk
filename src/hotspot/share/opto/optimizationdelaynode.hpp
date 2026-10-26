@@ -76,6 +76,7 @@ public:
   virtual uint hash() const { return NO_HASH; }
   virtual bool cmp(const Node& n) const { return this == &n; }
   virtual const Type* bottom_type() const { return _bottom_type; }
+  virtual uint ideal_reg() const { return _bottom_type->ideal_reg(); }
   virtual uint size_of() const { return sizeof(OptimizationDelayNode); }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
