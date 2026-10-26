@@ -1820,6 +1820,7 @@ public final class Unsafe {
         return compareAndExchangeReference(o, offset, expected, x);
     }
 
+    @ForceInline
     public final <V> Object compareAndExchangeReferenceAcquire(Object o, long offset,
                                                                Class<?> valueType,
                                                                V expected,
@@ -1848,6 +1849,7 @@ public final class Unsafe {
         return compareAndExchangeReference(o, offset, expected, x);
     }
 
+    @ForceInline
     public final <V> Object compareAndExchangeReferenceRelease(Object o, long offset,
                                                                Class<?> valueType,
                                                                V expected,
@@ -1876,6 +1878,7 @@ public final class Unsafe {
         return compareAndSetReference(o, offset, expected, x);
     }
 
+    @ForceInline
     public final <V> boolean weakCompareAndSetReferencePlain(Object o, long offset,
                                                              Class<?> valueType,
                                                              V expected,
@@ -1904,6 +1907,7 @@ public final class Unsafe {
         return compareAndSetReference(o, offset, expected, x);
     }
 
+    @ForceInline
     public final <V> boolean weakCompareAndSetReferenceAcquire(Object o, long offset,
                                                                Class<?> valueType,
                                                                V expected,
@@ -1932,6 +1936,7 @@ public final class Unsafe {
         return compareAndSetReference(o, offset, expected, x);
     }
 
+    @ForceInline
     public final <V> boolean weakCompareAndSetReferenceRelease(Object o, long offset,
                                                                Class<?> valueType,
                                                                V expected,
@@ -1960,6 +1965,7 @@ public final class Unsafe {
         return compareAndSetReference(o, offset, expected, x);
     }
 
+    @ForceInline
     public final <V> boolean weakCompareAndSetReference(Object o, long offset,
                                                         Class<?> valueType,
                                                         V expected,
