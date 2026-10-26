@@ -180,8 +180,7 @@ void ShenandoahFullGC::do_it() {
     heap->pre_full_gc_dump(_gc_timer);
   }
 
-  // Set it to true after pre_full_gc_dump() and set it to false before
-  // post_full_gc_dump() to allow heap dumps to run.
+  // Set it after pre_full_gc_dump() to allow heap dumps to run.
   heap->set_full_gc_in_progress(true);
 
   {
