@@ -8500,8 +8500,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   pclmulqdq(xmm1, xmm2, 0x10);
   pxor(xmm1, xmm0);
 
-  // xmm5 = _crc_by128_masks_avx512[1] = 0xffffffff_ffffffff_ffffffff_00000000.
-  pand(xmm1, xmm5);
+  pand(xmm1, xmm5);  // xmm5 = _crc_by128_masks_avx512[1] = 0xffffffff_ffffffff_ffffffff_00000000.
 
   // Barrett reduction with K_64_32.
   movdqa(xmm0, xmm1);
@@ -8510,16 +8509,14 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   pxor(xmm1, xmm0);
 
   // Reuse the mask to keep the low 64 bits only.
-  // xmm5 = _crc_by128_masks_avx512[0] = 0x00000000_00000000_ffffffff_ffffffff.
   psrldq(xmm5, 8);
-  pand(xmm1, xmm5);
+  pand(xmm1, xmm5);  // xmm5 = _crc_by128_masks_avx512[0] = 0x00000000_00000000_ffffffff_ffffffff.
 
   movdqa(xmm3, xmm1);
   pclmulqdq(xmm1, xmm2, 0x10);
   pxor(xmm1, xmm3);
   pxor(xmm1, xmm0);
 
-  // Only the non-AVX path may lack SSE4.1; UseAVX > 0 implies UseSSE >= 4.
   if (VM_Version::supports_sse4_1()) {
     pextrd(crc, xmm1, 2);
   } else {
