@@ -139,7 +139,7 @@ void VM_Version::apply_aot_cache_cpu_features() {
     if (os_cpu_log.is_enabled() || aot_log.is_enabled()) {
       ResourceMark rm;
       stringStream ss;
-      insert_features_names(features_to_clear, ss);
+      insert_features_names(&features_to_clear, ss);
       if (os_cpu_log.is_enabled()) {
         os_cpu_log.print("CPU features turned off by UseAOTCacheCpuFeaturesOnly: %s", ss.as_string());
       } else if (aot_log.is_enabled()) {
