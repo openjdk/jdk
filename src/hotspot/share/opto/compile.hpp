@@ -38,6 +38,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "opto/idealGraphPrinter.hpp"
+#include "opto/optimizationdelaypolicy.hpp"
 #include "opto/phase.hpp"
 #include "opto/phasetype.hpp"
 #include "opto/printinlining.hpp"
@@ -423,6 +424,9 @@ class Compile : public Phase {
   ConnectionGraph*      _congraph;
 
   Stress                _stress;
+
+  OptimizationDelayPolicy _optimization_delay_policy;
+
 #ifndef PRODUCT
   IdealGraphPrinter*    _igv_printer;
   static IdealGraphPrinter* _debug_file_printer;
