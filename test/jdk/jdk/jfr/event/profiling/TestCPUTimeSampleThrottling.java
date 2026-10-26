@@ -38,6 +38,7 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @requires vm.hasJFR & os.family == "linux"
+ * @requires vm.opt.CompileThresholdScaling == null & vm.opt.CompileThreshold == null
  * @library /test/lib
  * @run main/othervm jdk.jfr.event.profiling.TestCPUTimeSampleThrottling
  */
@@ -76,8 +77,6 @@ public class TestCPUTimeSampleThrottling {
      * <p>
      * The result is wall-clock independent; it only records the CPU-time and the number of
      * emitted events. The result, therefore, does not depend on the load of the machine.
-     * And because failed events are counted too, the result is not affected by the thread
-     * doing other in-JVM work (like garbage collection).
      */
     private static EventCount countEvents(int timeMs, String throttle) throws Exception {
         try (Recording recording = new Recording()) {
