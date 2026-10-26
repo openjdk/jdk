@@ -2950,6 +2950,9 @@ enum Nf {
 
   INSN(rori,    0b0010011, 0b101, 0b011000);
   INSN(slli_uw, 0b0011011, 0b001, 0b000010);
+  INSN(bseti,   0b0010011, 0b001, 0b001010);
+  INSN(bclri,   0b0010011, 0b001, 0b010010);
+  INSN(binvi,   0b0010011, 0b001, 0b011010);
   INSN(bexti,   0b0010011, 0b101, 0b010010);
 
 #undef INSN

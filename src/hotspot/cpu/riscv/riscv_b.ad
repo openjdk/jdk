@@ -777,3 +777,47 @@ instruct andL_reg_lshiftL_1_not(iRegLNoSp dst, iRegL src, immL_1 one, iRegIorL2I
 
   ins_pipe(ialu_reg_reg);
 %}
+
+// Fold a single-bit constant mask into the immediate Zbs instructions. Masks
+// that fit in a signed 12-bit immediate are handled by ori/xori/andi instead.
+instruct orL_reg_immL_Pow2(iRegLNoSp dst, iRegL src, immL_Pow2NotSimm12 mask) %{
+  predicate(UseZbs);
+  match(Set dst (OrL src mask));
+  ins_cost(ALU_COST);
+
+  format %{ "bseti  $dst, $src, exact_log2($mask)\t#@orL_reg_immL_Pow2" %}
+  ins_encode %{
+    __ bseti(as_Register($dst$$reg), as_Register($src$$reg),
+             exact_log2_long($mask$$constant));
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+instruct xorL_reg_immL_Pow2(iRegLNoSp dst, iRegL src, immL_Pow2NotSimm12 mask) %{
+  predicate(UseZbs);
+  match(Set dst (XorL src mask));
+  ins_cost(ALU_COST);
+
+  format %{ "binvi  $dst, $src, exact_log2($mask)\t#@xorL_reg_immL_Pow2" %}
+  ins_encode %{
+    __ binvi(as_Register($dst$$reg), as_Register($src$$reg),
+             exact_log2_long($mask$$constant));
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+instruct andL_reg_immL_NotPow2(iRegLNoSp dst, iRegL src, immL_NotPow2NotSimm12 mask) %{
+  predicate(UseZbs);
+  match(Set dst (AndL src mask));
+  ins_cost(ALU_COST);
+
+  format %{ "bclri  $dst, $src, exact_log2(~$mask)\t#@andL_reg_immL_NotPow2" %}
+  ins_encode %{
+    __ bclri(as_Register($dst$$reg), as_Register($src$$reg),
+             exact_log2_long(~$mask$$constant));
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}

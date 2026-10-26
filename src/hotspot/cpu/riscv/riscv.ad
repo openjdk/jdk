@@ -3036,6 +3036,30 @@ operand immL_1()
   interface(CONST_INTER);
 %}
 
+// A single-bit mask that cannot be encoded by an immediate logical instruction.
+operand immL_Pow2NotSimm12()
+%{
+  predicate(is_power_of_2((julong)n->get_long()) &&
+            !Assembler::is_simm12(n->get_long()));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// The complement of a single-bit mask that cannot be encoded by andi.
+operand immL_NotPow2NotSimm12()
+%{
+  predicate(is_power_of_2((julong)~n->get_long()) &&
+            !Assembler::is_simm12(n->get_long()));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 
 // 64 bit integer valid for add immediate
 operand immLAdd()
