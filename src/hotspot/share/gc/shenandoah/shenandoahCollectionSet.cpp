@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -134,7 +135,7 @@ void ShenandoahCollectionSet::clear() {
   _live = 0;
 
   _region_count = 0;
-  clear_current_index();
+  _current_index.store_relaxed(0);
 
   _young_bytes_to_evacuate = 0;
   _young_bytes_to_promote = 0;
