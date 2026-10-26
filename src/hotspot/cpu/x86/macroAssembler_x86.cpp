@@ -8482,82 +8482,50 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
 
   // Fold 128 bits in xmm1 down into 32 bits in crc register.
   BIND(L_fold_128b);
-  // Mask keeping the high 96 bits of the vector.
-  pxor(xmm5, xmm5);
+  // Build the "keep the high 96 bits" mask below:
+  //   xmm5 = 0xffffffff_ffffffff_ffffffff_00000000
   pcmpeqd(xmm5, xmm5);
   pslldq(xmm5, 4);
 
-  if (UseAVX > 0) {
-    // Fold 128 -> 96 -> 64 bits with K_128_64.
-    movdqu(xmm2, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 16), rscratch1); // [K_128_64_low, K_128_64_high]
-    movdqu(xmm0, xmm1);
-    vpclmulqdq(xmm1, xmm1, xmm2, 0x00);
-    vpsrldq(xmm0, xmm0, 8, Assembler::AVX_128bit);
-    vpxor(xmm1, xmm1, xmm0, Assembler::AVX_128bit);
+  movdqu(xmm2, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 16), rscratch1); // [K_128_64_low, K_128_64_high]
+  movdqa(xmm0, xmm1);
+  // 64b fold
+  pclmulqdq(xmm1, xmm2, 0x00);
+  psrldq(xmm0, 8);
+  pxor(xmm1, xmm0);
 
-    movdqu(xmm0, xmm1);
-    vpslldq(xmm1, xmm1, 4, Assembler::AVX_128bit);
-    vpclmulqdq(xmm1, xmm1, xmm2, 0x10);
-    vpxor(xmm1, xmm1, xmm0, Assembler::AVX_128bit);
+  // 32b fold
+  movdqa(xmm0, xmm1);
+  pslldq(xmm1, 4);
+  pclmulqdq(xmm1, xmm2, 0x10);
+  pxor(xmm1, xmm0);
 
-    pand(xmm1, xmm5);
+  // xmm5 = _crc_by128_masks_avx512[1] = 0xffffffff_ffffffff_ffffffff_00000000.
+  pand(xmm1, xmm5);
 
-    // Barrett reduction with K_64_32.
-    movdqu(xmm0, xmm1);
-    movdqu(xmm2, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr()), rscratch1); // [K_64_32_low, K_64_32_high]
-    vpclmulqdq(xmm1, xmm1, xmm2, 0x00);
-    vpxor(xmm1, xmm1, xmm0, Assembler::AVX_128bit);
+  // Barrett reduction with K_64_32.
+  movdqa(xmm0, xmm1);
+  movdqu(xmm2, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr()), rscratch1); // [K_64_32_low, K_64_32_high]
+  pclmulqdq(xmm1, xmm2, 0x00);
+  pxor(xmm1, xmm0);
 
-    // Reuse the mask to keep the low 64 bits only.
-    vpsrldq(xmm5, xmm5, 8, Assembler::AVX_128bit);
-    pand(xmm1, xmm5);
+  // Reuse the mask to keep the low 64 bits only.
+  // xmm5 = _crc_by128_masks_avx512[0] = 0x00000000_00000000_ffffffff_ffffffff.
+  psrldq(xmm5, 8);
+  pand(xmm1, xmm5);
 
-    movdqu(xmm3, xmm1);
-    vpclmulqdq(xmm1, xmm1, xmm2, 0x10);
-    vpxor(xmm1, xmm1, xmm3, Assembler::AVX_128bit);
-    vpxor(xmm1, xmm1, xmm0, Assembler::AVX_128bit);
-    if (VM_Version::supports_sse4_1()) {
-      pextrd(crc, xmm1, 2);
-    } else {
-      vpsrldq(xmm0, xmm1, 8, Assembler::AVX_128bit);
-      movdl(crc, xmm0);
-    }
+  movdqa(xmm3, xmm1);
+  pclmulqdq(xmm1, xmm2, 0x10);
+  pxor(xmm1, xmm3);
+  pxor(xmm1, xmm0);
+
+  // Only the non-AVX path may lack SSE4.1; UseAVX > 0 implies UseSSE >= 4.
+  if (VM_Version::supports_sse4_1()) {
+    pextrd(crc, xmm1, 2);
   } else {
-    // Fold 128 -> 96 -> 64 bits with K_128_64.
-    movdqu(xmm2, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 16), rscratch1); // [K_128_64_low, K_128_64_high]
     movdqa(xmm0, xmm1);
-    pclmulqdq(xmm1, xmm2, 0x00);
     psrldq(xmm0, 8);
-    pxor(xmm1, xmm0);
-
-    movdqa(xmm0, xmm1);
-    pslldq(xmm1, 4);
-    pclmulqdq(xmm1, xmm2, 0x10);
-    pxor(xmm1, xmm0);
-
-    pand(xmm1, xmm5);
-
-    // Barrett reduction with K_64_32.
-    movdqa(xmm0, xmm1);
-    movdqu(xmm2, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr()), rscratch1); // [K_64_32_low, K_64_32_high]
-    pclmulqdq(xmm1, xmm2, 0x00);
-    pxor(xmm1, xmm0);
-
-    // Reuse the mask to keep the low 64 bits only.
-    psrldq(xmm5, 8);
-    pand(xmm1, xmm5);
-
-    movdqa(xmm3, xmm1);
-    pclmulqdq(xmm1, xmm2, 0x10);
-    pxor(xmm1, xmm3);
-    pxor(xmm1, xmm0);
-    if (VM_Version::supports_sse4_1()) {
-      pextrd(crc, xmm1, 2);
-    } else {
-      movdqa(xmm0, xmm1);
-      psrldq(xmm0, 8);
-      movdl(crc, xmm0);
-    }
+    movdl(crc, xmm0);
   }
 
   BIND(L_tail_restore);
