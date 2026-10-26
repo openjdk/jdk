@@ -206,7 +206,11 @@ void GraphKit::verify_exception_state(SafePointNode* ex_map) {
 void GraphKit::stop_and_kill_map() {
   SafePointNode* dead_map = stop();
   if (dead_map != nullptr) {
-    dead_map->disconnect_inputs(C); // Mark the map as killed.
+    if (PhaseIterGVN* igvn = _gvn.is_IterGVN()) {
+      igvn->remove_dead_node(dead_map, PhaseIterGVN::NodeOrigin::Speculative);
+    } else {
+      dead_map->disconnect_inputs(C);
+    }
     assert(dead_map->is_killed(), "must be so marked");
   }
 }
