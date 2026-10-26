@@ -475,7 +475,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
         origVals.next();
 
         try {
-            updateWhere = buildWhereClause(updateWhere, origVals);
+            updateWhere = buildWhereClause(origVals);
 
             pstmt = con.prepareStatement(selectCmd + updateWhere,
                         ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -928,7 +928,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
         ResultSet origVals = crs.getOriginalRow();
         origVals.next();
 
-        deleteWhere = buildWhereClause(deleteWhere, origVals);
+        deleteWhere = buildWhereClause(origVals);
         pstmt = con.prepareStatement(selectCmd + deleteWhere,
                 ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
@@ -1229,10 +1229,9 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     }
 
     /**
-     * Constructs an SQL {@code WHERE} clause using the given
-     * string as a starting point. The resulting clause will contain
-     * a column name and " = ?" for each key column, that is, each column
-     * that is needed to form a unique identifier for a row in the rowset.
+     * Constructs an SQL {@code WHERE} clause. The resulting clause will contain
+     * a column name and " = ?" or " IS NULL " for each key column that is needed
+     * to form a unique identifier for a row in the rowset.
      * This {@code WHERE} clause can be added to
      * a {@code PreparedStatement} object that updates, inserts, or
      * deletes a row.
@@ -1244,31 +1243,27 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
      * {@code PreparedStatement} object that is sent to the
      * {@code CachedRowSet} object's underlying data source.
      *
-     * @param whereClause a {@code String} object that is an empty
-     *                    string ("")
      * @param rs a {@code ResultSet} object that can be used
      *           to access the {@code CachedRowSet} object's data
      * @return a {@code WHERE} clause of the form "{@code WHERE}
      *         columnName = ? AND columnName = ? AND columnName = ? ..."
      * @throws SQLException if a database access error occurs
      */
-    private String buildWhereClause(String whereClause,
-                                    ResultSet rs) throws SQLException {
-        whereClause = "WHERE ";
-
+    private String buildWhereClause(ResultSet rs) throws SQLException {
+        StringBuilder whereClause = new StringBuilder("WHERE ");
         for (int i = 0; i < keyCols.length; i++) {
             if (i > 0) {
-                    whereClause += "AND ";
+                whereClause.append("AND ");
             }
-            whereClause += callerMd.getColumnName(keyCols[i]);
+            whereClause.append(callerMd.getColumnName(keyCols[i]));
             params[i] = rs.getObject(keyCols[i]);
             if (rs.wasNull() == true) {
-                whereClause += " IS NULL ";
+                whereClause.append(" IS NULL ");
             } else {
-                whereClause += " = ? ";
+                whereClause.append(" = ? ");
             }
         }
-        return whereClause;
+        return whereClause.toString();
     }
 
     void updateResolvedConflictToDB(CachedRowSet crs, Connection con) throws SQLException {
@@ -1281,8 +1276,6 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
           int keyColumns[] = crs.getKeyColumns();
           Object param[];
           String strSet="";
-
-        strWhere = buildWhereClause(strWhere, crs);
 
         if (keyColumns == null || keyColumns.length == 0) {
             keyColumns = new int[icolCount];
