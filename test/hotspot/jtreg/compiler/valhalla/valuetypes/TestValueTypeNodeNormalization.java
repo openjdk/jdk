@@ -26,8 +26,8 @@
  * @bug 8393865
  * @summary [Valhalla] C2: assert(_gvn.type(stored_value_casted) == TypePtr::NULL_PTR) failed: Unexpected value
  * @enablePreview
- * @run main/othervm  -XX:-TieredCompilation -XX:CompileCommand=compileonly,${test.main.class}::test1
-                      -XX:CompileCommand=compileonly,${test.main.class}::test2 -Xcomp ${test.main.class}
+ * @run main/othervm -XX:-TieredCompilation -XX:CompileCommand=compileonly,${test.main.class}::test*
+                     -Xcomp ${test.main.class}
  */
 
 package compiler.valhalla.valuetypes;
