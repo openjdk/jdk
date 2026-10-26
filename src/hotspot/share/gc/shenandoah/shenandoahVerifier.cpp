@@ -835,6 +835,64 @@ public:
   }
 };
 
+class ShenandoahIsGCWorkerClosure : public ThreadClosure {
+private:
+  bool _found = false;
+  const Thread* _target;
+public:
+  ShenandoahIsGCWorkerClosure(Thread* t) : _target(t) {}
+
+  void do_thread(Thread* t) override {
+    if (_target == t) {
+      _found = true;
+    }
+  }
+
+  bool found() const { return _found; }
+};
+
+class ShenandoahVerifyThreadLabsClosure : public ThreadClosure {
+private:
+  const bool _generational = ShenandoahHeap::heap()->mode()->is_generational();
+  const char* _label;
+
+  void verify_labs(Thread* t, bool should_contain_labs) const {
+    const PLAB* gclab = ShenandoahThreadLocalData::gclab(t);
+    const ShenandoahPLAB* plab = ShenandoahThreadLocalData::shenandoah_plab(t);
+
+    if (_generational) {
+      if (should_contain_labs) {
+        guarantee(plab != nullptr, "%s: PLAB should exist for thread: %s", _label, t->name());
+      } else {
+        guarantee(plab == nullptr, "%s: PLAB shouldn't exist for thread: %s", _label, t->name());
+      }
+    } else {
+      guarantee(plab == nullptr, "%s: PLAB shouldn't exist for thread: %s", _label, t->name());
+    }
+
+    if (should_contain_labs) {
+      guarantee(gclab != nullptr, "%s: GCLAB should exist for thread: %s", _label, t->name());
+    } else {
+      guarantee(gclab == nullptr, "%s: GCLAB shouldn't exist for thread: %s", _label, t->name());
+    }
+  }
+
+public:
+  ShenandoahVerifyThreadLabsClosure(const char* label) : _label(label) {}
+
+  void do_thread(Thread* t) override {
+    if (t->is_Java_thread()) {
+      verify_labs(t, true);
+    } else if (t->is_Worker_thread()) {
+      ShenandoahIsGCWorkerClosure cl(t);
+      ShenandoahHeap::heap()->workers()->threads_do(&cl);
+      verify_labs(t, cl.found());
+    } else {
+      verify_labs(t, false);
+    }
+  }
+};
+
 void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
                                              const char* label,
                                              VerifyRememberedSet remembered,
@@ -904,6 +962,11 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
       Threads::java_threads_do(&vtgcs);
     }
   }
+
+  // Verify that Java and GC worker threads have a GCLAB and PLAB (if generational).
+  // All other threads should have neither a GCLAB nor a PLAB.
+  ShenandoahVerifyThreadLabsClosure labs_cl(label);
+  Threads::threads_do(&labs_cl);
 
   // Deactivate barriers temporarily: Verifier wants plain heap accesses
   ShenandoahGCStateResetter resetter;
