@@ -45,10 +45,10 @@ void MetaspaceClosure::push_impl(MetaspaceClosure::Ref* ref) {
   }
   if (_nest_level < MAX_NEST_LEVEL) {
     do_push(ref);
-    delete ref;
   } else {
-    ref->set_next(_pending_refs);
-    _pending_refs = ref;
+    Ref* cloned_ref = ref->clone_on_cheap();
+    cloned_ref->set_next(_pending_refs);
+    _pending_refs = cloned_ref;
   }
 }
 
@@ -102,9 +102,6 @@ bool UniqueMetaspaceClosure::do_ref(MetaspaceClosure::Ref* ref, bool read_only) 
   if (!created) {
     return false; // Already visited: no need to iterate embedded pointers.
   } else {
-    if (_has_been_visited.maybe_grow()) {
-      log_info(aot, hashtables)("Expanded _has_been_visited table to %d", _has_been_visited.table_size());
-    }
     return do_unique_ref(ref, read_only);
   }
 }

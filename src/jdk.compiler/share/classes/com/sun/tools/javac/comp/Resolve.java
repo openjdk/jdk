@@ -4009,7 +4009,9 @@ public class Resolve {
             // early this can only qualify instance field accesses
             return false;
         }
-        return isSimpleEarlyFieldRefAllowed(pos, env, context, field, writeOnlyTarget);
+        // early qualified access only allowed for writes
+        return writeOnlyTarget &&
+                isSimpleEarlyFieldRefAllowed(pos, env, context, field, writeOnlyTarget);
     }
 
     /** Implements early access checks for unqualified field references (6.5.6.1) */
@@ -4022,9 +4024,17 @@ public class Resolve {
             // If unrelated this/super, ignore
             return field.owner != context.owner();
         }
-        if (field.isStatic() ||
-                !field.isMemberOf(context.owner(), types)) {
-            // If unqualified static field, or unrelated instance field, ignore
+        if (field.isStatic()) {
+            // If unqualified static field, ignore
+            return true;
+        }
+        boolean declaredInSuper =
+                types.closure(context.owner().type)
+                     .stream()
+                     .map(t -> t.tsym)
+                     .anyMatch(ts -> field.owner == ts);
+        if (!declaredInSuper) {
+            // If unrelated instance field, ignore
             return true;
         }
         // We have now ruled out all cases where the check should not apply. Let's follow 6.5.6.1

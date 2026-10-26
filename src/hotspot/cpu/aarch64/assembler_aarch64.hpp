@@ -457,17 +457,18 @@ class Address {
 
   Address(address target, relocInfo::relocType rtype = relocInfo::external_word_type);
 
-  Address(Register base, RegisterOrConstant index, extend ext = lsl()) {
+  Address(Register base, RegisterOrConstant index, extend ext = lsl(0)) {
     if (index.is_register()) {
       _mode = base_plus_offset_reg;
       new (&_nonliteral) Nonliteral(base, index.as_register(), 0, ext);
     } else {
       guarantee(ext.option() == ext::uxtx, "should be");
       assert(index.is_constant(), "should be");
+      assert(ext.shift() == 0, "must be");
       _mode = base_plus_offset;
       new (&_nonliteral) Nonliteral(base,
                                     noreg,
-                                    index.as_constant() << ext.shift());
+                                    index.as_constant());
     }
   }
 
@@ -476,8 +477,8 @@ class Address {
   // Verify the value is trivially destructible regardless of mode, so our
   // destructor can also be trivial, and so our assignment operator doesn't
   // need to destruct the old value before copying over it.
-  static_assert(std::is_trivially_destructible<Literal>::value, "must be");
-  static_assert(std::is_trivially_destructible<Nonliteral>::value, "must be");
+  static_assert(std::is_trivially_destructible<Literal>::value);
+  static_assert(std::is_trivially_destructible<Nonliteral>::value);
 
   Address& operator=(const Address& a) {
     _mode = a._mode;
@@ -1022,11 +1023,14 @@ public:
   INSN(smc, 0b000, 0, 0b11);
   INSN(brk, 0b001, 0, 0b00);
   INSN(hlt, 0b010, 0, 0b00);
-  INSN(dcps1, 0b101, 0, 0b01);
-  INSN(dcps2, 0b101, 0, 0b10);
-  INSN(dcps3, 0b101, 0, 0b11);
 
 #undef INSN
+
+  // Reserved
+  void udf(uint16_t imm) {
+    starti;
+    f(0, 31, 16), f(imm, 15, 0);
+  }
 
   // System
   void system(int op0, int op1, int CRn, int CRm, int op2,

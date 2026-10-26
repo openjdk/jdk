@@ -11,8 +11,11 @@
     div.columns{display: flex; gap: min(4vw, 1.5em);}
     div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    ul.task-list{list-style: none;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
     ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
       width: 0.8em;
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
@@ -20,9 +23,6 @@
     .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
   <link rel="stylesheet" href="../make/data/docs-resources/resources/jdk-default.css" />
-  <!--[if lt IE 9]>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
-  <![endif]-->
 </head>
 <body>
 <header id="title-block-header">
@@ -268,8 +268,8 @@ Code</h4>
 synchronization context, such as a held mutex or at a safepoint. In such
 cases the variable should be declared <code>volatile</code> and it
 should NOT be accessed as a normal C++ lvalue. Rather, access should be
-performed via functions from <code>Atomic</code>, such as
-<code>Atomic::load</code>, <code>Atomic::store</code>, etc.</p>
+performed via functions from <code>AtomicAccess</code>, such as
+<code>AtomicAccess::load</code>, <code>AtomicAccess::store</code>, etc.</p>
 <p>This special formulation makes it more clear to maintainers that the
 variable is accessed concurrently in a lock-free manner.</p>
 <h3 id="source-files">Source Files</h3>

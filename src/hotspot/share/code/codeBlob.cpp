@@ -64,7 +64,7 @@ static_assert(!std::is_polymorphic<AdapterBlob>::value,        "no virtual metho
 static_assert(!std::is_polymorphic<VtableBlob>::value,         "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<MethodHandlesAdapterBlob>::value, "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<RuntimeStub>::value,        "no virtual methods are allowed in code blobs");
-static_assert(!std::is_polymorphic<BufferedInlineTypeBlob>::value,   "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<BufferedValueTypeBlob>::value,   "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<DeoptimizationBlob>::value, "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<SafepointBlob>::value,      "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<UpcallStub>::value,         "no virtual methods are allowed in code blobs");
@@ -95,7 +95,7 @@ const CodeBlob::Vptr* CodeBlob::vptr(CodeBlobKind kind) {
       &AdapterBlob::_vpntr,
       &VtableBlob::_vpntr,
       &MethodHandlesAdapterBlob::_vpntr,
-      &BufferedInlineTypeBlob::_vpntr,
+      &BufferedValueTypeBlob::_vpntr,
       &RuntimeStub::_vpntr,
       &DeoptimizationBlob::_vpntr,
       &SafepointBlob::_vpntr,
@@ -194,6 +194,12 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
   assert(_mutable_data == blob_end(), "sanity");
 }
 
+#ifdef ASSERT
+CodeBlob::~CodeBlob() {
+  assert(_oop_maps == nullptr || AOTCodeCache::is_address_in_aot_cache((address)_oop_maps), "Not flushed");
+}
+#endif
+
 void CodeBlob::purge() {
   assert(_mutable_data != nullptr, "should never be null");
   if (_mutable_data != blob_end()) {
@@ -202,7 +208,7 @@ void CodeBlob::purge() {
     _mutable_data_size = 0;
     _relocation_size = 0;
   }
-  if (_oop_maps != nullptr) {
+  if (_oop_maps != nullptr && !AOTCodeCache::is_address_in_aot_cache((address)_oop_maps)) {
     delete _oop_maps;
     _oop_maps = nullptr;
   }
@@ -252,8 +258,8 @@ void CodeBlob::prepare_for_archiving_impl() {
   _oop_maps = nullptr;
   _mutable_data = nullptr;
 #ifndef PRODUCT
-  asm_remarks().clear();
-  dbg_strings().clear();
+  asm_remarks().clear_ref();
+  dbg_strings().clear_ref();
 #endif /* PRODUCT */
 }
 
@@ -471,10 +477,10 @@ AdapterBlob::AdapterBlob(int size, CodeBuffer* cb, int entry_offset[AdapterBlob:
   }
 #endif // ASSERT
   _c2i_offset = entry_offset[C2I];
-  _c2i_inline_offset = entry_offset[C2I_Inline];
-  _c2i_inline_ro_offset = entry_offset[C2I_Inline_RO];
+  _c2i_value_offset = entry_offset[C2I_Value];
+  _c2i_value_ro_offset = entry_offset[C2I_Value_RO];
   _c2i_unverified_offset = entry_offset[C2I_Unverified];
-  _c2i_unverified_inline_offset = entry_offset[C2I_Unverified_Inline];
+  _c2i_unverified_value_offset = entry_offset[C2I_Unverified_Value];
   _c2i_no_clinit_check_offset = entry_offset[C2I_No_Clinit_Check];
   CodeCache::commit(this);
 }
@@ -572,23 +578,23 @@ MethodHandlesAdapterBlob* MethodHandlesAdapterBlob::create(int buffer_size) {
 }
 
 //----------------------------------------------------------------------------------------------------
-// Implementation of BufferedInlineTypeBlob
-BufferedInlineTypeBlob::BufferedInlineTypeBlob(int size, CodeBuffer* cb, int pack_fields_off, int pack_fields_jobject_off, int unpack_fields_off) :
-  BufferBlob("buffered inline type", CodeBlobKind::BufferedInlineType, cb, size, sizeof(BufferedInlineTypeBlob)),
+// Implementation of BufferedValueTypeBlob
+BufferedValueTypeBlob::BufferedValueTypeBlob(int size, CodeBuffer* cb, int pack_fields_off, int pack_fields_jobject_off, int unpack_fields_off) :
+  BufferBlob("buffered value type", CodeBlobKind::BufferedValueType, cb, size, sizeof(BufferedValueTypeBlob)),
   _pack_fields_off(pack_fields_off),
   _pack_fields_jobject_off(pack_fields_jobject_off),
   _unpack_fields_off(unpack_fields_off) {
   CodeCache::commit(this);
 }
 
-BufferedInlineTypeBlob* BufferedInlineTypeBlob::create(CodeBuffer* cb, int pack_fields_off, int pack_fields_jobject_off, int unpack_fields_off) {
+BufferedValueTypeBlob* BufferedValueTypeBlob::create(CodeBuffer* cb, int pack_fields_off, int pack_fields_jobject_off, int unpack_fields_off) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
-  BufferedInlineTypeBlob* blob = nullptr;
-  unsigned int size = CodeBlob::allocation_size(cb, sizeof(BufferedInlineTypeBlob));
+  BufferedValueTypeBlob* blob = nullptr;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(BufferedValueTypeBlob));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) BufferedInlineTypeBlob(size, cb, pack_fields_off, pack_fields_jobject_off, unpack_fields_off);
+    blob = new (size) BufferedValueTypeBlob(size, cb, pack_fields_off, pack_fields_jobject_off, unpack_fields_off);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();

@@ -39,7 +39,6 @@ import org.testng.annotations.Test;
  * @run testng/othervm -XX:UseSVE=0 -XX:-TieredCompilation
  *                     -XX:CompileThreshold=100
  *                     -XX:+IgnoreUnrecognizedVMOptions
- *                     -XX:CompileCommand=MemLimit,*.*,0
  *                     -XX:CompileTaskTimeout=0
  *                     compiler.vectorapi.VectorReplicateLongSpecialImmTest
  */

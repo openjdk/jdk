@@ -439,7 +439,7 @@ protected:
     decl(AVX512_FP16,       avx512_fp16       ) /* AVX512 FP16 ISA support*/ \
     decl(AVX10_1,           avx10_1           ) /* AVX10 512 bit vector ISA Version 1 support*/ \
     decl(AVX10_2,           avx10_2           ) /* AVX10 512 bit vector ISA Version 2 support*/ \
-    decl(HYBRID,            hybrid            ) /* Hybrid architecture */
+    decl(HYBRID,            hybrid            ) /* Hybrid architecture */ \
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name) CPU_##id,
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -453,7 +453,7 @@ protected:
    private:
     uint64_t _features_bitmap[(MAX_CPU_FEATURES / BitsPerLong) + 1];
 
-    STATIC_ASSERT(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURES);
+    static_assert(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURES);
 
     // Number of 8-byte elements in _bitmap.
     constexpr static int features_bitmap_element_count() {
@@ -677,7 +677,8 @@ protected:
     int          zmm_save[16*4]; // Save zmm0, zmm7, zmm8, zmm31
 
     // Space to save apx registers after signal handle
-    jlong        apx_save[2]; // Save r16 and r31
+    jlong        apx_save[2]; // Save r16 and the last volatile EGPR
+                              // (r29 on Windows, r31 on non-Windows)
 
     // cpuid function 0xD, subleaf 19 (APX extended state)
     uint32_t          apx_xstate_size;          // EAX: size of APX state (128)

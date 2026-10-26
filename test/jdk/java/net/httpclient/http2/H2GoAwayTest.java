@@ -44,6 +44,9 @@ import javax.net.ssl.SSLContext;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestExchange;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
+import jdk.httpclient.test.lib.http2.Http2TestExchangeImpl;
+import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
+import jdk.internal.net.http.frame.ErrorFrame;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
@@ -52,36 +55,35 @@ import org.junit.jupiter.api.Test;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
- * @bug 8335181
+ * @bug 8335181 8371903
  * @summary verify that the HttpClient correctly handles incoming GOAWAY frames and
  *          retries any unprocessed requests on a new connection
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
+ *        jdk.httpclient.test.lib.http2.Http2TestExchangeImpl
+ *        jdk.httpclient.test.lib.http2.Http2TestServerConnection
  * @run junit ${test.main.class}
  */
 public class H2GoAwayTest {
-    private static final String REQ_PATH = "/test";
+    private static final String CONN_CLOSING_HANDLER_REQ_PATH = "/closeConn";
+    private static final String TEST_REQ_PATH = "/test";
     private static HttpTestServer server;
-    private static String REQ_URI_BASE;
     private static final SSLContext sslCtx = SimpleSSLContext.findSSLContext();
 
     @BeforeAll
     static void beforeAll() throws Exception {
         server = HttpTestServer.create(HTTP_2, sslCtx);
-        server.addHandler(new Handler(), REQ_PATH);
+        server.addHandler(new Handler(), TEST_REQ_PATH);
+        server.addHandler(new ProcessingCapacityExceededHandler(), CONN_CLOSING_HANDLER_REQ_PATH);
         server.start();
         System.out.println("Server started at " + server.getAddress());
-        REQ_URI_BASE = URIBuilder.newBuilder().scheme("https")
-                .loopback()
-                .port(server.getAddress().getPort())
-                .path(REQ_PATH)
-                .build().toString();
     }
 
     @AfterAll
@@ -92,6 +94,52 @@ public class H2GoAwayTest {
         }
     }
 
+
+    /**
+     * Issues a HTTP/2 request against a server which is expected to send a GOAWAY and close the
+     * connection, without responding to the request. The test then verifies that the request fails
+     * with an IOException and the exception message contains the error code that was contained
+     * in the GOAWAY frame.
+     */
+    @Test
+    public void testGoAwayErrorCode() throws Exception {
+        final URI reqURI = URIBuilder.newBuilder().scheme("https")
+                .loopback()
+                .port(server.getAddress().getPort())
+                .path(CONN_CLOSING_HANDLER_REQ_PATH)
+                .build();
+        final HttpRequest req = HttpRequest.newBuilder().uri(reqURI).version(HTTP_2).build();
+        boolean receivedExpectedFailure = false;
+        try (final HttpClient client = HttpClient.newBuilder().version(HTTP_2)
+                .sslContext(sslCtx).build()) {
+            final String expectedExMsg =
+                    ErrorFrame.stringForCode(ProcessingCapacityExceededHandler.GOAWAY_ERROR_CODE);
+            final int numReqs = 10;
+            // it can't be guaranteed that the HttpClient will have finished processing the
+            // incoming GOAWAY before the connection gets closed and request fails. so we issue
+            // the request a reasonable number of times and expect that at least one of the
+            // failing request manages to have its failure exception attributed to the error
+            // code from the incoming GOAWAY frame.
+            for (int i = 1; i <= 10; i++) {
+                System.err.println("iteration - " + i + " issuing request " + req);
+                final IOException ioe = assertThrows(IOException.class,
+                        () -> client.send(req, BodyHandlers.discarding()));
+                final String actual = ioe.getMessage();
+                if (actual != null && actual.contains(expectedExMsg)) {
+                    receivedExpectedFailure = true;
+                    System.err.println("iteration - " + i + " got the expected exception: " + ioe);
+                    break; // no need to issue any more requests
+                }
+                // print the (unexpected) exception for debugging
+                System.err.println("iteration " + i + " - ignoring the following IOException" +
+                        " that had an unexpected exception message");
+                ioe.printStackTrace();
+            }
+            assertTrue(receivedExpectedFailure, "did not receive the expected exception message: \""
+                    + expectedExMsg + "\" in any of the " + numReqs + " request failures");
+        }
+    }
+
     /**
      * Verifies that when several requests are sent using send() and the server
      * connection is configured to send a GOAWAY after processing only a few requests, then
@@ -99,6 +147,11 @@ public class H2GoAwayTest {
      */
     @Test
     public void testSequential() throws Exception {
+        final String reqURIBase = URIBuilder.newBuilder().scheme("https")
+                .loopback()
+                .port(server.getAddress().getPort())
+                .path(TEST_REQ_PATH)
+                .build().toString();
         final LimitedPerConnRequestApprover reqApprover = new LimitedPerConnRequestApprover();
         server.setRequestApprover(reqApprover::allowNewRequest);
         try (final HttpClient client = HttpClient.newBuilder().version(HTTP_2)
@@ -108,7 +161,7 @@ public class H2GoAwayTest {
                 final int numReqs = LimitedPerConnRequestApprover.MAX_REQS_PER_CONN + 3;
                 final Set<String> connectionKeys = new LinkedHashSet<>();
                 for (int i = 1; i <= numReqs; i++) {
-                    final URI reqURI = new URI(REQ_URI_BASE + "?seq&" + reqMethod + "=" + i);
+                    final URI reqURI = new URI(reqURIBase + "?seq&" + reqMethod + "=" + i);
                     final HttpRequest req = HttpRequest.newBuilder()
                             .uri(reqURI)
                             .method(reqMethod, HttpRequest.BodyPublishers.noBody())
@@ -142,6 +195,11 @@ public class H2GoAwayTest {
      */
     @Test
     public void testUnprocessedRaisesException() throws Exception {
+        final String reqURIBase = URIBuilder.newBuilder().scheme("https")
+                .loopback()
+                .port(server.getAddress().getPort())
+                .path(TEST_REQ_PATH)
+                .build().toString();
         try (final HttpClient client = HttpClient.newBuilder().version(HTTP_2)
                 .sslContext(sslCtx).build()) {
             final Random random = new Random();
@@ -157,7 +215,7 @@ public class H2GoAwayTest {
                     int numFailed = 0;
                     for (int i = 1; i <= numReqs; i++) {
                         final String reqQueryPart = "?sync&" + reqMethod + "=" + i;
-                        final URI reqURI = new URI(REQ_URI_BASE + reqQueryPart);
+                        final URI reqURI = new URI(reqURIBase + reqQueryPart);
                         final HttpRequest req = HttpRequest.newBuilder()
                                 .uri(reqURI)
                                 .method(reqMethod, HttpRequest.BodyPublishers.noBody())
@@ -208,6 +266,11 @@ public class H2GoAwayTest {
      */
     @Test
     public void testUnprocessedRaisesExceptionAsync() throws Throwable {
+        final String reqURIBase = URIBuilder.newBuilder().scheme("https")
+                .loopback()
+                .port(server.getAddress().getPort())
+                .path(TEST_REQ_PATH)
+                .build().toString();
         try (final HttpClient client = HttpClient.newBuilder().version(HTTP_2)
                 .sslContext(sslCtx).build()) {
             final Random random = new Random();
@@ -221,7 +284,7 @@ public class H2GoAwayTest {
                 try {
                     final List<Future<HttpResponse<String>>> futures = new ArrayList<>();
                     for (int i = 1; i <= numReqs; i++) {
-                        final URI reqURI = new URI(REQ_URI_BASE + "?async&" + reqMethod + "=" + i);
+                        final URI reqURI = new URI(reqURIBase + "?async&" + reqMethod + "=" + i);
                         final HttpRequest req = HttpRequest.newBuilder()
                                 .uri(reqURI)
                                 .method(reqMethod, HttpRequest.BodyPublishers.noBody())
@@ -237,7 +300,7 @@ public class H2GoAwayTest {
                         final String reqQueryPart = "?async&" + reqMethod + "=" + i;
                         try {
                             System.out.println("waiting response of request "
-                                    + REQ_URI_BASE + reqQueryPart);
+                                    + reqURIBase + reqQueryPart);
                             final HttpResponse<String> resp = futures.get(i - 1).get();
                             numSuccess++;
                             final String respBody = resp.body();
@@ -249,20 +312,20 @@ public class H2GoAwayTest {
                             final Throwable cause = ee.getCause();
                             if (!(cause instanceof IOException ioe)) {
                                 System.err.println("unexpected exception: " + cause
-                                        + ", for request " + REQ_URI_BASE + reqQueryPart);
+                                        + ", for request " + reqURIBase + reqQueryPart);
                                 throw cause;
                             }
                             // verify it failed for the right reason
                             if (ioe.getMessage() == null
                                     || !ioe.getMessage().contains("request not processed by peer")) {
                                 System.err.println("unexpected exception message: " + ioe.getMessage()
-                                        + ", for request " + REQ_URI_BASE + reqQueryPart);
+                                        + ", for request " + reqURIBase + reqQueryPart);
                                 // propagate the original failure
                                 throw ioe;
                             }
                             numFailed++; // failed due to the right reason
                             System.out.println("received expected failure: " + ioe
-                                    + ", for request " + REQ_URI_BASE + reqQueryPart);
+                                    + ", for request " + reqURIBase + reqQueryPart);
                         }
                     }
                     // verify the correct number of requests succeeded/failed
@@ -333,6 +396,27 @@ public class H2GoAwayTest {
             try (final OutputStream os = exchange.getResponseBody()) {
                 os.write(response);
             }
+        }
+    }
+
+    /**
+     * A handler which always responds with a GOAWAY frame and closes the connection, without
+     * sending any HTTP response for the request.
+     */
+    private static final class ProcessingCapacityExceededHandler implements HttpTestHandler {
+
+        private static final int GOAWAY_ERROR_CODE = ErrorFrame.ENHANCE_YOUR_CALM;
+
+        @Override
+        public void handle(final HttpTestExchange exchg) throws IOException {
+            System.err.println("handling request " + exchg.getRequestURI());
+            final Http2TestExchangeImpl exchgImpl =
+                    exchg.getUnderlyingExchange(Http2TestExchangeImpl.class);
+            final Http2TestServerConnection conn = exchgImpl.getConnection();
+            System.err.println("handler closing connection " + conn
+                    + " with error: " + ErrorFrame.stringForCode(GOAWAY_ERROR_CODE));
+            // close will send a GOAWAY with the given error code
+            conn.close(GOAWAY_ERROR_CODE);
         }
     }
 }

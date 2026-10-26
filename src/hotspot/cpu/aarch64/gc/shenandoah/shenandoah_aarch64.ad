@@ -246,34 +246,6 @@ instruct encodePAndStoreN_Volatile_shenandoah(indirect mem, iRegP src, iRegPNoSp
 // ---------------------- LOAD-STORES -----------------------------------
 //
 
-instruct compareAndSwap_P_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr)
-%{
-  match(Set res (CompareAndSwapP mem (Binary oldval newval)));
-  predicate(UseShenandoahGC && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF res, TEMP tmp, KILL cr);
-  format %{
-    "cmpxchg_P_shenandoah $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval"
-  %}
-  ins_encode %{
-    assert($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
-
-    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
-      $res$$Register,
-      $mem$$base$$Register,
-      $oldval$$Register,
-      $newval$$Register,
-      $tmp$$Register,
-      rscratch1,
-      rscratch2,
-      /* exchange = */ false,
-      /* narrow = */   false,
-      /* weak = */     false,
-      /* acquire = */  false);
-  %}
-  ins_cost(VOLATILE_REF_COST);
-  ins_pipe(pipe_slow);
-%}
-
 instruct compareAndSwap_P_A_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr)
 %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
@@ -297,34 +269,6 @@ instruct compareAndSwap_P_A_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp ol
       /* narrow = */   false,
       /* weak = */     false,
       /* acquire = */  true);
-  %}
-  ins_cost(VOLATILE_REF_COST);
-  ins_pipe(pipe_slow);
-%}
-
-instruct compareAndSwap_N_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN newval, iRegPNoSp tmp, rFlagsReg cr)
-%{
-  match(Set res (CompareAndSwapN mem (Binary oldval newval)));
-  predicate(UseShenandoahGC && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF res, TEMP tmp, KILL cr);
-  format %{
-    "cmpxchg_N_shenandoah $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval"
-  %}
-  ins_encode %{
-    assert($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
-
-    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
-      $res$$Register,
-      $mem$$base$$Register,
-      $oldval$$Register,
-      $newval$$Register,
-      $tmp$$Register,
-      rscratch1,
-      rscratch2,
-      /* exchange = */ false,
-      /* narrow = */   true,
-      /* weak = */     false,
-      /* acquire = */  false);
   %}
   ins_cost(VOLATILE_REF_COST);
   ins_pipe(pipe_slow);
@@ -586,26 +530,6 @@ instruct weakCompareAndSwap_P_A_shenandoah(iRegINoSp res, indirect mem, iRegPNoS
   ins_pipe(pipe_slow);
 %}
 
-instruct getAndSet_P_shenandoah(indirect mem, iRegP newval, iRegPNoSp preval, iRegPNoSp tmp,  rFlagsReg cr)
-%{
-  match(Set preval (GetAndSetP mem newval));
-  predicate(UseShenandoahGC && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF preval, TEMP tmp, KILL cr);
-  format %{ "atomic_xchg $preval, $newval, [$mem]" %}
-  ins_encode %{
-    ShenandoahBarrierSet::assembler()->get_and_set_c2(this, masm,
-      $preval$$Register,
-      $newval$$Register,
-      $mem$$Register,
-      $tmp$$Register,
-      rscratch1,
-      rscratch2,
-      /* acquire = */ false);
-  %}
-  ins_cost(2*VOLATILE_REF_COST);
-  ins_pipe(pipe_serial);
-%}
-
 instruct getAndSet_P_A_shenandoah(indirect mem, iRegP newval, iRegPNoSp preval, iRegPNoSp tmp,  rFlagsReg cr)
 %{
   match(Set preval (GetAndSetP mem newval));
@@ -621,26 +545,6 @@ instruct getAndSet_P_A_shenandoah(indirect mem, iRegP newval, iRegPNoSp preval, 
       rscratch1,
       rscratch2,
       /* acquire = */ true);
-  %}
-  ins_cost(2*VOLATILE_REF_COST);
-  ins_pipe(pipe_serial);
-%}
-
-instruct getAndSet_N_shenandoah(indirect mem, iRegN newval, iRegNNoSp preval, iRegPNoSp tmp, rFlagsReg cr)
-%{
-  match(Set preval (GetAndSetN mem newval));
-  predicate(UseShenandoahGC && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF preval, TEMP tmp, KILL cr);
-  format %{ "atomic_xchgw $preval, $newval, [$mem]" %}
-  ins_encode %{
-    ShenandoahBarrierSet::assembler()->get_and_set_c2(this, masm,
-      $preval$$Register,
-      $newval$$Register,
-      $mem$$Register,
-      $tmp$$Register,
-      rscratch1,
-      rscratch2,
-      /* acquire = */ false);
   %}
   ins_cost(2*VOLATILE_REF_COST);
   ins_pipe(pipe_serial);

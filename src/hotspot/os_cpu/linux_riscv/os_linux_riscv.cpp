@@ -37,6 +37,7 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -77,6 +78,11 @@
 
 #define REG_LR       1
 #define REG_FP       8
+// First argument register (x10), used to pass the stop() message
+// to the signal handler.
+#ifndef REG_A0
+#define REG_A0       10
+#endif
 #define REG_BCP      22
 
 NOINLINE address os::current_stack_pointer() {
@@ -240,11 +246,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
       } else if (sig == SIGILL && nativeInstruction_at(pc)->is_stop()) {
-        // Pull a pointer to the error message out of the instruction
-        // stream.
-        const uint64_t *detail_msg_ptr
-          = (uint64_t*)(pc + NativeInstruction::instruction_size);
-        const char *detail_msg = (const char *)*detail_msg_ptr;
+        // A pointer to the message will have been placed in a0
+        const char *detail_msg = (const char *)(uc->uc_mcontext.__gregs[REG_A0]);
         const char *msg = "stop";
         if (TraceTraps) {
           tty->print_cr("trap: %s: (SIGILL)", msg);
@@ -281,7 +284,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
     // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks in
     // and the heap gets shrunk before the field access.
-    if ((sig == SIGSEGV) || (sig == SIGBUS)) {
+    if (stub == nullptr && ((sig == SIGSEGV) || (sig == SIGBUS))) {
       address addr_slow = JNI_FastGetField::find_slowcase_pc(pc);
       if (addr_slow != (address)-1) {
         stub = addr_slow;
@@ -450,10 +453,6 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
-  *(jlong *) dst = *(const jlong *) src;
-}
-
 extern "C" {
   int SpinPause() {
     if (UseZihintpause) {
@@ -502,14 +501,14 @@ extern "C" {
     if (from > to) {
       const jlong *end = from + count;
       while (from < end) {
-        atomic_copy64(from++, to++);
+        AtomicAccess::store(to++, AtomicAccess::load(from++));
       }
     } else if (from < to) {
       const jlong *end = from;
       from += count - 1;
       to   += count - 1;
       while (from >= end) {
-        atomic_copy64(from--, to--);
+        AtomicAccess::store(to--, AtomicAccess::load(from--));
       }
     }
   }

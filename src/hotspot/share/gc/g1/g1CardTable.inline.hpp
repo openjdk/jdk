@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,17 +44,6 @@ inline bool G1CardTable::mark_clean_as_from_remset(CardValue* card) {
   return false;
 }
 
-// Returns bits from a where mask is 0, and bits from b where mask is 1.
-//
-// Example:
-// a      = 0xAAAAAAAA
-// b      = 0xBBBBBBBB
-// mask   = 0xFF00FF00
-// result = 0xBBAABBAA
-inline size_t blend(size_t a, size_t b, size_t mask) {
-  return (a & ~mask) | (b & mask);
-}
-
 inline size_t G1CardTable::mark_clean_range_as_from_remset(size_t start_card_index, size_t num_cards) {
   assert(is_aligned(start_card_index, sizeof(size_t)), "Start card index must be aligned.");
   assert(is_aligned(num_cards, sizeof(size_t)), "Number of cards to change must be evenly divisible.");
@@ -73,10 +62,13 @@ inline size_t G1CardTable::mark_clean_range_as_from_remset(size_t start_card_ind
     } else if ((value & WordAlreadyScanned) == 0) {
       // Do nothing if there is no "Clean" card in it.
     } else {
-      // There is a mix of cards in there. Tread "slowly".
-      size_t clean_card_mask = (value & WordAlreadyScanned) * 0xff; // All "Clean" cards have 0xff, all other places 0x00 now.
-      result += population_count(clean_card_mask) / BitsPerByte;
-      *cur_word = blend(value, WordAllFromRemset, clean_card_mask);
+      // There is a mix of cards in there. Tread slowly.
+      CardValue* cur = (CardValue*)cur_word;
+      for (size_t i = 0; i < sizeof(size_t); i++) {
+        if (mark_clean_as_from_remset(&cur[i])) {
+          result++;
+        }
+      }
     }
     cur_word++;
   }

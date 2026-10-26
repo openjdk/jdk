@@ -152,6 +152,20 @@ class ArrayKlass: public Klass {
 };
 
 class ArrayDescription : public StackObj {
+  // Layout for uint32_t encoding
+  //
+  // 31             24 23            16 15                           0
+  // +----------------+----------------+-----------------------------+
+  // |   KlassKind    |   LayoutKind   |      ArrayProperties        |
+  // +----------------+----------------+-----------------------------+
+  //      8 bits           8 bits                16 bits
+  static constexpr uint32_t _layout_kind_shift = 16;
+  static constexpr uint32_t _kind_shift = 24;
+
+  static constexpr uint32_t _properties_mask = (1u << _layout_kind_shift) - 1;
+  static constexpr uint32_t _layout_kind_mask = (1u << (_kind_shift - _layout_kind_shift)) - 1;
+  static constexpr uint32_t _kind_mask = (1u << (32 - _kind_shift)) - 1;
+
 public:
   Klass::KlassKind _kind;
   ArrayProperties  _properties;
@@ -168,6 +182,30 @@ public:
     const bool non_atomic = lk != LayoutKind::REFERENCE && !LayoutKindHelper::is_atomic_flat(lk);
     _properties = p.with_non_atomic(non_atomic);
   }
- };
+
+  uint32_t value() const {
+    assert((_properties.value() & ~_properties_mask) == 0, "array properties do not fit into encoding");
+
+    uint32_t layout_kind_value = static_cast<uint32_t>(_layout_kind);
+    assert((layout_kind_value & ~_layout_kind_mask) == 0, "layout kind does not fit into encoding");
+
+    uint32_t kind_value = static_cast<uint32_t>(_kind);
+    assert((kind_value & ~_kind_mask) == 0, "klass kind does not fit into encoding");
+
+    return _properties.value() | (layout_kind_value << _layout_kind_shift) | (kind_value << _kind_shift);
+  }
+
+  static ArrayDescription from_value(uint32_t value) {
+    ArrayProperties properties(value & _properties_mask);
+
+    uint32_t layout_kind_value = (value >> _layout_kind_shift) & _layout_kind_mask;
+    LayoutKind layout_kind = static_cast<LayoutKind>(layout_kind_value);
+
+    uint32_t kind_value = (value >> _kind_shift) & _kind_mask;
+    Klass::KlassKind kind = static_cast<Klass::KlassKind>(kind_value);
+
+    return ArrayDescription(kind, properties, layout_kind);
+  }
+};
 
 #endif // SHARE_OOPS_ARRAYKLASS_HPP

@@ -1619,6 +1619,16 @@ public final class Unsafe {
      */
     public static boolean isWritebackEnabled() { return DATA_CACHE_LINE_FLUSH_SIZE != 0; }
 
+    /**
+     * Reports the mask used to fit hashcodes into the cache field of the mark word.
+     */
+    public int hashCodeMask() { return HASH_CODE_MASK; }
+
+    /**
+     * Reports the value used to mark that no hash code has been cached yet.
+     */
+    public int hashCodeNoHash() { return HASH_CODE_NO_HASH; }
+
     //--- random trusted operations from JNI:
 
     /**
@@ -1762,7 +1772,8 @@ public final class Unsafe {
                                                 V expected,
                                                 V x) {
         Object[] array = newSpecialArray(valueType, 2, layout);
-        return compareAndSetFlatValueAsBytes(array, o, offset, layout, valueType, expected, x);
+        int containerLayout = arrayLayout(array);
+        return compareAndSetFlatValueAsBytes(array, o, offset, containerLayout, valueType, expected, x);
     }
 
     @IntrinsicCandidate
@@ -1797,7 +1808,8 @@ public final class Unsafe {
                                                     V expected,
                                                     V x) {
         Object[] array = newSpecialArray(valueType, 2, layout);
-        compareAndSetFlatValueAsBytes(array, o, offset, layout, valueType, expected, x);
+        int containerLayout = arrayLayout(array);
+        compareAndSetFlatValueAsBytes(array, o, offset, containerLayout, valueType, expected, x);
         return array[0];
     }
 
@@ -1812,7 +1824,12 @@ public final class Unsafe {
                                                                Class<?> valueType,
                                                                V expected,
                                                                V x) {
-        return compareAndExchangeReference(o, offset, valueType, expected, x);
+        if (isValueObject(valueType, expected)) {
+            // Reusing a stronger operation for now, still compliant
+            return compareAndExchangeReference(o, offset, valueType, expected, x);
+        } else {
+            return compareAndExchangeReferenceAcquire(o, offset, expected, x);
+        }
     }
 
     @ForceInline
@@ -1835,7 +1852,12 @@ public final class Unsafe {
                                                                Class<?> valueType,
                                                                V expected,
                                                                V x) {
-        return compareAndExchangeReference(o, offset, valueType, expected, x);
+        if (isValueObject(valueType, expected)) {
+            // Reusing a stronger operation for now, still compliant
+            return compareAndExchangeReference(o, offset, valueType, expected, x);
+        } else {
+            return compareAndExchangeReferenceRelease(o, offset, expected, x);
+        }
     }
 
     @ForceInline
@@ -3406,7 +3428,12 @@ public final class Unsafe {
 
     @ForceInline
     public final Object getAndSetReferenceRelease(Object o, long offset, Class<?> valueType, Object newValue) {
-        return getAndSetReference(o, offset, valueType, newValue);
+        if (isValueObject(valueType, newValue)) {
+            // Reusing a stronger operation for now, still compliant
+            return getAndSetReference(o, offset, valueType, newValue);
+        } else {
+            return getAndSetReferenceRelease(o, offset, newValue);
+        }
     }
 
     @ForceInline
@@ -3425,7 +3452,12 @@ public final class Unsafe {
 
     @ForceInline
     public final Object getAndSetReferenceAcquire(Object o, long offset, Class<?> valueType, Object newValue) {
-        return getAndSetReference(o, offset, valueType, newValue);
+        if (isValueObject(valueType, newValue)) {
+            // Reusing a stronger operation for now, still compliant
+            return getAndSetReference(o, offset, valueType, newValue);
+        } else {
+            return getAndSetReferenceAcquire(o, offset, newValue);
+        }
     }
 
     @ForceInline

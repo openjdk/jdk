@@ -53,18 +53,18 @@ public class ClhsdbLongConstant {
 
             List<String> cmds = List.of(
                     "longConstant",
-                    "longConstant markWord::locked_value",
+                    "longConstant markWord::fast_locked_value",
                     "longConstant markWord::lock_bits",
                     "longConstant jtreg::test 6",
                     "longConstant jtreg::test");
 
             Map<String, List<String>> expStrMap = new HashMap<>();
             expStrMap.put("longConstant", List.of(
-                    "longConstant markWord::locked_value",
+                    "longConstant markWord::fast_locked_value",
                     "longConstant markWord::lock_bits",
                     "InvocationCounter::count_increment"));
-            expStrMap.put("longConstant markWord::locked_value", List.of(
-                    "longConstant markWord::locked_value"));
+            expStrMap.put("longConstant markWord::fast_locked_value", List.of(
+                    "longConstant markWord::fast_locked_value"));
             expStrMap.put("longConstant markWord::lock_bits", List.of(
                     "longConstant markWord::lock_bits"));
             expStrMap.put("longConstant jtreg::test", List.of(

@@ -22,9 +22,9 @@
  *
  */
 
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/cdsConfig.hpp"
 #include "ci/ciMethodData.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -324,7 +324,7 @@ static bool is_excluded(Klass* k) {
       log_debug(aot, training)("Purged %s from MDO: unloaded class", k->name()->as_C_string());
       return true;
     } else {
-      bool excluded = SystemDictionaryShared::should_be_excluded(k) || !SystemDictionaryShared::is_builtin_loader(k->class_loader_data());
+      bool excluded = AOTSystemDictionary::should_be_excluded(k) || !AOTSystemDictionary::is_builtin_loader(k->class_loader_data());
       if (excluded) {
         log_debug(aot, training)("Purged %s from MDO: excluded class", k->name()->as_C_string());
       }
@@ -1703,6 +1703,14 @@ bool MethodData::profile_parameters_jsr292_only() {
   return profile_parameters_flag() == type_profile_jsr292;
 }
 
+bool MethodData::profile_array_accesses() {
+  return COMPILER2_PRESENT(UseArrayLoadStoreProfile ||) TypeProfileLevel > 0;
+}
+
+bool MethodData::profile_acmp() {
+  return COMPILER2_PRESENT(UseACmpProfile ||) (Arguments::is_valhalla_enabled() && TypeProfileLevel > 0);
+}
+
 bool MethodData::profile_all_parameters() {
   return profile_parameters_flag() == type_profile_all;
 }
@@ -1914,13 +1922,22 @@ void MethodData::deallocate_contents(ClassLoaderData* loader_data) {
   release_C_heap_structures();
 }
 
+void MethodData::release_C_heap_structures() {
+  // The class unloading protocol guarantees that this object is
+  // unreachable at this point, so no synchronization is necessary.
+  if (_extra_data_lock != nullptr) {
+    delete _extra_data_lock;
+    _extra_data_lock = nullptr;
+  }
+}
+
 #if INCLUDE_CDS
 void MethodData::remove_unshareable_info() {
   _extra_data_lock = nullptr;
 }
 
 void MethodData::restore_unshareable_info(TRAPS) {
-  //_extra_data_lock = new Mutex(Mutex::nosafepoint, "MDOExtraData_lock");
+  // Do nothing. _extra_data_lock is created lazily.
 }
 #endif // INCLUDE_CDS
 

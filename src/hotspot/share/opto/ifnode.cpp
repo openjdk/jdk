@@ -1510,7 +1510,7 @@ Node* IfNode::merge_uncommon_traps(IfProjNode* proj, IfProjNode* success, IfProj
 void IfNode::improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGVN* igvn) {
 #ifdef _LP64
   ResourceMark rm;
-  Node_Stack stack(2);
+  Node_Stack<Node> stack(2);
 
   assert(r->Opcode() == Op_LoadRange, "unexpected range check");
   const TypeInt* array_size = igvn->type(r)->is_int();
@@ -1880,6 +1880,19 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* prev_dom = search_identical(dist, igvn);
 
   if (prev_dom != nullptr) {
+    Node* true_proj = this->true_proj();
+    Node* false_proj = this->false_proj();
+
+    Node* head = true_proj->find_out_with(Op_Loop);
+    if (head == nullptr) {
+      head = false_proj->find_out_with(Op_Loop);
+    }
+    if (head != nullptr && head->as_Loop()->is_loop_nest_inner_loop()) {
+      // Exit test for a loop that's in the process of being transformed into a counted loop: do not remove that exit
+      // test so the counted loop transformation happens.
+      return nullptr;
+    }
+
     // Dominating CountedLoopEnd (left over from some now dead loop) will become the new loop exit. Outer strip mined
     // loop will go away. Mark this loop as no longer strip mined.
     if (is_CountedLoopEnd()) {
