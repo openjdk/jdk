@@ -43,7 +43,6 @@ import jdk.test.lib.Asserts;
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
  *                   ${test.main.class}
  */
-
 public class TestDelayedInDifferentBlock {
     static value class A {
         @NullRestricted
