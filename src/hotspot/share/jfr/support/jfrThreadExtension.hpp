@@ -25,6 +25,7 @@
 #ifndef SHARE_JFR_SUPPORT_JFRTHREADEXTENSION_HPP
 #define SHARE_JFR_SUPPORT_JFRTHREADEXTENSION_HPP
 
+#include "jfr/periodic/sampling/jfrStackWalker.hpp"
 #include "jfr/recorder/storage/jfrBuffer.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 
@@ -69,5 +70,10 @@
 
 #define SAMPLING_CRITICAL_SECTION_OFFSET_JFR \
   JfrThreadLocal::sampling_critical_section_offset() + THREAD_LOCAL_OFFSET_JFR
+
+#define DEFINE_FIELD_STACKWALKER JfrStackWalkerThreadLocal _stackwalker_thread_local
+
+#define DEFINE_ACCESSOR_STACKWALKER \
+  JfrStackWalkerThreadLocal& stackwalker_thread_local() { return _stackwalker_thread_local; }
 
 #endif // SHARE_JFR_SUPPORT_JFRTHREADEXTENSION_HPP

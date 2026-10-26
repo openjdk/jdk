@@ -27,18 +27,20 @@
 
 #include "memory/allocation.hpp"
 
+class frame;
 class JavaThread;
 class JfrThreadLocal;
 class Thread;
+struct JfrSampleRequest;
 
 class JfrThreadSampling : AllStatic {
   friend class JfrSamplerThread;
-  friend class JfrCPUSamplerThread;
  private:
   static bool process_native_sample_request(JfrThreadLocal* tl, JavaThread* jt, Thread* sampler_thread);
-  static void process_cpu_time_request(JavaThread* jt, JfrThreadLocal* tl, Thread* current, bool lock);
  public:
   static void process_sample_request(JavaThread* jt);
+  // Computes the frame to start the stack walk from, correcting for safepoint bias where possible.
+  static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame, bool& in_continuation, JavaThread* jt, bool& biased);
 };
 
 #endif // SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
