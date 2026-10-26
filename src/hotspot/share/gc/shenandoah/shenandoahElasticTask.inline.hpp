@@ -35,9 +35,8 @@
 template<bool Cancellable, typename WorkFn>
 void shenandoah_elastic_loop(ShenandoahHeap* heap, TaskTerminator* terminator, WorkFn work) {
   // The TerminatorTerminator is responsible for controlling when a thread
-  // should withdraw its termination offer and resume the loop here. This
-  // component is responsible for holding excess threads in reserve and holding
-  // down 'retired' threads.
+  // should withdraw its termination offer and resume the loop here. The
+  // terminator component is responsible for holding excess threads in reserve.
   ShenandoahTerminatorTerminator tt(heap, Cancellable);
   SuspendibleThreadSetJoiner stsj(Cancellable);
   while (true) {
@@ -49,8 +48,8 @@ void shenandoah_elastic_loop(ShenandoahHeap* heap, TaskTerminator* terminator, W
     }
 
     if (tt.can_work()) {
-      // A thread can work if it is a member of the eligible thread set, there
-      // are tasks remaining, and it has not been 'retired'.
+      // A thread can work if it is a member of the eligible thread set, and
+      // there are tasks remaining.
       const ShenandoahWorkResult result = work();
       if (result == ShenandoahWorkResult::DidWork) {
         // This thread claimed work and believes there is more remaining.

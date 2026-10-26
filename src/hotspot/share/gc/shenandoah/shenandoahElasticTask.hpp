@@ -39,11 +39,10 @@ class ShenandoahController;
  * the number of workers during a concurrent gc phase when allocation
  * stalls are experienced. All threads in the work group are 'active',
  * however, only N threads will perform work (N = shHeap::eligible_workers).
- * The remaining threads will immediately offer termination. These threads
- * are woken periodically (per the termination protocol) to check for more
- * work. If the N has increased (in response to an allocation failure), the
- * reserved threads will withdraw their termination offer and begin claiming
- * work.
+ * The remaining threads will immediately wait for admission. These threads
+ * are woken to check their eligibility after each marking stride completes.
+ * If N has increased (in response to an allocation failure), the reserved
+ * threads will cease waiting and begin claiming work.
  */
 
 // This represents the outcome of an increment of work performed by the thread.

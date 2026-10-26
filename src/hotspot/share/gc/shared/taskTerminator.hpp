@@ -124,8 +124,7 @@ public:
   void reset_for_reuse(uint n_threads);
 
   // Wake up all waiting threads. This is intended for waking threads that
-  // have been waiting for admission to the work pool. This may be called by
-  // a mutator.
+  // have been waiting for admission to the work pool.
   void notify_all();
 };
 
