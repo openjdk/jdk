@@ -33,10 +33,12 @@ uint pick_log_uniform(Stress& stress, uint lo, uint hi) {
 }
 
 OptimizationDelayPolicy::OptimizationDelayPolicy(Stress& stress) :
+  _stress(stress),
   _interval_insertion(pick_log_uniform(stress, 1, 100000)),
   _interval_narrow(pick_log_uniform(stress, 1, 1000)),
   _interval_reveal_type(pick_log_uniform(stress, 1, 1000)),
-  _interval_reveal_identity(pick_log_uniform(stress, 1, 1000))
+  _interval_reveal_identity(pick_log_uniform(stress, 1, 1000)),
+  _insertion_count(0)
 {
   if (TraceOptimizationDelay) {
     print();
@@ -49,4 +51,21 @@ void OptimizationDelayPolicy::print() {
   tty->print_cr("  interval narrow:          %d", _interval_narrow);
   tty->print_cr("  interval reveal type:     %d", _interval_reveal_type);
   tty->print_cr("  interval reveal identity: %d", _interval_reveal_identity);
+}
+
+bool OptimizationDelayPolicy::should_insert() {
+  if (++_insertion_count > MAX_INSERTIONS) { return false; }
+  return _stress.random() % _interval_insertion == 0;
+}
+
+bool OptimizationDelayPolicy::should_narrow() {
+  return _stress.random() % _interval_narrow == 0;
+}
+
+bool OptimizationDelayPolicy::should_reveal_type() {
+  return _stress.random() % _interval_reveal_type == 0;
+}
+
+bool OptimizationDelayPolicy::should_reveal_identity() {
+  return _stress.random() % _interval_reveal_identity == 0;
 }

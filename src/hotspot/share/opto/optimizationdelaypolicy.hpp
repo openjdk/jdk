@@ -34,6 +34,8 @@ private:
   // Maximum OptimizationDelay nodes inserted in any compilation.
   static constexpr uint MAX_INSERTIONS = 100;
 
+  Stress& _stress;
+
   // Expected intervals between actions.
   // Each action happens with p=1/interval.
   const uint _interval_insertion;
@@ -41,10 +43,19 @@ private:
   const uint _interval_reveal_type;
   const uint _interval_reveal_identity;
 
+  // Number of inserted OptimizationDelay nodes, not to exceed
+  // MAX_INSERTIONS limit.
+  uint _insertion_count;
+
 public:
   OptimizationDelayPolicy(Stress& stress);
 
   void print();
+
+  bool should_insert();
+  bool should_narrow();
+  bool should_reveal_type();
+  bool should_reveal_identity();
 };
 
 #endif // SHARE_OPTO_OPTIZATIONDELAYPOLICY_HPP

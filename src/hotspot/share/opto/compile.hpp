@@ -857,6 +857,7 @@ public:
   bool       allow_macro_nodes() { return _allow_macro_nodes;  }
   void reset_allow_macro_nodes() { _allow_macro_nodes = false;  }
 
+  OptimizationDelayPolicy& optimization_delay_policy() { return _optimization_delay_policy; }
   void add_optimization_delay_node(OptimizationDelayNode* n);
   void remove_optimization_delay_node(OptimizationDelayNode* n);
   bool advance_optimization_delay_nodes(PhaseIterGVN& igvn);

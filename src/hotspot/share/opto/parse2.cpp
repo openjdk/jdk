@@ -2967,16 +2967,13 @@ Node* Parse::optimize_cmp_with_klass(Node* c) {
 
 // TODO: desc
 void Parse::maybe_insert_optimization_delay_nodes() {
-  if (C->stress().random() % 100 >= 1) {
-    return;
-  }
   // Insert a node for possibly every operand stack slot.
   for (int i = 0; i < sp(); i++) {
     Node* n = stack(i);
     const Type* t = _gvn.type(n);
     if (n->Opcode() != Op_OptimizationDelay &&
-        OptimizationDelayNode::can_delay_type(t)) {// &&
-        //C->stress().random() % 10 >= 5) {
+        OptimizationDelayNode::can_delay_type(t) &&
+        C->optimization_delay_policy().should_insert()) {
       Node* delay = _gvn.transform(new OptimizationDelayNode(C, n, t));
 
       // TODO: Not so sure about this below...

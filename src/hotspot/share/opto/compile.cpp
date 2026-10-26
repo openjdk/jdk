@@ -1995,19 +1995,19 @@ bool Compile::advance_optimization_delay_nodes(PhaseIterGVN& igvn) {
   OptimizationDelayNode* delay = _optimization_delay_nodes.at(r);
 
   if (_optimization_delay_nodes_cleanup_phase ||
-      stress().random() % 1000 == 0) {
+      C->optimization_delay_policy().should_reveal_identity()) {
     delay->reveal_identity();
     igvn._worklist.push(delay);
     return true;
   }
 
-  if (stress().random() % 100 == 0) {
+  if (C->optimization_delay_policy().should_reveal_type()) {
     delay->reveal_type();
     igvn._worklist.push(delay);
     return true;
   }
 
-  if (stress().random() % 10 == 0) {
+  if (C->optimization_delay_policy().should_narrow()) {
     const Type* t_in = igvn.type(delay->in(1));
     delay->narrow_hold_type(t_in, stress());
     igvn._worklist.push(delay);
