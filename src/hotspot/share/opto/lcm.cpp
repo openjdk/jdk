@@ -147,21 +147,18 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     bool found_trap = false;
     for (uint i1 = 0; i1 < null_block->number_of_nodes(); i1++) {
       Node* nn = null_block->get_node(i1);
-      if (nn->is_MachCall() &&
-          nn->as_MachCall()->entry_point() == OptoRuntime::uncommon_trap_blob()->entry_point()) {
-        const Type* trtype = nn->in(TypeFunc::Parms)->bottom_type();
-        if (trtype->isa_int() && trtype->is_int()->is_con()) {
-          jint tr_con = trtype->is_int()->get_con();
-          Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(tr_con);
-          Deoptimization::DeoptAction action = Deoptimization::trap_request_action(tr_con);
-          assert((int)reason < (int)BitsPerInt, "recode bit map");
-          if (is_set_nth_bit(allowed_reasons, (int) reason)
-              && action != Deoptimization::Action_none) {
-            // This uncommon trap is sure to recompile, eventually.
-            // When that happens, C->too_many_traps will prevent
-            // this transformation from happening again.
-            found_trap = true;
-          }
+      jint trap_request;
+      if (nn->is_MachSafePoint() &&
+          nn->as_MachSafePoint()->is_uncommon_trap(&trap_request)) {
+        Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(trap_request);
+        Deoptimization::DeoptAction action = Deoptimization::trap_request_action(trap_request);
+        assert((int)reason < (int)BitsPerInt, "recode bit map");
+        if (is_set_nth_bit(allowed_reasons, (int) reason)
+            && action != Deoptimization::Action_none) {
+          // This uncommon trap is sure to recompile, eventually.
+          // When that happens, C->too_many_traps will prevent
+          // this transformation from happening again.
+          found_trap = true;
         }
         break;
       }
@@ -562,9 +559,9 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
 // routine). If there is a tie, choose the instruction with the most inputs.
 Node* PhaseCFG::select(
   Block* block,
-  Node_List &worklist,
-  GrowableArray<int> &ready_cnt,
-  VectorSet &next_call,
+  Node_List<Node>& worklist,
+  GrowableArray<int>& ready_cnt,
+  VectorSet& next_call,
   uint sched_slot,
   intptr_t* recalc_pressure_nodes) {
 
@@ -843,11 +840,11 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
 
 //------------------------------set_next_call----------------------------------
 void PhaseCFG::set_next_call(const Block* block, Node* init, VectorSet& next_call) const {
-  Node_List worklist;
+  Node_List<const Node> worklist;
   worklist.push(init);
 
   while (worklist.size() > 0) {
-    Node* n = worklist.pop();
+    const Node* n = worklist.pop();
     if (next_call.test_set(n->_idx)) continue;
     for (uint i = 0; i < n->len(); i++) {
       Node* m = n->in(i);
@@ -900,7 +897,7 @@ static void add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_p
 
 
 //------------------------------sched_call-------------------------------------
-uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, GrowableArray<int>& ready_cnt, MachCallNode* mcall, VectorSet& next_call) {
+uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List<Node>& worklist, GrowableArray<int>& ready_cnt, MachCallNode* mcall, VectorSet& next_call) {
   ResourceMark rm(C->regmask_arena());
   RegMask regs(C->regmask_arena());
 
@@ -1093,9 +1090,9 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
     }
   }
 
-  Node_List delay;
+  Node_List<Node> delay;
   // Make a worklist
-  Node_List worklist;
+  Node_List<Node> worklist;
   for(uint i4=i3; i4<node_cnt; i4++ ) {    // Put ready guys on worklist
     Node *m = block->get_node(i4);
     if( !ready_cnt.at(m->_idx) ) {   // Zero ready count?
@@ -1306,7 +1303,7 @@ Node* PhaseCFG::catch_cleanup_find_cloned_def(Block *use_blk, Node *def, Block *
   if( j == def_blk->_num_succs ) {
     // Block at same level in dom-tree is not a successor.  It needs a
     // PhiNode, the PhiNode uses from the def and IT's uses need fixup.
-    Node_Array inputs;
+    Node_Array<Node> inputs;
     for(uint k = 1; k < use_blk->num_preds(); k++) {
       Block* block = get_block_for_node(use_blk->pred(k));
       inputs.map(k, catch_cleanup_find_cloned_def(block, def, def_blk, n_clone_idx));
@@ -1420,7 +1417,7 @@ void PhaseCFG::call_catch_cleanup(Block* block) {
     uint n_clone_idx = i2-beg+1; // Index of clone of n in each successor block
     Node *n = block->get_node(i2);        // Node that got cloned
     // Need DU safe iterator because of edge manipulation in calls.
-    Unique_Node_List* out = new Unique_Node_List();
+    Unique_Node_List<Node>* out = new Unique_Node_List<Node>();
     for (DUIterator_Fast j1max, j1 = n->fast_outs(j1max); j1 < j1max; j1++) {
       out->push(n->fast_out(j1));
     }

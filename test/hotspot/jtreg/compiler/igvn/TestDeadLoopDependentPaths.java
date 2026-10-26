@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,35 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZRUNTIMEWORKERS_HPP
-#define SHARE_GC_Z_ZRUNTIMEWORKERS_HPP
+/**
+ * @test
+ * @bug 8388435
+ * @run main/othervm -Xcomp -XX:CompileOnly=${test.main.class}::test1 ${test.main.class}
+ * @run main ${test.main.class}
+ */
 
-#include "gc/shared/workerThread.hpp"
+package compiler.igvn;
 
-class ThreadClosure;
 
-class ZRuntimeWorkers {
-private:
-  WorkerThreads _workers;
+public class TestDeadLoopDependentPaths {
+    private static int field;
+    private static boolean doThat = false;
 
-public:
-  ZRuntimeWorkers();
+    public static void main(String[] args) {
+        test1(true);
+    }
 
-  WorkerThreads* workers();
-
-  void threads_do(ThreadClosure* tc) const;
-};
-
-#endif // SHARE_GC_Z_ZRUNTIMEWORKERS_HPP
+    private static void test1(boolean flag) {
+        if (doThat) {
+            if (flag) {
+                field = 42;
+            } else {
+                field = 42;
+            }
+            if (!doThat) {
+                while (true) {
+                }
+            }
+        }
+    }
+}

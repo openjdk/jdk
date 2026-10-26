@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,12 @@
  */
 
 #include "gc/shared/gcLogPrecious.hpp"
+#include "gc/z/zAdaptiveHeap.inline.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
+#include "gc/z/zInitialize.hpp"
 #include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zList.inline.hpp"
 #include "gc/z/zNMT.hpp"
@@ -39,16 +41,21 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/init.hpp"
+#include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-ZPhysicalMemoryManager::ZPhysicalMemoryManager(size_t max_capacity)
+ZPhysicalMemoryManager::ZPhysicalMemoryManager(size_t min_capacity, size_t max_capacity)
   : _backing(max_capacity),
     _physical_mappings(ZAddressOffsetMax) {
   assert(is_aligned(max_capacity, ZGranuleSize), "must be granule aligned");
+
+  if (!_backing.is_initialized()) {
+    return;
+  }
 
   // Setup backing storage limits
   ZBackingOffsetMax = max_capacity;
@@ -77,6 +84,9 @@ ZPhysicalMemoryManager::ZPhysicalMemoryManager(size_t max_capacity)
     next_index += num_segments;
   }
 
+  // Check if uncommit should and can be enabled
+  try_enable_uncommit(min_capacity, max_capacity);
+
   assert(untype(next_index) == ZBackingIndexMax, "must insert all capacity");
 }
 
@@ -84,16 +94,13 @@ bool ZPhysicalMemoryManager::is_initialized() const {
   return _backing.is_initialized();
 }
 
-void ZPhysicalMemoryManager::warn_commit_limits(size_t max_capacity) const {
-  _backing.warn_commit_limits(max_capacity);
+void ZPhysicalMemoryManager::warn_commit_limits(size_t expected_capacity, size_t max_capacity) const {
+  _backing.warn_commit_limits(expected_capacity, max_capacity);
 }
 
 void ZPhysicalMemoryManager::try_enable_uncommit(size_t min_capacity, size_t max_capacity) {
   assert(!is_init_completed(), "Invalid state");
 
-  // If uncommit is not explicitly disabled, max capacity is greater than
-  // min capacity, and uncommit is supported by the platform, then uncommit
-  // will be enabled.
   if (!ZUncommit) {
     log_info_p(gc, init)("Uncommit: Disabled");
     return;
@@ -105,13 +112,12 @@ void ZPhysicalMemoryManager::try_enable_uncommit(size_t min_capacity, size_t max
     return;
   }
 
-  // Test if uncommit is supported by the operating system by committing
-  // and then uncommitting a granule.
+  // Test if uncommit is supported by the operating system or file system by
+  // committing and then uncommitting a granule.
   const ZVirtualMemory vmem(zoffset(0), ZGranuleSize);
   if (!commit(vmem, 0) || !uncommit(vmem)) {
-    log_info_p(gc, init)("Uncommit: Implicitly Disabled (Not supported by operating system)");
-    FLAG_SET_ERGO(ZUncommit, false);
-    return;
+    vm_exit_during_initialization("Uncommit not supported with the current configuration. "
+                                  "Use -XX:-ZUncommit to run without uncommit.");
   }
 
   const size_t max_delay_without_overflow = std::numeric_limits<uint64_t>::max() / MILLIUNITS;
@@ -390,4 +396,10 @@ void ZPhysicalMemoryManager::restore_segments(const ZArraySlice<const ZVirtualMe
   }
 
   assert(stash_index == stash.length(), "Must have emptied the stash");
+}
+
+void ZPhysicalMemoryManager::collapse(const ZVirtualMemory& vmem) const {
+  const zaddress_unsafe addr = ZOffset::address_unsafe(vmem.start());
+
+  _backing.collapse(addr, vmem.size());
 }

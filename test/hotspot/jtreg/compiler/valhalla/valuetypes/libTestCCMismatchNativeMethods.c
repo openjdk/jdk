@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,19 @@
  * questions.
  */
 
-#include "gc/shared/gc_globals.hpp"
-#include "gc/shared/gcLogPrecious.hpp"
-#include "gc/z/zRuntimeWorkers.hpp"
-#include "runtime/java.hpp"
+#include <jni.h>
 
-ZRuntimeWorkers::ZRuntimeWorkers()
-  : _workers("RuntimeWorker", ParallelGCThreads) {
-
-  log_info_p(gc, init)("Runtime Workers: %u", _workers.max_workers());
-
-  // Initialize worker threads
-  _workers.initialize_workers();
-  _workers.set_active_workers(_workers.max_workers());
-  if (_workers.active_workers() != _workers.max_workers()) {
-    vm_exit_during_initialization("Failed to create ZRuntimeWorkers");
-  }
+JNIEXPORT jint JNICALL
+Java_compiler_valhalla_valuetypes_TestCCMismatchNativeMethods_00024B1_m1(JNIEnv* env, jobject receiver, jobject vt1, jobject vt2) {
+  jclass cls = (*env)->GetObjectClass(env, vt2);
+  jfieldID fid = (*env)->GetFieldID(env, cls, "x", "I");
+  return (*env)->GetIntField(env, vt2, fid);
 }
 
-WorkerThreads* ZRuntimeWorkers::workers() {
-  return &_workers;
+JNIEXPORT jint JNICALL
+Java_compiler_valhalla_valuetypes_TestCCMismatchNativeMethods_00024D2_m1(JNIEnv* env, jobject receiver, jobject vt1, jobject vt2) {
+  jclass cls = (*env)->GetObjectClass(env, vt2);
+  jfieldID fid = (*env)->GetFieldID(env, cls, "x", "I");
+  return (*env)->GetIntField(env, vt2, fid);
 }
 
-void ZRuntimeWorkers::threads_do(ThreadClosure* tc) const {
-  _workers.threads_do(tc);
-}

@@ -30,13 +30,15 @@
  *
  * @run main/othervm
  *      -Djdk.tls.useExtendedMasterSecret=true
+ *      -Djdk.tls.allowLegacyMasterSecret=false
+ *      -Djavax.net.debug=ssl,handshake
  *      TestExtendedMasterSecretHandshake true
  *
  * @run main/othervm
  *      -Djdk.tls.useExtendedMasterSecret=false
+ *      -Djavax.net.debug=ssl,handshake
  *      TestExtendedMasterSecretHandshake false
  */
-
 import jdk.test.lib.security.SSLSocketTest;
 import jtreg.SkippedException;
 import sun.security.internal.spec.TlsMasterSecretParameterSpec;
@@ -77,18 +79,22 @@ public class TestExtendedMasterSecretHandshake extends PKCS11Test {
             verifyDirectEMSGeneration(p);
         }
 
-        System.setProperty("javax.net.debug", "ssl,handshake");
-
         String log = runHandshake();
 
         if (!log.contains("TLS handshake and application data exchange succeeded")) {
             throw new RuntimeException("Handshake failed");
         }
 
+        int consumed = countOccurrences(log,
+                "Consumed extension: extended_master_secret");
+        int ignored = countOccurrences(log,
+                "Ignore unavailable extension: extended_master_secret");
+        System.out.println("consumed = " + consumed + ", ignored = " + ignored);
+
         if (useExtendedMasterSecret) {
-            if (countOccurrences(log, "Consumed extension: extended_master_secret") != 2 ||
-                    countOccurrences(log, "Ignore unavailable extension: extended_master_secret") != 0) {
-                throw new RuntimeException("EMS extension not negotiated on both sides");
+            if (consumed != 2 || ignored != 0) {
+                throw new RuntimeException("EMS log check failed: consumed=" +
+                    consumed + ", ignored=" + ignored + "\n" + log);
             }
 
             if (!log.contains("TLS handshake and application data exchange succeeded")) {
@@ -97,8 +103,7 @@ public class TestExtendedMasterSecretHandshake extends PKCS11Test {
 
             System.out.println("Verified EMS derivation through PKCS11 enabled");
         } else {
-            if (countOccurrences(log, "Consumed extension: extended_master_secret") != 0 ||
-                    countOccurrences(log, "Ignore unavailable extension: extended_master_secret") < 2) {
+            if (consumed != 0 || ignored < 2) {
                 throw new RuntimeException("EMS extension negotiated although jdk.tls.useExtendedMasterSecret=false");
             }
 

@@ -30,6 +30,7 @@
 #include "cds/aotMapLogger.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotModules.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
@@ -40,7 +41,6 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/abstractInterpreter.hpp"
 #include "jvm.h"
@@ -528,14 +528,14 @@ void ArchiveBuilder::gather_source_objs() {
 bool ArchiveBuilder::is_excluded(Klass* klass) {
   if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
-    return SystemDictionaryShared::is_excluded_class(ik);
+    return AOTSystemDictionary::is_excluded_class(ik);
   } else if (klass->is_objArray_klass()) {
     Klass* bottom = ObjArrayKlass::cast(klass)->bottom_klass();
     if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache_static_region(bottom)) {
       // The bottom class is in the static archive so it's clearly not excluded.
       return false;
     } else if (bottom->is_instance_klass()) {
-      return SystemDictionaryShared::is_excluded_class(InstanceKlass::cast(bottom));
+      return AOTSystemDictionary::is_excluded_class(InstanceKlass::cast(bottom));
     }
   }
 
