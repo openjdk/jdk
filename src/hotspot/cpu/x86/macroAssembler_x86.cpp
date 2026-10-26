@@ -2406,12 +2406,14 @@ void MacroAssembler::null_check(Register reg, int offset) {
 }
 
 void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   andptr(markword, markWord::value_type_pattern_mask);
   cmpptr(markword, markWord::value_type_pattern);
   jcc(Assembler::equal, is_value_type);
 }
 
 void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   if (can_be_null) {
     testptr(object, object);
     jcc(Assembler::zero, not_value_type);
@@ -2424,18 +2426,21 @@ void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, L
 }
 
 void MacroAssembler::test_field_is_null_free_value_type(Register flags, Register temp_reg, Label& is_null_free_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   movl(temp_reg, flags);
   testl(temp_reg, 1 << ResolvedFieldEntry::is_null_free_value_type_shift);
   jcc(Assembler::notEqual, is_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_not_null_free_value_type(Register flags, Register temp_reg, Label& not_null_free_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   movl(temp_reg, flags);
   testl(temp_reg, 1 << ResolvedFieldEntry::is_null_free_value_type_shift);
   jcc(Assembler::equal, not_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label& is_flat) {
+  assert(UseFieldFlattening, "should not be used without field flattening enabled");
   movl(temp_reg, flags);
   testl(temp_reg, 1 << ResolvedFieldEntry::is_flat_shift);
   jcc(Assembler::notEqual, is_flat);
@@ -2450,23 +2455,28 @@ void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int
 
 void MacroAssembler::test_flat_array_oop(Register oop, Register temp_reg,
                                          Label& is_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, true, is_flat_array);
 }
 
 void MacroAssembler::test_non_flat_array_oop(Register oop, Register temp_reg,
                                              Label& is_non_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, false, is_non_flat_array);
 }
 
 void MacroAssembler::test_null_free_array_oop(Register oop, Register temp_reg, Label&is_null_free_array) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, true, is_null_free_array);
 }
 
 void MacroAssembler::test_non_null_free_array_oop(Register oop, Register temp_reg, Label&is_non_null_free_array) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, false, is_non_null_free_array);
 }
 
 void MacroAssembler::test_flat_array_layout(Register lh, Label& is_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   testl(lh, Klass::_lh_array_tag_flat_value_bit_inplace);
   jcc(Assembler::notZero, is_flat_array);
 }
@@ -3627,7 +3637,12 @@ RegSet MacroAssembler::call_clobbered_gp_registers() {
 #endif
   regs += RegSet::range(r8, r11);
   if (UseAPX) {
+#ifdef _WINDOWS
+    // On Windows, r30 and r31 are nonvolatile per the x64 ABI.
+    regs += RegSet::range(r16, r29);
+#else
     regs += RegSet::range(r16, as_Register(Register::number_of_registers - 1));
+#endif
   }
   return regs;
 }
@@ -3809,28 +3824,6 @@ void MacroAssembler::zero_memory(Register address, Register length_in_bytes, int
   }
 
   bind(done);
-}
-
-void MacroAssembler::value_field_layout_info(Register holder_klass, Register index, Register layout_info) {
-  movptr(layout_info, Address(holder_klass, InstanceKlass::value_field_layout_info_array_offset()));
-#ifdef ASSERT
-  {
-    Label done;
-    cmpptr(layout_info, 0);
-    jcc(Assembler::notEqual, done);
-    stop("value_field_layout_info_array is null");
-    bind(done);
-  }
-#endif
-
-  ValueFieldLayoutInfo array[2];
-  int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
-  if (is_power_of_2(size)) {
-    shll(index, log2i_exact(size)); // Scale index by power of 2
-  } else {
-    imull(index, index, size); // Scale the index to be the entry index * array_element_size
-  }
-  lea(layout_info, Address(layout_info, index, Address::times_1, Array<ValueFieldLayoutInfo>::base_offset_in_bytes()));
 }
 
 // Look up the method for a megamorphic invokeinterface call.
@@ -5638,18 +5631,14 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators, Ad
   }
 }
 
-void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst,
-                                     Register value_field_layout_info) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->flat_field_copy(this, decorators, src, dst, value_field_layout_info);
-}
-
 void MacroAssembler::payload_offset(Register value_klass, Register offset) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   movptr(offset, Address(value_klass, ValueKlass::adr_members_offset()));
   movl(offset, Address(offset, ValueKlass::payload_offset_offset()));
 }
 
 void MacroAssembler::payload_addr(Register oop, Register data, Register value_klass) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   // ((address) (void*) o) + vk->payload_offset();
   Register offset = (data == oop) ? rscratch1 : data;
   payload_offset(value_klass, offset);
@@ -6111,6 +6100,7 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
 
 // Move a value between registers/stack slots and update the reg_state
 bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState reg_state[]) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   assert(from->is_valid() && to->is_valid(), "source and destination must be valid");
   if (reg_state[to->value()] == reg_written) {
     return true; // Already written
@@ -6174,6 +6164,7 @@ bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState re
 // Calculate the extra stack space required for packing or unpacking value
 // args and adjust the stack pointer (see MacroAssembler::remove_frame).
 int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   int sp_inc = args_on_stack * VMRegImpl::stack_slot_size;
   sp_inc = align_up(sp_inc, StackAlignmentInBytes);
   assert(sp_inc > 0, "sanity");
@@ -6193,6 +6184,7 @@ int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
 bool MacroAssembler::unpack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
                                          VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
                                          RegState reg_state[]) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   assert(sig->at(sig_index)._bt == T_VOID, "should be at end delimiter");
   assert(from->is_valid(), "source must be valid");
   bool progress = false;
@@ -6330,6 +6322,7 @@ bool MacroAssembler::unpack_value_helper(const GrowableArray<SigEntry>* sig, int
 bool MacroAssembler::pack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
                                        VMRegPair* from, int from_count, int& from_index, VMReg to,
                                        RegState reg_state[], Register val_array) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   assert(sig->at(sig_index)._bt == T_METADATA, "should be at delimiter");
   assert(to->is_valid(), "destination must be valid");
 
@@ -10347,41 +10340,53 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
 
 
 void MacroAssembler::convert_f2i(Register dst, XMMRegister src) {
-  Label done;
-  cvttss2sil(dst, src);
-  // Conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
-  cmpl(dst, 0x80000000); // float_sign_flip
-  jccb(Assembler::notEqual, done);
-  subptr(rsp, 8);
-  movflt(Address(rsp, 0), src);
-  call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2i_fixup())));
-  pop(dst);
-  bind(done);
+  if (VM_Version::supports_avx10_2()) {
+    evcvttss2sisl(dst, src);
+  } else {
+    Label done;
+    cvttss2sil(dst, src);
+    // Conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
+    cmpl(dst, 0x80000000); // float_sign_flip
+    jccb(Assembler::notEqual, done);
+    subptr(rsp, 8);
+    movflt(Address(rsp, 0), src);
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2i_fixup())));
+    pop(dst);
+    bind(done);
+  }
 }
 
 void MacroAssembler::convert_d2i(Register dst, XMMRegister src) {
-  Label done;
-  cvttsd2sil(dst, src);
-  // Conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
-  cmpl(dst, 0x80000000); // float_sign_flip
-  jccb(Assembler::notEqual, done);
-  subptr(rsp, 8);
-  movdbl(Address(rsp, 0), src);
-  call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_fixup())));
-  pop(dst);
-  bind(done);
+  if (VM_Version::supports_avx10_2()) {
+    evcvttsd2sisl(dst, src);
+  } else {
+    Label done;
+    cvttsd2sil(dst, src);
+    // Conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
+    cmpl(dst, 0x80000000); // float_sign_flip
+    jccb(Assembler::notEqual, done);
+    subptr(rsp, 8);
+    movdbl(Address(rsp, 0), src);
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_fixup())));
+    pop(dst);
+    bind(done);
+  }
 }
 
 void MacroAssembler::convert_f2l(Register dst, XMMRegister src) {
-  Label done;
-  cvttss2siq(dst, src);
-  cmp64(dst, ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
-  jccb(Assembler::notEqual, done);
-  subptr(rsp, 8);
-  movflt(Address(rsp, 0), src);
-  call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2l_fixup())));
-  pop(dst);
-  bind(done);
+  if (VM_Version::supports_avx10_2()) {
+    evcvttss2sisq(dst, src);
+  } else {
+    Label done;
+    cvttss2siq(dst, src);
+    cmp64(dst, ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
+    jccb(Assembler::notEqual, done);
+    subptr(rsp, 8);
+    movflt(Address(rsp, 0), src);
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2l_fixup())));
+    pop(dst);
+    bind(done);
+  }
 }
 
 void MacroAssembler::round_float(Register dst, XMMRegister src, Register rtmp, Register rcx) {
@@ -10459,15 +10464,19 @@ void MacroAssembler::round_double(Register dst, XMMRegister src, Register rtmp, 
 }
 
 void MacroAssembler::convert_d2l(Register dst, XMMRegister src) {
-  Label done;
-  cvttsd2siq(dst, src);
-  cmp64(dst, ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
-  jccb(Assembler::notEqual, done);
-  subptr(rsp, 8);
-  movdbl(Address(rsp, 0), src);
-  call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_fixup())));
-  pop(dst);
-  bind(done);
+  if (VM_Version::supports_avx10_2()) {
+    evcvttsd2sisq(dst, src);
+  } else {
+    Label done;
+    cvttsd2siq(dst, src);
+    cmp64(dst, ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
+    jccb(Assembler::notEqual, done);
+    subptr(rsp, 8);
+    movdbl(Address(rsp, 0), src);
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_fixup())));
+    pop(dst);
+    bind(done);
+  }
 }
 
 void MacroAssembler::cache_wb(Address line)

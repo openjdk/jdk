@@ -1113,6 +1113,7 @@ protected:
 
   INSN(ecall,   0b1110011, 0b000, 0b000000000000);
   INSN(_ebreak, 0b1110011, 0b000, 0b000000000001);
+  INSN(wrs_sto, 0b1110011, 0b000, 0b000000011101);
 
 #undef INSN
 
@@ -3911,34 +3912,16 @@ public:
 
 // Cache Management Operations
 // These instruction may be turned off for user space.
- private:
-  enum CBO_FUNCT : unsigned int {
-    CBO_INVAL = 0b0000000000000,
-    CBO_CLEAN = 0b0000000000001,
-    CBO_FLUSH = 0b0000000000010,
-    CBO_ZERO  = 0b0000000000100
-  };
-
-  template <CBO_FUNCT FUNCT>
-  void cbo_base(Register Rs1) {
-    assert((UseZicbom && FUNCT != CBO_ZERO) || UseZicboz, "sanity");
+  // Zicboz
+  void cbo_zero(Register Rs1) {
+    assert(UseZicboz, "sanity");
     unsigned insn = 0;
     patch((address)&insn, 6,  0, 0b0001111);
     patch((address)&insn, 14, 12, 0b010);
     patch_reg((address)&insn, 15, Rs1);
-    patch((address)&insn, 31, 20, FUNCT);
+    patch((address)&insn, 31, 20, 0b0000000000100);
     emit(insn);
   }
-
-  // This instruction have some security implication.
-  // At this time it's not likely to be enabled for user mode.
-  void cbo_inval(Register Rs1) { cbo_base<CBO_INVAL>(Rs1); }
- public:
-  // Zicbom
-  void cbo_clean(Register Rs1) { cbo_base<CBO_CLEAN>(Rs1); }
-  void cbo_flush(Register Rs1) { cbo_base<CBO_FLUSH>(Rs1); }
-  // Zicboz
-  void cbo_zero(Register Rs1)  { cbo_base<CBO_ZERO>(Rs1); }
 
  private:
   enum PREFETCH_FUNCT : unsigned int {

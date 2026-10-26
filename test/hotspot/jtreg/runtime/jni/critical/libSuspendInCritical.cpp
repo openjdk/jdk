@@ -66,7 +66,7 @@ Java_SuspendInCritical_getNativeCounter(JNIEnv* jni, jclass cls) {
 JNIEXPORT void JNICALL
   Java_SuspendInCritical_doCritical(JNIEnv* jni, jclass cls, jbyteArray bytes, jstring str) {
   jboolean is_copy = JNI_FALSE;
-  jbyte* b;
+  jbyte* b = nullptr;
   if (bytes != nullptr) {
     LOG("CriticalThread doing GetPrimitiveArrayCritical\n");
     b = (jbyte*) jni->GetPrimitiveArrayCritical(bytes, &is_copy);
@@ -75,7 +75,7 @@ JNIEXPORT void JNICALL
     }
   }
 
-  const jchar* c;
+  const jchar* c = nullptr;
   if (str != nullptr) {
     LOG("CriticalThread doing GetStringCritical\n");
     c = jni->GetStringCritical(str, &is_copy);

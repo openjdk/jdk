@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,27 @@ static void dumpJvmlLauncherData(const JvmlLauncherData* jvmArgs) {
 }
 
 
+static const char* filename(const char* path) {
+    const char* slash = strrchr(path, '/');
+#ifdef _WIN32
+    const char* backslash = strrchr(path, '\\');
+#else
+    const char* backslash = NULL;
+#endif
+    const char* sep;
+
+    if (slash == NULL) {
+        sep = backslash;
+    } else if (backslash == NULL) {
+        sep = slash;
+    } else {
+        sep = slash > backslash ? slash : backslash;
+    }
+
+    return sep ? sep + 1 : path;
+}
+
+
 int jvmLauncherStartJvm(JvmlLauncherData* jvmArgs, void* JLI_Launch) {
     int i;
     int exitCode;
@@ -135,7 +156,7 @@ int jvmLauncherStartJvm(JvmlLauncherData* jvmArgs, void* JLI_Launch) {
 }
 
 
-void jvmLauncherLog(const char* format, ...) {
+void jvmLauncherLog(const char* file, int line, const char* format, ...) {
     const char *withLog = getenv("JPACKAGE_DEBUG");
     if (!withLog || strcmp(withLog, "true")) {
         return;
@@ -151,6 +172,7 @@ void jvmLauncherLog(const char* format, ...) {
 #ifdef LINUX
     fprintf(stderr, "[%d]: ", getpid());
 #endif
+    fprintf(stderr, "%s:%d: ", filename(file), line);
     vfprintf(stderr, format, args);
     fprintf(stderr, "\n");
 #if defined(__GNUC__) && __GNUC__ >= 5

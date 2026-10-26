@@ -44,7 +44,6 @@
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "oops/valueKlass.inline.hpp"
 #include "oops/valuePayload.hpp"
@@ -336,7 +335,7 @@ UNSAFE_ENTRY(jint, Unsafe_FieldLayout(JNIEnv *env, jobject unsafe, jobject field
   } else {
     InstanceKlass* ik = InstanceKlass::cast(k);
     if (ik->field_is_flat(slot)) {
-      return (jint)ik->value_field_layout_info(slot).kind();
+      return (jint)ik->value_field_info(slot).kind();
     } else {
       return (jint)LayoutKind::REFERENCE;
     }
