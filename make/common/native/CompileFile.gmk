@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -290,6 +290,7 @@ define CreatePrecompiledHeader
         else ifeq ($(TOOLCHAIN_TYPE), clang)
           $1_PCH_FILE := $$($1_OBJECT_DIR)/precompiled/$$(notdir $$($1_PRECOMPILED_HEADER)).pch
           $1_USE_PCH_FLAGS := -include-pch $$($1_PCH_FILE)
+          $1_PCH_FLAGS := -fpch-instantiate-templates
         endif
         $1_PCH_DEPS_FILE := $$($1_PCH_FILE).d
         $1_PCH_DEPS_TARGETS_FILE := $$($1_PCH_FILE).d.targets
@@ -298,7 +299,7 @@ define CreatePrecompiledHeader
         -include $$($1_PCH_DEPS_TARGETS_FILE)
 
         $1_PCH_COMMAND := $$($1_CC) $$($1_CFLAGS) $$($1_EXTRA_CFLAGS) $$($1_SYSROOT_CFLAGS) \
-            $$($1_OPT_CFLAGS) -x c++-header -c $(GENDEPS_FLAGS) \
+            $$($1_OPT_CFLAGS) $$($1_PCH_FLAGS) -x c++-header -c $(GENDEPS_FLAGS) \
             $$(addsuffix .tmp, $$($1_PCH_DEPS_FILE))
 
         $$($1_PCH_FILE): $$($1_PRECOMPILED_HEADER) $$($1_COMPILE_VARDEPS_FILE)
