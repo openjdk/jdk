@@ -3176,7 +3176,7 @@ private:
       while (casts.size() != 0) {
         // Push the cast(s) through the ValueTypeNode
         if (!n->is_top()) {
-          Node *cast = casts.pop()->clone();
+          Node* cast = casts.pop()->clone();
           cast->set_req_X(1, n->as_ValueType()->get_oop(), _phase);
           n = n->clone();
           n->as_ValueType()->set_oop(*_phase, _phase->transform(cast));
