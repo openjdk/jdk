@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,6 +243,7 @@
 /*
  * @test id=NoFlags
  * @bug 8288981 8350579 8350577
+ * @requires vm.opt.CompileThresholdScaling == null & vm.opt.CompileThreshold == null
  * @run main compiler.predicates.assertion.TestAssertionPredicates NoFlags
  */
 
