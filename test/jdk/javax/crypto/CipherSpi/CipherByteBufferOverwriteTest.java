@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
  * @run main CipherByteBufferOverwriteTest AES/GCM/NoPadding 4 true
  */
 
+import java.lang.foreign.Arena;
 import java.math.BigInteger;
 import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.Cipher;
@@ -48,7 +49,7 @@ import java.util.Arrays;
 
 public class CipherByteBufferOverwriteTest {
 
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = Boolean.getBoolean("test.debug");
 
     private static String transformation;
 
@@ -65,11 +66,10 @@ public class CipherByteBufferOverwriteTest {
     private static ByteBuffer outBuf;
 
     private enum BufferType {
-        ALLOCATE, DIRECT, WRAP;
+        ALLOCATE, DIRECT, WRAP, MEMORY_SEGMENT;
     }
 
     public static void main(String[] args) throws Exception {
-
         transformation = args[0];
         int offset = Integer.parseInt(args[1]);
         boolean useRO = Boolean.parseBoolean(args[2]);
@@ -104,7 +104,15 @@ public class CipherByteBufferOverwriteTest {
         runTest(offset, expectedPT, expectedCT);
         System.out.println("\tDIRECT: passed");
 
-        // Test#3: against ByteBuffer wrapping existing array
+        // Test#3: against ByteBuffer backed by MemorySegment
+        try (Arena arena = Arena.ofConfined()) {
+            prepareBuffers(BufferType.MEMORY_SEGMENT, useRO, buf.length,
+                    buf, 0, PLAINTEXT_SIZE, offset, arena);
+            runTest(offset, expectedPT, expectedCT);
+            System.out.println("\tMEMSEGMENT: passed");
+        }
+
+        // Test#4: against ByteBuffer wrapping existing array
         prepareBuffers(BufferType.WRAP, useRO, buf.length,
                 buf, 0, PLAINTEXT_SIZE, offset);
 
@@ -117,6 +125,12 @@ public class CipherByteBufferOverwriteTest {
     private static void prepareBuffers(BufferType type,
             boolean useRO, int bufSz, byte[] in, int inOfs, int inLen,
             int outOfs) {
+        prepareBuffers(type, useRO, bufSz, in, inOfs, inLen, outOfs, null);
+    }
+
+    private static void prepareBuffers(BufferType type,
+                                       boolean useRO, int bufSz, byte[] in, int inOfs, int inLen,
+                                       int outOfs, Arena arena) {
         switch (type) {
             case ALLOCATE:
                 outBuf = ByteBuffer.allocate(bufSz);
@@ -142,11 +156,24 @@ public class CipherByteBufferOverwriteTest {
                 inBuf = ByteBuffer.wrap(in, inOfs, inLen);
                 outBuf.position(outOfs);
                 break;
+            case MEMORY_SEGMENT:
+                if (arena == null) {
+                    throw new RuntimeException(
+                            "arena argument cannot be null for MEMORY_SEGMENT buffers.");
+                }
+                outBuf = arena.allocate(bufSz).asByteBuffer();
+                inBuf = outBuf.slice();
+                inBuf.put(in, inOfs, inLen);
+                inBuf.rewind();
+                inBuf.limit(inLen);
+                outBuf.position(outOfs);
+                break;
         }
         if (useRO) {
             inBuf = inBuf.asReadOnlyBuffer();
         }
         if (DEBUG) {
+            System.out.println("Buffer type: " + type);
             System.out.println("inBuf, pos = " + inBuf.position() +
                 ", capacity = " + inBuf.capacity() +
                 ", limit = " + inBuf.limit() +

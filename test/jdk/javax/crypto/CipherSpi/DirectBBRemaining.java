@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
  * @run main DirectBBRemaining AES 16
  */
 
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -74,34 +75,44 @@ public class DirectBBRemaining {
         System.out.println("Output test results for every "
                 + outputFrequency + " tests...");
 
-        for (int size = 0; size <= testSizes; size++) {
-            boolean output = (size % outputFrequency) == 0;
-            if (output) {
-                System.out.print("\nTesting buffer size: " + size + ":");
-            }
+        try (Arena arena = Arena.ofConfined()) {
+            for (int size = 0; size <= testSizes; size++) {
+                boolean output = (size % outputFrequency) == 0;
+                if (output) {
+                    System.out.print("\nTesting buffer size: " + size + ":");
+                }
 
-            int outSize = cipher.getOutputSize(size);
+                int outSize = cipher.getOutputSize(size);
 
-            try {
-                encrypt(cipher, size,
-                        ByteBuffer.allocate(size),
-                        ByteBuffer.allocate(outSize),
-                        ByteBuffer.allocateDirect(size),
-                        ByteBuffer.allocateDirect(outSize),
-                        output);
-            } catch (Exception e) {
-                System.out.print("\n    Failed with size " + size);
-                failedOnce = true;
-                failedReason = e;
+                try {
+                    encrypt(cipher, size,
+                            ByteBuffer.allocate(size),
+                            ByteBuffer.allocate(outSize),
+                            ByteBuffer.allocateDirect(size),
+                            ByteBuffer.allocateDirect(outSize),
+                            output);
 
-                // If we got an exception, let's be safe for future
-                // testing and reset the cipher to a known good state.
-                cipher.init(Cipher.ENCRYPT_MODE, key);
+                    encrypt(cipher, size,
+                            ByteBuffer.allocate(size),
+                            ByteBuffer.allocate(outSize),
+                            arena.allocate(size).asByteBuffer(),
+                            arena.allocate(outSize).asByteBuffer(),
+                            output);
+                } catch (Exception e) {
+                    System.out.print("\n    Failed with size " + size);
+                    failedOnce = true;
+                    failedReason = e;
+
+                    // If we got an exception, let's be safe for future
+                    // testing and reset the cipher to a known good state.
+                    cipher.init(Cipher.ENCRYPT_MODE, key);
+                }
             }
         }
         if (failedOnce) {
             throw failedReason;
         }
+
         System.out.println("\nTest Passed...");
     }
 
