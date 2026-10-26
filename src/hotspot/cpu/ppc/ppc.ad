@@ -6114,7 +6114,7 @@ instruct decodeN(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
              n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
             CompressedOops::shift() != 0 &&
             CompressedOops::base() != nullptr);
-  ins_cost(4 * DEFAULT_COST); // Should be more expensive than decodeN_Disjoint_isel_Ex.
+  ins_cost(4 * DEFAULT_COST); // Should be more expensive than decodeN_Disjoint_isel.
   effect(TEMP crx);
 
   format %{ "DecodeN $dst, $src \t// decode nullable narrow oop" %}
@@ -6160,7 +6160,7 @@ instruct decodeN_Disjoint_notNull_Ex(iRegPdst dst, iRegNsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct decodeN_Disjoint_isel_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
+instruct decodeN_Disjoint_isel(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
   match(Set dst (DecodeN src));
   effect(TEMP_DEF dst, TEMP crx);
   predicate((n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
