@@ -1457,6 +1457,7 @@ vmTestbase_nsk_jdwp_quick = \
   vmTestbase/nsk/jdwp/Method/IsObsolete/isobsolete002/TestDescription.java \
   vmTestbase/nsk/jdwp/ReferenceType/SourceDebugExtension/srcdebugext001/TestDescription.java \
   vmTestbase/nsk/jdwp/StackFrame/PopFrames/popframes001/TestDescription.java \
+  vmTestbase/nsk/jdwp/StackFrame/PopFrames/popframes002/TestDescription.java \
   vmTestbase/nsk/jdwp/VirtualMachine/CapabilitiesNew/capabilitiesnew001/TestDescription.java \
   vmTestbase/nsk/jdwp/VirtualMachine/RedefineClasses/redefinecls001/TestDescription.java \
   vmTestbase/nsk/jdwp/VirtualMachine/SetDefaultStratum/setdefstrat001/TestDescription.java \

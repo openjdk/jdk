@@ -46,10 +46,9 @@ import java.nio.file.Path;
 import java.util.Map;
 
 /*
- * @test
- * @bug 8380080 8391440
+ * @test id=platform
+ * @bug 8380080
  * @summary MemberName in local0 must be preserved when PopFrame re-executes direct MethodHandles.linkToStatic
- *          also when that caller is frozen in a virtual thread's stack chunk
  * @requires vm.jvmti
  * @requires vm.flavor != "zero"
  * @library ../../compiler/jsr292/patches /test/lib
@@ -57,6 +56,20 @@ import java.util.Map;
  *          jdk.jdi
  * @build   java.base/java.lang.invoke.MethodHandleHelper
  * @run driver runtime.interpreter.PopFrameMethodNameInvariantTest
+ */
+
+/*
+ * @test id=unmount
+ * @bug 8391440
+ * @summary MemberName in local0 must be preserved when PopFrame re-executes direct MethodHandles.linkToStatic
+ *          also when that caller is frozen in a virtual thread's stack chunk
+ * @requires vm.jvmti
+ * @requires vm.flavor != "zero"
+ * @requires vm.continuations
+ * @library ../../compiler/jsr292/patches /test/lib
+ * @modules java.base/jdk.internal.vm.annotation
+ *          jdk.jdi
+ * @build   java.base/java.lang.invoke.MethodHandleHelper
  * @run driver runtime.interpreter.PopFrameMethodNameInvariantTest unmount
  */
 
