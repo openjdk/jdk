@@ -44,8 +44,10 @@ private:
   static constexpr uint MAX_INSERTIONS = 100;
 
   // We also have to bound the number of type narrowings, so that we
-  // get a bound on how many times we re-run IGVN.
-  static constexpr uint MAX_NARROW = 10000;
+  // get a bound on how many times we re-run IGVN. We keep this low,
+  // since each IGVN round can come with VerifyIterativeGVN which
+  // will revisit all nodes in the graph, and that is expensive.
+  static constexpr uint MAX_NARROW = 100;
 
   Stress& _stress;
 
