@@ -1202,21 +1202,26 @@ bool LibraryCallKit::inline_countPositives() {
   return true;
 }
 
+// <X extends RuntimeException>
+// int checkIndex(int index, int length,
+//                BiFunction<String, List<Number>, X> oobef)
+// <X extends RuntimeException>
+// long checkIndex(long index, long length,
+//                 BiFunction<String, List<Number>, X> oobef)
 bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   Node* index = argument(0);
   Node* length = bt == T_INT ? argument(1) : argument(2);
-  if (too_many_traps(Deoptimization::Reason_intrinsic) || too_many_traps(Deoptimization::Reason_range_check)) {
-    return false;
-  }
 
   // check that length is positive
   Node* len_pos_cmp = _gvn.transform(CmpNode::make(length, integercon(0, bt), bt));
   Node* len_pos_bol = _gvn.transform(new BoolNode(len_pos_cmp, BoolTest::ge));
 
   {
+    // Let the intepreter throw the exception since the actual exception that needs throwing is the
+    // result of oobef, which is not trivial
     BuildCutout unless(this, len_pos_bol, PROB_MAX);
     uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_make_not_entrant);
+                  Deoptimization::Action_none);
   }
 
   if (stopped()) {
@@ -1244,10 +1249,12 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   }
   set_control(_gvn.transform(new IfTrueNode(rc)));
   {
+    // Let the intepreter throw the exception since the actual exception that needs throwing is the
+    // result of oobef, which is not trivial
     PreserveJVMState pjvms(this);
     set_control(_gvn.transform(new IfFalseNode(rc)));
     uncommon_trap(Deoptimization::Reason_range_check,
-                  Deoptimization::Action_make_not_entrant);
+                  Deoptimization::Action_none);
   }
 
   if (stopped()) {
@@ -2805,14 +2812,27 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
         // Flat array must have an exact type
         bool is_null_free = !LayoutKindHelper::is_nullable_flat(layout);
         bool is_atomic = LayoutKindHelper::is_atomic_flat(layout);
-        Node* new_base = cast_to_flat_array_exact(base, value_klass, is_null_free, is_atomic);
-        replace_in_map(base, new_base);
-        base = new_base;
-        ptr = basic_plus_adr(base, ConvL2X(offset));
-        const TypeAryPtr* ptr_type = _gvn.type(ptr)->is_aryptr();
-        if (ptr_type->field_offset().get() != 0) {
-          // TODO 8388444 This should be a CheckCastPP, can we add a test?
-          ptr = _gvn.transform(new CastPPNode(control(), ptr, ptr_type->with_field_offset(0), ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+        ciObjArrayKlass* array_klass = get_flat_array_klass_exact(value_klass, is_null_free, is_atomic);
+        if (!array_klass->is_loaded()) {
+          uncommon_trap(Deoptimization::Reason_unloaded,
+                        Deoptimization::Action_reinterpret,
+                        array_klass, "Flat array class meta-data unavailable");
+          return true;
+        } else {
+          Node* new_base = cast_to_flat_array(base, array_klass, true);
+          if (new_base->is_top()) {
+            uncommon_trap(Deoptimization::Reason_intrinsic,
+                          Deoptimization::Action_none);
+            return true;
+          }
+          replace_in_map(base, new_base);
+          base = new_base;
+          ptr = basic_plus_adr(base, ConvL2X(offset));
+          const TypeAryPtr* ptr_type = _gvn.type(ptr)->is_aryptr();
+          if (ptr_type->field_offset().get() != 0) {
+            // TODO 8388444 This should be a CheckCastPP, can we add a test?
+            ptr = _gvn.transform(new CastPPNode(control(), ptr, ptr_type->with_field_offset(0), ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+          }
         }
       } else {
         uncommon_trap(Deoptimization::Reason_intrinsic,
@@ -3256,7 +3276,10 @@ bool LibraryCallKit::inline_onspinwait() {
   return true;
 }
 
-bool LibraryCallKit::klass_needs_init_guard(Node* kls) {
+bool LibraryCallKit::klass_needs_init_guard(Node* kls) const {
+  if (C->do_clinit_barriers()) {
+    return true; // Generate guard in AOT preload code
+  }
   if (!kls->is_Con()) {
     return true;
   }
@@ -3491,85 +3514,6 @@ bool LibraryCallKit::inline_native_notify_jvmti_sync() {
 #endif // INCLUDE_JVMTI
 
 #ifdef JFR_HAVE_INTRINSICS
-
-/**
- * if oop->klass != null
- *   // normal class
- *   epoch = _epoch_state ? 2 : 1
- *   if oop->klass->trace_id & ((epoch << META_SHIFT) | epoch)) != epoch {
- *     ... // enter slow path when the klass is first recorded or the epoch of JFR shifts
- *   }
- *   id = oop->klass->trace_id >> TRACE_ID_SHIFT // normal class path
- * else
- *   // primitive class
- *   if oop->array_klass != null
- *     id = (oop->array_klass->trace_id >> TRACE_ID_SHIFT) + 1 // primitive class path
- *   else
- *     id = LAST_TYPE_ID + 1 // void class path
- *   if (!signaled)
- *     signaled = true
- */
-bool LibraryCallKit::inline_native_classID() {
-  Node* cls = argument(0);
-
-  IdealKit ideal(this);
-#define __ ideal.
-  IdealVariable result(ideal); __ declarations_done();
-  Node* kls = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(),
-                                                 basic_plus_adr(cls, java_lang_Class::klass_offset()),
-                                                 TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
-
-
-  __ if_then(kls, BoolTest::ne, null()); {
-    Node* kls_trace_id_addr = basic_plus_adr(kls, in_bytes(KLASS_TRACE_ID_OFFSET));
-    Node* kls_trace_id_raw = ideal.load(ideal.ctrl(), kls_trace_id_addr,TypeLong::LONG, T_LONG, Compile::AliasIdxRaw);
-
-    Node* epoch_address = makecon(TypeRawPtr::make(JfrIntrinsicSupport::epoch_address()));
-    Node* epoch = ideal.load(ideal.ctrl(), epoch_address, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
-    epoch = _gvn.transform(new LShiftLNode(longcon(1), epoch));
-    Node* mask = _gvn.transform(new LShiftLNode(epoch, intcon(META_SHIFT)));
-    mask = _gvn.transform(new OrLNode(mask, epoch));
-    Node* kls_trace_id_raw_and_mask = _gvn.transform(new AndLNode(kls_trace_id_raw, mask));
-
-    float unlikely  = PROB_UNLIKELY(0.999);
-    __ if_then(kls_trace_id_raw_and_mask, BoolTest::ne, epoch, unlikely); {
-      sync_kit(ideal);
-      make_runtime_call(RC_LEAF,
-                        OptoRuntime::class_id_load_barrier_Type(),
-                        CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::load_barrier),
-                        "class id load barrier",
-                        TypePtr::BOTTOM,
-                        kls);
-      ideal.sync_kit(this);
-    } __ end_if();
-
-    ideal.set(result,  _gvn.transform(new URShiftLNode(kls_trace_id_raw, ideal.ConI(TRACE_ID_SHIFT))));
-  } __ else_(); {
-    Node* array_kls = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(),
-                                                   basic_plus_adr(cls, java_lang_Class::array_klass_offset()),
-                                                   TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
-    __ if_then(array_kls, BoolTest::ne, null()); {
-      Node* array_kls_trace_id_addr = basic_plus_adr(array_kls, in_bytes(KLASS_TRACE_ID_OFFSET));
-      Node* array_kls_trace_id_raw = ideal.load(ideal.ctrl(), array_kls_trace_id_addr, TypeLong::LONG, T_LONG, Compile::AliasIdxRaw);
-      Node* array_kls_trace_id = _gvn.transform(new URShiftLNode(array_kls_trace_id_raw, ideal.ConI(TRACE_ID_SHIFT)));
-      ideal.set(result, _gvn.transform(new AddLNode(array_kls_trace_id, longcon(1))));
-    } __ else_(); {
-      // void class case
-      ideal.set(result, longcon(LAST_TYPE_ID + 1));
-    } __ end_if();
-
-    Node* signaled_flag_address = makecon(TypeRawPtr::make(JfrIntrinsicSupport::signal_address()));
-    Node* signaled = ideal.load(ideal.ctrl(), signaled_flag_address, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw, true, MemNode::acquire);
-    __ if_then(signaled, BoolTest::ne, ideal.ConI(1)); {
-      ideal.store(ideal.ctrl(), signaled_flag_address, ideal.ConI(1), T_BOOLEAN, Compile::AliasIdxRaw, MemNode::release, true);
-    } __ end_if();
-  } __ end_if();
-
-  final_sync(ideal);
-  set_result(ideal.value(result));
-#undef __
-  return true;
-}
 
 //------------------------inline_native_jvm_commit------------------
 bool LibraryCallKit::inline_native_jvm_commit() {
@@ -4984,17 +4928,34 @@ bool LibraryCallKit::inline_newArray(bool null_free, bool atomic) {
 // public static native boolean ValueClass::isNullRestrictedArray(Object array);
 // public static native boolean ValueClass::isAtomicArray(Object array);
 bool LibraryCallKit::inline_getArrayProperties(ArrayPropertiesCheck check) {
+  if (!Arguments::is_valhalla_enabled()) {
+    Node* res = gvn().transform(check == ArrayPropertiesCheck::IsAtomic ? intcon(1) : intcon(0));
+    set_result(res);
+    return true;
+  }
   Node* array = argument(0);
 
   Node* bol;
-  switch(check) {
+  switch (check) {
     case IsFlat:
-      bol = flat_array_test(array);
+      if (UseArrayFlattening) {
+        bol = flat_array_test(array);
+      } else {
+        Node* res = gvn().transform(intcon(0));
+        set_result(res);
+        return true;
+      }
       break;
     case IsNullRestricted:
       bol = null_free_array_test(array);
       break;
     case IsAtomic: {
+      if (!UseArrayFlattening) {
+        // Non-flat arrays are always atomic
+        Node* res = gvn().transform(intcon(1));
+        set_result(res);
+        return true;
+      }
       // See conditions in JVM_IsAtomicArray
       // 1. If not flat, then atomic, or else...
       RegionNode* atomic_region = new RegionNode(1);
@@ -5315,8 +5276,10 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
     if (Arguments::is_valhalla_enabled()) {
       // Handle value type arrays
       // TODO 8251971 This is too strong
-      generate_fair_guard(flat_array_test(original), bailout);
-      generate_fair_guard(flat_array_test(refined_klass_node), bailout);
+      if (UseArrayFlattening) {
+        generate_fair_guard(flat_array_test(original), bailout);
+        generate_fair_guard(flat_array_test(refined_klass_node), bailout);
+      }
       generate_fair_guard(null_free_array_test(original), bailout);
     }
 
@@ -6695,7 +6658,7 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
     int klass_idx = C->get_alias_index(ary_type->add_offset(oopDesc::klass_offset_in_bytes()));
 #endif
     auto move_proj = [&](ProjNode* proj) {
-      int alias_idx = C->get_alias_index(proj->adr_type());
+      int alias_idx = C->get_alias_index(proj->out_adr_type());
       assert(alias_idx == Compile::AliasIdxRaw ||
              alias_idx == elemidx ||
              alias_idx == mark_idx ||
@@ -7151,8 +7114,10 @@ bool LibraryCallKit::inline_arraycopy() {
       generate_fair_guard(tst, slow_region);
 
       // TODO 8251971 This is too strong
-      generate_fair_guard(flat_array_test(src), slow_region);
-      generate_fair_guard(flat_array_test(dest), slow_region);
+      if (UseArrayFlattening) {
+        generate_fair_guard(flat_array_test(src), slow_region);
+        generate_fair_guard(flat_array_test(dest), slow_region);
+      }
     }
 
     {

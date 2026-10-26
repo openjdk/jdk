@@ -270,13 +270,6 @@ void JvmtiTagMapTable::add(const JvmtiHeapwalkObject& obj, jlong tag) {
     jlong* value = _table.put_if_absent(new_entry, tag, &is_added);
     *value = tag; // assign the new tag
   }
-  if (is_added) {
-    if (_table.maybe_grow(5, true /* use_large_table_sizes */)) {
-      int max_bucket_size = DEBUG_ONLY(_table.verify()) NOT_DEBUG(0);
-      log_info(jvmti, table) ("JvmtiTagMap table resized to %d for %d entries max bucket %d",
-                              _table.table_size(), _table.number_of_entries(), max_bucket_size);
-    }
-  }
 }
 
 bool JvmtiTagMapTable::update(const JvmtiHeapwalkObject& obj, jlong tag) {
@@ -393,13 +386,6 @@ void JvmtiFlatTagMapTable::add(const JvmtiHeapwalkObject& obj, jlong tag) {
   bool is_added;
   jlong* value = _table.put_if_absent(entry, tag, &is_added);
   *value = tag; // assign the new tag
-  if (is_added) {
-    if (_table.maybe_grow(5, true /* use_large_table_sizes */)) {
-      int max_bucket_size = DEBUG_ONLY(_table.verify()) NOT_DEBUG(0);
-      log_info(jvmti, table) ("JvmtiFlatTagMapTable table resized to %d for %d entries max bucket %d",
-        _table.table_size(), _table.number_of_entries(), max_bucket_size);
-    }
-  }
 }
 
 jlong JvmtiFlatTagMapTable::remove(const JvmtiHeapwalkObject& obj) {

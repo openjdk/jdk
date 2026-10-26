@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -320,7 +320,6 @@ void VM_Version::vendor_features() {
 
 void VM_Version::rivos_features() {
   // Enable common features not dependent on marchid/mimpid.
-  ext_Zicbom.enable_feature();
   ext_Zicboz.enable_feature();
   ext_Zicbop.enable_feature();
 
@@ -366,6 +365,8 @@ void VM_Version::xuantie_features() {
   ext_v.enable_feature();
   ext_Zabha.enable_feature();
   ext_Zacas.enable_feature();
+  // Zalasr will always be available. Note that hwprobe won't report Ztso on C925-C950 CPUs.
+  ext_Zalasr.enable_feature();
   ext_Zawrs.enable_feature();
   ext_Zba.enable_feature();
   ext_Zbb.enable_feature();
@@ -375,9 +376,9 @@ void VM_Version::xuantie_features() {
   ext_Zfa.enable_feature();
   ext_Zfh.enable_feature();
   ext_Zfhmin.enable_feature();
-  ext_Zicbom.enable_feature();
   ext_Zicbop.enable_feature();
   ext_Zicboz.enable_feature();
+  ext_Ziccid.enable_feature();
   ext_Zicond.enable_feature();
   ext_Zicntr.enable_feature();
   ext_Zicsr.enable_feature();
@@ -392,4 +393,8 @@ void VM_Version::xuantie_features() {
 
   unaligned_scalar.enable_feature(MISALIGNED_SCALAR_FAST);
   unaligned_vector.enable_feature(MISALIGNED_VECTOR_FAST);
+
+  if (FLAG_IS_DEFAULT(CodeEntryAlignment)) {
+    FLAG_SET_DEFAULT(CodeEntryAlignment, 32);
+  }
 }

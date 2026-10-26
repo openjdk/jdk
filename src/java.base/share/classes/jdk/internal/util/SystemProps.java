@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,6 @@ public final class SystemProps {
         putIfAbsent(props, "sun.arch.data.model", raw.propDefault(Raw._sun_arch_data_model_NDX));
         putIfAbsent(props, "sun.os.patch.level", raw.propDefault(Raw._sun_os_patch_level_NDX));
         putIfAbsent(props, "sun.io.unicode.encoding", raw.propDefault(Raw._sun_io_unicode_encoding_NDX));
-        putIfAbsent(props, "sun.cpu.isalist", raw.propDefault(Raw._sun_cpu_isalist_NDX));
         putIfAbsent(props, "sun.cpu.endian", raw.propDefault(Raw._sun_cpu_endian_NDX));
 
         /* Construct i18n related options */
@@ -249,8 +248,7 @@ public final class SystemProps {
         @Native private static final int _sun_arch_abi_NDX = 1 + _stdout_encoding_NDX;
         @Native private static final int _sun_arch_data_model_NDX = 1 + _sun_arch_abi_NDX;
         @Native private static final int _sun_cpu_endian_NDX = 1 + _sun_arch_data_model_NDX;
-        @Native private static final int _sun_cpu_isalist_NDX = 1 + _sun_cpu_endian_NDX;
-        @Native private static final int _sun_io_unicode_encoding_NDX = 1 + _sun_cpu_isalist_NDX;
+        @Native private static final int _sun_io_unicode_encoding_NDX = 1 + _sun_cpu_endian_NDX;
         @Native private static final int _sun_jnu_encoding_NDX = 1 + _sun_io_unicode_encoding_NDX;
         @Native private static final int _sun_os_patch_level_NDX = 1 + _sun_jnu_encoding_NDX;
         @Native private static final int _user_dir_NDX = 1 + _sun_os_patch_level_NDX;
