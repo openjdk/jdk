@@ -1650,6 +1650,9 @@ char* AOTMetaspace::get_archived_cpu_features() {
   if (static_mapinfo == nullptr) {
     static_mapinfo = open_static_archive();
   }
+  if (static_mapinfo == nullptr) {
+    return nullptr;
+  }
   if (static_mapinfo->cpu_features_size() != VM_Version::cpu_features_size()) {
     return nullptr;
   }
