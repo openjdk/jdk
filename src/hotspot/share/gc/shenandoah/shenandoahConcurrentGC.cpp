@@ -306,22 +306,20 @@ void ShenandoahConcurrentGC::entry_complete_abbreviated_cycle() {
   ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::complete_abbreviated);
   EventMark em("%s", msg);
 
-  ShenandoahWorkerScope scope(heap->workers(),
-                              heap->max_workers(),
-                              msg);
-
   heap->try_inject_pin();
   // We chose not to evacuate because we found sufficient immediate garbage.
   // However, there may still be regions to promote in place, so do that now.
   if (heap->old_generation()->has_in_place_promotions()) {
+    ShenandoahWorkerScope scope(heap->workers(), heap->max_workers(), heap->eligible_workers(), msg);
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::complete_abbreviated_promote_in_place);
     ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::complete_abbreviated_promote_in_place);
-    heap->promote_regions_in_place(_generation);
+    heap->promote_regions_in_place();
   }
 
   // At this point, the cycle is effectively complete. If the cycle has been cancelled here,
   // the control thread will detect it on its next iteration.
   if (!heap->cancelled_gc() && !_generation->is_old()) {
+    ShenandoahWorkerScope scope(heap->workers(), heap->eligible_workers(), msg);
     ShenandoahTimingsTracker tracker(ShenandoahPhaseTimings::complete_abbreviated_update_region_ages);
     heap->update_region_ages(_generation->complete_marking_context());
   }

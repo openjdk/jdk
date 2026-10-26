@@ -189,7 +189,7 @@ void ShenandoahGenerationalHeap::evacuate_collection_set(ShenandoahGeneration* g
   workers()->run_task(&task);
 }
 
-void ShenandoahGenerationalHeap::promote_regions_in_place(ShenandoahGeneration* generation) {
+void ShenandoahGenerationalHeap::promote_regions_in_place() {
   ShenandoahElasticTaskCoordinator* coordinator = control_thread()->reset_task_coordinator();
   ShenandoahGenerationalEvacuationTask task(this, coordinator, collection_set(), true /* only promote regions */);
   workers()->run_task(&task);
