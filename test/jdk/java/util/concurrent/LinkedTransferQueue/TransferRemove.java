@@ -48,7 +48,7 @@ public class TransferRemove {
     public static void main(String[] args) throws Exception {
         var threads = new ArrayList<Thread>();
         var queues = new ArrayList<LinkedTransferQueue<Object>>();
-        for(int pair = 0; pair < PAIRS; pair++) { 
+        for(int pair = 0; pair < PAIRS; pair++) {
             var queue = new LinkedTransferQueue<Object>();
             Object token = new Object();
             var transferer = Thread.ofPlatform().daemon().start(() -> {
