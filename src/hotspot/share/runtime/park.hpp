@@ -120,24 +120,19 @@ class ParkEvent : public PlatformEvent {
   private:
     static ParkEvent * volatile FreeList ;
     static volatile int ListLock ;
+    bool _immortal ;
 
-    // It's prudent to mark the dtor as "private"
-    // ensuring that it's not visible outside the package.
-    // Unfortunately gcc warns about such usage, so
-    // we revert to the less desirable "protected" visibility.
-    // The other compilers accept private dtors.
+  public:
+    ~ParkEvent() { guarantee(!_immortal, "Destructor called on an immortal ParkEvent"); }
 
-  protected:        // Ensure dtor is never invoked
-    ~ParkEvent() { guarantee (0, "invariant") ; }
-
-    ParkEvent() : PlatformEvent() {
+    ParkEvent(bool immortal = true) : PlatformEvent(immortal) {
        AssociatedWith = nullptr ;
        FreeNext       = nullptr ;
+       _immortal      = immortal ;
     }
 
     void operator delete (void * a) ;
 
-  public:
     static ParkEvent * Allocate (Thread * t) ;
     static void Release (ParkEvent * e) ;
 } ;

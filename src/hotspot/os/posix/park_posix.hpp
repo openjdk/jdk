@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,10 @@
  * This is the platform-specific implementation underpinning
  * the ParkEvent class, which itself underpins Java-level monitor
  * operations. See park.hpp for details.
- * These event objects are type-stable and immortal - we never delete them.
- * Events are associated with a thread for the lifetime of the thread.
+ * These event objects might be type-stable and immortal. I.e., a java
+ * thread's _ParkEvent is immortal and is never deleted. On the other
+ * hand, the _SleepEvent is embedded in the JavaThread and is not
+ * immortal. It will be destroyed when the java thread is deleted.
  */
 class PlatformEvent : public CHeapObj<mtSynchronizer> {
  private:
@@ -46,12 +48,11 @@ class PlatformEvent : public CHeapObj<mtSynchronizer> {
   pthread_mutex_t _mutex[1]; // Native mutex for locking
   pthread_cond_t  _cond[1];  // Native condition variable for blocking
   double postPad[2];
-
- protected:       // TODO-FIXME: make dtor private
-  ~PlatformEvent() { guarantee(false, "invariant"); } // immortal so can't delete
+  bool _immortal;
 
  public:
-  PlatformEvent();
+  PlatformEvent(bool immortal = true);
+  ~PlatformEvent();
   void park();
   int  park(jlong millis);
   int  park_nanos(jlong nanos);

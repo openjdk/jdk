@@ -1182,7 +1182,7 @@ private:
   InstanceKlass* _class_being_initialized;
 
   // java.lang.Thread.sleep support
-  ParkEvent * _SleepEvent;
+  ParkEvent _SleepEvent{false /* immortal */};
 
 #if INCLUDE_JFR
   // Support for jdk.VirtualThreadPinned event
