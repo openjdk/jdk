@@ -3723,6 +3723,34 @@ operand indOffLN(iRegN reg, immLOffset off)
   %}
 %}
 
+operand indirectX2P(iRegL reg)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(CastX2P reg);
+  op_cost(0);
+  format %{ "[$reg]\t# long -> ptr" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp(0x0);
+  %}
+%}
+
+operand indOffX2P(iRegL reg, immLOffset off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (CastX2P reg) off);
+  op_cost(0);
+  format %{ "[$reg, $off]\t# long -> ptr" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
 //----------Special Memory Operands--------------------------------------------
 // Stack Slot Operand - This operand is used for loading and storing temporary
 //                      values on the stack where a match requires a value to
@@ -3793,6 +3821,13 @@ operand iRegL2I(iRegL reg) %{
 
   format %{ "l2i($reg)" %}
 
+  interface(REG_INTER)
+%}
+
+operand iRegL2P(iRegL reg) %{
+  op_cost(0);
+  match(CastX2P reg);
+  format %{ "l2p($reg)" %}
   interface(REG_INTER)
 %}
 
@@ -3954,7 +3989,7 @@ operand inline_cache_RegP(iRegP reg)
 // memory is used to define read/write location for load/store
 // instruction defs. we can turn a memory op into an Address
 
-opclass memory(indirect, indOffI, indOffL, indirectN, indOffIN, indOffLN);
+opclass memory(indirect, indOffI, indOffL, indirectN, indOffIN, indOffLN, indirectX2P, indOffX2P);
 
 // iRegIorL2I is used for src inputs in rules for 32 bit int (I)
 // operations. it allows the src to be either an iRegI or a (ConvL2I
@@ -3973,6 +4008,7 @@ opclass iRegIorL2I(iRegI, iRegL2I);
 opclass iRegIorL(iRegI, iRegL);
 opclass iRegNorP(iRegN, iRegP);
 opclass iRegILNP(iRegI, iRegL, iRegN, iRegP);
+opclass iRegPorL2P(iRegP, iRegL2P);
 opclass iRegILNPNoSp(iRegINoSp, iRegLNoSp, iRegNNoSp, iRegPNoSp);
 opclass immIorL(immI, immL);
 
@@ -7030,7 +7066,7 @@ instruct addI_reg_imm_l2i(iRegINoSp dst, iRegL src1, immIAdd src2) %{
 %}
 
 // Pointer Addition
-instruct addP_reg_reg(iRegPNoSp dst, iRegP src1, iRegL src2) %{
+instruct addP_reg_reg(iRegPNoSp dst, iRegPorL2P src1, iRegL src2) %{
   match(Set dst (AddP src1 src2));
 
   ins_cost(ALU_COST);
@@ -7061,7 +7097,7 @@ instruct lShiftL_regI_immGE32(iRegLNoSp dst, iRegI src, uimmI6_ge32 scale) %{
 // Pointer Immediate Addition
 // n.b. this needs to be more expensive than using an indirect memory
 // operand
-instruct addP_reg_imm(iRegPNoSp dst, iRegP src1, immLAdd src2) %{
+instruct addP_reg_imm(iRegPNoSp dst, iRegPorL2P src1, immLAdd src2) %{
   match(Set dst (AddP src1 src2));
   ins_cost(ALU_COST);
   format %{ "addi  $dst, $src1, $src2\t# ptr, #@addP_reg_imm" %}
