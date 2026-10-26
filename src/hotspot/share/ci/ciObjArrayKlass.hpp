@@ -60,6 +60,8 @@ protected:
   oop     loader()        { return _base_element_klass->loader(); }
   jobject loader_handle() { return _base_element_klass->loader_handle(); }
 
+  static ciObjArrayKlass* get_unloaded_named_klass(ciKlass* element_klass);
+
 public:
   // The one-level type of the array elements.
   ciKlass* element_klass();

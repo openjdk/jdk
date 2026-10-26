@@ -254,10 +254,6 @@ void ValueTypeNode::set_field_value(uint index, Node* value) {
   set_req(Values + index, value);
 }
 
-void ValueTypeNode::set_field_value_by_offset(int offset, Node* value) {
-  set_field_value(field_index(offset), value);
-}
-
 uint ValueTypeNode::field_index(int offset) const {
   uint i = 0;
   for (; i < field_count() && field(i)->offset_in_bytes() != offset; i++) { }
@@ -290,7 +286,7 @@ static uint add_top_to_safepoint(ciValueKlass* vk, SafePointNode* sfpt) {
   return cnt;
 }
 
-uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List& worklist, SafePointNode* sfpt) const {
+uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List<ValueTypeNode>& worklist, SafePointNode* sfpt) const {
   uint cnt = 0;
   for (uint i = 0; i < field_count(); ++i) {
     Node* value = field_value(i);
@@ -319,7 +315,7 @@ uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List& worklist, SafePoin
     }
     if (value->is_ValueType()) {
       // Add value type to the worklist to process later
-      worklist.push(value);
+      worklist.push(value->as_ValueType());
     }
     sfpt->add_req(value);
     cnt++;
@@ -327,7 +323,7 @@ uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List& worklist, SafePoin
   return cnt;
 }
 
-void ValueTypeNode::make_scalar_in_safepoint(PhaseIterGVN* igvn, Unique_Node_List& worklist, SafePointNode* sfpt) const {
+void ValueTypeNode::make_scalar_in_safepoint(PhaseIterGVN* igvn, Unique_Node_List<ValueTypeNode>& worklist, SafePointNode* sfpt) const {
   JVMState* jvms = sfpt->jvms();
   assert(jvms != nullptr, "missing JVMS");
   uint first_ind = (sfpt->req() - jvms->scloff());
@@ -365,17 +361,17 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
   Node* oop = get_oop();
   bool use_oop = false;
   if (allow_oop && is_allocated(igvn) && oop->is_Phi()) {
-    Unique_Node_List worklist;
+    Unique_Node_List<const PhiNode> worklist;
     VectorSet visited;
     visited.set(oop->_idx);
-    worklist.push(oop);
+    worklist.push(oop->as_Phi());
     use_oop = true;
     while (worklist.size() > 0 && use_oop) {
-      Node* n = worklist.pop();
+      const PhiNode* n = worklist.pop();
       for (uint i = 1; i < n->req(); i++) {
         Node* in = n->in(i);
         if (in->is_Phi() && !visited.test_set(in->_idx)) {
-          worklist.push(in);
+          worklist.push(in->as_Phi());
         } else if (!(in->is_Con() || in->is_Parm())) {
           use_oop = false;
           break;
@@ -388,17 +384,17 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
   }
 
   ResourceMark rm;
-  Unique_Node_List safepoints;
+  Unique_Node_List<SafePointNode> safepoints;
   if (safepoint == nullptr) {
     // Gathering all SafePoint users of `this`...
-    Unique_Node_List worklist;
+    Unique_Node_List<const Node> worklist;
     worklist.push(this);
     while (worklist.size() > 0) {
-      Node* n = worklist.pop();
+      const Node* n = worklist.pop();
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
         if (use->is_SafePoint() && !use->is_CallLeaf() && (!use->is_Call() || use->as_Call()->has_debug_use(n))) {
-          safepoints.push(use);
+          safepoints.push(use->as_SafePoint());
         } else if (use->is_ConstraintCast()) {
           worklist.push(use);
         }
@@ -415,9 +411,9 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
   if ((C->live_nodes() + safepoints.size() + NodeLimitFudgeFactor) > C->max_node_limit()) {
     return false;
   }
-  Unique_Node_List vt_worklist;
+  Unique_Node_List<ValueTypeNode> vt_worklist;
   while (safepoints.size() > 0) {
-    SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
+    SafePointNode* sfpt = safepoints.pop();
     if (use_oop) {
       for (uint i = sfpt->jvms()->debug_start(); i < sfpt->jvms()->debug_end(); i++) {
         Node* debug = sfpt->in(i);
@@ -432,7 +428,7 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
   }
   // Now scalarize non-flat fields
   for (uint i = 0; i < vt_worklist.size(); ++i) {
-    ValueTypeNode* vt = vt_worklist.at(i)->isa_ValueType();
+    ValueTypeNode* vt = vt_worklist.at(i);
     if (!vt->make_scalar_in_safepoints(igvn)) {
       return false;
     }
@@ -502,6 +498,59 @@ void ValueTypeNode::store_flat(GraphKit* kit, Node* base, Node* ptr, bool atomic
   StoreFlatNode::store(kit, base, ptr, this, null_free, decorators);
 }
 
+struct FlatArrayAccessContext {
+  GraphKit* _kit;
+  ValueTypeNode* _node;
+  RegionNode* _region;
+  PhiNode* _mem;
+  PhiNode* _io;
+  Node* _base;
+  Node* _idx;
+  ciValueKlass* _element_klass;
+  DecoratorSet _decorators;
+  int _stack_adj;
+
+  FlatArrayAccessContext(GraphKit* kit, ValueTypeNode* node, RegionNode* region, PhiNode* mem,
+                         PhiNode* io, Node* base, Node* idx, ciValueKlass* element_klass,
+                         DecoratorSet decorators, int stack_adj) :
+    _kit(kit), _node(node), _region(region), _mem(mem), _io(io), _base(base), _idx(idx),
+    _element_klass(element_klass), _decorators(decorators), _stack_adj(stack_adj) {}
+};
+
+static ValueTypeNode* do_flat_array_access(const FlatArrayAccessContext& ctx, bool is_atomic, bool is_null_free,
+                                           int region_idx, bool is_read) {
+  ciObjArrayKlass* array_klass = ctx._kit->get_flat_array_klass_exact(ctx._element_klass,
+                                                                      is_null_free,
+                                                                      is_atomic);
+  if (!array_klass->is_loaded()) {
+    PreserveJVMState pjvms(ctx._kit);
+    ctx._kit->inc_sp(ctx._stack_adj);
+    ctx._kit->uncommon_trap(Deoptimization::Reason_unloaded,
+                            Deoptimization::Action_reinterpret,
+                            array_klass, "Flat array class meta-data unavailable");
+    return nullptr;
+  }
+  ValueTypeNode* res = nullptr;
+  Node* cast = ctx._kit->cast_to_flat_array(ctx._base, array_klass, true);
+  if (!cast->is_top()) {
+    Node* ptr = ctx._kit->array_element_address(cast, ctx._idx, T_FLAT_ELEMENT);
+    if (is_read) {
+      res = ValueTypeNode::make_from_flat(ctx._kit, ctx._element_klass, cast, ptr,
+                                          is_atomic, false, is_null_free,
+                                          ctx._decorators);
+    } else {
+      assert(ctx._node != nullptr, "Store to a flat array needs a ValueTypeNode");
+      ctx._node->store_flat(ctx._kit, cast, ptr, is_atomic, false,
+                            is_null_free, ctx._decorators);
+    }
+
+    ctx._region->init_req(region_idx, ctx._kit->control());
+    ctx._mem->set_req(region_idx, ctx._kit->reset_memory());
+    ctx._io->set_req(region_idx, ctx._kit->i_o());
+  }
+  return res;
+}
+
 void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
   PhaseGVN& gvn = kit->gvn();
   DecoratorSet decorators = IN_HEAP | IS_ARRAY | MO_UNORDERED;
@@ -527,18 +576,14 @@ void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
   Node* bol_null_free = kit->null_free_array_test(base); // Argument evaluation order is undefined in C++ and since this sets control, it needs to come first
   IfNode* iff_null_free = kit->create_and_map_if(kit->control(), bol_null_free, PROB_FAIR, COUNT_UNKNOWN);
 
+  FlatArrayAccessContext faac(kit, this, region, mem, io, base, idx, vk, decorators, /* stack_adj */0);
+
   // Nullable
   kit->set_control(kit->IfFalse(iff_null_free));
   if (!kit->stopped()) {
     assert(vk->has_nullable_atomic_layout(), "element type %s does not have a nullable flat layout", vk->name()->as_utf8());
     kit->set_all_memory(input_memory_state);
-    Node* cast = kit->cast_to_flat_array_exact(base, vk, false, true);
-    Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-    store_flat(kit, cast, ptr, true, false, false, decorators);
-
-    region->init_req(1, kit->control());
-    mem->set_req(1, kit->reset_memory());
-    io->set_req(1, kit->i_o());
+    do_flat_array_access(faac, true, false, 1, false);
   }
 
   // Null-free
@@ -554,13 +599,7 @@ void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
     if (!kit->stopped()) {
       assert(vk->has_null_free_atomic_layout(), "element type %s does not have a null-free atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
-      Node* cast = kit->cast_to_flat_array_exact(base, vk, true, true);
-      Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-      store_flat(kit, cast, ptr, true, false, true, decorators);
-
-      region->init_req(2, kit->control());
-      mem->set_req(2, kit->reset_memory());
-      io->set_req(2, kit->i_o());
+      do_flat_array_access(faac, true, true, 2, false);
     }
 
     // Non-atomic
@@ -568,19 +607,13 @@ void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
     if (!kit->stopped()) {
       assert(vk->has_null_free_non_atomic_layout(), "element type %s does not have a null-free non-atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
-      Node* cast = kit->cast_to_flat_array_exact(base, vk, true, false);
-      Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-      store_flat(kit, cast, ptr, false, false, true, decorators);
-
-      region->init_req(3, kit->control());
-      mem->set_req(3, kit->reset_memory());
-      io->set_req(3, kit->i_o());
+      do_flat_array_access(faac, false, true, 3, false);
     }
   }
 
-  kit->set_control(gvn.transform(region));
-  kit->set_all_memory(gvn.transform(mem));
-  kit->set_i_o(gvn.transform(io));
+  kit->set_control(region);
+  kit->set_all_memory(mem);
+  kit->set_i_o(io);
 }
 
 void ValueTypeNode::store(GraphKit* kit, Node* base, Node* ptr, bool immutable_memory, DecoratorSet decorators) const {
@@ -1618,6 +1651,8 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
   gvn.set_type(io, Type::ABIO);
   kit->record_for_igvn(io);
 
+  FlatArrayAccessContext faac(kit, nullptr, region, mem, io, base, idx, vk, decorators, /* stack_adj */ 2);
+
   Node* bol_null_free = kit->null_free_array_test(base); // Argument evaluation order is undefined in C++ and since this sets control, it needs to come first
   IfNode* iff_null_free = kit->create_and_map_if(kit->control(), bol_null_free, PROB_FAIR, COUNT_UNKNOWN);
 
@@ -1626,13 +1661,7 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
   if (!kit->stopped()) {
     assert(vk->has_nullable_atomic_layout(), "element type %s does not have a nullable flat layout", vk->name()->as_utf8());
     kit->set_all_memory(input_memory_state);
-    Node* cast = kit->cast_to_flat_array_exact(base, vk, false, true);
-    Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-    vt_nullable = ValueTypeNode::make_from_flat(kit, vk, cast, ptr, true, false, false, decorators);
-
-    region->init_req(1, kit->control());
-    mem->set_req(1, kit->reset_memory());
-    io->set_req(1, kit->i_o());
+    vt_nullable = do_flat_array_access(faac, true, false, 1, true);
   }
 
   // Null-free
@@ -1648,13 +1677,7 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
     if (!kit->stopped()) {
       assert(vk->has_null_free_atomic_layout(), "element type %s does not have a null-free atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
-      Node* cast = kit->cast_to_flat_array_exact(base, vk, true, true);
-      Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-      vt_null_free = ValueTypeNode::make_from_flat(kit, vk, cast, ptr, true, false, true, decorators);
-
-      region->init_req(2, kit->control());
-      mem->set_req(2, kit->reset_memory());
-      io->set_req(2, kit->i_o());
+      vt_null_free = do_flat_array_access(faac, true, true, 2, true);
     }
 
     // Non-Atomic
@@ -1662,13 +1685,7 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
     if (!kit->stopped()) {
       assert(vk->has_null_free_non_atomic_layout(), "element type %s does not have a null-free non-atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
-      Node* cast = kit->cast_to_flat_array_exact(base, vk, true, false);
-      Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-      vt_non_atomic = ValueTypeNode::make_from_flat(kit, vk, cast, ptr, false, false, true, decorators);
-
-      region->init_req(3, kit->control());
-      mem->set_req(3, kit->reset_memory());
-      io->set_req(3, kit->i_o());
+      vt_non_atomic = do_flat_array_access(faac, false, true, 3, true);
     }
   }
 
@@ -1684,9 +1701,9 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
     vt = vt_nullable;
   }
   if (vt != nullptr) {
-    kit->set_control(kit->gvn().transform(region));
-    kit->set_all_memory(kit->gvn().transform(mem));
-    kit->set_i_o(kit->gvn().transform(io));
+    kit->set_control(region);
+    kit->set_all_memory(mem);
+    kit->set_i_o(io);
     return vt;
   }
 
@@ -1702,9 +1719,9 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
     vt = vt->merge_with(&gvn, vt_non_atomic, 3, false);
   }
 
-  kit->set_control(kit->gvn().transform(region));
-  kit->set_all_memory(kit->gvn().transform(mem));
-  kit->set_i_o(kit->gvn().transform(io));
+  kit->set_control(region);
+  kit->set_all_memory(mem);
+  kit->set_i_o(io);
   return gvn.transform(vt)->as_ValueType();
 }
 

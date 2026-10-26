@@ -1778,14 +1778,15 @@ void LIR_Assembler::unwind_op(LIR_Opr exceptionOop) {
 
 
 void LIR_Assembler::arraycopy_valuetype_check(Register obj, Register tmp, CodeStub* slow_path, bool is_dest, bool null_check) {
+  assert(Arguments::is_valhalla_enabled(), "Value types must be enabled");
   if (null_check) {
     __ cmpdi(CR0, obj, 0);
     __ bc_far_optimized(Assembler::bcondCRbiIs1, __ bi0(CR0, Assembler::equal), *slow_path->entry());
   }
   if (is_dest) {
     __ test_null_free_array_oop(obj, tmp, *slow_path->entry(), true);
-    __ test_flat_array_oop(obj, tmp, *slow_path->entry(), true);
-  } else {
+  }
+  if (UseArrayFlattening) {
     __ test_flat_array_oop(obj, tmp, *slow_path->entry(), true);
   }
 }
@@ -1853,12 +1854,14 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     return;
   }
 
-  // Handle value type arrays
-  if (flags & LIR_OpArrayCopy::src_valuetype_check) {
-    arraycopy_valuetype_check(src, tmp, stub, false, (flags & LIR_OpArrayCopy::src_null_check));
-  }
-  if (flags & LIR_OpArrayCopy::dst_valuetype_check) {
-    arraycopy_valuetype_check(dst, tmp, stub, true, (flags & LIR_OpArrayCopy::dst_null_check));
+  if (Arguments::is_valhalla_enabled()) {
+    // Handle value type arrays
+    if (flags & LIR_OpArrayCopy::src_valuetype_check) {
+      arraycopy_valuetype_check(src, tmp, stub, false, (flags & LIR_OpArrayCopy::src_null_check));
+    }
+    if (flags & LIR_OpArrayCopy::dst_valuetype_check) {
+      arraycopy_valuetype_check(dst, tmp, stub, true, (flags & LIR_OpArrayCopy::dst_null_check));
+    }
   }
 
   assert(default_type != nullptr && default_type->is_array_klass() && default_type->is_loaded(), "must be true at this point");
@@ -3075,6 +3078,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 }
 
 void LIR_Assembler::emit_profile_value_type(LIR_OpProfileValueType* op) {
+  assert(Arguments::is_valhalla_enabled(), "Should not be called without value types enabled");
   Register obj = op->obj()->as_register();
   //Register tmp = op->tmp()->as_pointer_register(); not needed!
   LIR_Address* mdo_addr = op->mdp()->as_address_ptr();

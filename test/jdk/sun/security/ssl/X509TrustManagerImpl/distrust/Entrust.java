@@ -35,7 +35,7 @@ import javax.net.ssl.*;
  * @modules java.base/sun.security.validator
  * @run main/othervm Entrust after policyOn invalid
  * @run main/othervm Entrust after policyOff valid
- * @run main/othervm Entrust before policyOn valid
+ * @run main/othervm Entrust before policyOn invalid
  * @run main/othervm Entrust before policyOff valid
  */
 
@@ -48,7 +48,7 @@ public class Entrust {
     private static final String[] ROOTS_TO_TEST = new String[]{
             "entrustevca", "entrustrootcaec1", "entrustrootcag2", "entrust2048ca"};
 
-    // Date when the restrictions take effect
+    // Date after the restrictions took effect when distrust was first announced
     private static final ZonedDateTime DISTRUST_DATE =
             LocalDate.of(2024, 11, 12).atStartOfDay(ZoneOffset.UTC);
 

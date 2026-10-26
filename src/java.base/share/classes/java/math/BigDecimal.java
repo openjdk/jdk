@@ -3599,8 +3599,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
     public BigInteger toBigInteger() {
-        // force to an integer, quietly
-        return this.setScale(0, ROUND_DOWN).inflated();
+        if (signum() == 0 ||             // Numerical zero
+            (scale() >= precision()) ) { // Only fractional digits
+            return BigInteger.ZERO;
+        } else { // force to an integer, quietly
+            return this.setScale(0, ROUND_DOWN).inflated();
+        }
     }
 
     /**
@@ -3614,8 +3618,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @since  1.5
      */
     public BigInteger toBigIntegerExact() {
-        // round to an integer, with Exception if decimal part non-0
-        return this.setScale(0, ROUND_UNNECESSARY).inflated();
+        if (signum() == 0) {                    // Numerical zero
+            return BigInteger.ZERO;
+        } else if ((scale() >= precision()) ) { // Quick check for only fractional digits
+            throw new ArithmeticException("Rounding necessary; only fractional digits");
+        } else { // round to an integer, with Exception if fractional part non-0
+            return this.setScale(0, ROUND_UNNECESSARY).inflated();
+        }
     }
 
     /**

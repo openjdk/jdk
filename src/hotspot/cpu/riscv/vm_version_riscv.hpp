@@ -275,8 +275,6 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zfh         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZfh))                                    \
   /* Zfhmin Minimal Half-Precision Floating-Point instructions */                                         \
   decl(Zfhmin      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZfhmin))                                 \
-  /* Zicbom Cache Block Management Operations */                                                          \
-  decl(Zicbom      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicbom))                                 \
   /* Zicbop Cache Block Prefetch Operations */                                                            \
   decl(Zicbop      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicbop))                                 \
   /* Zicboz Cache Block Zero Operations */                                                                \
@@ -446,7 +444,6 @@ private:
     RV_ENABLE_EXTENSION(UseZbb)                      \
     RV_ENABLE_EXTENSION(UseZbs)                      \
     RV_ENABLE_EXTENSION(UseZic64b)                   \
-    RV_ENABLE_EXTENSION(UseZicbom)                   \
     RV_ENABLE_EXTENSION(UseZicbop)                   \
     RV_ENABLE_EXTENSION(UseZicboz)                   \
     RV_ENABLE_EXTENSION(UseZihintpause)              \
@@ -465,7 +462,6 @@ private:
     RV_ENABLE_EXTENSION(UseZfa)                     \
     RV_ENABLE_EXTENSION(UseZfhmin)                  \
     RV_ENABLE_EXTENSION(UseZic64b)                  \
-    RV_ENABLE_EXTENSION(UseZicbom)                  \
     RV_ENABLE_EXTENSION(UseZicbop)                  \
     RV_ENABLE_EXTENSION(UseZicboz)                  \
     RV_ENABLE_EXTENSION(UseZicond)                  \
@@ -559,8 +555,18 @@ private:
   static bool supports_fast_class_init_checks() { return true; }
   static bool supports_fencei_barrier() { return ext_Zifencei.enabled(); }
 
+  // Zfhmin only provides half-precision load/store/convert instructions,
+  // Zfh additionally provides half-precision arithmetic. Either one is
+  // enough to convert between float16 and float.
   static bool supports_float16_float_conversion() {
     return UseZfh || UseZfhmin;
+  }
+
+  // Shared code gates the Float.float16ToFloat/floatToFloat16 intrinsics on
+  // this, and those only need the conversion instructions. Note that it does
+  // not imply half-precision arithmetic is available, which needs UseZfh.
+  static bool supports_float16() {
+    return supports_float16_float_conversion();
   }
 
   // Check intrinsic support
