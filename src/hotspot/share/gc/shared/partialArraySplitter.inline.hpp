@@ -44,11 +44,10 @@ void PartialArraySplitter::enqueue(Queue* queue, PartialArrayState* state, uint 
 }
 
 template<typename Queue>
-PartialArraySplitter::Claim
-PartialArraySplitter::start(Queue* queue,
-                            objArrayOop array,
-                            size_t length,
-                            size_t chunk_size) {
+size_t PartialArraySplitter::start(Queue* queue,
+                                   objArrayOop array,
+                                   size_t length,
+                                   size_t chunk_size) {
   precond(chunk_size > 0);
   size_t end = length % chunk_size;
   if (end < length) {
@@ -57,7 +56,7 @@ PartialArraySplitter::start(Queue* queue,
       _allocator.allocate(array, end, length, chunk_size);
     enqueue(queue, state, 1);
   }
-  return Claim{array, 0, end};
+  return end;
 }
 
 template<typename Queue>

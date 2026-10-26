@@ -77,9 +77,9 @@ void G1FullGCMarker::start_partial_array_processing(objArrayOop obj) {
   }
 
   const uintx stride = calc_array_stride(array_length, _collector->workers());
-  PartialArraySplitter::Claim chunk = _partial_array_splitter.start(task_queue(), obj, array_length, stride);
+  const size_t end = _partial_array_splitter.start(task_queue(), obj, array_length, stride);
 
-  process_array_chunk(chunk._array, chunk._start, chunk._end);
+  process_array_chunk(obj, 0, end);
 }
 
 void G1FullGCMarker::complete_marking(G1ScannerTasksQueueSet* task_queues,

@@ -2450,11 +2450,11 @@ size_t G1CMTask::start_partial_array_processing(objArrayOop obj) {
   process_klass(obj->klass());
 
   size_t array_length = obj->length();
-  PartialArraySplitter::Claim chunk = _partial_array_splitter.start(_task_queue, obj, array_length, ObjArrayMarkingStride);
+  const size_t chunk_len =
+    _partial_array_splitter.start(_task_queue, obj, array_length, ObjArrayMarkingStride);
 
-  process_array_chunk(chunk._array, chunk._start, chunk._end);
+  process_array_chunk(obj, 0, chunk_len);
 
-  const size_t chunk_len = chunk._end - chunk._start;
   // Include object header size
   if (obj->is_refArray()) {
     return refArrayOopDesc::object_size(checked_cast<int>(chunk_len));

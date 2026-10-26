@@ -275,10 +275,10 @@ void PSPromotionManager::push_objArray(oop new_obj) {
 
   objArrayOop to_array = objArrayOop(new_obj);
   size_t array_length = to_array->length();
-  PartialArraySplitter::Claim chunk =
+  size_t end =
     _partial_array_splitter.start(&_claimed_stack_depth, to_array, array_length, ParGCArrayScanChunk);
 
-  process_array_chunk(chunk._array, chunk._start, chunk._end);
+  process_array_chunk(to_array, 0, end);
 }
 
 oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {

@@ -254,10 +254,10 @@ void G1ParScanThreadState::start_partial_objarray(oop to_obj) {
 
   objArrayOop to_array = objArrayOop(to_obj);
   size_t array_length = to_array->length();
-  PartialArraySplitter::Claim chunk =
+  size_t end =
     _partial_array_splitter.start(_task_queue, to_array, array_length, ParGCArrayScanChunk);
 
-  process_array_chunk(chunk._array, chunk._start, chunk._end);
+  process_array_chunk(to_array, 0, end);
 }
 
 MAYBE_INLINE_EVACUATION

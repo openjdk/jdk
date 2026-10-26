@@ -51,22 +51,23 @@ public:
 
   NONCOPYABLE(PartialArraySplitter);
 
-  // A chunk remains valid after its progress record has been recycled.  It
-  // does not own or keep the array alive; that is the collector's responsibility.
+  // Start processing array[0, length).  Returns the end of the initial chunk
+  // array[0, end) that the caller must process, and enqueues a continuation if
+  // any full-sized chunks remain.
+  template<typename Queue>
+  size_t start(Queue* queue,
+               objArrayOop array,
+               size_t length,
+               size_t chunk_size);
+
+  // Result of claim().  A chunk remains valid after its progress record has
+  // been recycled.  It does not own or keep the array alive; that is the
+  // collector's responsibility.
   struct Claim {
     objArrayOop _array;
     size_t _start;
     size_t _end;
   };
-
-  // Start processing array[0, length).  Return the initial chunk and enqueue
-  // a continuation if any full-sized chunks remain.  Process the remainder
-  // first so every queued task claims exactly chunk_size elements.
-  template<typename Queue>
-  Claim start(Queue* queue,
-              objArrayOop array,
-              size_t length,
-              size_t chunk_size);
 
   // Claims a chunk from state, returning the index range for that chunk.  The
   // caller is expected to process that chunk.  Adds more state-based tasks to

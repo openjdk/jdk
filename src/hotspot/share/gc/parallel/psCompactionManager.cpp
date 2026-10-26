@@ -124,9 +124,9 @@ void ParCompactionManager::push_objArray(objArrayOop obj) {
   _mark_and_push_closure.do_klass(obj->klass());
 
   size_t array_length = obj->length();
-  PartialArraySplitter::Claim chunk =
+  size_t end =
     _partial_array_splitter.start(&_marking_stack, obj, array_length, ObjArrayMarkingStride);
-  follow_array(chunk._array, chunk._start, chunk._end);
+  follow_array(obj, 0, end);
 }
 
 void ParCompactionManager::process_array_chunk(PartialArrayState* state, bool stolen) {
