@@ -37,6 +37,8 @@ private:
   WorkerThreads* _workers;
 public:
   ShenandoahWorkerScope(WorkerThreads* workers, uint nworkers, const char* msg, bool do_check = true);
+  ShenandoahWorkerScope(WorkerThreads* workers, uint active_worker_count, uint eligible_worker_count,
+                        const char* msg, bool do_check = true);
   ~ShenandoahWorkerScope();
 };
 
