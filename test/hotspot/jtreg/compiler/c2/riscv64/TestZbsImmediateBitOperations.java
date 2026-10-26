@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8389236
- * @summary Test Zbs immediate single-bit operations on long values
+ * @summary Test Zbs register and immediate single-bit operations on long values
  * @library /test/lib /
  * @requires os.arch == "riscv64" & vm.compiler2.enabled
  * @requires vm.cpu.features ~= ".*zbs.*"
@@ -43,6 +43,10 @@ import compiler.lib.ir_framework.TestFramework;
 import jdk.test.lib.Asserts;
 
 public class TestZbsImmediateBitOperations {
+    private static final String BEXT = "extractL_reg_reg";
+    private static final String BSET = "orL_reg_lshiftL_1";
+    private static final String BINV = "xorL_reg_lshiftL_1";
+    private static final String BCLR = "andL_reg_lshiftL_1_not";
     private static final String BSETI = "orL_reg_immL_Pow2";
     private static final String BINVI = "xorL_reg_immL_Pow2";
     private static final String BCLRI = "andL_reg_immL_NotPow2";
@@ -57,6 +61,30 @@ public class TestZbsImmediateBitOperations {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:-TieredCompilation");
+    }
+
+    @Test(compLevel = CompLevel.C2)
+    @IR(counts = {BEXT, "1"}, phase = CompilePhase.FINAL_CODE)
+    static long testBext(long value, int shift) {
+        return (value >>> shift) & 1L;
+    }
+
+    @Test(compLevel = CompLevel.C2)
+    @IR(counts = {BSET, "1"}, phase = CompilePhase.FINAL_CODE)
+    static long testBset(long value, int shift) {
+        return value | (1L << shift);
+    }
+
+    @Test(compLevel = CompLevel.C2)
+    @IR(counts = {BINV, "1"}, phase = CompilePhase.FINAL_CODE)
+    static long testBinv(long value, int shift) {
+        return value ^ (1L << shift);
+    }
+
+    @Test(compLevel = CompLevel.C2)
+    @IR(counts = {BCLR, "1"}, phase = CompilePhase.FINAL_CODE)
+    static long testBclr(long value, int shift) {
+        return value & ~(1L << shift);
     }
 
     @Test(compLevel = CompLevel.C2)
@@ -125,6 +153,23 @@ public class TestZbsImmediateBitOperations {
             Asserts.assertEQ(values[0], input | (1L << 10));
             Asserts.assertEQ(values[1], input ^ (1L << 10));
             Asserts.assertEQ(values[2], input & ~(1L << 10));
+        }
+    }
+
+    @Run(test = {"testBext", "testBset", "testBinv", "testBclr"})
+    static void runRegisterTests() {
+        int[] shifts = {
+            Integer.MIN_VALUE, -65, -64, -33, -32, -1,
+            0, 1, 31, 32, 33, 63, 64, 65, Integer.MAX_VALUE
+        };
+        for (long input : INPUTS) {
+            for (int shift : shifts) {
+                long mask = 1L << (shift & 63);
+                Asserts.assertEQ(testBext(input, shift), (input & mask) == 0 ? 0L : 1L);
+                Asserts.assertEQ(testBset(input, shift), input | mask);
+                Asserts.assertEQ(testBinv(input, shift), input ^ mask);
+                Asserts.assertEQ(testBclr(input, shift), input & ~mask);
+            }
         }
     }
 }

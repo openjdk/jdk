@@ -665,21 +665,6 @@ instruct convI2Bool_andI_reg_immIpowerOf2(iRegINoSp dst, iRegIorL2I src, immIpow
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct extractI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, immI_1 one) %{
-  predicate(UseZbs && (n->in(1)->in(2)->bottom_type()->is_int()->_lo >= 0 &&
-            n->in(1)->in(2)->bottom_type()->is_int()->_hi <= 31));
-  match(Set dst (AndI (URShiftI src1 src2) one));
-  ins_cost(ALU_COST);
-
-  format %{ "bext  $dst, $src1, $src2\t#@extractI_reg_reg" %}
-  ins_encode %{
-    __ bext(as_Register($dst$$reg), as_Register($src1$$reg),
-            as_Register($src2$$reg));
-  %}
-
-  ins_pipe(ialu_reg_reg);
-%}
-
 instruct extractL_reg_reg(iRegLNoSp dst, iRegL src1, iRegIorL2I src2, immL_1 one) %{
   predicate(UseZbs);
   match(Set dst (AndL (URShiftL src1 src2) one));
