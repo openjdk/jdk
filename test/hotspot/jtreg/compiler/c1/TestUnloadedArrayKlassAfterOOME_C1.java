@@ -31,7 +31,7 @@
  * @run driver ${test.main.class}
  */
 
-package compiler.valhalla.valuetypes;
+package compiler.c1;
 
 import java.util.ArrayList;
 import java.util.List;
