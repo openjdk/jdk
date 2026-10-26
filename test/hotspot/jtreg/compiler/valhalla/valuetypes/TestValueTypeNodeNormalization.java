@@ -28,6 +28,7 @@
  * @enablePreview
  * @run main/othervm -XX:-TieredCompilation -XX:CompileCommand=compileonly,${test.main.class}::test*
                      -Xcomp ${test.main.class}
+ * @run main ${test.main.class}
  */
 
 package compiler.valhalla.valuetypes;
