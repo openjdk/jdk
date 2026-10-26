@@ -30,6 +30,7 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 
 template<bool Cancellable, typename WorkFn>
 void shenandoah_elastic_loop(ShenandoahHeap* heap, TaskTerminator* terminator, WorkFn work) {
@@ -67,12 +68,13 @@ void shenandoah_elastic_loop(ShenandoahHeap* heap, TaskTerminator* terminator, W
 }
 
 template<bool Cancellable, typename WorkFn>
-void ShenandoahElasticMonotonicTask::elastic_loop(WorkFn work) {
+void ShenandoahElasticMonotonicTask::elastic_loop(uint worker_id, WorkFn work) {
   if (!_coordinator->wait_for_work()) {
     // This thread never became eligible to work
     return;
   }
 
+  ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   SuspendibleThreadSetJoiner stsj(Cancellable);
   while (true) {

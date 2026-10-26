@@ -712,7 +712,6 @@ public:
   }
 
   void work(uint worker_id) override {
-    ShenandoahConcurrentWorkerSession worker_session(worker_id);
     do_work<ShenandoahUpdateRefsClosure<true>>(worker_id);
   }
 
@@ -739,7 +738,7 @@ private:
     bool do_regions = true;
     bool do_chunks = _generation->is_young();
 
-    elastic_loop<true>([&]{
+    elastic_loop<true>(worker_id, [&]{
       ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs,
                                 ShenandoahPhaseTimings::Work, worker_id, true);
       if (do_regions) {

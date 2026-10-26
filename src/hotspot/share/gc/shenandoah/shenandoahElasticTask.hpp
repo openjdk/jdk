@@ -102,7 +102,7 @@ public:
 
 protected:
   template<bool Cancellable, typename WorkFn>
-  void elastic_loop(WorkFn work);
+  void elastic_loop(uint worker_id, WorkFn work);
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHELASTICTASK_HPP

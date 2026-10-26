@@ -1122,12 +1122,11 @@ public:
   }
 
   void work(uint worker_id) override {
-    ShenandoahConcurrentWorkerSession worker_session(worker_id);
     ShenandoahCumulativeTimingsTracker timer(ShenandoahPhaseTimings::conc_evac,
                                              ShenandoahPhaseTimings::Work,
                                              worker_id);
     ShenandoahConcurrentEvacuateRegionObjectClosure cl(_heap);
-    elastic_loop<true>([&]{
+    elastic_loop<true>(worker_id, [&]{
 
       ShenandoahHeapRegion* r = _cs->claim_next();
       if (r == nullptr) {
@@ -2481,7 +2480,6 @@ public:
   }
 
   void work(uint worker_id) {
-    ShenandoahConcurrentWorkerSession worker_session(worker_id);
     do_work<ShenandoahUpdateRefsClosure<true>>(worker_id);
   }
 
@@ -2507,7 +2505,7 @@ private:
     }
 
     T cl;
-    elastic_loop<true>([&] {
+    elastic_loop<true>(worker_id, [&] {
       ShenandoahHeapRegion* r = _regions.next();
       if (r == nullptr) {
         return ShenandoahWorkResult::NoWork;
