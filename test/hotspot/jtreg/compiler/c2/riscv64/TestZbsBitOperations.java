@@ -43,13 +43,13 @@ import compiler.lib.ir_framework.TestFramework;
 import jdk.test.lib.Asserts;
 
 public class TestZbsBitOperations {
-    private static final String BEXT = "extractL_reg_reg";
+    private static final String BEXT = "andL_urshiftL_reg_1";
     private static final String BSET = "orL_reg_lshiftL_1";
     private static final String BINV = "xorL_reg_lshiftL_1";
     private static final String BCLR = "andL_reg_lshiftL_1_not";
-    private static final String BSETI = "orL_reg_immL_Pow2";
-    private static final String BINVI = "xorL_reg_immL_Pow2";
-    private static final String BCLRI = "andL_reg_immL_NotPow2";
+    private static final String BSETI = "orL_reg_immL_SingleBit";
+    private static final String BINVI = "xorL_reg_immL_SingleBit";
+    private static final String BCLRI = "andL_reg_immL_SingleZero";
 
     private static final long[] INPUTS = {
         0L,

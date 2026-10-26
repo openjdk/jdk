@@ -665,12 +665,12 @@ instruct convI2Bool_andI_reg_immIpowerOf2(iRegINoSp dst, iRegIorL2I src, immIpow
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct extractL_reg_reg(iRegLNoSp dst, iRegL src1, iRegIorL2I src2, immL_1 one) %{
+instruct andL_urshiftL_reg_1(iRegLNoSp dst, iRegL src1, iRegIorL2I src2, immL_1 one) %{
   predicate(UseZbs);
   match(Set dst (AndL (URShiftL src1 src2) one));
   ins_cost(ALU_COST);
 
-  format %{ "bext  $dst, $src1, $src2\t#@extractL_reg_reg" %}
+  format %{ "bext  $dst, $src1, $src2\t#@andL_urshiftL_reg_1" %}
   ins_encode %{
     __ bext(as_Register($dst$$reg), as_Register($src1$$reg),
             as_Register($src2$$reg));
@@ -723,12 +723,12 @@ instruct andL_reg_lshiftL_1_not(iRegLNoSp dst, iRegL src, immL_1 one, iRegIorL2I
 
 // Fold a single-bit constant mask into the immediate Zbs instructions. Masks
 // that fit in a signed 12-bit immediate are handled by ori/xori/andi instead.
-instruct orL_reg_immL_Pow2(iRegLNoSp dst, iRegL src, immL_SingleBitNotSimm12 mask) %{
+instruct orL_reg_immL_SingleBit(iRegLNoSp dst, iRegL src, immL_SingleBitNotSimm12 mask) %{
   predicate(UseZbs);
   match(Set dst (OrL src mask));
   ins_cost(ALU_COST);
 
-  format %{ "bseti  $dst, $src, exact_log2($mask)\t#@orL_reg_immL_Pow2" %}
+  format %{ "bseti  $dst, $src, exact_log2($mask)\t#@orL_reg_immL_SingleBit" %}
   ins_encode %{
     __ bseti(as_Register($dst$$reg), as_Register($src$$reg),
              exact_log2_long($mask$$constant));
@@ -737,12 +737,12 @@ instruct orL_reg_immL_Pow2(iRegLNoSp dst, iRegL src, immL_SingleBitNotSimm12 mas
   ins_pipe(ialu_reg_shift);
 %}
 
-instruct xorL_reg_immL_Pow2(iRegLNoSp dst, iRegL src, immL_SingleBitNotSimm12 mask) %{
+instruct xorL_reg_immL_SingleBit(iRegLNoSp dst, iRegL src, immL_SingleBitNotSimm12 mask) %{
   predicate(UseZbs);
   match(Set dst (XorL src mask));
   ins_cost(ALU_COST);
 
-  format %{ "binvi  $dst, $src, exact_log2($mask)\t#@xorL_reg_immL_Pow2" %}
+  format %{ "binvi  $dst, $src, exact_log2($mask)\t#@xorL_reg_immL_SingleBit" %}
   ins_encode %{
     __ binvi(as_Register($dst$$reg), as_Register($src$$reg),
              exact_log2_long($mask$$constant));
@@ -751,12 +751,12 @@ instruct xorL_reg_immL_Pow2(iRegLNoSp dst, iRegL src, immL_SingleBitNotSimm12 ma
   ins_pipe(ialu_reg_shift);
 %}
 
-instruct andL_reg_immL_NotPow2(iRegLNoSp dst, iRegL src, immL_SingleZeroNotSimm12 mask) %{
+instruct andL_reg_immL_SingleZero(iRegLNoSp dst, iRegL src, immL_SingleZeroNotSimm12 mask) %{
   predicate(UseZbs);
   match(Set dst (AndL src mask));
   ins_cost(ALU_COST);
 
-  format %{ "bclri  $dst, $src, exact_log2(~$mask)\t#@andL_reg_immL_NotPow2" %}
+  format %{ "bclri  $dst, $src, exact_log2(~$mask)\t#@andL_reg_immL_SingleZero" %}
   ins_encode %{
     __ bclri(as_Register($dst$$reg), as_Register($src$$reg),
              exact_log2_long(~$mask$$constant));
