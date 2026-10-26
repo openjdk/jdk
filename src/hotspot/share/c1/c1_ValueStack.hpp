@@ -54,6 +54,7 @@ class ValueStack: public CompilationResourceObj {
   ValueStack* _caller_state;
   int      _bci;
   Kind     _kind;
+  bool     _should_reexecute;
 
   Values   _locals;                              // the locals
   Values   _stack;                               // the expression stack
@@ -74,7 +75,7 @@ class ValueStack: public CompilationResourceObj {
   static void apply(const Values& list, ValueVisitor* f);
 
   // for simplified copying
-  ValueStack(ValueStack* copy_from, Kind kind, int bci);
+  ValueStack(ValueStack* copy_from, Kind kind, int bci, bool reexecute);
 
   int locals_size_for_copy(Kind kind) const;
   int stack_size_for_copy(Kind kind) const;
@@ -82,9 +83,9 @@ class ValueStack: public CompilationResourceObj {
   // creation
   ValueStack(IRScope* scope, ValueStack* caller_state);
 
-  ValueStack* copy()                             { return new ValueStack(this, _kind, _bci); }
-  ValueStack* copy(Kind new_kind, int new_bci)   { return new ValueStack(this, new_kind, new_bci); }
-  ValueStack* copy_for_parsing()                 { return new ValueStack(this, Parsing, -99); }
+  ValueStack* copy()                             { return new ValueStack(this, _kind, _bci, _should_reexecute); }
+  ValueStack* copy(Kind new_kind, int new_bci)   { return new ValueStack(this, new_kind, new_bci, _should_reexecute); }
+  ValueStack* copy_for_parsing()                 { return new ValueStack(this, Parsing, -99, false); }
 
   // Used when no exception handler is found
   static Kind empty_exception_kind(bool caller = false) {
@@ -106,6 +107,8 @@ class ValueStack: public CompilationResourceObj {
   ValueStack* caller_state() const               { return _caller_state; }
   int bci() const                                { return _bci; }
   Kind kind() const                              { return _kind; }
+  bool should_reexecute() const                  { return _should_reexecute; }
+  void set_should_reexecute(bool reexec)         { _should_reexecute = reexec; }
 
   int locals_size() const                        { return _locals.length(); }
   int stack_size() const                         { return _stack.length(); }

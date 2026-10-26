@@ -82,11 +82,13 @@
                            char*         buf,
                            int           buflen) const;
 
-  static jint interpreter_frame_expression_stack_direction() { return -1; }
-
   inline address* sender_pc_addr() const;
 
   template <typename RegisterMapT>
   static void update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr);
+
+  intptr_t* repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const;
+  static intptr_t* repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr);
+  bool was_augmented_on_entry(int& real_size) const;
 
 #endif // CPU_ZERO_FRAME_ZERO_HPP

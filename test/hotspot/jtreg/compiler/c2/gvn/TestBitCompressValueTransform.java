@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 package compiler.c2.gvn;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import compiler.lib.ir_framework.*;
 import compiler.lib.generators.*;
 
@@ -73,7 +74,7 @@ public class TestBitCompressValueTransform {
     public final long BOUND2_HI_L = GEN_L.next();
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
     public long test1(long value) {
         return Long.compress(0x8000_0000_0000_0000L, value);
     }
@@ -86,7 +87,7 @@ public class TestBitCompressValueTransform {
 
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
     public int test2(int value) {
         return Integer.compress(0x8000_0000, value);
     }
@@ -98,7 +99,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " 0 "} , failOn = { IRNode.UNSTABLE_IF_TRAP }, applyIfCPUFeature = { "bmi2", "true" })
+    @IR (counts = { IRNode.COMPRESS_BITS, " 0 "} , failOn = { IRNode.UNSTABLE_IF_TRAP }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
     public int test3(int value) {
         int filter_bits = value & 0xF;
         int compress_bits = Integer.compress(15, filter_bits);
@@ -118,7 +119,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " 0 "} , failOn = { IRNode.UNSTABLE_IF_TRAP }, applyIfCPUFeature = { "bmi2", "true" })
+    @IR (counts = { IRNode.COMPRESS_BITS, " 0 "} , failOn = { IRNode.UNSTABLE_IF_TRAP }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
     public long test4(long value) {
         long filter_bits = value & 0xFL;
         long compress_bits = Long.compress(15L, filter_bits);
@@ -138,7 +139,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
     public long test5(long value) {
         // Since value range includes -1 hence with mask
         // and value as -1 all the result bits will be set.
@@ -156,7 +157,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
     public long test6(long value) {
         // For mask within a strictly -ve value range less than -1,
         // result of compression will always be a +ve value.
@@ -174,7 +175,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
     public long test7(long value) {
         // For mask within a strictly +ve value range,
         // result of compression will always be a +ve value with
@@ -193,7 +194,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
     public int test8(int value) {
         // Since value range includes -1 hence with mask
         // and value as -1 all the result bits will be set.
@@ -211,7 +212,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
     public int test9(int value) {
         // For mask within a strictly -ve value range less than -1,
         // result of compression will always be a +ve value.
@@ -229,7 +230,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
     public int test10(int value) {
         // For mask within a strictly +ve value range,
         // result of compression will always be a +ve value with
@@ -316,7 +317,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfPlatform = {"x64", "true"}, applyIf = {"UseParallelBitInstructions" , "true"})
     public int test15(int src, int mask) {
         // src_type = [min_int + 1, -1]
         src = Math.max(Integer.MIN_VALUE + 1, Math.min(src, -1));
@@ -363,7 +364,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfPlatform = {"x64", "true"}, applyIf = {"UseParallelBitInstructions" , "true"})
     public int test16(int src, int mask) {
         src = Math.max(BOUND1_LO_I, Math.min(src, BOUND1_HI_I));
         mask = Math.max(BOUND2_LO_I, Math.min(mask, BOUND2_HI_I));
@@ -449,7 +450,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.EXPAND_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
+    @IR (counts = { IRNode.EXPAND_BITS, " >0 " }, applyIfPlatform = {"x64", "true"}, applyIf = {"UseParallelBitInstructions" , "true"})
     public int test17(int src, int mask) {
         src = Math.max(BOUND1_LO_I, Math.min(src, BOUND1_HI_I));
         mask = Math.max(BOUND2_LO_I, Math.min(mask, BOUND2_HI_I));
@@ -535,7 +536,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfPlatform = {"x64", "true"}, applyIf = {"UseParallelBitInstructions" , "true"})
     public long test18(long src, long mask) {
         src = Math.max(BOUND1_LO_L, Math.min(src, BOUND1_HI_L));
         mask = Math.max(BOUND2_LO_L, Math.min(mask, BOUND2_HI_L));
@@ -621,7 +622,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.EXPAND_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
+    @IR (counts = { IRNode.EXPAND_BITS, " >0 " }, applyIfPlatform = {"x64", "true"}, applyIf = {"UseParallelBitInstructions" , "true"})
     public long test19(long src, long mask) {
         src = Math.max(BOUND1_LO_L, Math.min(src, BOUND1_HI_L));
         mask = Math.max(BOUND2_LO_L, Math.min(mask, BOUND2_HI_L));
@@ -674,7 +675,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
     public static long test20(int x) {
         // Analysis of when this is used to produce wrong results on Windows:
         //
@@ -723,7 +724,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
     public static long test21(long x) {
         // Analysis of when this is used to produce wrong results on Windows:
         //
@@ -758,6 +759,10 @@ public class TestBitCompressValueTransform {
     }
 
     public static void main(String[] args) {
-        TestFramework.run(TestBitCompressValueTransform.class);
+        if (Platform.getOsArch().equals("x86_64")) {
+            TestFramework.runWithFlags("-XX:+UseParallelBitInstructions");
+        } else {
+            TestFramework.run(TestBitCompressValueTransform.class);
+        }
     }
 }

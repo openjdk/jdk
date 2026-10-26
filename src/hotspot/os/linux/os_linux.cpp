@@ -112,6 +112,7 @@
 # include <sys/time.h>
 # include <sys/times.h>
 # include <sys/types.h>
+# include <sys/un.h>
 # include <sys/utsname.h>
 # include <syscall.h>
 # include <time.h>
@@ -1547,11 +1548,47 @@ int os::current_process_id() {
   return ::getpid();
 }
 
-// DLL functions
+static bool is_writable_directory(const char* name) {
+  struct stat mystat;
+  int ret_val = stat(name, &mystat);
+  return (ret_val != -1 && S_ISDIR(mystat.st_mode) > 0 && access(name, R_OK|W_OK|X_OK) == 0);
+}
 
-// This must be hard coded because it's the system's temporary
-// directory not the java application's temp directory, ala java.io.tmpdir.
-const char* os::get_temp_directory() { return "/tmp"; }
+// Check that a given alternate temporary directory name specifies an absolute path and is an existing, writable
+// directory.
+
+// If it is not an absolute path, revert back to hardcoded /tmp. If the directory is non existant or not
+// writable give a warning but use AltTempDir. In the latter case, we may be connecting to a process that is
+// inside a container.
+//
+// Since the attach mechanism uses the socket name length, this limits the length of the alternate
+// temporary directory name.  We don't check that here since the temporary directory is
+// used for many things. The perfData and attach code will check it.
+
+void os::pd_check_temp_directory() {
+  if (AltTempDir != nullptr && AltTempDir[0] != '\0') {
+    if (AltTempDir[0] != '/') {
+      log_warning(os)("Warning: AltTempDir is ignored because it must be an absolute pathname");
+      AltTempDir = nullptr;
+    } else {
+      if (!is_writable_directory(AltTempDir)) {
+        // This is only a warning and still uses AltTempDir, which is needed to attach to a
+        // containerized process from the host.
+        log_warning(os)("Warning: AltTempDir is not an existing or writable directory");
+      }
+    }
+  } else {
+    if (!is_writable_directory("/tmp")) {
+      log_warning(os)("Warning: /tmp is not writable. Consider using -XX:AltTempDir=/<dir> to set a writable temp directory");
+    }
+    AltTempDir = nullptr; // avoid checking AltTempDir[0] again.
+  }
+}
+
+const char* os::get_temp_directory() {
+  // AltTempDir is already checked.
+  return AltTempDir != nullptr ? AltTempDir : "/tmp";
+}
 
 // check if addr is inside libjvm.so
 bool os::address_is_in_vm(address addr) {
@@ -3057,7 +3094,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MADV_POPULATE_WRITE MADV_POPULATE_WRITE_value
 #else
   // Sanity-check our assumed default value if we build with a new enough libc.
-  STATIC_ASSERT(MADV_POPULATE_WRITE == MADV_POPULATE_WRITE_value);
+  static_assert(MADV_POPULATE_WRITE == MADV_POPULATE_WRITE_value);
 #endif
 
 // Note that the value for MAP_FIXED_NOREPLACE differs between architectures, but all architectures
@@ -3067,7 +3104,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MAP_FIXED_NOREPLACE MAP_FIXED_NOREPLACE_value
 #else
   // Sanity-check our assumed default value if we build with a new enough libc.
-  STATIC_ASSERT(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value);
+  static_assert(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value);
 #endif
 
 int os::Linux::commit_memory_impl(char* addr, size_t size,
@@ -3315,6 +3352,8 @@ bool os::Linux::libnuma_init() {
                                                    libnuma_dlsym(handle, "numa_num_configured_nodes")));
       set_numa_available(CAST_TO_FN_PTR(numa_available_func_t,
                                         libnuma_dlsym(handle, "numa_available")));
+      set_numa_node_size64(CAST_TO_FN_PTR(numa_node_size64_func_t,
+                                          libnuma_dlsym(handle, "numa_node_size64")));
       set_numa_tonode_memory(CAST_TO_FN_PTR(numa_tonode_memory_func_t,
                                             libnuma_dlsym(handle, "numa_tonode_memory")));
       set_numa_interleave_memory(CAST_TO_FN_PTR(numa_interleave_memory_func_t,
@@ -3604,6 +3643,7 @@ os::Linux::numa_node_to_cpus_func_t os::Linux::_numa_node_to_cpus;
 os::Linux::numa_node_to_cpus_v2_func_t os::Linux::_numa_node_to_cpus_v2;
 os::Linux::numa_max_node_func_t os::Linux::_numa_max_node;
 os::Linux::numa_num_configured_nodes_func_t os::Linux::_numa_num_configured_nodes;
+os::Linux::numa_node_size64_func_t os::Linux::_numa_node_size64;
 os::Linux::numa_available_func_t os::Linux::_numa_available;
 os::Linux::numa_tonode_memory_func_t os::Linux::_numa_tonode_memory;
 os::Linux::numa_interleave_memory_func_t os::Linux::_numa_interleave_memory;

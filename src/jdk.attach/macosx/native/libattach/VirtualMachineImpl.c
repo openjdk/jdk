@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,13 +180,14 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkPermissions
         memset(&sb, 0, sizeof(struct stat));
 
         /*
-         * Check that the path is owned by the effective uid/gid of this
-         * process. Also check that group/other access is not allowed.
+         * Check that the path itself (not following symbolic links) is
+         * owned by the effective uid/gid of this process and that it is
+         * a socket. Also check that group/other access is not allowed.
          */
         uid = geteuid();
         gid = getegid();
 
-        res = stat(p, &sb);
+        res = lstat(p, &sb);
         if (res != 0) {
             /* save errno */
             res = errno;
@@ -195,7 +196,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkPermissions
         if (res == 0) {
             char msg[100];
             jboolean isError = JNI_FALSE;
-            if (sb.st_uid != uid && uid != ROOT_UID) {
+            if (!S_ISSOCK(sb.st_mode)) {
+                snprintf(msg, sizeof(msg),
+                    "file is expected to be a socket: S_ISSOCK(sb.st_mode): %d", S_ISSOCK(sb.st_mode));
+                isError = JNI_TRUE;
+            } else if (sb.st_uid != uid && uid != ROOT_UID) {
                 snprintf(msg, sizeof(msg),
                     "file should be owned by the current user (which is %d) but is owned by %d", uid, sb.st_uid);
                 isError = JNI_TRUE;

@@ -194,8 +194,8 @@ public final class CStrike extends PhysicalStrike {
         GeneralPath gp = getGlyphOutline(glyphCode, 0f, 0f);
         Rectangle2D r2d = gp.getBounds2D();
         Rectangle2D.Float r2df;
-        if (r2d instanceof Rectangle2D.Float) {
-            r2df = (Rectangle2D.Float)r2d;
+        if (r2d instanceof Rectangle2D.Float rf) {
+            r2df = rf;
         } else {
             float x = (float)r2d.getX();
             float y = (float)r2d.getY();

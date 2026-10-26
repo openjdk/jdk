@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,22 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @key headful
  * @bug 6240507 6662642
- * @summary verify that isFullScreenSupported and getFullScreenWindow work
+ * @summary verify that isFullScreenSupported work
  * correctly. Note that the test may fail on older Gnome versions (see bug 6500686).
  * @run main FSFrame
- * @run main/othervm -Dsun.java2d.noddraw=true FSFrame
+ */
+
+/*
+ * @test id=windows_d3d_false
+ * @key headful
+ * @bug 6240507 6662642
+ * @summary verify that isFullScreenSupported work
+ * correctly. Note that the test may fail on older Gnome versions (see bug 6500686).
+ * @requires (os.family == "windows")
+ * @run main/othervm -Dsun.java2d.d3d=false FSFrame
  */
 
 import java.awt.Color;
@@ -47,24 +56,12 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import javax.imageio.ImageIO;
 
-public class FSFrame extends Frame implements Runnable {
+public class FSFrame extends Frame {
 
-    // Don't start the test until the window is visible
-    boolean visible = false;
-    Robot robot = null;
-    static volatile boolean done = false;
+    static FSFrame frame;
+    static Robot robot = null;
 
     public void paint(Graphics g) {
-        if (!visible && getWidth() != 0 && getHeight() != 0) {
-            visible = true;
-            try {
-                GraphicsDevice gd = getGraphicsConfiguration().getDevice();
-                robot = new Robot(gd);
-            } catch (Exception e) {
-                System.out.println("Problem creating robot: cannot verify FS " +
-                                   "window display");
-            }
-        }
         g.setColor(Color.green);
         g.fillRect(0, 0, getWidth(), getHeight());
     }
@@ -91,7 +88,6 @@ public class FSFrame extends Frame implements Runnable {
 
     void checkFSDisplay(boolean fsSupported) {
         GraphicsConfiguration gc = getGraphicsConfiguration();
-        GraphicsDevice gd = gc.getDevice();
         Rectangle r = gc.getBounds();
         Insets in = null;
         if (!fsSupported) {
@@ -103,9 +99,7 @@ public class FSFrame extends Frame implements Runnable {
         BufferedImage bImg = robot.createScreenCapture(r);
         // Check that all four corners and middle pixel match the window's
         // fill color
-        if (robot == null) {
-            return;
-        }
+
         boolean colorCorrect = true;
         colorCorrect &= checkColor(0, 0, bImg);
         colorCorrect &= checkColor(0, bImg.getHeight() - 1, bImg);
@@ -122,9 +116,10 @@ public class FSFrame extends Frame implements Runnable {
                     (fsSupported?"supported":"not_supported")+".png";
             try {
                 ImageIO.write(bImg, "png", new File(name));
-                System.out.println("Dumped screen shot to "+name);
-            } catch (IOException ex) {}
-            throw new Error("Some pixel colors not correct; FS window may not" +
+                System.out.println("Dumped screen shot to " + name);
+            } catch (IOException ignored) {}
+
+            throw new RuntimeException("Some pixel colors not correct; FS window may not" +
                             " have been displayed correctly");
         }
     }
@@ -134,69 +129,47 @@ public class FSFrame extends Frame implements Runnable {
         try {
             // None of these should throw an exception
             final boolean fs = gd.isFullScreenSupported();
+
             System.out.println("FullscreenSupported: " + (fs ? "yes" : "no"));
             gd.setFullScreenWindow(this);
+            // Give the system time to set the FS window and display it
+            // properly
+            robot.delay(2000);
+
+            // See if FS window got displayed correctly
             try {
-                // Give the system time to set the FS window and display it
-                // properly
-                Thread.sleep(2000);
-            } catch (Exception e) {}
-                // See if FS window got displayed correctly
-            try {
-                EventQueue.invokeAndWait(new Runnable() {
-                    public void run() {
-                        repaint();
-                        checkFSDisplay(fs);
-                    }
-                });
+                EventQueue.invokeAndWait(this::repaint);
             } catch (InvocationTargetException | InterruptedException ex) {
                 ex.printStackTrace();
             }
+
+            robot.waitForIdle(500);
+
+            checkFSDisplay(fs);
+        } finally {
             // reset window
             gd.setFullScreenWindow(null);
-            try {
-                // Give the system time to set the FS window and display it
-                // properly
-                Thread.sleep(2000);
-            } catch (Exception e) {}
-        } catch (SecurityException e) {
-            e.printStackTrace();
-            throw new Error("Failure: should not get an exception when " +
-                            "calling isFSSupported or setFSWindow");
+            // Give the system time to set the FS window and display it
+            // properly
+            robot.delay(2000);
         }
     }
 
-    public void run() {
-        boolean firstTime = true;
-        while (!done) {
-            if (visible) {
-                checkFSFunctionality();
-                done = true;
-            } else {
-                // sleep while we wait
-                try {
-                    // Give the system time to set the FS window and display it
-                    // properly
-                    Thread.sleep(100);
-                } catch (Exception e) {}
-            }
-        }
-        System.out.println("PASS");
-    }
+    public static void main(String[] args) throws Exception {
+        try {
+            frame = new FSFrame();
+            frame.setUndecorated(true);
+            frame.setSize(500, 500);
+            frame.setVisible(true);
 
-    public static void main(String args[]) {
-        FSFrame frame = new FSFrame();
-        frame.setUndecorated(true);
-        Thread t = new Thread(frame);
-        frame.setSize(500, 500);
-        frame.setVisible(true);
-        t.start();
-        while (!done) {
-            try {
-                // Do not exit the main thread until the test is finished
-                Thread.sleep(1000);
-            } catch (Exception e) {}
+            robot = new Robot(frame.getGraphicsConfiguration().getDevice());
+            robot.waitForIdle(1000);
+
+            frame.checkFSFunctionality();
+
+            System.out.println("PASS");
+        } finally {
+            frame.dispose();
         }
-        frame.dispose();
     }
 }

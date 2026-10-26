@@ -78,19 +78,19 @@ class NativeInstruction {
 
  protected:
   address addr_at(int offset) const { return address(this) + offset; }
-  jint     int_at(int offset) const { return (jint)      Bytes::get_native_u4(addr_at(offset));  }
-  juint   uint_at(int offset) const { return             Bytes::get_native_u4(addr_at(offset));  }
-  address  ptr_at(int offset) const { return (address)   Bytes::get_native_u8(addr_at(offset));  }
-  oop      oop_at(int offset) const { return cast_to_oop(Bytes::get_native_u8(addr_at(offset))); }
+  jint     int_at(int offset) const { return (jint)      MacroAssembler::get_native_u4(addr_at(offset));  }
+  juint   uint_at(int offset) const { return             MacroAssembler::get_native_u4(addr_at(offset));  }
+  address  ptr_at(int offset) const { return (address)   MacroAssembler::get_native_u8(addr_at(offset));  }
+  oop      oop_at(int offset) const { return cast_to_oop(MacroAssembler::get_native_u8(addr_at(offset))); }
 
 
-  void  set_int_at(int offset, jint i)      { Bytes::put_native_u4(addr_at(offset), i); }
-  void set_uint_at(int offset, jint i)      { Bytes::put_native_u4(addr_at(offset), i); }
-  void  set_ptr_at(int offset, address ptr) { Bytes::put_native_u8(addr_at(offset), (u8)ptr); }
-  void  set_oop_at(int offset, oop o)       { Bytes::put_native_u8(addr_at(offset), cast_from_oop<u8>(o)); }
+  void  set_int_at(int offset, jint i)      { MacroAssembler::put_native_u4(addr_at(offset), i); }
+  void set_uint_at(int offset, juint i)     { MacroAssembler::put_native_u4(addr_at(offset), i); }
+  void  set_ptr_at(int offset, address ptr) { MacroAssembler::put_native_u8(addr_at(offset), (u8)ptr); }
+  void  set_oop_at(int offset, oop o)       { MacroAssembler::put_native_u8(addr_at(offset), cast_from_oop<u8>(o)); }
 
-  static void     set_data64_at(address dest, uint64_t data) { Bytes::put_native_u8(dest, (u8)data); }
-  static uint64_t get_data64_at(address src)                 { return Bytes::get_native_u8(src); }
+  static void     set_data64_at(address dest, uint64_t data) { MacroAssembler::put_native_u8(dest, (u8)data); }
+  static uint64_t get_data64_at(address src)                 { return MacroAssembler::get_native_u8(src); }
 
  public:
   inline friend NativeInstruction* nativeInstruction_at(address addr);
@@ -133,25 +133,24 @@ class NativeCall: private NativeInstruction {
   address instruction_address() const      { return addr_at(0); }
   address next_instruction_address() const { return addr_at(NativeCall::instruction_size); }
   address return_address() const           { return addr_at(NativeCall::instruction_size); }
+  // return target address of the reloc call, read from its address stub
   address destination() const;
-  address reloc_destination();
 
   void verify_alignment() {} // do nothing on riscv
   void verify();
   void print();
 
-  void set_destination(address dest) { Unimplemented(); }
+  // patch the address stub and link the reloc call to it
+  void set_destination(address dest);
   // patch stub to target address of the reloc call
   bool set_destination_mt_safe(address dest);
-  // patch reloc call to stub address
-  bool reloc_set_destination(address dest);
 
   static bool is_at(address addr);
   static bool is_call_before(address return_address);
 
  private:
-  // return stub address, without checking stub address in locs
-  address stub_address();
+  // return the address stub of the reloc call, nullptr if there is none yet
+  address stub_address() const;
   // set target address at stub
   static void set_stub_address_destination_at(address dest, address value);
   // return target address at stub

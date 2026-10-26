@@ -28,6 +28,7 @@
  *
  * @requires vm.compiler2.enabled & vm.compMode != "Xcomp"
  * @requires vm.opt.DeoptimizeALot != true
+ * @requires vm.opt.CompileThresholdScaling == null & vm.opt.CompileThreshold == null
  *
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -154,8 +155,8 @@ public class OptimizeImplicitExceptions {
 
         int trapCount = WB.getMethodTrapCount(throwImplicitException_m);
         int trapCountSpecific = WB.getMethodTrapCount(throwImplicitException_m, impExcp.getReason());
-        Asserts.assertEQ(trapCount, invocations, "Trap count must much invocation count.");
-        Asserts.assertEQ(trapCountSpecific, invocations, "Trap count must much invocation count.");
+        Asserts.assertEQ(trapCount, invocations, "Trap count must match invocation count.");
+        Asserts.assertEQ(trapCountSpecific, invocations, "Trap count must match invocation count.");
         Asserts.assertNotNull(ex.getMessage(), "Exceptions thrown in the interpreter should have a message.");
     }
 

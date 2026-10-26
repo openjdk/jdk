@@ -174,8 +174,8 @@ public:
           log_heap_usage,
           LogTargetHandle::create<level, T0, INJECT_START_TAG(T1, T2, T3, T4), GuardTag>(),
           LogTargetHandle::create<level, T0, T1, T2, T3, T4, GuardTag>()) {
-    STATIC_ASSERT(T0 != LogTag::__NO_TAG); // Need some tag to log on.
-    STATIC_ASSERT(T4 == LogTag::__NO_TAG); // Need to leave at least the last tag for the "start" tag in log_start()
+    static_assert(T0 != LogTag::__NO_TAG); // Need some tag to log on.
+    static_assert(T4 == LogTag::__NO_TAG); // Need to leave at least the last tag for the "start" tag in log_start()
   }
 };
 
@@ -195,8 +195,8 @@ public:
                 timer,
                 gc_cause,
                 log_heap_usage) {
-    STATIC_ASSERT(T0 != LogTag::__NO_TAG); // Need some tag to log on.
-    STATIC_ASSERT(T4 == LogTag::__NO_TAG); // Need to leave at least the last tag for the "start" tag in log_start()
+    static_assert(T0 != LogTag::__NO_TAG); // Need some tag to log on.
+    static_assert(T4 == LogTag::__NO_TAG); // Need to leave at least the last tag for the "start" tag in log_start()
   }
 };
 

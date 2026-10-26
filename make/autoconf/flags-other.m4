@@ -121,7 +121,7 @@ AC_DEFUN([FLAGS_SETUP_SVE],
       AC_MSG_CHECKING([if Arm SVE ACLE is supported])
       AC_LANG_PUSH([C])
       saved_cflags="$CFLAGS"
-      CFLAGS="$CFLAGS -march=armv8-a+sve $CFLAGS_WARNINGS_ARE_ERRORS ARG_ARGUMENT"
+      CFLAGS="$CFLAGS -march=armv8-a+sve"
       AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
         [
           #include <arm_sve.h>
@@ -211,7 +211,7 @@ AC_DEFUN([FLAGS_SETUP_ASFLAGS_CPU_DEP],
   fi
 
   if test "x$BRANCH_PROTECTION_ENABLED" = "xtrue"; then
-    $2JVM_ASFLAGS="${$2JVM_ASFLAGS} $BRANCH_PROTECTION_FLAG"
+    $2JVM_ASFLAGS="${$2JVM_ASFLAGS} $BRANCH_PROTECTION_ASFLAG"
   fi
 
   AC_SUBST($2JVM_ASFLAGS)

@@ -64,8 +64,8 @@ int StubLocations::data_offset(uint32_t loc) const {
 
 const CallRegs ForeignGlobals::parse_call_regs(jobject jconv) {
   oop conv_oop = JNIHandles::resolve_non_null(jconv);
-  objArrayOop arg_regs_oop = jdk_internal_foreign_abi_CallConv::argRegs(conv_oop);
-  objArrayOop ret_regs_oop = jdk_internal_foreign_abi_CallConv::retRegs(conv_oop);
+  refArrayOop arg_regs_oop = jdk_internal_foreign_abi_CallConv::argRegs(conv_oop);
+  refArrayOop ret_regs_oop = jdk_internal_foreign_abi_CallConv::retRegs(conv_oop);
   int num_args = arg_regs_oop->length();
   int num_rets = ret_regs_oop->length();
   CallRegs result(num_args, num_rets);

@@ -52,7 +52,8 @@ ifeq ($(call check-jvm-feature, zero), true)
   JVM_EXCLUDES += opto libadt
   JVM_EXCLUDE_PATTERNS += c1_ c1/ c2_ runtime_ /c2/
   JVM_EXCLUDE_FILES += templateInterpreter.cpp \
-      templateInterpreterGenerator.cpp bcEscapeAnalyzer.cpp ciTypeFlow.cpp
+      templateInterpreterGenerator.cpp bcEscapeAnalyzer.cpp ciTypeFlow.cpp \
+      macroAssembler_common.cpp
   JVM_CFLAGS_FEATURES += -DZERO \
       -DZERO_LIBARCH='"$(OPENJDK_TARGET_CPU_LEGACY_LIB)"' $(LIBFFI_CFLAGS)
   JVM_LIBS_FEATURES += $(LIBFFI_LIBS)
@@ -120,9 +121,7 @@ ifneq ($(call check-jvm-feature, cds), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_CDS=0
   JVM_EXCLUDE_FILES += \
       aotCodeCache.cpp \
-      classLoaderDataShared.cpp \
-      classLoaderExt.cpp \
-      systemDictionaryShared.cpp \
+      aotCompileBroker.cpp \
       trainingData.cpp
   JVM_EXCLUDE_PATTERNS += cds/
 endif

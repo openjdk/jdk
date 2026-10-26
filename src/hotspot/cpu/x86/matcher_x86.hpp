@@ -101,6 +101,10 @@
   // Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
 
+  // Use MachUncommonTrapNode for representing uncommon trap sequences.
+  // This is an alternative to representing uncommon traps as runtime calls.
+  static const bool use_mach_uncommon_trap_node = false;
+
   // Are floats converted to double when stored to stack during deoptimization?
   // On x64 it is stored without conversion so we can use normal access.
   static constexpr bool float_in_double() {
@@ -113,16 +117,6 @@
   // Does the CPU supports vector variable shift instructions?
   static bool supports_vector_variable_shifts(void) {
     return (UseAVX >= 2);
-  }
-
-  // Does target support predicated operation emulation.
-  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
-    switch(vopc) {
-      case Op_LoadVectorGatherMasked:
-        return is_subword_type(bt) && VM_Version::supports_avx2();
-      default:
-        return false;
-    }
   }
 
   // Does the CPU supports vector variable rotate instructions?
@@ -185,9 +179,6 @@
         return 7;
       case Op_MulVL:
         return VM_Version::supports_avx512vldq() ? 0 : 6;
-      case Op_LoadVectorGather:
-      case Op_LoadVectorGatherMasked:
-        return is_subword_type(ety) ? 50 : 0;
       case Op_VectorCastF2X: // fall through
       case Op_VectorCastD2X:
         return is_floating_point_type(ety) ? 0 : (is_subword_type(ety) ? 35 : 30);
@@ -233,6 +224,20 @@
     else {
       return false;
     }
+  }
+
+  // Return true if VectorSlice is better served by a two source permute than by
+  // the native slice lowering.
+  static bool vector_slice_prefers_select_from_two_vector(BasicType elem_bt, int byte_origin) {
+    // A subword slice whose byte origin lies in the middle of the vector and is
+    // not four byte aligned needs three shuffles (VALIGND + VALIGND + VPALIGNR),
+    // all contending for the same shuffle port, whereas a two source permute fed
+    // by a loop invariant index vector needs just one.
+    // Wider lane types scale the element origin by 4 or 8 and hence always match
+    // the single VALIGND rule, and origins below 16 or above 48 bytes already
+    // lower to two shuffles. Both beat the permute.
+    return is_subword_type(elem_bt) && byte_origin > 16 && byte_origin < 48 &&
+           (byte_origin & 3) != 0;
   }
 
 #endif // CPU_X86_MATCHER_X86_HPP

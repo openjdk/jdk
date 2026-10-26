@@ -30,10 +30,11 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classPrinter.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -250,9 +251,12 @@ static void print_bytecode_count() {}
 
 
 // General statistics printing (profiling ...)
-void print_statistics() {
+void print_statistics_before_exit() {
+  LogStreamHandle(Info, aot, codecache, stats) aot_log;
   if (CITime) {
     CompileBroker::print_times();
+  } else if (aot_log.is_enabled()) {
+    AOTCodeCache::print_timers_on(&aot_log);
   }
 
 #ifdef COMPILER1
@@ -285,6 +289,9 @@ void print_statistics() {
 
   if (PrintNMethodStatistics) {
     nmethod::print_statistics();
+    AOTCodeCache::print_statistics_on(tty);
+  } else if (aot_log.is_enabled()) {
+    AOTCodeCache::print_statistics_on(&aot_log);
   }
   if (CountCompiledCalls) {
     print_method_invocation_histogram();
@@ -379,6 +386,12 @@ void before_exit(JavaThread* thread, bool halt) {
   static jint volatile _before_exit_status = BEFORE_EXIT_NOT_RUN;
 
   Events::log(thread, "Before exit entered");
+
+  // A GC requested after we shut down the heap blocks that requesting Java thread.
+  // Suppress GC-a-lot for threads entering shutdown as Monitor::lock() calls in the
+  // remainder of the shutdown sequence could otherwise block when executing a
+  // GC-a-lot caused collection.
+  NOT_PRODUCT(thread->set_skip_gcalot(true);)
 
   // Note: don't use a Mutex to guard the entire before_exit(), as
   // JVMTI post_thread_end_event and post_vm_death_event will run native code.
@@ -499,7 +512,7 @@ void before_exit(JavaThread* thread, bool halt) {
   }
   #endif
 
-  print_statistics();
+  print_statistics_before_exit();
 
   { MutexLocker ml(BeforeExit_lock);
     _before_exit_status = BEFORE_EXIT_DONE;
@@ -753,21 +766,21 @@ void JDK_Version::to_string(char* buffer, size_t buflen) const {
 }
 
 void JDK_Version::set_java_version(const char* version) {
-  _java_version = os::strdup(version);
+  _java_version = os::strdup(version, mtInternal);
 }
 
 void JDK_Version::set_runtime_name(const char* name) {
-  _runtime_name = os::strdup(name);
+  _runtime_name = os::strdup(name, mtInternal);
 }
 
 void JDK_Version::set_runtime_version(const char* version) {
-  _runtime_version = os::strdup(version);
+  _runtime_version = os::strdup(version, mtInternal);
 }
 
 void JDK_Version::set_runtime_vendor_version(const char* vendor_version) {
-  _runtime_vendor_version = os::strdup(vendor_version);
+  _runtime_vendor_version = os::strdup(vendor_version, mtInternal);
 }
 
 void JDK_Version::set_runtime_vendor_vm_bug_url(const char* vendor_vm_bug_url) {
-  _runtime_vendor_vm_bug_url = os::strdup(vendor_vm_bug_url);
+  _runtime_vendor_vm_bug_url = os::strdup(vendor_vm_bug_url, mtInternal);
 }

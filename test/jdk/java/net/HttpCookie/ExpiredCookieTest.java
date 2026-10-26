@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8000525
+ * @bug 8000525 8380549
  * @library /test/lib
  */
 
@@ -32,6 +32,8 @@ import java.util.*;
 import java.io.*;
 import java.text.*;
 import jdk.test.lib.net.URIBuilder;
+
+import static jdk.test.lib.Asserts.assertEquals;
 
 public class ExpiredCookieTest {
     // lifted from HttpCookie.java
@@ -92,15 +94,28 @@ public class ExpiredCookieTest {
             cm.put(uri, header);
 
             CookieStore cookieJar =  cm.getCookieStore();
-            List <HttpCookie> cookies = cookieJar.getCookies();
+            Set<String> names = new TreeSet<>();
+            for (HttpCookie cookie : cookieJar.getCookies())
+                names.add(cookie.getName());
+
+            Set<String> expected;
             if (COOKIE_DATE_FORMATS[i].contains("yyyy")) {
-                if (cookies.size() != 2)
-                    throw new RuntimeException(
-                        "Incorrectly parsing a bad date");
-            } else if (cookies.size() != 1) {
-                throw new RuntimeException(
-                    "Incorrectly parsing a bad date");
+                // Four-digit years parse unambiguously: TEST1 and TEST2 are
+                // in the past and expire, while TEST3 and TEST4 remain.
+                expected = new TreeSet<>(List.of("TEST3", "TEST4"));
+            } else {
+                // Two-digit years make TEST2 and TEST3 resolve to a mismatched
+                // day-of-week, so strict parsing rejects the Expires value; per
+                // RFC 6265 section 5.2.1 an unparseable Expires is ignored, so
+                // they remain as session cookies. TEST1 parses cleanly but is
+                // already expired, so it is dropped. TEST4's two-digit year
+                // round-trips to itself (69 -> 2069), so it parses and remains
+                // because its expiry is still in the future.
+                expected = new TreeSet<>(List.of("TEST2", "TEST3", "TEST4"));
             }
+            assertEquals(expected, names,
+                "Incorrectly parsing a bad date, format: "
+                + COOKIE_DATE_FORMATS[i]);
         }
     }
 }

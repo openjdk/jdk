@@ -29,6 +29,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/ad.hpp"
+#include "opto/addnode.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
@@ -42,10 +43,13 @@
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/type.hpp"
+#include "opto/valuetypenode.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
+#include "utilities/vmError.hpp"
 
 class RegMask;
 // #include "phase.hpp"
@@ -524,9 +528,6 @@ Node *Node::clone() const {
     C->add_template_assertion_predicate_opaque(n->as_OpaqueTemplateAssertionPredicate());
   }
 
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->register_potential_barrier_node(n);
-
   n->set_idx(C->next_unique()); // Get new unique index as well
   NOT_PRODUCT(n->_igv_idx = C->next_igv_idx());
   DEBUG_ONLY( n->verify_construction() );
@@ -575,6 +576,12 @@ Node *Node::clone() const {
     n->as_SafePoint()->clone_jvms(C);
     n->as_SafePoint()->clone_replaced_nodes();
   }
+  if (n->is_ValueType()) {
+    C->add_value_type(n);
+  }
+  if (n->is_LoadFlat() || n->is_StoreFlat()) {
+    C->add_flat_access(n);
+  }
   Compile::current()->record_modified_node(n);
   return n;                     // Return the clone
 }
@@ -597,6 +604,7 @@ void Node::setup_is_top() {
 //------------------------------~Node------------------------------------------
 // Fancy destructor; eagerly attempt to reclaim Node numberings and storage
 void Node::destruct(PhaseValues* phase) {
+  assert(this != Compile::current()->dead_path(), "we want to keep the unique DeadPath node around");
   Compile* compile = (phase != nullptr) ? phase->C : Compile::current();
   if (phase != nullptr && phase->is_IterGVN()) {
     phase->is_IterGVN()->_worklist.remove(this);
@@ -638,6 +646,9 @@ void Node::destruct(PhaseValues* phase) {
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
   }
+  if (is_ValueType()) {
+    compile->remove_value_type(this);
+  }
   if (for_merge_stores_igvn()) {
     compile->remove_from_merge_stores_igvn(this);
   }
@@ -649,8 +660,6 @@ void Node::destruct(PhaseValues* phase) {
       compile->remove_unstable_if_trap(as_CallStaticJava(), false);
     }
   }
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->unregister_potential_barrier_node(this);
 
   // See if the input array was allocated just prior to the object
   int edge_size = _max*sizeof(void*);
@@ -735,11 +744,14 @@ void Node::out_grow(uint len) {
 //------------------------------is_dead----------------------------------------
 bool Node::is_dead() const {
   // Mach and pinch point nodes may look like dead.
-  if( is_top() || is_Mach() || (Opcode() == Op_Node && _outcnt > 0) )
+  if (is_top() || is_Mach() || (Opcode() == Op_Node && _outcnt > 0) || this == Compile::current()->dead_path()) {
     return false;
-  for( uint i = 0; i < _max; i++ )
-    if( _in[i] != nullptr )
+  }
+  for (uint i = 0; i < _max; i++) {
+    if (_in[i] != nullptr) {
       return false;
+    }
+  }
   return true;
 }
 
@@ -749,11 +761,11 @@ bool Node::is_not_dead(const Node* n) {
 
 bool Node::is_reachable_from_root() const {
   ResourceMark rm;
-  Unique_Node_List wq;
-  wq.push((Node*)this);
+  Unique_Node_List<const Node> wq;
+  wq.push(this);
   RootNode* root = Compile::current()->root();
   for (uint i = 0; i < wq.size(); i++) {
-    Node* m = wq.at(i);
+    const Node* m = wq.at(i);
     if (m == root) {
       return true;
     }
@@ -881,7 +893,7 @@ void Node::ins_req( uint idx, Node *n ) {
 }
 
 //-----------------------------find_edge---------------------------------------
-int Node::find_edge(Node* n) {
+int Node::find_edge(const Node* n) const {
   for (uint i = 0; i < len(); i++) {
     if (_in[i] == n)  return i;
   }
@@ -1141,6 +1153,80 @@ void Node::raise_bottom_type(const Type* new_type) {
   }
 }
 
+const TypePtr* Node::out_adr_type() const {
+  const TypePtr* res = out_adr_type_impl();
+
+#ifdef ASSERT
+  if (Node::in_dump() || VMError::is_error_reported()) {
+    return res;
+  }
+
+  // Verify that in_adr_type contains out_adr_type, except for Start, obviously it consumes nothing
+  if (is_Start()) {
+    return res;
+  }
+
+  // Load must have no out_adr_type
+  if (is_Load() && res != nullptr) {
+    stringStream ss;
+    res->dump_on(&ss);
+    assert(false, "Node %s must have no out_adr_type, out: %s", Name(), ss.as_string());
+  }
+
+  const TypePtr* in_type = in_adr_type_impl();
+  // Store, LoadStore, and Phi must have the same out_adr_type and in_adr_type
+  if ((is_Store() || is_LoadStore() || is_Phi()) && res != in_type) {
+    stringStream ss;
+    ss.print(", out: ");
+    if (res == nullptr) {
+      ss.print("nullptr");
+    } else {
+      res->dump_on(&ss);
+    }
+    ss.print(", in: ");
+    if (in_type == nullptr) {
+      ss.print("nullptr");
+    } else {
+      in_type->dump_on(&ss);
+    }
+    assert(false, "Node %s must have the same out_adr_type and in_adr_type%s", Name(), ss.as_string());
+  }
+
+  // For some reasons, Raw can be used as Bot (see GraphKit::set_output_for_allocation for
+  // example), so be lenient here
+  if (res != nullptr && in_type != TypePtr::BOTTOM && in_type != TypeRawPtr::BOTTOM && res != in_type) {
+    stringStream ss;
+    ss.print(", out: ");
+    res->dump_on(&ss);
+    ss.print(", in: ");
+    if (in_type == nullptr) {
+      ss.print("nullptr");
+    } else {
+      in_type->dump_on(&ss);
+    }
+    assert(false, "Node %s: in_adr_type must contain out_adr_type%s", Name(), ss.as_string());
+  }
+
+  // Unless this node is pinned, we must either have no out_adr_type or have the same out_adr_type
+  // and in_adr_type. This is because we DO NOT know how to compute the anti-dependence of any
+  // other node. The exceptions are the intrinsic nodes which are constructed specially to
+  // materialize anti-dependencies as def-use dependencies.
+  bool has_special_anti_dependence_construction = Opcode() == Op_StrCompressedCopy ||
+                                                  Opcode() == Op_StrInflatedCopy ||
+                                                  Opcode() == Op_EncodeISOArray;
+  if (!is_Mach() && !is_CFG() && !pinned() && res != nullptr && res != in_type && !has_special_anti_dependence_construction) {
+    stringStream ss;
+    ss.print(", out: ");
+    res->dump_on(&ss);
+    ss.print(", in: ");
+    in_type->dump_on(&ss);
+    assert(false, "Node %s: cannot compute anti-dependencies%s", Name(), ss.as_string());
+  }
+#endif // ASSERT
+
+  return res;
+}
+
 //------------------------------Identity---------------------------------------
 // Return a node that the given node is equivalent to.
 Node* Node::Identity(PhaseGVN* phase) {
@@ -1230,6 +1316,13 @@ bool Node::has_special_unique_user() const {
   } else if (this->is_Load() && n->is_Move()) {
     // Condition for MoveX2Y (LoadX mem) => LoadY mem
     return true;
+  } else if (op == Op_LoadUS && n->Opcode() == Op_LShiftI) {
+    // Condition for RShiftI(LShiftI(LoadUS(...), 16), 16) => LoadS(...), see RShiftINode::Ideal
+    return true;
+  } else if ((op == Op_LoadB || op == Op_LoadS) && n->Opcode() == Op_AndI) {
+    // AndINode::Ideal turns AndI(LoadB/S) into AndI(LoadUB/US), if the LoadB
+    // only has a single use.
+    return true;
   } else if (op == Op_AddL) {
     // Condition for convL2I(addL(x,y)) ==> addI(convL2I(x),convL2I(y))
     return n->Opcode() == Op_ConvL2I && n->in(1) == this;
@@ -1248,7 +1341,12 @@ bool Node::has_special_unique_user() const {
   } else {
     return false;
   }
-};
+}
+
+bool Node::should_process_when_disconnect_output(Node* output) const {
+  return (is_Phi() && as_Phi()->is_dead_phi()) ||
+         output->is_data_proj_of_pure_function(this);
+}
 
 //--------------------------find_exact_control---------------------------------
 // Skip Proj and CatchProj nodes chains. Check for Null and Top.
@@ -1275,7 +1373,7 @@ Node* Node::find_exact_control(Node* ctrl) {
 // We already know that if any path back to Root or Start reaches 'this',
 // then all paths so, so this is a simple search for one example,
 // not an exhaustive search for a counterexample.
-Node::DomResult Node::dominates(Node* sub, Node_List &nlist) {
+Node::DomResult Node::dominates(Node* sub, Node_List<Node>& nlist) {
   assert(this->is_CFG(), "expecting control");
   assert(sub != nullptr && sub->is_CFG(), "expecting control");
 
@@ -1404,7 +1502,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
   if( dead->is_Con() ) return;
 
   ResourceMark rm;
-  Node_List nstack;
+  Node_List<Node> nstack;
   VectorSet dead_set; // notify uses only once
 
   Node *top = igvn->C->top();
@@ -1473,19 +1571,16 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
           if (n->outcnt() == 0) {   // Input also goes dead?
             if (!n->is_Con())
               nstack.push(n);       // Clear it out as well
-          } else if (n->outcnt() == 1 &&
-                     n->has_special_unique_user()) {
-            igvn->add_users_to_worklist( n );
+          } else if (n->outcnt() == 1 && n->has_special_unique_user()) {
+            igvn->add_users_to_worklist(n);
           } else if (n->outcnt() <= 2 && n->is_Store()) {
             // Push store's uses on worklist to enable folding optimization for
             // store/store and store/load to the same address.
             // The restriction (outcnt() <= 2) is the same as in set_req_X()
             // and remove_globally_dead_node().
             igvn->add_users_to_worklist( n );
-          } else if (dead->is_data_proj_of_pure_function(n)) {
+          } else if (n->should_process_when_disconnect_output(dead)) {
             igvn->_worklist.push(n);
-          } else {
-            BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn, n);
           }
         }
       }
@@ -2620,7 +2715,7 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
     t->dump_on(st);
   } else if (t == Type::MEMORY) {
     st->print("  Memory:");
-    MemNode::dump_adr_type(adr_type(), st);
+    MemNode::dump_adr_type(out_adr_type(), st);
   } else if (Verbose || WizardMode) {
     st->print("  Type:");
     if (t) {
@@ -2736,7 +2831,7 @@ void Node::dump_comp(const char* suffix, outputStream *st) const {
 
 // VERIFICATION CODE
 // Verify all nodes if verify_depth is negative
-void Node::verify(int verify_depth, VectorSet& visited, Node_List& worklist) {
+void Node::verify(int verify_depth, VectorSet& visited, Node_List<Node>& worklist) {
   assert(verify_depth != 0, "depth should not be 0");
   Compile* C = Compile::current();
   uint last_index_on_current_depth = worklist.size() - 1;
@@ -2826,32 +2921,36 @@ const RegMask &Node::in_RegMask(uint) const {
   return RegMask::EMPTY;
 }
 
-void Node_Array::grow(uint i) {
+template <typename T>
+void Node_Array<T>::grow(uint i) {
   assert(i >= _max, "Should have been checked before, use maybe_grow?");
   assert(_max > 0, "invariant");
   uint old = _max;
   _max = next_power_of_2(i);
-  _nodes = (Node**)_a->Arealloc( _nodes, old*sizeof(Node*),_max*sizeof(Node*));
-  Copy::zero_to_bytes( &_nodes[old], (_max-old)*sizeof(Node*) );
+  _nodes = (T**)_a->Arealloc( _nodes, old*sizeof(T*),_max*sizeof(T*));
+  Copy::zero_to_bytes( &_nodes[old], (_max-old)*sizeof(T*) );
 }
 
-void Node_Array::insert(uint i, Node* n) {
+template <typename T>
+void Node_Array<T>::insert(uint i, T* n) {
   if (_nodes[_max - 1]) {
     grow(_max);
   }
-  Copy::conjoint_words_to_higher((HeapWord*)&_nodes[i], (HeapWord*)&_nodes[i + 1], ((_max - i - 1) * sizeof(Node*)));
+  Copy::conjoint_words_to_higher((HeapWord*)&_nodes[i], (HeapWord*)&_nodes[i + 1], ((_max - i - 1) * sizeof(T*)));
   _nodes[i] = n;
 }
 
-void Node_Array::remove(uint i) {
-  Copy::conjoint_words_to_lower((HeapWord*)&_nodes[i + 1], (HeapWord*)&_nodes[i], ((_max - i - 1) * sizeof(Node*)));
+template <typename T>
+void Node_Array<T>::remove(uint i) {
+  Copy::conjoint_words_to_lower((HeapWord*)&_nodes[i + 1], (HeapWord*)&_nodes[i], ((_max - i - 1) * sizeof(T*)));
   _nodes[_max - 1] = nullptr;
 }
 
-void Node_Array::dump() const {
+template <typename T>
+void Node_Array<T>::dump() const {
 #ifndef PRODUCT
   for (uint i = 0; i < _max; i++) {
-    Node* nn = _nodes[i];
+    T* nn = _nodes[i];
     if (nn != nullptr) {
       tty->print("%5d--> ",i); nn->dump();
     }
@@ -2997,8 +3096,9 @@ bool Node::is_dead_loop_safe() const {
     if (in(0)->is_Allocate()) {
       return false;
     }
-    // MemNode::can_see_stored_value() peeks through the boxing call
-    if (in(0)->is_CallStaticJava() && in(0)->as_CallStaticJava()->is_boxing_method()) {
+    // MemNode::can_see_stored_value() peeks through boxing calls and
+    // ProjNode::Identity() peeks through boxing and unboxing calls.
+    if (in(0)->is_boxing_or_unboxing_call()) {
       return false;
     }
     return true;
@@ -3008,6 +3108,11 @@ bool Node::is_dead_loop_safe() const {
 
 bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || Opcode() == Op_Mod(bt) ||
                                                       Opcode() == Op_UDiv(bt) || Opcode() == Op_UMod(bt); }
+
+bool Node::is_boxing_or_unboxing_call() const {
+  return is_CallStaticJava() && (as_CallStaticJava()->is_boxing_method() ||
+                                 as_CallStaticJava()->is_unboxing_method());
+}
 
 // `maybe_pure_function` is assumed to be the input of `this`. This is a bit redundant,
 // but we already have and need maybe_pure_function in all the call sites, so
@@ -3048,6 +3153,12 @@ bool Node::has_non_debug_uses() const {
       if (u->is_Call() && u->as_Call()->has_non_debug_use(this)) {
         return true;
       }
+      if (u->is_StoreFlat() && u->as_StoreFlat()->has_non_debug_use(this)) {
+        return true;
+      }
+      if (u->is_LoadFlat() && u->as_LoadFlat()->has_non_debug_use(this)) {
+        return true;
+      }
       // Non-call safepoints have only debug uses.
     } else if (u->is_ReachabilityFence()) {
       // Reachability fence is treated as debug use.
@@ -3061,36 +3172,39 @@ bool Node::has_non_debug_uses() const {
 //=============================================================================
 //------------------------------yank-------------------------------------------
 // Find and remove
-void Node_List::yank( Node *n ) {
+template <typename T>
+void Node_List<T>::yank(const T* n) {
   uint i;
   for (i = 0; i < _cnt; i++) {
-    if (_nodes[i] == n) {
+    if (Base::_nodes[i] == n) {
       break;
     }
   }
 
   if (i < _cnt) {
-    _nodes[i] = _nodes[--_cnt];
+    Base::_nodes[i] = Base::_nodes[--_cnt];
   }
 }
 
 //------------------------------dump-------------------------------------------
-void Node_List::dump() const {
+template <typename T>
+void Node_List<T>::dump() const {
 #ifndef PRODUCT
   for (uint i = 0; i < _cnt; i++) {
-    if (_nodes[i]) {
+    if (Base::_nodes[i]) {
       tty->print("%5d--> ", i);
-      _nodes[i]->dump();
+      Base::_nodes[i]->dump();
     }
   }
 #endif
 }
 
-void Node_List::dump_simple() const {
+template <typename T>
+void Node_List<T>::dump_simple() const {
 #ifndef PRODUCT
   for (uint i = 0; i < _cnt; i++) {
-    if( _nodes[i] ) {
-      tty->print(" %d", _nodes[i]->_idx);
+    if (Base::_nodes[i]) {
+      tty->print(" %d", Base::_nodes[i]->_idx);
     } else {
       tty->print(" null");
     }
@@ -3100,11 +3214,12 @@ void Node_List::dump_simple() const {
 
 //=============================================================================
 //------------------------------remove-----------------------------------------
-void Unique_Node_List::remove(Node* n) {
+template <typename T>
+void Unique_Node_List<T>::remove(const T* n) {
   if (_in_worklist.test(n->_idx)) {
-    for (uint i = 0; i < size(); i++) {
-      if (_nodes[i] == n) {
-        map(i, Node_List::pop());
+    for (uint i = 0; i < Base::size(); i++) {
+      if (Base::_nodes[i] == n) {
+        Base::map(i, Base::pop());
         _in_worklist.remove(n->_idx);
         return;
       }
@@ -3113,23 +3228,23 @@ void Unique_Node_List::remove(Node* n) {
   }
 }
 
-//-----------------------remove_useless_nodes----------------------------------
 // Remove useless nodes from worklist
-void Unique_Node_List::remove_useless_nodes(VectorSet &useful) {
-  for (uint i = 0; i < size(); ++i) {
-    Node *n = at(i);
+template <typename T>
+void Unique_Node_List<T>::remove_useless_nodes(const VectorSet& useful) {
+  for (uint i = 0; i < Base::size(); ++i) {
+    T* n = Base::at(i);
     assert( n != nullptr, "Did not expect null entries in worklist");
     if (!useful.test(n->_idx)) {
       _in_worklist.remove(n->_idx);
-      map(i, Node_List::pop());
+      Base::map(i, Base::pop());
       --i;  // Visit popped node
       // If it was last entry, loop terminates since size() was also reduced
     }
   }
 }
 
-//=============================================================================
-void Node_Stack::grow() {
+template <typename T>
+void Node_Stack<T>::grow() {
   size_t old_top = pointer_delta(_inode_top,_inodes,sizeof(INode)); // save _top
   size_t old_max = pointer_delta(_inode_max,_inodes,sizeof(INode));
   size_t max = old_max << 1;             // max * 2
@@ -3139,7 +3254,8 @@ void Node_Stack::grow() {
 }
 
 // Node_Stack is used to map nodes.
-Node* Node_Stack::find(uint idx) const {
+template <typename T>
+T* Node_Stack<T>::find(uint idx) const {
   uint sz = size();
   for (uint i = 0; i < sz; i++) {
     if (idx == index_at(i)) {
@@ -3178,10 +3294,11 @@ uint TypeNode::ideal_reg() const {
   return _type->ideal_reg();
 }
 
-void TypeNode::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str) {
+void Node::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str) {
   Node* c = ctrl_use->in(j);
-  if (igvn->type(c) != Type::TOP) {
-    igvn->replace_input_of(ctrl_use, j, igvn->C->top());
+  Node* top = igvn->C->top();
+  if (c != top) {
+    igvn->replace_input_of(ctrl_use, j, top);
     create_halt_path(igvn, c, loop, phase_str);
   }
 }
@@ -3193,14 +3310,18 @@ void TypeNode::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ct
 // constant folds and the control flow that leads to the Type node becomes unreachable. There are cases where that
 // doesn't happen, however. They are handled here by following uses of the Type node until a CFG or a Phi to find dead
 // paths. The dead paths are then replaced by a Halt node.
-void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str) {
-  Unique_Node_List wq;
+void Node::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str) {
+  Unique_Node_List<Node> wq;
   wq.push(this);
   for (uint i = 0; i < wq.size(); ++i) {
     Node* n = wq.at(i);
+    if (n->is_CFG()) {
+      n->remove_dead_region(igvn, true);
+    }
     for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
       Node* u = n->fast_out(k);
       if (u->is_CFG()) {
+        wq.push(u);
         assert(!u->is_Region(), "Can't reach a Region without going through a Phi");
         make_path_dead(igvn, loop, u, 0, phase_str);
       } else if (u->is_Phi()) {
@@ -3220,7 +3341,7 @@ void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loo
   }
 }
 
-void TypeNode::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str) const {
+void Node::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str) {
   Node* frame = new ParmNode(igvn->C->start(), TypeFunc::FramePtr);
   if (loop == nullptr) {
     igvn->register_new_node_with_optimizer(frame);
@@ -3240,14 +3361,43 @@ void TypeNode::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loo
   igvn->add_input_to(igvn->C->root(), halt);
 }
 
-Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (KillPathsReachableByDeadTypeNode && can_reshape && Value(phase) == Type::TOP) {
-    PhaseIterGVN* igvn = phase->is_IterGVN();
-    Node* top = igvn->C->top();
-    ResourceMark rm;
-    make_paths_from_here_dead(igvn, nullptr, "igvn");
-    return top;
-  }
+#define INSTANTIATE_NODE_CONTAINERS(node)    \
+template class Node_Array<node>;             \
+template class Node_Array<const node>;       \
+template class Node_List<node>;              \
+template class Node_List<const node>;        \
+template class Unique_Node_List<node>;       \
+template class Unique_Node_List<const node>; \
+template class Node_Stack<node>;             \
+template class Node_Stack<const node>;       \
 
-  return Node::Ideal(phase, can_reshape);
-}
+INSTANTIATE_NODE_CONTAINERS(Node)
+
+INSTANTIATE_NODE_CONTAINERS(AbstractLockNode)
+INSTANTIATE_NODE_CONTAINERS(AddPNode)
+INSTANTIATE_NODE_CONTAINERS(BoolNode)
+INSTANTIATE_NODE_CONTAINERS(CallJavaNode)
+INSTANTIATE_NODE_CONTAINERS(CallStaticJavaNode)
+INSTANTIATE_NODE_CONTAINERS(CastPPNode)
+INSTANTIATE_NODE_CONTAINERS(ConstraintCastNode)
+INSTANTIATE_NODE_CONTAINERS(CountedLoopNode)
+INSTANTIATE_NODE_CONTAINERS(CreateExNode)
+INSTANTIATE_NODE_CONTAINERS(IfNode)
+INSTANTIATE_NODE_CONTAINERS(IfProjNode)
+INSTANTIATE_NODE_CONTAINERS(MachNode)
+INSTANTIATE_NODE_CONTAINERS(MachProjNode)
+INSTANTIATE_NODE_CONTAINERS(MergeMemNode)
+INSTANTIATE_NODE_CONTAINERS(MemNode)
+INSTANTIATE_NODE_CONTAINERS(MultiBranchNode)
+INSTANTIATE_NODE_CONTAINERS(PhiNode)
+INSTANTIATE_NODE_CONTAINERS(OpaqueMultiversioningNode)
+INSTANTIATE_NODE_CONTAINERS(OpaqueTemplateAssertionPredicateNode)
+INSTANTIATE_NODE_CONTAINERS(OpaqueZeroTripGuardNode)
+INSTANTIATE_NODE_CONTAINERS(ReachabilityFenceNode)
+INSTANTIATE_NODE_CONTAINERS(RegionNode)
+INSTANTIATE_NODE_CONTAINERS(SafePointNode)
+INSTANTIATE_NODE_CONTAINERS(SafePointScalarObjectNode)
+INSTANTIATE_NODE_CONTAINERS(StoreNode)
+INSTANTIATE_NODE_CONTAINERS(TypeNode)
+INSTANTIATE_NODE_CONTAINERS(ValueTypeNode)
+#undef INSTANTIATE_NODE_CONTAINERS

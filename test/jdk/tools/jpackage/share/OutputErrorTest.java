@@ -34,6 +34,7 @@ import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.TKit;
@@ -59,6 +60,7 @@ public final class OutputErrorTest {
         new PackageTest().configureHelloApp().addInitializer(cmd -> {
 
             cmd.setFakeRuntime();
+            cmd.enableMessageCategories(MessageCategory.ERRORS);
             cmd.setArgumentValue("--dest", TKit.createTempDirectory("output"));
             cmd.removeOldOutputBundle(false);
             cmd.validateErr(JPackageCommand.makeError(

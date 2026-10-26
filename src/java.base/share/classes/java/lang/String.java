@@ -1931,6 +1931,19 @@ public final class String
     }
 
     /**
+     * {@return the number of Unicode code points in this {@code string}}
+     * Unpaired surrogates count as one code point each.
+     *
+     * @since 28
+     */
+    public int codePointCount() {
+        if (isLatin1()) {
+            return value.length;
+        }
+        return StringUTF16.codePointCount(value, 0, value.length >> 1);
+    }
+
+    /**
      * Returns the index within this {@code String} that is
      * offset from the given {@code index} by
      * {@code codePointOffset} code points. Unpaired surrogates
@@ -4054,7 +4067,7 @@ public final class String
      *   <td>(all)</td>
      *   <th scope="row" style="font-weight:normal; text-align:left">
      *       &Iota;&Chi;&Theta;&Upsilon;&Sigma;</th>
-     *   <td>&iota;&chi;&theta;&upsilon;&sigma;</td>
+     *   <td>&iota;&chi;&theta;&upsilon;&sigmaf;</td>
      *   <td>lowercased all chars in String</td>
      * </tr>
      * </tbody>

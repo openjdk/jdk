@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,9 +41,9 @@
  *                   -XX:-AllowParallelDefineClass
  *                   test.DefineClass defineClassParallel
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -Djdk.attach.allowAttachSelf test.DefineClass redefineClass
+ *                   -XX:+EnableDynamicAgentLoading -Djdk.attach.allowAttachSelf test.DefineClass redefineClass
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -Djdk.attach.allowAttachSelf test.DefineClass redefineClassWithError
+ *                   -XX:+EnableDynamicAgentLoading -Djdk.attach.allowAttachSelf test.DefineClass redefineClassWithError
  * @author volker.simonis@gmail.com
  */
 
