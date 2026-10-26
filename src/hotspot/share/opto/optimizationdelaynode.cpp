@@ -30,7 +30,7 @@ const Type* OptimizationDelayNode::Value(PhaseGVN* phase) const {
 
   // We always have to propagate TOP, at least within one IGVN
   // round, otherwise we risk dead data paths with live CFG.
-  if (t_in == Type::TOP || _stage == OptimizationDelayNode::Stage::RevealType) {
+  if (t_in == Type::TOP || _stage >= OptimizationDelayNode::Stage::RevealType) {
     return t_in;
   }
 
