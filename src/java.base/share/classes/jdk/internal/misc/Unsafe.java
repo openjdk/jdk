@@ -286,6 +286,7 @@ public final class Unsafe {
      *
      * A layout of 0 indicates this array is not flat.
      */
+    @ForceInline
     public int arrayLayout(Object[] array) {
         if (array == null) {
             throw new NullPointerException();
@@ -1422,6 +1423,7 @@ public final class Unsafe {
      * @see #getInt(Object, long)
      * @see #putInt(Object, long, int)
      */
+    @ForceInline
     public long arrayBaseOffset(Class<?> arrayClass) {
         if (arrayClass == null) {
             throw new NullPointerException();
@@ -1430,6 +1432,7 @@ public final class Unsafe {
         return arrayBaseOffset0(arrayClass);
     }
 
+    @ForceInline
     public long arrayInstanceBaseOffset(Object[] array) {
         if (array == null) {
             throw new NullPointerException();
@@ -1493,6 +1496,7 @@ public final class Unsafe {
      * @see #getInt(Object, long)
      * @see #putInt(Object, long, int)
      */
+    @ForceInline
     public int arrayIndexScale(Class<?> arrayClass) {
         if (arrayClass == null) {
             throw new NullPointerException();
@@ -1501,6 +1505,7 @@ public final class Unsafe {
         return arrayIndexScale0(arrayClass);
     }
 
+    @ForceInline
     public int arrayInstanceIndexScale(Object[] array) {
         if (array == null) {
             throw new NullPointerException();
@@ -1514,6 +1519,7 @@ public final class Unsafe {
      * Intended to be used by substitutability test in ValueObjectMethods only.
      * The format is subject to change.
      */
+    @ForceInline
     public int[] getFieldMap(Class<?> c) {
         if (c == null) {
             throw new NullPointerException();
@@ -1526,6 +1532,7 @@ public final class Unsafe {
      * a possible flat layout that contains no oop.
      * Required for numerical CAS safety.
      */
+    @ForceInline
     public boolean isFlatPayloadBinary(Class<?> c) {
         int[] map = getFieldMap(c);
         int nbNonRef = map[0];
