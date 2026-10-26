@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1790,11 +1790,14 @@ typedef struct {
         if (_size >= (PTR)->plgMax) {                                       \
             jint newMax = (PTR)->plgMax*2;                                  \
             if ((PTR)->plgPnts == (PTR)->dfPlgPnts) {                       \
-                (PTR)->plgPnts = (Point*)malloc(newMax*sizeof(Point));      \
-                memcpy((PTR)->plgPnts, _pnts, _size*sizeof(Point));         \
+                Point* _newp = (Point*)malloc(newMax*sizeof(Point));        \
+                if (_newp == NULL) break;                                   \
+                memcpy(_newp, _pnts, _size*sizeof(Point));                  \
+                (PTR)->plgPnts = _newp;                                     \
             } else {                                                        \
-                (PTR)->plgPnts = (Point*)realloc(                           \
-                    _pnts, newMax*sizeof(Point));                           \
+                Point* _newp = (Point*)realloc(_pnts, newMax*sizeof(Point));\
+                if (_newp == NULL) break;                                   \
+                (PTR)->plgPnts = _newp;                                     \
             }                                                               \
             _pnts = (PTR)->plgPnts;                                         \
             (PTR)->plgMax = newMax;                                         \
