@@ -85,6 +85,9 @@ public:
     _weak = weak;
   }
 
+  inline void do_cld(ClassLoaderData* cld) override;
+  inline void do_klass(Klass* k) override;
+
   virtual void do_nmethod(nmethod* nm) {
     assert(!is_weak(), "Can't handle weak marking of nmethods");
     ShenandoahSuperClosure::do_nmethod(nm);
