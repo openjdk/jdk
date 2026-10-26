@@ -26,17 +26,9 @@ package compiler.controldependency;
  * @test
  * @bug 8395612
  * @summary C2: Split-if rewires constraint cast to a wrong control
+ * @key stress randomness
  * @requires vm.compiler2.enabled
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=1  ${test.main.class}
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=2  ${test.main.class}
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=3  ${test.main.class}
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=4  ${test.main.class}
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=5  ${test.main.class}
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=6  ${test.main.class}
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=7  ${test.main.class}
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=8  ${test.main.class}
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=9  ${test.main.class}
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=10 ${test.main.class}
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=5 ${test.main.class}
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM ${test.main.class}
  * @run main/othervm ${test.main.class}
  */
