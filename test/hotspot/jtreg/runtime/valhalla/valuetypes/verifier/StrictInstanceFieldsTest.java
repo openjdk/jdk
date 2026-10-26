@@ -43,6 +43,7 @@
  *          EndsInEarlyLarval.jcod
  *          EarlyLarvalNotSubset.jcod
  *          InvalidIndexInEarlyLarval.jcod
+ *          HasStrictFieldSafe.jasm
  *          HasStrictField.jasm
  * @compile StrictInstanceFieldsTest.java
  * @run driver jdk.test.lib.helpers.StrictProcessor
@@ -122,6 +123,8 @@ public class StrictInstanceFieldsTest {
 
         NoUnsetFieldsSuper c8 = new NoUnsetFieldsSuper();
         System.out.println(c8);
+
+        HasStrictFieldSafe c9 = new HasStrictFieldSafe(new Integer(0));
 
         // --------------
         // NEGATIVE TESTS

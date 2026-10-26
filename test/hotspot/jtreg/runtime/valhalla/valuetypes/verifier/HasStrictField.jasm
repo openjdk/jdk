@@ -24,8 +24,8 @@
 /*
 // Ensure that exception handler preserves the verification state before the putfield
 value class HasStrictField {
-   Foo sf;
-   HasStrictField(Foo something) {
+   Integer sf;
+   HasStrictField(Integer something) {
       try {
         this.sf = something;
       }
@@ -61,7 +61,5 @@ final class HasStrictField version 72:65535
          return;
   }
 
-  SourceFile               "HasStrictField.java";
-
   LoadableDescriptors      "Ljava/lang/Integer;";
-} // end Class HasStrictField compiled from "HasStrictField.java"
+}

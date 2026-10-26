@@ -44,7 +44,7 @@ public class UninitThisTopTest {
         }
     }
 
-   public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
         // Positive test
         UninitializedTopControl c0 = new UninitializedTopControl();
 

@@ -1730,11 +1730,14 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
           no_control_flow = false; break;
         case Bytecodes::_putfield :
           // Putfield on a strict field changes the verification state so the exception handler must be verified
-          if (bci >= ex_min && bci < ex_max) {
-            verify_exception_handler_targets(bci, VerificationType::top_type(), &current_frame, &stackmap_table, CHECK_VERIFY(this));
-            if (was_recursively_verified()) return;
-            verified_exc_handlers = true;
+          if (current_frame.flag_this_uninit()) {
+            if (bci >= ex_min && bci < ex_max) {
+              verify_exception_handler_targets(bci, VerificationType::top_type(), &current_frame, &stackmap_table, CHECK_VERIFY(this));
+              if (was_recursively_verified()) return;
+              verified_exc_handlers = true;
+            }
           }
+          // fall through
         case Bytecodes::_getfield :
           // pass FALSE, operand can't be an array type for getfield/putfield.
           verify_field_instructions(
