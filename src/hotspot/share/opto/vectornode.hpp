@@ -763,7 +763,9 @@ public:
 // Common superclass for Min/Max vector nodes
 class MinMaxVNode : public VectorNode {
 public:
-  MinMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  MinMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
+    init_class_id(Class_MinMaxV);
+  }
   virtual int min_opcode() const = 0;
   virtual int max_opcode() const = 0;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);

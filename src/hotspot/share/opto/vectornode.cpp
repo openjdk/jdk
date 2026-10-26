@@ -30,6 +30,7 @@
 #include "opto/divnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/subnode.hpp"
+#include "opto/valuetypenode.hpp"
 #include "opto/vectornode.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -2325,8 +2326,15 @@ Node* VectorInsertNode::make(Node* vec, Node* new_val, int position, PhaseGVN& g
 }
 
 Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (!EnableVectorReboxing) {
+    return nullptr;
+  }
   Node* n = obj()->uncast();
-  if (EnableVectorReboxing && n->Opcode() == Op_VectorBox) {
+  if (n->is_ValueType()) {
+    // VectorUnbox (ValueType ...) - possibly VectorBox inside
+    n = n->as_ValueType()->get_oop()->uncast();
+  }
+  if (n->Opcode() == Op_VectorBox) {
     if (Type::equals(bottom_type(), n->in(VectorBoxNode::Value)->bottom_type())) {
       // Handled by VectorUnboxNode::Identity()
     } else {
@@ -2365,8 +2373,15 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 Node* VectorUnboxNode::Identity(PhaseGVN* phase) {
+  if (!EnableVectorReboxing) {
+    return this;
+  }
   Node* n = obj()->uncast();
-  if (EnableVectorReboxing && n->Opcode() == Op_VectorBox) {
+  if (n->is_ValueType()) {
+    // VectorUnbox (ValueType ...) - possibly VectorBox inside
+    n = n->as_ValueType()->get_oop()->uncast();
+  }
+  if (n->Opcode() == Op_VectorBox) {
     if (Type::equals(bottom_type(), n->in(VectorBoxNode::Value)->bottom_type())) {
       return n->in(VectorBoxNode::Value); // VectorUnbox (VectorBox v) ==> v
     } else {

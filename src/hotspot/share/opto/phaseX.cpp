@@ -2552,6 +2552,10 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       if (n->is_ValueType()) {
         worklist.push(n);
       }
+      // Notify VectorUnbox through ValueType node
+      if (EnableVectorSupport && n->is_VectorUnbox()) {
+        worklist.push(n);
+      }
     };
     auto is_boundary = [](Node* n){ return !n->is_ValueType(); };
     use->visit_uses(push_the_uses_to_worklist, is_boundary, true);
@@ -2785,6 +2789,10 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     add_users_to_worklist_if(worklist, use, [](Node* u) {
       return u->is_MinMax();
     });
+  }
+  // Check for MaxV/MinV(A, MaxV/MinV(B, C)) where A == B or A == C
+  if (use->is_MinMaxV()) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) { return u->is_MinMaxV(); });
   }
   // Check for A | (B | C) and (B | C) | A where A == B or A == C.
   if (use_op == Op_OrI || use_op == Op_OrL) {
