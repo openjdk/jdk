@@ -21,7 +21,7 @@
  * questions.
  */
 
- /**
+/*
  * @test
  * @bug 8374807
  * @summary Regression test for -Xlog:deoptimization=debug -XX:-ProfileTraps
@@ -31,6 +31,22 @@
  * @run main/othervm -XX:-DisplayVMOutput -Xlog:deoptimization=debug -XX:-ProfileTraps
  *                   -XX:-TieredCompilation -Xcomp -Xbatch
  *                   -XX:CompileCommand=compileonly,compiler.uncommontrap.TestPrintDiagnosticsWithoutProfileTraps::test
+ *                   compiler.uncommontrap.TestPrintDiagnosticsWithoutProfileTraps
+ */
+
+/*
+ * @test
+ * @bug 8374807
+ * @summary Regression test for -Xlog:deoptimization=debug -XX:-ProfileTraps
+ *          -XX:-TieredCompilation -Xcomp crash
+ * @modules java.base/jdk.internal.misc
+ * @requires vm.debug
+ * @requires os.arch == "aarch64"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:-DisplayVMOutput -Xlog:deoptimization=debug -XX:-ProfileTraps
+ *                   -XX:-TieredCompilation -Xcomp -Xbatch
+ *                   -XX:CompileCommand=compileonly,compiler.uncommontrap.TestPrintDiagnosticsWithoutProfileTraps::test
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
  *                   compiler.uncommontrap.TestPrintDiagnosticsWithoutProfileTraps
  */
 

@@ -810,17 +810,15 @@ class JumpProjNode : public JProjNode {
 
  private:
   const int  _dest_bci;
-  const int  _switch_val;
  public:
-  JumpProjNode(Node* jumpnode, uint proj_no, int dest_bci, int switch_val)
-    : JProjNode(jumpnode, proj_no), _dest_bci(dest_bci), _switch_val(switch_val) {
+  JumpProjNode(Node* jumpnode, uint proj_no, int dest_bci)
+    : JProjNode(jumpnode, proj_no), _dest_bci(dest_bci) {
     init_class_id(Class_JumpProj);
   }
 
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return Type::CONTROL; }
   int  dest_bci()    const { return _dest_bci; }
-  int  switch_val()  const { return _con; }
   uint proj_no()     const { return _con; }
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
