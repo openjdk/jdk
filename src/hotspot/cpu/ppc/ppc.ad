@@ -1336,35 +1336,26 @@ int ConstantTable::calculate_table_base_offset() const {
   return 0;  // absolute addressing, no offset
 }
 
-bool MachConstantBaseNode::requires_postalloc_expand() const { return true; }
+bool MachConstantBaseNode::requires_postalloc_expand() const { return false; }
 void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {
-  iRegLdstOper *op_dst = new iRegLdstOper();
-  MachNode *m1 = new loadToc_hiNode();
-  MachNode *m2 = new loadToc_loNode();
-
-  m1->add_req(nullptr);
-  m2->add_req(nullptr, m1);
-  m1->_opnds[0] = op_dst;
-  m2->_opnds[0] = op_dst;
-  m2->_opnds[1] = op_dst;
-  ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-  ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-  nodes->push(m1);
-  nodes->push(m2);
-}
-
-void MachConstantBaseNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {
-  // Is postalloc expanded.
   ShouldNotReachHere();
 }
 
+void MachConstantBaseNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {
+  Register dst = as_Register(ra_->get_encode(this));
+  __ calculate_address_from_global_toc(dst, __ method_toc());
+}
+
 uint MachConstantBaseNode::size(PhaseRegAlloc* ra_) const {
-  return 0;
+  return 8;
 }
 
 #ifndef PRODUCT
 void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
-  st->print("-- \t// MachConstantBaseNode (empty encoding)");
+  char reg_str[128];
+  ra_->dump_register(this, reg_str, sizeof(reg_str));
+  st->print("ADDIS   %s, R29, DISP.hi \t// MachConstantBaseNode: load TOC hi\n\t"
+            "ADDI    %s, %s, DISP.lo \t// load TOC lo", reg_str, reg_str, reg_str);
 }
 #endif
 
@@ -5319,33 +5310,6 @@ instruct loadD_unaligned(regD dst, memory mem) %{
 %}
 
 //----------Constants--------------------------------------------------------
-
-// Load MachConstantTableBase: add hi offset to global toc.
-// TODO: Handle hidden register r29 in bundler!
-instruct loadToc_hi(iRegLdst dst) %{
-  effect(DEF dst);
-  ins_cost(DEFAULT_COST);
-
-  format %{ "ADDIS   $dst, R29, DISP.hi \t// load TOC hi" %}
-  size(4);
-  ins_encode %{
-    __ calculate_address_from_global_toc_hi16only($dst$$Register, __ method_toc());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Load MachConstantTableBase: add lo offset to global toc.
-instruct loadToc_lo(iRegLdst dst, iRegLdst src) %{
-  effect(DEF dst, USE src);
-  ins_cost(DEFAULT_COST);
-
-  format %{ "ADDI    $dst, $src, DISP.lo \t// load TOC lo" %}
-  size(4);
-  ins_encode %{
-    __ calculate_address_from_global_toc_lo16only($dst$$Register, __ method_toc());
-  %}
-  ins_pipe(pipe_class_default);
-%}
 
 // Load 16-bit integer constant 0xssss????
 instruct loadConI16(iRegIdst dst, immI16 src) %{
