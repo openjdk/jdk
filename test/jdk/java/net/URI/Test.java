@@ -1200,7 +1200,7 @@ public class Test {
         // same URI
         URI u1 = URI.create("s://h/../p");
         URI u2 = u1.normalize();
-        eqHashCompBidi(u1, u2, "=");
+        eqHashCompBidi(u1, u2, '=');
         eqeq(u1, u2);
 
         // Relativization
@@ -1399,7 +1399,7 @@ public class Test {
      * <p>
      * This method is bidirectional, i.e., it compares {@code s} against
      * {@code t}, and also the other way around. See
-     * {@link #eqHashCompUni(Object, Object, String) eqHashCompUni} for the
+     * {@link #eqHashCompUni(Object, Object, char) eqHashCompUni} for the
      * unidirectional variant.
      *
      * @param s Either a URI, or a string to be converted to URI
@@ -1407,7 +1407,7 @@ public class Test {
      * @param expectedRelation One of following relation identifiers: {@code <},
      * {@code >}, and {@code =}.
      */
-    private static void eqHashCompBidi(Object s, Object t, String expectedRelation)
+    private static void eqHashCompBidi(Object s, Object t, char expectedRelation)
             throws URISyntaxException {
 
         // Obtain URIs
@@ -1418,11 +1418,11 @@ public class Test {
         eqHashCompUni(u, v, expectedRelation);
 
         // Check `(v, u)`
-        final String substitutedRelation;
-        if ("<".equals(expectedRelation)) {
-            substitutedRelation = ">";
-        } else if (">".equals(expectedRelation)) {
-            substitutedRelation = "<";
+        final char substitutedRelation;
+        if ('<' == expectedRelation) {
+            substitutedRelation = '>';
+        } else if ('>' == expectedRelation) {
+            substitutedRelation = '<';
         } else {
             substitutedRelation = expectedRelation;
         }
@@ -1437,7 +1437,7 @@ public class Test {
      * <p>
      * This method is unidirectional, i.e., it only compares {@code u} against
      * {@code v}, not the other way around. See
-     * {@link #eqHashCompBidi(Object, Object, String) eqHashCompBidi} for the
+     * {@link #eqHashCompBidi(Object, Object, char) eqHashCompBidi} for the
      * bidirectional variant.
      *
      * @param s Either a URI, or a string to be converted to URI
@@ -1445,7 +1445,7 @@ public class Test {
      * @param expectedRelation One of following relation identifiers: {@code <},
      * {@code >}, and {@code =}.
      */
-    private static void eqHashCompUni(Object s, Object t, String expectedRelation)
+    private static void eqHashCompUni(Object s, Object t, char expectedRelation)
             throws URISyntaxException {
 
         // Obtain URIs
@@ -1457,11 +1457,11 @@ public class Test {
         int comp = u.compareTo(v);
         final boolean compMatched;
         if (comp < 0) {
-            compMatched = "<".equals(expectedRelation);
+            compMatched = '<' == expectedRelation;
         } else if (comp > 0) {
-            compMatched = ">".equals(expectedRelation);
+            compMatched = '>' == expectedRelation;
         } else {
-            compMatched = "=".equals(expectedRelation);
+            compMatched = '=' == expectedRelation;
         }
         if (!compMatched) {
             throw new AssertionError(
@@ -1472,7 +1472,7 @@ public class Test {
         // Check `equals`
         testCount++;
         boolean eq = u.equals(v);
-        if ("=".equals(expectedRelation) != eq) {
+        if (('=' == expectedRelation) != eq) {
             throw new AssertionError(
                     "Expected: %s %s %s, Actual: equals(): %s".formatted(
                             u, expectedRelation, v, eq));
@@ -1516,49 +1516,49 @@ public class Test {
         URI r = new URI("reg://some%20registry/b/c/d?q#f");
         URI s = new URI("http://jag:cafebabe@java.sun.com:94/b/c/d?q#f");
         URI t = new URI("http://example.com/%5bsegment%5d");
-        eqHashCompBidi(o, o, "=");
-        eqHashCompBidi(o, r, "<");
-        eqHashCompBidi(s, o, "<");
-        eqHashCompBidi(s, r, "<");
+        eqHashCompBidi(o, o, '=');
+        eqHashCompBidi(o, r, '<');
+        eqHashCompBidi(s, o, '<');
+        eqHashCompBidi(s, r, '<');
 
-        eqHashCompBidi(o, "MaILto:foo@bar.com", "=");
-        eqHashCompBidi(o, "mailto:foo@bar.COM", ">");
-        eqHashCompBidi(r, "rEg://some%20registry/b/c/d?q#f", "=");
-        eqHashCompBidi(r, "reg://Some%20Registry/b/c/d?q#f", ">");
-        eqHashCompBidi(r, "reg://some%20registry/b/c/D?q#f", ">");
-        eqHashCompBidi(s, "hTtP://jag:cafebabe@Java.Sun.COM:94/b/c/d?q#f", "=");
-        eqHashCompBidi(s, "http://jag:CafeBabe@java.sun.com:94/b/c/d?q#f", ">");
-        eqHashCompBidi(s, "http://jag:cafebabe@java.sun.com:94/b/c/d?r#f", "<");
-        eqHashCompBidi(s, "http://jag:cafebabe@java.sun.com:94/b/c/d?q#g", "<");
-        eqHashCompBidi(t, "http://example.com/%5Bsegment%5D", "=");
-        eqHashCompBidi(t, "http://example.com/%5BSegment%5D", ">");
-        eqHashCompBidi("http://example.com/%5Asegment%5D", "http://example.com/%5Bsegment%5D", "<");
-        eqHashCompBidi("http://host/a%00bcd", "http://host/a%00bcd", "=");
-        eqHashCompBidi("http://host/a%00bcd", "http://host/aZ00bcd", "<");
-        eqHashCompBidi("http://host/abc%e2def%C3ghi", "http://host/abc%E2def%c3ghi", "=");
+        eqHashCompBidi(o, "MaILto:foo@bar.com", '=');
+        eqHashCompBidi(o, "mailto:foo@bar.COM", '>');
+        eqHashCompBidi(r, "rEg://some%20registry/b/c/d?q#f", '=');
+        eqHashCompBidi(r, "reg://Some%20Registry/b/c/d?q#f", '>');
+        eqHashCompBidi(r, "reg://some%20registry/b/c/D?q#f", '>');
+        eqHashCompBidi(s, "hTtP://jag:cafebabe@Java.Sun.COM:94/b/c/d?q#f", '=');
+        eqHashCompBidi(s, "http://jag:CafeBabe@java.sun.com:94/b/c/d?q#f", '>');
+        eqHashCompBidi(s, "http://jag:cafebabe@java.sun.com:94/b/c/d?r#f", '<');
+        eqHashCompBidi(s, "http://jag:cafebabe@java.sun.com:94/b/c/d?q#g", '<');
+        eqHashCompBidi(t, "http://example.com/%5Bsegment%5D", '=');
+        eqHashCompBidi(t, "http://example.com/%5BSegment%5D", '>');
+        eqHashCompBidi("http://example.com/%5Asegment%5D", "http://example.com/%5Bsegment%5D", '<');
+        eqHashCompBidi("http://host/a%00bcd", "http://host/a%00bcd", '=');
+        eqHashCompBidi("http://host/a%00bcd", "http://host/aZ00bcd", '<');
+        eqHashCompBidi("http://host/abc%e2def%C3ghi", "http://host/abc%E2def%c3ghi", '=');
 
-        eqHashCompBidi("p", "s:p", "<");
-        eqHashCompBidi("s:p", "T:p", "<");
-        eqHashCompBidi("S:p", "t:p", "<");
-        eqHashCompBidi("s:/p", "s:p", "<");
-        eqHashCompBidi("s:p", "s:q", "<");
-        eqHashCompBidi("s:p#f", "s:p#g", "<");
-        eqHashCompBidi("s://u@h:1", "s://v@h:1", "<");
-        eqHashCompBidi("s://u@h:1", "s://u@i:1", "<");
-        eqHashCompBidi("s://u@h:1", "s://v@h:2", "<");
-        eqHashCompBidi("s://h", "s://h:0", "<");
-        eqHashCompBidi("s://h", "s://h:" + Integer.MAX_VALUE, "<");
-        eqHashCompBidi("s://h:0", "s://h:" + Integer.MAX_VALUE, "<");
-        eqHashCompBidi("s://h:" + Integer.MAX_VALUE, "s://H:" + Integer.MAX_VALUE, "=");
-        eqHashCompBidi("s://a%20b", "s://a%20c", "<");
-        eqHashCompBidi("s://a%20b", "s://aab", "<");
-        eqHashCompBidi("s://AA", "s://A_", "<");
-        eqHashCompBidi("s:/p", "s:/q", "<");
-        eqHashCompBidi("s:/p?q", "s:/p?r", "<");
-        eqHashCompBidi("s:/p#f", "s:/p#g", "<");
+        eqHashCompBidi("p", "s:p", '<');
+        eqHashCompBidi("s:p", "T:p", '<');
+        eqHashCompBidi("S:p", "t:p", '<');
+        eqHashCompBidi("s:/p", "s:p", '<');
+        eqHashCompBidi("s:p", "s:q", '<');
+        eqHashCompBidi("s:p#f", "s:p#g", '<');
+        eqHashCompBidi("s://u@h:1", "s://v@h:1", '<');
+        eqHashCompBidi("s://u@h:1", "s://u@i:1", '<');
+        eqHashCompBidi("s://u@h:1", "s://v@h:2", '<');
+        eqHashCompBidi("s://h", "s://h:0", '<');
+        eqHashCompBidi("s://h", "s://h:" + Integer.MAX_VALUE, '<');
+        eqHashCompBidi("s://h:0", "s://h:" + Integer.MAX_VALUE, '<');
+        eqHashCompBidi("s://h:" + Integer.MAX_VALUE, "s://H:" + Integer.MAX_VALUE, '=');
+        eqHashCompBidi("s://a%20b", "s://a%20c", '<');
+        eqHashCompBidi("s://a%20b", "s://aab", '<');
+        eqHashCompBidi("s://AA", "s://A_", '<');
+        eqHashCompBidi("s:/p", "s:/q", '<');
+        eqHashCompBidi("s:/p?q", "s:/p?r", '<');
+        eqHashCompBidi("s:/p#f", "s:/p#g", '<');
 
-        eqHashCompBidi("s://h", "s://h/p", "<");
-        eqHashCompBidi("s://h/p", "s://h/p?q", "<");
+        eqHashCompBidi("s://h", "s://h/p", '<');
+        eqHashCompBidi("s://h/p", "s://h/p?q", '<');
 
     }
 
@@ -1575,7 +1575,7 @@ public class Test {
         ObjectInputStream oi = new ObjectInputStream(bi);
         try {
             Object o = oi.readObject();
-            eqHashCompBidi(u, (URI)o, "=");
+            eqHashCompBidi(u, (URI)o, '=');
         } catch (ClassNotFoundException x) {
             x.printStackTrace();
             throw new RuntimeException(x.toString());
@@ -1842,13 +1842,13 @@ public class Test {
         throws URISyntaxException {
             URI baseURI = URI.create(base);
             URI targetURI = URI.create(target);
-            eqHashCompBidi(expected, baseURI.relativize(baseURI.resolve(targetURI)), "=");
+            eqHashCompBidi(expected, baseURI.relativize(baseURI.resolve(targetURI)), '=');
     }
     private static void resolveAfterRelativizeTest(String base, String target, String expected)
         throws URISyntaxException {
             URI baseURI = URI.create(base);
             URI targetURI = URI.create(target);
-            eqHashCompBidi(expected, baseURI.resolve(baseURI.relativize(targetURI)), "=");
+            eqHashCompBidi(expected, baseURI.resolve(baseURI.relativize(targetURI)), '=');
     }
 
     // 8272072 - Resolving URI relative path with no "/" may lead to incorrect toString
@@ -1858,12 +1858,12 @@ public class Test {
             URI relativeURI = new URI("test");
             URI resolvedURI = baseURI.resolve(relativeURI);
 
-            eqHashCompBidi("http://example.com/test", resolvedURI, "=");
+            eqHashCompBidi("http://example.com/test", resolvedURI, '=');
 
             baseURI = new URI("relativeBase");
             resolvedURI = baseURI.resolve(relativeURI);
 
-            eqHashCompBidi("test", resolvedURI, "=");
+            eqHashCompBidi("test", resolvedURI, '=');
         } catch (URISyntaxException e) {
             throw new AssertionError("shouldn't ever happen", e);
         }
