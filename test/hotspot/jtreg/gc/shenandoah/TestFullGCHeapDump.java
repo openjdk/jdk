@@ -128,6 +128,8 @@ public class TestFullGCHeapDump {
 
         for (File file : heapDumpFiles) {
             HprofParser.parseAndVerify(file);
+            file.delete();
         }
+        heapDumpDirectory.delete();
     }
 }
