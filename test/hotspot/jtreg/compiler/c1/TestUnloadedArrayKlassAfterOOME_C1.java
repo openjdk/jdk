@@ -28,7 +28,6 @@
  * @library /test/lib
  * @requires vm.compiler1.enabled
  * @requires vm.opt.AbortVMOnCompilationFailure != true
- * @enablePreview
  * @run driver ${test.main.class}
  */
 
@@ -48,7 +47,6 @@ public class TestUnloadedArrayKlassAfterOOME_C1 {
         options.add("-XX:+PrintCompilation");
         options.add("-Xcomp");
         options.add("-XX:TieredStopAtLevel=1");
-        options.add("--enable-preview");
         options.add("-Xmx12m");
         options.add("-XX:CompileCommand=compileonly," + getTestClass() + "::testNew");
         options.add("-XX:CompileCommand=compileonly," + getTestClass() + "::testArrayCopy");
@@ -72,7 +70,7 @@ public class TestUnloadedArrayKlassAfterOOME_C1 {
     }
 
     public static class TestMain {
-        static value class Value {
+        static class Value {
             int value = 0;
         }
 
