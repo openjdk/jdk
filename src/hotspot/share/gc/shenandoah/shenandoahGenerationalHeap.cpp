@@ -734,14 +734,14 @@ private:
       return_evac_reserves_to_mutators();
     }
 
+    ShenandoahCumulativeTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs, ShenandoahPhaseTimings::Work, worker_id);
     T cl;
     bool do_regions = true;
     bool do_chunks = _generation->is_young();
 
     elastic_loop<true>(worker_id, [&]{
-      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs,
-                                ShenandoahPhaseTimings::Work, worker_id, true);
       if (do_regions) {
+        ShenandoahActualWorkTimingsTracker tracker(&timer);
         if (do_next_region(cl, worker_id)) {
           return ShenandoahWorkResult::DidWork;
         }
@@ -749,6 +749,7 @@ private:
       }
 
       if (do_chunks) {
+        ShenandoahActualWorkTimingsTracker tracker(&timer);
         if (do_next_chunk(cl, worker_id)) {
           return ShenandoahWorkResult::DidWork;
         }
