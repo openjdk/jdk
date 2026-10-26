@@ -103,7 +103,6 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
       set_state(_regular);
     case _regular:
     case _pinned:
-      assert(_humongous_start_region_index == UndefinedRegionIndex, "state machine");
       return;
     default:
       report_illegal_transition("regular allocation");
@@ -160,21 +159,16 @@ void ShenandoahHeapRegion::make_regular_bypass() {
       do_commit();
     case _empty_committed:
     case _cset:
-      assert(_humongous_start_region_index == UndefinedRegionIndex, "state machine");
     case _humongous_start:
     case _humongous_cont:
-#ifdef ASSERT
       _humongous_start_region_index = UndefinedRegionIndex;
-#endif
       set_state(_regular);
       return;
     case _pinned_cset:
       set_state(_pinned);
-      assert(_humongous_start_region_index == UndefinedRegionIndex, "state machine");
       return;
     case _regular:
     case _pinned:
-      assert(_humongous_start_region_index == UndefinedRegionIndex, "state machine");
       return;
     default:
       report_illegal_transition("regular bypass");
@@ -320,14 +314,12 @@ void ShenandoahHeapRegion::make_trash() {
       // Reclaiming humongous regions and reclaim humongous waste.  When this region is eventually recycled, we'll reclaim
       // its used memory.  At recycle time, we no longer recognize this as a humongous region.
       decrement_humongous_waste();
+      _humongous_start_region_index = UndefinedRegionIndex;
     }
     case _cset:
       // Reclaiming cset regions
     case _regular:
       // Immediate region reclaim
-#ifdef ASSERT
-      _humongous_start_region_index = UndefinedRegionIndex;
-#endif
       set_state(_trash);
       return;
     default:
