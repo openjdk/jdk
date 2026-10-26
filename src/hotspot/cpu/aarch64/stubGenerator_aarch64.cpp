@@ -8463,14 +8463,14 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_intpoly_assign() {
     // KNOWN Lengths:
-    //   MontgomeryIntPolynP256: 5  = 4 + 1
-    //   IntegerPolynomial1305:  5  = 4 + 1
-    //   IntegerPolynomial25519: 5  = 4 + 1
-    //   IntegerPolynomialP384:  7  = 4 + 2 + 1
+    //   MontgomeryIntPolynP256:  5 = 4 + 1
+    //   IntegerPolynomial1305:   5 = 4 + 1
+    //   IntegerPolynomial25519: 10 = 8 + 2
     //   IntegerPolynomialP256:  10 = 8 + 2
     //   Curve25519OrderField:   10 = 8 + 2
     //   Curve25519OrderField:   10 = 8 + 2
     //   P256OrderField:         10 = 8 + 2
+    //   IntegerPolynomialP384:  14 = 8 + 4 + 2
     //   P384OrderField:         14 = 8 + 4 + 2
     //   IntegerPolynomial448:   16 = 8 + 8
     //   Curve448OrderField:     16 = 8 + 8
@@ -8498,7 +8498,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register bLimbs = c_rarg2;
     const Register length = c_rarg3;
 
-    Label L_Length5, L_Length7, L_Length10, L_Length14, L_Length16, L_Length19, L_Default, L_Done;
+    Label L_Length5, L_Length10, L_Length14, L_Length16, L_Length19, L_Default, L_Done;
 
     /*
     int maskValue = -set;
@@ -8515,8 +8515,6 @@ class StubGenerator: public StubCodeGenerator {
 
     __ cmp(length, (u1)5);
     __ br(Assembler::EQ, L_Length5);
-    __ cmp(length, (u1)7);
-    __ br(Assembler::EQ, L_Length7);
     __ cmp(length, (u1)10);
     __ br(Assembler::EQ, L_Length10);
     __ cmp(length, (u1)14);
@@ -8581,86 +8579,6 @@ class StubGenerator: public StubCodeGenerator {
       __ str(a3, Address(aLimbs, 3 * BytesPerLong));
       __ str(a4, Address(aLimbs, 4 * BytesPerLong));
 
-      __ pop(r19, sp);
-      __ b(L_Done);
-    }
-
-    // Use 7 GPRs (neon not faster with this few limbs)
-    __ BIND(L_Length7);
-    {
-      Register a0 = r5;
-      Register a1 = r6;
-      Register a2 = r7;
-      Register a3 = r10;
-      Register a4 = r11;
-      Register a5 = r12;
-      Register a6 = r13;
-      Register b0 = r14;
-      Register b1 = r15;
-      Register b2 = r19;
-      Register b3 = r20;
-      Register b4 = r21;
-      Register b5 = r22;
-      Register b6 = r23;
-
-      __ push(r19, sp);
-      __ push(r20, sp);
-      __ push(r21, sp);
-      __ push(r22, sp);
-      __ push(r23, sp);
-
-      __ ldr(a0, aLimbs);
-      __ ldr(a1, Address(aLimbs, 1 * BytesPerLong));
-      __ ldr(a2, Address(aLimbs, 2 * BytesPerLong));
-      __ ldr(a3, Address(aLimbs, 3 * BytesPerLong));
-      __ ldr(a4, Address(aLimbs, 4 * BytesPerLong));
-      __ ldr(a5, Address(aLimbs, 5 * BytesPerLong));
-      __ ldr(a6, Address(aLimbs, 6 * BytesPerLong));
-
-      __ ldr(b0, bLimbs);
-      __ ldr(b1, Address(bLimbs, 1 * BytesPerLong));
-      __ ldr(b2, Address(bLimbs, 2 * BytesPerLong));
-      __ ldr(b3, Address(bLimbs, 3 * BytesPerLong));
-      __ ldr(b4, Address(bLimbs, 4 * BytesPerLong));
-      __ ldr(b5, Address(bLimbs, 5 * BytesPerLong));
-      __ ldr(b6, Address(bLimbs, 6 * BytesPerLong));
-
-      __ eor(b0, b0, a0);
-      __ eor(b1, b1, a1);
-      __ eor(b2, b2, a2);
-      __ eor(b3, b3, a3);
-      __ eor(b4, b4, a4);
-      __ eor(b5, b5, a5);
-      __ eor(b6, b6, a6);
-
-      __ andr(b0, b0, mask_scalar);
-      __ andr(b1, b1, mask_scalar);
-      __ andr(b2, b2, mask_scalar);
-      __ andr(b3, b3, mask_scalar);
-      __ andr(b4, b4, mask_scalar);
-      __ andr(b5, b5, mask_scalar);
-      __ andr(b6, b6, mask_scalar);
-
-      __ eor(a0, a0, b0);
-      __ eor(a1, a1, b1);
-      __ eor(a2, a2, b2);
-      __ eor(a3, a3, b3);
-      __ eor(a4, a4, b4);
-      __ eor(a5, a5, b5);
-      __ eor(a6, a6, b6);
-
-      __ str(a0, aLimbs);
-      __ str(a1, Address(aLimbs, 1 * BytesPerLong));
-      __ str(a2, Address(aLimbs, 2 * BytesPerLong));
-      __ str(a3, Address(aLimbs, 3 * BytesPerLong));
-      __ str(a4, Address(aLimbs, 4 * BytesPerLong));
-      __ str(a5, Address(aLimbs, 5 * BytesPerLong));
-      __ str(a6, Address(aLimbs, 6 * BytesPerLong));
-
-      __ pop(r23, sp);
-      __ pop(r22, sp);
-      __ pop(r21, sp);
-      __ pop(r20, sp);
       __ pop(r19, sp);
       __ b(L_Done);
     }
