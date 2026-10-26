@@ -28,7 +28,7 @@
  * @library /test/lib /
  * @requires os.arch == "riscv64" & vm.compiler2.enabled
  * @requires vm.cpu.features ~= ".*zbs.*"
- * @run driver compiler.c2.riscv64.TestZbsImmediateBitOperations
+ * @run driver compiler.c2.riscv64.TestZbsBitOperations
  */
 
 package compiler.c2.riscv64;
@@ -42,7 +42,7 @@ import compiler.lib.ir_framework.TestFramework;
 
 import jdk.test.lib.Asserts;
 
-public class TestZbsImmediateBitOperations {
+public class TestZbsBitOperations {
     private static final String BEXT = "extractL_reg_reg";
     private static final String BSET = "orL_reg_lshiftL_1";
     private static final String BINV = "xorL_reg_lshiftL_1";
