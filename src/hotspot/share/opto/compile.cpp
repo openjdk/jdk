@@ -1986,7 +1986,7 @@ void Compile::add_optimization_delay_node(OptimizationDelayNode* n) {
 
 void Compile::remove_optimization_delay_node(OptimizationDelayNode* n) {
   assert(n != nullptr, "no nullptr");
-  _optimization_delay_nodes.remove(n);
+  _optimization_delay_nodes.remove_if_existing(n);
 }
 
 bool Compile::advance_optimization_delay_nodes(PhaseIterGVN& igvn) {

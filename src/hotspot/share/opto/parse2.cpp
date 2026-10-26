@@ -2965,7 +2965,12 @@ Node* Parse::optimize_cmp_with_klass(Node* c) {
 
 
 
-// TODO: desc
+// We insert OptimizationDelay nodes into the graph, so that they
+// can delay IGVN optimizations, which also can have effects on
+// other optimizations. This should not alter the behavior of the
+// compilation, as the OptimizationDelay node acts as an identity
+// function, and the OptimizationDelay node is eventually removed,
+// and replaced with its input.
 void Parse::maybe_insert_optimization_delay_nodes() {
   // Insert a node for possibly every operand stack slot.
   for (int i = 0; i < sp(); i++) {

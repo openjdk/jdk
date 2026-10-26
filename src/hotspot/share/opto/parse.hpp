@@ -460,7 +460,7 @@ class Parse : public GraphKit {
   // Parse the current basic block
   void do_one_block();
 
-  // TODO: desc
+  // Insert OptimizationDelay nodes to delay IGVN and other optimizations.
   void maybe_insert_optimization_delay_nodes();
 
   // Raise an error if we get a bad ciTypeFlow CFG.
