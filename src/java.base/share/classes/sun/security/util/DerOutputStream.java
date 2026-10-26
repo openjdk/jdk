@@ -484,22 +484,22 @@ public final class DerOutputStream
     }
 
     /**
-     * 1/1/1950 is the lowest date that RFC 2630 serializes to UTC time
+     * 1/1/1950 00:00:00 is the lowest date that RFC 2630 serializes to UTC time
      */
-    private static final Instant utcLow = Instant.ofEpochSecond(-631152000L); // Dates before 1/1/1950
+    private static final Instant utcLow = Instant.ofEpochSecond(-631152000L);
 
     /**
-     * 12/31/2049 is the highest date that RFC 2630 serializes to UTC time
+     * 12/31/2049 23:59:59 is the highest date that RFC 2630 serializes to UTC time
      */
     private static final Instant utcHigh = Instant.ofEpochSecond(2524607999L);
 
     /**
-     * 1/1/0001 is the lowest date representable by the GeneralizedTime
+     * 1/1/0000 00:00:00 is the lowest date representable by GeneralizedTime
      */
-    private static final Instant generalizedLow = Instant.ofEpochSecond(-62135596800L);
+    private static final Instant generalizedLow = Instant.ofEpochSecond(-62167219200L);
 
     /**
-     * 12/31/9999 is the highest date representable by the GeneralizedTime
+     * 12/31/9999 23:59:59 is the highest date representable by GeneralizedTime
      */
     private static final Instant generalizedHigh = Instant.ofEpochSecond(253402300799L);
 
@@ -566,18 +566,16 @@ public final class DerOutputStream
 
         if (tag == DerValue.tag_UtcTime) {
             pattern = "yyMMddHHmmss'Z'";
-            if (d.isBefore(utcLow)) {
-                d = utcLow;
-            } else if (d.isAfter(utcHigh)) {
-                d = utcHigh;
+            if (d.isBefore(utcLow) || d.isAfter(utcHigh)) {
+                throw new IllegalArgumentException(
+                        "Instant " + d + " cannot be represented as UTC time");
             }
         } else {
             tag = DerValue.tag_GeneralizedTime;
             pattern = "yyyyMMddHHmmss'Z'";
-            if (d.isBefore(generalizedLow)) {
-                d = generalizedLow;
-            } else if (d.isAfter(generalizedHigh)) {
-                d = generalizedHigh;
+            if (d.isBefore(generalizedLow) || d.isAfter(generalizedHigh)) {
+                throw new IllegalArgumentException(
+                        "Instant " + d + " cannot be represented as GeneralizedTime");
             }
         }
 
