@@ -2018,17 +2018,23 @@ bool Compile::advance_optimization_delay_nodes(PhaseIterGVN& igvn) {
 }
 
 void Compile::optimization_delay_nodes_cleanup(PhaseIterGVN& igvn) {
+#ifdef ASSERT
   if (TraceOptimizationDelay) {
     tty->print_cr("[OptimizationDelay] Cleanup with %d optimization delay nodes.",
                   _optimization_delay_nodes.length());
   }
+#endif
+
   _optimization_delay_nodes_cleanup_phase = true;
   igvn.optimize();
   if (failing()) return;
   assert(_optimization_delay_nodes.is_empty(), "must all be released");
+
+#ifdef ASSERT
   if (TraceOptimizationDelay) {
     tty->print_cr("[OptimizationDelay] Cleanup done.");
   }
+#endif
 }
 
 void Compile::record_for_post_loop_opts_igvn(Node* n) {

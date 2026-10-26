@@ -56,7 +56,7 @@
           "Randomly insert OptimizationDelay nodes to arbitrarily delay"    \
           "Value, Ideal and Identity optimizations")                        \
                                                                             \
-  product(bool, TraceOptimizationDelay, false, DIAGNOSTIC,                  \
+  develop(bool, TraceOptimizationDelay, false,                                \
           "Trace insertion and removal of OptimizationDelay nodes")         \
                                                                             \
   product(bool, StressIncrementalInlining, false, DIAGNOSTIC,               \

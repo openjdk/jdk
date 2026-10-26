@@ -59,7 +59,7 @@ private:
 public:
   OptimizationDelayPolicy(Stress& stress);
 
-  void print();
+  DEBUG_ONLY( void print(); )
 
   bool should_insert();
   bool should_narrow();

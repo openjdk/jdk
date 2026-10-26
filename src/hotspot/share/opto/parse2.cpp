@@ -2984,6 +2984,7 @@ void Parse::maybe_insert_optimization_delay_nodes() {
       // Replace stack slot: n -> delay(n)
       set_stack(i, delay);
 
+#ifdef ASSERT
       if (TraceOptimizationDelay) {
         tty->print_cr("[OptimizationDelay] bci=%d", bci());
         n->dump();
@@ -2991,6 +2992,7 @@ void Parse::maybe_insert_optimization_delay_nodes() {
         tty->cr();
         delay->dump();
         tty->cr();
+#endif
       }
     }
   }
