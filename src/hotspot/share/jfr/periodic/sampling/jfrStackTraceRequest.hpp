@@ -36,6 +36,9 @@ class JavaThread;
 class JfrStackTraceRequest : AllStatic {
  public:
   static bool is_enabled();
+  // Enables or disables jdk.StackTraceRequest, starting or stopping the stack
+  // walker so that it is running whenever the event can be observed as enabled.
+  static void set_enabled(bool enabled);
 
   // Returns false if the request was dropped. Signal-safe when the target is
   // the current thread.

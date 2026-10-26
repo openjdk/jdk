@@ -25,8 +25,10 @@
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/sampling/jfrStackTraceRequest.hpp"
 #include "jfr/periodic/sampling/jfrStackWalker.hpp"
+#include "jfr/recorder/jfrEventSetting.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/orderAccess.hpp"
 
 static void send_lost_event(JavaThread* jt) {
   const u4 lost_requests = jt->jfr_thread_local()->get_and_reset_stack_trace_requests_lost();
@@ -87,6 +89,23 @@ class JfrStackTraceRequestCallback : public JfrStackWalkerCallback {
 
 bool JfrStackTraceRequest::is_enabled() {
   return EventStackTraceRequest::is_enabled();
+}
+
+void JfrStackTraceRequest::set_enabled(bool enabled) {
+  // Called serially by the recorder when it applies event settings.
+  static bool active = false;
+  // RequestJFRStackTrace checks is_enabled() before it submits a request, so the
+  // stack walker must be running before the event is enabled and until after it
+  // is disabled.
+  if (enabled && !active) {
+    JfrStackWalker::initialize();
+    OrderAccess::storestore();
+  }
+  JfrEventSetting::set_enabled(EventStackTraceRequest::eventId, enabled);
+  if (!enabled && active) {
+    JfrStackWalker::teardown();
+  }
+  active = enabled;
 }
 
 bool JfrStackTraceRequest::request(JavaThread* target, const void* ucontext, bool thread_is_suspended, jlong user_data) {

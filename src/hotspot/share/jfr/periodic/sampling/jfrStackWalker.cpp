@@ -433,7 +433,13 @@ bool JfrStackWalker::request_stack_trace(JfrStackWalkRequest& request, JavaThrea
 }
 
 void JfrStackWalker::trigger_async_processing_of_requests() {
-  _native_stackwalker_thread->trigger_async_processing_of_stackwalk_requests();
+  // The thread is created once and never freed, but a request can race with its
+  // creation. Skipping the trigger is harmless: the request stays queued and is
+  // processed when its thread next polls.
+  JfrNativeStackWalkerThread* const thread = AtomicAccess::load_acquire(&_native_stackwalker_thread);
+  if (thread != nullptr) {
+    thread->trigger_async_processing_of_stackwalk_requests();
+  }
 }
 
 static traceid compute_tid(JavaThread* jt, bool in_continuation) {
