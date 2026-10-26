@@ -197,7 +197,9 @@ public final class TimeZoneNameUtility {
     /**
      * {@return the localized GMT (zero) format with fallback}
      * CLDR removed {@code gmtZeroFormat} element as of v49, it falls back
-     * to {@code gmtFormat} with the placeholder removed, or "GMT"
+     * to {@code gmtFormat} with the placeholder removed, or "GMT".
+     * {@code gmtZeroFormat} is checked first for compatibility, even though
+     * it is not in the spec (DTD still defines it).
      * @param locale the locale
      */
     public static String gmtZeroFormat(Locale locale) {

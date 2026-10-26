@@ -407,6 +407,8 @@ class Bundle {
         return myMap;
     }
 
+    // Resolve a name slot from this locale, its parents, or a metazone alias.
+    // Track visited aliases to prevent cycles.
     private static String resolveZoneName(Map<String, Object> map, Map<String, Object> parents,
                                           String key, int index, Set<String> resolving) {
         String name = zoneName(map, key, index);
@@ -424,6 +426,7 @@ class Bundle {
         return null;
     }
 
+    // Read a name slot from either the parsed name map or the converted array.
     @SuppressWarnings("unchecked")
     private static String zoneName(Map<String, Object> map, String key, int index) {
         if (map == null) {

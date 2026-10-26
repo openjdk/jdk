@@ -2226,6 +2226,8 @@ public class SimpleDateFormat extends DateFormat {
                                 && (text.length() - start) > gmtZero.length()
                                 && text.regionMatches(true, start, gmtZero, 0, gmtZero.length())
                                 && (text.charAt(start + gmtZero.length()) == '+' || text.charAt(start + gmtZero.length()) == '-')) {
+                                // Currently, localized GMT text is supported only as a prefix to an
+                                // offset using ASCII signs and digits and ':' as the separator.
                                 gmtText = gmtZero;
                             }
                             if (gmtText != null) {

@@ -1128,6 +1128,8 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         return calType + "." + toJDKKey(qName, context, width);
     }
 
+    // Register a metazone name alias, limiting its scope to the name slots
+    // selected by the enclosing long/short and standard/daylight/generic elements.
     private boolean registerMetazoneNameAlias(String path) {
         Container container = currentContainer;
         String style = null;
@@ -1167,6 +1169,8 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         return true;
     }
 
+    // Map the alias's enclosing elements to the affected name slots.
+    // An unspecified style selects all slots.
     private static EnumSet<ZoneNameSlot> zoneNameSlots(String style, String nameType) {
         if (style == null) {
             return EnumSet.allOf(ZoneNameSlot.class);

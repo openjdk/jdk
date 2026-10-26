@@ -675,16 +675,20 @@ public class CLDRConverter {
 
     static void addMetazoneNameAlias(String sourceKey, String targetKey,
                                      EnumSet<ZoneNameSlot> slots) {
-        MetazoneNameAlias previous = metazoneNameAliases.putIfAbsent(sourceKey,
-                new MetazoneNameAlias(targetKey, slots));
-        if (previous != null) {
-            if (!previous.targetKey().equals(targetKey)) {
+        EnumSet<ZoneNameSlot> resultSlots;
+        MetazoneNameAlias alias = metazoneNameAliases.get(sourceKey);
+
+        if (alias != null) {
+            if (!alias.targetKey().equals(targetKey)) {
                 throw new IllegalArgumentException("Conflicting aliases for " + sourceKey);
             }
-            EnumSet<ZoneNameSlot> merged = EnumSet.copyOf(previous.slots());
-            merged.addAll(slots);
-            metazoneNameAliases.put(sourceKey, new MetazoneNameAlias(targetKey, merged));
+            resultSlots = EnumSet.copyOf(alias.slots());
+            resultSlots.addAll(slots);
+        } else {
+            resultSlots = slots;
         }
+
+        metazoneNameAliases.put(sourceKey, new MetazoneNameAlias(targetKey, resultSlots));
     }
 
     /**
