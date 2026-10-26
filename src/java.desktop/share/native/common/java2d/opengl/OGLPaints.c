@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,6 +304,7 @@ OGLPaints_SetTexturePaint(OGLContext *oglc,
  */
 #define CYCLE_NONE    0
 #define CYCLE_REFLECT 1
+#define CYCLE_REPEAT  2
 
 /**
  * The following constants are flags that can be bitwise-or'ed together

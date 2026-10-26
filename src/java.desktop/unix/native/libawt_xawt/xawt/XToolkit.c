@@ -297,6 +297,11 @@ static void     update_poll_timeout(int timeout_control);
 static uint32_t get_poll_timeout(jlong nextTaskTime);
 
 // Defines
+
+#ifndef bzero
+#define bzero(a,b) memset(a, 0, b)
+#endif
+
 #define AWT_POLL_BUFSIZE        100 /* bytes */
 #define AWT_READPIPE            (awt_pipe_fds[0])
 #define AWT_WRITEPIPE           (awt_pipe_fds[1])

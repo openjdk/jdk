@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1033,6 +1033,15 @@ static int src_in_overlay(image_region_type *src, int numOverlayVisuals,
  * with your program.
  *
  ******************************************************************************/
+
+
+
+#define STATIC_GRAY     0x01
+#define GRAY_SCALE      0x02
+#define PSEUDO_COLOR    0x04
+#define TRUE_COLOR      0x10
+#define DIRECT_COLOR    0x11
+
 
 static int      weCreateServerOverlayVisualsProperty = False;
 

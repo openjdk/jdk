@@ -1270,6 +1270,7 @@ static FT_Outline* getFTOutline(JNIEnv* env, jobject font2D,
 /* Types of GeneralPath segments.
    TODO: pull constants from other place? */
 
+#define SEG_UNKNOWN -1
 #define SEG_MOVETO   0
 #define SEG_LINETO   1
 #define SEG_QUADTO   2

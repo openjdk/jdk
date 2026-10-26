@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,10 @@
 #endif /* !HEADLESS */
 #include <jlong.h>
 
-#ifndef HEADLESS
-
 #define TEXT_BM_WIDTH   1024
 #define TEXT_BM_HEIGHT  32
+
+#ifndef HEADLESS
 
 static jboolean checkPixmap(JNIEnv *env, AwtGraphicsConfigDataPtr cData)
 {
