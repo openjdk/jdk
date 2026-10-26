@@ -176,7 +176,7 @@ void OptimizationDelayNode::narrow_hold_type(const Type* t_in, Stress& stress) {
 }
 
 bool OptimizationDelayNode::reveal_type() {
-  if (_stage > Stage::RevealType) { return false; }
+  if (_stage >= Stage::RevealType) { return false; }
   _stage = Stage::RevealType;
 
 #ifdef ASSERT
