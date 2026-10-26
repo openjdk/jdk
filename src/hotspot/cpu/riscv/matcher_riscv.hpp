@@ -116,7 +116,7 @@
 
   // Use MachUncommonTrapNode for representing uncommon trap sequences.
   // This is an alternative to representing uncommon traps as runtime calls.
-  static const bool use_mach_uncommon_trap_node = false;
+  static const bool use_mach_uncommon_trap_node = true;
 
   // Are floats converted to double when stored to stack during
   // deoptimization?

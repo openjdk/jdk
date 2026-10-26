@@ -36,7 +36,7 @@
  * @bug 8374862
  * @summary Regression test for -XX:+Verbose -XX:+WizardMode -Xlog:deoptimization=debug crash
  * @requires vm.debug
- * @requires os.arch == "aarch64"
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
  * @requires vm.compiler2.enabled
  * @run main/othervm -XX:-DisplayVMOutput
  *                   -XX:+Verbose -XX:+WizardMode -Xlog:deoptimization=debug

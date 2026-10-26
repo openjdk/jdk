@@ -38,7 +38,7 @@
  * @bug 8140574
  * @summary Verify proper re-execution of checks after merging of uncommon traps
  *
- * @requires os.arch == "aarch64"
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
  * @requires vm.compiler2.enabled
  * @run main/othervm -Xcomp -XX:-TieredCompilation
  *                   -XX:CompileCommand=compileonly,compiler.rangechecks.TestUncommonTrapMerging::test*
