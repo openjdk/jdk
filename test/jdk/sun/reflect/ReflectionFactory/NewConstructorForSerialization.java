@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8393262
  * @summary Test default behavior of 1-arg and 2-arg newConstructorForSerialization methods
  * @modules jdk.unsupported
  * @run junit/othervm ${test.main.class}

@@ -368,9 +368,6 @@ public class ReflectionFactoryTest {
     // test that the generated read/write objects are working properly
     @Test
     static void testDefaultReadWriteObject() throws Throwable {
-        if (!allowNonSerializableConstruction) {
-            throw new SkipException("2-arg newConstructorForSerialization method disabled");
-        }
         Ser2 ser = new Ser2((byte) 0x33, (short) 0x2244, (char) 0x5342, 0x05382716, 0xf035a73b09113bacL, 1234f, 3456.0, true, new Ser3(0x004917aa));
         ser.byte_ = (byte) 0x44;
         ser.short_ = (short) 0x3355;
@@ -687,7 +684,7 @@ public class ReflectionFactoryTest {
         };
         // all the same methods, except for `writeFields`
         Arrays.fill(called, false);
-        Constructor<?> ctor = factory.newConstructorForSerialization(Ser2.class, Object.class.getDeclaredConstructor());
+        Constructor<?> ctor = factory.newConstructorForSerialization(Ser2.class);
         ser = (Ser2) ctor.newInstance();
         readObject.invokeExact(ser, ois);
         // excluding "writeFields", so 18 instead of 19

@@ -222,7 +222,7 @@ public class ReflectionFactory {
             return generateConstructor(cl, constructorToCall);
         }
         throw new UnsupportedOperationException(
-                "Run with -Djdk.reflect.allowNonSerializableConstruction=false to temporarily re-enable this method"
+                "Run with -Djdk.reflect.allowNonSerializableConstruction=true to temporarily re-enable this method"
         );
     }
 
