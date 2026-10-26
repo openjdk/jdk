@@ -66,6 +66,12 @@ public class ActionSet implements ProcessInfoGatherer, EnvironmentInfoGatherer, 
         coreActions = getPatternActions(log, p, CORES_PROPERTY);
     }
 
+    private String getSectionPath(String name, String tool, Properties p) {
+        String sectionPathDefault = Utils.prependPrefix(name, tool);
+        return p.getProperty(Utils.prependPrefix(tool, "sectionPathOverride"),
+                sectionPathDefault);
+    }
+
     private List<SimpleAction> getSimpleActions(PrintWriter log, Properties p,
                                                 String key) {
         String[] tools = getTools(log, p, key);
@@ -73,7 +79,7 @@ public class ActionSet implements ProcessInfoGatherer, EnvironmentInfoGatherer, 
         for (String tool : tools) {
             try {
                 SimpleAction action = new SimpleAction(
-                        Utils.prependPrefix(name, tool), tool, p);
+                        getSectionPath(name, tool, p), tool, p);
                 result.add(action);
             } catch (Exception e) {
                 log.printf("ERROR: %s cannot be created : %s %n",
@@ -91,7 +97,7 @@ public class ActionSet implements ProcessInfoGatherer, EnvironmentInfoGatherer, 
         for (String tool : tools) {
             try {
                 PatternAction action = new PatternAction(
-                        Utils.prependPrefix(name, tool), tool, p);
+                        getSectionPath(name, tool, p), tool, p);
                 result.add(action);
             } catch (Exception e) {
                 log.printf("ERROR: %s cannot be created : %s %n",
