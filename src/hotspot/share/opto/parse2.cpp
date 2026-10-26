@@ -2992,8 +2992,8 @@ void Parse::maybe_insert_optimization_delay_nodes() {
         tty->cr();
         delay->dump();
         tty->cr();
-#endif
       }
+#endif
     }
   }
 }

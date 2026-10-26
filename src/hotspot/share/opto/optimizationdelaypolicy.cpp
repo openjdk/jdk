@@ -58,8 +58,13 @@ void OptimizationDelayPolicy::print() {
 #endif
 
 bool OptimizationDelayPolicy::should_insert() {
-  if (++_insertion_count > MAX_INSERTIONS) { return false; }
-  return _stress.random() % _interval_insertion == 0;
+  if (_insertion_count > MAX_INSERTIONS) { return false; }
+  if (_stress.random() % _interval_insertion == 0) {
+    _insertion_count++;
+    return true;
+  } else {
+    return false;
+  }
 }
 
 bool OptimizationDelayPolicy::should_narrow() {
