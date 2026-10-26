@@ -317,16 +317,16 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
   }
 }
 
-// Given that this range of clusters is known to span a humongous object spanned by region r, scan the
+// Given that the requested range of clusters is known to span humongous object starting at start_region, scan the
 // portion of the humongous object that corresponds to the specified range.
 template <typename ClosureType>
 inline void
-ShenandoahScanRemembered::process_humongous_clusters(ShenandoahHeapRegion* r, size_t first_cluster, size_t count,
+ShenandoahScanRemembered::process_humongous_clusters(ShenandoahHeapRegion* start_region, size_t first_cluster, size_t count,
                                                      HeapWord *end_of_range, ClosureType *cl, bool use_write_table) {
-  ShenandoahHeapRegion* start_region = ShenandoahHeap::heap()->get_region(r->humongous_start_region());
+
   HeapWord* p = start_region->bottom();
   oop obj = cast_to_oop(p);
-  assert(r->is_humongous(), "Only process humongous regions here");
+  assert(start_region->is_humongous(), "Only process humongous regions here");
   assert(start_region->is_humongous_start(), "Should be start of humongous region");
   assert(p + obj->size() >= end_of_range, "Humongous object ends before range ends");
 
