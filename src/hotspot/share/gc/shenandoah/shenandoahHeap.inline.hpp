@@ -68,12 +68,6 @@ inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {
   return _heap->get_region(index);
 }
 
-inline size_t ShenandoahRegionIterator::remaining() const {
-  const size_t num_regions = ShenandoahHeap::heap()->num_regions();
-  const size_t index = _index.load_relaxed();
-  return num_regions >= index ? num_regions - index : 0;
-}
-
 inline WorkerThreads* ShenandoahHeap::workers() const {
   return _workers;
 }

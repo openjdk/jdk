@@ -106,11 +106,6 @@ public:
   // Returns next region, or null if there are no more regions.
   // This is multi-thread-safe.
   inline ShenandoahHeapRegion* next();
-
-  // Return the number of regions yet to be visited. Note that this is
-  // an upper bound in a multi-threaded context. That is, it is a stale
-  // estimate.
-  inline size_t remaining() const;
 };
 
 class ShenandoahHeapRegionClosure : public StackObj {

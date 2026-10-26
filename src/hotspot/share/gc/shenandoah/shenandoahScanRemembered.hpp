@@ -934,13 +934,6 @@ public:
   // Otherwise, returns false.  This is multi-thread-safe. Chunk assignments pertain only to
   // memory affiliated with the Old generation.
   inline bool next(ShenandoahRegionChunk* assignment);
-
-  // This is *not* MT safe. However, in the absence of multithreaded access, it
-  // can be used to determine if there is more work to do.
-  inline bool has_next() const;
-
-  // Returns an upper bound estimate of the number of chunks remaining
-  inline size_t remaining() const;
 };
 
 class ShenandoahScanRememberedTask : public WorkerTask {

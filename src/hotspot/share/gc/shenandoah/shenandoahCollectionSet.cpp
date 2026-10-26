@@ -160,7 +160,6 @@ ShenandoahHeapRegion* ShenandoahCollectionSet::claim_next() {
       assert(cur >= old, "Always move forward");
       if (cur == old) {
         // Successfully moved the claim index, this is our region.
-        _claimed.add_then_fetch(1UL, memory_order_relaxed);
         return _heap->get_region(index);
       } else {
         // Somebody else moved the claim index, restart from there.
@@ -180,7 +179,6 @@ ShenandoahHeapRegion* ShenandoahCollectionSet::next() {
   for (size_t index = _current_index.load_relaxed(); index < max; index++) {
     if (is_in(index)) {
       _current_index.store_relaxed(index + 1);
-      _claimed.add_then_fetch(1UL, memory_order_relaxed);
       return _heap->get_region(index);
     }
   }
