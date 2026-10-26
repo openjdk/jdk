@@ -74,7 +74,6 @@ Matcher::Matcher()
   _reused(C->comp_arena()),
 #endif // !PRODUCT
   _allocation_started(false),
-  _ruleName(ruleName),
   _register_save_policy(register_save_policy),
   _c_reg_save_policy(c_reg_save_policy),
   _register_save_type(register_save_type),
@@ -141,11 +140,11 @@ OptoReg::Name Compile::compute_old_SP() {
 void Matcher::verify_new_nodes_only(Node* xroot) {
   // Make sure that the new graph only references new nodes
   ResourceMark rm;
-  Unique_Node_List worklist;
+  Unique_Node_List<const Node> worklist;
   VectorSet visited;
   worklist.push(xroot);
   while (worklist.size() > 0) {
-    Node* n = worklist.pop();
+    const Node* n = worklist.pop();
     if (visited.test_set(n->_idx)) {
       continue;
     }
@@ -1212,15 +1211,45 @@ OptoReg::Name Matcher::warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out
 // Helper function to match call instructions.  Calls match special.
 // They match alone with no children.  Their children, the incoming
 // arguments, match normally.
-MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
-  MachSafePointNode *msfpt = nullptr;
-  MachCallNode      *mcall = nullptr;
+MachNode* Matcher::match_sfpt(SafePointNode* sfpt) {
+  MachSafePointNode* msfpt = nullptr;
+  MachCallNode*      mcall = nullptr;
+  JVMState*          sfpt_jvms = nullptr;
   uint               cnt;
   // Split out case for SafePoint vs Call
-  CallNode *call;
-  const TypeTuple *domain;
+  CallNode* call = nullptr;
+  const TypeTuple* domain = nullptr;
   ciMethod*        method = nullptr;
-  if( sfpt->is_Call() ) {
+  if (Matcher::use_mach_uncommon_trap_node &&
+      !PreferCallBasedUncommonTraps &&
+      sfpt->is_CallStaticJava() &&
+      sfpt->as_CallStaticJava()->is_uncommon_trap()) {
+    const address entry_point = OptoRuntime::uncommon_trap_blob()->entry_point();
+    const CallStaticJavaNode* static_java_call = sfpt->as_CallStaticJava();
+    const int trap_request = static_java_call->uncommon_trap_request();
+
+    assert(trap_request != 0, "malformed uncommon trap");
+    assert(static_java_call->tf() == OptoRuntime::uncommon_trap_Type(), "unexpected uncommon trap call shape");
+    assert(static_java_call->entry_point() == entry_point, "unexpected uncommon trap entry point");
+    assert(static_java_call->jvms() != nullptr, "no map back into the interpreter state");
+    assert(static_java_call->req() > TypeFunc::Parms, "does not have the trap request input");
+    assert(static_java_call->in(TypeFunc::Parms) != nullptr, "missing trap request input edge");
+
+    MachUncommonTrapNode* mn = new MachUncommonTrapNode(trap_request);
+    for (uint i = 0; i < static_java_call->req(); i++) {
+      if (i == TypeFunc::Parms) {
+        // Remove the trap request input edge.
+        assert(static_java_call->in(i)->bottom_type()->isa_int() &&
+               static_java_call->in(i)->bottom_type()->is_int()->is_con(), "incorrect trap request input");
+      } else {
+        mn->add_req(static_java_call->in(i));
+      }
+    }
+    msfpt = mn->as_MachSafePoint();
+    sfpt_jvms = sfpt->jvms()->clone_deep(C);
+    sfpt_jvms->adapt_position(-1);
+    cnt = TypeFunc::Parms;
+  } else if (sfpt->is_Call()) {
     call = sfpt->as_Call();
     domain = call->tf()->domain_cc();
     cnt = domain->cnt();
@@ -1259,14 +1288,14 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       mach_call_rt->_name = call->as_CallRuntime()->_name;
     }
     msfpt = mcall;
+    sfpt_jvms = sfpt->jvms();
   }
   // This is a non-call safepoint
   else {
-    call = nullptr;
-    domain = nullptr;
     MachNode *mn = match_tree(sfpt);
     if (C->failing())  return nullptr;
     msfpt = mn->as_MachSafePoint();
+    sfpt_jvms = sfpt->jvms();
     cnt = TypeFunc::Parms;
   }
   msfpt->_has_ea_local_in_scope = sfpt->has_ea_local_in_scope();
@@ -1396,7 +1425,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   }
   // Transfer the safepoint information from the call to the mcall
   // Move the JVMState list
-  msfpt->set_jvms(sfpt->jvms());
+  msfpt->set_jvms(sfpt_jvms);
   for (JVMState* jvms = msfpt->jvms(); jvms; jvms = jvms->caller()) {
     jvms->set_map(sfpt);
   }
@@ -2722,7 +2751,7 @@ void Matcher::specialize_generic_vector_operands() {
 
   // Replace generic vector operands (vec/legVec) with concrete ones (vec[SDXYZ]/legVec[SDXYZ])
   // and remove reg-to-reg vector moves (MoveVec2Leg and MoveLeg2Vec).
-  Unique_Node_List live_nodes;
+  Unique_Node_List<Node> live_nodes;
   C->identify_useful_nodes(live_nodes);
 
   while (live_nodes.size() > 0) {
@@ -2797,7 +2826,7 @@ bool Matcher::is_encode_and_store_pattern(const Node* n, const Node* m) {
 bool Matcher::verify_after_postselect_cleanup() {
   assert(!C->failing_internal() || C->failure_is_artificial(), "sanity");
   if (supports_generic_vector_operands) {
-    Unique_Node_List useful;
+    Unique_Node_List<Node> useful;
     C->identify_useful_nodes(useful);
     for (uint i = 0; i < useful.size(); i++) {
       MachNode* m = useful.at(i)->isa_Mach();

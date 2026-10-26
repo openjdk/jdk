@@ -116,8 +116,8 @@ private:
   void do_oop_work(T* p) { work<T, YOUNG, true>(p); }
 
 public:
-  ShenandoahRedirtyCardsMarkClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q)
-    : ShenandoahMarkRefsSuperClosure(q, rp, old_q) {}
+  ShenandoahRedirtyCardsMarkClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp)
+    : ShenandoahMarkRefsSuperClosure(q, rp, nullptr) {}
 
   ALWAYSINLINE
   void do_oop(narrowOop* p) override { do_oop_work(p); }

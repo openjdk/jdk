@@ -2602,7 +2602,7 @@ void PhaseChaitin::dump_lrg(uint lidx, bool defs_only) const {
 #ifdef ASSERT
 // Verify that base pointers and derived pointers are still sane.
 void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
-  Unique_Node_List worklist(a);
+  Unique_Node_List<const Node> worklist(a);
   for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
     Block* block = _cfg.get_block(i);
     for (uint j = block->end_idx() + 1; j > 1; j--) {
@@ -2619,7 +2619,7 @@ void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
           if (jvms->oopoff() < sfpt->req()) {
             // Check each derived/base pair
             for (uint idx = jvms->oopoff(); idx < sfpt->req(); idx++) {
-              Node* check = sfpt->in(idx);
+              const Node* check = sfpt->in(idx);
               bool is_derived = ((idx - jvms->oopoff()) & 1) == 0;
               // search upwards through spills and spill phis for AddP
               worklist.clear();

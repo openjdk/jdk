@@ -31,6 +31,7 @@
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "runtime/atomic.hpp"
 
 class LogStream;
 class ShenandoahScanRemembered;
@@ -83,6 +84,10 @@ private:
 
   // True if old regions may be safely traversed by the remembered set scan.
   bool _is_parsable;
+
+  // Read by mutators, written by control thread. This is a logical id for an old generation collection.
+  // It is stable across interruptions by young GCs.
+  Atomic<size_t> _started_gc_id;
 
   bool coalesce_and_fill();
 
@@ -332,6 +337,14 @@ public:
   size_t free_unaffiliated_regions() const override;
   size_t get_affiliated_region_count() const override;
   size_t max_capacity() const override;
+
+  void record_collection_start(size_t gc_id) {
+    _started_gc_id.store_relaxed(gc_id);
+  }
+
+  size_t started_gc_id() const {
+    return _started_gc_id.load_relaxed();
+  }
 };
 
 

@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.warn.value.finalize
+// key: compiler.err.value.finalize
 // key: compiler.note.preview.filename
 // key: compiler.note.preview.recompile
 // key: compiler.warn.has.been.deprecated.for.removal
