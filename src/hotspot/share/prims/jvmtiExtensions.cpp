@@ -248,6 +248,11 @@ static jvmtiError JNICALL RequestJFRStackTrace(const jvmtiEnv* env, ...) {
   // target JavaThread* cannot be freed underneath us. None of this is
   // async-signal-safe; the JEP only promises signal-safety for the
   // current-thread case (thread == nullptr).
+  if (current_jt->thread_state() != _thread_in_native) {
+    // Called from a context that cannot transition to the VM, e.g. from a
+    // signal handler that interrupted Java or VM code.
+    return JVMTI_ERROR_UNSUPPORTED_OPERATION;
+  }
   ThreadsListHandle tlh;
   JavaThread* target = nullptr;
   {
