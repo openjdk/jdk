@@ -24,6 +24,7 @@
 
 #include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahElasticTask.hpp"
+#include "runtime/mutexLocker.hpp"
 
 ShenandoahElasticTaskCoordinator::ShenandoahElasticTaskCoordinator()
   : _admitted(0)
@@ -49,13 +50,16 @@ void ShenandoahElasticTaskCoordinator::increase_workers(size_t max_concurrent_wo
     return;
   }
 
-  assert(max_concurrent_workers >= _admitted, "Cannot decrease");
-  const uint delta = max_concurrent_workers - _admitted;
-  if (delta > 0) {
-    _admitted += delta;
-    _capable += delta;
-    locker.notify_all();
+  if (max_concurrent_workers <= _admitted) {
+    // Delta can be zero, but there is nothing to do for that case.
+    // Delta cannot be negative.
+    return;
   }
+
+  const uint delta = max_concurrent_workers - _admitted;
+  _admitted += delta;
+  _capable += delta;
+  locker.notify_all();
 }
 
 void ShenandoahElasticTaskCoordinator::complete() {
