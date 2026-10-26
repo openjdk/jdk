@@ -69,7 +69,6 @@ public:
            t->isa_long() != nullptr;
   }
 
-  // TODO: description and improvements
   static const Type* compute_bottom_type(const Type* t) {
     return Type::get_const_basic_type(t->basic_type());
   }

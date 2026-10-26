@@ -2981,9 +2981,8 @@ void Parse::maybe_insert_optimization_delay_nodes() {
         C->optimization_delay_policy().should_insert()) {
       Node* delay = _gvn.transform(new OptimizationDelayNode(C, n, t));
 
-      // TODO: Not so sure about this below...
+      // Replace stack slot: n -> delay(n)
       set_stack(i, delay);
-      //C->record_for_igvn(delay);
 
       if (TraceOptimizationDelay) {
         tty->print_cr("[OptimizationDelay] bci=%d", bci());
