@@ -25,6 +25,7 @@
  */
 
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "pauth_aarch64.hpp"
 #include "register_aarch64.hpp"
 #include "runtime/arguments.hpp"

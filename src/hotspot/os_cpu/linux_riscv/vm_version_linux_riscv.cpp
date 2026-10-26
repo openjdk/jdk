@@ -26,6 +26,7 @@
 
 #include "asm/register.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "os_linux.hpp"
 #include "riscv_hwprobe.hpp"
 #include "runtime/java.hpp"
