@@ -28,10 +28,19 @@
 #include "compiler/stress.hpp"
 #include "memory/allocation.hpp"
 
-// TODO: description
+// This policy handles the insertion and advancement of the
+// OptimizationDelay node. It is a helper object that provides
+// the probability that a delay node is inserted kept delayed
+// or advanced (type narrowing, type reveal, identity reveal).
 class OptimizationDelayPolicy : public StackObj {
 private:
   // Maximum OptimizationDelay nodes inserted in any compilation.
+  // Compilations with a high probability of insertion will quickly
+  // insert a lot of delay nodes at the beginning. Compilations
+  // with low probability of insertion may not insert any delay
+  // nodes if there are only few IR nodes, but will be able to
+  // insert delay nodes more evenly into graphs with a lot of IR
+  // nodes.
   static constexpr uint MAX_INSERTIONS = 100;
 
   Stress& _stress;

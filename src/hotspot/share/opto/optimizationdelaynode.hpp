@@ -39,6 +39,8 @@
 // 2. We can initially keep the type of the node wider than the input type.
 // 3. We can progressively narrow the type, as long as it is equal to
 //    or wider than the input type.
+//
+// See also: OptimizationDelayPolicy
 class OptimizationDelayNode : public Node {
   enum class Stage {
     HoldType,
