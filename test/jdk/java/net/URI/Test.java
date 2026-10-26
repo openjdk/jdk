@@ -1392,22 +1392,6 @@ public class Test {
             .ta("s://a/%00").z();
     }
 
-
-    static void eq0(URI u, URI v) throws URISyntaxException {
-        testCount++;
-        if (!u.equals(v))
-            throw new RuntimeException("Not equal: " + u + " " + v);
-        int uh = u.hashCode();
-        int vh = v.hashCode();
-        if (uh != vh)
-            throw new RuntimeException("Hash codes not equal: "
-                                       + u + " " + Integer.toHexString(uh) + " "
-                                       + v + " " + Integer.toHexString(vh));
-        out.println();
-        out.println(u + " == " + v
-                    + "  [" + Integer.toHexString(uh) + "]");
-    }
-
     /**
      * Verifies {@link URI#equals(Object)}, {@link URI#hashCode()}, and
      * {@link URI#compareTo(URI)} are consistent with each other and match the
