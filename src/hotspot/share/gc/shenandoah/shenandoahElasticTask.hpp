@@ -72,7 +72,7 @@ public:
   void reset(const ShenandoahController* controller);
 
   // Called by mutators when they experience an allocation stall
-  void increase_workers(size_t concurrent_worker_limit);
+  void increase_workers(size_t max_concurrent_workers);
 
   // Called by workers when they have finished (or can no longer work)
   void complete();

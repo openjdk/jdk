@@ -129,7 +129,7 @@ class ShenandoahInPlacePromoter {
 public:
   explicit ShenandoahInPlacePromoter(ShenandoahGenerationalHeap* heap) : _heap(heap) {}
 
-  // Returns true f the region still meets the criteria for promotion in place and is promoted
+  // Returns true if the region still meets the criteria for promotion in place and is promoted
   bool maybe_promote_region(ShenandoahHeapRegion* region) const;
 
 private:

@@ -2487,7 +2487,7 @@ private:
   template<class T>
   void do_work(uint worker_id) {
     ShenandoahCumulativeTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs,
-                                  ShenandoahPhaseTimings::Work,
+                                             ShenandoahPhaseTimings::Work,
                                              worker_id);
 
     if (worker_id == 0) {

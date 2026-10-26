@@ -29,7 +29,6 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/markBitMap.hpp"
-#include "gc/shared/taskqueue.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.hpp"

@@ -78,10 +78,10 @@ void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
   ShenandoahCumulativeTimingsTracker timer(ShenandoahPhaseTimings::conc_evac, ShenandoahPhaseTimings::Work, worker_id);
   ShenandoahConcurrentEvacuator cl(_heap);
   ShenandoahInPlacePromoter promoter(_heap);
-  bool canEvacuate = true;
+  bool can_evacuate = true;
   elastic_loop<true>(worker_id, [&]{
     ShenandoahHeapRegion* r = nullptr;
-    if (canEvacuate && !_only_promote_regions) {
+    if (can_evacuate && !_only_promote_regions) {
       // Take evacuation work first
       r = _collection_set->claim_next();
     }
@@ -91,7 +91,7 @@ void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
       maybe_log_region(r);
       _heap->marked_object_iterate(r, &cl);
       if (ShenandoahCollectorPolicy::should_abandon_evacuations(r)) {
-        canEvacuate = false;
+        can_evacuate = false;
       }
       return ShenandoahWorkResult::DidWork;
     }
