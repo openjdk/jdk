@@ -5370,13 +5370,7 @@ instruct vector_slice(vReg dst, vReg src1, vReg src2, immI origin) %{
       __ vmv_v_v(vd, as_VectorRegister($src2$$reg));
     } else {
       __ slidedown_v(vd, as_VectorRegister($src1$$reg), offset);
-      uint up_offset = vlen - offset;
-      if (__ is_uimm5(up_offset)) {
-        __ vslideup_vi(vd, as_VectorRegister($src2$$reg), up_offset);
-      } else {
-        __ mv(t0, up_offset);
-        __ vslideup_vx(vd, as_VectorRegister($src2$$reg), t0);
-      }
+      __ slideup_v(vd, as_VectorRegister($src2$$reg), vlen - offset);
     }
   %}
   ins_pipe(pipe_slow);

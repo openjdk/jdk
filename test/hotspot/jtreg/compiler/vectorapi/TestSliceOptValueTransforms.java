@@ -132,8 +132,9 @@ public class TestSliceOptValueTransforms {
     // Byte tests
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_B}, applyIfCPUFeatureAnd = {"avx2", "true"})
     @IR(failOn = {IRNode.VECTOR_SLICE_B}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testZeroSliceIndexByte() {
         for (int i = 0; i < B256.loopBound(SIZE); i += B256.length()) {
             ByteVector.fromArray(B256, bsrc1, i)
@@ -143,8 +144,9 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_B}, applyIfCPUFeature = {"avx2", "true"})
     @IR(failOn = {IRNode.VECTOR_SLICE_B}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testMaxSliceIndexByte() {
         for (int i = 0; i < B256.loopBound(SIZE); i += B256.length()) {
             ByteVector.fromArray(B256, bsrc1, i)
@@ -154,8 +156,9 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_B, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"avx2", "true"})
     @IR(counts = {IRNode.VECTOR_SLICE_B, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testConstantSliceIndexByte() {
         for (int i = 0; i < B256.loopBound(SIZE); i += B256.length()) {
             ByteVector.fromArray(B256, bsrc1, i)
@@ -250,8 +253,9 @@ public class TestSliceOptValueTransforms {
     // Short tests
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_S}, applyIfCPUFeatureAnd = {"avx2", "true"})
     @IR(failOn = {IRNode.VECTOR_SLICE_S}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testZeroSliceIndexShort() {
         for (int i = 0; i < S256.loopBound(SIZE); i += S256.length()) {
             ShortVector.fromArray(S256, ssrc1, i)
@@ -261,8 +265,9 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_S}, applyIfCPUFeature = {"avx2", "true"})
     @IR(failOn = {IRNode.VECTOR_SLICE_S}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testMaxSliceIndexShort() {
         for (int i = 0; i < S256.loopBound(SIZE); i += S256.length()) {
             ShortVector.fromArray(S256, ssrc1, i)
@@ -272,8 +277,9 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_S, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"avx2", "true"})
     @IR(counts = {IRNode.VECTOR_SLICE_S, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testConstantSliceIndexShort() {
         for (int i = 0; i < S256.loopBound(SIZE); i += S256.length()) {
             ShortVector.fromArray(S256, ssrc1, i)
@@ -354,8 +360,9 @@ public class TestSliceOptValueTransforms {
     // Int tests
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_I}, applyIfCPUFeatureAnd = {"avx2", "true"})
     @IR(failOn = {IRNode.VECTOR_SLICE_I}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testZeroSliceIndexInt() {
         for (int i = 0; i < I256.loopBound(SIZE); i += I256.length()) {
             IntVector.fromArray(I256, isrc1, i)
@@ -365,8 +372,9 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_I}, applyIfCPUFeature = {"avx2", "true"})
     @IR(failOn = {IRNode.VECTOR_SLICE_I}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testMaxSliceIndexInt() {
         for (int i = 0; i < I256.loopBound(SIZE); i += I256.length()) {
             IntVector.fromArray(I256, isrc1, i)
@@ -376,8 +384,9 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_I, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"avx2", "true"})
     @IR(counts = {IRNode.VECTOR_SLICE_I, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testConstantSliceIndexInt() {
         for (int i = 0; i < I256.loopBound(SIZE); i += I256.length()) {
             IntVector.fromArray(I256, isrc1, i)
@@ -458,8 +467,9 @@ public class TestSliceOptValueTransforms {
     // Long tests
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_L}, applyIfCPUFeatureAnd = {"avx2", "true"})
     @IR(failOn = {IRNode.VECTOR_SLICE_L}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testZeroSliceIndexLong() {
         for (int i = 0; i < L256.loopBound(SIZE); i += L256.length()) {
             LongVector.fromArray(L256, lsrc1, i)
@@ -469,8 +479,9 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_L}, applyIfCPUFeature = {"avx2", "true"})
     @IR(failOn = {IRNode.VECTOR_SLICE_L}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testMaxSliceIndexLong() {
         for (int i = 0; i < L256.loopBound(SIZE); i += L256.length()) {
             LongVector.fromArray(L256, lsrc1, i)
@@ -480,8 +491,9 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_L, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"avx2", "true"})
     @IR(counts = {IRNode.VECTOR_SLICE_L, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testConstantSliceIndexLong() {
         for (int i = 0; i < L256.loopBound(SIZE); i += L256.length()) {
             LongVector.fromArray(L256, lsrc1, i)
@@ -562,8 +574,9 @@ public class TestSliceOptValueTransforms {
     // Float tests
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_F}, applyIfCPUFeatureAnd = {"avx2", "true"})
     @IR(failOn = {IRNode.VECTOR_SLICE_F}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testZeroSliceIndexFloat() {
         for (int i = 0; i < F256.loopBound(SIZE); i += F256.length()) {
             FloatVector.fromArray(F256, fsrc1, i)
@@ -573,8 +586,9 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_F}, applyIfCPUFeature = {"avx2", "true"})
     @IR(failOn = {IRNode.VECTOR_SLICE_F}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testMaxSliceIndexFloat() {
         for (int i = 0; i < F256.loopBound(SIZE); i += F256.length()) {
             FloatVector.fromArray(F256, fsrc1, i)
@@ -584,8 +598,9 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_F, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"avx2", "true"})
     @IR(counts = {IRNode.VECTOR_SLICE_F, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testConstantSliceIndexFloat() {
         for (int i = 0; i < F256.loopBound(SIZE); i += F256.length()) {
             FloatVector.fromArray(F256, fsrc1, i)
@@ -666,8 +681,9 @@ public class TestSliceOptValueTransforms {
     // Double tests
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_D}, applyIfCPUFeatureAnd = {"avx2", "true"})
     @IR(failOn = {IRNode.VECTOR_SLICE_D}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testZeroSliceIndexDouble() {
         for (int i = 0; i < D256.loopBound(SIZE); i += D256.length()) {
             DoubleVector.fromArray(D256, dsrc1, i)
@@ -677,8 +693,9 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(failOn = {IRNode.VECTOR_SLICE_D}, applyIfCPUFeature = {"avx2", "true"})
     @IR(failOn = {IRNode.VECTOR_SLICE_D}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testMaxSliceIndexDouble() {
         for (int i = 0; i < D256.loopBound(SIZE); i += D256.length()) {
             DoubleVector.fromArray(D256, dsrc1, i)
@@ -688,8 +705,9 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
+    @IR(counts = {IRNode.VECTOR_SLICE_D, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIfCPUFeature = {"avx2", "true"})
     @IR(counts = {IRNode.VECTOR_SLICE_D, IRNode.VECTOR_SIZE_ANY, " >0 "}, applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"rvv", "true"})
     public void testConstantSliceIndexDouble() {
         for (int i = 0; i < D256.loopBound(SIZE); i += D256.length()) {
             DoubleVector.fromArray(D256, dsrc1, i)

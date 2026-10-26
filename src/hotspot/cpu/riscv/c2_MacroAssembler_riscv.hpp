@@ -337,4 +337,7 @@
   void slidedown_v(VectorRegister dst, VectorRegister src,
                    uint32_t offset, Register tmp = t0);
 
+  void slideup_v(VectorRegister dst, VectorRegister src,
+                 uint32_t offset, Register tmp = t0);
+
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP
