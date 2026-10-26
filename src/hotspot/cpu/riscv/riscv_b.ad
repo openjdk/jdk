@@ -723,7 +723,7 @@ instruct andL_reg_lshiftL_1_not(iRegLNoSp dst, iRegL src, immL_1 one, iRegIorL2I
 
 // Fold a single-bit constant mask into the immediate Zbs instructions. Masks
 // that fit in a signed 12-bit immediate are handled by ori/xori/andi instead.
-instruct orL_reg_immL_Pow2(iRegLNoSp dst, iRegL src, immL_Pow2NotSimm12 mask) %{
+instruct orL_reg_immL_Pow2(iRegLNoSp dst, iRegL src, immL_SingleBitNotSimm12 mask) %{
   predicate(UseZbs);
   match(Set dst (OrL src mask));
   ins_cost(ALU_COST);
@@ -737,7 +737,7 @@ instruct orL_reg_immL_Pow2(iRegLNoSp dst, iRegL src, immL_Pow2NotSimm12 mask) %{
   ins_pipe(ialu_reg_shift);
 %}
 
-instruct xorL_reg_immL_Pow2(iRegLNoSp dst, iRegL src, immL_Pow2NotSimm12 mask) %{
+instruct xorL_reg_immL_Pow2(iRegLNoSp dst, iRegL src, immL_SingleBitNotSimm12 mask) %{
   predicate(UseZbs);
   match(Set dst (XorL src mask));
   ins_cost(ALU_COST);
@@ -751,7 +751,7 @@ instruct xorL_reg_immL_Pow2(iRegLNoSp dst, iRegL src, immL_Pow2NotSimm12 mask) %
   ins_pipe(ialu_reg_shift);
 %}
 
-instruct andL_reg_immL_NotPow2(iRegLNoSp dst, iRegL src, immL_NotPow2NotSimm12 mask) %{
+instruct andL_reg_immL_NotPow2(iRegLNoSp dst, iRegL src, immL_SingleZeroNotSimm12 mask) %{
   predicate(UseZbs);
   match(Set dst (AndL src mask));
   ins_cost(ALU_COST);

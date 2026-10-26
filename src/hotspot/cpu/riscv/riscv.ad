@@ -2874,17 +2874,6 @@ operand immI5()
   interface(CONST_INTER);
 %}
 
-// 5 bit signed value (simm5)
-operand immL5()
-%{
-  predicate(n->get_long() <= 15 && n->get_long() >= -16);
-  match(ConL);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Integer operands 64 bit
 // 64 bit immediate
 operand immL()
@@ -2900,6 +2889,38 @@ operand immL()
 operand immL0()
 %{
   predicate(n->get_long() == 0);
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 64 bit unit decrement
+operand immL_M1()
+%{
+  predicate(n->get_long() == -1);
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immL_1()
+%{
+  predicate(n->get_long() == 1);
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 5 bit signed value (simm5)
+operand immL5()
+%{
+  predicate(n->get_long() <= 15 && n->get_long() >= -16);
   match(ConL);
 
   op_cost(0);
@@ -3015,29 +3036,8 @@ operand immL_bitmask() %{
   interface(CONST_INTER);
 %}
 
-// 64 bit unit decrement
-operand immL_M1()
-%{
-  predicate(n->get_long() == -1);
-  match(ConL);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-operand immL_1()
-%{
-  predicate(n->get_long() == 1);
-  match(ConL);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // A single-bit mask that cannot be encoded by an immediate logical instruction.
-operand immL_Pow2NotSimm12()
+operand immL_SingleBitNotSimm12()
 %{
   predicate(is_power_of_2((julong)n->get_long()) &&
             !Assembler::is_simm12(n->get_long()));
@@ -3049,7 +3049,7 @@ operand immL_Pow2NotSimm12()
 %}
 
 // The complement of a single-bit mask that cannot be encoded by andi.
-operand immL_NotPow2NotSimm12()
+operand immL_SingleZeroNotSimm12()
 %{
   predicate(is_power_of_2((julong)~n->get_long()) &&
             !Assembler::is_simm12(n->get_long()));
@@ -3059,7 +3059,6 @@ operand immL_NotPow2NotSimm12()
   format %{ %}
   interface(CONST_INTER);
 %}
-
 
 // 64 bit integer valid for add immediate
 operand immLAdd()
