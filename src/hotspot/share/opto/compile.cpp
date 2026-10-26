@@ -2001,8 +2001,8 @@ bool Compile::advance_optimization_delay_nodes(PhaseIterGVN& igvn) {
     return true;
   }
 
-  if (C->optimization_delay_policy().should_reveal_type()) {
-    delay->reveal_type();
+  if (C->optimization_delay_policy().should_reveal_type() &&
+      delay->reveal_type()) {
     igvn._worklist.push(delay);
     return true;
   }

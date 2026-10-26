@@ -175,8 +175,8 @@ void OptimizationDelayNode::narrow_hold_type(const Type* t_in, Stress& stress) {
   assert(_hold_type->filter(old) == _hold_type, "must be between");
 }
 
-void OptimizationDelayNode::reveal_type() {
-  if (_stage > Stage::RevealType) { return; }
+bool OptimizationDelayNode::reveal_type() {
+  if (_stage > Stage::RevealType) { return false; }
   _stage = Stage::RevealType;
 
 #ifdef ASSERT
@@ -185,6 +185,7 @@ void OptimizationDelayNode::reveal_type() {
     this->dump();
   }
 #endif
+  return true;
 }
 
 void OptimizationDelayNode::reveal_identity() {

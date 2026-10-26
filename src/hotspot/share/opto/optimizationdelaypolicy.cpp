@@ -38,7 +38,8 @@ OptimizationDelayPolicy::OptimizationDelayPolicy(Stress& stress) :
   _interval_narrow(pick_log_uniform(stress, 1, 1000)),
   _interval_reveal_type(pick_log_uniform(stress, 1, 1000)),
   _interval_reveal_identity(pick_log_uniform(stress, 1, 1000)),
-  _insertion_count(0)
+  _count_insertion(0),
+  _count_narrow(0)
 {
 #ifdef ASSERT
   if (TraceOptimizationDelay) {
@@ -58,9 +59,9 @@ void OptimizationDelayPolicy::print() {
 #endif
 
 bool OptimizationDelayPolicy::should_insert() {
-  if (_insertion_count >= MAX_INSERTIONS) { return false; }
+  if (_count_insertion >= MAX_INSERTIONS) { return false; }
   if (_stress.random() % _interval_insertion == 0) {
-    _insertion_count++;
+    _count_insertion++;
     return true;
   } else {
     return false;
@@ -68,7 +69,13 @@ bool OptimizationDelayPolicy::should_insert() {
 }
 
 bool OptimizationDelayPolicy::should_narrow() {
-  return _stress.random() % _interval_narrow == 0;
+  if (_count_narrow >= MAX_NARROW) { return false; }
+  if (_stress.random() % _interval_narrow == 0) {
+    _count_narrow++;
+    return true;
+  } else {
+    return false;
+  }
 }
 
 bool OptimizationDelayPolicy::should_reveal_type() {

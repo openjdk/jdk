@@ -83,7 +83,7 @@ public:
   virtual Node* Identity(PhaseGVN* phase);
 
   void narrow_hold_type(const Type* narrow, Stress& stress);
-  void reveal_type();
+  bool reveal_type();
   void reveal_identity();
 
 #ifndef PRODUCT

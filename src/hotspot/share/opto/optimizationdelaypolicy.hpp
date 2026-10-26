@@ -43,6 +43,10 @@ private:
   // nodes.
   static constexpr uint MAX_INSERTIONS = 100;
 
+  // We also have to bound the number of type narrowings, so that we
+  // get a bound on how many times we re-run IGVN.
+  static constexpr uint MAX_NARROW = 10000;
+
   Stress& _stress;
 
   // Expected intervals between actions.
@@ -53,8 +57,10 @@ private:
   const uint _interval_reveal_identity;
 
   // Number of inserted OptimizationDelay nodes, not to exceed
-  // MAX_INSERTIONS limit.
-  uint _insertion_count;
+  // MAX_INSERTIONS limit. Similarly, cound advancements to
+  // keep IGVN re-runs bounded.
+  uint _count_insertion;
+  uint _count_narrow;
 
 public:
   OptimizationDelayPolicy(Stress& stress);
