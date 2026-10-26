@@ -172,8 +172,6 @@ void ShenandoahFullGC::do_it() {
     Universe::verify();
   }
 
-  heap->set_full_gc_in_progress(true);
-
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
   assert(Thread::current()->is_VM_thread(), "Do full GC only while world is stopped");
 
@@ -181,6 +179,9 @@ void ShenandoahFullGC::do_it() {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_heapdump_pre);
     heap->pre_full_gc_dump(_gc_timer);
   }
+
+  // Set it after pre_full_gc_dump() to allow heap dumps to run.
+  heap->set_full_gc_in_progress(true);
 
   {
     ShenandoahGCPhase prepare_phase(ShenandoahPhaseTimings::full_gc_prepare);
