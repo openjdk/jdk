@@ -1264,7 +1264,9 @@ void JavaThread::oops_do_frames(OopClosure* f, NMethodClosure* cf) {
     return;
   }
   // Finish any pending lazy GC activity for the frames
-  StackWatermarkSet::finish_processing(this, nullptr /* context */, StackWatermarkKind::gc);
+  if (!Thread::is_revived()) {
+    StackWatermarkSet::finish_processing(this, nullptr /* context */, StackWatermarkKind::gc);
+  }
   // Traverse the execution stack
   for (StackFrameStream fst(this, true /* update */, false /* process_frames */); !fst.is_done(); fst.next()) {
     fst.current()->oops_do(f, cf, fst.register_map());

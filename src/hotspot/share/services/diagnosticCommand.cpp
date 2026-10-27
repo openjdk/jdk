@@ -568,6 +568,12 @@ ThreadDumpDCmd::ThreadDumpDCmd(outputStream* output, bool heap) :
 }
 
 void ThreadDumpDCmd::execute(DCmdSource source, TRAPS) {
+
+  if (Thread::is_revived() && _locks.value()) {
+    // In VMThread, VM_PrintThreads::doit_prologue is not called.
+    Heap_lock->lock();
+  }
+
   // thread stacks and JNI global handles
   VM_PrintThreads op1(output(), _locks.value(), _extended.value(), true /* print JNI handle info */);
   VMThread::execute(&op1);
@@ -575,6 +581,10 @@ void ThreadDumpDCmd::execute(DCmdSource source, TRAPS) {
   // Deadlock detection
   VM_FindDeadlocks op2(output());
   VMThread::execute(&op2);
+
+  if (Thread::is_revived() && _locks.value()) {
+    Heap_lock->unlock();
+  }
 }
 
 // Enhanced JMX Agent support

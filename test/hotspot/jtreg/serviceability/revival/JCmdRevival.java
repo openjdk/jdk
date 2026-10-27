@@ -169,7 +169,7 @@ public class JCmdRevival {
     }
 
     public static void testAndCrash(String[] args) {
-        // Type of run (abortvmonexception, oom, cicrash) is passed as arg.
+        // arg is tye type of run being tested (abortvmonexception, oom, cicrash).
         // Do the thing that will cause a crash (if cicrash, then any activity will trigger crash).
         System.out.println("JCmdRevival in main for test type '" + args[0] + "'");
 
@@ -182,6 +182,13 @@ public class JCmdRevival {
                 oa[i] = new Object[Integer.MAX_VALUE / 2];
             }
         } else if (args[0].equals("oom2")) {
+            List<Object> list = new LinkedList<>();
+            while (true) {
+                list.add("string");
+                list.add(123);
+            }
+        } else if (args[0].equals("cicrash")) {
+            // Any activity will trigger crash, and likely already has done.  Add activity to make sure.
             List<Object> list = new LinkedList<>();
             while (true) {
                 list.add("string");

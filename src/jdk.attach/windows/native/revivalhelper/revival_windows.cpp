@@ -160,14 +160,17 @@ void printMemBasicInfo(MEMORY_BASIC_INFORMATION meminfo) {
         );
 }
 
+void virtualQueryOrErrorExit(void* addr, PMEMORY_BASIC_INFORMATION meminfo) {
+    size_t s = VirtualQueryEx(hProc, (PVOID) addr, meminfo, sizeof(*meminfo));
+    if (s != sizeof(*meminfo)) {
+        error("revival: VirtualQueryEx(0x%p) returns %d (!= %d): error 0x%x", addr, s, sizeof(*meminfo), GetLastError());
+    }
+}
+
 void printMemBasicInfo(void* addr) {
     MEMORY_BASIC_INFORMATION meminfo;
-    size_t s = VirtualQueryEx(hProc, (PVOID) addr, &meminfo, sizeof(meminfo));
-    if (s == sizeof(meminfo)) {
-        printMemBasicInfo(meminfo);
-    } else {
-        warn("%p: VirtualQueryEx returns %d (!= %d)", addr, s, sizeof(meminfo));
-    }
+    virtualQueryOrErrorExit((PVOID) addr, &meminfo);
+    printMemBasicInfo(meminfo);
 }
 
 void tls_fixup_pd(void* teb) {
@@ -262,13 +265,27 @@ LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* excepti
     std::list<Segment>::iterator iter;
     for (iter = delayedCopySegments.begin(); iter != delayedCopySegments.end(); iter++) {
         if (iter->contains((uint64_t) addr)) {
-            logv("revival:revival:  Delayed Copy Segment: si_addr = %p in segment %p", addr, iter->vaddr);
+            logv("revival: Delayed Copy Segment: si_addr = %p in segment %p", addr, iter->vaddr);
             set_prot(iter->vaddr, iter->length, stdProt);
             revival_mapping_docopy(core_filename, iter->vaddr, iter->length, iter->file_offset);
             return EXCEPTION_CONTINUE_EXECUTION;
         }
     }
     warn("revival: handler: PID %ld thread: 0x%lx pc 0x%llx address 0x%llx: not handled. ", _getpid(), GetCurrentThreadId(), pc, addr);
+    warn("rsp = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rsp);
+    warn("rbp = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rbp);
+    warn("rax = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rax);
+    warn("rbx = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rbx);
+    warn("rcx = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rcx);
+    warn("rdx = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rdx);
+    warn("r8  = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R8);
+    warn("r9  = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R9);
+    warn("r10 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R10);
+    warn("r11 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R11);
+    warn("r12 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R12);
+    warn("r13 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R13);
+    warn("r14 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R14);
+    warn("r15 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R15);
     diagWait();
     if (logLevel >= LOG_DEBUG) {
         dump();
@@ -306,36 +323,34 @@ void* load_sharedobject_pd(const char* name, void* vaddr) {
 
 bool mem_canwrite_pd(void* vaddr, size_t length) {
     MEMORY_BASIC_INFORMATION meminfo;
-    size_t q = VirtualQueryEx(hProc, vaddr, &meminfo, sizeof(meminfo));
-    if (q == sizeof(meminfo)) {
-        if (logLevel >= LOG_DEBUG) {
-            warn("mem_canwrite_pd:");
-            printMemBasicInfo(meminfo);
-        }
-        int prot = meminfo.Protect & ~PAGE_GUARD; // Remove PAGE_GUARD for this comparison.
-        if (prot == PAGE_EXECUTE_READWRITE
-            || prot == PAGE_EXECUTE_WRITECOPY
-            || prot == PAGE_READWRITE
-            || prot == PAGE_WRITECOPY) {
-            logd("mem_canwrite_pd: %p protect: 0x%lx: YES", vaddr, meminfo.Protect);
-            return true;
-        } else {
-            logd("mem_canwrite_pd: %p protect: 0x%lx: NO", vaddr, meminfo.Protect);
-            return false;
-        }
-    } else {
-        warn("mem_canwrite_pd: %p VirtualQueryEx failed, returning false. Error 0x%x", vaddr, GetLastError());
+    virtualQueryOrErrorExit(vaddr, &meminfo);
+    if (logLevel >= LOG_DEBUG) {
+        warn("mem_canwrite_pd: 0x%p len 0x%x", vaddr, length);
+        printMemBasicInfo(meminfo);
     }
-    return false;
-}
 
-bool can_lazycopy_pd(void* addr) {
-    MEMORY_BASIC_INFORMATION meminfo;
-    size_t q = VirtualQueryEx(hProc, addr, &meminfo, sizeof(meminfo));
-    if (q != sizeof(meminfo)) {
-        warn("VirtualQueryEx failed");
+    int prot = meminfo.Protect & ~PAGE_GUARD; // Remove PAGE_GUARD for this comparison.
+    if (prot == PAGE_EXECUTE_READWRITE
+        || prot == PAGE_EXECUTE_WRITECOPY
+        || prot == PAGE_READWRITE
+        || prot == PAGE_WRITECOPY) {
+        logd("mem_canwrite_pd: %p protect: 0x%lx: YES", vaddr, meminfo.Protect);
+        return true;
+    } else {
+        logd("mem_canwrite_pd: %p protect: 0x%lx: NO", vaddr, meminfo.Protect);
         return false;
     }
+}
+
+bool enableLazyCopy = false;
+
+bool can_lazycopy_pd(void* addr) {
+    if (!enableLazyCopy) {
+        return false;
+    }
+    // We can copy lazily if PAGE_GUARD was set on this memory:
+    MEMORY_BASIC_INFORMATION meminfo;
+    virtualQueryOrErrorExit(addr, &meminfo);
     if ((meminfo.Protect & PAGE_GUARD) != 0) {
         return true;
     } else {
@@ -374,28 +389,20 @@ void* do_mmap_pd(void* addr, size_t length, const char* filename, int fd, size_t
     return (void*) p;
 }
 
-void* do_map_allocate_pd_VirtualAlloc2(void* addr, size_t length, int protRequested /* 0 to use PAGE_GUARD */) {
+void* do_map_allocate_pd_VirtualAlloc2(void* addr, size_t length, bool use_guard /* use PAGE_GUARD */) {
     DWORD prot = stdProt;
-    if (protRequested == 0) {
+    if (use_guard && enableLazyCopy) {
         prot |= PAGE_GUARD;
     }
     MEMORY_BASIC_INFORMATION meminfo;
-    size_t q = VirtualQueryEx(hProc, addr, &meminfo, sizeof(meminfo));
-    if (q != sizeof(meminfo)) {
-        warn("VirtualQueryEx failed");
-        return (void*) -1;
-    }
+    virtualQueryOrErrorExit(addr, &meminfo);
     void* p = pVirtualAlloc2(hProc, (PVOID) addr, length, MEM_RESERVE | MEM_COMMIT, prot, nullptr, 0);
     logd("do_map_allocate_pd_VirtualAlloc2: first alloc attempt 0x%p len 0x%zx prot 0x%x: returns = 0x%p, error = 0x%lx",
         (void*) addr, length, prot, p, GetLastError());
 
     if ((void*) p != (void*) addr) {
         // Did not get requested address.
-        q = VirtualQueryEx(hProc, addr, &meminfo, sizeof(meminfo));
-        if (q != sizeof(meminfo)) {
-            warn("do_map_allocate_pd_VirtualAlloc2: 0x%llx: VirtualQueryEx failed", addr);
-            return (void*) -1;
-        }
+        virtualQueryOrErrorExit(addr, &meminfo);
         uint64_t existing_end = (uint64_t) meminfo.BaseAddress + (uint64_t) meminfo.RegionSize;
         uint64_t requested_end = (uint64_t) addr + (uint64_t) length;
 
@@ -422,8 +429,8 @@ void* do_map_allocate_pd_VirtualAlloc2(void* addr, size_t length, int protReques
                 return addr;
             } else {
                 size_t remaining = (uint64_t) wanted_end - existing_end;
-                logd("do_map_allocate_pd_VirtualAlloc2: existing. remaining = 0x%llx protRequested = 0x%x", remaining, protRequested);
-                void* r = do_map_allocate_pd_VirtualAlloc2((void*) existing_end, remaining, protRequested);
+                logd("do_map_allocate_pd_VirtualAlloc2: existing. remaining = 0x%llx use_guard = 0x%x", remaining, use_guard);
+                void* r = do_map_allocate_pd_VirtualAlloc2((void*) existing_end, remaining, use_guard);
                 logd("do_map_allocate_pd_VirtualAlloc2: done recurse");
                 // Return original requested address on success:
                 if ((uint64_t) r == (uint64_t) existing_end) {
@@ -534,15 +541,15 @@ char* check_editbin() {
     }
 }
 
-int relocate_sharedlib_pd(const char* filename, const void* addr) {
+int relocate_sharedlib_pd(const char* filename, const void* address) {
     if (editbin == nullptr) {
         // Normal usage, editbin not specified.
         // Two calls.  ReBaseImage64 may not report correct rebased address,
         // second call verifies change has been made (see verbose log output).
-        if (!PEFile::rebase(filename, (long long) addr)) {
+        if (!PEFile::rebase(filename, (long long) address)) {
             return -1;
         }
-        if (!PEFile::rebase(filename, (long long) addr)) {
+        if (!PEFile::rebase(filename, (long long) address)) {
             return -1;
         }
         if (!PEFile::remove_dynamicbase(filename)) {
@@ -554,14 +561,7 @@ int relocate_sharedlib_pd(const char* filename, const void* addr) {
         // EDITBIN.EXE /DYNAMICBASE:NO /REBASE:BASE=0xaddress filename
         char command[BUFLEN];
         memset(command, 0, BUFLEN);
-        strncat(command, editbin, BUFLEN);
-        strncat(command, " /DYNAMICBASE:NO /REBASE:BASE=0x", BUFLEN);
-        char address[32];
-        sprintf(address, "%llx", (unsigned long long) addr);
-        strncat(command, address, BUFLEN);
-        strncat(command, " ", BUFLEN);
-        strncat(command, filename, BUFLEN);
-
+        snprintf(command, BUFLEN - 1, "%s /DYNAMICBASE:NO /REBASE:BASE=0x%llx %s", editbin, (uint64_t) address, filename);
         int e = system(command);
         logv("relocate_sharedlib_pd: '%s' returns %d", command, e);
         return e;
@@ -757,10 +757,8 @@ void write_sharedlib_mappings(int mappings_fd, MiniDump* dump) {
 void copy_and_relocate(const char* srcfile, const char* destdir, uint64_t address) {
     char copy_path[PATH_MAX]; // destination
     memset(copy_path, 0, PATH_MAX);
-    strncpy(copy_path, destdir, PATH_MAX);
-    strncat(copy_path, FILE_SEPARATOR, PATH_MAX);
     char* basefilename = basename_pd((char*) srcfile); // basefilename is e.g. "file.dll"
-    strncat(copy_path, basefilename, PATH_MAX);
+    snprintf(copy_path, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s", destdir, basefilename);
     logv("Copying %s to %s", srcfile, copy_path);
     copy_file_pd(srcfile, copy_path);
 
@@ -894,8 +892,5 @@ int create_revival_cache_pd(const char* corename, const char* revival_dirname, c
     write_symbols(symbols_fd, JVM_SYMS, N_JVM_SYMS, revival_dirname);
     close(symbols_fd);
     logv("Write symbols done");
-    diagWait();
-
-    logv("create_revival_cache_pd returning %d", 0);
     return 0;
 }

@@ -86,9 +86,9 @@ int main(int argc, char** argv) {
     // Build jcmd command line from all additional arguments:
     for (int i = n; i < argc; i++) {
         if (i != n) {
-            strncat(command, " ", BUFLEN - 1); // Add a space if not adding the first item.
+            strncat(command, " ", BUFLEN - 1 - strlen(command)); // Add a space if not adding the first item.
         }
-        strncat(command, argv[i], BUFLEN - 1);
+        strncat(command, argv[i], BUFLEN - 1 - strlen(command));
     }
 
     int e = revive_image(corename, libdirs, revival_data);

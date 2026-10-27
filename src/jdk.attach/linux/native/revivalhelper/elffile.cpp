@@ -147,6 +147,11 @@ ELFFile::ELFFile(const char* filename, const char* libdirs, bool write) {
         warn("ELFFile: cannot open '%s': %s", filename, strerror(errno));
         return;
     }
+    if (!is_elf(filename)) {
+        warn("ELFFile: not an ELF file: '%s'", filename);
+        return;
+    }
+
     length = file_size(filename);
 
     int prot = write ? (PROT_READ | PROT_WRITE) : PROT_READ;

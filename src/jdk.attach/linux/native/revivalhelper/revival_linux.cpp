@@ -377,6 +377,7 @@ void handler(int sig, siginfo_t* info, void* ucontext) {
         }
     }
     warn("revival: handler: si_addr = %p : not handled.", addr);
+    diagWait();
     if (logLevel >= LOG_DEBUG) {
         abort();
     }
@@ -508,8 +509,7 @@ const char* JVM_SYMS[N_JVM_SYMS] = {
 void write_symbols(int symbols_fd, const char* symbols[], int count, const char* revival_dirname) {
     char buf[PATH_MAX];
     memset(buf, 0, PATH_MAX);
-    strncpy(buf, revival_dirname, PATH_MAX - 1);
-    strncat(buf, "/" JVM_FILENAME, PATH_MAX - 1);
+    snprintf(buf, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s", revival_dirname, JVM_FILENAME);
     ELFFile lib_copy(buf);
     lib_copy.write_symbols(symbols_fd, symbols, count);
 }
@@ -564,6 +564,7 @@ void write_sharedlib_mappings(ELFFile& core, int mappings_fd) {
 
 void copy_and_relocate(const char* srcfile, const char* destdir, uint64_t address) {
     char copy_path[PATH_MAX];
+    char relocate_path[PATH_MAX];
 
     ELFFile elf(srcfile);
     if (!elf.is_sharedlib()) {
@@ -571,10 +572,21 @@ void copy_and_relocate(const char* srcfile, const char* destdir, uint64_t addres
         return;
     }
     memset(copy_path, 0, PATH_MAX);
-    strncpy(copy_path, destdir, PATH_MAX - 1);
-    strncat(copy_path, "/", PATH_MAX - 1);
-    char* basefilename = basename((char*) srcfile);
-    strncat(copy_path, basefilename, PATH_MAX - 1);
+    memset(relocate_path, 0, PATH_MAX);
+
+    const char* basefilename = strrchr(srcfile, '/');
+    if (!basefilename) {
+        error("copy_and_relocate: source file should be in a directory");
+    }
+    snprintf(copy_path, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s", destdir, basefilename + 1);
+    logv("Copying %s to %s", srcfile, copy_path);
+    if (!copy_file_pd(srcfile, copy_path)) {
+        return;
+    }
+    memcpy(relocate_path, copy_path, PATH_MAX - 1);
+
+    // Copied file will be modified, keep a duplicate of the original:
+    snprintf(copy_path, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s.orig", destdir, basefilename + 1);
     logv("Copying %s to %s", srcfile, copy_path);
     if (!copy_file_pd(srcfile, copy_path)) {
         return;
@@ -588,14 +600,15 @@ void copy_and_relocate(const char* srcfile, const char* destdir, uint64_t addres
     if (p != nullptr) {
         snprintf(p, PATH_MAX - 1, ".debuginfo"); // Append to debuginfo_path in place of .so
         if (file_exists_pd(debuginfo_path)) {
-            snprintf(debuginfo_copy_path, PATH_MAX - 1, "%s/%s.debuginfo", destdir, basefilename);
+            snprintf(debuginfo_copy_path, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s.debuginfo", destdir, basefilename);
             logv("Copying debuginfo %s to %s", debuginfo_path, debuginfo_copy_path);
             copy_file_pd(debuginfo_path, debuginfo_copy_path);
         }
     }
+
     // Relocate the copy: address of 0 will avoid any relocation.
     if (address != 0) {
-        relocate_sharedlib_pd(copy_path, address);
+        relocate_sharedlib_pd(relocate_path, address);
     }
 }
 
@@ -664,8 +677,6 @@ int create_revival_cache_pd(const char* corename, const char* revival_dirname, c
     write_symbols(symbols_fd, JVM_SYMS, N_JVM_SYMS, revival_dirname);
     close(symbols_fd);
     logv("Write symbols done");
-
-    logv("create_revival_cache_pd returning %d", 0);
     return 0;
 }
 
