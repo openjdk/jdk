@@ -3767,8 +3767,7 @@ class StubGenerator: public StubCodeGenerator {
     if (bs_asm->nmethod_patching_type() == NMethodPatchingType::conc_instruction_and_data_patch) {
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
       Address thread_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()) + 4);
-      __ la(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
-      __ lwu(t1, t1);
+      __ lwu(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
       __ sw(t1, thread_epoch_addr);
       // There are two ways this can work:
       // - The writer did system icache shootdown after the instruction stream update.
@@ -5427,8 +5426,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(preemption_cancelled);
     __ sb(zr, Address(xthread, JavaThread::preemption_cancelled_offset()));
     __ la(fp, Address(sp, checked_cast<int32_t>(ContinuationEntry::size() + 2 * wordSize)));
-    __ la(t1, ExternalAddress(ContinuationEntry::thaw_call_pc_address()));
-    __ ld(t1, Address(t1));
+    __ ld(t1, ExternalAddress(ContinuationEntry::thaw_call_pc_address()));
     __ jr(t1);
 
     // record the stub start and end
