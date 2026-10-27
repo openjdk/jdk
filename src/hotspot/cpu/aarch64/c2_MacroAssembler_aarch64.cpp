@@ -2512,9 +2512,8 @@ void C2_MacroAssembler::neon_rearrange_hsd(FloatRegister dst, FloatRegister src,
     case T_LONG:
     case T_DOUBLE:
       {
-        int idx = vector_iota_entry_index(T_LONG);
         lea(rscratch1,
-            ExternalAddress(StubRoutines::aarch64::vector_iota_indices(idx)));
+            ExternalAddress(StubRoutines::aarch64::vector_iota_indices(T_LONG)));
         ldrq(tmp, rscratch1);
         // Check whether the input "shuffle" is the same with iota indices.
         // Return "src" if true, otherwise swap the two elements of "src".
@@ -3001,31 +3000,9 @@ void C2_MacroAssembler::sve_cpy(FloatRegister dst, SIMD_RegVariant T,
   Assembler::sve_cpy(dst, T, pg, imm8, isMerge);
 }
 
-int C2_MacroAssembler::vector_iota_entry_index(BasicType bt) {
-  // The vector iota entries array is ordered by type B/S/I/L/F/D, and
-  // the offset between two types is 16.
-  switch(bt) {
-  case T_BYTE:
-    return 0;
-  case T_SHORT:
-    return 1;
-  case T_INT:
-    return 2;
-  case T_LONG:
-    return 3;
-  case T_FLOAT:
-    return 4;
-  case T_DOUBLE:
-    return 5;
-  default:
-    ShouldNotReachHere();
-  }
-}
-
 void C2_MacroAssembler::neon_load_iota_indices(FloatRegister dst, BasicType bt) {
-  int type_index = vector_iota_entry_index(bt);
   lea(rscratch1,
-      ExternalAddress(StubRoutines::aarch64::vector_iota_indices(type_index)));
+      ExternalAddress(StubRoutines::aarch64::vector_iota_indices(bt)));
   ldrq(dst, rscratch1);
 }
 

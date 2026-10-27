@@ -859,13 +859,18 @@ class StubGenerator: public StubCodeGenerator {
   // Register the index arrays for typed iota vectors.
   void register_iota_indices() {
     int entry_count = StubInfo::entry_count(StubId::stubgen_vector_iota_indices_id);
-    assert(entry_count == VECTOR_IOTA_COUNT, "sanity check");
-    StubRoutines::aarch64::_vector_iota_indices[0] = (address) _iota_indices_b;
-    StubRoutines::aarch64::_vector_iota_indices[1] = (address) _iota_indices_h;
-    StubRoutines::aarch64::_vector_iota_indices[2] = (address) _iota_indices_s;
-    StubRoutines::aarch64::_vector_iota_indices[3] = (address) _iota_indices_d;
-    StubRoutines::aarch64::_vector_iota_indices[4] = (address) _iota_indices_s_fp;
-    StubRoutines::aarch64::_vector_iota_indices[5] = (address) _iota_indices_d_fp;
+    assert(entry_count == VECTOR_IOTA_MAX_INDEX + 1, "sanity check");
+    static_assert(VECTOR_IOTA_MAX_INDEX == MAX6(T_BYTE, T_SHORT, T_INT, T_LONG, T_FLOAT, T_DOUBLE));
+    // Zero out the sparse array
+    for (int i = 0; i <= VECTOR_IOTA_MAX_INDEX; i++) {
+      StubRoutines::aarch64::_vector_iota_indices[i] = nullptr;
+    }
+    StubRoutines::aarch64::_vector_iota_indices[T_BYTE] = (address) _iota_indices_b;
+    StubRoutines::aarch64::_vector_iota_indices[T_SHORT] = (address) _iota_indices_h;
+    StubRoutines::aarch64::_vector_iota_indices[T_INT] = (address) _iota_indices_s;
+    StubRoutines::aarch64::_vector_iota_indices[T_LONG] = (address) _iota_indices_d;
+    StubRoutines::aarch64::_vector_iota_indices[T_FLOAT] = (address) _iota_indices_s_fp;
+    StubRoutines::aarch64::_vector_iota_indices[T_DOUBLE] = (address) _iota_indices_d_fp;
   }
 
   // The inner part of zero_words().  This is the bulk operation,
