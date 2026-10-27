@@ -512,6 +512,7 @@ class Instruction: public CompilationResourceObj {
   }
 
   ciFlatArrayKlass* as_loaded_flat_array_klass_or_null() const;
+  bool is_loaded_flat_array() const { return as_loaded_flat_array_klass_or_null() != nullptr; }
   bool maybe_flat_array() const;
   bool maybe_null_free_array() const;
 

@@ -789,7 +789,7 @@ void LIRGenerator::arraycopy_helper(Intrinsic* x, int* flagsp, ciArrayKlass** ex
 
   // TODO 8251971 Compare ArrayKlass::properties() of source and destination
   // array here instead, see also LIR_Assembler::arraycopy_valuetype_check
-  if (src->as_loaded_flat_array_klass_or_null() == nullptr && dst->as_loaded_flat_array_klass_or_null() == nullptr) {
+  if (!src->is_loaded_flat_array() && !dst->is_loaded_flat_array()) {
     flags &= ~LIR_OpArrayCopy::always_slow_path;
   }
   if (!src->maybe_flat_array()) {
@@ -2376,7 +2376,7 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
   ciMethodData* md = nullptr;
   ciProfileData* data = nullptr;
   if (x->should_profile()) {
-    if (x->array()->as_loaded_flat_array_klass_or_null() != nullptr) {
+    if (x->array()->is_loaded_flat_array()) {
       // No need to profile a load from a flat array of known type. This can happen if
       // the type only became known after optimizations (for example, after the PhiSimplifier).
       x->set_should_profile(false);
@@ -2416,7 +2416,7 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
 
   Value element = nullptr;
   if (x->buffer() != nullptr) {
-    assert(x->array()->as_loaded_flat_array_klass_or_null() != nullptr, "must be");
+    assert(x->array()->is_loaded_flat_array(), "must be");
     // Find the destination address (of the NewValueTypeInstance).
     LIRItem buffer(x->buffer(), this);
     LIR_Opr payload = access_flat_array(true, array, index, buffer,
@@ -2434,7 +2434,7 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
       __ cmove(lir_cond_equal, LIR_OprFact::oopConst(nullptr), buffer.result(), rlock_result(x), T_OBJECT);
     }
   } else if (x->delayed() != nullptr) {
-    assert(x->array()->as_loaded_flat_array_klass_or_null() != nullptr, "must be");
+    assert(x->array()->is_loaded_flat_array(), "must be");
     LIR_Opr result = rlock_result(x, x->delayed()->field()->type()->basic_type());
     access_sub_element(array, index, result, x->delayed()->field(), x->delayed()->offset());
   } else {

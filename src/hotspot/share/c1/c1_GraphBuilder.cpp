@@ -1173,7 +1173,7 @@ void GraphBuilder::store_indexed(BasicType type) {
   }
 
   StoreIndexed* store_indexed = new StoreIndexed(array, index, length, type, value, state_before, check_boolean);
-  if (profile_array_accesses() && is_reference_type(type) && array->as_loaded_flat_array_klass_or_null() == nullptr) {
+  if (profile_array_accesses() && is_reference_type(type) && !array->is_loaded_flat_array()) {
     compilation()->set_would_profile(true);
     store_indexed->set_should_profile(true);
     store_indexed->set_profiled_method(method());
