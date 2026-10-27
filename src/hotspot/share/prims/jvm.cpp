@@ -1414,6 +1414,8 @@ JVM_END
 
 
 JVM_ENTRY(jobject, JVM_FindScopedValueBindings(JNIEnv *env, jclass cls))
+  ResourceMark rm(THREAD);
+  GrowableArray<Handle>* local_array = new GrowableArray<Handle>(12);
   JvmtiVMObjectAllocEventCollector oam;
 
   // Iterate through Java frames
