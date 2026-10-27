@@ -132,6 +132,9 @@ public:
   // init the queue capacity
   void init();
 
+  // Frees the queue. The caller holds the dequeue lock and the queue is empty.
+  void release();
+
   void clear();
 };
 

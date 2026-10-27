@@ -127,6 +127,12 @@ void JfrStackWalkerRequestQueue::init() {
   AtomicAccess::release_store(&_capacity, INITIAL_CAPACITY);
 }
 
+void JfrStackWalkerRequestQueue::release() {
+  assert(is_empty(), "invariant");
+  get_and_reset_lost_requests_due_to_queue_full();
+  set_capacity(0);
+}
+
 void JfrStackWalkerRequestQueue::clear() {
   AtomicAccess::release_store(&_head, (u4)0);
 }
@@ -528,10 +534,8 @@ void JfrStackWalker::process_requests_locked(JavaThread* jt) {
   queue.resize_if_needed();
 }
 
-void JfrStackWalker::on_javathread_terminate(JavaThread* jt) {
-  assert(jt != nullptr, "invariant");
-  JfrStackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
-  JfrStackWalkDequeueLocker lock(tl);
+// Discards the pending requests of a thread. The caller holds its dequeue lock.
+static void discard_requests_locked(JavaThread* jt, JfrStackWalkerThreadLocal& tl) {
   JfrStackWalkerRequestQueue& queue = tl.queue();
   const u4 count = queue.size();
   for (u4 i = 0; i < count; i++) {
@@ -540,6 +544,29 @@ void JfrStackWalker::on_javathread_terminate(JavaThread* jt) {
   }
   queue.clear();
   tl.set_has_requests(false);
+  tl.set_do_async_processing_of_requests(false);
+}
+
+void JfrStackWalker::on_javathread_terminate(JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  JfrStackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
+  JfrStackWalkDequeueLocker lock(tl);
+  discard_requests_locked(jt, tl);
+}
+
+// Frees the queues of all threads once the stack walker is no longer used.
+// Pending requests, e.g. of threads that are still in native, are discarded and
+// counted as lost by their consumers. The dequeue lock excludes the thread's own
+// processing, the native stack walker thread and any late producer; a producer
+// that comes later finds an empty queue and drops its request.
+static void release_queues() {
+  JavaThreadIteratorWithHandle jtiwh;
+  for (JavaThread* jt = jtiwh.next(); jt != nullptr; jt = jtiwh.next()) {
+    JfrStackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
+    JfrStackWalkDequeueLocker lock(tl);
+    discard_requests_locked(jt, tl);
+    tl.queue().release();
+  }
 }
 
 void JfrStackWalker::process_requests(JavaThread* jt) {
@@ -577,10 +604,12 @@ void JfrStackWalker::initialize() {
 
 void JfrStackWalker::teardown() {
   DEBUG_ONLY(JfrStackWalkerLifecycleMark mark;)
-  // Decrement the use count. The last caller (1->0) disenrolls the native thread.
+  // Decrement the use count. The last caller (1->0) disenrolls the native thread
+  // and frees the queues that initialize() allocated.
   if (AtomicAccess::fetch_then_add(&_stackwalker_use_count, -1) == 1) {
     assert(_native_stackwalker_thread != nullptr, "invariant");
     _native_stackwalker_thread->disenroll();
+    release_queues();
   }
 }
 
