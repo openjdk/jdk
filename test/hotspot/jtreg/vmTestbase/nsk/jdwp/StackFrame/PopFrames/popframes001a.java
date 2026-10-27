@@ -41,10 +41,10 @@ public class popframes001a {
     public static final String THREAD_NAME = "testedThread";
 
     // line nunber for breakpoint
-    public static final int BREAKPOINT_LINE_NUMBER = 150;
+    public static final int BREAKPOINT_LINE_NUMBER = 160;
 
     // line number of the popframes003 breakpoint in stop()
-    public static final int STOP_LINE_NUMBER = 164;
+    public static final int STOP_LINE_NUMBER = 177;
 
     // scaffold objects
     private static volatile ArgumentHandler argumentHandler = null;
@@ -99,6 +99,12 @@ public class popframes001a {
             return popframes001.FAILED;
         }
 
+        if (TestedThreadClass.argsMismatch != null) {
+            log.complain("Tested method got wrong arguments: " + TestedThreadClass.argsMismatch);
+            log.display("Debugee FAILED");
+            return popframes001.FAILED;
+        }
+
         log.display("Debugee PASSED");
         return popframes001.PASSED;
     }
@@ -108,6 +114,10 @@ public class popframes001a {
 
         // number of invokations of tested method
         public static volatile int invokations = 0;
+
+        // arguments run() passes to testedMethod, checked on every invocation
+        static final long LONG_ARG = 0x1234567890ABL;
+        public static volatile String argsMismatch = null;
 
         // popframes002 and popframes003 run this debuggee with these set
         private static final boolean UNMOUNT = Boolean.getBoolean("popframes001.unmount");
@@ -123,13 +133,13 @@ public class popframes001a {
         // invoke tested method, nothing before the call that could deoptimize this frame
         public void run() {
             int foo = 100;
-            foo = testedMethod(foo);
+            foo = testedMethod(foo, LONG_ARG, this);
 
             log.display("Tested thread: finished");
         }
 
         // tested method to pop frames
-        public int testedMethod(int arg) {
+        public int testedMethod(int arg, long arg2, Object arg3) {
             invokations++;
             int boo = 0;
 
@@ -149,6 +159,9 @@ public class popframes001a {
             // next line is for breakpoint
             boo = arg * 2; // BREAKPOINT_LINE_NUMBER
             log.display("Breakpoint line passed");
+            if (arg != 100 || arg2 != LONG_ARG || arg3 != this) {
+                argsMismatch = "arg " + arg + " arg2 " + arg2 + " arg3 " + arg3;
+            }
 
             if (COMPILED_CALLER) {
                 // popframes003 breaks in stop() and pops this frame together with it

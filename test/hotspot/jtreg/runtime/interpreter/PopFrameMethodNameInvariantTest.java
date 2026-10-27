@@ -77,21 +77,23 @@ public class PopFrameMethodNameInvariantTest {
     public static class Target {
         static final boolean UNMOUNT = Boolean.getBoolean("popframe.unmount");
         static int entered;
+        static final long LONG_ARG = 0x1234567890ABL;
+        static final Object MARKER = new Object();
 
         // the debugger pops body, the caller of this one
-        static void stop(float x) {}
+        static void stop(int a) {}
 
-        static void body(float x) throws InterruptedException {
+        static void body(int a, long b, Object c) throws InterruptedException {
             entered++;
             if (UNMOUNT) {
                 // sleeping unmounts this virtual thread, when it comes back the
                 // frames below body stay frozen until they are returned into
                 Thread.sleep(1000);
             }
-            stop(x);
+            stop(a);
             // only the reexecuted invocation gets here
-            if (entered != 2 || x != 1.0f) {
-                throw new RuntimeException("entered " + entered + " times, x = " + x);
+            if (entered != 2 || a != 7 || b != LONG_ARG || c != MARKER) {
+                throw new RuntimeException("entered " + entered + " times, a = " + a + ", b = " + b + ", c = " + c);
             }
         }
 
@@ -99,16 +101,16 @@ public class PopFrameMethodNameInvariantTest {
             MethodHandle target = MethodHandles.lookup().findStatic(
                     Target.class,
                     "body",
-                    MethodType.methodType(void.class, float.class));
+                    MethodType.methodType(void.class, int.class, long.class, Object.class));
             Object name = MethodHandleHelper.internalMemberName(target);
             if (!UNMOUNT) {
-                MethodHandleHelper.linkToStatic(name, (float)1.0);
+                MethodHandleHelper.linkToStatic(name, 7, LONG_ARG, MARKER);
                 return;
             }
             Throwable[] failure = new Throwable[1];
             Thread thread = Thread.ofVirtual().start(() -> {
                 try {
-                    MethodHandleHelper.linkToStatic(name, (float)1.0);
+                    MethodHandleHelper.linkToStatic(name, 7, LONG_ARG, MARKER);
                 } catch (Throwable t) {
                     failure[0] = t;
                 }
