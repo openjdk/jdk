@@ -2744,7 +2744,7 @@ operand immI()
 %}
 
 // 32 bit zero
-operand immI0()
+operand immI_0()
 %{
   predicate(n->get_int() == 0);
   match(ConI);
@@ -2984,7 +2984,7 @@ operand immI_16bits()
   interface(CONST_INTER);
 %}
 
-operand immIpowerOf2() %{
+operand immI_single_set_bit() %{
   predicate(is_power_of_2((juint)(n->get_int())));
   match(ConI);
   op_cost(0);
@@ -5492,7 +5492,7 @@ instruct storeB_volatile(iRegIorL2I src, indirect mem)
   ins_pipe(pipe_serial);
 %}
 
-instruct storeimmB0(immI0 zero, memory mem)
+instruct storeimmB0(immI_0 zero, memory mem)
 %{
   predicate(!needs_releasing_store(n));
   match(Set mem (StoreB mem zero));
@@ -5507,7 +5507,7 @@ instruct storeimmB0(immI0 zero, memory mem)
   ins_pipe(istore_mem);
 %}
 
-instruct storeimmB0_volatile(immI0 zero, indirect mem)
+instruct storeimmB0_volatile(immI_0 zero, indirect mem)
 %{
   predicate(needs_releasing_store(n));
   match(Set mem (StoreB mem zero));
@@ -5553,7 +5553,7 @@ instruct storeC_volatile(iRegIorL2I src, indirect mem)
   ins_pipe(pipe_serial);
 %}
 
-instruct storeimmC0(immI0 zero, memory mem)
+instruct storeimmC0(immI_0 zero, memory mem)
 %{
   predicate(!needs_releasing_store(n));
   match(Set mem (StoreC mem zero));
@@ -5568,7 +5568,7 @@ instruct storeimmC0(immI0 zero, memory mem)
   ins_pipe(istore_mem);
 %}
 
-instruct storeimmC0_volatile(immI0 zero, indirect mem)
+instruct storeimmC0_volatile(immI_0 zero, indirect mem)
 %{
   predicate(needs_releasing_store(n));
   match(Set mem (StoreC mem zero));
@@ -5614,7 +5614,7 @@ instruct storeI_volatile(iRegIorL2I src, indirect mem)
   ins_pipe(pipe_serial);
 %}
 
-instruct storeimmI0(immI0 zero, memory mem)
+instruct storeimmI0(immI_0 zero, memory mem)
 %{
   predicate(!needs_releasing_store(n));
   match(Set mem(StoreI mem zero));
@@ -5629,7 +5629,7 @@ instruct storeimmI0(immI0 zero, memory mem)
   ins_pipe(istore_mem);
 %}
 
-instruct storeimmI0_volatile(immI0 zero, indirect mem)
+instruct storeimmI0_volatile(immI_0 zero, indirect mem)
 %{
   predicate(needs_releasing_store(n));
   match(Set mem (StoreI mem zero));
@@ -7237,7 +7237,7 @@ instruct subL_reg_imm(iRegLNoSp dst, iRegL src1, immLSub src2) %{
 
 // Integer Negation (special case for sub)
 
-instruct negI_reg(iRegINoSp dst, iRegIorL2I src, immI0 zero) %{
+instruct negI_reg(iRegINoSp dst, iRegIorL2I src, immI_0 zero) %{
   match(Set dst (SubI zero src));
   ins_cost(ALU_COST);
   format %{ "subw  $dst, x0, $src\t# int, #@negI_reg" %}
@@ -10046,7 +10046,7 @@ instruct cmpLTMask_reg_reg(iRegINoSp dst, iRegI p, iRegI q)
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct cmpLTMask_reg_zero(iRegINoSp dst, iRegIorL2I op, immI0 zero)
+instruct cmpLTMask_reg_zero(iRegINoSp dst, iRegIorL2I op, immI_0 zero)
 %{
   match(Set dst (CmpLTMask op zero));
 
@@ -10099,7 +10099,7 @@ instruct maxI_reg_reg(iRegINoSp dst, iRegI src)
 // n.b. this is selected in preference to the rule above because it
 // avoids loading constant 0 into a source register
 
-instruct minI_reg_zero(iRegINoSp dst, immI0 zero)
+instruct minI_reg_zero(iRegINoSp dst, immI_0 zero)
 %{
   match(Set dst (MinI dst zero));
   match(Set dst (MinI zero dst));
@@ -10115,7 +10115,7 @@ instruct minI_reg_zero(iRegINoSp dst, immI0 zero)
   ins_pipe(pipe_class_compare);
 %}
 
-instruct maxI_reg_zero(iRegINoSp dst, immI0 zero)
+instruct maxI_reg_zero(iRegINoSp dst, immI_0 zero)
 %{
   match(Set dst (MaxI dst zero));
   match(Set dst (MaxI zero dst));
@@ -10404,7 +10404,7 @@ instruct cmpD_branch(cmpOp cmp, fRegD op1, fRegD op2, label lbl)
 %}
 
 // Compare signed int with zero and branch near instructions
-instruct cmpI_reg_imm0_branch(cmpOp cmp, iRegI op1, immI0 zero, label lbl)
+instruct cmpI_reg_imm0_branch(cmpOp cmp, iRegI op1, immI_0 zero, label lbl)
 %{
   // Same match rule as `far_cmpI_reg_imm0_branch'.
   match(If cmp (CmpI op1 zero));
@@ -10422,7 +10422,7 @@ instruct cmpI_reg_imm0_branch(cmpOp cmp, iRegI op1, immI0 zero, label lbl)
   ins_short_branch(1);
 %}
 
-instruct cmpI_reg_imm0_loop(cmpOp cmp, iRegI op1, immI0 zero, label lbl)
+instruct cmpI_reg_imm0_loop(cmpOp cmp, iRegI op1, immI_0 zero, label lbl)
 %{
   // Same match rule as `far_cmpI_reg_imm0_loop'.
   match(CountedLoopEnd cmp (CmpI op1 zero));
@@ -10442,7 +10442,7 @@ instruct cmpI_reg_imm0_loop(cmpOp cmp, iRegI op1, immI0 zero, label lbl)
 %}
 
 // Compare unsigned int with zero and branch near instructions
-instruct cmpUEqNeLeGt_reg_imm0_branch(cmpOpUEqNeLeGt cmp, iRegI op1, immI0 zero, label lbl)
+instruct cmpUEqNeLeGt_reg_imm0_branch(cmpOpUEqNeLeGt cmp, iRegI op1, immI_0 zero, label lbl)
 %{
   // Same match rule as `far_cmpUEqNeLeGt_reg_imm0_branch'.
   match(If cmp (CmpU op1 zero));
@@ -10749,7 +10749,7 @@ instruct far_cmpD_branch(cmpOp cmp, fRegD op1, fRegD op2, label lbl)
   ins_pipe(pipe_class_compare);
 %}
 
-instruct far_cmpI_reg_imm0_branch(cmpOp cmp, iRegI op1, immI0 zero, label lbl)
+instruct far_cmpI_reg_imm0_branch(cmpOp cmp, iRegI op1, immI_0 zero, label lbl)
 %{
   match(If cmp (CmpI op1 zero));
 
@@ -10766,7 +10766,7 @@ instruct far_cmpI_reg_imm0_branch(cmpOp cmp, iRegI op1, immI0 zero, label lbl)
   ins_pipe(pipe_cmpz_branch);
 %}
 
-instruct far_cmpI_reg_imm0_loop(cmpOp cmp, iRegI op1, immI0 zero, label lbl)
+instruct far_cmpI_reg_imm0_loop(cmpOp cmp, iRegI op1, immI_0 zero, label lbl)
 %{
   match(CountedLoopEnd cmp (CmpI op1 zero));
 
@@ -10783,7 +10783,7 @@ instruct far_cmpI_reg_imm0_loop(cmpOp cmp, iRegI op1, immI0 zero, label lbl)
   ins_pipe(pipe_cmpz_branch);
 %}
 
-instruct far_cmpUEqNeLeGt_imm0_branch(cmpOpUEqNeLeGt cmp, iRegI op1, immI0 zero, label lbl)
+instruct far_cmpUEqNeLeGt_imm0_branch(cmpOpUEqNeLeGt cmp, iRegI op1, immI_0 zero, label lbl)
 %{
   match(If cmp (CmpU op1 zero));
 
@@ -10801,7 +10801,7 @@ instruct far_cmpUEqNeLeGt_imm0_branch(cmpOpUEqNeLeGt cmp, iRegI op1, immI0 zero,
 %}
 
 // compare lt/ge unsigned instructs has no short instruct with same match
-instruct far_cmpULtGe_reg_imm0_branch(cmpOpULtGe cmp, iRegI op1, immI0 zero, label lbl)
+instruct far_cmpULtGe_reg_imm0_branch(cmpOpULtGe cmp, iRegI op1, immI_0 zero, label lbl)
 %{
   match(If cmp (CmpU op1 zero));
 
@@ -10938,7 +10938,7 @@ instruct far_cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN op1, immP0 zero, la
 //   floating point    : CmpF, CmpD   -> single/double variants of the fp encoder
 
 instruct cmovI_cmpI_cmpL_zero_one(iRegINoSp dst, iRegIorL op1, iRegIorL op2,
-                                  cmpOp cop, immI_1 one, immI0 zero) %{
+                                  cmpOp cop, immI_1 one, immI_0 zero) %{
   match(Set dst (CMoveI (Binary cop (CmpI op1 op2)) (Binary one zero)));
   match(Set dst (CMoveI (Binary cop (CmpL op1 op2)) (Binary one zero)));
   ins_cost(ALU_COST * 2);
@@ -10955,7 +10955,7 @@ instruct cmovI_cmpI_cmpL_zero_one(iRegINoSp dst, iRegIorL op1, iRegIorL op2,
 %}
 
 instruct cmovI_cmpU_cmpUL_zero_one(iRegINoSp dst, iRegIorL op1, iRegIorL op2,
-                                   cmpOpU cop, immI_1 one, immI0 zero) %{
+                                   cmpOpU cop, immI_1 one, immI_0 zero) %{
   match(Set dst (CMoveI (Binary cop (CmpU op1 op2)) (Binary one zero)));
   match(Set dst (CMoveI (Binary cop (CmpUL op1 op2)) (Binary one zero)));
   ins_cost(ALU_COST * 2);
@@ -10972,7 +10972,7 @@ instruct cmovI_cmpU_cmpUL_zero_one(iRegINoSp dst, iRegIorL op1, iRegIorL op2,
 %}
 
 instruct cmovI_cmpF_zero_one(iRegINoSp dst, fRegF op1, fRegF op2,
-                             cmpOp cop, immI_1 one, immI0 zero) %{
+                             cmpOp cop, immI_1 one, immI_0 zero) %{
   match(Set dst (CMoveI (Binary cop (CmpF op1 op2)) (Binary one zero)));
   ins_cost(ALU_COST * 2);
 
@@ -10988,7 +10988,7 @@ instruct cmovI_cmpF_zero_one(iRegINoSp dst, fRegF op1, fRegF op2,
 %}
 
 instruct cmovI_cmpD_zero_one(iRegINoSp dst, fRegD op1, fRegD op2,
-                             cmpOp cop, immI_1 one, immI0 zero) %{
+                             cmpOp cop, immI_1 one, immI_0 zero) %{
   match(Set dst (CMoveI (Binary cop (CmpD op1 op2)) (Binary one zero)));
   ins_cost(ALU_COST * 2);
 
@@ -11085,7 +11085,7 @@ instruct cmovI_cmpD(iRegINoSp dst, iRegI src, fRegD op1, fRegD op2, cmpOp cop) %
 // These are selected in preference to the rules above because they
 // avoid loading constant 0 into a source register
 
-instruct cmovI_cmpI_zero(iRegINoSp dst, immI0 src, iRegI op1, iRegI op2, cmpOp cop) %{
+instruct cmovI_cmpI_zero(iRegINoSp dst, immI_0 src, iRegI op1, iRegI op2, cmpOp cop) %{
   match(Set dst (CMoveI (Binary cop (CmpI op1 op2)) (Binary dst src)));
   ins_cost(ALU_COST + BRANCH_COST);
 
@@ -11100,7 +11100,7 @@ instruct cmovI_cmpI_zero(iRegINoSp dst, immI0 src, iRegI op1, iRegI op2, cmpOp c
   ins_pipe(pipe_class_compare);
 %}
 
-instruct cmovI_cmpU_zero(iRegINoSp dst, immI0 src, iRegI op1, iRegI op2, cmpOpU cop) %{
+instruct cmovI_cmpU_zero(iRegINoSp dst, immI_0 src, iRegI op1, iRegI op2, cmpOpU cop) %{
   match(Set dst (CMoveI (Binary cop (CmpU op1 op2)) (Binary dst src)));
   ins_cost(ALU_COST + BRANCH_COST);
 
@@ -11115,7 +11115,7 @@ instruct cmovI_cmpU_zero(iRegINoSp dst, immI0 src, iRegI op1, iRegI op2, cmpOpU 
   ins_pipe(pipe_class_compare);
 %}
 
-instruct cmovI_cmpN_cmpP_zero(iRegINoSp dst, immI0 src, iRegNorP op1, iRegNorP op2, cmpOpU cop) %{
+instruct cmovI_cmpN_cmpP_zero(iRegINoSp dst, immI_0 src, iRegNorP op1, iRegNorP op2, cmpOpU cop) %{
   match(Set dst (CMoveI (Binary cop (CmpN op1 op2)) (Binary dst src)));
   match(Set dst (CMoveI (Binary cop (CmpP op1 op2)) (Binary dst src)));
   ins_cost(ALU_COST + BRANCH_COST);
