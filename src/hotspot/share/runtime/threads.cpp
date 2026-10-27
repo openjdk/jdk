@@ -100,6 +100,7 @@
 #include "runtime/vmOperations.hpp"
 #include "sanitizers/address.hpp"
 #include "services/attachListener.hpp"
+#include "services/diagnosticWorkers.hpp"
 #include "services/management.hpp"
 #include "services/threadIdTable.hpp"
 #include "services/threadService.hpp"
@@ -1466,6 +1467,7 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   if (Universe::heap() != nullptr) {
     PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
     Universe::heap()->gc_threads_do(&print_closure);
+    DiagnosticWorkers::threads_do(&print_closure);
     num_other += print_closure.num_printed();
   }
 

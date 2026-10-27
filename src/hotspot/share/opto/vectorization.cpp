@@ -395,7 +395,7 @@ void VLoopDependencyGraph::construct() {
 
 void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& strong_memory_edges, GrowableArray<int>& weak_memory_edges) {
   assert(_dependency_nodes.at_grow(_body.bb_idx(n), nullptr) == nullptr, "not yet created");
-  DependencyNode* dn = new (_arena) DependencyNode(n, strong_memory_edges, weak_memory_edges, _arena);
+  DependencyNode* dn = new (_arena) DependencyNode(strong_memory_edges, weak_memory_edges, _arena);
   _dependency_nodes.at_put_grow(_body.bb_idx(n), dn, nullptr);
 }
 
@@ -482,11 +482,9 @@ void VLoopDependencyGraph::print() const {
 }
 #endif
 
-VLoopDependencyGraph::DependencyNode::DependencyNode(MemNode* n,
-                                                     GrowableArray<int>& strong_memory_edges,
+VLoopDependencyGraph::DependencyNode::DependencyNode(GrowableArray<int>& strong_memory_edges,
                                                      GrowableArray<int>& weak_memory_edges,
                                                      Arena* arena) :
-    _node(n),
     _num_strong_memory_edges(strong_memory_edges.length()),
     _num_weak_memory_edges(weak_memory_edges.length()),
     _memory_edges(nullptr)

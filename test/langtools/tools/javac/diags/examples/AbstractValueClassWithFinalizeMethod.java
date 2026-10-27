@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,12 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZRUNTIMEWORKERS_HPP
-#define SHARE_GC_Z_ZRUNTIMEWORKERS_HPP
+// key: compiler.err.value.finalize
+// key: compiler.note.preview.filename
+// key: compiler.note.preview.recompile
+// key: compiler.warn.has.been.deprecated.for.removal
+// options: --enable-preview  -source ${jdk.version}
 
-#include "gc/shared/workerThread.hpp"
-
-class ThreadClosure;
-
-class ZRuntimeWorkers {
-private:
-  WorkerThreads _workers;
-
-public:
-  ZRuntimeWorkers();
-
-  WorkerThreads* workers();
-
-  void threads_do(ThreadClosure* tc) const;
-};
-
-#endif // SHARE_GC_Z_ZRUNTIMEWORKERS_HPP
+abstract value class AbstractValueClassWithFinalizeMethod {
+    protected void finalize() throws Throwable { }
+}

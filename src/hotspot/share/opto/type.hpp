@@ -430,11 +430,6 @@ public:
     return _const_basic_type[type];
   }
 
-  // For two instance arrays of same dimension, return the base element types.
-  // Otherwise or if the arrays have different dimensions, return null.
-  static void get_arrays_base_elements(const Type *a1, const Type *a2,
-                                       const TypeInstPtr **e1, const TypeInstPtr **e2);
-
   // Mapping to the array element's basic type.
   BasicType array_element_basic_type() const;
 
@@ -990,18 +985,19 @@ public:
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
   // Convenience common pre-built types.
-  static const TypeTuple *IFBOTH;
-  static const TypeTuple *IFFALSE;
-  static const TypeTuple *IFTRUE;
-  static const TypeTuple *IFNEITHER;
-  static const TypeTuple *LOOPBODY;
-  static const TypeTuple *MEMBAR;
-  static const TypeTuple *STORECONDITIONAL;
-  static const TypeTuple *START_I2C;
-  static const TypeTuple *INT_PAIR;
-  static const TypeTuple *LONG_PAIR;
-  static const TypeTuple *INT_CC_PAIR;
-  static const TypeTuple *LONG_CC_PAIR;
+  static const TypeTuple* CONTROL;
+  static const TypeTuple* IFBOTH;
+  static const TypeTuple* IFFALSE;
+  static const TypeTuple* IFTRUE;
+  static const TypeTuple* IFNEITHER;
+  static const TypeTuple* LOOPBODY;
+  static const TypeTuple* MEMBAR;
+  static const TypeTuple* STORECONDITIONAL;
+  static const TypeTuple* START_I2C;
+  static const TypeTuple* INT_PAIR;
+  static const TypeTuple* LONG_PAIR;
+  static const TypeTuple* INT_CC_PAIR;
+  static const TypeTuple* LONG_CC_PAIR;
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint, outputStream *st  ) const; // Specialized per-Type dumping
 #endif
@@ -2097,7 +2093,6 @@ public:
   static const TypeAryKlassPtr* make(ciKlass* klass, InterfaceHandling interface_handling);
 
   const TypeAryKlassPtr* cast_to_non_refined() const;
-  const TypeAryKlassPtr* cast_to_default_refined() const;
   const TypeAryKlassPtr* cast_to_refined_array_klass_ptr(bool refined = true) const;
 
   const Type *elem() const { return _elem; }

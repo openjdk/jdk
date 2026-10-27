@@ -30,6 +30,20 @@
  *
  */
 
+/**
+ * @test
+ * @bug 8201368
+ * @summary IfNode::fold_compares() may lead to incorrect execution
+ *
+ * @requires os.arch == "aarch64"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement
+ *                   -XX:-BackgroundCompilation
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
+ *                   FoldedIfNonDomMidIf
+ *
+ */
+
 public class FoldedIfNonDomMidIf {
     public static void main(String[] args) {
         for (int i = 0; i < 20_000; i++) {

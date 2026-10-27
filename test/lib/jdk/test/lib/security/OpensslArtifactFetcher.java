@@ -24,7 +24,9 @@
 package jdk.test.lib.security;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.artifacts.Artifact;
@@ -130,12 +132,50 @@ public class OpensslArtifactFetcher {
 
     // retrieve the provider directory path from <OPENSSL_HOME>/bin/openssl
     public static Path getProviderPath(String opensslPath) {
-        Path openSslRootPath = Path.of(opensslPath).getParent().getParent();
-        String libDir = "lib";
-        if (Platform.isX64() && (Platform.isLinux() || Platform.isWindows())) {
-            libDir = "lib64";
+        Path modules = null;
+
+        // Prefer the modules dir next to the binary: the downloaded bundle is
+        // relocatable, so "info -modulesdir" reports a stale build-time path.
+        Path bin = Path.of(opensslPath).getParent();
+        if (bin != null && bin.getParent() != null) {
+            Path root = bin.getParent();
+            for (String lib : List.of("lib", "lib64")) {
+                Path candidate = root.resolve(lib).resolve("ossl-modules");
+                if (Files.isDirectory(candidate)) {
+                    modules = candidate;
+                    break;
+                }
+            }
         }
-        return openSslRootPath.resolve(libDir, "ossl-modules");
+
+        // System installs (e.g. distro multiarch) don't keep modules next to
+        // the binary; fall back to "openssl info -modulesdir".
+        if (modules == null) {
+            try {
+                String dir = ProcessTools.executeCommand(opensslPath, "info", "-modulesdir")
+                        .shouldHaveExitValue(0)
+                        .getStdout().trim();
+                modules = Path.of(dir);
+            } catch (Exception e) {
+                throw new SkippedException("Could not determine OpenSSL modules directory", e);
+            }
+        }
+
+        // This test uses -legacy (RC4/SHA1 PBE). Skip if the legacy provider
+        // module is missing. Check the module file rather than
+        // "openssl list -providers", which only lists loaded providers.
+        if (!hasLegacyProvider(modules)) {
+            throw new SkippedException("OpenSSL legacy provider not available in " + modules);
+        }
+
+        return modules;
+    }
+
+    // Provider module file name differs per platform.
+    private static boolean hasLegacyProvider(Path modulesDir) {
+        return Files.isRegularFile(modulesDir.resolve("legacy.so"))
+                || Files.isRegularFile(modulesDir.resolve("legacy.dylib"))
+                || Files.isRegularFile(modulesDir.resolve("legacy.dll"));
     }
 
     public static String getTestOpensslBundleVersion() {
