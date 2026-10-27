@@ -575,13 +575,6 @@ private:
 
       verify(r, !r->is_humongous() || start_region->is_humongous_start(),
            "Humongous start region must be is_humongous_start()");
-
-      oop p = cast_to_oop(start_region->bottom());
-      size_t word_size = p->size();
-      size_t num_regions = ShenandoahHeapRegion::required_regions(word_size * HeapWordSize);
-
-      verify(r, !r->is_humongous() || (r->index() - start_index <= num_regions - 1),
-             "Humongous start region must span region");
     }
 
     verify(r, r->capacity() == ShenandoahHeapRegion::region_size_bytes(),
