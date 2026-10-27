@@ -839,6 +839,7 @@ class ShenandoahIsGCWorkerClosure : public ThreadClosure {
 private:
   bool _found = false;
   const Thread* _target;
+
 public:
   ShenandoahIsGCWorkerClosure(Thread* t) : _target(t) {}
 
@@ -855,7 +856,7 @@ class ShenandoahVerifyThreadLabsClosure : public ThreadClosure {
 private:
   const char* _label;
   const bool _generational;
-  WorkerThreads* _workers;
+  const WorkerThreads* _workers;
 
   void verify_labs(Thread* t, bool should_contain_labs) const {
     const PLAB* gclab = ShenandoahThreadLocalData::gclab(t);
@@ -866,7 +867,7 @@ private:
     guarantee((plab != nullptr) == expect_plab, "%s: PLAB %s be initialized for thread: %s",
               _label, expect_plab ? "should" : "shouldn't", t->name());
     guarantee((gclab != nullptr) == expect_gclab, "%s: GCLAB %s be initialized for thread: %s",
-              _label, expect_gclab ? "should" : "shouldn't", t->name()); 
+              _label, expect_gclab ? "should" : "shouldn't", t->name());
   }
 
 public:
