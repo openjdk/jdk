@@ -479,27 +479,27 @@ static traceid compute_tid(JavaThread* jt, bool in_continuation) {
                          : JfrThreadLocal::jvm_thread_id(jt);
 }
 
-static void report_thread(JfrStackWalkRequest& request, const JfrStackWalkerThreadLocal& tl, JavaThread* jt, const Thread* current) {
+bool JfrStackWalker::walk(JfrStackWalkRequest& request, JavaThread* jt, traceid& sid, traceid& tid, bool& biased) {
   assert(jt != nullptr, "invariant");
-  assert(current != nullptr, "invariant");
+  sid = 0;
+  biased = false;
   frame top_frame;
-  bool biased = false;
   bool in_continuation = false;
   if (!JfrThreadSampling::compute_top_frame(request.sample_request(), top_frame, in_continuation, jt, biased)) {
-    request.callback()->on_failure(jt, JfrThreadLocal::jvm_thread_id(jt));
-    return;
+    tid = JfrThreadLocal::jvm_thread_id(jt);
+    return false;
   }
+  tid = compute_tid(jt, in_continuation);
 
   // JfrStackTrace allocates its frames in the ResourceArea.
   ResourceMark rm;
   JfrStackTrace stack_trace;
   if (!stack_trace.record(jt, top_frame, in_continuation, request.sample_request())) {
-    request.callback()->on_failure(jt, compute_tid(jt, in_continuation));
-    return;
+    return false;
   }
-  const traceid sid = JfrStackTraceRepository::add(stack_trace);
+  sid = JfrStackTraceRepository::add(stack_trace);
   assert(sid != 0, "invariant");
-  request.callback()->on_stacktrace(jt, sid, compute_tid(jt, in_continuation), biased);
+  return true;
 }
 
 /**
@@ -512,8 +512,6 @@ static void report_thread(JfrStackWalkRequest& request, const JfrStackWalkerThre
  */
 // Process queued requests with the dequeue lock already held by the caller.
 void JfrStackWalker::process_requests_locked(JavaThread* jt) {
-  const Thread* current = Thread::current();
-  assert(current != nullptr, "current should not be null");
   assert(jt != nullptr, "Java thread should not be null");
 
   JfrStackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
@@ -522,7 +520,7 @@ void JfrStackWalker::process_requests_locked(JavaThread* jt) {
   u4 count = queue.size();
   for (u4 i = 0; i < count; i++) {
     JfrStackWalkRequest& request = queue.at(i);
-    report_thread(request, tl, jt, current);
+    request.callback()->process(jt, request);
     request.destroy_callback();
   }
   queue.clear();

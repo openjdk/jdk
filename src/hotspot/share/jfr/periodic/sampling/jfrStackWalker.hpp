@@ -36,6 +36,7 @@
 
 class JavaThread;
 class JfrNativeStackWalkerThread;
+class JfrStackWalkRequest;
 
 class JfrStackWalkerCallback {
 public:
@@ -50,18 +51,14 @@ public:
 
   virtual ~JfrStackWalkerCallback() = default;
 
-  // Called when a stack-trace was successfully built and registered with the
-  // stack-trace repository. `sid` is the assigned stack-trace id; `tid` is
-  // the appropriate thread id (vthread id when the sample is in a continuation,
-  // jvm thread id otherwise).
-  virtual void on_stacktrace(JavaThread* jt, traceid sid, traceid tid, bool biased) = 0;
+  // Called to process a queued request, either by the requested thread itself at
+  // a safepoint poll, or by the native stack walker thread while the requested
+  // thread is in native. Implementations walk the stack with JfrStackWalker::walk(),
+  // or decide not to.
+  virtual void process(JavaThread* jt, JfrStackWalkRequest& request) = 0;
 
-  // Called when no stack-trace could be obtained for the request. `tid` is the
-  // jvm thread id of the sampled thread.
-  virtual void on_failure(JavaThread* jt, traceid tid) = 0;
-
-  // Called instead of the above when a queued request is discarded without
-  // being processed, e.g. because its thread terminates.
+  // Called instead of process() when a queued request is discarded, e.g.
+  // because its thread terminates.
   virtual void on_dropped(JavaThread* jt) = 0;
 };
 
@@ -237,6 +234,12 @@ public:
   // is never called. Accounting for dropped requests is up to the caller.
   // This API is signal-safe (no allocations).
   static bool request_stack_trace(JfrStackWalkRequest& request, JavaThread* jt, const void* context, bool thread_is_suspended);
+
+  // Walks the stack described by a request and adds the trace to the stack-trace
+  // repository. Only valid from JfrStackWalkerCallback::process(). Returns false if
+  // no trace could be obtained, in which case sid is 0. tid is the thread id to
+  // report: the vthread id if the trace is in a continuation, else the jvm thread id.
+  static bool walk(JfrStackWalkRequest& request, JavaThread* jt, traceid& sid, traceid& tid, bool& biased);
 
   // Entry point for the runtime to trigger stack-walk processing.
   static inline void check_and_process_requests(JavaThread* jt);

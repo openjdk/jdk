@@ -51,22 +51,6 @@ class JfrStackTraceRequestCallback : public JfrStackWalkerCallback {
   JfrTicks _sample_ticks;
   jlong _user_data;
 
-  void send_event(JavaThread* jt, traceid sid, traceid tid, bool failed, bool biased) {
-    EventStackTraceRequest event(UNTIMED);
-    event.set_starttime(_sample_ticks);
-    if (event.should_commit()) {
-      event.set_eventThread(tid);
-      event.set_stackTrace(sid);
-      event.set_userData(_user_data);
-      event.set_failed(failed);
-      event.set_biased(biased);
-      event.commit();
-    } else {
-      // Throttled, or the event was disabled after the request was made.
-      jt->jfr_thread_local()->increment_stack_trace_requests_lost();
-    }
-    send_lost_event(jt);
-  }
 
  public:
   JfrStackTraceRequestCallback(jlong user_data) :
@@ -74,12 +58,28 @@ class JfrStackTraceRequestCallback : public JfrStackWalkerCallback {
     _user_data(user_data) {
   }
 
-  void on_stacktrace(JavaThread* jt, traceid sid, traceid tid, bool biased) final {
-    send_event(jt, sid, tid, false, biased);
-  }
-
-  void on_failure(JavaThread* jt, traceid tid) final {
-    send_event(jt, 0, tid, true, false);
+  void process(JavaThread* jt, JfrStackWalkRequest& request) final {
+    // Throttle before walking, so a throttled request does not pay for a walk.
+    // Unlike for an UNTIMED event, should_commit() evaluates the throttle here
+    // and commit() reuses the decision.
+    EventStackTraceRequest event;
+    if (event.should_commit()) {
+      traceid sid;
+      traceid tid;
+      bool biased;
+      const bool walked = JfrStackWalker::walk(request, jt, sid, tid, biased);
+      event.set_starttime(_sample_ticks);
+      event.set_eventThread(tid);
+      event.set_stackTrace(sid);
+      event.set_userData(_user_data);
+      event.set_failed(!walked);
+      event.set_biased(walked && biased);
+      event.commit();
+    } else {
+      // Throttled, or the event was disabled after the request was made.
+      jt->jfr_thread_local()->increment_stack_trace_requests_lost();
+    }
+    send_lost_event(jt);
   }
 
   void on_dropped(JavaThread* jt) final {
