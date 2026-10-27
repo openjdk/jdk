@@ -26,7 +26,7 @@
  * @bug 8395712
  * @summary Removing a transferred element must wake its producer
  * @library /test/lib
- * @run main/othervm -XX:ActiveProcessorCount=1 TransferRemove
+ * @run main/othervm/timeout=60 -XX:ActiveProcessorCount=1 TransferRemove
  */
 
 /*
@@ -35,7 +35,7 @@
  * @summary Removing a transferred element must wake its producer without LSE
  * @requires os.arch == "aarch64"
  * @library /test/lib
- * @run main/othervm -XX:-UseLSE -XX:ActiveProcessorCount=1 TransferRemove
+ * @run main/othervm/timeout=60 -XX:-UseLSE -XX:ActiveProcessorCount=1 TransferRemove
  */
 
 import java.util.ArrayList;
