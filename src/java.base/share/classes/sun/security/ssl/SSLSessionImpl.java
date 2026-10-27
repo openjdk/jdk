@@ -115,6 +115,15 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     private int                 negotiatedMaxFragLen = -1;
     private int                 maximumPacketSize;
 
+    /*
+     * A family is composed of a root session and the sessions that are
+     * derived from its ticket. Sessions that are derived from the tickets of
+     * descendant sessions will also belong to the same family, with each
+     * generation being one level deeper. Invalidation occurs when the familyDepth
+     * is greater than or equal to the familyDepthLimit, which is initially set
+     * to Long.MAX_VALUE. Once a session is invalidated at the specified depth,
+     * all deeper sessions will be invalidated, not just its branch descendants.
+     */
     private final AtomicLong familyDepthLimit;
     private final long familyDepth;
     private boolean hasDescendant;
