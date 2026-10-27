@@ -8360,31 +8360,6 @@ void MacroAssembler::fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegi
 }
 
 /**
- * 8-bit folds to compute 32-bit CRC
- *
- * uint64_t xcrc;
- * timesXtoThe32[xcrc & 0xFF] ^ (xcrc >> 8);
- */
-void MacroAssembler::fold_8bit_crc32(XMMRegister xcrc, Register table, XMMRegister xtmp, Register tmp) {
-  movdl(tmp, xcrc);
-  andl(tmp, 0xFF);
-  movdl(xtmp, Address(table, tmp, Address::times_4, 0));
-  psrldq(xcrc, 1); // unsigned shift one byte
-  pxor(xcrc, xtmp);
-}
-
-/**
- * uint32_t crc;
- * timesXtoThe32[crc & 0xFF] ^ (crc >> 8);
- */
-void MacroAssembler::fold_8bit_crc32(Register crc, Register table, Register tmp) {
-  movl(tmp, crc);
-  andl(tmp, 0xFF);
-  shrl(crc, 8);
-  xorl(crc, Address(table, tmp, Address::times_4, 0));
-}
-
-/**
  * @param crc   register containing existing CRC (32-bit)
  * @param buf   register pointing to input byte buffer (byte*)
  * @param len   register containing number of bytes
