@@ -194,8 +194,6 @@ vmTestbase/nsk/monitoring/ThreadMXBean/findMonitorDeadlockedThreads/find006/Test
 
 compiler/codegen/TestRedundantLea.java#Spill                            8361089 generic-all
 
-compiler/vectorapi/TestVectorReassociations.java 8388927 generic-all
-
 serviceability/sa/TestJhsdbJstackMixedWithXComp.java#xcomp-disable-tiered-compilation 8386674 linux-aarch64
 
 # The following test failure(s) DID NOT reproduce during Tier[1-8] testing
