@@ -34,8 +34,9 @@
 // automatically eligible for eager reclaim if they are in this set.
 //
 // Card set groups for humongous objects are per humongous object. Such a card set group
-// contains all regions the humongous object covers. The first region in this group must be
-// the humongous-starts region, followed by any humongous-continues regions in address order.
+// contains all references to regions covered by the humongous object. The first region in this
+// group must be the humongous-starts region, followed by any humongous-continues regions in
+// address order.
 //
 // Some humongous objects may not have a card set group, for example after Full GC or when
 // tracking is dropped.
