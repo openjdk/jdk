@@ -431,7 +431,7 @@ void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm, Register zpointer,
   __ bind(load_done);
 
   // Remove color so that store side (vectorized or non-vectorized) can inject
-  // the sotore-good color with an or instruction
+  // the store-good color with an or instruction
   __ z_nill(zpointer, 0x0);
 }
 
