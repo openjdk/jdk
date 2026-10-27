@@ -1819,7 +1819,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   // the known type isn't loaded since the code sanity checks
   // in debug mode and the type isn't required when we know the exact type
   // also check that the type is an array type.
-  if (default_type == nullptr) {
+  if (default_type == nullptr || !default_type->is_loaded()) {
     assert(src->is_nonvolatile() && src_pos->is_nonvolatile() && dst->is_nonvolatile() && dst_pos->is_nonvolatile() &&
            length->is_nonvolatile(), "must preserve");
     address copyfunc_addr = StubRoutines::generic_arraycopy();

@@ -134,7 +134,6 @@ class CompilerOracle : AllStatic {
  private:
   static bool _quiet;
   static void print_parse_error(char* error_msg, char* original_line);
-  static void print_command(CompileCommandEnum option, const char* name, enum OptionType type);
 
   // The core parser.
   static bool parse_from_input(inputStream::Input* input,

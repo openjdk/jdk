@@ -152,7 +152,7 @@ public class SSLFlowDelegate {
         this.exec = exec;
         this.handshakeState = new AtomicInteger(NOT_HANDSHAKING);
         this.readerCF = reader.completion();
-        this.writerCF = reader.completion();
+        this.writerCF = writer.completion();
         readerCF.exceptionally(this::stopOnError);
         writerCF.exceptionally(this::stopOnError);
         this.stopCF = CompletableFuture.allOf(reader.completion(), writer.completion())

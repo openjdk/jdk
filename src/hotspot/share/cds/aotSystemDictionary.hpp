@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
-#define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
+#ifndef SHARE_CDS_AOTSYSTEMDICTIONARY_HPP
+#define SHARE_CDS_AOTSYSTEMDICTIONARY_HPP
 
 #include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
@@ -135,7 +135,7 @@ class SharedClassLoadingMark {
   }
 };
 
-class SystemDictionaryShared: public SystemDictionary {
+class AOTSystemDictionary: public SystemDictionary {
   friend class LambdaProxyClassDictionary;
 
   struct ArchiveInfo {
@@ -303,7 +303,7 @@ public:
 #ifdef ASSERT
   // This object marks a critical period when writing the CDS archive. During this
   // period, the JVM must not load any new classes, so as to avoid adding new
-  // items in the SystemDictionaryShared::_dumptime_table.
+  // items in the AOTSystemDictionary::_dumptime_table.
   class NoClassLoadingMark: public StackObj {
   public:
     NoClassLoadingMark() {
@@ -327,4 +327,4 @@ public:
   static unsigned int hash_for_shared_dictionary(address ptr);
 };
 
-#endif // SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
+#endif // SHARE_CDS_AOTSYSTEMDICTIONARY_HPP
