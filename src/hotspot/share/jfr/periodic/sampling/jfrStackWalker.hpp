@@ -219,6 +219,9 @@ class JfrStackWalker : public AllStatic {
   static void process_requests_locked(JavaThread* jt);
 
 public:
+  // Reference-counted start and stop of the stack walker, one pair per user.
+  // Callers must be serialized; JFR applies event settings, which drive both
+  // users, under the MetadataRepository lock.
   static void initialize();
   static void teardown();
 

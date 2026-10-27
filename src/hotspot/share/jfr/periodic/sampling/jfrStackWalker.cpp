@@ -61,12 +61,15 @@ bool JfrStackWalkerRequestQueue::enqueue(const JfrStackWalkRequest& request) {
   static_assert(std::is_trivially_copyable<JfrStackWalkRequest>::value,
                 "JfrStackWalkRequest must be trivially copyable for queue storage");
   // Note: assertions about JavaThread::current() are not valid here because
-  // cross-thread enqueuing (e.g., from JFR wall-clock sampler) calls this
-  // from a non-JavaThread on behalf of the target thread.
+  // cross-thread enqueuing (e.g., RequestJFRStackTrace for another thread)
+  // calls this on behalf of the target thread.
+  // Acquire pairs with the release in init() and set_capacity(), so that a
+  // non-zero capacity is never seen together with a stale _data.
+  const u4 capacity = AtomicAccess::load_acquire(&_capacity);
   u4 elementIndex;
   do {
     elementIndex = AtomicAccess::load_acquire(&_head);
-    if (elementIndex >= _capacity) {
+    if (elementIndex >= capacity) {
       return false;
     }
   } while (AtomicAccess::cmpxchg(&_head, elementIndex, elementIndex + 1) != elementIndex);
@@ -111,9 +114,17 @@ u4 JfrStackWalkerRequestQueue::get_and_reset_lost_requests_due_to_queue_full() {
 void JfrStackWalkerRequestQueue::init() {
   // Keep an existing queue: it may have grown, and may still hold requests
   // from a previous use of the stack walker that its thread is about to process.
-  if (AtomicAccess::load(&_capacity) == 0) {
-    set_capacity(INITIAL_CAPACITY);
+  if (AtomicAccess::load_acquire(&_capacity) != 0) {
+    return;
   }
+  // A starting thread and JfrStackWalker::initialize() can race to initialize
+  // the same queue. Only the first to publish its array wins.
+  JfrStackWalkRequest* const data = NEW_C_HEAP_ARRAY(JfrStackWalkRequest, INITIAL_CAPACITY, mtOther);
+  if (AtomicAccess::cmpxchg(&_data, (JfrStackWalkRequest*)nullptr, data) != nullptr) {
+    FREE_C_HEAP_ARRAY(data);
+    return;
+  }
+  AtomicAccess::release_store(&_capacity, INITIAL_CAPACITY);
 }
 
 void JfrStackWalkerRequestQueue::clear() {
@@ -125,7 +136,12 @@ void JfrStackWalkerRequestQueue::resize_if_needed() {
   if (lost_requests_due_to_queue_full == 0) {
     return;
   }
-  u4 capacity = AtomicAccess::load(&_capacity);
+  // Acquire pairs with the release in init(), which may race with us if the
+  // drop we are reacting to hit a queue that was not yet initialized.
+  u4 capacity = AtomicAccess::load_acquire(&_capacity);
+  if (capacity == 0) {
+    return; // Not initialized, nothing to grow.
+  }
   if (capacity < MAX_CAPACITY) {
     float ratio = (float)lost_requests_due_to_queue_full / (float)capacity;
     int factor = 1;
@@ -381,6 +397,21 @@ public:
 JfrNativeStackWalkerThread* JfrStackWalker::_native_stackwalker_thread = nullptr;
 static volatile int _stackwalker_use_count = 0;
 
+#ifdef ASSERT
+// Verifies that initialize() and teardown() are not called concurrently.
+class JfrStackWalkerLifecycleMark : public StackObj {
+  static volatile bool _active;
+ public:
+  JfrStackWalkerLifecycleMark() {
+    assert(!AtomicAccess::cmpxchg(&_active, false, true), "initialize() and teardown() must be serialized");
+  }
+  ~JfrStackWalkerLifecycleMark() {
+    AtomicAccess::release_store(&_active, false);
+  }
+};
+volatile bool JfrStackWalkerLifecycleMark::_active = false;
+#endif
+
 static bool check_state(const JavaThread* thread) {
   switch (thread->thread_state()) {
     case _thread_in_Java:
@@ -523,6 +554,7 @@ void JfrStackWalker::process_requests(JavaThread* jt) {
 }
 
 void JfrStackWalker::initialize() {
+  DEBUG_ONLY(JfrStackWalkerLifecycleMark mark;)
   // Ensure the native thread is created and published before incrementing the
   // use count. Any thread observing count > 0 via load_acquire is then
   // guaranteed to see a non-null _native_stackwalker_thread pointer.
@@ -548,6 +580,7 @@ void JfrStackWalker::initialize() {
 }
 
 void JfrStackWalker::teardown() {
+  DEBUG_ONLY(JfrStackWalkerLifecycleMark mark;)
   // Decrement the use count. The last caller (1->0) disenrolls the native thread.
   if (AtomicAccess::fetch_then_add(&_stackwalker_use_count, -1) == 1) {
     assert(_native_stackwalker_thread != nullptr, "invariant");
