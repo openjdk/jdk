@@ -121,41 +121,6 @@ void JfrCPUTimeTraceQueue::release_lock() {
   AtomicAccess::release_store(&_lock, UNLOCKED);
 }
 
-JfrCPUTimeTraceQueue::LockState JfrCPUTimeTraceQueue::lock_state() const {
-  return AtomicAccess::load_acquire(&_lock);
-}
-
-bool JfrCPUTimeTraceQueue::try_acquire_enqueue_lock() {
-  return AtomicAccess::cmpxchg(&_lock, UNLOCKED, ENQUEUE, memory_order_seq_cst) == UNLOCKED;
-}
-
-bool JfrCPUTimeTraceQueue::try_acquire_dequeue_lock() {
-  while (true) {
-    LockState state = lock_state();
-    if (state == UNLOCKED &&
-        AtomicAccess::cmpxchg(&_lock, UNLOCKED, DEQUEUE, memory_order_seq_cst) == UNLOCKED) {
-      return true; // successfully locked for dequeuing
-    }
-    if (state == DEQUEUE) {
-      return false; // already locked for dequeuing
-    }
-    // else wait for the lock to be released by a signal handler
-  }
-}
-
-void JfrCPUTimeTraceQueue::acquire_dequeue_lock() {
-  SpinYield s;
-  while (lock_state() != UNLOCKED ||
-         AtomicAccess::cmpxchg(&_lock, UNLOCKED, DEQUEUE, memory_order_seq_cst) != UNLOCKED) {
-    s.wait();
-  }
-}
-
-void JfrCPUTimeTraceQueue::release_lock() {
-  assert(lock_state() != UNLOCKED, "invariant");
-  AtomicAccess::release_store(&_lock, UNLOCKED);
-}
-
 bool JfrCPUTimeTraceQueue::enqueue(JfrCPUTimeSampleRequest& request) {
   assert(lock_state() == ENQUEUE, "invariant");
   assert(&JavaThread::current()->jfr_thread_local()->cpu_time_jfr_queue() == this, "invariant");
@@ -177,11 +142,6 @@ JfrCPUTimeSampleRequest& JfrCPUTimeTraceQueue::at(u4 offset) const {
   assert(offset < _head, "invariant");
   assert(is_aligned(offset, sizeof(address)), "invariant");
   return *reinterpret_cast<JfrCPUTimeSampleRequest*>(_data + offset);
-}
-
-u4 JfrCPUTimeTraceQueue::size() const {
-  assert(lock_state() != UNLOCKED, "invariant");
-  return _head;
 }
 
 u4 JfrCPUTimeTraceQueue::size() const {
