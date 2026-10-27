@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,58 @@
  *
  */
 
+#include "runtime/atomic.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 
-// Check values and return conventions for each supported memory order.
-// These functional checks do not establish memory ordering or atomicity.
+// Give AtomicAccess the same interface as Atomic<T> so both APIs use the same
+// functional tests. An empty order pack preserves calls using the default order.
 template<typename T>
-static void test_atomic_bitops() {
+struct AtomicAccessBitopsValue {
+  using ValueType = T;
+  volatile T _value;
+
+  explicit AtomicAccessBitopsValue(T value) : _value(value) {}
+
+  T load_relaxed() const { return AtomicAccess::load(&_value); }
+  void store_relaxed(T value) { AtomicAccess::store(&_value, value); }
+
+  template<typename... Order>
+  T fetch_then_and(T bits, Order... order) {
+    return AtomicAccess::fetch_then_and(&_value, bits, order...);
+  }
+
+  template<typename... Order>
+  T and_then_fetch(T bits, Order... order) {
+    return AtomicAccess::and_then_fetch(&_value, bits, order...);
+  }
+
+  template<typename... Order>
+  T fetch_then_or(T bits, Order... order) {
+    return AtomicAccess::fetch_then_or(&_value, bits, order...);
+  }
+
+  template<typename... Order>
+  T or_then_fetch(T bits, Order... order) {
+    return AtomicAccess::or_then_fetch(&_value, bits, order...);
+  }
+
+  template<typename... Order>
+  T fetch_then_xor(T bits, Order... order) {
+    return AtomicAccess::fetch_then_xor(&_value, bits, order...);
+  }
+
+  template<typename... Order>
+  T xor_then_fetch(T bits, Order... order) {
+    return AtomicAccess::xor_then_fetch(&_value, bits, order...);
+  }
+};
+
+// These functional checks do not establish memory ordering or atomicity.
+template<typename Value, typename... Order>
+static void test_atomic_bitops_values(Order... order) {
+  using T = typename Value::ValueType;
   const T values[] = {
     static_cast<T>(0),
     static_cast<T>(1),
@@ -39,8 +83,51 @@ static void test_atomic_bitops() {
     static_cast<T>(0x80000000u),
     static_cast<T>(UCONST64(0x8000000000000000)),
     static_cast<T>(UCONST64(0x55aa55aaaa55aa55)),
+    // Include the operands from the original basic bitwise tests.
+    static_cast<T>(UCONST64(0x7f5300007f530044)),
+    static_cast<T>(UCONST64(0x3800530038005322)),
     static_cast<T>(~UCONST64(0))
   };
+
+  for (T initial : values) {
+    SCOPED_TRACE(initial);
+    for (T bits : values) {
+      SCOPED_TRACE(bits);
+      Value value(initial);
+      const T and_result = initial & bits;
+      const T or_result = initial | bits;
+      const T xor_result = initial ^ bits;
+
+      EXPECT_EQ(initial, value.fetch_then_and(bits, order...));
+      EXPECT_EQ(and_result, value.load_relaxed());
+      value.store_relaxed(initial);
+      EXPECT_EQ(and_result, value.and_then_fetch(bits, order...));
+      EXPECT_EQ(and_result, value.load_relaxed());
+
+      value.store_relaxed(initial);
+      EXPECT_EQ(initial, value.fetch_then_or(bits, order...));
+      EXPECT_EQ(or_result, value.load_relaxed());
+      value.store_relaxed(initial);
+      EXPECT_EQ(or_result, value.or_then_fetch(bits, order...));
+      EXPECT_EQ(or_result, value.load_relaxed());
+
+      value.store_relaxed(initial);
+      EXPECT_EQ(initial, value.fetch_then_xor(bits, order...));
+      EXPECT_EQ(xor_result, value.load_relaxed());
+      value.store_relaxed(initial);
+      EXPECT_EQ(xor_result, value.xor_then_fetch(bits, order...));
+      EXPECT_EQ(xor_result, value.load_relaxed());
+    }
+  }
+}
+
+template<typename Value>
+static void test_atomic_bitops() {
+  {
+    SCOPED_TRACE("default memory order");
+    test_atomic_bitops_values<Value>();
+  }
+
   const atomic_memory_order orders[] = {
     memory_order_relaxed,
     memory_order_acquire,
@@ -52,61 +139,48 @@ static void test_atomic_bitops() {
 
   for (atomic_memory_order order : orders) {
     SCOPED_TRACE(order);
-    for (T initial : values) {
-      SCOPED_TRACE(initial);
-      for (T bits : values) {
-        SCOPED_TRACE(bits);
-        volatile T value = initial;
-        const T and_result = initial & bits;
-        const T or_result = initial | bits;
-        const T xor_result = initial ^ bits;
-
-        EXPECT_EQ(initial, AtomicAccess::fetch_then_and(&value, bits, order));
-        EXPECT_EQ(and_result, AtomicAccess::load(&value));
-        AtomicAccess::store(&value, initial);
-        EXPECT_EQ(and_result, AtomicAccess::and_then_fetch(&value, bits, order));
-        EXPECT_EQ(and_result, AtomicAccess::load(&value));
-
-        AtomicAccess::store(&value, initial);
-        EXPECT_EQ(initial, AtomicAccess::fetch_then_or(&value, bits, order));
-        EXPECT_EQ(or_result, AtomicAccess::load(&value));
-        AtomicAccess::store(&value, initial);
-        EXPECT_EQ(or_result, AtomicAccess::or_then_fetch(&value, bits, order));
-        EXPECT_EQ(or_result, AtomicAccess::load(&value));
-
-        AtomicAccess::store(&value, initial);
-        EXPECT_EQ(initial, AtomicAccess::fetch_then_xor(&value, bits, order));
-        EXPECT_EQ(xor_result, AtomicAccess::load(&value));
-        AtomicAccess::store(&value, initial);
-        EXPECT_EQ(xor_result, AtomicAccess::xor_then_fetch(&value, bits, order));
-        EXPECT_EQ(xor_result, AtomicAccess::load(&value));
-      }
-    }
+    test_atomic_bitops_values<Value>(order);
   }
 }
 
-TEST_VM(AtomicAccessBitops, int8) {
-  test_atomic_bitops<int8_t>();
+TEST_VM(AtomicBitopsTest, int32) {
+  test_atomic_bitops<Atomic<int32_t>>();
 }
 
-TEST_VM(AtomicAccessBitops, uint8) {
-  test_atomic_bitops<uint8_t>();
+TEST_VM(AtomicBitopsTest, uint32) {
+  test_atomic_bitops<Atomic<uint32_t>>();
 }
 
-TEST_VM(AtomicAccessBitops, int32) {
-  test_atomic_bitops<int32_t>();
+TEST_VM(AtomicBitopsTest, int64) {
+  test_atomic_bitops<Atomic<int64_t>>();
 }
 
-TEST_VM(AtomicAccessBitops, uint32) {
-  test_atomic_bitops<uint32_t>();
+TEST_VM(AtomicBitopsTest, uint64) {
+  test_atomic_bitops<Atomic<uint64_t>>();
 }
 
-TEST_VM(AtomicAccessBitops, int64) {
-  test_atomic_bitops<int64_t>();
+TEST_VM(AtomicAccessBitopsTest, int8) {
+  test_atomic_bitops<AtomicAccessBitopsValue<int8_t>>();
 }
 
-TEST_VM(AtomicAccessBitops, uint64) {
-  test_atomic_bitops<uint64_t>();
+TEST_VM(AtomicAccessBitopsTest, uint8) {
+  test_atomic_bitops<AtomicAccessBitopsValue<uint8_t>>();
+}
+
+TEST_VM(AtomicAccessBitopsTest, int32) {
+  test_atomic_bitops<AtomicAccessBitopsValue<int32_t>>();
+}
+
+TEST_VM(AtomicAccessBitopsTest, uint32) {
+  test_atomic_bitops<AtomicAccessBitopsValue<uint32_t>>();
+}
+
+TEST_VM(AtomicAccessBitopsTest, int64) {
+  test_atomic_bitops<AtomicAccessBitopsValue<int64_t>>();
+}
+
+TEST_VM(AtomicAccessBitopsTest, uint64) {
+  test_atomic_bitops<AtomicAccessBitopsValue<uint64_t>>();
 }
 
 // Each worker modifies its own bit in shared words. A non-atomic update can
