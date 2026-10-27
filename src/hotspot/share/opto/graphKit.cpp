@@ -3921,7 +3921,8 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
   if (Arguments::is_valhalla_enabled() && (not_value || not_flat_in_array)) {
     // Check if obj has been loaded from an array. Keep obj unchanged for final
     // map replacement below.
-    Node* array_obj = obj->isa_DecodeN() ? obj->in(1) : obj;
+    Node* array_obj = obj->uncast();
+    array_obj = array_obj->isa_DecodeN() ? array_obj->in(1) : array_obj;
     Node* array = nullptr;
     if (array_obj->isa_Load()) {
       Node* address = array_obj->in(MemNode::Address);
