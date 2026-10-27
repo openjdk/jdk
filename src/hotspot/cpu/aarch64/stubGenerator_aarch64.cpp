@@ -8942,13 +8942,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register bLimbs  = c_rarg1; // r1
     const Register rLimbs  = c_rarg2; // r2
 
-    Register c[]   = {r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r19, r20, r21, r22};
-    Register a     = r13;
-    Register b     = r14;
-    Register low   = r15;
-    Register high  = r16;
-    Register v     = r17;
-    Register vt    = r23;
+    RegSetIterator<Register> regs = (RegSet::range(r3, r23) - r18_tls).begin();
+    auto saved_regs = RegSet::range(r19, r23);
 
     const int32_t limbs      = 7;
     const int32_t bpl        = 55;
@@ -8957,13 +8952,19 @@ class StubGenerator: public StubCodeGenerator {
     const uint64_t mask      = (uint64_t) -1 >> rem;
     const uint64_t CARRY_ADD = (uint64_t) 1 << (bpl - 1);
 
-    __ push(r19, sp);
-    __ push(r20, sp);
-    __ push(r21, sp);
-    __ push(r22, sp);
-    __ push(r23, sp);
+    Register a     = *regs++;
+    Register b     = *regs++;
+    Register low   = *regs++;
+    Register high  = *regs++;
+    Register v     = *regs++;
+    Register vt    = *regs++;
+    Register c[columns];
+
+    // save callee-saved registers on stack
+    __ push(saved_regs, sp);
 
     for (int i = 0; i < columns; i++) {
+      c[i] = *regs++;
       __ mov(c[i], zr);
     }
 
@@ -9068,11 +9069,8 @@ class StubGenerator: public StubCodeGenerator {
       __ str(c[i], Address(rLimbs, i * 8));
     }
 
-    __ pop(r23, sp);
-    __ pop(r22, sp);
-    __ pop(r21, sp);
-    __ pop(r20, sp);
-    __ pop(r19, sp);
+    // restore calleee-saved registers from stack
+    __ pop(saved_regs, sp);
 
     __ mov(r0, 0);
     __ leave();   // required for proper stackwalking of RuntimeStub frame
@@ -9114,13 +9112,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register aLimbs  = c_rarg0; // r0
     const Register rLimbs  = c_rarg1; // r1
 
-    Register c[]   = {r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15};
-    Register a     = r16;
-    Register aArg  = r17;
-    Register low   = r19;
-    Register high  = r20;
-    Register v     = r21;
-    Register vt    = r22;
+    RegSetIterator<Register> regs = (RegSet::range(r2, r22) - r18_tls).begin();
+    auto saved_regs = RegSet::range(r19, r22);
 
     const int32_t limbs      = 7;
     const int32_t bpl        = 55;
@@ -9129,12 +9122,18 @@ class StubGenerator: public StubCodeGenerator {
     const uint64_t mask      = (uint64_t) -1 >> rem;
     const uint64_t CARRY_ADD = (uint64_t) 1 << (bpl - 1);
 
-    __ push(r19, sp);
-    __ push(r20, sp);
-    __ push(r21, sp);
-    __ push(r22, sp);
+    Register a     = *regs++;
+    Register aArg  = *regs++;
+    Register low   = *regs++;
+    Register high  = *regs++;
+    Register v     = *regs++;
+    Register vt    = *regs++;
+    Register c[columns];
+
+    __ push(saved_regs, sp);
 
     for (int i = 0; i < 14; i++) {
+      c[i] = *regs++;
       __ mov(c[i], zr);
     }
 
@@ -9247,10 +9246,7 @@ class StubGenerator: public StubCodeGenerator {
       __ str(c[i], Address(rLimbs, i * 8));
     }
 
-    __ pop(r22, sp);
-    __ pop(r21, sp);
-    __ pop(r20, sp);
-    __ pop(r19, sp);
+    __ pop(saved_regs, sp);
 
     __ mov(r0, 0);
     __ leave();   // required for proper stackwalking of RuntimeStub frame
