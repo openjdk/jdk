@@ -64,17 +64,18 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, StringDedup::R
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahLiveData* ld = heap->get_liveness_cache(w);
 
-  // TODO: We can clean up this if we figure out how to do templated oop closures that
-  // play nice with specialized_oop_iterators.
+  bool thread_did_work = false;
   using Closure = ShenandoahMarkRefsClosure<GENERATION>;
   Closure cl(q, rp, old_q);
   if (UseCompressedOops) {
-    mark_loop_work<Closure, narrowOop, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
+    thread_did_work = mark_loop_work<Closure, narrowOop, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
   } else {
-    mark_loop_work<Closure, oop, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
+    thread_did_work = mark_loop_work<Closure, oop, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
   }
 
-  heap->flush_liveness_cache(w);
+  if (thread_did_work) {
+    heap->flush_liveness_cache(w);
+  }
 }
 
 template<bool CANCELLABLE, bool STRING_DEDUP>
@@ -117,7 +118,8 @@ void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, Shena
 }
 
 template <class T, class OT, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
-void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req) {
+bool ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator* terminator,
+                                    StringDedup::Requests* const req) {
   const uintx stride = ShenandoahMarkLoopStride;
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
@@ -132,6 +134,7 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
   ShenandoahCumulativeTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::Work, worker_id);
   ShenandoahSATBBufferClosure<GENERATION> drain_satb(q, old_q);
   SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
+  bool thread_did_work = false;
   shenandoah_elastic_loop<CANCELLABLE>(heap, terminator, [&]{
     uint work = 0;
     ShenandoahActualWorkTimingsTracker tracker(&timer);
@@ -161,6 +164,8 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
       }
     }
 
+    thread_did_work |= work > 0;
     return work == 0 ? ShenandoahWorkResult::NoWork : ShenandoahWorkResult::DidWork;
   });
+  return thread_did_work;
 }

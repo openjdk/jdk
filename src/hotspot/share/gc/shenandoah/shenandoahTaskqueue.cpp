@@ -152,8 +152,7 @@ void ShenandoahObjToScanQueueSet::rebalance(size_t target_queues) {
 }
 
 bool ShenandoahTerminatorTerminator::can_work() const {
-  // Can work if the thread cannot be cancelled (i.e., STW worker) or the thread has not been retired,
-  // and it is not being held in reserve.
+  // Can work if the thread cannot be cancelled (i.e., STW worker) or the thread is not being held in reserve.
   return !_cancellable || WorkerThread::worker_id() < _heap->control_thread()->concurrent_worker_count();
 }
 
