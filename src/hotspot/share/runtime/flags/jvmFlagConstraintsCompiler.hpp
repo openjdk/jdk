@@ -52,6 +52,7 @@
   f(intx,  InitArrayShortSizeConstraintFunc)            \
   f(ccstrlist, DisableIntrinsicConstraintFunc)          \
   f(ccstrlist, ControlIntrinsicConstraintFunc)          \
+  f(uint,  DisableAOTCodeConstraintFunc)                \
   f(int,   ProfileCaptureRatioConstraintFunc)           \
 COMPILER2_PRESENT(                                      \
   f(intx,  InteriorEntryAlignmentConstraintFunc)        \

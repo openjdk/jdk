@@ -28,7 +28,6 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
-#include "gc/shared/barrierSetRuntime.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "memory/universe.hpp"
@@ -161,19 +160,6 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
     __ movptr(dst, val);
     break;
   default: Unimplemented();
-  }
-}
-
-void BarrierSetAssembler::flat_field_copy(MacroAssembler* masm, DecoratorSet decorators,
-                                          Register src, Register dst, Register value_field_layout_info) {
-  // flat_field_copy implementation is fairly complex, and there are not any
-  // "short-cuts" to be made from asm. What there is, appears to have the same
-  // cost in C++, so just "call_VM_leaf" for now rather than maintain hundreds
-  // of hand-rolled instructions...
-  if (decorators & IS_DEST_UNINITIALIZED) {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy_is_dest_uninitialized), src, dst, value_field_layout_info);
-  } else {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy), src, dst, value_field_layout_info);
   }
 }
 
@@ -529,8 +515,11 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
     caller_saved.insert(OptoReg::as_OptoReg(r27->as_VMReg()));
     caller_saved.insert(OptoReg::as_OptoReg(r28->as_VMReg()));
     caller_saved.insert(OptoReg::as_OptoReg(r29->as_VMReg()));
+#ifndef _WINDOWS
+    // On Windows, r30 and r31 are nonvolatile per the x64 ABI.
     caller_saved.insert(OptoReg::as_OptoReg(r30->as_VMReg()));
     caller_saved.insert(OptoReg::as_OptoReg(r31->as_VMReg()));
+#endif
   }
 
   int gp_spill_size = 0;

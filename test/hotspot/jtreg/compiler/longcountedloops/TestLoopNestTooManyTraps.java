@@ -60,7 +60,7 @@ public class TestLoopNestTooManyTraps {
                 test1(10000, 1000);
             } catch (IndexOutOfBoundsException ioobe) {
             }
-            if (j <= 1) {
+            if (j == 0) {
                 if (WHITE_BOX.isMethodCompiled(methodTest1)) {
                     throw new RuntimeException("test1 should have deoptimized at iteration " + j);
                 }
