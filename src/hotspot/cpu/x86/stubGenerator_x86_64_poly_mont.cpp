@@ -711,7 +711,7 @@ address StubGenerator::generate_intpoly_assign() {
   XMMRegister B = xmm1;
   XMMRegister select = xmm2;
 
-  Register tmp = r9;
+  Register tmp = r10;
   Label L_Length5, L_Length10, L_Length14, L_Length16, L_Length19, L_DefaultLoop, L_Done;
 
   __ negq(set);
