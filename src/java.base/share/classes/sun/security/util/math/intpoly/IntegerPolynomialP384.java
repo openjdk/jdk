@@ -843,7 +843,7 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         c10 += (d6 + dd5) << 1;
         c11 = dd6 << 1;
 
-        // Row 5 - multiply by aa4
+        // Row 5 - multiply by aa5
         d5 = aa5 * aa5;
         dd5 = Math.multiplyHigh(aa5, aa5) << shift1 | (d5 >>> shift2);
         d5 &= LIMB_MASK;
