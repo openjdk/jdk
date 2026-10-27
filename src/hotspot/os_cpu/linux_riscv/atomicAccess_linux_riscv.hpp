@@ -237,36 +237,6 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest __attribu
 }
 #endif
 
-template<>
-struct AtomicAccess::PlatformXchg<1> : AtomicAccess::XchgUsingCmpxchg<1> {};
-
-template<size_t byte_size>
-template<typename T>
-inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
-                                                           T exchange_value,
-                                                           atomic_memory_order order) const {
-  static_assert(byte_size == sizeof(T));
-  static_assert(byte_size == 4 || byte_size == 8);
-
-  if (order == memory_order_relaxed) {
-    return __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
-  }
-
-  T old_value;
-  if constexpr (byte_size == 4) {
-    __asm__ __volatile__ ("amoswap.w.aqrl %0, %2, %1"
-                          : "=r" (old_value), "+A" (*dest)
-                          : "r" (exchange_value)
-                          : "memory");
-  } else {
-    __asm__ __volatile__ ("amoswap.d.aqrl %0, %2, %1"
-                          : "=r" (old_value), "+A" (*dest)
-                          : "r" (exchange_value)
-                          : "memory");
-  }
-  return old_value;
-}
-
 // __attribute__((unused)) on dest is to get rid of spurious GCC warnings.
 template<size_t byte_size>
 template<typename T>
