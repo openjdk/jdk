@@ -122,6 +122,11 @@ TEST_VM(AtomicAccessXchgTest, int64) {
   Support().test();
 }
 
+static constexpr atomic_memory_order cmpxchg_orders[] = {
+  memory_order_relaxed, memory_order_acquire, memory_order_release,
+  memory_order_acq_rel, memory_order_seq_cst, memory_order_conservative
+};
+
 template<typename T>
 struct AtomicAccessCmpxchgTestSupport {
   volatile T _test_value;
@@ -129,16 +134,19 @@ struct AtomicAccessCmpxchgTestSupport {
   AtomicAccessCmpxchgTestSupport() : _test_value{} {}
 
   void test() {
-    T zero = 0;
-    T five = 5;
-    T ten = 10;
-    AtomicAccess::store(&_test_value, zero);
-    T res = AtomicAccess::cmpxchg(&_test_value, five, ten);
-    EXPECT_EQ(zero, res);
-    EXPECT_EQ(zero, AtomicAccess::load(&_test_value));
-    res = AtomicAccess::cmpxchg(&_test_value, zero, ten);
-    EXPECT_EQ(zero, res);
-    EXPECT_EQ(ten, AtomicAccess::load(&_test_value));
+    for (atomic_memory_order order : cmpxchg_orders) {
+      SCOPED_TRACE(order);
+      T zero = 0;
+      T five = 5;
+      T ten = 10;
+      AtomicAccess::store(&_test_value, zero);
+      T res = AtomicAccess::cmpxchg(&_test_value, five, ten, order);
+      EXPECT_EQ(zero, res);
+      EXPECT_EQ(zero, AtomicAccess::load(&_test_value));
+      res = AtomicAccess::cmpxchg(&_test_value, zero, ten, order);
+      EXPECT_EQ(zero, res);
+      EXPECT_EQ(ten, AtomicAccess::load(&_test_value));
+    }
   }
 };
 
@@ -150,10 +158,32 @@ TEST_VM(AtomicAccessCmpxchgTest, int32) {
 TEST_VM(AtomicAccessCmpxchgTest, uint32_high_bit) {
   const uint32_t high_bit = 0x80000000u;
   const uint32_t replacement = 1;
-  volatile uint32_t value = high_bit;
+  for (atomic_memory_order order : cmpxchg_orders) {
+    SCOPED_TRACE(order);
+    volatile uint32_t value = high_bit;
 
-  EXPECT_EQ(high_bit, AtomicAccess::cmpxchg(&value, high_bit, replacement));
-  EXPECT_EQ(replacement, AtomicAccess::load(&value));
+    EXPECT_EQ(high_bit, AtomicAccess::cmpxchg(&value, high_bit, replacement, order));
+    EXPECT_EQ(replacement, AtomicAccess::load(&value));
+    EXPECT_EQ(replacement, AtomicAccess::cmpxchg(&value, high_bit, 2u, order));
+    EXPECT_EQ(replacement, AtomicAccess::load(&value));
+    EXPECT_EQ(replacement, AtomicAccess::cmpxchg(&value, replacement, high_bit, order));
+    EXPECT_EQ(high_bit, AtomicAccess::load(&value));
+  }
+}
+
+TEST_VM(AtomicAccessCmpxchgTest, uint8_high_bit) {
+  for (atomic_memory_order order : cmpxchg_orders) {
+    SCOPED_TRACE(order);
+    alignas(4) volatile uint8_t values[4] = {0x80, 0x80, 0x80, 0x80};
+    for (int index = 0; index < 4; ++index) {
+      SCOPED_TRACE(index);
+      EXPECT_EQ(uint8_t(0x80), AtomicAccess::cmpxchg(&values[index], uint8_t(0x80), uint8_t(0x7f), order));
+      EXPECT_EQ(uint8_t(0x7f), AtomicAccess::cmpxchg(&values[index], uint8_t(0x80), uint8_t(0x01), order));
+      for (int adjacent = 0; adjacent < 4; ++adjacent) {
+        EXPECT_EQ(uint8_t(adjacent <= index ? 0x7f : 0x80), AtomicAccess::load(&values[adjacent]));
+      }
+    }
+  }
 }
 
 TEST_VM(AtomicAccessCmpxchgTest, int64) {
