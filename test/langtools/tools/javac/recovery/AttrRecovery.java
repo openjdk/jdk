@@ -929,8 +929,8 @@ public class AttrRecovery {
                       import java.math.BigDecimal;
 
                       class Test {
-                          void test(BigDecimal v1, double v2) {
-                              BigDecimal _ = BigDecimal.ONE.add(v2.divide(BigDecimal.valueOf(100)));
+                          void test(double v) {
+                              BigDecimal _ = BigDecimal.ONE.add(v.divide(BigDecimal.valueOf(100)));
                               BigDecimal _ = BigDecimal.ONE.add(null.divide(BigDecimal.valueOf(100)));
                           }
                       }
@@ -944,7 +944,7 @@ public class AttrRecovery {
                 .getOutputLines(OutputKind.DIRECT);
 
         List<String> expected = List.of(
-                "Test.java:5:45: compiler.err.cant.deref: double",
+                "Test.java:5:44: compiler.err.cant.deref: double",
                 "Test.java:6:47: compiler.err.cant.deref: compiler.misc.type.null",
                 "2 errors"
         );
