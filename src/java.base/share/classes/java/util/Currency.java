@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -394,12 +394,10 @@ public final class Currency implements Serializable {
         }
 
         String country = CalendarDataUtility.findRegionOverride(locale).getCountry();
-
-        if (country == null || !country.matches("^[a-zA-Z]{2}$")) {
+        if (country.length() != 2) {
             throw new IllegalArgumentException(
                     "The country of the input locale: \"%s\" is not a valid ISO 3166 country code".formatted(locale));
         }
-
         char char1 = country.charAt(0);
         char char2 = country.charAt(1);
         int tableEntry = getMainTableEntry(char1, char2);
