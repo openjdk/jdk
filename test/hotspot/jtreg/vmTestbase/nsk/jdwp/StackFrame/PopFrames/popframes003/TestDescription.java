@@ -67,7 +67,7 @@
  *     Finally, debugger disconnects debuggee, waits for it exits
  *     and exits too with the proper exit code.
  *
- * @requires vm.continuations
+ * @requires vm.jvmti & vm.flavor != "zero" & vm.continuations
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  * @build nsk.jdwp.StackFrame.PopFrames.popframes001a
