@@ -45,9 +45,10 @@ protected:
   ShenandoahObjToScanQueueSet* const _task_queues;
   ShenandoahObjToScanQueueSet* const _old_gen_task_queues;
   bool const _string_dedup;
+  bool const _bootstrapping;
   Atomic<size_t> _workers_watermark;
 
-  explicit ShenandoahMark(ShenandoahGeneration* generation);
+  ShenandoahMark(ShenandoahGeneration* generation, bool bootstrapping);
 
 public:
   template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY>

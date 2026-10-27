@@ -63,7 +63,7 @@ void ShenandoahSTWMarkTask::work(uint worker_id) {
 }
 
 ShenandoahSTWMark::ShenandoahSTWMark(ShenandoahGeneration* generation) :
-  ShenandoahMark(generation),
+  ShenandoahMark(generation, false),
   _root_scanner(ShenandoahPhaseTimings::full_gc_mark),
   _terminator(ShenandoahHeap::heap()->workers()->active_workers(), task_queues()) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a Shenandoah safepoint");

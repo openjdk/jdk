@@ -477,28 +477,6 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
         try {
             updateWhere = buildWhereClause(updateWhere, origVals);
 
-
-             /**
-              *  The following block of code is for checking a particular type of
-              *  query where in there is a where clause. Without this block, if a
-              *  SQL statement is built the "where" clause will appear twice hence
-              *  the DB errors out and a SQLException is thrown. This code also
-              *  considers that the where clause is in the right place as the
-              *  CachedRowSet object would already have been populated with this
-              *  query before coming to this point.
-              **/
-
-
-            String tempselectCmd = selectCmd.toLowerCase();
-
-            int idxWhere = tempselectCmd.indexOf("where");
-
-            if(idxWhere != -1)
-            {
-               String tempSelect = selectCmd.substring(0,idxWhere);
-               selectCmd = tempSelect;
-            }
-
             pstmt = con.prepareStatement(selectCmd + updateWhere,
                         ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
@@ -1125,24 +1103,6 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
         updateCmd = "UPDATE " + buildTableName(dbmd, catalog, schema, table);
 
 
-        /**
-         *  The following block of code is for checking a particular type of
-         *  query where in there is a where clause. Without this block, if a
-         *  SQL statement is built the "where" clause will appear twice hence
-         *  the DB errors out and a SQLException is thrown. This code also
-         *  considers that the where clause is in the right place as the
-         *  CachedRowSet object would already have been populated with this
-         *  query before coming to this point.
-         **/
-
-        String tempupdCmd = updateCmd.toLowerCase();
-
-        int idxupWhere = tempupdCmd.indexOf("where");
-
-        if(idxupWhere != -1)
-        {
-           updateCmd = updateCmd.substring(0,idxupWhere);
-        }
         updateCmd += "SET ";
 
         /*

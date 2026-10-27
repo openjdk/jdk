@@ -1211,15 +1211,45 @@ OptoReg::Name Matcher::warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out
 // Helper function to match call instructions.  Calls match special.
 // They match alone with no children.  Their children, the incoming
 // arguments, match normally.
-MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
-  MachSafePointNode *msfpt = nullptr;
-  MachCallNode      *mcall = nullptr;
+MachNode* Matcher::match_sfpt(SafePointNode* sfpt) {
+  MachSafePointNode* msfpt = nullptr;
+  MachCallNode*      mcall = nullptr;
+  JVMState*          sfpt_jvms = nullptr;
   uint               cnt;
   // Split out case for SafePoint vs Call
-  CallNode *call;
-  const TypeTuple *domain;
+  CallNode* call = nullptr;
+  const TypeTuple* domain = nullptr;
   ciMethod*        method = nullptr;
-  if( sfpt->is_Call() ) {
+  if (Matcher::use_mach_uncommon_trap_node &&
+      !PreferCallBasedUncommonTraps &&
+      sfpt->is_CallStaticJava() &&
+      sfpt->as_CallStaticJava()->is_uncommon_trap()) {
+    const address entry_point = OptoRuntime::uncommon_trap_blob()->entry_point();
+    const CallStaticJavaNode* static_java_call = sfpt->as_CallStaticJava();
+    const int trap_request = static_java_call->uncommon_trap_request();
+
+    assert(trap_request != 0, "malformed uncommon trap");
+    assert(static_java_call->tf() == OptoRuntime::uncommon_trap_Type(), "unexpected uncommon trap call shape");
+    assert(static_java_call->entry_point() == entry_point, "unexpected uncommon trap entry point");
+    assert(static_java_call->jvms() != nullptr, "no map back into the interpreter state");
+    assert(static_java_call->req() > TypeFunc::Parms, "does not have the trap request input");
+    assert(static_java_call->in(TypeFunc::Parms) != nullptr, "missing trap request input edge");
+
+    MachUncommonTrapNode* mn = new MachUncommonTrapNode(trap_request);
+    for (uint i = 0; i < static_java_call->req(); i++) {
+      if (i == TypeFunc::Parms) {
+        // Remove the trap request input edge.
+        assert(static_java_call->in(i)->bottom_type()->isa_int() &&
+               static_java_call->in(i)->bottom_type()->is_int()->is_con(), "incorrect trap request input");
+      } else {
+        mn->add_req(static_java_call->in(i));
+      }
+    }
+    msfpt = mn->as_MachSafePoint();
+    sfpt_jvms = sfpt->jvms()->clone_deep(C);
+    sfpt_jvms->adapt_position(-1);
+    cnt = TypeFunc::Parms;
+  } else if (sfpt->is_Call()) {
     call = sfpt->as_Call();
     domain = call->tf()->domain_cc();
     cnt = domain->cnt();
@@ -1258,14 +1288,14 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       mach_call_rt->_name = call->as_CallRuntime()->_name;
     }
     msfpt = mcall;
+    sfpt_jvms = sfpt->jvms();
   }
   // This is a non-call safepoint
   else {
-    call = nullptr;
-    domain = nullptr;
     MachNode *mn = match_tree(sfpt);
     if (C->failing())  return nullptr;
     msfpt = mn->as_MachSafePoint();
+    sfpt_jvms = sfpt->jvms();
     cnt = TypeFunc::Parms;
   }
   msfpt->_has_ea_local_in_scope = sfpt->has_ea_local_in_scope();
@@ -1395,7 +1425,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   }
   // Transfer the safepoint information from the call to the mcall
   // Move the JVMState list
-  msfpt->set_jvms(sfpt->jvms());
+  msfpt->set_jvms(sfpt_jvms);
   for (JVMState* jvms = msfpt->jvms(); jvms; jvms = jvms->caller()) {
     jvms->set_map(sfpt);
   }

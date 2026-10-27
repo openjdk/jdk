@@ -1994,7 +1994,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   }
 
   // If we don't know anything, just go through the generic arraycopy.
-  if (default_type == nullptr) {
+  if (default_type == nullptr || !default_type->is_loaded()) {
     address copyfunc_addr = StubRoutines::generic_arraycopy();
 
     if (copyfunc_addr == nullptr) {
