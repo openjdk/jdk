@@ -136,7 +136,6 @@ inline T riscv_amocas(T volatile* dest, T compare_value, T exchange_value,
     case memory_order_release:
       return riscv_amocas<byte_size, 0b01>(dest, compare_value, exchange_value);
     case memory_order_acq_rel:
-    case memory_order_seq_cst:
       return riscv_amocas<byte_size, 0b11>(dest, compare_value, exchange_value);
     default:
       // Failed AMOCAS has no release semantics, even with .rl.
