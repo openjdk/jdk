@@ -138,7 +138,8 @@ class WindowsPathParser {
             }
         }
 
-        if (requireToNormalize) {
+        // For a root-only UNC path, we need to normalize it to a UNC path with a trailing slash.
+        if (requireToNormalize || (type == WindowsPathType.UNC && off == len)) {
             return new Result(type, root, normalize(root, input, off));
         } else {
             return new Result(type, root, input);
