@@ -96,6 +96,12 @@ class JavaThread: public Thread {
  private:
   bool           _on_thread_list;                // Is set when this JavaThread is added to the Threads list
 
+  // When ThreadsSMRSupport::free_list() is called by ThreadsSMRSupport::remove_thread(),
+  // it may set this flag to indicate that this JavaThread is no longer protected by a
+  // ThreadsListHandle. This avoids a costly re-scan of hazard pointers in
+  // ThreadsSMRSupport::wait_until_not_protected().
+  bool           _smr_delete_is_safe;
+
   // All references to Java objects managed via OopHandles. These
   // have to be released by the ServiceThread after the JavaThread has
   // terminated - see add_oop_handles_for_release().
@@ -577,6 +583,8 @@ private:
 
   // JavaThread termination and lifecycle support:
   void smr_delete();
+  bool smr_delete_is_safe() const { return _smr_delete_is_safe; }
+  void set_smr_delete_is_safe() { _smr_delete_is_safe = true; }
   bool on_thread_list() const { return _on_thread_list; }
   void set_on_thread_list() { _on_thread_list = true; }
 
@@ -665,9 +673,6 @@ public:
   bool java_resume(bool register_vthread_SR);
   bool is_suspended()     { return _suspend_resume_manager.is_suspended(); }
   SuspendResumeManager* suspend_resume_manager() { return &_suspend_resume_manager; }
-
-  // Check for async exception in addition to safepoint.
-  static void check_special_condition_for_native_trans(JavaThread *thread);
 
   // Synchronize with another thread that is deoptimizing objects of the
   // current thread, i.e. reverts optimizations based on escape analysis.

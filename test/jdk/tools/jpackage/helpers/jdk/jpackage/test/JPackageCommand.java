@@ -1012,6 +1012,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return setEnabledMessageCategories(Set.of(categories));
     }
 
+    public JPackageCommand enableMessageCategories(Set<MessageCategory> categories) {
+        return setEnabledMessageCategories(SetBuilder.build(logConfig.add()).add(categories).emptyAllowed(true).create());
+    }
+
+    public JPackageCommand enableMessageCategories(MessageCategory... categories) {
+        return enableMessageCategories(Set.of(categories));
+    }
+
     public JPackageCommand setDisabledMessageCategories(Set<MessageCategory> categories) {
         verifyMutable();
         logConfig = new LogConfig(
@@ -1022,6 +1030,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public JPackageCommand setDisabledMessageCategories(MessageCategory... categories) {
         return setDisabledMessageCategories(Set.of(categories));
+    }
+
+    public JPackageCommand disableMessageCategories(Set<MessageCategory> categories) {
+        return setDisabledMessageCategories(SetBuilder.build(logConfig.remove()).add(categories).emptyAllowed(true).create());
+    }
+
+    public JPackageCommand disableMessageCategories(MessageCategory... categories) {
+        return disableMessageCategories(Set.of(categories));
     }
 
     public static Set<MessageCategory> messageCategoriesConsoleAll() {

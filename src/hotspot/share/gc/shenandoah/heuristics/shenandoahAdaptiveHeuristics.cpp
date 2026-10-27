@@ -77,7 +77,7 @@ void ShenandoahAdaptiveHeuristics::post_initialize() {
 }
 
 void ShenandoahAdaptiveHeuristics::compute_headroom_adjustment() {
-  // The trigger threshold represents mutator available - "head room".
+  // The trigger threshold represents mutator available - "headroom".
   // We plan for GC to finish before the amount of allocated memory exceeds trigger threshold.  This is the same  as saying we
   // intend to finish GC before the amount of available memory is less than the allocation headroom.  Headroom is the planned
   // safety buffer to allow a small amount of additional allocation to take place in case we were overly optimistic in delaying
@@ -152,15 +152,8 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   }
 }
 
-void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start, double gc_time) {
-  // Conservatively add sample into linear model, if this time is above the predicted concurrent gc time
-  if (_cycles.predict_duration(time_at_start, _margin_of_error_sd) < gc_time) {
-    _cycles.record_duration(time_at_start, gc_time);
-  }
-}
-
-void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
-  ShenandoahHeuristics::record_success_concurrent();
+void ShenandoahAdaptiveHeuristics::record_concurrent_completion() {
+  ShenandoahHeuristics::record_concurrent_completion();
 
   // We add this time even if it is a shortened cycle. There is a risk that this pulls
   // the gc time trend down, but it is still a more accurate view than excluding times
@@ -213,13 +206,6 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   }
 }
 
-void ShenandoahAdaptiveHeuristics::record_degenerated(bool is_generational_global) {
-  ShenandoahHeuristics::record_degenerated(is_generational_global);
-  if (!is_generational_global) {
-    add_degenerated_gc_time(_precursor_cycle_start, elapsed_degenerated_cycle_time());
-  }
-}
-
 bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   const size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   const size_t available = _space_info->soft_mutator_available();
@@ -227,8 +213,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT,
                       PROPERFMTARGS(available), PROPERFMTARGS(capacity));
 
-  if (_start_gc_is_pending) {
-    log_trigger("GC start is already pending");
+  if (_start_gc_is_pending.load_relaxed()) {
+    log_info(gc, ergo)("GC start is already pending");
     return true;
   }
 
@@ -263,7 +249,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 bool ShenandoahAdaptiveHeuristics::trigger_min_free_threshold(size_t available, size_t capacity) {
   const size_t min_threshold = min_free_threshold(capacity);
   if (available < min_threshold) {
-    log_trigger("Free (Soft) (" PROPERFMT ") is below minimum threshold (" PROPERFMT ")",
+    log_trigger("Occupancy. " PROPERFMT " free, below " PROPERFMT " threshold",
                 PROPERFMTARGS(available), PROPERFMTARGS(min_threshold));
     accept_trigger_with_type(OTHER);
     return true;
@@ -276,8 +262,9 @@ bool ShenandoahAdaptiveHeuristics::trigger_learning(size_t available, size_t cap
   if (_gc_times_learned < ShenandoahLearningSteps) {
     const size_t init_threshold = capacity / 100 * ShenandoahInitFreeThreshold;
     if (available < init_threshold) {
-      log_trigger("Learning %zu of %zu. Free (" PROPERFMT ") is below initial threshold (" PROPERFMT ")",
-                  _gc_times_learned + 1, ShenandoahLearningSteps, PROPERFMTARGS(available), PROPERFMTARGS(init_threshold));
+      log_trigger("Learning. Step %zu of %zu, " PROPERFMT " free, below " PROPERFMT " threshold",
+                  _gc_times_learned + 1, ShenandoahLearningSteps,
+                  PROPERFMTARGS(available), PROPERFMTARGS(init_threshold));
       accept_trigger_with_type(OTHER);
       return true;
     }
@@ -287,10 +274,11 @@ bool ShenandoahAdaptiveHeuristics::trigger_learning(size_t available, size_t cap
 
 bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(const ShenandoahAnticipatedConsumption& rate, const size_t allocatable_bytes) {
   if (rate.baseline_consumption() > allocatable_bytes) {
-    log_trigger("Anticipated GC duration (%.2f ms) is above the time for average allocation rate (" PROPERFMT_F "/s)"
-                " to deplete free headroom (" PROPERFMT ") (margin of error = %.2f)",
-                rate.duration_seconds() * 1000,
-                PROPERFMT_F_ARGS(rate.baseline_rate()), PROPERFMTARGS(allocatable_bytes), _margin_of_error_sd);
+    const ShenandoahSignedSize baseline_rate = ShenandoahSignedSize::get(rate.baseline_rate());
+    log_trigger("Allocation Rate. %.2fms GC predicted, " PROPERFMT " free, "
+                PROPERFMT_F "/s average allocation rate",
+                rate.duration_seconds() * 1000, PROPERFMTARGS(allocatable_bytes),
+                PROPERFMTARGS_SIGNED(baseline_rate));
     accept_trigger_with_type(RATE);
     return true;
   }
@@ -306,7 +294,7 @@ bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(const Shenand
 // The following trace represents an actual workload, with allocation rates sampled at 10 Hz, the default behavior before
 // introduction of accelerated allocation rate detection.  Though the allocation rate is seen to be increasing at times
 // 101.907 and 102.007 and 102.108, the newly sampled allocation rate is not enough to trigger GC because the headroom is
-// still quite large.  In fact, GC is not triggered until time 102.409s, and this GC degenerates.
+// still quite large.  In fact, GC is not triggered until time 102.409s, and this GC stalls.
 //
 //    Sample Time (s)      Allocation Rate (MB/s)       Headroom (GB)
 //       101.807                       0.0                  26.93
@@ -383,10 +371,10 @@ bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(const Sh
   if (rate.momentary_consumption() > allocatable_bytes) {
     const ShenandoahSignedSize momentary_rate = ShenandoahSignedSize::get(rate.momentary_rate());
     assert(rate.accelerated_consumption() == 0, "Momentary trigger is meant to exclude acceleration trigger");
-    log_trigger("Momentary spike consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
-                "current rate (" PROPERFMT_F "/s) for anticipated GC duration (%.2f ms)",
-                PROPERFMTARGS(rate.momentary_consumption()), PROPERFMTARGS(allocatable_bytes),
-                PROPERFMTARGS_SIGNED(momentary_rate), rate.duration_seconds() * 1000);
+    log_trigger("Allocation Rate. %.2fms GC predicted, " PROPERFMT " free, "
+                PROPERFMT_F "/s momentary allocation rate",
+                rate.duration_seconds() * 1000, PROPERFMTARGS(allocatable_bytes),
+                PROPERFMTARGS_SIGNED(momentary_rate));
     accept_trigger_with_type(RATE);
     return true;
   }
@@ -395,10 +383,10 @@ bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(const Sh
     const ShenandoahSignedSize predicted_rate = ShenandoahSignedSize::get(rate.predicted_rate());
     const ShenandoahSignedSize acceleration = ShenandoahSignedSize::get(rate.acceleration());
     assert(rate.momentary_consumption() == 0, "Acceleration trigger is meant to exclude momentary trigger");
-    log_trigger("Accelerated consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
-                "current rate (" PROPERFMT_F "/s) with acceleration (" PROPERFMT_F "/s/s) for anticipated GC duration (%.2f ms)",
-                PROPERFMTARGS(rate.accelerated_consumption()), PROPERFMTARGS(allocatable_bytes),
-                PROPERFMTARGS_SIGNED(predicted_rate), PROPERFMTARGS_SIGNED(acceleration), rate.duration_seconds() * 1000);
+    log_trigger("Allocation Rate. %.2fms GC predicted, " PROPERFMT " free, "
+                PROPERFMT_F "/s predicted allocation rate, " PROPERFMT_F "/s^2 acceleration",
+                rate.duration_seconds() * 1000, PROPERFMTARGS(allocatable_bytes),
+                PROPERFMTARGS_SIGNED(predicted_rate), PROPERFMTARGS_SIGNED(acceleration));
     accept_trigger_with_type(RATE);
     return true;
   }

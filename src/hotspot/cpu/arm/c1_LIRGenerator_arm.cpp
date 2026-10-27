@@ -93,7 +93,7 @@ LIR_Opr LIRGenerator::atomicLockOpr() {
   return LIR_OprFact::illegalOpr;
 }
 
-LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
+LIR_Opr LIRGenerator::result_register_for(ValueType* type) {
   LIR_Opr opr;
   switch (type->tag()) {
     case intTag:     opr = FrameMap::Int_result_opr;    break;
@@ -109,7 +109,7 @@ LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
 }
 
 
-LIR_Opr LIRGenerator::rlock_byte(BasicType type) {
+LIR_Opr LIRGenerator::rlock_byte() {
   return new_register(T_INT);
 }
 
@@ -294,14 +294,6 @@ LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
     return tmp;
   }
   return r;
-}
-
-
-void LIRGenerator::increment_counter(address counter, BasicType type, int step) {
-  LIR_Opr pointer = new_pointer_register();
-  __ move(LIR_OprFact::intptrConst(counter), pointer);
-  LIR_Address* addr = new LIR_Address(pointer, type);
-  increment_counter(addr, step);
 }
 
 
@@ -944,7 +936,7 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
   LIR_Opr tmp2 = new_register(objectType);
   LIR_Opr tmp3 = FrameMap::LR_oop_opr;
 
-  new_instance(reg, x->klass(), x->is_unresolved(), /* allow_inline */ false, tmp1, tmp2, tmp3,
+  new_instance(reg, x->klass(), x->is_unresolved(), /* allow_value */ false, tmp1, tmp2, tmp3,
                LIR_OprFact::illegalOpr, klass_reg, info);
 
   LIR_Opr result = rlock_result(x);
@@ -990,7 +982,8 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   LIR_Opr len = length.result();
 
   CodeEmitInfo* patching_info = nullptr;
-  if (!x->klass()->is_loaded() || PatchALot) {
+  ciMetadata* obj = ciObjArrayKlass::make(x->klass());
+  if (!x->klass()->is_loaded() || !obj->is_loaded() || PatchALot) {
     patching_info = state_for(x, x->state_before());
   }
 
@@ -1003,8 +996,8 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   LIR_Opr tmp4 = LIR_OprFact::illegalOpr;
 
   CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info);
-  ciMetadata* obj = ciObjArrayKlass::make(x->klass());
-  if (obj == ciEnv::unloaded_ciobjarrayklass()) {
+
+  if (x->klass()->is_loaded() && !obj->is_loaded()) {
     BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
   }
   klass2reg_with_patching(klass_reg, obj, patching_info);
@@ -1302,6 +1295,7 @@ void LIRGenerator::trace_block_entry(BlockBegin* block) {
 
 void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
                                         CodeEmitInfo* info) {
+  __ membar_release();
   if (value->is_double_cpu()) {
     assert(address->index()->is_illegal(), "should have a constant displacement");
     LIR_Address* store_addr = nullptr;
@@ -1314,9 +1308,10 @@ void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
       store_addr = address;
     }
     __ volatile_store_mem_reg(value, store_addr, info);
-    return;
+  } else {
+    __ store(value, address, info, lir_patch_none);
   }
-  __ store(value, address, info, lir_patch_none);
+  __ membar();
 }
 
 void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,

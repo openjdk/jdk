@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,13 +60,15 @@ public final class CutoffSetting extends SettingControl {
 
     @Override
     public String combine(Set<String> values) {
-        long max = 0;
+        Long max = null;
         String text = null;
         for (String value : values) {
             long nanos = ValueParser.parseTimespanWithInfinity(value, MISSING);
-            if (nanos != MISSING && nanos > max) {
-                text = value;
-                max = nanos;
+            if (nanos != MISSING) {
+                if (max == null || nanos > max) {
+                    text = value;
+                    max = nanos;
+                }
             }
         }
         return Objects.requireNonNullElse(text, defaultValue);

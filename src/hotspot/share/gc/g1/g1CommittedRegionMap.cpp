@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,30 +37,30 @@ G1HeapRegionRange::G1HeapRegionRange(uint start, uint end) :
 
 G1CommittedRegionMap::G1CommittedRegionMap() :
   _active(mtGC),
-  _inactive(mtGC),
-  _num_active(0),
-  _num_inactive(0) { }
+  _pending_uncommit(mtGC),
+  _num_active_regions(0),
+  _num_pending_uncommit_regions(0) { }
 
 void G1CommittedRegionMap::initialize(uint num_regions) {
   _active.initialize(num_regions);
-  _inactive.initialize(num_regions);
+  _pending_uncommit.initialize(num_regions);
 }
 
-uint G1CommittedRegionMap::num_active() const {
-  return _num_active;
+uint G1CommittedRegionMap::num_active_regions() const {
+  return _num_active_regions;
 }
 
-uint G1CommittedRegionMap::num_inactive() const {
-  return _num_inactive;
+uint G1CommittedRegionMap::num_pending_uncommit_regions() const {
+  return _num_pending_uncommit_regions;
 }
 
-uint G1CommittedRegionMap::max_length() const {
+uint G1CommittedRegionMap::max_num_regions() const {
   return (uint) _active.size();
 }
 
 void G1CommittedRegionMap::activate(uint start, uint end) {
-  verify_active_count(start, end, 0);
-  verify_inactive_count(start, end, 0);
+  verify_num_active_regions(start, end, 0);
+  verify_num_pending_uncommit_regions(start, end, 0);
 
   log_debug(gc, heap, region)("Activate regions [%u, %u)", start, end);
 
@@ -68,40 +68,40 @@ void G1CommittedRegionMap::activate(uint start, uint end) {
 }
 
 void G1CommittedRegionMap::reactivate(uint start, uint end) {
-  verify_active_count(start, end, 0);
-  verify_inactive_count(start, end, (end - start));
+  verify_num_active_regions(start, end, 0);
+  verify_num_pending_uncommit_regions(start, end, (end - start));
 
   log_debug(gc, heap, region)("Reactivate regions [%u, %u)", start, end);
 
   active_set_range(start, end);
-  inactive_clear_range(start, end);
+  clear_pending_uncommit_range(start, end);
 }
 
 void G1CommittedRegionMap::deactivate(uint start, uint end) {
-  verify_active_count(start, end, (end - start));
-  verify_inactive_count(start, end, 0);
+  verify_num_active_regions(start, end, (end - start));
+  verify_num_pending_uncommit_regions(start, end, 0);
 
   log_debug(gc, heap, region)("Deactivate regions [%u, %u)", start, end);
 
   active_clear_range(start, end);
-  inactive_set_range(start, end);
+  set_range_to_pending_uncommit(start, end);
 }
 
 void G1CommittedRegionMap::uncommit(uint start, uint end) {
-  verify_active_count(start, end, 0);
-  verify_inactive_count(start, end, (end-start));
+  verify_num_active_regions(start, end, 0);
+  verify_num_pending_uncommit_regions(start, end, (end-start));
 
   log_debug(gc, heap, region)("Uncommit regions [%u, %u)", start, end);
 
-  inactive_clear_range(start, end);
+  clear_pending_uncommit_range(start, end);
 }
 
 G1HeapRegionRange G1CommittedRegionMap::next_active_range(uint offset) const {
   // Find first active index from offset.
   uint start = (uint) _active.find_first_set_bit(offset);
-  if (start == max_length()) {
+  if (start == max_num_regions()) {
     // Early out when no active regions are found.
-    return G1HeapRegionRange(max_length(), max_length());
+    return G1HeapRegionRange(max_num_regions(), max_num_regions());
   }
 
   uint end = (uint) _active.find_first_clear_bit(start);
@@ -111,14 +111,14 @@ G1HeapRegionRange G1CommittedRegionMap::next_active_range(uint offset) const {
 }
 
 G1HeapRegionRange G1CommittedRegionMap::next_committable_range(uint offset) const {
-  // We should only call this function when there are no inactive regions.
-  verify_no_inactive_regons();
+  // We should only call this function when there are no pending uncommit regions.
+  verify_no_pending_uncommit_regions();
 
   // Find first free region from offset.
   uint start = (uint) _active.find_first_clear_bit(offset);
-  if (start == max_length()) {
+  if (start == max_num_regions()) {
     // Early out when no free regions are found.
-    return G1HeapRegionRange(max_length(), max_length());
+    return G1HeapRegionRange(max_num_regions(), max_num_regions());
   }
 
   uint end = (uint) _active.find_first_set_bit(start);
@@ -127,17 +127,17 @@ G1HeapRegionRange G1CommittedRegionMap::next_committable_range(uint offset) cons
   return G1HeapRegionRange(start, end);
 }
 
-G1HeapRegionRange G1CommittedRegionMap::next_inactive_range(uint offset) const {
-  // Find first inactive region from offset.
-  uint start = (uint) _inactive.find_first_set_bit(offset);
+G1HeapRegionRange G1CommittedRegionMap::next_pending_uncommit_range(uint offset) const {
+  // Find first pending uncommit region from offset.
+  uint start = (uint) _pending_uncommit.find_first_set_bit(offset);
 
-  if (start == max_length()) {
-    // Early when no inactive regions are found.
-    return G1HeapRegionRange(max_length(), max_length());
+  if (start == max_num_regions()) {
+    // Early when no pending uncommit regions are found.
+    return G1HeapRegionRange(max_num_regions(), max_num_regions());
   }
 
-  uint end = (uint) _inactive.find_first_clear_bit(start);
-  verify_inactive_range(start, end);
+  uint end = (uint) _pending_uncommit.find_first_clear_bit(start);
+  verify_pending_uncommit_range(start, end);
 
   return G1HeapRegionRange(start, end);
 }
@@ -146,28 +146,28 @@ void G1CommittedRegionMap::active_set_range(uint start, uint end) {
   guarantee_mt_safety_active();
 
   _active.par_set_range(start, end, BitMap::unknown_range);
-  _num_active += (end - start);
+  _num_active_regions += (end - start);
 }
 
 void G1CommittedRegionMap::active_clear_range(uint start, uint end) {
   guarantee_mt_safety_active();
 
   _active.par_clear_range(start, end, BitMap::unknown_range);
-  _num_active -= (end - start);
+  _num_active_regions -= (end - start);
 }
 
-void G1CommittedRegionMap::inactive_set_range(uint start, uint end) {
-  guarantee_mt_safety_inactive();
+void G1CommittedRegionMap::set_range_to_pending_uncommit(uint start, uint end) {
+  guarantee_mt_safety_pending_uncommit();
 
-  _inactive.par_set_range(start, end, BitMap::unknown_range);
-  _num_inactive += (end - start);
+  _pending_uncommit.par_set_range(start, end, BitMap::unknown_range);
+  _num_pending_uncommit_regions += (end - start);
 }
 
-void G1CommittedRegionMap::inactive_clear_range(uint start, uint end) {
-  guarantee_mt_safety_inactive();
+void G1CommittedRegionMap::clear_pending_uncommit_range(uint start, uint end) {
+  guarantee_mt_safety_pending_uncommit();
 
-  _inactive.par_clear_range(start, end, BitMap::unknown_range);
-  _num_inactive -= (end - start);
+  _pending_uncommit.par_clear_range(start, end, BitMap::unknown_range);
+  _num_pending_uncommit_regions -= (end - start);
 }
 
 void G1CommittedRegionMap::guarantee_mt_safety_active() const {
@@ -191,8 +191,8 @@ void G1CommittedRegionMap::guarantee_mt_safety_active() const {
   }
 }
 
-void G1CommittedRegionMap::guarantee_mt_safety_inactive() const {
-  // G1CommittedRegionMap _inactive-map MT safety protocol:
+void G1CommittedRegionMap::guarantee_mt_safety_pending_uncommit() const {
+  // G1CommittedRegionMap _pending_uncommit-map MT safety protocol:
   // (a) If we're at a safepoint, the caller must either be the VM thread or
   //     hold the FreeList_lock.
   // (b) If we're not at a safepoint, the caller must hold the Uncommit_lock.
@@ -214,35 +214,35 @@ void G1CommittedRegionMap::guarantee_mt_safety_inactive() const {
 
 #ifdef ASSERT
 void G1CommittedRegionMap::verify_active_range(uint start, uint end) const {
-  assert(active(start), "First region (%u) is not active", start);
-  assert(active(end - 1), "Last region (%u) is not active", end - 1);
-  assert(end == _active.size() || !active(end), "Region (%u) is active but not included in range", end);
+  assert(is_active(start), "First region (%u) is not active", start);
+  assert(is_active(end - 1), "Last region (%u) is not active", end - 1);
+  assert(end == _active.size() || !is_active(end), "Region (%u) is active but not included in range", end);
 }
 
-void G1CommittedRegionMap::verify_inactive_range(uint start, uint end) const {
-  assert(inactive(start), "First region (%u) is not inactive", start);
-  assert(inactive(end - 1), "Last region (%u) in range is not inactive", end - 1);
-  assert(end == _inactive.size() || !inactive(end), "Region (%u) is inactive but not included in range", end);
+void G1CommittedRegionMap::verify_pending_uncommit_range(uint start, uint end) const {
+  assert(is_pending_uncommit(start), "First region (%u) is not pending uncommit", start);
+  assert(is_pending_uncommit(end - 1), "Last region (%u) in range is not pending uncommit", end - 1);
+  assert(end == _pending_uncommit.size() || !is_pending_uncommit(end), "Region (%u) is pending uncommit but not included in range", end);
 }
 
 void G1CommittedRegionMap::verify_free_range(uint start, uint end) const {
-  assert(!active(start), "First region (%u) is active", start);
-  assert(!active(end - 1), "Last region (%u) in range is active", end - 1);
+  assert(!is_active(start), "First region (%u) is active", start);
+  assert(!is_active(end - 1), "Last region (%u) in range is active", end - 1);
 }
 
-void G1CommittedRegionMap::verify_no_inactive_regons() const {
-  BitMap::idx_t first_inactive = _inactive.find_first_set_bit(0);
-  assert(first_inactive == _inactive.size(), "Should be no inactive regions, but was at index: %zu", first_inactive);
+void G1CommittedRegionMap::verify_no_pending_uncommit_regions() const {
+  BitMap::idx_t first_pending_uncommit = _pending_uncommit.find_first_set_bit(0);
+  assert(first_pending_uncommit == _pending_uncommit.size(), "Should be no pending uncommit regions, but was at index: %zu", first_pending_uncommit);
 }
 
-void G1CommittedRegionMap::verify_active_count(uint start, uint end, uint expected) const {
+void G1CommittedRegionMap::verify_num_active_regions(uint start, uint end, uint expected) const {
   uint found = (uint) _active.count_one_bits(start, end);
   assert(found == expected, "Unexpected number of active regions, found: %u, expected: %u", found, expected);
 }
 
-void G1CommittedRegionMap::verify_inactive_count(uint start, uint end, uint expected) const {
-  uint found = (uint) _inactive.count_one_bits(start, end);
-  assert(found == expected, "Unexpected number of inactive regions, found: %u, expected: %u", found, expected);
+void G1CommittedRegionMap::verify_num_pending_uncommit_regions(uint start, uint end, uint expected) const {
+  uint found = (uint) _pending_uncommit.count_one_bits(start, end);
+  assert(found == expected, "Unexpected number of pending uncommit regions, found: %u, expected: %u", found, expected);
 }
 
 #endif //ASSERT

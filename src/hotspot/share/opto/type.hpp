@@ -25,7 +25,7 @@
 #ifndef SHARE_OPTO_TYPE_HPP
 #define SHARE_OPTO_TYPE_HPP
 
-#include "ci/ciInlineKlass.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "opto/adlcVMDeps.hpp"
 #include "opto/compile.hpp"
 #include "opto/rangeinference.hpp"
@@ -178,7 +178,6 @@ public:
 
 private:
   typedef struct {
-    TYPES                dual_type;
     BasicType            basic_type;
     const char*          msg;
     bool                 isa_oop;
@@ -360,8 +359,8 @@ public:
   virtual bool      is_finite() const;           // Has a finite value
   virtual bool      is_nan()    const;           // Is not a number (NaN)
 
-  bool is_inlinetypeptr() const;
-  virtual ciInlineKlass* inline_klass() const;
+  bool is_valueklassptr() const;
+  virtual ciValueKlass* value_klass() const;
 
   // Returns this ptr type or the equivalent ptr type for this compressed pointer.
   const TypePtr* make_ptr() const;
@@ -387,7 +386,7 @@ public:
   // TRUE if type is a singleton
   virtual bool singleton(void) const;
 
-  // TRUE if type is above the lattice centerline, and is therefore vacuous
+  // TRUE if type is therefore vacuous, i.e. it is not inhabited, i.e. concretization is empty
   virtual bool empty(void) const;
 
   // Return a hash for this type.  The hash function is public so ConNode
@@ -423,16 +422,13 @@ public:
 #endif // !PRODUCT
   [[noreturn]] void typerr(const Type *t) const; // Mixing types error
 
+  DEBUG_ONLY(static void verify_meet_join());
+
   // Create basic type
   static const Type* get_const_basic_type(BasicType type) {
     assert((uint)type <= T_CONFLICT && _const_basic_type[type] != nullptr, "bad type");
     return _const_basic_type[type];
   }
-
-  // For two instance arrays of same dimension, return the base element types.
-  // Otherwise or if the arrays have different dimensions, return null.
-  static void get_arrays_base_elements(const Type *a1, const Type *a2,
-                                       const TypeInstPtr **e1, const TypeInstPtr **e2);
 
   // Mapping to the array element's basic type.
   BasicType array_element_basic_type() const;
@@ -460,17 +456,16 @@ public:
   }
 
   // Convenience common pre-built types.
-  static const Type *ABIO;
-  static const Type *BOTTOM;
-  static const Type *CONTROL;
-  static const Type *DOUBLE;
-  static const Type *FLOAT;
-  static const Type *HALF_FLOAT;
-  static const Type *HALF;
-  static const Type *MEMORY;
-  static const Type *MULTI;
-  static const Type *RETURN_ADDRESS;
-  static const Type *TOP;
+  static const Type* ABIO;
+  static const Type* BOTTOM;
+  static const Type* CONTROL;
+  static const Type* DOUBLE;
+  static const Type* FLOAT;
+  static const Type* HALF_FLOAT;
+  static const Type* HALF;
+  static const Type* MEMORY;
+  static const Type* RETURN_ADDRESS;
+  static const Type* TOP;
 
   // Mapping from compiler type to VM BasicType
   BasicType basic_type() const       { return _type_info[_base].basic_type; }
@@ -548,12 +543,10 @@ public:
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
   // Convenience common pre-built types.
-  static const TypeF *MAX;
-  static const TypeF *MIN;
-  static const TypeF *ZERO; // positive zero only
-  static const TypeF *ONE;
-  static const TypeF *POS_INF;
-  static const TypeF *NEG_INF;
+  static const TypeF* ZERO; // positive zero only
+  static const TypeF* ONE;
+  static const TypeF* POS_INF;
+  static const TypeF* NEG_INF;
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
 #endif
@@ -580,8 +573,6 @@ public:
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
   // Convenience common pre-built types.
-  static const TypeH* MAX;
-  static const TypeH* MIN;
   static const TypeH* ZERO; // positive zero only
   static const TypeH* ONE;
   static const TypeH* POS_INF;
@@ -611,12 +602,10 @@ public:
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
   // Convenience common pre-built types.
-  static const TypeD *MAX;
-  static const TypeD *MIN;
-  static const TypeD *ZERO; // positive zero only
-  static const TypeD *ONE;
-  static const TypeD *POS_INF;
-  static const TypeD *NEG_INF;
+  static const TypeD* ZERO; // positive zero only
+  static const TypeD* ONE;
+  static const TypeD* POS_INF;
+  static const TypeD* NEG_INF;
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
 #endif
@@ -945,10 +934,8 @@ public:
   static const TypeLong* ONE;
   static const TypeLong* NON_ZERO;
   static const TypeLong* POS;
-  static const TypeLong* NEG;
   static const TypeLong* LONG;
   static const TypeLong* INT;    // 32-bit subrange [min_jint..max_jint]
-  static const TypeLong* UINT;   // 32-bit unsigned [0..max_juint]
   static const TypeLong* TYPE_DOMAIN; // alias for TypeLong::LONG
 
   // static convenience methods.
@@ -998,18 +985,19 @@ public:
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
   // Convenience common pre-built types.
-  static const TypeTuple *IFBOTH;
-  static const TypeTuple *IFFALSE;
-  static const TypeTuple *IFTRUE;
-  static const TypeTuple *IFNEITHER;
-  static const TypeTuple *LOOPBODY;
-  static const TypeTuple *MEMBAR;
-  static const TypeTuple *STORECONDITIONAL;
-  static const TypeTuple *START_I2C;
-  static const TypeTuple *INT_PAIR;
-  static const TypeTuple *LONG_PAIR;
-  static const TypeTuple *INT_CC_PAIR;
-  static const TypeTuple *LONG_CC_PAIR;
+  static const TypeTuple* CONTROL;
+  static const TypeTuple* IFBOTH;
+  static const TypeTuple* IFFALSE;
+  static const TypeTuple* IFTRUE;
+  static const TypeTuple* IFNEITHER;
+  static const TypeTuple* LOOPBODY;
+  static const TypeTuple* MEMBAR;
+  static const TypeTuple* STORECONDITIONAL;
+  static const TypeTuple* START_I2C;
+  static const TypeTuple* INT_PAIR;
+  static const TypeTuple* LONG_PAIR;
+  static const TypeTuple* INT_CC_PAIR;
+  static const TypeTuple* LONG_CC_PAIR;
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint, outputStream *st  ) const; // Specialized per-Type dumping
 #endif
@@ -1031,7 +1019,7 @@ private:
   const TypeInt *_size;         // Elements in array
   const bool _stable;           // Are elements @Stable?
 
-  // Inline type array properties
+  // Value type array properties
   const bool _flat;             // Array is flat
   const bool _not_flat;         // Array is never flat
   const bool _null_free;        // Array is null-free
@@ -1195,7 +1183,7 @@ protected:
   static const TypeInterfaces* interfaces(ciKlass*& k, bool klass, bool interface, bool array, InterfaceHandling interface_handling);
 
 public:
-  enum PTR { TopPTR, AnyNull, Constant, Null, NotNull, BotPTR, lastPTR };
+  enum PTR { TopPTR, Constant, Null, NotNull, BotPTR, lastPTR };
 
   enum FlatInArray {
     TopFlat,        // Dedicated top element. Result when joining Flat and NotFlat.
@@ -1211,13 +1199,12 @@ protected:
           int inline_depth = InlineDepthBottom) :
     Type(t), _speculative(speculative), _inline_depth(inline_depth), _offset(offset), _ptr(ptr), _reloc(reloc) {
     assert(t == AnyPtr || (ptr != TopPTR && ptr != Null), "Top and Null must be AnyPtr");
-    assert(ptr != AnyNull, "Nonsensical PTR");
     assert(ptr == TopPTR || offset != Offset::top, "only TopPTR can have top offset");
     assert(static_cast<uint>(ptr) < static_cast<uint>(lastPTR), "out of bounds");
   }
   static const PTR ptr_meet[lastPTR][lastPTR];
-  static const PTR ptr_dual[lastPTR];
-  static const char * const ptr_msg[lastPTR];
+  static const PTR ptr_join[lastPTR][lastPTR];
+  static const char* const ptr_msg[lastPTR];
 
   static const char* const flat_in_array_msg[Uninitialized];
 
@@ -1297,14 +1284,8 @@ public:
   Offset join_offset(int offset) const;
 
   // meet and join over pointer equivalence sets
-  PTR meet_ptr( const PTR in_ptr ) const { return ptr_meet[in_ptr][ptr()]; }
-  PTR dual_ptr()                   const { return ptr_dual[ptr()];      }
-
-  // This is textually confusing unless one recalls that
-  // join(t) == dual()->meet(t->dual())->dual().
-  PTR join_ptr( const PTR in_ptr ) const {
-    return ptr_dual[ ptr_meet[ ptr_dual[in_ptr] ] [ dual_ptr() ] ];
-  }
+  PTR meet_ptr(const PTR in_ptr) const { return ptr_meet[in_ptr][ptr()]; }
+  PTR join_ptr(const PTR in_ptr) const { return ptr_join[in_ptr][ptr()]; }
 
   // Speculative type helper methods.
   virtual const TypePtr* speculative() const { return _speculative; }
@@ -1328,7 +1309,7 @@ public:
   static FlatInArray compute_flat_in_array_if_unknown(ciInstanceKlass* instance_klass, bool is_exact,
                                                       FlatInArray old_flat_in_array);
 
-  virtual bool can_be_inline_type() const { return false; }
+  virtual bool can_be_value_type() const { return false; }
   virtual bool is_flat_in_array()     const { return flat_in_array() == Flat; }
   virtual bool is_not_flat_in_array() const { return flat_in_array() == NotFlat; }
   virtual FlatInArray flat_in_array() const { return NotFlat; }
@@ -1338,13 +1319,13 @@ public:
   virtual bool is_not_null_free()   const { return false; }
   virtual bool is_atomic()          const { return false; }
 
-  // Tests for relation to centerline of type lattice:
-  static bool above_centerline(PTR ptr) { return (ptr <= AnyNull); }
-  static bool below_centerline(PTR ptr) { return (ptr >= NotNull); }
+  static bool is_top(PTR ptr) { return ptr == TopPTR; }
+  static bool is_uniquely_inhabited(PTR ptr) { return ptr == Null || ptr == Constant; }
+  static bool is_at_most_uniquely_inhabited(PTR ptr) { return is_top(ptr) || is_uniquely_inhabited(ptr); }
   // Convenience common pre-built types.
-  static const TypePtr *NULL_PTR;
-  static const TypePtr *NOTNULL;
-  static const TypePtr *BOTTOM;
+  static const TypePtr* NULL_PTR;
+  static const TypePtr* NOTNULL;
+  static const TypePtr* BOTTOM;
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st  ) const;
 #endif
@@ -1524,8 +1505,8 @@ public:
     return instance_id() == t->instance_id();
   }
 
-  virtual bool can_be_inline_type() const { return (_klass == nullptr || _klass->can_be_inline_klass(_klass_is_exact)); }
-  virtual bool can_be_inline_array() const { ShouldNotReachHere(); return false; }
+  virtual bool can_be_value_type() const { return (_klass == nullptr || _klass->can_be_value_klass(_klass_is_exact)); }
+  virtual bool can_be_value_array() const { ShouldNotReachHere(); return false; }
 
   virtual intptr_t get_con() const;
 
@@ -1673,7 +1654,7 @@ public:
 
   const TypeKlassPtr* as_klass_type(bool try_for_exact = false) const;
 
-  virtual bool can_be_inline_array() const;
+  virtual bool can_be_value_array() const;
 
   // Convenience common pre-built types.
   static const TypeInstPtr *NOTNULL;
@@ -1724,7 +1705,7 @@ class TypeAryPtr : public TypeOopPtr {
   virtual uint hash() const;    // Type specific hashing
   const TypeAry *_ary;          // Array we point into
   const bool     _is_autobox_cache;
-  // For flat inline type arrays, each field of the inline type in
+  // For flat value type arrays, each field of the value type in
   // the array has its own memory slice so we need to keep track of
   // which field is accessed
   const Offset _field_offset;
@@ -1755,7 +1736,7 @@ public:
   const TypeInt* size() const { return _ary->_size; }
   bool      is_stable() const { return _ary->_stable; }
 
-  // Inline type array properties
+  // Value type array properties
   bool is_flat()          const { return _ary->_flat; }
   bool is_not_flat()      const { return _ary->_not_flat; }
   bool is_null_free()     const { return _ary->_null_free; }
@@ -1802,11 +1783,11 @@ public:
   virtual const Type* xmeet_helper(const Type* t) const;
   virtual const Type* xjoin_helper(const Type* t) const;
 
-  // Inline type array properties
-  const TypeAryPtr* cast_to_flat(bool flat) const;
-  const TypeAryPtr* cast_to_not_flat(bool not_flat = true) const;
-  const TypeAryPtr* cast_to_null_free(bool null_free) const;
-  const TypeAryPtr* cast_to_not_null_free(bool not_null_free = true) const;
+  // Value type array properties
+  const TypeAryPtr* cast_to_flat() const;
+  const TypeAryPtr* cast_to_not_flat() const;
+  const TypeAryPtr* cast_to_null_free() const;
+  const TypeAryPtr* cast_to_not_null_free() const;
   const TypeAryPtr* update_properties(const TypeAryPtr* new_type) const;
   jint flat_layout_helper() const;
   int flat_elem_size() const;
@@ -1825,24 +1806,28 @@ public:
   const TypeAryPtr* with_field_offset(int offset) const;
   const TypePtr* add_field_offset_and_offset(intptr_t offset) const;
 
-  virtual bool can_be_inline_type() const { return false; }
+  virtual bool can_be_value_type() const { return false; }
   virtual const TypeKlassPtr* as_klass_type(bool try_for_exact = false) const;
 
-  virtual bool can_be_inline_array() const;
+  virtual bool can_be_value_array() const;
 
   // Convenience common pre-built types.
   static const TypeAryPtr* BOTTOM;
-  static const TypeAryPtr *RANGE;
-  static const TypeAryPtr *OOPS;
-  static const TypeAryPtr *NARROWOOPS;
-  static const TypeAryPtr *BYTES;
-  static const TypeAryPtr *SHORTS;
-  static const TypeAryPtr *CHARS;
-  static const TypeAryPtr *INTS;
-  static const TypeAryPtr *LONGS;
-  static const TypeAryPtr *FLOATS;
-  static const TypeAryPtr *DOUBLES;
-  static const TypeAryPtr *INLINES;
+  static const TypeAryPtr* RANGE;
+  static const TypeAryPtr* OOPS;
+  static const TypeAryPtr* NARROWOOPS;
+  static const TypeAryPtr* BYTES;
+  static const TypeAryPtr* SHORTS;
+  static const TypeAryPtr* CHARS;
+  static const TypeAryPtr* INTS;
+  static const TypeAryPtr* LONGS;
+  static const TypeAryPtr* FLOATS;
+  static const TypeAryPtr* DOUBLES;
+  static const TypeAryPtr* INLINES;
+  static const TypeAryPtr* REFERENCES;
+  static const TypeAryPtr* NULL_FREES;
+  static const TypeAryPtr* NULLABLES;
+
   // selects one of the above:
   static const TypeAryPtr *get_array_body_type(BasicType elem) {
     assert((uint)elem <= T_CONFLICT && _array_body_type[elem] != nullptr, "bad elem type");
@@ -1968,7 +1953,7 @@ public:
 
   virtual const TypeKlassPtr* with_offset(intptr_t offset) const { ShouldNotReachHere(); return nullptr; }
 
-  virtual bool can_be_inline_array() const { ShouldNotReachHere(); return false; }
+  virtual bool can_be_value_array() const { ShouldNotReachHere(); return false; }
 
   virtual const TypeKlassPtr* try_improve() const { return this; }
 
@@ -2016,7 +2001,7 @@ public:
   bool is_java_subtype_of_helper(const TypeKlassPtr* other, bool this_exact, bool other_exact) const;
   bool maybe_java_subtype_of_helper(const TypeKlassPtr* other, bool this_exact, bool other_exact) const;
 
-  virtual bool can_be_inline_type() const { return (_klass == nullptr || _klass->can_be_inline_klass(klass_is_exact())); }
+  virtual bool can_be_value_type() const { return (_klass == nullptr || _klass->can_be_value_klass(klass_is_exact())); }
 
   static const TypeInstKlassPtr *make(ciKlass* k, InterfaceHandling interface_handling) {
     const TypeInterfaces* interfaces = TypePtr::interfaces(k, true, true, false, interface_handling);
@@ -2052,7 +2037,7 @@ public:
 
   virtual FlatInArray flat_in_array() const { return _flat_in_array; }
 
-  virtual bool can_be_inline_array() const;
+  virtual bool can_be_value_array() const;
 
   // Convenience common pre-built types.
   static const TypeInstKlassPtr* OBJECT; // Not-null object klass or below
@@ -2108,7 +2093,6 @@ public:
   static const TypeAryKlassPtr* make(ciKlass* klass, InterfaceHandling interface_handling);
 
   const TypeAryKlassPtr* cast_to_non_refined() const;
-  const TypeAryKlassPtr* cast_to_default_refined() const;
   const TypeAryKlassPtr* cast_to_refined_array_klass_ptr(bool refined = true) const;
 
   const Type *elem() const { return _elem; }
@@ -2140,7 +2124,7 @@ public:
   bool is_not_null_free() const { return _not_null_free; }
   bool is_atomic()        const { return _atomic; }
   bool is_refined_type()  const { return _refined_type; }
-  virtual bool can_be_inline_array() const;
+  virtual bool can_be_value_array() const;
 
   // Convenience common pre-built types.
   static const TypeAryKlassPtr* OBJECT_ARRAY;         // Not-null object array klass
@@ -2184,6 +2168,10 @@ public:
 
   bool is_known_instance() const {
     return _ptrtype->is_known_instance();
+  }
+
+  virtual bool maybe_null() const {
+    return _ptrtype->maybe_null();
   }
 
 #ifndef PRODUCT
@@ -2283,15 +2271,15 @@ class TypeFunc : public Type {
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 
-  // Domains of inputs: inline type arguments are not passed by
-  // reference, instead each field of the inline type is passed as an
+  // Domains of inputs: value type arguments are not passed by
+  // reference, instead each field of the value type is passed as an
   // argument. We maintain 2 views of the argument list here: one
-  // based on the signature (with an inline type argument as a single
+  // based on the signature (with a value type argument as a single
   // slot), one based on the actual calling convention (with a value
   // type argument as a list of its fields).
   const TypeTuple* const _domain_sig;
   const TypeTuple* const _domain_cc;
-  // Range of results. Similar to domains: an inline type result can be
+  // Range of results. Similar to domains: a value type result can be
   // returned in registers in which case range_cc lists all fields and
   // is the actual calling convention.
   const TypeTuple* const _range_sig;
@@ -2323,7 +2311,7 @@ public:
 
   BasicType return_type() const;
 
-  bool returns_inline_type_as_fields() const {
+  bool returns_value_type_as_fields() const {
     // First condition is not sufficient because returned value class can be empty
     assert(_range_sig == _range_cc || _scalarized_return, "Only possible with scalarized return");
     return _scalarized_return;
@@ -2605,12 +2593,12 @@ inline bool Type::is_floatingpoint() const {
   return false;
 }
 
-inline bool Type::is_inlinetypeptr() const {
-  return isa_instptr() != nullptr && is_instptr()->instance_klass()->is_inlinetype();
+inline bool Type::is_valueklassptr() const {
+  return isa_instptr() != nullptr && is_instptr()->instance_klass()->is_value_klass();
 }
 
-inline ciInlineKlass* Type::inline_klass() const {
-  return make_ptr()->is_instptr()->instance_klass()->as_inline_klass();
+inline ciValueKlass* Type::value_klass() const {
+  return make_ptr()->is_instptr()->instance_klass()->as_value_klass();
 }
 
 template <>

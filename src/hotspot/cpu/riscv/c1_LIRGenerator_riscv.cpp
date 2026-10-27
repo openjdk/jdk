@@ -78,7 +78,7 @@ LIR_Opr LIRGenerator::syncTempOpr()     { return FrameMap::r10_opr; }
 LIR_Opr LIRGenerator::getThreadTemp()   { return LIR_OprFact::illegalOpr; }
 
 
-LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
+LIR_Opr LIRGenerator::result_register_for(ValueType* type) {
   LIR_Opr opr;
   switch (type->tag()) {
     case intTag:     opr = FrameMap::r10_opr;          break;
@@ -98,7 +98,7 @@ LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
 }
 
 
-LIR_Opr LIRGenerator::rlock_byte(BasicType type) {
+LIR_Opr LIRGenerator::rlock_byte() {
   LIR_Opr reg = new_register(T_INT);
   set_vreg_flag(reg, LIRGenerator::byte_reg);
   return reg;
@@ -116,9 +116,9 @@ bool LIRGenerator::can_store_as_constant(Value v, BasicType type) const {
   } else if (v->type()->as_ObjectConstant() != nullptr) {
     return v->type()->as_ObjectConstant()->value()->is_null_object();
   } else if (v->type()->as_FloatConstant() != nullptr) {
-    return jint_cast(v->type()->as_FloatConstant()->value()) == 0.0f;
+    return jint_cast(v->type()->as_FloatConstant()->value()) == 0;
   } else if (v->type()->as_DoubleConstant() != nullptr) {
-    return jlong_cast(v->type()->as_DoubleConstant()->value()) == 0.0;
+    return jlong_cast(v->type()->as_DoubleConstant()->value()) == 0;
   }
   return false;
 }
@@ -208,13 +208,6 @@ LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
   return r;
 }
 
-void LIRGenerator::increment_counter(address counter, BasicType type, int step) {
-  LIR_Opr pointer = new_pointer_register();
-  __ move(LIR_OprFact::intptrConst(counter), pointer);
-  LIR_Address* addr = new LIR_Address(pointer, type);
-  increment_counter(addr, step);
-}
-
 void LIRGenerator::increment_counter(LIR_Address* addr, int step) {
   LIR_Opr reg = new_register(addr->type());
   __ load(addr, reg);
@@ -283,7 +276,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   }
 
   CodeStub* throw_ie_stub =
-      x->maybe_inlinetype() ?
+      x->maybe_valuetype() ?
       new SimpleExceptionStub(StubId::c1_throw_identity_exception_id, obj.result(), state_for(x)) :
       nullptr;
 
@@ -603,13 +596,12 @@ LIR_Opr LIRGenerator::atomic_cmpxchg(BasicType type, LIR_Opr addr, LIRItem& cmp_
   if (is_reference_type(type)) {
     __ cas_obj(addr, cmp_value.result(), new_value.result(), new_register(T_INT), new_register(T_INT), result);
   } else if (type == T_INT) {
-    __ cas_int(addr->as_address_ptr()->base(), cmp_value.result(), new_value.result(), ill, ill);
+    __ cas_int(addr->as_address_ptr()->base(), cmp_value.result(), new_value.result(), ill, ill, result);
   } else if (type == T_LONG) {
-    __ cas_long(addr->as_address_ptr()->base(), cmp_value.result(), new_value.result(), ill, ill);
+    __ cas_long(addr->as_address_ptr()->base(), cmp_value.result(), new_value.result(), ill, ill, result);
   } else {
     ShouldNotReachHere();
   }
-  __ logical_xor(FrameMap::r5_opr, LIR_OprFact::intConst(1), result);
   return result;
 }
 
@@ -648,7 +640,9 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       break;
     case vmIntrinsics::_dabs: // fall through
     case vmIntrinsics::_dsqrt: // fall through
-    case vmIntrinsics::_dsqrt_strict: {
+    case vmIntrinsics::_dsqrt_strict: // fall through
+    case vmIntrinsics::_floatToFloat16: // fall through
+    case vmIntrinsics::_float16ToFloat: {
       assert(x->number_of_arguments() == 1, "wrong type");
       LIRItem value(x->argument_at(0), this);
       value.load_item();
@@ -662,6 +656,17 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
         }
         case vmIntrinsics::_dabs: {
           __ abs(value.result(), dst, LIR_OprFact::illegalOpr);
+          break;
+        }
+        case vmIntrinsics::_floatToFloat16: {
+          // flt_to_flt16 needs a float temporary to move the result through.
+          LIR_Opr tmp = new_register(T_FLOAT);
+          __ f2hf(value.result(), dst, tmp);
+          break;
+        }
+        case vmIntrinsics::_float16ToFloat: {
+          // flt16_to_flt only needs t0/t1, which are not visible to the allocator.
+          __ hf2f(value.result(), dst, LIR_OprFact::illegalOpr);
           break;
         }
         default:
@@ -864,7 +869,75 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
 }
 
 void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
-  ShouldNotReachHere();
+  assert(UseCRC32CIntrinsics, "why are we here?");
+  LIR_Opr result = rlock_result(x);
+
+  switch (x->id()) {
+    case vmIntrinsics::_updateBytesCRC32C:
+    case vmIntrinsics::_updateDirectByteBufferCRC32C: {
+      bool is_updateBytes = (x->id() == vmIntrinsics::_updateBytesCRC32C);
+      int offset = is_updateBytes ? arrayOopDesc::base_offset_in_bytes(T_BYTE) : 0;
+
+      LIRItem crc(x->argument_at(0), this);
+      LIRItem buf(x->argument_at(1), this);
+      LIRItem off(x->argument_at(2), this);
+      LIRItem end(x->argument_at(3), this);
+
+      buf.load_item();
+      off.load_nonconstant();
+      end.load_nonconstant();
+
+      // len = end - off
+      LIR_Opr tmpA = new_register(T_INT);
+      LIR_Opr tmpB = new_register(T_INT);
+      __ move(end.result(), tmpA);
+      __ move(off.result(), tmpB);
+      __ sub(tmpA, tmpB, tmpA);
+      LIR_Opr len = tmpA;
+
+      LIR_Opr index = off.result();
+      if (off.result()->is_constant()) {
+        index = LIR_OprFact::illegalOpr;
+        offset += off.result()->as_jint();
+      }
+      LIR_Opr base_op = buf.result();
+
+      if (index->is_valid()) {
+        LIR_Opr tmp = new_register(T_LONG);
+        __ convert(Bytecodes::_i2l, index, tmp);
+        index = tmp;
+      }
+
+      if (offset) {
+        LIR_Opr tmp = new_pointer_register();
+        __ add(base_op, LIR_OprFact::intConst(offset), tmp);
+        base_op = tmp;
+        offset = 0;
+      }
+
+      LIR_Address* a = new LIR_Address(base_op, index, offset, T_BYTE);
+      BasicTypeList signature(3);
+      signature.append(T_INT);
+      signature.append(T_ADDRESS);
+      signature.append(T_INT);
+      CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+      const LIR_Opr result_reg = result_register_for(x->type());
+
+      LIR_Opr addr = new_register(T_ADDRESS);
+      __ leal(LIR_OprFact::address(a), addr);
+
+      crc.load_item_force(cc->at(0));
+      __ move(addr, cc->at(1));
+      __ move(len, cc->at(2));
+
+      __ call_runtime_leaf(StubRoutines::updateBytesCRC32C(), getThreadTemp(), result_reg, cc->args());
+      __ move(result_reg, result);
+      break;
+    }
+    default: {
+      ShouldNotReachHere();
+    }
+  }
 }
 
 void LIRGenerator::do_FmaIntrinsic(Intrinsic* x) {
@@ -921,7 +994,7 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
   CodeEmitInfo* info = state_for(x, x->needs_state_before() ? x->state_before() : x->state());
   LIR_Opr reg = result_register_for(x->type());
   new_instance(reg, x->klass(), x->is_unresolved(),
-               !x->is_unresolved() && x->klass()->is_inlinetype(),
+               !x->is_unresolved() && x->klass()->is_value_klass(),
                FrameMap::r12_oop_opr,
                FrameMap::r15_oop_opr,
                FrameMap::r14_oop_opr,
@@ -968,7 +1041,8 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   // in case of patching (i.e., object class is not yet loaded), we need to reexecute the instruction
   // and therefore provide the state before the parameters have been consumed
   CodeEmitInfo* patching_info = nullptr;
-  if (!x->klass()->is_loaded() || PatchALot) {
+  ciKlass* obj = ciObjArrayKlass::make(x->klass());
+  if (!x->klass()->is_loaded() || !obj->is_loaded() || PatchALot) {
     patching_info =  state_for(x, x->state_before());
   }
 
@@ -984,16 +1058,14 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   length.load_item_force(FrameMap::r9_opr);
   LIR_Opr len = length.result();
 
-  ciKlass* obj = ciObjArrayKlass::make(x->klass());
-
   // TODO 8265122 Implement a fast path for this
   bool is_flat = obj->is_loaded() && obj->is_flat_array_klass();
   bool is_null_free = obj->is_loaded() && obj->as_array_klass()->is_elem_null_free();
 
   CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info, is_null_free);
 
-  if (obj == ciEnv::unloaded_ciobjarrayklass()) {
-    BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
+  if (x->klass()->is_loaded() && !obj->is_loaded()) {
+    BAILOUT("encountered unloaded ciobjarrayklass due to out of memory error");
   }
   klass2reg_with_patching(klass_reg, obj, patching_info);
   bool always_slow_path = is_null_free || is_flat;
@@ -1191,5 +1263,4 @@ void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
 void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
   __ volatile_load_mem_reg(address, result, info);
-  __ membar_acquire();
 }

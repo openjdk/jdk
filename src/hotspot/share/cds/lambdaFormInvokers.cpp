@@ -25,6 +25,7 @@
 #include "cds/aotClassFilter.hpp"
 #include "cds/aotCompressedPointers.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
@@ -36,7 +37,6 @@
 #include "classfile/klassFactory.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
@@ -47,7 +47,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -195,7 +194,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
         // Fake it, so that it will be included into the archive.
         klass->set_shared_classpath_index(0);
         // Set the "generated" bit, so it won't interfere with JVMTI.
-        // See SystemDictionaryShared::find_builtin_class().
+        // See AOTSystemDictionary::find_builtin_class().
         klass->set_is_aot_generated_class();
       }
     } else {
@@ -225,6 +224,9 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
                                                    cl_info,
                                                    CHECK);
 
+  // The result InstanceKlass* is never used during the JVM process lifetime.
+  // We create it only for writing to the CDS archive, and so it need not be monitored by JVMTI or JFR.
+
   assert(result->java_mirror() != nullptr, "must be");
   RegeneratedClasses::add_class(InstanceKlass::cast(klass), result);
 
@@ -237,7 +239,7 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
   result->set_is_aot_generated_class();
   if (!klass->in_aot_cache()) {
     log_info(aot, lambda)("regenerate_class excluding klass %s %s", class_name, klass->name()->as_C_string());
-    SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
+    AOTSystemDictionary::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
   }
   log_info(aot, lambda)("Regenerated class %s, old: " INTPTR_FORMAT " new: " INTPTR_FORMAT,
                  class_name, p2i(klass), p2i(result));

@@ -46,6 +46,37 @@
  *      compiler.uncommontrap.TestDeoptOOM
  */
 
+/*
+ * @test
+ * @bug 6898462 8198826
+ * @summary failed reallocations of scalar replaced objects during deoptimization causes crash
+ *
+ * @requires os.arch == "aarch64"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm/timeout=480 -XX:-BackgroundCompilation -Xmx128M -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::main
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::m9_1
+ *      -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
+ *      compiler.uncommontrap.TestDeoptOOM
+ */
+
+/*
+ * @test id=Z_PreferCallBasedUncommonTraps
+ * @bug 8273456
+ * @summary Test that ttyLock is ranked above StackWatermark_lock
+ * @requires vm.gc.Z
+ * @requires os.arch == "aarch64"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm/timeout=480 -XX:-BackgroundCompilation -Xmx128M -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::main
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::m9_1
+ *      -XX:+UnlockDiagnosticVMOptions
+ *      -XX:-DisplayVMOutput -XX:+UseZGC -XX:+LogCompilation
+ *      -Xlog:deoptimization=debug -XX:+Verbose
+ *      -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
+ *      compiler.uncommontrap.TestDeoptOOM
+ */
+
 package compiler.uncommontrap;
 
 public class TestDeoptOOM {

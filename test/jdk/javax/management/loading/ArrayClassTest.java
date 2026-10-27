@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,7 @@
 /*
  * @test
  * @bug 4974913
- * @summary Test that array classes can be found in signatures always
- * and can be deserialized by the deprecated MBeanServer.deserialize method
+ * @summary Test that array classes found in signatures can be deserialized
  * @author Eamonn McManus
  *
  * @run clean ArrayClassTest
@@ -72,16 +71,20 @@ public class ArrayClassTest {
         oout.writeObject(new Z[0]);
         oout.close();
         byte[] bytes = bout.toByteArray();
-        ObjectInputStream oin = mbs.deserialize(testName, bytes);
-        Object zarray = oin.readObject();
+
+        ClassLoader newLoader = mbs.getClassLoaderFor(testName);
+        ByteLoaderStream byteLoaderStream = new ByteLoaderStream(new ByteArrayInputStream(bytes), newLoader);
+        Object zarray = byteLoaderStream.readObject();
+
         String failed = null;
-        if (zarray instanceof Z[])
+        if (zarray instanceof Z[]) {
             failed = "read back a real Z[]";
-        else if (!zarray.getClass().getName().equals(Z[].class.getName())) {
-            failed = "returned object of wrong type: " +
-                zarray.getClass().getName();
-        } else if (Array.getLength(zarray) != 0)
+        } else if (!zarray.getClass().getName().equals(Z[].class.getName())) {
+            failed = "returned object of wrong type: " + zarray.getClass().getName();
+        } else if (Array.getLength(zarray) != 0) {
             failed = "returned array of wrong size: " + Array.getLength(zarray);
+        }
+
         if (failed != null) {
             System.out.println("TEST FAILED: " + failed);
             System.exit(1);
@@ -120,6 +123,24 @@ public class ArrayClassTest {
             Class c = super.findClass(name);
             System.out.println(" -> " + name + " (" + c.getClassLoader() + ")");
             return c;
+        }
+    }
+
+    public static class ByteLoaderStream extends ObjectInputStream {
+        private ClassLoader loader;
+
+        public ByteLoaderStream(InputStream is, ClassLoader loader) throws IOException {
+            super(is);
+            this.loader = loader;
+        }
+
+        @Override
+        protected Class<?> resolveClass(ObjectStreamClass osc) throws IOException, ClassNotFoundException {
+            try {
+                return Class.forName(osc.getName(), false, loader);
+            } catch (ClassNotFoundException cnfe) {
+                return super.resolveClass(osc);
+            }
         }
     }
 }

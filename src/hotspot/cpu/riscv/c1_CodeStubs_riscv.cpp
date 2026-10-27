@@ -127,7 +127,7 @@ LoadFlattenedArrayStub::LoadFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR
   _array = array;
   _index = index;
   _result = result;
-  _scratch_reg = FrameMap::r10_oop_opr;
+  _stub_result_reg = FrameMap::r10_oop_opr;
   _info = new CodeEmitInfo(info);
 }
 
@@ -151,7 +151,6 @@ StoreFlattenedArrayStub::StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, L
   _array = array;
   _index = index;
   _value = value;
-  _scratch_reg = FrameMap::r10_oop_opr;
   _info = new CodeEmitInfo(info);
 }
 
@@ -172,7 +171,7 @@ void StoreFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
 SubstitutabilityCheckStub::SubstitutabilityCheckStub(LIR_Opr left, LIR_Opr right, CodeEmitInfo* info) {
   _left = left;
   _right = right;
-  _scratch_reg = FrameMap::r10_oop_opr;
+  _stub_result_reg = FrameMap::r10_oop_opr;
   _info = new CodeEmitInfo(info);
 }
 
@@ -265,7 +264,7 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   if (_throw_ie_stub != nullptr) {
     // When we come here, _obj_reg has already been checked to be non-null.
     __ ld(t0, Address(_obj_reg->as_register(), oopDesc::mark_offset_in_bytes()));
-    __ mv(t1, markWord::inline_type_pattern);
+    __ mv(t1, markWord::value_type_pattern);
     __ andr(t0, t0, t1);
     __ beq(t0, t1, *_throw_ie_stub->entry(), /* is_far */ true);
   }

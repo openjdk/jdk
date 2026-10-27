@@ -197,7 +197,7 @@ class ResourceBundleGenerator implements BundleGenerator {
                     var escapedVal = CLDRConverter.escape(valStr);
                     if (type == BundleType.TIMEZONE &&
                         !(key.startsWith(CLDRConverter.EXEMPLAR_CITY_PREFIX) ||
-                          key.startsWith(CLDRConverter.METAZONE_DSTOFFSET_PREFIX)) ||
+                          key.startsWith(CLDRConverter.METAZONE_DSTOFFSETS)) ||
                         valStr.startsWith(META_VALUE_PREFIX)) {
                         out.printf("            { \"%s\", %s },\n", keyStr, escapedVal);
                     } else {

@@ -260,7 +260,7 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
   allocator()->release_mutator_alloc_regions();
 
   collection_set()->finalize_initial_collection_set(target_pause_time_ms, survivor_regions());
-  evacuation_info->set_collection_set_regions(collection_set()->num_initial_regions() +
+  evacuation_info->set_num_collection_set_regions(collection_set()->num_initial_regions() +
                                               collection_set()->num_optional_regions());
 
   concurrent_mark()->verify_no_collection_set_oops();
@@ -436,7 +436,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
                                cast_to_oop(hr->bottom())->size() * HeapWordSize,
                                p2i(hr->bottom()),
                                hr->rem_set()->occupied(),
-                               hr->rem_set()->code_roots_list_length(),
+                               hr->rem_set()->code_roots_length(),
                                _g1h->concurrent_mark()->mark_bitmap()->is_marked(hr->bottom()),
                                hr->pinned_count(),
                                _g1h->is_humongous_reclaim_candidate(index),
@@ -556,7 +556,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     Tickspan task_time = run_task_timed(&g1_prep_task);
 
     G1MonotonicArenaMemoryStats sampled_card_set_stats = g1_prep_task.all_card_set_stats();
-    sampled_card_set_stats.add(_g1h->young_regions_cset_group()->card_set_memory_stats());
+    sampled_card_set_stats.add(collection_set()->young_regions_card_set_group()->card_set_memory_stats());
     _g1h->set_young_gen_card_set_stats(sampled_card_set_stats);
     _g1h->set_humongous_stats(g1_prep_task.humongous_total(), g1_prep_task.humongous_candidates());
 
@@ -1024,7 +1024,7 @@ void G1YoungCollector::post_evacuate_cleanup_2(G1ParScanThreadStateSet* per_thre
 void G1YoungCollector::enqueue_candidates_as_root_regions() {
   assert(collector_state()->is_in_concurrent_start_gc(), "must be");
 
-  G1CollectionSetCandidates* candidates = collection_set()->candidates();
+  G1CollectionSetCandidates* candidates = _g1h->collection_set_candidates();
   candidates->iterate_regions([&] (G1HeapRegion* r) {
     _g1h->concurrent_mark()->add_root_region_set_bottom(r);
   });
@@ -1084,15 +1084,15 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 }
 
 bool G1YoungCollector::evacuation_failed() const {
-  return _evac_failure_regions.has_regions_evac_failed();
+  return _evac_failure_regions.has_evac_failed_regions();
 }
 
 bool G1YoungCollector::evacuation_pinned() const {
-  return _evac_failure_regions.has_regions_evac_pinned();
+  return _evac_failure_regions.has_evac_pinned_regions();
 }
 
 bool G1YoungCollector::evacuation_alloc_failed() const {
-  return _evac_failure_regions.has_regions_alloc_failed();
+  return _evac_failure_regions.has_alloc_failed_regions();
 }
 
 G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause,
@@ -1119,7 +1119,7 @@ void G1YoungCollector::collect() {
   G1YoungGCJFRTracerMark jtm(this);
   // JStat/MXBeans
   G1YoungGCMonitoringScope ms(monitoring_support(),
-                              !collection_set()->candidates()->is_empty() /* all_memory_pools_affected */);
+                              !_g1h->collection_set_candidates()->is_empty() /* all_memory_pools_affected */);
   // Create the heap printer before internal pause timing to have
   // heap information printed as last part of detailed GC log.
   G1HeapPrinterMark hpm(_g1h);

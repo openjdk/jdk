@@ -329,32 +329,13 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
   }
 
-  if (InlineTypePassFieldsAsArgs) {
-    warning("InlineTypePassFieldsAsArgs not supported on this CPU.");
-    FLAG_SET_DEFAULT(InlineTypePassFieldsAsArgs, false);
+  if (ValueTypePassFieldsAsArgs) {
+    warning("ValueTypePassFieldsAsArgs not supported on this CPU.");
+    FLAG_SET_DEFAULT(ValueTypePassFieldsAsArgs, false);
   }
-  if (InlineTypeReturnedAsFields) {
-    warning("InlineTypeReturnedAsFields not supported on this CPU.");
-    FLAG_SET_DEFAULT(InlineTypeReturnedAsFields, false);
-  }
-  // TODO: Valhalla optimizations
-  if (UseArrayFlattening) {
-    FLAG_SET_DEFAULT(UseArrayFlattening, false);
-  }
-  if (UseFieldFlattening) {
-    FLAG_SET_DEFAULT(UseFieldFlattening, false);
-  }
-  if (UseNullFreeNonAtomicValueFlattening) {
-    FLAG_SET_DEFAULT(UseNullFreeNonAtomicValueFlattening, false);
-  }
-  if (UseNullableAtomicValueFlattening) {
-    FLAG_SET_DEFAULT(UseNullableAtomicValueFlattening, false);
-  }
-  if (UseNullFreeAtomicValueFlattening) {
-    FLAG_SET_DEFAULT(UseNullFreeAtomicValueFlattening, false);
-  }
-  if (UseNullableNonAtomicValueFlattening) {
-    FLAG_SET_DEFAULT(UseNullableNonAtomicValueFlattening, false);
+  if (ValueTypeReturnedAsFields) {
+    warning("ValueTypeReturnedAsFields not supported on this CPU.");
+    FLAG_SET_DEFAULT(ValueTypeReturnedAsFields, false);
   }
 }
 
@@ -445,7 +426,7 @@ void VM_Version::set_cpu_info_string() {
     _model_string = "unknown model";
     strcpy(buf, "z/Architecture (ambiguous detection)");
   }
-  _cpu_info_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf, mtInternal);
 
   if (has_Crypto_AES()) {
     assert(strlen(_cpu_info_string) + 3*8 < sizeof(buf), "increase buffer size");
@@ -455,7 +436,7 @@ void VM_Version::set_cpu_info_string() {
                  has_Crypto_AES192() ? ", aes192" : "",
                  has_Crypto_AES256() ? ", aes256" : "");
     os::free((void *)_cpu_info_string);
-    _cpu_info_string = os::strdup(buf);
+    _cpu_info_string = os::strdup(buf, mtInternal);
   }
 
   if (has_Crypto_SHA()) {
@@ -467,7 +448,7 @@ void VM_Version::set_cpu_info_string() {
                  has_Crypto_SHA512() ? ", sha512" : "",
                  has_Crypto_GHASH()  ? ", ghash"  : "");
     os::free((void *)_cpu_info_string);
-    _cpu_info_string = os::strdup(buf);
+    _cpu_info_string = os::strdup(buf, mtInternal);
   }
 }
 
