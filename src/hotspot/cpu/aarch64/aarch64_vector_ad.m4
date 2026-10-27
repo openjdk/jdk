@@ -326,7 +326,15 @@ source %{
         }
         break;
       case Op_VectorSlice:
-        if (length_in_bytes != 8 && length_in_bytes != 16) {
+        if (length_in_bytes > 16) {
+          // EXT extracts the highest elements from the first register and the
+          // lower elements from the second register so we disable this operation
+          // when length_in_bytes < MaxVectorSize
+          if (UseSVE == 0 || length_in_bytes < MaxVectorSize) {
+            return false;
+          }
+        } else if (length_in_bytes != 8 && length_in_bytes != 16) {
+          // NEON EXT only supports vector lengths of 8 and 16 bytes
           return false;
         }
         break;
@@ -5638,14 +5646,21 @@ SELECT_FROM_TWO_VECTORS(23, 24)
 // -------------------------------- VectorSlice --------------------------------
 
 instruct vslice(vReg dst, vReg src1, vReg src2, immI origin) %{
-  predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
   match(Set dst (VectorSlice (Binary src1 src2) origin));
+  effect(TEMP_DEF dst);
   format %{ "vslice $dst, $src1, $src2, $origin" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    assert(length_in_bytes == 8 || length_in_bytes == 16, "must be");
-    __ ext($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
-           $src1$$FloatRegister, $src2$$FloatRegister, $origin$$constant);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      assert(length_in_bytes == 8 || length_in_bytes == 16, "must be");
+      __ ext($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
+             $src1$$FloatRegister, $src2$$FloatRegister, $origin$$constant);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      assert(length_in_bytes == MaxVectorSize, "invalid vector length");
+      __ sve_movprfx($dst$$FloatRegister, $src1$$FloatRegister);
+      __ sve_ext($dst$$FloatRegister, $src2$$FloatRegister, $origin$$constant);
+    }
   %}
   ins_pipe(pipe_slow);
 %}
