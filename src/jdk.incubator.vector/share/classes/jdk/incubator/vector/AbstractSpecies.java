@@ -25,6 +25,7 @@
 package jdk.incubator.vector;
 
 import java.lang.reflect.Array;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.function.IntUnaryOperator;
@@ -286,6 +287,53 @@ abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSu
     AbstractSpecies<Byte> byteSpecies() {
         // This JITs to a constant value:
         return (AbstractSpecies<Byte>) withLanes(LaneType.BYTE);
+    }
+
+    @ForceInline
+    final AbstractVector<E> swapIfNeeded(AbstractSpecies<?> srcSpecies, AbstractVector<E> arg) {
+        int subLanesPerSrc = subLanesToSwap(srcSpecies);
+        if (subLanesPerSrc < 0) {
+            return arg;
+        }
+        VectorShuffle<E> shuffle = normalizeSubLanesForSpecies(this, subLanesPerSrc);
+        return (AbstractVector<E>) arg.rearrange(shuffle);
+    }
+
+    @ForceInline
+    final int subLanesToSwap(AbstractSpecies<?> srcSpecies) {
+        if (AbstractVector.NATIVE_ENDIAN != ByteOrder.BIG_ENDIAN) {
+            return -1;
+        }
+        int sBytes = srcSpecies.elementSize();
+        int tBytes = this.elementSize();
+
+        // No lane reordering needed for same size or widening reinterprets
+        if (sBytes == tBytes || (sBytes % tBytes) != 0) {
+            return -1;
+        }
+        int subLanesPerSrc = sBytes / tBytes;
+        return subLanesPerSrc;
+    }
+
+    @ForceInline
+    static <T> VectorShuffle<T> normalizeSubLanesForSpecies(AbstractSpecies<T> targetSpecies, int subLanesPerSrc) {
+        final int lanes = targetSpecies.laneCount();
+
+        if ((lanes % subLanesPerSrc) != 0) {
+            throw new IllegalArgumentException("laneCount " + lanes + " not divisible by subLanesPerSrc " + subLanesPerSrc);
+        }
+
+        // Each group corresponds to one source lane.
+        // For each group, reverse the lanes inside that group.
+        final int groups = lanes / subLanesPerSrc;
+        int[] map = new int[lanes];
+        for (int g = 0; g < groups; ++g) {
+            int base = g * subLanesPerSrc;
+            for (int j = 0; j < subLanesPerSrc; ++j) {
+                map[base + j] = base + (subLanesPerSrc - 1 - j);
+            }
+        }
+        return VectorShuffle.fromArray(targetSpecies, map, 0);
     }
 
     @ForceInline

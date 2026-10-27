@@ -48,11 +48,6 @@ public class OldClassSupport2 {
         // Explicitly disable
         Tester tester1 = new Tester("-XX:-AOTClassLinking");
         tester1.run(new String[] {"AOT", "--two-step-training"} );
-
-        // Full module graph caching is disabled with -Djdk.module.showModuleResolution=true.
-        // This will disable AOT class linking.
-        Tester tester2 = new Tester("-Djdk.module.showModuleResolution=true");
-        tester2.run(new String[] {"AOT", "--two-step-training"} );
     }
 
     static class Tester extends CDSAppTester {

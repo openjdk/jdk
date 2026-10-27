@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,10 @@
  * questions.
  */
 #include <malloc.h>
+#include <winternl.h>
+#include <winsock2.h>
+#include <iphlpapi.h>
+#include <icmpapi.h>
 
 #include "net_util.h"
 
@@ -76,7 +80,6 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
 
     // try once, with our static buffer
     memset(&hints, 0, sizeof(hints));
-    hints.ai_flags = AI_CANONNAME;
     hints.ai_family = lookupCharacteristicsToAddressFamily(characteristics);
 
     error = getaddrinfo(hostname, NULL, &hints, &res);
@@ -400,7 +403,9 @@ ping6(JNIEnv *env, HANDLE hIcmpFile, SOCKETADDRESS *sa,
     IP_OPTION_INFORMATION ipInfo = {255, 0, 0, 0, NULL};
     SOCKETADDRESS dftNetif;
 
-    ReplySize = sizeof(ICMPV6_ECHO_REPLY) + sizeof(SendData);
+    // According to MS docu: size of ICMPV6_ECHO_REPLY structure + RequestSize bytes of data +
+    // 8 more bytes of data (the size of an ICMP error message) + size of an IO_STATUS_BLOCK structure
+    ReplySize = sizeof(ICMPV6_ECHO_REPLY) + sizeof(SendData) + 8 + sizeof(IO_STATUS_BLOCK);
     ReplyBuffer = (VOID *)malloc(ReplySize);
     if (ReplyBuffer == NULL) {
         IcmpCloseHandle(hIcmpFile);

@@ -366,6 +366,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     private boolean tryTransparentNTLMProxy = true;
     private boolean useProxyResponseCode = false;
 
+    // used when redirecting to compare current and previous proxies
+    private Proxy lastProxy;
+
     /* Used by Windows specific code */
     private Object authObj;
 
@@ -571,8 +574,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         throws ProtocolException {
         lock();
         try {
-            if (connecting) {
-                throw new IllegalStateException("connect in progress");
+            if (connected || connecting) {
+                throw new IllegalStateException("Already connected");
             }
             super.setRequestMethod(method);
         } finally {
@@ -1376,7 +1379,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         // If the user has set either of these headers then do not remove them
         isUserServerAuth = requests.getKey("Authorization") != -1;
         isUserProxyAuth = requests.getKey("Proxy-Authorization") != -1;
-
         try {
             do {
                 if (!checkReuseConnection())
@@ -1386,6 +1388,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     return cachedInputStream;
                 }
 
+                // we may need to remove proxy-authorization
+                Proxy p = http.getHttpProxy();
+                // if we're not using a proxy or if the proxy to be used is not
+                // the same as the originally set one, then remove it
+                if (p == null || (lastProxy != null && !lastProxy.equals(p))) {
+                    requests.remove("Proxy-Authorization");
+                    lastProxy = null;
+                }
                 /* REMIND: This exists to fix the HttpsURLConnection subclass.
                  * Hotjava needs to run on JDK1.1FCS.  Do proper fix once a
                  * proper solution for SSL can be found.
@@ -1416,7 +1426,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     disconnectInternal();
                     throw new IOException ("Invalid Http response");
                 }
-                if (respCode == HTTP_PROXY_AUTH) {
+                if (respCode == HTTP_PROXY_AUTH && tunnelState() != TunnelState.TUNNELING) {
                     if (streaming()) {
                         disconnectInternal();
                         throw new HttpRetryException (
@@ -1999,6 +2009,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
                 if (respCode == HTTP_OK) {
                     setTunnelState(TunnelState.TUNNELING);
+                    savedRequests.remove("Proxy-Authorization");
                     break;
                 }
                 // we don't know how to deal with other response code
@@ -2552,6 +2563,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     {
         assert isLockHeldByCurrentThread();
 
+        lastProxy = http.getHttpProxy();
         disconnectInternal();
         if (streaming()) {
             throw new HttpRetryException (RETRY_MSG3, stat, loc);

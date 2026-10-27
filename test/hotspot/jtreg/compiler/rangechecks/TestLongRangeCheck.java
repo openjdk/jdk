@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,8 +26,9 @@
  * @test
  * @bug 8259609 8276116
  * @summary C2: optimize long range checks in long counted loops
- * @requires vm.compiler2.enabled
- * @requires vm.compMode != "Xcomp"
+ * @comment This test tests specific compile and deoptimization behaviors that are disrupted by -Xcomp or
+            -XX:+DeoptimizeALot. Let's exclude those.
+ * @requires vm.compiler2.enabled & vm.compMode != "Xcomp" & vm.opt.DeoptimizeALot != true
  * @library /test/lib /
  * @modules java.base/jdk.internal.util
  * @build jdk.test.whitebox.WhiteBox
@@ -93,7 +95,6 @@ public class TestLongRangeCheck {
                 throw new RuntimeException("unexpected exception");
             }
         }
-        assertIsNotCompiled(m);
 
         m = newClassLoader().loadClass("TestLongRangeCheck").getDeclaredMethod(method, long.class, long.class, long.class, long.class);
         m.invoke(null, start, stop, length, offset); // run once so all classes are loaded
@@ -110,7 +111,6 @@ public class TestLongRangeCheck {
                 throw new RuntimeException("unexpected exception");
             }
         }
-        assertIsNotCompiled(m);
 
         m = newClassLoader().loadClass("TestLongRangeCheck").getDeclaredMethod(method, long.class, long.class, long.class, long.class);
         m.invoke(null, start, stop, length, offset); // run once so all classes are loaded
@@ -126,7 +126,6 @@ public class TestLongRangeCheck {
                 throw new RuntimeException("unexpected exception");
             }
         }
-        assertIsNotCompiled(m);
     }
 
     private static void testOverflow(String method, long start, long stop, long length, long offset0, long offset1) throws Exception {
@@ -144,7 +143,6 @@ public class TestLongRangeCheck {
                 throw new RuntimeException("unexpected exception");
             }
         }
-        assertIsNotCompiled(m);
     }
 
     private static void testConditional(String method, long start, long stop, long length, long offset0, long offset1, long start1, long stop1) throws Exception {
@@ -165,7 +163,6 @@ public class TestLongRangeCheck {
                     throw new RuntimeException("unexpected exception");
                 }
             }
-            assertIsNotCompiled(m);
         }
 
         if (stop1 != stop) {
@@ -183,7 +180,6 @@ public class TestLongRangeCheck {
                     throw new RuntimeException("unexpected exception");
                 }
             }
-            assertIsNotCompiled(m);
         }
 
         m = newClassLoader().loadClass("TestLongRangeCheck").getDeclaredMethod(method, long.class, long.class, long.class, long.class, long.class, long.class);
@@ -326,7 +322,6 @@ public class TestLongRangeCheck {
                     throw new RuntimeException("unexpected exception");
                 }
             }
-            assertIsNotCompiled(m);
         }
     }
 

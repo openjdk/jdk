@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,6 +240,8 @@ int LIR_Assembler::emit_unwind_handler() {
 
   __ bind(_unwind_handler_entry);
   __ verify_not_null_oop(Rexception_obj);
+
+  __ restore_profile_rng();
 
   // Perform needed unlocking
   MonitorExitStub* stub = nullptr;
@@ -2550,7 +2552,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr,
           __ cbz(step->as_register(), *overflow_stub->entry());
         } else {
           __ b(*overflow_stub->entry());
-          return;
         }
       } else {
         if (!step->is_constant()) {
@@ -2579,6 +2580,8 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr,
             break;
         }
       }
+
+      __ bind(*overflow_stub->continuation());
     }
 
     if (counter_stub != nullptr) {
@@ -2597,10 +2600,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr,
     append_code_stub(counter_stub);
   } else {
     lambda(this, nullptr);
-  }
-
-  if (overflow_stub != nullptr) {
-    __ bind(*overflow_stub->continuation());
   }
 
 #ifndef PRODUCT
@@ -2709,6 +2708,10 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 
 void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   fatal("Type profiling not implemented on this platform");
+}
+
+void LIR_Assembler::emit_profile_value_type(LIR_OpProfileValueType* op) {
+  Unimplemented();
 }
 
 void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
@@ -3008,6 +3011,32 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
   __ cbnz_32(Rtemp, retry);
   __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad | MacroAssembler::StoreStore), Rtemp);
 
+}
+
+// Valhalla support
+
+void LIR_Assembler::check_orig_pc() {
+  Unimplemented();
+}
+
+int LIR_Assembler::store_value_type_fields_to_buf(ciValueKlass* vk) {
+  Unimplemented();
+  return 0;
+}
+
+void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
+  Unimplemented();
+}
+
+void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
+  // Since there is no markWord::null_free_array_bit_in_place on ARM32,
+  // setting the EQ flag by cmp(tmp, tmp) by will tell C1 that the array is NOT null-free.
+  Register tmp = op->tmp()->as_register();
+  __ cmp(tmp, tmp);
+}
+
+void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op) {
+  Unimplemented();
 }
 
 #undef __

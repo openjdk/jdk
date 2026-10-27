@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,13 @@ package jdk.test.lib.security;
 
 import jdk.test.lib.Asserts;
 import sun.security.util.DerInputStream;
+import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 import sun.security.util.KnownOIDs;
 import sun.security.util.ObjectIdentifier;
 
 import java.io.IOException;
+import java.util.Locale;
 
 public class DerUtils {
     /**
@@ -36,9 +38,10 @@ public class DerUtils {
      * <p>
      * The location of the inner DerValue is expressed as a string, in which
      * each character is a step from the outer DerValue into the inner one.
-     * If it's a number n, the n'th element (starting from 0) of a sequence
-     * is the next step. If it's 'c', the content of an OctetString parsed
-     * as a DerValue is the next step. Note that n cannot be bigger than 9.
+     * If it's a number n (in uppercase HEX, from 0 to F), the n'th element
+     * of a sequence is the next step. If it's 'c', the content of an OCTET
+     * STRING parsed as a DerValue is the next step. Note that n cannot be
+     * bigger than 15 (HEX "F").
      * <p>
      * Attention: do not reuse the return value. DerValue is mutable and
      * reading it advances a pointer inside.
@@ -79,7 +82,7 @@ public class DerUtils {
             } else {
                 DerInputStream ins = v.getData();
                 // skip n DerValue in the sequence
-                for (int i = 0; i < step - '0'; i++) {
+                for (int i = 0; i < Integer.parseInt(step + "", 16); i++) {
                     ins.getDerValue();
                 }
                 if (ins.available() > 0) {
@@ -123,5 +126,85 @@ public class DerUtils {
     public static void shouldNotExist(byte[] der, String location)
             throws Exception {
         Asserts.assertTrue(innerDerValue(der, location) == null);
+    }
+
+    /// Replaces a `DerValue` (deep) inside with another one.
+    ///
+    /// @param data the `DerValue`
+    /// @param target the location to edit. Cannot be empty.
+    /// @param replacement replace the value at `target` with this. Can be a `DerValue`
+    ///         or a `DerOutputStream`. Remove if `null`.
+    /// @return the new value
+    public static byte[] edit(byte[] data, String target, Object replacement)
+            throws IOException {
+        if (target.isEmpty()) throw new IOException("Must be a sub-location");
+        return modify0(data, "", target, replacement, false).toByteArray();
+    }
+
+    /// Inserts a `DerValue` (deep) into another one.
+    ///
+    /// @param data the `DerValue`
+    /// @param target the location to insert at. Cannot be empty. The new value
+    ///        is inserted before the existing value at `target`, and following
+    ///        values are shifted. After insertion, the value at `target`
+    ///        is the inserted value. A target ending exactly with `c` is not
+    ///        a valid insertion position because the content of an OCTET
+    ///        STRING must be only one `DerValue`.
+    /// @param addition the value to insert. Can be a `DerValue` or a
+    ///        `DerOutputStream`
+    /// @return the new value
+    public static byte[] insert(byte[] data, String target, Object addition)
+            throws IOException {
+        if (target.isEmpty()) throw new IOException("Must be a sub-location");
+        return modify0(data, "", target, addition, true).toByteArray();
+    }
+
+    /// Implementation of [#edit] and [#insert], recursively.
+    ///
+    /// @param data the `DerValue`
+    /// @param now the current location
+    /// @param target the location to edit or insert at
+    /// @param replacement the replacement or inserted value
+    /// @param insert true to insert before the target, false to replace it
+    /// @return the new value at this location
+    private static DerOutputStream modify0(byte[] data, String now, String target,
+            Object replacement, boolean insert) throws IOException {
+        var out = new DerOutputStream();
+        var parent = DerUtils.innerDerValue(data, now);
+        if (target.equals(now + "c")) {
+            if (insert) {
+                throw new IOException("Action cannot be performed at position " + target);
+            }
+            if (replacement instanceof DerValue v) {
+                out.putDerValue(v);
+            } else if (replacement instanceof DerOutputStream s) {
+                out.write(s);
+            }
+        } else if (target.startsWith(now + "c")) { // not there yet, go inside
+            return out.write(parent.tag, modify0(data, now + "c", target, replacement, insert));
+        } else {
+            for (int i = 0; ; i++) {
+                // We only support locations of one digit now
+                if (i > 15) throw new IllegalStateException("Too big " + i);
+                String pos = now + Integer.toHexString(i).toUpperCase(Locale.ROOT);
+                var sub = DerUtils.innerDerValue(data, pos); // current value
+                if (sub == null) break; // at the end
+                if (target.equals(pos)) { // the one we want to change
+                    if (replacement instanceof DerValue v) {
+                        out.putDerValue(v);
+                    } else if (replacement instanceof DerOutputStream s) {
+                        out.write(s);
+                    }
+                    if (insert) {
+                        out.putDerValue(sub);
+                    }
+                } else if (target.startsWith(pos)) { // not there yet, go inside
+                    out.write(modify0(data, pos, target, replacement, insert));
+                } else { // the untouched values
+                    out.putDerValue(sub);
+                }
+            }
+        }
+        return new DerOutputStream().write(parent.tag, out);
     }
 }

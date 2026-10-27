@@ -395,9 +395,7 @@ AwtMenuItem::DrawSelf(DRAWITEMSTRUCT& drawInfo)
     //draw check mark
     int checkWidth = ::GetSystemMetrics(SM_CXMENUCHECK);
     // Workaround for CR#6401956
-    if (IS_WINVISTA) {
-        AdjustCheckWidth(checkWidth);
-    }
+    AdjustCheckWidth(checkWidth);
 
     if (IsCheckbox()) {
         // means that target is a java.awt.CheckboxMenuItem
@@ -558,9 +556,7 @@ void AwtMenuItem::MeasureSelf(HDC hDC, MEASUREITEMSTRUCT& measureInfo)
     if (!IsTopMenu()) {
         int checkWidth = ::GetSystemMetrics(SM_CXMENUCHECK);
         // Workaround for CR#6401956
-        if (IS_WINVISTA) {
-            AdjustCheckWidth(checkWidth);
-        }
+        AdjustCheckWidth(checkWidth);
         measureInfo.itemWidth += checkWidth;
 
         // Add in shortcut width, if one exists.

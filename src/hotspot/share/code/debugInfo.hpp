@@ -130,6 +130,7 @@ class ObjectValue: public ScopeValue {
  protected:
   int                        _id;
   ScopeValue*                _klass;
+  ScopeValue*                _properties; // Used to pass additional data like the null marker or array properties.
   GrowableArray<ScopeValue*> _field_values;
   Handle                     _value;
   bool                       _visited;
@@ -140,9 +141,10 @@ class ObjectValue: public ScopeValue {
                                          // Otherwise false, meaning it's just a candidate
                                          // in an object allocation merge.
  public:
-  ObjectValue(int id, ScopeValue* klass = nullptr, bool is_scalar_replaced = true)
+  ObjectValue(int id, ScopeValue* klass = nullptr, bool is_scalar_replaced = true, ScopeValue* properties = nullptr)
      : _id(id)
      , _klass(klass)
+     , _properties((properties == nullptr) ? new MarkerValue() : properties)
      , _field_values()
      , _value()
      , _visited(false)
@@ -155,6 +157,7 @@ class ObjectValue: public ScopeValue {
   bool                        is_object() const           { return true; }
   int                         id() const                  { return _id; }
   virtual ScopeValue*         klass() const               { return _klass; }
+  virtual ScopeValue*         properties() const          { return _properties; }
   virtual GrowableArray<ScopeValue*>* field_values()      { return &_field_values; }
   virtual ScopeValue*         field_at(int i) const       { return _field_values.at(i); }
   virtual int                 field_size()                { return _field_values.length(); }
@@ -162,6 +165,7 @@ class ObjectValue: public ScopeValue {
   bool                        is_visited() const          { return _visited; }
   bool                        is_scalar_replaced() const  { return _is_scalar_replaced; }
   bool                        is_root() const             { return _is_root; }
+  bool                        has_properties() const      { return !_properties->is_marker(); }
 
   void                        set_id(int id)                   { _id = id; }
   virtual void                set_value(oop value);

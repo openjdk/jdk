@@ -43,13 +43,16 @@
   // Record the type of the receiver in ReceiverTypeData
   void type_profile_helper(Register mdo,
                            ciMethodData *md, ciProfileData *data,
-                           Register recv, Register temp = noreg);
+                           Register recv, Register temp);
 
   enum {
     _call_stub_size = 28,
     _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175),
     _deopt_handler_size = 7
   };
+
+  void arraycopy_valuetype_check(Register obj, Register tmp, CodeStub* slow_path, bool is_dest, bool null_check);
+  void move(LIR_Opr src, LIR_Opr dst);
 
 public:
 

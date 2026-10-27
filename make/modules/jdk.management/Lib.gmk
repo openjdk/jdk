@@ -31,21 +31,13 @@ include LibCommon.gmk
 ## Build libmanagement_ext
 ################################################################################
 
-ifeq ($(call isTargetOs, windows), true)
-  # In (at least) VS2013 and later, -DPSAPI_VERSION=1 is needed to generate
-  # a binary that is compatible with windows versions older than 7/2008R2.
-  # See MSDN documentation for GetProcessMemoryInfo for more information.
-  LIBMANAGEMENT_EXT_CFLAGS := -DPSAPI_VERSION=1
-endif
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_EXT, \
     NAME := management_ext, \
     OPTIMIZATION := HIGH, \
     DISABLED_WARNINGS_clang_UnixOperatingSystem.c := format-nonliteral, \
-    CFLAGS := $(LIBMANAGEMENT_EXT_CFLAGS), \
     JDK_LIBS := java.base:libjava java.base:libjvm, \
     LIBS_aix := -lperfstat, \
-    LIBS_windows := advapi32.lib psapi.lib, \
+    LIBS_windows := advapi32.lib, \
 ))
 
 TARGETS += $(BUILD_LIBMANAGEMENT_EXT)

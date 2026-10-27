@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ package gc.arguments;
  * @library /test/lib
  * @library /
  * @requires vm.bits == "64"
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
@@ -121,19 +122,19 @@ public class TestMaxRAMPercentage {
     long M = 1L * 1024L * 1024L;
     long headroom = 64 * M;
 
-    long requiredHostMemory = maxcoopheap + headroom;
+    long requiredTotalMemory = maxcoopheap + headroom;
 
-    // Get host memory
-    long hostMemory = wb.hostPhysicalMemory();
+    // Get total memory. This needs to be the container-aware value (if any) for the test to work
+    long totalMemory = wb.physicalMemory();
 
-    System.out.println("hostMemory: " + hostMemory + ", requiredHostMemory: " + requiredHostMemory);
+    System.out.println("totalMemory: " + totalMemory + ", requiredTotalMemory: " + requiredTotalMemory);
 
-    if (hostMemory < requiredHostMemory) {
-      throw new SkippedException("Not enough RAM on machine to run. Test skipped!");
+    if (totalMemory < requiredTotalMemory) {
+      throw new SkippedException("Not enough RAM to run. Test skipped!");
     }
 
-    double MaxRAMPercentage = ((double)maxcoopheap / hostMemory) * 100.0;
-    double headroomPercentage = ((double)headroom / hostMemory) * 100.0;
+    double MaxRAMPercentage = ((double)maxcoopheap / totalMemory) * 100.0;
+    double headroomPercentage = ((double)headroom / totalMemory) * 100.0;
 
     // Args: MaxRAMPercentage, forcecoop, expectheap, expectcoop
     checkMaxRAMSize(MaxRAMPercentage - headroomPercentage, false, maxcoopheap - (long)headroom, true);

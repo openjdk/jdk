@@ -86,13 +86,13 @@ define_pd_global(bool, PreserveFramePointer, false);
 
 define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
+define_pd_global(bool, ValueTypePassFieldsAsArgs, true);
+define_pd_global(bool, ValueTypeReturnedAsFields, true);
+
 #define ARCH_FLAGS(develop,                                                 \
                    product,                                                 \
                    range,                                                   \
                    constraint)                                              \
-                                                                            \
-  develop(bool, IEEEPrecision, true,                                        \
-          "Enables IEEE precision (for INTEL only)")                        \
                                                                             \
   product(bool, UseStoreImmI16, true,                                       \
           "Use store immediate 16-bits value instruction on x86")           \
@@ -105,7 +105,7 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
           "Highest supported AVX instructions set on x86/x64")              \
           range(0, 3)                                                       \
                                                                             \
-  product(bool, UseAPX, false, EXPERIMENTAL,                                \
+  product(bool, UseAPX, false,                                              \
           "Use Intel Advanced Performance Extensions")                      \
                                                                             \
   product(bool, UseKNLSetting, false, DIAGNOSTIC,                           \
@@ -196,7 +196,11 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
              "3 = CLWB loop; 4 = single CPUID; 5 = single SERIALIZE. "      \
              "Explicitly selected mechanism will fail at startup if "       \
              "hardware does not support it.")                               \
-             range(-1, 5)
+             range(-1, 5)                                                   \
+                                                                            \
+  product(bool, UseParallelBitInstructions, false,                          \
+          "Use PDEP/PEXT instructions")                                     \
+                                                                            \
 
 // end of ARCH_FLAGS
 

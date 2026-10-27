@@ -121,6 +121,7 @@
 
   // This platform only uses signal-based null checks. The Label is not needed.
   void null_check(Register r, Label *Lnull = nullptr) { MacroAssembler::null_check(r); }
+  void remove_frame(int frame_size_in_bytes, bool needs_stack_repair);
 
   void load_parameter(int offset_in_words, Register reg);
 

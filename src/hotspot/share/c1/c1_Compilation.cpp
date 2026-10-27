@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compileTask.hpp"
 #include "memory/resourceArea.hpp"
@@ -294,7 +295,7 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
     return;
   }
 
-  // generate code for slow cases
+  // generate code or slow cases
   assembler->emit_slow_case_stubs();
   CHECK_BAILOUT();
 
@@ -363,6 +364,7 @@ int Compilation::emit_code_body() {
   return frame_map()->framesize();
 }
 
+
 int Compilation::compile_java_method() {
   assert(!method()->is_native(), "should not reach here");
 
@@ -386,6 +388,7 @@ int Compilation::compile_java_method() {
   if (BailoutAfterHIR) {
     BAILOUT_("Bailing out because of -XX:+BailoutAfterHIR", no_frame_size);
   }
+
 
   {
     PhaseTraceTime timeit(_t_emit_lir);
@@ -423,11 +426,14 @@ void Compilation::install_code(int frame_size) {
     exception_handler_table(),
     implicit_exception_table(),
     compiler(),
+    false, // has_clinit_barriers
+    false, // for_preload
     has_unsafe_access(),
     SharedRuntime::is_wide_vector(max_vector_size()),
     has_monitors(),
     has_scoped_access(),
-    _immediate_oops_patched
+    _immediate_oops_patched,
+    should_install_code()
   );
 }
 
@@ -472,8 +478,7 @@ void Compilation::compile_method() {
   // Note: make sure we mark the method as not compilable!
   CHECK_BAILOUT();
 
-  if (should_install_code()) {
-    // install code
+  { // install code
     PhaseTraceTime timeit(_t_codeinstall);
     install_code(frame_size);
   }
@@ -554,6 +559,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _directive(directive)
 , _env(env)
 , _log(env->log())
+, _stress(_directive, _log, compiler_c1)
 , _method(method)
 , _osr_bci(osr_bci)
 , _hir(nullptr)

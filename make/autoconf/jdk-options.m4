@@ -95,6 +95,13 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_OPEN_OR_CUSTOM],
 
 AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 [
+  # Should we build a JDK with/without sound ?
+  UTIL_ARG_ENABLE(NAME: jsound, DEFAULT: true,
+      RESULT: ENABLE_JSOUND,
+      DESC: [build with sound support],
+      CHECKING_MSG: [if we should build with sound support])
+  AC_SUBST(ENABLE_JSOUND)
+
   # Should we build a JDK without a graphical UI?
   UTIL_ARG_ENABLE(NAME: headless-only, DEFAULT: false,
       RESULT: ENABLE_HEADLESS_ONLY,
@@ -790,7 +797,6 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_NOCOH],
 [
   UTIL_ARG_ENABLE(NAME: cds-archive-nocoh, DEFAULT: auto, RESULT: BUILD_CDS_ARCHIVE_NOCOH,
       DESC: [enable generation of default CDS archives for no compact object headers (requires --enable-cds-archive)],
-      DEFAULT_DESC: [auto],
       CHECKING_MSG: [if default CDS archives for no compact object headers should be generated],
       CHECK_AVAILABLE: [
         AC_MSG_CHECKING([if CDS archive with no compact object headers is available])
@@ -811,6 +817,31 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_NOCOH],
         fi
       ])
   AC_SUBST(BUILD_CDS_ARCHIVE_NOCOH)
+])
+
+AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_NOCOOPS],
+[
+  UTIL_ARG_ENABLE(NAME: cds-archive-nocoops, DEFAULT: true, RESULT: BUILD_CDS_ARCHIVE_NOCOOPS,
+      DESC: [enable generation of no compressed oops CDS archives (requires --enable-cds-archive)],
+      CHECKING_MSG: [if default CDS archives for no compressed oops should be generated])
+  AC_SUBST(BUILD_CDS_ARCHIVE_NOCOOPS)
+])
+
+AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_PREVIEW],
+[
+  UTIL_ARG_ENABLE(NAME: cds-archive-preview, DEFAULT: auto, RESULT: BUILD_CDS_ARCHIVE_PREVIEW,
+      DESC: [enable generation of preview CDS archives (requires --enable-cds-archive)],
+      CHECKING_MSG: [if default CDS archives for preview should be generated],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if value objects are supported])
+        if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
+          AC_MSG_RESULT([yes])
+        else
+          AC_MSG_RESULT([no (64-bit only)])
+          AVAILABLE=false
+        fi
+      ])
+  AC_SUBST(BUILD_CDS_ARCHIVE_PREVIEW)
 ])
 
 ################################################################################

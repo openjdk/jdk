@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package jdk.jfr.tool;
 import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
+import jdk.jfr.internal.query.Report;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 /**
@@ -35,6 +35,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @requires vm.hasJFR
  * @requires (vm.gc == "G1" | vm.gc == null)
  *           & vm.opt.ExplicitGCInvokesConcurrent != false
+ * @modules jdk.jfr/jdk.jfr.internal.query
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:-ExplicitGCInvokesConcurrent -XX:-DisableExplicitGC
  *                   -XX:+UseG1GC jdk.jfr.tool.TestView
@@ -43,10 +44,20 @@ public class TestView {
 
     public static void main(String... args) throws Throwable {
         testIncorrectUsage();
+        testViewHelp();
         String recordingFile = ExecuteHelper.createProfilingRecording().toAbsolutePath().toString();
         testEventType(recordingFile);
         testFormView(recordingFile);
         testTableView(recordingFile);
+    }
+
+    private static void testViewHelp() throws Throwable {
+        OutputAnalyzer output = ExecuteHelper.jfr("view");
+        for (Report r:  Report.getReports()) {
+            if (!output.contains(r.name())) {
+                throw new Exception("Missing view '" + r.name() + "' in help text");
+            }
+        }
     }
 
     private static void testIncorrectUsage() throws Throwable {

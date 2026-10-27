@@ -127,7 +127,6 @@
   static LIR_Opr fpu0_float_opr;
   static LIR_Opr fpu0_double_opr;
 
-  // static LIR_Opr r_profile_rng_opr;
   static LIR_Opr profile_rng_opr;
 
   static LIR_Opr as_long_opr(Register r) {
