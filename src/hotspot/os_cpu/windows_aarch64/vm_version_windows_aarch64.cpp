@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Microsoft Corporation. All rights reserved.
+ * Copyright (c) 2020, 2026, Microsoft Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,44 @@ int VM_Version::set_and_get_current_sve_vector_length(int length) {
   return VM_Version::supports_sve() ? get_sve_vector_length() : 0;
 }
 
+static bool read_central_processor_qword(const wchar_t *value_name,
+                                         uint64_t *out) {
+  // Windows exposes ID_AA64ISAR1_EL1 and ID_AA64ISAR2_EL1 as CP 4031 and CP
+  // 4032 in the Windows Registry.
+
+  *out = 0;
+  uint64_t value = 0;
+  DWORD key_type = 0;
+  DWORD data_size = sizeof(uint64_t);
+  const wchar_t *subkey = L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0";
+  LSTATUS result =
+      RegGetValueW(HKEY_LOCAL_MACHINE, subkey, value_name, RRF_RT_REG_QWORD,
+                   &key_type, &value, &data_size);
+  if (result != ERROR_SUCCESS || data_size != sizeof(uint64_t)) {
+    return false;
+  }
+
+  *out = value;
+  return true;
+}
+
+static bool is_pac_supported() {
+  uint64_t isar1 = 0;
+  uint64_t isar2 = 0;
+
+  bool isar1_present = read_central_processor_qword(L"CP 4031", &isar1);
+  bool isar2_present = read_central_processor_qword(L"CP 4032", &isar2);
+
+  // - ISAR1's APA field (bits 4 through 7): QARM5 algorithm support
+  // - ISAR1's API field (bits 8 through 11): custom algorithm support
+  // - ISAR2's APA3 field (bits 12 through 15): QARM3 algorithm support
+  // See feature descriptions of the ARM v8 architecture for details.
+  const bool is_apa = isar1_present && ((isar1 >> 4) & 0x0f) != 0;
+  const bool is_api = isar1_present && ((isar1 >> 8) & 0x0f) != 0;
+  const bool is_apa3 = isar2_present && ((isar2 >> 12) & 0x0f) != 0;
+  return is_apa || is_api || is_apa3;
+}
+
 void VM_Version::get_os_cpu_info() {
 
   if (IsProcessorFeaturePresent(PF_ARM_V8_CRC32_INSTRUCTIONS_AVAILABLE)) {
@@ -109,6 +147,9 @@ void VM_Version::get_os_cpu_info() {
   }
   if (IsProcessorFeaturePresent(PF_ARM_SHA512_INSTRUCTIONS_AVAILABLE)) {
     set_feature(CPU_SHA512);
+  }
+  if (is_pac_supported()) {
+    set_feature(CPU_PACA);
   }
 
   __int64 dczid_el0 = _ReadStatusReg(0x5807 /* ARM64_DCZID_EL0 */);

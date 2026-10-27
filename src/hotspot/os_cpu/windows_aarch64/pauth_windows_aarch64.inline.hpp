@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2021, 2026, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,10 @@
 // OS specific Support for ROP Protection in VM code.
 // For more details on PAC see pauth_aarch64.hpp.
 
+inline bool pauth_ptr_is_raw(address ptr);
+
+extern "C" address pauth_sign_win_arm64(address p);
+extern "C" address pauth_auth_win_arm64(address p);
 extern "C" address pauth_drop_signature_win_arm64(address p);
 
 inline address pauth_strip_pointer(address ptr) {
@@ -35,12 +39,20 @@ inline address pauth_strip_pointer(address ptr) {
 }
 
 inline address pauth_sign_return_address(address ret_addr) {
-  // No PAC support in windows as of yet.
+  if (VM_Version::use_rop_protection()) {
+    // A pointer cannot be double signed.
+    guarantee(pauth_ptr_is_raw(ret_addr), "Return address is already signed");
+    return pauth_sign_win_arm64(ret_addr);
+  }
   return ret_addr;
 }
 
 inline address pauth_authenticate_return_address(address ret_addr) {
-  // No PAC support in windows as of yet.
+  if (VM_Version::use_rop_protection()) {
+    ret_addr = pauth_auth_win_arm64(ret_addr);
+    // Ensure that the pointer authenticated.
+    guarantee(pauth_ptr_is_raw(ret_addr), "Return address did not authenticate");
+  }
   return ret_addr;
 }
 
