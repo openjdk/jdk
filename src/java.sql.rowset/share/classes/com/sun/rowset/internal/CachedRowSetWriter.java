@@ -1250,14 +1250,19 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
      * @throws SQLException if a database access error occurs
      */
     private String buildWhereClause(ResultSet rs) throws SQLException {
+        return buildWhereClause(rs, callerMd, params, keyCols);
+    }
+
+    private String buildWhereClause(ResultSet rs, ResultSetMetaData metaData, Object[] params, int[] keyCols)
+            throws SQLException {
         StringBuilder whereClause = new StringBuilder("WHERE ");
         for (int i = 0; i < keyCols.length; i++) {
             if (i > 0) {
                 whereClause.append("AND ");
             }
-            whereClause.append(callerMd.getColumnName(keyCols[i]));
+            whereClause.append(metaData.getColumnName(keyCols[i]));
             params[i] = rs.getObject(keyCols[i]);
-            if (rs.wasNull() == true) {
+            if (rs.wasNull()) {
                 whereClause.append(" IS NULL ");
             } else {
                 whereClause.append(" = ? ");
@@ -1269,7 +1274,6 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     void updateResolvedConflictToDB(CachedRowSet crs, Connection con) throws SQLException {
           //String updateExe = ;
           PreparedStatement pStmt  ;
-          String strWhere = "WHERE " ;
           String strExec =" ";
           String strUpdate = "UPDATE ";
           int icolCount = crs.getMetaData().getColumnCount();
@@ -1309,21 +1313,8 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
 
          // keycols will become part of where clause
          strUpdate += strSet;
-         strWhere = "WHERE ";
 
-        for (int i = 0; i < keyColumns.length; i++) {
-            if (i > 0) {
-                    strWhere += "AND ";
-            }
-            strWhere += crs.getMetaData().getColumnName(keyColumns[i]);
-            param[i] = crs.getObject(keyColumns[i]);
-            if (crs.wasNull() == true) {
-                strWhere += " IS NULL ";
-            } else {
-                strWhere += " = ? ";
-            }
-        }
-          strUpdate += strWhere;
+          strUpdate += buildWhereClause(crs, crs.getMetaData(), param, keyColumns);
 
         pStmt = con.prepareStatement(strUpdate);
 
