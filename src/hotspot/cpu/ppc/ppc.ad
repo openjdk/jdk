@@ -6108,21 +6108,20 @@ instruct encodeP_narrow_oop_shift_0(iRegNdst dst, iRegPsrc src) %{
 // Decode nodes.
 
 //  shift != 0, base != 0
-instruct decodeN(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
+instruct decodeN(iRegPdst dst, iRegNsrc src, flagsRegCR0 cr0) %{
   match(Set dst (DecodeN src));
   predicate((n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
              n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
             CompressedOops::shift() != 0 &&
             CompressedOops::base() != nullptr);
   ins_cost(4 * DEFAULT_COST); // Should be more expensive than decodeN_Disjoint_isel.
-  effect(TEMP crx);
+  effect(TEMP cr0);
 
   format %{ "DecodeN $dst, $src \t// decode nullable narrow oop" %}
   ins_encode %{
-    __ cmplwi($crx$$CondRegister, $src$$Register, 0);
-    __ sldi($dst$$Register, $src$$Register, CompressedOops::shift());
+    __ sldi_($dst$$Register, $src$$Register, CompressedOops::shift());
     __ add_const_optimized($dst$$Register, $dst$$Register, CompressedOops::base(), R0);
-    __ isel_0($dst$$Register, $crx$$CondRegister, Assembler::equal);
+    __ isel_0($dst$$Register, CR0, Assembler::equal);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6143,7 +6142,7 @@ instruct decodeN_nullBase(iRegPdst dst, iRegNsrc src) %{
 
 // Optimize DecodeN for disjoint base.
 // This node requires only one cycle on the critical path.
-instruct decodeN_Disjoint_notNull_Ex(iRegPdst dst, iRegNsrc src) %{
+instruct decodeN_Disjoint_notNull(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeN src));
   effect(TEMP_DEF dst);
   predicate((n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
@@ -6166,7 +6165,7 @@ instruct decodeN_Disjoint_isel(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
   predicate((n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
              n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
             CompressedOops::base_disjoint());
-  ins_cost(3 * DEFAULT_COST);
+  ins_cost(3 * DEFAULT_COST); // Has a lower latency than decodeN because of a better ILP.
 
   format %{ "DecodeN  $dst, $src \t// decode with disjoint base using isel" %}
   ins_encode %{
