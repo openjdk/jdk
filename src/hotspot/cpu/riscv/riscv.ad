@@ -730,10 +730,6 @@ reg_class r30_reg(
     R30, R30_H
 );
 
-reg_class r31_reg(
-    R31, R31_H
-);
-
 // Class for zero registesr
 reg_class zr_reg(
     R0, R0_H
@@ -3385,17 +3381,6 @@ operand iRegP_R28()
 operand iRegP_R30()
 %{
   constraint(ALLOC_IN_RC(r30_reg));
-  match(RegP);
-  match(iRegPNoSp);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-// Pointer 64 bit Register R31 only
-operand iRegP_R31()
-%{
-  constraint(ALLOC_IN_RC(r31_reg));
   match(RegP);
   match(iRegPNoSp);
   op_cost(0);
@@ -11944,13 +11929,13 @@ instruct stringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
 // clearing of an array
 
 instruct clearArray_reg_reg_immL0(iRegL_R29 cnt, iRegP_R28 base, immL0 zero,
-                                  iRegP_R30 tmp1, iRegP_R31 tmp2, rFlagsReg cr,
+                                  iRegP_R30 tmp1, rFlagsReg cr,
                                   Universe dummy)
 %{
   // temp registers must match the one used in StubGenerator::generate_zero_blocks()
-  predicate(UseBlockZeroing || !UseRVV);
+  predicate(!UseRVV);
   match(Set dummy (ClearArray (Binary cnt base) zero));
-  effect(USE_KILL cnt, USE_KILL base, TEMP tmp1, TEMP tmp2, KILL cr);
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp1, KILL cr);
 
   ins_cost(4 * DEFAULT_COST);
   format %{ "ClearArray $cnt, $base\t#@clearArray_reg_reg_immL0" %}
@@ -11967,13 +11952,11 @@ instruct clearArray_reg_reg_immL0(iRegL_R29 cnt, iRegP_R28 base, immL0 zero,
 %}
 
 instruct clearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, iRegL val,
-                            iRegP_R30 tmp1, iRegP_R31 tmp2, rFlagsReg cr,
-                            Universe dummy)
+                            rFlagsReg cr, Universe dummy)
 %{
-  // temp registers must match the one used in StubGenerator::generate_zero_blocks()
   predicate(((ClearArrayNode*)n)->requires_word_fill());
   match(Set dummy (ClearArray (Binary cnt base) val));
-  effect(USE_KILL cnt, USE_KILL base, TEMP tmp1, TEMP tmp2, KILL cr);
+  effect(USE_KILL cnt, USE_KILL base, KILL cr);
 
   ins_cost(4 * DEFAULT_COST);
   format %{ "ClearArray $cnt, $base, $val\t#@clearArray_reg_reg" %}
