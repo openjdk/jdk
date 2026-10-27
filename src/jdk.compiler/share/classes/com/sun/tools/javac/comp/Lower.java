@@ -3106,8 +3106,7 @@ public class Lower extends TreeTranslator {
     }
 //where
     private JCExpression convert(JCExpression tree, Type pt) {
-        if (tree.type == pt || tree.type.hasTag(BOT))
-            return tree;
+        if (tree.type == pt) return tree;
         JCExpression result = make_at(tree.pos()).TypeCast(make.Type(pt), tree);
         result.type = (tree.type.constValue() != null) ? cfolder.coerce(tree.type, pt)
                                                        : pt;

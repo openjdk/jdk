@@ -11060,20 +11060,6 @@ instruct subI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct subI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (SubI src1 src2));
-  effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr1);
-
-  format %{ "esubl    $dst, $src1, $src2\t# int ndd" %}
-  ins_encode %{
-    __ esubl($dst$$Register, $src1$$Register, $src2$$constant, false);
-  %}
-  ins_pipe(ialu_reg_reg);
-%}
-
 instruct subI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
 %{
   match(Set dst (SubI dst (LoadI src)));
@@ -11126,20 +11112,6 @@ instruct subL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
   format %{ "esubq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
     __ esubq($dst$$Register, $src1$$Register, $src2$$Register, false);
-  %}
-  ins_pipe(ialu_reg_reg);
-%}
-
-instruct subL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (SubL src1 src2));
-  effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr1);
-
-  format %{ "esubq    $dst, $src1, $src2\t# long ndd" %}
-  ins_encode %{
-    __ esubq($dst$$Register, $src1$$Register, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}

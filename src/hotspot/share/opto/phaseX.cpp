@@ -40,6 +40,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/vectornode.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -2696,13 +2697,17 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   }
   // If changed AndI/AndL inputs, check RShift/URShift users for "(x & mask) >> shift" optimization opportunity
   // LShiftNode::IdealIL optimizes patterns like: LShift(And(RShift(x, c), Y), c)
+  // Additionally, check for nested And reassociation:
+  // e.g. (x & c1) & c2 -> x & (c1 & c2)
   if (use_op == Op_AndI || use_op == Op_AndL) {
-    add_users_to_worklist_if(worklist, use, [](Node* u) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
       return u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL ||
              u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL ||
-             u->Opcode() == Op_LShiftI || u->Opcode() == Op_LShiftL;
+             u->Opcode() == Op_LShiftI || u->Opcode() == Op_LShiftL ||
+             u->Opcode() == use_op;
     });
   }
+
   // MulNode::AndIL_sum_and_mask can optimize:
   // AndX(AddX(x, y), mask) -> AndX(x, mask)
   if (use_op == Op_AddI || use_op == Op_AddL) {
@@ -2910,6 +2915,20 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (use_op == Op_LShiftCntV || use_op == Op_RShiftCntV) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
       return u->is_ShiftV();
+    });
+  }
+
+  // VectorNode::reassociate_vector_operation matches a two-hop pattern:
+  // VectorOp (Replicate INP1) (VectorOp (Replicate INP2) INP3)
+  //   => VectorOp (VectorOp (Replicate INP1) (Replicate INP2)) INP3
+  // The outer VectorOp only becomes idealizable once an input of the inner
+  // VectorOp is a Replicate, and the change of that input notifies the inner
+  // VectorOp alone.
+  if (VectorNode::is_associative_and_commutative_vector_operation(use_op) &&
+      !use->as_Vector()->is_predicated_vector()) {
+    add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
+      return u->Opcode() == use_op && !u->as_Vector()->is_predicated_vector() &&
+             (u->in(1)->Opcode() == Op_Replicate || u->in(2)->Opcode() == Op_Replicate);
     });
   }
 
