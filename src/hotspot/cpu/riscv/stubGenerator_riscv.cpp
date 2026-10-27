@@ -1054,9 +1054,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register src = x30, dst = x31, vl = x14, cnt = x15, tmp1 = x16, tmp2 = x17;
     assert_different_registers(s, d, cnt, vl, tmp1, tmp2);
     Assembler::SEW sew = Assembler::elembytes_to_sew(granularity);
-    // 128 is the target vector register group size in bytes, not a fixed copy size.
-    // Benchmarks on one 256-bit VLEN system favored m4 over m8; use m1 when a
-    // single register is already wider than the target.
+    // 128 bytes is the target vector group capacity: retain m8 for 128-bit
+    // VLEN and use m4 for 256-bit VLEN, based on measurements on one system.
     const int vector_length = static_cast<int>(VM_Version::initial_vector_length());
     const int lmul_multiplier = MAX2(128 / vector_length, 1);
     const Assembler::LMUL lmul = static_cast<Assembler::LMUL>(exact_log2(lmul_multiplier));
