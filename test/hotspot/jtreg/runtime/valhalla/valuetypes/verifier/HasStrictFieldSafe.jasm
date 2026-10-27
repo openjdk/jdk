@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+// Ensure that exception handler preserves the verification state before the putfield
+value class HasStrictFieldSafe {
+   Integer sf;
+   HasStrictFieldSafe(Integer something) {
+      try {
+        this.sf = something;
+      }
+      catch (Throwable ex) {
+        this.sf = something;
+      }
+   }
+}
+*/
+
+final class HasStrictFieldSafe version 72:65535
+{
+  final strict Field sf:"Ljava/lang/Integer;";
+
+  Method       "<init>":"(Ljava/lang/Integer;)V"
+    stack 2  locals 3
+  {
+         aload_0;
+         aload_1;
+         try               T0;
+         putfield          Field sf:"Ljava/lang/Integer;";
+         endtry            T0;
+         goto              L12;
+         catch             T0 java/lang/Throwable;
+         stack_frame_type  early_larval;
+           unset_fields    sf:"Ljava/lang/Integer;";
+           frame_type      stack1;
+             stack_map     class java/lang/Throwable;
+         pop;
+         aload_0;
+         aload_1;
+         putfield          Field sf:"Ljava/lang/Integer;";
+  L12:   stack_frame_type early_larval;
+           unset_fields;
+           frame_type  same;
+         aload_0;
+         invokespecial     Method java/lang/Object."<init>":"()V";
+         return;
+  }
+
+  LoadableDescriptors      "Ljava/lang/Integer;";
+}
