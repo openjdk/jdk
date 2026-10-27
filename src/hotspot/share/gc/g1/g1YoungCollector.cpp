@@ -428,7 +428,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
 
       // Sample card set sizes for humongous regions before GC: this makes the policy
       // to give back memory to the OS keep the most recent amount of memory for these regions.
-      if (hr->rem_set()->has_card_set_group()) {
+      if (hr->rem_set()->is_tracked()) {
         _humongous_card_set_stats.add(hr->rem_set()->card_set_memory_stats());
       }
 

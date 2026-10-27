@@ -27,6 +27,19 @@
 
 #include "gc/g1/g1CardSetGroup.hpp"
 
+// Manages card set groups for humongous objects.
+//
+// This container is the owner of all humongous object card set groups currently active.
+// Card set groups may be of any state, i.e. both Updating and Complete. Their regions are not
+// automatically eligible for eager reclaim if they are in this set.
+//
+// Card set groups for humongous objects are per humongous object. Such a card set group
+// contains all regions the humongous object covers. The first region in this group must be
+// the humongous-starts region, followed by any humongous-continues regions in address order.
+//
+// Some humongous objects may not have a card set group, for example after Full GC or when
+// tracking is dropped.
+//
 class G1HumongousCardSetGroups {
   G1CardSetGroupList _groups;
 
