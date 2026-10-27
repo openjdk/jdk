@@ -341,7 +341,7 @@ class EventRequestManagerImpl extends MirrorImpl
         }
 
         public synchronized void addInstanceFilter(ObjectReference instance) {
-            validateMirror(instance);
+            validateMirrorOrNull(instance);
             if (isEnabled() || deleted) {
                 throw invalidState();
             }
@@ -349,8 +349,14 @@ class EventRequestManagerImpl extends MirrorImpl
                 throw new UnsupportedOperationException(
                      "target does not support instance filters");
             }
+            ObjectReferenceImpl inst;
+            if (instance == null) {
+                inst = new ObjectReferenceImpl(vm, 0);
+            } else {
+                inst = (ObjectReferenceImpl)instance;
+            }
             filters.add(JDWP.EventRequest.Set.Modifier.InstanceOnly
-                                      .create((ObjectReferenceImpl)instance));
+                                      .create(inst));
         }
     }
 
