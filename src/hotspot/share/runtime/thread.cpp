@@ -488,7 +488,7 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
     }
 
     st->print("cpu=%.2fms ",
-              (double)os::thread_cpu_time(const_cast<Thread*>(this), true) / 1000000.0
+              Thread::is_revived() ? 0 : (double)os::thread_cpu_time(const_cast<Thread*>(this), true) / 1000000.0
               );
     st->print("elapsed=%.2fs ",
               (double)_statistical_info.getElapsedTime() / 1000.0
@@ -632,11 +632,11 @@ void* Thread::process_revival() {
   // Reset some VM state/options:
   ostream_revive(); // Fix tty
   SafepointSynchronize::set_is_at_safepoint();
+  UsePerfData = false; // Not relevant, also avoids ~VMThreadCPUTimeScope calling os::thread_cpu_time()
   DisplayVMOutput = 1;
   LogVMOutput = 0;
   NativeMemoryTracking = nullptr;
   UnlockDiagnosticVMOptions = true;
-  DebuggingContext::force(); // Disable asserts
   Mutex::clear_all_for_revive();
 
   // Initialize the revival data structure to return:

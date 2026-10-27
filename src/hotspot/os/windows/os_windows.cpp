@@ -63,6 +63,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/suspendedThreadTask.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
@@ -4258,7 +4259,7 @@ OSReturn os::get_native_priority(const Thread* const thread,
   }
   int os_prio = GetThreadPriority(thread->osthread()->thread_handle());
   if (os_prio == THREAD_PRIORITY_ERROR_RETURN) {
-    assert(false, "GetThreadPriority failed");
+    assert(Thread::is_revived(), "GetThreadPriority failed"); // Always assert, unless revived.
     return OS_ERR;
   }
   *priority_ptr = os_prio;

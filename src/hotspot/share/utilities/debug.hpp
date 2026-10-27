@@ -31,7 +31,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 
 class oopDesc;
 
@@ -65,7 +64,6 @@ public:
   // Asserts and other code use this to determine whether to bypass checks
   // that would otherwise lead to program termination.
   static bool is_enabled() { return _enabled > 0; }
-  static void force() { _enabled++; }
 };
 
 // VMASSERT_CHECK_PASSED(P) provides the mechanism by which DebuggingContext

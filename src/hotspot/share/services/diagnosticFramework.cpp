@@ -147,6 +147,18 @@ bool DCmdInfo::name_equals(const char* name) const {
   return strcmp(name, this->name()) == 0;
 }
 
+JavaThread* get_thread() {
+  // For exception macros
+  JavaThread* thread = nullptr;
+  if (!Thread::is_revived()) {
+    thread = JavaThread::current();
+  } else {
+    thread = static_cast<JavaThread*>(Thread::current()); // avoid assert
+  }
+  return thread;
+}
+
+
 void DCmdParser::add_dcmd_option(GenDCmdArgument* arg) {
   assert(arg != nullptr, "Sanity");
   if (_options == nullptr) {
@@ -159,7 +171,8 @@ void DCmdParser::add_dcmd_option(GenDCmdArgument* arg) {
     o->set_next(arg);
   }
   arg->set_next(nullptr);
-  JavaThread* THREAD = JavaThread::current(); // For exception macros.
+
+  JavaThread* THREAD = get_thread();
   arg->init_value(THREAD);
   if (HAS_PENDING_EXCEPTION) {
     fatal("Initialization must be successful");
@@ -178,7 +191,8 @@ void DCmdParser::add_dcmd_argument(GenDCmdArgument* arg) {
     a->set_next(arg);
   }
   arg->set_next(nullptr);
-  JavaThread* THREAD = JavaThread::current(); // For exception macros.
+
+  JavaThread* THREAD = get_thread();
   arg->init_value(THREAD);
   if (HAS_PENDING_EXCEPTION) {
     fatal("Initialization must be successful");
