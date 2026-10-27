@@ -58,6 +58,8 @@ extern void vm_shutdown_during_initialization(const char* error, const char* mes
 
 extern void vm_exit_during_cds_dumping(const char* error, const char* message = nullptr);
 
+extern void print_statistics_before_exit();
+
 // This is defined in linkType.cpp due to linking restraints
 extern bool is_vm_statically_linked();
 

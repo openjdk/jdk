@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,6 @@
 package jdk.jfr.internal.util;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.RandomAccessFile;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
 import java.lang.reflect.Array;
@@ -133,11 +130,6 @@ public final class Utils {
         } catch (NoSuchMethodException e) {
             return null;
         }
-    }
-
-    public static void touch(Path dumpFile) throws IOException {
-        RandomAccessFile raf = new RandomAccessFile(dumpFile.toFile(), "rw");
-        raf.close();
     }
 
     public static Class<?> unboxType(Class<?> t) {

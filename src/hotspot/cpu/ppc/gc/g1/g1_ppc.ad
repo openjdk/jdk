@@ -419,43 +419,9 @@ instruct g1CompareAndExchangeN_acq(iRegNdst res, indirect mem, iRegNsrc oldval, 
   ins_pipe(pipe_class_default);
 %}
 
-instruct g1CompareAndSwapP(iRegIdst res, indirect mem, iRegPsrc oldval, iRegPsrc newval, iRegPdst tmp, flagsRegCR0 cr0)
-%{
-  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0 &&
-            (((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst));
-  match(Set res (CompareAndSwapP mem (Binary oldval newval)));
-  effect(TEMP_DEF res, TEMP tmp, KILL cr0);
-  format %{ "CMPXCHGD $res, $mem, $oldval, $newval; as bool; ptr" %}
-  ins_encode %{
-    Label no_update;
-    __ li($res$$Register, 0);
-    __ cmpxchgd(CR0, R0, $oldval$$Register, $newval$$Register, $mem$$Register,
-                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, &no_update, true);
-    // Pass oldval to SATB which is the only value which can get overwritten.
-    // Can be done after cmpxchg because there's no safepoint here.
-    pre_write_barrier(masm, this,
-                      noreg,
-                      $oldval$$Register /* pre_val */,
-                      $tmp$$Register,
-                      $res$$Register /* temp */,
-                      RegSet::of($mem$$Register, $newval$$Register) /* preserve */,
-                      RegSet::of($res$$Register) /* no_preserve */);
-    post_write_barrier(masm, this,
-                       $mem$$Register,
-                       $newval$$Register,
-                       $tmp$$Register,
-                       $res$$Register /* temp */);
-    __ li($res$$Register, 1);
-    __ bind(no_update);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 instruct g1CompareAndSwapP_acq(iRegIdst res, indirect mem, iRegPsrc oldval, iRegPsrc newval, iRegPdst tmp, flagsRegCR0 cr0)
 %{
-  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0 &&
-            (((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst));
+  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0);
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   effect(TEMP_DEF res, TEMP tmp, KILL cr0);
   format %{ "CMPXCHGD acq $res, $mem, $oldval, $newval; as bool; ptr" %}
@@ -491,44 +457,9 @@ instruct g1CompareAndSwapP_acq(iRegIdst res, indirect mem, iRegPsrc oldval, iReg
   ins_pipe(pipe_class_default);
 %}
 
-instruct g1CompareAndSwapN(iRegIdst res, indirect mem, iRegNsrc oldval, iRegNsrc newval, iRegPdst tmp, flagsRegCR0 cr0)
-%{
-  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0 &&
-            (((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst));
-  match(Set res (CompareAndSwapN mem (Binary oldval newval)));
-  effect(TEMP_DEF res, TEMP tmp, KILL cr0);
-  format %{ "CMPXCHGW $res, $mem, $oldval, $newval; as bool; ptr" %}
-  ins_encode %{
-    Label no_update;
-    __ li($res$$Register, 0);
-    __ cmpxchgw(CR0, R0, $oldval$$Register, $newval$$Register, $mem$$Register,
-                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, &no_update, true);
-    // Pass oldval to SATB which is the only value which can get overwritten.
-    // Can be done after cmpxchg because there's no safepoint here.
-    pre_write_barrier(masm, this,
-                      noreg,
-                      $oldval$$Register /* pre_val */,
-                      $tmp$$Register,
-                      $res$$Register /* temp */,
-                      RegSet::of($mem$$Register, $newval$$Register) /* preserve */,
-                      RegSet::of($res$$Register) /* no_preserve */);
-    post_write_barrier(masm, this,
-                       $mem$$Register,
-                       $newval$$Register,
-                       $tmp$$Register,
-                       $res$$Register /* temp */,
-                       true /* decode_new_val */);
-    __ li($res$$Register, 1);
-    __ bind(no_update);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 instruct g1CompareAndSwapN_acq(iRegIdst res, indirect mem, iRegNsrc oldval, iRegNsrc newval, iRegPdst tmp, flagsRegCR0 cr0)
 %{
-  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0 &&
-            (((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst));
+  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0);
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
   effect(TEMP_DEF res, TEMP tmp, KILL cr0);
   format %{ "CMPXCHGW acq $res, $mem, $oldval, $newval; as bool; ptr" %}
