@@ -454,8 +454,8 @@ void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm, Register zpointer
       __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr());
     }
 
-   // Restoring float registers corrupts the lower 64 bits of the corresponding vector register
-   // Restore these values
+    // Restoring float registers corrupts the lower 64 bits of the corresponding vector register
+    // Restore these values
     __ z_vrepg(_vec_load_bad, _vec_load_bad, 0);
     __ z_vrepg(_vec_store_bad, _vec_store_bad, 0);
     __ z_vrepg(_vec_store_good, _vec_store_good, 0);
