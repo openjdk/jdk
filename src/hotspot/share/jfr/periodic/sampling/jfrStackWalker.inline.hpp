@@ -36,12 +36,9 @@
 
 void JfrStackWalker::check_and_process_requests(JavaThread* jt) {
   JfrStackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
-  // Protect agains re-entrant calls. This can happen when we are
-  // currently processing sampling requests and one is calling into
-  // a JVMTI callback. Calling into a callback requires that we
-  // transition the thread state from VM to native, which also
-  // involves a safepoint check. That safepoint would then go ahead
-  // and call into JFR again.
+  // Protect against re-entrant calls. This thread holds its own dequeue lock
+  // while it processes its requests, so if anything during processing polls
+  // for a safepoint, coming back in here would spin on that lock forever.
   if (tl.has_requests() && !tl.is_processing_requests()) {
     tl.set_processing_requests(true);
     process_requests(jt);

@@ -92,8 +92,10 @@ public:
   }
 };
 
-// Fixed size async-signal-safe SPSC linear queue backed by an array.
-// Designed to be only used under lock and read linearly
+// Async-signal-safe queue of stack-walk requests, backed by an array that can
+// grow between drains. Producers (signal handlers on the thread itself, or other
+// threads requesting its stack trace) and the consumer are serialized by the
+// thread's queue lock, and the consumer drains the queue linearly.
 class JfrStackWalkerRequestQueue {
 
   static constexpr u4 INITIAL_CAPACITY = 20;
