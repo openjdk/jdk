@@ -499,7 +499,7 @@ void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm, VectorRegister Vd
     __ z_vl(Vscratch, Address(dst));
     __ z_vn(Vscratch, Vscratch, _vec_store_bad);
     __ z_vtm(Vscratch, Vscratch);
-    __ branch_optimized(Assembler::bcondNotZero, fallback);
+    __ branch_optimized(Assembler::bcondNotAllZero, fallback);
   }
 
   __ z_vo(Vdata, Vdata, _vec_store_good);
