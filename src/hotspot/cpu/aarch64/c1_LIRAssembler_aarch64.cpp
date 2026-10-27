@@ -2915,7 +2915,9 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
                   dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
       __ ret(lr);
     }
-#endif//  __APPLE__
+#else
+    (void)counter_contents ;
+#endif //  __APPLE__
 
     if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
 
