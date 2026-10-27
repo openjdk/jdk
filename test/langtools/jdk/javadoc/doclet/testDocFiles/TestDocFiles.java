@@ -201,14 +201,10 @@ public class TestDocFiles extends JavadocTester {
 
         // Files should be copied without changes.
         checkFiles(false, "p/doc-files/README.html");
-        checkOutput("p/doc-files/README.MD", true, """
-                    README
-                    ======
-                    This is *not* recognized as Markdown file by javadoc.
-                    """);
-        checkOutput("p/doc-files/INDEX.HTML", true, """
-                    This is not recognized as HTML doc file by {@code javadoc}.
-                    """);
+        checkOutput("p/doc-files/README.MD", true, "README", "======",
+                "This is *not* recognized as Markdown file by javadoc.");
+        checkOutput("p/doc-files/INDEX.HTML", true,
+                "This is not recognized as HTML doc file by {@code javadoc}.");
     }
 
 }
