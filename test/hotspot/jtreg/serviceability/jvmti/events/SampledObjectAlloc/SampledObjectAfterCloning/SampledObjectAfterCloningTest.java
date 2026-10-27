@@ -25,7 +25,10 @@
  * @test
  * @bug 8383787
  * @summary Test verifies that SampledObjectAlloc event is called after clone().
+ * SetHeapSamplingInterval might be not generated with Xcomp for every allocation.
+ *
  * @requires vm.jvmti
+ * @requires vm.compMode != "Xcomp"
  * @run main/othervm/native -agentlib:SampledObjectAfterCloning SampledObjectAfterCloningTest
  */
 
