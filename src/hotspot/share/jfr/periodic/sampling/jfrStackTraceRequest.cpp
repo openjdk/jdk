@@ -64,12 +64,16 @@ static void process_stack_trace_request(JavaThread* jt, JfrStackWalkRequest& req
     bool biased;
     const bool walked = JfrStackWalker::walk(request, jt, sid, tid, biased);
     event.set_starttime(payload.sample_ticks);
-    event.set_eventThread(tid);
     event.set_stackTrace(sid);
     event.set_userData(payload.user_data);
     event.set_failed(!walked);
     event.set_biased(walked && biased);
+    // The event belongs to the requested thread, whichever thread processes it.
+    Thread* const current = Thread::current();
+    JfrThreadLocal::impersonate(current, tid);
+    assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
     event.commit();
+    JfrThreadLocal::stop_impersonating(current);
   } else {
     // Throttled, or the event was disabled after the request was made.
     jt->jfr_thread_local()->increment_stack_trace_requests_lost();
