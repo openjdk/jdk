@@ -46,8 +46,8 @@ public class TransferRemove {
     private static final int PAIRS = 4;
 
     public static void main(String[] args) throws Exception {
-        var threads = new ArrayList<Thread>();
-        var queues = new ArrayList<LinkedTransferQueue<Object>>();
+        var threads = new ArrayList<Thread>(PAIRS * 2);
+        var queues = new ArrayList<LinkedTransferQueue<Object>>(PAIRS);
         for(int pair = 0; pair < PAIRS; pair++) {
             var queue = new LinkedTransferQueue<Object>();
             Object token = new Object();
