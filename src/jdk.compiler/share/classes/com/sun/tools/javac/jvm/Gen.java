@@ -781,12 +781,78 @@ public class Gen extends JCTree.Visitor {
             code.undefineVariablesInChain(result.falseJumps, limit);
             code.undefineVariablesInChain(result.trueJumps, limit);
             return result;
+        } else if (inner_tree instanceof JCTypeCast cast) {
+            //as part of condition, the cast must always be (boolean), assert that holds:
+            Assert.check(cast.type.hasTag(BOOLEAN));
+            CondItem result = genCond(cast.expr, markBranches);
+            setTypeAnnotationPositions(cast.pos);
+            return result;
+        } else if (inner_tree instanceof JCMethodInvocation mi &&
+                   mi.boxingKind == JCMethodInvocation.BoxingKind.UNBOX &&
+                   ((JCFieldAccess) mi.meth).selected instanceof JCTree unboxedValue &&
+                   findDeepestCast(unboxedValue) instanceof JCTypeCast deepestCast &&
+                   deepestCast.expr instanceof JCMethodInvocation boxing &&
+                   boxing.boxingKind == JCMethodInvocation.BoxingKind.BOX) {
+            //case like:
+            //(Boolean) (b && (result = 1) > 0)
+            //expanded to:
+            //((Boolean)Boolean.valueOf((b && (result = 1) > 0))).booleanValue()
+            //it is impossible to correctly track variable DA across the method calls,
+            //so call after evaluating the actual condition,
+            //keep the true and false branches separate
+            //note that in place of (Boolean), there may be multiple casts,
+            //to different types, including (Boolean) (Object) (String) (Object) (Boolean)
+
+            //generate the actual condition:
+            JCExpression boxedValue = boxing.args.head;
+            CondItem value = genCond(boxedValue, markBranches);
+
+            //now generate the cast cascade, once for true and once for false,
+            //ignoring the resulting value, but preserving the codepath:
+            ClassSymbol jlBoolean = types.boxedClass(syms.booleanType);
+
+            Chain secondJumps = value.jumpFalse();
+            code.resolve(value.trueJumps);
+            make.at(boxing.args.head);
+            VarSymbol _true =
+                    rs.resolveInternalField(_tree, attrEnv, jlBoolean.type, names.TRUE);
+            deepestCast.expr = make.QualIdent(_true);
+            genExpr(unboxedValue, unboxedValue.type).drop();
+            Chain trueJumps = code.branch(goto_);
+
+            code.resolve(secondJumps);
+            make.at(boxing.args.head);
+            VarSymbol _false =
+                    rs.resolveInternalField(_tree, attrEnv, jlBoolean.type, names.FALSE);
+            deepestCast.expr = make.QualIdent(_false);
+            genExpr(unboxedValue, unboxedValue.type).drop();
+            Chain falseJumps = code.branch(goto_);
+
+            CondItem result = items.makeCondItem(goto_,
+                                      trueJumps,
+                                      falseJumps);
+            if (markBranches) result.tree = _tree;
+
+            deepestCast.expr = boxing;
+
+            return result;
         } else {
             CondItem result = genExpr(_tree, syms.booleanType).mkCond();
             if (markBranches) result.tree = _tree;
             return result;
         }
     }
+        //where:
+        JCTree findDeepestCast(JCTree source) {
+            JCTree lastTypeCast = null;
+
+            while (TreeInfo.skipParens(source) instanceof JCTypeCast tc) {
+                lastTypeCast = tc;
+                source = tc.expr;
+            }
+
+            return lastTypeCast;
+        }
 
     public Code getCode() {
         return code;

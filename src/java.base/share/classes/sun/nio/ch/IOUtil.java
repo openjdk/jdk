@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,13 +190,25 @@ public final class IOUtil {
                 int lim = buf.limit();
                 assert (pos <= lim);
                 int rem = (pos <= lim ? lim - pos : 0);
-                if (directIO)
+
+                if (directIO) {
                     Util.checkRemainingBufferSizeAligned(rem, alignment);
+                    if (buf instanceof DirectBuffer) {
+                        Util.checkBufferPositionAligned(buf, pos, alignment);
+                    }
+                }
 
                 if (rem > 0) {
                     long headroom = WRITEV_MAX - writevLen;
-                    if (headroom < rem)
-                        rem = (int)headroom;
+                    if (headroom < rem) {
+                        if (directIO) {
+                            headroom -= headroom % alignment;
+                            if (headroom == 0) {
+                                break;
+                            }
+                        }
+                        rem = (int) headroom;
+                    }
 
                     vec.setBuffer(iov_len, buf, pos, rem);
 
@@ -404,8 +416,12 @@ public final class IOUtil {
                 assert (pos <= lim);
                 int rem = (pos <= lim ? lim - pos : 0);
 
-                if (directIO)
+                if (directIO) {
                     Util.checkRemainingBufferSizeAligned(rem, alignment);
+                    if (buf instanceof DirectBuffer) {
+                        Util.checkBufferPositionAligned(buf, pos, alignment);
+                    }
+                }
 
                 if (rem > 0) {
                     vec.setBuffer(iov_len, buf, pos, rem);

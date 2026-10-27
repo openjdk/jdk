@@ -266,8 +266,11 @@ local z_size_t gz_write(gz_statep state, voidpc buf, z_size_t len) {
             n -= state->strm.avail_in;
             state->x.pos += n;
             len -= n;
-            if (ret == -1)
+            if (ret == -1) {
+                state->strm.avail_in = 0;
+                state->strm.next_in = state->in;
                 return state->again ? put - len : 0;
+            }
         } while (len);
     }
 
@@ -407,7 +410,8 @@ local int gz_vacate(gz_statep state) {
     z_streamp strm;
 
     strm = &(state->strm);
-    if (strm->next_in + strm->avail_in <= state->in + state->size)
+    if (strm->next_in == NULL ||
+        strm->next_in + strm->avail_in <= state->in + state->size)
         return 0;
     (void)gz_comp(state, Z_NO_FLUSH);
     if (strm->avail_in == 0) {
@@ -467,6 +471,7 @@ int ZEXPORTVA gzvprintf(gzFile file, const char *format, va_list va) {
                a Z_BUF_ERROR to let the application know that this gzprintf()
                needs to be retried. */
             gz_error(state, Z_BUF_ERROR, "stalled write on gzprintf");
+            return state->err;
         }
         if (!state->again)
             return state->err;
