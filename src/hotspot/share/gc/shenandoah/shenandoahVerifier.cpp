@@ -562,6 +562,28 @@ private:
         ShouldNotReachHere();
     }
 
+    if (r->is_humongous()) {
+      uint32_t start_index = r->humongous_start_region();
+
+      verify(r, !r->is_humongous() || start_index != ShenandoahHeapRegion::UndefinedRegionIndex,
+             "Humongous region must have a valid start region index");
+
+      ShenandoahHeapRegion* start_region = _heap->get_region(start_index);
+
+      verify(r, !r->is_humongous_start() || (start_index == r->index()),
+           "Humongous start region must identify itself as its own start");
+
+      verify(r, !r->is_humongous() || start_region->is_humongous_start(),
+           "Humongous start region must be is_humongous_start()");
+
+      oop p = cast_to_oop(start_region->bottom());
+      size_t word_size = p->size();
+      size_t num_regions = ShenandoahHeapRegion::required_regions(word_size * HeapWordSize);
+
+      verify(r, !r->is_humongous() || (r->index() - start_index <= num_regions - 1),
+             "Humongous start region must span region");
+    }
+
     verify(r, r->capacity() == ShenandoahHeapRegion::region_size_bytes(),
            "Capacity should match region size");
 
