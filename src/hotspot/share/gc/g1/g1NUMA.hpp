@@ -32,14 +32,28 @@
 
 class LogStream;
 
+// Provides helpers for NUMA support.
+//
+// * mapping between preferred OS NUMA node ids and an internal zero-based index and back.
+//
+//   Preferred OS NUMA node ids for the current process may be sparse sets of integers. To avoid
+//   unnecessary pollution of caches, we map these to internal indexes, that are then used to access
+//   internal NUMA data structures.
+//
+// * finding internal node index for a given G1HeapRegion or an address in the Java heap.
+//
+// * assigning memory to preferred NUMA nodes
+//
+// * statistics
+//
 class G1NUMA: public CHeapObj<mtGC> {
-  // Mapping of available node ids to  0-based index which can be used for
-  // fast resource management. I.e. for every node id provides a unique value in
-  // the range from [0, {# of nodes-1}].
-  // For invalid node id, return UnknownNodeIndex.
+  // Mapping of preferred OS NUMA node ids to a zero-based index which is internally used for
+  // faster resource management.
+  // Allowed OS NUMA node ids may be more than the preferred ones so this array conservatively covers
+  // all possible OS NUMA node ids. OS NUMA node ids outside the preferred set map to UnknownNodeIndex.
   uint* _node_id_to_index_map;
-  // Maximum number of (OS) NUMA nodes.
-  uint _max_num_nodes;
+  // Maximum number of (OS) NUMA nodes in the system, size of the _node_id_to_index_map.
+  uint _max_num_node_ids;
 
   // Current active node ids.
   uint* _node_ids;

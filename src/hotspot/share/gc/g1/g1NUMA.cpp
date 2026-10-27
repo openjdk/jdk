@@ -66,12 +66,12 @@ const uint* G1NUMA::node_ids() const {
 }
 
 uint G1NUMA::index_of_node_id(uint node_id) const {
-  precond(node_id < _max_num_nodes);
+  precond(node_id < _max_num_node_ids);
   return _node_id_to_index_map[node_id];
 }
 
 G1NUMA::G1NUMA() :
-  _node_id_to_index_map(nullptr), _max_num_nodes(0),
+  _node_id_to_index_map(nullptr), _max_num_node_ids(0),
   _node_ids(nullptr), _num_active_node_ids(0),
   _region_size(0), _page_size(0), _stats(nullptr) {
 }
@@ -82,8 +82,8 @@ void G1NUMA::initialize_without_numa() {
   _node_ids = NEW_C_HEAP_ARRAY(uint, _num_active_node_ids, mtGC);
   _node_ids[0] = 0;
   // Map index 0 to node 0
-  _max_num_nodes = 1;
-  _node_id_to_index_map = NEW_C_HEAP_ARRAY(uint, _max_num_nodes, mtGC);
+  _max_num_node_ids = 1;
+  _node_id_to_index_map = NEW_C_HEAP_ARRAY(uint, _max_num_node_ids, mtGC);
   _node_id_to_index_map[0] = 0;
 }
 
@@ -95,14 +95,14 @@ void G1NUMA::initialize(bool use_numa) {
 
   guarantee(UseNUMA, "Must be enabled");
 #ifdef LINUX
-  const int max_num_nodes = os::Linux::numa_max_node() + 1;
-  if (max_num_nodes < 1) {
+  const int max_num_node_ids = os::Linux::numa_max_node() + 1;
+  if (max_num_node_ids < 1) {
     vm_exit_during_initialization("Cannot determine maximum number of available NUMA nodes. Run without NUMA using -XX:-UseNUMA");
   }
-  _max_num_nodes = checked_cast<uint>(max_num_nodes);
+  _max_num_node_ids = checked_cast<uint>(max_num_node_ids);
 #endif /* LINUX */
   const size_t num_node_ids = os::numa_get_groups_num();
-  if (num_node_ids > _max_num_nodes) {
+  if (num_node_ids > _max_num_node_ids) {
     vm_exit_during_initialization("Cannot determine the number of available NUMA nodes. Run without NUMA using -XX:-UseNUMA");
   }
 
@@ -111,10 +111,10 @@ void G1NUMA::initialize(bool use_numa) {
   _num_active_node_ids = checked_cast<uint>(os::numa_get_leaf_groups(_node_ids, num_node_ids));
 
   // Create a mapping between node_id and index.
-  _node_id_to_index_map = NEW_C_HEAP_ARRAY(uint, _max_num_nodes, mtGC);
+  _node_id_to_index_map = NEW_C_HEAP_ARRAY(uint, _max_num_node_ids, mtGC);
 
   // Set all indices with unknown node id.
-  for (uint i = 0; i < _max_num_nodes; i++) {
+  for (uint i = 0; i < _max_num_node_ids; i++) {
     _node_id_to_index_map[i] = G1NUMA::UnknownNodeIndex;
   }
 
