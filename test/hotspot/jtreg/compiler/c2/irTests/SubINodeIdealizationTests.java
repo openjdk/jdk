@@ -30,7 +30,7 @@ import compiler.lib.ir_framework.*;
  * @bug 8267265 8392563
  * @summary Test that Ideal transformations of SubINode* are being performed as expected.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.SubINodeIdealizationTests
+ * @run driver ${test.main.class}
  */
 public class SubINodeIdealizationTests {
     public static void main(String[] args) {
@@ -44,7 +44,8 @@ public class SubINodeIdealizationTests {
                  "test13", "test14", "test15",
                  "test16", "test17", "test18",
                  "test19", "test20", "test21",
-                 "test22","test23"})
+                 "test22", "test23", "test24",
+                 "test25"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
@@ -84,6 +85,8 @@ public class SubINodeIdealizationTests {
         Asserts.assertEQ(a*b - c*a        , test21(a, b, c));
         Asserts.assertEQ(Math.max(Integer.MIN_VALUE - ((a & 1) | 2), 0), test22(a));
         Asserts.assertEQ(Math.min(Integer.MAX_VALUE - (a | -2), 0), test23(a));
+        Asserts.assertEQ(0                , test24(a, b));
+        Asserts.assertEQ(8                , test25(a, b));
     }
 
     @Test
@@ -269,5 +272,24 @@ public class SubINodeIdealizationTests {
     public int test23(int x) {
         int value = Integer.MAX_VALUE - (x | -2);
         return Math.min(value, 0);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.AND, IRNode.LSHIFT, IRNode.SUB})
+    // Both x and y have 3 trailing zeros, so (x - y) has 3 trailing zeros
+    public int test24(int x, int y) {
+        x <<= 3;
+        y <<= 3;
+        return (x - y) & 7;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD, IRNode.AND, IRNode.OR, IRNode.SUB})
+    // The compiler should be able to conclude that x - y ends with 0b010xx and constant-fold the
+    // method
+    public int test25(int x, int y) {
+        x = (x & -31) | 0b10010; // x ends with 0b1001x
+        y = (y & -31) | 0b1000;  // y ends with 0b0100x
+        return (x - y) & 0b11100;
     }
 }

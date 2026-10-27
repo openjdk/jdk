@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import compiler.lib.ir_framework.*;
  * @bug 8267265
  * @summary Test that Ideal transformations of AddLNode* are being performed as expected.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.AddLNodeIdealizationTests
+ * @run driver ${test.main.class}
  */
 public class AddLNodeIdealizationTests {
     public static void main(String[] args) {
@@ -45,7 +45,8 @@ public class AddLNodeIdealizationTests {
                  "test14", "test15", "test16",
                  "test17", "test18", "test19",
                  "test20", "test21", "test22",
-                 "test23", "test24"})
+                 "test23", "test24", "test25",
+                 "test26"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -89,6 +90,8 @@ public class AddLNodeIdealizationTests {
         Asserts.assertEQ((a - b) + -123_456_788_877L    , test22(a, b));
         Asserts.assertEQ(Math.max(a, b) + Math.min(a, b), test23(a, b));
         Asserts.assertEQ(Math.min(a, b) + Math.max(a, b), test24(a, b));
+        Asserts.assertEQ(0L                             , test25(a, b));
+        Asserts.assertEQ(8L                             , test26(a, b));
     }
 
     @Test
@@ -305,5 +308,24 @@ public class AddLNodeIdealizationTests {
     // Checks Math.min(a, b) + Math.max(a, b) => a + b
     public long test24(long a, long b) {
         return Math.min(a, b) + Math.max(a, b);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD, IRNode.AND, IRNode.LSHIFT})
+    // Both x and y have 3 trailing zeros, so (x + y) has 3 trailing zeros
+    public long test25(long x, long y) {
+        x <<= 3;
+        y <<= 3;
+        return (x + y) & 7;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD, IRNode.AND, IRNode.LSHIFT, IRNode.OR})
+    // The compiler should be able to conclude that x + y ends with 0b010xx and constant-fold the
+    // method
+    public long test26(long x, long y) {
+        x = (x & -31) | 0b100; // x ends with 0b0010x
+        y = (y & -31) | 0b100; // y ends with 0b0010x
+        return (x + y) & 0b11100;
     }
 }
