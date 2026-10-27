@@ -716,6 +716,63 @@ void ClassVerifier::create_method_sig_entry(sig_as_verification_types* sig_verif
   assert(is_unique, "Duplicate entries in method_signature_table");
 }
 
+#ifdef ASSERT
+// These assertion checking helpers manage a running sample of the exception state
+// for each opcode.  Each sampled state is a candidate for merging into an exception
+// handler.  The assertion runs at the bottom of verify_method, where some catch-all
+// logic (commented "CATCH-ALL") is responsible for merging exception states into any
+// applicable handlers.  This logic only runs if the opcode did not already perform
+// exception propagation; those specialized opcodes set `verified_exc_handlers`.
+//
+// The assertion demands that any merged exception state will be identical to the
+// state BEFORE the opcode that might raise an exception.  (Note that all opcodes are
+// assumed to be capable of raising exceptions.)  In order to check the assertion, we
+// need to look back at the incoming state, before the opcode.  But the verifier
+// modifies the frame state destructively, so our look-back requires a distinct copy
+// of the frame state, updated differently.  See the assertion code at the catch-all
+// for additional details.
+static bool is_same_unset_field_table(const StackMapFrame* exf, const StackMapFrame* src) {
+  // for this test, treat null table pointer and empty table as "the same"
+  if (exf->verify_unset_fields_satisfied() && src->verify_unset_fields_satisfied()) {
+    return true;  // usual case, non-<init>, and/or no strict field tracking
+  }
+  // run the compatibility test in both directions to derive "sameness"
+  return (exf->verify_unset_fields_compatibility(src->assert_unset_fields()) &&
+          src->verify_unset_fields_compatibility(exf->assert_unset_fields()));
+}
+
+
+static StackMapFrame* copy_exception_frame(StackMapFrame* src) {
+  StackMapFrame* exf = StackMapFrame::copy(src);
+  exf->clear_stack();  // exception frame never merges stack states
+  return exf;
+}
+
+static void refresh_exception_frame(StackMapFrame* exf, const StackMapFrame* src) {
+  exf->set_offset(src->offset());  // not checked, but useful for debug output
+  exf->set_locals_size(src->locals_size());
+  exf->copy_locals(src);
+  exf->set_flags(src->flags());
+  if (!is_same_unset_field_table(exf, src)) {
+    // this next operation allocates, so gate it by the faster equality test
+    exf->set_assert_unset_fields(src->assert_unset_fields());
+  }
+}
+
+static bool is_same_exception_frame(const StackMapFrame* exf, const StackMapFrame* src) {
+  int lsize = src->locals_size();
+  if (exf->flags() != src->flags() ||
+      exf->locals_size() != lsize ||
+      !is_same_unset_field_table(exf, src)) {
+    return false;
+  }
+  for (int32_t i = 0; i < lsize; i++) {
+      if (exf->locals()[i] != src->locals()[i])  return false;
+  }
+  return true;
+}
+#endif //ASSERT
+
 void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
   HandleMark hm(THREAD);
   _method = m;   // initialize _method
@@ -796,6 +853,10 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
                                 // flow from current instruction to the next
                                 // instruction in sequence
 
+  // For asserts, keep a running copy of the state incoming to each bytecode.
+  // It will be treated as an exception state, so it will never have stacked items.
+  // We build one object outside the loop and update it to track each incoming state.
+  DEBUG_ONLY(StackMapFrame* exception_frame = copy_exception_frame(&current_frame));
   Bytecodes::Code opcode;
   while (!bcs.is_last_bytecode()) {
     // Check for recursive re-verification before each bytecode.
@@ -829,6 +890,8 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         lt.print("offset = %d,  opcode = %s", bci,
                  opcode == Bytecodes::_illegal ? "illegal" : Bytecodes::name(opcode));
       }
+
+      DEBUG_ONLY(refresh_exception_frame(exception_frame, &current_frame));
 
       // Make sure wide instruction is in correct format
       if (bcs.is_wide()) {
@@ -1853,9 +1916,11 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
       }  // end switch
     }  // end Merge with the next instruction
 
+    // CATCH-ALL for wiring up exception states, when the opcode did nothing special.
     // Look for possible jump target in exception handlers and see if it matches
     // current_frame.  Don't do this check if it has been done earlier, as reported
-    // by verified_exc_handlers.  Early checks include [a,d,f,i,l]store* opcodes,
+    // by verified_exc_handlers.  Early checks happen with [a,d,f,i,l]store* opcodes,
+    // the putfield opcode (only in early larval <init>, for strict field tracking),
     // and the special processing of invokespecial <init> in verify_invoke_init,
     // which makes a special distinction between exception states and normal ones.
     // For all other bytecodes, the state that must be passed to exception handlers
@@ -1863,6 +1928,15 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
     // See StackMapFrame::frame_in_exception_handler for more details.
     if (!verified_exc_handlers && bci >= ex_min && bci < ex_max) {
       if (was_recursively_verified()) return;
+#ifdef ASSERT
+      if (!is_same_exception_frame(exception_frame, &current_frame)) {
+        tty->print("incoming: "); exception_frame->print_on(tty);
+        tty->print("current:  "); current_frame.print_on(tty);
+        assert(false, "exception must apply to incoming frame, not post-opcode frame");
+        // If you hit this assert, the offending bytecode needs its own logic that
+        // propagates exceptions and sets verified_exc_handlers.
+      }
+#endif //ASSERT
       verify_exception_handler_targets(
         bci, VerificationType::top_type(), &current_frame, &stackmap_table, CHECK_VERIFY(this));
     }
