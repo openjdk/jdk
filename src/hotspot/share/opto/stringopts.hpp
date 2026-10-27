@@ -38,7 +38,7 @@ class PhaseStringOpts : public Phase {
   PhaseGVN* _gvn;
 
   // List of dead nodes to clean up aggressively at the end
-  Unique_Node_List dead_worklist;
+  Unique_Node_List<Node> dead_worklist;
 
   // Memory slices needed for code gen
   int byte_adr_idx;
@@ -47,7 +47,7 @@ class PhaseStringOpts : public Phase {
   VectorSet _visited;
 
   // Collect a list of all SB.toString calls
-  Node_List collect_toString_calls();
+  Node_List<CallStaticJavaNode> collect_toString_calls();
 
   // Examine the use of the SB alloc to see if it can be replace with
   // a single string construction.

@@ -34,15 +34,74 @@ import static compiler.valhalla.valuetypes.ValueTypes.rI;
 import static compiler.valhalla.valuetypes.ValueTypes.rL;
 
 /*
- * @test
+ * @test id=vanilla
  * @key randomness
+ * @summary Test calls from {C1} to {C2, Interpreter}, and vice versa.
+ * @library /test/lib /
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @run main/timeout=300 ${test.main.class} vanilla
+ */
+
+/*
+ * @test id=default
+ * @key stress randomness
  * @summary Test calls from {C1} to {C2, Interpreter}, and vice versa.
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run driver/timeout=300 ${test.main.class}
+ * @run driver/timeout=300 ${test.main.class} 0
+ */
+
+/*
+ * @test id=stress-calling-convention
+ * @key stress randomness
+ * @summary Test calls from {C1} to {C2, Interpreter}, and vice versa.
+ * @library /test/lib /
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @run driver/timeout=300 ${test.main.class} 1
+ */
+
+/*
+ * @test id=flip-c1-c2
+ * @key stress randomness
+ * @summary Test calls from {C1} to {C2, Interpreter}, and vice versa.
+ * @library /test/lib /
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @run driver/timeout=300 ${test.main.class} 2
+ */
+
+/*
+ * @test id=c1
+ * @key stress randomness
+ * @summary Test calls from {C1} to {C2, Interpreter}, and vice versa.
+ * @library /test/lib /
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @run driver/timeout=300 ${test.main.class} 3
+ */
+
+/*
+ * @test id=c2
+ * @key stress randomness
+ * @summary Test calls from {C1} to {C2, Interpreter}, and vice versa.
+ * @library /test/lib /
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @run driver/timeout=300 ${test.main.class} 4
  */
 
 @ForceCompileClassInitializer
@@ -52,13 +111,11 @@ public class TestCallingConventionC1 {
         final Scenario[] scenarios = {
                 // Default: both C1 and C2 are enabled, tiered compilation enabled
                 new Scenario(0,
-                             "--enable-preview",
                              "-XX:CICompilerCount=2",
                              "-XX:TieredStopAtLevel=4",
                              "-XX:+TieredCompilation"),
                 // Default: both C1 and C2 are enabled, tiered compilation enabled
                 new Scenario(1,
-                             "--enable-preview",
                              "-XX:CICompilerCount=2",
                              "-XX:TieredStopAtLevel=4",
                              "-XX:+TieredCompilation",
@@ -67,30 +124,29 @@ public class TestCallingConventionC1 {
                 // Same as above, but flip all the compLevel=CompLevel.C1_SIMPLE and compLevel=CompLevel.C2, so we test
                 // the compliment of the above scenario.
                 new Scenario(2,
-                             "--enable-preview",
                              "-XX:CICompilerCount=2",
                              "-XX:TieredStopAtLevel=4",
                              "-XX:+TieredCompilation",
                              "-DFlipC1C2=true"),
                 // Only C1. Tiered compilation disabled.
                 new Scenario(3,
-                             "--enable-preview",
                              "-XX:TieredStopAtLevel=1",
                              "-XX:+TieredCompilation",
                              "-XX:+IgnoreUnrecognizedVMOptions",
                              "-XX:-PatchALot"),
                 // Only C2.
                 new Scenario(4,
-                             "--enable-preview",
                              "-XX:TieredStopAtLevel=4",
                              "-XX:-TieredCompilation")
         };
 
         System.gc(); // Resolve this call, to avoid C1 code patching in the test cases.
 
-        ValueTypes.getFramework()
-                   .addScenarios(scenarios)
-                   .start();
+        TestFramework framework = ValueTypes.getFramework().addFlags("--enable-preview");
+        if (!args[0].equals("vanilla")) {
+            framework.addScenarios(scenarios[Integer.parseInt(args[0])]);
+        }
+        framework.start();
     }
 
     // Helper methods and classes

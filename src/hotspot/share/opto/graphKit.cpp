@@ -81,8 +81,6 @@ GraphKit::GraphKit(JVMState* jvms, PhaseGVN* gvn)
 #ifdef ASSERT
   if (_gvn.is_IterGVN() != nullptr) {
     assert(_gvn.is_IterGVN()->delay_transform(), "Transformation must be delayed if IterGVN is used");
-    // Save the initial size of _for_igvn worklist for verification (see ~GraphKit)
-    _worklist_size = _gvn.C->igvn_worklist()->size();
   }
 #endif
 }
@@ -208,7 +206,11 @@ void GraphKit::verify_exception_state(SafePointNode* ex_map) {
 void GraphKit::stop_and_kill_map() {
   SafePointNode* dead_map = stop();
   if (dead_map != nullptr) {
-    dead_map->disconnect_inputs(C); // Mark the map as killed.
+    if (PhaseIterGVN* igvn = _gvn.is_IterGVN()) {
+      igvn->remove_dead_node(dead_map, PhaseIterGVN::NodeOrigin::Speculative);
+    } else {
+      dead_map->disconnect_inputs(C);
+    }
     assert(dead_map->is_killed(), "must be so marked");
   }
 }
@@ -1957,36 +1959,48 @@ Node* GraphKit::array_element_address(Node* ary, Node* idx, BasicType elembt,
   return basic_plus_adr(ary, base, scale);
 }
 
-Node* GraphKit::cast_to_flat_array(Node* array, ciValueKlass* elem_vk) {
+// The three methods below, get_flat_array_klass(), get_flat_array_klass_exact() and
+// cast_to_flat_array() break down the processus to cast an array node into a flat array node.
+// The first step involves obtaining the ciObjArrayKlass instance representing the flat array.
+// The second step uses this ciObjArrayKlass instance to implement the cast on the array node.
+// If retrieving the flat array klass fails, the returned ciObjArrayKlass instance is marked
+// as being in an unloaded state, but it retains the array type name; this instance can be used
+// to create an uncommon trap with Reason unloaded.
+ciObjArrayKlass* GraphKit::get_flat_array_klass(ciValueKlass* elem_vk) {
   assert(elem_vk->maybe_flat_in_array(), "no flat array for %s", elem_vk->name()->as_utf8());
   if (!elem_vk->has_null_free_atomic_layout() && !elem_vk->has_nullable_atomic_layout()) {
-    return cast_to_flat_array_exact(array, elem_vk, true, false);
+    return get_flat_array_klass_exact(elem_vk, true, false);
   } else if (!elem_vk->has_nullable_atomic_layout() && !elem_vk->has_null_free_non_atomic_layout()) {
-    return cast_to_flat_array_exact(array, elem_vk, true, true);
+    return get_flat_array_klass_exact(elem_vk, true, true);
   } else if (!elem_vk->has_null_free_atomic_layout() && !elem_vk->has_null_free_non_atomic_layout()) {
-    return cast_to_flat_array_exact(array, elem_vk, false, true);
+    return get_flat_array_klass_exact(elem_vk, false, true);
   }
-
-  bool is_null_free = false;
-  if (!elem_vk->has_nullable_atomic_layout()) {
-    // Element does not have a nullable flat layout, cannot be nullable
-    is_null_free = true;
-  }
-
-  ciArrayKlass* array_klass = ciObjArrayKlass::make(elem_vk, false);
-  const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->isa_aryptr();
-  arytype = arytype->cast_to_flat(true)->cast_to_null_free(is_null_free);
-  return _gvn.transform(new CheckCastPPNode(control(), array, arytype, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+  return ciObjArrayKlass::make(elem_vk, false);
 }
 
-Node* GraphKit::cast_to_flat_array_exact(Node* array, ciValueKlass* elem_vk, bool is_null_free, bool is_atomic) {
+ciObjArrayKlass* GraphKit::get_flat_array_klass_exact(ciValueKlass* elem_vk, bool is_null_free, bool is_atomic) {
   assert(is_null_free || is_atomic, "nullable arrays must be atomic");
-  ciArrayKlass* array_klass = ciObjArrayKlass::make(elem_vk, true, is_null_free, is_atomic);
+  return ciObjArrayKlass::make(elem_vk, true, is_null_free, is_atomic);
+}
+
+Node* GraphKit::cast_to_flat_array(Node* array, ciObjArrayKlass* array_klass, bool exact) {
+  if (!array_klass->is_loaded()) {
+    return top();
+  }
+  assert(array_klass->element_klass()->is_value_klass(), "Must be");
+
   const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->isa_aryptr();
-  assert(arytype->klass_is_exact(), "inconsistency");
-  assert(arytype->is_flat(), "inconsistency");
-  assert(arytype->is_null_free() == is_null_free, "inconsistency");
-  assert(arytype->is_not_null_free() == !is_null_free, "inconsistency");
+  if (exact) {
+    assert(arytype->klass_is_exact(), "inconsistency");
+    assert(arytype->is_flat(), "inconsistency");
+    assert(arytype->is_null_free() == array_klass->is_elem_null_free(), "inconsistency");
+    assert(arytype->is_not_null_free() == !array_klass->is_elem_null_free(), "inconsistency");
+  } else {
+    arytype = arytype->cast_to_flat();
+    if (!array_klass->element_klass()->as_value_klass()->has_nullable_atomic_layout()) {
+      arytype = arytype->cast_to_null_free();
+    }
+  }
   return _gvn.transform(new CheckCastPPNode(control(), array, arytype, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
 }
 
@@ -2255,7 +2269,7 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
 
     // Make sure the call advertises its memory effects precisely.
     // This lets us build accurate anti-dependences in gcm.cpp.
-    assert(C->alias_type(call->adr_type()) == C->alias_type(hook_mem),
+    assert(C->alias_type(call->out_adr_type()) == C->alias_type(hook_mem),
            "call node must be constructed correctly");
   } else {
     assert(hook_mem == nullptr, "");
@@ -2265,14 +2279,14 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
 }
 
 // Keep track of MergeMems feeding into other MergeMems
-static void add_mergemem_users_to_worklist(Unique_Node_List& wl, Node* mem) {
+static void add_mergemem_users_to_worklist(Unique_Node_List<MergeMemNode>& wl, Node* mem) {
   if (!mem->is_MergeMem()) {
     return;
   }
   for (SimpleDUIterator i(mem); i.has_next(); i.next()) {
     Node* use = i.get();
     if (use->is_MergeMem()) {
-      wl.push(use);
+      wl.push(use->as_MergeMem());
     }
   }
 }
@@ -2293,7 +2307,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
   // Find all the needed outputs of this call
   CallProjections* callprojs = call->extract_projections(true, do_asserts);
 
-  Unique_Node_List wl;
+  Unique_Node_List<MergeMemNode> wl;
   Node* final_mem = final_state->in(TypeFunc::Memory);
   Node* final_ctl = final_state->in(TypeFunc::Control);
   Node* final_io = final_state->in(TypeFunc::I_O);
@@ -2390,7 +2404,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
   // Clean up any MergeMems that feed other MergeMems since the
   // optimizer doesn't like that.
   while (wl.size() > 0) {
-    Node* old_mem = wl.pop();
+    MergeMemNode* old_mem = wl.pop();
     Node* new_mem = _gvn.transform(old_mem);
     if (old_mem != new_mem) {
       C->gvn_replace_by(old_mem, new_mem);
@@ -2504,6 +2518,15 @@ Node* GraphKit::uncommon_trap(int trap_request,
     tty->print_cr("Uncommon trap %s at bci:%d",
                   Deoptimization::format_trap_request(buf, sizeof(buf),
                                                       trap_request), bci());
+  }
+
+  if (PreloadReduceTraps && C->for_aot_preload() && (action != Deoptimization::Action_none)) {
+    ResourceMark rm;
+    ciMethod* cim = C->method();
+    log_debug(aot, codecache, deoptimization)("Uncommon trap in AOT preload code: reason=%s action=%s method=%s::%s bci=%d, %s",
+                  Deoptimization::trap_reason_name(reason), Deoptimization::trap_action_name(action),
+                  cim->holder()->name()->as_klass_external_name(), cim->name()->as_klass_external_name(),
+                  bci(), comment);
   }
 
   CompileLog* log = C->log();
@@ -2852,7 +2875,7 @@ Node* GraphKit::opt_iff(Node* region, Node* iff) {
 Node* GraphKit::make_runtime_call(int flags,
                                   const TypeFunc* call_type, address call_addr,
                                   const char* call_name,
-                                  const TypePtr* adr_type,
+                                  const TypePtr* out_adr_type,
                                   // The following parms are all optional.
                                   // The first null ends the list.
                                   Node* parm0, Node* parm1,
@@ -2868,34 +2891,35 @@ Node* GraphKit::make_runtime_call(int flags,
     assert(!is_leaf, "must supply name for leaf");
     call_name = OptoRuntime::stub_name(call_addr);
   }
+
+  // Slow path call has no side-effects, uses few values
+  bool wide_in  = !(flags & RC_NARROW_MEM);
+  bool wide_out = (C->get_alias_index(out_adr_type) == Compile::AliasIdxBot);
+
+  const TypePtr* in_adr_type = wide_in ? TypePtr::BOTTOM : out_adr_type;
   CallNode* call;
   if (!is_leaf) {
-    call = new CallStaticJavaNode(call_type, call_addr, call_name, adr_type);
+    call = new CallStaticJavaNode(call_type, call_addr, call_name, out_adr_type, in_adr_type);
   } else if (flags & RC_NO_FP) {
-    call = new CallLeafNoFPNode(call_type, call_addr, call_name, adr_type);
+    call = new CallLeafNoFPNode(call_type, call_addr, call_name, out_adr_type, in_adr_type);
   } else  if (flags & RC_VECTOR){
     uint num_bits = call_type->range_sig()->field_at(TypeFunc::Parms)->is_vect()->length_in_bytes() * BitsPerByte;
-    call = new CallLeafVectorNode(call_type, call_addr, call_name, adr_type, num_bits);
+    call = new CallLeafVectorNode(call_type, call_addr, call_name, out_adr_type, in_adr_type, num_bits);
   } else if (flags & RC_PURE) {
-    assert(adr_type == nullptr, "pure call does not touch memory");
+    assert(out_adr_type == nullptr, "pure call does not touch memory");
     call = new CallLeafPureNode(call_type, call_addr, call_name);
   } else {
-    call = new CallLeafNode(call_type, call_addr, call_name, adr_type);
+    call = new CallLeafNode(call_type, call_addr, call_name, out_adr_type, in_adr_type);
   }
 
   // The following is similar to set_edges_for_java_call,
   // except that the memory effects of the call are restricted to AliasIdxRaw.
-
-  // Slow path call has no side-effects, uses few values
-  bool wide_in  = !(flags & RC_NARROW_MEM);
-  bool wide_out = (C->get_alias_index(adr_type) == Compile::AliasIdxBot);
-
   Node* prev_mem = nullptr;
   if (wide_in) {
     prev_mem = set_predefined_input_for_runtime_call(call);
   } else {
     assert(!wide_out, "narrow in => narrow out");
-    Node* narrow_mem = memory(adr_type);
+    Node* narrow_mem = memory(in_adr_type);
     prev_mem = set_predefined_input_for_runtime_call(call, narrow_mem);
   }
 
@@ -2935,7 +2959,7 @@ Node* GraphKit::make_runtime_call(int flags,
     set_predefined_output_for_runtime_call(call);
   } else {
     // Slow path call has few side-effects, and/or sets few values.
-    set_predefined_output_for_runtime_call(call, prev_mem, adr_type);
+    set_predefined_output_for_runtime_call(call, prev_mem, out_adr_type);
   }
 
   if (has_io) {
@@ -3409,6 +3433,32 @@ bool GraphKit::seems_never_null(Node* obj, ciProfileData* data, bool& speculatin
   return false;
 }
 
+void GraphKit::guard_klass_is_initialized(Node* klass) {
+  assert(C->do_clinit_barriers(), "should be called only for clinit barriers");
+  if (ClassInitBarrierMode == 0) {
+    return;
+  }
+  precond(ClassInitBarrierMode == 1); // catch new value
+  int init_state_off = in_bytes(InstanceKlass::init_state_offset());
+  Node* adr = basic_plus_adr(top(), klass, init_state_off);
+  Node* init_state = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
+                                    adr->bottom_type()->is_ptr(), TypeInt::BYTE,
+                                    T_BYTE, MemNode::acquire);
+  init_state = _gvn.transform(init_state);
+
+  Node* initialized_state = makecon(TypeInt::make(InstanceKlass::fully_initialized));
+
+  Node* chk = _gvn.transform(new CmpINode(initialized_state, init_state));
+  Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::eq));
+
+  { // uncommon trap on slow path
+    BuildCutout unless(this, tst, PROB_MAX);
+    // Do not deoptimize this nmethod. Go to Interpreter to initialize class.
+    uncommon_trap(Deoptimization::Reason_uninitialized, Deoptimization::Action_none);
+  }
+  C->set_has_clinit_barriers(true);
+}
+
 void GraphKit::guard_klass_being_initialized(Node* klass) {
   int init_state_off = in_bytes(InstanceKlass::init_state_offset());
   Node* adr = off_heap_plus_addr(klass, init_state_off);
@@ -3447,9 +3497,14 @@ void GraphKit::guard_init_thread(Node* klass) {
 }
 
 void GraphKit::clinit_barrier(ciInstanceKlass* ik, ciMethod* context) {
+  if (C->do_clinit_barriers()) {
+    Node* klass = makecon(TypeKlassPtr::make(ik, Type::trust_interfaces));
+    guard_klass_is_initialized(klass);
+    return;
+  }
   if (ik->is_being_initialized()) {
     if (C->needs_clinit_barrier(ik, context)) {
-      Node* klass = makecon(TypeKlassPtr::make(ik));
+      Node* klass = makecon(TypeKlassPtr::make(ik, Type::trust_interfaces));
       guard_klass_being_initialized(klass);
       guard_init_thread(klass);
       insert_mem_bar(Op_MemBarCPUOrder);
@@ -3457,6 +3512,10 @@ void GraphKit::clinit_barrier(ciInstanceKlass* ik, ciMethod* context) {
   } else if (ik->is_initialized()) {
     return; // no barrier needed
   } else {
+    if (C->is_aot_compile()) {
+      ResourceMark rm;
+      log_debug(aot, compilation)("Emitting uncommon trap (clinit barrier) in AOT code for %s", ik->name()->as_klass_external_name());
+    }
     uncommon_trap(Deoptimization::Reason_uninitialized,
                   Deoptimization::Action_reinterpret,
                   nullptr);
@@ -3726,6 +3785,13 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
         if (null_free) {
           assert(safe_for_replace, "must be");
           obj = null_check(obj);
+        }
+        if (!stopped() && toop->is_valueklassptr() && !maybe_larval) {
+          Node* vt = ValueTypeNode::make_from_oop(this, obj, toop->value_klass());
+          if (safe_for_replace) {
+            replace_in_map(obj, vt);
+          }
+          obj = vt;
         }
         return obj;
       case Compile::SSC_always_false:
@@ -4114,31 +4180,27 @@ Node* GraphKit::insert_reachability_fence(Node* referent) {
 
 //------------------------------shared_lock------------------------------------
 // Emit locking code.
-FastLockNode* GraphKit::shared_lock(Node* obj) {
+BoxLockNode* GraphKit::shared_lock(Node* obj) {
   // bci is either a monitorenter bc or InvocationEntryBci
   // %%% SynchronizationEntryBCI is redundant; use InvocationEntryBci in interfaces
   assert(SynchronizationEntryBCI == InvocationEntryBci, "");
 
-  if (stopped())                // Dead monitor?
-    return nullptr;
+  if (stopped()) { return nullptr; } // Dead monitor?
 
   assert(dead_locals_are_killed(), "should kill locals before sync. point");
 
   // Box the stack location
-  Node* box = new BoxLockNode(next_monitor());
-  // Check for bailout after new BoxLockNode
-  if (failing()) { return nullptr; }
-  box = _gvn.transform(box);
+  BoxLockNode* box = new BoxLockNode(next_monitor());
+  if (failing()) { return nullptr; } // check for bailout after new BoxLockNode
+  box = _gvn.transform(box)->as_BoxLock();
   Node* mem = reset_memory();
-
-  FastLockNode * flock = _gvn.transform(new FastLockNode(nullptr, obj, box) )->as_FastLock();
 
   // Add monitor to debug info for the slow path.  If we block inside the
   // slow path and de-opt, we need the monitor hanging around
-  map()->push_monitor( flock );
+  map()->push_monitor(box, obj);
 
-  const TypeFunc *tf = LockNode::lock_type();
-  LockNode *lock = new LockNode(C, tf);
+  const TypeFunc* tf = LockNode::lock_type();
+  LockNode* lock = new LockNode(C, tf);
 
   lock->init_req( TypeFunc::Control, control() );
   lock->init_req( TypeFunc::Memory , mem );
@@ -4148,12 +4210,12 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
 
   lock->init_req(TypeFunc::Parms + 0, obj);
   lock->init_req(TypeFunc::Parms + 1, box);
-  lock->init_req(TypeFunc::Parms + 2, flock);
+
   add_safepoint_edges(lock);
 
-  lock = _gvn.transform( lock )->as_Lock();
+  lock = _gvn.transform(lock)->as_Lock();
 
-  // lock has no side-effects, sets few values
+  // lock has no side effects, sets few values
   set_predefined_output_for_runtime_call(lock, mem, TypeRawPtr::BOTTOM);
 
   insert_mem_bar(Op_MemBarAcquireLock);
@@ -4169,14 +4231,13 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
     increment_counter(lock->counter()->addr());
   }
 #endif
-
-  return flock;
+  return box;
 }
 
 
 //------------------------------shared_unlock----------------------------------
 // Emit unlocking code.
-void GraphKit::shared_unlock(Node* box, Node* obj) {
+void GraphKit::shared_unlock(BoxLockNode* box, Node* obj) {
   // bci is either a monitorenter bc or InvocationEntryBci
   // %%% SynchronizationEntryBCI is redundant; use InvocationEntryBci in interfaces
   assert(SynchronizationEntryBCI == InvocationEntryBci, "");
@@ -4897,7 +4958,7 @@ void GraphKit::memory_effect(Node* res_mem, const TypePtr* src_type, const TypeP
   if (src_type != dst_type) {
     Node* all_mem = reset_memory();
     set_all_memory(all_mem);
-    Node* membar = new MemBarCPUOrderNode(C, C->get_alias_index(src_type), nullptr);
+    Node* membar = new MemBarCPUOrderNode(C, src_type, TypePtr::BOTTOM, nullptr);
     membar->init_req(TypeFunc::Control, control());
     membar->init_req(TypeFunc::Memory, all_mem);
     membar = _gvn.transform(membar);
@@ -4924,7 +4985,7 @@ void GraphKit::inflate_string(Node* src, Node* dst, const TypeAryPtr* dst_type, 
   const TypePtr* src_type = TypeAryPtr::BYTES;
   const TypePtr* adr_type;
   Node* mem = capture_memory(adr_type, src_type, dst_type);
-  StrInflatedCopyNode* str = new StrInflatedCopyNode(control(), mem, adr_type, src, dst, count);
+  StrInflatedCopyNode* str = new StrInflatedCopyNode(control(), mem, dst_type, adr_type, src, dst, count);
   Node* res_mem = _gvn.transform(str);
   memory_effect(res_mem, src_type, dst_type);
 }

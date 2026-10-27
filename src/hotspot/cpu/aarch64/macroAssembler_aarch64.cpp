@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,6 +330,16 @@ public:
     return 2;
   }
   static int immediate(address insn_addr, address &target) {
+    // Metadata pointers are either narrow (32 bits) or wide (48 bits).
+    // We encode narrow ones by setting the upper 16 bits in the first
+    // instruction.
+    if (Instruction_aarch64::extract(insn_at(insn_addr, 0), 31, 21) == 0b11010010101) {
+      assert(nativeInstruction_at(insn_addr+4)->is_movk(), "wrong insns in patch");
+      narrowKlass nk = CompressedKlassPointers::encode((Klass*)target);
+      Instruction_aarch64::patch(insn_addr, 20, 5, nk >> 16);
+      Instruction_aarch64::patch(insn_addr+4, 20, 5, nk & 0xffff);
+      return 2;
+    }
     assert(Instruction_aarch64::extract(insn_at(insn_addr, 0), 31, 21) == 0b11010010100, "must be");
     uint64_t dest = (uint64_t)target;
     // Move wide constant
@@ -456,6 +467,16 @@ public:
   }
   static int immediate(address insn_addr, address &target) {
     uint32_t *insns = (uint32_t *)insn_addr;
+    // Metadata pointers are either narrow (32 bits) or wide (48 bits).
+    // We encode narrow ones by setting the upper 16 bits in the first
+    // instruction.
+    if (Instruction_aarch64::extract(insns[0], 31, 21) == 0b11010010101) {
+      assert(nativeInstruction_at(insn_addr+4)->is_movk(), "wrong insns in patch");
+      narrowKlass nk = (narrowKlass)((uint32_t(Instruction_aarch64::extract(insns[0], 20, 5)) << 16)
+                                   +  uint32_t(Instruction_aarch64::extract(insns[1], 20, 5)));
+      target = (address)CompressedKlassPointers::decode(nk);
+      return 2;
+    }
     assert(Instruction_aarch64::extract(insns[0], 31, 21) == 0b11010010100, "must be");
     // Move wide constant: movz, movk, movk.  See movptr().
     assert(nativeInstruction_at(insns+1)->is_movk(), "wrong insns in patch");
@@ -1692,10 +1713,18 @@ bool MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
 
   // Get the first array index that can contain super_klass into r_array_index.
   if (bit != 0) {
-    shld(vtemp, vtemp, Klass::SECONDARY_SUPERS_TABLE_MASK - bit);
+    int shift = Klass::SECONDARY_SUPERS_TABLE_MASK - bit;
+    shld(vtemp, vtemp, shift);
     cnt(vtemp, T8B, vtemp);
-    addv(vtemp, T8B, vtemp);
-    fmovd(r_array_index, vtemp);
+    // If the left shift is so great that all bytes below the most
+    // significant are zero, don't add across all byte lanes, just use
+    // the top byte.
+    if (BitsPerLong - shift <= BitsPerByte) {
+      umov(r_array_index, vtemp, B, BytesPerLong - 1);
+    } else {
+      addv(vtemp, T8B, vtemp);
+      umov(r_array_index, vtemp, B, 0);
+    }
   } else {
     mov(r_array_index, (u1)1);
   }
@@ -2375,6 +2404,7 @@ void MacroAssembler::null_check(Register reg, int offset) {
 }
 
 void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert_different_registers(markword, rscratch2);
   mov(rscratch2, markWord::value_type_pattern_mask);
   andr(markword, markword, rscratch2);
@@ -2384,6 +2414,7 @@ void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_va
 }
 
 void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert_different_registers(tmp, rscratch1);
   if (can_be_null) {
     cbz(object, not_value_type);
@@ -2397,16 +2428,19 @@ void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, L
 }
 
 void MacroAssembler::test_field_is_null_free_value_type(Register flags, Register temp_reg, Label& is_null_free_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert(temp_reg == noreg, "not needed"); // keep signature uniform with x86
   tbnz(flags, ResolvedFieldEntry::is_null_free_value_type_shift, is_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_not_null_free_value_type(Register flags, Register temp_reg, Label& not_null_free_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert(temp_reg == noreg, "not needed"); // keep signature uniform with x86
   tbz(flags, ResolvedFieldEntry::is_null_free_value_type_shift, not_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label& is_flat) {
+  assert(UseFieldFlattening, "should not be used without field flattening enabled");
   assert(temp_reg == noreg, "not needed"); // keep signature uniform with x86
   tbnz(flags, ResolvedFieldEntry::is_flat_shift, is_flat);
 }
@@ -2423,23 +2457,28 @@ void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int
 }
 
 void MacroAssembler::test_flat_array_oop(Register oop, Register temp_reg, Label& is_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, true, is_flat_array);
 }
 
 void MacroAssembler::test_non_flat_array_oop(Register oop, Register temp_reg,
                                                   Label&is_non_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, false, is_non_flat_array);
 }
 
 void MacroAssembler::test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, true, is_null_free_array);
 }
 
 void MacroAssembler::test_non_null_free_array_oop(Register oop, Register temp_reg, Label&is_non_null_free_array) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, false, is_non_null_free_array);
 }
 
 void MacroAssembler::test_flat_array_layout(Register lh, Label& is_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   tst(lh, Klass::_lh_array_tag_flat_value_bit_inplace);
   br(Assembler::NE, is_flat_array);
 }
@@ -2459,7 +2498,7 @@ void MacroAssembler::mov(Register r, Address dest) {
 // reach anywhere.
 void MacroAssembler::movptr(Register r, uintptr_t imm64) {
 #ifndef PRODUCT
-  {
+  if (!AOTCodeCache::is_on_for_dump()) {
     char buffer[64];
     os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIX64, (uint64_t)imm64);
     block_comment(buffer);
@@ -2517,7 +2556,7 @@ void MacroAssembler::mov(FloatRegister Vd, SIMD_Arrangement T, uint64_t imm64) {
 void MacroAssembler::mov_immediate64(Register dst, uint64_t imm64)
 {
 #ifndef PRODUCT
-  {
+  if (!AOTCodeCache::is_on_for_dump()) {
     char buffer[64];
     os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIX64, imm64);
     block_comment(buffer);
@@ -2630,7 +2669,7 @@ void MacroAssembler::mov_immediate64(Register dst, uint64_t imm64)
 void MacroAssembler::mov_immediate32(Register dst, uint32_t imm32)
 {
 #ifndef PRODUCT
-    {
+    if (!AOTCodeCache::is_on_for_dump()) {
       char buffer[64];
       os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIX32, imm32);
       block_comment(buffer);
@@ -5665,18 +5704,14 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
   }
 }
 
-void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst,
-                                     Register value_field_layout_info) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->flat_field_copy(this, decorators, src, dst, value_field_layout_info);
-}
-
 void MacroAssembler::payload_offset(Register value_klass, Register offset) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   ldr(offset, Address(value_klass, ValueKlass::adr_members_offset()));
   ldrw(offset, Address(offset, ValueKlass::payload_offset_offset()));
 }
 
 void MacroAssembler::payload_address(Register oop, Register data, Register value_klass) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   // ((address) (void*) o) + vk->payload_offset();
   Register offset = (data == oop) ? rscratch1 : data;
   payload_offset(value_klass, offset);
@@ -5801,21 +5836,6 @@ void MacroAssembler::verify_tlab() {
 #endif
 }
 
-void MacroAssembler::value_field_layout_info(Register holder_klass, Register index, Register layout_info) {
-  assert_different_registers(holder_klass, index, layout_info);
-  ValueFieldLayoutInfo array[2];
-  int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
-  if (is_power_of_2(size)) {
-    lsl(index, index, log2i_exact(size)); // Scale index by power of 2
-  } else {
-    mov(layout_info, size);
-    mul(index, index, layout_info); // Scale the index to be the entry index * array_element_size
-  }
-  ldr(layout_info, Address(holder_klass, InstanceKlass::value_field_layout_info_array_offset()));
-  add(layout_info, layout_info, Array<ValueFieldLayoutInfo>::base_offset_in_bytes());
-  lea(layout_info, Address(layout_info, index));
-}
-
 // Writes to stack successive pages until offset reached to check for
 // stack overflow + shadow pages.  This clobbers tmp.
 void MacroAssembler::bang_stack_size(Register size, Register tmp) {
@@ -5879,7 +5899,11 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
   code_section()->relocate(inst_mark(), dest.rspec());
   // 8143067: Ensure that the adrp can reach the dest from anywhere within
   // the code cache so that if it is relocated we know it will still reach
-  if (offset_high >= -(1<<20) && offset_low < (1<<20)) {
+  // For AOT code force far distance for external_word relocation.
+  const bool force_far = AOTCodeCache::is_on_for_dump() &&
+                         (dest.rspec().type() == relocInfo::external_word_type) &&
+                         !CodeCache::contains(dest.target());
+  if (!force_far && offset_high >= -(1<<20) && offset_low < (1<<20)) {
     _adrp(reg1, dest.target());
   } else {
     uint64_t target = (uint64_t)dest.target();
@@ -6348,22 +6372,43 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
 }
 
 // Compare Strings
-
-// For Strings we're passed the address of the first characters in a1
-// and a2 and the length in cnt1.
-// There are two implementations.  For arrays >= 8 bytes, all
-// comparisons (including the final one, which may overlap) are
-// performed 8 bytes at a time.  For strings < 8 bytes, we compare a
-// halfword, then a short, and then a byte.
+//
+// Inputs:
+//   a1, a2  - byte addresses of the first elements
+//   cnt1    - byte length
+//
+// Invariants and memory contract:
+//   - cnt1 is the number of bytes to compare.
+//   - The 8 bytes immediately preceding a1/a2 are readable
+//     (Java object header guarantee). This allows a pre-read at
+//     (base + len - 8) even when len < 8.
+//   - No read is performed beyond (base + len - 1).
+//
+// Strategy:
+//   1) Preload the final 8-byte window at (base + len - 8).
+//      This covers the last up to 8 bytes and serves as a fast-fail check.
+//   2) For len <= 8, handle entirely in SMALL using shift/mask logic.
+//   3) For medium sizes (9..23) and post-loop remainders,
+//      TAIL15 compares head and tail windows with overlap as needed.
+//   4) For larger inputs (>= 24), MAINLOOP processes 16-byte blocks
+//      using LDP + CMP/CCMP to allow a single branch on inequality.
+//      Any remaining <16 bytes fall back to TAIL15.
+//
+// SMALL path:
+//   For lengths <= 8, the preloaded 8-byte window is shifted
+//   so that only the valid low-order bytes participate in comparison.
 
 void MacroAssembler::string_equals(Register a1, Register a2,
-                                   Register result, Register cnt1)
+                                   Register result, Register cnt1,
+                                   Register a1_hi, Register a2_hi)
 {
-  Label SAME, DONE, SHORT, NEXT_WORD;
-  Register tmp1 = rscratch1;
-  Register tmp2 = rscratch2;
+  Label MAINLOOP, TAIL15, SMALL, END, SMALL2;
+  Register a1_low = rscratch1;
+  Register a2_low = rscratch2;
 
-  assert_different_registers(a1, a2, result, cnt1, rscratch1, rscratch2);
+  assert_different_registers(a1, a2, cnt1, a1_hi, a2_hi, a1_low, a2_low);
+  assert(result != a1, "result must not alias a1");
+  assert(result != a2, "result must not alias a2");
 
 #ifndef PRODUCT
   {
@@ -6373,62 +6418,71 @@ void MacroAssembler::string_equals(Register a1, Register a2,
   }
 #endif
 
-  mov(result, false);
+  subs(cnt1, cnt1, 8);
+  ldr(a1_low, Address(a1, cnt1));       // Load last 8 bytes from a1
+  ldr(a2_low, Address(a2, cnt1));       // Load last 8 bytes from a2
+  br(Assembler::LE, SMALL);
+  subs(cnt1, cnt1, 16);
+  br(Assembler::LT, TAIL15);
+  cmp(a1_low, a2_low);
+  br(Assembler::NE, END);
+  // ---- MAINLOOP: process two 8B via ldp/ccmp ----
+  bind(MAINLOOP);
+    ldp(a1_low, a1_hi, Address(post(a1,16)));       // A1: low/high 8B
+    ldp(a2_low, a2_hi, Address(post(a2,16)));       // A2: low/high 8B
+    cmp(a1_low, a2_low);
+    ccmp(a1_hi, a2_hi, /*nzcv=*/0, Assembler::EQ);
+    br(Assembler::NE, END);
+    subs(cnt1, cnt1, 16);
+    br(Assembler::HS, MAINLOOP);           // while remaining >= 16
 
-  // Check for short strings, i.e. smaller than wordSize.
-  subs(cnt1, cnt1, wordSize);
-  br(Assembler::LT, SHORT);
-  // Main 8 byte comparison loop.
-  bind(NEXT_WORD); {
-    ldr(tmp1, Address(post(a1, wordSize)));
-    ldr(tmp2, Address(post(a2, wordSize)));
-    subs(cnt1, cnt1, wordSize);
-    eor(tmp1, tmp1, tmp2);
-    cbnz(tmp1, DONE);
-  } br(GT, NEXT_WORD);
-  // Last longword.  In the case where length == 4 we compare the
-  // same longword twice, but that's still faster than another
-  // conditional branch.
-  // cnt1 could be 0, -1, -2, -3, -4 for chars; -4 only happens when
-  // length == 4.
-  ldr(tmp1, Address(a1, cnt1));
-  ldr(tmp2, Address(a2, cnt1));
-  eor(tmp2, tmp1, tmp2);
-  cbnz(tmp2, DONE);
-  b(SAME);
+  adds(zr, cnt1, 16);           // If cnt1 == -16, skip tail handling.
+  br(Assembler::EQ, END);
 
-  bind(SHORT);
-  Label TAIL03, TAIL01;
+  // ---- TAIL15: medium sizes and post-loop tail.
+  // Entered when (initial len < 24) or when MAINLOOP leaves a <16B tail.
+  // At entry, cnt1 is in [-15 .. -1] ----
+  bind(TAIL15);
+    // cnt1 := remaining length - 8 ; if remaining lengths <= 8 goto SMALL2
+    adds(cnt1, cnt1, 8);
+    br(Assembler::LE, SMALL2);
+    cmp(a1_low, a2_low);
 
-  tbz(cnt1, 2, TAIL03); // 0-7 bytes left.
-  {
-    ldrw(tmp1, Address(post(a1, 4)));
-    ldrw(tmp2, Address(post(a2, 4)));
-    eorw(tmp1, tmp1, tmp2);
-    cbnzw(tmp1, DONE);
-  }
-  bind(TAIL03);
-  tbz(cnt1, 1, TAIL01); // 0-3 bytes left.
-  {
-    ldrh(tmp1, Address(post(a1, 2)));
-    ldrh(tmp2, Address(post(a2, 2)));
-    eorw(tmp1, tmp1, tmp2);
-    cbnzw(tmp1, DONE);
-  }
-  bind(TAIL01);
-  tbz(cnt1, 0, SAME); // 0-1 bytes left.
-    {
-    ldrb(tmp1, a1);
-    ldrb(tmp2, a2);
-    eorw(tmp1, tmp1, tmp2);
-    cbnzw(tmp1, DONE);
-  }
-  // Arrays are equal.
-  bind(SAME);
-  mov(result, true);
+    // We have more than 8 bytes unchecked and 8 bytes from end previously read
+    // One ldp can cover all remained bytes
+    ldp(a1_low, a1_hi, Address(a1));         // A1 high 8B
+    ldp(a2_low, a2_hi, Address(a2));         // A2 high 8B
+    ccmp(a1_hi, a2_hi, 0, Assembler::EQ);
+    ccmp(a1_low, a2_low, /*nzcv=*/0, Assembler::EQ);
+    b(END);
+  // Tail <= 16B case: compare head 8 bytes and tail 8 bytes (tail 8 bytes was preloaded).
+  bind(SMALL2);
+    ldr(a1_hi, Address(a1));
+    ldr(a2_hi, Address(a2));
+    cmp(a1_low, a2_low);
+    ccmp(a1_hi, a2_hi, /*nzcv=*/0, Assembler::EQ);
+    b(END);
+  // For lengths <= 8 we avoid 4/2/1-byte tail branches and extra loads.
+  // Compute shift = (8 - len) * 8 and right-shift the preloaded 8B window
+  // so that only the valid low-order len bytes remain for comparison.
+  //
+  // The load at (base + len - 8) produces an 8B window ending at the last
+  // string byte. When len < 8, the leading bytes in this window are
+  // outside the logical string. On little-endian AArch64, lower-address
+  // bytes occupy the least significant bits of the 64-bit word, so a
+  // logical right shift cleanly discards those unused prefix bytes.
+  //
+  // a2_hi is reused as a temporary register holding the shift amount.
+  bind(SMALL);
+    neg(a2_hi, cnt1, LSL, 3);
+    lsrv(a1_low, a1_low, a2_hi);
+    lsrv(a2_low, a2_low, a2_hi);
+    adds(zr, cnt1, 8);         // Prepare flags for length==0 handling
+    ccmp(a1_low, a2_low, /*nzcv=*/4, Assembler::NE);
 
-  // That's it.
-  bind(DONE);
+  bind(END);
+    cset(result, Assembler::EQ);
+
   BLOCK_COMMENT("} string_equals");
 }
 
@@ -7114,6 +7168,7 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
 
 // Move a value between registers/stack slots and update the reg_state
 bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState reg_state[]) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   assert(from->is_valid() && to->is_valid(), "source and destination must be valid");
   if (reg_state[to->value()] == reg_written) {
     return true; // Already written
@@ -7176,6 +7231,7 @@ bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState re
 // Calculate the extra stack space required for packing or unpacking value
 // args and adjust the stack pointer
 int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   int sp_inc = args_on_stack * VMRegImpl::stack_slot_size;
   sp_inc = align_up(sp_inc, StackAlignmentInBytes);
   assert(sp_inc > 0, "sanity");
@@ -7207,6 +7263,7 @@ int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
 bool MacroAssembler::unpack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
                                          VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
                                          RegState reg_state[]) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   assert(sig->at(sig_index)._bt == T_VOID, "should be at end delimiter");
   assert(from->is_valid(), "source must be valid");
   bool progress = false;
@@ -7353,6 +7410,7 @@ bool MacroAssembler::unpack_value_helper(const GrowableArray<SigEntry>* sig, int
 bool MacroAssembler::pack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
                                        VMRegPair* from, int from_count, int& from_index, VMReg to,
                                        RegState reg_state[], Register val_array) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   assert(sig->at(sig_index)._bt == T_METADATA, "should be at delimiter");
   assert(to->is_valid(), "destination must be valid");
 
