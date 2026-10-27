@@ -3036,11 +3036,9 @@ operand immL_bitmask() %{
   interface(CONST_INTER);
 %}
 
-// A single-bit mask that cannot be encoded by an immediate logical instruction.
-operand immL_SingleBitNotSimm12()
+operand immL_single_bit()
 %{
-  predicate(is_power_of_2((julong)n->get_long()) &&
-            !Assembler::is_simm12(n->get_long()));
+  predicate(is_power_of_2((julong)n->get_long()));
   match(ConL);
 
   op_cost(0);
@@ -3048,11 +3046,9 @@ operand immL_SingleBitNotSimm12()
   interface(CONST_INTER);
 %}
 
-// The complement of a single-bit mask that cannot be encoded by andi.
-operand immL_SingleZeroNotSimm12()
+operand immL_single_zero()
 %{
-  predicate(is_power_of_2((julong)~n->get_long()) &&
-            !Assembler::is_simm12(n->get_long()));
+  predicate(is_power_of_2((julong)~n->get_long()));
   match(ConL);
 
   op_cost(0);
