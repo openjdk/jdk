@@ -24,6 +24,9 @@
  */
 #include <malloc.h>
 #include <winternl.h>
+#include <winsock2.h>
+#include <iphlpapi.h>
+#include <icmpapi.h>
 
 #include "net_util.h"
 

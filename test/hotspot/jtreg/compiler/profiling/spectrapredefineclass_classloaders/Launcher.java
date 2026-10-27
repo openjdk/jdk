@@ -39,7 +39,7 @@
  * @run driver compiler.profiling.spectrapredefineclass_classloaders.Launcher
  * @run main/othervm/timeout=480 -XX:CompilationMode=high-only -XX:-BackgroundCompilation -XX:CompileThreshold=10000
  *                               -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222
- *                               -XX:ReservedCodeCacheSize=3M -Djdk.attach.allowAttachSelf
+ *                               -XX:ReservedCodeCacheSize=3M -XX:+EnableDynamicAgentLoading -Djdk.attach.allowAttachSelf
  *                               compiler.profiling.spectrapredefineclass_classloaders.Agent
  */
 

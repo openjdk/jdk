@@ -28,7 +28,6 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
-#include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "runtime/mutexLocker.hpp"
 
@@ -42,7 +41,6 @@ public:
   typedef enum {
     none,
     concurrent_normal,
-    stw_degenerated,
     stw_full,
     bootstrapping_old,
     servicing_old,
@@ -57,14 +55,6 @@ public:
   };
 
 private:
-  // This lock is used to coordinate setting the _requested_gc_cause, _requested generation
-  // and _gc_mode. It is important that these be changed together and have a consistent view.
-  Monitor _control_lock;
-
-  // Represents a normal (non cancellation) gc request. This can be set by mutators (System.gc,
-  // whitebox gc, etc.) or by the regulator thread when the heuristics want to start a cycle.
-  GCCause::Cause  _requested_gc_cause;
-
   // This is the generation the request should operate on.
   ShenandoahGeneration* _requested_generation;
 
@@ -73,10 +63,6 @@ private:
   // before making any state changes (double-checked locking idiom).
   volatile GCMode _gc_mode;
 
-  // Only the control thread knows the correct degeneration point. This is used to have the
-  // control thread resume a STW cycle from the point where the concurrent cycle was cancelled.
-  ShenandoahGC::ShenandoahDegenPoint _degen_point;
-
   // A reference to the heap
   ShenandoahGenerationalHeap* _heap;
 
@@ -84,45 +70,46 @@ private:
   // preparing for mark).
   ShenandoahSharedFlag _allow_old_preemption;
 
-  // True while the current cycle is the bootstrap of an old GC.
-  bool _do_old_gc_bootstrap;
-
 public:
   ShenandoahGenerationalControlThread();
 
-  void run_service() override;
-  void stop_service() override;
-
-  void request_gc(GCCause::Cause cause) override;
-
   // Return true if the request to start a concurrent GC for the given generation succeeded.
   bool request_concurrent_gc(ShenandoahGeneration* generation);
+
+  // Visible for white box API to start an old cycle
+  bool wait_for_gc_cycle(GCCause::Cause cause, ShenandoahGeneration* generation, uint timeout_seconds = 10);
 
   // Returns the current state of the control thread
   GCMode gc_mode() const {
     return _gc_mode;
   }
+
+protected:
+  void run_service() override;
+  void stop_service() override;
+
+  void notify_alloc_stall(GCCause::Cause cause) override;
+  bool notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) override;
+
+  // Will also schedule an immediate full gc if old evacuations failed
+  void clear_allocation_failure_and_notify_waiters() override;
+
+  // Handle whitebox requests to run old or young cycles
+  void handle_requested_gc(GCCause::Cause cause) override;
+
 private:
-  // Returns true if the cycle has been cancelled or degenerated.
-  bool check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point);
 
   // Executes one GC cycle
   void run_gc_cycle(const ShenandoahGCRequest& request);
 
   // Returns true if the old generation marking completed (i.e., final mark executed for old generation).
-  bool resume_concurrent_old_cycle(ShenandoahOldGeneration* generation, GCCause::Cause cause);
+  void resume_concurrent_old_cycle(ShenandoahOldGeneration* generation, GCCause::Cause cause);
 
   // Various service methods handle different gc cycle types
   void service_concurrent_cycle(ShenandoahGeneration* generation, GCCause::Cause cause, bool reset_old_bitmap_specially);
   void service_stw_full_cycle(GCCause::Cause cause);
-  void service_stw_degenerated_cycle(const ShenandoahGCRequest& request);
   void service_concurrent_normal_cycle(const ShenandoahGCRequest& request);
   void service_concurrent_old_cycle(const ShenandoahGCRequest& request);
-
-  void notify_gc_waiters();
-
-  // Blocks until at least one global GC cycle is complete.
-  void handle_requested_gc(GCCause::Cause cause);
 
   // Returns true if the old generation marking was interrupted to allow a young cycle.
   bool preempt_old_marking(ShenandoahGeneration* generation);
@@ -137,21 +124,25 @@ private:
 
   // These notify the control thread after updating _requested_gc_cause and (optionally) _requested_generation.
   // Updating the requested generation is not necessary for allocation failures nor when stopping the thread.
-  void notify_control_thread(GCCause::Cause cause);
   void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause);
-  void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation);
-  void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation);
+  bool notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation);
+  void request_gc_and_interrupt_old(GCCause::Cause cause, ShenandoahGeneration* generation);
 
   // Take the _control_lock and check for a request to run a gc cycle. If a request is found,
   // the `prepare` methods are used to configure the heap and update heuristics accordingly.
   void check_for_request(ShenandoahGCRequest& request);
 
-  GCMode prepare_for_allocation_failure_gc(ShenandoahGCRequest &request);
-  GCMode prepare_for_explicit_gc(ShenandoahGCRequest &request) const;
-  GCMode prepare_for_concurrent_gc(const ShenandoahGCRequest &request) const;
+  GCMode prepare_for_concurrent_gc(ShenandoahGCRequest &request) const;
+  GCMode prepare_for_full_gc(ShenandoahGCRequest& request) const;
+  void prepare_for_explicit_gc(ShenandoahGCRequest &request) const;
 
   // Print table for young region ages if log is enabled
   void maybe_print_young_region_ages() const;
+
+  // Specialized function that waits for one complete old gc cycle. Note that this may invoke
+  // young cycles in order to complete mixed evacuations of an existent old gc before starting
+  // another.
+  bool wait_for_old_gc_cycle(GCCause::Cause cause, ShenandoahOldGeneration* generation, uint timeout_seconds);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALCONTROLTHREAD_HPP

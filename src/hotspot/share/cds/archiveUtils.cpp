@@ -25,6 +25,7 @@
 #include "cds/aotCompressedPointers.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
@@ -33,9 +34,7 @@
 #include "cds/dumpAllocStats.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -411,7 +410,7 @@ char* DumpRegion::allocate_metaspace_obj(size_t num_bytes, address src, Metaspac
 
   char* oldtop = top();
   if (is_instance_class) {
-    SystemDictionaryShared::validate_before_archiving((InstanceKlass*)src);
+    AOTSystemDictionary::validate_before_archiving((InstanceKlass*)src);
     allocate(RuntimeClassInfoPtrSize);
   }
 
@@ -538,7 +537,7 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
   if (ClassListWriter::is_enabled()) {
     if (LambdaProxyClassDictionary::is_supported_invokedynamic(bootstrap_specifier)) {
       const constantPoolHandle& pool = bootstrap_specifier->pool();
-      if (SystemDictionaryShared::is_builtin_loader(pool->pool_holder()->class_loader_data())) {
+      if (AOTSystemDictionary::is_builtin_loader(pool->pool_holder()->class_loader_data())) {
         // Currently lambda proxy classes are supported only for the built-in loaders.
         ResourceMark rm(THREAD);
         int pool_index = bootstrap_specifier->bss_index();

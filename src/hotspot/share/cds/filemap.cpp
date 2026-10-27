@@ -23,24 +23,24 @@
  */
 
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotHeap.inline.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMappedHeapLoader.hpp"
 #include "cds/aotMappedHeapWriter.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -293,7 +293,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _compact_headers = UseCompactObjectHeaders;
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    _object_streaming_mode = HeapShared::is_writing_streaming_mode();
+    _object_streaming_mode = AOTHeap::is_writing_streaming_mode();
     _narrow_oop_mode = AOTMappedHeapWriter::narrow_oop_mode();
     _narrow_oop_base = AOTMappedHeapWriter::narrow_oop_base();
     _narrow_oop_shift = AOTMappedHeapWriter::narrow_oop_shift();
@@ -875,7 +875,7 @@ size_t FileMapRegion::used_aligned() const {
 
 void FileMapRegion::init(int region_index, size_t mapping_offset, size_t size, bool read_only,
                          bool allow_exec, int crc) {
-  _is_heap_region = HeapShared::is_heap_region(region_index);
+  _is_heap_region = AOTHeap::is_heap_region(region_index);
   _is_bitmap_region = (region_index == AOTMetaspace::bm);
   _mapping_offset = mapping_offset;
   _used = size;
@@ -977,11 +977,11 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   } else if (size == 0) {
     // This is an unused region (e.g., a heap region when !INCLUDE_CDS_JAVA_HEAP)
     requested_base = nullptr;
-  } else if (HeapShared::is_heap_region(region)) {
+  } else if (AOTHeap::is_heap_region(region)) {
     assert(CDSConfig::is_dumping_heap(), "sanity");
 #if INCLUDE_CDS_JAVA_HEAP
     assert(!CDSConfig::is_dumping_dynamic_archive(), "must be");
-    if (HeapShared::is_writing_mapping_mode()) {
+    if (AOTHeap::is_writing_mapping_mode()) {
       requested_base = (char*)AOTMappedHeapWriter::requested_address();
       if (UseCompressedOops) {
         mapping_offset = (size_t)((address)requested_base - AOTMappedHeapWriter::narrow_oop_base());
@@ -1055,7 +1055,7 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap,
 
   if (mapped_heap_info != nullptr && mapped_heap_info->is_used()) {
     // Remove leading and trailing zeros
-    assert(HeapShared::is_writing_mapping_mode(), "unexpected dumping mode");
+    assert(AOTHeap::is_writing_mapping_mode(), "unexpected dumping mode");
     size_t removed_oop_leading_zeros = remove_bitmap_zeros(mapped_heap_info->oopmap());
     size_t removed_ptr_leading_zeros = remove_bitmap_zeros(mapped_heap_info->ptrmap());
     mapped_heap_info->set_oopmap_start_pos(removed_oop_leading_zeros);
@@ -1064,7 +1064,7 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap,
     size_in_bytes += mapped_heap_info->oopmap()->size_in_bytes();
     size_in_bytes += mapped_heap_info->ptrmap()->size_in_bytes();
   } else if (streamed_heap_info != nullptr && streamed_heap_info->is_used()) {
-    assert(HeapShared::is_writing_streaming_mode(), "unexpected dumping mode");
+    assert(AOTHeap::is_writing_streaming_mode(), "unexpected dumping mode");
 
     size_in_bytes += streamed_heap_info->oopmap()->size_in_bytes();
   }
@@ -1090,7 +1090,7 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap,
   }
 
   if (mapped_heap_info != nullptr && mapped_heap_info->is_used()) {
-    assert(HeapShared::is_writing_mapping_mode(), "unexpected dumping mode");
+    assert(AOTHeap::is_writing_mapping_mode(), "unexpected dumping mode");
     FileMapRegion* r = region_at(AOTMetaspace::hp);
 
     r->init_oopmap(written, mapped_heap_info->oopmap()->size());
@@ -1099,7 +1099,7 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap,
     r->init_ptrmap(written, mapped_heap_info->ptrmap()->size());
     written = write_bitmap(mapped_heap_info->ptrmap(), buffer, written);
   } else if (streamed_heap_info != nullptr && streamed_heap_info->is_used()) {
-    assert(HeapShared::is_writing_streaming_mode(), "unexpected dumping mode");
+    assert(AOTHeap::is_writing_streaming_mode(), "unexpected dumping mode");
     FileMapRegion* r = region_at(AOTMetaspace::hp);
 
     r->init_oopmap(written, streamed_heap_info->oopmap()->size());
@@ -1320,7 +1320,7 @@ bool FileMapInfo::read_region(int i, char* base, size_t size, bool do_commit) {
 }
 
 MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs) {
-  assert(!HeapShared::is_heap_region(i), "sanity");
+  assert(!AOTHeap::is_heap_region(i), "sanity");
   FileMapRegion* r = region_at(i);
   size_t size = r->used_aligned();
   char *requested_addr = mapped_base_address + r->mapping_offset();
@@ -1660,7 +1660,7 @@ void FileMapInfo::stream_heap_region() {
   assert(object_streaming_mode(), "This should only be done for the streaming approach");
 
   if (map_auxiliary_region(AOTMetaspace::hp, /*readonly=*/true) != nullptr) {
-    HeapShared::initialize_streaming();
+    AOTHeap::initialize_streaming();
   } else {
     on_heap_region_loading_error();
   }
@@ -1723,11 +1723,11 @@ bool FileMapInfo::can_use_heap_region() {
     // If JvmtiExport::has_early_class_hook_env() is false, the classes of some objects
     // in the archived subgraphs may be replaced by the ClassFileLoadHook. But that's OK
     // because we won't install an archived object subgraph if the klass of any of the
-    // referenced objects are replaced. See HeapShared::initialize_from_archived_subgraph().
+    // referenced objects are replaced. See AOTHeap::initialize_from_archived_subgraph().
   }
 
   // We pre-compute narrow Klass IDs with the runtime mapping start intended to be the base, and a shift of
-  // HeapShared::precomputed_narrow_klass_shift. We enforce this encoding at runtime (see
+  // AOTHeap::precomputed_narrow_klass_shift. We enforce this encoding at runtime (see
   // CompressedKlassPointers::initialize_for_given_encoding()). Therefore, the following assertions must
   // hold:
   address archive_narrow_klass_base = (address)header()->mapped_base_address();
@@ -2076,7 +2076,7 @@ bool FileMapHeader::validate() {
     aot_log_info(aot)("The %s was created with less restrictive "
                                "verification setting than the current setting.", file_type);
     // Pretend that we didn't have any archived platform/app classes, so they won't be loaded
-    // by SystemDictionaryShared.
+    // by AOTSystemDictionary.
     _has_platform_or_app_classes = false;
   }
 

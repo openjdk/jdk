@@ -35,10 +35,11 @@ private:
   LIR_Opr _obj;
   LIR_Opr _addr;
   bool _do_load;
+  CodeEmitInfo* _info;
 
 public:
-  ShenandoahKeepaliveBarrierStub(LIR_Opr obj, LIR_Opr addr) :
-    _obj(obj), _addr(addr), _do_load(true)
+  ShenandoahKeepaliveBarrierStub(LIR_Opr obj, LIR_Opr addr, CodeEmitInfo* info) :
+    _obj(obj), _addr(addr), _do_load(true), _info(info)
   {
     assert(_obj->is_register(), "should be temporary register");
     assert(_addr->is_address(), "should be the address of the field");
@@ -47,7 +48,7 @@ public:
   }
 
   ShenandoahKeepaliveBarrierStub(LIR_Opr obj) :
-    _obj(obj), _addr(LIR_OprFact::illegalOpr), _do_load(false)
+    _obj(obj), _addr(LIR_OprFact::illegalOpr), _do_load(false), _info(nullptr)
   {
     assert(_obj->is_register(), "should be a register");
     FrameMap* f = Compilation::current()->frame_map();
@@ -57,10 +58,15 @@ public:
   LIR_Opr addr() const { return _addr; }
   LIR_Opr obj() const { return _obj; }
   bool do_load() const { return _do_load; }
+  CodeEmitInfo* info() const { return _info; }
 
   virtual void emit_code(LIR_Assembler* e);
   virtual void visit(LIR_OpVisitState* visitor) {
-    visitor->do_slow_case();
+    if (_info != nullptr) {
+      visitor->do_slow_case(_info);
+    } else {
+      visitor->do_slow_case();
+    }
     if (_do_load) {
       visitor->do_input(_addr);
       visitor->do_temp(_addr);
@@ -121,7 +127,7 @@ private:
 
   void enter_if_gc_state(LIRGenerator* gen, int flags, CodeStub* slow_stub);
 
-  void keepalive_barrier(LIRGenerator* gen, LIR_Opr obj, LIR_Opr addr, DecoratorSet decorators);
+  void keepalive_barrier(LIRGenerator* gen, LIR_Opr obj, LIR_Opr addr, CodeEmitInfo* info, DecoratorSet decorators);
   void load_reference_barrier(LIRGenerator* gen, LIR_Opr obj, LIR_Opr addr, DecoratorSet decorators);
   void card_barrier(LIRGenerator* gen, LIR_Opr addr, DecoratorSet decorators);
 

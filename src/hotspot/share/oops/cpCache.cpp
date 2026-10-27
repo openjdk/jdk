@@ -23,13 +23,12 @@
  */
 
 #include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
 #include "interpreter/bytecodes.hpp"
@@ -409,9 +408,9 @@ void ConstantPoolCache::remove_unshareable_info() {
   _archived_references_index = -1;
   if (CDSConfig::is_dumping_heap()) {
     ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(constant_pool());
-    oop rr = HeapShared::scratch_resolved_references(src_cp);
+    oop rr = AOTHeap::scratch_resolved_references(src_cp);
     if (rr != nullptr) {
-      _archived_references_index = HeapShared::append_root(rr);
+      _archived_references_index = AOTHeap::append_root(rr);
     }
   }
 #endif
@@ -719,12 +718,12 @@ oop ConstantPoolCache::archived_references() {
   if (_archived_references_index < 0) {
     return nullptr;
   }
-  return HeapShared::get_root(_archived_references_index);
+  return AOTHeap::get_root(_archived_references_index);
 }
 
 void ConstantPoolCache::clear_archived_references() {
   if (_archived_references_index >= 0) {
-    HeapShared::clear_root(_archived_references_index);
+    AOTHeap::clear_root(_archived_references_index);
     _archived_references_index = -1;
   }
 }
