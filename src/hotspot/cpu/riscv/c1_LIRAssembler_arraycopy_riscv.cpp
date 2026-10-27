@@ -274,7 +274,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   }
 
   // if we don't know anything, just go through the generic arraycopy
-  if (default_type == nullptr) {
+  if (default_type == nullptr || !default_type->is_loaded()) {
     generic_arraycopy(src, src_pos, length, dst, dst_pos, stub);
     return;
   }
