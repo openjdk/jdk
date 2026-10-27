@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,8 +222,6 @@ public interface MBeanServer extends MBeanServerConnection {
      * Returns the number of MBeans registered in the MBean server.
      *
      * @return the number of registered MBeans, wrapped in an Integer.
-     * If the caller's permissions are restricted, this number may
-     * be greater than the number of MBeans the caller can access.
      */
     public Integer getMBeanCount();
 
