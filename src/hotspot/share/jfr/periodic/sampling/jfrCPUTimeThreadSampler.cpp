@@ -401,70 +401,70 @@ void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* contex
   _sampler->decrement_signal_handler_count();
 }
 
-class JfrCPUTimeJfrStackWalkerCallback : public JfrStackWalkerCallback {
-  JfrTicks _sample_ticks;
-  Tickspan _cpu_time_period;
+struct JfrCPUTimeSamplePayload {
+  JfrTicks sample_ticks;
+  Tickspan cpu_time_period;
+};
 
-  void send_safepoint_latency_event(JavaThread* jt, traceid sid) {
-    assert(jt != nullptr, "invariant");
-    assert(!jt->jfr_thread_local()->has_cached_stack_trace(), "invariant");
-    const JfrTicks end_time = JfrTicks::now();
-    EventSafepointLatency event(UNTIMED);
-    event.set_starttime(_sample_ticks);
-    event.set_endtime(end_time);
-    if (event.should_commit()) {
-      event.set_threadState(_thread_in_Java);
-      jt->jfr_thread_local()->set_cached_stack_trace_id(sid);
-      event.commit();
-      jt->jfr_thread_local()->clear_cached_stack_trace();
+static void send_safepoint_latency_event(JavaThread* jt, const JfrTicks& sample_ticks, traceid sid) {
+  assert(jt != nullptr, "invariant");
+  assert(!jt->jfr_thread_local()->has_cached_stack_trace(), "invariant");
+  const JfrTicks end_time = JfrTicks::now();
+  EventSafepointLatency event(UNTIMED);
+  event.set_starttime(sample_ticks);
+  event.set_endtime(end_time);
+  if (event.should_commit()) {
+    event.set_threadState(_thread_in_Java);
+    jt->jfr_thread_local()->set_cached_stack_trace_id(sid);
+    event.commit();
+    jt->jfr_thread_local()->clear_cached_stack_trace();
+  }
+}
+
+static void send_lost_samples_event(JavaThread* jt) {
+  const u4 lost_samples = jt->jfr_thread_local()->get_and_reset_cpu_time_lost_samples();
+  if (lost_samples == 0) {
+    return;
+  }
+  // Lost samples belong to the platform thread that owns the queue.
+  Thread* const current = Thread::current();
+  const traceid tid = JfrThreadLocal::jvm_thread_id(jt);
+  JfrThreadLocal::impersonate(current, tid);
+  assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
+  JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), (s4)lost_samples);
+  JfrThreadLocal::stop_impersonating(current);
+}
+
+static void process_cpu_time_sample(JavaThread* jt, JfrStackWalkRequest& request) {
+  const JfrCPUTimeSamplePayload payload = request.payload<JfrCPUTimeSamplePayload>();
+  traceid sid;
+  traceid tid;
+  bool biased;
+  const bool walked = JfrStackWalker::walk(request, jt, sid, tid, biased);
+  Thread* const current = Thread::current();
+  JfrThreadLocal::impersonate(current, tid);
+  assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
+  if (walked) {
+    JfrCPUTimeThreadSampling::send_event(payload.sample_ticks, sid, payload.cpu_time_period, biased);
+    if (current == jt) {
+      // TODO: Safepoint latency would be better and more generically tracked in the
+      // safepoint/handshake implementation.
+      send_safepoint_latency_event(jt, payload.sample_ticks, sid);
     }
+  } else {
+    JfrCPUTimeThreadSampling::send_empty_event(payload.sample_ticks, payload.cpu_time_period);
   }
+  JfrThreadLocal::stop_impersonating(current);
+  send_lost_samples_event(jt);
+}
 
-  static void send_lost_samples_event(JavaThread* jt) {
-    const u4 lost_samples = jt->jfr_thread_local()->get_and_reset_cpu_time_lost_samples();
-    if (lost_samples == 0) {
-      return;
-    }
-    // Lost samples belong to the platform thread that owns the queue.
-    Thread* const current = Thread::current();
-    const traceid tid = JfrThreadLocal::jvm_thread_id(jt);
-    JfrThreadLocal::impersonate(current, tid);
-    assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
-    JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), (s4)lost_samples);
-    JfrThreadLocal::stop_impersonating(current);
-  }
+static void drop_cpu_time_sample(JavaThread* jt, const JfrStackWalkRequest& request) {
+  jt->jfr_thread_local()->increment_cpu_time_lost_samples();
+}
 
-public:
-  JfrCPUTimeJfrStackWalkerCallback(JfrTicks sample_ticks, Tickspan cpu_time_period) :
-    _sample_ticks(sample_ticks),
-    _cpu_time_period(cpu_time_period) {
-  }
-
-  void process(JavaThread* jt, JfrStackWalkRequest& request) final {
-    traceid sid;
-    traceid tid;
-    bool biased;
-    const bool walked = JfrStackWalker::walk(request, jt, sid, tid, biased);
-    Thread* const current = Thread::current();
-    JfrThreadLocal::impersonate(current, tid);
-    assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
-    if (walked) {
-      JfrCPUTimeThreadSampling::send_event(_sample_ticks, sid, _cpu_time_period, biased);
-      if (current == jt) {
-        // TODO: Safepoint latency would be better and more generically tracked in the
-        // safepoint/handshake implementation.
-        send_safepoint_latency_event(jt, sid);
-      }
-    } else {
-      JfrCPUTimeThreadSampling::send_empty_event(_sample_ticks, _cpu_time_period);
-    }
-    JfrThreadLocal::stop_impersonating(current);
-    send_lost_samples_event(jt);
-  }
-
-  void on_dropped(JavaThread* jt) final {
-    jt->jfr_thread_local()->increment_cpu_time_lost_samples();
-  }
+static const JfrStackWalkerConsumer cpu_time_sample_consumer = {
+  process_cpu_time_sample,
+  drop_cpu_time_sample
 };
 
 void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
@@ -478,8 +478,8 @@ void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
   int64_t period = get_sampling_period() * (info->si_overrun + 1);
   Tickspan cpu_time_period = Ticks(period / 1000000000.0 * JfrTime::frequency()) - Ticks(0);
 
-  JfrStackWalkRequest request;
-  request.construct_callback<JfrCPUTimeJfrStackWalkerCallback>(now, cpu_time_period);
+  const JfrCPUTimeSamplePayload payload = { now, cpu_time_period };
+  JfrStackWalkRequest request(&cpu_time_sample_consumer, payload);
   if (!JfrStackWalker::request_stack_trace(request, jt, context, true /* suspended */)) {
     jt->jfr_thread_local()->increment_cpu_time_lost_samples();
   }

@@ -30,6 +30,7 @@
 
 #if INCLUDE_JFR
 
+#include "cppstdlib/type_traits.hpp"
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allStatic.hpp"
@@ -38,67 +39,56 @@ class JavaThread;
 class JfrNativeStackWalkerThread;
 class JfrStackWalkRequest;
 
-class JfrStackWalkerCallback {
-public:
-  // Prevent heap allocation - only embedded storage via placement new is allowed.
-  void* operator new(size_t size) = delete;
-  void* operator new[](size_t size) = delete;
-  void operator delete[](void* p) = delete;
-  // Placement new for embedded storage in JfrStackWalkRequest.
-  void* operator new(size_t size, void* ptr) { return ptr; }
-  // No-op: destructor is called explicitly, never via delete.
-  void operator delete(void* p) {}
-
-  virtual ~JfrStackWalkerCallback() = default;
-
+// The handlers of one consumer of the stack walker, e.g. JFR CPU-time sampling.
+// Each consumer defines one static instance and passes it with its requests.
+struct JfrStackWalkerConsumer {
   // Called to process a queued request, either by the requested thread itself at
   // a safepoint poll, or by the native stack walker thread while the requested
   // thread is in native. Implementations walk the stack with JfrStackWalker::walk(),
   // or decide not to.
-  virtual void process(JavaThread* jt, JfrStackWalkRequest& request) = 0;
+  void (*process)(JavaThread* jt, JfrStackWalkRequest& request);
 
   // Called instead of process() when a queued request is discarded, e.g.
   // because its thread terminates.
-  virtual void on_dropped(JavaThread* jt) = 0;
+  void (*on_dropped)(JavaThread* jt, const JfrStackWalkRequest& request);
 };
 
+// A stack-walk request: the consumer that handles it, the consumer's payload,
+// and the description of the top frame. Requests are built in signal handlers
+// and copied into the queue, so they must be plain data throughout.
 class JfrStackWalkRequest {
-public:
-  // Embedded storage constants for the callback object.
-  // Avoids heap allocation in signal handlers.
-  // Size/alignment are enforced at compile time by construct_callback().
-  static constexpr size_t CALLBACK_STORAGE_SIZE = 32;
-  static constexpr size_t CALLBACK_STORAGE_ALIGNMENT = 8;
+  static constexpr size_t PAYLOAD_SIZE = 24;
 
-private:
-  alignas(CALLBACK_STORAGE_ALIGNMENT) char _callback_storage[CALLBACK_STORAGE_SIZE];
+  const JfrStackWalkerConsumer* _consumer;
   JfrSampleRequest _sample_request;
+  alignas(8) u1 _payload[PAYLOAD_SIZE];
+
+  template <typename T>
+  static void check_payload() {
+    static_assert(std::is_trivially_copyable<T>::value, "payload must be trivially copyable");
+    static_assert(sizeof(T) <= PAYLOAD_SIZE, "payload too large");
+    static_assert(alignof(T) <= 8, "payload alignment too large");
+  }
 
 public:
-  JfrStackWalkRequest() :
-    _sample_request() {}
+  template <typename T>
+  JfrStackWalkRequest(const JfrStackWalkerConsumer* consumer, const T& payload) :
+    _consumer(consumer),
+    _sample_request() {
+    check_payload<T>();
+    memcpy(_payload, &payload, sizeof(T));
+  }
+
+  const JfrStackWalkerConsumer* consumer() const { return _consumer; }
 
   JfrSampleRequest& sample_request() { return _sample_request; }
 
-  // Construct a callback in the embedded storage.
-  // Enforces size and alignment constraints at compile time.
-  template <typename T, typename... Args>
-  T* construct_callback(Args&&... args) {
-    static_assert(sizeof(T) <= CALLBACK_STORAGE_SIZE,
-                  "Callback too large for JfrStackWalkRequest embedded storage");
-    static_assert(alignof(T) <= CALLBACK_STORAGE_ALIGNMENT,
-                  "Callback alignment exceeds JfrStackWalkRequest embedded storage alignment");
-    return new (_callback_storage) T(static_cast<Args&&>(args)...);
-  }
-
-  // Returns the callback pointer (assumes callback was constructed in storage).
-  JfrStackWalkerCallback* callback() const {
-    return reinterpret_cast<JfrStackWalkerCallback*>(const_cast<char*>(_callback_storage));
-  }
-
-  // Call destructor on the callback (must be called after processing).
-  void destroy_callback() {
-    callback()->~JfrStackWalkerCallback();
+  template <typename T>
+  T payload() const {
+    check_payload<T>();
+    T payload;
+    memcpy(&payload, _payload, sizeof(T));
+    return payload;
   }
 };
 
@@ -228,15 +218,14 @@ public:
   // Called when a Java thread terminates to discard its pending requests.
   static void on_javathread_terminate(JavaThread* thread);
 
-  // Request a stack trace. The caller must prepare the request by
-  // constructing a callback via request.construct_callback<T>(...).
-  // Returns false if the request was dropped, in which case the callback
-  // is never called. Accounting for dropped requests is up to the caller.
+  // Request a stack trace. Returns false if the request was dropped, in which
+  // case its consumer is never called. Accounting for dropped requests is up
+  // to the caller.
   // This API is signal-safe (no allocations).
   static bool request_stack_trace(JfrStackWalkRequest& request, JavaThread* jt, const void* context, bool thread_is_suspended);
 
   // Walks the stack described by a request and adds the trace to the stack-trace
-  // repository. Only valid from JfrStackWalkerCallback::process(). Returns false if
+  // repository. Only valid from JfrStackWalkerConsumer::process. Returns false if
   // no trace could be obtained, in which case sid is 0. tid is the thread id to
   // report: the vthread id if the trace is in a continuation, else the jvm thread id.
   static bool walk(JfrStackWalkRequest& request, JavaThread* jt, traceid& sid, traceid& tid, bool& biased);

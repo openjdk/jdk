@@ -520,8 +520,7 @@ void JfrStackWalker::process_requests_locked(JavaThread* jt) {
   u4 count = queue.size();
   for (u4 i = 0; i < count; i++) {
     JfrStackWalkRequest& request = queue.at(i);
-    request.callback()->process(jt, request);
-    request.destroy_callback();
+    request.consumer()->process(jt, request);
   }
   queue.clear();
   assert(queue.is_empty(), "invariant");
@@ -537,8 +536,7 @@ void JfrStackWalker::on_javathread_terminate(JavaThread* jt) {
   const u4 count = queue.size();
   for (u4 i = 0; i < count; i++) {
     JfrStackWalkRequest& request = queue.at(i);
-    request.callback()->on_dropped(jt);
-    request.destroy_callback();
+    request.consumer()->on_dropped(jt, request);
   }
   queue.clear();
   tl.set_has_requests(false);
