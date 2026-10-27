@@ -438,7 +438,7 @@ void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm, Register zpointer,
 void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm, Register zpointer, Address dst,
                                          bool dest_uninitialized) {
   if (!dest_uninitialized) {
-    Label store, store_bad, dummy;
+    Label store, store_bad;
     __ z_lg(Z_R0_scratch, dst);
     __ z_ngrk(Z_R0_scratch, Z_R0_scratch, _store_bad_mask);
     __ branch_optimized(Assembler::bcondZero, store);
