@@ -23,7 +23,8 @@
  */
 
 /*
- * @test automatic modules can read all unnamed modules, and vice versa, even if AOT cache is used.
+ * @test
+ * @summary Automatic modules can read all unnamed modules, and vice versa, even if AOT cache is used.
  * @bug 8393235
  * @modules java.logging
  * @requires vm.cds.supports.aot.class.linking
