@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_COMPILER_OOPMAP_INLINE_HPP
-#define SHARE_VM_COMPILER_OOPMAP_INLINE_HPP
+#ifndef SHARE_COMPILER_OOPMAP_INLINE_HPP
+#define SHARE_COMPILER_OOPMAP_INLINE_HPP
 
 #include "compiler/oopMap.hpp"
 
@@ -145,5 +145,4 @@ void OopMapDo<OopFnT, DerivedOopFnT, ValueFilterT>::oops_do(const frame *fr, con
   iterate_oops_do(fr, reg_map, oopmap);
 }
 
-#endif // SHARE_VM_COMPILER_OOPMAP_INLINE_HPP
-
+#endif // SHARE_COMPILER_OOPMAP_INLINE_HPP

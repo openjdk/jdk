@@ -78,7 +78,7 @@ LIR_Opr LIRGenerator::syncLockOpr()                  { return FrameMap::R5_opr; 
 LIR_Opr LIRGenerator::syncTempOpr()                  { return FrameMap::R4_oop_opr; } // Need temp effect for MonitorEnterStub.
 LIR_Opr LIRGenerator::getThreadTemp()                { return LIR_OprFact::illegalOpr; } // not needed
 
-LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
+LIR_Opr LIRGenerator::result_register_for(ValueType* type) {
   LIR_Opr opr;
   switch (type->tag()) {
   case intTag:     opr = FrameMap::R3_opr;         break;
@@ -95,13 +95,8 @@ LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
   return opr;
 }
 
-LIR_Opr LIRGenerator::rlock_callee_saved(BasicType type) {
-  ShouldNotReachHere();
-  return LIR_OprFact::illegalOpr;
-}
 
-
-LIR_Opr LIRGenerator::rlock_byte(BasicType type) {
+LIR_Opr LIRGenerator::rlock_byte() {
   return new_register(T_INT);
 }
 
@@ -261,14 +256,6 @@ LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
     return tmp;
   }
   return r;
-}
-
-
-void LIRGenerator::increment_counter(address counter, BasicType type, int step) {
-  LIR_Opr pointer = new_pointer_register();
-  __ move(LIR_OprFact::intptrConst(counter), pointer);
-  LIR_Address* addr = new LIR_Address(pointer, type);
-  increment_counter(addr, step);
 }
 
 
@@ -899,7 +886,8 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   // we need to reexecute the instruction and therefore provide
   // the state before the parameters have been consumed.
   CodeEmitInfo* patching_info = nullptr;
-  if (!x->klass()->is_loaded() || PatchALot) {
+  ciKlass* obj = ciObjArrayKlass::make(x->klass());
+  if (!x->klass()->is_loaded() || !obj->is_loaded() || PatchALot) {
     patching_info = state_for(x, x->state_before());
   }
 
@@ -915,15 +903,13 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   LIR_Opr tmp4 = FrameMap::R8_oop_opr;
   LIR_Opr len = length.result();
 
-  ciKlass* obj = ciObjArrayKlass::make(x->klass());
-
   // TODO 8265122 Implement a fast path for this
   bool is_flat = obj->is_loaded() && obj->is_flat_array_klass();
   bool is_null_free = obj->is_loaded() && obj->as_array_klass()->is_elem_null_free();
 
   CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info, is_null_free);
-  if (obj == ciEnv::unloaded_ciobjarrayklass()) {
-    BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
+  if (x->klass()->is_loaded() && !obj->is_loaded()) {
+    BAILOUT("encountered unloaded ciobjarrayklass due to out of memory error");
   }
   klass2reg_with_patching(klass_reg, obj, patching_info);
   bool always_slow_path = is_null_free || is_flat;
@@ -1145,16 +1131,23 @@ void LIRGenerator::trace_block_entry(BlockBegin* block) {
 
 void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
                                         CodeEmitInfo* info) {
+  __ membar_release();
 #ifdef _LP64
   __ store(value, address, info);
 #else
   Unimplemented();
 //  __ volatile_store_mem_reg(value, address, info);
 #endif
+  if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ membar();
+  }
 }
 
 void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ membar();
+  }
 #ifdef _LP64
   __ load(address, result, info);
 #else
