@@ -722,7 +722,7 @@ instruct andL_reg_lshiftL_1_not(iRegLNoSp dst, iRegL src, immL_1 one, iRegIorL2I
 %}
 
 // Prefer ori/xori/andi when the mask fits in a signed 12-bit immediate.
-instruct orL_reg_immL_SingleBit(iRegLNoSp dst, iRegL src, immL_single_bit mask) %{
+instruct orL_reg_immL_SingleBit(iRegLNoSp dst, iRegL src, immL_single_set_bit mask) %{
   predicate(UseZbs && !Assembler::is_simm12(n->in(2)->get_long()));
   match(Set dst (OrL src mask));
   ins_cost(ALU_COST);
@@ -736,7 +736,7 @@ instruct orL_reg_immL_SingleBit(iRegLNoSp dst, iRegL src, immL_single_bit mask) 
   ins_pipe(ialu_reg_shift);
 %}
 
-instruct xorL_reg_immL_SingleBit(iRegLNoSp dst, iRegL src, immL_single_bit mask) %{
+instruct xorL_reg_immL_SingleBit(iRegLNoSp dst, iRegL src, immL_single_set_bit mask) %{
   predicate(UseZbs && !Assembler::is_simm12(n->in(2)->get_long()));
   match(Set dst (XorL src mask));
   ins_cost(ALU_COST);
@@ -750,7 +750,7 @@ instruct xorL_reg_immL_SingleBit(iRegLNoSp dst, iRegL src, immL_single_bit mask)
   ins_pipe(ialu_reg_shift);
 %}
 
-instruct andL_reg_immL_SingleZero(iRegLNoSp dst, iRegL src, immL_single_zero mask) %{
+instruct andL_reg_immL_SingleZero(iRegLNoSp dst, iRegL src, immL_single_clear_bit mask) %{
   predicate(UseZbs && !Assembler::is_simm12(n->in(2)->get_long()));
   match(Set dst (AndL src mask));
   ins_cost(ALU_COST);

@@ -2864,7 +2864,7 @@ operand immISub()
 %}
 
 // 5 bit signed value.
-operand immI5()
+operand immI_simm5()
 %{
   predicate(n->get_int() <= 15 && n->get_int() >= -16);
   match(ConI);
@@ -3036,7 +3036,7 @@ operand immL_bitmask() %{
   interface(CONST_INTER);
 %}
 
-operand immL_single_bit()
+operand immL_single_set_bit()
 %{
   predicate(is_power_of_2((julong)n->get_long()));
   match(ConL);
@@ -3046,7 +3046,7 @@ operand immL_single_bit()
   interface(CONST_INTER);
 %}
 
-operand immL_single_zero()
+operand immL_single_clear_bit()
 %{
   predicate(is_power_of_2((julong)~n->get_long()));
   match(ConL);

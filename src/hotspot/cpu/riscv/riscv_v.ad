@@ -500,7 +500,7 @@ instruct vadd_fp_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 
 // vector-immediate add (unpredicated)
 
-instruct vadd_vi(vReg dst, vReg src1, immI5 con) %{
+instruct vadd_vi(vReg dst, vReg src1, immI_simm5 con) %{
   match(Set dst (AddVB src1 (Replicate con)));
   match(Set dst (AddVS src1 (Replicate con)));
   match(Set dst (AddVI src1 (Replicate con)));
@@ -558,7 +558,7 @@ instruct vaddL_vx(vReg dst, vReg src1, iRegL src2) %{
 
 // vector-immediate add (predicated)
 
-instruct vadd_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
+instruct vadd_vi_masked(vReg dst_src, immI_simm5 con, vRegMask_V0 v0) %{
   match(Set dst_src (AddVB (Binary dst_src (Replicate con)) v0));
   match(Set dst_src (AddVS (Binary dst_src (Replicate con)) v0));
   match(Set dst_src (AddVI (Binary dst_src (Replicate con)) v0));
@@ -907,7 +907,7 @@ instruct vand_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 
 // vector-immediate and (unpredicated)
 
-instruct vand_vi(vReg dst, vReg src1, immI5 con) %{
+instruct vand_vi(vReg dst, vReg src1, immI_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -969,7 +969,7 @@ instruct vandL_vx(vReg dst, vReg src1, iRegL src2) %{
 
 // vector-immediate and (predicated)
 
-instruct vand_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
+instruct vand_vi_masked(vReg dst_src, immI_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -1061,7 +1061,7 @@ instruct vor_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 
 // vector-immediate or (unpredicated)
 
-instruct vor_vi(vReg dst, vReg src1, immI5 con) %{
+instruct vor_vi(vReg dst, vReg src1, immI_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -1123,7 +1123,7 @@ instruct vorL_vx(vReg dst, vReg src1, iRegL src2) %{
 
 // vector-immediate or (predicated)
 
-instruct vor_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
+instruct vor_vi_masked(vReg dst_src, immI_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -1215,7 +1215,7 @@ instruct vxor_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 
 // vector-immediate xor (unpredicated)
 
-instruct vxor_vi(vReg dst, vReg src1, immI5 con) %{
+instruct vxor_vi(vReg dst, vReg src1, immI_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -1277,7 +1277,7 @@ instruct vxorL_vx(vReg dst, vReg src1, iRegL src2) %{
 
 // vector-immediate xor (predicated)
 
-instruct vxor_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
+instruct vxor_vi_masked(vReg dst_src, immI_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -3211,7 +3211,7 @@ instruct replicateL(vReg dst, iRegL src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct replicate_imm5(vReg dst, immI5 con) %{
+instruct replicate_imm5(vReg dst, immI_simm5 con) %{
   predicate(Matcher::is_non_long_integral_vector(n));
   match(Set dst (Replicate con));
   format %{ "replicate_imm5 $dst, $con" %}
