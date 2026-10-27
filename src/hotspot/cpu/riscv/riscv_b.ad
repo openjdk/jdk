@@ -329,7 +329,7 @@ instruct bits_reverse_L(iRegLNoSp dst, iRegL src)
 
 
 // Shift Add Pointer
-instruct shaddP_reg_reg_b(iRegPNoSp dst, iRegP src1, iRegL src2, immIScale imm) %{
+instruct shaddP_reg_reg_b(iRegPNoSp dst, iRegPorL2P src1, iRegL src2, immIScale imm) %{
   predicate(UseZba);
   match(Set dst (AddP src1 (LShiftL src2 imm)));
 
@@ -346,7 +346,7 @@ instruct shaddP_reg_reg_b(iRegPNoSp dst, iRegP src1, iRegL src2, immIScale imm) 
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct shaddP_reg_reg_ext_b(iRegPNoSp dst, iRegP src1, iRegI src2, immIScale imm) %{
+instruct shaddP_reg_reg_ext_b(iRegPNoSp dst, iRegPorL2P src1, iRegI src2, immIScale imm) %{
   predicate(UseZba);
   match(Set dst (AddP src1 (LShiftL (ConvI2L src2) imm)));
 
