@@ -1253,6 +1253,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
         return buildWhereClause(rs, callerMd, params, keyCols);
     }
 
+    // Allows `updateResolvedConflictToDB` to provide its own metadata, key cols, and populate its params
     private String buildWhereClause(ResultSet rs, ResultSetMetaData metaData, Object[] params, int[] keyCols)
             throws SQLException {
         StringBuilder whereClause = new StringBuilder("WHERE ");
