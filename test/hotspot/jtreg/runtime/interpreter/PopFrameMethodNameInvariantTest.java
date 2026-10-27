@@ -48,7 +48,7 @@ import java.util.Map;
 /*
  * @test id=platform
  * @bug 8380080
- * @summary MemberName in local0 must be preserved when PopFrame re-executes direct MethodHandles.linkToStatic
+ * @summary MemberName in local0 must be preserved when PopFrame re-executes direct MethodHandle.linkToStatic
  * @requires vm.jvmti
  * @requires vm.flavor != "zero"
  * @library ../../compiler/jsr292/patches /test/lib
@@ -61,7 +61,7 @@ import java.util.Map;
 /*
  * @test id=unmount
  * @bug 8391440
- * @summary MemberName in local0 must be preserved when PopFrame re-executes direct MethodHandles.linkToStatic
+ * @summary MemberName in local0 must be preserved when PopFrame re-executes direct MethodHandle.linkToStatic
  *          also when that caller is frozen in a virtual thread's stack chunk
  * @requires vm.jvmti
  * @requires vm.flavor != "zero"
@@ -73,15 +73,45 @@ import java.util.Map;
  * @run driver runtime.interpreter.PopFrameMethodNameInvariantTest unmount
  */
 
+/*
+ * @test id=platform-mh
+ * @bug 8391440
+ * @summary MemberName must be restored from the DirectMethodHandle in local0 when PopFrame re-executes
+ *          linkToStatic in a LambdaForm frame
+ * @requires vm.jvmti
+ * @requires vm.flavor != "zero"
+ * @library ../../compiler/jsr292/patches /test/lib
+ * @modules java.base/jdk.internal.vm.annotation
+ *          jdk.jdi
+ * @build   java.base/java.lang.invoke.MethodHandleHelper
+ * @run driver runtime.interpreter.PopFrameMethodNameInvariantTest mh
+ */
+
+/*
+ * @test id=unmount-mh
+ * @bug 8391440
+ * @summary MemberName must be restored from the DirectMethodHandle in local0 when PopFrame re-executes
+ *          linkToStatic in a LambdaForm frame frozen in a virtual thread's stack chunk
+ * @requires vm.jvmti
+ * @requires vm.flavor != "zero"
+ * @requires vm.continuations
+ * @library ../../compiler/jsr292/patches /test/lib
+ * @modules java.base/jdk.internal.vm.annotation
+ *          jdk.jdi
+ * @build   java.base/java.lang.invoke.MethodHandleHelper
+ * @run driver runtime.interpreter.PopFrameMethodNameInvariantTest unmount mh
+ */
+
 public class PopFrameMethodNameInvariantTest {
     public static class Target {
         static final boolean UNMOUNT = Boolean.getBoolean("popframe.unmount");
         static int entered;
         static final long LONG_ARG = 0x1234567890ABL;
         static final Object MARKER = new Object();
+        static final boolean USE_MH = Boolean.getBoolean("popframe.mh");
 
         // the debugger pops body, the caller of this one
-        static void stop(int a) {}
+        static void stop() {}
 
         static void body(int a, long b, Object c) throws InterruptedException {
             entered++;
@@ -90,10 +120,20 @@ public class PopFrameMethodNameInvariantTest {
                 // frames below body stay frozen until they are returned into
                 Thread.sleep(1000);
             }
-            stop(a);
+            stop();
             // only the reexecuted invocation gets here
             if (entered != 2 || a != 7 || b != LONG_ARG || c != MARKER) {
                 throw new RuntimeException("entered " + entered + " times, a = " + a + ", b = " + b + ", c = " + c);
+            }
+        }
+
+        // invokeExact reaches body through a LambdaForm frame that keeps the DirectMethodHandle in local0,
+        // the helper keeps the MemberName there
+        static void call(MethodHandle target, Object name) throws Throwable {
+            if (USE_MH) {
+                target.invokeExact(7, LONG_ARG, MARKER);
+            } else {
+                MethodHandleHelper.linkToStatic(name, 7, LONG_ARG, MARKER);
             }
         }
 
@@ -104,13 +144,13 @@ public class PopFrameMethodNameInvariantTest {
                     MethodType.methodType(void.class, int.class, long.class, Object.class));
             Object name = MethodHandleHelper.internalMemberName(target);
             if (!UNMOUNT) {
-                MethodHandleHelper.linkToStatic(name, 7, LONG_ARG, MARKER);
+                call(target, name);
                 return;
             }
             Throwable[] failure = new Throwable[1];
             Thread thread = Thread.ofVirtual().start(() -> {
                 try {
-                    MethodHandleHelper.linkToStatic(name, 7, LONG_ARG, MARKER);
+                    call(target, name);
                 } catch (Throwable t) {
                     failure[0] = t;
                 }
@@ -164,8 +204,12 @@ public class PopFrameMethodNameInvariantTest {
         if (patchPath != null) {
             options += " --patch-module=java.base=\"" + Path.of(patchPath, "java.base") + "\"";
         }
-        if (args.length > 0 && args[0].equals("unmount")) {
-            options += " -Dpopframe.unmount=true";
+        for (String arg : args) {
+            if (arg.equals("unmount")) {
+                options += " -Dpopframe.unmount=true";
+            } else if (arg.equals("mh")) {
+                options += " -Dpopframe.mh=true";
+            }
         }
         argumentMap.get("options").setValue((options + " -Xint").trim());
         return connector.launch(argumentMap);

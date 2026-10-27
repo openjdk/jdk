@@ -40,7 +40,7 @@ public class popframes001a {
     // name of the tested thread
     public static final String THREAD_NAME = "testedThread";
 
-    // line nunber for breakpoint
+    // line number for breakpoint
     public static final int BREAKPOINT_LINE_NUMBER = 160;
 
     // line number of the popframes003 breakpoint in stop()
