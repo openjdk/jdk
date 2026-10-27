@@ -138,7 +138,8 @@ class WindowsPathParser {
             }
         }
 
-        // For a root-only UNC path, we need to normalize it to a UNC path with a trailing slash.
+        // A UNC path to the root of a share, such as an administrative share
+        // (\\host\C$), may lack a trailing slash and need to be normalized.
         if (requireToNormalize || (type == WindowsPathType.UNC && off == len)) {
             return new Result(type, root, normalize(root, input, off));
         } else {
