@@ -2886,7 +2886,7 @@ operand immL()
 %}
 
 // 64 bit zero
-operand immL0()
+operand immL_0()
 %{
   predicate(n->get_long() == 0);
   match(ConL);
@@ -2918,7 +2918,7 @@ operand immL_1()
 %}
 
 // 5 bit signed value (simm5)
-operand immL5()
+operand immL_simm5()
 %{
   predicate(n->get_long() <= 15 && n->get_long() >= -16);
   match(ConL);
@@ -5680,7 +5680,7 @@ instruct storeL_volatile(iRegL src, indirect mem)
 %}
 
 // Store Long (64 bit signed)
-instruct storeimmL0(immL0 zero, memory mem)
+instruct storeimmL0(immL_0 zero, memory mem)
 %{
   predicate(!needs_releasing_store(n));
   match(Set mem (StoreL mem zero));
@@ -5695,7 +5695,7 @@ instruct storeimmL0(immL0 zero, memory mem)
   ins_pipe(istore_mem);
 %}
 
-instruct storeimmL0_volatile(immL0 zero, indirect mem)
+instruct storeimmL0_volatile(immL_0 zero, indirect mem)
 %{
   predicate(needs_releasing_store(n));
   match(Set mem (StoreL mem zero));
@@ -7257,7 +7257,7 @@ instruct negI_reg(iRegINoSp dst, iRegIorL2I src, immI0 zero) %{
 
 // Long Negation
 
-instruct negL_reg(iRegLNoSp dst, iRegL src, immL0 zero) %{
+instruct negL_reg(iRegLNoSp dst, iRegL src, immL_0 zero) %{
   match(Set dst (SubL zero src));
   ins_cost(ALU_COST);
   format %{ "sub  $dst, x0, $src\t# long, #@negL_reg" %}
@@ -10466,7 +10466,7 @@ instruct cmpUEqNeLeGt_reg_imm0_branch(cmpOpUEqNeLeGt cmp, iRegI op1, immI0 zero,
 %}
 
 // Compare signed long with zero and branch near instructions
-instruct cmpL_reg_imm0_branch(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
+instruct cmpL_reg_imm0_branch(cmpOp cmp, iRegL op1, immL_0 zero, label lbl)
 %{
   // Same match rule as `far_cmpL_reg_imm0_branch'.
   match(If cmp (CmpL op1 zero));
@@ -10485,7 +10485,7 @@ instruct cmpL_reg_imm0_branch(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
   ins_short_branch(1);
 %}
 
-instruct cmpL_reg_imm0_loop(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
+instruct cmpL_reg_imm0_loop(cmpOp cmp, iRegL op1, immL_0 zero, label lbl)
 %{
   // Same match rule as `far_cmpL_reg_imm0_loop'.
   match(CountedLoopEnd cmp (CmpL op1 zero));
@@ -10505,7 +10505,7 @@ instruct cmpL_reg_imm0_loop(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
 %}
 
 // Compare unsigned long with zero and branch near instructions
-instruct cmpULEqNeLeGt_reg_imm0_branch(cmpOpUEqNeLeGt cmp, iRegL op1, immL0 zero, label lbl)
+instruct cmpULEqNeLeGt_reg_imm0_branch(cmpOpUEqNeLeGt cmp, iRegL op1, immL_0 zero, label lbl)
 %{
   // Same match rule as `far_cmpULEqNeLeGt_reg_imm0_branch'.
   match(If cmp (CmpUL op1 zero));
@@ -10820,7 +10820,7 @@ instruct far_cmpULtGe_reg_imm0_branch(cmpOpULtGe cmp, iRegI op1, immI0 zero, lab
   ins_pipe(pipe_cmpz_branch);
 %}
 
-instruct far_cmpL_reg_imm0_branch(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
+instruct far_cmpL_reg_imm0_branch(cmpOp cmp, iRegL op1, immL_0 zero, label lbl)
 %{
   match(If cmp (CmpL op1 zero));
 
@@ -10837,7 +10837,7 @@ instruct far_cmpL_reg_imm0_branch(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
   ins_pipe(pipe_cmpz_branch);
 %}
 
-instruct far_cmpL_reg_imm0_loop(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
+instruct far_cmpL_reg_imm0_loop(cmpOp cmp, iRegL op1, immL_0 zero, label lbl)
 %{
   match(CountedLoopEnd cmp (CmpL op1 zero));
 
@@ -10854,7 +10854,7 @@ instruct far_cmpL_reg_imm0_loop(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
   ins_pipe(pipe_cmpz_branch);
 %}
 
-instruct far_cmpULEqNeLeGt_reg_imm0_branch(cmpOpUEqNeLeGt cmp, iRegL op1, immL0 zero, label lbl)
+instruct far_cmpULEqNeLeGt_reg_imm0_branch(cmpOpUEqNeLeGt cmp, iRegL op1, immL_0 zero, label lbl)
 %{
   match(If cmp (CmpUL op1 zero));
 
@@ -10872,7 +10872,7 @@ instruct far_cmpULEqNeLeGt_reg_imm0_branch(cmpOpUEqNeLeGt cmp, iRegL op1, immL0 
 %}
 
 // compare lt/ge unsigned instructs has no short instruct with same match
-instruct far_cmpULLtGe_reg_imm0_branch(cmpOpULtGe cmp, iRegL op1, immL0 zero, label lbl)
+instruct far_cmpULLtGe_reg_imm0_branch(cmpOpULtGe cmp, iRegL op1, immL_0 zero, label lbl)
 %{
   match(If cmp (CmpUL op1 zero));
 
@@ -11217,7 +11217,7 @@ instruct cmovL_cmpD(iRegLNoSp dst, iRegL src, fRegD op1, fRegD op2, cmpOp cop) %
 
 // Special cases where one arg is zero
 
-instruct cmovL_cmpL_zero(iRegLNoSp dst, immL0 src, iRegL op1, iRegL op2, cmpOp cop) %{
+instruct cmovL_cmpL_zero(iRegLNoSp dst, immL_0 src, iRegL op1, iRegL op2, cmpOp cop) %{
   match(Set dst (CMoveL (Binary cop (CmpL op1 op2)) (Binary dst src)));
   ins_cost(ALU_COST + BRANCH_COST);
 
@@ -11232,7 +11232,7 @@ instruct cmovL_cmpL_zero(iRegLNoSp dst, immL0 src, iRegL op1, iRegL op2, cmpOp c
   ins_pipe(pipe_class_compare);
 %}
 
-instruct cmovL_cmpUL_zero(iRegLNoSp dst, immL0 src, iRegL op1, iRegL op2, cmpOpU cop) %{
+instruct cmovL_cmpUL_zero(iRegLNoSp dst, immL_0 src, iRegL op1, iRegL op2, cmpOpU cop) %{
   match(Set dst (CMoveL (Binary cop (CmpUL op1 op2)) (Binary dst src)));
   ins_cost(ALU_COST + BRANCH_COST);
 
@@ -12029,7 +12029,7 @@ instruct stringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
 // ============================================================================
 // clearing of an array
 
-instruct clearArray_reg_reg_immL0(iRegL_R29 cnt, iRegP_R28 base, immL0 zero,
+instruct clearArray_reg_reg_immL0(iRegL_R29 cnt, iRegP_R28 base, immL_0 zero,
                                   iRegP_R30 tmp1, iRegP_R31 tmp2, rFlagsReg cr,
                                   Universe dummy)
 %{
@@ -12071,7 +12071,7 @@ instruct clearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, iRegL val,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct clearArray_imm_reg(immL cnt, iRegP_R28 base, immL0 zero, Universe dummy, rFlagsReg cr)
+instruct clearArray_imm_reg(immL cnt, iRegP_R28 base, immL_0 zero, Universe dummy, rFlagsReg cr)
 %{
   predicate(!UseRVV
             && (uint64_t)n->in(2)->in(1)->get_long()

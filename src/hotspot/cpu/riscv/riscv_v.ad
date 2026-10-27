@@ -515,7 +515,7 @@ instruct vadd_vi(vReg dst, vReg src1, immI5 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vaddL_vi(vReg dst, vReg src1, immL5 con) %{
+instruct vaddL_vi(vReg dst, vReg src1, immL_simm5 con) %{
   match(Set dst (AddVL src1 (Replicate con)));
   format %{ "vaddL_vi $dst, $src1, $con" %}
   ins_encode %{
@@ -573,7 +573,7 @@ instruct vadd_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vaddL_vi_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
+instruct vaddL_vi_masked(vReg dst_src, immL_simm5 con, vRegMask_V0 v0) %{
   match(Set dst_src (AddVL (Binary dst_src (Replicate con)) v0));
   format %{ "vaddL_vi_masked $dst_src, $dst_src, $con, $v0" %}
   ins_encode %{
@@ -923,7 +923,7 @@ instruct vand_vi(vReg dst, vReg src1, immI5 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vandL_vi(vReg dst, vReg src1, immL5 con) %{
+instruct vandL_vi(vReg dst, vReg src1, immL_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (AndV src1 (Replicate con)));
   format %{ "vandL_vi $dst, $src1, $con" %}
@@ -985,7 +985,7 @@ instruct vand_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vandL_vi_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
+instruct vandL_vi_masked(vReg dst_src, immL_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst_src (AndV (Binary dst_src (Replicate con)) v0));
   format %{ "vandL_vi_masked $dst_src, $dst_src, $con, $v0" %}
@@ -1077,7 +1077,7 @@ instruct vor_vi(vReg dst, vReg src1, immI5 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vorL_vi(vReg dst, vReg src1, immL5 con) %{
+instruct vorL_vi(vReg dst, vReg src1, immL_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (OrV src1 (Replicate con)));
   format %{ "vorL_vi $dst, $src1, $con" %}
@@ -1139,7 +1139,7 @@ instruct vor_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vorL_vi_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
+instruct vorL_vi_masked(vReg dst_src, immL_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst_src (OrV (Binary dst_src (Replicate con)) v0));
   format %{ "vorL_vi_masked $dst_src, $dst_src, $con, $v0" %}
@@ -1231,7 +1231,7 @@ instruct vxor_vi(vReg dst, vReg src1, immI5 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vxorL_vi(vReg dst, vReg src1, immL5 con) %{
+instruct vxorL_vi(vReg dst, vReg src1, immL_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (XorV src1 (Replicate con)));
   format %{ "vxorL_vi $dst, $src1, $con" %}
@@ -1293,7 +1293,7 @@ instruct vxor_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vxorL_vi_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
+instruct vxorL_vi_masked(vReg dst_src, immL_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst_src (XorV (Binary dst_src (Replicate con)) v0));
   format %{ "vxorL_vi_masked $dst_src, $dst_src, $con, $v0" %}
@@ -3223,7 +3223,7 @@ instruct replicate_imm5(vReg dst, immI5 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct replicateL_imm5(vReg dst, immL5 con) %{
+instruct replicateL_imm5(vReg dst, immL_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (Replicate con));
   format %{ "replicateL_imm5 $dst, $con" %}
@@ -4569,7 +4569,7 @@ instruct vstringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
 %}
 
 // clearing of an array
-instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, immL0 zero,
+instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, immL_0 zero,
                              vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
                              Universe dummy)
 %{
