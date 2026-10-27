@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Salesforce. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,31 +78,44 @@ public class StaleTrustedCerts {
     }
 
     public static void main(String[] args) throws Exception {
+        // Initialize the truststore with the first key entry
         addKey("one");
 
+        // Set the default SSLContext properties
         System.setProperty("javax.net.ssl.trustStore", STORE);
         System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
         System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
 
-        X509TrustManager first = defaultTrustManager();
-        assertEquals(1, first.getAcceptedIssuers().length);
+        // Create the default trust manager, and verify it has exactly 1 cert
+        X509TrustManager trustManager = defaultTrustManager();
+        assertEquals(1, trustManager.getAcceptedIssuers().length);
 
+        // Add the second key entry
         FileTime before = Files.getLastModifiedTime(Path.of(STORE));
         addKey("two");
+
+        // Explicitly set the modification timestamp as a guard against flaky file-systems
         Files.setLastModifiedTime(Path.of(STORE),
                 FileTime.fromMillis(before.toMillis() + 2000));
 
+        // Dummy provider forces SSLContextImpl to call TrustStoreManager.getTrustedKeyStore()
         Security.insertProviderAt(new Provider("DelegatingTMFProvider", "1", "") {
             {
                 putService(new Service(this, "TrustManagerFactory", "PKIX",
                         DelegatingTMF.class.getName(), null, null));
             }
         }, 1);
+
+        // Trigger the context initialization, and remove the dummy provider
         SSLContext.getDefault();
         Security.removeProvider("DelegatingTMFProvider");
 
         assertEquals(2, defaultTrustManager().getAcceptedIssuers().length);
-        Reference.reachabilityFence(first);
+
+        // Ensure trustManager can only be GC'ed after this point.
+        // A prior GC may clear the TrustStoreManager.TrustAnchorManager.csRef,
+        // which defeats the purpose of the test.
+        Reference.reachabilityFence(trustManager);
     }
 
     private static void addKey(String alias) throws Exception {
