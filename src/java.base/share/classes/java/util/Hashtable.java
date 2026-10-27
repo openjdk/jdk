@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,9 +297,12 @@ public class Hashtable<K,V>
      * This operation is more expensive than the {@link #containsKey
      * containsKey} method.
      *
-     * <p>Note that this method is identical in functionality to
-     * {@link #containsValue containsValue}, (which is part of the
-     * {@link Map} interface in the collections framework).
+     * @deprecated
+     * This method predates the collections framework; the method name,
+     * {@code contains}, is highly misleading with {@link #containsKey(Object)
+     * containsKey}. It is recommended to call the identical {@link
+     * #containsValue(Object) containsValue} (which is part of the
+     * {@link Map} interface in the collections framework) instead.
      *
      * @param      value   a value to search for
      * @return     {@code true} if and only if some key maps to the
@@ -308,6 +311,7 @@ public class Hashtable<K,V>
      *             {@code false} otherwise.
      * @throws     NullPointerException  if the value is {@code null}
      */
+    @Deprecated(since = "28")
     public synchronized boolean contains(Object value) {
         if (value == null) {
             throw new NullPointerException();
@@ -327,9 +331,6 @@ public class Hashtable<K,V>
     /**
      * Returns true if this hashtable maps one or more keys to this value.
      *
-     * <p>Note that this method is identical in functionality to {@link
-     * #contains contains} (which predates the {@link Map} interface).
-     *
      * @param value value whose presence in this hashtable is to be tested
      * @return {@code true} if this map maps one or more keys to the
      *         specified value
@@ -348,7 +349,6 @@ public class Hashtable<K,V>
      *          is a key in this hashtable, as determined by the
      *          {@code equals} method; {@code false} otherwise.
      * @throws  NullPointerException  if the key is {@code null}
-     * @see     #contains(Object)
      */
     public synchronized boolean containsKey(Object key) {
         Entry<?,?> tab[] = table;
