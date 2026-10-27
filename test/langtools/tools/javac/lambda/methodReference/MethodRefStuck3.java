@@ -1,7 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @bug 8375572
- * @summary Functional descriptors can be computed for partially inferred targets
+ * @summary stuck method references should consider free vars in the target type
  * @compile MethodRefStuck3.java
  */
 

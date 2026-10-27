@@ -1,7 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @bug 8375572 8205052
- * @summary Reject dependent wildcard bounds and ill-formed derived functional targets
+ * @summary stuck method references should consider free vars in the target type
  * @compile/fail/ref=WildcardFunctionTypeBad.out -XDrawDiagnostics WildcardFunctionTypeBad.java
  */
 

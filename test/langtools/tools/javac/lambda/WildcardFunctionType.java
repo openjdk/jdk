@@ -1,7 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @bug 8375572
- * @summary Valid wildcard targets remain applicable during overload resolution
+ * @summary stuck method references should consider free vars in the target type
  * @compile WildcardFunctionType.java
  */
 
