@@ -493,10 +493,6 @@ class AuthenticationFilter implements HeaderFilter {
             this.isUTF8 = isUTF8;
         }
 
-        public PasswordAuthentication value() {
-            return value;
-        }
-
         public boolean equalsKey(URI uri, boolean proxy) {
             if (this.proxy != proxy) {
                 return false;
