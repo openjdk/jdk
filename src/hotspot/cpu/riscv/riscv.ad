@@ -2776,8 +2776,9 @@ operand immI_M1()
   interface(CONST_INTER);
 %}
 
-// Unsigned Integer Immediate:  6-bit int, greater than 32
-operand uimmI6_ge32() %{
+// Unsigned 6-bit integer immediate, at least 32
+operand immI_uimm6_ge32()
+%{
   predicate(((unsigned int)(n->get_int()) < 64) && (n->get_int() >= 32));
   match(ConI);
   op_cost(0);
@@ -2843,8 +2844,8 @@ operand immI_63()
   interface(CONST_INTER);
 %}
 
-// 32 bit integer valid for add immediate
-operand immIAdd()
+// 12 bit signed immediate
+operand immI_simm12()
 %{
   predicate(Assembler::is_simm12((int64_t)n->get_int()));
   match(ConI);
@@ -2918,6 +2919,16 @@ operand immL_simm5()
   interface(CONST_INTER);
 %}
 
+// 12 bit signed immediate
+operand immL_simm12()
+%{
+  predicate(Assembler::is_simm12(n->get_long()));
+  match(ConL);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Pointer operands
 // Pointer Immediate
 operand immP()
@@ -2930,7 +2941,7 @@ operand immP()
 %}
 
 // Null Pointer Immediate
-operand immP0()
+operand immP_0()
 %{
   predicate(n->get_ptr() == 0);
   match(ConP);
@@ -3046,16 +3057,6 @@ operand immL_single_clear_bit()
   interface(CONST_INTER);
 %}
 
-// 64 bit integer valid for add immediate
-operand immLAdd()
-%{
-  predicate(Assembler::is_simm12(n->get_long()));
-  match(ConL);
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Narrow pointer operands
 // Narrow Pointer Immediate
 operand immN()
@@ -3068,7 +3069,7 @@ operand immN()
 %}
 
 // Narrow Null Pointer Immediate
-operand immN0()
+operand immN_0()
 %{
   predicate(n->get_narrowcon() == 0);
   match(ConN);
@@ -3098,7 +3099,7 @@ operand immD()
 %}
 
 // Double Immediate: +0.0d
-operand immD0()
+operand immD_0()
 %{
   predicate(jlong_cast(n->getd()) == 0);
   match(ConD);
@@ -3118,7 +3119,7 @@ operand immF()
 %}
 
 // Float Immediate: +0.0f.
-operand immF0()
+operand immF_0()
 %{
   predicate(jint_cast(n->getf()) == 0);
   match(ConF);
@@ -3139,7 +3140,7 @@ operand immH()
 %}
 
 // Half Float Immediate: +0.0f.
-operand immH0()
+operand immH_0()
 %{
   predicate(jint_cast(n->geth()) == 0);
   match(ConH);
@@ -3149,26 +3150,8 @@ operand immH0()
   interface(CONST_INTER);
 %}
 
-operand immIOffset()
-%{
-  predicate(Assembler::is_simm12(n->get_int()));
-  match(ConI);
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-operand immLOffset()
-%{
-  predicate(Assembler::is_simm12(n->get_long()));
-  match(ConL);
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Scale values
-operand immIScale()
+operand immI_scale()
 %{
   predicate(1 <= n->get_int() && (n->get_int() <= 3));
   match(ConI);
@@ -3659,7 +3642,7 @@ operand indirect(iRegP reg)
   %}
 %}
 
-operand indOffI(iRegP reg, immIOffset off)
+operand indOffI(iRegP reg, immI_simm12 off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP reg off);
@@ -3673,7 +3656,7 @@ operand indOffI(iRegP reg, immIOffset off)
   %}
 %}
 
-operand indOffL(iRegP reg, immLOffset off)
+operand indOffL(iRegP reg, immL_simm12 off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP reg off);
@@ -3702,7 +3685,7 @@ operand indirectN(iRegN reg)
   %}
 %}
 
-operand indOffIN(iRegN reg, immIOffset off)
+operand indOffIN(iRegN reg, immI_simm12 off)
 %{
   predicate(CompressedOops::shift() == 0);
   constraint(ALLOC_IN_RC(ptr_reg));
@@ -3717,7 +3700,7 @@ operand indOffIN(iRegN reg, immIOffset off)
   %}
 %}
 
-operand indOffLN(iRegN reg, immLOffset off)
+operand indOffLN(iRegN reg, immL_simm12 off)
 %{
   predicate(CompressedOops::shift() == 0);
   constraint(ALLOC_IN_RC(ptr_reg));
@@ -3746,7 +3729,7 @@ operand indirectX2P(iRegL reg)
   %}
 %}
 
-operand indOffX2P(iRegL reg, immLOffset off)
+operand indOffX2P(iRegL reg, immL_simm12 off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP (CastX2P reg) off);
@@ -5259,7 +5242,7 @@ instruct loadConP(iRegPNoSp dst, immP con)
 %}
 
 // Load Null Pointer Constant
-instruct loadConP0(iRegPNoSp dst, immP0 con)
+instruct loadConP0(iRegPNoSp dst, immP_0 con)
 %{
   match(Set dst con);
 
@@ -5312,7 +5295,7 @@ instruct loadConN(iRegNNoSp dst, immN con)
 %}
 
 // Load Narrow Null Pointer Constant
-instruct loadConN0(iRegNNoSp dst, immN0 con)
+instruct loadConN0(iRegNNoSp dst, immN_0 con)
 %{
   match(Set dst con);
 
@@ -5358,7 +5341,7 @@ instruct loadConH(fRegF dst, immH con) %{
   ins_pipe(fp_load_constant_s);
 %}
 
-instruct loadConH0(fRegF dst, immH0 con) %{
+instruct loadConH0(fRegF dst, immH_0 con) %{
   match(Set dst con);
 
   ins_cost(XFER_COST);
@@ -5393,7 +5376,7 @@ instruct loadConF(fRegF dst, immF con) %{
   ins_pipe(fp_load_constant_s);
 %}
 
-instruct loadConF0(fRegF dst, immF0 con) %{
+instruct loadConF0(fRegF dst, immF_0 con) %{
   match(Set dst con);
 
   ins_cost(XFER_COST);
@@ -5427,7 +5410,7 @@ instruct loadConD(fRegD dst, immD con) %{
   ins_pipe(fp_load_constant_d);
 %}
 
-instruct loadConD0(fRegD dst, immD0 con) %{
+instruct loadConD0(fRegD dst, immD_0 con) %{
   match(Set dst con);
 
   ins_cost(XFER_COST);
@@ -5718,7 +5701,7 @@ instruct storeP_volatile(iRegP src, indirect mem)
 %}
 
 // Store Pointer
-instruct storeimmP0(immP0 zero, memory mem)
+instruct storeimmP0(immP_0 zero, memory mem)
 %{
   match(Set mem (StoreP mem zero));
   predicate(n->as_Store()->barrier_data() == 0 && !needs_releasing_store(n));
@@ -5733,7 +5716,7 @@ instruct storeimmP0(immP0 zero, memory mem)
   ins_pipe(istore_mem);
 %}
 
-instruct storeimmP0_volatile(immP0 zero, indirect mem)
+instruct storeimmP0_volatile(immP_0 zero, indirect mem)
 %{
   predicate(n->as_Store()->barrier_data() == 0 && needs_releasing_store(n));
   match(Set mem (StoreP mem zero));
@@ -5779,7 +5762,7 @@ instruct storeN_volatile(iRegN src, indirect mem)
   ins_pipe(pipe_serial);
 %}
 
-instruct storeImmN0(immN0 zero, memory mem)
+instruct storeImmN0(immN_0 zero, memory mem)
 %{
   predicate(n->as_Store()->barrier_data() == 0 && !needs_releasing_store(n));
   match(Set mem (StoreN mem zero));
@@ -5794,7 +5777,7 @@ instruct storeImmN0(immN0 zero, memory mem)
   ins_pipe(istore_reg_mem);
 %}
 
-instruct storeImmN0_volatile(immN0 zero, indirect mem)
+instruct storeImmN0_volatile(immN_0 zero, indirect mem)
 %{
   predicate(n->as_Store()->barrier_data() == 0 && needs_releasing_store(n));
   match(Set mem (StoreN mem zero));
@@ -6916,7 +6899,7 @@ instruct get_and_addL_no_resAcq(indirect mem, Universe dummy, iRegL incr) %{
   ins_pipe(pipe_serial);
 %}
 
-instruct get_and_addLiAcq(indirect mem, iRegLNoSp newval, immLAdd incr)
+instruct get_and_addLiAcq(indirect mem, iRegLNoSp newval, immL_simm12 incr)
 %{
   predicate(needs_acquiring_load_reserved(n));
 
@@ -6933,7 +6916,7 @@ instruct get_and_addLiAcq(indirect mem, iRegLNoSp newval, immLAdd incr)
   ins_pipe(pipe_serial);
 %}
 
-instruct get_and_addLi_no_resAcq(indirect mem, Universe dummy, immLAdd incr)
+instruct get_and_addLi_no_resAcq(indirect mem, Universe dummy, immL_simm12 incr)
 %{
   predicate(n->as_LoadStore()->result_not_used() && needs_acquiring_load_reserved(n));
 
@@ -6984,7 +6967,7 @@ instruct get_and_addI_no_resAcq(indirect mem, Universe dummy, iRegIorL2I incr)
   ins_pipe(pipe_serial);
 %}
 
-instruct get_and_addIiAcq(indirect mem, iRegINoSp newval, immIAdd incr)
+instruct get_and_addIiAcq(indirect mem, iRegINoSp newval, immI_simm12 incr)
 %{
   predicate(needs_acquiring_load_reserved(n));
 
@@ -7001,7 +6984,7 @@ instruct get_and_addIiAcq(indirect mem, iRegINoSp newval, immIAdd incr)
   ins_pipe(pipe_serial);
 %}
 
-instruct get_and_addIi_no_resAcq(indirect mem, Universe dummy, immIAdd incr)
+instruct get_and_addIi_no_resAcq(indirect mem, Universe dummy, immI_simm12 incr)
 %{
   predicate(n->as_LoadStore()->result_not_used() && needs_acquiring_load_reserved(n));
 
@@ -7044,7 +7027,7 @@ instruct addI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct addI_reg_imm(iRegINoSp dst, iRegIorL2I src1, immIAdd src2) %{
+instruct addI_reg_imm(iRegINoSp dst, iRegIorL2I src1, immI_simm12 src2) %{
   match(Set dst (AddI src1 src2));
 
   ins_cost(ALU_COST);
@@ -7059,7 +7042,7 @@ instruct addI_reg_imm(iRegINoSp dst, iRegIorL2I src1, immIAdd src2) %{
   ins_pipe(ialu_reg_imm);
 %}
 
-instruct addI_reg_imm_l2i(iRegINoSp dst, iRegL src1, immIAdd src2) %{
+instruct addI_reg_imm_l2i(iRegINoSp dst, iRegL src1, immI_simm12 src2) %{
   match(Set dst (AddI (ConvL2I src1) src2));
 
   ins_cost(ALU_COST);
@@ -7091,7 +7074,7 @@ instruct addP_reg_reg(iRegPNoSp dst, iRegPorL2P src1, iRegL src2) %{
 %}
 
 // If we shift more than 32 bits, we need not convert I2L.
-instruct lShiftL_regI_immGE32(iRegLNoSp dst, iRegI src, uimmI6_ge32 scale) %{
+instruct lShiftL_regI_immGE32(iRegLNoSp dst, iRegI src, immI_uimm6_ge32 scale) %{
   match(Set dst (LShiftL (ConvI2L src) scale));
   ins_cost(ALU_COST);
   format %{ "slli  $dst, $src, $scale & 63\t#@lShiftL_regI_immGE32" %}
@@ -7106,7 +7089,7 @@ instruct lShiftL_regI_immGE32(iRegLNoSp dst, iRegI src, uimmI6_ge32 scale) %{
 // Pointer Immediate Addition
 // n.b. this needs to be more expensive than using an indirect memory
 // operand
-instruct addP_reg_imm(iRegPNoSp dst, iRegPorL2P src1, immLAdd src2) %{
+instruct addP_reg_imm(iRegPNoSp dst, iRegPorL2P src1, immL_simm12 src2) %{
   match(Set dst (AddP src1 src2));
   ins_cost(ALU_COST);
   format %{ "addi  $dst, $src1, $src2\t# ptr, #@addP_reg_imm" %}
@@ -7136,7 +7119,7 @@ instruct addL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
 %}
 
 // No constant pool entries requiredLong Immediate Addition.
-instruct addL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
+instruct addL_reg_imm(iRegLNoSp dst, iRegL src1, immL_simm12 src2) %{
   match(Set dst (AddL src1 src2));
   ins_cost(ALU_COST);
   format %{ "addi  $dst, $src1, $src2\t#@addL_reg_imm" %}
@@ -8380,7 +8363,7 @@ instruct andI_reg_reg(iRegINoSp dst, iRegI src1, iRegI src2) %{
 %}
 
 // Immediate And
-instruct andI_reg_imm(iRegINoSp dst, iRegI src1, immIAdd src2) %{
+instruct andI_reg_imm(iRegINoSp dst, iRegI src1, immI_simm12 src2) %{
   match(Set dst (AndI src1 src2));
 
   format %{ "andi  $dst, $src1, $src2\t#@andI_reg_imm" %}
@@ -8412,7 +8395,7 @@ instruct orI_reg_reg(iRegINoSp dst, iRegI src1, iRegI src2) %{
 %}
 
 // Immediate Or
-instruct orI_reg_imm(iRegINoSp dst, iRegI src1, immIAdd src2) %{
+instruct orI_reg_imm(iRegINoSp dst, iRegI src1, immI_simm12 src2) %{
   match(Set dst (OrI src1 src2));
 
   format %{ "ori  $dst, $src1, $src2\t#@orI_reg_imm" %}
@@ -8444,7 +8427,7 @@ instruct xorI_reg_reg(iRegINoSp dst, iRegI src1, iRegI src2) %{
 %}
 
 // Immediate Xor
-instruct xorI_reg_imm(iRegINoSp dst, iRegI src1, immIAdd src2) %{
+instruct xorI_reg_imm(iRegINoSp dst, iRegI src1, immI_simm12 src2) %{
   match(Set dst (XorI src1 src2));
 
   format %{ "xori  $dst, $src1, $src2\t#@xorI_reg_imm" %}
@@ -8476,7 +8459,7 @@ instruct andL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
 %}
 
 // Immediate And Long
-instruct andL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
+instruct andL_reg_imm(iRegLNoSp dst, iRegL src1, immL_simm12 src2) %{
   match(Set dst (AndL src1 src2));
 
   format %{ "andi  $dst, $src1, $src2\t#@andL_reg_imm" %}
@@ -8508,7 +8491,7 @@ instruct orL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
 %}
 
 // Immediate Or Long
-instruct orL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
+instruct orL_reg_imm(iRegLNoSp dst, iRegL src1, immL_simm12 src2) %{
   match(Set dst (OrL src1 src2));
 
   format %{ "ori  $dst, $src1, $src2\t#@orL_reg_imm" %}
@@ -8540,7 +8523,7 @@ instruct xorL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
 %}
 
 // Immediate Xor Long
-instruct xorL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
+instruct xorL_reg_imm(iRegLNoSp dst, iRegL src1, immL_simm12 src2) %{
   match(Set dst (XorL src1 src2));
 
   ins_cost(ALU_COST);
@@ -9046,7 +9029,7 @@ instruct convI2L_addI_reg_reg(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2) %
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct convI2L_addI_reg_imm(iRegLNoSp dst, iRegIorL2I src1, immIAdd src2) %{
+instruct convI2L_addI_reg_imm(iRegLNoSp dst, iRegIorL2I src1, immI_simm12 src2) %{
   match(Set dst (ConvI2L (AddI src1 src2)));
 
   ins_cost(ALU_COST);
@@ -10468,7 +10451,7 @@ instruct cmpULEqNeLeGt_reg_imm0_branch(cmpOpUEqNeLeGt cmp, iRegL op1, immL_0 zer
 %}
 
 // Compare pointer with zero and branch near instructions
-instruct cmpP_imm0_branch(cmpOpEqNe cmp, iRegP op1, immP0 zero, label lbl) %{
+instruct cmpP_imm0_branch(cmpOpEqNe cmp, iRegP op1, immP_0 zero, label lbl) %{
   // Same match rule as `far_cmpP_reg_imm0_branch'.
   match(If cmp (CmpP op1 zero));
   effect(USE lbl);
@@ -10485,7 +10468,7 @@ instruct cmpP_imm0_branch(cmpOpEqNe cmp, iRegP op1, immP0 zero, label lbl) %{
 %}
 
 // Compare narrow pointer with zero and branch near instructions
-instruct cmpN_imm0_branch(cmpOpEqNe cmp, iRegN op1, immN0 zero, label lbl) %{
+instruct cmpN_imm0_branch(cmpOpEqNe cmp, iRegN op1, immN_0 zero, label lbl) %{
   // Same match rule as `far_cmpN_reg_imm0_branch'.
   match(If cmp (CmpN op1 zero));
   effect(USE lbl);
@@ -10503,7 +10486,7 @@ instruct cmpN_imm0_branch(cmpOpEqNe cmp, iRegN op1, immN0 zero, label lbl) %{
 %}
 
 // Compare narrow pointer with pointer zero and branch near instructions
-instruct cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN op1, immP0 zero, label lbl) %{
+instruct cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN op1, immP_0 zero, label lbl) %{
   // Same match rule as `far_cmpP_narrowOop_imm0_branch'.
   match(If cmp (CmpP (DecodeN op1) zero));
   effect(USE lbl);
@@ -10830,7 +10813,7 @@ instruct far_cmpULLtGe_reg_imm0_branch(cmpOpULtGe cmp, iRegL op1, immL_0 zero, l
   ins_pipe(pipe_cmpz_branch);
 %}
 
-instruct far_cmpP_imm0_branch(cmpOpEqNe cmp, iRegP op1, immP0 zero, label lbl) %{
+instruct far_cmpP_imm0_branch(cmpOpEqNe cmp, iRegP op1, immP_0 zero, label lbl) %{
   match(If cmp (CmpP op1 zero));
   effect(USE lbl);
 
@@ -10844,7 +10827,7 @@ instruct far_cmpP_imm0_branch(cmpOpEqNe cmp, iRegP op1, immP0 zero, label lbl) %
   ins_pipe(pipe_cmpz_branch);
 %}
 
-instruct far_cmpN_imm0_branch(cmpOpEqNe cmp, iRegN op1, immN0 zero, label lbl) %{
+instruct far_cmpN_imm0_branch(cmpOpEqNe cmp, iRegN op1, immN_0 zero, label lbl) %{
   match(If cmp (CmpN op1 zero));
   effect(USE lbl);
 
@@ -10859,7 +10842,7 @@ instruct far_cmpN_imm0_branch(cmpOpEqNe cmp, iRegN op1, immN0 zero, label lbl) %
   ins_pipe(pipe_cmpz_branch);
 %}
 
-instruct far_cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN op1, immP0 zero, label lbl) %{
+instruct far_cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN op1, immP_0 zero, label lbl) %{
   match(If cmp (CmpP (DecodeN op1) zero));
   effect(USE lbl);
 
