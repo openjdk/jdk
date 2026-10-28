@@ -100,6 +100,9 @@ public class ToolKit implements EnvironmentInfoGatherer, ProcessInfoGatherer, Co
         }
         for (Long p : orderedPids) {
             for (ActionSet set : actions) {
+                set.gatherInitialProcessInfo(section, p);
+            }
+            for (ActionSet set : actions) {
                 set.gatherProcessInfo(section, p);
             }
         }

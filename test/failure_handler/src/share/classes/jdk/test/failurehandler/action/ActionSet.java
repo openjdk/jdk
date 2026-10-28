@@ -23,26 +23,20 @@
 
 package jdk.test.failurehandler.action;
 
-import jdk.test.failurehandler.CoreInfoGatherer;
-import jdk.test.failurehandler.ProcessInfoGatherer;
-import jdk.test.failurehandler.EnvironmentInfoGatherer;
 import jdk.test.failurehandler.HtmlSection;
 import jdk.test.failurehandler.Utils;
 
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.zip.GZIPInputStream;
 
-public class ActionSet implements ProcessInfoGatherer, EnvironmentInfoGatherer, CoreInfoGatherer {
+public class ActionSet {
     private static final String ENVIRONMENT_PROPERTY = "environment";
     private static final String ON_PID_PROPERTY = "onTimeout";
+    private static final String ON_PID_INITIAL_PROPERTY = "onTimeout.initial";
     private static final String CORES_PROPERTY = "cores";
-
 
     private final ActionHelper helper;
 
@@ -52,6 +46,7 @@ public class ActionSet implements ProcessInfoGatherer, EnvironmentInfoGatherer, 
 
     private final String name;
     private final List<SimpleAction> environmentActions;
+    private final List<PatternAction> processInitialActions;
     private final List<PatternAction> processActions;
     private final List<PatternAction> coreActions;
 
@@ -62,6 +57,7 @@ public class ActionSet implements ProcessInfoGatherer, EnvironmentInfoGatherer, 
 
         Properties p = Utils.getProperties(name);
         environmentActions = getSimpleActions(log, p, ENVIRONMENT_PROPERTY);
+        processInitialActions = getPatternActions(log, p, ON_PID_INITIAL_PROPERTY);
         processActions = getPatternActions(log, p, ON_PID_PROPERTY);
         coreActions = getPatternActions(log, p, CORES_PROPERTY);
     }
@@ -120,29 +116,35 @@ public class ActionSet implements ProcessInfoGatherer, EnvironmentInfoGatherer, 
         return value.split(" ");
     }
 
-
-    @Override
-    public void gatherProcessInfo(HtmlSection section, long pid) {
+    private void gatherProcessInfoFor(HtmlSection section, long pid, PatternAction action) {
         String pidStr = "" + pid;
-        for (PatternAction action : processActions) {
-            if (action.isJavaOnly()) {
-                if (helper.isJava(pid, section.getWriter())) {
-                    helper.runPatternAction(action, section, pidStr);
-                }
-            } else {
+        if (action.isJavaOnly()) {
+            if (helper.isJava(pid, section.getWriter())) {
                 helper.runPatternAction(action, section, pidStr);
             }
+        } else {
+            helper.runPatternAction(action, section, pidStr);
         }
     }
 
-    @Override
+    public void gatherInitialProcessInfo(HtmlSection section, long pid) {
+        for (PatternAction action : processInitialActions) {
+            gatherProcessInfoFor(section, pid, action);
+        }
+    }
+
+    public void gatherProcessInfo(HtmlSection section, long pid) {
+        for (PatternAction action : processActions) {
+            gatherProcessInfoFor(section, pid, action);
+        }
+    }
+
     public void gatherEnvironmentInfo(HtmlSection section) {
         for (SimpleAction action : environmentActions) {
             helper.runPatternAction(action, section);
         }
     }
 
-    @Override
     public void gatherCoreInfo(HtmlSection section, Path core) {
         for (PatternAction action : coreActions) {
             helper.runPatternAction(action, section, core.toString());

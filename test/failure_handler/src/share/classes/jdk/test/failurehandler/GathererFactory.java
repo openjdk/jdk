@@ -60,7 +60,7 @@ public final class GathererFactory {
         try {
             ActionHelper helper = new ActionHelper(workdir, "config", osProperty, jdks);
             // os-specific action set must be last, b/c they can kill the process
-            return new ToolKit(helper, log, osName + "-initial-native-stack", "common", osName);
+            return new ToolKit(helper, log, "common", osName);
         } catch (InvalidValueException e) {
             throw new IllegalStateException("can't create tool kit", e);
         }
