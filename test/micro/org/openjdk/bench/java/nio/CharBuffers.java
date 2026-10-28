@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 import java.nio.*;
 import java.util.concurrent.TimeUnit;
 import static java.nio.ByteOrder.*;
@@ -65,6 +66,7 @@ public class CharBuffers {
 
     public char charValue;
     public char[] charArray;
+    public CharSequence charSeq;
 
     public CharBuffer heapCharBuffer;
     public CharBuffer heapCharBufferRO;
@@ -80,6 +82,7 @@ public class CharBuffers {
     @Setup
     public void setup() {
         charArray = new char[size / CARRIER_BYTE_WIDTH];
+        charSeq = "x".repeat(size / CARRIER_BYTE_WIDTH);
 
         // explicitly allocated heap carrier buffer
         heapCharBuffer = CharBuffer.allocate(size / CARRIER_BYTE_WIDTH);
@@ -112,6 +115,40 @@ public class CharBuffers {
     private void innerLoopPutChar(CharBuffer buf) {
         for (int i = 0; i < buf.capacity(); i++) {
             buf.put(i, charValue);
+        }
+    }
+
+    // -- Heap `wrap(char[] array, int offset, int length)`
+
+    @Benchmark
+    public CharBuffer testHeapArrayWrapValidRange() {
+        return CharBuffer.wrap(charArray, 1, charArray.length - 1);
+    }
+
+    @Benchmark
+    public void testHeapArrayWrapBogusRange(Blackhole bh) {
+        try {
+            bh.consume(CharBuffer.wrap(charArray, -1, charArray.length));
+            throw new AssertionError();
+        } catch (IndexOutOfBoundsException ioobe) {
+            bh.consume(ioobe);
+        }
+    }
+
+    // -- Heap `wrap(CharSequence csq, int start, int end)`
+
+    @Benchmark
+    public CharBuffer testHeapCharSeqWrapValidRange() {
+        return CharBuffer.wrap(charSeq, 1, charSeq.length() - 1);
+    }
+
+    @Benchmark
+    public void testHeapCharSeqWrapBogusRange(Blackhole bh) {
+        try {
+            bh.consume(CharBuffer.wrap(charSeq, -1, charSeq.length()));
+            throw new AssertionError();
+        } catch (IndexOutOfBoundsException ioobe) {
+            bh.consume(ioobe);
         }
     }
 
@@ -152,6 +189,26 @@ public class CharBuffers {
         return innerLoopGetChar(heapByteBufferAsCharBufferViewSwapRO);
     }
 
+    // -- Heap_View_Swap_RO `subSequence(int start, int end)`
+
+    @Benchmark
+    public CharBuffer testHeapSubSeqValidRangeViewSwapRO() {
+        return heapByteBufferAsCharBufferViewSwapRO.subSequence(
+                1, heapByteBufferAsCharBufferViewSwapRO.length());
+    }
+
+    @Benchmark
+    public void testHeapSubSeqBogusRangeViewSwapRO(Blackhole bh) {
+        try {
+            bh.consume(
+                    heapByteBufferAsCharBufferViewSwapRO.subSequence(
+                        -1, heapByteBufferAsCharBufferViewSwapRO.length()));
+            throw new AssertionError();
+        } catch (IndexOutOfBoundsException ioobe) {
+            bh.consume(ioobe);
+        }
+    }
+
     // -- Heap_View_Swap_
 
     @Benchmark
@@ -187,6 +244,26 @@ public class CharBuffers {
     @Benchmark
     public char testHeapLoopGetCharViewRO() {
         return innerLoopGetChar(heapByteBufferAsCharBufferViewRO);
+    }
+
+    // -- Heap_View__RO `subSequence(int start, int end)`
+
+    @Benchmark
+    public CharBuffer testHeapSubSeqValidRangeViewRO() {
+        return heapByteBufferAsCharBufferViewRO.subSequence(
+                1, heapByteBufferAsCharBufferViewRO.length());
+    }
+
+    @Benchmark
+    public void testHeapSubSeqBogusRangeViewRO(Blackhole bh) {
+        try {
+            bh.consume(
+                    heapByteBufferAsCharBufferViewRO.subSequence(
+                        -1, heapByteBufferAsCharBufferViewRO.length()));
+            throw new AssertionError();
+        } catch (IndexOutOfBoundsException ioobe) {
+            bh.consume(ioobe);
+        }
     }
 
     // -- Heap_View__
@@ -226,6 +303,26 @@ public class CharBuffers {
         return innerLoopGetChar(directByteBufferAsCharBufferViewSwapRO);
     }
 
+    // -- Direct_View_Swap_RO `subSequence(int start, int end)`
+
+    @Benchmark
+    public CharBuffer testDirectSubSeqValidRangeViewSwapRO() {
+        return directByteBufferAsCharBufferViewSwapRO.subSequence(
+                1, directByteBufferAsCharBufferViewSwapRO.length());
+    }
+
+    @Benchmark
+    public void testDirectSubSeqBogusRangeViewSwapRO(Blackhole bh) {
+        try {
+            bh.consume(
+                    directByteBufferAsCharBufferViewSwapRO.subSequence(
+                        -1, directByteBufferAsCharBufferViewSwapRO.length()));
+            throw new AssertionError();
+        } catch (IndexOutOfBoundsException ioobe) {
+            bh.consume(ioobe);
+        }
+    }
+
     // -- Direct_View_Swap_
 
     @Benchmark
@@ -261,6 +358,26 @@ public class CharBuffers {
     @Benchmark
     public char testDirectLoopGetCharViewRO() {
         return innerLoopGetChar(directByteBufferAsCharBufferViewRO);
+    }
+
+    // -- Direct_View__RO `subSequence(int start, int end)`
+
+    @Benchmark
+    public CharBuffer testDirectSubSeqValidRangeViewRO() {
+        return directByteBufferAsCharBufferViewRO.subSequence(
+                1, directByteBufferAsCharBufferViewRO.length());
+    }
+
+    @Benchmark
+    public void testDirectSubSeqBogusRangeViewRO(Blackhole bh) {
+        try {
+            bh.consume(
+                    directByteBufferAsCharBufferViewRO.subSequence(
+                        -1, directByteBufferAsCharBufferViewRO.length()));
+            throw new AssertionError();
+        } catch (IndexOutOfBoundsException ioobe) {
+            bh.consume(ioobe);
+        }
     }
 
     // -- Direct_View__
