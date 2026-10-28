@@ -500,7 +500,7 @@ instruct vadd_fp_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 
 // vector-immediate add (unpredicated)
 
-instruct vadd_vi(vReg dst, vReg src1, immI5 con) %{
+instruct vadd_vi(vReg dst, vReg src1, immI_simm5 con) %{
   match(Set dst (AddVB src1 (Replicate con)));
   match(Set dst (AddVS src1 (Replicate con)));
   match(Set dst (AddVI src1 (Replicate con)));
@@ -515,7 +515,7 @@ instruct vadd_vi(vReg dst, vReg src1, immI5 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vaddL_vi(vReg dst, vReg src1, immL5 con) %{
+instruct vaddL_vi(vReg dst, vReg src1, immL_simm5 con) %{
   match(Set dst (AddVL src1 (Replicate con)));
   format %{ "vaddL_vi $dst, $src1, $con" %}
   ins_encode %{
@@ -558,7 +558,7 @@ instruct vaddL_vx(vReg dst, vReg src1, iRegL src2) %{
 
 // vector-immediate add (predicated)
 
-instruct vadd_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
+instruct vadd_vi_masked(vReg dst_src, immI_simm5 con, vRegMask_V0 v0) %{
   match(Set dst_src (AddVB (Binary dst_src (Replicate con)) v0));
   match(Set dst_src (AddVS (Binary dst_src (Replicate con)) v0));
   match(Set dst_src (AddVI (Binary dst_src (Replicate con)) v0));
@@ -573,7 +573,7 @@ instruct vadd_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vaddL_vi_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
+instruct vaddL_vi_masked(vReg dst_src, immL_simm5 con, vRegMask_V0 v0) %{
   match(Set dst_src (AddVL (Binary dst_src (Replicate con)) v0));
   format %{ "vaddL_vi_masked $dst_src, $dst_src, $con, $v0" %}
   ins_encode %{
@@ -907,7 +907,7 @@ instruct vand_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 
 // vector-immediate and (unpredicated)
 
-instruct vand_vi(vReg dst, vReg src1, immI5 con) %{
+instruct vand_vi(vReg dst, vReg src1, immI_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -923,7 +923,7 @@ instruct vand_vi(vReg dst, vReg src1, immI5 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vandL_vi(vReg dst, vReg src1, immL5 con) %{
+instruct vandL_vi(vReg dst, vReg src1, immL_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (AndV src1 (Replicate con)));
   format %{ "vandL_vi $dst, $src1, $con" %}
@@ -969,7 +969,7 @@ instruct vandL_vx(vReg dst, vReg src1, iRegL src2) %{
 
 // vector-immediate and (predicated)
 
-instruct vand_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
+instruct vand_vi_masked(vReg dst_src, immI_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -985,7 +985,7 @@ instruct vand_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vandL_vi_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
+instruct vandL_vi_masked(vReg dst_src, immL_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst_src (AndV (Binary dst_src (Replicate con)) v0));
   format %{ "vandL_vi_masked $dst_src, $dst_src, $con, $v0" %}
@@ -1061,7 +1061,7 @@ instruct vor_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 
 // vector-immediate or (unpredicated)
 
-instruct vor_vi(vReg dst, vReg src1, immI5 con) %{
+instruct vor_vi(vReg dst, vReg src1, immI_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -1077,7 +1077,7 @@ instruct vor_vi(vReg dst, vReg src1, immI5 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vorL_vi(vReg dst, vReg src1, immL5 con) %{
+instruct vorL_vi(vReg dst, vReg src1, immL_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (OrV src1 (Replicate con)));
   format %{ "vorL_vi $dst, $src1, $con" %}
@@ -1123,7 +1123,7 @@ instruct vorL_vx(vReg dst, vReg src1, iRegL src2) %{
 
 // vector-immediate or (predicated)
 
-instruct vor_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
+instruct vor_vi_masked(vReg dst_src, immI_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -1139,7 +1139,7 @@ instruct vor_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vorL_vi_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
+instruct vorL_vi_masked(vReg dst_src, immL_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst_src (OrV (Binary dst_src (Replicate con)) v0));
   format %{ "vorL_vi_masked $dst_src, $dst_src, $con, $v0" %}
@@ -1215,7 +1215,7 @@ instruct vxor_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 
 // vector-immediate xor (unpredicated)
 
-instruct vxor_vi(vReg dst, vReg src1, immI5 con) %{
+instruct vxor_vi(vReg dst, vReg src1, immI_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -1231,7 +1231,7 @@ instruct vxor_vi(vReg dst, vReg src1, immI5 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vxorL_vi(vReg dst, vReg src1, immL5 con) %{
+instruct vxorL_vi(vReg dst, vReg src1, immL_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (XorV src1 (Replicate con)));
   format %{ "vxorL_vi $dst, $src1, $con" %}
@@ -1277,7 +1277,7 @@ instruct vxorL_vx(vReg dst, vReg src1, iRegL src2) %{
 
 // vector-immediate xor (predicated)
 
-instruct vxor_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
+instruct vxor_vi_masked(vReg dst_src, immI_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -1293,7 +1293,7 @@ instruct vxor_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vxorL_vi_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
+instruct vxorL_vi_masked(vReg dst_src, immL_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst_src (XorV (Binary dst_src (Replicate con)) v0));
   format %{ "vxorL_vi_masked $dst_src, $dst_src, $con, $v0" %}
@@ -3211,7 +3211,7 @@ instruct replicateL(vReg dst, iRegL src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct replicate_imm5(vReg dst, immI5 con) %{
+instruct replicate_imm5(vReg dst, immI_simm5 con) %{
   predicate(Matcher::is_non_long_integral_vector(n));
   match(Set dst (Replicate con));
   format %{ "replicate_imm5 $dst, $con" %}
@@ -3223,7 +3223,7 @@ instruct replicate_imm5(vReg dst, immI5 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct replicateL_imm5(vReg dst, immL5 con) %{
+instruct replicateL_imm5(vReg dst, immL_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (Replicate con));
   format %{ "replicateL_imm5 $dst, $con" %}
@@ -4569,11 +4569,11 @@ instruct vstringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
 %}
 
 // clearing of an array
-instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, immL0 zero,
+instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, immL_0 zero,
                              vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
                              Universe dummy)
 %{
-  predicate(!UseBlockZeroing && UseRVV);
+  predicate(UseRVV);
   match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL cnt, USE_KILL base, TEMP v4, TEMP v5, TEMP v6, TEMP v7);
 
@@ -4587,7 +4587,7 @@ instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, immL0 zero,
 %}
 
 // Vector Load Const
-instruct vloadcon(vReg dst, immI0 src) %{
+instruct vloadcon(vReg dst, immI_0 src) %{
   match(Set dst (VectorLoadConst src));
   format %{ "vloadcon $dst\t# generate iota indices" %}
   ins_encode %{
@@ -6110,7 +6110,7 @@ instruct vmask_fromlong(vRegMask dst, iRegL src) %{
 
 // Not matched. Condition is negated and value zero is moved to the right side in CMoveINode::Ideal.
 
-// instruct cmovI_vtest_anytrue(iRegINoSp dst, cmpOp cop, vRegMask op1, vRegMask op2, immI0 zero, immI_1 one) %{
+// instruct cmovI_vtest_anytrue(iRegINoSp dst, cmpOp cop, vRegMask op1, vRegMask op2, immI_0 zero, immI_1 one) %{
 //   predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne &&
 //             static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::ne);
 //   match(Set dst (CMoveI (Binary cop (VectorTest op1 op2)) (Binary zero one)));
@@ -6125,7 +6125,7 @@ instruct vmask_fromlong(vRegMask dst, iRegL src) %{
 //   ins_pipe(pipe_slow);
 // %}
 
-instruct cmovI_vtest_anytrue_negate(iRegINoSp dst, cmpOp cop, vRegMask op1, vRegMask op2, immI0 zero, immI_1 one) %{
+instruct cmovI_vtest_anytrue_negate(iRegINoSp dst, cmpOp cop, vRegMask op1, vRegMask op2, immI_0 zero, immI_1 one) %{
   predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq &&
             static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::ne);
   match(Set dst (CMoveI (Binary cop (VectorTest op1 op2)) (Binary one zero)));
@@ -6144,7 +6144,7 @@ instruct cmovI_vtest_anytrue_negate(iRegINoSp dst, cmpOp cop, vRegMask op1, vReg
 
 // Not matched. Condition is negated and value zero is moved to the right side in CMoveINode::Ideal.
 
-// instruct cmovI_vtest_alltrue(iRegINoSp dst, cmpOp cop, vRegMask op1, vRegMask op2, immI0 zero, immI_1 one) %{
+// instruct cmovI_vtest_alltrue(iRegINoSp dst, cmpOp cop, vRegMask op1, vRegMask op2, immI_0 zero, immI_1 one) %{
 //   predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq &&
 //             static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::overflow);
 //   match(Set dst (CMoveI (Binary cop (VectorTest op1 op2)) (Binary zero one)));
@@ -6160,7 +6160,7 @@ instruct cmovI_vtest_anytrue_negate(iRegINoSp dst, cmpOp cop, vRegMask op1, vReg
 //   ins_pipe(pipe_slow);
 // %}
 
-instruct cmovI_vtest_alltrue_negate(iRegINoSp dst, cmpOp cop, vRegMask op1, vRegMask op2, immI0 zero, immI_1 one) %{
+instruct cmovI_vtest_alltrue_negate(iRegINoSp dst, cmpOp cop, vRegMask op1, vRegMask op2, immI_0 zero, immI_1 one) %{
   predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne &&
             static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::overflow);
   match(Set dst (CMoveI (Binary cop (VectorTest op1 op2)) (Binary one zero)));
