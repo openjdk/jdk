@@ -157,7 +157,11 @@ class TestNullRestrictedArrayEscapeState {
     // array's load to the identity object, and preserve the synchronization
     // operations.
     @Test
+    // Test precondition: the array copy is fully expanded.
+    @IR(counts = {IRNode.ARRAY_COPY, "= 1"}, phase = CompilePhase.AFTER_PARSING)
     @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
+    // Ensure we test the compilation where the array copy is fully expanded.
+    @Warmup(10_000)
     static void testAllocateNullRestrictedArraysThenCopyThenLoadAndEscape() {
         ValueHolder srcHolder = createValueHolderWithSynchronizedFieldWrite();
         ValueHolder[] src = createNullRestrictedAtomicArray(srcHolder);
@@ -171,7 +175,11 @@ class TestNullRestrictedArrayEscapeState {
     // through its holder. C2 should propagate the global escape state and
     // preserve the synchronization operations.
     @Test
+    // Test precondition: the array copy is fully expanded.
+    @IR(counts = {IRNode.ARRAY_COPY, "= 1"}, phase = CompilePhase.AFTER_PARSING)
     @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
+    // Ensure we test the compilation where the array copy is fully expanded.
+    @Warmup(10_000)
     static void testAllocateNullRestrictedArraysThenCopyThenLoadAndEscapeHolder() {
         ValueHolder srcHolder = createValueHolderWithSynchronizedFieldWrite();
         ValueHolder[] src = createNullRestrictedAtomicArray(srcHolder);
@@ -184,7 +192,11 @@ class TestNullRestrictedArrayEscapeState {
     // Variant of the above tests using array cloning instead of copying. C2
     // should preserve the synchronization operations.
     @Test
+    // Test precondition: the array copy is fully expanded.
+    @IR(counts = {IRNode.ARRAY_COPY, "= 1"}, phase = CompilePhase.AFTER_PARSING)
     @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
+    // Ensure we test the compilation where the array copy is fully expanded.
+    @Warmup(10_000)
     static void testAllocateNullRestrictedArraysThenCloneThenLoadAndEscape() {
         ValueHolder srcHolder = createValueHolderWithSynchronizedFieldWrite();
         ValueHolder[] src = createNullRestrictedAtomicArray(srcHolder);
@@ -195,7 +207,11 @@ class TestNullRestrictedArrayEscapeState {
     // Variant of the above tests using non-atomic arrays. C2 should preserve
     // the synchronization operations.
     @Test
+    // Test precondition: the array copy is fully expanded.
+    @IR(counts = {IRNode.ARRAY_COPY, "= 1"}, phase = CompilePhase.AFTER_PARSING)
     @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
+    // Ensure we test the compilation where the array copy is fully expanded.
+    @Warmup(10_000)
     static void testAllocateNullRestrictedNonAtomicArraysThenCopyThenLoadAndEscape() {
         ValueHolder srcHolder = createValueHolderWithSynchronizedFieldWrite();
         ValueHolder[] src = createNullRestrictedNonAtomicArray(srcHolder);
@@ -208,7 +224,11 @@ class TestNullRestrictedArrayEscapeState {
     // Variant of the above tests where the loaded identity object does not
     // escape. C2 should optimize away the synchronization operations.
     @Test
+    // Test precondition: the array copy is fully expanded.
+    @IR(counts = {IRNode.ARRAY_COPY, "= 1"}, phase = CompilePhase.AFTER_PARSING)
     @IR(failOn = {IRNode.FAST_LOCK, IRNode.FAST_UNLOCK})
+    // Ensure we test the compilation where the array copy is fully expanded.
+    @Warmup(10_000)
     static int testAllocateNullRestrictedArraysThenCopyThenLoadButDontEscape() {
         ValueHolder srcHolder = createValueHolderWithSynchronizedFieldWrite();
         ValueHolder[] src = createNullRestrictedAtomicArray(srcHolder);
@@ -221,31 +241,15 @@ class TestNullRestrictedArrayEscapeState {
     // Variant of the above tests using array cloning instead of copying. C2
     // should optimize away the synchronization operations.
     @Test
+    // Test precondition: the array copy is fully expanded.
+    @IR(counts = {IRNode.ARRAY_COPY, "= 1"}, phase = CompilePhase.AFTER_PARSING)
     @IR(failOn = {IRNode.FAST_LOCK, IRNode.FAST_UNLOCK})
+    // Ensure we test the compilation where the array copy is fully expanded.
+    @Warmup(10_000)
     static int testAllocateNullRestrictedArraysThenCloneThenLoadButDontEscape() {
         ValueHolder srcHolder = createValueHolderWithSynchronizedFieldWrite();
         ValueHolder[] src = createNullRestrictedAtomicArray(srcHolder);
         ValueHolder[] dst = src.clone();
         return dst[0].obj.val;
-    }
-
-    // Use a standalone runner to ensure we assert IR properties on the final C2
-    // compilation, where the array copy is fully expanded.
-    @Run(test = {"testAllocateNullRestrictedArraysThenCopyThenLoadAndEscape",
-                 "testAllocateNullRestrictedArraysThenCopyThenLoadAndEscapeHolder",
-                 "testAllocateNullRestrictedArraysThenCloneThenLoadAndEscape",
-                 "testAllocateNullRestrictedNonAtomicArraysThenCopyThenLoadAndEscape",
-                 "testAllocateNullRestrictedArraysThenCopyThenLoadButDontEscape",
-                 "testAllocateNullRestrictedArraysThenCloneThenLoadButDontEscape"},
-         mode = RunMode.STANDALONE)
-    static void runArrayCopyTests() {
-        for (int i = 0; i < 10_000; i++) {
-            testAllocateNullRestrictedArraysThenCopyThenLoadAndEscape();
-            testAllocateNullRestrictedArraysThenCopyThenLoadAndEscapeHolder();
-            testAllocateNullRestrictedArraysThenCloneThenLoadAndEscape();
-            testAllocateNullRestrictedNonAtomicArraysThenCopyThenLoadAndEscape();
-            testAllocateNullRestrictedArraysThenCopyThenLoadButDontEscape();
-            testAllocateNullRestrictedArraysThenCloneThenLoadButDontEscape();
-        }
     }
 }
