@@ -47,10 +47,6 @@
 
 #endif
 
-#if defined(x86_64) && !defined(amd64)
-#define amd64 1
-#endif
-
 #ifndef __WALL
 #define __WALL          0x40000000  // Copied from /usr/include/linux/wait.h
 #endif
@@ -136,8 +132,6 @@ static bool process_write_data(struct ps_prochandle* ph,
 static bool process_get_lwp_regs(struct ps_prochandle* ph, pid_t pid, struct user_regs_struct *user) {
   // we have already attached to all thread 'pid's, just use ptrace call
   // to get regset now. Note that we don't cache regset upfront for processes.
-
-#if defined(PTRACE_GETREGSET)
   struct iovec iov;
   iov.iov_base = user;
   iov.iov_len = sizeof(*user);
@@ -146,28 +140,6 @@ static bool process_get_lwp_regs(struct ps_prochandle* ph, pid_t pid, struct use
     return false;
   }
   return true;
-#else
-
-#if defined(_LP64) && defined(PTRACE_GETREGS64)
-#define PTRACE_GETREGS_REQ PTRACE_GETREGS64
-#elif defined(PTRACE_GETREGS)
-#define PTRACE_GETREGS_REQ PTRACE_GETREGS
-#elif defined(PT_GETREGS)
-#define PTRACE_GETREGS_REQ PT_GETREGS
-#endif
-
-#if defined(PTRACE_GETREGS_REQ)
- if (ptrace(PTRACE_GETREGS_REQ, pid, NULL, user) < 0) {
-   print_warning("ptrace(PTRACE_GETREGS, ...) failed for lwp(%d) errno(%d) \"%s\"\n", pid,
-               errno, strerror(errno));
-   return false;
- }
- return true;
-#else
- print_warning("ptrace(PTRACE_GETREGS, ...) not supported\n");
- return false;
-#endif
-#endif
 }
 
 static bool ptrace_continue(pid_t pid, int signal) {
