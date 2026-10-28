@@ -350,7 +350,7 @@ private:
   double           _build_time; // Time (sec) took to build graph
 
   // Virtual AddP nodes, created to make array initialization explicit in the CG.
-  GrowableArray<Node*> _virtual_array_init_nodes;
+  GrowableArray<AddPNode*> _virtual_array_init_nodes;
 
 public:
   JavaObjectNode* phantom_obj; // Unknown object
@@ -682,7 +682,7 @@ public:
   // explicitly in the CG.
   bool is_virtual_array_init(Node* n) const {
     precond(n->is_AddP());
-    return _virtual_array_init_nodes.contains(n);
+    return _virtual_array_init_nodes.contains(n->as_AddP());
   }
 
   // Utility function for nodes that load an object
