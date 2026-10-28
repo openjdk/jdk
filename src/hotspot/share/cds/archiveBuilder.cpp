@@ -25,22 +25,22 @@
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotCompressedPointers.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMapLogger.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotModules.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
 #include "cds/dynamicArchive.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/abstractInterpreter.hpp"
 #include "jvm.h"
@@ -437,11 +437,6 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
   SourceObjInfo src_info(ref, read_only, follow_mode);
   bool created;
   SourceObjInfo* p = _src_obj_table.put_if_absent(src_obj, src_info, &created);
-  if (created) {
-    if (_src_obj_table.maybe_grow()) {
-      log_info(aot, hashtables)("Expanded _src_obj_table table to %d", _src_obj_table.table_size());
-    }
-  }
 
 #ifdef ASSERT
   if (ref->type() == MetaspaceClosureType::MethodType) {
@@ -533,14 +528,14 @@ void ArchiveBuilder::gather_source_objs() {
 bool ArchiveBuilder::is_excluded(Klass* klass) {
   if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
-    return SystemDictionaryShared::is_excluded_class(ik);
+    return AOTSystemDictionary::is_excluded_class(ik);
   } else if (klass->is_objArray_klass()) {
     Klass* bottom = ObjArrayKlass::cast(klass)->bottom_klass();
     if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache_static_region(bottom)) {
       // The bottom class is in the static archive so it's clearly not excluded.
       return false;
     } else if (bottom->is_instance_klass()) {
-      return SystemDictionaryShared::is_excluded_class(InstanceKlass::cast(bottom));
+      return AOTSystemDictionary::is_excluded_class(InstanceKlass::cast(bottom));
     }
   }
 
@@ -659,9 +654,6 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
     bool created;
     _buffered_to_src_table.put_if_absent((address)dest, src, &created);
     assert(created, "must be");
-    if (_buffered_to_src_table.maybe_grow()) {
-      log_info(aot, hashtables)("Expanded _buffered_to_src_table table to %d", _buffered_to_src_table.table_size());
-    }
   }
 
   intptr_t* archived_vtable = CppVtables::get_archived_vtable(src_info->type(), (address)dest);
@@ -852,10 +844,10 @@ void ArchiveBuilder::make_klasses_shareable() {
           assert(0, "shouldn't happen");
         }
         if (CDSConfig::is_dumping_method_handles()) {
-          assert(HeapShared::is_archivable_hidden_klass(ik), "sanity");
+          assert(AOTHeap::is_archivable_hidden_klass(ik), "sanity");
         } else {
           // Legacy CDS support for lambda proxies
-          CDS_JAVA_HEAP_ONLY(assert(HeapShared::is_lambda_proxy_klass(ik), "sanity");)
+          CDS_JAVA_HEAP_ONLY(assert(AOTHeap::is_lambda_proxy_klass(ik), "sanity");)
         }
       } else if (ik->defined_by_boot_loader()) {
         type = "boot";
@@ -1178,7 +1170,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, AOTMappedHeapInfo* mapp
   if (log_is_enabled(Info, aot, map)) {
     AOTMapLogger::dumptime_log(this, mapinfo, mapped_heap_info, streamed_heap_info, bitmap, bitmap_size_in_bytes);
   }
-  CDS_JAVA_HEAP_ONLY(HeapShared::destroy_archived_object_cache());
+  CDS_JAVA_HEAP_ONLY(AOTHeap::destroy_archived_object_cache());
   FREE_C_HEAP_ARRAY(bitmap);
 }
 

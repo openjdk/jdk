@@ -2918,88 +2918,6 @@ encode %{
     __ stfd($src$$FloatRegister, Idisp, $mem$$base$$Register);
   %}
 
-  enc_class postalloc_expand_encode_oop(iRegNdst dst, iRegPdst src, flagsReg crx) %{
-    cmpP_reg_imm16Node *n_compare  = new cmpP_reg_imm16Node();
-    encodeP_subNode    *n_sub_base = new encodeP_subNode();
-    encodeP_shiftNode  *n_shift    = new encodeP_shiftNode();
-    cond_set_0_oopNode *n_cond_set = new cond_set_0_oopNode();
-
-    n_compare->add_req(n_region, n_src);
-    n_compare->_opnds[0] = op_crx;
-    n_compare->_opnds[1] = op_src;
-    n_compare->_opnds[2] = new immL16Oper(0);
-
-    n_sub_base->add_req(n_region, n_src);
-    n_sub_base->_opnds[0] = op_dst;
-    n_sub_base->_opnds[1] = op_src;
-    n_sub_base->_bottom_type = _bottom_type;
-
-    n_shift->add_req(n_region, n_sub_base);
-    n_shift->_opnds[0] = op_dst;
-    n_shift->_opnds[1] = op_dst;
-    n_shift->_bottom_type = _bottom_type;
-
-    n_cond_set->add_req(n_region, n_compare, n_shift);
-    n_cond_set->_opnds[0] = op_dst;
-    n_cond_set->_opnds[1] = op_crx;
-    n_cond_set->_opnds[2] = op_dst;
-    n_cond_set->_bottom_type = _bottom_type;
-
-    ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
-    ra_->set_pair(n_sub_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n_cond_set->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    nodes->push(n_compare);
-    nodes->push(n_sub_base);
-    nodes->push(n_shift);
-    nodes->push(n_cond_set);
-
-    assert(!(ra_->is_oop(this)), "sanity"); // This is not supposed to be GC'ed.
-  %}
-
-  enc_class postalloc_expand_decode_oop(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
-    decodeN_shiftNode *n_shift    = new decodeN_shiftNode();
-    cmpN_reg_imm0Node *n_compare  = new cmpN_reg_imm0Node();
-
-    n_compare->add_req(n_region, n_src);
-    n_compare->_opnds[0] = op_crx;
-    n_compare->_opnds[1] = op_src;
-    n_compare->_opnds[2] = new immN_0Oper(TypeNarrowOop::NULL_PTR);
-
-    n_shift->add_req(n_region, n_src);
-    n_shift->_opnds[0] = op_dst;
-    n_shift->_opnds[1] = op_src;
-    n_shift->_bottom_type = _bottom_type;
-
-    decodeN_addNode *n_add_base = new decodeN_addNode();
-    n_add_base->add_req(n_region, n_shift);
-    n_add_base->_opnds[0] = op_dst;
-    n_add_base->_opnds[1] = op_dst;
-    n_add_base->_bottom_type = _bottom_type;
-
-    cond_set_0_ptrNode *n_cond_set = new cond_set_0_ptrNode();
-    n_cond_set->add_req(n_region, n_compare, n_add_base);
-    n_cond_set->_opnds[0] = op_dst;
-    n_cond_set->_opnds[1] = op_crx;
-    n_cond_set->_opnds[2] = op_dst;
-    n_cond_set->_bottom_type = _bottom_type;
-
-    assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
-    ra_->set_oop(n_cond_set, true);
-
-    ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
-    ra_->set_pair(n_add_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n_cond_set->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    nodes->push(n_compare);
-    nodes->push(n_shift);
-    nodes->push(n_add_base);
-    nodes->push(n_cond_set);
-
-  %}
-
   // This enc_class is needed so that scheduler gets proper
   // input mapping for latency computation.
   enc_class enc_andc(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
@@ -3772,6 +3690,15 @@ operand immN() %{
   match(ConN);
 
   op_cost(10);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immN_31bit() %{
+  predicate(MacroAssembler::compressed_oops_fit_in_31_bits());
+  match(ConN);
+
+  op_cost(5);
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -5666,14 +5593,17 @@ instruct rldicl(iRegLdst dst, iRegLsrc src, immI16 shift, immI16 mask_begin) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Optimize DecodeN for disjoint base.
-// Load base of compressed oops into a register
-instruct loadBase(iRegLdst dst) %{
-  effect(DEF dst);
+instruct loadConN_31bit(iRegNdst dst, immN_31bit src) %{
+  match(Set dst src);
+  ins_cost(DEFAULT_COST*2);
 
-  format %{ "LoadConst $dst, heapbase" %}
+  format %{ "LIS/ORI $dst, $src" %}
+  size(8);
   ins_encode %{
-    __ load_const_optimized($dst$$Register, CompressedOops::base(), R0);
+    AddressLiteral addrlit = __ constant_oop_address((jobject)$src$$constant);
+    __ lis($dst$$Register, 0);                              // Will get patched.
+    __ relocate(addrlit.rspec(), /*compressed format*/ 1);
+    __ ori($dst$$Register, $dst$$Register, 0);              // Will get patched.
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6101,66 +6031,6 @@ instruct storeD(memory mem, regD src) %{
 
 // Convert oop pointer into compressed form.
 
-// Nodes for postalloc expand.
-
-// Shift node for expand.
-instruct encodeP_shift(iRegNdst dst, iRegNsrc src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (EncodeP src));
-  predicate(false);
-
-  format %{ "SRDI    $dst, $src, 3 \t// encode" %}
-  size(4);
-  ins_encode %{
-    __ srdi($dst$$Register, $src$$Register, CompressedOops::shift());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Add node for expand.
-instruct encodeP_sub(iRegPdst dst, iRegPdst src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (EncodeP src));
-  predicate(false);
-
-  format %{ "SUB     $dst, $src, oop_base \t// encode" %}
-  ins_encode %{
-    __ sub_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Conditional sub base.
-instruct cond_sub_base(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (EncodeP (Binary crx src1)));
-  predicate(false);
-
-  format %{ "BEQ     $crx, done\n\t"
-            "SUB     $dst, $src1, heapbase \t// encode: subtract base if != nullptr\n"
-            "done:" %}
-  ins_encode %{
-    Label done;
-    __ beq($crx$$CondRegister, done);
-    __ sub_const_optimized($dst$$Register, $src1$$Register, CompressedOops::base(), R0);
-    __ bind(done);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cond_set_0_oop(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (EncodeP (Binary crx src1)));
-  predicate(false);
-
-  format %{ "CMOVE   $dst, $crx eq, 0, $src1 \t// encode: preserve 0" %}
-  size(4);
-  ins_encode %{
-    __ isel_0($dst$$Register, $crx$$CondRegister, Assembler::equal, $src1$$Register);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 // Disjoint narrow oop base.
 instruct encodeP_Disjoint(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodeP src));
@@ -6175,15 +6045,21 @@ instruct encodeP_Disjoint(iRegNdst dst, iRegPsrc src) %{
 %}
 
 // shift != 0, base != 0
-instruct encodeP_Ex(iRegNdst dst, flagsReg crx, iRegPsrc src) %{
+instruct encodeP(iRegNdst dst, flagsReg crx, iRegPsrc src) %{
   match(Set dst (EncodeP src));
   effect(TEMP crx);
   predicate(n->bottom_type()->make_ptr()->ptr() != TypePtr::NotNull &&
             CompressedOops::shift() != 0 &&
             CompressedOops::base_overlaps());
 
-  format %{ "EncodeP $dst, $crx, $src \t// postalloc expanded" %}
-  postalloc_expand( postalloc_expand_encode_oop(dst, src, crx));
+  format %{ "EncodeP $dst, $crx, $src" %}
+  ins_encode %{
+    __ cmpdi($crx$$CondRegister, $src$$Register, 0);
+    __ sub_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
+    __ srdi($dst$$Register, $dst$$Register, CompressedOops::shift());
+    __ isel_0($dst$$Register, $crx$$CondRegister, Assembler::equal);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // shift != 0, base != 0
@@ -6202,7 +6078,6 @@ instruct encodeP_not_null(iRegNdst dst, iRegPsrc src) %{
 %}
 
 // shift != 0, base == 0
-// TODO: This is the same as encodeP_shift. Merge!
 instruct encodeP_not_null_base_null(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodeP src));
   predicate(CompressedOops::shift() != 0 &&
@@ -6232,82 +6107,23 @@ instruct encodeP_narrow_oop_shift_0(iRegNdst dst, iRegPsrc src) %{
 
 // Decode nodes.
 
-// Shift node for expand.
-instruct decodeN_shift(iRegPdst dst, iRegPsrc src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (DecodeN src));
-  predicate(false);
-
-  format %{ "SLDI    $dst, $src, #3 \t// DecodeN" %}
-  size(4);
-  ins_encode %{
-    __ sldi($dst$$Register, $src$$Register, CompressedOops::shift());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Add node for expand.
-instruct decodeN_add(iRegPdst dst, iRegPdst src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (DecodeN src));
-  predicate(false);
-
-  format %{ "ADD     $dst, $src, heapbase \t// DecodeN, add oop base" %}
-  ins_encode %{
-    __ add_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// conditianal add base for expand
-instruct cond_add_base(iRegPdst dst, flagsRegSrc crx, iRegPsrc src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  // NOTICE that the rule is nonsense - we just have to make sure that:
-  //  - _matrule->_rChild->_opType == "DecodeN" (see InstructForm::captures_bottom_type() in formssel.cpp)
-  //  - we have to match 'crx' to avoid an "illegal USE of non-input: flagsReg crx" error in ADLC.
-  match(Set dst (DecodeN (Binary crx src)));
-  predicate(false);
-
-  format %{ "BEQ     $crx, done\n\t"
-            "ADD     $dst, $src, heapbase \t// DecodeN: add oop base if $src != nullptr\n"
-            "done:" %}
-  ins_encode %{
-    Label done;
-    __ beq($crx$$CondRegister, done);
-    __ add_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
-    __ bind(done);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cond_set_0_ptr(iRegPdst dst, flagsRegSrc crx, iRegPsrc src1) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  // NOTICE that the rule is nonsense - we just have to make sure that:
-  //  - _matrule->_rChild->_opType == "DecodeN" (see InstructForm::captures_bottom_type() in formssel.cpp)
-  //  - we have to match 'crx' to avoid an "illegal USE of non-input: flagsReg crx" error in ADLC.
-  match(Set dst (DecodeN (Binary crx src1)));
-  predicate(false);
-
-  format %{ "CMOVE   $dst, $crx eq, 0, $src1 \t// decode: preserve 0" %}
-  size(4);
-  ins_encode %{
-    __ isel_0($dst$$Register, $crx$$CondRegister, Assembler::equal, $src1$$Register);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 //  shift != 0, base != 0
-instruct decodeN_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
+instruct decodeN(iRegPdst dst, iRegNsrc src, flagsRegCR0 cr0) %{
   match(Set dst (DecodeN src));
   predicate((n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
              n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
             CompressedOops::shift() != 0 &&
             CompressedOops::base() != nullptr);
-  ins_cost(4 * DEFAULT_COST); // Should be more expensive than decodeN_Disjoint_isel_Ex.
-  effect(TEMP crx);
+  ins_cost(4 * DEFAULT_COST); // Should be more expensive than decodeN_Disjoint_isel.
+  effect(TEMP cr0);
 
-  format %{ "DecodeN $dst, $src \t// Kills $crx, postalloc expanded" %}
-  postalloc_expand( postalloc_expand_decode_oop(dst, src, crx) );
+  format %{ "DecodeN $dst, $src \t// decode nullable narrow oop" %}
+  ins_encode %{
+    __ sldi_($dst$$Register, $src$$Register, CompressedOops::shift());
+    __ add_const_optimized($dst$$Register, $dst$$Register, CompressedOops::base(), R0);
+    __ isel_0($dst$$Register, CR0, Assembler::equal);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // shift != 0, base == 0
@@ -6325,26 +6141,8 @@ instruct decodeN_nullBase(iRegPdst dst, iRegNsrc src) %{
 %}
 
 // Optimize DecodeN for disjoint base.
-// Shift narrow oop and or it into register that already contains the heap base.
-// Base == dst must hold, and is assured by construction in postaloc_expand.
-instruct decodeN_mergeDisjoint(iRegPdst dst, iRegNsrc src, iRegLsrc base) %{
-  match(Set dst (DecodeN src));
-  effect(TEMP base);
-  predicate(false);
-
-  format %{ "RLDIMI  $dst, $src, shift, 32-shift \t// DecodeN (disjoint base)" %}
-  size(4);
-  ins_encode %{
-    __ rldimi($dst$$Register, $src$$Register, CompressedOops::shift(), 32-CompressedOops::shift());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Optimize DecodeN for disjoint base.
 // This node requires only one cycle on the critical path.
-// We must postalloc_expand as we can not express use_def effects where
-// the used register is L and the def'ed register P.
-instruct decodeN_Disjoint_notNull_Ex(iRegPdst dst, iRegNsrc src) %{
+instruct decodeN_Disjoint_notNull(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeN src));
   effect(TEMP_DEF dst);
   predicate((n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
@@ -6354,76 +6152,29 @@ instruct decodeN_Disjoint_notNull_Ex(iRegPdst dst, iRegNsrc src) %{
 
   format %{ "MOV     $dst, heapbase \t\n"
             "RLDIMI  $dst, $src, shift, 32-shift \t// decode with disjoint base" %}
-  postalloc_expand %{
-    loadBaseNode *n1 = new loadBaseNode();
-    n1->add_req(nullptr);
-    n1->_opnds[0] = op_dst;
-
-    decodeN_mergeDisjointNode *n2 = new decodeN_mergeDisjointNode();
-    n2->add_req(n_region, n_src, n1);
-    n2->_opnds[0] = op_dst;
-    n2->_opnds[1] = op_src;
-    n2->_opnds[2] = op_dst;
-    n2->_bottom_type = _bottom_type;
-
-    assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
-    ra_->set_oop(n2, true);
-
-    ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    nodes->push(n1);
-    nodes->push(n2);
+  ins_encode %{
+    __ load_const_optimized($dst$$Register, CompressedOops::base(), R0);
+    __ rldimi($dst$$Register, $src$$Register, CompressedOops::shift(), 32-CompressedOops::shift());
   %}
+  ins_pipe(pipe_class_default);
 %}
 
-instruct decodeN_Disjoint_isel_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
+instruct decodeN_Disjoint_isel(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
   match(Set dst (DecodeN src));
   effect(TEMP_DEF dst, TEMP crx);
   predicate((n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
              n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
             CompressedOops::base_disjoint());
-  ins_cost(3 * DEFAULT_COST);
+  ins_cost(3 * DEFAULT_COST); // Has a lower latency than decodeN because of a better ILP.
 
   format %{ "DecodeN  $dst, $src \t// decode with disjoint base using isel" %}
-  postalloc_expand %{
-    loadBaseNode *n1 = new loadBaseNode();
-    n1->add_req(nullptr);
-    n1->_opnds[0] = op_dst;
-
-    cmpN_reg_imm0Node *n_compare  = new cmpN_reg_imm0Node();
-    n_compare->add_req(n_region, n_src);
-    n_compare->_opnds[0] = op_crx;
-    n_compare->_opnds[1] = op_src;
-    n_compare->_opnds[2] = new immN_0Oper(TypeNarrowOop::NULL_PTR);
-
-    decodeN_mergeDisjointNode *n2 = new decodeN_mergeDisjointNode();
-    n2->add_req(n_region, n_src, n1);
-    n2->_opnds[0] = op_dst;
-    n2->_opnds[1] = op_src;
-    n2->_opnds[2] = op_dst;
-    n2->_bottom_type = _bottom_type;
-
-    cond_set_0_ptrNode *n_cond_set = new cond_set_0_ptrNode();
-    n_cond_set->add_req(n_region, n_compare, n2);
-    n_cond_set->_opnds[0] = op_dst;
-    n_cond_set->_opnds[1] = op_crx;
-    n_cond_set->_opnds[2] = op_dst;
-    n_cond_set->_bottom_type = _bottom_type;
-
-    assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
-    ra_->set_oop(n_cond_set, true);
-
-    ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
-    ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n_cond_set->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    nodes->push(n1);
-    nodes->push(n_compare);
-    nodes->push(n2);
-    nodes->push(n_cond_set);
+  ins_encode %{
+    __ load_const_optimized($dst$$Register, CompressedOops::base(), R0);
+    __ cmplwi($crx$$CondRegister, $src$$Register, 0);
+    __ rldimi($dst$$Register, $src$$Register, CompressedOops::shift(), 32-CompressedOops::shift());
+    __ isel_0($dst$$Register, $crx$$CondRegister, Assembler::equal);
   %}
+  ins_pipe(pipe_class_default);
 %}
 
 // src != 0, shift != 0, base != 0
@@ -10381,22 +10132,6 @@ instruct cmpP_reg_null(flagsReg crx, iRegP_N2P src1, immP_0or1 src2) %{
   size(4);
   ins_encode %{
     __ cmpldi($crx$$CondRegister, $src1$$Register, (int)((short)($src2$$constant & 0xFFFF)));
-  %}
-  ins_pipe(pipe_class_compare);
-%}
-
-// Used in postalloc expand.
-instruct cmpP_reg_imm16(flagsReg crx, iRegPsrc src1, immL16 src2) %{
-  // This match rule prevents reordering of node before a safepoint.
-  // This only makes sense if this instructions is used exclusively
-  // for the expansion of EncodeP!
-  match(Set crx (CmpP src1 src2));
-  predicate(false);
-
-  format %{ "CMPDI   $crx, $src1, $src2" %}
-  size(4);
-  ins_encode %{
-    __ cmpdi($crx$$CondRegister, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_compare);
 %}

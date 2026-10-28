@@ -2275,6 +2275,10 @@ public class Lower extends TreeTranslator {
         // Class is serializable
         return true;
       }
+      if (sym.isValueClass()) {
+          // Omitting enclosing instance field in value classes changes ==
+          return true;
+      }
       return false;
     }
 
@@ -3102,8 +3106,7 @@ public class Lower extends TreeTranslator {
     }
 //where
     private JCExpression convert(JCExpression tree, Type pt) {
-        if (tree.type == pt || tree.type.hasTag(BOT))
-            return tree;
+        if (tree.type == pt) return tree;
         JCExpression result = make_at(tree.pos()).TypeCast(make.Type(pt), tree);
         result.type = (tree.type.constValue() != null) ? cfolder.coerce(tree.type, pt)
                                                        : pt;
@@ -3312,7 +3315,9 @@ public class Lower extends TreeTranslator {
                                          box,
                                          List.<Type>nil()
                                          .prepend(tree.type));
-        return make.App(make.QualIdent(valueOfSym), List.of(tree));
+        JCMethodInvocation res = make.App(make.QualIdent(valueOfSym), List.of(tree));
+        res.boxingKind = JCMethodInvocation.BoxingKind.BOX;
+        return res;
     }
 
     /** Unbox an object to a primitive value. */
@@ -3334,7 +3339,9 @@ public class Lower extends TreeTranslator {
                                        unboxedType.tsym.name.append(names.Value), // x.intValue()
                                        tree.type,
                                        List.nil());
-        return make.App(make.Select(tree, valueSym));
+        JCMethodInvocation res = make.App(make.Select(tree, valueSym));
+        res.boxingKind = JCMethodInvocation.BoxingKind.UNBOX;
+        return res;
     }
 
     /** Visitor method for parenthesized expressions.
