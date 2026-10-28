@@ -79,17 +79,41 @@ inline D AtomicAccess::PlatformAdd<byte_size>::fetch_then_add(D volatile* dest, 
   return old_value;
 }
 
+// aqrl encodes [aq, rl]: 0b00 relaxed, 0b10 acquire, 0b01 release, 0b11 acquire-release.
+static constexpr int riscv_amo_aqrl(atomic_memory_order order) {
+  switch (order) {
+    case memory_order_relaxed:
+      return 0b00;
+    case memory_order_acquire:
+      return 0b10;
+    case memory_order_release:
+      return 0b01;
+    case memory_order_acq_rel:
+    case memory_order_seq_cst:
+    case memory_order_conservative:
+      return 0b11;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
 // Use .insn so baseline builds do not require assembler support for Zacas/Zabha.
 // .insn r opcode, funct3, funct7, rd, rs1, rs2.
 // opcode: 0x2f selects the AMO instruction group.
 // funct3: 0b000 for byte, 0b010 for word, 0b011 for doubleword.
 // funct7: (AMOCAS funct5 0b00101 << 2) | aqrl = 0x14 | aqrl.
 // rd: expected value in, observed value out; rs1: address; rs2: replacement.
-template<size_t byte_size, int aqrl, typename T>
+template<size_t byte_size, atomic_memory_order order, typename T>
 inline T riscv_amocas(T volatile* dest, T compare_value, T exchange_value) {
   static_assert(byte_size == sizeof(T));
   static_assert(byte_size == 1 || byte_size == 4 || byte_size == 8);
   constexpr int width = byte_size == 1 ? 0 : byte_size == 4 ? 2 : 3;
+  constexpr int aqrl = riscv_amo_aqrl(order);
+
+  if constexpr (order == memory_order_seq_cst || order == memory_order_conservative) {
+    // Failed AMOCAS has no release semantics, even with .rl.
+    FULL_MEM_BARRIER;
+  }
 
   uint64_t old_value = (uint64_t)compare_value;
   __asm__ __volatile__ (".insn r 0x2f, %3, %4, %0, %1, %2"
@@ -100,23 +124,24 @@ inline T riscv_amocas(T volatile* dest, T compare_value, T exchange_value) {
   return (T)old_value;
 }
 
-// aqrl encodes [aq, rl]: 0b00 relaxed, 0b10 acquire, 0b01 release, 0b11 acquire-release.
 template<size_t byte_size, typename T>
 inline T riscv_amocas(T volatile* dest, T compare_value, T exchange_value,
                      atomic_memory_order order) {
   switch (order) {
     case memory_order_relaxed:
-      return riscv_amocas<byte_size, 0b00>(dest, compare_value, exchange_value);
+      return riscv_amocas<byte_size, memory_order_relaxed>(dest, compare_value, exchange_value);
     case memory_order_acquire:
-      return riscv_amocas<byte_size, 0b10>(dest, compare_value, exchange_value);
+      return riscv_amocas<byte_size, memory_order_acquire>(dest, compare_value, exchange_value);
     case memory_order_release:
-      return riscv_amocas<byte_size, 0b01>(dest, compare_value, exchange_value);
+      return riscv_amocas<byte_size, memory_order_release>(dest, compare_value, exchange_value);
     case memory_order_acq_rel:
-      return riscv_amocas<byte_size, 0b11>(dest, compare_value, exchange_value);
+      return riscv_amocas<byte_size, memory_order_acq_rel>(dest, compare_value, exchange_value);
+    case memory_order_seq_cst:
+      return riscv_amocas<byte_size, memory_order_seq_cst>(dest, compare_value, exchange_value);
+    case memory_order_conservative:
+      return riscv_amocas<byte_size, memory_order_conservative>(dest, compare_value, exchange_value);
     default:
-      // Failed AMOCAS has no release semantics, even with .rl.
-      FULL_MEM_BARRIER;
-      return riscv_amocas<byte_size, 0b11>(dest, compare_value, exchange_value);
+      ShouldNotReachHere();
   }
 }
 
