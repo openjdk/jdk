@@ -524,6 +524,18 @@ void VM_Version::c2_initialize() {
       FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
     }
   }
+
+  if (UseRVV && UseZbb
+      && (MaxVectorSize == 16 || MaxVectorSize == 32)) {
+    // The vectorized stub fixes the chunk width to 256 bits and has only been
+    // validated on MaxVectorSize=16/32 so far.
+    if (FLAG_IS_DEFAULT(UseVectorizedStringIndexOf)) {
+      FLAG_SET_DEFAULT(UseVectorizedStringIndexOf, true);
+    }
+  } else if (UseVectorizedStringIndexOf) {
+    warning("VectorizedStringIndexOf stubs requires RVV and Zbb, and MaxVectorSize of 16 or 32 bytes.");
+    FLAG_SET_DEFAULT(UseVectorizedStringIndexOf, false);
+  }
 }
 
 #endif // COMPILER2
