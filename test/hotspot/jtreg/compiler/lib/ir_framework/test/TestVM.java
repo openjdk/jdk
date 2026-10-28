@@ -95,10 +95,7 @@ public class TestVM {
     private static final boolean PRINT_TIMES = Boolean.getBoolean("PrintTimes") || VERBOSE;
     public static final boolean USE_COMPILER = WHITE_BOX.getBooleanVMFlag("UseCompiler");
     static final boolean EXCLUDE_RANDOM = Boolean.getBoolean("ExcludeRandom");
-    private static final String TEST_LIST = SystemProperty.getTestList();
-    private static final String EXCLUDE_LIST = SystemProperty.getExcludeList();
     // We ignore @Skip when running with -DIgnoreSkip=true
-    private static final boolean IGNORE_SKIP = Boolean.getBoolean("IgnoreSkip");
     private static final boolean DUMP_REPLAY = Boolean.getBoolean("DumpReplay");
     private static final boolean GC_AFTER = Boolean.getBoolean("GCAfter");
     private static final boolean SHUFFLE_TESTS = Boolean.parseBoolean(System.getProperty("ShuffleTests", "true"));
@@ -114,8 +111,7 @@ public class TestVM {
     private final List<AbstractTest> allTests = new ArrayList<>();
     private final HashMap<String, Method> testMethodMap = new HashMap<>();
     private final HashMap<String, Method> setupMethodMap = new HashMap<>();
-    private final List<String> excludeList;
-    private final List<String> testList;
+    private final TestExecutionPolicy testExecutionPolicy;
     private Set<Class<?>> helperClasses = null; // Helper classes that contain framework annotations to be processed.
     private final ApplicableIRRulesPrinter irMatchRulePrinter;
     private final Class<?> testClass;
@@ -124,38 +120,12 @@ public class TestVM {
     private TestVM(Class<?> testClass) {
         TestRun.check(testClass != null, "Test class cannot be null");
         this.testClass = testClass;
-        this.testList = createTestFilterList(TEST_LIST, testClass);
-        this.excludeList = createTestFilterList(EXCLUDE_LIST, testClass);
-
+        this.testExecutionPolicy = new TestExecutionPolicy(testClass);
         if (PRINT_VALID_IR_RULES) {
             irMatchRulePrinter = new ApplicableIRRulesPrinter();
         } else {
             irMatchRulePrinter = null;
         }
-    }
-
-    /**
-     * Parse "test1,test2,test3" into a list.
-     */
-    private static List<String> createTestFilterList(String list, Class<?> testClass) {
-        if (list.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        String classPrefix = testClass.getSimpleName() + ".";
-        List<String> filterList = new ArrayList<>(Arrays.asList(list.split(",")));
-        for (int i = filterList.size() - 1; i >= 0; i--) {
-            String test = filterList.get(i);
-            if (test.indexOf(".") > 0) {
-                if (test.startsWith(classPrefix)) {
-                    test = test.substring(classPrefix.length());
-                    filterList.set(i, test);
-                } else {
-                    filterList.remove(i);
-                }
-            }
-        }
-        return filterList;
     }
 
     /**
@@ -298,7 +268,7 @@ public class TestVM {
                 try {
                     Arguments argumentsAnno = getAnnotation(m, Arguments.class);
                     TestFormat.check(argumentsAnno != null || m.getParameterCount() == 0, "Missing @Arguments annotation to define arguments of " + m);
-                    if (shouldExcludeTest(m)) {
+                    if (testExecutionPolicy.shouldExcludeTestMethod(m)) {
                         return;
                     }
 
@@ -312,39 +282,6 @@ public class TestVM {
                 }
             }
         });
-    }
-
-    /**
-     * A test is excluded from execution if:
-     * - -DTest does not list the method
-     * - -DExclude lists the method
-     * - The method specifies a (temporary) @Skip annotation.
-     */
-    private boolean shouldExcludeTest(Method testMethod) {
-        String testName = testMethod.getName();
-        return isNotOnTestList(testName) ||
-               isOnExcludeList(testName) ||
-               shouldSkip(testMethod);
-    }
-
-    private boolean isNotOnTestList(String testName) {
-        return isDTestSet() && !testList.contains(testName);
-    }
-
-    private boolean isDTestSet() {
-        return !testList.isEmpty();
-    }
-
-    private boolean isOnExcludeList(String testName) {
-        return excludeList.contains(testName);
-    }
-
-    private boolean shouldSkip(Method method) {
-        return !IGNORE_SKIP && hasSkipAnnotation(method);
-    }
-
-    private boolean hasSkipAnnotation(Method method) {
-        return getAnnotation(method, Skip.class) != null;
     }
 
     /**
@@ -724,7 +661,7 @@ public class TestVM {
                          "Missing @Arguments annotation to define arguments of " + testMethod + " required by "
                          + "checked test " + m);
         CheckedTest.Parameter parameter = getCheckedTestParameter(m, testMethod);
-        if (shouldExcludeTest(testMethod)) {
+        if (testExecutionPolicy.shouldExcludeTestMethod(testMethod)) {
             return;
         }
 
@@ -798,7 +735,7 @@ public class TestVM {
         }
 
         checkNoneOrAllAssociatedTestsSkipped(m, tests);
-        if (shouldExcludeCustomRunTest(tests)) {
+        if (testExecutionPolicy.shouldExcludeCustomRunTest(tests)) {
             return;
         }
 
@@ -844,37 +781,6 @@ public class TestVM {
                                 "Cannot set @Warmup at @Run method " + m + " when used with RunMode.STANDALONE. The @Run method is only invoked once.");
     }
 
-
-    /**
-     * A custom run test is excluded from execution if:
-     * - -DExclude lists at least one associated test method
-     * - -DTest does not list any associated test method
-     * - At least one associated test method has a (temporary) @Skip annotation.
-     */
-    private boolean shouldExcludeCustomRunTest(List<DeclaredTest> tests) {
-        boolean isNotOnTestList = true;
-        for (DeclaredTest test : tests) {
-            Method testMethod = test.getTestMethod();
-            String testName = testMethod.getName();
-            if (shouldSkip(testMethod) || isOnExcludeList(testName)) {
-                // Skip the custom run test if at least one associated test method should be skipped or excluded.
-                return true;
-            }
-            if (isOnTestList(testName)) {
-                // Enable the custom run test if at least one associated test method is on the test list and there is
-                // no other reason to skip the custom run test.
-                isNotOnTestList = false;
-            }
-        }
-
-        // -DTest set? Skip this @Run method because no associated test is on the list.
-        return isDTestSet() && isNotOnTestList;
-    }
-
-    private boolean isOnTestList(String testName) {
-        return testList.contains(testName);
-    }
-
     private void checkNoneOrAllAssociatedTestsSkipped(Method runMethod, List<DeclaredTest> tests) {
         List<Method> testMethodsWithoutSkip = testMethodsWithoutSkipAnnotation(tests);
         if (testMethodsWithoutSkip.isEmpty() ||
@@ -901,7 +807,7 @@ public class TestVM {
         TestFormat.fail(builder.toString());
     }
 
-    private static <T extends Annotation> T getAnnotation(AnnotatedElement element, Class<T> c) {
+    public static <T extends Annotation> T getAnnotation(AnnotatedElement element, Class<T> c) {
         T[] annos =  element.getAnnotationsByType(c);
         TestFormat.check(annos.length < 2, element + " has duplicated annotations");
         return Arrays.stream(annos).findFirst().orElse(null);
@@ -939,8 +845,8 @@ public class TestVM {
      */
     private void runTests() {
         long startTime = System.nanoTime();
-        boolean testFilterPresent = testFilterPresent();
-        if (testFilterPresent && allTests.isEmpty()) {
+        boolean testExecutionPolicyActive = testExecutionPolicy.isTestOrExcludePolicyActive();
+        if (testExecutionPolicyActive && allTests.isEmpty()) {
             // Throw an exception to inform the user about an empty specified test set with -DTest and/or -DExclude
             throw new NoTestsRunException();
         }
@@ -959,7 +865,7 @@ public class TestVM {
             if (VERBOSE) {
                 System.out.println("Run \"" + testName + "\"");
             }
-            if (testFilterPresent) {
+            if (testExecutionPolicyActive) {
                 TestVmSocket.sendWithTag(MessageTag.TEST_LIST, test.toString());
             }
             try {
@@ -993,10 +899,6 @@ public class TestVM {
                          + System.lineSeparator() + "----------------" + "-".repeat(String.valueOf(failures).length());
             throw new TestRunException(msg + System.lineSeparator() + builder);
         }
-    }
-
-    private boolean testFilterPresent() {
-        return isDTestSet() || !excludeList.isEmpty();
     }
 
     enum TriState {

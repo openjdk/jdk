@@ -29,6 +29,7 @@ import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.TestVMException;
 import compiler.lib.ir_framework.shared.NoTestsRunException;
+import compiler.lib.ir_framework.shared.OverlappingTestAndExcludeException;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -47,15 +48,15 @@ public class TestDTestAndExclude {
         if (args.length == 0) {
             run("good1,good2", "", "good");
             run("good1,good2", "bad1", "good");
-            run("good1,bad1", "bad1", "good");
-            run("good1,bad1", "bad1,good", "good");
-            run("good3,bad2", "bad1,bad2", "good");
+            run("good1,bad1", "bad1", "overlap");
+            run("good1,bad1", "badSingle,good", "bad1");
+            run("good3,badSingle", "bad1,badSingle", "overlap");
             run("goodMulti1,goodMulti2", "", "good");
             run("bad1,good1", "", "bad1");
-            run("bad1,good1", "good1", "bad1");
+            run("bad1,good1", "good1", "overlap");
             run("bad1,good1", "asdf", "bad1");
-            run("bad2,good1", "", "runBadSingle");
-            run("bad2", "runBadSingle", "runBadSingle");
+            run("badSingle,good1", "", "runBadSingle");
+            run("badSingle", "runBadSingle", "runBadSingle");
             run("badMulti1,badMulti2", "", "runBadMulti");
             run("badMulti1", "", "runBadMulti");
             run("badMulti1,good1", "badMulti2", "good");
@@ -64,10 +65,10 @@ public class TestDTestAndExclude {
             run("runBadSingle", "", "empty");
             run("runBadMulti", "", "empty");
             run("asdf", "", "empty");
-            run("", "good1,good2,good3,bad1,bad2,goodMulti1,goodMulti2,badMulti1,badMulti2", "empty");
-            run("asdf", "good1,good2,good3,bad1,bad2,goodMulti1,goodMulti2,badMulti1,badMulti2", "empty");
-            run("bad1", "bad1", "empty");
-            run("good1", "asdf,good,good1", "empty");
+            run("", "good1,good2,good3,bad1,badSingle,goodMulti1,goodMulti2,badMulti1,badMulti2", "empty");
+            run("asdf", "good1,good2,good3,bad1,badSingle,goodMulti1,goodMulti2,badMulti1,badMulti2", "empty");
+            run("bad1", "bad1", "overlap");
+            run("good1", "asdf,good,good1", "overlap");
         } else {
             switch (args[0]) {
                 case "good" -> TestFramework.run();
@@ -84,6 +85,14 @@ public class TestDTestAndExclude {
                         TestFramework.run();
                         throw new RuntimeException("should not reach");
                     } catch (NoTestsRunException e) {
+                        // Expected
+                    }
+                }
+                case "overlap" -> {
+                    try {
+                        TestFramework.run();
+                        throw new RuntimeException("should not reach");
+                    } catch (OverlappingTestAndExcludeException e) {
                         // Expected
                     }
                 }
@@ -112,7 +121,8 @@ public class TestDTestAndExclude {
                 "-Dtest.vm.opts=" + dTestFlag + "=" + dTest + " " + dExcludeFlag + "=" + dExclude,
                 "ir_framework.tests.TestDTestAndExclude", arg);
         oa = ProcessTools.executeProcess(process);
-        oa.shouldHaveExitValue(0);
+        int exitCode = arg.equals("overlap") ? 1 : 0;
+        oa.shouldHaveExitValue(exitCode);
     }
 
     @Test
@@ -150,7 +160,7 @@ public class TestDTestAndExclude {
     }
 
     @Test
-    public void bad2() {
+    public void badSingle() {
     }
 
     @Test
@@ -161,7 +171,7 @@ public class TestDTestAndExclude {
     public void badMulti2() {
     }
 
-    @Run(test = "bad2")
+    @Run(test = "badSingle")
     public void runBadSingle() {
         throw new RuntimeException("expected runBadSingle exception");
     }

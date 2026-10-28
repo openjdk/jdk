@@ -31,6 +31,7 @@ import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.parser.TestClassParser;
 import compiler.lib.ir_framework.shared.*;
+import compiler.lib.ir_framework.shared.TestExecutionPolicy;
 import compiler.lib.ir_framework.test.TestVM;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
@@ -158,8 +159,6 @@ public class TestFramework {
 
     public static final boolean VERBOSE = Boolean.getBoolean("Verbose");
     public static final boolean PRINT_RULE_MATCHING_TIME = Boolean.getBoolean("PrintRuleMatchingTime");
-    private static final boolean TEST_LIST_IS_EMPTY = SystemProperty.getTestList().isEmpty();
-    private static final boolean EXCLUDE_LIST_IS_EMPTY = SystemProperty.getExcludeList().isEmpty();
     private static final boolean REPORT_STDOUT = Boolean.getBoolean("ReportStdout");
     // Only used for internal testing and should not be used for normal user testing.
 
@@ -178,6 +177,7 @@ public class TestFramework {
     private static boolean toggleBool;
 
     private final Class<?> testClass;
+    private final TestExecutionPolicy testExecutionPolicy;
     private Set<Class<?>> helperClasses;
     private List<Scenario> scenarios;
     private Set<Integer> scenarioIndices;
@@ -212,6 +212,7 @@ public class TestFramework {
     public TestFramework(Class<?> testClass) {
         TestRun.check(testClass != null, "Test class cannot be null");
         this.testClass = testClass;
+        this.testExecutionPolicy = new TestExecutionPolicy(testClass);
         if (VERBOSE) {
             System.out.println("Test class: " + testClass);
         }
@@ -792,7 +793,7 @@ public class TestFramework {
             builder.append(System.lineSeparator());
         }
         System.err.println(builder);
-        if (!VERBOSE && !REPORT_STDOUT && TEST_LIST_IS_EMPTY && EXCLUDE_LIST_IS_EMPTY) {
+        if (!VERBOSE && !REPORT_STDOUT && !testExecutionPolicy.isTestOrExcludePolicyActive()) {
             // Provide a hint to the user how to get additional output/debugging information.
             System.err.println(RERUN_HINT);
         }
