@@ -309,14 +309,6 @@ void InterpreterMacroAssembler::push_2ptrs(Register first, Register second) {
   addi(R15_esp, R15_esp, - 2 * Interpreter::stackElementSize );
 }
 
-void InterpreterMacroAssembler::move_l_to_d(Register l, FloatRegister d) {
-  mtfprd(d, l);
-}
-
-void InterpreterMacroAssembler::move_d_to_l(FloatRegister d, Register l) {
-  mffprd(l, d);
-}
-
 void InterpreterMacroAssembler::push(TosState state) {
   switch (state) {
     case atos: push_ptr();                break;
