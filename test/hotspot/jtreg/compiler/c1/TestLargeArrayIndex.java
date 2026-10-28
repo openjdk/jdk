@@ -60,7 +60,6 @@ public class TestLargeArrayIndex {
 
     static void testBytePositive(byte[] values) {
         try {
-            // The array header alone makes the byte offset overflow.
             values[Integer.MAX_VALUE] = 0;
             throw new RuntimeException("ArrayIndexOutOfBoundsException expected");
         } catch (ArrayIndexOutOfBoundsException expected) {
