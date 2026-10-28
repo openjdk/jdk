@@ -3429,6 +3429,7 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Uniq
     // Non-escaping object node should point only to field nodes.
     FieldNode* field = j.get()->as_Field();
     if (is_virtual_array_init(field->ideal_node())) {
+      // Virtual array initialization fields do not affect scalar replaceability.
       continue;
     }
     int offset = field->as_Field()->offset();
