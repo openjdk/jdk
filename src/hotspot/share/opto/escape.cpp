@@ -1934,8 +1934,8 @@ void ConnectionGraph::add_final_edges(Node *n) {
       add_base(n_ptn->as_Field(), ptn_base);
       if (is_virtual_array_init(n)) {
         // Connect allocated arrays and their initialization values explicitly.
-        // Note that, for flat arrays, propagating the array's fields escape
-        // state into the initialization value is a conservative
+        // Note that, for flat arrays, propagating the array's
+        // fields_escape_state into the initialization value is a conservative
         // over-approximation and may result in an unnecessary constructor
         // barrier. If needed, this could be addressed by connecting the field
         // node directly to the referents of the initialization value fields.
