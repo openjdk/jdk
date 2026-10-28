@@ -238,10 +238,10 @@ void RiscvHwprobe::add_features_from_query_result() {
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZCB)) {
     VM_Version::ext_Zcb.enable_feature();
   }
-#ifndef PRODUCT
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICBOP)) {
     VM_Version::ext_Zicbop.enable_feature();
   }
+#ifndef PRODUCT
   // Currently tests shows that cmove using Zicond instructions will bring
   // performance regression, but to get a test coverage all the time, will
   // still prefer to enabling it in debug version.
