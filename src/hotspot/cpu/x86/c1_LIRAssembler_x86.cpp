@@ -490,6 +490,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
       __ testptr(rax, rax);
       __ jcc(Assembler::notZero, not_null);
       // Returned value is null, zero all return registers because they may belong to oop fields
+      __ xorq(j_rarg0, j_rarg0);
       __ xorq(j_rarg1, j_rarg1);
       __ xorq(j_rarg2, j_rarg2);
       __ xorq(j_rarg3, j_rarg3);
