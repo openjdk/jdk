@@ -1738,16 +1738,16 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       // adjust_scalar_replaceable_state() and split_unique_types().
       // Note, non-oop fields will have only base edges in Connection
       // Graph because such fields are not used for oop loads and stores.
-      bool is_virtual = is_virtual_array_init(n);
-      assert(!is_virtual || n->outcnt() == 0, "virtual AddPs must be unused");
-      int offset = is_virtual ? Type::OffsetBot : address_offset(n, igvn);
+      bool is_virtual_array_init_n = is_virtual_array_init(n);
+      assert(!is_virtual_array_init_n || n->outcnt() == 0, "virtual AddPs must be unused");
+      int offset = is_virtual_array_init_n ? Type::OffsetBot : address_offset(n, igvn);
       add_field(n, PointsToNode::NoEscape, offset);
       if (ptn_base == nullptr) {
         delayed_worklist->push(n); // Process it later.
       } else {
         n_ptn = ptnode_adr(n_idx);
         add_base(n_ptn->as_Field(), ptn_base);
-        if (is_virtual) {
+        if (is_virtual_array_init_n) {
           delayed_worklist->push(n);
         }
       }
