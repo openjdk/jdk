@@ -689,7 +689,7 @@ address StubGenerator::generate_intpoly_assign() {
   //   Curve448OrderField:     16 = 8 + 8
   //   IntegerPolynomialP521:  19 = 8 + 8 + 2 + 1
   //   P521OrderField:         19 = 8 + 8 + 2 + 1
-  // Special Cases 5, 10, 14, 16, 19
+  // Special Cases 5, 7, 10, 14, 16, 19
 
   StubId stub_id = StubId::stubgen_intpoly_assign_id;
   int entry_count = StubInfo::entry_count(stub_id);
