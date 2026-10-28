@@ -2776,8 +2776,8 @@ operand immI_M1()
   interface(CONST_INTER);
 %}
 
-// Unsigned 6-bit integer immediate, at least 32
-operand immI_uimm6_ge32()
+// Integer Immediate: the values 32-63
+operand immI_32_63()
 %{
   predicate(n->get_int() >= 32 && n->get_int() < 64);
   match(ConI);
@@ -7074,7 +7074,7 @@ instruct addP_reg_reg(iRegPNoSp dst, iRegPorL2P src1, iRegL src2) %{
 %}
 
 // If we shift more than 32 bits, we need not convert I2L.
-instruct lShiftL_regI_immGE32(iRegLNoSp dst, iRegI src, immI_uimm6_ge32 scale) %{
+instruct lShiftL_regI_immGE32(iRegLNoSp dst, iRegI src, immI_32_63 scale) %{
   match(Set dst (LShiftL (ConvI2L src) scale));
   ins_cost(ALU_COST);
   format %{ "slli  $dst, $src, $scale & 63\t#@lShiftL_regI_immGE32" %}
