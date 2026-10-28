@@ -127,7 +127,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * Invalidating all deeper sessions happens only when hasDescendant is true.
      * Invalidating a session that has never produced a copy leaves the shared
      * familyDepthLimit unchanged, only that session is invalidated, and any copy
-     * created from it is invalid from the start.
+     * created from it is invalid from the start. Only the copy constructor
+     * SSLSessionImpl(SSLSessionImpl, SessionId) joins as session to an existing
+     * family. Every other constructor starts a new family at familyDepth 0.
      */
     private final AtomicLong familyDepthLimit;
     private final long familyDepth;
@@ -817,13 +819,13 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     boolean isRejoinable() {
         // TLS 1.3 can have no session id
         if (protocolVersion.useTLS13PlusSpec()) {
-            return (!isInvalid() && isLocalAuthenticationValid());
+            return (!isInvalidated() && isLocalAuthenticationValid());
         }
         return sessionId != null && sessionId.length() != 0 &&
-                !isInvalid() && isLocalAuthenticationValid();
+                !isInvalidated() && isLocalAuthenticationValid();
     }
 
-    boolean isInvalid() {
+    boolean isInvalidated() {
         return invalidated || familyDepth >= familyDepthLimit.get();
     }
 
