@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8375572 8205052
+ * @bug 8375572
  * @summary stuck method references should consider free vars in the target type
  * @compile/fail/ref=WildcardFunctionTypeBad.out -XDrawDiagnostics WildcardFunctionTypeBad.java
  */

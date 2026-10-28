@@ -1,2 +1,2 @@
-TargetType70.java:50:9: compiler.err.cant.apply.symbol: kindname.method, m, TargetType70.I<? extends TargetType70.GenSup<T>,T>,T, @11,TargetType70.Sub, kindname.class, TargetType70, (compiler.misc.infer.no.conforming.assignment.exists: T, (compiler.misc.no.suitable.functional.intf.inst: TargetType70.I<? extends TargetType70.GenSup<T>,T>))
+TargetType70.java:27:9: compiler.err.cant.apply.symbol: kindname.method, m, TargetType70.I<? extends TargetType70.GenSup<T>,T>,T, @11,TargetType70.Sub, kindname.class, TargetType70, (compiler.misc.infer.no.conforming.assignment.exists: T, (compiler.misc.no.suitable.functional.intf.inst: TargetType70.I<? extends TargetType70.GenSup<T>,T>))
 1 error
