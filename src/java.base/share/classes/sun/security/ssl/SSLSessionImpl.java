@@ -124,6 +124,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * is greater than or equal to the familyDepthLimit, which is initially set
      * to Long.MAX_VALUE. Once a session is invalidated at the specified depth,
      * all deeper sessions will be invalidated, not just its branch descendants.
+     * Invalidating all deeper sessions happens only when hasDescendant is true.
+     * Invalidating a session that has never produced a copy leaves the shared
+     * familyDepthLimit unchanged, only that session is invalidated, and any copy
+     * created from it is invalid from the start.
      */
     private final AtomicLong familyDepthLimit;
     private final long familyDepth;
