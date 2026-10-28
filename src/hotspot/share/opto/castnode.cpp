@@ -798,8 +798,8 @@ const TypeInteger* ConstraintCastNode::widen_type(const PhaseGVN* phase, const T
       lo = min_signed_integer(bt);
       hi = max_signed_integer(bt);
     }
-    // Beware when lo = min, hi = max, TypeInteger::make will normalize w to WidenMax
-    return TypeInteger::make(lo, hi, w, bt)->join(in_type)->is_integer(bt);
+    // Must filter in the same direction as Value
+    return in_type->filter(TypeInteger::make(lo, hi, w, bt))->is_integer(bt);
   }
   return this_type;
 }
