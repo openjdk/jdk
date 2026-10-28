@@ -559,7 +559,6 @@ ShenandoahHeap::ShenandoahHeap() :
   _active_generation(nullptr),
   _initial_size(0),
   _committed(0),
-  _alloc_rate_decay(&_alloc_rate),
   _max_workers(MAX3(ConcGCThreads, ParallelGCThreads, 1U)),
   _workers(nullptr),
   _heap_region_special(false),
@@ -703,11 +702,6 @@ void ShenandoahHeap::post_initialize() {
 
   // Schedule periodic task to report on gc thread CPU utilization
   _mmu_tracker.initialize();
-
-  // Periodically decay allocation rate to compensate for not being updated when allocation rate
-  // is low. Heuristics are evaluated unconditionally from a dedicated thread so it will continue
-  // to see the last (possibly stale) allocation rate if the allocation rate is low.
-  _alloc_rate_decay.enroll();
 
   MutexLocker ml(Threads_lock);
 
@@ -2286,19 +2280,16 @@ uint ShenandoahHeap::max_workers() {
 void ShenandoahHeap::stop() {
   // The shutdown sequence should be able to terminate when GC is running.
 
-  // Step 0. Notify policy to disable event recording and prevent visiting gc threads during shutdown
+  // Notify policy to disable event recording and prevent visiting gc threads during shutdown
   _shenandoah_policy->record_shutdown();
 
-  // Step 1. Stop reporting on gc thread cpu utilization
+  // Stop reporting on gc thread cpu utilization
   mmu_tracker()->stop();
 
-  // Step 2. Stop decaying allocation rate.
-  _alloc_rate_decay.disenroll();
-
-  // Step 3. Wait until GC worker exits normally (this will cancel any ongoing GC).
+  // Wait until GC worker exits normally (this will cancel any ongoing GC).
   control_thread()->stop();
 
-  // Step 4. Shutdown uncommit thread.
+  // Shutdown uncommit thread.
   if (_uncommit_thread != nullptr) {
     _uncommit_thread->stop();
   }
