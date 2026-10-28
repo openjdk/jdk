@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,9 +55,6 @@ struct NSAppArgs {
 
 #define JVM_DLL "libjvm.dylib"
 #define JAVA_DLL "libjava.dylib"
-/* FALLBACK avoids naming conflicts with system libraries
- * (eg, ImageIO's libJPEG.dylib) */
-#define LD_LIBRARY_PATH "DYLD_FALLBACK_LIBRARY_PATH"
 
 /*
  * Following is the high level flow of the launcher
