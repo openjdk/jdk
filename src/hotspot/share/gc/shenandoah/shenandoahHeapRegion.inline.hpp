@@ -208,8 +208,7 @@ inline void ShenandoahHeapRegion::record_unpin(size_t value) {
 }
 
 inline uint32_t ShenandoahHeapRegion::humongous_start_region() const {
-  assert(is_humongous(), "Must be part of a humongous object");
-  assert(_humongous_start_region_index != UndefinedRegionIndex, "Bad start region index");
+  assert(!is_humongous() || _humongous_start_region_index != UndefinedRegionIndex, "Bad start region index");
   return _humongous_start_region_index;
 }
 

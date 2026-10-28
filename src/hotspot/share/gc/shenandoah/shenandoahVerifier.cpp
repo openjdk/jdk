@@ -562,19 +562,24 @@ private:
         ShouldNotReachHere();
     }
 
+    uint32_t start_index = r->humongous_start_region();
     if (r->is_humongous()) {
-      uint32_t start_index = r->humongous_start_region();
-
-      verify(r, !r->is_humongous() || start_index != ShenandoahHeapRegion::UndefinedRegionIndex,
+      verify(r, start_index != ShenandoahHeapRegion::UndefinedRegionIndex,
              "Humongous region must have a valid start region index");
 
-      ShenandoahHeapRegion* start_region = _heap->get_region(start_index);
-
-      verify(r, !r->is_humongous_start() || (start_index == r->index()),
-           "Humongous start region must identify itself as its own start");
-
-      verify(r, !r->is_humongous() || start_region->is_humongous_start(),
-           "Humongous start region must be is_humongous_start()");
+      if (r->is_humongous_start()) {
+        verify(r, start_index == r->index(),
+               "Humongous start region must identify itself as its own start");
+      } else {
+        for (size_t i = start_index + 1; i <= r->index(); i++) {
+          ShenandoahHeapRegion* chain = _heap->get_region(i);
+          verify(chain, chain->is_humongous_continuation(),
+                 "Humongous start must belong to same humongous chain");
+        }
+      }
+    } else {
+      verify(r, start_index == ShenandoahHeapRegion::UndefinedRegionIndex,
+             "Non-humongous region should have an undefined region index");
     }
 
     verify(r, r->capacity() == ShenandoahHeapRegion::region_size_bytes(),
