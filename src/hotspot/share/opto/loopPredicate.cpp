@@ -24,17 +24,22 @@
 
 #include "memory/allocation.hpp"
 #include "opto/addnode.hpp"
+#include "opto/c2_globals.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
+#include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/predicates.hpp"
+#include "opto/rangecheck.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #include <fenv.h>
 #include <math.h>
@@ -593,70 +598,46 @@ bool IdealLoopTree::is_range_check_if(const IfProjNode* if_success_proj, PhaseId
 //   max(scale*i + offset) = scale*(limit-stride) + offset
 // (2) stride*scale < 0
 //   max(scale*i + offset) = scale*init + offset
-BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl, const int scale, Node* offset, Node* init, Node* limit,
-                                       const jint stride, Node* range, const bool upper, bool& overflow) {
-  jint con_limit  = (limit != nullptr && limit->is_Con())  ? limit->get_int()  : 0;
-  jint con_init   = init->is_Con()   ? init->get_int()   : 0;
-  jint con_offset = offset->is_Con() ? offset->get_int() : 0;
-
+BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl, RangeCheckInfo info, Node* init_iv, Node* final_iv, jint stride_con, bool is_final_iv) {
+  assert(info._is_unsigned && info._test == BoolTest::lt, "implementation limitation");
   stringStream* predString = nullptr;
   if (TraceLoopPredicate) {
     predString = new (mtCompiler) stringStream();
     predString->print("rc_predicate ");
   }
 
-  overflow = false;
-  Node* max_idx_expr = nullptr;
-  const TypeInt* idx_type = TypeInt::INT;
-  // same signs and upper, or different signs and not upper.
-  if (((stride > 0) == (scale > 0)) == upper) {
-    guarantee(limit != nullptr, "sanity");
-    if (TraceLoopPredicate) {
-      if (limit->is_Con()) {
-        predString->print("(%d ", con_limit);
+  Node* max_idx_expr;
+  if (is_final_iv) {
+    if (predString != nullptr) {
+      if (final_iv->is_Con()) {
+        predString->print("%d ", final_iv->get_int());
       } else {
-        predString->print("(limit ");
+        predString->print("final_iv ");
       }
-      predString->print("- %d) ", stride);
     }
-    // Check if (limit - stride) may overflow
-    const TypeInt* limit_type = _igvn.type(limit)->isa_int();
-    jint limit_lo = limit_type->_lo;
-    jint limit_hi = limit_type->_hi;
-    if ((stride > 0 && (java_subtract(limit_lo, stride) < limit_lo)) ||
-        (stride < 0 && (java_subtract(limit_hi, stride) > limit_hi))) {
-      // No overflow possible
-      ConINode* con_stride = intcon(stride);
-      max_idx_expr = new SubINode(limit, con_stride);
-      idx_type = TypeInt::make(limit_lo - stride, limit_hi - stride, limit_type->_widen);
-    } else {
-      // May overflow
-      overflow = true;
-      limit = new ConvI2LNode(limit);
-      register_new_node(limit, ctrl);
-      ConLNode* con_stride = longcon(stride);
-      max_idx_expr = new SubLNode(limit, con_stride);
-    }
-    register_new_node(max_idx_expr, ctrl);
+
+    max_idx_expr = final_iv;
   } else {
-    if (TraceLoopPredicate) {
-      if (init->is_Con()) {
-        predString->print("%d ", con_init);
+    if (predString != nullptr) {
+      if (init_iv->is_Con()) {
+        predString->print("%d ", init_iv->get_int());
       } else {
         predString->print("init ");
       }
     }
-    idx_type = _igvn.type(init)->isa_int();
-    max_idx_expr = init;
+
+    max_idx_expr = init_iv;
   }
 
-  if (scale != 1) {
-    ConNode* con_scale = intcon(scale);
-    if (TraceLoopPredicate) {
-      predString->print("* %d ", scale);
+  bool overflow = false;
+  const TypeInt* idx_type = _igvn.type(max_idx_expr)->is_int();
+  if (info._scale != 1) {
+    ConNode* con_scale = intcon(info._scale);
+    if (predString != nullptr) {
+      predString->print("* %d ", info._scale);
     }
     // Check if (scale * max_idx_expr) may overflow
-    const TypeInt* scale_type = TypeInt::make(scale);
+    const TypeInt* scale_type = TypeInt::make(info._scale);
     MulINode* mul = new MulINode(max_idx_expr, con_scale);
 
     if (overflow || MulINode::does_overflow(idx_type, scale_type)) {
@@ -668,7 +649,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl, const int scale, Node* offset
         register_new_node(max_idx_expr, ctrl);
       }
       overflow = true;
-      con_scale = longcon(scale);
+      con_scale = longcon(info._scale);
       max_idx_expr = new MulLNode(max_idx_expr, con_scale);
     } else {
       // No overflow possible
@@ -678,16 +659,16 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl, const int scale, Node* offset
     register_new_node(max_idx_expr, ctrl);
   }
 
-  if (offset && (!offset->is_Con() || con_offset != 0)){
-    if (TraceLoopPredicate) {
-      if (offset->is_Con()) {
-        predString->print("+ %d ", con_offset);
+  if (info._offset->find_int_con(1) != 0) {
+    if (predString != nullptr) {
+      if (info._offset->is_Con()) {
+        predString->print("+ %d ", info._offset->get_int());
       } else {
         predString->print("+ offset");
       }
     }
     // Check if (max_idx_expr + offset) may overflow
-    const TypeInt* offset_type = _igvn.type(offset)->isa_int();
+    const TypeInt* offset_type = _igvn.type(info._offset)->is_int();
     jint lo = java_add(idx_type->_lo, offset_type->_lo);
     jint hi = java_add(idx_type->_hi, offset_type->_hi);
     if (overflow || (lo > hi) ||
@@ -699,12 +680,12 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl, const int scale, Node* offset
         register_new_node(max_idx_expr, ctrl);
       }
       overflow = true;
-      offset = new ConvI2LNode(offset);
+      Node* offset = new ConvI2LNode(info._offset);
       register_new_node(offset, ctrl);
       max_idx_expr = new AddLNode(max_idx_expr, offset);
     } else {
       // No overflow possible
-      max_idx_expr = new AddINode(max_idx_expr, offset);
+      max_idx_expr = new AddINode(max_idx_expr, info._offset);
     }
     register_new_node(max_idx_expr, ctrl);
   }
@@ -712,17 +693,17 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl, const int scale, Node* offset
   CmpNode* cmp = nullptr;
   if (overflow) {
     // Integer expressions may overflow, do long comparison
-    range = new ConvI2LNode(range);
+    Node* range = new ConvI2LNode(info._range);
     register_new_node(range, ctrl);
     cmp = new CmpULNode(max_idx_expr, range);
   } else {
-    cmp = new CmpUNode(max_idx_expr, range);
+    cmp = new CmpUNode(max_idx_expr, info._range);
   }
   register_new_node(cmp, ctrl);
   BoolNode* bol = new BoolNode(cmp, BoolTest::lt);
   register_new_node(bol, ctrl);
 
-  if (TraceLoopPredicate) {
+  if (predString != nullptr) {
     predString->print_cr("<u range");
     tty->print("%s", predString->base());
     delete predString;
@@ -1041,7 +1022,6 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, const IfP
     bool ok = is_scaled_iv_plus_offset(idx, cl->phi(), &scale, &offset);
     assert(ok, "must be index expression");
 
-    Node* init    = cl->init_trip();
     // Limit is not exact.
     // Calculate exact limit here.
     // Note, counted loop's test is '<' or '>'.
@@ -1052,8 +1032,9 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, const IfP
     assert(exact_trip_count == cl->has_exact_trip_count() && trip_count == cl->trip_count(),
            "should have computed trip count on Loop Predication entry");
 #endif
-    Node* limit   = exact_limit(loop);
-    int  stride   = cl->stride()->get_int();
+    Node* init_iv = cl->init_trip();
+    Node* limit = exact_limit(loop);
+    int stride = cl->stride()->get_int();
 
     // Build if's for the upper and lower bound tests.  The
     // lower_bound test will dominate the upper bound test and all
@@ -1069,38 +1050,39 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, const IfP
       assert(invar.is_invariant(offset), "offset must be loop invariant");
       offset = invar.clone(offset, ctrl);
     }
-    // If predicate expressions may overflow in the integer range, longs are used.
-    bool overflow = false;
-    // Test the lower bound
-    BoolNode* lower_bound_bol = rc_predicate(ctrl, scale, offset, init, limit, stride, range, false, overflow);
 
-    const int if_opcode = iff->Opcode();
-    IfProjNode* lower_bound_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, deopt_reason, overflow ? Op_If : if_opcode);
-    IfNode* lower_bound_iff = lower_bound_proj->in(0)->as_If();
-    _igvn.hash_delete(lower_bound_iff);
-    lower_bound_iff->set_req(1, lower_bound_bol);
+    BoolTest::mask test = bol->_test._test;
+    bool is_unsigned = cmp->Opcode() == Op_CmpU;
+    RangeCheckInfo info(cl->bt(), scale, offset, test, is_unsigned, range);
+    Node* final_iv = new SubINode(limit, cl->stride());
+    register_new_node(final_iv, ctrl);
+
+    // Test init_iv
+    BoolNode* init_bol = rc_predicate(ctrl, info, init_iv, final_iv, stride, false);
+    IfTrueNode* init_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, deopt_reason, Op_If);
+    IfNode* init_iff = init_proj->in(0)->as_If();
+    _igvn.hash_delete(init_iff);
+    init_iff->set_req(1, init_bol);
     if (TraceLoopPredicate) {
-      tty->print_cr("lower bound check if: %d", lower_bound_iff->_idx);
+      tty->print_cr("init check if: %d", init_iff->_idx);
     }
 
-    // Test the upper bound
-    BoolNode* upper_bound_bol = rc_predicate(lower_bound_proj, scale, offset, init, limit, stride, range, true, overflow);
-
-    IfProjNode* upper_bound_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, deopt_reason, overflow ? Op_If : if_opcode);
-    assert(upper_bound_proj->in(0)->as_If()->in(0) == lower_bound_proj, "should dominate");
-    IfNode* upper_bound_iff = upper_bound_proj->in(0)->as_If();
-    _igvn.hash_delete(upper_bound_iff);
-    upper_bound_iff->set_req(1, upper_bound_bol);
+    // Test final_iv
+    BoolNode* final_bol = rc_predicate(init_proj, info, init_iv, final_iv, stride, true);
+    IfTrueNode* final_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, deopt_reason, Op_If);
+    assert(final_proj->in(0)->as_If()->in(0) == init_proj, "should dominate");
+    IfNode* final_iff = final_proj->in(0)->as_If();
+    _igvn.hash_delete(final_iff);
+    final_iff->set_req(1, final_bol);
     if (TraceLoopPredicate) {
-      tty->print_cr("upper bound check if: %d", upper_bound_iff->_idx);
+      tty->print_cr("final check if: %d", final_iff->_idx);
     }
 
     // Fall through into rest of the cleanup code which will move any dependent nodes to the skeleton predicates of the
     // upper bound test. We always need to create skeleton predicates in order to properly remove dead loops when later
     // splitting the predicated loop into (unreachable) sub-loops (i.e. done by unrolling, peeling, pre/main/post etc.).
     IfTrueNode* template_assertion_predicate_proj = create_template_assertion_predicate(cl, parse_predicate,
-                                                                                        upper_bound_proj, scale, offset,
-                                                                                        range);
+                                                                                        final_proj, info);
 
     // Eliminate the old range check in the loop body.
     // When a range check is eliminated, data dependent nodes (Load and range check CastII nodes) are now dependent on 2
@@ -1138,10 +1120,9 @@ void PhaseIdealLoop::eliminate_hoisted_range_check(IfTrueNode* hoisted_check_pro
 // loops are removed properly.
 IfTrueNode* PhaseIdealLoop::create_template_assertion_predicate(CountedLoopNode* loop_head,
                                                                 ParsePredicateNode* parse_predicate,
-                                                                IfProjNode* new_control, const int scale, Node* offset,
-                                                                Node* range) {
+                                                                IfProjNode* new_control, RangeCheckInfo info) {
 
-  TemplateAssertionPredicateCreator template_assertion_predicate_creator(loop_head, scale, offset, range, this);
+  TemplateAssertionPredicateCreator template_assertion_predicate_creator(loop_head, info, this);
   IfTrueNode* template_success_proj = template_assertion_predicate_creator.create(new_control);
   _igvn.replace_input_of(parse_predicate, 0, template_success_proj);
   set_idom(parse_predicate, template_success_proj, dom_depth(template_success_proj));
