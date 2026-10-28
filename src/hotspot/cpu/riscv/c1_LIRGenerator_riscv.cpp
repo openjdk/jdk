@@ -177,6 +177,7 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
       return new LIR_Address(base, (jint)c, type);
     } else {
       LIR_Opr tmp = new_register(T_LONG);
+      // A T_INT index can still require a 64-bit byte offset.
       __ move(LIR_OprFact::longConst(c), tmp);
       return new LIR_Address(base, tmp, type);
     }
