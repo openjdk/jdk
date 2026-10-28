@@ -233,15 +233,26 @@ public:
   // other TD object that are sometimes circular).
   class Visitor {
     ResizeableHashTable<TrainingData*, bool> _visited;
+    GrowableArray<TrainingData*> _pending_visit_list;
   public:
-    Visitor(unsigned size) : _visited(size, 0x3fffffff) { }
+    Visitor(unsigned size) : _visited(size, 0x3fffffff),  _pending_visit_list() { }
+    ~Visitor() {
+      assert(_pending_visit_list.length() == 0, "need to call one of the xxx_finish() functions");
+    }
     bool is_visited(TrainingData* td) {
       return _visited.contains(td);
     }
     void visit(TrainingData* td) {
       bool created;
       _visited.put_if_absent(td, &created);
+      assert(created, "must be");
     }
+    void visit_later(TrainingData* td) {
+      _pending_visit_list.append(td);
+    }
+    void finish_preparing();
+    void finish_merging();
+    void finish_cleanup();
   };
 
   typedef OffsetCompactHashtable<const TrainingData::Key*, TrainingData*, TrainingData::Key::equals> TrainingDataDictionary;
@@ -681,7 +692,7 @@ public:
       template<typename U = T, ENABLE_IF(std::is_pointer<U>::value && std::is_base_of<TrainingData, typename std::remove_pointer<U>::type>::value)>
       void prepare(Visitor& visitor) {
         if (_first != nullptr) {
-          _first->prepare(visitor);
+          visitor.visit_later(_first);
         }
         _remaining.prepare(visitor);
       }

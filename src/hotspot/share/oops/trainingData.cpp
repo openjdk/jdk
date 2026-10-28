@@ -376,7 +376,7 @@ void KlassTrainingData::prepare(Visitor& visitor) {
   visitor.visit(this);
   for (int i = 0; i < comp_dep_count(); i++) {
     CompileTrainingData* ctd = comp_dep(i);
-    ctd->prepare(visitor);
+    visitor.visit_later(ctd);;
   }
   _comp_deps.prepare();
 }
@@ -386,7 +386,7 @@ void MethodTrainingData::merge(Visitor& visitor) {
     return;
   }
   visitor.visit(this);
-  klass()->merge(visitor);
+  visitor.visit_later(klass());
   // Merge NEXT into CURRENT
   _iterations[CURRENT]._highest_top_level = MAX2(_iterations[CURRENT]._highest_top_level, _iterations[NEXT]._highest_top_level);
   _iterations[CURRENT]._level_mask = _iterations[CURRENT]._level_mask | _iterations[NEXT]._level_mask;
@@ -402,7 +402,7 @@ void MethodTrainingData::merge(Visitor& visitor) {
       new_ctd = nullptr;
     }
     if (ctd != nullptr) {
-      ctd->merge(visitor);
+      visitor.visit_later(ctd);
     }
   }
 }
@@ -414,7 +414,7 @@ void KlassTrainingData::merge(Visitor& visitor) {
   visitor.visit(this);
   for (int i = 0; i < comp_dep_count(); i++) {
     CompileTrainingData* ctd = comp_dep(i);
-    ctd->merge(visitor);
+    visitor.visit_later(ctd);
   }
 }
 
@@ -423,9 +423,9 @@ void CompileTrainingData::merge(Visitor& visitor) {
     return;
   }
   visitor.visit(this);
-  method()->merge(visitor);
+  visitor.visit_later(method());
   for (int i = 0; i < _init_deps.length(); i++) {
-    _init_deps.at(i)->merge(visitor);
+    visitor.visit_later(_init_deps.at(i));
    }
 }
 
@@ -434,7 +434,7 @@ void MethodTrainingData::prepare(Visitor& visitor) {
     return;
   }
   visitor.visit(this);
-  klass()->prepare(visitor);
+  visitor.visit_later(klass());
   if (has_holder()) {
     _final_counters = holder()->method_counters();
     _final_profile  = holder()->method_data();
@@ -446,7 +446,7 @@ void MethodTrainingData::prepare(Visitor& visitor) {
     CompileTrainingData* ctd = _iterations[CURRENT]._last_toplevel_compiles[i];
     assert(_iterations[NEXT]._last_toplevel_compiles[i] == nullptr, "");
     if (ctd != nullptr) {
-      ctd->prepare(visitor);
+      visitor.visit_later( ctd);
     }
   }
 }
@@ -456,10 +456,10 @@ void CompileTrainingData::prepare(Visitor& visitor) {
     return;
   }
   visitor.visit(this);
-  method()->prepare(visitor);
+  visitor.visit_later(method());
   _init_deps.prepare();
   for (int i = 0; i < _init_deps.length(); i++) {
-    _init_deps.at(i)->prepare(visitor);
+    visitor.visit_later(_init_deps.at(i));
    }
   _ci_records.prepare(visitor);
 }
@@ -556,6 +556,27 @@ void KlassTrainingData::notice_fully_initialized() {
   holder()->set_has_init_deps_processed();
 }
 
+void TrainingData::Visitor::finish_preparing() {
+  while (_pending_visit_list.length() > 0) {
+    TrainingData* td = _pending_visit_list.pop();
+    td->prepare(*this);
+  }
+}
+
+void TrainingData::Visitor::finish_merging() {
+  while (_pending_visit_list.length() > 0) {
+    TrainingData* td = _pending_visit_list.pop();
+    td->merge(*this);
+  }
+}
+
+void TrainingData::Visitor::finish_cleanup() {
+  while (_pending_visit_list.length() > 0) {
+    TrainingData* td = _pending_visit_list.pop();
+    td->cleanup(*this);
+  }
+}
+
 void TrainingData::init_dumptime_table(TRAPS) {
   if (assembling_data() && !need_data()) {
     _dumptime_training_data_dictionary = new DumptimeTrainingDataDictionary();
@@ -570,6 +591,7 @@ void TrainingData::init_dumptime_table(TRAPS) {
     training_data_set()->iterate([&](TrainingData* td) {
       td->merge(merge_visitor);
     });
+    merge_visitor.finish_merging();
     _dumptime_training_data_dictionary = new DumptimeTrainingDataDictionary();
     Visitor prepare_visitor(training_data_set()->size());
     training_data_set()->iterate([&](TrainingData* td) {
@@ -578,6 +600,7 @@ void TrainingData::init_dumptime_table(TRAPS) {
         _dumptime_training_data_dictionary->append(td);
       }
     });
+    prepare_visitor.finish_preparing();
     TrainingDataLocker::snapshot();
   }
 
@@ -632,6 +655,7 @@ void TrainingData::cleanup_training_data() {
       TrainingData* td = _dumptime_training_data_dictionary->at(i).training_data();
       td->cleanup(visitor);
     }
+    visitor.finish_cleanup();
     // Throw away all elements with empty keys
     int j = 0;
     for (int i = 0; i < _dumptime_training_data_dictionary->length(); i++) {
@@ -656,6 +680,7 @@ void TrainingData::cleanup_after_redefinition() {
     training_data_set()->iterate([&](TrainingData* td) {
       td->cleanup(visitor);
     });
+    visitor.finish_cleanup();
   }
 }
 
@@ -673,7 +698,7 @@ void KlassTrainingData::cleanup(Visitor& visitor) {
     }
   }
   for (int i = 0; i < _comp_deps.length(); i++) {
-    _comp_deps.at(i)->cleanup(visitor);
+    visitor.visit_later(_comp_deps.at(i));
   }
 }
 
@@ -695,11 +720,11 @@ void MethodTrainingData::cleanup(Visitor& visitor) {
     CompileTrainingData* ctd;
     ctd = _iterations[CURRENT]._last_toplevel_compiles[i];
     if (ctd != nullptr) {
-      ctd->cleanup(visitor);
+      visitor.visit_later(ctd);
     }
     ctd = _iterations[NEXT]._last_toplevel_compiles[i];
     if (ctd != nullptr) {
-      ctd->cleanup(visitor);
+      visitor.visit_later(ctd);
     }
   }
 }
@@ -759,7 +784,7 @@ void CompileTrainingData::cleanup(Visitor& visitor) {
     return;
   }
   visitor.visit(this);
-  method()->cleanup(visitor);
+  visitor.visit_later(method());
 }
 
 void TrainingData::serialize(SerializeClosure* soc) {
