@@ -250,9 +250,7 @@ public:
     void visit_later(TrainingData* td) {
       _pending_visit_list.append(td);
     }
-    void finish_preparing();
-    void finish_merging();
-    void finish_cleanup();
+    template <typename FUNC> void finish(FUNC f);
   };
 
   typedef OffsetCompactHashtable<const TrainingData::Key*, TrainingData*, TrainingData::Key::equals> TrainingDataDictionary;

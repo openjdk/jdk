@@ -556,24 +556,12 @@ void KlassTrainingData::notice_fully_initialized() {
   holder()->set_has_init_deps_processed();
 }
 
-void TrainingData::Visitor::finish_preparing() {
-  while (_pending_visit_list.length() > 0) {
-    TrainingData* td = _pending_visit_list.pop();
-    td->prepare(*this);
-  }
-}
 
-void TrainingData::Visitor::finish_merging() {
+template <typename FUNC>
+void TrainingData::Visitor::finish(FUNC f) {
   while (_pending_visit_list.length() > 0) {
     TrainingData* td = _pending_visit_list.pop();
-    td->merge(*this);
-  }
-}
-
-void TrainingData::Visitor::finish_cleanup() {
-  while (_pending_visit_list.length() > 0) {
-    TrainingData* td = _pending_visit_list.pop();
-    td->cleanup(*this);
+    f(td);
   }
 }
 
@@ -591,7 +579,9 @@ void TrainingData::init_dumptime_table(TRAPS) {
     training_data_set()->iterate([&](TrainingData* td) {
       td->merge(merge_visitor);
     });
-    merge_visitor.finish_merging();
+    merge_visitor.finish([&](TrainingData* td) {
+      td->merge(merge_visitor);
+    });
     _dumptime_training_data_dictionary = new DumptimeTrainingDataDictionary();
     Visitor prepare_visitor(training_data_set()->size());
     training_data_set()->iterate([&](TrainingData* td) {
@@ -600,7 +590,9 @@ void TrainingData::init_dumptime_table(TRAPS) {
         _dumptime_training_data_dictionary->append(td);
       }
     });
-    prepare_visitor.finish_preparing();
+    prepare_visitor.finish([&](TrainingData* td) {
+      td->prepare(prepare_visitor);
+    });
     TrainingDataLocker::snapshot();
   }
 
@@ -655,7 +647,9 @@ void TrainingData::cleanup_training_data() {
       TrainingData* td = _dumptime_training_data_dictionary->at(i).training_data();
       td->cleanup(visitor);
     }
-    visitor.finish_cleanup();
+    visitor.finish([&](TrainingData* td) {
+      td->cleanup(visitor);
+    });
     // Throw away all elements with empty keys
     int j = 0;
     for (int i = 0; i < _dumptime_training_data_dictionary->length(); i++) {
@@ -680,7 +674,9 @@ void TrainingData::cleanup_after_redefinition() {
     training_data_set()->iterate([&](TrainingData* td) {
       td->cleanup(visitor);
     });
-    visitor.finish_cleanup();
+    visitor.finish([&](TrainingData* td) {
+      td->cleanup(visitor);
+    });
   }
 }
 
