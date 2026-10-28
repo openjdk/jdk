@@ -26,7 +26,6 @@
  * @summary Test that cloning flat exact klass arrays have a NarrowMemProj
  *          which is required for some memory optimizations.
  * @bug 8390508
- * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value

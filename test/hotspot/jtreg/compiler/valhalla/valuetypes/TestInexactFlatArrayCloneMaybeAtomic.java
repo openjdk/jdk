@@ -26,7 +26,6 @@
  * @summary Test clone of flat array that does not have an exact klass,
  *          i.e. multiple layouts are possible.
  * @bug 8390508
- * @requires vm.compiler2.enabled
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
