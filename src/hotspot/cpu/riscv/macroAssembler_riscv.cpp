@@ -7562,7 +7562,7 @@ void MacroAssembler::fast_unlock(Register obj, Register tmp1, Register tmp2, Reg
 void MacroAssembler::vectorized_mismatch(Register obja, Register objb,
                                          Register length, Register log2_array_indxscale,
                                          Register result, Register tmp1, Register tmp2) {
-  assert(UseRVV && UseZbb, "RVV and Zbb must be enabled");
+  assert(UseRVV && UseZbb && !AvoidUnalignedAccesses, "RVV and Zbb must be enabled, and unaligned vector access must be enabled");
 
   Label NOT_EQUAL, ALL_MATCH, DONE;
   Label CONVERT_RESULT;
