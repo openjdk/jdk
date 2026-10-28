@@ -2779,7 +2779,7 @@ operand immI_M1()
 // Unsigned 6-bit integer immediate, at least 32
 operand immI_uimm6_ge32()
 %{
-  predicate(((unsigned int)(n->get_int()) < 64) && (n->get_int() >= 32));
+  predicate(n->get_int() >= 32 && n->get_int() < 64);
   match(ConI);
   op_cost(0);
   format %{ %}
