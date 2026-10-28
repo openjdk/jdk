@@ -517,20 +517,29 @@ void ShenandoahBarrierSetC2::analyze_dominating_barriers() const {
 }
 
 uint ShenandoahBarrierSetC2::estimated_barrier_size(const Node* node) const {
-  uint8_t barrier_data = MemNode::barrier_data(node);
-
-  // Barrier impact on fast-path is mostly driven by hot-patched GC state checks.
-  // These checks are single nop or jump, with no impact on C2 graph size.
   // Barrier cost drives loop optimizations, to avoid over-unrolling the loops
-  // with many GC barriers. Performance testing shows zero barrier size estimate
-  // is as good as anything.
+  // with many GC barriers. Approximate barrier cost, roughly assuming 1 "node"
+  // per instruction.
+
+  uint8_t bd = MemNode::barrier_data(node) & ShenandoahBitsReal;
+
+  if (bd == 0) {
+    // No real barriers, the cost is zero.
+    return 0;
+  }
+
   uint nodes = 0;
 
-  // Card mark is on fast-path, not covered by hot-patching.
-  // Approximate its cost, roughly assuming 1 "node" per instruction.
-  if ((barrier_data & ShenandoahBitCardMark) != 0) {
-    nodes += 4 + (UseCondCardMark ? 4 : 0);
+  if ((bd & ~ShenandoahBitCardMark) != 0) {
+    // Hotpatched GC state checks are either single nop or jump.
+    nodes += 1;
   }
+
+  if ((bd & ShenandoahBitCardMark) != 0) {
+    // Card mark is on fast-path, not covered by hotpatching.
+    nodes += 4 + (UseCondCardMark ? 2 : 0);
+  }
+
   return nodes;
 }
 
