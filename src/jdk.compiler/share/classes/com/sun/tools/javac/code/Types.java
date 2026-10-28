@@ -683,8 +683,11 @@ public class Types {
             }
 
             public Type getType(Type site) {
-                site = removeWildcards(site);
-                return memberType(site, descSym);
+                Type newSite = removeWildcards(site);
+                if (newSite.isErroneous()) {
+                    throw descCache.failure(diags.fragment(Fragments.NoSuitableFunctionalIntfInst(site)));
+                }
+                return memberType(newSite, descSym);
             }
         }
 
@@ -853,7 +856,7 @@ public class Types {
                     WildcardType wt = (WildcardType)actual;
                     //check that bound does not contain other formals
                     if (bound.containsAny(formals)) {
-                        throw descCache.failure(diags.fragment(Fragments.NoSuitableFunctionalIntfInst(site)));
+                        return new ErrorType(site, site.tsym);
                     } else {
                         //compute new type-argument based on declared bound and wildcard bound
                         switch (wt.kind) {

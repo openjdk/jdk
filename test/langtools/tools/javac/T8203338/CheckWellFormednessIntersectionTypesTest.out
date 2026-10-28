@@ -1,2 +1,2 @@
-CheckWellFormednessIntersectionTypesTest.java:29:49: compiler.err.prob.found.req: (compiler.misc.no.suitable.functional.intf.inst: CheckWellFormednessIntersectionTypesTest.SAM<?,?,?>)
+CheckWellFormednessIntersectionTypesTest.java:29:49: compiler.err.prob.found.req: (compiler.misc.not.a.functional.intf.1: java.lang.Object&SAM&CheckWellFormednessIntersectionTypesTest.I<java.lang.Object>, (compiler.misc.no.abstracts: kindname.interface, java.lang.Object&SAM&CheckWellFormednessIntersectionTypesTest.I<java.lang.Object>))
 1 error
