@@ -439,7 +439,7 @@ void ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
     // for an old cycle and because cycle waiters would have requested a global cycle that would
     // have cancelled the old mark anyway.
     clear_allocation_failure_and_notify_waiters();
-  } else if (cause == GCCause::_shenandoah_concurrent_gc) {
+  } else {
     _heap->shenandoah_policy()->record_interrupted_old();
   }
 }
