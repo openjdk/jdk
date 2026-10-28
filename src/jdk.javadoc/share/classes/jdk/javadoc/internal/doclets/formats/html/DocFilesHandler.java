@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,8 +159,7 @@ public class DocFilesHandler {
                     configuration.messages.warning("doclet.Copy_Overwrite_warning",
                             srcfile.getPath(), dstdir.getPath());
                 } else {
-                    var path = Utils.toLowerCase(srcfile.getPath());
-                    if (path.endsWith(".html") || path.endsWith(".md")) {
+                    if (Utils.isHtmlFile(srcfile.getPath()) || Utils.isMarkdownFile(srcfile.getPath())) {
                         handleDocFile(srcfile, dstDocPath);
                     } else {
                         configuration.messages.notice("doclet.Copying_File_0_To_Dir_1",
