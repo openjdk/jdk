@@ -837,11 +837,11 @@ public:
 
 class ShenandoahIsGCWorkerClosure : public ThreadClosure {
 private:
-  bool _found = false;
   const Thread* _target;
+  bool _found;
 
 public:
-  ShenandoahIsGCWorkerClosure(Thread* t) : _target(t) {}
+  ShenandoahIsGCWorkerClosure(const Thread* t) : _target(t), _found(false) {}
 
   void do_thread(Thread* t) override {
     if (_target == t) {
@@ -858,20 +858,19 @@ private:
   const bool _generational;
   const WorkerThreads* _workers;
 
-  void verify_labs(Thread* t, bool should_contain_labs) const {
+  void verify_labs(Thread* t, bool expect_labs) const {
     const PLAB* gclab = ShenandoahThreadLocalData::gclab(t);
     const ShenandoahPLAB* plab = ShenandoahThreadLocalData::shenandoah_plab(t);
-    const bool expect_plab = _generational && should_contain_labs;
-    const bool expect_gclab = should_contain_labs;
+    const bool expect_plab = _generational && expect_labs;
 
+    guarantee((gclab != nullptr) == expect_labs, "%s: GCLAB %s be initialized for thread: %s",
+              _label, expect_labs ? "should" : "shouldn't", t->name());
     guarantee((plab != nullptr) == expect_plab, "%s: PLAB %s be initialized for thread: %s",
               _label, expect_plab ? "should" : "shouldn't", t->name());
-    guarantee((gclab != nullptr) == expect_gclab, "%s: GCLAB %s be initialized for thread: %s",
-              _label, expect_gclab ? "should" : "shouldn't", t->name());
   }
 
 public:
-  ShenandoahVerifyThreadLabsClosure(const char* label, bool generational, WorkerThreads* workers) :
+  ShenandoahVerifyThreadLabsClosure(const char* label, bool generational, const WorkerThreads* workers) :
     _label(label),
     _generational(generational),
     _workers(workers) {}
