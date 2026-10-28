@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -2896,6 +2896,10 @@ enum Nf {
   INSN(andn,      0b0110011, 0b111, 0b0100000);
   INSN(orn,       0b0110011, 0b110, 0b0100000);
   INSN(xnor,      0b0110011, 0b100, 0b0100000);
+  INSN(bset,      0b0110011, 0b001, 0b0010100);
+  INSN(bclr,      0b0110011, 0b001, 0b0100100);
+  INSN(binv,      0b0110011, 0b001, 0b0110100);
+  INSN(bext,      0b0110011, 0b101, 0b0100100);
   INSN(max,       0b0110011, 0b110, 0b0000101);
   INSN(maxu,      0b0110011, 0b111, 0b0000101);
   INSN(min,       0b0110011, 0b100, 0b0000101);
@@ -2946,6 +2950,9 @@ enum Nf {
 
   INSN(rori,    0b0010011, 0b101, 0b011000);
   INSN(slli_uw, 0b0011011, 0b001, 0b000010);
+  INSN(bseti,   0b0010011, 0b001, 0b001010);
+  INSN(bclri,   0b0010011, 0b001, 0b010010);
+  INSN(binvi,   0b0010011, 0b001, 0b011010);
   INSN(bexti,   0b0010011, 0b101, 0b010010);
 
 #undef INSN
