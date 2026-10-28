@@ -723,14 +723,6 @@ public final class Utils {
         return p1;
     }
 
-    /**
-     * Set limit to position, and position to mark.
-     */
-    public static void flipToMark(ByteBuffer buffer, int mark) {
-        buffer.limit(buffer.position());
-        buffer.position(mark);
-    }
-
     public static String stackTrace(Throwable t) {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         PrintStream p = new PrintStream(bos, true, US_ASCII);
