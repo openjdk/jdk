@@ -62,7 +62,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 #if INCLUDE_CDS
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #endif
 
 #define NOFAILOVER_MAJOR_VERSION                       51
@@ -239,8 +239,8 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
       // Exclude any classes that are verified with the old verifier when the verification constraints
       // cannot be preserved.
       if (CDSConfig::is_dumping_archive() && !CDSConfig::is_preserving_verification_constraints()) {
-        SystemDictionaryShared::log_exclusion(klass, "Verified with old verifier");
-        SystemDictionaryShared::set_excluded(klass);
+        AOTSystemDictionary::log_exclusion(klass, "Verified with old verifier");
+        AOTSystemDictionary::set_excluded(klass);
       }
 #endif
       message_buffer = NEW_RESOURCE_ARRAY(char, message_buffer_len);

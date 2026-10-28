@@ -549,9 +549,9 @@ public abstract class HtmlDocletWriter {
      */
     public String getFileTitle(DocFileElement element) {
         var fileName = element.getFileObject().getName();
-        if (fileName.endsWith(".html")) {
+        if (Utils.isHtmlFile(fileName)) {
             return getTextContent(utils.getPreamble(element), "title");
-        } else if (fileName.endsWith(".md")) {
+        } else if (Utils.isMarkdownFile(fileName)) {
             var c = commentTagsToContent(element, utils.getBody(element), false);
             return getHeadingText(c);
         } else {

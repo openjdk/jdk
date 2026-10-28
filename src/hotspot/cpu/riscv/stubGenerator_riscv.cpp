@@ -829,21 +829,9 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, stub_id);
     Label done;
 
-    const Register base = x28, cnt = x29, tmp1 = x30, tmp2 = x31;
+    const Register base = x28, cnt = x29, tmp1 = x30;
 
     start = __ pc();
-
-    if (UseBlockZeroing) {
-      int zicboz_block_size = VM_Version::zicboz_block_size.value();
-      // Ensure count >= 2 * zicboz_block_size so that it still deserves
-      // a cbo.zero after alignment.
-      Label small;
-      int low_limit = MAX2(2 * zicboz_block_size, (int)BlockZeroingLowLimit) / wordSize;
-      __ mv(tmp1, low_limit);
-      __ blt(cnt, tmp1, small);
-      __ zero_dcache_blocks(base, cnt, tmp1, tmp2);
-      __ bind(small);
-    }
 
     {
       // Clear the remaining blocks.
@@ -3767,8 +3755,7 @@ class StubGenerator: public StubCodeGenerator {
     if (bs_asm->nmethod_patching_type() == NMethodPatchingType::conc_instruction_and_data_patch) {
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
       Address thread_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()) + 4);
-      __ la(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
-      __ lwu(t1, t1);
+      __ lwu(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
       __ sw(t1, thread_epoch_addr);
       // There are two ways this can work:
       // - The writer did system icache shootdown after the instruction stream update.
@@ -5427,8 +5414,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(preemption_cancelled);
     __ sb(zr, Address(xthread, JavaThread::preemption_cancelled_offset()));
     __ la(fp, Address(sp, checked_cast<int32_t>(ContinuationEntry::size() + 2 * wordSize)));
-    __ la(t1, ExternalAddress(ContinuationEntry::thaw_call_pc_address()));
-    __ ld(t1, Address(t1));
+    __ ld(t1, ExternalAddress(ContinuationEntry::thaw_call_pc_address()));
     __ jr(t1);
 
     // record the stub start and end
