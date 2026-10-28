@@ -2197,7 +2197,7 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr de
 #endif
 
   if (dest->is_single_cpu()) {
-    count = count & 0x1F; // Java spec
+    count &= right_n_bits(LogBitsPerInt);
     if (count == 0) { __ mr_if_needed(dest->as_register(), left->as_register()); }
     else {
       switch (code) {
@@ -2208,7 +2208,7 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr de
       }
     }
   } else if (dest->is_double_cpu()) {
-    count = count & 63; // Java spec
+    count &= right_n_bits(LogBitsPerLong);
     if (count == 0) { __ mr_if_needed(dest->as_pointer_register(), left->as_pointer_register()); }
     else {
       switch (code) {
