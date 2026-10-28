@@ -33,6 +33,7 @@ import javax.imageio.ImageIO;
 /*
  * @test
  * @bug 8393264
+ * @key headful
  * @summary The splash screen GIF decoder must not read past the color table
  *          when the background color index is not covered by the global
  *          color table
@@ -54,8 +55,6 @@ public class SplashGifBackgroundColorTest {
 
     private static final int BACKGROUND_COLOR = 11;
 
-    private static Process xvfb;
-
     public static void main(String[] args) throws Exception {
         var image = ImageIO.read(new ByteArrayInputStream(GIF));
         if (image == null || image.getWidth() != 1 || image.getHeight() != 1) {
@@ -67,8 +66,7 @@ public class SplashGifBackgroundColorTest {
 
         Path dir = Files.createTempDirectory("splash-gif-background");
         try {
-            Path java = Path.of(System.getProperty("java.home"), "bin",
-                    isWindows() ? "java.exe" : "java");
+            Path java = Path.of(System.getProperty("java.home"), "bin", "java");
             Path badGif = dir.resolve("background-color-oob.gif");
             Files.write(badGif, GIF);
             runSplash(java, badGif, 5);
@@ -77,9 +75,6 @@ public class SplashGifBackgroundColorTest {
             runSplash(java, goodGif, 1);
             System.out.println("OK: splash screen decoded GIFs with an out-of-range and a valid background color index");
         } finally {
-            if (xvfb != null) {
-                xvfb.destroyForcibly().waitFor();
-            }
             delete(dir);
         }
     }
@@ -93,10 +88,6 @@ public class SplashGifBackgroundColorTest {
                     "-splash:" + gif, "-version")
                     .redirectErrorStream(true).redirectOutput(out.toFile());
 
-            String display = display();
-            if (display != null) {
-                pb.environment().put("DISPLAY", display);
-            }
             Process p = pb.start();
             if (!p.waitFor(60, TimeUnit.SECONDS)) {
                 p.destroyForcibly().waitFor();
@@ -107,61 +98,6 @@ public class SplashGifBackgroundColorTest {
                         + p.exitValue() + ":\n" + Files.readString(out));
             }
         }
-    }
-
-    private static boolean isWindows() {
-        return System.getProperty("os.name").startsWith("Windows");
-    }
-
-    /*
-     * Returns the X display the child should use, starting a private Xvfb
-     * server when the environment has no display. Returns null on platforms
-     * that do not use X11.
-     */
-    private static String display() throws Exception {
-        String os = System.getProperty("os.name");
-        if (!os.equals("Linux")) {
-            return null;
-        }
-        String current = System.getenv("DISPLAY");
-        if (current != null && !current.isEmpty()) {
-            return current;
-        }
-        if (xvfb == null) {
-            xvfb = startXvfb();
-        }
-        return xvfbDisplay;
-    }
-
-    private static String xvfbDisplay;
-
-    private static Process startXvfb() throws Exception {
-        Path socketDir = Path.of("/tmp/.X11-unix");
-        for (int number = 96; number < 256; number++) {
-            if (Files.exists(socketDir.resolve("X" + number))) {
-                continue;
-            }
-            String display = ":" + number;
-            Process p = new ProcessBuilder("Xvfb", display,
-                    "-screen", "0", "1280x1024x24")
-                    .redirectErrorStream(true)
-                    .redirectOutput(ProcessBuilder.Redirect.DISCARD)
-                    .start();
-            Path socket = socketDir.resolve("X" + number);
-            for (int i = 0; i < 100; i++) {
-                if (!p.isAlive()) {
-                    break;
-                }
-                if (Files.exists(socket)) {
-                    Thread.sleep(200);
-                    xvfbDisplay = display;
-                    return p;
-                }
-                Thread.sleep(100);
-            }
-            p.destroyForcibly().waitFor();
-        }
-        throw new RuntimeException("cannot start Xvfb; install it or set DISPLAY to run this test");
     }
 
     private static void delete(Path path) throws IOException {
