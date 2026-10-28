@@ -473,14 +473,3 @@ ps_err_e ps_pwrite(struct ps_prochandle *ph, psaddr_t addr,
 ps_err_e ps_linfo(struct ps_prochandle *ph, lwpid_t lwp_id, void *linfo) {
   return ph->ops->get_lwp_info(ph, lwp_id, linfo)? PS_OK: PS_ERR;
 }
-
-// needed for when libthread_db is compiled with TD_DEBUG defined
-void
-ps_plog (const char *format, ...)
-{
-  va_list alist;
-
-  va_start(alist, format);
-  vfprintf(stderr, format, alist);
-  va_end(alist);
-}
