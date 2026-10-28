@@ -5797,10 +5797,7 @@ void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
   relocate(metadata_Relocation::spec(index), [&] {
     li32(dst, nk);
   });
-  // li32 uses addiw which sign-extends; only need zext when bit 31 is set.
-  // Safe: narrow klass immediates are never patched at runtime on RISC-V
-  // (see metadata_Relocation::pd_fix_value).
-  if ((int32_t)nk < 0) {
+  if ((int32_t)nk < 0 || AOTCodeCache::is_on_for_dump()) {
     zext(dst, dst, 32);
   }
 }
