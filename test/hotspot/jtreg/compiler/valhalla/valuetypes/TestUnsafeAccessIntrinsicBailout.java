@@ -31,7 +31,7 @@ import jdk.internal.misc.Unsafe;
  * @summary Test control restoration when an Unsafe access intrinsic bails out
  * @enablePreview
  * @modules java.base/jdk.internal.misc
- * @requires vm.compiler2.enabled
+ * @run main ${test.main.class}
  * @run main/othervm -XX:-TieredCompilation -Xcomp
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test
  *                   ${test.main.class}
