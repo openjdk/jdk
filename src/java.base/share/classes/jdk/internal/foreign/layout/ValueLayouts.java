@@ -192,7 +192,7 @@ public final class ValueLayouts {
             return sign;
         }
 
-        public final V withSign(boolean sign) {
+        public final V withSignedness(boolean sign) {
             return dup(order(), sign, byteAlignment(), name());
         }
 

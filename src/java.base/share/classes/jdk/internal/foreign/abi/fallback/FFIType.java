@@ -51,8 +51,8 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT;
  */
 class FFIType {
 
-    static final ValueLayout SIZE_T = layoutFor((int)ADDRESS.byteSize()).withSign(false);
-    private static final ValueLayout UNSIGNED_SHORT = JAVA_SHORT.withSign(false);
+    static final ValueLayout SIZE_T = layoutFor((int)ADDRESS.byteSize()).withSignedness(false);
+    private static final ValueLayout UNSIGNED_SHORT = JAVA_SHORT.withSignedness(false);
     private static final StructLayout LAYOUT = Utils.computePaddedStructLayout(
             SIZE_T, UNSIGNED_SHORT, UNSIGNED_SHORT.withName("type"), ADDRESS.withName("elements"));
 

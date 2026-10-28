@@ -64,10 +64,10 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                                                                       LinuxRISCV64Linker, LinuxS390Linker,
                                                                       FallbackLinker {
 
-    public static final ValueLayout.OfByte UBYTE = ValueLayout.JAVA_BYTE.withSign(false);
-    public static final ValueLayout.OfShort USHORT = ValueLayout.JAVA_SHORT.withSign(false);
-    public static final ValueLayout.OfInt UINT = ValueLayout.JAVA_INT.withSign(false);
-    public static final ValueLayout.OfLong ULONG = ValueLayout.JAVA_LONG.withSign(false);
+    public static final ValueLayout.OfByte UBYTE = ValueLayout.JAVA_BYTE.withSignedness(false);
+    public static final ValueLayout.OfShort USHORT = ValueLayout.JAVA_SHORT.withSignedness(false);
+    public static final ValueLayout.OfInt UINT = ValueLayout.JAVA_INT.withSignedness(false);
+    public static final ValueLayout.OfLong ULONG = ValueLayout.JAVA_LONG.withSignedness(false);
 
     public interface UpcallStubFactory {
         MemorySegment makeStub(MethodHandle target, Arena arena);
@@ -316,7 +316,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     // overridden by sub classes
     protected ValueLayout maybeEraseSign(ValueLayout valueLayout) {
         return valueLayout instanceof ValueLayout.OfIntegral integral
-                ? integral.withSign(true)
+                ? integral.withSignedness(true)
                 : valueLayout;
     }
 

@@ -159,7 +159,7 @@ public sealed interface ValueLayout extends MemoryLayout
          *
          * @param signed {@code true} for a signed layout, {@code false} for an unsigned layouts.
          */
-        OfIntegral withSign(boolean signed);
+        OfIntegral withSignedness(boolean signed);
 
         /**
          * {@inheritDoc}
@@ -260,7 +260,7 @@ public sealed interface ValueLayout extends MemoryLayout
          * {@inheritDoc}
          */
         @Override
-        OfByte withSign(boolean sign);
+        OfByte withSignedness(boolean sign);
 
     }
 
@@ -338,7 +338,7 @@ public sealed interface ValueLayout extends MemoryLayout
          * {@inheritDoc}
          */
         @Override
-        OfShort withSign(boolean sign);
+        OfShort withSignedness(boolean sign);
 
     }
 
@@ -380,7 +380,7 @@ public sealed interface ValueLayout extends MemoryLayout
          * {@inheritDoc}
          */
         @Override
-        OfInt withSign(boolean sign);
+        OfInt withSignedness(boolean sign);
 
     }
 
@@ -457,7 +457,7 @@ public sealed interface ValueLayout extends MemoryLayout
          * {@inheritDoc}
          */
         @Override
-        OfLong withSign(boolean sign);
+        OfLong withSignedness(boolean sign);
 
     }
 
