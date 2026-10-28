@@ -1166,6 +1166,11 @@ public class IRNode {
         loadOfNodes(LOAD_US_OF_CLASS, "LoadUS", IS_REPLACED);
     }
 
+    public static final String STR_EQUALS = PREFIX + "STR_EQUALS" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(STR_EQUALS, "StrEquals");
+    }
+
     public static final String LOAD_VECTOR_B = VECTOR_PREFIX + "LOAD_VECTOR_B" + POSTFIX;
     static {
         vectorNode(LOAD_VECTOR_B, "LoadVector", TYPE_BYTE);

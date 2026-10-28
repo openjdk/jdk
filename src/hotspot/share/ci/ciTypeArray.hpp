@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,14 +49,31 @@ public:
   // What kind of ciObject is this?
   bool is_type_array() { return true; }
 
-  // Return character at index. This is only useful if the
-  // compiler has already proved that the contents of the
-  // array will never change.
-  jchar char_at(int index);
-
   // Return byte at index.
   jbyte byte_at(int index);
 
+  // Given a byte array and an integral type composed of N bytes, return the integral value constructed from reading N bytes
+  // while accounting for endianness.
+  template<typename Type, ENABLE_IF(std::is_integral_v<Type>)>
+  Type read_integral_bytes(int index) {
+    assert(element_basic_type() == T_BYTE, "Array base must be byte");
+    const int size = sizeof(Type);
+
+    Type value = 0;
+    for (int i = 0; i < size; i++) {
+      Type byte = static_cast<Type>(byte_at(index + i)) & 0xFF;
+
+#ifdef VM_LITTLE_ENDIAN
+      int shift = i * 8;
+#else
+      int shift = (size - i - 1) * 8;
+#endif
+
+      value |= byte << shift;
+    }
+
+    return value;
+  }
 };
 
 #endif // SHARE_CI_CITYPEARRAY_HPP
