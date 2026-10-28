@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8394634
+ * @bug 8396020
  * @summary C1 must handle constant array index whose byte offsets exceed the signed 32-bit range
  * @requires vm.compiler1.enabled
  * @run main/othervm -Xcomp -XX:TieredStopAtLevel=1
