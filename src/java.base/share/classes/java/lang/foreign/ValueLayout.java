@@ -124,26 +124,42 @@ public sealed interface ValueLayout extends MemoryLayout
 
     /**
      * An integral value layout models an integral data type.
+     * <p>
+     * Values represented by {@linkplain OfIntegral integral} layouts
+     * represent either a signed or an unsigned integral value.
+     * For example, two value layout instances of type {@link ValueLayout.OfInt}
+     * may be used to represent the C type {@code int} and the C type {@code unsigned int}.
+     * Both of these layouts have the same {@linkplain #carrier() carrier type},
+     * but they can be distinguished by their {@linkplain #isSigned() signedness}.
+     * <p>
+     * The signedness of a value is relevant when that value is widened. For instance,
+     * when an {@code int} is widened to a {@code long}, the signedness determines
+     * whether the value should be sign extended as specified by {@jls 5.1.2},
+     * or zero extended as specified by the {@link Integer#toUnsignedLong(int)} method.
+     * <p>
+     * The signedness of a value is used by the {@linkplain Linker linker} to implement
+     * the calling convention on certain platforms that required the widening of values
+     * as part of a calling sequence. Outside the linker, signedness is not used by
+     * the APIs in the {@code java.lang.foreign} package. As such, the signedness of
+     * a layout has no effect on the memory access operations provided by this package.
+     * However, a user who is interested in manually widening values represented by
+     * integral value layouts may wish to use the signedness of the layout to select
+     * the correct widening mode.
      */
     sealed interface OfIntegral extends ValueLayout permits ValueLayout.OfByte,
             ValueLayout.OfShort, ValueLayout.OfInt, ValueLayout.OfLong {
         /**
          * {@return {@code true} if the value represented by this layout is signed}
-         * <p>
-         * Values represented by {@linkplain OfIntegral integral} layouts
-         * can be used to represent either a signed or an unsigned integral value.
-         * For example, a value layout of type {@link ValueLayout.OfInt} may be used
-         * to represent the C type {@code int} or the C type {@code unsigned int}.
          */
         boolean isSigned();
 
         /**
          * {@return an integral value layout with the same characteristics as this layout,
-         * but with the given sign}
+         * but with the given signedness}
          *
-         * @param sign {@code true} for a signed layout, {@code false} for an unsigned layouts.
+         * @param signed {@code true} for a signed layout, {@code false} for an unsigned layouts.
          */
-        OfIntegral withSign(boolean sign);
+        OfIntegral withSign(boolean signed);
 
         /**
          * {@inheritDoc}
