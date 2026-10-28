@@ -280,8 +280,12 @@ inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest _
 #endif
 
   static_assert(byte_size == sizeof(T));
-  if constexpr (byte_size == 1 || byte_size == 4 || byte_size == 8) {
-    if (VM_Version::use_zacas_atomics() && (byte_size != 1 || VM_Version::use_zabha_atomics())) {
+  if constexpr (byte_size == 1) {
+    if (VM_Version::use_zacas_atomics() && VM_Version::use_zabha_atomics()) {
+      return riscv_amocas<1>(dest, compare_value, exchange_value, order);
+    }
+  } else if constexpr (byte_size == 4 || byte_size == 8) {
+    if (VM_Version::use_zacas_atomics()) {
       return riscv_amocas<byte_size>(dest, compare_value, exchange_value, order);
     }
   }
