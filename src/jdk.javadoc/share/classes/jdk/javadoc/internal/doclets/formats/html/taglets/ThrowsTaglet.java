@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -634,11 +634,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         }
         DocFinder.Result<Map<ThrowsTree, ExecutableElement>> result;
         try {
-            if (src.isPresent()) {
-                result = utils.docFinder().search(src.get(), criterion);
-            } else {
-                result = utils.docFinder().find(holder, criterion);
-            }
+            result = utils.docFinder().searchInherited(holder, src.orElse(null), criterion);
         } catch (Failure.NotExceptionType
                  | Failure.ExceptionTypeNotFound
                  | Failure.UnsupportedTypeParameter x) {

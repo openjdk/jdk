@@ -33,6 +33,18 @@ import java.lang.ref.WeakReference;
  *
  * @author Hui Shi
  */
+
+/*
+ * @test
+ * @bug 8260473
+ * @summary Handle leak might cause object not collected as expected
+ *
+ * @requires os.arch == "aarch64"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:-Inline -XX:-TieredCompilation -XX:CompileCommand=compileonly,UncommonTrapLeak.foo
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
+ *                   -XX:CompileThreshold=100 -XX:-BackgroundCompilation UncommonTrapLeak
+ */
 public class UncommonTrapLeak {
     static WeakReference<Object> ref = null;
     static int val = 0;

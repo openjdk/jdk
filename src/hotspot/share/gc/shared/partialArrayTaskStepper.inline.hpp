@@ -27,28 +27,11 @@
 
 #include "gc/shared/partialArrayTaskStepper.hpp"
 
-#include "gc/shared/partialArrayState.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 
-PartialArrayTaskStepper::Step
-PartialArrayTaskStepper::start(size_t length, size_t chunk_size) const {
-  size_t end = length % chunk_size; // End of initial chunk.
-  // If the initial chunk is the complete array, then don't need any partial
-  // tasks.  Otherwise, start with just one partial task; see new task
-  // calculation in next().
-  return Step{ end, (length > end) ? 1u : 0u };
-}
-
-PartialArrayTaskStepper::Step
-PartialArrayTaskStepper::next_impl(size_t length, size_t chunk_size, Atomic<size_t>* index_addr) const {
-  // The start of the next task is in the state's index.
-  // Atomically increment by the chunk size to claim the associated chunk.
-  // Because we limit the number of enqueued tasks to being no more than the
-  // number of remaining chunks to process, we can use an atomic add for the
-  // claim, rather than a CAS loop.
-  size_t start = index_addr->fetch_then_add(chunk_size, memory_order_relaxed);
-
+uint PartialArrayTaskStepper::continuation_tasks(size_t start, size_t length, size_t chunk_size) const {
+  precond(chunk_size > 0);
   assert(start < length, "invariant: start %zu, length %zu", start, length);
   assert(((length - start) % chunk_size) == 0,
          "invariant: start %zu, length %zu, chunk size %zu",
@@ -69,7 +52,7 @@ PartialArrayTaskStepper::next_impl(size_t length, size_t chunk_size, Atomic<size
   // => (F-1)*N + 1
   assert(_task_limit > 0, "precondition");
   assert(_task_fanout > 0, "precondition");
-  uint max_pending = (_task_fanout - 1) * task_num + 1;
+  uint64_t max_pending = (uint64_t)(_task_fanout - 1) * task_num + 1;
 
   // The actual pending may be less than that.  Bound by remaining_tasks to
   // not overrun.  Also bound by _task_limit to avoid spawning an excessive
@@ -78,14 +61,9 @@ PartialArrayTaskStepper::next_impl(size_t length, size_t chunk_size, Atomic<size
   // not be what's actually in the queues, because of concurrent task
   // processing.  That's okay; we just need to determine the correct number
   // of tasks to add for this task.
-  uint pending = MIN3(max_pending, remaining_tasks, _task_limit);
+  uint pending = (uint)MIN3<uint64_t>(max_pending, remaining_tasks, _task_limit);
   uint ncreate = MIN2(_task_fanout, MIN2(remaining_tasks, _task_limit + 1) - pending);
-  return Step{ start, ncreate };
-}
-
-PartialArrayTaskStepper::Step
-PartialArrayTaskStepper::next(PartialArrayState* state) const {
-  return next_impl(state->length(), state->chunk_size(), state->index_addr());
+  return ncreate;
 }
 
 #endif // SHARE_GC_SHARED_PARTIALARRAYTASKSTEPPER_INLINE_HPP
