@@ -571,10 +571,6 @@ public class ResponseSubscribers {
 
     }
 
-    public static BodySubscriber<Stream<String>> createLineStream() {
-        return createLineStream(UTF_8);
-    }
-
     public static BodySubscriber<Stream<String>> createLineStream(Charset charset) {
         Objects.requireNonNull(charset);
         BodySubscriber<InputStream> s = new HttpResponseInputStream();
