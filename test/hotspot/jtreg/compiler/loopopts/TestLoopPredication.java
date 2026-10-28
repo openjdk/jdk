@@ -28,7 +28,7 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @bug 8395711
+ * @bug 8396028
  * @summary Verify the expected behavior of loop predication.
  * @requires vm.compiler2.enabled
  * @requires vm.flagless
@@ -455,7 +455,7 @@ public class TestLoopPredication {
         }
     }
 
-    // Large stride and scale, there is another loop-limit check as the 10-th If
+    // Large stride and scale, there is another loop-limit check as the 9-th If
     @Test
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     @IR(counts = {IRNode.IF, "9"}, phase = CompilePhase.AFTER_LOOP_PREDICATION_RC)
@@ -581,9 +581,9 @@ public class TestLoopPredication {
 
     @Test
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
-    // There is no loop-limit check, so there are only 8 Ifs
+    // There is no loop-limit check, so there are only 7 Ifs
     @IR(counts = {IRNode.IF, "7"}, phase = CompilePhase.AFTER_LOOP_PREDICATION_RC)
-    // 1 CmpL for final_iv and 1 for OpaqueInit in the Template Assertion Predicate
+    // 1 CmpUL for final_iv and 1 for OpaqueInit in the Template Assertion Predicate
     @IR(counts = {IRNode.CMP_UL, "2"}, phase = CompilePhase.AFTER_LOOP_PREDICATION_RC)
     private static int testIntRC18(int begin, int end, int range) {
         int stride = 1;
