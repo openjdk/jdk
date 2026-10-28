@@ -498,6 +498,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
       Label not_null;
       __ cbnz(r0, not_null);
       // Returned value is null, zero all return registers because they may belong to oop fields
+      __ mov(j_rarg0, zr);
       __ mov(j_rarg1, zr);
       __ mov(j_rarg2, zr);
       __ mov(j_rarg3, zr);
