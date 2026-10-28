@@ -57,7 +57,7 @@ public class TestLayoutEquality {
             newLayout = ((AddressLayout)newLayout).withTargetLayout(addressLayout.targetLayout().get());
         }
         if (layout instanceof ValueLayout.OfIntegral integral) {
-            newLayout = ((ValueLayout.OfIntegral) newLayout).withSign(integral.isSigned());
+            newLayout = ((ValueLayout.OfIntegral) newLayout).withSignedness(integral.isSigned());
         }
 
         // properties should be equal

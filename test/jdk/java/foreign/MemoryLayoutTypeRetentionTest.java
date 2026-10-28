@@ -63,7 +63,7 @@ public class MemoryLayoutTypeRetentionTest {
                 .withoutName()
                 .withName(NAME)
                 .withOrder(BYTE_ORDER)
-                .withSign(false);
+                .withSignedness(false);
         check(v);
     }
 
@@ -74,7 +74,7 @@ public class MemoryLayoutTypeRetentionTest {
                 .withoutName()
                 .withName(NAME)
                 .withOrder(BYTE_ORDER)
-                .withSign(false);
+                .withSignedness(false);
         check(v);
     }
 
@@ -85,7 +85,7 @@ public class MemoryLayoutTypeRetentionTest {
                 .withoutName()
                 .withName(NAME)
                 .withOrder(BYTE_ORDER)
-                .withSign(false);
+                .withSignedness(false);
         check(v);
     }
 
@@ -106,7 +106,7 @@ public class MemoryLayoutTypeRetentionTest {
                 .withoutName()
                 .withName(NAME)
                 .withOrder(BYTE_ORDER)
-                .withSign(false);
+                .withSignedness(false);
         check(v);
     }
 
