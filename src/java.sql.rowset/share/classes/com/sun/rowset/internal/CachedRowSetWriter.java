@@ -268,7 +268,6 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     public boolean writeData(RowSetInternal caller) throws SQLException {
         long conflicts = 0;
         boolean showDel = false;
-        PreparedStatement pstmtIns = null;
         iChangedValsInDbAndCRS = 0;
         iChangedValsinDbOnly = 0;
 
@@ -319,9 +318,6 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
         }
         this.crsResolve.setMetaData(rsmdResolv);
 
-        // moved outside the insert inner loop
-        //pstmtIns = con.prepareStatement(insertCmd);
-
         if (callerColumnCount < 1) {
             // No data, so return success.
             if (reader.getCloseConnection() == true)
@@ -337,76 +333,93 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
 
         int rows =1;
         String[] primaryKeys = null;
-        while (crs.next()) {
-            if (crs.rowDeleted()) {
-                // The row has been deleted.
-                if (deleteOriginalRow(crs, this.crsResolve)) {
-                       status.add(rows, SyncResolver.DELETE_ROW_CONFLICT);
-                       conflicts++;
-                } else {
-                      // delete happened without any occurrence of conflicts
-                      // so update status accordingly
-                       status.add(rows, SyncResolver.NO_ROW_CONFLICT);
-                }
-
-           } else if (crs.rowInserted()) {
-                // The row has been inserted.
-                pstmtIns = con.prepareStatement(insertCmd);
-                if (primaryKeys == null) {
-                    try (ResultSet rs = con.getMetaData().getPrimaryKeys(null, null,
-                            crs.getTableName())) {
-                        var pks = new ArrayList<String>();
-                        while (rs.next()) {
-                            pks.add(rs.getString("COLUMN_NAME"));
-                        }
-                        primaryKeys = pks.toArray(new String[0]);
+        PreparedStatement pstmtIns = null;
+        Throwable cause = null;
+        try {
+            while (crs.next()) {
+                if (crs.rowDeleted()) {
+                    // The row has been deleted.
+                    if (deleteOriginalRow(crs, this.crsResolve)) {
+                        status.add(rows, SyncResolver.DELETE_ROW_CONFLICT);
+                        conflicts++;
+                    } else {
+                        // delete happened without any occurrence of conflicts
+                        // so update status accordingly
+                        status.add(rows, SyncResolver.NO_ROW_CONFLICT);
                     }
-                }
-                if (insertNewRow(crs, pstmtIns, primaryKeys)) {
-                          status.add(rows, SyncResolver.INSERT_ROW_CONFLICT);
-                          conflicts++;
+
+                } else if (crs.rowInserted()) {
+                    // The row has been inserted.
+                    if (pstmtIns == null) {
+                        pstmtIns = con.prepareStatement(insertCmd);
+                    }
+                    if (primaryKeys == null) {
+                        try (ResultSet rs = con.getMetaData().getPrimaryKeys(null, null,
+                                crs.getTableName())) {
+                            var pks = new ArrayList<String>();
+                            while (rs.next()) {
+                                pks.add(rs.getString("COLUMN_NAME"));
+                            }
+                            primaryKeys = pks.toArray(new String[0]);
+                        }
+                    }
+                    if (insertNewRow(crs, pstmtIns, primaryKeys)) {
+                        status.add(rows, SyncResolver.INSERT_ROW_CONFLICT);
+                        conflicts++;
+                    } else {
+                        // insert happened without any occurrence of conflicts
+                        // so update status accordingly
+                        status.add(rows, SyncResolver.NO_ROW_CONFLICT);
+                    }
+                } else if (crs.rowUpdated()) {
+                    // The row has been updated.
+                    if (updateOriginalRow(crs)) {
+                        status.add(rows, SyncResolver.UPDATE_ROW_CONFLICT);
+                        conflicts++;
+                    } else {
+                        // update happened without any occurrence of conflicts
+                        // so update status accordingly
+                        status.add(rows, SyncResolver.NO_ROW_CONFLICT);
+                    }
+
                 } else {
-                      // insert happened without any occurrence of conflicts
-                      // so update status accordingly
-                       status.add(rows, SyncResolver.NO_ROW_CONFLICT);
-                }
-            } else  if (crs.rowUpdated()) {
-                  // The row has been updated.
-                       if (updateOriginalRow(crs)) {
-                             status.add(rows, SyncResolver.UPDATE_ROW_CONFLICT);
-                             conflicts++;
-               } else {
-                      // update happened without any occurrence of conflicts
-                      // so update status accordingly
-                      status.add(rows, SyncResolver.NO_ROW_CONFLICT);
-               }
+                    /** The row is neither of inserted, updated or deleted.
+                     *  So set nulls in the this.crsResolve for this row,
+                     *  as nothing is to be done for such rows.
+                     *  Also note that if such a row has been changed in database
+                     *  and we have not changed(inserted, updated or deleted)
+                     *  that is fine.
+                     **/
+                    int icolCount = crs.getMetaData().getColumnCount();
+                    status.add(rows, SyncResolver.NO_ROW_CONFLICT);
 
-            } else {
-               /** The row is neither of inserted, updated or deleted.
-                *  So set nulls in the this.crsResolve for this row,
-                *  as nothing is to be done for such rows.
-                *  Also note that if such a row has been changed in database
-                *  and we have not changed(inserted, updated or deleted)
-                *  that is fine.
-                **/
-                int icolCount = crs.getMetaData().getColumnCount();
-                status.add(rows, SyncResolver.NO_ROW_CONFLICT);
+                    this.crsResolve.moveToInsertRow();
+                    for (int cols = 0; cols < iColCount; cols++) {
+                        this.crsResolve.updateNull(cols + 1);
+                    } //end for
 
-                this.crsResolve.moveToInsertRow();
-                for(int cols=0;cols<iColCount;cols++) {
-                   this.crsResolve.updateNull(cols+1);
-                } //end for
-
-                this.crsResolve.insertRow();
-                this.crsResolve.moveToCurrentRow();
+                    this.crsResolve.insertRow();
+                    this.crsResolve.moveToCurrentRow();
 
                 } //end if
-         rows++;
-      } //end while
+                rows++;
+            } //end while
+        } catch (Throwable e) {
+            cause = e;
+            throw e;
+        } finally {
+            // close the insert statement
+            try {
+                if (pstmtIns != null) {
+                    pstmtIns.close();
+                }
+            } catch (SQLException e) {
+                if (cause == null) {
+                    throw e;
+                }
+            }
+        }
 
-        // close the insert statement
-        if(pstmtIns!=null)
-        pstmtIns.close();
         // reset
         crs.setShowDeleted(showDel);
 
