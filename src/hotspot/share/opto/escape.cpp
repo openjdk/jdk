@@ -1948,6 +1948,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
         AllocateNode* alloc = AllocateNode::Ideal_allocation(base);
         assert(alloc != nullptr, "should be available if virtual field test passed");
         Node* init = alloc->in(AllocateNode::InitValue);
+        assert(init != nullptr, "should have init value if virtual field test passed");
         PointsToNode* init_ptn = ptnode_adr(init->_idx);
         assert(init_ptn != nullptr, "init value should be registered");
         add_edge(n_ptn, init_ptn);
