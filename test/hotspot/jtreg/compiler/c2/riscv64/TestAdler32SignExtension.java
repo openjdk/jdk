@@ -28,7 +28,7 @@
  * @requires os.arch == "riscv64" & vm.compiler2.enabled
  * @requires vm.cpu.features ~= ".*rvv.*"
  * @modules java.base/java.util.zip:+open
- * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+UseRVV -XX:+UseAdler32Intrinsics
+ * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+UseAdler32Intrinsics
  *      -XX:-TieredCompilation -XX:CompileThreshold=1000
  *      -XX:CompileCommand=compileonly,compiler.c2.riscv64.TestAdler32SignExtension::test*
  *      compiler.c2.riscv64.TestAdler32SignExtension
