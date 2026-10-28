@@ -138,10 +138,12 @@ class WindowsPathParser {
             }
         }
 
-        // A UNC path to the root of a share, such as an administrative share
-        // (\\host\C$), may lack a trailing slash and need to be normalized.
-        if (requireToNormalize || (type == WindowsPathType.UNC && off == len)) {
+        if (requireToNormalize) {
             return new Result(type, root, normalize(root, input, off));
+        } else if (type == WindowsPathType.UNC && off == len) {
+            // A UNC path to the root of a share, such as an administrative share
+            // (\\host\C$), may lack a trailing slash and need to be normalized.
+            return new Result(type, root, root);
         } else {
             return new Result(type, root, input);
         }
