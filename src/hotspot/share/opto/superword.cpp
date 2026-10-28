@@ -2815,6 +2815,10 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     } else {
       // SuperWordAutomaticAlignmentThreshold is measured in bytes accessed
       // during the loop, for the memory access we align for.
+      //
+      // We make a simplifying assumption to keep the computation simple:
+      // The scalar memory access was unrolled by unroll_count, and then all of those
+      // unrolled scalar operations were packed into a single pack p.
       const float bytes_accessed = profiled_trip_count * p.size() / cl()->unrolled_count();
 
 #ifdef ASSERT
@@ -2826,7 +2830,9 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 #endif
       if (bytes_accessed < SuperWordAutomaticAlignmentThreshold) {
 #ifdef ASSERT
-        tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors: too few iterations, no alignment.");
+        if (_trace._align_vector) {
+          tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors: too few iterations, no alignment.");
+        }
 #endif
         return;
       }
