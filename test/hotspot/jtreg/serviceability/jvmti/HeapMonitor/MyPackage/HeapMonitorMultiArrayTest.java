@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -52,8 +52,9 @@ public class HeapMonitorMultiArrayTest {
     int sampledEvents = HeapMonitor.sampledEvents();
     int expectedNumber = iterations * allocationsPerIteration;
 
-    if (sampledEvents != expectedNumber) {
-      throw new RuntimeException("Number of samples (" + sampledEvents + ") not the expected ("
+    // Other allocations in the window get sampled too.
+    if (!HeapMonitor.statsHaveExpectedNumberSamples(expectedNumber, 10)) {
+      throw new RuntimeException("Number of samples (" + sampledEvents + ") not within 10% of the expected ("
           + expectedNumber + ")");
     }
   }
