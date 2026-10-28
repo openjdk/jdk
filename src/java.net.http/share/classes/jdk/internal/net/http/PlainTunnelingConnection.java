@@ -73,7 +73,7 @@ final class PlainTunnelingConnection extends HttpConnection {
                 HttpClientImpl client = client();
                 assert client != null;
                 HttpRequestImpl req = new HttpRequestImpl("CONNECT", address, proxyHeaders);
-                MultiExchange<Void> mulEx = new MultiExchange<>(null, req,
+                MultiExchange<Void> mulEx = new MultiExchange<>(req,
                         client, discarding(), null);
                 Exchange<Void> connectExchange = mulEx.getExchange();
 
