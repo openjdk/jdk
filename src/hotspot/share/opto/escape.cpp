@@ -79,27 +79,6 @@ ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation
     assert(noop_null->_idx < nodes_size(), "should be created already");
     map_ideal_node(noop_null, null_obj);
   }
-  // Add artificial AddP nodes to make the connection between allocated arrays
-  // and their initialization values explicit.
-  for (int i = 0; i < C->macro_count(); i++) {
-    Node* n = C->macro_node(i);
-    if (!n->is_AllocateArray() || n->in(AllocateNode::InitValue) == nullptr) {
-      continue;
-    }
-    AllocateArrayNode* alloc = n->as_AllocateArray();
-    // Model the AddP as a raw address so that artificial AddP nodes are still
-    // created even if the AllocateArray OOP is unused. The resulting Field
-    // nodes are treated specially to avoid inhibiting scalar replacement.
-    Node* result = alloc->proj_out_or_null(AllocateNode::RawAddress);
-    if (result == nullptr) {
-      continue;
-    }
-    // Use an arbitrary offset. The corresponding CG Field node uses OffsetBot.
-    AddPNode* addp = AddPNode::make_off_heap(result, igvn->MakeConX(0));
-    igvn->register_new_node_with_optimizer(addp);
-    _virtual_array_init_nodes.push(addp);
-    _nodes.at_put_grow(addp->_idx, nullptr, nullptr);
-  }
 }
 
 bool ConnectionGraph::has_candidates(Compile *C) {
@@ -158,7 +137,7 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
 
 bool ConnectionGraph::compute_escape() {
   Compile* C = _compile;
-  PhaseGVN* igvn = _igvn;
+  PhaseIterGVN* igvn = _igvn;
 
   // Worklists used by EA.
   Unique_Node_List delayed_worklist;
@@ -201,6 +180,21 @@ bool ConnectionGraph::compute_escape() {
       _igvn->replace_input_of(n, MemNode::Address, addp);
       ideal_nodes.push(addp);
       _nodes.at_put_grow(addp->_idx, nullptr, nullptr);
+    }
+    if (n->is_AllocateArray() && n->in(AllocateNode::InitValue) != nullptr) {
+      // Add artificial AddP nodes to make the connection between allocated
+      // arrays and their initialization values explicit. Model the AddP as a
+      // raw address so that artificial AddP nodes are still created even if the
+      // AllocateArray OOP is unused. The resulting Field nodes are treated
+      // specially to avoid inhibiting scalar replacement.
+      Node* result = n->as_AllocateArray()->proj_out_or_null(AllocateNode::RawAddress);
+      if (result != nullptr) {
+        // Use an arbitrary offset. The corresponding CG Field node uses OffsetBot.
+        AddPNode* addp = AddPNode::make_off_heap(result, igvn->MakeConX(0));
+        igvn->register_new_node_with_optimizer(addp);
+        _virtual_array_init_nodes.push(addp);
+        _nodes.at_put_grow(addp->_idx, nullptr, nullptr);
+      }
     }
     // Create PointsTo nodes and add them to Connection Graph. Called
     // only once per ideal node since ideal_nodes is Unique_Node list.
