@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -764,7 +764,7 @@ public abstract sealed class Buffer
      */
     @ForceInline
     final int checkIndex(int i) {                       // package-private
-        return Preconditions.checkIndex(i, limit, IOOBE_FORMATTER);
+        return Preconditions.checkIndex(i, limit, Preconditions.IOOBE_FORMATTER);
     }
 
     /**
