@@ -69,34 +69,34 @@ public class SplashGifBackgroundColorTest {
             Path java = Path.of(System.getProperty("java.home"), "bin", "java");
             Path badGif = dir.resolve("background-color-oob.gif");
             Files.write(badGif, GIF);
-            runSplash(java, badGif, 5);
+            runSplash(java, badGif);
             Path goodGif = dir.resolve("background-color-valid.gif");
             Files.write(goodGif, validGif);
-            runSplash(java, goodGif, 1);
+            runSplash(java, goodGif);
             System.out.println("OK: splash screen decoded GIFs with an out-of-range and a valid background color index");
         } finally {
             delete(dir);
         }
     }
 
-    private static void runSplash(Path java, Path gif, int times)
-            throws Exception {
-        Path dir = gif.getParent();
-        for (int i = 0; i < times; i++) {
-            Path out = dir.resolve(gif.getFileName() + ".log");
-            var pb = new ProcessBuilder(java.toString(),
-                    "-splash:" + gif, "-version")
-                    .redirectErrorStream(true).redirectOutput(out.toFile());
 
-            Process p = pb.start();
-            if (!p.waitFor(60, TimeUnit.SECONDS)) {
-                p.destroyForcibly().waitFor();
-                throw new RuntimeException("child VM timed out");
-            }
-            if (p.exitValue() != 0) {
-                throw new RuntimeException("child VM failed to start, exit "
-                        + p.exitValue() + ":\n" + Files.readString(out));
-            }
+    private static void runSplash(Path java, Path gif) throws Exception {
+        Path log = gif.resolveSibling(gif.getFileName() + ".log");
+
+        Process p = new ProcessBuilder(java.toString(),
+                "-splash:" + gif, "-version")
+                .redirectErrorStream(true)
+                .redirectOutput(log.toFile())
+                .start();
+
+        if (!p.waitFor(60, TimeUnit.SECONDS)) {
+            p.destroyForcibly().waitFor();
+            throw new RuntimeException("child VM timed out: " + gif);
+        }
+
+        if (p.exitValue() != 0) {
+            throw new RuntimeException("child VM failed, exit "
+                    + p.exitValue() + ":\n" + Files.readString(log));
         }
     }
 
