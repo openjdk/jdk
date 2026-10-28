@@ -3893,12 +3893,12 @@ void ConnectionGraph::add_field(Node *n, PointsToNode::EscapeState es, int offse
     return;
   }
   bool unsafe = false;
-  bool is_oop = is_virtual_array_init(n) || is_oop_field(n, offset, &unsafe);
+  bool may_point_to_object = is_virtual_array_init(n) || is_oop_field(n, offset, &unsafe);
   if (unsafe) {
     es = PointsToNode::GlobalEscape;
   }
   Compile* C = _compile;
-  FieldNode* field = new (C->comp_arena()) FieldNode(this, n, es, offset, is_oop);
+  FieldNode* field = new (C->comp_arena()) FieldNode(this, n, es, offset, may_point_to_object);
   map_ideal_node(n, field);
 }
 
