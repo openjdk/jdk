@@ -284,7 +284,7 @@ public:
   // This is NOT the same as workers()->active_workers(). For concurrent worker elasticity,
   // Shenandoah will start mark, evac and update reference phases with the maximum number of
   // workers "active" in the pool. However, a subset of these workers will be held in reserve
-  // and not will perform any work until required (by an allocation stall, for instance).
+  // and will not perform any work until required (by an allocation stall, for instance).
   // This method returns the number of workers NOT in this reserve, i.e., workers able to work.
   // This value may increase, but never decrease, during a phase. It may decrease between phases.
   uint eligible_workers() const;
