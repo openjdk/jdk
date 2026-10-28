@@ -206,7 +206,11 @@ void GraphKit::verify_exception_state(SafePointNode* ex_map) {
 void GraphKit::stop_and_kill_map() {
   SafePointNode* dead_map = stop();
   if (dead_map != nullptr) {
-    dead_map->disconnect_inputs(C); // Mark the map as killed.
+    if (PhaseIterGVN* igvn = _gvn.is_IterGVN()) {
+      igvn->remove_dead_node(dead_map, PhaseIterGVN::NodeOrigin::Speculative);
+    } else {
+      dead_map->disconnect_inputs(C);
+    }
     assert(dead_map->is_killed(), "must be so marked");
   }
 }
@@ -3781,6 +3785,13 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
         if (null_free) {
           assert(safe_for_replace, "must be");
           obj = null_check(obj);
+        }
+        if (!stopped() && toop->is_valueklassptr() && !maybe_larval) {
+          Node* vt = ValueTypeNode::make_from_oop(this, obj, toop->value_klass());
+          if (safe_for_replace) {
+            replace_in_map(obj, vt);
+          }
+          obj = vt;
         }
         return obj;
       case Compile::SSC_always_false:

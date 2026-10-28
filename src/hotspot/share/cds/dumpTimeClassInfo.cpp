@@ -22,12 +22,12 @@
  *
  */
 
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/runTimeClassInfo.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "memory/resourceArea.hpp"
 
 DumpTimeClassInfo::~DumpTimeClassInfo() {
@@ -143,7 +143,7 @@ int DumpTimeClassInfo::enum_klass_static_field(int which_field) {
 }
 
 bool DumpTimeClassInfo::is_builtin() {
-  return SystemDictionaryShared::is_builtin(_klass);
+  return AOTSystemDictionary::is_builtin(_klass);
 }
 
 DumpTimeClassInfo* DumpTimeSharedClassTable::allocate_info(InstanceKlass* k) {
@@ -159,7 +159,7 @@ DumpTimeClassInfo* DumpTimeSharedClassTable::get_info(InstanceKlass* k) {
   assert(CDSConfig::is_dumping_with_input_archive() || !k->in_aot_cache(), "Do not call with archived classes");
   DumpTimeClassInfo* p = get(k);
   assert(p != nullptr, "we must not see any non-shared InstanceKlass* that's "
-         "not stored with SystemDictionaryShared::init_dumptime_info");
+         "not stored with AOTSystemDictionary::init_dumptime_info");
   assert(p->_klass == k, "Sanity");
   return p;
 }

@@ -84,6 +84,7 @@
 #define   RISCV_HWPROBE_EXT_ZAWRS               (1ULL << 48)
 #define   RISCV_HWPROBE_EXT_ZABHA               (1ULL << 58)
 #define   RISCV_HWPROBE_EXT_ZALASR              (1ULL << 59)
+#define   RISCV_HWPROBE_EXT_ZICBOP              (1ULL << 60)
 
 #define RISCV_HWPROBE_KEY_CPUPERF_0     5
 #define   RISCV_HWPROBE_MISALIGNED_UNKNOWN      (0 << 0)
@@ -239,6 +240,9 @@ void RiscvHwprobe::add_features_from_query_result() {
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZCB)) {
     VM_Version::ext_Zcb.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICBOP)) {
+    VM_Version::ext_Zicbop.enable_feature();
   }
 #ifndef PRODUCT
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICBOZ)) {

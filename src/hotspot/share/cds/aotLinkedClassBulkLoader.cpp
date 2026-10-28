@@ -28,12 +28,14 @@
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLinkedClassTable.hpp"
 #include "cds/aotModules.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
+#include "classfile/moduleEntry.hpp"
+#include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "gc/shared/gcVMOperations.hpp"
@@ -91,7 +93,7 @@ void AOTLinkedClassBulkLoader::preload_classes_impl(TRAPS) {
   AOTHeap::load_cached_resolved_methods();
 
   if (CDSConfig::is_redumping_aot_configuration()) {
-   SystemDictionaryShared::copy_unregistered_classes_for_retraining(THREAD);
+   AOTSystemDictionary::copy_unregistered_classes_for_retraining(THREAD);
   }
 }
 

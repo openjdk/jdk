@@ -24,6 +24,7 @@
 
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotHeap.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classLoader.hpp"
@@ -33,7 +34,6 @@
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -333,7 +333,7 @@ refArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
   }
 
   InstanceKlass *ik = pool_holder();
-  if (!SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
+  if (!AOTSystemDictionary::is_builtin_loader(ik->class_loader_data())) {
     // Archiving resolved references for classes from non-builtin loaders
     // is not yet supported.
     return nullptr;
@@ -451,7 +451,7 @@ void ConstantPool::remove_unshareable_info() {
     precond(src_holder->defined_by_other_loaders());
     precond(CDSConfig::is_dumping_with_input_archive());
     // <src_cp> is a cached unregistered class that has been entered into
-    // SystemDictionaryShared::_dumptime_table, but it has not been actually
+    // AOTSystemDictionary::_dumptime_table, but it has not been actually
     // loaded in this JVM lifetime. The resolved reference length should have already
     // been saved when <src_cp> was written into the AOT cache (or AOT config) file.
     precond(resolved_reference_length() >= 0);
@@ -548,7 +548,7 @@ void ConstantPool::remove_resolved_klass_if_non_archivable(int cp_index) {
     k = resolved_klass_at(cp_index);
     if (k == nullptr) {
       // We'd come here if the referenced class has been excluded via
-      // SystemDictionaryShared::is_excluded_class(). As a result, ArchiveBuilder
+      // AOTSystemDictionary::is_excluded_class(). As a result, ArchiveBuilder
       // has cleared the resolved_klasses()->at(...) pointer to null. Thus, we
       // need to revert the tag to JVM_CONSTANT_UnresolvedClass.
       can_archive = false;

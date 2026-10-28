@@ -23,13 +23,15 @@
  */
 
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+#include "classfile/packageEntry.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/oopFactory.hpp"

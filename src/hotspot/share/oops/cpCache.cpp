@@ -29,7 +29,6 @@
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
 #include "interpreter/bytecodes.hpp"

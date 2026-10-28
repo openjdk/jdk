@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotHeap.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
 #include "classfile/classLoader.hpp"
@@ -31,7 +32,6 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -135,7 +135,7 @@ void Klass::set_name(Symbol* n) {
   }
 
   if (CDSConfig::is_dumping_archive() && is_instance_klass()) {
-    SystemDictionaryShared::init_dumptime_info(InstanceKlass::cast(this));
+    AOTSystemDictionary::init_dumptime_info(InstanceKlass::cast(this));
   }
 }
 

@@ -27,9 +27,9 @@
 
 #include "cds/dumpTimeClassInfo.hpp"
 
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderData.inline.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -62,9 +62,9 @@ void DumpTimeSharedClassTable::iterate_all_live_classes(Function function) const
       }
     }
 
-    if (exclude_reason != nullptr && !!SystemDictionaryShared::is_excluded_class(k)) {
-      SystemDictionaryShared::log_exclusion(k, exclude_reason);
-      SystemDictionaryShared::set_excluded_locked(k);
+    if (exclude_reason != nullptr && !!AOTSystemDictionary::is_excluded_class(k)) {
+      AOTSystemDictionary::log_exclusion(k, exclude_reason);
+      AOTSystemDictionary::set_excluded_locked(k);
     }
   };
   DumpTimeSharedClassTableBaseType::iterate_all(wrapper);

@@ -35,6 +35,7 @@
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/aotStreamedHeapLoader.hpp"
 #include "cds/aotStreamedHeapWriter.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
@@ -48,7 +49,6 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/aotCodeCache.hpp"
@@ -728,7 +728,7 @@ public:
 };
 
 void AOTHeap::add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) {
-  if (SystemDictionaryShared::is_builtin_loader(src->pool_holder()->class_loader_data())) {
+  if (AOTSystemDictionary::is_builtin_loader(src->pool_holder()->class_loader_data())) {
     _scratch_objects_table->set_oop(src, dest);
   }
 }
@@ -961,7 +961,7 @@ void AOTHeap::copy_java_mirror(oop orig_mirror, oop scratch_m) {
 }
 
 static objArrayOop get_archived_resolved_references(InstanceKlass* src_ik) {
-  if (SystemDictionaryShared::is_builtin_loader(src_ik->class_loader_data())) {
+  if (AOTSystemDictionary::is_builtin_loader(src_ik->class_loader_data())) {
     objArrayOop rr = src_ik->constants()->resolved_references_or_null();
     if (rr != nullptr && !AOTHeap::is_too_large_to_archive(rr)) {
       return AOTHeap::scratch_resolved_references(src_ik->constants());
@@ -1302,7 +1302,7 @@ public:
     if (info.subgraph_object_klasses() != nullptr || info.subgraph_entry_fields() != nullptr) {
       ArchivedKlassSubGraphInfoRecord* record = AOTHeap::archive_subgraph_info(&info);
       Klass* buffered_k = ArchiveBuilder::get_buffered_klass(klass);
-      unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary((address)buffered_k);
+      unsigned int hash = AOTSystemDictionary::hash_for_shared_dictionary((address)buffered_k);
       _writer->add(hash, AOTCompressedPointers::encode_not_null(record));
     }
     return true; // keep on iterating
@@ -1407,7 +1407,7 @@ void AOTHeap::resolve_classes_for_subgraphs(JavaThread* current, ArchivableStati
   for (int i = 0; fields[i].valid(); i++) {
     ArchivableStaticFieldInfo* info = &fields[i];
     TempNewSymbol klass_name = SymbolTable::new_symbol(info->klass_name);
-    InstanceKlass* k = SystemDictionaryShared::find_builtin_class(klass_name);
+    InstanceKlass* k = AOTSystemDictionary::find_builtin_class(klass_name);
     assert(k != nullptr && k->defined_by_boot_loader(), "sanity");
     resolve_classes_for_subgraph_of(current, k);
   }
@@ -1546,7 +1546,7 @@ AOTHeap::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAPS) 
   if (!k->in_aot_cache()) {
     return nullptr;
   }
-  unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(k);
+  unsigned int hash = AOTSystemDictionary::hash_for_shared_dictionary_quick(k);
   const ArchivedKlassSubGraphInfoRecord* record = _run_time_subgraph_info_table.lookup(k, hash, 0);
 
   // Initialize from archived data. Currently this is done only
@@ -1598,7 +1598,7 @@ AOTHeap::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAPS) 
 
 void AOTHeap::resolve_or_init(const char* klass_name, bool do_init, TRAPS) {
   TempNewSymbol klass_name_sym =  SymbolTable::new_symbol(klass_name);
-  InstanceKlass* k = SystemDictionaryShared::find_builtin_class(klass_name_sym);
+  InstanceKlass* k = AOTSystemDictionary::find_builtin_class(klass_name_sym);
   if (k == nullptr) {
     return;
   }
@@ -1672,7 +1672,7 @@ void AOTHeap::init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphInfo
 }
 
 void AOTHeap::clear_archived_roots_of(Klass* k) {
-  unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(k);
+  unsigned int hash = AOTSystemDictionary::hash_for_shared_dictionary_quick(k);
   const ArchivedKlassSubGraphInfoRecord* record = _run_time_subgraph_info_table.lookup(k, hash, 0);
   if (record != nullptr) {
     Array<int>* entry_field_records = record->entry_field_records();
