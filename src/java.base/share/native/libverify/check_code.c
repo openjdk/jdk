@@ -445,12 +445,12 @@ static jclass object_fullinfo_to_classclass(context_type *, fullinfo_type);
 
 
 #define NEW(type, count) \
-        ((type *)CCalloc(context, (count)*(sizeof(type)), JNI_FALSE))
+        ((type *)CCalloc(context, (count)*(sizeof(type))))
 
 static void CCinit(context_type *context);
 static void CCreinit(context_type *context);
 static void CCdestroy(context_type *context);
-static void *CCalloc(context_type *context, int size, jboolean zero);
+static void *CCalloc(context_type *context, int size);
 
 static fullinfo_type cp_index_to_class_fullinfo(context_type *, int, int);
 
@@ -3562,10 +3562,8 @@ static void CCdestroy(context_type *context)
 }
 
 /* Allocate an object of the given size from the context's heap. */
-static void *
-CCalloc(context_type *context, int size, jboolean zero)
+static void* CCalloc(context_type *context, int size)
 {
-
     register char *p;
     /* Round CC to the size of a pointer */
     size = (size + (sizeof(void *) - 1)) & ~(sizeof(void *) - 1);
@@ -3601,8 +3599,6 @@ CCalloc(context_type *context, int size, jboolean zero)
     p = context->CCfree_ptr;
     context->CCfree_ptr += size;
     context->CCfree_size -= size;
-    if (zero)
-        memset(p, 0, size);
     return p;
 }
 
