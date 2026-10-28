@@ -38,11 +38,18 @@ outputStream* InlinePrinter::record(ciMethod* callee, JVMState* state, InliningR
   if (is_suspended()) {
     return &_nullStream;
   }
-  outputStream* stream = locate(state, callee)->add(result);
+  outputStream* stream = locate(state, callee)->add(callee, result);
   if (msg != nullptr) {
     stream->print("%s", msg);
   }
   return stream; // Pointer stays valid, see IPInlineSite::add()
+}
+
+outputStream* InlinePrinter::record_type_profile(ciMethod* callee, JVMState* state) {
+  if (!is_enabled() || is_suspended()) {
+    return &_nullStream;
+  }
+  return locate(state, callee)->add(nullptr, InliningResult::SUCCESS);
 }
 
 void InlinePrinter::print_on(outputStream* tty) const {
@@ -77,13 +84,7 @@ InlinePrinter::IPInlineSite& InlinePrinter::IPInlineSite::at_bci(int bci, ciMeth
   RBTreeCHeap<int, IPInlineSite, Cmp, mtCompiler>::Cursor cursor = _children.cursor(bci);
 
   if (cursor.found()) { // We already saw a call at this site before
-    IPInlineSite& child = cursor.node()->val();
-    if (callee != nullptr && callee != child._method) {
-      outputStream* stream = child.add(InliningResult::SUCCESS, /* is_callee_change */ true);
-      stream->print("callee changed to ");
-      CompileTask::print_inline_inner_method_info(stream, callee);
-    }
-    return child;
+    return cursor.node()->val();
   }
 
   assert(callee != nullptr, "an inline call is missing in the chain up to the root");
@@ -95,26 +96,43 @@ InlinePrinter::IPInlineSite& InlinePrinter::IPInlineSite::at_bci(int bci, ciMeth
   return node->val();
 }
 
-outputStream* InlinePrinter::IPInlineSite::add(InliningResult result, bool is_callee_change) {
-  _attempts.push(IPInlineAttempt(result, is_callee_change));
+outputStream* InlinePrinter::IPInlineSite::add(ciMethod* callee, InliningResult result) {
+  _attempts.push(IPInlineAttempt(callee, result));
   return _attempts.last().make_stream();
 }
 
 void InlinePrinter::IPInlineSite::dump(outputStream* tty, int level) const {
   assert(_bci != -999, "trying to dump site without source");
 
-  if (_attempts.is_nonempty()) {
-    CompileTask::print_inlining_header(tty, _method, level, _bci);
-  }
+  ciMethod* last_callee = nullptr;
+  bool line_open = false;
   for (int i = 0; i < _attempts.length(); i++) {
     const IPInlineAttempt& attempt = _attempts.at(i);
-    if (attempt.is_callee_change()) {
-      tty->cr();
+    if (attempt.callee() == nullptr) {
+      if (line_open) {
+        tty->cr();
+      } else if (last_callee == nullptr) {
+        CompileTask::print_inlining_header(tty, _method, level, _bci);
+        tty->cr();
+        last_callee = _method;
+      }
       CompileTask::print_inline_indent(level, tty);
+      tty->print_raw(attempt.stream()->base());
+      tty->cr();
+      line_open = false;
+      continue;
+    }
+    if (!line_open || attempt.callee() != last_callee) {
+      if (line_open) {
+        tty->cr();
+      }
+      CompileTask::print_inlining_header(tty, attempt.callee(), level, _bci);
+      line_open = true;
     }
     CompileTask::print_inlining_inner_message(tty, attempt.result(), attempt.stream()->base());
+    last_callee = attempt.callee();
   }
-  if (_attempts.is_nonempty()) {
+  if (line_open) {
     tty->cr();
   }
 

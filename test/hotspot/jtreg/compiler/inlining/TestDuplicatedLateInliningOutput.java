@@ -49,14 +49,14 @@ public class TestDuplicatedLateInliningOutput {
         test(
             NonConstantReceiverLauncher.class,
             "@ (\\d+)\\h+java\\.lang\\.invoke\\.MethodHandle::invokeBasic\\(\\)V \\(\\d+ bytes\\)\\h+failed to inline: receiver not constant"
-                    + "\\R\\h+callee changed to\\h+java\\.lang\\.invoke\\.LambdaForm\\$DMH\\/0x[0-9a-f]+::invokeStatic \\(\\d+ bytes\\)"
+                    + "\\R\\h+@ \\1\\h+java\\.lang\\.invoke\\.LambdaForm\\$DMH\\/0x[0-9a-f]+::invokeStatic \\(\\d+ bytes\\)"
                     + "\\h+force inline by annotation\\h+late inline succeeded \\(method handle\\)",
             "@ (\\d+)\\s+java\\.lang\\.invoke\\.MethodHandle::invokeBasic\\(\\)V \\(\\d+ bytes\\)\\s+failed to inline: receiver not constant");
 
         test(
             VirtualCallLauncher.class,
             "@ (\\d+)\\h+compiler\\.inlining\\.TestDuplicatedLateInliningOutput\\$VirtualCallLauncher\\$A::lateInlined2 \\(\\d+ bytes\\)\\h+failed to inline: virtual call"
-                    + "\\R\\h+callee changed to\\h+compiler\\.inlining\\.TestDuplicatedLateInliningOutput\\$VirtualCallLauncher\\$B::lateInlined2 \\(\\d+ bytes\\)"
+                    + "\\R\\h+@ \\1\\h+compiler\\.inlining\\.TestDuplicatedLateInliningOutput\\$VirtualCallLauncher\\$B::lateInlined2 \\(\\d+ bytes\\)"
                     + "\\h+inline \\(hot\\)\\h+late inline succeeded",
             "@ (\\d+)\\s+compiler\\.inlining\\.TestDuplicatedLateInliningOutput\\$VirtualCallLauncher\\$A::lateInlined2 \\(\\d+ bytes\\)\\s+failed to inline: virtual call"
         );

@@ -80,7 +80,7 @@ static void trace_type_profile(Compile* C, ciMethod* method, JVMState* jvms,
       CompileTask::print_inlining_tty(prof_method, depth, bci, InliningResult::SUCCESS);
       print_trace_type_profile(tty, depth, prof_klass, site_count, receiver_count, true);
     } else {
-      auto stream = C->inline_printer()->record(method, jvms, InliningResult::SUCCESS);
+      auto stream = C->inline_printer()->record_type_profile(prof_method, jvms);
       print_trace_type_profile(stream, depth, prof_klass, site_count, receiver_count, false);
     }
   }

@@ -40,16 +40,16 @@ class InlinePrinter {
 private:
   class IPInlineAttempt {
     InliningResult _result;
-    bool _is_callee_change;
+    ciMethod* _callee;
     stringStream* _stream;
 
   public:
-    IPInlineAttempt() : _is_callee_change(false), _stream(nullptr) {}
+    IPInlineAttempt() : _callee(nullptr), _stream(nullptr) {}
 
-    IPInlineAttempt(InliningResult result, bool is_callee_change) : _result(result), _is_callee_change(is_callee_change), _stream(nullptr) {}
+    IPInlineAttempt(ciMethod* callee, InliningResult result) : _result(result), _callee(callee), _stream(nullptr) {}
 
     InliningResult result() const { return _result; }
-    bool is_callee_change() const { return _is_callee_change; }
+    ciMethod* callee() const { return _callee; }
 
     stringStream* make_stream() {
       assert(_stream == nullptr, "stream already exists");
@@ -107,7 +107,8 @@ private:
     // Returned reference is valid until any at_bci is called with non-null callee.
     IPInlineSite& at_bci(int bci, ciMethod* callee);
     // The returned pointer stays valid until InlinePrinter is destructed.
-    outputStream* add(InliningResult result, bool is_callee_change = false);
+    // A null callee denotes type profile information for this call site.
+    outputStream* add(ciMethod* callee, InliningResult result);
 
     void dump(outputStream* tty, int level) const;
   };
@@ -137,6 +138,9 @@ public:
   // Returns an output stream which stores the message associated with this attempt. The buffer stays valid until InlinePrinter is destructed.
   // You can print arbitrary information to this stream but do not add line breaks, as this will break formatting.
   outputStream* record(ciMethod* callee, JVMState* state, InliningResult result, const char* msg = nullptr);
+
+  // Saves type profile information without recording an inlining attempt.
+  outputStream* record_type_profile(ciMethod* callee, JVMState* state);
 
   // Prints all collected inlining information to the given output stream.
   void print_on(outputStream* tty) const;

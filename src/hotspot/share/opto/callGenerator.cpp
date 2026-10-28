@@ -836,15 +836,15 @@ void CallGenerator::do_late_inline_helper() {
     if (C->failing())      return;
 
     if (is_mh_late_inline()) {
-      C->inline_printer()->record(method(), jvms, InliningResult::SUCCESS, "late inline succeeded (method handle)");
+      C->inline_printer()->record(inline_method, jvms, InliningResult::SUCCESS, "late inline succeeded (method handle)");
     } else if (is_string_late_inline()) {
-      C->inline_printer()->record(method(), jvms, InliningResult::SUCCESS, "late inline succeeded (string method)");
+      C->inline_printer()->record(inline_method, jvms, InliningResult::SUCCESS, "late inline succeeded (string method)");
     } else if (is_boxing_late_inline()) {
-      C->inline_printer()->record(method(), jvms, InliningResult::SUCCESS, "late inline succeeded (boxing method)");
+      C->inline_printer()->record(inline_method, jvms, InliningResult::SUCCESS, "late inline succeeded (boxing method)");
     } else if (is_vector_reboxing_late_inline()) {
-      C->inline_printer()->record(method(), jvms, InliningResult::SUCCESS, "late inline succeeded (vector reboxing method)");
+      C->inline_printer()->record(inline_method, jvms, InliningResult::SUCCESS, "late inline succeeded (vector reboxing method)");
     } else {
-      C->inline_printer()->record(method(), jvms, InliningResult::SUCCESS, "late inline succeeded");
+      C->inline_printer()->record(inline_method, jvms, InliningResult::SUCCESS, "late inline succeeded");
     }
 
     if (inline_cg()->is_inline()) {
