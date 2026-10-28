@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -559,20 +559,42 @@ public class BasicShort
     }
 
     private static void catchIndexOutOfBounds(Buffer b, Runnable thunk) {
-        tryCatch(b, IndexOutOfBoundsException.class, thunk);
+        tryCatch(b, IndexOutOfBoundsException.class, "null", thunk);
     }
 
-    private static void catchIndexOutOfBounds(short[] t, Runnable thunk) {
-        tryCatch(t, IndexOutOfBoundsException.class, thunk);
+    private static void catchIndexOutOfBoundsForIndex(Buffer b, Runnable thunk) {
+        tryCatch(b, IndexOutOfBoundsException.class, "Index [-]?\\d+ out of bounds for length \\d+", thunk);
+    }
+
+    private static void catchIndexOutOfBoundsForRange(Buffer b, Runnable thunk) {
+        tryCatch(b, IndexOutOfBoundsException.class, "Range .+ out of bounds for length \\d+", thunk);
+    }
+
+    private static void catchIndexOutOfBoundsForRange(short[] t, Runnable thunk) {
+        tryCatch(t, IndexOutOfBoundsException.class, "Range .+ out of bounds for length \\d+", thunk);
     }
 
     private static void tryCatch(Buffer b, Class<?> ex, Runnable thunk) {
+        tryCatch(b, ex, null, thunk);
+    }
+
+    private static void tryCatch(Buffer b, Class<?> ex, String messagePattern, Runnable thunk) {
         boolean caught = false;
         try {
             thunk.run();
         } catch (Throwable x) {
             if (ex.isAssignableFrom(x.getClass())) {
                 caught = true;
+                var message = x.getMessage();
+                if (message == null) {
+                    message = "null";
+                }
+                if (messagePattern != null && !message.matches(messagePattern)) {
+                    var reason = String.format(
+                        "%s message \"%s\" does not match pattern \"%s\"",
+                        ex.getName(), message, messagePattern);
+                    fail(reason, b);
+                }
             } else {
                 String s = x.getMessage();
                 if (s == null)
@@ -586,7 +608,11 @@ public class BasicShort
     }
 
     private static void tryCatch(short[] t, Class<?> ex, Runnable thunk) {
-        tryCatch(ShortBuffer.wrap(t), ex, thunk);
+        tryCatch(ShortBuffer.wrap(t), ex, null, thunk);
+    }
+
+    private static void tryCatch(short[] t, Class<?> ex, String messagePattern, Runnable thunk) {
+        tryCatch(ShortBuffer.wrap(t), ex, messagePattern, thunk);
     }
 
     public static void test(int level, final ShortBuffer b, boolean direct) {
@@ -724,9 +750,9 @@ public class BasicShort
         tryCatch(b, BufferUnderflowException.class, () -> b.get());
         tryCatch(b, BufferOverflowException.class, () -> b.put((short)42));
         // The index must be non-negative and less than the buffer's limit.
-        catchIndexOutOfBounds(b, () -> b.get(b.limit()));
-        catchIndexOutOfBounds(b, () -> b.get(-1));
-        catchIndexOutOfBounds(b, () -> b.put(b.limit(), (short)42));
+        catchIndexOutOfBoundsForIndex(b, () -> b.get(b.limit()));
+        catchIndexOutOfBoundsForIndex(b, () -> b.get(-1));
+        catchIndexOutOfBoundsForIndex(b, () -> b.put(b.limit(), (short)42));
         tryCatch(b, InvalidMarkException.class,
                 () -> b.position(0).mark().compact().reset());
 
@@ -776,24 +802,24 @@ public class BasicShort
         catchNullArgument(b, () -> b.put(7, (short[])null, 0, 42));
 
         short[] tmpa = new short[42];
-        catchIndexOutOfBounds(b, () -> b.get(7, tmpa, -1, 42));
-        catchIndexOutOfBounds(b, () -> b.get(7, tmpa, 42, 1));
-        catchIndexOutOfBounds(b, () -> b.get(7, tmpa, 41, -1));
-        catchIndexOutOfBounds(b, () -> b.get(-1, tmpa, 0, 1));
-        catchIndexOutOfBounds(b, () -> b.get(b.limit(), tmpa, 0, 1));
-        catchIndexOutOfBounds(b, () -> b.get(b.limit() - 41, tmpa, 0, 42));
+        catchIndexOutOfBoundsForRange(b, () -> b.get(7, tmpa, -1, 42));
+        catchIndexOutOfBoundsForRange(b, () -> b.get(7, tmpa, 42, 1));
+        catchIndexOutOfBoundsForRange(b, () -> b.get(7, tmpa, 41, -1));
+        catchIndexOutOfBoundsForRange(b, () -> b.get(-1, tmpa, 0, 1));
+        catchIndexOutOfBoundsForRange(b, () -> b.get(b.limit(), tmpa, 0, 1));
+        catchIndexOutOfBoundsForRange(b, () -> b.get(b.limit() - 41, tmpa, 0, 42));
 
-        catchIndexOutOfBounds(b, () -> b.put(7, tmpa, -1, 42));
-        catchIndexOutOfBounds(b, () -> b.put(7, tmpa, 42, 1));
-        catchIndexOutOfBounds(b, () -> b.put(7, tmpa, 41, -1));
-        catchIndexOutOfBounds(b, () -> b.put(-1, tmpa, 0, 1));
-        catchIndexOutOfBounds(b, () -> b.put(b.limit(), tmpa, 0, 1));
-        catchIndexOutOfBounds(b, () -> b.put(b.limit() - 41, tmpa, 0, 42));
+        catchIndexOutOfBoundsForRange(b, () -> b.put(7, tmpa, -1, 42));
+        catchIndexOutOfBoundsForRange(b, () -> b.put(7, tmpa, 42, 1));
+        catchIndexOutOfBoundsForRange(b, () -> b.put(7, tmpa, 41, -1));
+        catchIndexOutOfBoundsForRange(b, () -> b.put(-1, tmpa, 0, 1));
+        catchIndexOutOfBoundsForRange(b, () -> b.put(b.limit(), tmpa, 0, 1));
+        catchIndexOutOfBoundsForRange(b, () -> b.put(b.limit() - 41, tmpa, 0, 42));
 
-        catchIndexOutOfBounds(b, () -> b.slice(-1, 7));
-        catchIndexOutOfBounds(b, () -> b.slice(b.limit() + 1, 7));
-        catchIndexOutOfBounds(b, () -> b.slice(0, -1));
-        catchIndexOutOfBounds(b, () -> b.slice(7, b.limit() - 7 + 1));
+        catchIndexOutOfBoundsForRange(b, () -> b.slice(-1, 7));
+        catchIndexOutOfBoundsForRange(b, () -> b.slice(b.limit() + 1, 7));
+        catchIndexOutOfBoundsForRange(b, () -> b.slice(0, -1));
+        catchIndexOutOfBoundsForRange(b, () -> b.slice(7, b.limit() - 7 + 1));
 
         // Values
 
@@ -1143,10 +1169,10 @@ public class BasicShort
         ck(b, b.limit(), offset + length);
 
         // The offset must be non-negative and no larger than <array.length>.
-        catchIndexOutOfBounds(ba, () -> ShortBuffer.wrap(ba, -1, ba.length));
-        catchIndexOutOfBounds(ba, () -> ShortBuffer.wrap(ba, ba.length + 1, ba.length));
-        catchIndexOutOfBounds(ba, () -> ShortBuffer.wrap(ba, 0, -1));
-        catchIndexOutOfBounds(ba, () -> ShortBuffer.wrap(ba, 0, ba.length + 1));
+        catchIndexOutOfBoundsForRange(ba, () -> ShortBuffer.wrap(ba, -1, ba.length));
+        catchIndexOutOfBoundsForRange(ba, () -> ShortBuffer.wrap(ba, ba.length + 1, ba.length));
+        catchIndexOutOfBoundsForRange(ba, () -> ShortBuffer.wrap(ba, 0, -1));
+        catchIndexOutOfBoundsForRange(ba, () -> ShortBuffer.wrap(ba, 0, ba.length + 1));
 
         // A NullPointerException will be thrown if the array is null.
         tryCatch(ba, NullPointerException.class,
