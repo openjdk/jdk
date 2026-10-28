@@ -9062,8 +9062,8 @@ instruct moveI2F_reg_stack(stackSlotF dst, iRegIorL2I src) %{
 instruct moveD2L_stack_reg(iRegLdst dst, stackSlotD src) %{
   match(Set dst (MoveD2L src));
   ins_cost(MEMORY_REF_COST);
-  size(4);
   format %{ "LD      $dst, $src \t// MoveD2L" %}
+  size(4);
   ins_encode( enc_ld(dst, src) );
   ins_pipe(pipe_class_memory);
 %}
@@ -9071,12 +9071,22 @@ instruct moveD2L_stack_reg(iRegLdst dst, stackSlotD src) %{
 // Move double value from double register to long stack-location.
 instruct moveD2L_reg_stack(stackSlotL dst, regD src) %{
   match(Set dst (MoveD2L src));
-  effect(DEF dst, USE src);
   ins_cost(MEMORY_REF_COST);
-
   format %{ "STFD    $src, $dst \t// MoveD2L" %}
   size(4);
   ins_encode( enc_stfd(src, dst) );
+  ins_pipe(pipe_class_memory);
+%}
+
+// Move directly between registers.
+instruct moveD2L_reg_reg(iRegLdst dst, regD src) %{
+  match(Set dst (MoveD2L src));
+  ins_cost(DEFAULT_COST);
+  format %{ "MFFPRD  $src, $dst \t// MoveD2L" %}
+  size(4);
+  ins_encode %{
+    __ mffprd($dst$$Register, $src$$FloatRegister);
+  %}
   ins_pipe(pipe_class_memory);
 %}
 
