@@ -125,18 +125,17 @@ public sealed interface ValueLayout extends MemoryLayout
     /**
      * An integral value layout models an integral data type.
      * <p>
-     * Values represented by {@linkplain OfIntegral integral} layouts
+     * Values associated with {@linkplain OfIntegral integral} layouts
      * can be either signed or unsigned. The signedness of an integral
      * value layout has no effect on the memory access operations
-     * provided by this package. However, signedness is relevant when
-     * values represented by integral layouts are widened. For example,
+     * involving that integral layout. However, signedness is relevant when
+     * values associated with integral layouts are widened. For example,
      * when an {@code int} is widened to a {@code long}, the signedness
      * determines whether the value should be sign extended as specified
      * by {@jls 5.1.2}, or zero extended as specified by the
-     * {@link Integer#toUnsignedLong(int)} method. A user who is interested
-     * in widening values represented by integral value layouts may wish
-     * to use the signedness of the layout to select the correct widening
-     * mode.
+     * {@link Integer#toUnsignedLong(int)} method. As such, the signedness
+     * of an integral value layout allows clients to select the correct
+     * widening mode for values associated with that layout.
      */
     sealed interface OfIntegral extends ValueLayout permits ValueLayout.OfByte,
             ValueLayout.OfShort, ValueLayout.OfInt, ValueLayout.OfLong {
@@ -497,8 +496,9 @@ public sealed interface ValueLayout extends MemoryLayout
     AddressLayout ADDRESS = ValueLayouts.OfAddressImpl.of(ByteOrder.nativeOrder());
 
     /**
-     * A value layout constant whose size is the same as that of a Java {@code byte},
-     * byte alignment set to 1, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * An integral value layout constant whose size is the same as that of a Java {@code byte},
+     * byte alignment set to 1, byte order set to {@link ByteOrder#nativeOrder()},
+     * and signedness set to {@code true}.
      */
     OfByte JAVA_BYTE = ValueLayouts.OfByteImpl.of(ByteOrder.nativeOrder());
 
@@ -515,20 +515,23 @@ public sealed interface ValueLayout extends MemoryLayout
     OfChar JAVA_CHAR = ValueLayouts.OfCharImpl.of(ByteOrder.nativeOrder());
 
     /**
-     * A value layout constant whose size is the same as that of a Java {@code short},
-     * byte alignment set to 2, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * An integral value layout constant whose size is the same as that of a Java {@code short},
+     * byte alignment set to 2, byte order set to {@link ByteOrder#nativeOrder()},
+     * and signedness set to {@code true}.
      */
     OfShort JAVA_SHORT = ValueLayouts.OfShortImpl.of(ByteOrder.nativeOrder());
 
     /**
-     * A value layout constant whose size is the same as that of a Java {@code int},
-     * byte alignment set to 4, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * An integral value layout constant whose size is the same as that of a Java {@code int},
+     * byte alignment set to 4, byte order set to {@link ByteOrder#nativeOrder()},
+     * and signedness set to {@code true}.
      */
     OfInt JAVA_INT = ValueLayouts.OfIntImpl.of(ByteOrder.nativeOrder());
 
     /**
-     * A value layout constant whose size is the same as that of a Java {@code long},
-     * byte alignment set to 8, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * An integral value layout constant whose size is the same as that of a Java {@code long},
+     * byte alignment set to 8, and byte order set to {@link ByteOrder#nativeOrder()},
+     * and signedness set to {@code true}.
      */
     OfLong JAVA_LONG = ValueLayouts.OfLongImpl.of(ByteOrder.nativeOrder());
 
