@@ -163,12 +163,6 @@ DEF_Agent_OnLoad(JavaVM *vm, char *tail, void * reserved) {
         return JNI_ERR;
     }
 
-    initerror = createNewJPLISAgent(vm, &agent, jarfile, JNI_FALSE);
-    if (initerror != JPLIS_INIT_ERROR_NONE) {
-        result = JNI_ERR;
-        goto releaseAndReturn;
-    }
-
     /*
      * Agent_OnLoad is specified to provide the agent options
      * argument tail in modified UTF8. However for 1.5.0 this is
@@ -192,7 +186,6 @@ DEF_Agent_OnLoad(JavaVM *vm, char *tail, void * reserved) {
         result = JNI_ERR;
         goto releaseAndReturn;
     }
-
     /*
      * The value of the Premain-Class attribute becomes the agent
      * class name. The manifest is in UTF8 so need to convert to
@@ -227,6 +220,24 @@ DEF_Agent_OnLoad(JavaVM *vm, char *tail, void * reserved) {
     }
 
     /*
+     * Create JPLISAgent with JVMTI environment
+     */
+    initerror = createNewJPLISAgent(vm, &agent, jarfile, JNI_FALSE);
+    if (initerror != JPLIS_INIT_ERROR_NONE) {
+        result = JNI_ERR;
+        goto releaseAndReturn;
+    }
+
+    /*
+     * Track (record) the agent class name and options data
+     */
+    initerror = recordCommandLineData(agent, premainClassJNI, options);
+    if (initerror != JPLIS_INIT_ERROR_NONE) {
+        result = JNI_ERR;
+        goto releaseAndReturn;
+    }
+
+    /*
      * If the Boot-Class-Path attribute is specified then we process
      * each relative URL and add it to the bootclasspath.
      */
@@ -239,14 +250,6 @@ DEF_Agent_OnLoad(JavaVM *vm, char *tail, void * reserved) {
      * Convert JAR attributes into agent capabilities
      */
     convertCapabilityAttributes(attributes, agent);
-
-    /*
-     * Track (record) the agent class name and options data
-     */
-    initerror = recordCommandLineData(agent, premainClassJNI, options);
-    if (initerror != JPLIS_INIT_ERROR_NONE) {
-        result = JNI_ERR;
-    }
 
     /*
      * Clean-up
@@ -308,6 +311,7 @@ DEF_Agent_OnAttach(JavaVM* vm, char *args, void * reserved) {
     char *                   agentClassJNI  = NULL;
     char *                   bootClassPath  = NULL;
     int                      oldLen, newLen;
+    jboolean                 print_warning;
 
     /*
      * Need JNIEnv - guaranteed to be called from thread that is already
@@ -321,12 +325,6 @@ DEF_Agent_OnAttach(JavaVM* vm, char *args, void * reserved) {
      */
     if (parseArgumentTail(args, &jarfile, &options) != 0) {
         return JNI_ENOMEM;
-    }
-
-    jboolean print_warning = JVM_PrintWarningAtDynamicAgentLoad();
-    if (createNewJPLISAgent(vm, &agent, jarfile, print_warning) != JPLIS_INIT_ERROR_NONE) {
-        result = JNI_ERR;
-        goto releaseAndReturn;
     }
 
     /*
@@ -346,18 +344,6 @@ DEF_Agent_OnAttach(JavaVM* vm, char *args, void * reserved) {
         result = AGENT_ERROR_BADJAR;
         goto releaseAndReturn;
     }
-
-    /*
-     * Add the jarfile to the system class path
-     */
-    if (appendClassPath(agent, jarfile)) {
-        fprintf(stderr, "Unable to add %s to system class path "
-            "- not supported by system class loader or configuration error!\n",
-            jarfile);
-        result = AGENT_ERROR_NOTONCP;
-        goto releaseAndReturn;
-    }
-
     /*
      * The value of the Agent-Class attribute becomes the agent
      * class name. The manifest is in UTF8 so need to convert to
@@ -387,6 +373,26 @@ DEF_Agent_OnAttach(JavaVM* vm, char *args, void * reserved) {
     }
     if (agentClassJNI == NULL) {
         result = JNI_ENOMEM;
+        goto releaseAndReturn;
+    }
+
+    /*
+     * Create JPLISAgent with JVMTI environment
+     */
+    print_warning = JVM_PrintWarningAtDynamicAgentLoad();
+    if (createNewJPLISAgent(vm, &agent, jarfile, print_warning) != JPLIS_INIT_ERROR_NONE) {
+        result = JNI_ERR;
+        goto releaseAndReturn;
+    }
+
+    /*
+     * Add the jarfile to the system class path
+     */
+    if (appendClassPath(agent, jarfile)) {
+        fprintf(stderr, "Unable to add %s to system class path "
+            "- not supported by system class loader or configuration error!\n",
+            jarfile);
+        result = AGENT_ERROR_NOTONCP;
         goto releaseAndReturn;
     }
 
@@ -463,7 +469,7 @@ DEF_Agent_OnUnload(JavaVM *vm) {
  */
 jint loadAgent(JNIEnv* env, jstring path) {
     JavaVM* vm;
-    JPLISAgent* agent;
+    JPLISAgent* agent = NULL;
     const char* jarfile = NULL;
     jarAttribute* attributes = NULL;
     char* agentClass;
@@ -482,11 +488,6 @@ jint loadAgent(JNIEnv* env, jstring path) {
         return JNI_ERR;
     }
 
-    // create JPLISAgent with JVMTI environment
-    if (createNewJPLISAgent(vm, &agent, jarfile, JNI_FALSE) != JPLIS_INIT_ERROR_NONE) {
-        goto releaseAndReturn;
-    }
-
     // read the attributes in the main section of JAR manifest
     attributes = readAttributes(jarfile);
     if (attributes == NULL) {
@@ -498,7 +499,6 @@ jint loadAgent(JNIEnv* env, jstring path) {
     if (agentClass == NULL) {
         goto releaseAndReturn;
     }
-
     // The value of Launcher-Agent-Class is in UTF-8, convert it to modified UTF-8
     oldLen = (int) strlen(agentClass);
     newLen = modifiedUtf8LengthOfUtf8(agentClass, oldLen);
@@ -524,6 +524,11 @@ jint loadAgent(JNIEnv* env, jstring path) {
          jthrowable oome = createThrowable(env, "java/lang/OutOfMemoryError", NULL);
          if (oome != NULL) (*env)->Throw(env, oome);
          goto releaseAndReturn;
+    }
+
+    // create JPLISAgent with JVMTI environment
+    if (createNewJPLISAgent(vm, &agent, jarfile, JNI_FALSE) != JPLIS_INIT_ERROR_NONE) {
+        goto releaseAndReturn;
     }
 
     // Boot-Class-Path
