@@ -110,7 +110,7 @@ inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
 }
 
 // Use .insn so baseline builds do not require assembler support for Zacas/Zabha.
-// .insn r opcode, funct3, funct7, rd, rs1, rs2; 
+// .insn r opcode, funct3, funct7, rd, rs1, rs2.
 // opcode: 0x2f selects the AMO instruction group.
 // funct3: 0b000 for byte, 0b010 for word, 0b011 for doubleword.
 // funct7: (AMOCAS funct5 0b00101 << 2) | aqrl = 0x14 | aqrl.
