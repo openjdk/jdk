@@ -1334,7 +1334,6 @@ public class Properties extends Hashtable<Object,Object> {
      */
     @Override
     @Deprecated(since = "28")
-    @SuppressWarnings("deprecated")
     public boolean contains(Object value) {
         return map.containsValue(value);
     }
