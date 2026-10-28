@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,6 +336,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
         crs.beforeFirst();
 
         int rows =1;
+        String[] primaryKeys = null;
         while (crs.next()) {
             if (crs.rowDeleted()) {
                 // The row has been deleted.
@@ -350,9 +351,18 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
 
            } else if (crs.rowInserted()) {
                 // The row has been inserted.
-
                 pstmtIns = con.prepareStatement(insertCmd);
-                if (insertNewRow(crs, pstmtIns, this.crsResolve)) {
+                if (primaryKeys == null) {
+                    try (ResultSet rs = con.getMetaData().getPrimaryKeys(null, null,
+                            crs.getTableName())) {
+                        var pks = new ArrayList<String>();
+                        while (rs.next()) {
+                            pks.add(rs.getString("COLUMN_NAME"));
+                        }
+                        primaryKeys = pks.toArray(new String[0]);
+                    }
+                }
+                if (insertNewRow(crs, pstmtIns, primaryKeys)) {
                           status.add(rows, SyncResolver.INSERT_ROW_CONFLICT);
                           conflicts++;
                 } else {
@@ -466,28 +476,6 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
 
         try {
             updateWhere = buildWhereClause(updateWhere, origVals);
-
-
-             /**
-              *  The following block of code is for checking a particular type of
-              *  query where in there is a where clause. Without this block, if a
-              *  SQL statement is built the "where" clause will appear twice hence
-              *  the DB errors out and a SQLException is thrown. This code also
-              *  considers that the where clause is in the right place as the
-              *  CachedRowSet object would already have been populated with this
-              *  query before coming to this point.
-              **/
-
-
-            String tempselectCmd = selectCmd.toLowerCase();
-
-            int idxWhere = tempselectCmd.indexOf("where");
-
-            if(idxWhere != -1)
-            {
-               String tempSelect = selectCmd.substring(0,idxWhere);
-               selectCmd = tempSelect;
-            }
 
             pstmt = con.prepareStatement(selectCmd + updateWhere,
                         ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -816,31 +804,24 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     *            and to whose underlying data source the row will be inserted
     * @param pstmt the {@code PreparedStatement} object that will be used
     *              to execute the insertion
+    * @param primaryKeys the {@code String[]} of primary key columns from the underlying
+    *                    data source
     * @return {@code false} to indicate that the insertion was successful;
     *         {@code true} otherwise
     * @throws SQLException if a database access error occurs
     */
    private boolean insertNewRow(CachedRowSet crs,
-       PreparedStatement pstmt, CachedRowSetImpl crsRes) throws SQLException {
+                                PreparedStatement pstmt, String[] primaryKeys) throws SQLException {
 
        boolean returnVal = false;
 
        try (PreparedStatement pstmtSel = con.prepareStatement(selectCmd,
                        ResultSet.TYPE_SCROLL_SENSITIVE,
                        ResultSet.CONCUR_READ_ONLY);
-            ResultSet rs = pstmtSel.executeQuery();
-            ResultSet rs2 = con.getMetaData().getPrimaryKeys(null, null,
-                       crs.getTableName())
-       ) {
+            ResultSet rs = pstmtSel.executeQuery()) {
 
            ResultSetMetaData rsmd = crs.getMetaData();
            int icolCount = rsmd.getColumnCount();
-           String[] primaryKeys = new String[icolCount];
-           int k = 0;
-           while (rs2.next()) {
-               primaryKeys[k] = rs2.getString("COLUMN_NAME");
-               k++;
-           }
 
            if (rs.next()) {
                for (String pkName : primaryKeys) {
@@ -1122,24 +1103,6 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
         updateCmd = "UPDATE " + buildTableName(dbmd, catalog, schema, table);
 
 
-        /**
-         *  The following block of code is for checking a particular type of
-         *  query where in there is a where clause. Without this block, if a
-         *  SQL statement is built the "where" clause will appear twice hence
-         *  the DB errors out and a SQLException is thrown. This code also
-         *  considers that the where clause is in the right place as the
-         *  CachedRowSet object would already have been populated with this
-         *  query before coming to this point.
-         **/
-
-        String tempupdCmd = updateCmd.toLowerCase();
-
-        int idxupWhere = tempupdCmd.indexOf("where");
-
-        if(idxupWhere != -1)
-        {
-           updateCmd = updateCmd.substring(0,idxupWhere);
-        }
         updateCmd += "SET ";
 
         /*

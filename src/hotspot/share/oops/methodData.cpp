@@ -22,9 +22,9 @@
  *
  */
 
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/cdsConfig.hpp"
 #include "ci/ciMethodData.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -324,7 +324,7 @@ static bool is_excluded(Klass* k) {
       log_debug(aot, training)("Purged %s from MDO: unloaded class", k->name()->as_C_string());
       return true;
     } else {
-      bool excluded = SystemDictionaryShared::should_be_excluded(k) || !SystemDictionaryShared::is_builtin_loader(k->class_loader_data());
+      bool excluded = AOTSystemDictionary::should_be_excluded(k) || !AOTSystemDictionary::is_builtin_loader(k->class_loader_data());
       if (excluded) {
         log_debug(aot, training)("Purged %s from MDO: excluded class", k->name()->as_C_string());
       }
@@ -1708,7 +1708,7 @@ bool MethodData::profile_array_accesses() {
 }
 
 bool MethodData::profile_acmp() {
-  return COMPILER2_PRESENT(UseACmpProfile ||) TypeProfileLevel > 0;
+  return COMPILER2_PRESENT(UseACmpProfile ||) (Arguments::is_valhalla_enabled() && TypeProfileLevel > 0);
 }
 
 bool MethodData::profile_all_parameters() {

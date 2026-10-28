@@ -62,7 +62,6 @@ public:
 // Base class for all the classes that represent heap region sets. It contains the
 // basic attributes that each set needs to maintain (e.g., number of regions) plus
 // any shared functionality (e.g., verification).
-
 class G1HeapRegionSetBase {
   friend class VMStructs;
 
@@ -105,7 +104,6 @@ public:
 
   virtual void verify();
   void verify_start();
-  void verify_next_region(G1HeapRegion* hr);
   void verify_end();
 
   void verify_optional() { DEBUG_ONLY(verify();) }
@@ -117,7 +115,6 @@ public:
 // explicitly tracked. It's helpful to group regions using such sets
 // so that we can reason about all the region groups in the heap using
 // the same interface (namely, the G1HeapRegionSetBase API).
-
 class G1HeapRegionSet : public G1HeapRegionSetBase {
 public:
   G1HeapRegionSet(const char* name, G1HeapRegionSetChecker* checker):
@@ -133,18 +130,9 @@ public:
 // sorted list. We should try to avoid doing operations that iterate over
 // such lists in performance critical paths. Typically we should
 // add / remove one region at a time or concatenate two lists.
-
-class G1FreeRegionListIterator;
-class G1NUMA;
-
 class G1FreeRegionList : public G1HeapRegionSetBase {
-  friend class G1FreeRegionListIterator;
-
-private:
-
   // This class is only initialized if there are multiple active nodes.
   class NodeInfo : public CHeapObj<mtGC> {
-    G1NUMA* _numa;
     uint*   _num_regions_on_node;
     uint    _num_nodes;
 
@@ -173,8 +161,8 @@ private:
 
   static uint _unrealistically_large_num_regions;
 
-  inline G1HeapRegion* remove_from_head_impl();
-  inline G1HeapRegion* remove_from_tail_impl();
+  inline void unlink_from_list(G1HeapRegion* cur);
+  inline void remove_from_list(G1HeapRegion* cur);
 
   inline void increase_num_regions(uint node_index);
   inline void decrease_num_regions(uint node_index);
@@ -184,9 +172,10 @@ private:
   void add_list_common_end(G1FreeRegionList* from_list);
 
   void verify_region_to_remove(G1HeapRegion* curr, G1HeapRegion* next) NOT_DEBUG_RETURN;
-protected:
-  // See the comment for G1HeapRegionSetBase::clear()
-  virtual void clear();
+
+  void clear();
+
+  G1HeapRegion* find_region_to_remove(bool from_head, uint requested_node_index);
 
 public:
   G1FreeRegionList(const char* name, G1HeapRegionSetChecker* checker = nullptr);
@@ -209,11 +198,11 @@ public:
   // Same restrictions as above, but adds the region last in the list.
   inline void add_to_tail(G1HeapRegion* region_to_add);
 
-  // Removes from head or tail based on the given argument.
-  G1HeapRegion* remove_region(bool from_head);
-
-  G1HeapRegion* remove_region_with_node_index(bool from_head,
-                                            uint requested_node_index);
+  // Finds and removes the next fitting region from the free list from head or tail.
+  // If NUMA support is enabled, initially tries to match the result to be on the
+  // requested node. This search is limited by G1NUMA's maximum search depth; if no
+  // matching region is found or not using NUMA, just takes the first.
+  G1HeapRegion* remove_region(bool from_head, uint requested_node_index);
 
   // Merge two ordered lists. The result is also ordered. The order is
   // determined by hrm_index.
@@ -234,40 +223,7 @@ public:
 
   virtual void verify();
 
-  using G1HeapRegionSetBase::num_regions;
   uint num_regions_on_node(uint node_index) const;
-};
-
-// Iterator class that provides a convenient way to iterate over the
-// regions of a FreeRegionList.
-
-class G1FreeRegionListIterator : public StackObj {
-private:
-  G1FreeRegionList* _list;
-  G1HeapRegion*   _curr;
-
-public:
-  bool more_available() {
-    return _curr != nullptr;
-  }
-
-  G1HeapRegion* get_next() {
-    assert(more_available(),
-           "get_next() should be called when more regions are available");
-
-    // If we are going to introduce a count in the iterator we should
-    // do the "cycle" check.
-
-    G1HeapRegion* hr = _curr;
-    _list->verify_region(hr);
-    _curr = hr->next();
-    return hr;
-  }
-
-  G1FreeRegionListIterator(G1FreeRegionList* list)
-  : _list(list),
-    _curr(list->_head) {
-  }
 };
 
 #endif // SHARE_GC_G1_G1HEAPREGIONSET_HPP

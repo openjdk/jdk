@@ -23,17 +23,17 @@
  */
 
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotModules.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "jni.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -409,11 +409,11 @@ void ModuleEntry::metaspace_pointers_do(MetaspaceClosure* it) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 bool ModuleEntry::should_be_archived() const {
-  return SystemDictionaryShared::is_builtin_loader(loader_data());
+  return AOTSystemDictionary::is_builtin_loader(loader_data());
 }
 
 void ModuleEntry::remove_unshareable_info() {
-  _archived_module_index = HeapShared::append_root(module_oop());
+  _archived_module_index = AOTHeap::append_root(module_oop());
 
   if (_reads != nullptr) {
     _reads->set_in_aot_cache();
@@ -449,12 +449,12 @@ void ModuleEntry::load_from_archive(ClassLoaderData* loader_data) {
 }
 
 void ModuleEntry::preload_archived_oops() {
-  (void)HeapShared::get_root(_archived_module_index, false /* clear */);
+  (void)AOTHeap::get_root(_archived_module_index, false /* clear */);
 }
 
 void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
   assert(CDSConfig::is_using_full_module_graph(), "runtime only");
-  Handle module_handle(Thread::current(), HeapShared::get_root(_archived_module_index, /*clear=*/true));
+  Handle module_handle(Thread::current(), AOTHeap::get_root(_archived_module_index, /*clear=*/true));
   assert(module_handle.not_null(), "huh");
   set_module_handle(loader_data->add_handle(module_handle));
 
@@ -475,7 +475,7 @@ void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
 
 void ModuleEntry::clear_archived_oops() {
   assert(CDSConfig::is_using_archive() && !CDSConfig::is_using_full_module_graph(), "runtime only");
-  HeapShared::clear_root(_archived_module_index);
+  AOTHeap::clear_root(_archived_module_index);
 }
 
 static int compare_module_by_name(ModuleEntry* a, ModuleEntry* b) {

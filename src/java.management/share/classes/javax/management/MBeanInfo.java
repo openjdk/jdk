@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -511,16 +511,18 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
 
            We don't bother synchronizing, because, at worst, n different
            threads will compute the same hashCode at the same time.  */
-        if (hashCode != 0)
-            return hashCode;
+        int hash = hashCode;
+        if (hash != 0)
+            return hash;
 
-        hashCode = Objects.hash(getClassName(), getDescriptor())
+        hash = Objects.hash(getClassName(), getDescriptor())
                 ^ Arrays.hashCode(fastGetAttributes())
                 ^ Arrays.hashCode(fastGetOperations())
                 ^ Arrays.hashCode(fastGetConstructors())
                 ^ Arrays.hashCode(fastGetNotifications());
 
-        return hashCode;
+        hashCode = hash;
+        return hash;
     }
 
     /**

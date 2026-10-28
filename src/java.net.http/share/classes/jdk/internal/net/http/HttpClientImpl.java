@@ -1839,8 +1839,8 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     }
 
     private void initFilters() {
-        addFilter(AuthenticationFilter.class);
         addFilter(RedirectFilter.class);
+        addFilter(AuthenticationFilter.class);
         if (this.cookieHandler != null) {
             addFilter(CookieFilter.class);
         }

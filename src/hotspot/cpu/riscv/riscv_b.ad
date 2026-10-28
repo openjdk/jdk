@@ -329,7 +329,7 @@ instruct bits_reverse_L(iRegLNoSp dst, iRegL src)
 
 
 // Shift Add Pointer
-instruct shaddP_reg_reg_b(iRegPNoSp dst, iRegP src1, iRegL src2, immIScale imm) %{
+instruct shaddP_reg_reg_b(iRegPNoSp dst, iRegPorL2P src1, iRegL src2, immIScale imm) %{
   predicate(UseZba);
   match(Set dst (AddP src1 (LShiftL src2 imm)));
 
@@ -346,7 +346,7 @@ instruct shaddP_reg_reg_b(iRegPNoSp dst, iRegP src1, iRegL src2, immIScale imm) 
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct shaddP_reg_reg_ext_b(iRegPNoSp dst, iRegP src1, iRegI src2, immIScale imm) %{
+instruct shaddP_reg_reg_ext_b(iRegPNoSp dst, iRegPorL2P src1, iRegI src2, immIScale imm) %{
   predicate(UseZba);
   match(Set dst (AddP src1 (LShiftL (ConvI2L src2) imm)));
 
@@ -518,7 +518,7 @@ instruct maxI_reg_reg_b(iRegINoSp dst, iRegI src1, iRegI src2) %{
 // n.b. this is selected in preference to the rule above because it
 // avoids loading constant 0 into a source register
 
-instruct minI_reg_zero_b(iRegINoSp dst, iRegI src1, immI0 zero) %{
+instruct minI_reg_zero_b(iRegINoSp dst, iRegI src1, immI_0 zero) %{
   predicate(UseZbb);
   match(Set dst (MinI src1 zero));
   match(Set dst (MinI zero src1));
@@ -533,7 +533,7 @@ instruct minI_reg_zero_b(iRegINoSp dst, iRegI src1, immI0 zero) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct maxI_reg_zero_b(iRegINoSp dst, iRegI src1, immI0 zero) %{
+instruct maxI_reg_zero_b(iRegINoSp dst, iRegI src1, immI_0 zero) %{
   predicate(UseZbb);
   match(Set dst (MaxI src1 zero));
   match(Set dst (MaxI zero src1));
@@ -652,7 +652,7 @@ instruct ornL_reg_reg_b(iRegLNoSp dst, iRegL src1, iRegL src2, immL_M1 m1) %{
 %}
 
 // AndI 0b0..010..0 + ConvI2B
-instruct convI2Bool_andI_reg_immIpowerOf2(iRegINoSp dst, iRegIorL2I src, immIpowerOf2 mask) %{
+instruct convI2Bool_andI_reg_immIpowerOf2(iRegINoSp dst, iRegIorL2I src, immI_single_set_bit mask) %{
   predicate(UseZbs);
   match(Set dst (Conv2B (AndI src mask)));
   ins_cost(ALU_COST);
@@ -663,4 +663,103 @@ instruct convI2Bool_andI_reg_immIpowerOf2(iRegINoSp dst, iRegIorL2I src, immIpow
   %}
 
   ins_pipe(ialu_reg_reg);
+%}
+
+instruct andL_urshiftL_reg_1(iRegLNoSp dst, iRegL src1, iRegIorL2I src2, immL_1 one) %{
+  predicate(UseZbs);
+  match(Set dst (AndL (URShiftL src1 src2) one));
+  ins_cost(ALU_COST);
+
+  format %{ "bext  $dst, $src1, $src2\t#@andL_urshiftL_reg_1" %}
+  ins_encode %{
+    __ bext(as_Register($dst$$reg), as_Register($src1$$reg),
+            as_Register($src2$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct orL_reg_lshiftL_1(iRegLNoSp dst, iRegL src, immL_1 one, iRegIorL2I shift) %{
+  predicate(UseZbs);
+  match(Set dst (OrL src (LShiftL one shift)));
+  ins_cost(ALU_COST);
+
+  format %{ "bset  $dst, $src, $shift\t#@orL_reg_lshiftL_1" %}
+  ins_encode %{
+    __ bset(as_Register($dst$$reg), as_Register($src$$reg),
+            as_Register($shift$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct xorL_reg_lshiftL_1(iRegLNoSp dst, iRegL src, immL_1 one, iRegIorL2I shift) %{
+  predicate(UseZbs);
+  match(Set dst (XorL src (LShiftL one shift)));
+  ins_cost(ALU_COST);
+
+  format %{ "binv  $dst, $src, $shift\t#@xorL_reg_lshiftL_1" %}
+  ins_encode %{
+    __ binv(as_Register($dst$$reg), as_Register($src$$reg),
+            as_Register($shift$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct andL_reg_lshiftL_1_not(iRegLNoSp dst, iRegL src, immL_1 one, iRegIorL2I shift, immL_M1 m1) %{
+  predicate(UseZbs);
+  match(Set dst (AndL src (XorL (LShiftL one shift) m1)));
+  ins_cost(ALU_COST);
+
+  format %{ "bclr  $dst, $src, $shift\t#@andL_reg_lshiftL_1_not" %}
+  ins_encode %{
+    __ bclr(as_Register($dst$$reg), as_Register($src$$reg),
+            as_Register($shift$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Prefer ori/xori/andi when the mask fits in a signed 12-bit immediate.
+instruct orL_reg_immL_SingleBit(iRegLNoSp dst, iRegL src, immL_single_set_bit mask) %{
+  predicate(UseZbs && !Assembler::is_simm12(n->in(2)->get_long()));
+  match(Set dst (OrL src mask));
+  ins_cost(ALU_COST);
+
+  format %{ "bseti  $dst, $src, exact_log2($mask)\t#@orL_reg_immL_SingleBit" %}
+  ins_encode %{
+    __ bseti(as_Register($dst$$reg), as_Register($src$$reg),
+             exact_log2_long($mask$$constant));
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+instruct xorL_reg_immL_SingleBit(iRegLNoSp dst, iRegL src, immL_single_set_bit mask) %{
+  predicate(UseZbs && !Assembler::is_simm12(n->in(2)->get_long()));
+  match(Set dst (XorL src mask));
+  ins_cost(ALU_COST);
+
+  format %{ "binvi  $dst, $src, exact_log2($mask)\t#@xorL_reg_immL_SingleBit" %}
+  ins_encode %{
+    __ binvi(as_Register($dst$$reg), as_Register($src$$reg),
+             exact_log2_long($mask$$constant));
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+instruct andL_reg_immL_SingleZero(iRegLNoSp dst, iRegL src, immL_single_clear_bit mask) %{
+  predicate(UseZbs && !Assembler::is_simm12(n->in(2)->get_long()));
+  match(Set dst (AndL src mask));
+  ins_cost(ALU_COST);
+
+  format %{ "bclri  $dst, $src, exact_log2(~$mask)\t#@andL_reg_immL_SingleZero" %}
+  ins_encode %{
+    __ bclri(as_Register($dst$$reg), as_Register($src$$reg),
+             exact_log2_long(~$mask$$constant));
+  %}
+
+  ins_pipe(ialu_reg_shift);
 %}

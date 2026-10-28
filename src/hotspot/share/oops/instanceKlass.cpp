@@ -23,13 +23,14 @@
  */
 
 #include "cds/aotClassInitializer.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsEnumKlass.hpp"
 #include "cds/classListWriter.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -38,7 +39,6 @@
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -792,7 +792,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   if (constants() != nullptr) {
     assert (!constants()->on_stack(), "shouldn't be called if anything is onstack");
     if (!constants()->in_aot_cache()) {
-      HeapShared::remove_scratch_resolved_references(constants());
+      AOTHeap::remove_scratch_resolved_references(constants());
       MetadataFactory::free_metadata(loader_data, constants());
     }
     // Delete any cached resolution errors for the constant pool
@@ -840,11 +840,11 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   }
   set_annotations(nullptr);
 
-  SystemDictionaryShared::handle_class_unloading(this);
+  AOTSystemDictionary::handle_class_unloading(this);
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    HeapShared::remove_scratch_objects(this);
+    AOTHeap::remove_scratch_objects(this);
   }
 #endif
 }
@@ -1142,7 +1142,7 @@ bool InstanceKlass::link_class_or_fail(TRAPS) {
 }
 
 bool InstanceKlass::link_class_impl(TRAPS) {
-  if (CDSConfig::is_dumping_static_archive() && SystemDictionaryShared::has_class_failed_verification(this)) {
+  if (CDSConfig::is_dumping_static_archive() && AOTSystemDictionary::has_class_failed_verification(this)) {
     // This is for CDS static dump only -- we use the in_error_state to indicate that
     // the class has failed verification. Throwing the NoClassDefFoundError here is just
     // a convenient way to stop repeat attempts to verify the same (bad) class.
@@ -1252,7 +1252,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
         // also sets rewritten
         rewrite_class(CHECK_false);
       } else if (in_aot_cache()) {
-        SystemDictionaryShared::check_verification_constraints(this, CHECK_false);
+        AOTSystemDictionary::check_verification_constraints(this, CHECK_false);
       }
 
       // relocate jsrs and link methods after they are all rewritten
@@ -1270,7 +1270,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       // 3) the class was not verified during dump time
       bool need_init_table = true;
       if (in_aot_cache() && verified_at_dump_time() &&
-          SystemDictionaryShared::check_linking_constraints(THREAD, this)) {
+          AOTSystemDictionary::check_linking_constraints(THREAD, this)) {
         need_init_table = false;
       }
       if (need_init_table) {
@@ -3111,7 +3111,7 @@ void InstanceKlass::remove_unshareable_info() {
 
   Klass::remove_unshareable_info();
 
-  if (SystemDictionaryShared::has_class_failed_verification(this)) {
+  if (AOTSystemDictionary::has_class_failed_verification(this)) {
     // Classes are attempted to link during dumping and may fail,
     // but these classes are still in the dictionary and class list in CLD.
     // If the class has failed verification, there is nothing else to remove.
@@ -3171,7 +3171,7 @@ void InstanceKlass::remove_unshareable_info() {
   _methods_jmethod_ids = nullptr;
   _jni_ids = nullptr;
   _oop_map_cache = nullptr;
-  if (CDSConfig::is_dumping_method_handles() && HeapShared::is_lambda_proxy_klass(this)) {
+  if (CDSConfig::is_dumping_method_handles() && AOTHeap::is_lambda_proxy_klass(this)) {
     // keep _nest_host
   } else {
     // clear _nest_host to ensure re-load at runtime
@@ -3314,14 +3314,14 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
 
   if (CDSConfig::is_old_class_for_verifier(this)) {
     // The old verifier does not save verification constraints, so at run time
-    // SystemDictionaryShared::check_verification_constraints() will not work for this class.
+    // AOTSystemDictionary::check_verification_constraints() will not work for this class.
     return false;
   }
 
   if (CDSConfig::is_dumping_final_static_archive() && fail_over_verified()) {
     // This is a class with version >50 but was verified with the old verifier in the training run,
     // which had -XX:+AOTClassLinking. However, we are now in the assembly run with -XX:-AOTClassLinking.
-    // As SystemDictionaryShared::check_verification_constraints() does not support this case,
+    // As AOTSystemDictionary::check_verification_constraints() does not support this case,
     // we must exclude this class.
     assert(!CDSConfig::is_dumping_aot_linked_classes(), "must be");
     return false;
@@ -3367,7 +3367,7 @@ void InstanceKlass::unload_class(InstanceKlass* ik) {
   // notify ClassLoadingService of class unload
   ClassLoadingService::notify_class_unloaded(ik);
 
-  SystemDictionaryShared::handle_class_unloading(ik);
+  AOTSystemDictionary::handle_class_unloading(ik);
 
   if (log_is_enabled(Info, class, unload)) {
     ResourceMark rm;

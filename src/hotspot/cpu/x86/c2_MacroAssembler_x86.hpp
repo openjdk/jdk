@@ -509,15 +509,6 @@ public:
 
   void efp16sh(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2);
 
-  void vgather_subword(BasicType elem_ty, XMMRegister dst,  Register base, Register idx_base, Register mask,
-                       XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
-                       Register midx, Register length, int vector_len, int vlen_enc);
-
-  void vgather8b_masked(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
-                        Register mask, Register midx, Register rtmp, int vlen_enc);
-  void vgather8b(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
-                 Register rtmp, int vlen_enc);
-
   void vector_saturating_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, bool is_unsigned, int vlen_enc);
 
   void vector_saturating_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, Address src2, bool is_unsigned, int vlen_enc);

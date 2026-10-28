@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Implementation of Http Basic authentication.
  */
 class AuthenticationFilter implements HeaderFilter {
-    volatile MultiExchange<?> exchange;
+
     private static final Base64.Encoder encoder = Base64.getEncoder();
 
     static final int DEFAULT_RETRY_LIMIT = 3;
@@ -67,12 +67,12 @@ class AuthenticationFilter implements HeaderFilter {
     // A public no-arg constructor is required by FilterFactory
     public AuthenticationFilter() {}
 
-    private PasswordAuthentication getCredentials(String header,
+    private PasswordAuthentication getCredentials(HttpClientImpl client,
+                                                  String header,
                                                   boolean proxy,
                                                   HttpRequestImpl req)
         throws IOException
     {
-        HttpClientImpl client = exchange.client();
         java.net.Authenticator auth =
                 client.authenticator()
                       .orElseThrow(() -> new IOException("No authenticator set"));
@@ -144,31 +144,49 @@ class AuthenticationFilter implements HeaderFilter {
     }
 
     @Override
-    public void request(HttpRequestImpl r, MultiExchange<?> e) throws IOException {
+    public void request(HttpRequestImpl r, MultiExchange<?> exchange) throws IOException {
         // use preemptive authentication if an entry exists.
-        Cache cache = getCache(e);
-        this.exchange = e;
+        Cache cache = getCache(exchange.client());
+        AuthInfo serverAuth = exchange.serverauth;
+        AuthInfo proxyAuth = exchange.proxyauth;
+
+        if (serverAuth != null && !sameOriginAndScheme(serverAuth.requestor, r.uri())) {
+            serverAuth = exchange.serverauth = null;
+        }
+        if (proxyAuth != null && !sameOriginAndScheme(proxyAuth.requestor, getProxyURI(r))) {
+            proxyAuth = exchange.proxyauth = null;
+        }
 
         // Proxy
-        if (exchange.proxyauth == null) {
+        if (proxyAuth == null) {
             URI proxyURI = getProxyURI(r);
             if (proxyURI != null) {
                 CacheEntry ca = cache.get(proxyURI, true);
                 if (ca != null) {
-                    exchange.proxyauth = new AuthInfo(true, ca.scheme, null, ca, ca.isUTF8);
+                    exchange.proxyauth = new AuthInfo(true, ca.scheme, proxyURI, null, ca, ca.isUTF8);
                     addBasicCredentials(r, true, ca.value, ca.isUTF8);
                 }
             }
         }
 
         // Server
-        if (exchange.serverauth == null) {
-            CacheEntry ca = cache.get(r.uri(), false);
+        if (serverAuth == null) {
+            URI requestor = r.uri();
+            CacheEntry ca = cache.get(requestor, false);
             if (ca != null) {
-                exchange.serverauth = new AuthInfo(true, ca.scheme, null, ca, ca.isUTF8);
+                exchange.serverauth = new AuthInfo(true, ca.scheme, requestor, null, ca, ca.isUTF8);
                 addBasicCredentials(r, false, ca.value, ca.isUTF8);
             }
         }
+    }
+
+    private static boolean sameOriginAndScheme(URI uri, URI other) {
+        // in this context we don't need to use equalsIgnoreCase.
+        if (uri == other) return true;
+        if (uri == null || other == null) return false;
+        if (!Objects.equals(uri.getScheme(), other.getScheme())) return false;
+        if (!Objects.equals(uri.getRawAuthority(), other.getRawAuthority())) return false;
+        return true;
     }
 
     // TODO: refactor into per auth scheme class
@@ -202,6 +220,7 @@ class AuthenticationFilter implements HeaderFilter {
     static class AuthInfo {
         final boolean fromcache;
         final String scheme;
+        final URI requestor;
         int retries;
         PasswordAuthentication credentials; // used in request
         CacheEntry cacheEntry; // if used
@@ -209,19 +228,24 @@ class AuthenticationFilter implements HeaderFilter {
 
         AuthInfo(boolean fromcache,
                  String scheme,
-                 PasswordAuthentication credentials, boolean isUTF8) {
+                 URI requestor,
+                 PasswordAuthentication credentials,
+                 boolean isUTF8) {
             this.fromcache = fromcache;
             this.scheme = scheme;
             this.credentials = credentials;
+            this.requestor = requestor;
             this.retries = 1;
             this.isUTF8 = isUTF8;
         }
 
         AuthInfo(boolean fromcache,
                  String scheme,
+                 URI requestor,
                  PasswordAuthentication credentials,
-                 CacheEntry ca, boolean isUTF8) {
-            this(fromcache, scheme, credentials, isUTF8);
+                 CacheEntry ca,
+                 boolean isUTF8) {
+            this(fromcache, scheme, requestor, credentials, isUTF8);
             assert credentials == null || (ca != null && ca.value == null);
             cacheEntry = ca;
         }
@@ -230,7 +254,9 @@ class AuthenticationFilter implements HeaderFilter {
             // If the info was already in the cache we need to create a new
             // instance with fromCache==false so that it's put back in the
             // cache if authentication succeeds
-            AuthInfo res = fromcache ? new AuthInfo(false, scheme, pw, isUTF8) : this;
+            AuthInfo res = fromcache
+                    ? new AuthInfo(false, scheme, requestor, pw, isUTF8)
+                    : this;
             res.credentials = Objects.requireNonNull(pw);
             res.retries = retries;
             return res;
@@ -239,7 +265,9 @@ class AuthenticationFilter implements HeaderFilter {
 
     @Override
     public HttpRequestImpl response(Response r) throws IOException {
-        Cache cache = getCache(exchange);
+        MultiExchange<?> exchange = r.exchange.multi;
+        HttpClientImpl client = exchange.client();
+        Cache cache = getCache(client);
         int status = r.statusCode();
         HttpHeaders hdrs = r.headers();
         HttpRequestImpl req = r.request();
@@ -253,28 +281,37 @@ class AuthenticationFilter implements HeaderFilter {
         }
 
         if (status != PROXY_UNAUTHORIZED) {
-            if (exchange.proxyauth != null && !exchange.proxyauth.fromcache) {
-                AuthInfo au = exchange.proxyauth;
+            AuthInfo au = exchange.proxyauth;
+            if (au != null && !au.fromcache) {
                 URI proxyURI = getProxyURI(req);
                 if (proxyURI != null) {
-                    exchange.proxyauth = null;
-                    cache.store(au.scheme, proxyURI, true, au.credentials, au.isUTF8);
+                    if (sameOriginAndScheme(au.requestor, proxyURI)) {
+                        exchange.proxyauth = null;
+                        cache.store(au.scheme, au.requestor, true, au.credentials, au.isUTF8);
+                    }
                 }
             }
             if (status != UNAUTHORIZED) {
+                au = exchange.serverauth;
                 // check if any authentication succeeded for first time
-                if (exchange.serverauth != null && !exchange.serverauth.fromcache) {
-                    AuthInfo au = exchange.serverauth;
-                    cache.store(au.scheme, req.uri(), false, au.credentials, au.isUTF8);
+                if (au != null && !au.fromcache) {
+                    URI requestor = req.uri();
+                    if (sameOriginAndScheme(au.requestor, requestor)) {
+                        cache.store(au.scheme, au.requestor, false, au.credentials, au.isUTF8);
+                    }
                 }
+                assert status != PROXY_UNAUTHORIZED && status != UNAUTHORIZED;
                 return null;
             }
+            assert status == UNAUTHORIZED;
         }
+
+        assert status == PROXY_UNAUTHORIZED || status == UNAUTHORIZED;
 
         boolean proxy = status == PROXY_UNAUTHORIZED;
         String authname = proxy ? "Proxy-Authenticate" : "WWW-Authenticate";
         List<String> authvals = hdrs.allValues(authname);
-        if (authvals.isEmpty() && exchange.client().authenticator().isPresent()) {
+        if (authvals.isEmpty() && client.authenticator().isPresent()) {
             throw new IOException(authname + " header missing for response code " + status);
         }
         String authval = null;
@@ -310,16 +347,17 @@ class AuthenticationFilter implements HeaderFilter {
         }
 
         AuthInfo au = proxy ? exchange.proxyauth : exchange.serverauth;
-        if (au == null) {
+        URI requestor = proxy ? getProxyURI(req) : req.uri();
+        if (au == null || !sameOriginAndScheme(au.requestor, requestor)) {
             // if no authenticator, let the user deal with 407/401
-            if (exchange.client().authenticator().isEmpty()) return null;
+            if (client.authenticator().isEmpty()) return null;
 
-            PasswordAuthentication pw = getCredentials(authval, proxy, req);
+            PasswordAuthentication pw = getCredentials(client, authval, proxy, req);
             if (pw == null) {
                 throw new IOException("No credentials provided");
             }
             // No authentication in request. Get credentials from user
-            au = new AuthInfo(false, "Basic", pw, isUTF8);
+            au = new AuthInfo(false, "Basic",requestor, pw, isUTF8);
             if (proxy) {
                 exchange.proxyauth = au;
             } else {
@@ -332,16 +370,17 @@ class AuthenticationFilter implements HeaderFilter {
             throw new IOException("too many authentication attempts. Limit: " +
                     retry_limit);
         } else {
+            assert sameOriginAndScheme(au.requestor, requestor);
             // we sent credentials, but they were rejected
             if (au.fromcache) {
                 cache.remove(au.cacheEntry);
             }
 
             // if no authenticator, let the user deal with 407/401
-            if (exchange.client().authenticator().isEmpty()) return null;
+            if (client.authenticator().isEmpty()) return null;
 
             // try again
-            PasswordAuthentication pw = getCredentials(authval, proxy, req);
+            PasswordAuthentication pw = getCredentials(client, authval, proxy, req);
             if (pw == null) {
                 throw new IOException("No credentials provided");
             }
@@ -362,8 +401,7 @@ class AuthenticationFilter implements HeaderFilter {
     // be garbage collected when no longer referenced.
     static final WeakHashMap<HttpClientImpl,Cache> caches = new WeakHashMap<>();
 
-    static synchronized Cache getCache(MultiExchange<?> exchange) {
-        HttpClientImpl client = exchange.client();
+    static synchronized Cache getCache(HttpClientImpl client) {
         Cache c = caches.get(client);
         if (c == null) {
             c = new Cache();

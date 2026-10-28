@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,16 @@
 
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotLinkedClassTable.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
@@ -127,7 +127,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
   assert(is_initialized(), "sanity");
   assert(CDSConfig::is_dumping_aot_linked_classes(), "sanity");
 
-  if (!SystemDictionaryShared::is_builtin(ik)) {
+  if (!AOTSystemDictionary::is_builtin(ik)) {
     // not loaded by a class loader which we know about
     return false;
   }
@@ -136,7 +136,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
     return true;
   }
 
-  if (!ik->is_linked() && SystemDictionaryShared::has_class_failed_verification(ik)) {
+  if (!ik->is_linked() && AOTSystemDictionary::has_class_failed_verification(ik)) {
     return false;
   }
 
@@ -145,7 +145,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
     if (!CDSConfig::is_dumping_method_handles()) {
       return false;
     }
-    if (HeapShared::is_lambda_proxy_klass(ik)) {
+    if (AOTHeap::is_lambda_proxy_klass(ik)) {
       InstanceKlass* nest_host = ik->nest_host_not_null();
       if (!try_add_candidate(nest_host)) {
         ResourceMark rm;

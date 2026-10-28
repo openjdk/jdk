@@ -2929,6 +2929,11 @@ Java HotSpot VM.
     some throughput cost. Pause times are independent of what heap size is
     used. Supports heap sizes from 8MB to 16TB.
 
+[`-XX:+ZAdaptiveHeapSizing`]{#-XX__ZAdaptiveHeapSizing}
+:   Enables Adaptive Heap Sizing for ZGC, which dynamically adjusts the heap
+    size based on memory availability and system resources. By default, this
+    option is disabled.
+
 [`-XX:ZAllocationSpikeTolerance=`]{#-XX_ZAllocationSpikeTolerance}*factor*
 :   Sets the allocation spike tolerance for ZGC. By default, this option is
     set to 2.0. This factor describes the level of allocation spikes to expect.
@@ -2944,6 +2949,13 @@ Java HotSpot VM.
     By default, this option is set to 25. Using a lower value will cause the
     heap to be compacted more aggressively, to reclaim more memory at the cost
     of using more CPU time.
+
+[`-XX:ZGCIntensity=`]{#-XX_ZGCIntensity}*intensity*
+:   Configures the trade-off between memory and CPU usage on the system when
+    Adaptive Heap Sizing is enabled with `-XX:+ZAdaptiveHeapSizing`. When
+    enabled, the default value is 5, striking a balance between memory and CPU
+    that is reasonable for most systems. When Adaptive Heap Sizing is disabled,
+    the effective value is 0.
 
 [`-XX:+ZProactive`]{#-XX__ZProactive}
 :   Enables proactive GC cycles when using ZGC. By default, this option is
@@ -3026,6 +3038,9 @@ they're used.
 [`-XX:+FlightRecorder`]{#-XX__FlightRecorder}
 :   Enables the use of Java Flight Recorder (JFR) during the runtime of the
     application. Since JDK 8u40 this option has not been required to use JFR.
+
+[`-XX:AOTMode=on`]{#-XX__AOTModeOn}
+:   Requires the AOTCache to be loaded. Use `-XX:AOTMode=required` instead.
 
 ## Obsolete Java Options
 
@@ -4161,8 +4176,8 @@ The AOT cache can be used with the following command-line options:
 :   Specifies the location of the AOT cache. The standard extension for *cachefile* is `.aot`.
     This option cannot be used together with `-XX:AOTCacheOutput`.
 
-    This option is compatible with `AOTMode` settings of `on`, `create`, or `auto` (the default).
-    The *cachefile* is read in AOT modes `on` and `auto`, and is ignored by mode `off`.
+    This option is compatible with `AOTMode` settings of `required`, `create`, or `auto` (the default).
+    The *cachefile* is read in AOT modes `required` and `auto`, and is ignored by mode `off`.
     The *cachefile* is written by AOT mode `create`.  In that case, this option is
     equivalent to `-XX:AOTCacheOutput=`*cachefile*.
 
@@ -4182,11 +4197,7 @@ The AOT cache can be used with the following command-line options:
 
 [`-XX:AOTMode=`]{#-XX_AOTMode}*mode*
 :   Specifies the AOT Mode for this run.
-    *mode* must be one of the following: `auto`, `off`, `record`, `create`, `on`, or `required`.
-
-    Note that `on` is an alias for `required`. All discussion below about `required`
-    also applies to `on`. The use of `on` is discouraged. The support of `on` may be deprecated and
-    removed in future releases.
+    *mode* must be one of the following: `auto`, `off`, `record`, `create`, or `required`.
 
 -   `auto`: This AOT mode is the default, and takes effect if no `-XX:AOTMode` option
     is present.  It automatically sets the AOT mode to `record`, `required`, or `off`, as follows:

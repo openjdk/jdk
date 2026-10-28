@@ -107,8 +107,7 @@ void ShenandoahBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop n
   if (ReduceInitialCardMarks && ShenandoahCardBarrier && !ShenandoahHeap::heap()->is_in_young(new_obj)) {
     log_debug(gc)("Newly allocated object (" PTR_FORMAT ") is not in the young generation", p2i(new_obj));
     // This can happen when an object is newly allocated, but we come to a safepoint before returning
-    // the object. If the safepoint runs a degenerated cycle that is upgraded to a full GC, this object
-    // will have survived two GC cycles. If the tenuring age is very low (1), this object may be promoted.
+    // the object. If the safepoint runs a full GC, and the tenuring age is very low (1), this object may be promoted.
     // In this case, we have an allocated object, but it has received no stores yet. If card marking barriers
     // have been elided, we could end up with an object in old holding pointers to young that won't be in
     // the remembered set. The solution here is conservative, but this problem should be rare, and it will

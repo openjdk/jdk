@@ -455,7 +455,7 @@ abstract public class CDSAppTester {
         } else if (isDynamicWorkflow()) {
             cmdLine = StringArrayUtils.concat(cmdLine, "-Xshare:on", "-XX:SharedArchiveFile=" + dynamicArchiveFile);
        } else if (isAOTWorkflow()) {
-            cmdLine = StringArrayUtils.concat(cmdLine, "-XX:AOTMode=on", "-XX:AOTCache=" + aotCacheFile);
+            cmdLine = StringArrayUtils.concat(cmdLine, "-XX:AOTMode=required", "-XX:AOTCache=" + aotCacheFile);
         }
 
         if (extraVmArgs != null) {

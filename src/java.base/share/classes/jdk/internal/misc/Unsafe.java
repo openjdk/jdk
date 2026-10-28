@@ -1824,7 +1824,12 @@ public final class Unsafe {
                                                                Class<?> valueType,
                                                                V expected,
                                                                V x) {
-        return compareAndExchangeReference(o, offset, valueType, expected, x);
+        if (isValueObject(valueType, expected)) {
+            // Reusing a stronger operation for now, still compliant
+            return compareAndExchangeReference(o, offset, valueType, expected, x);
+        } else {
+            return compareAndExchangeReferenceAcquire(o, offset, expected, x);
+        }
     }
 
     @ForceInline
@@ -1847,7 +1852,12 @@ public final class Unsafe {
                                                                Class<?> valueType,
                                                                V expected,
                                                                V x) {
-        return compareAndExchangeReference(o, offset, valueType, expected, x);
+        if (isValueObject(valueType, expected)) {
+            // Reusing a stronger operation for now, still compliant
+            return compareAndExchangeReference(o, offset, valueType, expected, x);
+        } else {
+            return compareAndExchangeReferenceRelease(o, offset, expected, x);
+        }
     }
 
     @ForceInline
@@ -3418,7 +3428,12 @@ public final class Unsafe {
 
     @ForceInline
     public final Object getAndSetReferenceRelease(Object o, long offset, Class<?> valueType, Object newValue) {
-        return getAndSetReference(o, offset, valueType, newValue);
+        if (isValueObject(valueType, newValue)) {
+            // Reusing a stronger operation for now, still compliant
+            return getAndSetReference(o, offset, valueType, newValue);
+        } else {
+            return getAndSetReferenceRelease(o, offset, newValue);
+        }
     }
 
     @ForceInline
@@ -3437,7 +3452,12 @@ public final class Unsafe {
 
     @ForceInline
     public final Object getAndSetReferenceAcquire(Object o, long offset, Class<?> valueType, Object newValue) {
-        return getAndSetReference(o, offset, valueType, newValue);
+        if (isValueObject(valueType, newValue)) {
+            // Reusing a stronger operation for now, still compliant
+            return getAndSetReference(o, offset, valueType, newValue);
+        } else {
+            return getAndSetReferenceAcquire(o, offset, newValue);
+        }
     }
 
     @ForceInline

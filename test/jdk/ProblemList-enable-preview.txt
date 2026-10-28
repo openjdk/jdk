@@ -34,3 +34,5 @@
 #############################################################################
 
 # Value Objects failures start here:
+
+sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java 8394812 generic-all
