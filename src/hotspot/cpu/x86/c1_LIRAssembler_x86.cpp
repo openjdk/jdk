@@ -2445,7 +2445,7 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr de
   } else if (dest->is_double_cpu()) {
     // first move left into dest so that left is not destroyed by the shift
     Register value = dest->as_register_lo();
-    count = count & 0x1F; // Java spec
+    count = count & 0x3F; // Java spec
 
     move_regs(left->as_register_lo(), value);
     switch (code) {
