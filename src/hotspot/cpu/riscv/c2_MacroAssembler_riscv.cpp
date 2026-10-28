@@ -165,8 +165,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     srli(tmp2_hash, tmp2_hash, markWord::hash_shift);
 
     // Get the table and calculate the bucket's address.
-    la(tmp3_t, ExternalAddress(ObjectMonitorTable::current_table_address()));
-    ld(tmp3_t, Address(tmp3_t));
+    ld(tmp3_t, ExternalAddress(ObjectMonitorTable::current_table_address()));
     ld(tmp1, Address(tmp3_t, ObjectMonitorTable::table_capacity_mask_offset()));
     andr(tmp2_hash, tmp2_hash, tmp1);
     ld(tmp3_t, Address(tmp3_t, ObjectMonitorTable::table_buckets_offset()));
@@ -2108,6 +2107,40 @@ void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Regis
   }
 }
 
+// Set dst to 0 if the condition specified by cmpFlag is true, or 1 otherwise.
+// cmpFlag may include unsigned_branch_mask for an unsigned comparison.
+void C2_MacroAssembler::enc_cmove_zero_one(int cmpFlag, Register op1, Register op2, Register dst) {
+  bool is_unsigned = (cmpFlag & unsigned_branch_mask) == unsigned_branch_mask;
+  int op_select = cmpFlag & (~unsigned_branch_mask);
+
+  switch (op_select) {
+    case BoolTest::eq:
+      xorr(dst, op1, op2);
+      snez(dst, dst);
+      break;
+    case BoolTest::ne:
+      xorr(dst, op1, op2);
+      seqz(dst, dst);
+      break;
+    case BoolTest::lt:
+      is_unsigned ? sltu(dst, op1, op2) : slt(dst, op1, op2);
+      seqz(dst, dst);
+      break;
+    case BoolTest::gt:
+      is_unsigned ? sltu(dst, op2, op1) : slt(dst, op2, op1);
+      seqz(dst, dst);
+      break;
+    case BoolTest::le:
+      is_unsigned ? sltu(dst, op2, op1) : slt(dst, op2, op1);
+      break;
+    case BoolTest::ge:
+      is_unsigned ? sltu(dst, op1, op2) : slt(dst, op1, op2);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
 void C2_MacroAssembler::enc_cmove_cmp_fp(int cmpFlag, FloatRegister op1, FloatRegister op2, Register dst, Register src, bool is_single) {
   int op_select = cmpFlag & (~unsigned_branch_mask);
 
@@ -2209,6 +2242,41 @@ void C2_MacroAssembler::enc_cmove_fp_cmp_fp(int cmpFlag,
       break;
     default:
       assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
+  }
+}
+
+// Set dst to 0 if the floating-point condition is true, or 1 otherwise.
+// cmpFlag may include double_branch_mask for a double comparison.
+// CmpF/CmpD treat unordered as less: eq/gt/ge are false for NaN, while
+// ne/lt/le are true.
+void C2_MacroAssembler::enc_cmove_cmp_fp_zero_one(int cmpFlag, FloatRegister op1, FloatRegister op2, Register dst) {
+  bool is_single = (cmpFlag & double_branch_mask) == 0;
+  int op_select = cmpFlag & (~double_branch_mask);
+
+  switch (op_select) {
+    case BoolTest::eq:
+      is_single ? feq_s(dst, op1, op2) : feq_d(dst, op1, op2);
+      seqz(dst, dst);
+      break;
+    case BoolTest::ne:
+      is_single ? feq_s(dst, op1, op2) : feq_d(dst, op1, op2);
+      break;
+    case BoolTest::lt:
+      is_single ? fle_s(dst, op2, op1) : fle_d(dst, op2, op1);
+      break;
+    case BoolTest::le:
+      is_single ? flt_s(dst, op2, op1) : flt_d(dst, op2, op1);
+      break;
+    case BoolTest::gt:
+      is_single ? flt_s(dst, op2, op1) : flt_d(dst, op2, op1);
+      seqz(dst, dst);
+      break;
+    case BoolTest::ge:
+      is_single ? fle_s(dst, op2, op1) : fle_d(dst, op2, op1);
+      seqz(dst, dst);
+      break;
+    default:
       ShouldNotReachHere();
   }
 }

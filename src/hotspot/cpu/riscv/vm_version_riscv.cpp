@@ -224,19 +224,6 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
-  if (UseZicboz && zicboz_block_size.value() > 0) {
-    assert(is_power_of_2(zicboz_block_size.value()), "Sanity");
-    if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
-      FLAG_SET_DEFAULT(UseBlockZeroing, true);
-    }
-    if (FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
-      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * zicboz_block_size.value());
-    }
-  } else if (UseBlockZeroing) {
-    warning("Block zeroing is not available");
-    FLAG_SET_DEFAULT(UseBlockZeroing, false);
-  }
-
   if (UseRVV) {
     // read vector length from vector CSR vlenb
     _initial_vector_length = cpu_vector_length();

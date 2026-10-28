@@ -24,12 +24,12 @@
 
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotHeap.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -88,7 +88,7 @@ bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* c
   if (resolved_class->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(resolved_class);
 
-    if (!ik->in_aot_cache() && SystemDictionaryShared::is_excluded_class(ik)) {
+    if (!ik->in_aot_cache() && AOTSystemDictionary::is_excluded_class(ik)) {
       return false;
     }
 
@@ -159,13 +159,13 @@ void AOTConstantPoolResolver::preresolve_string_cp_entries(InstanceKlass* ik, TR
   // However, we want to aggressively resolve all klass/field/method constants for
   // LambdaForm Invoker Holder classes, Lambda Proxy classes, and LambdaForm classes,
   // so that the compiler can inline through them.
-  if (SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
+  if (AOTSystemDictionary::is_builtin_loader(ik->class_loader_data())) {
     bool eager_resolve = false;
 
     if (LambdaFormInvokers::may_be_regenerated_class(ik->name())) {
       eager_resolve = true;
     }
-    if (ik->is_hidden() && HeapShared::is_archivable_hidden_klass(ik)) {
+    if (ik->is_hidden() && AOTHeap::is_archivable_hidden_klass(ik)) {
       eager_resolve = true;
     }
 
@@ -213,7 +213,7 @@ void AOTConstantPoolResolver::resolve_string(constantPoolHandle cp, int cp_index
 #endif
 
 void AOTConstantPoolResolver::preresolve_class_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list) {
-  if (!SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
+  if (!AOTSystemDictionary::is_builtin_loader(ik->class_loader_data())) {
     return;
   }
 
@@ -444,7 +444,7 @@ bool AOTConstantPoolResolver::check_methodtype_signature(ConstantPool* cp, Symbo
         return false;
       }
 
-      if (SystemDictionaryShared::should_be_excluded(k)) {
+      if (AOTSystemDictionary::should_be_excluded(k)) {
         if (log_is_enabled(Warning, aot, resolve)) {
           ResourceMark rm;
           log_warning(aot, resolve)("Cannot aot-resolve %s because %s is excluded",
@@ -456,8 +456,8 @@ bool AOTConstantPoolResolver::check_methodtype_signature(ConstantPool* cp, Symbo
 
       // cp->pool_holder() must be able to resolve k in production run
       precond(CDSConfig::is_dumping_aot_linked_classes());
-      precond(SystemDictionaryShared::is_builtin_loader(cp->pool_holder()->class_loader_data()));
-      precond(SystemDictionaryShared::is_builtin_loader(k->class_loader_data()));
+      precond(AOTSystemDictionary::is_builtin_loader(cp->pool_holder()->class_loader_data()));
+      precond(AOTSystemDictionary::is_builtin_loader(k->class_loader_data()));
 
       if (ss.at_return_type() && return_type_ret != nullptr) {
         *return_type_ret = k;
@@ -540,7 +540,7 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(Constant
       }
       return false;
     }
-    if (SystemDictionaryShared::should_be_excluded(k)) {
+    if (AOTSystemDictionary::should_be_excluded(k)) {
       if (log_is_enabled(Warning, aot, resolve)) {
         ResourceMark rm;
         log_warning(aot, resolve)("Cannot aot-resolve Lambda proxy because %s is excluded", k->external_name());
@@ -550,8 +550,8 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(Constant
 
     // cp->pool_holder() must be able to resolve k in production run
     precond(CDSConfig::is_dumping_aot_linked_classes());
-    precond(SystemDictionaryShared::is_builtin_loader(cp->pool_holder()->class_loader_data()));
-    precond(SystemDictionaryShared::is_builtin_loader(k->class_loader_data()));
+    precond(AOTSystemDictionary::is_builtin_loader(cp->pool_holder()->class_loader_data()));
+    precond(AOTSystemDictionary::is_builtin_loader(k->class_loader_data()));
   }
 
   return check_methodtype_signature(cp, sig);
@@ -564,7 +564,7 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
   }
 
   InstanceKlass* pool_holder = cp->pool_holder();
-  if (!SystemDictionaryShared::is_builtin(pool_holder)) {
+  if (!AOTSystemDictionary::is_builtin(pool_holder)) {
     return false;
   }
 

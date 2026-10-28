@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  *
  */
 
+#include "asm/macroAssembler.hpp"
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
 #include "runtime/globals.hpp"
@@ -34,4 +35,7 @@
 
 void Compile::pd_compiler2_init() {
   guarantee(CodeEntryAlignment >= InteriorEntryAlignment, "");
+#ifdef _LP64
+  MacroAssembler::initialize_compressed_oops_fit_in_31_bits();
+#endif
 }
