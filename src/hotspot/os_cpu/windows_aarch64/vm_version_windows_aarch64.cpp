@@ -102,10 +102,12 @@ static bool is_pac_supported() {
   bool isar1_present = read_central_processor_qword(L"CP 4031", &isar1);
   bool isar2_present = read_central_processor_qword(L"CP 4032", &isar2);
 
-  // - ISAR1's APA field (bits 4 through 7): QARM5 algorithm support
-  // - ISAR1's API field (bits 8 through 11): custom algorithm support
-  // - ISAR2's APA3 field (bits 12 through 15): QARM3 algorithm support
-  // See feature descriptions of the ARM v8 architecture for details.
+  // The Arm Architecture Reference Manual for A-profile architecture (DDI0487)
+  // specifies the bits that reflect whether pointer authentication is enabled.
+  // See Part D (System Level Architecture), Section D8.10.3 (PAC instructions):
+  // - ID_AA64ISAR1_EL1.APA is nonzero => FEAT_PACQARMA5 is implemented
+  // - ID_AA64ISAR1_EL1.API is nonzero => FEAT_PACIMP is implemented
+  // - ID_AA64ISAR2_EL1.APA3 is nonzero => FEAT_PACQARMA3 is implemented
   const bool is_apa = isar1_present && ((isar1 >> 4) & 0x0f) != 0;
   const bool is_api = isar1_present && ((isar1 >> 8) & 0x0f) != 0;
   const bool is_apa3 = isar2_present && ((isar2 >> 12) & 0x0f) != 0;
