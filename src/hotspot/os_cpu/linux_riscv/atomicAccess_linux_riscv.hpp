@@ -109,6 +109,12 @@ inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
   return old_value;
 }
 
+// Use .insn so baseline builds do not require assembler support for Zacas/Zabha.
+// .insn r opcode, funct3, funct7, rd, rs1, rs2; 
+// opcode: 0x2f selects the AMO instruction group.
+// funct3: 0b000 for byte, 0b010 for word, 0b011 for doubleword.
+// funct7: (AMOCAS funct5 0b00101 << 2) | aqrl = 0x14 | aqrl.
+// rd: expected value in, observed value out; rs1: address; rs2: replacement.
 template<size_t byte_size, int aqrl, typename T>
 inline T riscv_amocas(T volatile* dest, T compare_value, T exchange_value) {
   static_assert(byte_size == sizeof(T));
@@ -116,7 +122,6 @@ inline T riscv_amocas(T volatile* dest, T compare_value, T exchange_value) {
   constexpr int width = byte_size == 1 ? 0 : byte_size == 4 ? 2 : 3;
 
   uint64_t old_value = (uint64_t)compare_value;
-  // Use .insn so baseline builds do not require assembler support for Zacas/Zabha.
   __asm__ __volatile__ (".insn r 0x2f, %3, %4, %0, %1, %2"
                         : "+r" (old_value)
                         : "r" (dest), "r" ((uint64_t)exchange_value),
@@ -125,6 +130,7 @@ inline T riscv_amocas(T volatile* dest, T compare_value, T exchange_value) {
   return (T)old_value;
 }
 
+// aqrl encodes [aq, rl]: 0b00 relaxed, 0b10 acquire, 0b01 release, 0b11 acquire-release.
 template<size_t byte_size, typename T>
 inline T riscv_amocas(T volatile* dest, T compare_value, T exchange_value,
                      atomic_memory_order order) {
