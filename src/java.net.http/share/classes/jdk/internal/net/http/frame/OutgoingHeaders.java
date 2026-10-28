@@ -33,12 +33,7 @@ import java.net.http.HttpHeaders;
  */
 public class OutgoingHeaders<T> extends Http2Frame {
 
-    int streamDependency;
-    int weight;
-    boolean exclusive;
     T attachment;
-
-    public static final int PRIORITY = 0x20;
 
     HttpHeaders user, system;
 
@@ -47,25 +42,6 @@ public class OutgoingHeaders<T> extends Http2Frame {
         this.user = hdrs2;
         this.system = hdrs1;
         this.attachment = attachment;
-    }
-
-    public void setPriority(int streamDependency, boolean exclusive, int weight) {
-        this.streamDependency = streamDependency;
-        this.exclusive = exclusive;
-        this.weight = weight;
-        this.flags |= PRIORITY;
-    }
-
-    public int getStreamDependency() {
-        return streamDependency;
-    }
-
-    public int getWeight() {
-        return weight;
-    }
-
-    public boolean getExclusive() {
-        return exclusive;
     }
 
     public T getAttachment() {
