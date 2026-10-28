@@ -3368,8 +3368,7 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Uniq
       // 1. An object is not scalar replaceable if the field into which it is
       // stored has unknown offset (stored into unknown element of an array),
       // with the exception of virtual array initialization fields.
-      if (field->offset() == Type::OffsetBot &&
-          !is_virtual_array_init(field->ideal_node())) {
+      if (field->offset() == Type::OffsetBot && !is_virtual_array_init(field->ideal_node())) {
         set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is stored at unknown offset"));
         return;
       }
