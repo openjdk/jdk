@@ -714,15 +714,15 @@ public class TestVM {
      * Set up a custom run test by first verifying the correct format of the @Test and @Run method and then adding it
      * to the allTests list which keeps track of all framework tests that are eventually executed.
      */
-    private void addCustomRunTest(Method m, Run runAnno) {
-        checkRunMethod(m, runAnno);
+    private void addCustomRunTest(Method runMethod, Run runAnno) {
+        checkRunMethod(runMethod, runAnno);
         List<DeclaredTest> tests = new ArrayList<>();
         for (String testName : runAnno.test()) {
             try {
                 Method testMethod = testMethodMap.get(testName);
                 DeclaredTest test = declaredTests.get(testMethod);
-                checkCustomRunTest(m, testName, testMethod, test, runAnno.mode());
-                test.setAttachedMethod(m);
+                checkCustomRunTest(runMethod, testName, testMethod, test, runAnno.mode());
+                test.setAttachedMethod(runMethod);
                 tests.add(test);
             } catch (TestFormatException e) {
                 // Logged, continue.
@@ -734,13 +734,13 @@ public class TestVM {
             return;
         }
 
-        checkNoneOrAllAssociatedTestsSkipped(m, tests);
+        checkNoneOrAllAssociatedTestsSkipped(runMethod, tests);
         if (testExecutionPolicy.shouldExcludeCustomRunTest(tests)) {
             return;
         }
 
-        dontCompileAndDontInlineMethod(m);
-        CustomRunTest customRunTest = new CustomRunTest(m, getAnnotation(m, Warmup.class), runAnno, tests);
+        dontCompileAndDontInlineMethod(runMethod);
+        CustomRunTest customRunTest = new CustomRunTest(runMethod, getAnnotation(runMethod, Warmup.class), runAnno, tests);
         allTests.add(customRunTest);
         if (PRINT_VALID_IR_RULES) {
             tests.forEach(test -> irMatchRulePrinter.emitApplicableIRRules(test.getTestMethod()));
@@ -750,36 +750,41 @@ public class TestVM {
     /**
      * Only allow parameters as specified in {@link Run}.
      */
-    private void checkCustomRunTest(Method m, String testName, Method testMethod, DeclaredTest test, RunMode runMode) {
-        TestFormat.check(testMethod != null, "Did not find associated @Test method \""  + m.getDeclaringClass().getName()
-                                             + "." + testName + "\" specified in @Run at " + m);
+    private void checkCustomRunTest(Method runMethod, String testName, Method testMethod, DeclaredTest test, RunMode runMode) {
+        TestFormat.check(testMethod != null, "Did not find associated @Test method \"" + runMethod.getDeclaringClass().getName()
+                                             + "." + testName + "\" specified in @Run at " + runMethod);
         TestFormat.check(test != null,
-                         "Missing @Test annotation for associated test method " + testName + " for @Run at " + m);
+                         "Missing @Test annotation for associated test method " + testName + " for @Run at " + runMethod);
         Method attachedMethod = test.getAttachedMethod();
         TestFormat.check(attachedMethod == null,
                          "Cannot use @Test " + testMethod + " for more than one @Run/@Check method. Found: "
-                         + m + ", " + attachedMethod);
+                         + runMethod + ", " + attachedMethod);
         Arguments argumentsAnno = getAnnotation(testMethod, Arguments.class);
         TestFormat.check(argumentsAnno == null,
-                         "Cannot use @Arguments at test method " + testMethod + " in combination with @Run method " + m);
+                         "Cannot use @Arguments at test method " + testMethod + " in combination with @Run method " + runMethod);
         Warmup warmupAnno = getAnnotation(testMethod, Warmup.class);
         TestFormat.checkNoThrow(warmupAnno == null,
                                 "Cannot set @Warmup at @Test method " + testMethod + " when used with its @Run method "
-                                + m + ". Use @Warmup at @Run method instead.");
+                                + runMethod + ". Use @Warmup at @Run method instead.");
         Test testAnno = getAnnotation(testMethod, Test.class);
         TestFormat.checkNoThrow(runMode != RunMode.STANDALONE || testAnno.compLevel() == CompLevel.ANY,
                                 "Setting explicit compilation level for @Test method " + testMethod + " has no effect "
-                                + "when used with STANDALONE @Run method " + m);
+                                + "when used with STANDALONE @Run method " + runMethod);
     }
 
-    private void checkRunMethod(Method m, Run runAnno) {
-        TestFormat.check(runAnno.test().length > 0, "@Run method " + m + " must specify at least one test method");
-        TestFormat.checkNoThrow(m.getParameterCount() == 0 || (m.getParameterCount() == 1 && m.getParameterTypes()[0].equals(RunInfo.class)),
-                                "@Run method " + m + " must specify either no parameter or exactly one " + RunInfo.class + " parameter.");
-        Warmup warmupAnno = getAnnotation(m, Warmup.class);
-        TestFormat.checkNoThrow(warmupAnno == null || runAnno.mode() != RunMode.STANDALONE,
-                                "Cannot set @Warmup at @Run method " + m + " when used with RunMode.STANDALONE. The @Run method is only invoked once.");
-    }
+    private void checkRunMethod(Method runMethod, Run runAnno) {
+        TestFormat.check(runAnno.test().length > 0, "@Run method " + runMethod + " must specify at least one test method");
+        TestFormat.checkNoThrow(runMethod.getParameterCount() == 0 || (runMethod.getParameterCount() == 1 && runMethod.getParameterTypes()[0].equals(RunInfo.class)),
+                                "@Run method " + runMethod + " must specify either no parameter or exactly one " + RunInfo.class + " parameter.");
+        Warmup warmupAnno = getAnnotation(runMethod, Warmup.class);
+        if (warmupAnno != null) {
+            TestFormat.checkNoThrow(warmupAnno.value() >= 0, "Cannot have negative value for @Warmup at " + runMethod);
+            TestFormat.checkNoThrow(runAnno.mode() != RunMode.STANDALONE,
+                                    "Cannot set @Warmup at @Run method " + runMethod + " when used with RunMode.STANDALONE. " +
+                                    "The @Run method is only invoked once.");
+
+        }
+  }
 
     private void checkNoneOrAllAssociatedTestsSkipped(Method runMethod, List<DeclaredTest> tests) {
         List<Method> testMethodsWithoutSkip = testMethodsWithoutSkipAnnotation(tests);

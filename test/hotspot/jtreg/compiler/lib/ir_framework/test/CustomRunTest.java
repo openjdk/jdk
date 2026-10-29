@@ -50,7 +50,6 @@ class CustomRunTest extends AbstractTest {
     public CustomRunTest(Method runMethod, Warmup warmUpAnno, Run runSpecification, List<DeclaredTest> tests) {
         // Make sure we can also call non-public or public methods in package private classes
         super(warmUpAnno != null ? warmUpAnno.value() : TestVM.WARMUP_ITERATIONS);
-        TestFormat.checkNoThrow(warmupIterations >= 0, "Cannot have negative value for @Warmup at " + runMethod);
         runMethod.setAccessible(true);
         this.runMethod = runMethod;
         this.runInvocationTarget = createInvocationTarget(runMethod);
