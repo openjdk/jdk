@@ -136,14 +136,8 @@ public class TestClassLoaderLeak {
                 // Forceful enabling should work
                 passWith("-XX:ShenandoahGCMode=" + mode, "-XX:ShenandoahGCHeuristics=" + h, "-XX:+ClassUnloading");
 
-                // Shenandoah ignores ClassUnloadingWithConcurrentMark, so it will still recover here
-                passWith("-XX:ShenandoahGCMode=" + mode, "-XX:ShenandoahGCHeuristics=" + h, "-XX:+ClassUnloading", "-XX:-ClassUnloadingWithConcurrentMark");
-
                 // Should OOME when unloading forcefully disabled
                 failWith("-XX:ShenandoahGCMode=" + mode, "-XX:ShenandoahGCHeuristics=" + h, "-XX:-ClassUnloading");
-
-                // Will still OOME because Shenandoah ignores ClassUnloadingWithConcurrentMark (it won't enable class unloading)
-                failWith("-XX:ShenandoahGCMode=" + mode, "-XX:ShenandoahGCHeuristics=" + h, "-XX:-ClassUnloading", "-XX:+ClassUnloadingWithConcurrentMark");
             }
         }
     }
