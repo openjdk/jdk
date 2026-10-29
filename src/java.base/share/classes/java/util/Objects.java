@@ -250,8 +250,8 @@ public final class Objects {
      * This method throws an {@code IdentityException} if and only if the
      * parameter represents a value object when preview features are enabled.
      * All objects are identity objects when preview features are disabled;
-     * consequently, this method behaves the same as {@link #requireNonNull(Object, String)
-     * Objects.requireNonNull} when preview features are disabled.
+     * consequently, this method simply performs a null check when preview
+     * features are disabled.
      *
      * @param obj the object reference to check for identity
      * @param message detail message to be used in the event that an
@@ -277,8 +277,8 @@ public final class Objects {
      * This method throws an {@code IdentityException} if and only if the
      * parameter represents a value object when preview features are enabled.
      * All objects are identity objects when preview features are disabled;
-     * consequently, this method behaves the same as {@link #requireNonNull(Object, Supplier)
-     * Objects.requireNonNull} when preview features are disabled.
+     * consequently, this method simply performs a null check when preview
+     * features are disabled.
      *
      * @param obj the object reference to check for identity
      * @param messageSupplier supplier of the detail message to be
