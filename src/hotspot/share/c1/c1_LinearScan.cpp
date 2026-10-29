@@ -5762,6 +5762,7 @@ void LinearScanWalker::init_vars_for_alloc(Interval* cur) {
 
   assert(0 <= _first_reg && _first_reg < LinearScan::nof_regs, "out of range");
   assert(0 <= _last_reg && _last_reg < LinearScan::nof_regs, "out of range");
+  assert(_first_reg < _last_reg, "first_reg must be smaller than last_reg");
 }
 
 
@@ -5842,6 +5843,39 @@ void LinearScanWalker::combine_spilled_intervals(Interval* cur) {
 }
 
 
+void LinearScanWalker::stress_spilling() {
+  const int p = current_position();
+  // We only look at positions with LIR instructions, i.e. even positions.
+  if ((p & 1) != 0) {
+    return;
+  }
+
+  for (Interval* it = active_first(anyKind); it != Interval::end(); it = it->next()) {
+    // Ensure the interval includes the current position.
+    if (it->from() >= p || it->to() <= p + 1) {
+      continue;
+    }
+
+    // Leave enough space after previous usage.
+    if (it->previous_usage(shouldHaveRegister, p) >= p - 2) {
+      continue;
+    }
+
+    // Leave enough space before next usage.
+    if (it->next_usage(shouldHaveRegister, p) <= p + 3) {
+      continue;
+    }
+
+    // Decide randomly whether to victimize this candiate interval.
+    if ((compilation()->stress().random() % 42) == 0) {
+      remove_from_list(it);
+      split_and_spill_interval(it);
+      return;
+    }
+  }
+}
+
+
 // allocate a physical register or memory location to an interval
 bool LinearScanWalker::activate_current() {
   Interval* cur = current();
@@ -5876,6 +5910,11 @@ bool LinearScanWalker::activate_current() {
     combine_spilled_intervals(cur);
 
     init_vars_for_alloc(cur);
+
+    if (StressC1Spilling) {
+      stress_spilling();
+    }
+
     if (no_allocation_possible(cur) || !alloc_free_reg(cur)) {
       // no empty register available.
       // split and spill another interval so that this interval gets a register
