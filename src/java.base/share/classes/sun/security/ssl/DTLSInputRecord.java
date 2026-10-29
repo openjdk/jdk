@@ -687,6 +687,18 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 }
             }
 
+            // All fragments of one message must agree on its total length.
+            for (RecordFragment fragment : bufferedFragments) {
+                if (fragment instanceof HandshakeFragment previous &&
+                        previous.recordEpoch == hsf.recordEpoch &&
+                        previous.messageSeq == hsf.messageSeq &&
+                        (previous.handshakeType != hsf.handshakeType ||
+                         previous.messageLength != hsf.messageLength)) {
+                    throw new SSLProtocolException(
+                            "Inconsistent DTLS handshake fragments");
+                }
+            }
+
             // Clean up the retransmission messages if necessary.
             cleanUpRetransmit(hsf);
 
