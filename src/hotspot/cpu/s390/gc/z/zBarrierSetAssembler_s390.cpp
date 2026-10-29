@@ -525,7 +525,7 @@ void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm, VectorRegister Vd
 //      count: Z_ARG3 (int >= 0)
 void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized) {
   const Register zpointer = Z_R1;
-  const VectorRegister Vdata = Z_V0;
+  const VectorRegister Vdata = Z_V16;
 
   Label done;
   __ compare64_and_branch(Z_ARG3, 0x0, Assembler::bcondEqual, done);
@@ -562,7 +562,7 @@ void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool
 
 void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized) {
   const Register zpointer = Z_R1;
-  const VectorRegister Vdata = Z_V0;
+  const VectorRegister Vdata = Z_V16;
 
   Label done;
   __ z_slag(Z_R0, Z_ARG3, 3);
