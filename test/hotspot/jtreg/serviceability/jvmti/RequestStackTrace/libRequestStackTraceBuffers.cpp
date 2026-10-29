@@ -27,14 +27,17 @@
 // drained on a thread of the agent's own. Two profilers run side by side to
 // show that environments are independent.
 
+#include "jvmti.h"
+
+// The agent uses POSIX threads and signals; the test does not run on Windows.
+#ifndef _WIN32
+
 #include <atomic>
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-#include "jvmti.h"
 
 // Mirrors the types in prims/jvmtiStackTraceRequest.hpp.
 enum { STACK_TRACE_PENDING = 0, STACK_TRACE_DONE = 1, STACK_TRACE_FAILED = 2, STACK_TRACE_DROPPED = 3 };
@@ -409,3 +412,5 @@ Java_TestRequestStackTraceBuffers_count(JNIEnv*, jclass, jint profiler, jint kin
 }
 
 }
+
+#endif // !_WIN32
