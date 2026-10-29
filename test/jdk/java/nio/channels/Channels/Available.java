@@ -44,55 +44,67 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 class Available {
 
     /**
+     * Supplies (file) sizes and positions to test.
+     */
+    static Stream<Arguments> testCases() {
+        return IntStream.of(0, 1, 100)  // sizes
+                .boxed()
+                .flatMap(size -> {
+                    long[] positions = {
+                            0,
+                            1,
+                            2,
+                            size - 1,
+                            size,
+                            size + 1,
+                            Integer.MAX_VALUE - size - 1,
+                            Integer.MAX_VALUE - size,
+                            Integer.MAX_VALUE - size + 1,
+                            Integer.MAX_VALUE - 1,
+                            Integer.MAX_VALUE,
+                            Integer.MAX_VALUE + 1L
+                    };
+                    return Arrays.stream(positions)
+                            .filter(pos -> pos >= 0)
+                            .distinct()
+                            .mapToObj(pos -> Arguments.of(size, pos));
+                });
+    }
+
+    /**
      * Test InputStream.available when input stream reads from a SeekableByteChannel.
      */
-    private static void testSeekableByteChannel(SeekableByteChannel ch) throws Exception {
+    private static void testAvailable(SeekableByteChannel ch) throws Exception {
         InputStream in = Channels.newInputStream(ch);
-        long size = ch.size();
-        long[] positions = new long[] {
-                0L,
-                size - 1L,
-                size,
-                size + 1L,
-                Integer.MAX_VALUE - size - 1L,
-                Integer.MAX_VALUE - size,
-                Integer.MAX_VALUE - size + 1L,
-                Integer.MAX_VALUE - 1L,
-                Integer.MAX_VALUE,
-                Integer.MAX_VALUE + 1L
-        };
-        for (long pos : positions) {
-            if (pos >= 0) {
-                int expectedAvailable = Math.clamp(size - pos, 0, Integer.MAX_VALUE);
-                System.err.format(
-                        "  size = %d, position = %d, expected available = %d%n",
-                        size, pos, expectedAvailable);
-                ch.position(pos);
-                assertEquals(expectedAvailable, in.available());
-            }
-        }
+        int expectedAvailable = Math.clamp(ch.size() - ch.position(), 0, Integer.MAX_VALUE);
+        assertEquals(expectedAvailable, in.available());
     }
 
     /**
      * Test InputStream.available when input stream reads from a FileChannel.
      */
     @ParameterizedTest
-    @ValueSource(ints = { 0, 100 })
-    void testFileChannel(int size) throws Exception {
+    @MethodSource("testCases")
+    void testFileChannel(int size, long pos) throws Exception {
         Path file = Files.createTempFile(Path.of("."), "blah", "dat");
         try {
             Files.write(file, new byte[size]);
             try (FileChannel fc = FileChannel.open(file)) {
-                testSeekableByteChannel(fc);
+                fc.position(pos);
+                testAvailable(fc);
             }
         } finally {
             Files.delete(file);
@@ -103,8 +115,8 @@ class Available {
      * Test InputStream.available when input stream reads from a SeekableByteChannel.
      */
     @ParameterizedTest
-    @ValueSource(ints = { 0, 100 })
-    void testSeekableByteChannel(int size) throws Exception {
+    @MethodSource("testCases")
+    void testSeekableByteChannel(int size, long pos) throws Exception {
         var ch = new SeekableByteChannel() {
             long position;
             @Override
@@ -143,7 +155,9 @@ class Available {
                 throw new IOException();
             }
         };
-        testSeekableByteChannel(ch);
+
+        ch.position(pos);
+        testAvailable(ch);
     }
 
     /**

@@ -23,13 +23,13 @@
  */
 
 #include "cds/aotCompressedPointers.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/cdsConfig.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciMetadata.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileTask.hpp"
 #include "memory/metadataFactory.hpp"
@@ -125,7 +125,7 @@ static bool is_excluded(InstanceKlass* k) {
   }
   if (CDSConfig::is_at_aot_safepoint()) {
     // Check for AOT exclusion only at AOT safe point.
-    return SystemDictionaryShared::should_be_excluded(k) || !SystemDictionaryShared::is_builtin_loader(k->class_loader_data());
+    return AOTSystemDictionary::should_be_excluded(k) || !AOTSystemDictionary::is_builtin_loader(k->class_loader_data());
   }
   return false;
 }
@@ -733,7 +733,7 @@ bool TrainingData::Key::can_compute_cds_hash(const Key* const& k) {
 }
 
 uint TrainingData::Key::cds_hash(const Key* const& k) {
-  return SystemDictionaryShared::hash_for_shared_dictionary((address)k->meta());
+  return AOTSystemDictionary::hash_for_shared_dictionary((address)k->meta());
 }
 
 TrainingData* TrainingData::lookup_archived_training_data(const Key* k) {

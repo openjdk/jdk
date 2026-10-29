@@ -223,13 +223,13 @@ VStatus VLoopMemorySlices::find_memory_slices() {
     if (n->is_memory_phi()) {
       // Memory slice with stores (and maybe loads)
       PhiNode* phi = n->as_Phi();
-      int alias_idx = C->get_alias_index(phi->adr_type());
+      int alias_idx = C->get_alias_index(phi->out_adr_type());
       assert(_inputs.at(alias_idx) == nullptr, "did not yet touch this slice");
       _inputs.at_put(alias_idx, phi->in(1));
       _heads.at_put(alias_idx, phi);
     } else if (n->is_Load()) {
       LoadNode* load = n->as_Load();
-      int alias_idx = C->get_alias_index(load->adr_type());
+      int alias_idx = C->get_alias_index(load->in_adr_type());
       PhiNode* head = _heads.at(alias_idx);
       if (head == nullptr) {
         // We did not find a phi on this slice yet -> must be a slice with only loads.
@@ -248,7 +248,7 @@ VStatus VLoopMemorySlices::find_memory_slices() {
     } else if (n->is_Store()) {
       // Found a store. Make sure it is in a slice with a Phi.
       StoreNode* store = n->as_Store();
-      int alias_idx = C->get_alias_index(store->adr_type());
+      int alias_idx = C->get_alias_index(store->out_adr_type());
       PhiNode* head = _heads.at(alias_idx);
       assert(head != nullptr, "should have found a mem phi for this slice");
 #endif
@@ -395,7 +395,7 @@ void VLoopDependencyGraph::construct() {
 
 void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& strong_memory_edges, GrowableArray<int>& weak_memory_edges) {
   assert(_dependency_nodes.at_grow(_body.bb_idx(n), nullptr) == nullptr, "not yet created");
-  DependencyNode* dn = new (_arena) DependencyNode(n, strong_memory_edges, weak_memory_edges, _arena);
+  DependencyNode* dn = new (_arena) DependencyNode(strong_memory_edges, weak_memory_edges, _arena);
   _dependency_nodes.at_put_grow(_body.bb_idx(n), dn, nullptr);
 }
 
@@ -482,11 +482,9 @@ void VLoopDependencyGraph::print() const {
 }
 #endif
 
-VLoopDependencyGraph::DependencyNode::DependencyNode(MemNode* n,
-                                                     GrowableArray<int>& strong_memory_edges,
+VLoopDependencyGraph::DependencyNode::DependencyNode(GrowableArray<int>& strong_memory_edges,
                                                      GrowableArray<int>& weak_memory_edges,
                                                      Arena* arena) :
-    _node(n),
     _num_strong_memory_edges(strong_memory_edges.length()),
     _num_weak_memory_edges(weak_memory_edges.length()),
     _memory_edges(nullptr)
