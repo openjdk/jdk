@@ -125,7 +125,7 @@ public sealed interface ValueLayout extends MemoryLayout
     /**
      * An integral value layout models an integral data type.
      * <p>
-     * An integral value layout has a <em>signedness</em>. That is, they can
+     * Integral value layouts have a <em>signedness</em>. That is, they can
      * be either <em>signed</em> or <em>unsigned</em> to reflect the
      * signedness of the values they are associated with. The
      * signedness of an integral value layout has no effect on the
