@@ -47,7 +47,10 @@ public class CompileFramework {
     /**
      * Set up a new Compile Framework instance, for a new compilation unit.
      */
-    public CompileFramework() {}
+    public CompileFramework() {
+        // Pass the seed to generated code that may load a separate copy of Utils.
+        System.getProperties().putIfAbsent(jdk.test.lib.Utils.SEED_PROPERTY_NAME, Long.toString(jdk.test.lib.Utils.SEED));
+    }
 
     /**
      * Add a Java source to the compilation.
