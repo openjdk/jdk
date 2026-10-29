@@ -1734,33 +1734,6 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
     return;
   }
 
-  if (n->is_ValueType()) {
-    // ValueTypeNode::Ideal
-    // Pattern:
-    //   CheckCastPP as oop
-    //   --(ValueTypeNode::Oop)-> ValueType
-    //   --(AllocateNode::ValueType)-> Allocate
-    //   ---> Proj:Parm
-    //   ---> CheckCastPP
-    //   ---> user
-    //    ===>
-    //   oop ---> user
-    //
-    //  This is problematic as this optimization (using replace_allocation)
-    //  is part of ValueTypeNode, so it looks deep at outputs and not only
-    //  at inputs. It is possible to common two ValueTypeNode with the same
-    //  inputs, but only of them would trigger this optimization. If we
-    //  remove this one in favor of the one without such inputs, we will only
-    //  enqueue the users for optimization: this is not enough. We should
-    //  implement this in such a way it depends only on (transitive) inputs.
-    //
-    // Found with:
-    //   compiler/valhalla/valuetypes/TestCallingConvention.java#id4
-    //   -XX:-TieredCompilation -XX:VerifyIterativeGVN=1110
-
-    return;
-  }
-
   // Ideal should not make progress if it returns nullptr.
   // We use made_progress() rather than unique() or live_nodes() because some
   // Ideal implementations speculatively create nodes and kill them before
