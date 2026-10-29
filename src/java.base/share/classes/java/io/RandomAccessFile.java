@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1031,24 +1031,11 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     public final String readLine() throws IOException {
         if (jfrTracing && FileReadEvent.enabled()) {
-            long bytesRead = 0;
-            long start = FileReadEvent.timestamp();
-            try {
-                String result = implReadLine();
-                bytesRead = result == null ? 0 : result.length();
-                return result;
-            } finally {
-                FileReadEvent.offer(start, path, bytesRead);
-            }
+            return traceReadLine();
         }
-        return implReadLine();
-    }
-
-    private final String implReadLine() throws IOException {
         StringBuilder input = new StringBuilder();
         int c = -1;
         boolean eol = false;
-
         while (!eol) {
             switch (c = read0()) {
                 case -1, '\n' -> eol = true;
@@ -1067,6 +1054,48 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
             return null;
         }
         return input.toString();
+    }
+
+    private String traceReadLine() throws IOException {
+        StringBuilder input = new StringBuilder();
+        int c = -1;
+        boolean eol = false;
+        long bytesRead = 0;
+        long start = FileReadEvent.timestamp();
+        boolean endOfFile = false;
+        try {
+            while (!eol) {
+                c = read0();
+                if (c >= 0) {
+                    bytesRead++;
+                } else {
+                    endOfFile = true;
+                }
+                switch (c) {
+                    case -1, '\n' -> eol = true;
+                    case '\r' -> {
+                        eol = true;
+                        long cur = getFilePointer();
+                        int d = read0();
+                        if (d >= 0) {
+                            bytesRead++;
+                        } else {
+                            endOfFile = true;
+                        }
+                        if (d != '\n') {
+                            seek(cur);
+                        }
+                    }
+                    default -> input.append((char) c);
+                }
+            }
+            if ((c == -1) && (input.length() == 0)) {
+                return null;
+            }
+            return input.toString();
+        } finally {
+            FileReadEvent.offer(start, path, bytesRead, endOfFile);
+        }
     }
 
     /**

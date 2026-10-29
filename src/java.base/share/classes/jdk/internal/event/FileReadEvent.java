@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,12 +63,18 @@ public final class FileReadEvent extends Event {
      * @param bytesRead  the number of bytes that were read, or -1 if the end of the file was reached
      */
     public static void offer(long start, String path, long bytesRead) {
+        if (bytesRead < 0) {
+            offer(start, path, 0, true);
+        } else {
+            offer(start, path, bytesRead, false);
+        }
+    }
+
+    public static void offer(long start, String path, long bytesRead, boolean endOfFile) {
         long end = timestamp();
         long duration = end - start;
         if (shouldThrottleCommit(duration, end)) {
-            boolean endOfFile = bytesRead < 0;
-            long bytes = endOfFile ? 0 : bytesRead;
-            commit(start, duration, path, bytes, endOfFile);
+            commit(start, duration, path, bytesRead, endOfFile);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,13 +119,7 @@ public class IOEvent {
         }
         return new IOEvent(Thread.currentThread().getName(), EventType.FileForce, 0, address, false);
     }
-
-    public static IOEvent createFileReadEvent(long size, File file) {
-        boolean endOfStream = false;
-        if (size < 0) {
-            endOfStream = true;
-            size = 0;
-        }
+    public static IOEvent createFileReadEvent(long size, File file, boolean endOfStream) {
         String address = null;
         try {
             address = file.getCanonicalPath();
@@ -133,6 +127,15 @@ public class IOEvent {
                 throw new RuntimeException();
         }
         return new IOEvent(Thread.currentThread().getName(), EventType.FileRead, size, address, endOfStream);
+    }
+
+    public static IOEvent createFileReadEvent(long size, File file) {
+        boolean endOfStream = false;
+        if (size < 0) {
+            endOfStream = true;
+            size = 0;
+        }
+        return createFileReadEvent(size, file, endOfStream);
     }
 
     public static IOEvent createFileWriteEvent(long size, File file) {
