@@ -8936,7 +8936,7 @@ instruct andcL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
 
 instruct moveD2L_reg_reg(iRegLdst dst, regD src) %{
   match(Set dst (MoveD2L src));
-  format %{ "MFFPRD  $src, $dst \t// MoveD2L" %}
+  format %{ "MFFPRD  $dst, $src \t// MoveD2L" %}
   size(4);
   ins_encode %{
     __ mffprd($dst$$Register, $src$$FloatRegister);
