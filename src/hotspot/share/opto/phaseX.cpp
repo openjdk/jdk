@@ -2785,6 +2785,41 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->is_MinMax();
     });
   }
+
+  // fold_subI_no_underflow_pattern parses nested no-overflow
+  // addition and subtraction with constants. Thus, we need
+  // notification for:
+  //        u4           u3      u2           u1
+  // n -> AddL -> MaxL/MinL -> AddL -> MaxL/MinL   (4-hop)
+  //         n -> MaxL/MinL -> AddL -> MaxL/MinL   (3-hop)
+  //                      n -> AddL -> MaxL/MinL   (2-hop)
+  auto nested_add_no_overflow_pattern_2_hop = [&](Node* u2) {
+    if (u2->Opcode() == Op_AddL) {
+      add_users_to_worklist_if(worklist, u2, [](Node* u1) {
+        return u1->Opcode() == Op_MaxL || u1->Opcode() == Op_MinL;
+      });
+    }
+  };
+  auto nested_add_no_overflow_pattern_3_hop = [&](Node* u3) {
+    if (u3->Opcode() == Op_MaxL || u3->Opcode() == Op_MinL) {
+      for (DUIterator_Fast imax, i = u3->fast_outs(imax); i < imax; i++) {
+        Node* u2 = u3->fast_out(i);
+        nested_add_no_overflow_pattern_2_hop(u2);
+      }
+    }
+  };
+  auto nested_add_no_overflow_pattern_4_hop = [&](Node* u4) {
+    if (u4->Opcode() == Op_AddL) {
+      for (DUIterator_Fast imax, i = u4->fast_outs(imax); i < imax; i++) {
+        Node* u3 = u4->fast_out(i);
+        nested_add_no_overflow_pattern_3_hop(u3);
+      }
+    }
+  };
+  nested_add_no_overflow_pattern_2_hop(use);
+  nested_add_no_overflow_pattern_3_hop(use);
+  //nested_add_no_overflow_pattern_4_hop(use);
+
   // Check for A | (B | C) and (B | C) | A where A == B or A == C.
   if (use_op == Op_OrI || use_op == Op_OrL) {
     add_users_to_worklist_if(worklist, use, [&](Node* u) { return u->Opcode() == use->Opcode(); });

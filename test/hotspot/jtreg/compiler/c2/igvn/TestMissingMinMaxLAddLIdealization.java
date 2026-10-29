@@ -40,11 +40,13 @@ public class TestMissingMinMaxLAddLIdealization {
         // Ensure Math.min and Math.max are loaded/resolved properly.
         Math.min(1L, 2L);
         Math.max(1L, 2L);
-        test1(0);
-        test2(0);
+        testMin2Hop(0);
+        testMax2Hop(0);
+        testMin3Hop(0);
+        testMax3Hop(0);
     }
 
-    static long test1(int x) {
+    static long testMin2Hop(int x) {
         int delayedZero = 100;
         for (int i = 0; i < 100; i++) { delayedZero--; }
 
@@ -70,7 +72,31 @@ public class TestMissingMinMaxLAddLIdealization {
         return outer;
     }
 
-    static long test2(int x) {
+    static long testMax2Hop(int x) {
+        int delayedZero = 100;
+        for (int i = 0; i < 100; i++) { delayedZero--; }
+
+        long delayedLongMax = delayedZero == 0 ? Long.MAX_VALUE : 0L;
+
+        long inner = Math.max((long)x - 2L, Integer.MIN_VALUE);
+        long delayedInner = Math.min(inner, delayedLongMax);
+        long outer = Math.max(delayedInner - 1L, Integer.MIN_VALUE);
+        return outer;
+    }
+
+    static long testMin3Hop(int x) {
+        int delayedZero = 100;
+        for (int i = 0; i < 100; i++) { delayedZero--; }
+
+        long delayedLongMax = delayedZero == 0 ? Long.MAX_VALUE : 0L;
+
+        long inner = Math.min((long)x + 2L, Integer.MAX_VALUE);
+        long delayedInner = Math.min(inner, delayedLongMax);
+        long outer = Math.min(delayedInner + 1L, Integer.MAX_VALUE);
+        return outer;
+    }
+
+    static long testMax3Hop(int x) {
         int delayedZero = 100;
         for (int i = 0; i < 100; i++) { delayedZero--; }
 
