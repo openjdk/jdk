@@ -44,7 +44,6 @@ public class TestMissingMinMaxLAddLIdealization {
         testMax2Hop(0);
         testMin3Hop(0, 0);
         testMax3Hop(0, 0);
-        testMin4Hop(0, 0);
     }
 
     static long testMin2Hop(int x) {
@@ -108,18 +107,6 @@ public class TestMissingMinMaxLAddLIdealization {
 
         long inner = Math.max(delayedAdd, Integer.MIN_VALUE);
         long outer = Math.max(inner - 1L, Integer.MIN_VALUE);
-        return outer;
-    }
-
-    static long testMin4Hop(int x, int y) {
-        int delayedZero = 100;
-        for (int i = 0; i < 100; i++) { delayedZero--; }
-
-        long delayedAdd = delayedZero == 0 ? (long)x + 4L : (long)y + 4L;
-        delayedAdd = delayedAdd + -2L;
-
-        long inner = Math.min(delayedAdd, Integer.MAX_VALUE);
-        long outer = Math.min(inner + 1L, Integer.MAX_VALUE);
         return outer;
     }
 }

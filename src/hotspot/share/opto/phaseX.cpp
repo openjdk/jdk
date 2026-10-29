@@ -2818,7 +2818,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   };
   nested_add_no_overflow_pattern_2_hop(use);
   nested_add_no_overflow_pattern_3_hop(use);
-  //nested_add_no_overflow_pattern_4_hop(use);
+  nested_add_no_overflow_pattern_4_hop(use);
 
   // Check for A | (B | C) and (B | C) | A where A == B or A == C.
   if (use_op == Op_OrI || use_op == Op_OrL) {
