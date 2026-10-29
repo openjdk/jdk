@@ -541,7 +541,10 @@ uint ShenandoahBarrierSetC2::estimated_barrier_size(const Node* node) const {
 
   if ((bd & ShenandoahBitCardMark) != 0) {
     // Card mark is not covered by hot-patching.
-    nodes += 4 + (UseCondCardMark ? 4 : 0);
+    nodes += 4;
+    if (UseCondCardMark) {
+      nodes += 4;
+    }
   }
 
   return nodes;
