@@ -297,7 +297,7 @@ public class UnicodeReader {
 
         for (int i = 0; i < 4; i++) {
             // Translate and merge digit.
-            int digit = index < length ? unidigit(buffer[index]) : -1;
+            int digit = index < length && buffer[index] < 0x80 ? Character.digit(buffer[index], 16) : -1;
             code = code << 4 | digit;
 
             // If invalid digit.
@@ -326,22 +326,6 @@ public class UnicodeReader {
         BACKSLASH,
         VALID_ESCAPE,
         BROKEN_ESCAPE;
-    }
-
-    /**
-     * Parse an ASCII hex digit that is part of a Unicode escape sequence. Does not advance character.
-     *
-     * @param ch    digit character
-     *
-     * @return value of digit if valid, else -1
-     */
-    private int unidigit(int ch) {
-        if (ch >= '0' && ch <= '9')
-            return ch - '0';
-        ch |= 0x20;
-        if (ch >= 'a' && ch <= 'f')
-            return 10 + ch - 'a';
-        return -1;
     }
 
     /**
