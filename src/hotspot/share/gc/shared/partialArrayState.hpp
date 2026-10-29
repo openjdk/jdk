@@ -49,17 +49,17 @@ class PartialArrayStateManager;
 // claiming a chunk, not while scanning it.
 //
 // States are allocated and released using a PartialArrayStateAllocator.
-// Each queued or currently claiming task contributes one to the state's
-// ref-count.  Increment the ref-count before publishing continuation tasks.
-// After a task has claimed its chunk and published any continuations, decrement
-// the ref-count by one.  The worker that decrements it to zero recycles the
-// state on its own allocator for later reuse.
+// Each full-sized chunk reserves a reference to the state at allocation,
+// including chunks whose tasks have not yet been published.  After a task has
+// claimed its chunk, published any continuations, and captured everything needed
+// for scanning, decrement the remaining chunk count by one.  The worker that
+// decrements it to zero recycles the state on its own allocator for later reuse.
 class PartialArrayState {
   objArrayOop _array;
   size_t _length;
   size_t _chunk_size;
   Atomic<size_t> _index;
-  Atomic<size_t> _refcount;
+  Atomic<size_t> _num_remaining_chunks;
 
   friend class PartialArrayStateAllocator;
   friend class PartialArraySplitter;
@@ -67,9 +67,6 @@ class PartialArrayState {
   PartialArrayState(objArrayOop array,
                     size_t index, size_t length,
                     size_t chunk_size);
-
-  // Increment the ref-count by count before publishing that many tasks to a queue.
-  void add_references(size_t count);
 
   size_t claim_next() {
     size_t start = _index.fetch_then_add(_chunk_size, memory_order_relaxed);
@@ -99,7 +96,7 @@ public:
 // states will eventually be reclaimed when the arena is reset.
 //
 // The allocators each provide a free-list of states.  When a state is
-// released and its reference count has reached zero, it is added to the
+// released and its remaining chunk count has reached zero, it is added to the
 // allocator's free-list, for use by future allocation requests.  This causes
 // the maximum number of allocated states to be based on the number of
 // in-progress arrays, rather than the total number of arrays that need to be
@@ -123,8 +120,9 @@ public:
                               size_t index, size_t length,
                               size_t chunk_size);
 
-  // Decrement the state's ref-count by one.  If it reaches zero, recycle on
-  // this allocator's free-list.  The state must belong to the same manager.
+  // Decrement the state's remaining chunk count by one.  If it reaches zero,
+  // recycle on this allocator's free-list.  The caller must have finished
+  // accessing the state.  The state must belong to the same manager.
   void release(PartialArrayState* state);
 };
 
