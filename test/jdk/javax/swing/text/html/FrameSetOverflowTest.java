@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8393731
- * @summary Verifies integer overflow in FrameSetView.parseDigits() 
+ * @summary Verifies integer overflow in FrameSetView.parseDigits()
  * @run main FrameSetOverflowTest
  */
 
