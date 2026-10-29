@@ -2802,23 +2802,24 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // optimization to be unlocked, the types of the inputs
   // to the AddL would have to change, which would trigger
   // a type update for AddL.
-  auto nested_add_no_overflow_pattern_2_hop = [&](Node* u2) {
-    if (u2->Opcode() == Op_AddL) {
-      add_users_to_worklist_if(worklist, u2, [](Node* u1) {
-        return u1->Opcode() == Op_MaxL || u1->Opcode() == Op_MinL;
-      });
-    }
-  };
-  auto nested_add_no_overflow_pattern_3_hop = [&](Node* u3) {
-    if (u3->Opcode() == Op_MaxL || u3->Opcode() == Op_MinL) {
-      for (DUIterator_Fast imax, i = u3->fast_outs(imax); i < imax; i++) {
-        Node* u2 = u3->fast_out(i);
-        nested_add_no_overflow_pattern_2_hop(u2);
+  //
+  // 2-hop notification for fold_subI_no_underflow_pattern
+  if (use->Opcode() == Op_AddL) {
+    add_users_to_worklist_if(worklist, use, [](Node* u1) {
+      return u1->Opcode() == Op_MaxL || u1->Opcode() == Op_MinL;
+    });
+  }
+  // 3-hop notification for fold_subI_no_underflow_pattern
+  if (use->Opcode() == Op_MaxL || use->Opcode() == Op_MinL) {
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      Node* u2 = use->fast_out(i);
+      if (u2->Opcode() == Op_AddL) {
+        add_users_to_worklist_if(worklist, u2, [](Node* u1) {
+          return u1->Opcode() == Op_MaxL || u1->Opcode() == Op_MinL;
+        });
       }
     }
-  };
-  nested_add_no_overflow_pattern_2_hop(use);
-  nested_add_no_overflow_pattern_3_hop(use);
+  }
 
   // Check for A | (B | C) and (B | C) | A where A == B or A == C.
   if (use_op == Op_OrI || use_op == Op_OrL) {
