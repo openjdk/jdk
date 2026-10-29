@@ -133,7 +133,7 @@ public class TestExecutionPolicy {
      * - At least one associated test method has a (temporary) @Skip annotation.
      */
     public boolean shouldExcludeCustomRunTest(List<DeclaredTest> tests) {
-        boolean atLeastOneTestMethodOnTestList = true;
+        boolean noTestMethodOnTestList = true;
         for (DeclaredTest test : tests) {
             Method testMethod = test.getTestMethod();
             String testName = testMethod.getName();
@@ -144,12 +144,12 @@ public class TestExecutionPolicy {
             if (isOnTestList(testName)) {
                 // Enable the custom run test if at least one associated test method is on the test list and there is
                 // no other reason to skip the custom run test.
-                atLeastOneTestMethodOnTestList = false;
+                noTestMethodOnTestList = false;
             }
         }
 
         // -DTest set? Skip this @Run method because no associated test is on the list.
-        return isTestPolicyActive() && atLeastOneTestMethodOnTestList;
+        return isTestPolicyActive() && noTestMethodOnTestList;
     }
 
     private boolean isOnTestList(String testName) {
