@@ -149,7 +149,7 @@ DEF_Agent_OnLoad(JavaVM *vm, char *tail, void * reserved) {
     JPLISAgent *             agent           = NULL;
     char *                   jarfile         = NULL;
     char *                   options         = NULL;
-    jarAttribute*            attributes      = NULL;
+    jarAttribute *           attributes      = NULL;
     char *                   premainClass    = NULL;
     char *                   premainClassJNI = NULL;
     char *                   bootClassPath   = NULL;

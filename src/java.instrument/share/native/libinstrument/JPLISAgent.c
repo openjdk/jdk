@@ -242,6 +242,7 @@ initializeJPLISAgent(   JPLISAgent *    agent,
                         jboolean        printWarning) {
     jvmtiError      jvmtierror = JVMTI_ERROR_NONE;
     jvmtiPhase      phase;
+    size_t          size;
 
     agent->mJVM                                      = vm;
     agent->mNormalEnvironment.mJVMTIEnv              = jvmtienv;
@@ -263,11 +264,12 @@ initializeJPLISAgent(   JPLISAgent *    agent,
     agent->mJarfile                                  = NULL;        /* set below */
     agent->mPrintWarning                             = printWarning;
 
-    agent->mJarfile = allocate(jvmtienv, strlen(jarfile)+1);
+    size = strlen(jarfile) + 1;
+    agent->mJarfile = allocate(jvmtienv, size);
     if (agent->mJarfile == NULL) {
         return JPLIS_INIT_ERROR_ALLOCATION_FAILURE;
     }
-    strcpy((char *) agent->mJarfile, jarfile);
+    memcpy((char *) agent->mJarfile, jarfile, size);
 
     /* make sure we can recover either handle in either direction.
      * the agent has a ref to the jvmti; make it mutual
