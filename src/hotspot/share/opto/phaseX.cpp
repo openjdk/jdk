@@ -1220,7 +1220,6 @@ void PhaseIterGVN::optimize(bool deep) {
   // A correctly handled failure returns at the failing() call that raised it, so
   // the compilation must never get here failed, with the graph already flushed.
   assert(!C->failing_internal(), "should not run IGVN on a failed compilation");
-  bool deep_revisit_converged = false;
   DEBUG_ONLY(_num_processed = 0;)
   NOT_PRODUCT(init_verifyPhaseIterGVN();)
   NOT_PRODUCT(C->reset_igv_phase_iter(PHASE_AFTER_ITER_GVN_STEP);)
@@ -1229,19 +1228,73 @@ void PhaseIterGVN::optimize(bool deep) {
     shuffle_worklist();
   }
 
-  // Pull from worklist and transform the node.
-  if (drain_worklist()) {
-    return;
-  }
+  // Core IGVN Loop
+  // --------------
+  // In principle, IGVN starts with a list of nodes in the worklist,
+  // and iteratively performs local optimizations, which then unlock
+  // optimizations of nodes nearby. These nodes near by are notified
+  // and put on the worklist. Eventually, IGVN drains the worklist
+  // and is done.
+  //
+  // Deep Revisit
+  // ------------
+  // However, the notification process only performs shallow graph
+  // walks (e.g. 2-hop or 3-hop), which is not sufficient for
+  // optimizions that require deep traversals. Hence, once IGVN
+  // finishes, those nodes may not have been fully optimized.
+  // deep_revisit ensures that all such nodes are put on the worklist
+  // again, and IGVN is run again. We do this iteratively, until
+  // IGVN makes no progress on any node, i.e. no Value, Ideal or
+  // Identity produce any new optimizaitons.
+  //
+  // Optimization Delay and Advancement
+  // ----------------------------------
+  // To verify that delaying IGVN optimizations has no effect on
+  // correctness, we insert OptimizationDelay nodes during parsing,
+  // and slowly "advance" them. These nodes delay Value optimizations
+  // by artificially keeping the type wider than the input type,
+  // and they delay Ideal and Identity optimizations until the node
+  // is eventually removed.
+  // The idea is to run IGVN, and once no optimizations can be done,
+  // we advance at most one OptimizationDelay node, put that node
+  // on the IGVN worklist, which might allow IGVN to now optimize this
+  // node (narrower type via Value or remove the node via Identity),
+  // which may then trigger further optimizations nearby.
+  //
+  // This produces the following nesting:
+  // For possibly multiple OptimizationDelay advancements:
+  //   For possibly multiple deep_revisits:
+  //     drain IGVN worklist (Value, Ideal, Identity optimizations)
+  //     deep revisit
+  //   verify
+  //   advance at most one OptimizationDelay node
 
-  if (deep && UseDeepIGVNRevisit) {
-    deep_revisit_converged = deep_revisit();
-    if (C->failing()) {
+  do {
+    // Pull from worklist and transform the node.
+    if (drain_worklist()) {
       return;
     }
-  }
 
-  NOT_PRODUCT(verify_PhaseIterGVN(deep_revisit_converged);)
+    // Deep revisit loop with nested IGVN
+    bool deep_revisit_converged = false;
+    if (deep && UseDeepIGVNRevisit) {
+      deep_revisit_converged = deep_revisit();
+      if (C->failing()) {
+        return;
+      }
+    }
+
+    NOT_PRODUCT(verify_PhaseIterGVN(deep_revisit_converged);)
+
+    // Advance at most one OptimizationDelay node
+    if (StressOptimizationDelay &&
+        C->advance_optimization_delay_nodes(*this)) {
+      continue;
+    } else {
+      break;
+    }
+  } while (true);
+
   C->print_method(PHASE_AFTER_ITER_GVN, 3);
 }
 

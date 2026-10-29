@@ -2537,6 +2537,7 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   case Op_ExtractS:
   case Op_ExtractC:
   case Op_ExtractB:
+  case Op_OptimizationDelay:
     return false;
   default:
     // If this assert is hit, that means that we need to determine if the node can be safely truncated,
