@@ -23,9 +23,7 @@
 
 package compiler.lib.ir_framework.shared;
 
-import compiler.lib.ir_framework.Skip;
 import compiler.lib.ir_framework.test.DeclaredTest;
-import compiler.lib.ir_framework.test.TestVM;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -103,11 +101,12 @@ public class TestExecutionPolicy {
      * - -DExclude lists the method
      * - The method specifies a (temporary) @Skip annotation.
      */
-    public boolean shouldExcludeTestMethod(Method testMethod) {
+    public boolean shouldExcludeTestMethod(DeclaredTest test) {
+        Method testMethod = test.getTestMethod();
         String testName = testMethod.getName();
         return isNotOnTestList(testName) ||
                isOnExcludeList(testName) ||
-               shouldSkip(testMethod);
+               shouldSkip(test);
     }
 
     private boolean isNotOnTestList(String testName) {
@@ -118,12 +117,8 @@ public class TestExecutionPolicy {
         return excludeList.contains(testName);
     }
 
-    private boolean shouldSkip(Method method) {
-        return !IGNORE_SKIP && hasSkipAnnotation(method);
-    }
-
-    private boolean hasSkipAnnotation(Method method) {
-        return TestVM.getAnnotation(method, Skip.class) != null;
+    private boolean shouldSkip(DeclaredTest test) {
+        return !IGNORE_SKIP && test.hasSkipAnno();
     }
 
     /**
@@ -137,7 +132,7 @@ public class TestExecutionPolicy {
         for (DeclaredTest test : tests) {
             Method testMethod = test.getTestMethod();
             String testName = testMethod.getName();
-            if (shouldSkip(testMethod) || isOnExcludeList(testName)) {
+            if (shouldSkip(test) || isOnExcludeList(testName)) {
                 // Skip the custom run test if at least one associated test method should be skipped or excluded.
                 return true;
             }

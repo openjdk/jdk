@@ -268,7 +268,7 @@ public class TestVM {
                 try {
                     Arguments argumentsAnno = getAnnotation(m, Arguments.class);
                     TestFormat.check(argumentsAnno != null || m.getParameterCount() == 0, "Missing @Arguments annotation to define arguments of " + m);
-                    if (testExecutionPolicy.shouldExcludeTestMethod(m)) {
+                    if (testExecutionPolicy.shouldExcludeTestMethod(test)) {
                         return;
                     }
 
@@ -661,7 +661,7 @@ public class TestVM {
                          "Missing @Arguments annotation to define arguments of " + testMethod + " required by "
                          + "checked test " + m);
         CheckedTest.Parameter parameter = getCheckedTestParameter(m, testMethod);
-        if (testExecutionPolicy.shouldExcludeTestMethod(testMethod)) {
+        if (testExecutionPolicy.shouldExcludeTestMethod(test)) {
             return;
         }
 

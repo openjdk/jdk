@@ -78,6 +78,8 @@ public class TestDTestAndExclude {
                         throw new RuntimeException("should not reach");
                     } catch (TestVMException e) {
                         Asserts.assertTrue(e.getExceptionInfo().contains("expected " + args[0] + " exception"));
+                    } catch (Exception e) {
+                        Asserts.fail("unexpected exception");
                     }
                 }
                 case "empty" -> {
@@ -86,6 +88,8 @@ public class TestDTestAndExclude {
                         throw new RuntimeException("should not reach");
                     } catch (NoTestsRunException e) {
                         // Expected
+                    } catch (Exception e) {
+                        Asserts.fail("unexpected exception");
                     }
                 }
                 case "overlap" -> {
@@ -94,6 +98,8 @@ public class TestDTestAndExclude {
                         throw new RuntimeException("should not reach");
                     } catch (OverlappingTestAndExcludeException e) {
                         // Expected
+                    } catch (Exception e) {
+                        Asserts.fail("unexpected exception");
                     }
                 }
                 default -> throw new RuntimeException("should not reach");
