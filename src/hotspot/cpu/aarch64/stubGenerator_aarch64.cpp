@@ -8637,11 +8637,6 @@ class StubGenerator: public StubCodeGenerator {
     // Split into 4 neon regs
     __ BIND(L_Length8);
     {
-      Register a9 = r10;
-      Register a10 = r11;
-      Register b9 = r12;
-      Register b10 = r13;
-
       VSeq<4> a_vec(16);
       VSeq<4> b_vec(20);
 
