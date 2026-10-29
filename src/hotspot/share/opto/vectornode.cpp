@@ -2056,7 +2056,7 @@ int VectorCastNode::opcode(int sopc, BasicType bt, bool is_signed) {
   }
 }
 
-bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type) {
+bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type, bool is_signed) {
   if (is_java_primitive(dst_type) &&
       is_java_primitive(src_type) &&
       (vlen > 1) && is_power_of_2(vlen) &&
@@ -2064,7 +2064,7 @@ bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicTy
       // check the src_type:
       VectorNode::vector_size_supported_auto_vectorization(src_type, vlen) &&
       VectorNode::vector_size_supported_auto_vectorization(dst_type, vlen)) {
-    int vopc = VectorCastNode::opcode(opc, src_type);
+    int vopc = VectorCastNode::opcode(opc, src_type, is_signed);
     return vopc > 0 && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, dst_type);
   }
   return false;
@@ -2075,6 +2075,20 @@ bool VectorCastNode::is_supported_subword_cast(BasicType def_bt, BasicType use_b
 
   // Opcode is only required to disambiguate half float, so we pass -1 as it can't be encountered here.
   return (is_subword_type(def_bt) || is_subword_type(use_bt)) && VectorCastNode::implemented(-1, pack_size, def_bt, use_bt);
+}
+
+bool VectorCastNode::is_supported_unsigned_cast(BasicType def_bt, BasicType use_bt, const uint pack_size, int def_opc) {
+  // Only unsigned subword loads (LoadUB/LoadUS) widened to int;
+  // source lanes selected by load opcode.
+  BasicType src_bt = T_ILLEGAL;
+  if (def_opc == Op_LoadUB && use_bt == T_INT && type2aelembytes(def_bt) == 1) {
+    src_bt = T_BYTE;
+  } else if (def_opc == Op_LoadUS && use_bt == T_INT && type2aelembytes(def_bt) == 2) {
+    src_bt = T_SHORT;
+  } else {
+    return false;
+  }
+  return VectorCastNode::implemented(-1, pack_size, src_bt, T_INT, false);
 }
 
 Node* VectorCastNode::Identity(PhaseGVN* phase) {

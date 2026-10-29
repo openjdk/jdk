@@ -2321,6 +2321,11 @@ bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def, cons
     return true;
   }
 
+  // Unsigned widening: a LoadUB def feeding an int use carries an implicit zero-extension.
+  if (VectorCastNode::is_supported_unsigned_cast(def_bt, use_bt, pack_size, def->Opcode())) {
+    return true;
+  }
+
   return false;
 }
 
