@@ -50,7 +50,7 @@ instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
   ins_encode %{
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
                Assembler::byte, memory_order_release, $res$$Register);
-    __ sxtbw($res$$Register, $res$$Register);
+    __ narrow_subword_type($res$$Register, T_BYTE);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -66,7 +66,7 @@ instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
   ins_encode %{
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
                Assembler::halfword, memory_order_release, $res$$Register);
-    __ sxthw($res$$Register, $res$$Register);
+    __ narrow_subword_type($res$$Register, T_SHORT);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -142,7 +142,7 @@ instruct compareAndExchangeBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
   ins_encode %{
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
                Assembler::byte, memory_order_seq_cst, $res$$Register);
-    __ sxtbw($res$$Register, $res$$Register);
+    __ narrow_subword_type($res$$Register, T_BYTE);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -158,7 +158,7 @@ instruct compareAndExchangeSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
   ins_encode %{
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
                Assembler::halfword, memory_order_seq_cst, $res$$Register);
-    __ sxthw($res$$Register, $res$$Register);
+    __ narrow_subword_type($res$$Register, T_SHORT);
   %}
   ins_pipe(pipe_slow);
 %}
