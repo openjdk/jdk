@@ -1200,7 +1200,7 @@ public class Test {
         // same URI
         URI u1 = URI.create("s://h/../p");
         URI u2 = u1.normalize();
-        eqHashCompBidi(u1, u2, '=');
+        xeq(u1, u2);
         eqeq(u1, u2);
 
         // Relativization
@@ -1392,6 +1392,21 @@ public class Test {
             .ta("s://a/%00").z();
     }
 
+    /** {@link #eqHashCompBidi(Object, Object, char) eqHashCompBidi(s, t, '=')} shortcut. */
+    private static void xeq(Object s, Object t) throws URISyntaxException {
+        eqHashCompBidi(s, t, '=');
+    }
+
+    /** {@link #eqHashCompBidi(Object, Object, char) eqHashCompBidi(s, t, '<')} shortcut. */
+    private static void xlt(Object s, Object t) throws URISyntaxException {
+        eqHashCompBidi(s, t, '<');
+    }
+
+    /** {@link #eqHashCompBidi(Object, Object, char) eqHashCompBidi(s, t, '>')} shortcut. */
+    private static void xgt(Object s, Object t) throws URISyntaxException {
+        eqHashCompBidi(s, t, '>');
+    }
+
     /**
      * Verifies {@link URI#equals(Object)}, {@link URI#hashCode()}, and
      * {@link URI#compareTo(URI)} are consistent with each other and match the
@@ -1516,49 +1531,49 @@ public class Test {
         URI r = new URI("reg://some%20registry/b/c/d?q#f");
         URI s = new URI("http://jag:cafebabe@java.sun.com:94/b/c/d?q#f");
         URI t = new URI("http://example.com/%5bsegment%5d");
-        eqHashCompBidi(o, o, '=');
-        eqHashCompBidi(o, r, '<');
-        eqHashCompBidi(s, o, '<');
-        eqHashCompBidi(s, r, '<');
+        xeq(o, o);
+        xlt(o, r);
+        xlt(s, o);
+        xlt(s, r);
 
-        eqHashCompBidi(o, "MaILto:foo@bar.com", '=');
-        eqHashCompBidi(o, "mailto:foo@bar.COM", '>');
-        eqHashCompBidi(r, "rEg://some%20registry/b/c/d?q#f", '=');
-        eqHashCompBidi(r, "reg://Some%20Registry/b/c/d?q#f", '>');
-        eqHashCompBidi(r, "reg://some%20registry/b/c/D?q#f", '>');
-        eqHashCompBidi(s, "hTtP://jag:cafebabe@Java.Sun.COM:94/b/c/d?q#f", '=');
-        eqHashCompBidi(s, "http://jag:CafeBabe@java.sun.com:94/b/c/d?q#f", '>');
-        eqHashCompBidi(s, "http://jag:cafebabe@java.sun.com:94/b/c/d?r#f", '<');
-        eqHashCompBidi(s, "http://jag:cafebabe@java.sun.com:94/b/c/d?q#g", '<');
-        eqHashCompBidi(t, "http://example.com/%5Bsegment%5D", '=');
-        eqHashCompBidi(t, "http://example.com/%5BSegment%5D", '>');
-        eqHashCompBidi("http://example.com/%5Asegment%5D", "http://example.com/%5Bsegment%5D", '<');
-        eqHashCompBidi("http://host/a%00bcd", "http://host/a%00bcd", '=');
-        eqHashCompBidi("http://host/a%00bcd", "http://host/aZ00bcd", '<');
-        eqHashCompBidi("http://host/abc%e2def%C3ghi", "http://host/abc%E2def%c3ghi", '=');
+        xeq(o, "MaILto:foo@bar.com");
+        xgt(o, "mailto:foo@bar.COM");
+        xeq(r, "rEg://some%20registry/b/c/d?q#f");
+        xgt(r, "reg://Some%20Registry/b/c/d?q#f");
+        xgt(r, "reg://some%20registry/b/c/D?q#f");
+        xeq(s, "hTtP://jag:cafebabe@Java.Sun.COM:94/b/c/d?q#f");
+        xgt(s, "http://jag:CafeBabe@java.sun.com:94/b/c/d?q#f");
+        xlt(s, "http://jag:cafebabe@java.sun.com:94/b/c/d?r#f");
+        xlt(s, "http://jag:cafebabe@java.sun.com:94/b/c/d?q#g");
+        xeq(t, "http://example.com/%5Bsegment%5D");
+        xgt(t, "http://example.com/%5BSegment%5D");
+        xlt("http://example.com/%5Asegment%5D", "http://example.com/%5Bsegment%5D");
+        xeq("http://host/a%00bcd", "http://host/a%00bcd");
+        xlt("http://host/a%00bcd", "http://host/aZ00bcd");
+        xeq("http://host/abc%e2def%C3ghi", "http://host/abc%E2def%c3ghi");
 
-        eqHashCompBidi("p", "s:p", '<');
-        eqHashCompBidi("s:p", "T:p", '<');
-        eqHashCompBidi("S:p", "t:p", '<');
-        eqHashCompBidi("s:/p", "s:p", '<');
-        eqHashCompBidi("s:p", "s:q", '<');
-        eqHashCompBidi("s:p#f", "s:p#g", '<');
-        eqHashCompBidi("s://u@h:1", "s://v@h:1", '<');
-        eqHashCompBidi("s://u@h:1", "s://u@i:1", '<');
-        eqHashCompBidi("s://u@h:1", "s://v@h:2", '<');
-        eqHashCompBidi("s://h", "s://h:0", '<');
-        eqHashCompBidi("s://h", "s://h:" + Integer.MAX_VALUE, '<');
-        eqHashCompBidi("s://h:0", "s://h:" + Integer.MAX_VALUE, '<');
-        eqHashCompBidi("s://h:" + Integer.MAX_VALUE, "s://H:" + Integer.MAX_VALUE, '=');
-        eqHashCompBidi("s://a%20b", "s://a%20c", '<');
-        eqHashCompBidi("s://a%20b", "s://aab", '<');
-        eqHashCompBidi("s://AA", "s://A_", '<');
-        eqHashCompBidi("s:/p", "s:/q", '<');
-        eqHashCompBidi("s:/p?q", "s:/p?r", '<');
-        eqHashCompBidi("s:/p#f", "s:/p#g", '<');
+        xlt("p", "s:p");
+        xlt("s:p", "T:p");
+        xlt("S:p", "t:p");
+        xlt("s:/p", "s:p");
+        xlt("s:p", "s:q");
+        xlt("s:p#f", "s:p#g");
+        xlt("s://u@h:1", "s://v@h:1");
+        xlt("s://u@h:1", "s://u@i:1");
+        xlt("s://u@h:1", "s://v@h:2");
+        xlt("s://h", "s://h:0");
+        xlt("s://h", "s://h:" + Integer.MAX_VALUE);
+        xlt("s://h:0", "s://h:" + Integer.MAX_VALUE);
+        xeq("s://h:" + Integer.MAX_VALUE, "s://H:" + Integer.MAX_VALUE);
+        xlt("s://a%20b", "s://a%20c");
+        xlt("s://a%20b", "s://aab");
+        xlt("s://AA", "s://A_");
+        xlt("s:/p", "s:/q");
+        xlt("s:/p?q", "s:/p?r");
+        xlt("s:/p#f", "s:/p#g");
 
-        eqHashCompBidi("s://h", "s://h/p", '<');
-        eqHashCompBidi("s://h/p", "s://h/p?q", '<');
+        xlt("s://h", "s://h/p");
+        xlt("s://h/p", "s://h/p?q");
 
     }
 
@@ -1575,7 +1590,7 @@ public class Test {
         ObjectInputStream oi = new ObjectInputStream(bi);
         try {
             Object o = oi.readObject();
-            eqHashCompBidi(u, (URI)o, '=');
+            xeq(u, o);
         } catch (ClassNotFoundException x) {
             x.printStackTrace();
             throw new RuntimeException(x.toString());
@@ -1842,13 +1857,13 @@ public class Test {
         throws URISyntaxException {
             URI baseURI = URI.create(base);
             URI targetURI = URI.create(target);
-            eqHashCompBidi(expected, baseURI.relativize(baseURI.resolve(targetURI)), '=');
+            xeq(expected, baseURI.relativize(baseURI.resolve(targetURI)));
     }
     private static void resolveAfterRelativizeTest(String base, String target, String expected)
         throws URISyntaxException {
             URI baseURI = URI.create(base);
             URI targetURI = URI.create(target);
-            eqHashCompBidi(expected, baseURI.resolve(baseURI.relativize(targetURI)), '=');
+            xeq(expected, baseURI.resolve(baseURI.relativize(targetURI)));
     }
 
     // 8272072 - Resolving URI relative path with no "/" may lead to incorrect toString
@@ -1858,12 +1873,12 @@ public class Test {
             URI relativeURI = new URI("test");
             URI resolvedURI = baseURI.resolve(relativeURI);
 
-            eqHashCompBidi("http://example.com/test", resolvedURI, '=');
+            xeq("http://example.com/test", resolvedURI);
 
             baseURI = new URI("relativeBase");
             resolvedURI = baseURI.resolve(relativeURI);
 
-            eqHashCompBidi("test", resolvedURI, '=');
+            xeq("test", resolvedURI);
         } catch (URISyntaxException e) {
             throw new AssertionError("shouldn't ever happen", e);
         }
