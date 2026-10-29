@@ -552,15 +552,13 @@ public:
 
 #if defined(RISCV64) && !defined(ZERO)
 #define AOTCODECACHE_CONFIGS_RISCV_DO(do_var, do_fun) \
-  do_var(intx,  BlockZeroingLowLimit)                   /* zero blocks stub */ \
-  do_var(bool,  UseBlockZeroing)                        /* zero blocks stub and nmethods */ \
+  do_var(intx,  BlockZeroingLowLimit)                   /* array clear nmethods */ \
   do_var(bool,  UseConservativeFence)                   /* fence encoding in stubs and nmethods */ \
   do_var(bool,  UseCtxFencei)                           /* method entry barrier stub */ \
   do_var(bool,  UseSecondarySupersCache)                /* secondary supers cache in nmethods */ \
   do_var(bool,  UseZabha)                               /* narrow cmpxchg selection in nmethods */ \
   do_var(bool,  UsePopCountInstruction)                 /* other platforms record it in CPU features */ \
   do_fun(int,   SatpMode,                               (int)VM_Version::satp_mode.value()) \
-  do_fun(int,   RVZicbozBlockSize,                      (int)VM_Version::zicboz_block_size.value()) \
   // END
 #else
 #define AOTCODECACHE_CONFIGS_RISCV_DO(do_var, do_fun)

@@ -1538,8 +1538,6 @@ INSN(sd_release, sd, sd_rl);
   address zero_words(Register ptr, Register cnt);
   void fill_words(Register base, Register cnt, Register value);
   void zero_memory(Register addr, Register len, Register tmp);
-  void zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2);
-
   void shift_left_add(Register Rd, Register Rs1, Register Rs2, int shamt);
   void shift_left_add(Register Rd, Register Rs1, Register Rs2, int shamt, Register tmp);
 
