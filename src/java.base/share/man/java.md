@@ -3476,7 +3476,7 @@ By default logging messages are output synchronously - each log message is writt
 the designated output when the logging call is made. You can instead use asynchronous
 logging mode by specifying:
 
-`-Xlog:async[:[stall|drop]]`
+`-Xlog:async[:[off|stall|drop]]`
 :     Write all logging asynchronously.
 
 In asynchronous logging mode, log sites enqueue all logging messages to an intermediate buffer
@@ -3485,6 +3485,7 @@ intermediate buffer is bounded. On buffer exhaustion the enqueuing message is ei
 or logging threads are stalled until the flushing thread catches up (`async:stall`).
 If no specific mode is chosen, then `async:drop` is chosen by default.
 Log entry write operations are guaranteed to be non-blocking in the `async:drop` case.
+Use `async:off` to explicitly disable asynchronous logging.
 
 The option `-XX:AsyncLogBufferSize=N` specifies the memory budget in bytes for the intermediate buffer.
 The default value should be big enough to cater for most cases. Users can provide a custom value to

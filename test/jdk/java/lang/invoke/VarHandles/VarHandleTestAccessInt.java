@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,14 @@
  * questions.
  */
 
+// -- This file was mechanically generated: Do not edit! -- //
+
 /*
  * @test
  * @run junit/othervm -Diters=10   -Xint                                                   VarHandleTestAccessInt
  *
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
  *
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestAccessInt
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestAccessInt
@@ -50,17 +52,17 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class VarHandleTestAccessInt extends VarHandleBaseTest {
     static final int static_final_v = 0x01234567;
 
-    static int static_v;
+    static int static_v = 0x01234567;
 
-    final int final_v = 0x01234567;
+    final int final_v;
 
     int v;
 
     static final int static_final_v2 = 0x01234567;
 
-    static int static_v2;
+    static int static_v2 = 0x01234567;
 
-    final int final_v2 = 0x01234567;
+    final int final_v2;
 
     int v2;
 
@@ -74,6 +76,13 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
 
     VarHandle vhArray;
 
+    public VarHandleTestAccessInt() {
+        final_v = 0x01234567;
+        v = 0x01234567;
+        final_v2 = 0x01234567;
+        v2 = 0x01234567;
+        super();
+    }
 
     VarHandle[] allocate(boolean same) {
         List<VarHandle> vhs = new ArrayList<>();
@@ -308,7 +317,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         // Lazy
         {
             int x = (int) vh.getAcquire(recv);
-            assertEquals(0x01234567, x, "getRelease int value");
+            assertEquals(0x01234567, x, "getAcquire int value");
         }
 
         // Opaque
@@ -357,7 +366,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         // Lazy
         {
             int x = (int) vh.getAcquire();
-            assertEquals(0x01234567, x, "getRelease int value");
+            assertEquals(0x01234567, x, "getAcquire int value");
         }
 
         // Opaque
@@ -601,7 +610,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             vh.set(recv, 0x01234567);
 
             int o = (int) vh.getAndAddRelease(recv, 0x89ABCDEF);
-            assertEquals(0x01234567, o, "getAndAddReleaseint");
+            assertEquals(0x01234567, o, "getAndAddRelease int");
             int x = (int) vh.get(recv);
             assertEquals((int)(0x01234567 + 0x89ABCDEF), x, "getAndAddRelease int value");
         }
@@ -909,7 +918,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             vh.set(0x01234567);
 
             int o = (int) vh.getAndAddRelease(0x89ABCDEF);
-            assertEquals(0x01234567, o, "getAndAddReleaseint");
+            assertEquals(0x01234567, o, "getAndAddRelease int");
             int x = (int) vh.get();
             assertEquals((int)(0x01234567 + 0x89ABCDEF), x, "getAndAddRelease int value");
         }
@@ -1220,7 +1229,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
                 vh.set(array, i, 0x01234567);
 
                 int o = (int) vh.getAndAddRelease(array, i, 0x89ABCDEF);
-                assertEquals(0x01234567, o, "getAndAddReleaseint");
+                assertEquals(0x01234567, o, "getAndAddRelease int");
                 int x = (int) vh.get(array, i);
                 assertEquals((int)(0x01234567 + 0x89ABCDEF), x, "getAndAddRelease int value");
             }
@@ -1450,6 +1459,5 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             });
         }
     }
-
 }
 

@@ -33,7 +33,6 @@ Atomic<uint32_t> ShenandoahThreadLocalData::_next_round_robin_probe{0};
 
 ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _gc_state(0),
-  _gc_state_fast_array{},
   _satb_mark_queue(&ShenandoahBarrierSet::satb_mark_queue_set()),
   _card_table(nullptr),
   _gclab(nullptr),
@@ -43,7 +42,9 @@ ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _invisible_root(nullptr),
   _invisible_root_word_size(0),
   _round_robin_probe(0),
-  _round_robin_probe_initialized(false) {
+  _round_robin_probe_initialized(false),
+  _pin_region_idx(0),
+  _pin_count(0) {
 }
 
 ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {

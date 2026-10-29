@@ -1,2 +1,4 @@
 T8332463b.java:36:18: compiler.err.pattern.dominated
+- compiler.note.preview.filename: T8332463b.java, DEFAULT
+- compiler.note.preview.recompile
 1 error

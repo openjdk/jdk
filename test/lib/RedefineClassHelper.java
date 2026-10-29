@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,13 @@ import java.io.InputStream;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.MethodModel;
 import java.lang.constant.ClassDesc;
-
 import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.Instrumentation;
+import java.util.function.Predicate;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.helpers.ClassFileInstaller;
 
@@ -68,6 +71,10 @@ public class RedefineClassHelper {
         instrumentation.redefineClasses(new ClassDefinition(clazz, bytecode));
     }
 
+    private static byte[] getBytecodes(Class<?> clazz) throws Exception {
+        return getBytecodes(clazz.getClassLoader(), clazz.getName());
+    }
+
     private static byte[] getBytecodes(ClassLoader loader, String name) throws Exception {
         try (InputStream is = loader.getResourceAsStream(name + ".class")) {
             byte[] buf = is.readAllBytes();
@@ -101,6 +108,33 @@ public class RedefineClassHelper {
     public static byte[] replaceClassName(ClassLoader loader, String oldClassName, String newClassName) throws Exception {
         byte[] buf = getBytecodes(loader, oldClassName);
         return replaceClassName(buf, newClassName);
+    }
+
+    /*
+     * For the given <code>clazz</code>, use <xform> to replace the code body of the methods that are
+     * selected by <code>filter</code>.
+     *
+     * @param clazz the class to redefine
+     * @param filter the Predicate to choose the method(s) to redefine
+     * @param xform used for generating new method bodies
+     *
+     * Example:
+     *
+     * RedefineClassHelper.redefineMethodBodies(ShouldBeTransformed.class,
+     *                                          (MethodModel method) -> method.methodName().equalsString("toString"),
+     *                                          (CodeBuilder builder, CodeElement element) -> {
+     *                                              builder.ldc("YYYY");
+     *                                              builder.areturn();
+     *                                          });
+     */
+    public static void redefineMethodBodies(Class<?> clazz, Predicate<MethodModel> filter, CodeTransform xform) throws Exception {
+        byte[] bytecodes = RedefineClassHelper.getBytecodes(clazz);
+        ClassFile cf = ClassFile.of();
+        ClassModel model = cf.parse(bytecodes);
+
+        ClassTransform transform =
+            ClassTransform.transformingMethodBodies(filter, xform);
+        redefineClass(clazz, cf.transformClass(model, transform));
     }
 
     /**

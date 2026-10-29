@@ -37,7 +37,7 @@ class ArrayWithFreeList {
   // An E must be trivially copyable and destructible, but it may be constructed
   // however it likes.
   constexpr void static_assert_E_satisfies_type_requirements() const {
-    static_assert(std::is_trivially_copyable<E>::value && std::is_trivially_destructible<E>::value, "must be");
+    static_assert(std::is_trivially_copyable<E>::value && std::is_trivially_destructible<E>::value);
   }
 
 public:

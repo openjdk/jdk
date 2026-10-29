@@ -76,7 +76,10 @@
      log_2_of_alignment_in_bits = 6
   } frame_constants;
 
-  // Common ABI. On top of all frames, C and Java
+  // Common ABI. On top of all frames, C and Java.
+  // Note: return_pc is only valid for Java calls.
+  // Calls following the native convention would use
+  // z_abi_160_base::gpr14 to save their return pc.
   struct z_common_abi {
     uint64_t callers_sp;
     uint64_t return_pc;
@@ -569,10 +572,16 @@
     // in bytes
     frame_alignment          = 8,
     // size, in words, of maximum shift in frame position due to alignment
-    align_wiggle             =  0
+    align_wiggle             =  0,
+    // This is wrong and unimplemented
+    sender_sp_offset         =  0
   };
 
   // returns the sending frame, without applying any barriers
   inline frame sender_raw(RegisterMap* map) const;
+
+  intptr_t* repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const;
+  static intptr_t* repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr);
+  bool was_augmented_on_entry(int& real_size) const;
 
 #endif // CPU_S390_FRAME_S390_HPP

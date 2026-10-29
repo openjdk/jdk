@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  * @modules jdk.compiler
  *          jdk.jlink
  * @build jdk.test.lib.compiler.CompilerUtils
+ * @build jdk.test.lib.util.FileUtils
  * @run testng LegalFilePluginTest
  */
 
@@ -38,12 +39,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,7 +52,10 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.util.FileUtils;
 
+import org.testng.ITestResult;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -78,6 +79,8 @@ public class LegalFilePluginTest {
     static final Path JMODS_DIR = Paths.get("jmods");
     static final Path LEGAL_DIR = Paths.get("legal");
     static final Path IMAGES_DIR = Paths.get("images");
+
+    private Path lastImageDir;
 
     static final Map<List<String>, Map<String,String>> LICENSES = Map.of(
         // Key is module name and requires
@@ -259,32 +262,21 @@ public class LegalFilePluginTest {
     }
 
     private Path createImage(String outputDir, List<String> options) {
+        lastImageDir = IMAGES_DIR.resolve(outputDir);
         System.out.println("jlink " + options.stream().collect(Collectors.joining(" ")));
         int rc = JLINK_TOOL.run(System.out, System.out,
                                 options.toArray(new String[0]));
         assertTrue(rc == 0);
 
-        return IMAGES_DIR.resolve(outputDir);
+        return lastImageDir;
     }
 
-    private void deleteDirectory(Path dir) throws IOException {
-        Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                throws IOException
-            {
-                Files.delete(file);
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc)
-                throws IOException
-            {
-                Files.delete(dir);
-                return FileVisitResult.CONTINUE;
-            }
-        });
+    @AfterMethod
+    public void cleanup(ITestResult result) throws IOException {
+        if (result.isSuccess() && lastImageDir != null && Files.exists(lastImageDir)) {
+            FileUtils.deleteFileTreeWithRetry(lastImageDir);
+        }
+        lastImageDir = null;
     }
 
     /**
@@ -301,7 +293,7 @@ public class LegalFilePluginTest {
 
             Path msrc = SRC_DIR.resolve(name);
             if (Files.exists(msrc)) {
-                deleteDirectory(msrc);
+                FileUtils.deleteFileTreeWithRetry(msrc);
             }
         }
 

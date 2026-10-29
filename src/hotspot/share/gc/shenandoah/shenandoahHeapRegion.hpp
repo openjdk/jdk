@@ -224,8 +224,8 @@ public:
   RegionState state()              const { return _state.load_acquire(); }
   int  state_ordinal()             const { return region_state_to_ordinal(state()); }
 
-  void record_pin();
-  void record_unpin();
+  inline void record_pin(size_t value = 1);
+  inline void record_unpin(size_t value = 1);
   size_t pin_count() const;
 
 private:
@@ -379,6 +379,10 @@ public:
 
   inline size_t index() const {
     return _index;
+  }
+
+  static bool is_in_same_region(const void* p, oop obj) {
+    return (((uintptr_t) p ^ cast_from_oop<uintptr_t>(obj)) >> region_size_bytes_shift()) == 0;
   }
 
   inline void save_top_before_promote();
@@ -575,6 +579,7 @@ public:
   }
 
   void reset_age() {
+    assert(get_top_before_promote() == nullptr, "Cannot reset age on region (%zu) scheduled for promotion", index());
     CENSUS_NOISE(_youth.add_then_fetch(age(), memory_order_relaxed);)
     _age.store_relaxed(0);
   }
@@ -618,7 +623,7 @@ public:
   // installs a self-forward mark on an object in this region. Tested and cleared
   // at the drain phase (degen/full GC entry) and again on region recycle.
   bool has_self_forwards() const { return _has_self_forwards.is_set(); }
-  void set_has_self_forwards()   { _has_self_forwards.set(); }
+  void set_has_self_forwards()   { _has_self_forwards.try_set(); }
   void clear_has_self_forwards() { _has_self_forwards.unset(); }
 
 private:

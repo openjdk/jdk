@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,16 @@
  * @test
  * @requires sun.arch.data.model == "64"
  * @bug 8292851
- * @run testng/othervm -Xmx4G TestLargeSegmentCopy
+ * @run junit/othervm -Xmx4G TestLargeSegmentCopy
  */
 
-import org.testng.annotations.Test;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
+
+import org.junit.jupiter.api.Test;
 
 public class TestLargeSegmentCopy {
 

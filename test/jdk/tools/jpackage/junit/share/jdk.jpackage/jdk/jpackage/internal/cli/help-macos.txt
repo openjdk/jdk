@@ -135,12 +135,20 @@ Options for creating the application image:
   --app-content <additional content>[,<additional content>...]
           A comma separated list of paths to files and/or directories
           to add to the application payload.
+          --app-content is processed after --app-resources, independent
+          of command-line order.
           This option can be used more than once.
           Note: The value should be a directory with the "Resources"
           subdirectory (or any other directory that is valid in the "Contents"
           directory of the application bundle). Otherwise, jpackage may produce
           invalid application bundle which may fail code signing and/or
           notarization.
+  --app-resources <additional resources>[:<additional resources>...]
+          A colon-separated list of paths to files and/or directories
+          to add to the application's "Contents/Resources" directory.
+          If a file from --app-resources conflicts with one from
+          --app-content, the file from --app-content is used.
+          This option can be used more than once.
   --input -i <directory path>
           Path of the input directory that contains the files to be packaged
           (absolute path or relative to the current directory)
