@@ -660,80 +660,119 @@ Node* IfNode::up_one_dom(Node *curr, bool linear_only) {
 //            shape, which works well for comparisions with constants, as they are
 //            canonicalized to the rhs. This may not happen with variables, and so
 //            the optimization may not work for those cases, when val stays on the rhs.
-const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj) {
+const Type* IfNode::filtered_int_type(PhaseValues* phase, Node* val, Node* if_proj, BasicType bt) {
   assert(if_proj &&
          (if_proj->Opcode() == Op_IfTrue || if_proj->Opcode() == Op_IfFalse), "expecting an if projection");
   if (if_proj->in(0) && if_proj->in(0)->is_If()) {
     IfNode* iff = if_proj->in(0)->as_If();
-    if (iff->in(1) && iff->in(1)->is_Bool()) {
-      BoolNode* bol = iff->in(1)->as_Bool();
-      if (bol->in(1) && bol->in(1)->is_Cmp()) {
-        const CmpNode* cmp  = bol->in(1)->as_Cmp();
-        // Val is always the lhs of the comparision: val CmpI cmp2
-        if (cmp->Opcode() == Op_CmpI && cmp->in(1) == val) {
-          // Only CmpI allowed, assumed by signed logic below.
-          // We could extend to CmpU in the future, and would
-          // have to implement unsigned range logic below.
-          const TypeInt* cmp2_t = gvn->type(cmp->in(2))->isa_int();
-          if (cmp2_t != nullptr) {
-            jint lo = cmp2_t->_lo;
-            jint hi = cmp2_t->_hi;
+    if (iff->in(1)) {
+      Node* iff1 = iff->in(1);
+      if (iff->is_OuterStripMinedLoopEnd()) {
+#ifdef ASSERT
+        iff->as_OuterStripMinedLoopEnd()->inner_counted_loop()->verify_strip_mined(1);
+#endif
+        assert(iff->in(0)->in(0)->in(0)->is_CountedLoopEnd(), "bad strip mined loop shape");
+        // Exit condition of skeleton outer strip mined loop is exit condition of inner loop
+        iff1 = iff->in(0)->in(0)->in(0)->in(1);
+      }
+      if (iff1->Opcode() == Op_OpaqueInitializedAssertionPredicate) {
+        // Look at the actual condition
+        iff1 = iff1->in(1);
+      }
+      if (iff1->is_Bool()) {
+        bool taken = if_proj->Opcode() == Op_IfTrue;
+        BoolNode* bol = iff1->as_Bool();
+        if (bol->in(1) && bol->in(1)->is_Cmp()) {
+          const CmpNode* cmp = bol->in(1)->as_Cmp();
+          if (cmp->in(1) == val || cmp->in(2) == val) {
+            const Type* other_t = phase->type(cmp->in(1) == val ? cmp->in(2) : cmp->in(1));
+            if (other_t == Type::TOP) {
+              return Type::TOP;
+            }
+            const TypeInteger* other_int_t = other_t->is_integer(bt);
+            jlong lo = other_int_t->lo_as_long();
+            jlong hi = other_int_t->hi_as_long();
+            assert(hi >= lo, "dead?");
+            BoolTest test = bol->_test;
+            if (cmp->in(2) == val && cmp->in(1) != val) {
+              test = test.commute();
+            }
             // Negate the test if we are on the false branch.
-            BoolTest::mask msk = if_proj->Opcode() == Op_IfTrue ? bol->_test._test : bol->_test.negate();
-            switch (msk) {
-            case BoolTest::ne: {
-              // If val is compared to its lower or upper bound, we can narrow the type
-              const TypeInt* val_t = gvn->type(val)->isa_int();
-              if (val_t != nullptr && !val_t->singleton() && cmp2_t->is_con()) {
-                if (val_t->_lo == lo) {
-                  // Condition leading to if_proj: val != val->lo
-                  //   val in [val->lo + 1, val->hi]
-                  return TypeInt::make(val_t->_lo + 1, val_t->_hi, val_t->_widen);
-                } else if (val_t->_hi == hi) {
-                  // Condition leading to if_proj: val != val->hi
-                  //   val in [val->lo, val->hi - 1]
-                  return TypeInt::make(val_t->_lo, val_t->_hi - 1, val_t->_widen);
+            BoolTest::mask msk = taken ? test._test : test.negate();
+
+            if (cmp->Opcode() == Op_Cmp_unsigned(bt)) {
+              if (lo >= 0 && (msk == BoolTest::lt || msk == BoolTest::le)) {
+                lo = 0;
+                if (msk == BoolTest::lt) {
+                  hi = hi - 1;
                 }
+                if (lo > hi) {
+                  return Type::TOP;
+                }
+                return TypeInteger::make(lo, hi, other_int_t->_widen, bt);
               }
-              // Can't refine type
-              return nullptr;
+            } else {
+              assert(cmp->Opcode() == Op_Cmp(bt), "should be signed comparison");
+              switch (msk) {
+                case BoolTest::ne: {
+                  // If val is compared to its lower or upper bound, we can narrow the type
+                  const TypeInteger* val_t = phase->type(val)->isa_integer(bt);
+                  if (val_t != nullptr && other_int_t->is_con()) {
+                    if (val_t->singleton()) {
+                      if (val_t->lo_as_long() == lo) {
+                        return Type::TOP;
+                      }
+                    } else {
+                      if (val_t->lo_as_long() == lo) {
+                        // Condition leading to if_proj: val != val->lo
+                        //   val in [val->lo + 1, val->hi]
+                        return TypeInteger::make(val_t->lo_as_long() + 1, val_t->hi_as_long(), val_t->_widen, bt);
+                      } else if (val_t->hi_as_long() == hi) {
+                        // Condition leading to if_proj: val != val->hi
+                        //   val in [val->lo, val->hi - 1]
+                        return TypeInteger::make(val_t->lo_as_long(), val_t->hi_as_long() - 1, val_t->_widen, bt);
+                      }
+                    }
+                  }
+                  // Can't refine type
+                  return nullptr;
+                }
+                case BoolTest::eq:
+                  // Condition leading to if_proj: val == cmp2
+                  //   val in cmp2_t
+                  return other_t;
+                case BoolTest::lt:
+                  // Condition leading to if_proj: val < cmp2
+                  //   val in [min_int .. max(min_int, cmp2->_hi - 1)]
+                  lo = min_signed_integer(bt);
+                  if (hi != min_signed_integer(bt)) {
+                    hi = hi - 1;
+                  }
+                  break;
+                case BoolTest::le:
+                  // Condition leading to if_proj: val <= cmp2
+                  //   val in [min_int .. cmp2->_hi]
+                  lo = min_signed_integer(bt);
+                  break;
+                case BoolTest::gt:
+                  // Condition leading to if_proj: val > cmp2
+                  //   val in [min(cmp2->_lo + 1, max_int) .. max_int]
+                  if (lo != max_signed_integer(bt)) {
+                    lo = lo + 1;
+                  }
+                  hi = max_signed_integer(bt);
+                  break;
+                case BoolTest::ge:
+                  // Condition leading to if_proj: val >= cmp2
+                  //   val in [cmp2->_lo .. max_int]
+                  hi = max_signed_integer(bt);
+                  break;
+                default:
+                  assert(false, "impossible case");
+                  return nullptr;
+              }
+              return TypeInteger::make(lo, hi, other_int_t->_widen, bt);
             }
-            case BoolTest::eq:
-              // Condition leading to if_proj: val == cmp2
-              //   val in cmp2_t
-              return cmp2_t;
-            case BoolTest::lt:
-              // Condition leading to if_proj: val < cmp2
-              //   val in [min_int .. max(min_int, cmp2->_hi - 1)]
-              lo = min_jint;
-              if (hi != min_jint) {
-                hi = hi - 1;
-              }
-              break;
-            case BoolTest::le:
-              // Condition leading to if_proj: val <= cmp2
-              //   val in [min_int .. cmp2->_hi]
-              lo = min_jint;
-              break;
-            case BoolTest::gt:
-              // Condition leading to if_proj: val > cmp2
-              //   val in [min(cmp2->_lo + 1, max_int) .. max_int]
-              if (lo != max_jint) {
-                lo = lo + 1;
-              }
-              hi = max_jint;
-              break;
-            case BoolTest::ge:
-              // Condition leading to if_proj: val >= cmp2
-              //   val in [cmp2->_lo .. max_int]
-              hi = max_jint;
-              break;
-            default:
-              assert(false, "impossible case");
-              return nullptr;
-            }
-            const TypeInt* rtn_t = TypeInt::make(lo, hi, cmp2_t->_widen);
-            return rtn_t;
           }
         }
       }

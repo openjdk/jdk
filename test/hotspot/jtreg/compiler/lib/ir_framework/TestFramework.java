@@ -152,7 +152,8 @@ public class TestFramework {
                     "UseZbb",
                     "UseZfh",
                     "UseZicond",
-                    "UseZvbb"
+                    "UseZvbb",
+                    "UseLoopConditionalPropagation"
             )
     );
 
