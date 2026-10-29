@@ -1303,11 +1303,11 @@ char* ClassLoader::uri_to_path(const char* uri) {
 
 // Hashtable to reduce the number of os::same_files() calls inside classpath_to_index().
 
-static unsigned cstring_hash(const char* const& s) {
+inline unsigned cstring_hash(const char* const& s) {
   return java_lang_String::hash_code((const jbyte*)s, checked_cast<int>(strlen(s)));
 }
 
-static bool cstring_equals(const char* const& a, const char* const& b) {
+inline bool cstring_equals(const char* const& a, const char* const& b) {
   return strcmp(a, b) == 0;
 }
 
