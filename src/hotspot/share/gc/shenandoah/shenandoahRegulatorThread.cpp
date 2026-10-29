@@ -168,7 +168,6 @@ bool ShenandoahRegulatorThread::should_start_metaspace_gc() {
   // cycle. For this reason, we treat an oom in metaspace as a _trigger_ for a
   // global cycle. But, we check other prerequisites before starting a gc that won't
   // unload anything.
-  return ClassUnloadingWithConcurrentMark
-      && _global_heuristics->can_unload_classes()
+  return _global_heuristics->can_unload_classes()
       && _global_heuristics->has_metaspace_oom();
 }
