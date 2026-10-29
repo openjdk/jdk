@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -95,6 +95,26 @@ static void JNICALL OnVMInit(jvmtiEnv *jvmti, JNIEnv *jni_env, jthread thread) {
   }
 }
 
+// The first AsyncGetCallTrace frame below the GetStackTrace frames of a virtual thread is the continuation entry.
+static bool isContinuationEnterSpecial(jmethodID method) {
+  JvmtiDeallocator<char*> name;
+  jvmtiError err = jvmti->GetMethodName(method, name.get_addr(), nullptr, nullptr);
+  if (err != JVMTI_ERROR_NONE || name.get() == nullptr || strcmp(name.get(), "enterSpecial") != 0) {
+    return false;
+  }
+  jclass klass;
+  err = jvmti->GetMethodDeclaringClass(method, &klass);
+  if (err != JVMTI_ERROR_NONE) {
+    return false;
+  }
+  JvmtiDeallocator<char*> signature;
+  err = jvmti->GetClassSignature(klass, signature.get_addr(), nullptr);
+  if (err != JVMTI_ERROR_NONE || signature.get() == nullptr) {
+    return false;
+  }
+  return strcmp(signature.get(), "Ljdk/internal/vm/Continuation;") == 0;
+}
+
 extern "C" {
 
 static
@@ -184,7 +204,7 @@ typedef struct {
 typedef void (*ASGCTType)(ASGCT_CallTrace *, jint, void *);
 
 JNIEXPORT jboolean JNICALL
-Java_MyPackage_ASGCTBaseTest_checkAsyncGetCallTraceCall(JNIEnv* env, jclass cls) {
+Java_MyPackage_ASGCTBaseTest_checkAsyncGetCallTraceCall(JNIEnv* env, jclass cls, jboolean is_virtual) {
   ASGCTType agct = reinterpret_cast<ASGCTType>(dlsym(RTLD_DEFAULT, "AsyncGetCallTrace"));
 
   const int MAX_DEPTH = 16;
@@ -245,12 +265,15 @@ Java_MyPackage_ASGCTBaseTest_checkAsyncGetCallTraceCall(JNIEnv* env, jclass cls)
 
   jvmti->GetStackTrace(thread, 0, MAX_DEPTH, gstFrames, &gstCount);
 
-  if (gstCount != trace.num_frames) {
+  // On a virtual thread AsyncGetCallTrace walks on into the carrier where GetStackTrace
+  // stops at the continuation entry, without continuations both end at the thread's run.
+  bool carrier_frames = is_virtual && trace.num_frames > gstCount;
+  if (!carrier_frames && gstCount != trace.num_frames) {
     fprintf(stderr, "GetStackTrace and AsyncGetCallTrace return different number of frames: %d vs %d)", gstCount, trace.num_frames);
     return false;
   }
 
-  for (int i = 0; i < trace.num_frames; ++i) {
+  for (int i = 0; i < gstCount; ++i) {
     if (trace.frames[i].lineno == -3) {
       if (gstFrames[i].location != -1) {
         fprintf(stderr, "%d: ASGCT found native frame but GST did not\n", i);
@@ -262,6 +285,11 @@ Java_MyPackage_ASGCTBaseTest_checkAsyncGetCallTraceCall(JNIEnv* env, jclass cls)
         return false;
       }
     }
+  }
+
+  if (carrier_frames && !isContinuationEnterSpecial(trace.frames[gstCount].method_id)) {
+    fprintf(stderr, "%d: frame below the GetStackTrace frames is not Continuation.enterSpecial\n", gstCount);
+    return false;
   }
   return true;
 }

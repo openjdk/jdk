@@ -26,7 +26,7 @@ package MyPackage;
 
 /**
  * @test
- * @summary Verifies that AsyncGetCallTrace is call-able and provides sane information.
+ * @summary Verifies that AsyncGetCallTrace is call-able and provides sane information on platform and virtual threads.
  * @compile ASGCTBaseTest.java
  * @requires os.family == "linux"
  * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="arm" | os.arch=="aarch64" | os.arch=="ppc64" | os.arch=="ppc64le" | os.arch=="s390x" | os.arch=="riscv64"
@@ -45,11 +45,23 @@ public class ASGCTBaseTest {
     }
   }
 
-  private static native boolean checkAsyncGetCallTraceCall();
+  private static native boolean checkAsyncGetCallTraceCall(boolean virtual);
 
-  public static void main(String[] args) {
-    if (!checkAsyncGetCallTraceCall()) {
-      throw new RuntimeException("AsyncGetCallTrace call failed.");
+  private static boolean check(boolean virtual) throws InterruptedException {
+    boolean[] result = new boolean[1];
+    Thread.Builder builder = virtual ? Thread.ofVirtual() : Thread.ofPlatform();
+    Thread thread = builder.start(() -> result[0] = checkAsyncGetCallTraceCall(virtual));
+    thread.join();
+    return result[0];
+  }
+
+  // main may run on either kind of thread under the test thread factory, so both are checked explicitly
+  public static void main(String[] args) throws InterruptedException {
+    if (!check(false)) {
+      throw new RuntimeException("AsyncGetCallTrace call failed on a platform thread.");
+    }
+    if (!check(true)) {
+      throw new RuntimeException("AsyncGetCallTrace call failed on a virtual thread.");
     }
   }
 }
