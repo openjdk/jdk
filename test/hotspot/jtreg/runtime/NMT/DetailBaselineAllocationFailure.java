@@ -25,6 +25,7 @@
  * @test
  * @summary Failed NMT detail baseline allocation falls back to summary reporting
  * @requires vm.flagless
+ * @requires vm.bits == "64"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -39,7 +40,7 @@ public class DetailBaselineAllocationFailure {
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
         // Empty malloc sites remain in the table and count towards the initial baseline array size.
-        // These entries occupy about 21 MB, while the baseline array needs another 17 MB, exceeding the 32 MB NMT limit.
+        // These entries occupy about 21 MB (on 64-bit platforms), while the baseline array needs another 17 MB, exceeding the 32 MB NMT limit.
         int sites = 250_000;
         for (int i = 1; i <= sites; i++) {
             long p = wb.NMTMallocWithPseudoStack(1, i);
