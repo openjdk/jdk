@@ -425,7 +425,7 @@ void ELFFile::read_bytes(ssize_t bytes, char* buffer) {
     }
 }
 
-char* ELFFile::find_note_data(Elf64_Phdr* notes_ph, Elf64_Word type) {
+char* ELFFile::find_note_by_type(Elf64_Phdr* notes_ph, Elf64_Word type) {
     // Read NOTES.  p_filesz is limit.
     Elf64_Nhdr* nhdr = (Elf64_Nhdr*) ((uint64_t) m + notes_ph->p_offset);
     Elf64_Nhdr* end  = nhdr + notes_ph->p_filesz;
@@ -505,7 +505,7 @@ void ELFFile::read_file_mappings() {
         error("read_file_mappings: Cannot locate PT_NOTE in %s", filename);
     }
     // Look for NT_FILE note:
-    char* note_nt_file = find_note_data(notes_ph, 0x46494c45 /* NT_FILE */);
+    char* note_nt_file = find_note_by_type(notes_ph, 0x46494c45 /* NT_FILE */);
     if (note_nt_file == nullptr) {
         error("read_file_mappings: Cannot locate NOTE NT_FILE in %s", filename);
     }
@@ -596,7 +596,6 @@ void ELFFile::relocate(long displacement) {
     if (shdr_strings == 0) {
         error("%s: ELFFile::relocate expects shdr_strings", filename);
     }
-    // Check first Program Header has zero vaddr?
 
     relocate_header(displacement);
     relocate_program_headers(displacement);
@@ -623,7 +622,7 @@ void ELFFile::write_symbols(int symbols_fd, const char* symbols[], int count) {
             if (ret == 0) {
                 char buf[BUFLEN];
                 int len = snprintf(buf, BUFLEN - 1, "%s %llx\n", SYMTAB_BUFFER + sym->st_name,
-                        (unsigned long long) sym->st_value);
+                                   (unsigned long long) sym->st_value);
                 int e = write(symbols_fd, buf, len);
                 if (e != len) {
                     warn("write_symbols: write error: %s", strerror(errno));

@@ -83,7 +83,7 @@ class ELFFile {
 
     bool verify();
 
-    char* find_note_data(Elf64_Phdr* notes_ph, Elf64_Word type);
+    char* find_note_by_type(Elf64_Phdr* notes_ph, Elf64_Word type);
     char* file_name_for_nt_file(char* name, const char* libdirs);
 
     void read_file_mappings();
@@ -119,6 +119,7 @@ class ELFFile {
     void relocate_relocation_table(long displacement, const char* name);
 
     void relocate_dynamic_table(long displacement);
+
     // Relocate e.g. INIT_ARRAY contents.
     void relocate_dyn_array(long displacement, Elf64_Dyn* dyn, int count);
 

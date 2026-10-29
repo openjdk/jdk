@@ -295,6 +295,10 @@ int revival_mapping_allocate(void* vaddr, size_t length, int prot) {
  */
 int revival_mapping_docopy(const char* filename, void* vaddr, size_t length, size_t offset) {
     logd("revival_mapping_docopy: %s: %p size 0x%lx pos=%zu", filename, vaddr, length, offset);
+    if (length < 8 || length % 8 != 0) {
+        // length is expected to be at least a multiple of 8 bytes (and likely a page size multiple)
+        error("revival_mapping_docopy: unsupported mapping length: 0x%lx", length);
+    }
     if (!mem_canwrite_pd(vaddr, length)) {
         warn("revival_mapping_docopy: cannot write at vaddr 0x%p length " SIZE_FORMAT_X_0, vaddr, length);
         return -1;
@@ -304,16 +308,21 @@ int revival_mapping_docopy(const char* filename, void* vaddr, size_t length, siz
         warn("revival_mapping_docopy: cannot open: '%s': %s", filename, strerror(errno));
         return -1;
     }
-    int e = fseek(f, (long) offset, SEEK_SET);
+#ifdef WINDOWS
+    int e = _fseeki64(f, offset, SEEK_SET);
+#else
+    int e = fseek(f, offset, SEEK_SET);
+#endif
     if (e != 0) {
         warn("revival_mapping_docopy: cannot seek '%s' to offset %lx: returns %d: %s", filename, (long) offset, e, strerror(errno));
         fclose(f);
         return -1;
     }
-    // Read at offset and copy bytes to vaddr:
+    // Read file at offset and copy bytes to vaddr.
+    // Test we can read and write.  Will overwrite the test write in the loop below.
     uint64_t* p = (uint64_t*) vaddr;
-    *p = 0xb19d1b5; // Check we can write.  Overwrite in the loop below.
-    for (size_t i = 0; i < length/8; i++) {
+    *p = 0xb19d1b5;
+    for (size_t i = 0; i < length / 8; i++) {
         e = (int) fread(p++, 8, 1, f);
         if (e != 1) {
             warn("revival_mapping_docopy: fread failed: returns %d at %p pos=%zu : %s", e, p, i, strerror(errno));
@@ -414,15 +423,14 @@ int mappings_file_read(const char* corename, const char* dirname, const char* ma
     logv("mappings_file_read: revival data version %s", s1);
 
     // Read corefile details:
-    e = fscanf(f, "core %1024s %32s %128s\n", s1 /* core filename */, s2 /* length */, s3 /* possible checksum */);
-    if (e != 3) {
+    e = fscanf(f, "core %32s %128s\n", s2 /* length */, s3 /* possible checksum */);
+    if (e != 2) {
         warn("mappings_file_read: unrecognised core file info in: %s", mappings_filename);
         fclose(f);
         return -1;
     }
     lines++;
-    // Do not compare core names, cores can be renamed.
-    // Compare size: this must match.
+    // Compare size: must match.
     unsigned long long parsedSize = strtoull(s2, nullptr, 10);
     unsigned long long coresize = file_size(corename);
     if ((unsigned long long) coresize != parsedSize) {
@@ -433,7 +441,7 @@ int mappings_file_read(const char* corename, const char* dirname, const char* ma
     core_timestamp = 0;
     e = fscanf(f, "time %32s\n", s1);
     if (e == 1) {
-        core_timestamp = (long long) strtoll(s1, nullptr, 10);
+        core_timestamp = (long long) strtoull(s1, nullptr, 10);
         logd("core file timestamp: %lld", core_timestamp);
     }
     lines++;
@@ -506,8 +514,8 @@ int mappings_file_read(const char* corename, const char* dirname, const char* ma
             //  s1      s2               s3                   s4                  s5                        s6                s7
             char* endptr;
             void* vaddr = (void*) strtoull(s2, &endptr, 16);
-            size_t length = strtoul(s6, &endptr, 16);
-            size_t offset = strtoul(s4, &endptr, 16);
+            size_t length = strtoull(s6, &endptr, 16);
+            size_t offset = strtoull(s4, &endptr, 16);
             // Different length in memory and length in file not needed, not implemented.  Field s4 ignored.
             if (strncmp(s1, "M", 1) == 0) {
                 // Map memory from core:
@@ -789,7 +797,7 @@ char* find_filename_in_libdirs(const char* libdirs, const char* filename) {
 int mappings_file_create(const char* dirname, const char* corename) {
     char buf[BUFLEN];
     // Create file and header lines:
-    // core FILENAME SIZE_BYTES 0    (0 is placeholder for possible checksum)
+    // core SIZE_BYTES 0    (0 is placeholder for possible checksum)
     // time 123213123
     //
     // Shared libraries written later:
@@ -812,7 +820,7 @@ int mappings_file_create(const char* dirname, const char* corename) {
     write0(fd, buf);
     // Write core file details.  Use base filename (no path), as it can be moved.
     unsigned long long coresize = file_size(corename);
-    snprintf(buf, BUFLEN - 1, "core %s %lld 0\n", basename_pd((char*) corename), coresize);
+    snprintf(buf, BUFLEN - 1, "core %lld 0\n", coresize);
     write0(fd, buf);
     snprintf(buf, BUFLEN - 1, "time %llu\n", file_time(corename));
     write0(fd, buf);

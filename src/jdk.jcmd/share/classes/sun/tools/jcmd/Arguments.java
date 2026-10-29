@@ -72,6 +72,9 @@ class Arguments {
                 forceCore = true;
             } else if (args[i].equals("-L")) {
                 i++;
+                if (i == args.length) {
+                    throw new IllegalArgumentException("-L requires a path");
+                }
                 if (libDirs == null) {
                     libDirs = args[i];
                 } else {
@@ -79,6 +82,9 @@ class Arguments {
                 }
             } else if (args[i].equals("-R")) {
                 i++;
+                if (i == args.length) {
+                    throw new IllegalArgumentException("-R requires a path");
+                }
                 revivalCachePath = args[i];
             } else if (args[i].startsWith("-")) {
                 throw new IllegalArgumentException("Unknown option: " + args[i]);
@@ -89,9 +95,14 @@ class Arguments {
             i++;
         }
 
-        // Remaining arguments: process string or pid, and command.
-        processString = args[i++];
+        if (i >= args.length) {
+            listProcesses = true;
+            processString = "0";
+            return;
+        }
 
+        // Any remaining arguments: process string or pid, and command.
+        processString = args[i++];
         StringBuilder sb = new StringBuilder();
         for (; i < args.length; i++) {
             if (args[i].equals("-f")) {
@@ -132,7 +143,7 @@ class Arguments {
     }
 
     private static boolean isFile(String s) {
-        return new File(s).exists();
+        return s != null && new File(s).exists();
     }
 
     private static boolean isPID(String s) {
