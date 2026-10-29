@@ -52,6 +52,8 @@ static constexpr bool toolchain_uses_psabi_atomics() {
 }
 
 uint32_t VM_Version::_initial_vector_length = 0;
+// Conservative default until CPU feature initialization selects the policy.
+VM_Version::MovptrMode VM_Version::_movptr_mode = VM_Version::MovptrMode::sv48;
 bool VM_Version::_use_zalasr_atomics = false;
 
 #define DEF_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
@@ -96,6 +98,23 @@ void VM_Version::initialize() {
 #endif // COMPILER2
 }
 
+void VM_Version::initialize_movptr_mode() {
+  if (UseSv48Nop && satp_mode.value() != VM_SV48) {
+    warning("UseSv48Nop requires Sv48; disabling it");
+    FLAG_SET_DEFAULT(UseSv48Nop, false);
+  }
+  switch (satp_mode.value()) {
+    case VM_SV39:
+      _movptr_mode = MovptrMode::sv39;
+      break;
+    case VM_SV48:
+      _movptr_mode = UseSv48Nop ? MovptrMode::sv48_nop : MovptrMode::sv48;
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
 void VM_Version::common_initialize() {
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
@@ -103,6 +122,7 @@ void VM_Version::common_initialize() {
   _supports_atomic_getadd8 = true;
 
   setup_cpu_available_features();
+  initialize_movptr_mode();
 
   if (UseRVA20U64) {
     useRVA20U64Profile();
