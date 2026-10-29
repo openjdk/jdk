@@ -441,15 +441,18 @@ public:
         // st2._lo == st2._ulo, st2._hi == st2._uhi, we have both:
         // + 0 <= st1._ulo <= v1 <= st1._uhi <= 2^(n-1) - 1
         // + 0 <= st2._ulo <= v2 <= st2._uhi <= 2^(n-1) - 1
-        // Which means 0 <= st1._ulo + st2._ulo <= v1 + v2 <= st1._uhi + st2._uhi <= 2^n - 2, so
+        // Which means:
+        // 0 <= st1._ulo + st2._ulo           <= v1 + v2           <= st1._uhi + st2._uhi           <= 2^n - 2
+        // so:
         // 0 <= (st1._ulo + st2._ulo) mod 2^n <= (v1 + v2) mod 2^n <= (st1._uhi + st2._uhi) mod 2^n
         //
         // Similarly, if st1._lo < 0 and st2._lo < 0, we have:
         // + 2^(n-1) <= st1._ulo <= v1 <= st1._uhi <= 2^n - 1
         // + 2^(n-1) <= st2._ulo <= v2 <= st2._uhi <= 2^n - 1
-        // Which means 2^n <= st1._ulo + st2._ulo <= v1 + v2 <= st1._uhi + st2._uhi <= 2^n + 2^n - 2
+        // Which means
+        // 2^n <= st1._ulo + st2._ulo           <= v1 + v2           <= st1._uhi + st2._uhi           <= 2^n + 2^n - 2
         // For all value x such that 2^n <= x <= 2^n + 2^n - 1, we have x mod 2^n == x - 2^n. So:
-        // 0 <= (st1._ulo + st2._ulo) mod 2^n <= (v1 + v2) mod 2^n <= (st1._uhi + st2._uhi) mod 2^n
+        // 0   <= (st1._ulo + st2._ulo) mod 2^n <= (v1 + v2) mod 2^n <= (st1._uhi + st2._uhi) mod 2^n
         //
         // In other words, we can calculate the unsigned bounds.
         ulo = st1._ulo + st2._ulo;
@@ -473,8 +476,12 @@ public:
       // - If st1._bits._ones[i] == 1, then v1[i] == 1.
       // - If st1._bits._zeros[i] == 1, then v1[i] == 0.
       // We have: st1._bits._ones[i] <= v1[i] <= (~st1._bits._zeros)[i]
+      // Call min_v1[i] the minimum value of v1[i] and max_v1[i] the maximum value of v1[i],
+      // we have:
+      // min_v1[i] = st1._bits._ones[i]
+      // max_v1[i] = (~st1._bits._zeros)[i]
       //
-      // Try to calculate the sum bits by bits:
+      // Calculate the sum bit by bit:
       // carry[n - 1] = 0;
       // for (int i = n - 1; i >= 0; i--) {
       //   int bit = v1[i] + v2[i] + carry[i];
@@ -482,7 +489,7 @@ public:
       //   carry[i - 1] = (bit >= 2);
       // }
       //
-      // Then, try to calculate the min and max of carry[i] from the bounds of v1[i] and v2[i]:
+      // Then, calculate the min and max of carry[i] from the bounds of v1[i] and v2[i].
       // min_carry[n - 1] = 0;
       // max_carry[n - 1] = 0;
       // for (int i = n - 1; i >= 0; i--) {
