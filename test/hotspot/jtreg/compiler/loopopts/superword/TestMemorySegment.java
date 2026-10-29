@@ -33,7 +33,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=byte-array
- * @bug 8329273
+ * @bug 8329273 8336759
  * @key randomness
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
@@ -42,7 +42,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=byte-array-AlignVector
- * @bug 8329273 8348263
+ * @bug 8329273 8348263 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray AlignVector
@@ -50,7 +50,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=byte-array-NoSpeculativeAliasingCheck
- * @bug 8329273 8348263 8324751
+ * @bug 8329273 8348263 8324751 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray NoSpeculativeAliasingCheck
@@ -58,7 +58,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=byte-array-AlignVector-NoSpeculativeAliasingCheck
- * @bug 8329273 8348263 8324751
+ * @bug 8329273 8348263 8324751 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray AlignVector NoSpeculativeAliasingCheck
@@ -66,7 +66,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=byte-array-NoShortRunningLongLoop
- * @bug 8329273 8342692
+ * @bug 8329273 8342692 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray NoShortRunningLongLoop
@@ -74,7 +74,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=byte-array-AlignVector-NoShortRunningLongLoop
- * @bug 8329273 8348263 8342692
+ * @bug 8329273 8348263 8342692 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray AlignVector NoShortRunningLongLoop
@@ -82,7 +82,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=byte-array-NoSpeculativeAliasingCheck-NoShortRunningLongLoop
- * @bug 8329273 8348263 8342692 8324751
+ * @bug 8329273 8348263 8342692 8324751 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray NoSpeculativeAliasingCheck NoShortRunningLongLoop
@@ -90,7 +90,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=char-array
- * @bug 8329273
+ * @bug 8329273 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment CharArray
@@ -98,7 +98,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=short-array
- * @bug 8329273
+ * @bug 8329273 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ShortArray
@@ -106,7 +106,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=int-array
- * @bug 8329273
+ * @bug 8329273 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment IntArray
@@ -114,7 +114,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=int-array-AlignVector
- * @bug 8329273 8348263
+ * @bug 8329273 8348263 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment IntArray AlignVector
@@ -122,7 +122,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=long-array
- * @bug 8329273
+ * @bug 8329273 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment LongArray
@@ -130,7 +130,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=long-array-AlignVector
- * @bug 8329273 8348263
+ * @bug 8329273 8348263 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment LongArray AlignVector
@@ -138,7 +138,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=float-array
- * @bug 8329273
+ * @bug 8329273 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment FloatArray
@@ -146,7 +146,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=double-array
- * @bug 8329273
+ * @bug 8329273 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment DoubleArray
@@ -154,7 +154,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=byte-buffer
- * @bug 8329273
+ * @bug 8329273 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteBuffer
@@ -162,7 +162,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=byte-buffer-direct
- * @bug 8329273
+ * @bug 8329273 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteBufferDirect
@@ -170,7 +170,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=native
- * @bug 8329273
+ * @bug 8329273 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment Native
@@ -178,7 +178,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=native-AlignVector
- * @bug 8329273 8348263
+ * @bug 8329273 8348263 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment Native AlignVector
@@ -186,7 +186,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=native-NoSpeculativeAliasingCheck
- * @bug 8329273 8348263 8324751
+ * @bug 8329273 8348263 8324751 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment Native NoSpeculativeAliasingCheck
@@ -194,7 +194,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=native-AlignVector-NoSpeculativeAliasingCheck
- * @bug 8329273 8348263 8324751
+ * @bug 8329273 8348263 8324751 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment Native AlignVector NoSpeculativeAliasingCheck
@@ -202,7 +202,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=native-NoShortRunningLongLoop
- * @bug 8329273 8342692
+ * @bug 8329273 8342692 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment Native NoShortRunningLongLoop
@@ -210,7 +210,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=native-AlignVector-NoShortRunningLongLoop
- * @bug 8329273 8348263 8342692
+ * @bug 8329273 8348263 8342692 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment Native AlignVector NoShortRunningLongLoop
@@ -218,7 +218,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=native-NoSpeculativeAliasingCheck-NoShortRunningLongLoop
- * @bug 8329273 8348263 8342692 8324751
+ * @bug 8329273 8348263 8342692 8324751 8336759
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment Native NoSpeculativeAliasingCheck NoShortRunningLongLoop
