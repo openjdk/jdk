@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,15 +129,23 @@ void G1FullGCCompactTask::compact_humongous_obj(G1HeapRegion* src_hr) {
   copy_object_to_new_location(obj);
 
   uint dest_start_idx = _g1h->addr_to_region(destination);
+
+  cleanup_humongous_regions(src_hr, dest_start_idx, num_regions);
+
   // Update the metadata for the destination regions.
   _g1h->set_humongous_metadata(_g1h->region_at(dest_start_idx), num_regions, word_size, false);
-
-  // Free the source regions that do not overlap with the destination regions.
-  uint src_start_idx = src_hr->hrm_index();
-  free_non_overlapping_regions(src_start_idx, dest_start_idx, num_regions);
 }
 
-void G1FullGCCompactTask::free_non_overlapping_regions(uint src_start_idx, uint dest_start_idx, uint num_regions) {
+void G1FullGCCompactTask::cleanup_humongous_regions(G1HeapRegion* src_hr, uint dest_start_idx, uint num_regions) {
+  uint src_start_idx = src_hr->hrm_index();
+  // If the source start region overlaps the destination, release its card set
+  // group explicitly, since it will not be freed by the loop below.
+  if (src_hr->rem_set()->has_card_set_group() &&
+      (src_start_idx >= dest_start_idx && src_start_idx < (dest_start_idx + num_regions))) {
+    src_hr->clear_humongous();
+  }
+
+  // Free the source regions that do not overlap with the destination regions.
   uint dest_end_idx = dest_start_idx + num_regions -1;
   uint src_end_idx  = src_start_idx + num_regions - 1;
 

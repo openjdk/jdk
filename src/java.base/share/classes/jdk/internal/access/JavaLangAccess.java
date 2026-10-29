@@ -251,6 +251,12 @@ public interface JavaLangAccess {
     boolean isReflectivelyOpened(Module module, String pn, Module other);
 
     /**
+     * Returns true if there are readability, exports/uses, or service uses that were added
+     * reflectively.
+     */
+    boolean hasModuleReflectionData();
+
+    /**
      * Updates module m to allow access to restricted methods.
      */
     void addEnableNativeAccess(Module m);

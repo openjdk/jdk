@@ -125,12 +125,14 @@ ciKlass* Instruction::as_loaded_klass_or_null() const {
   return nullptr;
 }
 
-bool Instruction::is_loaded_flat_array() const {
+ciFlatArrayKlass* Instruction::as_loaded_flat_array_klass_or_null() const {
   if (UseArrayFlattening) {
-    ciType* type = declared_type();
-    return type != nullptr && type->is_flat_array_klass();
+    ciType* type = exact_type();
+    if (type != nullptr && type->is_flat_array_klass()) {
+      return type->as_flat_array_klass();
+    }
   }
-  return false;
+  return nullptr;
 }
 
 bool Instruction::maybe_flat_array() const {
@@ -270,8 +272,9 @@ ciType* LoadIndexed::declared_type() const {
 }
 
 bool StoreIndexed::is_exact_flat_array_store() const {
-  if (array()->is_loaded_flat_array() && value()->as_Constant() == nullptr && value()->declared_type() != nullptr) {
-    ciKlass* element_klass = array()->declared_type()->as_flat_array_klass()->element_klass();
+  ciFlatArrayKlass* array_klass = array()->as_loaded_flat_array_klass_or_null();
+  if (array_klass != nullptr && value()->as_Constant() == nullptr && value()->declared_type() != nullptr) {
+    ciKlass* element_klass = array_klass->element_klass();
     ciKlass* actual_klass = value()->declared_type()->as_klass();
 
     // Inlining can expose more specific types than the callee's signature. In

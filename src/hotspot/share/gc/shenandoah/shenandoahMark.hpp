@@ -45,9 +45,10 @@ protected:
   ShenandoahObjToScanQueueSet* const _task_queues;
   ShenandoahObjToScanQueueSet* const _old_gen_task_queues;
   bool const _string_dedup;
+  bool const _bootstrapping;
 
 protected:
-  ShenandoahMark(ShenandoahGeneration* generation);
+  ShenandoahMark(ShenandoahGeneration* generation, bool bootstrapping);
 
 public:
   template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY>
@@ -103,7 +104,7 @@ private:
   static void dedup_string(oop obj, StringDedup::Requests* const req);
 
   template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
-  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req, bool update_refs);
+  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req);
 
   template <class T, class OT, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
   NOINLINE // Main hot loop, start inlining from here

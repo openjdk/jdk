@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -534,6 +534,11 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
     }
   }
 
+  if (static_cast<uint64_t>(spill_cnt) * _cfg.number_of_blocks() > RegSplitLimit) {
+    C->record_method_not_compilable("PhaseChaitin::Split requires too much memory");
+    return 0;
+  }
+
   // Create side arrays for propagating reaching defs info.
   // Each block needs a node pointer for each spilling live range for the
   // Def which is live into the block.  Phi nodes handle multiple input
@@ -570,8 +575,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   }
 
   // Keep track of DEFS & Phis for later passes
-  Node_List defs(split_arena, 8);
-  Node_List phis(split_arena, 16);
+  Node_List<Node> defs(split_arena, 8);
+  Node_List<PhiNode> phis(split_arena, 16);
 
   //----------PASS 1----------
   //----------Propagation & Node Insertion Code----------
@@ -1323,8 +1328,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   // Walk the phis list to patch inputs, split phis, and name phis
   uint lrgs_before_phi_split = maxlrg;
   for( insidx = 0; insidx < phis.size(); insidx++ ) {
-    Node *phi = phis.at(insidx);
-    assert(phi->is_Phi(),"This list must only contain Phi Nodes");
+    PhiNode* phi = phis.at(insidx);
     Block *b = _cfg.get_block_for_node(phi);
     // Grab the live range number
     uint lidx = _lrg_map.find_id(phi);

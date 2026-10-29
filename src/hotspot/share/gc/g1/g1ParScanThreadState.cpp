@@ -175,9 +175,7 @@ void G1ParScanThreadState::verify_task(oop* task) const {
 
 void G1ParScanThreadState::verify_task(PartialArrayState* task) const {
   assert(task != nullptr, "invariant");
-  // Source isn't used for processing, so not recorded in task.
-  assert(task->source() == nullptr, "invariant");
-  oop p = task->destination();
+  oop p = task->array();
   assert(_g1h->is_in_reserved(p),
          "task=" PTR_FORMAT " dest=" PTR_FORMAT, p2i(task), p2i(p));
 }
@@ -238,10 +236,9 @@ void G1ParScanThreadState::process_array_chunk(objArrayOop obj, size_t start, si
 
 MAYBE_INLINE_EVACUATION
 void G1ParScanThreadState::do_partial_array(PartialArrayState* state, bool stolen) {
-  // Access state before release by claim().
-  objArrayOop to_array = objArrayOop(state->destination());
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, _task_queue, stolen);
+  objArrayOop to_array = claim._array;
   G1HeapRegionAttr dest_attr = _g1h->region_attr(to_array);
   G1SkipCardMarkSetter x(&_scanner, dest_attr.is_new_survivor());
   // Process claimed task.
@@ -250,21 +247,17 @@ void G1ParScanThreadState::do_partial_array(PartialArrayState* state, bool stole
 }
 
 MAYBE_INLINE_EVACUATION
-void G1ParScanThreadState::start_partial_objarray(oop from_obj,
-                                                  oop to_obj) {
-  assert(from_obj->is_forwarded(), "precondition");
-  assert(from_obj->forwardee() == to_obj, "precondition");
+void G1ParScanThreadState::start_partial_objarray(oop to_obj) {
   assert(to_obj->is_objArray(), "precondition");
   assert(!_scanner.do_metadata(), "precondition");
   assert(_scanner.skip_card_mark_set(), "precondition");
 
   objArrayOop to_array = objArrayOop(to_obj);
   size_t array_length = to_array->length();
-  size_t initial_chunk_size =
-    // The source array is unused when processing states.
-    _partial_array_splitter.start(_task_queue, nullptr, to_array, array_length, ParGCArrayScanChunk);
+  PartialArraySplitter::Claim chunk =
+    _partial_array_splitter.start(_task_queue, to_array, array_length, ParGCArrayScanChunk);
 
-  process_array_chunk(to_array, 0, initial_chunk_size);
+  process_array_chunk(chunk._array, chunk._start, chunk._end);
 }
 
 MAYBE_INLINE_EVACUATION
@@ -432,13 +425,16 @@ void G1ParScanThreadState::do_iterate_object(oop const obj,
                                              G1HeapRegionAttr const region_attr,
                                              G1HeapRegionAttr const dest_attr,
                                              uint age) {
+    assert(old->is_forwarded(), "precondition");
+    assert(old->forwardee() == obj, "precondition");
+
     // Most objects are not arrays, so do one array check rather than
     // checking for each array category for each object.
     if (klass->is_array_klass()) {
       assert(!klass->is_stack_chunk_instance_klass(), "must be");
 
       if (klass->is_objArray_klass()) {
-        start_partial_objarray(old, obj);
+        start_partial_objarray(obj);
       } else {
         // Nothing needs to be done for typeArrays.  Body doesn't contain
         // any oops to scan, and the type in the klass will already be handled
