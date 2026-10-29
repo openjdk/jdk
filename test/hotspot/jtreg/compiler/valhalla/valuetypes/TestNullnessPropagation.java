@@ -38,7 +38,7 @@ import static compiler.lib.ir_framework.IRNode.LSHIFT_L;
  * @run driver ${test.main.class}
  */
 
-public class TestNullNessPropagation {
+public class TestNullnessPropagation {
 
     public static void main(String[] args) {
         ValueTypes.getFramework()
