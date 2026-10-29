@@ -67,8 +67,9 @@ public class TestRunTests {
         new TestFramework(SkipC2Compilation.class).addFlags("-XX:TieredStopAtLevel=3").start();
         new TestFramework(FilteredIRRun.class).addFlags("-DTest=testGood").start();
         new TestFramework(FilteredIRRun.class).addFlags("-DExclude=test2").start();
-        new TestFramework(FilteredIRRun.class).addFlags("-DTest=testGood,test1", "-DExclude=test2").start();
-        for (String[] flags : new String[][] { { "-DTest=testNotExist" }, { "-DTest=test1", "-DExclude=test2" } }) {
+        new TestFramework(FilteredIRRun.class).addFlags("-DTest=testGood", "-DExclude=test2").start();
+
+        for (String[] flags : new String[][] { { "-DTest=testNotExist" }, { "-DTest=testNotExist", "-DExclude=test2" } }) {
             try {
                 new TestFramework(FilteredIRRun.class).addFlags(flags).start();
                 Asserts.fail("expected NoTestsRunException");

@@ -45,42 +45,39 @@ public class TestExecutionPolicy {
     private final List<String> excludeList;
     private final List<String> testList;
 
-    public TestExecutionPolicy(Class<?> testClass) {
-        this.testList = createTestFilterList(TEST_LIST, testClass);
-        this.excludeList = createTestFilterList(EXCLUDE_LIST, testClass);
+    public TestExecutionPolicy() {
+        this.testList = createTestFilterList(TEST_LIST);
+        this.excludeList = createTestFilterList(EXCLUDE_LIST);
         checkPolicy();
     }
 
     /**
-     * Parse "test1,test2,test3" into a list.
+     * Parse "test1,test2,test3" into a list of method names.
      */
-    private static List<String> createTestFilterList(String list, Class<?> testClass) {
-        if (list.isEmpty()) {
+    private static List<String> createTestFilterList(String methods) {
+        if (methods.isBlank()) {
             return new ArrayList<>();
         }
-
-        String classPrefix = testClass.getSimpleName() + ".";
-        List<String> filterList = new ArrayList<>(Arrays.asList(list.split(",")));
-        for (int i = filterList.size() - 1; i >= 0; i--) {
-            String test = filterList.get(i);
-            if (test.indexOf(".") > 0) {
-                if (test.startsWith(classPrefix)) {
-                    test = test.substring(classPrefix.length());
-                    filterList.set(i, test);
-                } else {
-                    filterList.remove(i);
-                }
-            }
-        }
-        return filterList;
+        return new ArrayList<>(Arrays.asList(methods.split(",")));
     }
 
     private void checkPolicy() {
-        List<String> overlaps = new ArrayList<>(testList);
-        overlaps.retainAll(excludeList);
-
         if (!Collections.disjoint(excludeList, testList)) {
-            throw new OverlappingTestAndExcludeException(overlaps);
+            List<String> overlaps = new ArrayList<>(testList);
+            overlaps.retainAll(excludeList);
+            throw OverlappingTestAndExcludeException.create(overlaps);
+        }
+    }
+
+    public void checkPolicyForCustomRunTest(Method runMethod, String[] testNames) {
+        List<String> testNamesList = Arrays.asList(testNames);
+        List<String> overlapInclude = new ArrayList<>(testList);
+        List<String> overlapExclude = new ArrayList<>(excludeList);
+        overlapInclude.retainAll(testNamesList);
+        overlapExclude.retainAll(testNamesList);
+        if (!overlapInclude.isEmpty() && !overlapExclude.isEmpty()) {
+            throw OverlappingTestAndExcludeException.createForRunWithMultipleTests(overlapInclude, overlapExclude,
+                                                                                   runMethod);
         }
     }
 
@@ -96,20 +93,20 @@ public class TestExecutionPolicy {
     }
 
     /**
-     * A test is excluded from execution if:
+     * A base or checked test is excluded from execution if either:
      * - -DTest does not list the method
      * - -DExclude lists the method
      * - The method specifies a (temporary) @Skip annotation.
      */
-    public boolean shouldExcludeTestMethod(DeclaredTest test) {
+    public boolean shouldExcludeBaseOrCheckedTest(DeclaredTest test) {
         Method testMethod = test.getTestMethod();
         String testName = testMethod.getName();
-        return isNotOnTestList(testName) ||
+        return isNotOnExistingTestList(testName) ||
                isOnExcludeList(testName) ||
                shouldSkip(test);
     }
 
-    private boolean isNotOnTestList(String testName) {
+    private boolean isNotOnExistingTestList(String testName) {
         return isTestPolicyActive() && !testList.contains(testName);
     }
 
@@ -122,29 +119,29 @@ public class TestExecutionPolicy {
     }
 
     /**
-     * A custom run test is excluded from execution if:
-     * - -DExclude lists at least one associated test method
+     * A custom run test is excluded from execution if either:
      * - -DTest does not list any associated test method
+     * - -DExclude lists at least one associated test method
      * - At least one associated test method has a (temporary) @Skip annotation.
+     *
+     * <p>
+     * Note that specifying distinct methods in -DTest and -DExclude which are both associated with the same @Run-method
+     * results in a {@link OverlappingTestAndExcludeException}.
      */
     public boolean shouldExcludeCustomRunTest(List<DeclaredTest> tests) {
-        boolean noTestMethodOnTestList = true;
-        for (DeclaredTest test : tests) {
-            Method testMethod = test.getTestMethod();
-            String testName = testMethod.getName();
-            if (shouldSkip(test) || isOnExcludeList(testName)) {
-                // Skip the custom run test if at least one associated test method should be skipped or excluded.
-                return true;
-            }
-            if (isOnTestList(testName)) {
-                // Enable the custom run test if at least one associated test method is on the test list and there is
-                // no other reason to skip the custom run test.
-                noTestMethodOnTestList = false;
-            }
-        }
+        return hasSkipOrOnExcludeList(tests) || isNotOnExistingTestList(tests);
+    }
 
-        // -DTest set? Skip this @Run method because no associated test is on the list.
-        return isTestPolicyActive() && noTestMethodOnTestList;
+    private boolean hasSkipOrOnExcludeList(List<DeclaredTest> tests) {
+        return tests.stream()
+                    .anyMatch(test -> shouldSkip(test) ||
+                                      isOnExcludeList(test.getTestMethod().getName()));
+    }
+
+    private boolean isNotOnExistingTestList(List<DeclaredTest> tests) {
+        return isTestPolicyActive() &&
+               tests.stream()
+                    .noneMatch(test -> isOnTestList(test.getTestMethod().getName()));
     }
 
     private boolean isOnTestList(String testName) {

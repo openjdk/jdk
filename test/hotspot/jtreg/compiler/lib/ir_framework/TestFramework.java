@@ -212,7 +212,7 @@ public class TestFramework {
     public TestFramework(Class<?> testClass) {
         TestRun.check(testClass != null, "Test class cannot be null");
         this.testClass = testClass;
-        this.testExecutionPolicy = new TestExecutionPolicy(testClass);
+        this.testExecutionPolicy = new TestExecutionPolicy();
         if (VERBOSE) {
             System.out.println("Test class: " + testClass);
         }

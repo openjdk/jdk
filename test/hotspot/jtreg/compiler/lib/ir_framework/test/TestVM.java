@@ -120,7 +120,7 @@ public class TestVM {
     private TestVM(Class<?> testClass) {
         TestRun.check(testClass != null, "Test class cannot be null");
         this.testClass = testClass;
-        this.testExecutionPolicy = new TestExecutionPolicy(testClass);
+        this.testExecutionPolicy = new TestExecutionPolicy();
         if (PRINT_VALID_IR_RULES) {
             irMatchRulePrinter = new ApplicableIRRulesPrinter();
         } else {
@@ -268,7 +268,7 @@ public class TestVM {
                 try {
                     Arguments argumentsAnno = getAnnotation(m, Arguments.class);
                     TestFormat.check(argumentsAnno != null || m.getParameterCount() == 0, "Missing @Arguments annotation to define arguments of " + m);
-                    if (testExecutionPolicy.shouldExcludeTestMethod(test)) {
+                    if (testExecutionPolicy.shouldExcludeBaseOrCheckedTest(test)) {
                         return;
                     }
 
@@ -661,7 +661,7 @@ public class TestVM {
                          "Missing @Arguments annotation to define arguments of " + testMethod + " required by "
                          + "checked test " + m);
         CheckedTest.Parameter parameter = getCheckedTestParameter(m, testMethod);
-        if (testExecutionPolicy.shouldExcludeTestMethod(test)) {
+        if (testExecutionPolicy.shouldExcludeBaseOrCheckedTest(test)) {
             return;
         }
 
@@ -729,12 +729,14 @@ public class TestVM {
             }
         }
 
+
         if (tests.size() != runAnno.test().length) {
             // At least one test is invalid. Return and report the already recorded format violation(s) later.
             return;
         }
 
         checkNoneOrAllAssociatedTestsSkipped(runMethod, tests);
+        testExecutionPolicy.checkPolicyForCustomRunTest(runMethod, runAnno.test());
         if (testExecutionPolicy.shouldExcludeCustomRunTest(tests)) {
             return;
         }

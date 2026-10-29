@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework.shared;
 
+import java.lang.reflect.Method;
 import java.util.List;
 
 /**
@@ -30,8 +31,22 @@ import java.util.List;
  * likely a mistake.
  */
 public class OverlappingTestAndExcludeException extends RuntimeException {
-    public OverlappingTestAndExcludeException(List<String> overlaps) {
-        super("-DTest and -DExclude share duplicates: " + String.join(", ", overlaps));
+    public OverlappingTestAndExcludeException(String message) {
+        super(message);
+    }
+
+    public static OverlappingTestAndExcludeException create(List<String> overlaps) {
+        return new OverlappingTestAndExcludeException("-DTest and -DExclude share duplicates: " + String.join(", ", overlaps));
+    }
+
+    public static OverlappingTestAndExcludeException createForRunWithMultipleTests(List<String> testList,
+                                                                                   List<String> excludeList,
+                                                                                   Method runMethod) {
+        return new OverlappingTestAndExcludeException("-DTest and -DExclude specify methods that are both part of the " +
+                                                      "test definition for @Run method \"" + runMethod + "\":" +
+                                                      System.lineSeparator() +
+                                                      "- -DTest: " + String.join(", ", testList) + System.lineSeparator() +
+                                                      "- -DExclude: " + String.join(", ", excludeList));
     }
 }
 

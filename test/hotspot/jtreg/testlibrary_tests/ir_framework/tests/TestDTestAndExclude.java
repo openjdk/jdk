@@ -59,9 +59,9 @@ public class TestDTestAndExclude {
             run("badSingle", "runBadSingle", "runBadSingle");
             run("badMulti1,badMulti2", "", "runBadMulti");
             run("badMulti1", "", "runBadMulti");
-            run("badMulti1,good1", "badMulti2", "good");
-            run("badMulti1", "badMulti2", "empty");
-            run("badMulti2", "badMulti1", "empty");
+            run("badMulti1,good1", "badMulti2", "overlap");
+            run("badMulti1", "badMulti2", "overlap");
+            run("badMulti2", "badMulti1", "overlap");
             run("runBadSingle", "", "empty");
             run("runBadMulti", "", "empty");
             run("asdf", "", "empty");
@@ -79,7 +79,7 @@ public class TestDTestAndExclude {
                     } catch (TestVMException e) {
                         Asserts.assertTrue(e.getExceptionInfo().contains("expected " + args[0] + " exception"));
                     } catch (Exception e) {
-                        Asserts.fail("unexpected exception");
+                        Asserts.fail("unexpected exception", e);
                     }
                 }
                 case "empty" -> {
@@ -89,7 +89,7 @@ public class TestDTestAndExclude {
                     } catch (NoTestsRunException e) {
                         // Expected
                     } catch (Exception e) {
-                        Asserts.fail("unexpected exception");
+                        Asserts.fail("unexpected exception", e);
                     }
                 }
                 case "overlap" -> {
@@ -99,7 +99,7 @@ public class TestDTestAndExclude {
                     } catch (OverlappingTestAndExcludeException e) {
                         // Expected
                     } catch (Exception e) {
-                        Asserts.fail("unexpected exception");
+                        Asserts.fail("unexpected exception", e);
                     }
                 }
                 default -> throw new RuntimeException("should not reach");
@@ -120,15 +120,20 @@ public class TestDTestAndExclude {
             dTestFlag = dTestFlag + "s";
             dExcludeFlag = dExcludeFlag + "s";
         }
-        System.out.println("Run " + dTestFlag + "=" + dTest + " " + dExcludeFlag + "=" + dExclude + " arg=" + arg);
+        String include = dTestFlag + "=" + dTest;
+        String exclude = dExcludeFlag + "=" + dExclude;
+        String includeExclude = include + " " + exclude;
+        System.out.println("Run " + includeExclude + " arg=" + arg);
         OutputAnalyzer oa;
         ProcessBuilder process = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-Dtest.class.path=" + Utils.TEST_CLASS_PATH, "-Dtest.jdk=" + Utils.TEST_JDK,
-                "-Dtest.vm.opts=" + dTestFlag + "=" + dTest + " " + dExcludeFlag + "=" + dExclude,
+                "-Dtest.class.path=" + Utils.TEST_CLASS_PATH,
+                "-Dtest.jdk=" + Utils.TEST_JDK,
+                "-Dtest.vm.opts=" + includeExclude,
+                include,
+                exclude,
                 "ir_framework.tests.TestDTestAndExclude", arg);
         oa = ProcessTools.executeProcess(process);
-        int exitCode = arg.equals("overlap") ? 1 : 0;
-        oa.shouldHaveExitValue(exitCode);
+        oa.shouldHaveExitValue(0);
     }
 
     @Test
