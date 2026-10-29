@@ -717,6 +717,10 @@ class SerializeClosure;
   /* JVMTI/java.lang.instrument support and VM Attach mechanism */                                                \
   template(jdk_internal_module_Modules,                "jdk/internal/module/Modules")                             \
   template(jdk_internal_vm_VMSupport,                  "jdk/internal/vm/VMSupport")                               \
+  template(setLogLevel_name,                           "setLogLevel")                                             \
+  template(setLogLevel_signature,                      \
+           "(Ljava/lang/String;Ljava/lang/String;"                 \
+           "Ljava/lang/String;)Ljava/lang/String;")                 \
   template(addReads_name,                              "addReads")                                                \
   template(addReads_signature,                         "(Ljava/lang/Module;Ljava/lang/Module;)V")                 \
   template(addExports_name,                            "addExports")                                              \

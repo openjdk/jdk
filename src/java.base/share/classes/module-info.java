@@ -192,6 +192,8 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.logger to
         java.logging;
+    exports jdk.internal.logger.dynamic to
+        java.logging;
     exports jdk.internal.net.quic to
         java.net.http;
     exports jdk.internal.org.xml.sax to
