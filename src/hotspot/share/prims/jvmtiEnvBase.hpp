@@ -54,6 +54,8 @@ class JvmtiTagMap;
 // done via JNI GetEnv() call. Multiple attachments are
 // allowed in jvmti.
 
+class JvmtiStackTraceRequestState;
+
 class JvmtiEnvBase : public CHeapObj<mtServiceability> {
 
  private:
@@ -119,6 +121,7 @@ class JvmtiEnvBase : public CHeapObj<mtServiceability> {
   jvmtiEventCallbacks _event_callbacks;
   jvmtiExtEventCallbacks _ext_event_callbacks;
   JvmtiTagMap* volatile _tag_map;
+  JvmtiStackTraceRequestState* volatile _stack_trace_requests; // RequestStackTrace extension
   JvmtiEnvEventEnable _env_event_enable;
   jvmtiCapabilities _current_capabilities;
   jvmtiCapabilities _prohibited_capabilities;
@@ -329,6 +332,14 @@ class JvmtiEnvBase : public CHeapObj<mtServiceability> {
 
   JvmtiTagMap* tag_map_acquire() {
     return AtomicAccess::load_acquire(&_tag_map);
+  }
+
+  JvmtiStackTraceRequestState* stack_trace_requests() {
+    return AtomicAccess::load_acquire(&_stack_trace_requests);
+  }
+
+  void set_stack_trace_requests(JvmtiStackTraceRequestState* state) {
+    AtomicAccess::release_store(&_stack_trace_requests, state);
   }
 
   void release_set_tag_map(JvmtiTagMap* tag_map) {

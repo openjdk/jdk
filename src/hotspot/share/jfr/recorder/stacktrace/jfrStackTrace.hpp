@@ -36,8 +36,20 @@ class JfrCheckpointWriter;
 class JfrChunkWriter;
 struct JfrSampleRequest;
 
+// Receives the frames of a stack walk, top frame first. The type is one of
+// the JfrStackFrame frame types.
+class JfrStackFrameVisitor {
+ public:
+  // Asked before each frame below the top frame, ahead of any stack filtering.
+  // Returns false to stop the walk.
+  virtual bool has_room() { return true; }
+  // Returns false to stop the walk.
+  virtual bool visit(const Method* method, int bci, u1 type) = 0;
+};
+
 class JfrStackTrace : public JfrCHeapObj {
   friend class JfrNativeSamplerCallback;
+  friend class JfrStackFrameRecorder;
   friend class JfrStackTraceRepository;
   friend class LeakProfilerStackTraceWriter;
   friend class JfrThreadSampling;
@@ -89,6 +101,11 @@ class JfrStackTrace : public JfrCHeapObj {
   bool record(JavaThread* current_thread, int skip, int64_t stack_filter_id);
   bool record(JavaThread* jt, const frame& frame, bool in_continuation, const JfrSampleRequest& request);
   bool should_write() const { return !_written; }
+
+  // Walks the same frames that record(jt, frame, in_continuation, request) records,
+  // but passes them to a visitor instead. Has no JFR side effects.
+  static void walk(JavaThread* jt, const frame& frame, bool in_continuation, const JfrSampleRequest& request,
+                   JfrStackFrameVisitor& visitor);
 };
 
 #endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACE_HPP

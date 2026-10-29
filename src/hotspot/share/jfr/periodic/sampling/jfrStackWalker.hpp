@@ -37,6 +37,7 @@
 
 class JavaThread;
 class JfrNativeStackWalkerThread;
+class JfrStackFrameVisitor;
 class JfrStackWalkRequest;
 
 // The handlers of one consumer of the stack walker, e.g. JFR CPU-time sampling.
@@ -138,6 +139,9 @@ public:
   void release();
 
   void clear();
+
+  // Keeps only the first size requests.
+  void truncate(u4 size);
 };
 
 class JfrStackWalkerThreadLocal {
@@ -212,8 +216,7 @@ class JfrStackWalker : public AllStatic {
 
 public:
   // Reference-counted start and stop of the stack walker, one pair per user.
-  // Callers must be serialized; JFR applies event settings, which drive both
-  // users, under the MetadataRepository lock.
+  // Called in native state; serialized internally.
   static void initialize();
   static void teardown();
 
@@ -222,6 +225,14 @@ public:
 
   // Called when a Java thread terminates to discard its pending requests.
   static void on_javathread_terminate(JavaThread* thread);
+
+  // Discards the pending requests of one consumer in all threads, passing each
+  // to its on_dropped. A filter, if given, selects the requests to discard.
+  // When this returns, none of them is queued or being processed. Called in
+  // native state.
+  static void discard_requests(const JfrStackWalkerConsumer* consumer,
+                               bool (*filter)(const JfrStackWalkRequest& request, const void* context) = nullptr,
+                               const void* context = nullptr);
 
   // Request a stack trace. Returns false if the request was dropped, in which
   // case its consumer is never called. Accounting for dropped requests is up
@@ -234,6 +245,12 @@ public:
   // no trace could be obtained, in which case sid is 0. tid is the thread id to
   // report: the vthread id if the trace is in a continuation, else the jvm thread id.
   static bool walk(JfrStackWalkRequest& request, JavaThread* jt, traceid& sid, traceid& tid, bool& biased);
+
+  // Walks the stack described by a request and passes the frames to a visitor,
+  // without any JFR side effects. Only valid from JfrStackWalkerConsumer::process.
+  // Returns false if no top frame could be found.
+  static bool walk_frames(JfrStackWalkRequest& request, JavaThread* jt, JfrStackFrameVisitor& visitor,
+                          bool& biased, bool& in_continuation);
 
   // Entry point for the runtime to trigger stack-walk processing.
   static inline void check_and_process_requests(JavaThread* jt);
