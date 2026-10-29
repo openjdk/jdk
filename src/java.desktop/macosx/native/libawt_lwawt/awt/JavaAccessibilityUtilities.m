@@ -43,11 +43,11 @@ NSMutableDictionary *sRoles = nil;
 void initializeRoles();
 
 // Unique
-static jclass sjc_AccessibleState = NULL;
+DECLARE_CLASS_ONLY(sjc_AccessibleState);
 #define GET_ACCESSIBLESTATE_CLASS_RETURN(ret) \
      GET_CLASS_RETURN(sjc_AccessibleState, "javax/accessibility/AccessibleState", ret);
 
-static jclass sjc_CAccessibility = NULL;
+DECLARE_CLASS_ONLY(sjc_CAccessibility);
 
 NSSize getAxComponentSize(JNIEnv *env, jobject axComponent, jobject component)
 {
