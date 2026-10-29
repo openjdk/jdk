@@ -188,6 +188,7 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
         addSystemMenuItems(systemPopupMenu);
         enableActions();
         menuButton = createNoFocusButton();
+        menuButton.setVisible(!isOptionDialog());
         updateMenuIcon();
         menuButton.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
@@ -209,6 +210,10 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
             }
         }
         setInheritsPopupMenu(true);
+    }
+
+    private boolean isOptionDialog() {
+        return "optionDialog".equals(frame.getClientProperty("JInternalFrame.frameType"));
     }
 
     protected void addSystemMenuItems(JPopupMenu menu) {
@@ -237,6 +242,9 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
     }
 
     protected void showSystemMenu() {
+        if (isOptionDialog()) {
+            return;
+        }
         Insets insets = frame.getInsets();
         if (!frame.isIcon()) {
             systemPopupMenu.show(frame, menuButton.getX(), getY() + getHeight());
@@ -353,6 +361,10 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
             // Changes for the internal frame
             if (evt.getPropertyName() == JInternalFrame.FRAME_ICON_PROPERTY) {
                 updateMenuIcon();
+            }
+            if ("JInternalFrame.frameType".equals(evt.getPropertyName())
+                    && isOptionDialog()) {
+                menuButton.setVisible(false);
             }
         }
     }
