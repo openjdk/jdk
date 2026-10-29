@@ -517,9 +517,9 @@ void ShenandoahBarrierSetC2::analyze_dominating_barriers() const {
 }
 
 uint ShenandoahBarrierSetC2::estimated_barrier_size(const Node* node) const {
-  // Barrier cost drives loop optimizations, to avoid over-unrolling the loops
-  // with many GC barriers. Approximate barrier cost, roughly assuming 1 "node"
-  // per instruction.
+  // Barrier cost drives how deep C2 optimizations go, to avoid manifesting
+  // too many GC barriers. This is a heuristic question, so we give approximate
+  // answer, roughly assuming 1 "node" per instruction.
 
   uint8_t bd = MemNode::barrier_data(node) & ShenandoahBitsReal;
 
