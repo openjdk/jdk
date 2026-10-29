@@ -78,9 +78,9 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/classpathStream.hpp"
 #include "utilities/events.hpp"
-#include "utilities/resizableHashTable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/resizableHashTable.hpp"
 #include "utilities/utf8.hpp"
 
 #include <ctype.h>
@@ -1433,7 +1433,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
   } else {
     if (stream->from_boot_loader_modules_image() || string_starts_with(src, "jrt:")) {
       classpath_index = 0;
-    } else if (string_starts_with(src, "file:")) {
+    } else {
       const char* path = ClassLoader::uri_to_path(src);
       assert(path != nullptr, "sanity");
       int i = classpath_to_index(path);
