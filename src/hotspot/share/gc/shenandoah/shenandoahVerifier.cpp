@@ -958,8 +958,6 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
     }
   }
 
-  // Verify that Java and GC worker threads have a GCLAB and PLAB (if generational).
-  // All other threads should have neither a GCLAB nor a PLAB.
   ShenandoahVerifyThreadLabsClosure labs_cl(label, _heap->mode()->is_generational(), _heap->workers());
   Threads::threads_do(&labs_cl);
 
