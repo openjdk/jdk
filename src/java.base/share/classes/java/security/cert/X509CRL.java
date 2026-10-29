@@ -31,6 +31,7 @@ import sun.security.x509.X509CRLImpl;
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
 import java.security.*;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Set;
@@ -348,12 +349,48 @@ public abstract non-sealed class X509CRL extends CRL implements X509Extension, B
     public abstract Date getThisUpdate();
 
     /**
+     * Gets the {@code thisUpdate} date as an {@code Instant} from the CRL.
+     * See {@link #getThisUpdate() getThisUpdate} for relevant ASN.1
+     * definitions.
+     *
+     * @apiNote Subclasses should override this method to directly return an
+     * instant.
+     *
+     * @implSpec
+     * The default implementation calls {@code getThisUpdate()}
+     * and returns the date as an {@code Instant}.
+     *
+     * @return the {@code thisUpdate} date from the CRL.
+     */
+    public Instant getThisUpdateInstant() {
+        return getThisUpdate().toInstant();
+    }
+
+    /**
      * Gets the {@code nextUpdate} date from the CRL.
      *
      * @return the {@code nextUpdate} date from the CRL, or null if
      * not present.
      */
     public abstract Date getNextUpdate();
+
+    /**
+     * Gets the {@code nextUpdate} date as an {@code Instant} from the CRL.
+     *
+     * @apiNote Subclasses should override this method to directly return an
+     * instant.
+     *
+     * @implSpec
+     * The default implementation calls {@code getNextUpdate()}
+     * and returns the date as an {@code Instant}.
+     *
+     * @return the {@code nextUpdate} date from the CRL, or null if
+     * not present.
+     */
+    public Instant getNextUpdateInstant() {
+        final Date date = getNextUpdate();
+        return date == null ? null : date.toInstant();
+    }
 
     /**
      * Gets the CRL entry, if any, with the given certificate serialNumber.
