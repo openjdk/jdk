@@ -57,6 +57,7 @@ public class TestHeuristicsUnlock {
                     "-XX:-UnlockDiagnosticVMOptions",
                     "-XX:-UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
+                    "-XX:ShenandoahGCMode=satb",
                     h,
                     "-version"
             );
@@ -77,6 +78,7 @@ public class TestHeuristicsUnlock {
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:-UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
+                    "-XX:ShenandoahGCMode=satb",
                     h,
                     "-version"
             );
@@ -97,6 +99,7 @@ public class TestHeuristicsUnlock {
                     "-XX:-UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
+                    "-XX:ShenandoahGCMode=satb",
                     h,
                     "-version"
             );
