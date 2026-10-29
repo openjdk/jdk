@@ -688,7 +688,7 @@ size_t ShenandoahHeapRegion::block_size(const HeapWord* p) const {
 
 size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   // Generational Shenandoah needs this alignment for card tables.
-  if (strcmp(ShenandoahGCMode, "generational") == 0) {
+  if (ShenandoahModeFlag::value() == ShenandoahModeFlag::Mode::GENERATIONAL) {
     max_heap_size = align_up(max_heap_size , CardTable::ct_max_alignment_constraint());
   }
 
