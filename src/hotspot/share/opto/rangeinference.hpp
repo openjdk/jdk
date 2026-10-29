@@ -506,7 +506,7 @@ public:
       //   min_carry[i - 1] = (min_bit >= 2);
       // }
       //
-      // Since st1._bits._ones[i] <= v1[i], we have:
+      // Since min_v1[i] = st1._bits._ones[i], we have:
       // min_carry[n - 1] = 0;
       // for (int i = n - 1; i >= 0; i--) {
       //   int min_bit = st1._bits._ones[i] + st2._bits._ones[i] + min_carry[i];
