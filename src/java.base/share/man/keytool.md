@@ -1191,14 +1191,14 @@ These options can appear for all commands operating on a keystore:
 [`-keystore`]{#option-keystore} *keystore*
 :   The keystore location.
 
-    If the JKS `storetype` is used and a keystore file doesn't yet exist, then
-    certain `keytool` commands can result in a new keystore file being created.
-    For example, if `keytool -genkeypair` is called and the `-keystore` option
-    isn't specified, the default keystore file named `.keystore` is created in
-    the user's home directory if it doesn't already exist. Similarly, if the
-    `-keystore ks_file` option is specified but `ks_file` doesn't exist, then
-    it is created. For more information on the JKS `storetype`, see the
-    **KeyStore Implementation** section in **KeyStore aliases**.
+    If a keystore file doesn't yet exist, then certain `keytool` commands can
+    result in a new keystore file being created. For example, if
+    `keytool -genkeypair` is called and the `-keystore` option isn't specified,
+    the default keystore file named `.keystore` is created in the user's home
+    directory if it doesn't already exist. Similarly, if the `-keystore ks_file`
+    option is specified but `ks_file` doesn't exist, then it is created. For
+    more information on keystore types and implementations, see the
+    **KeyStore implementation** section in [Terms].
 
     Note that the input stream from the `-keystore` option is passed to the
     `KeyStore.load` method. If `NONE` is specified as the URL, then a null
@@ -1325,9 +1325,9 @@ which is equivalent to
 because `-keyalg` is a single-valued option and the `ec` value specified
 on the command line overrides the preconfigured options file.
 
-## Examples of Option Values
+## Defaults of Option Values
 
-The following examples show the defaults for various option values:
+These are the defaults for various option values:
 
 ```
 -alias "mykey"
@@ -1335,13 +1335,15 @@ The following examples show the defaults for various option values:
 -keysize
     2048 (when using -genkeypair and -keyalg is "DSA")
     3072 (when using -genkeypair and -keyalg is "RSA", "RSASSA-PSS", or "DH")
-    384 (when using -genkeypair and -keyalg is "EC")
     56 (when using -genseckey and -keyalg is "DES")
     168 (when using -genseckey and -keyalg is "DESede")
 
 -groupname
-    ed25519 (when using -genkeypair and -keyalg is "EdDSA", key size is 255)
-    x25519 (when using -genkeypair and -keyalg is "XDH", key size is 255)
+    secp384r1 (when using -genkeypair and -keyalg is "EC")
+    ed25519 (when using -genkeypair and -keyalg is "EdDSA")
+    x25519 (when using -genkeypair and -keyalg is "XDH")
+    ML-DSA-65 (when using -genkeypair and -keyalg is "ML-DSA")
+    ML-KEM-768 (when using -genkeypair and -keyalg is "ML-KEM")
 
 -validity 90
 
@@ -1378,10 +1380,6 @@ RSASSA-PSS  \< 624    RSASSA-PSS (with SHA-256, key size is too small for
                       using SHA-384)
             \<= 7680  RSASSA-PSS (with SHA-384)
             \> 7680   RSASSA-PSS (with SHA-512)
-EdDSA       255       Ed25519
-            448       Ed448
-Ed25519     255       Ed25519
-Ed448       448       Ed448
 -------     --------  --------------
 
 * The key size, measured in bits, corresponds to the size of the private key.
@@ -1393,6 +1391,9 @@ algorithm as its hash and MGF1 algorithms.
 
 * If neither a default `-keysize` or `-groupname` is defined for an algorithm,
 the security provider will choose a default setting.
+
+* Modern digital signature algorithms such as EdDSA and ML-DSA use the same
+algorithm as the key. When using such a key, specifying `-sigalg` is unnecessary.
 
 **Note:**
 
@@ -1766,11 +1767,11 @@ keystore, then it prompts you for a password. If it detects alias duplication,
 then it asks you for a new alias, and you can specify a new alias or simply
 allow the `keytool` command to overwrite the existing one.
 
-For example, import entries from a typical JKS type keystore `key.jks` into a
-PKCS \#11 type hardware-based keystore, by entering the following command:
+For example, import entries from a typical PKCS12 type keystore `key.p12` into
+a PKCS \#11 type hardware-based keystore, by entering the following command:
 
->   `keytool -importkeystore -srckeystore key.jks -destkeystore NONE
-    -srcstoretype JKS -deststoretype PKCS11 -srcstorepass` *password*
+>   `keytool -importkeystore -srckeystore key.p12 -destkeystore NONE
+    -srcstoretype PKCS12 -deststoretype PKCS11 -srcstorepass` *password*
     `-deststorepass` *password*
 
 The `importkeystore` command can also be used to import a single entry from a
@@ -1780,8 +1781,8 @@ import. With the `-srcalias` option specified, you can also specify the
 destination alias name, protection password for a secret or private key, and
 the destination protection password you want as follows:
 
->   `keytool -importkeystore -srckeystore key.jks -destkeystore NONE
-    -srcstoretype JKS -deststoretype PKCS11 -srcstorepass` *password*
+>   `keytool -importkeystore -srckeystore key.p12 -destkeystore NONE
+    -srcstoretype PKCS12 -deststoretype PKCS11 -srcstorepass` *password*
     `-deststorepass` *password* `-srcalias myprivatekey -destalias
     myoldprivatekey -srckeypass` *password* `-destkeypass` *password*
     `-noprompt`
@@ -1800,22 +1801,22 @@ certificates for three entities:
 Ensure that you store all the certificates in the same keystore.
 
 ```
-keytool -genkeypair -keystore root.jks -alias root -ext bc:c -keyalg rsa
-keytool -genkeypair -keystore ca.jks -alias ca -ext bc:c -keyalg rsa
-keytool -genkeypair -keystore server.jks -alias server -keyalg rsa
+keytool -genkeypair -keystore root.p12 -alias root -ext bc:c -keyalg rsa
+keytool -genkeypair -keystore ca.p12 -alias ca -ext bc:c -keyalg rsa
+keytool -genkeypair -keystore server.p12 -alias server -keyalg rsa
 
-keytool -keystore root.jks -alias root -exportcert -rfc > root.pem
+keytool -keystore root.p12 -alias root -exportcert -rfc > root.pem
 
-keytool -storepass password -keystore ca.jks -certreq -alias ca |
-    keytool -storepass password -keystore root.jks
+keytool -storepass password -keystore ca.p12 -certreq -alias ca |
+    keytool -storepass password -keystore root.p12
     -gencert -alias root -ext BC=0 -rfc > ca.pem
-keytool -keystore ca.jks -importcert -alias ca -file ca.pem
+keytool -keystore ca.p12 -importcert -alias ca -file ca.pem
 
-keytool -storepass password -keystore server.jks -certreq -alias server |
-    keytool -storepass password -keystore ca.jks -gencert -alias ca
+keytool -storepass password -keystore server.p12 -certreq -alias server |
+    keytool -storepass password -keystore ca.p12 -gencert -alias ca
     -ext ku:c=dig,kE -rfc > server.pem
 cat root.pem ca.pem server.pem |
-    keytool -keystore server.jks -importcert -alias server
+    keytool -keystore server.p12 -importcert -alias server
 
 ```
 
@@ -1886,11 +1887,7 @@ Keystore implementation
     is a cross platform keystore based on the RSA PKCS12 Personal Information
     Exchange Syntax Standard. This standard is primarily meant for storing or
     transporting a user's private keys, certificates, and miscellaneous
-    secrets. There is another built-in implementation, provided by Oracle. It
-    implements the keystore as a file with a proprietary keystore type (format)
-    named `JKS`. It protects each private key with its individual password, and
-    also protects the integrity of the entire keystore with a (possibly
-    different) password.
+    secrets.
 
     Keystore implementations are provider-based. More specifically, the
     application interfaces supplied by `KeyStore` are implemented in terms of a
@@ -1946,16 +1943,12 @@ Keystore implementation
     >   `keystore.type=pkcs12`
 
     To have the tools utilize a keystore implementation other than the default,
-    you can change that line to specify a different keystore type. For example,
-    if you want to use the Oracle's `jks` keystore implementation, then change
-    the line to the following:
-
-    >   `keystore.type=jks`
+    you can change that line to specify a different keystore type.
 
     **Note:**
 
-    Case doesn't matter in keystore type designations. For example, `JKS` would
-    be considered the same as `jks`.
+    Case doesn't matter in keystore type designations. For example, `PKCS12`
+    would be considered the same as `pkcs12`.
 
 Certificate
 :   A certificate (or public-key certificate) is a digitally signed statement
@@ -2157,9 +2150,9 @@ cacerts Certificates File
 
     The `cacerts` file represents a system-wide keystore with CA certificates.
     System administrators can configure and manage that file with the `keytool`
-    command by specifying `jks` as the keystore type. The `cacerts` keystore
-    file ships with a default set of root CA certificates. For Linux, macOS, and
-    Windows, you can list the default certificates with the following command:
+    command. The `cacerts` keystore file ships with a default set of root CA
+    certificates. For Linux, macOS, and Windows, you can list the default
+    certificates with the following command:
 
     >   `keytool -list -cacerts`
 

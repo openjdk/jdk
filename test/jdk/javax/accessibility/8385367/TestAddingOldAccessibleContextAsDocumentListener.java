@@ -26,7 +26,9 @@ import javax.accessibility.AccessibleContext;
 import javax.swing.JTextPane;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.html.HTMLDocument;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /*
@@ -42,6 +44,8 @@ public class TestAddingOldAccessibleContextAsDocumentListener {
 
         // This installs an HTMLDocument
         textPane.setContentType("text/html");
+        HTMLDocument htmlDoc =
+                (HTMLDocument) textPane.getDocument();
 
         // this instantiates the AccessibleContext
         AccessibleContext htmlAXContext = textPane.getAccessibleContext();
@@ -59,9 +63,25 @@ public class TestAddingOldAccessibleContextAsDocumentListener {
 
         List<DocumentListener> docListeners = Arrays.asList(
                 plainDoc.getDocumentListeners());
-        if (docListeners.contains(htmlAXContext)) {
-            throw new Exception("failed");
-        }
+        assertEquals(0, Collections.frequency(docListeners, htmlAXContext));
+
+        AccessibleContext plainAXContext = textPane.getAccessibleContext();
+        assertEquals(1, Collections.frequency(docListeners, plainAXContext));
+
+        // this is optional (we don't care about the HTMLDocument anymore).
+        // setDocument() automatically removes the old AX context listener
+        List<DocumentListener> htmlDocListeners = Arrays.asList(
+                htmlDoc.getDocumentListeners());
+        assertEquals(0, Collections.frequency(htmlDocListeners,
+                htmlAXContext));
+
         System.out.println("test passed");
+    }
+
+    private static void assertEquals(int expectedValue, int observedValue) {
+        if (expectedValue != observedValue) {
+            throw new RuntimeException("Expected: " + expectedValue +
+                    ", observed: " + observedValue);
+        }
     }
 }

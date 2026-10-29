@@ -96,6 +96,12 @@ class JavaThread: public Thread {
  private:
   bool           _on_thread_list;                // Is set when this JavaThread is added to the Threads list
 
+  // When ThreadsSMRSupport::free_list() is called by ThreadsSMRSupport::remove_thread(),
+  // it may set this flag to indicate that this JavaThread is no longer protected by a
+  // ThreadsListHandle. This avoids a costly re-scan of hazard pointers in
+  // ThreadsSMRSupport::wait_until_not_protected().
+  bool           _smr_delete_is_safe;
+
   // All references to Java objects managed via OopHandles. These
   // have to be released by the ServiceThread after the JavaThread has
   // terminated - see add_oop_handles_for_release().
@@ -230,16 +236,16 @@ class JavaThread: public Thread {
 
   // Asynchronous exception support
  private:
-  friend class InstallAsyncExceptionHandshakeClosure;
   friend class AsyncExceptionHandshakeClosure;
   friend class HandshakeState;
 
+  int _at_no_async_entry_count;  // Tracks JRT_xxx_NO_ASYNC entry points
+
   void handle_async_exception(oop java_throwable);
  public:
-  void install_async_exception(AsyncExceptionHandshakeClosure* aec = nullptr);
+  void install_async_exception(AsyncExceptionHandshakeClosure* aec);
   bool has_async_exception_condition();
   inline void set_pending_unsafe_access_error();
-  static void send_async_exception(JavaThread* jt, oop java_throwable);
 
   class NoAsyncExceptionDeliveryMark : public StackObj {
     friend JavaThread;
@@ -247,6 +253,20 @@ class JavaThread: public Thread {
     inline NoAsyncExceptionDeliveryMark(JavaThread *t);
     inline ~NoAsyncExceptionDeliveryMark();
   };
+
+  int at_no_async_entry_count() const {
+    assert(is_handshake_safe_for(Thread::current()), "Should only be invoked from within a handshake!");
+    assert(_at_no_async_entry_count >= 0, "");
+    return _at_no_async_entry_count;
+  }
+  void inc_at_no_async_entry_count() {
+    assert(_at_no_async_entry_count >= 0, "");
+    _at_no_async_entry_count++;
+  }
+  void dec_at_no_async_entry_count() {
+    _at_no_async_entry_count--;
+    assert(_at_no_async_entry_count >= 0, "");
+  }
 
   // Safepoint support
  public:                                                        // Expose _thread_state for SafeFetchInt()
@@ -270,8 +290,8 @@ class JavaThread: public Thread {
  public:
   // These functions check conditions before possibly going to a safepoint.
   // including NoSafepointVerifier.
-  void check_for_valid_safepoint_state() NOT_DEBUG_RETURN;
-  void check_possible_safepoint()        NOT_DEBUG_RETURN;
+  void check_for_valid_safepoint_state()                         NOT_DEBUG_RETURN;
+  void check_possible_safepoint()                                NOT_DEBUG_RETURN;
 
 #ifdef ASSERT
  private:
@@ -563,6 +583,8 @@ private:
 
   // JavaThread termination and lifecycle support:
   void smr_delete();
+  bool smr_delete_is_safe() const { return _smr_delete_is_safe; }
+  void set_smr_delete_is_safe() { _smr_delete_is_safe = true; }
   bool on_thread_list() const { return _on_thread_list; }
   void set_on_thread_list() { _on_thread_list = true; }
 
@@ -651,9 +673,6 @@ public:
   bool java_resume(bool register_vthread_SR);
   bool is_suspended()     { return _suspend_resume_manager.is_suspended(); }
   SuspendResumeManager* suspend_resume_manager() { return &_suspend_resume_manager; }
-
-  // Check for async exception in addition to safepoint.
-  static void check_special_condition_for_native_trans(JavaThread *thread);
 
   // Synchronize with another thread that is deoptimizing objects of the
   // current thread, i.e. reverts optimizations based on escape analysis.
@@ -983,9 +1002,9 @@ public:
   void print_jni_stack();
 
   // Print stack traces in various internal formats
-  void trace_stack()                             PRODUCT_RETURN;
-  void trace_stack_from(vframe* start_vf)        PRODUCT_RETURN;
-  void trace_frames()                            PRODUCT_RETURN;
+  void trace_stack_on(outputStream* st)                            PRODUCT_RETURN;
+  void trace_stack_from(outputStream* st, vframe* start_vf)        PRODUCT_RETURN;
+  void trace_frames_on(outputStream* st)                           PRODUCT_RETURN;
 
   // Print an annotated view of the stack frames
   void print_frame_layout(int depth = 0, bool validate_only = false) NOT_DEBUG_RETURN;
@@ -1224,7 +1243,6 @@ public:
   static ByteSize lock_stack_base_offset() { return lock_stack_offset() + LockStack::base_offset(); }
 
   static ByteSize om_cache_offset()        { return byte_offset_of(JavaThread, _om_cache); }
-  static ByteSize om_cache_oops_offset()   { return om_cache_offset() + OMCache::entries_offset(); }
 
   void om_set_monitor_cache(ObjectMonitor* monitor);
   void om_clear_monitor_cache();
@@ -1335,6 +1353,27 @@ public:
   }
   ~ThrowingUnsafeAccessError() {
     _thread->set_throwing_unsafe_access_error(_prev);
+  }
+};
+
+// Tracks Java->VM entry points that defer async exception
+// processing on the transition back to Java (except the
+// safepoint poll from compiled code which is already
+// tracked by JavaThread::is_at_poll_safepoint()).
+class AtNoAsyncEntryMark : public StackObj {
+  JavaThread* _target;
+  bool _do_count;
+ public:
+  AtNoAsyncEntryMark(JavaThread* jt, bool do_count)
+    : _target(jt), _do_count(do_count) {
+    if (_do_count) {
+      _target->inc_at_no_async_entry_count();
+    }
+  }
+  ~AtNoAsyncEntryMark() {
+    if (_do_count) {
+      _target->dec_at_no_async_entry_count();
+    }
   }
 };
 

@@ -160,13 +160,15 @@ public:
   // strong.
   // Words that have been marked final before or by a concurrent thread will be
   // upgraded to strong. In this case, this method also returns true.
-  inline bool mark_strong(HeapWord* w, bool& was_upgraded);
+  ALWAYSINLINE
+  bool mark_strong(HeapWord* w, bool& was_upgraded);
 
   // Mark word as 'weak' if it hasn't been marked weak or strong yet.
   // Return true if the word has been marked weak, false if it has already been
   // marked strong or weak or if another thread has beat us by marking it
   // strong or weak.
-  inline bool mark_weak(HeapWord* heap_addr);
+  ALWAYSINLINE
+  bool mark_weak(HeapWord* heap_addr);
 
   inline bool is_marked(HeapWord* addr) const;
   inline bool is_marked_strong(HeapWord* w)  const;

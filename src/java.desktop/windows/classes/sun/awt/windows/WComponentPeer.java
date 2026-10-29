@@ -1082,16 +1082,10 @@ public abstract class WComponentPeer extends WObjectPeer
      */
     public boolean isAccelCapable() {
         if (!isAccelCapable ||
-            !isContainingTopLevelAccelCapable((Component)target))
-        {
+            !isContainingTopLevelAccelCapable((Component)target)) {
             return false;
         }
-
-        boolean isTranslucent =
-            SunToolkit.isContainingTopLevelTranslucent((Component)target);
-        // D3D/OGL and translucent windows interacted poorly in Windows XP;
-        // these problems are no longer present in Vista
-        return !isTranslucent || Win32GraphicsEnvironment.isVistaOS();
+        return true;
     }
 
     /**

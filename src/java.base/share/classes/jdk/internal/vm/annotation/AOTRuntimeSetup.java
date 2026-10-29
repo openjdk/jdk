@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +64,7 @@ import java.lang.annotation.Target;
 /// an AOT-initialized class, at the end of the assembly phase run which builds
 /// an AOT cache.  The `resetArchivedStates` may "tear down" state that should
 /// not be stored in the AOT cache, which the `runtimeSetup` method may then
-/// "build up again" as the production run begins.  This additional method is
-/// currently only used by [Class] to reset a cache field, but it may be
-/// expanded to other classes and interfaces later on, using more
-/// annotation-driven logic.
+/// "build up again" as the production run begins.
 ///
 /// The logic in `classFileParser.cpp` performs checks on the annotated method: If the
 /// annotated method's signature differs from that described above, or if (during the

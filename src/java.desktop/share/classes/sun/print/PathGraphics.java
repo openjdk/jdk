@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,6 +153,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @param   x2  the second point's <i>x</i> coordinate.
      * @param   y2  the second point's <i>y</i> coordinate.
      */
+    @Override
     public void drawLine(int x1, int y1, int x2, int y2) {
 
         Paint paint = getPaint();
@@ -187,6 +188,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see          java.awt.Graphics#fillRect
      * @see          java.awt.Graphics#clearRect
      */
+    @Override
     public void drawRect(int x, int y, int width, int height) {
 
         Paint paint = getPaint();
@@ -224,6 +226,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see           java.awt.Graphics#clearRect
      * @see           java.awt.Graphics#drawRect
      */
+    @Override
     public void fillRect(int x, int y, int width, int height){
 
         Paint paint = getPaint();
@@ -260,6 +263,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see         java.awt.Graphics#setPaintMode
      * @see         java.awt.Graphics#setXORMode(java.awt.Color)
      */
+    @Override
     public void clearRect(int x, int y, int width, int height) {
 
         fill(new Rectangle2D.Float(x, y, width, height), getBackground());
@@ -281,6 +285,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      *                    at the four corners.
      * @see        java.awt.Graphics#fillRoundRect
      */
+    @Override
     public void drawRoundRect(int x, int y, int width, int height,
                               int arcWidth, int arcHeight) {
 
@@ -306,6 +311,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      *                     of the arc at the four corners.
      * @see         java.awt.Graphics#drawRoundRect
      */
+    @Override
     public void fillRoundRect(int x, int y, int width, int height,
                               int arcWidth, int arcHeight) {
 
@@ -332,6 +338,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see         java.awt.Graphics#fillOval
      * @since       1.0
      */
+    @Override
     public void drawOval(int x, int y, int width, int height) {
         draw(new Ellipse2D.Float(x, y, width, height));
     }
@@ -347,6 +354,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @param       height the height of the oval to be filled.
      * @see         java.awt.Graphics#drawOval
      */
+    @Override
     public void fillOval(int x, int y, int width, int height){
 
         fill(new Ellipse2D.Float(x, y, width, height));
@@ -389,6 +397,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      *                    relative to the start angle.
      * @see         java.awt.Graphics#fillArc
      */
+    @Override
     public void drawArc(int x, int y, int width, int height,
                                  int startAngle, int arcAngle) {
         draw(new Arc2D.Float(x, y, width, height,
@@ -433,6 +442,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      *                    relative to the start angle.
      * @see         java.awt.Graphics#drawArc
      */
+    @Override
     public void fillArc(int x, int y, int width, int height,
                                  int startAngle, int arcAngle) {
 
@@ -453,6 +463,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see         java.awt.Graphics#drawPolygon(int[], int[], int)
      * @since       1.1
      */
+    @Override
     public void drawPolyline(int[] xPoints, int[] yPoints,
                              int nPoints) {
 
@@ -489,6 +500,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see          java.awt.Graphics#fillPolygon
      * @see          java.awt.Graphics#drawPolyline
      */
+    @Override
     public void drawPolygon(int[] xPoints, int[] yPoints,
                                      int nPoints) {
 
@@ -502,6 +514,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see          java.awt.Graphics#fillPolygon
      * @see          java.awt.Graphics#drawPolyline
      */
+    @Override
     public void drawPolygon(Polygon p) {
         draw(p);
     }
@@ -526,6 +539,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @param        nPoints   the total number of points.
      * @see          java.awt.Graphics#drawPolygon(int[], int[], int)
      */
+    @Override
     public void fillPolygon(int[] xPoints, int[] yPoints,
                             int nPoints) {
 
@@ -542,6 +556,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @param        p the polygon to fill.
      * @see          java.awt.Graphics#drawPolygon(int[], int[], int)
      */
+    @Override
     public void fillPolygon(Polygon p) {
 
         fill(p);
@@ -559,10 +574,12 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see         java.awt.Graphics#drawChars
      * @since       1.0
      */
+    @Override
     public void drawString(String str, int x, int y) {
         drawString(str, (float) x, (float) y);
     }
 
+    @Override
     public void drawString(String str, float x, float y) {
         if (str.length() == 0) {
             return;
@@ -593,10 +610,12 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see         java.awt.Graphics#drawBytes
      * @see         java.awt.Graphics#drawChars
      */
+    @Override
     public void drawString(AttributedCharacterIterator iterator,
                            int x, int y) {
         drawString(iterator, (float) x, (float) y);
     }
+    @Override
     public void drawString(AttributedCharacterIterator iterator,
                            float x, float y) {
         if (iterator == null) {
@@ -623,6 +642,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see #clip
      * @see #setClip
      */
+    @Override
     public void drawGlyphVector(GlyphVector g,
                                 float x,
                                 float y) {
@@ -1055,6 +1075,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see #setClip
      * @see #setComposite
      */
+    @Override
     public void draw(Shape s) {
 
         fill(getStroke().createStrokedShape(s));
@@ -1072,6 +1093,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see #clip
      * @see #setClip
      */
+    @Override
     public void fill(Shape s) {
         Paint paint = getPaint();
 
@@ -1411,6 +1433,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see      java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
      * @since    1.0
      */
+    @Override
     public boolean drawImage(Image img, int x, int y,
                              ImageObserver observer) {
 
@@ -1451,6 +1474,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see      java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
      * @since    1.0
      */
+    @Override
     public boolean drawImage(Image img, int x, int y,
                              int width, int height,
                              ImageObserver observer) {
@@ -1495,6 +1519,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see      java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
      * @since    1.0
      */
+    @Override
     public boolean drawImage(Image img, int x, int y,
                              Color bgcolor,
                              ImageObserver observer) {
@@ -1556,6 +1581,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see      java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
      * @since    1.0
      */
+    @Override
     public boolean drawImage(Image img, int x, int y,
                              int width, int height,
                              Color bgcolor,
@@ -1628,6 +1654,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see         java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
      * @since       1.1
      */
+    @Override
     public boolean drawImage(Image img,
                              int dx1, int dy1, int dx2, int dy2,
                              int sx1, int sy1, int sx2, int sy2,
@@ -1693,6 +1720,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see         java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
      * @since       1.1
      */
+    @Override
     public boolean drawImage(Image img,
                              int dx1, int dy1, int dx2, int dy2,
                              int sx1, int sy1, int sx2, int sy2,
@@ -1802,6 +1830,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see #clip
      * @see #setClip
      */
+    @Override
     public boolean drawImage(Image img,
                              AffineTransform xform,
                              ImageObserver obs) {
@@ -1842,6 +1871,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see #clip
      * @see #setClip
      */
+    @Override
     public void drawImage(BufferedImage img,
                           BufferedImageOp op,
                           int x,
@@ -1886,6 +1916,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see #clip
      * @see #setClip
      */
+    @Override
     public void drawRenderedImage(RenderedImage img,
                                   AffineTransform xform) {
 

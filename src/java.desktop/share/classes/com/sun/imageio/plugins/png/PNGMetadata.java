@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1810,7 +1810,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
      * Latin-1 [ISO-8859-1] characters and spaces; that is, only
      * character codes 32-126 and 161-255 decimal are allowed.
      * For Latin-1 value fields the 0x10 (linefeed) control
-     * character is aloowed too.
+     * character is allowed too.
      *
      * See: http://www.w3.org/TR/PNG/#11keywords
      */

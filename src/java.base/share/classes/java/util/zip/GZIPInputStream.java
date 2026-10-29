@@ -58,6 +58,19 @@ import java.util.Objects;
  * The {@link #close} method should be called to release resources used by this
  * stream, either directly, or with the {@code try}-with-resources statement.
  *
+ * @implNote
+ * After reading a member trailer, the {@linkplain #read(byte[], int, int) read} method calls
+ * {@link InputStream#available()} on the underlying stream to determine whether additional
+ * bytes are available that may represent a subsequent member. If the
+ * {@systemProperty jdk.util.gzip.tryReadAheadAfterTrailer} system property is set
+ * to {@code true}, then the call to {@code InputStream.available()} is skipped and the
+ * implementation instead attempts to read a subsequent member in the stream.
+ * {@code GZIPInputStream} depends on the return value of {@code InputStream.available()}
+ * to reliably process a stream with a series of members. Consequently, it may be necessary
+ * to set this property in environments that process streams with a series of members. By default,
+ * the {@code jdk.util.gzip.tryReadAheadAfterTrailer} system property is not set, and
+ * {@code InputStream.available()} gets called.
+ *
  * @spec https://www.rfc-editor.org/info/rfc1952
  *       RFC 1952: GZIP file format specification version 4.3
  *
@@ -66,6 +79,12 @@ import java.util.Objects;
  * @since 1.1
  */
 public class GZIPInputStream extends InflaterInputStream {
+
+    // system property which configures whether we skip the call to InputStream.available()
+    // when checking for additional GZIP members in a stream
+    private static final boolean alwaysReadNextMember =
+            Boolean.getBoolean("jdk.util.gzip.tryReadAheadAfterTrailer");
+
     /**
      * GZIP header magic number.
      */
@@ -119,7 +138,11 @@ public class GZIPInputStream extends InflaterInputStream {
         super(in, createInflater(in, size), size);
         usesDefaultInflater = true;
         try {
-            readHeader(in);
+            // we don't expect the stream to be at EOF
+            // and if it is, then we want readHeader to
+            // raise an exception, so we pass "true" for
+            // the "failOnEOF" param.
+            readHeader(in, true);
         } catch (IOException ioe) {
             this.inf.end();
             throw ioe;
@@ -194,10 +217,15 @@ public class GZIPInputStream extends InflaterInputStream {
         }
         int n = super.read(buf, off, len);
         if (n == -1) {
-            if (readTrailer())
+            if (hasNoMoreMembers()) {
                 eos = true;
-            else
+            } else {
+                // When a next member is available, hasNoMoreMembers() will read
+                // its header and will position the stream at the next member's
+                // deflated data. We now decompress and return that member's
+                // decompressed data.
                 return this.read(buf, off, len);
+            }
         } else {
             crc.update(buf, off, n);
         }
@@ -221,12 +249,40 @@ public class GZIPInputStream extends InflaterInputStream {
     /*
      * Reads GZIP member header and returns the total byte number
      * of this member header.
+     * If failOnEOF is false and if the given InputStream has already
+     * reached EOF when this method was invoked, then this method returns
+     * -1 (indicating that there's no GZIP member header).
+     * In all other cases of malformed header or EOF being detected
+     * when reading the header, this method will throw an IOException.
      */
-    private int readHeader(InputStream this_in) throws IOException {
-        CheckedInputStream in = new CheckedInputStream(this_in, crc);
+    private int readHeader(InputStream stream, boolean failOnEOF) throws IOException {
+        CheckedInputStream in = new CheckedInputStream(stream, crc);
         crc.reset();
+
+        int magic;
+        if (!failOnEOF) {
+            // read an unsigned short value representing the GZIP magic header.
+            // this is the same as calling readUShort(in), except that here,
+            // when reading the first byte, we don't raise an EOFException
+            // if the stream has already reached EOF.
+
+            // read unsigned byte
+            int b = in.read();
+            if (b == -1) { // EOF
+                crc.reset();
+                return -1; // represents no header bytes available
+            }
+            checkUnexpectedByte(b);
+            // read the next unsigned byte to form the unsigned
+            // short. we throw the usual EOFException/ZipException
+            // from this point on if there is no more data or
+            // the data doesn't represent a header.
+            magic = (readUByte(in) << 8) | b;
+        } else {
+            magic = readUShort(in);
+        }
         // Check header magic
-        if (readUShort(in) != GZIP_MAGIC) {
+        if (magic != GZIP_MAGIC) {
             throw new ZipException("Not in GZIP format");
         }
         // Check compression method
@@ -268,44 +324,66 @@ public class GZIPInputStream extends InflaterInputStream {
         return n;
     }
 
-    /*
-     * Reads GZIP member trailer and returns true if the eos
-     * reached, false if there are more (concatenated gzip
-     * data set)
+    /**
+     * Reads the current GZIP member's trailer and returns true if the end-of-stream is
+     * reached. After reading the current member's trailer, if the stream has a subsequent
+     * GZIP member, then this method reads that member's header and returns false indicating
+     * that there is another member in the stream.
      */
-    private boolean readTrailer() throws IOException {
-        InputStream in = this.in;
-        int n = inf.getRemaining();
-        if (n > 0) {
-            in = new SequenceInputStream(
-                        new ByteArrayInputStream(buf, len - n, n),
-                        new FilterInputStream(in) {
-                            public void close() throws IOException {}
-                        });
+    private boolean hasNoMoreMembers() throws IOException {
+        final int numRemainingInInflater = inf.getRemaining();
+        InputStream stream = this.in;
+        if (numRemainingInInflater > 0) {
+            stream = new SequenceInputStream(
+                    new ByteArrayInputStream(buf, len - numRemainingInInflater, numRemainingInInflater),
+                    new FilterInputStream(stream) {
+                        public void close() {}
+                    });
         }
-        // Uses left-to-right evaluation order
-        if ((readUInt(in) != crc.getValue()) ||
-            // rfc1952; ISIZE is the input size modulo 2^32
-            (readUInt(in) != (inf.getBytesWritten() & 0xffffffffL)))
-            throw new ZipException("Corrupt GZIP trailer");
-
-        // If there are more bytes available in "in" or
-        // the leftover in the "inf" is > 26 bytes:
-        // this.trailer(8) + next.header.min(10) + next.trailer(8)
-        // try concatenated case
-        if (this.in.available() > 0 || n > 26) {
-            int m = 8;                  // this.trailer
-            try {
-                m += readHeader(in);    // next.header
-            } catch (IOException ze) {
-                return true;  // ignore any malformed, do nothing
+        // first read the current member's trailer
+        readTrailer(stream);
+        // decide whether to read next member's header
+        final boolean readNextMember = alwaysReadNextMember
+                || this.in.available() > 0
+                || numRemainingInInflater > 26; // current member's trailer == 8 bytes
+                                                // + minimum of 10 bytes header for next member
+                                                // + mandatory 8 bytes from next member's trailer
+                                                // == at least 26 bytes needed for next member to
+                                                // be present
+        if (!readNextMember) {
+            return true; // no need to read next member
+        }
+        // read next member's header
+        int m = 8;  // this.trailer
+        try {
+            int numNextHeaderBytes = readHeader(stream, false); // next.header (if available)
+            if (numNextHeaderBytes == -1) {
+                return true; // end of stream reached, no more members
             }
-            inf.reset();
-            if (n > m)
-                inf.setInput(buf, len - n + m, n - m);
-            return false;
+            m += numNextHeaderBytes;
+        } catch (IOException ze) {
+            return true;  // ignore any malformed, consider it as no more members in the stream
         }
-        return true;
+        inf.reset(); // reset the inflater for fresh input data from the next member
+        if (numRemainingInInflater > m) {
+            // position the inflater's input buffer to the start of next member's deflated data
+            inf.setInput(buf, len - numRemainingInInflater + m, numRemainingInInflater - m);
+        }
+        return false; // next member exists
+    }
+
+    /**
+     * Reads the current member's trailer
+     *
+     * @param stream the InputStream containing the trailer
+     */
+    private void readTrailer(final InputStream stream) throws IOException {
+        // Uses left-to-right evaluation order
+        if ((readUInt(stream) != crc.getValue()) ||
+                // rfc1952; ISIZE is the input size modulo 2^32
+                (readUInt(stream) != (inf.getBytesWritten() & 0xffffffffL))) {
+            throw new ZipException("Corrupt GZIP trailer");
+        }
     }
 
     /*
@@ -332,12 +410,16 @@ public class GZIPInputStream extends InflaterInputStream {
         if (b == -1) {
             throw new EOFException();
         }
-        if (b < -1 || b > 255) {
-            // Report on this.in, not argument in; see read{Header, Trailer}.
-            throw new IOException(this.in.getClass().getName()
-                + ".read() returned value out of range -1..255: " + b);
-        }
+        checkUnexpectedByte(b);
         return b;
+    }
+
+    private void checkUnexpectedByte(final int b) throws IOException {
+        if (b < -1 || b > 255) {
+            // report the InputStream type which returned this unexpected byte
+            throw new IOException(this.in.getClass().getName()
+                    + ".read() returned value out of range -1..255: " + b);
+        }
     }
 
     /*

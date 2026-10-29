@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,16 @@
 
 #include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalFullGC.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 
@@ -52,7 +56,7 @@ void assert_usage_not_more_than_regions_used(ShenandoahGeneration* generation) {
 
 void ShenandoahGenerationalFullGC::prepare() {
   auto heap = ShenandoahGenerationalHeap::heap();
-  // Since we may arrive here from degenerated GC failure of either young or old, establish generation as GLOBAL.
+  // Full GC always operates on the GLOBAL generation.
   heap->set_active_generation(heap->global_generation());
 
   // Full GC supersedes any marking or coalescing in old generation.
@@ -66,6 +70,7 @@ void ShenandoahGenerationalFullGC::handle_completion(ShenandoahHeap* heap) {
   ShenandoahOldGeneration* old = gen_heap->old_generation();
   young->heuristics()->record_cycle_end();
   old->heuristics()->record_cycle_end();
+  old->clear_failed_evacuation();
 
   gen_heap->mmu_tracker()->record_full(GCId::current());
   gen_heap->log_heap_status("At end of Full GC");
@@ -106,10 +111,11 @@ void ShenandoahGenerationalFullGC::log_live_in_old(ShenandoahHeap* heap) {
   if (lt.is_enabled()) {
     size_t live_bytes_in_old = 0;
     for (size_t i = 0; i < heap->num_regions(); i++) {
-      ShenandoahHeapRegion* r = heap->get_region(i);
-      if (r->is_old()) {
-        live_bytes_in_old += r->get_live_data_bytes();
+      if (!heap->is_region_old(i)) {
+        continue;
       }
+
+      live_bytes_in_old += heap->get_region(i)->get_live_data_bytes();
     }
     log_debug(gc)("Live bytes in old after STW mark: " PROPERFMT, PROPERFMTARGS(live_bytes_in_old));
   }
@@ -151,13 +157,15 @@ void ShenandoahGenerationalFullGC::maybe_coalesce_and_fill_region(ShenandoahHeap
 void ShenandoahGenerationalFullGC::compute_balances() {
   auto heap = ShenandoahGenerationalHeap::heap();
 
-  // In case this Full GC resulted from degeneration, clear the tally on anticipated promotion.
+  // Reset the tally on anticipated promotion.
   heap->old_generation()->set_promotion_potential(0);
 
   // Invoke this in case we are able to transfer memory from OLD to YOUNG
   size_t allocation_runway =
     heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(0L);
-  heap->compute_old_generation_balance(allocation_runway, 0, 0);
+  size_t max_transfer = MIN2(allocation_runway,
+                             heap->young_generation()->free_unaffiliated_regions() * ShenandoahHeapRegion::region_size_bytes());
+  heap->compute_old_generation_balance(max_transfer, 0, 0);
 }
 
 ShenandoahPrepareForGenerationalCompactionObjectClosure::ShenandoahPrepareForGenerationalCompactionObjectClosure(PreservedMarks* preserved_marks,
@@ -242,9 +250,9 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
   assert(_heap->global_generation()->complete_marking_context()->is_marked(p), "must be marked");
   assert(!_heap->global_generation()->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
 
-  size_t obj_size = p->size();
+  size_t obj_size = ShenandoahForwarding::size(p);
   uint from_region_age = _from_region->age();
-  uint object_age = p->age();
+  uint object_age = ShenandoahForwarding::age(p);
 
   bool promote_object = false;
   if ((_from_affiliation == ShenandoahAffiliation::YOUNG_GENERATION) &&
@@ -312,7 +320,7 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
 
     // After full gc compaction, all regions have age 0.  Embed the region's age into the object's age in order to preserve
     // tenuring progress.
-    ShenandoahHeap::increase_object_age(p, from_region_age + 1);
+    ShenandoahForwarding::increase_age(p, from_region_age + 1);
 
     if (_young_compact_point + obj_size > _young_to_region->end()) {
       ShenandoahHeapRegion* new_to_region;

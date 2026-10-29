@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,12 +110,14 @@ class ThreadsSMRSupport : AllStatic {
   static ThreadsList*          _to_delete_list;
   static uint                  _to_delete_list_cnt;
   static uint                  _to_delete_list_max;
+  static uint                  _retired_since_reclaim_cnt;
+  static size_t                _retired_since_reclaim_mem;
 
   static void add_deleted_thread_times(uint add_value);
   static void add_tlh_times(uint add_value);
   static void clear_delete_notify();
   static bool delete_notify();
-  static void free_list(ThreadsList* threads);
+  static void free_list(ThreadsList* threads, JavaThread* thread_to_delete = nullptr);
   static void inc_deleted_thread_cnt();
   static void inc_java_thread_list_alloc_cnt();
   static void inc_tlh_cnt();
@@ -191,6 +193,8 @@ public:
   JavaThread *thread_at(uint i) const { return _threads[i]; }
 
   JavaThread *const *threads() const  { return _threads; }
+
+  size_t size_in_bytes() const;
 
   // Returns -1 if target is not found.
   int find_index_of_JavaThread(JavaThread* target);

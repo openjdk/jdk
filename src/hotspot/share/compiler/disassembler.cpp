@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,7 +281,7 @@ void decode_env::print_hook_comments(address pc, bool newline) {
           if (len > 0 && line[len-1] == '\n') {
             line[len-1] = '\0';
           }
-          _cached_src_lines->append(os::strdup(line));
+          _cached_src_lines->append(os::strdup(line, mtCompiler));
         }
         fclose(fp);
         _print_file_name = true;
@@ -591,9 +591,6 @@ void decode_env::print_address(address adr) {
   if (Universe::is_fully_initialized()) {
     if (StubRoutines::contains(adr)) {
       StubCodeDesc* desc = StubCodeDesc::desc_for(adr);
-      if (desc == nullptr) {
-        desc = StubCodeDesc::desc_for(adr + frame::pc_return_offset);
-      }
       if (desc != nullptr) {
         st->print("Stub::%s", desc->name());
         if (desc->begin() != adr) {

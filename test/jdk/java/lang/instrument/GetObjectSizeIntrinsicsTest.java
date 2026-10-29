@@ -26,7 +26,7 @@
  * @bug 8253525
  * @summary Test for fInst.getObjectSize with 32-bit compressed oops
  * @library /test/lib
- * @requires !vm.opt.VerifyOops
+ * @requires (vm.opt.VerifyOops == "null" | !vm.opt.VerifyOops)
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest
@@ -55,7 +55,7 @@
  * @summary Test for fInst.getObjectSize with zero-based compressed oops
  * @library /test/lib
  * @requires vm.bits == 64
- * @requires !vm.opt.VerifyOops
+ * @requires (vm.opt.VerifyOops == "null" | !vm.opt.VerifyOops)
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest
@@ -84,7 +84,7 @@
  * @summary Test for fInst.getObjectSize without compressed oops
  * @library /test/lib
  * @requires vm.bits == 64
- * @requires !vm.opt.VerifyOops
+ * @requires (vm.opt.VerifyOops == "null" | !vm.opt.VerifyOops)
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest
@@ -113,7 +113,7 @@
  * @summary Test for fInst.getObjectSize with 32-bit compressed oops
  * @library /test/lib
  * @requires vm.debug
- * @requires !vm.opt.VerifyOops
+ * @requires (vm.opt.VerifyOops == "null" | !vm.opt.VerifyOops)
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest
@@ -146,7 +146,7 @@
  * @library /test/lib
  * @requires vm.bits == 64
  * @requires vm.debug
- * @requires !vm.opt.VerifyOops
+ * @requires (vm.opt.VerifyOops == "null" | !vm.opt.VerifyOops)
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest
@@ -179,7 +179,7 @@
  * @library /test/lib
  * @requires vm.bits == 64
  * @requires vm.debug
- * @requires !vm.opt.VerifyOops
+ * @requires (vm.opt.VerifyOops == "null" | !vm.opt.VerifyOops)
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest
@@ -212,7 +212,7 @@
  * @library /test/lib
  * @requires vm.bits == 64
  * @requires vm.debug
- * @requires !vm.opt.VerifyOops
+ * @requires (vm.opt.VerifyOops == "null" | !vm.opt.VerifyOops)
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest
@@ -245,7 +245,7 @@
  * @library /test/lib
  * @requires vm.bits == 64
  * @requires vm.debug
- * @requires !vm.opt.VerifyOops
+ * @requires (vm.opt.VerifyOops == "null" | !vm.opt.VerifyOops)
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest
@@ -279,7 +279,7 @@
  * @requires vm.bits == 64
  * @requires vm.debug
  * @requires os.maxMemory >= 10G
- * @requires !vm.opt.VerifyOops
+ * @requires (vm.opt.VerifyOops == "null" | !vm.opt.VerifyOops)
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest

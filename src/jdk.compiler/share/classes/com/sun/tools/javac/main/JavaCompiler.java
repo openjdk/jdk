@@ -441,7 +441,7 @@ public class JavaCompiler {
         devVerbose    = options.isSet("dev");
         processPcks   = options.isSet("process.packages");
         werrorNonLint = options.isSet(WERROR) || options.isSet(WERROR_CUSTOM, Option.LINT_CUSTOM_ALL);
-        werrorLint    = options.getLintCategoriesOf(WERROR, LintCategory::newEmptySet);
+        werrorLint    = options.getLintCategoriesOf(WERROR, LintCategory::newEmptySet, () -> EnumSet.allOf(LintCategory.class));
 
         verboseCompilePolicy = options.isSet("verboseCompilePolicy");
 

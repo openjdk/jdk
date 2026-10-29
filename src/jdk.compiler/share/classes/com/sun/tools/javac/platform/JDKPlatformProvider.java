@@ -62,7 +62,6 @@ import com.sun.tools.javac.file.CacheFSInfo;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.Option;
-import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.StringUtils;
@@ -76,6 +75,9 @@ import com.sun.tools.javac.util.StringUtils;
  */
 public class JDKPlatformProvider implements PlatformProvider {
 
+    public static final String PREVIEW_OPTION = "preview";
+    private static final String CT_SYM_PREVIEW_VERSION = "@";
+
     @Override
     public Iterable<String> getSupportedPlatformNames() {
         return SUPPORTED_JAVA_PLATFORM_VERSIONS;
@@ -86,11 +88,23 @@ public class JDKPlatformProvider implements PlatformProvider {
         if (!SUPPORTED_JAVA_PLATFORM_VERSIONS.contains(platformName)) {
             throw new PlatformNotSupported();
         }
-        return getPlatformTrusted(platformName);
+        if (PREVIEW_OPTION.equals(options) && !Source.DEFAULT.name.equals(platformName)) {
+            throw new PlatformNotSupported();
+        }
+        return getPlatformTrusted(platformName, options);
     }
 
-    public PlatformDescription getPlatformTrusted(String platformName) {
-        return new PlatformDescriptionImpl(platformName);
+    public PlatformDescription getPlatformTrusted(String platformName, String options) {
+        String ctSymVersion;
+
+        if (PREVIEW_OPTION.equals(options)) {
+            ctSymVersion = CT_SYM_PREVIEW_VERSION;
+        } else {
+            ctSymVersion =
+                    StringUtils.toUpperCase(Integer.toString(Integer.parseInt(platformName), Character.MAX_RADIX));
+        }
+
+        return new PlatformDescriptionImpl(platformName, ctSymVersion);
     }
 
     private static final String[] symbolFileLocation = { "lib", "ct.sym" };
@@ -132,6 +146,11 @@ public class JDKPlatformProvider implements PlatformProvider {
                         continue;
                     for (char ver : section.getFileName().toString().toCharArray()) {
                         String verString = Character.toString(ver);
+
+                        if (CT_SYM_PREVIEW_VERSION.equals(verString)) {
+                            continue; //ignore - preview is just an option
+                        }
+
                         Target t = Target.lookup("" + Integer.parseInt(verString, Character.MAX_RADIX));
 
                         if (t != null) {
@@ -154,10 +173,9 @@ public class JDKPlatformProvider implements PlatformProvider {
         private final String sourceVersion;
         private final String ctSymVersion;
 
-        PlatformDescriptionImpl(String sourceVersion) {
+        PlatformDescriptionImpl(String sourceVersion, String ctSymVersion) {
             this.sourceVersion = sourceVersion;
-            this.ctSymVersion =
-                    StringUtils.toUpperCase(Integer.toString(Integer.parseInt(sourceVersion), Character.MAX_RADIX));
+            this.ctSymVersion = ctSymVersion;
         }
 
         @Override

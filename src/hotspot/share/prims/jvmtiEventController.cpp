@@ -34,6 +34,7 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/threads.hpp"
@@ -1245,6 +1246,9 @@ JvmtiEventController::vm_death() {
   // callbacks are complete. The count could rise again, but those "callbacks"
   // will immediately see `execution_finished()` and return (dropping the count).
   while (in_callback_count() > 0) {
+    // Ensure we are safepoint-safe else we may prevent progress of an active
+    // callback until the maximum wait time has passed.
+    ThreadBlockInVM tbivm(JavaThread::current());
     os::naked_short_sleep(100);
     if (os::elapsedTime() - start > max_wait_time) {
       break;

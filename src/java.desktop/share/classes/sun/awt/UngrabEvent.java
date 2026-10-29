@@ -30,7 +30,7 @@ import java.awt.Component;
 
 /**
  * Sent when one of the following events occur on the grabbed window: <ul>
- * <li> it looses focus, but not to one of the owned windows
+ * <li> it loses focus, but not to one of the owned windows
  * <li> mouse click on the outside area happens (except for one of the owned windows)
  * <li> switch to another application or desktop happens
  * <li> click in the non-client area of the owning window or this window happens

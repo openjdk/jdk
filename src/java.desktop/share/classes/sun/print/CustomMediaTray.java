@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,7 @@ public class CustomMediaTray extends MediaTray {
     /**
      * Returns the string table for class CustomMediaTray.
      */
+    @Override
     protected String[] getStringTable() {
       String[] nameTable = new String[customStringTable.size()];
       return customStringTable.toArray(nameTable);
@@ -92,6 +93,7 @@ public class CustomMediaTray extends MediaTray {
     /**
      * Returns the enumeration value table for class CustomMediaTray.
      */
+    @Override
     protected EnumSyntax[] getEnumValueTable() {
       MediaTray[] enumTable = new MediaTray[customEnumTable.size()];
       return customEnumTable.toArray(enumTable);
@@ -117,6 +119,7 @@ public class CustomMediaTray extends MediaTray {
             this.choice = choice;
         }
 
+        @Override
         public boolean equals(Object object) {
             if (this == object) return true;
             if (object == null || getClass() != object.getClass()) return false;
@@ -125,6 +128,7 @@ public class CustomMediaTray extends MediaTray {
                     && Objects.equals(this.choice, that.choice);
         }
 
+        @Override
         public int hashCode() {
             return Objects.hash(name, choice);
         }

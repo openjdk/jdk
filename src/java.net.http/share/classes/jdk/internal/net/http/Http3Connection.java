@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import jdk.internal.net.http.Http3PushManager.CancelPushReason;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
+import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.http3.ConnectionSettings;
 import jdk.internal.net.http.http3.Http3Error;
@@ -667,13 +668,27 @@ public final class Http3Connection implements AutoCloseable {
                     closeCause == null ? "" : closeCause.toString());
             debug.log("State is: " + describeClosedState(closedState));
         }
+        // record the error in each unfinished exchange
         exchanges.values().forEach(e -> e.recordError(closeCause));
         // close the underlying QUIC connection
         connection.close(error.code(), logMsg, closeCause);
         final TerminationCause tc = connection.quicConnection.terminationCause();
         assert tc != null : "termination cause is null";
-        // close all HTTP streams
-        exchanges.values().forEach(exchange -> exchange.cancelImpl(tc.getCloseCause(), error));
+
+        // Figure out whether this is an orderly close.
+        boolean orderlyClose = tc.isAppLayer() && tc.getCloseCode() == H3_NO_ERROR.code();
+        if (orderlyClose) {
+            // For an orderly close, we will let the caller pull the bytes
+            // from exchanges which have received all promised bytes
+            // (but haven't processed them yet), but cancel all exchanges
+            // for which not all bytes have been received.
+            exchanges.values().stream()
+                    .filter(Http3ExchangeImpl::shouldCancelOnOrderlyClose)
+                    .forEach(exchange -> exchange.cancelImpl(tc.getCloseCause(), error));
+        } else {
+            // close all HTTP streams
+            exchanges.values().forEach(exchange -> exchange.cancelImpl(tc.getCloseCause(), error));
+        }
         pushManager.cancelAllPromises(tc.getCloseCause(), error);
         discardConnectionState();
         // No longer wait for reading HTTP/3 stream types:
@@ -716,6 +731,13 @@ public final class Http3Connection implements AutoCloseable {
         final Optional<Http3Error> error = Http3Error.fromCode(errorCode);
         assert error.isPresent() : "not a HTTP3 error code: " + errorCode;
         close(error.get(), logMsg, throwable);
+        if (exchange instanceof Http3ExchangeImpl<?> impl) {
+            // if the error originates from the exchange itself,
+            // makes sure it gets cancelled even if it has buffered
+            // all data, as processing buffered data can still trigger
+            // malformed frame errors
+            impl.cancelImpl(throwable, error.get());
+        }
     }
 
     public String toString() {
@@ -725,10 +747,15 @@ public final class Http3Connection implements AutoCloseable {
     private boolean finalStreamClosed() {
         lock();
         try {
-            return this.finalStream && this.exchangeStreams.isEmpty() && this.reservedStreamCount.get() == 0;
+            return this.finalStream && isIdle();
         } finally {
             unlock();
         }
+    }
+
+    private boolean isIdle() {
+        assert lock.isHeldByCurrentThread();
+        return exchangeStreams.isEmpty() && reservedStreamCount.get() == 0;
     }
 
     /**
@@ -894,6 +921,18 @@ public final class Http3Connection implements AutoCloseable {
         // must be done with "stateLock" held to co-ordinate idle connection management
         lock();
         try {
+
+            // Idle connection timeout processing might be delayed when this
+            // connection checkout request has arrived. Hence, first check for
+            // the timeout.
+            var idleConnectionTimeoutEventCopy = idleConnectionTimeoutEvent;
+            var timedOut = idleConnectionTimeoutEventCopy != null &&
+                    !idleConnectionTimeoutEventCopy.deadline().isAfter(TimeSource.now());
+            if (timedOut && isIdle()) {
+                setFinalStream();
+                return false;
+            }
+
             cancelIdleShutdownEvent();
             // co-ordinate with the QUIC connection to prevent it from silently terminating
             // a potentially idle transport
@@ -981,9 +1020,40 @@ public final class Http3Connection implements AutoCloseable {
             boolean okToIdleTimeout;
             lock();
             try {
-                if (cancelled || idleShutDownInitiated) {
+
+                // Are we still the effective idle timeout handler? If not, we're done.
+                if (idleConnectionTimeoutEvent != this) {
+                    if (debug.on()) {
+                        debug.log("Idle timeout event is found obsolete, skipping it");
+                    }
                     return;
                 }
+
+                if (cancelled) {
+                    if (debug.on()) {
+                        debug.log("Idle timeout event is found cancelled, skipping it");
+                    }
+                    return;
+                }
+
+                if (idleShutDownInitiated) {
+                    if (debug.on()) {
+                        debug.log("Idle timeout event found the shutdown initiated, skipping the event");
+                    }
+                    return;
+                }
+
+                if (!isIdle()) {
+                    if (debug.on()) {
+                        debug.log("Idle timeout event found the connection in-use, skipping the event");
+                    }
+                    // When the active/reserved stream later closes, it won't
+                    // arm a new idle timer upon seeing this one, which is
+                    // already fired. Hence, detach this event.
+                    idleConnectionTimeoutEvent = null;
+                    return;
+                }
+
                 idleShutDownInitiated = true;
                 if (debug.on()) {
                     debug.log("H3 idle shutdown initiated");

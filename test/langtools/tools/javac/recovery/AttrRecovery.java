@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8301580 8322159 8333107 8332230 8338678 8351260 8366196 8372336 8373094 8384229
+ *      8387865 8389478
  * @summary Verify error recovery w.r.t. Attr
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -858,6 +859,68 @@ public class AttrRecovery {
                 .outdir(out)
                 .run()
                 .writeAll();
+    }
+
+    @Test //JDK-8387865
+    public void testThisEscapeUnknownField() throws Exception {
+        String code = """
+                      public class C {
+                          public C() {
+                              this.unknown = unknown;
+                          }
+                      }
+                      """;
+        List<String> actual = new JavacTask(tb)
+                .options("-XDrawDiagnostics", "-XDdev",
+                         "-XDshould-stop.at=WARN", "-Xlint:this-escape")
+                .sources(code)
+                .outdir(base)
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+                "C.java:3:13: compiler.err.cant.resolve: kindname.variable, unknown, , ",
+                "C.java:3:24: compiler.err.cant.resolve.location: kindname.variable, unknown, , , (compiler.misc.location: kindname.class, C, null)",
+                "2 errors"
+        );
+
+        assertEquals(expected, actual);
+    }
+
+    @Test //JDK-8389478
+    public void testCheckAccessFromSerializableElement() throws Exception {
+        String code = """
+                      import java.io.Serializable;
+
+                      public class Test {
+                          interface SerializableFunction<T, R> extends Serializable {
+                              R apply(T t);
+                          }
+
+                          public static void main(String[] args) {
+                              SerializableFunction<String, Object> f = (x) -> {
+                                  // Map is not imported
+                                  return Map.Entry.FIELD;
+                              };
+                          }
+                      }
+                      """;
+        List<String> actual = new JavacTask(tb)
+                .options("-XDrawDiagnostics", "-XDdev",
+                         "-XDshould-stop.at=WARN", "-Xlint:all")
+                .sources(code)
+                .outdir(base)
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+                "Test.java:11:23: compiler.err.doesnt.exist: Map",
+                "1 error"
+        );
+
+        assertEquals(expected, actual);
     }
 
     @BeforeEach
