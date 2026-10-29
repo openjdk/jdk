@@ -374,7 +374,7 @@ public class Properties extends Hashtable<Object,Object> {
      * loaded from the property list.
      * <p>
      * If a key occurs more than once in the loaded property list, the
-     * associated element is set to the value of the latest such occurrence.
+     * associated element is set to the value of the last occurrence.
      * <p>
      * The specified stream remains open after this method returns.
      *
