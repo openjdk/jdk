@@ -3893,12 +3893,12 @@ void ConnectionGraph::add_field(Node *n, PointsToNode::EscapeState es, int offse
     return;
   }
   bool unsafe = false;
-  bool may_point_to_object = is_virtual_array_init(n) || is_oop_field(n, offset, &unsafe);
+  bool is_oop = is_oop_field(n, offset, &unsafe);
   if (unsafe) {
     es = PointsToNode::GlobalEscape;
   }
   Compile* C = _compile;
-  FieldNode* field = new (C->comp_arena()) FieldNode(this, n, es, offset, may_point_to_object);
+  FieldNode* field = new (C->comp_arena()) FieldNode(this, n, es, offset, is_oop);
   map_ideal_node(n, field);
 }
 
@@ -3923,6 +3923,11 @@ void ConnectionGraph::add_arraycopy(Node *n, PointsToNode::EscapeState es,
 }
 
 bool ConnectionGraph::is_oop_field(Node* n, int offset, bool* unsafe) {
+  if (is_virtual_array_init(n)) {
+    // n models a virtual field containing a reference to an array's init value
+    // oop, so it should be treated as any other oop field by escape analysis.
+    return true;
+  }
   const Type* adr_type = n->as_AddP()->bottom_type();
   int field_offset = adr_type->isa_aryptr() ? adr_type->isa_aryptr()->field_offset().get() : Type::OffsetBot;
   BasicType bt = T_INT;
