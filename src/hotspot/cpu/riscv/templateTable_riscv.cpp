@@ -46,6 +46,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
@@ -1906,12 +1907,12 @@ void TemplateTable::if_acmp(Condition cc) {
   Label taken, not_taken;
   __ pop_ptr(x11);
 
-  __ profile_acmp(x12, x11, x10, x14);
-
-  Register is_value_type_mask = t1;
-  __ mv(is_value_type_mask, markWord::value_type_pattern);
-
   if (Arguments::is_valhalla_enabled()) {
+    __ profile_acmp(x12, x11, x10, x14);
+
+    Register is_value_type_mask = t1;
+    __ mv(is_value_type_mask, markWord::value_type_pattern);
+
     // The substitutability test is only necessary if x11 and x10 are not the same...
     if (cc == equal) {
       __ beq(x11, x10, taken);
@@ -2181,7 +2182,6 @@ void TemplateTable::fast_binaryswitch() {
   __ load_unsigned_byte(t0, Address(temp, 0));
 
   __ add(xbcp, xbcp, j);
-  __ la(xbcp, Address(xbcp, 0));
   __ dispatch_only(vtos, /*generate_poll*/true);
 
   // default case -> j = default offset
@@ -2194,7 +2194,6 @@ void TemplateTable::fast_binaryswitch() {
   __ load_unsigned_byte(t0, Address(temp, 0));
 
   __ add(xbcp, xbcp, j);
-  __ la(xbcp, Address(xbcp, 0));
   __ dispatch_only(vtos, /*generate_poll*/true);
 }
 
@@ -2721,7 +2720,9 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
       __ j(Done);
     } else {
       Label is_flat;
-      __ test_field_is_flat(flags, x28, is_flat);
+      if (UseFieldFlattening) {
+        __ test_field_is_flat(flags, x28, is_flat);
+      }
       __ load_heap_oop(x10, field, x28, x29);
       __ push(atos);
       if (rc == may_rewrite) {
@@ -2729,15 +2730,17 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
       }
       __ j(Done);
       __ bind(is_flat);
-      // field is flat (null-free or nullable with a null-marker)
-      __ mv(x10, obj);
-      __ read_flat_field(cache, x10);
-      __ verify_oop(x10);
-      __ push(atos);
-      if (rc == may_rewrite) {
-        patch_bytecode(Bytecodes::_fast_vgetfield, bc, x11);
+      if (UseFieldFlattening) {
+        // field is flat (null-free or nullable with a null-marker)
+        __ mv(x10, obj);
+        __ read_flat_field(cache, x10);
+        __ verify_oop(x10);
+        __ push(atos);
+        if (rc == may_rewrite) {
+          patch_bytecode(Bytecodes::_fast_vgetfield, bc, x11);
+        }
+        __ j(Done);
       }
-      __ j(Done);
     }
   }
 
@@ -2996,7 +2999,9 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
         __ j(Done);
       } else {
         Label null_free_reference, is_flat, rewrite_value;
-        __ test_field_is_flat(flags, x28, is_flat);
+        if (UseFieldFlattening) {
+          __ test_field_is_flat(flags, x28, is_flat);
+        }
         __ test_field_is_null_free_value_type(flags, x28, null_free_reference);
         pop_and_check_object(obj);
         {
@@ -3022,8 +3027,10 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
         }
         __ j(rewrite_value);
         __ bind(is_flat);
-        pop_and_check_object(x17);
-        __ write_flat_field(cache, index, flags, x17);
+        if (UseFieldFlattening) {
+          pop_and_check_object(x17);
+          __ write_flat_field(cache, index, flags, x17);
+        }
         __ bind(rewrite_value);
         if (rc == may_rewrite) {
           patch_bytecode(Bytecodes::_fast_vputfield, bc, x9, true, byte_no);
@@ -3275,17 +3282,25 @@ void TemplateTable::fast_storefield(TosState state) {
   switch (bytecode()) {
     case Bytecodes::_fast_vputfield:
       {
-        Label is_flat, done;
-        __ test_field_is_flat(x13, x28, is_flat);
-        __ null_check(x10);
-        __ store_heap_oop(field, x10, x28, x29, x15, IN_HEAP);
-        __ j(done);
-        __ bind(is_flat);
-        __ load_field_entry(x14, x13);
-        // Re-shuffle registers because of VM calls calling convention
-        __ mv(x17, x12);
-        __ write_flat_field(x14, x16, x18, x17);
-        __ bind(done);
+        if (Arguments::is_valhalla_enabled()) {
+          Label is_flat, done;
+          if (UseFieldFlattening) {
+            __ test_field_is_flat(x13, x28, is_flat);
+          }
+          __ null_check(x10);
+          __ store_heap_oop(field, x10, x28, x29, x15, IN_HEAP);
+          __ j(done);
+          __ bind(is_flat);
+          if (UseFieldFlattening) {
+            __ load_field_entry(x14, x13);
+            // Re-shuffle registers because of VM calls calling convention
+            __ mv(x17, x12);
+            __ write_flat_field(x14, x16, x18, x17);
+          }
+          __ bind(done);
+        } else {
+          __ should_not_reach_here();
+        }
       }
       break;
     case Bytecodes::_fast_aputfield:
@@ -3373,9 +3388,13 @@ void TemplateTable::fast_accessfield(TosState state) {
   switch (bytecode()) {
     case Bytecodes::_fast_vgetfield:
       {
-        // field is flat
-        __ read_flat_field(x12, x10);
-        __ verify_oop(x10);
+        if (UseFieldFlattening) {
+          // field is flat
+          __ read_flat_field(x12, x10);
+          __ verify_oop(x10);
+        } else {
+          __ should_not_reach_here();
+        }
       }
       break;
     case Bytecodes::_fast_agetfield:
@@ -4070,8 +4089,10 @@ void TemplateTable::monitorenter() {
    __ null_check(x10);
 
    Label is_value_type;
-   __ ld(t0, Address(x10, oopDesc::mark_offset_in_bytes()));
-   __ test_markword_is_value_type(t0, is_value_type);
+   if (Arguments::is_valhalla_enabled()) {
+     __ ld(t0, Address(x10, oopDesc::mark_offset_in_bytes()));
+     __ test_markword_is_value_type(t0, is_value_type);
+   }
 
    const Address monitor_block_top(
          fp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
@@ -4174,9 +4195,11 @@ void TemplateTable::monitorenter() {
    __ dispatch_next(vtos);
 
    __ bind(is_value_type);
-   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                     InterpreterRuntime::throw_identity_exception), x10);
-   __ should_not_reach_here();
+   if (Arguments::is_valhalla_enabled()) {
+     __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                       InterpreterRuntime::throw_identity_exception), x10);
+     __ should_not_reach_here();
+   }
 }
 
 void TemplateTable::monitorexit() {
@@ -4185,16 +4208,18 @@ void TemplateTable::monitorexit() {
   // check for null object
   __ null_check(x10);
 
-  const int is_value_type_mask = markWord::value_type_pattern;
-  Label has_identity;
-  __ ld(t0, Address(x10, oopDesc::mark_offset_in_bytes()));
-  __ mv(t1, is_value_type_mask);
-  __ andr(t0, t0, t1);
-  __ bne(t0, t1, has_identity);
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                    InterpreterRuntime::throw_illegal_monitor_state_exception));
-  __ should_not_reach_here();
-  __ bind(has_identity);
+  if (Arguments::is_valhalla_enabled()) {
+    const int is_value_type_mask = markWord::value_type_pattern;
+    Label has_identity;
+    __ ld(t0, Address(x10, oopDesc::mark_offset_in_bytes()));
+    __ mv(t1, is_value_type_mask);
+    __ andr(t0, t0, t1);
+    __ bne(t0, t1, has_identity);
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                      InterpreterRuntime::throw_illegal_monitor_state_exception));
+    __ should_not_reach_here();
+    __ bind(has_identity);
+  }
 
   const Address monitor_block_top(
         fp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
