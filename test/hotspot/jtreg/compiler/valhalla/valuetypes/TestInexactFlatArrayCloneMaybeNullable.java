@@ -26,6 +26,7 @@
  * @summary Test clone of flat array that does not have an exact klass,
  *          i.e. multiple layouts are possible.
  * @bug 8390508
+ * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -42,6 +43,7 @@ package compiler.valhalla.valuetypes;
 
 import jdk.internal.value.ValueClass;
 import jdk.internal.vm.annotation.LooselyConsistentValue;
+import jdk.test.lib.Asserts;
 
 public class TestInexactFlatArrayCloneMaybeNullable {
     @LooselyConsistentValue
@@ -75,18 +77,10 @@ public class TestInexactFlatArrayCloneMaybeNullable {
 
             // Some additional checks just to ensure the cloned array has
             // the expected properties.
-            if (result[0] != source[0]) {
-                throw new AssertionError("Unexpected clone element value");
-            }
-            if (!ValueClass.isAtomicArray(result)) {
-                throw new AssertionError("Unexpected clone atomic property");
-            }
-            if (ValueClass.isNullRestrictedArray(result) != nullFree) {
-                throw new AssertionError("Unexpected clone nullable property");
-            }
-            if (ValueClass.isFlatArray(result) != flat) {
-                throw new AssertionError("Unexpected clone flat property");
-            }
+            Asserts.assertEQ(result[0], source[0]);
+            Asserts.assertTrue(ValueClass.isAtomicArray(result));
+            Asserts.assertEQ(ValueClass.isNullRestrictedArray(result), nullFree);
+            Asserts.assertEQ(ValueClass.isFlatArray(result), flat);
         }
     }
 }
