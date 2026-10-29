@@ -125,17 +125,19 @@ public sealed interface ValueLayout extends MemoryLayout
     /**
      * An integral value layout models an integral data type.
      * <p>
-     * Values associated with {@linkplain OfIntegral integral} layouts
-     * can be either signed or unsigned. The signedness of an integral
-     * value layout has no effect on the memory access operations
-     * involving that integral layout. However, signedness is relevant when
-     * values associated with integral layouts are widened. For example,
-     * when an {@code int} is widened to a {@code long}, the signedness
-     * determines whether the value should be sign extended as specified
-     * by {@jls 5.1.2}, or zero extended as specified by the
-     * {@link Integer#toUnsignedLong(int)} method. As such, the signedness
-     * of an integral value layout allows clients to select the correct
-     * widening mode for values associated with that layout.
+     * An integral value layout has a <em>signedness</em>. That is, they can
+     * be either <em>signed</em> or <em>unsigned</em> to reflect the
+     * signedness of the values they are associated with. The
+     * signedness of an integral value layout has no effect on the
+     * memory access operations involving that integral layout.
+     * However, signedness is relevant when values associated with
+     * integral layouts are widened. For example, when an {@code int}
+     * is widened to a {@code long}, the signedness determines whether
+     * the value should be sign extended as specified by {@jls 5.1.2},
+     * or zero extended as specified by the {@link Integer#toUnsignedLong(int)}
+     * method. As such, the signedness of an integral value layout
+     * allows clients to select the correct widening mode for values
+     * associated with that layout.
      */
     sealed interface OfIntegral extends ValueLayout permits ValueLayout.OfByte,
             ValueLayout.OfShort, ValueLayout.OfInt, ValueLayout.OfLong {
