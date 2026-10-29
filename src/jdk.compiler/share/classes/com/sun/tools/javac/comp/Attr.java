@@ -4671,7 +4671,7 @@ public class Attr extends JCTree.Visitor {
                     return syms.getClassField(site, types);
                 } else {
                     log.error(pos, Errors.CantDeref(site));
-                    return syms.errSymbol;
+                    return types.createErrorType(name, syms.errSymbol, site).tsym;
                 }
             }
         }

@@ -801,11 +801,21 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 # From Paul Eggert (2013-10-17):
 # For now, assume western Amazonas will change as well.
 
+# From Daniel Dias Rodrigues (2026-10-20):
+# Under Brazilian law, a period stated as "until day X" includes day X.
+# From Tim Parenti (2026-10-27):
+# With the decrees explicitly naming the hour of 01:00 for only a few fall back
+# transitions, there remains some ambiguity in whether other implied midnight
+# fall back transitions may have therefore been intended as 24:00s (i.e.,
+# 25:00 -> 24:00) rather than as 24:00 (24:00 -> 23:00), particularly prior to
+# 1966.  Since contemporaneous reporting was somewhat inconsistent on this,
+# minimize changes from earlier tzdb versions where there is ambiguity.
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 # Decree 20,466 <http://pcdsh01.on.br/HV20466.htm> (1931-10-01)
 # Decree 21,896 <http://pcdsh01.on.br/HV21896.htm> (1932-01-10)
 Rule	Brazil	1931	only	-	Oct	 3	11:00	1:00	-
-Rule	Brazil	1932	1933	-	Apr	 1	 0:00	0	-
+Rule	Brazil	1932	1933	-	Mar	31	24:00	0	-
 Rule	Brazil	1932	only	-	Oct	 3	 0:00	1:00	-
 # Decree 23,195 <http://pcdsh01.on.br/HV23195.htm> (1933-10-10)
 # revoked DST.
@@ -813,28 +823,32 @@ Rule	Brazil	1932	only	-	Oct	 3	 0:00	1:00	-
 # Decree 27,998 <http://pcdsh01.on.br/HV27998.htm> (1950-04-13)
 Rule	Brazil	1949	1952	-	Dec	 1	 0:00	1:00	-
 Rule	Brazil	1950	only	-	Apr	16	 1:00	0	-
-Rule	Brazil	1951	1952	-	Apr	 1	 0:00	0	-
+Rule	Brazil	1951	1952	-	Mar	31	24:00	0	-
 # Decree 32,308 <http://pcdsh01.on.br/HV32308.htm> (1953-02-24)
-Rule	Brazil	1953	only	-	Mar	 1	 0:00	0	-
+Rule	Brazil	1953	only	-	Feb	28	24:00	0	-
 # Decree 34,724 <http://pcdsh01.on.br/HV34724.htm> (1953-11-30)
 # revoked DST.
 # Decree 52,700 <http://pcdsh01.on.br/HV52700.htm> (1963-10-18)
-# established DST from 1963-10-23 00:00 to 1964-02-29 00:00
-# in SP, RJ, GB, MG, ES, due to the prolongation of the drought.
+# established DST as an "Hora Especial" from 1963-10-23 00:00 in SP, RJ, GB,
+# MG, ES, due to the prolongation of the drought.  It originally specified an
+# end date of 1964-02-29 24:00.
 # Decree 53,071 <http://pcdsh01.on.br/HV53071.htm> (1963-12-03)
-# extended the above decree to all of the national territory on 12-09.
+# extended DST as a usual "hora de verão" to all of the national territory from
+# 1963-12-09 and would have extended its end date to 1964-03-31 24:00.
 Rule	Brazil	1963	only	-	Dec	 9	 0:00	1:00	-
 # Decree 53,604 <http://pcdsh01.on.br/HV53604.htm> (1964-02-25)
-# extended summer time by one day to 1964-03-01 00:00 (start of school).
+# restored the original end date of 1964-03-01 00:00 due to the start of
+# school.
 Rule	Brazil	1964	only	-	Mar	 1	 0:00	0	-
 # Decree 55,639 <http://pcdsh01.on.br/HV55639.htm> (1965-01-27)
 Rule	Brazil	1965	only	-	Jan	31	 0:00	1:00	-
-Rule	Brazil	1965	only	-	Mar	31	 0:00	0	-
+Rule	Brazil	1965	only	-	Mar	31	24:00	0	-
 # Decree 57,303 <http://pcdsh01.on.br/HV57303.htm> (1965-11-22)
-Rule	Brazil	1965	only	-	Dec	 1	 0:00	1:00	-
+Rule	Brazil	1965	only	-	Nov	30	24:00	1:00	-
 # Decree 57,843 <http://pcdsh01.on.br/HV57843.htm> (1966-02-18)
-Rule	Brazil	1966	1968	-	Mar	 1	 0:00	0	-
+Rule	Brazil	1966	only	-	Mar	 1	 1:00	0	-
 Rule	Brazil	1966	1967	-	Nov	 1	 0:00	1:00	-
+Rule	Brazil	1967	1968	-	Mar	 1	 0:00	0	-
 # Decree 63,429 <http://pcdsh01.on.br/HV63429.htm> (1968-10-15)
 # revoked DST.
 # Decree 91,698 <http://pcdsh01.on.br/HV91698.htm> (1985-09-27)
@@ -1063,6 +1077,7 @@ Zone America/Bahia	-2:34:04 -	LMT	1914
 # Goiás (GO), Distrito Federal (DF), Minas Gerais (MG),
 # Espírito Santo (ES), Rio de Janeiro (RJ), São Paulo (SP), Paraná (PR),
 # Santa Catarina (SC), Rio Grande do Sul (RS)
+# The 1963 date is for MG, ES, RJ, SP; others started DST on 1963-12-09.
 Zone America/Sao_Paulo	-3:06:28 -	LMT	1914
 			-3:00	Brazil	%z	1963 Oct 23  0:00
 			-3:00	1:00	%z	1964
