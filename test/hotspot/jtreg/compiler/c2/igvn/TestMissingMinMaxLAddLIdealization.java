@@ -42,8 +42,8 @@ public class TestMissingMinMaxLAddLIdealization {
         Math.max(1L, 2L);
         testMin2Hop(0);
         testMax2Hop(0);
-        testMin3Hop(0);
-        testMax3Hop(0);
+        testMin3Hop(0, 0);
+        testMax3Hop(0, 0);
     }
 
     static long testMin2Hop(int x) {
@@ -84,27 +84,29 @@ public class TestMissingMinMaxLAddLIdealization {
         return outer;
     }
 
-    static long testMin3Hop(int x) {
+    static long testMin3Hop(int x, int y) {
         int delayedZero = 100;
         for (int i = 0; i < 100; i++) { delayedZero--; }
 
-        long delayedLongMax = delayedZero == 0 ? Long.MAX_VALUE : 0L;
+        // Trigger update at 3-hop, the inner add.
+        // Make sure this does not trigger a type update which would
+        // trickle down incrementally, so collapse from two expressions
+        // that have exactly the same type.
+        long delayedAdd = delayedZero == 0 ? (long)x + 2L : (long)y + 2L;
 
-        long inner = Math.min((long)x + 2L, Integer.MAX_VALUE);
-        long delayedInner = Math.min(inner, delayedLongMax);
-        long outer = Math.min(delayedInner + 1L, Integer.MAX_VALUE);
+        long inner = Math.min(delayedAdd, Integer.MAX_VALUE);
+        long outer = Math.min(inner + 1L, Integer.MAX_VALUE);
         return outer;
     }
 
-    static long testMax3Hop(int x) {
+    static long testMax3Hop(int x, int y) {
         int delayedZero = 100;
         for (int i = 0; i < 100; i++) { delayedZero--; }
 
-        long delayedLongMin = delayedZero == 0 ? Long.MIN_VALUE : 0L;
+        long delayedAdd = delayedZero == 0 ? (long)x - 2L : (long)y - 2L;
 
-        long inner = Math.max((long)x - 2L, Integer.MIN_VALUE);
-        long delayedInner = Math.max(inner, delayedLongMin);
-        long outer = Math.max(delayedInner - 1L, Integer.MIN_VALUE);
+        long inner = Math.max(delayedAdd, Integer.MIN_VALUE);
+        long outer = Math.max(inner - 1L, Integer.MIN_VALUE);
         return outer;
     }
 }
