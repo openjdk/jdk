@@ -2788,6 +2788,57 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   const VPointer& p = *_vpointer_for_main_loop_alignment;
   const int aw      = _aw_for_main_loop_alignment;
 
+  // Alignment has a trade-off:
+  // - For small trip count, the cost of alignment dominates, and is two fold:
+  //   - In expectation, we spend more iterations in pre/post loops.
+  //   - We have to compute an adjusted limit, which requires more operations.
+  // - For large trip count, the cost of misaligned vectorized accesses dominate, as the CPU splits the accesses
+  //   into multiple accesses when memory boundaries are crossed.
+  //
+  // We make a compile-time decision based on trip count profiling and a threshold based on the number
+  // of bytes accessed by the access that is to be aligned. For small iteration count loops, this means
+  // we do not have to compute the alignment and spend fewer iterations in the pre loop, which avoids
+  // some significant overhead.
+  //
+  // Alternative: emit a runtime check that determines if we should align, based on the runtime trip count.
+  // In an experiment, we emitted a CMove that decides between the two pre-loop limits, based on a runtime
+  // check. But this had a big overhead for small iteration count loops, and there was no speedup.
+  if (!VLoop::vectors_should_be_aligned()) {
+    const float profiled_trip_count = cl()->profile_trip_cnt();
+
+    if (cl()->is_profile_trip_failed() || profiled_trip_count == COUNT_UNKNOWN) {
+#ifdef ASSERT
+      if (_trace._align_vector) {
+        tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors: trip count not known, will align.");
+      }
+#endif
+    } else {
+      // SuperWordAutomaticAlignmentThreshold is measured in bytes accessed
+      // during the loop, for the memory access we align for.
+      //
+      // We make a simplifying assumption to keep the computation simple:
+      // The scalar memory access was unrolled by unroll_count, and then all of those
+      // unrolled scalar operations were packed into a single pack p.
+      const float bytes_accessed = profiled_trip_count * p.size() / cl()->unrolled_count();
+
+#ifdef ASSERT
+      if (_trace._align_vector) {
+        tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors:");
+        tty->print_cr("  profiled trip count: %f", profiled_trip_count);
+        tty->print_cr("  estimated bytes accessed: %f", bytes_accessed);
+      }
+#endif
+      if (bytes_accessed < SuperWordAutomaticAlignmentThreshold) {
+#ifdef ASSERT
+        if (_trace._align_vector) {
+          tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors: too few iterations, no alignment.");
+        }
+#endif
+        return;
+      }
+    }
+  }
+
   // The opaque node for the limit, where we adjust the input
   Opaque1Node* pre_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
 
