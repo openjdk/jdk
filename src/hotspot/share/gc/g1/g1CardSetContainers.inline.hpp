@@ -276,7 +276,7 @@ inline size_t G1CardSetBitMap::header_size_in_bytes() {
 }
 
 inline Atomic<G1CardSetHowl::ContainerPtr> const* G1CardSetHowl::container_addr(EntryCountType index) const {
-  assert(index < _num_entries.load_relaxed(), "precondition");
+  precond(index < _num_buckets);
   return buckets() + index;
 }
 
@@ -295,6 +295,7 @@ inline Atomic<G1CardSetHowl::ContainerPtr> const* G1CardSetHowl::buckets() const
 
 inline G1CardSetHowl::G1CardSetHowl(EntryCountType card_in_region, G1CardSetConfiguration* config) :
   G1CardSetContainer(),
+  DEBUG_ONLY(_num_buckets(config->num_buckets_in_howl()) COMMA)
   _num_entries((config->max_cards_in_array() + 1)) /* Card Transfer will not increment _num_entries */ {
   EntryCountType num_buckets = config->num_buckets_in_howl();
   EntryCountType bucket = config->howl_bucket_index(card_in_region);

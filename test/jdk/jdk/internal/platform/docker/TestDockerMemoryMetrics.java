@@ -93,7 +93,7 @@ public class TestDockerMemoryMetrics {
         Common.logNewTestCase("testMemoryLimit, value = " + value);
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsMemoryTester");
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
                 .addDockerOpts("--memory=" + value)
                 .addJavaOpts("-cp", "/test-classes/")
                 .addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED")
@@ -119,7 +119,7 @@ public class TestDockerMemoryMetrics {
         // killed by the OOM killer.
         DockerRunOptions preOpts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "-version");
-        preOpts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
+        preOpts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
                 .addDockerOpts("--memory=" + memory)
                 .addDockerOpts("--memory-swap=" + memoryAndSwap)
                 .addJavaOpts("-XX:+AlwaysPreTouch")
@@ -139,7 +139,7 @@ public class TestDockerMemoryMetrics {
         //
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsMemoryTester");
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
                 .addDockerOpts("--memory=" + memory)
                 .addDockerOpts("--memory-swap=" + memoryAndSwap)
                 .addJavaOpts("-cp", "/test-classes/")
@@ -159,7 +159,7 @@ public class TestDockerMemoryMetrics {
         Common.logNewTestCase("testMemoryAndSwapLimit, memory = " + memory + ", memory and swap = " + memandswap);
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsMemoryTester");
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
                 .addDockerOpts("--memory=" + memory)
                 .addDockerOpts("--memory-swap=" + memandswap)
                 .addJavaOpts("-cp", "/test-classes/")
@@ -172,7 +172,7 @@ public class TestDockerMemoryMetrics {
         Common.logNewTestCase("testOomKillFlag, oomKillFlag = " + oomKillFlag);
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsMemoryTester");
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
                 .addDockerOpts("--memory=" + value);
         if (!oomKillFlag) {
             opts.addDockerOpts("--oom-kill-disable");
@@ -188,7 +188,7 @@ public class TestDockerMemoryMetrics {
         Common.logNewTestCase("testMemorySoftLimit, memory = " + mem + ", soft limit = " + softLimit);
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsMemoryTester");
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
                 .addDockerOpts("--memory=" + mem)
                 .addDockerOpts("--memory-reservation=" + softLimit);
         opts.addJavaOpts("-cp", "/test-classes/")
