@@ -101,6 +101,8 @@ public class TestDebugInfoDecode {
         SATestUtils.addPrivilegesIfNeeded(processBuilder);
         OutputAnalyzer SAOutput = ProcessTools.executeProcess(processBuilder);
         SAOutput.shouldHaveExitValue(0);
+        // Detect NullPointerExceptions when scanning free blocks in the code heap
+        SAOutput.shouldNotContain("java.lang.NullPointerException");
         System.out.println(SAOutput.getOutput());
     }
 
