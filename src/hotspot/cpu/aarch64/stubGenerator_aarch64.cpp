@@ -8990,8 +8990,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register bLimbs  = c_rarg1; // r1
     const Register rLimbs  = c_rarg2; // r2
 
-    RegSetIterator<Register> regs = (RegSet::range(r3, r23) - r18_tls).begin();
-    auto saved_regs = RegSet::range(r19, r23);
+    RegSetIterator<Register> regs = (RegSet::range(r3, r21) - r18_tls).begin();
+    auto saved_regs = RegSet::range(r19, r21);
 
     const int32_t limbs      = 7;
     const int32_t bpl        = 55;
@@ -9004,8 +9004,6 @@ class StubGenerator: public StubCodeGenerator {
     Register b     = *regs++;
     Register low   = *regs++;
     Register high  = *regs++;
-    Register v     = *regs++;
-    Register vt    = *regs++;
     Register c[columns];
 
     // save callee-saved registers on stack
@@ -9029,6 +9027,9 @@ class StubGenerator: public StubCodeGenerator {
         __ add(c[i + j + 1], c[i + j + 1], high);
       }
     }
+
+    Register v  = a;
+    Register vt = b;
 
     // Reduce upper limbs
     for (int i = 13; i > 6; i--) {
@@ -9062,6 +9063,7 @@ class StubGenerator: public StubCodeGenerator {
     // Carry-add with reduction from high limb
     Register tmp       = low;
     Register carry_add = high;
+
     __ mov(carry_add, CARRY_ADD);
 
     // Limb 5
@@ -9160,8 +9162,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register aLimbs  = c_rarg0; // r0
     const Register rLimbs  = c_rarg1; // r1
 
-    RegSetIterator<Register> regs = (RegSet::range(r2, r22) - r18_tls).begin();
-    auto saved_regs = RegSet::range(r19, r22);
+    RegSetIterator<Register> regs = (RegSet::range(r2, r20) - r18_tls).begin();
+    auto saved_regs = RegSet::range(r19, r20);
 
     const int32_t limbs      = 7;
     const int32_t bpl        = 55;
@@ -9174,8 +9176,6 @@ class StubGenerator: public StubCodeGenerator {
     Register aArg  = *regs++;
     Register low   = *regs++;
     Register high  = *regs++;
-    Register v     = *regs++;
-    Register vt    = *regs++;
     Register c[columns];
 
     __ push(saved_regs, sp);
@@ -9206,6 +9206,9 @@ class StubGenerator: public StubCodeGenerator {
         __ add(c[i + j + 1], c[i + j + 1], high);
       }
     }
+
+    Register v     = a;
+    Register vt    = aArg;
 
     // Reduce upper limbs
     for (int i = 13; i > 6; i--) {
@@ -9239,6 +9242,7 @@ class StubGenerator: public StubCodeGenerator {
     // Carry-add with reduction from high limb
     Register tmp       = low;
     Register carry_add = high;
+
     __ mov(carry_add, CARRY_ADD);
 
     // Limb 5
