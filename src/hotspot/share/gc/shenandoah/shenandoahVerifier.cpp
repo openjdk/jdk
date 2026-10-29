@@ -1215,7 +1215,7 @@ void ShenandoahVerifier::verify_after_update_refs(ShenandoahGeneration* generati
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_nocset,      // no cset regions, trash regions have appeared
                                        // expect generation and heap sizes to match exactly, including trash
-          _verify_size_exact_including_trash,
+          _verify_size_exact,
           _verify_gcstate_stable       // update refs had cleaned up forwarded objects
   );
 }
@@ -1232,23 +1232,8 @@ void ShenandoahVerifier::verify_after_gc(ShenandoahGeneration* generation) {
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_nocset,      // no cset regions, trash regions have appeared
                                        // expect generation and heap sizes to match exactly, including trash
-          _verify_size_exact_including_trash,
+          _verify_size_exact,
           _verify_gcstate_stable       // GC state was turned off
-  );
-}
-
-void ShenandoahVerifier::verify_after_degenerated(ShenandoahGeneration* generation) {
-  verify_at_safepoint(
-          generation,
-          "After Degenerated GC",
-          _verify_remembered_disable,  // do not verify remembered set
-          _verify_forwarded_none,      // all objects are non-forwarded
-          _verify_marked_disable,      // no need to check unreachable objects, end of cycle
-          _verify_cset_none,           // no cset references
-          _verify_liveness_disable,    // no reliable liveness data anymore
-          _verify_regions_notrash_nocset, // no trash, no cset
-          _verify_size_exact,          // expect generation and heap sizes to match exactly
-          _verify_gcstate_stable       // degenerated refs had cleaned up forwarded objects
   );
 }
 
@@ -1256,14 +1241,14 @@ void ShenandoahVerifier::verify_before_fullgc(ShenandoahGeneration* generation) 
   verify_at_safepoint(
           generation,
           "Before Full GC",
-          _verify_remembered_disable,  // do not verify remembered set
-          _verify_forwarded_allow,     // can have forwarded objects
-          _verify_marked_disable,      // do not verify marked: lots ot time wasted checking dead allocations
-          _verify_cset_disable,        // cset might be foobared
-          _verify_liveness_disable,    // no reliable liveness data anymore
-          _verify_regions_disable,     // no reliable region data here
-          _verify_size_disable,        // if we degenerate during evacuation, usage not valid: padding and deferred accounting
-          _verify_gcstate_disable      // no reliable gcstate data
+          _verify_remembered_disable,      // do not verify remembered set
+          _verify_forwarded_none,          // cannot have forwarded objects
+          _verify_marked_disable,          // do not verify marked: lots ot time wasted checking dead allocations
+          _verify_cset_none,               // cset should be empty
+          _verify_liveness_disable,        // no reliable liveness data anymore
+          _verify_regions_notrash_nocset,  // no reliable region data here
+          _verify_size_exact,              // expect generation and heap sizes to match exactly
+          _verify_gcstate_stable           // no forwarded objects
   );
 }
 
@@ -1319,12 +1304,12 @@ private:
                 "Verify Roots In To-Space", "Should be marked", __FILE__, __LINE__);
       }
 
-      if (heap->in_collection_set(obj)) {
+      if (heap->in_collection_set(obj) && !ShenandoahForwarding::is_self_forwarded(obj)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                 "Verify Roots In To-Space", "Should not be in collection set", __FILE__, __LINE__);
       }
 
-      if (ShenandoahForwarding::is_forwarded(obj)) {
+      if (ShenandoahForwarding::is_real_forwarded(obj)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                 "Verify Roots In To-Space", "Should not be forwarded", __FILE__, __LINE__);
       }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -864,10 +864,12 @@ static void CopyGrey4ToGrey8(const void* srcImage, int srcRowBytes,
          srcRow += srcRowBytes;
          dstRow += dstRowBytes;
 
-         for (i = 0; i < width; i++) {
+         for (i = 0; i < width; i += 2) {
              srcValue = *src8++;
-             *dstByte++ = Grey4ToAlpha255(srcValue & 0x0f);
              *dstByte++ = Grey4ToAlpha255(srcValue >> 4);
+             if (i < width-1) {
+                 *dstByte++ = Grey4ToAlpha255(srcValue & 0x0f);
+             }
          }
      }
 }
@@ -996,6 +998,12 @@ static jlong
     renderFlags |= target;
 
     error = FT_Load_Glyph(scalerInfo->face, glyphCode, renderFlags);
+    /* If hinted rendering fails for the specific reason of a bad FDEF reference,
+     * retry without hinting.
+     */
+    if ((error == FT_Err_Invalid_Reference) && ((renderFlags & FT_LOAD_NO_HINTING) == 0)) {
+        error = FT_Load_Glyph(scalerInfo->face, glyphCode, renderFlags | FT_LOAD_NO_HINTING);
+    }
     if (error) {
         //do not destroy scaler yet.
         //this can be problem of particular context (e.g. with bad transform)

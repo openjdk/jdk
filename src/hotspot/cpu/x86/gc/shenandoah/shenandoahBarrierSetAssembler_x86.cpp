@@ -652,7 +652,7 @@ void ShenandoahBarrierSetAssembler::keepalive_barrier_c1_stub(LIR_Assembler* ce,
   Register obj = stub->obj()->as_register();
 
   if (stub->do_load()) {
-    ce->mem2reg(stub->addr(), stub->obj(), T_OBJECT, lir_patch_none, nullptr, /* wide = */ false);
+    ce->mem2reg(stub->addr(), stub->obj(), T_OBJECT, lir_patch_none, stub->info(), /* wide = */ false);
   }
   __ cmpptr(obj, NULL_WORD);
   __ jcc(Assembler::equal, *stub->continuation());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,15 @@
  */
 package jdk.jshell.execution;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.Reader;
 import java.lang.reflect.Method;
 import java.net.Socket;
+import java.util.Base64;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +48,12 @@ import static jdk.jshell.execution.Util.forwardExecutionControlAndIO;
  * executes the code, and other misc, Specialization of
  * {@link DirectExecutionControl} which adds stop support controlled by
  * an external process. Designed to work with {@link JdiDefaultExecutionControl}.
+ *
+ * <p>The initial handshake with {@link JdiDefaultExecutionControl} is as follows:
+ * the first command line argument is {@code -1}. The port number to which the
+ * agent should connect is passed on the first line on stdin. On the second line
+ * of stdin, an Base64-encoded byte array is sent, which should be sent to
+ * the socket immediately after the connection is established.
  *
  * @author Jan Lahoda
  * @author Robert Field
@@ -61,9 +71,24 @@ public class RemoteExecutionControl extends DirectExecutionControl implements Ex
      */
     public static void main(String[] args) throws Exception {
         String loopBack = null;
-        Socket socket = new Socket(loopBack, Integer.parseInt(args[0]));
+        int commandLinePort = Integer.parseInt(args[0]);
+        int port;
+        byte[] secret;
+        if (commandLinePort == (-1)) {
+            Reader r = new InputStreamReader(System.in);
+            port = Integer.parseInt(readLine(r));
+            secret = Base64.getDecoder().decode(readLine(r));
+        } else {
+            port = commandLinePort;
+            secret = null;
+        }
+        Socket socket = new Socket(loopBack, port);
         InputStream inStream = socket.getInputStream();
         OutputStream outStream = socket.getOutputStream();
+        if (secret != null) {
+            outStream.write(secret);
+            outStream.flush();
+        }
         Map<String, Consumer<OutputStream>> outputs = new HashMap<>();
         outputs.put("out", st -> System.setOut(new PrintStream(st, true, System.out.charset())));
         outputs.put("err", st -> System.setErr(new PrintStream(st, true, System.err.charset())));
@@ -72,6 +97,17 @@ public class RemoteExecutionControl extends DirectExecutionControl implements Ex
         input.put("in", System::setIn);
         input.put("consoleOutput", in -> ConsoleProviderImpl.setRemoteOutput(in));
         forwardExecutionControlAndIO(new RemoteExecutionControl(), inStream, outStream, outputs, input);
+    }
+
+    private static String readLine(Reader r) throws IOException {
+        StringBuilder line = new StringBuilder();
+        int read;
+
+        while ((read = r.read()) != (-1) && read != '\n') {
+            line.append((char)read);
+        }
+
+        return line.toString();
     }
 
     // These three variables are used by the main JShell process in interrupting

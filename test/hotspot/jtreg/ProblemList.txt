@@ -69,8 +69,6 @@ compiler/c2/aarch64/TestStaticCallStub.java 8359963 generic-aarch64
 
 compiler/escapeAnalysis/TestBCEscapeAnalyzerOverflow.java 8387392 windows-aarch64
 
-compiler/vectorapi/VectorExpressionFuzzer.java 8337281 linux-aarch64,macosx-aarch64
-
 compiler/igvn/TestIncorrectDeadPathTypeNode.java 8392354 generic-all
 
 #############################################################################
@@ -89,7 +87,6 @@ gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#generational 83869
 gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#generational 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
-gc/metaspace/TestMetaspaceFirstGC.java 8392597 generic-all
 
 #############################################################################
 
@@ -123,14 +120,6 @@ serviceability/jvmti/vthread/GetThreadStateMountedTest/GetThreadStateMountedTest
 serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generic-all
 serviceability/jvmti/vthread/CarrierThreadEventNotification/CarrierThreadEventNotification.java 8333681 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 generic-all
-
-serviceability/sa/ClhsdbCDSCore.java              8318754 macosx-aarch64
-serviceability/sa/ClhsdbFindPC.java#xcomp-core    8318754 macosx-aarch64
-serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8318754 macosx-aarch64
-serviceability/sa/ClhsdbPmap.java#core            8318754 macosx-aarch64
-serviceability/sa/ClhsdbPstack.java#core          8318754 macosx-aarch64
-serviceability/sa/TestJmapCore.java               8318754 macosx-aarch64
-serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
 
 serviceability/sa/ClhsdbThreadContext.java        8356704 windows-x64
 
@@ -196,8 +185,6 @@ vmTestbase/nsk/monitoring/ThreadMXBean/findMonitorDeadlockedThreads/find006/Test
 #############################################################################
 
 compiler/codegen/TestRedundantLea.java#Spill                            8361089 generic-all
-
-compiler/vectorapi/TestVectorReassociations.java 8388927 generic-all
 
 serviceability/sa/TestJhsdbJstackMixedWithXComp.java#xcomp-disable-tiered-compilation 8386674 linux-aarch64
 
