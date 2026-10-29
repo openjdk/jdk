@@ -1983,10 +1983,13 @@ Node* PhaseIterGVN::register_new_node_with_optimizer(Node* n, Node* orig) {
   if (orig != nullptr)  C->copy_node_notes_to(n, orig);
   return n;
 }
-Node* PhaseIterGVN::register_and_hash_new_node_with_optimizer(Node* n, Node* orig) {
-  n = register_new_node_with_optimizer(n, orig);
-  Node* i = hash_find_insert(n);
-  return i == nullptr ? n : i;
+Node* PhaseIterGVN::find_node_or_register_new_node_with_optimizer(Node* n, Node* orig) {
+  Node* existing = hash_find_insert(n);
+  if (existing != nullptr) {
+    n->destruct(this);
+    return existing;
+  }
+  return register_new_node_with_optimizer(n);
 }
 
 //------------------------------transform--------------------------------------

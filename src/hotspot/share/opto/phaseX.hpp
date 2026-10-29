@@ -591,7 +591,7 @@ public:
   // It also cannot be the default strategy as it confuses loops. In particular, loops
   // optimization often clone loops and modify nodes right away, so it is both useless
   // and forbidden to put these new nodes in the hash table.
-  Node* register_and_hash_new_node_with_optimizer(Node* n, Node* orig = nullptr);
+  Node* find_node_or_register_new_node_with_optimizer(Node* n, Node* orig = nullptr);
 
   // Origin of a dead node, describing why it is dying.
   // Speculative: a temporarily created node that was never part of the graph

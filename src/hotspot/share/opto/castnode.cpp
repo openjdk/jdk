@@ -296,12 +296,7 @@ CastLLNode* CastLLNode::make_with(Node* parent, const TypeInteger* type, const D
 
 Node* ConstraintCastNode::find_or_make_integer_cast(PhaseIterGVN* igvn, Node* parent, const TypeInteger* type, const DependencyType& dependency) const {
   Node* n = make_with(parent, type, dependency);
-  Node* existing = igvn->hash_find_insert(n);
-  if (existing != nullptr) {
-    n->destruct(igvn);
-    return existing;
-  }
-  return igvn->register_new_node_with_optimizer(n);
+  return igvn->find_node_or_register_new_node_with_optimizer(n);
 }
 
 Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {

@@ -301,8 +301,9 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
       // for the same rule to apply again. Even if termination is guaranteed, in some cases, we can
       // create an exponential amount of nodes before simplifying them. To avoid that, let's leave this
       // job to IGVN, where we delay the recursive transformations, hoping we can common the new nodes
-      // with existing ones, containing the explosion. This is likely if leaves of the expression tree
-      // is actually a quite narrow expression DAG.
+      // with existing ones, containing the explosion. This is likely if the expression has a small
+      // number of leaves, that is expression DAG in the IR is rather narrow (not like a tree whose width
+      // blows up with depth).
       if (can_reshape == false) {
         phase->record_for_igvn(this);
         return nullptr;
@@ -314,9 +315,9 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
       // we make them available for eager commoning with sub_in1 and sub_in2 created by the AddNode::IdealIL
       // of other Add nodes, similar enough to `this`.
       Node* sub_in1 = AddNode::make(in1->in(1), in2->in(1), bt);
-      sub_in1 = igvn->register_and_hash_new_node_with_optimizer(sub_in1);
+      sub_in1 = igvn->find_node_or_register_new_node_with_optimizer(sub_in1);
       Node* sub_in2 = AddNode::make(in1->in(2), in2->in(2), bt);
-      sub_in2 = igvn->register_and_hash_new_node_with_optimizer(sub_in2);
+      sub_in2 = igvn->find_node_or_register_new_node_with_optimizer(sub_in2);
       return SubNode::make(sub_in1, sub_in2, bt);
     }
     // Convert "(a-b)+(b+c)" into "(a+c)"
