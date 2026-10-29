@@ -424,13 +424,13 @@
           "2 = Prefer alignment with vector load.")                         \
           range(0, 2)                                                       \
                                                                             \
-  product(uint, SuperWordAutomaticAlignmentThreshold, 1600, DIAGNOSTIC,     \
+  product(uint, SuperWordAutomaticAlignmentThreshold, 256, DIAGNOSTIC,      \
           "Heuristic threshold for compile time check that decides if a"    \
           "loop accesses sufficient bytes so that automatic alignment is"   \
           "profitable. Loops that access fewer bytes are too small, and"    \
           "the overheads of alignment probably outweight the performance"   \
-          "gained by making sure the accesses are aligned." \
-          "0 = Always align.")  \
+          "gained by making sure the accesses are aligned."                 \
+          "0 = Always align.")                                              \
                                                                             \
   product(uint, AutoVectorizationOverrideProfitability, 1, DIAGNOSTIC,      \
           "Override the auto vectorization profitability heuristics."       \
