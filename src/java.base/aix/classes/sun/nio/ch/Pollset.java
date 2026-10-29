@@ -76,10 +76,6 @@ public class Pollset {
     // event
     public static final int PS_POLLPRI = 0x4;
 
-    // revent errcodes
-    public static final char PS_POLLNVAL = 0x8000;
-    public static final char PS_POLLERR  = 0x4000;
-
     public static final int PS_NO_TIMEOUT = -1;
 
     /**
@@ -141,7 +137,8 @@ public class Pollset {
     public static native int pollsetPoll(int pollset, long pollAddress, int numfds, int timeout)
         throws IOException;
     public static native void pollsetDestroy(int pollset);
-    public static native void pollsetBulkCtl(int pollsetFd, long pollCtlArrayAddress, int count);
+    public static native void pollsetBulkCtl(int pollsetFd, long pollCtlArrayAddress, int count)
+        throws IOException;
     public static native void init();
     public static native int eventSize();
     public static native int eventsOffset();

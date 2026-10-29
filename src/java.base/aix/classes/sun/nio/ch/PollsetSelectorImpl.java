@@ -179,7 +179,7 @@ class PollsetSelectorImpl
      * Queues a single poll_ctl entry into the batch buffer, flushing first
      * if the buffer is full.
      */
-    private void enqueuePollCtl(int cmd, int fd, int events) {
+    private void enqueuePollCtl(int cmd, int fd, int events) throws IOException {
         if (pollsetNumEvents == NUM_POLLCTLEVENTS) {
             Pollset.pollsetBulkCtl(pfd, pollCtlAddress, pollsetNumEvents);
             pollsetNumEvents = 0;
@@ -191,7 +191,7 @@ class PollsetSelectorImpl
     /**
      * Process changes to the interest ops.
      */
-    private void processUpdateQueue() {
+    private void processUpdateQueue() throws IOException {
         assert Thread.holdsLock(this);
 
         synchronized (updateLock) {
@@ -228,7 +228,7 @@ class PollsetSelectorImpl
     /**
      * Flushes all buffered poll_ctl entries to the OS via pollset_ctl.
      */
-    private void flushBulkPollCtlEvents() {
+    private void flushBulkPollCtlEvents() throws IOException {
         synchronized (updateLock) {
             if (pollsetNumEvents > 0) {
                 Pollset.pollsetBulkCtl(pfd, pollCtlAddress, pollsetNumEvents);
