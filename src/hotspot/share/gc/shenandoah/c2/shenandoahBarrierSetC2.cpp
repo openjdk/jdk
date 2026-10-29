@@ -517,26 +517,30 @@ void ShenandoahBarrierSetC2::analyze_dominating_barriers() const {
 }
 
 uint ShenandoahBarrierSetC2::estimated_barrier_size(const Node* node) const {
-  // Barrier cost drives how deep C2 optimizations go, to avoid manifesting
-  // too many GC barriers. This is a heuristic question, so we give approximate
-  // answer, roughly assuming 1 "node" per instruction.
+  // Barrier cost drives how deep C2 optimizations go, to avoid emitting too many
+  // GC barriers, for example during loop unrolling. This is a heuristic question,
+  // and it is asked before final barrier elision code is able to remove some
+  // of the barriers. It also asks for a node count, which for late-expanded barriers
+  // forces us to make assumptions. We give an approximate answer, roughly assuming
+  // one "node" per instruction.
 
   uint8_t bd = MemNode::barrier_data(node) & ShenandoahBitsReal;
 
   if (bd == 0) {
-    // No real barriers, the cost is zero.
+    // No real barriers.
     return 0;
   }
 
   uint nodes = 0;
 
   if ((bd & ~ShenandoahBitCardMark) != 0) {
-    // Hotpatched GC state checks are either single nop or jump.
+    // Hot-patched GC state checks are either a single nop or a jump.
     nodes += 1;
   }
 
   if ((bd & ShenandoahBitCardMark) != 0) {
-    // Card mark is on fast-path, not covered by hotpatching.
+    // Card mark is not covered by hot-patching. It takes 4 instructions
+    // to do the basic card manipulation, and 2 more for the conditional check.
     nodes += 4 + (UseCondCardMark ? 2 : 0);
   }
 
