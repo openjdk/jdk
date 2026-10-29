@@ -369,6 +369,13 @@ public class Properties extends Hashtable<Object,Object> {
      *
      * </ul>
      * <p>
+     * If the loaded property list includes a key that is already present
+     * in this {@code Properties}, the associated element is set to the value
+     * loaded from the property list.
+     * <p>
+     * If a key occurs more than once in the loaded property list, the
+     * associated element is set to the value of the latest such occurrence.
+     * <p>
      * The specified stream remains open after this method returns.
      *
      * @param   reader   the input character stream.
