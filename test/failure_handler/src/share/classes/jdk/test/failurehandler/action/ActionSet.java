@@ -34,8 +34,8 @@ import java.util.Properties;
 
 public class ActionSet {
     private static final String ENVIRONMENT_PROPERTY = "environment";
-    private static final String ON_PID_PROPERTY = "onTimeout";
     private static final String ON_PID_INITIAL_PROPERTY = "onTimeout.initial";
+    private static final String ON_PID_PROPERTY = "onTimeout";
     private static final String CORES_PROPERTY = "cores";
 
     private final ActionHelper helper;
