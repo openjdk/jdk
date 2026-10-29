@@ -86,7 +86,7 @@ void ShenandoahControlThread::run_service() {
       mode = default_mode;
       cause = default_cause;
       // Ask policy if this cycle wants to process references or unload classes
-      heap->set_unload_classes(heuristics->should_unload_classes());
+      heap->set_unload_classes(heuristics->can_unload_classes());
     }
 
     if (mode != none) {

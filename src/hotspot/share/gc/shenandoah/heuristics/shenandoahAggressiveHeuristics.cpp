@@ -55,4 +55,3 @@ bool ShenandoahAggressiveHeuristics::should_start_gc() {
   accept_trigger();
   return true;
 }
-

@@ -163,7 +163,7 @@ void ShenandoahRegulatorThread::stop_service() {
   log_debug(gc)("%s: Stop requested.", name());
 }
 
-bool ShenandoahRegulatorThread::should_start_metaspace_gc() {
+bool ShenandoahRegulatorThread::should_start_metaspace_gc() const {
   // The generational mode can, at present, only unload classes during a global
   // cycle. For this reason, we treat an oom in metaspace as a _trigger_ for a
   // global cycle. But, we check other prerequisites before starting a gc that won't

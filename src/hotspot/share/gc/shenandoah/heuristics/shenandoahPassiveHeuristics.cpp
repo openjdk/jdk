@@ -37,11 +37,6 @@ bool ShenandoahPassiveHeuristics::should_start_gc() {
   return false;
 }
 
-bool ShenandoahPassiveHeuristics::should_unload_classes() {
-  // Always unload classes, if we can.
-  return can_unload_classes();
-}
-
 void ShenandoahPassiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                                         RegionData* data, size_t size,
                                                                         size_t actual_free) {

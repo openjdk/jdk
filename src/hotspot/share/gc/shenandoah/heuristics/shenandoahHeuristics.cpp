@@ -270,10 +270,6 @@ bool ShenandoahHeuristics::can_unload_classes() {
   return ClassUnloading;
 }
 
-bool ShenandoahHeuristics::should_unload_classes() {
-  return can_unload_classes();
-}
-
 void ShenandoahHeuristics::initialize() {
   // Nothing to do by default.
 }
