@@ -52,6 +52,7 @@
 #include "prims/jvmtiManageCapabilities.hpp"
 #include "prims/jvmtiRawMonitor.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
+#include "prims/jvmtiStackTraceRequest.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/arguments.hpp"
@@ -763,6 +764,8 @@ void JvmtiExport::post_vm_initialized() {
 
   // can now enable events
   JvmtiEventController::vm_init();
+  // and start what agents enabled before threads could be started
+  JvmtiStackTraceRequest::on_vm_initialized();
 
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {

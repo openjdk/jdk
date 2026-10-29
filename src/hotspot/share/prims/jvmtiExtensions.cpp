@@ -25,6 +25,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiExtensions.hpp"
+#include "prims/jvmtiStackTraceRequest.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -175,49 +176,27 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
   return JVMTI_ERROR_NONE;
 }
 
-// Parameters: (const jvmtiEnv* env, jthread thread, void* ucontext, jlong user_data)
-static jvmtiError JNICALL RequestJFRStackTrace(const jvmtiEnv* env, ...) {
-#if !INCLUDE_JFR
-  return JVMTI_ERROR_NOT_AVAILABLE;
-#else
-  jthread thread = nullptr;
-  void* ucontext = nullptr;
-  jlong user_data = 0;
-  va_list ap;
+#if INCLUDE_JFR
 
-  va_start(ap, env);
-  thread = va_arg(ap, jthread);
-  ucontext = va_arg(ap, void*);
-  user_data = va_arg(ap, jlong);
-  va_end(ap);
+// Returns the attached current thread, or null. Uses current_or_null_safe()
+// because this is called from signal handlers, which may fire on a thread that
+// is detaching from the VM.
+static JavaThread* current_java_thread_or_null() {
+  Thread* const current = Thread::current_or_null_safe();
+  return current != nullptr && current->is_Java_thread() ? JavaThread::cast(current) : nullptr;
+}
 
-  // Use current_or_null_safe() because this is called from a signal handler
-  // and the signal may fire on a thread that is detaching from the VM.
-  Thread* current = Thread::current_or_null_safe();
-  if (current == nullptr || !current->is_Java_thread()) {
-    return JVMTI_ERROR_UNATTACHED_THREAD;
-  }
-
-  if (!JfrRecorder::is_created() || !JfrStackTraceRequest::is_enabled()) {
-    return JVMTI_ERROR_NOT_AVAILABLE;
-  }
-
-  JavaThread* const current_jt = JavaThread::cast(current);
-
-  // Helper that issues the actual request once the target is known and
-  // (when foreign) protected by a live ThreadsListHandle in the caller.
-  auto submit = [&](JavaThread* target) -> jvmtiError {
-    // Filter out threads that are exiting or excluded, matching the JFR
-    // CPU time sampler's get_java_thread_if_valid() checks.
+// Resolves the target of a stack-trace request and passes it to submit, together
+// with whether its frame state can be read directly. Shared by the JFR and the
+// JVMTI variant of the stack-trace request.
+template <typename SUBMIT>
+static jvmtiError resolve_and_submit(JavaThread* current_jt, jthread thread, void* ucontext, SUBMIT submit) {
+  auto checked_submit = [&](JavaThread* target) -> jvmtiError {
     if (target->is_exiting()) {
       return JVMTI_ERROR_THREAD_NOT_ALIVE;
     }
     if (target->is_hidden_from_external_view()) {
       return JVMTI_ERROR_INVALID_THREAD;
-    }
-    if (target->jfr_thread_local()->is_excluded()) {
-      // JFR does not record events for excluded threads.
-      return JVMTI_ERROR_NOT_AVAILABLE;
     }
     // The walker can read frame state directly only when the target is the
     // calling thread (we hold its state by virtue of executing on it) or
@@ -225,18 +204,12 @@ static jvmtiError JNICALL RequestJFRStackTrace(const jvmtiEnv* env, ...) {
     // captured ucontext. Otherwise we queue a biased request, processed at
     // the target's next safepoint.
     const bool thread_is_suspended = (target == current_jt) || (ucontext != nullptr);
-
-    if (!JfrStackTraceRequest::request(target, ucontext, thread_is_suspended, user_data)) {
-      // Dropped, e.g. because the thread is in a state that does not permit
-      // stack walking or its request queue is full.
-      return JVMTI_ERROR_ABSENT_INFORMATION;
-    }
-    return JVMTI_ERROR_NONE;
+    return submit(target, thread_is_suspended);
   };
 
   if (thread == nullptr) {
     // Signal-safe path: no JNI handle resolution, no ThreadsListHandle.
-    return submit(current_jt);
+    return checked_submit(current_jt);
   }
 
   // Resolving a non-null jthread uses ThreadsListHandle and JNI handle
@@ -246,8 +219,7 @@ static jvmtiError JNICALL RequestJFRStackTrace(const jvmtiEnv* env, ...) {
   // we scope the in_VM transition narrowly to just the resolution.
   // ThreadsListHandle stays alive across the submit so the resolved
   // target JavaThread* cannot be freed underneath us. None of this is
-  // async-signal-safe; the JEP only promises signal-safety for the
-  // current-thread case (thread == nullptr).
+  // async-signal-safe; only the current-thread case (thread == nullptr) is.
   if (current_jt->thread_state() != _thread_in_native) {
     // Called from a context that cannot transition to the VM, e.g. from a
     // signal handler that interrupted Java or VM code.
@@ -274,8 +246,93 @@ static jvmtiError JNICALL RequestJFRStackTrace(const jvmtiEnv* env, ...) {
       return err;
     }
   }
-  return submit(target);
+  return checked_submit(target);
+}
+
+#endif // INCLUDE_JFR
+
+// Parameters: (const jvmtiEnv* env, jthread thread, void* ucontext, jlong user_data)
+static jvmtiError JNICALL RequestJFRStackTrace(const jvmtiEnv* env, ...) {
+#if !INCLUDE_JFR
+  return JVMTI_ERROR_NOT_AVAILABLE;
+#else
+  va_list ap;
+  va_start(ap, env);
+  jthread thread = va_arg(ap, jthread);
+  void* ucontext = va_arg(ap, void*);
+  jlong user_data = va_arg(ap, jlong);
+  va_end(ap);
+
+  JavaThread* const current_jt = current_java_thread_or_null();
+  if (current_jt == nullptr) {
+    return JVMTI_ERROR_UNATTACHED_THREAD;
+  }
+  if (!JfrRecorder::is_created() || !JfrStackTraceRequest::is_enabled()) {
+    return JVMTI_ERROR_NOT_AVAILABLE;
+  }
+  return resolve_and_submit(current_jt, thread, ucontext, [&](JavaThread* target, bool thread_is_suspended) -> jvmtiError {
+    if (target->jfr_thread_local()->is_excluded()) {
+      // JFR does not record events for excluded threads.
+      return JVMTI_ERROR_NOT_AVAILABLE;
+    }
+    if (!JfrStackTraceRequest::request(target, ucontext, thread_is_suspended, user_data)) {
+      // Dropped, e.g. because the thread is in a state that does not permit
+      // stack walking or its request queue is full.
+      return JVMTI_ERROR_ABSENT_INFORMATION;
+    }
+    return JVMTI_ERROR_NONE;
+  });
 #endif // !INCLUDE_JFR
+}
+
+// Parameters: (const jvmtiEnv* env, jthread thread, void* ucontext, jvmtiStackTraceBuffer* buffer)
+static jvmtiError JNICALL RequestStackTrace(const jvmtiEnv* env, ...) {
+#if !INCLUDE_JFR
+  return JVMTI_ERROR_NOT_AVAILABLE;
+#else
+  va_list ap;
+  va_start(ap, env);
+  jthread thread = va_arg(ap, jthread);
+  void* ucontext = va_arg(ap, void*);
+  jvmtiStackTraceBuffer* buffer = va_arg(ap, jvmtiStackTraceBuffer*);
+  va_end(ap);
+
+  JavaThread* const current_jt = current_java_thread_or_null();
+  if (current_jt == nullptr) {
+    return JVMTI_ERROR_UNATTACHED_THREAD;
+  }
+  if (buffer == nullptr) {
+    return JVMTI_ERROR_NULL_POINTER;
+  }
+  if (buffer->frame_capacity < 0 || buffer->max_depth < 0 ||
+      (buffer->frame_capacity > 0 && buffer->frames == nullptr)) {
+    return JVMTI_ERROR_ILLEGAL_ARGUMENT;
+  }
+  JvmtiEnv* const jvmti_env = JvmtiEnv::JvmtiEnv_from_jvmti_env((jvmtiEnv*)env);
+  if (!JvmtiStackTraceRequest::is_enabled(jvmti_env)) {
+    return JVMTI_ERROR_NOT_AVAILABLE;
+  }
+  return resolve_and_submit(current_jt, thread, ucontext, [&](JavaThread* target, bool thread_is_suspended) -> jvmtiError {
+    if (!JvmtiStackTraceRequest::request(jvmti_env, buffer, target, ucontext, thread_is_suspended)) {
+      return JVMTI_ERROR_ABSENT_INFORMATION;
+    }
+    return JVMTI_ERROR_NONE;
+  });
+#endif // !INCLUDE_JFR
+}
+
+// Parameters: (const jvmtiEnv* env, jvmtiStackTraceBuffer** completed)
+static jvmtiError JNICALL EnableRequestStackTrace(const jvmtiEnv* env, ...) {
+  va_list ap;
+  va_start(ap, env);
+  jvmtiStackTraceBuffer** completed = va_arg(ap, jvmtiStackTraceBuffer**);
+  va_end(ap);
+  return JvmtiStackTraceRequest::enable(JvmtiEnv::JvmtiEnv_from_jvmti_env((jvmtiEnv*)env), completed);
+}
+
+// No parameters.
+static jvmtiError JNICALL DisableRequestStackTrace(const jvmtiEnv* env, ...) {
+  return JvmtiStackTraceRequest::disable(JvmtiEnv::JvmtiEnv_from_jvmti_env((jvmtiEnv*)env));
 }
 
 // register extension functions and events. In this implementation we
@@ -365,6 +422,65 @@ void JvmtiExtensions::register_extensions() {
   _ext_functions->append(&ext_func1);
   _ext_functions->append(&ext_func2);
   _ext_functions->append(&ext_func_rst);
+
+  static jvmtiParamInfo func_params_rqst[] = {
+    { (char*)"thread",    JVMTI_KIND_IN, JVMTI_TYPE_JTHREAD, JNI_TRUE },
+    { (char*)"ucontext",  JVMTI_KIND_IN_PTR, JVMTI_TYPE_CVOID, JNI_TRUE },
+    { (char*)"buffer",    JVMTI_KIND_IN_PTR, JVMTI_TYPE_CVOID, JNI_FALSE }
+  };
+
+  static jvmtiError rqst_errors[] = {
+    JVMTI_ERROR_NOT_AVAILABLE,
+    JVMTI_ERROR_ABSENT_INFORMATION,
+    JVMTI_ERROR_INVALID_THREAD,
+    JVMTI_ERROR_THREAD_NOT_ALIVE,
+    JVMTI_ERROR_UNSUPPORTED_OPERATION,
+    JVMTI_ERROR_UNATTACHED_THREAD,
+    JVMTI_ERROR_NULL_POINTER,
+    JVMTI_ERROR_ILLEGAL_ARGUMENT
+  };
+
+  static jvmtiExtensionFunctionInfo ext_func_rqst = {
+    (jvmtiExtensionFunction)RequestStackTrace,
+    (char*)"com.sun.hotspot.functions.RequestStackTrace",
+    (char*)"Request an async stack trace of a thread, written into an agent-provided buffer",
+    sizeof(func_params_rqst)/sizeof(func_params_rqst[0]),
+    func_params_rqst,
+    sizeof(rqst_errors)/sizeof(jvmtiError),
+    rqst_errors
+  };
+
+  static jvmtiError enable_errors[] = {
+    JVMTI_ERROR_NOT_AVAILABLE
+  };
+
+  static jvmtiParamInfo func_params_enable_rqst[] = {
+    { (char*)"completed", JVMTI_KIND_IN_PTR, JVMTI_TYPE_CVOID, JNI_TRUE }
+  };
+
+  static jvmtiExtensionFunctionInfo ext_func_enable_rqst = {
+    (jvmtiExtensionFunction)EnableRequestStackTrace,
+    (char*)"com.sun.hotspot.functions.EnableRequestStackTrace",
+    (char*)"Enable RequestStackTrace, optionally with a completion list; may be called in the OnLoad phase",
+    sizeof(func_params_enable_rqst)/sizeof(func_params_enable_rqst[0]),
+    func_params_enable_rqst,
+    sizeof(enable_errors)/sizeof(jvmtiError),
+    enable_errors
+  };
+
+  static jvmtiExtensionFunctionInfo ext_func_disable_rqst = {
+    (jvmtiExtensionFunction)DisableRequestStackTrace,
+    (char*)"com.sun.hotspot.functions.DisableRequestStackTrace",
+    (char*)"Disable RequestStackTrace; afterwards all requests are complete and no buffer is touched again",
+    0,
+    nullptr,
+    sizeof(enable_errors)/sizeof(jvmtiError),
+    enable_errors
+  };
+
+  _ext_functions->append(&ext_func_rqst);
+  _ext_functions->append(&ext_func_enable_rqst);
+  _ext_functions->append(&ext_func_disable_rqst);
 
   // register our extension event
 

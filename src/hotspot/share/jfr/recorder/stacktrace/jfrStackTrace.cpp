@@ -141,17 +141,42 @@ inline void JfrStackTrace::record_frame(const Method* method, int bci, u1 frame_
   _count++;
 }
 
+// Records the visited frames into a JfrStackTrace. When limited, stops at the
+// trace's max_frames.
+class JfrStackFrameRecorder : public JfrStackFrameVisitor {
+  JfrStackTrace& _trace;
+  const bool _limited;
+ public:
+  JfrStackFrameRecorder(JfrStackTrace& trace, bool limited) : _trace(trace), _limited(limited) {}
+  bool has_room() override {
+    if (_limited && _trace._count >= _trace._max_frames) {
+      _trace._reached_root = false;
+      return false;
+    }
+    return true;
+  }
+  bool visit(const Method* method, int bci, u1 type) override {
+    _trace.record_frame(method, bci, type);
+    return true;
+  }
+};
+
+static void visit_interpreter_top_frame(const JfrSampleRequest& request, JfrStackFrameVisitor& visitor) {
+  const Method* method = reinterpret_cast<Method*>(request._sample_pc);
+  assert(method != nullptr, "invariant");
+  const int bci = method->is_native() ? 0 : method->bci_from(reinterpret_cast<address>(request._sample_bcp));
+  const u1 type = method->is_native() ? JfrStackFrame::FRAME_NATIVE : JfrStackFrame::FRAME_INTERPRETER;
+  visitor.visit(method, bci, type);
+}
+
 void JfrStackTrace::record_interpreter_top_frame(const JfrSampleRequest& request) {
   assert(_hash == 0, "invariant");
   assert(_count == 0, "invariant");
   assert(_frames != nullptr, "invariant");
   assert(_frames->length() == 0, "invariant");
   _hash = 1;
-  const Method* method = reinterpret_cast<Method*>(request._sample_pc);
-  assert(method != nullptr, "invariant");
-  const int bci = method->is_native() ? 0 : method->bci_from(reinterpret_cast<address>(request._sample_bcp));
-  const u1 type = method->is_native() ? JfrStackFrame::FRAME_NATIVE : JfrStackFrame::FRAME_INTERPRETER;
-  record_frame(method, bci, type);
+  JfrStackFrameRecorder recorder(*this, false);
+  visit_interpreter_top_frame(request, recorder);
 }
 
 class JfrUnpackNeedStackRepair {
@@ -196,19 +221,26 @@ class JfrUnpackNeedStackRepair {
   }
 };
 
-void JfrStackTrace::record_stack_repair_top_frame(const JfrSampleRequest& request) {
+static void visit_stack_repair_top_frame(const JfrSampleRequest& request, JfrStackFrameVisitor& visitor) {
   assert(p2i(request._sample_bcp) == JfrSampleRequestFrameType::NEEDS_STACK_REPAIR, "invariant");
+  JfrUnpackNeedStackRepair unpack(static_cast<PcDesc*>(request._sample_pc),
+                                  static_cast<nmethod*>(request._sample_sp));
+  while (unpack.has_next()) {
+    unpack.next();
+    if (!visitor.visit(unpack.method(), unpack.normalized_bci(), unpack.has_next() ? JfrStackFrame::FRAME_INLINE : JfrStackFrame::FRAME_JIT)) {
+      return;
+    }
+  }
+}
+
+void JfrStackTrace::record_stack_repair_top_frame(const JfrSampleRequest& request) {
   assert(_hash == 0, "invariant");
   assert(_count == 0, "invariant");
   assert(_frames != nullptr, "invariant");
   assert(_frames->length() == 0, "invariant");
   _hash = 1;
-  JfrUnpackNeedStackRepair unpack(static_cast<PcDesc*>(request._sample_pc),
-                                  static_cast<nmethod*>(request._sample_sp));
-  while (unpack.has_next()) {
-    unpack.next();
-    record_frame(unpack.method(), unpack.normalized_bci(), unpack.has_next() ? JfrStackFrame::FRAME_INLINE : JfrStackFrame::FRAME_JIT);
-  }
+  JfrStackFrameRecorder recorder(*this, false);
+  visit_stack_repair_top_frame(request, recorder);
 }
 
 static inline JfrSampleRequestFrameType frame_type(const JfrSampleRequest& request) {
@@ -255,29 +287,22 @@ bool JfrStackTrace::record(JavaThread* jt, const frame& frame, bool in_continuat
   return record_inner(jt, frame, in_continuation, skip, stack_filter_id);
 }
 
-bool JfrStackTrace::record_inner(JavaThread* jt, const frame& frame, bool in_continuation, int skip, int64_t stack_filter_id /* -1 */) {
+static void visit_vframes(JavaThread* jt, const frame& frame, bool in_continuation, int skip,
+                          const JfrStackFilter* stack_filter, JfrStackFrameVisitor& visitor) {
   assert(jt != nullptr, "invariant");
-  assert(!_lineno, "invariant");
-  assert(_frames != nullptr, "invariant");
   assert(!in_continuation || is_in_continuation(frame, jt), "invariant");
   Thread* const current_thread = Thread::current();
   HandleMark hm(current_thread); // RegisterMap uses Handles to support continuations.
   JfrVframeStream vfs(jt, frame, in_continuation, false);
-  _reached_root = true;
   for (int i = 0; i < skip; ++i) {
     if (vfs.at_end()) {
       break;
     }
     vfs.next_vframe();
   }
-  const JfrStackFilter* stack_filter = stack_filter_id < 0 ? nullptr : JfrStackFilterRegistry::lookup(stack_filter_id);
-  if (_hash == 0) {
-    _hash = 1;
-  }
   while (!vfs.at_end()) {
-    if (_count >= _max_frames) {
-      _reached_root = false;
-      break;
+    if (!visitor.has_room()) {
+      return;
     }
     const Method* method = vfs.method();
     if (stack_filter != nullptr) {
@@ -301,9 +326,41 @@ bool JfrStackTrace::record_inner(JavaThread* jt, const frame& frame, bool in_con
       // frame, so this frame is inlined into the caller.
       type = JfrStackFrame::FRAME_INLINE;
     }
-    record_frame(method, bci, type);
+    if (!visitor.visit(method, bci, type)) {
+      return;
+    }
   }
+}
+
+bool JfrStackTrace::record_inner(JavaThread* jt, const frame& frame, bool in_continuation, int skip, int64_t stack_filter_id /* -1 */) {
+  assert(!_lineno, "invariant");
+  assert(_frames != nullptr, "invariant");
+  _reached_root = true;
+  const JfrStackFilter* stack_filter = stack_filter_id < 0 ? nullptr : JfrStackFilterRegistry::lookup(stack_filter_id);
+  if (_hash == 0) {
+    _hash = 1;
+  }
+  JfrStackFrameRecorder recorder(*this, true);
+  visit_vframes(jt, frame, in_continuation, skip, stack_filter, recorder);
   return _count > 0;
+}
+
+void JfrStackTrace::walk(JavaThread* jt, const frame& frame, bool in_continuation, const JfrSampleRequest& request,
+                         JfrStackFrameVisitor& visitor) {
+  const JfrSampleRequestFrameType ft = frame_type(request);
+  if (ft == JfrSampleRequestFrameType::INTERPRETER) {
+    visit_interpreter_top_frame(request, visitor);
+  } else if (ft == JfrSampleRequestFrameType::NEEDS_STACK_REPAIR) {
+    visit_stack_repair_top_frame(request, visitor);
+  }
+  if (ft != JfrSampleRequestFrameType::NONE && frame.pc() == nullptr) {
+    // No sender frame. Done.
+    return;
+  }
+  // Must use ResetNoHandleMark here to bypass if any NoHandleMark exist on stack.
+  // This is because RegisterMap uses Handles to support continuations.
+  ResetNoHandleMark rnhm;
+  visit_vframes(jt, frame, in_continuation, 0, nullptr, visitor);
 }
 
 void JfrStackTrace::resolve_linenos() const {

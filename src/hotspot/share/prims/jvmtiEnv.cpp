@@ -54,6 +54,7 @@
 #include "prims/jvmtiManageCapabilities.hpp"
 #include "prims/jvmtiRawMonitor.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
+#include "prims/jvmtiStackTraceRequest.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "prims/jvmtiUtil.hpp"
@@ -780,6 +781,7 @@ JvmtiEnv::GetPhase(jvmtiPhase* phase_ptr) {
 
 jvmtiError
 JvmtiEnv::DisposeEnvironment() {
+  JvmtiStackTraceRequest::on_env_dispose(this);
   dispose();
   return JVMTI_ERROR_NONE;
 } /* end DisposeEnvironment */

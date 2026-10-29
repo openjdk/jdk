@@ -133,6 +133,11 @@ void JfrStackWalkerRequestQueue::release() {
   set_capacity(0);
 }
 
+void JfrStackWalkerRequestQueue::truncate(u4 size) {
+  assert(size <= this->size(), "invariant");
+  AtomicAccess::release_store(&_head, size);
+}
+
 void JfrStackWalkerRequestQueue::clear() {
   AtomicAccess::release_store(&_head, (u4)0);
 }
@@ -403,20 +408,23 @@ public:
 JfrNativeStackWalkerThread* JfrStackWalker::_native_stackwalker_thread = nullptr;
 static volatile int _stackwalker_use_count = 0;
 
-#ifdef ASSERT
-// Verifies that initialize() and teardown() are not called concurrently.
-class JfrStackWalkerLifecycleMark : public StackObj {
-  static volatile bool _active;
+// Serializes initialize() and teardown(). Their callers (JFR settings and the
+// JVMTI extension) run in native state, and teardown() may block, so this is a
+// plain spin lock rather than a VM Mutex.
+class JfrStackWalkerLifecycleLocker : public StackObj {
+  static volatile int _lock;
  public:
-  JfrStackWalkerLifecycleMark() {
-    assert(!AtomicAccess::cmpxchg(&_active, false, true), "initialize() and teardown() must be serialized");
+  JfrStackWalkerLifecycleLocker() {
+    SpinYield s;
+    while (AtomicAccess::cmpxchg(&_lock, 0, 1) != 0) {
+      s.wait();
+    }
   }
-  ~JfrStackWalkerLifecycleMark() {
-    AtomicAccess::release_store(&_active, false);
+  ~JfrStackWalkerLifecycleLocker() {
+    AtomicAccess::release_store(&_lock, 0);
   }
 };
-volatile bool JfrStackWalkerLifecycleMark::_active = false;
-#endif
+volatile int JfrStackWalkerLifecycleLocker::_lock = 0;
 
 static bool check_state(const JavaThread* thread) {
   switch (thread->thread_state()) {
@@ -483,6 +491,19 @@ static traceid compute_tid(JavaThread* jt, bool in_continuation) {
   JfrThreadLocal* const tl = jt->jfr_thread_local();
   return in_continuation ? tl->vthread_id_with_epoch_update(jt)
                          : JfrThreadLocal::jvm_thread_id(jt);
+}
+
+bool JfrStackWalker::walk_frames(JfrStackWalkRequest& request, JavaThread* jt, JfrStackFrameVisitor& visitor,
+                                 bool& biased, bool& in_continuation) {
+  assert(jt != nullptr, "invariant");
+  biased = false;
+  in_continuation = false;
+  frame top_frame;
+  if (!JfrThreadSampling::compute_top_frame(request.sample_request(), top_frame, in_continuation, jt, biased)) {
+    return false;
+  }
+  JfrStackTrace::walk(jt, top_frame, in_continuation, request.sample_request(), visitor);
+  return true;
 }
 
 bool JfrStackWalker::walk(JfrStackWalkRequest& request, JavaThread* jt, traceid& sid, traceid& tid, bool& biased) {
@@ -554,6 +575,34 @@ void JfrStackWalker::on_javathread_terminate(JavaThread* jt) {
   discard_requests_locked(jt, tl);
 }
 
+void JfrStackWalker::discard_requests(const JfrStackWalkerConsumer* consumer,
+                                      bool (*filter)(const JfrStackWalkRequest& request, const void* context),
+                                      const void* context) {
+  JavaThreadIteratorWithHandle jtiwh;
+  for (JavaThread* jt = jtiwh.next(); jt != nullptr; jt = jtiwh.next()) {
+    JfrStackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
+    JfrStackWalkDequeueLocker lock(tl);
+    JfrStackWalkerRequestQueue& queue = tl.queue();
+    const u4 count = queue.size();
+    u4 kept = 0;
+    for (u4 i = 0; i < count; i++) {
+      JfrStackWalkRequest& request = queue.at(i);
+      if (request.consumer() == consumer && (filter == nullptr || filter(request, context))) {
+        consumer->on_dropped(jt, request);
+      } else {
+        if (kept != i) {
+          queue.at(kept) = request;
+        }
+        kept++;
+      }
+    }
+    queue.truncate(kept);
+    if (kept == 0) {
+      tl.set_has_requests(false);
+    }
+  }
+}
+
 // Frees the queues of all threads once the stack walker is no longer used.
 // Pending requests, e.g. of threads that are still in native, are discarded and
 // counted as lost by their consumers. The dequeue lock excludes the thread's own
@@ -577,7 +626,7 @@ void JfrStackWalker::process_requests(JavaThread* jt) {
 }
 
 void JfrStackWalker::initialize() {
-  DEBUG_ONLY(JfrStackWalkerLifecycleMark mark;)
+  JfrStackWalkerLifecycleLocker lock;
   // Ensure the native thread is created and published before incrementing the
   // use count. Any thread observing count > 0 via load_acquire is then
   // guaranteed to see a non-null _native_stackwalker_thread pointer.
@@ -603,7 +652,7 @@ void JfrStackWalker::initialize() {
 }
 
 void JfrStackWalker::teardown() {
-  DEBUG_ONLY(JfrStackWalkerLifecycleMark mark;)
+  JfrStackWalkerLifecycleLocker lock;
   // Decrement the use count. The last caller (1->0) disenrolls the native thread
   // and frees the queues that initialize() allocated.
   if (AtomicAccess::fetch_then_add(&_stackwalker_use_count, -1) == 1) {

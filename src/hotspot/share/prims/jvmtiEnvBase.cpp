@@ -204,6 +204,7 @@ JvmtiEnvBase::JvmtiEnvBase(jint version) : _env_event_enable() {
   _version = version;
   _env_local_storage = nullptr;
   _tag_map = nullptr;
+  _stack_trace_requests = nullptr;
   _native_method_prefix_count = 0;
   _native_method_prefixes = nullptr;
   _next = nullptr;
