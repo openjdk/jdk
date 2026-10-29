@@ -449,7 +449,7 @@ void DumpRegion::report_gaps(DumpAllocStats* stats) {
 }
 
 void DumpRegion::append_intptr_t(intptr_t n) {
-  if (AOTWriteClosureDisabler::is_disabled()) {
+  if (AOTWriteClosureDisabler::is_active()) {
     n = 0;
   }
   assert(is_aligned(_top, sizeof(intptr_t)), "bad alignment");
@@ -498,25 +498,26 @@ void DumpRegion::pack(DumpRegion* next) {
   }
 }
 
-int AOTWriteClosureDisabler::_disable_count = 0;
+int AOTWriteClosureDisabler::_active_count = 0;
 
-AOTWriteClosureDisabler::AOTWriteClosureDisabler(bool should_disable)
-  : _should_disable(should_disable)
+AOTWriteClosureDisabler::AOTWriteClosureDisabler(bool is_active)
+  : _is_active(is_active)
 {
-  if (_should_disable) {
-    _disable_count ++;
+  if (_is_active) {
+    precond(CDSConfig::is_redumping_aot_configuration());
+    _active_count ++;
   }
 }
 
 AOTWriteClosureDisabler::~AOTWriteClosureDisabler() {
-  if (_should_disable) {
-    _disable_count --;
+  if (_is_active) {
+    _active_count --;
   }
-  assert(_disable_count >= 0, "must be");
+  assert(_active_count >= 0, "must be");
 }
 
 void WriteClosure::do_ptr(void** p) {
-  if (AOTWriteClosureDisabler::is_disabled()) {
+  if (AOTWriteClosureDisabler::is_active()) {
     // Note: a null pointer is represented with the value 0 in AOTCompressedPointers.
     assert(checked_cast<intptr_t>(AOTCompressedPointers::null()) == 0, "must be");
     _dump_region->append_intptr_t(0);

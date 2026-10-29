@@ -787,7 +787,7 @@ void CDSConfig::setup_compiler_args() {
 
   assert(new_aot_flags_used(), "");
 
-  if (is_dumping_preimage_static_archive()) {
+  if (is_dumping_aot_configuration()) {
     // --- AOT training
     if (!AOTClassLinking) { // Note: is_dumping_aot_linked_classes() is false in training run.
       disable_profile_and_compiled_code();
@@ -806,7 +806,7 @@ void CDSConfig::setup_compiler_args() {
       AOTCodeCache::disable_caching();
     }
     disable_dumping_aot_code(); // No AOT code generation during training run
-  } else if (is_dumping_final_static_archive()) {
+  } else if (is_dumping_aot_cache()) {
     // --- AOT assembly
     if (!is_dumping_aot_linked_classes()) {
       disable_profile_and_compiled_code();

@@ -3450,7 +3450,7 @@ void AdapterHandlerLibrary::dump_aot_adapter_table() {
 }
 
 void AdapterHandlerLibrary::serialize_shared_table_header(SerializeClosure* soc) {
-  // This table is used for loading cached adapters  in a retaining JVM. However,
+  // This table is used for loading cached adapters in a retraining JVM. However,
   // this table should not be written into the AOT configuration file (which
   // doesn't store AOT adapters).
   AOTWriteClosureDisabler disable_if(CDSConfig::is_redumping_aot_configuration());

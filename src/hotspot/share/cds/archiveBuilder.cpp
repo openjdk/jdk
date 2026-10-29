@@ -643,8 +643,8 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
 
   memcpy(dest, src, bytes);
   if (CDSConfig::is_redumping_aot_configuration() && src_info->type() == MetaspaceClosureType::ClassType) {
-    // This class was aot-initialized in the input AOT cache, but we never aot-initialize classes in the
-    // output AOT configuration file.
+    // This class might have been aot-initialized in the input AOT cache, but we never
+    // aot-initialize classes in the output AOT configuration file.
     Klass* k = (Klass*)dest;
     k->clear_has_aot_initialized_mirror();
   }

@@ -62,7 +62,7 @@ void DumpTimeSharedClassTable::iterate_all_live_classes(Function function) const
       }
     }
 
-    if (exclude_reason != nullptr && !!AOTSystemDictionary::is_excluded_class(k)) {
+    if (exclude_reason != nullptr && !AOTSystemDictionary::is_excluded_class(k)) {
       AOTSystemDictionary::log_exclusion(k, exclude_reason);
       AOTSystemDictionary::set_excluded_locked(k);
     }

@@ -218,18 +218,21 @@ public:
   static void report_gaps(DumpAllocStats* stats);
 };
 
-// RAII helper for demarcating data structures that are loaded from the input archive in
-// AOT retraining, but should not be written into the output AOT configuration file.
-// E.g., AOTLinkedClassTable.
+// RAII marker class -- if it's active, all WriteClosure::do_xxx() functions will write
+// zeros regardless of the input.
+//
+// This class is currently used only for demarcating data structures that are loaded
+// from the input archive in AOT retraining, but should not be written into the output AOT
+// configuration file. E.g., AOTLinkedClassTable.
 class AOTWriteClosureDisabler {
-  static int _disable_count;
-  bool _should_disable;
+  static int _active_count;
+  bool _is_active;
 public:
-  AOTWriteClosureDisabler(bool should_disable);
+  AOTWriteClosureDisabler(bool is_active);
   ~AOTWriteClosureDisabler();
 
-  static bool is_disabled() {
-    return _disable_count > 0;
+  static bool is_active() {
+    return _active_count > 0;
   }
 };
 

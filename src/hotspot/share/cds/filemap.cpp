@@ -230,7 +230,7 @@ FileMapInfo* FileMapInfo::allocate_static_input_archive(const char* filename) {
 
 FileMapInfo* FileMapInfo::allocate_dynamic_input_archive(const char* filename) {
   precond(_dynamic_input_archive == nullptr);
-  _dynamic_input_archive = new FileMapInfo(filename, /*is_dynamic=*/false);
+  _dynamic_input_archive = new FileMapInfo(filename, /*is_static=*/false);
   return _dynamic_input_archive;
 }
 
