@@ -8468,21 +8468,21 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_intpoly_assign() {
     // KNOWN Lengths:
-    //   MontgomeryIntPolynP256:  5 = 4 + 1
-    //   IntegerPolynomial1305:   5 = 4 + 1
-    //   IntegerPolynomial25519: 10 = 8 + 2
+    //   MontgomeryIntPolynP256:  5 = 0 + 5
+    //   IntegerPolynomial1305:   5 = 0 + 5
+    //   IntegerPolynomial25519:  5 = 0 + 5
+    //   IntegerPolynomialP384:   7 = 6 + 1
     //   IntegerPolynomialP256:  10 = 8 + 2
     //   Curve25519OrderField:   10 = 8 + 2
     //   Curve25519OrderField:   10 = 8 + 2
     //   P256OrderField:         10 = 8 + 2
-    //   IntegerPolynomialP384:  14 = 8 + 4 + 2
-    //   P384OrderField:         14 = 8 + 4 + 2
-    //   IntegerPolynomial448:   16 = 8 + 8
-    //   Curve448OrderField:     16 = 8 + 8
-    //   Curve448OrderField:     16 = 8 + 8
-    //   IntegerPolynomialP521:  19 = 8 + 8 + 2 + 1
-    //   P521OrderField:         19 = 8 + 8 + 2 + 1
-    // Special Cases 5, 10, 14, 16, 19
+    //   P384OrderField:         14 = 10 + 4
+    //   IntegerPolynomial448:   16 = 16 + 0
+    //   Curve448OrderField:     16 = 16 + 0
+    //   Curve448OrderField:     16 = 16 + 0
+    //   IntegerPolynomialP521:  19 = 16 + 3
+    //   P521OrderField:         19 = 16 + 3
+    // Special Cases 5, 7, 10, 14, 16, 19
     assert(UseIntPolyIntrinsics, "what are we doing here?");
     StubId stub_id = StubId::stubgen_intpoly_assign_id;
     int entry_count = StubInfo::entry_count(stub_id);
@@ -8503,7 +8503,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register bLimbs = c_rarg2;
     const Register length = c_rarg3;
 
-    Label L_Length5, L_Length10, L_Length14, L_Length16, L_Length19, L_Default, L_Done;
+    Label L_Length5, L_Length7, L_Length10, L_Length14, L_Length16, L_Length19, L_Default, L_Done;
 
     /*
     int maskValue = -set;
@@ -8520,6 +8520,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ cmp(length, (u1)5);
     __ br(Assembler::EQ, L_Length5);
+    __ cmp(length, (u1)7);
+    __ br(Assembler::EQ, L_Length7);
     __ cmp(length, (u1)10);
     __ br(Assembler::EQ, L_Length10);
     __ cmp(length, (u1)14);
@@ -8585,6 +8587,47 @@ class StubGenerator: public StubCodeGenerator {
       __ str(a4, Address(aLimbs, 4 * BytesPerLong));
 
       __ pop(r19, sp);
+      __ b(L_Done);
+    }
+
+    // Length = 7
+    // Split into 3 neon regs and 1 GPR
+    __ BIND(L_Length7);
+    {
+      Register a7 = r10;
+      Register b7 = r11;
+
+      VSeq<3> a_vec(16);
+      VSeq<3> b_vec(20);
+
+      int offsets[1] = { 0 };
+
+      __ ldr(a7, Address(aLimbs, 6 * BytesPerLong));
+      __ ldr(b7, Address(bLimbs, 6 * BytesPerLong));
+
+      __ ld1(a_vec[0], __ T2D, aLimbs);
+      vs_ldpq_indexed(vs_tail(a_vec), aLimbs, 16, offsets);
+
+      __ eor(b7, b7, a7);
+
+      __ ld1(b_vec[0], __ T2D, bLimbs);
+      vs_ldpq_indexed(vs_tail(b_vec), bLimbs, 16, offsets);
+
+      __ andr(b7, b7, mask_scalar);
+
+      vs_eor(b_vec, b_vec, a_vec);
+
+      __ eor(a7, a7, b7);
+
+      vs_andr(b_vec, b_vec, mask_vec);
+
+      __ str(a7, Address(aLimbs, 6 * BytesPerLong));
+
+      vs_eor(a_vec, a_vec, b_vec);
+
+      __ st1(a_vec[0], __ T2D, aLimbs);
+      vs_stpq_indexed(vs_tail(a_vec), aLimbs, 16, offsets);
+
       __ b(L_Done);
     }
 
