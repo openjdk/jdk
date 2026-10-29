@@ -10,7 +10,7 @@ WildcardFunctionTypeBad.java:31:62: compiler.err.prob.found.req: (compiler.misc.
 WildcardFunctionTypeBad.java:32:54: compiler.err.prob.found.req: (compiler.misc.no.suitable.functional.intf.inst: Dependent)
 WildcardFunctionTypeBad.java:33:67: compiler.err.prob.found.req: (compiler.misc.no.suitable.functional.intf.inst: Dependent)
 WildcardFunctionTypeBad.java:34:65: compiler.err.prob.found.req: (compiler.misc.no.suitable.functional.intf.inst: Dependent)
-WildcardFunctionTypeBad.java:35:43: compiler.err.prob.found.req: (compiler.misc.no.suitable.functional.intf.inst: WildcardFunctionTypeBad.CrossBound<java.lang.String,java.lang.Object>)
-WildcardFunctionTypeBad.java:36:46: compiler.err.prob.found.req: (compiler.misc.no.suitable.functional.intf.inst: WildcardFunctionTypeBad.CrossBound<java.lang.String,java.lang.Object>)
-WildcardFunctionTypeBad.java:38:60: compiler.err.prob.found.req: (compiler.misc.no.suitable.functional.intf.inst: java.lang.Object&WildcardFunctionTypeBad.CrossBound<java.lang.String,java.lang.Object>&java.io.Serializable)
+WildcardFunctionTypeBad.java:35:43: compiler.err.prob.found.req: (compiler.misc.no.suitable.functional.intf.inst: CrossBound)
+WildcardFunctionTypeBad.java:36:46: compiler.err.prob.found.req: (compiler.misc.no.suitable.functional.intf.inst: CrossBound)
+WildcardFunctionTypeBad.java:38:60: compiler.err.prob.found.req: (compiler.misc.not.a.functional.intf.1: java.lang.Object&CrossBound&java.io.Serializable, (compiler.misc.no.abstracts: kindname.interface, java.lang.Object&CrossBound&java.io.Serializable))
 15 errors

@@ -879,7 +879,9 @@ public class Types {
                 }
                 actuals = actuals.tail;
             }
-            return subst(site.tsym.type, formals, targs.toList());
+            site = subst(site.tsym.type, formals, targs.toList());
+            return !chk.checkValidGenericType(site) ?
+                    new ErrorType(site, site.tsym) : site;
         } else {
             return site;
         }
