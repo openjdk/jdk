@@ -2790,9 +2790,18 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // addition and subtraction with constants. Thus, we need
   // notification for:
   //        u4           u3      u2           u1
-  // n -> AddL -> MaxL/MinL -> AddL -> MaxL/MinL   (4-hop)
+  // n -> AddL -> MaxL/MinL -> AddL -> MaxL/MinL   (4-hop - dropped)
   //         n -> MaxL/MinL -> AddL -> MaxL/MinL   (3-hop)
   //                      n -> AddL -> MaxL/MinL   (2-hop)
+  //
+  // However, the 4-hop notification could be a bit expensive,
+  // and so far no reproducer has been found. There probably
+  // cannot be any: one would have to update either side of
+  // the u4 AddL, without updating the type of AddL itself
+  // (that would cause a 3-hop notification). But for the
+  // optimization to be unlocked, the types of the inputs
+  // to the AddL would have to change, which would trigger
+  // a type update for AddL.
   auto nested_add_no_overflow_pattern_2_hop = [&](Node* u2) {
     if (u2->Opcode() == Op_AddL) {
       add_users_to_worklist_if(worklist, u2, [](Node* u1) {
@@ -2808,17 +2817,8 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   };
-  auto nested_add_no_overflow_pattern_4_hop = [&](Node* u4) {
-    if (u4->Opcode() == Op_AddL) {
-      for (DUIterator_Fast imax, i = u4->fast_outs(imax); i < imax; i++) {
-        Node* u3 = u4->fast_out(i);
-        nested_add_no_overflow_pattern_3_hop(u3);
-      }
-    }
-  };
   nested_add_no_overflow_pattern_2_hop(use);
   nested_add_no_overflow_pattern_3_hop(use);
-  nested_add_no_overflow_pattern_4_hop(use);
 
   // Check for A | (B | C) and (B | C) | A where A == B or A == C.
   if (use_op == Op_OrI || use_op == Op_OrL) {
