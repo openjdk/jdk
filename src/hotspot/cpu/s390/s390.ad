@@ -1746,13 +1746,6 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_PopCountL:
       // PopCount supported by H/W from z/Architecture G5 (z196) on.
       return (UsePopCountInstruction && VM_Version::has_PopCount());
-    // TODO: Find the correct conditions here
-    case Op_AbsVB:
-    case Op_AbsVS:
-    case Op_AbsVI:
-    case Op_AbsVL:
-    //case Op_NegVI:
-    //case Op_NegVL:
     case Op_AddVB:
     case Op_AddVS:
     case Op_AddVI:
@@ -1770,23 +1763,45 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_DivVD:
     case Op_SqrtVD:
     case Op_RoundDoubleModeV:
-      return SuperwordUseVX;
-    // TODO: Find the correct conditions here
-    case Op_AddVF:
-    case Op_AbsVF:
-    case Op_NegVF:
+    case Op_AbsVB:
+    case Op_AbsVS:
+    case Op_AbsVI:
+    case Op_AbsVL:
     case Op_AbsVD:
     case Op_NegVD:
+    case Op_MaxV:
+    case Op_MinV:
+    case Op_UMaxV:
+    case Op_UMinV:
+    case Op_AndV:
+    case Op_OrV:
+    case Op_XorV:
+    case Op_LShiftCntV:
+    case Op_RShiftCntV:
+    case Op_LShiftVI:
+    case Op_LShiftVL:
+    case Op_RShiftVI:
+    case Op_RShiftVL:
+    case Op_URShiftVI:
+    case Op_URShiftVL:
+      return SuperwordUseVX;
+    case Op_AddVF:
     case Op_SubVF:
     case Op_MulVF:
     case Op_DivVF:
     case Op_SqrtVF:
+    case Op_AbsVF:
+    case Op_NegVF:
     //PopCountVI supported by z14 onwards.
     case Op_PopCountVI:
       return (SuperwordUseVX && UseSFPV);
     case Op_FmaF:
     case Op_FmaD:
       return UseFMA;
+    case Op_FmaVD:
+      return (SuperwordUseVX && UseFMA);
+    case Op_FmaVF:
+      return (SuperwordUseVX && UseSFPV && UseFMA);
   }
 
   return true; // Per default match rules are supported.
@@ -11736,7 +11751,6 @@ instruct vneg(vecX dst, vecX src) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-// TODO: Find the correct place for it
 instruct vmax_reg(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (MaxV src1 src2));
   size(6);
@@ -11857,8 +11871,6 @@ instruct vminu_reg(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-//TODO: find correct place for it
-//TODO: put AndV into the match rule supported table
 instruct vand(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (AndV src1 src2));
   ins_cost(DEFAULT_COST);
@@ -11892,6 +11904,8 @@ instruct vxor(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_dummy);
 %}
 
+// --------------------------------- FMA --------------------------------------
+// src1 * src2 + dst
 instruct vfma4F(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVF dst (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 4);
@@ -11904,6 +11918,8 @@ instruct vfma4F(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_dummy);
 %}
 
+// src1 * (-src2) + dst
+// "(-src1) * src2 + dst" has been idealized to "src2 * (-src1) + dst"
 instruct vfnms4F(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVF dst (Binary src1 (NegVF src2))));
   predicate(n->as_Vector()->length() == 4);
@@ -11916,6 +11932,7 @@ instruct vfnms4F(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_dummy);
 %}
 
+// src1 * src2 - dst
 instruct vfms4F(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVF (NegVF dst) (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 4);
