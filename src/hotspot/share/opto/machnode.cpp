@@ -33,6 +33,7 @@
 #include "opto/opcodes.hpp"
 #include "opto/output.hpp"
 #include "opto/regalloc.hpp"
+#include "opto/type.hpp"
 #include "utilities/vmError.hpp"
 
 //=============================================================================
@@ -361,11 +362,14 @@ const TypePtr* MachNode::out_adr_type_impl() const {
 
   if (const TypePtr* res = _out_adr_type; res != TYPE_PTR_SENTINAL) {
 #ifdef ASSERT
-    if (produce_memory) {
-      assert(res != nullptr, "must declare an out_adr_type");
-      verify_adr_type(res, compute_adr_type_from_inputs());
-    } else {
-      assert(res == nullptr, "unexpected memory producer");
+    if (!Node::in_dump() && !VMError::is_error_reported()) {
+      if (produce_memory) {
+        assert(res != nullptr, "must declare an out_adr_type");
+        verify_adr_type(res, compute_adr_type_from_inputs());
+      } else {
+        // We don't know whether the node actually produces memory, because the memory output Proj
+        // may be dead if the following node is a Halt
+      }
     }
 #endif // ASSERT
     return res;
@@ -378,7 +382,11 @@ const TypePtr* MachNode::out_adr_type_impl() const {
 
 const TypePtr* MachNode::in_adr_type_impl() const {
   if (const TypePtr* res = _in_adr_type; res != TYPE_PTR_SENTINAL) {
-    DEBUG_ONLY(verify_adr_type(res, compute_adr_type_from_inputs()));
+#ifdef ASSERT
+    if (!Node::in_dump() && !VMError::is_error_reported()) {
+      verify_adr_type(res, compute_adr_type_from_inputs());
+    }
+#endif // ASSERT
     return res;
   } else {
     return compute_adr_type_from_inputs();
@@ -387,10 +395,7 @@ const TypePtr* MachNode::in_adr_type_impl() const {
 
 void MachNode::verify_adr_type(const TypePtr* declared, const TypePtr* verify) const {
 #ifdef ASSERT
-  if (Node::in_dump() || VMError::is_error_reported()) {
-    return;
-  }
-
+  assert(!Node::in_dump() && !VMError::is_error_reported(), "should not verify");
   if (verify == nullptr) {
     return;
   }
