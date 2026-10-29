@@ -521,8 +521,9 @@ uint ShenandoahBarrierSetC2::estimated_barrier_size(const Node* node) const {
   // GC barriers, for example during loop unrolling. This is a heuristic question,
   // and it is asked before final barrier elision code is able to remove some
   // of the barriers. It also asks for a node count, which for late-expanded barriers
-  // forces us to make assumptions. We give an approximate answer, roughly assuming
-  // one "node" per instruction.
+  // forces us to make assumptions. We give an approximate answer, estimating
+  // how many Ideal nodes our barrier shapes would correspond to. This model tries
+  // to match other GCs as much as possible to avoid accidental performance differences.
 
   uint8_t bd = MemNode::barrier_data(node) & ShenandoahBitsReal;
 
@@ -539,9 +540,8 @@ uint ShenandoahBarrierSetC2::estimated_barrier_size(const Node* node) const {
   }
 
   if ((bd & ShenandoahBitCardMark) != 0) {
-    // Card mark is not covered by hot-patching. It takes 4 instructions
-    // to do the basic card manipulation, and 2 more for the conditional check.
-    nodes += 4 + (UseCondCardMark ? 2 : 0);
+    // Card mark is not covered by hot-patching.
+    nodes += 4 + (UseCondCardMark ? 4 : 0);
   }
 
   return nodes;
