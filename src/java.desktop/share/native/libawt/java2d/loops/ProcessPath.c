@@ -1783,7 +1783,7 @@ typedef struct {
         (PTR)->plgMax = DF_MAX_POINT;                                       \
     } while(0)
 
-#define FD_ADD_POINT(PTR, X, Y, LASTPT)                                     \
+#define FD_ADD_POINT(HND, PTR, X, Y, LASTPT)                                \
     do {                                                                    \
         Point* _pnts = (PTR)->plgPnts;                                      \
         jint _size = (PTR)->plgSize;                                        \
@@ -1791,12 +1791,12 @@ typedef struct {
             jint newMax = (PTR)->plgMax*2;                                  \
             if ((PTR)->plgPnts == (PTR)->dfPlgPnts) {                       \
                 Point* _newp = (Point*)malloc(newMax*sizeof(Point));        \
-                if (_newp == NULL) break;                                   \
+                if (_newp == NULL) { (HND)->resultCode = 1; break; }        \
                 memcpy(_newp, _pnts, _size*sizeof(Point));                  \
                 (PTR)->plgPnts = _newp;                                     \
             } else {                                                        \
                 Point* _newp = (Point*)realloc(_pnts, newMax*sizeof(Point));\
-                if (_newp == NULL) break;                                   \
+                if (_newp == NULL) { (HND)->resultCode = 1; break; }        \
                 (PTR)->plgPnts = _newp;                                     \
             }                                                               \
             _pnts = (PTR)->plgPnts;                                         \
@@ -2160,10 +2160,10 @@ void  StoreFixedLine(ProcessHandler* hnd,jint x1,jint y1,jint x2,jint y2,
      * path
      */
     if (FD_IS_EMPTY(pfd) || FD_IS_ENDED(pfd)) {
-        FD_ADD_POINT(pfd, x1, y1, JNI_FALSE);
+        FD_ADD_POINT(hnd, pfd, x1, y1, JNI_FALSE);
     }
 
-    FD_ADD_POINT(pfd, x2, y2, JNI_FALSE);
+    FD_ADD_POINT(hnd, pfd, x2, y2, JNI_FALSE);
 
     if (endSubPath) {
         FD_SET_ENDED(pfd);
@@ -2199,7 +2199,8 @@ doFillPath(DrawHandler* dhnd,
         NULL,
         PH_STROKE_DEFAULT,
         PH_MODE_FILL_CLIP,
-        NULL
+        NULL,
+        0
     };
 
     /* Initialization of the following fields in the declaration of the hnd
@@ -2213,7 +2214,7 @@ doFillPath(DrawHandler* dhnd,
     FD_INIT(&fillData);
     res = ProcessPath(&hnd, (jfloat)transX, (jfloat)transY,
                       coords, maxCoords, types, numTypes);
-    if (!res) {
+    if (!res || hnd.resultCode != 0) { /* maybe check resultCode already earlier ??? */
         FD_FREE_POINTS(&fillData);
         return JNI_FALSE;
     }
@@ -2229,6 +2230,8 @@ doDrawPath(DrawHandler* dhnd,
                     jfloat* coords, jint maxCoords,
                     jbyte* types, jint numTypes, PHStroke stroke)
 {
+    jint res;
+
     ProcessHandler hnd =
     {
         &ProcessFixedLine,
@@ -2236,7 +2239,8 @@ doDrawPath(DrawHandler* dhnd,
         NULL,
         PH_STROKE_DEFAULT,
         PH_MODE_DRAW_CLIP,
-        NULL
+        NULL,
+        0
     };
 
     /* Initialization of the following fields in the declaration of the hnd
@@ -2245,9 +2249,14 @@ doDrawPath(DrawHandler* dhnd,
      */
     hnd.dhnd = dhnd;
     hnd.stroke = stroke;
+    hnd.resultCode = 0;
 
     hnd.pProcessEndSubPath = (pProcessEndSubPath == NULL)?
         stubEndSubPath : pProcessEndSubPath;
-    return ProcessPath(&hnd, (jfloat)transX, (jfloat)transY, coords, maxCoords,
-                       types, numTypes);
+    res = ProcessPath(&hnd, (jfloat)transX, (jfloat)transY, coords, maxCoords,
+                      types, numTypes);
+    if (!res || hnd.resultCode != 0) { /* maybe check resultCode already earlier ??? */
+        return JNI_FALSE;
+    }
+    return JNI_TRUE;
 }
