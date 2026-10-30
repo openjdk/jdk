@@ -7418,6 +7418,7 @@ class StubGenerator: public StubCodeGenerator {
   __ bind(L_combine);
     __ slli(s2, s2, 16);
     __ orr(s1, s1, s2);
+    __ sext(s1, s1, 32);
 
     __ leave(); // Required for proper stackwalking of RuntimeStub frame
     __ ret();
