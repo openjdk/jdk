@@ -19,6 +19,7 @@
 
 /*
  * @test
+ * bug 8396112
  * @summary Reject inconsistent lengths in DTLS handshake fragments
  * @run main InconsistentFragmentLength
  */
