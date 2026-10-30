@@ -891,6 +891,100 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         out.writeInt(lineNumber);                                // line number
     }
 
+    // unmounted virtual threads seen during the heap walk, they get their
+    // roots after the platform threads
+    private final List<Instance> unmountedVirtualThreads = new ArrayList<>();
+
+    @Override
+    protected void writeThread(Instance instance) throws IOException {
+        super.writeThread(instance);
+        if (isUnmountedVirtualThread(instance)) {
+            unmountedVirtualThreads.add(instance);
+        }
+    }
+
+    private static boolean isUnmountedVirtualThread(Instance instance) {
+        InstanceKlass ik = (InstanceKlass) instance.getKlass();
+        if (!ik.getName().asString().equals("java/lang/VirtualThread")) {
+            return false;
+        }
+        OopField carrier = (OopField) ik.findField("carrierThread", "Ljava/lang/Thread;");
+        if (carrier == null || carrier.getValue(instance) != null) {
+            return false;
+        }
+        // NEW and TERMINATED are left out, as the hotspot dumper does
+        int state = ((IntField) ik.findField("state", "I")).getValue(instance);
+        int newState = ((IntField) ik.findField("NEW", "I")).getValue(ik.getJavaMirror());
+        int terminatedState = ((IntField) ik.findField("TERMINATED", "I")).getValue(ik.getJavaMirror());
+        return state != newState && state != terminatedState;
+    }
+
+    @Override
+    protected void writeJavaThreads() throws IOException {
+        super.writeJavaThreads();
+        // serials above every platform thread serial
+        int serial = VM.getVM().getThreads().getNumberOfThreads() + 1;
+        for (Instance vt : unmountedVirtualThreads) {
+            writeVirtualThreadRoots(vt, serial++);
+        }
+    }
+
+    // Mirrors the hotspot heap dumper's handling of an unmounted virtual thread,
+    // a thread object root and a java frame root for each oop in its stack
+    // chunks, all on the dummy stack trace.
+    private void writeVirtualThreadRoots(Instance vt, final int serial) throws IOException {
+        // the thread root is written whether or not there are frames, as in hotspot
+        writeHeapRecordPrologue(BYTE_SIZE + OBJ_ID_SIZE + INT_SIZE * 2);
+        out.writeByte((byte) HPROF_GC_ROOT_THREAD_OBJ);
+        writeObjectID(vt);
+        out.writeInt(serial);
+        out.writeInt(DUMMY_STACK_TRACE_ID);
+        InstanceKlass ik = (InstanceKlass) vt.getKlass();
+        OopField contField = (OopField) ik.findField("cont", "Ljdk/internal/vm/Continuation;");
+        Oop cont = contField == null ? null : contField.getValue(vt);
+        if (cont == null) {
+            return;
+        }
+        OopField tailField = (OopField) ((InstanceKlass) cont.getKlass()).findField("tail", "Ljdk/internal/vm/StackChunk;");
+        Oop chunk = tailField == null ? null : tailField.getValue(cont);
+        // an empty tail keeps its frames in the parent, like last_nonempty_chunk in hotspot
+        InstanceStackChunkKlass tailKlass = chunk == null ? null : (InstanceStackChunkKlass) chunk.getKlass();
+        if (tailKlass != null && tailKlass.isEmpty(chunk)) {
+            OopField parentField = (OopField) tailKlass.findField("parent", "Ljdk/internal/vm/StackChunk;");
+            chunk = parentField == null ? null : parentField.getValue(chunk);
+        }
+        while (chunk != null) {
+            InstanceStackChunkKlass sck = (InstanceStackChunkKlass) chunk.getKlass();
+            final Oop current = chunk;
+            DefaultOopVisitor visitor = new DefaultOopVisitor() {
+                public void doOop(OopField field, boolean isVMField) {
+                    Oop oop = field.getValue(current);
+                    if (oop == null) {
+                        return;
+                    }
+                    try {
+                        writeHeapRecordPrologue(BYTE_SIZE + OBJ_ID_SIZE + INT_SIZE * 2);
+                        out.writeByte((byte) HPROF_GC_ROOT_JAVA_FRAME);
+                        writeObjectID(oop);
+                        out.writeInt(serial);
+                        out.writeInt(-1);   // no frame information
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+            visitor.setObj(chunk);
+            if (sck.hasBitmap(chunk)) {
+                sck.iterateStackOops(visitor, chunk);
+            } else {
+                System.err.println("WARNING: skipping a stack chunk of thread #" + OopUtilities.threadOopGetTID(vt)
+                    + " (" + OopUtilities.threadOopGetName(vt) + ") because it has no bitmap");
+            }
+            OopField parentField = (OopField) sck.findField("parent", "Ljdk/internal/vm/StackChunk;");
+            chunk = parentField == null ? null : parentField.getValue(chunk);
+        }
+    }
+
     protected void writeJavaThread(JavaThread jt, int index) throws IOException {
         int size = BYTE_SIZE + OBJ_ID_SIZE + INT_SIZE * 2;
         writeHeapRecordPrologue(size);
