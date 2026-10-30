@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -349,8 +349,12 @@ sun_jpeg_fill_suspended_buffer(j_decompress_ptr cinfo)
         memmove(src->inbuf, src->pub.next_input_byte, offset);
     }
     RELEASE_ARRAYS(env, src);
-    buflen = (*env)->GetArrayLength(env, src->hInputBuffer) - offset;
-    if (buflen <= 0) {
+    buflen = (*env)->GetArrayLength(env, src->hInputBuffer);
+    if (offset > buflen) {
+        cinfo->err->error_exit((struct jpeg_common_struct *) cinfo);
+    }
+    buflen -= offset;
+    if (buflen == 0) {
         if (!GET_ARRAYS(env, src)) {
             cinfo->err->error_exit((struct jpeg_common_struct *) cinfo);
         }
@@ -365,6 +369,9 @@ sun_jpeg_fill_suspended_buffer(j_decompress_ptr cinfo)
     if (ret <= 0) {
         /* Silently accept truncated JPEG files */
         WARNMS(cinfo, JWRN_JPEG_EOF);
+        if (buflen < 2) {
+            cinfo->err->error_exit((struct jpeg_common_struct *) cinfo);
+        }
         src->inbuf[offset] = (JOCTET) 0xFF;
         src->inbuf[offset + 1] = (JOCTET) JPEG_EOI;
         ret = 2;
