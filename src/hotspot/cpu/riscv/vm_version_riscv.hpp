@@ -477,7 +477,12 @@ private:
     VM_SV64   = 64
   };
 
+  // Instruction encoding policy, independent of the hardware address width.
+  enum class MovptrMode { sv39, sv48, sv48_nop };
+
  private:
+  static MovptrMode _movptr_mode;
+  static void initialize_movptr_mode();
   static VM_MODE parse_satp_mode(const char* vm_mode);
 
   // Values from riscv_hwprobe()
@@ -552,7 +557,11 @@ private:
   static bool supports_fast_class_init_checks() { return true; }
   static bool supports_fencei_barrier() { return ext_Zifencei.enabled(); }
 
-static int max_va_bits() {
+  // Fixed during VM initialization. Generation, decoding and patching must
+  // use the same policy, including when checking AOT code cache compatibility.
+  static MovptrMode movptr_mode() { return _movptr_mode; }
+
+  static int max_va_bits() {
     assert(satp_mode.enabled(), "satp mode not initialized yet");
     switch ((int)satp_mode.value()) {
       case VM_SV39: return 39;
