@@ -25,6 +25,9 @@
  * @test
  * @requires jdk.foreign.linker != "FALLBACK"
  * @library ../
+ * @requires (os.name == "Mac OS X")
+ *           | (os.name == "Linux"
+ *               & (os.arch == "amd64" | os.arch == "ppc64" | os.arch == "ppc64le" | os.arch == "riscv64"))
  * @run junit/othervm/native
  *   --enable-native-access=ALL-UNNAMED
  *   TestZeroExtendInt
@@ -56,6 +59,7 @@ public class TestZeroExtendInt extends NativeTestHelper {
         }
     }
 
+    // some platforms (see @requires) require zero-extension of types smaller than int
     @ParameterizedTest
     @MethodSource("cases")
     public void testZeroExtend(MemoryLayout layout, Object input, Object expectedOutput) throws Throwable {
