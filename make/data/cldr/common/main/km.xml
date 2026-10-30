@@ -332,6 +332,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pcm">ភាសាទំនាក់ទំនងនីហ្សេរីយ៉ា</language>
 			<language type="pis">ពីជីន</language>
 			<language type="pl">ប៉ូឡូញ</language>
+			<language type="pms">ភីម៉ន</language>
 			<language type="pqm">ម៉ាលីស៊ីត ប៉ាសាម៉ាខ្វូឌី</language>
 			<language type="prg">ព្រូស៊ាន</language>
 			<language type="ps">បាស្តូ</language>
@@ -892,15 +893,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<keys>
 			<key type="calendar">ប្រតិទិន</key>
 			<key type="cf">ទម្រង់រូបិយប័ណ្ណ</key>
+			<key type="colAlternate">ការតម្រៀបដោយមិនអើពើនឹងនិមិត្តសញ្ញា</key>
+			<key type="colBackwards">ការតម្រៀបតុងបញ្ច្រាស</key>
+			<key type="colCaseFirst">ការតម្រៀបលំដាប់អក្សរធំ/អក្សរតូច</key>
+			<key type="colCaseLevel">ការតម្រៀបដែលបែងចែកអក្សរធំតូច</key>
 			<key type="collation">លំដាប់​តម្រៀប</key>
+			<key type="colNormalization">ការតម្រៀបដែលមានប្រក្រតីកម្ម</key>
+			<key type="colNumeric">ការតម្រៀបលេខ</key>
+			<key type="colReorder">ការតម្រៀបលំដាប់ស្គ្រីប/ប្លុកឡើងវិញ</key>
+			<key type="colStrength">កម្លាំងនៃការតម្រៀប</key>
 			<key type="currency">រូបិយប័ណ្ណ</key>
+			<key type="d0">ទិសដៅបំប្លែង</key>
+			<key type="dx">ការមិនរួមបញ្ចូលការបំបែកតាមវចនានុក្រម</key>
 			<key type="em">រូបរាងរូបអារម្មណ៍</key>
+			<key type="fw">ថ្ងៃដំបូងនៃសប្ដាហ៍</key>
+			<key type="h0">លាយឡំគ្នា</key>
 			<key type="hc">វដ្តម៉ោង (12 vs 24)</key>
+			<key type="i0">វិធីបញ្ចូល</key>
+			<key type="k0">ក្ដារចុច</key>
+			<key type="kv">មិនអើពើនឹងខ្ពស់បំផុត</key>
 			<key type="lb">ការចុះបន្ទាត់ភាសា CJK</key>
 			<key type="lw">ការចុះបន្ទាត់ក្នុងពាក្យ</key>
+			<key type="m0">វិធានបំប្លែង</key>
 			<key type="ms">ប្រព័ន្ធវាស់វែង</key>
+			<key type="mu">ខ្នាតរង្វាស់</key>
 			<key type="numbers">លេខ</key>
-			<key type="ss">ការបំបែកប្រយោគបន្ទាប់ពី Abbr ។</key>
+			<key type="rg">តំបន់សម្រាប់ទិន្នន័យបំពេញបន្ថែម</key>
+			<key type="s0">ប្រភពបំប្លែង</key>
+			<key type="sd">ផ្នែករងតំបន់</key>
+			<key type="ss">ការបំបែកប្រយោគបន្ទាប់ពីអក្សរកាត់</key>
+			<key type="t">បំប្លែង</key>
+			<key type="t0">បកប្រែដោយម៉ាស៊ីន</key>
+			<key type="timezone">ល្វែងម៉ោង</key>
+			<key type="va">វ៉ារ្យ៉ង់ភាសា</key>
+			<key type="x">ប្រើឯកជន</key>
+			<key type="x0">ការបំប្លែងប្រើឯកជន</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">ប្រតិទិនពុទ្ធសាសនា</type>
@@ -919,13 +946,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian" scope="core">ហ្គ្រីហ្គររៀន</type>
 			<type key="calendar" type="hebrew">ប្រតិទិនហេប្រឺ</type>
 			<type key="calendar" type="hebrew" scope="core">ហេប្រឺ</type>
+			<type key="calendar" type="indian" scope="core">ជាតិឥណ្ឌា</type>
 			<type key="calendar" type="islamic">ប្រតិទិនអ៊ីស្លាម</type>
 			<type key="calendar" type="islamic" scope="core">ហ៊ីជ្រី</type>
 			<type key="calendar" type="islamic-civil">ប្រតិទិនអ៊ិស្លាម (តារាង, សម័យស៊ីវិល)</type>
 			<type key="calendar" type="islamic-civil" scope="core">ហ៊ីជ្រី (តាមតារាង, សម័យស៊ីវិល)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">ហ៊ីជ្រី ការមើលព្រះចន្ទនៅអារ៉ាប៊ីសាអូឌីត</type>
+			<type key="calendar" type="islamic-tbla" scope="core">ហ៊ីជ្រី (យុគសម័យតារាសាស្ត្រ តារាង)</type>
 			<type key="calendar" type="islamic-umalqura">ប្រតិទិនអ៊ិស្លាម (អ៊ុំអាល់គូរ៉ា)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">ហ៊ីជ្រី (អ៊ុំអាល់គូរ៉ា)</type>
 			<type key="calendar" type="iso8601">ប្រតិទិនហ្គ្រីហ្គររៀន (ឆ្នាំនៅពីមុខ)</type>
+			<type key="calendar" type="iso8601" scope="core">ហ្គ្រីហ្គររៀន</type>
 			<type key="calendar" type="japanese">ប្រតិទិន​ជប៉ុន</type>
 			<type key="calendar" type="japanese" scope="core">ជប៉ុន</type>
 			<type key="calendar" type="persian">ប្រតិទិនពែក្ស</type>
@@ -936,15 +967,46 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="cf" type="account" scope="core">គណនេយ្យ</type>
 			<type key="cf" type="standard">ទម្រង់រូបិយប័ណ្ណស្តង់ដា</type>
 			<type key="cf" type="standard" scope="core">ស្តង់ដា</type>
+			<type key="colCaseFirst" type="lower" scope="core">អក្សរតូច</type>
+			<type key="colCaseFirst" type="no" scope="core">អក្សរតូច</type>
+			<type key="colCaseFirst" type="upper" scope="core">អក្សរធំ</type>
+			<type key="collation" type="compat" scope="core">ភាពត្រូវគ្នា</type>
+			<type key="collation" type="dictionary" scope="core">វចនានុក្រម</type>
 			<type key="collation" type="ducet">លំដាប់​តម្រៀប​យូនីកូដ​លំនាំដើម</type>
 			<type key="collation" type="ducet" scope="core">យូនីកូដ​លំនាំដើម</type>
+			<type key="collation" type="emoji" scope="core">រូបអារម្មណ៍</type>
+			<type key="collation" type="eor" scope="core">វិធានអឺរ៉ុប</type>
+			<type key="collation" type="phonebook" scope="core">សៀវភៅសូរសព្ទ</type>
+			<type key="collation" type="phonetic" scope="core">សូរសព្ទ</type>
+			<type key="collation" type="pinyin" scope="core">ភីនអ៊ីន</type>
 			<type key="collation" type="search">ការស្វែងរកក្នុងគោលបំណងទូទៅ</type>
 			<type key="collation" type="search" scope="core">ស្វែងរក</type>
+			<type key="collation" type="searchjl" scope="core">ព្យញ្ជនៈដើមកូរ៉េ</type>
 			<type key="collation" type="standard">លំដាប់​តម្រៀប​ស្តង់ដា</type>
 			<type key="collation" type="standard" scope="core">ស្តង់ដា</type>
+			<type key="collation" type="stroke" scope="core">គំនូស</type>
+			<type key="collation" type="traditional" scope="core">ប្រពៃណី</type>
+			<type key="collation" type="unihan" scope="core">គំនូសរ៉ាឌីកាល់</type>
+			<type key="collation" type="zhuyin" scope="core">ជូយីន</type>
+			<type key="colReorder" type="currency" scope="core">រូបិយប័ណ្ណ</type>
+			<type key="colReorder" type="digit" scope="core">លេខ</type>
+			<type key="colReorder" type="punct" scope="core">វណ្ណយុត្ត</type>
+			<type key="colReorder" type="space" scope="core">ចន្លោះទទេ</type>
+			<type key="colReorder" type="symbol" scope="core">និមិត្តសញ្ញា</type>
+			<type key="colStrength" type="identical" scope="core">ទាំងអស់</type>
+			<type key="colStrength" type="primary" scope="core">អក្សរគោលតែប៉ុណ្ណោះ</type>
+			<type key="colStrength" type="quaternary" scope="core">គោល, តុង, ករណី, វ៉ារ្យ៉ង់, កាណា</type>
+			<type key="colStrength" type="secondary" scope="core">គោល, តុង</type>
+			<type key="colStrength" type="tertiary" scope="core">គោល, តុង, ករណី, វ៉ារ្យ៉ង់</type>
+			<type key="d0" type="fwidth">ទៅទទឹងពេញ</type>
+			<type key="d0" type="hwidth">ទៅទទឹងកន្លះ</type>
 			<type key="em" type="default" scope="core">លំនាំដើម</type>
 			<type key="em" type="emoji" scope="core">រូបអារម្មណ៍</type>
 			<type key="em" type="text" scope="core">អក្សរ</type>
+			<type key="hc" type="c12">ប្រព័ន្ធ 12 ម៉ោង</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">ប្រព័ន្ធ 24 ម៉ោង</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">ប្រព័ន្ធ 12 ម៉ោង (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">ប្រព័ន្ធ 12 ម៉ោង (1–12)</type>
@@ -953,6 +1015,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">ប្រព័ន្ធ 24 ម៉ោង (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Shift Spaces, វណ្ណយុត្ត, និមិត្តសញ្ញាទាំងអស់</type>
+			<type key="kv" type="punct" scope="core">Shift spaces, វណ្ណយុត្ត</type>
+			<type key="kv" type="space" scope="core">Shift spaces, វណ្ណយុត្ត</type>
+			<type key="kv" type="symbol" scope="core">Shift spaces, វណ្ណយុត្ត, និមិត្តសញ្ញាមិនមែនរូបិយប័ណ្ណ</type>
 			<type key="lb" type="loose">បែបបទចុះបន្ទាត់ធូររលុង</type>
 			<type key="lb" type="loose" scope="core">ធូររលុង</type>
 			<type key="lb" type="normal">បែបបទចុះបន្ទាត់ធម្មតា</type>
@@ -963,6 +1029,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="lw" type="keepall" scope="core">រក្សាទាំងអស់</type>
 			<type key="lw" type="normal" scope="core">ធម្មតា</type>
 			<type key="lw" type="phrase" scope="core">រក្សាក្នុងឃ្លា</type>
+			<type key="m0" type="bgn">ការបកប្រែតាមសូរសព្ទដើម US BGN</type>
+			<type key="m0" type="ungegn">ការបកប្រែតាមសូរសព្ទដើម UN GEGN</type>
 			<type key="ms" type="metric">ប្រព័ន្ធម៉ែត្រ</type>
 			<type key="ms" type="metric" scope="core">ម៉ែត្រ</type>
 			<type key="ms" type="uksystem">ប្រព័ន្ធរង្វាស់អង់គ្លេស</type>
@@ -971,47 +1039,82 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="ussystem" scope="core">សហរដ្ឋអាម៉េរិក</type>
 			<type key="numbers" type="arab">លេខ​ឥណ្ឌា-អារ៉ាប់</type>
 			<type key="numbers" type="arabext">លេខ​ឥណ្ឌា-អារ៉ាប់​ពង្រីក</type>
+			<type key="numbers" type="arabext" scope="core">ឥណ្ឌា-អារ៉ាប់​ពង្រីក</type>
 			<type key="numbers" type="armn">លេខ​អាមេនី</type>
 			<type key="numbers" type="armnlow">លេខ​តូច​អាមេនី</type>
+			<type key="numbers" type="armnlow" scope="core">អក្សរតូចអាមេនី</type>
 			<type key="numbers" type="beng">លេខ​បង់ក្លា</type>
 			<type key="numbers" type="cakm">លេខចាក់ម៉ា</type>
 			<type key="numbers" type="deva">លេខ​ឌីវ៉ាណាការី</type>
 			<type key="numbers" type="ethi">លេខ​អេត្យូពី</type>
+			<type key="numbers" type="finance" scope="core">ហិរញ្ញវត្ថុ</type>
 			<type key="numbers" type="fullwide">លេខ​ទទឹង​ពេញ</type>
+			<type key="numbers" type="fullwide" scope="core">ទទឹងពេញ</type>
 			<type key="numbers" type="geor">លេខ​ហ្សកហ្សី</type>
 			<type key="numbers" type="grek">លេខ​ក្រិក</type>
 			<type key="numbers" type="greklow">លេខ​តូច​ក្រិក</type>
+			<type key="numbers" type="greklow" scope="core">អក្សរតូចក្រិក</type>
 			<type key="numbers" type="gujr">លេខ​ហ្កុយ៉ារាទី</type>
 			<type key="numbers" type="guru">លេខ​កុមុឃី</type>
+			<type key="numbers" type="hanidays" scope="core">ការបង់លេខថ្ងៃនៃខែដោយប្រើអក្សរហានសម្រាប់ប្រតិទិនប្រពៃណី</type>
 			<type key="numbers" type="hanidec">លេខ​ទសភាគ​ចិន</type>
+			<type key="numbers" type="hanidec" scope="core">ប្រព័ន្ធទសភាគផ្អែកតាមទីតាំងដែលប្រើនិមិត្តសញ្ញាតំណាងលេខចិនជាលេខ</type>
 			<type key="numbers" type="hans">លេខ​ចិន​អក្សរ​កាត់</type>
 			<type key="numbers" type="hansfin">លេខ​ហិរញ្ញវត្ថុ​ចិន​អក្សរ​កាត់</type>
+			<type key="numbers" type="hansfin" scope="core">ហិរញ្ញវត្ថុជាភាសាចិនអក្សរកាត់</type>
 			<type key="numbers" type="hant">លេខ​ចិន​អក្សរ​ពេញ</type>
 			<type key="numbers" type="hantfin">លេខ​ហិរញ្ញវត្ថុ​ចិន​អក្សរ​ពេញ</type>
+			<type key="numbers" type="hantfin" scope="core">ហិរញ្ញវត្ថុជាភាសាចិនអក្សរពេញ</type>
 			<type key="numbers" type="hebr">លេខហេប្រឺ</type>
 			<type key="numbers" type="java">លេខជ្វា</type>
 			<type key="numbers" type="jpan">លេខ​ជប៉ុន</type>
 			<type key="numbers" type="jpanfin">លេខ​ហិរញ្ញវត្ថុ​ជប៉ុន</type>
+			<type key="numbers" type="jpanfin" scope="core">ហិរញ្ញវត្ថុជប៉ុន</type>
+			<type key="numbers" type="jpanyear" scope="core">ការបង់លេខហ្កាននេនឆ្នាំដំបូងជប៉ុន</type>
 			<type key="numbers" type="khmr">លេខ​ខ្មែរ</type>
 			<type key="numbers" type="knda">លេខខាណាដា</type>
+			<type key="numbers" type="lanatham" scope="core">តៃថាមថាម (ប្រើក្នុងសាសនាគ្រិស្ត)</type>
 			<type key="numbers" type="laoo">លេខ​ឡាវ</type>
-			<type key="numbers" type="latn">លេខ​បច្ចឹម​ប្រទេស</type>
-			<type key="numbers" type="mlym">លេខ​មលយាល័ម</type>
+			<type key="numbers" type="latn">លេខ​បស្ចិម​ប្រទេស</type>
+			<type key="numbers" type="mathbold" scope="core">ដិតគណិត</type>
+			<type key="numbers" type="mathdbl" scope="core">ពីរឆ្នូតគណិត</type>
+			<type key="numbers" type="mathmono" scope="core">ឯកទំហំគណិត</type>
+			<type key="numbers" type="mathsanb" scope="core">ដិត sans-serif គណិត</type>
+			<type key="numbers" type="mathsans" scope="core">sans-serif គណិត</type>
+			<type key="numbers" type="mlym">លេខ​ម៉ាឡាយ៉ាឡាម</type>
 			<type key="numbers" type="mtei">លេខមីតីម៉ាយ៉ែក</type>
-			<type key="numbers" type="mymr">លេខ​ភូមា</type>
+			<type key="numbers" type="mymr">លេខ​មីយ៉ាន់ម៉ា</type>
+			<type key="numbers" type="mymrepka" scope="core">ភូការ៉ែនបូព៌ាមីយ៉ាន់ម៉ា</type>
+			<type key="numbers" type="mymrpao" scope="core">ប៉ាវមីយ៉ាន់ម៉ា</type>
+			<type key="numbers" type="mymrshan" scope="core">សានមីយ៉ាន់ម៉ា</type>
+			<type key="numbers" type="mymrtlng" scope="core">តៃលាំងមីយ៉ាន់ម៉ា</type>
+			<type key="numbers" type="native">លេខដើម</type>
+			<type key="numbers" type="native" scope="core">លេខដើម</type>
 			<type key="numbers" type="olck">លេខអូលឈិគិ</type>
 			<type key="numbers" type="orya">លេខអូឌៀ</type>
-			<type key="numbers" type="roman">លេខ​រ៉ូមាំង</type>
+			<type key="numbers" type="outlined" scope="core">បន្ទាត់ក្រៅ</type>
+			<type key="numbers" type="roman">លេខ​រ៉ូម៉ាំង</type>
+			<type key="numbers" type="roman" scope="core">អក្សរធំ​រ៉ូម៉ាំង</type>
 			<type key="numbers" type="romanlow">លេខ​តូច​រ៉ូមាំង</type>
-			<type key="numbers" type="taml">លេខ​តាមីល</type>
+			<type key="numbers" type="romanlow" scope="core">អក្សរតូច​រ៉ូម៉ាំង</type>
+			<type key="numbers" type="segment" scope="core">ជាផ្នែក</type>
+			<type key="numbers" type="taml">លេខ​តាមីលប្រពៃណី</type>
 			<type key="numbers" type="tamldec">លេខ​តាមីល</type>
+			<type key="numbers" type="tamldec" scope="core">តាមីលទំនើប</type>
 			<type key="numbers" type="telu">លេខ​តេលុគុ</type>
 			<type key="numbers" type="thai">លេខ​ថៃ</type>
 			<type key="numbers" type="tibt">លេខទីបេ</type>
+			<type key="numbers" type="traditional" scope="core">លេខប្រពៃណី</type>
 			<type key="numbers" type="vaii">លេខវ៉ៃ</type>
 			<type key="ss" type="none" scope="core">បិទ</type>
 			<type key="ss" type="standard" scope="core">បើក</type>
+			<type key="t0" type="und">ការបកប្រែដោយម៉ាស៊ីនដែលមិនបានបញ្ជាក់</type>
+			<type key="va" type="posix" scope="core">វ៉ារ្យ៉ង់ POSIX</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">បិទ</typeValue>
+			<typeValue type="yes">បើក</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">រង្វាស់​ប្រវែង</measurementSystemName>
 			<measurementSystemName type="UK">ចក្រភព​អង់គ្លេស</measurementSystemName>
@@ -1065,7 +1168,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
 							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
@@ -1076,7 +1179,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
 							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
@@ -1087,7 +1190,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
@@ -1098,7 +1201,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
@@ -1108,13 +1211,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyM">M/y G</dateFormatItem>
 						<dateFormatItem id="GyMEd">E d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
 						<dateFormatItem id="Hv">HH v</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E d/M</dateFormatItem>
@@ -1128,7 +1231,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyMEd">E d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
@@ -1217,6 +1321,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
 							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d – d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y – y G</greatestDifference>
@@ -1439,6 +1547,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -1481,16 +1592,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyM">M/y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMEd">E d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
-						<dateFormatItem id="Hv">HH v</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E d MMMM y G</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E d/M</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">សប្តាហ៍ទី W នៃខែ MMMM</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
@@ -1499,6 +1614,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E d MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">សប្តាហ៍ទី w នៃឆ្នាំ Y</dateFormatItem>
@@ -1602,6 +1719,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
 							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d – d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y – y</greatestDifference>
@@ -1860,7 +1981,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</fields>
 		<timeZoneNames>
 			<gmtFormat>ម៉ោង​សកល {0}</gmtFormat>
-			<gmtZeroFormat>ម៉ោង​សកល</gmtZeroFormat>
 			<regionFormat>ម៉ោង​នៅ​ {0}</regionFormat>
 			<regionFormat type="daylight">ម៉ោង​ពេល​ថ្ងៃ​នៅ​ {0}</regionFormat>
 			<regionFormat type="standard">ម៉ោង​ស្តង់ដារ​នៅ ​{0}</regionFormat>
@@ -1885,7 +2005,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>កាប៊ុល</exemplarCity>
 			</zone>
 			<zone type="America/Antigua">
-				<exemplarCity>អង់ទីហ្គា</exemplarCity>
+				<exemplarCity>អង់ទីហ្កា</exemplarCity>
 			</zone>
 			<zone type="America/Anguilla">
 				<exemplarCity>អង់ហ្គីឡា</exemplarCity>
@@ -2008,7 +2128,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ឡតហូវ៉េ</exemplarCity>
 			</zone>
 			<zone type="America/Aruba">
-				<exemplarCity>អារ៉ូបា</exemplarCity>
+				<exemplarCity>អារូបា</exemplarCity>
 			</zone>
 			<zone type="Europe/Mariehamn">
 				<exemplarCity>ម៉ារៀហាំ</exemplarCity>
@@ -2341,9 +2461,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>លីប្រីវីល</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​​នៅ​ចក្រភព​អង់គ្លេស</daylight>
-				</long>
 				<exemplarCity>ឡុងដ៍</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2434,9 +2551,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ចាយ៉ាភូរ៉ា</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​អៀរឡង់​</daylight>
-				</long>
 				<exemplarCity>ឌុយប្លាំង</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -3004,7 +3118,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ណូម</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
-				<exemplarCity>អង់ចូរ៉ាក</exemplarCity>
+				<exemplarCity>អង់ឃើរេច</exemplarCity>
 			</zone>
 			<zone type="America/Yakutat">
 				<exemplarCity>យ៉ាគូតាត</exemplarCity>
@@ -3132,6 +3246,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Harare">
 				<exemplarCity>ហារ៉ារ៉េ</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>ម៉ោងនៅអាក្រឺ</generic>
+					<standard>ម៉ោងស្តង់ដានៅអាក្រឺ</standard>
+					<daylight>ម៉ោងនារដូវក្ដៅនៅអាក្រឺ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>ម៉ោង​នៅ​អាហ្វហ្គានីស្ថាន</standard>
@@ -3167,8 +3288,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Amazon">
 				<long>
 					<generic>ម៉ោង​នៅ​អាម៉ាហ្សូន</generic>
-					<standard>ម៉ោងស្តង់ដារ​នៅ​អាម៉ាហ្សូន</standard>
-					<daylight>ម៉ោង​នៅ​អាម៉ាហ្សូននារដូវក្តៅ</daylight>
+					<standard>ម៉ោងស្តង់ដានៅ​អាម៉ាហ្សូន</standard>
+					<daylight>ម៉ោង​នារដូវក្តៅនៅ​អាម៉ាហ្សូន</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Central">
@@ -3305,6 +3426,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ម៉ោង​នៅ​ប្រាស៊ីលីយ៉ា</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​ប្រាស៊ីលីយ៉ា</standard>
 					<daylight>ម៉ោង​នៅ​ប្រាស៊ីលីយ៉ានា​​រដូវ​ក្ដៅ</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>ម៉ោងអង់គ្លេស</generic>
+					<daylight>ម៉ោង​រដូវ​ក្ដៅ​​នៅ​ចក្រភព​អង់គ្លេស</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3480,18 +3607,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>ម៉ោងនៅគ្រីនវិច</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>ម៉ោងនៅហ្គ្រោអង់ឡង់</generic>
+					<standard>ម៉ោងស្តង់ដានៅហ្គ្រោអង់ឡង់</standard>
+					<daylight>ម៉ោងនារដូវក្ដៅនៅហ្គ្រោអង់ឡង់</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
-					<generic>ម៉ោង​​នៅ​ហ្គ្រីនលែន​ខាង​កើត</generic>
-					<standard>ម៉ោង​​​ស្តង់ដារ​នៅ​​ហ្គ្រីនលែន​ខាង​កើត</standard>
-					<daylight>ម៉ោង​នៅ​ហ្គ្រីនលែនខាង​កើតនា​រដូវ​ក្ដៅ</daylight>
+					<generic>ម៉ោង​​នៅ​ហ្គ្រោអង់ឡង់​ខាង​កើត</generic>
+					<standard>ម៉ោង​​​ស្តង់ដានៅហ្គ្រោអង់ឡង់​ខាង​កើត</standard>
+					<daylight>ម៉ោង​នារដូវក្ដៅនៅ​ហ្គ្រោអង់ឡង់ខាង​កើត</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
-					<generic>ម៉ោងនៅហ្គ្រីនលែនខាងលិច</generic>
-					<standard>ម៉ោងស្តង់ដារនៅហ្គ្រីនលែនខាងលិច</standard>
-					<daylight>ម៉ោងនៅហ្គ្រីនលែនខាងលិចនារដូវក្តៅ</daylight>
+					<generic>ម៉ោងនៅហ្គ្រោអង់ឡង់ខាងលិច</generic>
+					<standard>ម៉ោងស្តង់ដានៅហ្គ្រោអង់ឡង់ខាងលិច</standard>
+					<daylight>ម៉ោង​នារដូវក្ដៅនៅ​ហ្គ្រោអង់ឡង់ខាង​លិច</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gulf">
@@ -3506,14 +3640,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>ម៉ោង​ស្តង់ដារ​​នៅ​ហាវៃ-អាល់ដ្យូសិន</standard>
+					<standard>ម៉ោងនៅហាវ៉ៃ</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic>ម៉ោង​​នៅ​ហាវៃ-អាល់ដ្យូសិន</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​​នៅ​ហាវៃ-អាល់ដ្យូសិន</standard>
-					<daylight>ម៉ោង​ពេល​ថ្ងៃ​នៅ​ហាវៃ-អាល់ដ្យូសិន</daylight>
+					<generic>ម៉ោងនៅហាវ៉ៃ-អាលូសិន</generic>
+					<standard>ម៉ោងស្តង់ដានៅហាវ៉ៃ-អាលូសិន</standard>
+					<daylight>ម៉ោងពេលថ្ងៃនៅហាវ៉ៃ-អាលូសិន</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
@@ -3567,6 +3701,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ម៉ោង​ពេល​ថ្ងៃ​នៅ​អ៊ីរ៉ង់</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>ម៉ោងអៀរឡង់</generic>
+					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​អៀរឡង់​</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>ម៉ោងនៅអៀរគុតស្កិ៍</generic>
@@ -3586,6 +3726,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ម៉ោង​នៅ​ជប៉ុន</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​ជប៉ុន</standard>
 					<daylight>ម៉ោង​ពេល​ថ្ងៃ​នៅជប៉ុន</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>ម៉ោងនៅកាំឆាត់ស្កា</generic>
+					<standard>ម៉ោងស្តង់ដានៅកាំឆាត់ស្កា</standard>
+					<daylight>ម៉ោងនារដូវក្ដៅនៅកាំឆាត់ស្កា</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -3731,7 +3878,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Newfoundland">
 				<long>
 					<generic>ម៉ោង​​នៅញូវហ្វោនឡែន</generic>
-					<standard>ម៉ោង​​ស្តង់ដារ​​នៅ​ញូវហ្វោនឡែន</standard>
+					<standard>ម៉ោង​​ស្តង់ដា​នៅ​ញូវហ្វោនឡែន</standard>
 					<daylight>ម៉ោង​ពេលថ្ងៃ​នៅ​ញូវហ្វោនឡែន</daylight>
 				</long>
 			</metazone>
@@ -3813,9 +3960,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
-					<generic>ម៉ោង​​​នៅសង់​ព្យែរ និង​មីគុយឡុង</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​នៅសង់​ព្យែរ និង​មីគុយឡុង</standard>
-					<daylight>ម៉ោង​ពេល​ថ្ងៃ​នៅសង់​ព្យែរ និង​មីគុយឡុង</daylight>
+					<generic>ម៉ោង​​​នៅសាំងព្យែរ និង​មីគីឡុង</generic>
+					<standard>ម៉ោង​ស្តង់ដា​នៅសាំងព្យែរ និង​មីគីឡុង</standard>
+					<daylight>ម៉ោង​ពេល​ថ្ងៃ​នៅសាំងព្យែរ និង​មីគីឡុង</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pitcairn">
@@ -3850,11 +3997,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ម៉ោង​នៅ​សាក់ខាលីននា​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>ម៉ោងនៅសាម៉ារ៉ា</generic>
+					<standard>ម៉ោងស្តង់ដានៅសាម៉ារ៉ា</standard>
+					<daylight>ម៉ោងនារដូវក្ដៅនៅសាម៉ារ៉ា</daylight>
+				</long>
+			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>ម៉ោង​នៅ​សាម័រ</generic>
 					<standard>ម៉ោង​ស្តង់ដារនៅ​សាម័រ</standard>
-					<daylight>ម៉ោង​នៅ​សាម័រនារដូវក្តៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3921,6 +4073,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>ម៉ោង​នៅ​ចូអុក</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>ម៉ោងនៅតួកគីយេ</generic>
+					<standard>ម៉ោងស្តង់ដានៅតួកគីយេ</standard>
+					<daylight>ម៉ោងនារដូវក្ដៅនៅតួកគីយេ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>ម៉ោង​នៅ​តួកម៉េនីស្ថាន</generic>
@@ -3938,6 +4097,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ម៉ោង​នៅ​អ៊ុយរូហ្គាយ</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​អ៊ុយរូហ្គាយ</standard>
 					<daylight>ម៉ោង​នៅ​អ៊ុយរូហ្គាយនា​​រដូវ​ក្ដៅ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>ម៉ោងនៅអ៊ីរឹមឈិ</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -4580,7 +4744,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName>ហ្គីលឌ័រការីបៀន</displayName>
-				<displayName count="other">ហ្គីលឌ័រការីបៀន</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>ហ្វ្រង់ CFA អាហ្វ្រិកខាងលិច</displayName>
@@ -4606,7 +4769,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName>ហ្កូលស៊ីមបាវ៉េ</displayName>
-				<displayName count="other">ហ្កូលស៊ីមបាវ៉េ</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">

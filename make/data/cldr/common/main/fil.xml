@@ -102,6 +102,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="dar">Dargwa</language>
 			<language type="dav">Taita</language>
 			<language type="de">German</language>
+			<language type="de_AT">Austrian German</language>
+			<language type="de_CH">Swiss High German</language>
 			<language type="dgr">Dogrib</language>
 			<language type="dje">Zarma</language>
 			<language type="doi">Dogri</language>
@@ -116,10 +118,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="efi">Efik</language>
 			<language type="eka">Ekajuk</language>
 			<language type="el">Greek</language>
-			<language type="en">Ingles</language>
+			<language type="en">English</language>
+			<language type="en_AU">Australian English</language>
+			<language type="en_CA">Canadian English</language>
+			<language type="en_GB">British English</language>
 			<language type="en_GB" alt="short">Ingles sa UK</language>
-			<language type="en_US">Ingles (American)</language>
-			<language type="en_US" alt="short">Ingles sa US</language>
+			<language type="en_US">American English</language>
+			<language type="en_US" alt="short">US English</language>
 			<language type="eo">Esperanto</language>
 			<language type="es">Spanish</language>
 			<language type="es_419">Latin American na Espanyol</language>
@@ -130,13 +135,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ewo">Ewondo</language>
 			<language type="fa">Persian</language>
 			<language type="fa_AF">Dari</language>
-			<language type="ff">Fulah</language>
+			<language type="ff">Fula</language>
 			<language type="fi">Finnish</language>
 			<language type="fil">Filipino</language>
 			<language type="fj">Fijian</language>
 			<language type="fo">Faroese</language>
 			<language type="fon">Fon</language>
 			<language type="fr">French</language>
+			<language type="fr_CA">Canadian French</language>
+			<language type="fr_CH">Swiss French</language>
 			<language type="frc">Cajun French</language>
 			<language type="frr">Hilagang Frisian</language>
 			<language type="fur">Friulian</language>
@@ -336,6 +343,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pcm">Nigerian Pidgin</language>
 			<language type="pis">Pijin</language>
 			<language type="pl">Polish</language>
+			<language type="pms">Piedmontese</language>
 			<language type="pqm">Maliseet-Passamaquoddy</language>
 			<language type="prg">Prussian</language>
 			<language type="ps">Pashto</language>
@@ -472,9 +480,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zgh">Standard Moroccan Tamazight</language>
 			<language type="zh">Chinese</language>
 			<language type="zh" alt="menu">Chinese, Mandarin</language>
-			<language type="zh_Hans">Pinasimpleng Chinese</language>
-			<language type="zh_Hans" alt="long">Pinasimpleng Mandarin Chinese</language>
-			<language type="zh_Hant">Tradisyonal na Chinese</language>
+			<language type="zh_Hans">Simplified Chinese</language>
+			<language type="zh_Hans" alt="long">Simplified Mandarin Chinese</language>
+			<language type="zh_Hant">Traditional Chinese</language>
 			<language type="zh_Hant" alt="long">Tradisyonal na Mandarin Chinese</language>
 			<language type="zu">Zulu</language>
 			<language type="zun">Zuni</language>
@@ -866,24 +874,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="calendar">Kalendaryo</key>
 			<key type="cf">Format ng Pera</key>
 			<key type="colAlternate">Pag-uuri-uri ng Mga Ignore Symbol</key>
-			<key type="colBackwards">Pag-uuri-uri ng Baliktad na Accent</key>
-			<key type="colCaseFirst">Uppercase/Lowercase na Pagsusunud-sunod</key>
+			<key type="colBackwards">Reversed Accent na Pag-uuri</key>
+			<key type="colCaseFirst">Uppercase/Lowercase na Pagsusunod-sunod</key>
 			<key type="colCaseLevel">Case Sensitive na Pag-uuri-uri</key>
 			<key type="collation">Pagkakasunud-sunod ng Ayos</key>
 			<key type="colNormalization">Normalized na Pag-uuri-uri</key>
 			<key type="colNumeric">Numeric na Pag-uuri-uri</key>
+			<key type="colReorder">Script/Block na Pag-reorder</key>
 			<key type="colStrength">Lakas ng Pag-uuri-uri</key>
 			<key type="currency">Pera</key>
+			<key type="d0">Transform Destination</key>
+			<key type="dx">Mga Dictionary Break Exclusion</key>
 			<key type="em">Presentation ng Emoji</key>
+			<key type="fw">Unang araw ng linggo</key>
+			<key type="h0">Mixed-in</key>
 			<key type="hc">Siklo ng Oras (12 laban sa 24)</key>
+			<key type="i0">Paraan ng Pag-input</key>
+			<key type="k0">Keyboard</key>
+			<key type="kv">Balewalain ang Pinakamataas</key>
 			<key type="lb">CJK na Line Break</key>
 			<key type="lw">Mga Line Break sa Mga Salita</key>
+			<key type="m0">Mga Transform Rule</key>
 			<key type="ms">Sistema ng Pagsukat</key>
+			<key type="mu">Unit ng Pagsukat</key>
 			<key type="numbers">Mga Numero</key>
+			<key type="rg">Rehiyon para sa Karagdagang Data</key>
+			<key type="s0">Transform Source</key>
+			<key type="sd">Subdivision ng Rehiyon</key>
 			<key type="ss">Sentence Break Pagkatapos ng Abbr.</key>
+			<key type="t">Transform</key>
+			<key type="t0">Machine Translated</key>
 			<key type="timezone">Time Zone</key>
 			<key type="va">Lokal na Variant</key>
 			<key type="x">Pribadong Paggamit</key>
+			<key type="x0">Private-Use Transform</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Kalendaryo ng Buddhist</type>
@@ -896,27 +920,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="dangi" scope="core">Dangi</type>
 			<type key="calendar" type="ethiopic">Kalendaryo ng Ethiopia</type>
 			<type key="calendar" type="ethiopic" scope="core">Ethiopic</type>
-			<type key="calendar" type="ethiopic-amete-alem">Kalendaryong Ethiopic Amete Alem</type>
+			<type key="calendar" type="ethiopic-amete-alem">Ethiopic Amete Alem Calendar</type>
 			<type key="calendar" type="ethiopic-amete-alem" scope="core">Ethiopic Amete Alem</type>
-			<type key="calendar" type="gregorian">Gregorian na Kalendaryo</type>
+			<type key="calendar" type="gregorian">Gregorian Calendar</type>
 			<type key="calendar" type="gregorian" scope="core">Gregorian</type>
-			<type key="calendar" type="hebrew">Hebrew na Kalendaryo</type>
+			<type key="calendar" type="hebrew">Hebrew Calendar</type>
 			<type key="calendar" type="hebrew" scope="core">Hebrew</type>
 			<type key="calendar" type="indian">Pambansang Kalendaryong Indian</type>
-			<type key="calendar" type="islamic">Kalendaryong Hijiri</type>
+			<type key="calendar" type="indian" scope="core">Indian National</type>
+			<type key="calendar" type="islamic">Hijri Calendar</type>
 			<type key="calendar" type="islamic" scope="core">Hijri</type>
-			<type key="calendar" type="islamic-civil">Kalendaryong Hijri (tabular, Civil epoch)</type>
+			<type key="calendar" type="islamic-civil">Hijri Calendar (tabular, civil epoch)</type>
 			<type key="calendar" type="islamic-civil" scope="core">Hijri (tabular, civil epoch)</type>
 			<type key="calendar" type="islamic-rgsa" draft="contributed">Kalendaryong Islamiko (Saudi Arabia, sighting)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">Hijri, Saudi Arabia sighting</type>
 			<type key="calendar" type="islamic-tbla" draft="contributed">Kalendaryong Islamiko (tabular, astronomikal na epoch)</type>
-			<type key="calendar" type="islamic-umalqura">Kalendaryong Hijri (Umm al-Qura)</type>
+			<type key="calendar" type="islamic-tbla" scope="core">Hijri (tabular, astronomical epoch)</type>
+			<type key="calendar" type="islamic-umalqura">Hijri Calendar (Umm al-Qura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">Hijri (Umm al-Qura)</type>
-			<type key="calendar" type="iso8601">Kalendaryong Gregorian (Unang Taon)</type>
-			<type key="calendar" type="japanese">Kalendaryong Japanese</type>
+			<type key="calendar" type="iso8601">Gregorian Calendar (ISO 8601 Weeks)</type>
+			<type key="calendar" type="iso8601" scope="core">Gregorian</type>
+			<type key="calendar" type="japanese">Japanese Calendar</type>
 			<type key="calendar" type="japanese" scope="core">Japanese</type>
-			<type key="calendar" type="persian">Kalendaryong Persian</type>
+			<type key="calendar" type="persian">Persian Calendar</type>
 			<type key="calendar" type="persian" scope="core">Persian</type>
-			<type key="calendar" type="roc">Kalendaryong Minguo</type>
+			<type key="calendar" type="roc">Minguo Calendar</type>
 			<type key="calendar" type="roc" scope="core">Minguo</type>
 			<type key="cf" type="account">Format ng Pera sa Accounting</type>
 			<type key="cf" type="account" scope="core">Accounting</type>
@@ -927,43 +955,72 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colBackwards" type="no">Pag-uri-uriin ang Mga Accent nang Normal</type>
 			<type key="colBackwards" type="yes">Pag-uri-uriin ang Mga Accent nang Baliktad</type>
 			<type key="colCaseFirst" type="lower">Lowercase Muna ang Pag-uri-uriin</type>
+			<type key="colCaseFirst" type="lower" scope="core">Lowercase</type>
 			<type key="colCaseFirst" type="no">Pag-uri-uriin ang Ayos ng Normal na Case</type>
+			<type key="colCaseFirst" type="no" scope="core">Lowercase</type>
 			<type key="colCaseFirst" type="upper">Uppercase Muna ang Pag-uri-uriin</type>
+			<type key="colCaseFirst" type="upper" scope="core">Uppercase</type>
 			<type key="colCaseLevel" type="no">Pag-uri-uriin ang Hindi Case Sensitive</type>
 			<type key="colCaseLevel" type="yes">Pag-uri-uriin ang Case Sensitive</type>
 			<type key="collation" type="compat" draft="contributed">Nakaraang Pagkakasunud-sunod ng Pag-uuri, para sa compatibility</type>
+			<type key="collation" type="compat" scope="core">Compatibility</type>
 			<type key="collation" type="dictionary">Pagkakasunud-sunod ng Pag-uuri ng Diksyunaryo</type>
+			<type key="collation" type="dictionary" scope="core">Dictionary</type>
 			<type key="collation" type="ducet">Default na Pagkakasunud-sunod ng Ayos ng Unicode</type>
 			<type key="collation" type="ducet" scope="core">Default na Unicode</type>
 			<type key="collation" type="emoji" draft="contributed">Pagkakasunud-sunod ng Pag-uuri ng Emoji</type>
+			<type key="collation" type="emoji" scope="core">Emoji</type>
 			<type key="collation" type="eor" draft="contributed">Mga Tuntunin ng European na Pagkakasunud-sunod</type>
+			<type key="collation" type="eor" scope="core">Mga panuntunan sa Europe</type>
 			<type key="collation" type="phonebook">Pagkakasunud-sunod ng Pag-uuri ng Phonebook</type>
+			<type key="collation" type="phonebook" scope="core">Phonebook</type>
 			<type key="collation" type="phonetic">Phonetic na Ayos ng Pag-uuri-uri</type>
+			<type key="collation" type="phonetic" scope="core">Phonetic</type>
 			<type key="collation" type="pinyin">Pagkakasunud-sunod ng Pag-uuri ng Pinyin</type>
+			<type key="collation" type="pinyin" scope="core">Pinyin</type>
 			<type key="collation" type="search">Pangkalahatang Paghahanap</type>
 			<type key="collation" type="search" scope="core">Maghanap</type>
 			<type key="collation" type="searchjl">Maghanap Ayon sa Unang Katinig ng Hangul</type>
+			<type key="collation" type="searchjl" scope="core">Korean initial consonant</type>
 			<type key="collation" type="standard">Karaniwang Pagkakasunud-sunod ng Ayos</type>
 			<type key="collation" type="standard" scope="core">Karaniwan</type>
 			<type key="collation" type="stroke">Pagkakasunud-sunod ng Pag-uuri ng Stroke</type>
+			<type key="collation" type="stroke" scope="core">Stroke</type>
 			<type key="collation" type="traditional">Tradisyunal na Pagkakasunud-sunod ng Pag-uuri</type>
+			<type key="collation" type="traditional" scope="core">Traditional</type>
 			<type key="collation" type="unihan">Pagkakasunud-sunod ng Pag-uuri ng Radical-Stroke</type>
+			<type key="collation" type="unihan" scope="core">Radical-Stroke</type>
 			<type key="collation" type="zhuyin" draft="contributed">Zhuyin na Pagkakasunud-sunod ng Pag-uuri</type>
+			<type key="collation" type="zhuyin" scope="core">Zhuyin</type>
 			<type key="colNormalization" type="no">Pag-uri-uriin nang Walang Pag-normalize</type>
 			<type key="colNormalization" type="yes">Pag-uri-uriin ang Unicode nang Normalized</type>
 			<type key="colNumeric" type="no">Pag-uri-uriin ang Mga Digit nang Indibidwal</type>
 			<type key="colNumeric" type="yes">Pag-uri-uriin ang Mga Digit nang Numerical</type>
+			<type key="colReorder" type="currency" scope="core">Currency</type>
+			<type key="colReorder" type="digit" scope="core">Mga Digit</type>
+			<type key="colReorder" type="punct" scope="core">Bantas</type>
+			<type key="colReorder" type="space" scope="core">Whitespace</type>
+			<type key="colReorder" type="symbol" scope="core">Simbolo</type>
 			<type key="colStrength" type="identical">Pag-uri-uriin Lahat</type>
+			<type key="colStrength" type="identical" scope="core">Lahat</type>
 			<type key="colStrength" type="primary">Mga Base na Titik Lang ang Pag-uri-uriin</type>
+			<type key="colStrength" type="primary" scope="core">Mga Base na Titik Lang</type>
 			<type key="colStrength" type="quaternary">Pag-uri-uriin ang Mga Accent/Case/Lapad/Kana</type>
+			<type key="colStrength" type="quaternary" scope="core">Base, Mga Accent, Case, Mga Variant, Kana</type>
 			<type key="colStrength" type="secondary">Pag-uri-uriin ang Mga Accent</type>
+			<type key="colStrength" type="secondary" scope="core">Base, Mga Accent</type>
 			<type key="colStrength" type="tertiary">Pag-uri-uriin ang Mga Accent/Case/Lapad</type>
+			<type key="colStrength" type="tertiary" scope="core">Base, Mga Accent, Case, Mga Variant</type>
 			<type key="d0" type="fwidth">Hanggang sa Fullwidth</type>
 			<type key="d0" type="hwidth">Hanggang sa Halfwidth</type>
 			<type key="d0" type="npinyin">Numeric</type>
 			<type key="em" type="default" scope="core">Default</type>
 			<type key="em" type="emoji" scope="core">Emoji</type>
 			<type key="em" type="text" scope="core">Text</type>
+			<type key="hc" type="c12">12 Oras na Sistema</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24 na Oras na Sistema</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12 Oras na Sistema (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 Oras na Sistema (1–12)</type>
@@ -972,6 +1029,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 na Oras na Sistema (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">I-shift ang mga Space, bantas, lahat ng simbolo</type>
+			<type key="kv" type="punct" scope="core">I-shift ang mga space, bantas</type>
+			<type key="kv" type="space" scope="core">I-shift ang mga Space, bantas</type>
+			<type key="kv" type="symbol" scope="core">I-shift ang mga Space, bantas, hindi currency na simbolo</type>
 			<type key="lb" type="loose">Loose na Istilo ng Line Break</type>
 			<type key="lb" type="loose" scope="core">Loose</type>
 			<type key="lb" type="normal">Normal na Istilo ng Line Break</type>
@@ -993,8 +1054,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="ahom" draft="contributed">Ahom na mga Digit</type>
 			<type key="numbers" type="arab">Arabic-Indic na Mga Digit</type>
 			<type key="numbers" type="arabext">Extendend Arabic-Indic na Mga Digit</type>
+			<type key="numbers" type="arabext" scope="core">Extended Arabic-Indic</type>
 			<type key="numbers" type="armn">Mga Armenian Numeral</type>
 			<type key="numbers" type="armnlow">Armenian Lowercase Numerals</type>
+			<type key="numbers" type="armnlow" scope="core">Armenian lowercase</type>
 			<type key="numbers" type="bali" draft="contributed">Balinese na Mga Digit</type>
 			<type key="numbers" type="beng">Mga Bengali Digit</type>
 			<type key="numbers" type="brah" draft="contributed">Brahmi na Mga Digit</type>
@@ -1004,61 +1067,93 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="deva">Mga Devanagari Digit</type>
 			<type key="numbers" type="ethi">Mga Ethiopic Numeral</type>
 			<type key="numbers" type="finance">Mga Pampinansyang Numeral</type>
+			<type key="numbers" type="finance" scope="core">Financial</type>
 			<type key="numbers" type="fullwide">Mga Full-Width Digit</type>
+			<type key="numbers" type="fullwide" scope="core">Full-width</type>
 			<type key="numbers" type="geor">Georgian na Mga Numeral</type>
 			<type key="numbers" type="gonm" draft="contributed">Masaram Gondi na mga digit</type>
 			<type key="numbers" type="grek">Greek na Mga Numeral</type>
 			<type key="numbers" type="greklow">Greek Lowercase na Mga Numeral</type>
+			<type key="numbers" type="greklow" scope="core">Greek lowercase</type>
 			<type key="numbers" type="gujr">Mga Gujarati Digit</type>
 			<type key="numbers" type="guru">Mga Gurmukhi Digit</type>
+			<type key="numbers" type="hanidays" scope="core">Han-character na pagnunumero sa araw ng buwan para sa mga tradisyonal na kalendaryo</type>
 			<type key="numbers" type="hanidec">Mga Chinese Decimal na Numeral</type>
+			<type key="numbers" type="hanidec" scope="core">Positional decimal system gamit ang mga Chinese number ideograph bilang mga digit</type>
 			<type key="numbers" type="hans">Simplified Chinese na Mga Numeral</type>
 			<type key="numbers" type="hansfin">Simplified Chinese na Mga Numeral para sa Pananalapi</type>
+			<type key="numbers" type="hansfin" scope="core">Simplified Chinese financial</type>
 			<type key="numbers" type="hant">Traditional Chinese na Mga Numeral</type>
 			<type key="numbers" type="hantfin">Traditional Chinese na Mga Numeral para sa Pananalapi</type>
+			<type key="numbers" type="hantfin" scope="core">Traditional Chinese financial</type>
 			<type key="numbers" type="hebr">Mga Hebrew Numeral</type>
 			<type key="numbers" type="hmng" draft="contributed">Pahawh Hmong na Mga Digit</type>
 			<type key="numbers" type="java">Javanese na Mga Digit</type>
 			<type key="numbers" type="jpan">Mga Japanese Numeral</type>
 			<type key="numbers" type="jpanfin">Mga Japanese Numeral sa Pananalapi</type>
+			<type key="numbers" type="jpanfin" scope="core">Japanese financial</type>
+			<type key="numbers" type="jpanyear" scope="core">Japanese first-year Gannen na pagnunumero</type>
 			<type key="numbers" type="kali" draft="contributed">Kayah Li na Mga Digit</type>
 			<type key="numbers" type="khmr">Mga Khmer na Digit</type>
 			<type key="numbers" type="knda">Mga Kannada na Digit</type>
 			<type key="numbers" type="lana" draft="contributed">Tai Tham Hora na Mga Digit</type>
 			<type key="numbers" type="lanatham" draft="contributed">Tai Tham Tham na Mga Digit</type>
+			<type key="numbers" type="lanatham" scope="core">Tai Tham Tham (ecclesiastical)</type>
 			<type key="numbers" type="laoo">Mga Lao na Digit</type>
 			<type key="numbers" type="latn">Mga Kanluraning Digit</type>
 			<type key="numbers" type="lepc" draft="contributed">Lepcha Mga Digit</type>
 			<type key="numbers" type="limb" draft="contributed">Limbu na Mga Digit</type>
 			<type key="numbers" type="mathbold" draft="contributed">Matematikal na Bold na Mga Digit</type>
+			<type key="numbers" type="mathbold" scope="core">Mathematical bold</type>
 			<type key="numbers" type="mathdbl" draft="contributed">Matematikal na Dobleng-Struck na Mga Digit</type>
+			<type key="numbers" type="mathdbl" scope="core">Mathematical double-struck</type>
 			<type key="numbers" type="mathmono" draft="contributed">Matematikal na Mga Digit na May Isang Puwang</type>
+			<type key="numbers" type="mathmono" scope="core">Mathematical monospace</type>
 			<type key="numbers" type="mathsanb" draft="contributed">Matematikal na Sans-Serif Bold na Mga Digit</type>
+			<type key="numbers" type="mathsanb" scope="core">Mathematical sans-serif bold</type>
 			<type key="numbers" type="mathsans" draft="contributed">Matematikal na Sans-Serif na Mga Digit</type>
+			<type key="numbers" type="mathsans" scope="core">Mathematical sans-serif</type>
 			<type key="numbers" type="mlym">Mga Malayalam na Digit</type>
 			<type key="numbers" type="modi" draft="contributed">Modi na Mga Digit</type>
 			<type key="numbers" type="mong">Mongolian Digits</type>
 			<type key="numbers" type="mroo" draft="contributed">Mro na Mga Digit</type>
 			<type key="numbers" type="mtei">Meetei Mayek na Mga Digit</type>
 			<type key="numbers" type="mymr">Mga Myanmar na Digit</type>
+			<type key="numbers" type="mymrepka" scope="core">Myanmar Eastern Pwo Karen</type>
+			<type key="numbers" type="mymrpao" scope="core">Myanmar Pao</type>
 			<type key="numbers" type="mymrshan" draft="contributed">Maynmar Shan na Mga Digit</type>
+			<type key="numbers" type="mymrshan" scope="core">Myanmar Shan</type>
 			<type key="numbers" type="mymrtlng" draft="contributed">Myanmar Tai Laing na Mga Digit</type>
+			<type key="numbers" type="mymrtlng" scope="core">Myanmar Tai Laing</type>
 			<type key="numbers" type="native">Mga Native na Digit</type>
+			<type key="numbers" type="native" scope="core">Mga native digit</type>
 			<type key="numbers" type="nkoo" draft="contributed">N’Ko na Mga Digit</type>
 			<type key="numbers" type="olck">Mga Digit ng Ol Chiki</type>
 			<type key="numbers" type="orya">Mga Odia na Digit</type>
+			<type key="numbers" type="outlined" scope="core">Naka-outline</type>
 			<type key="numbers" type="roman">Mga Roman Numeral</type>
+			<type key="numbers" type="roman" scope="core">Roman uppercase</type>
 			<type key="numbers" type="romanlow">Roman Lowercase na Mga Numeral</type>
+			<type key="numbers" type="romanlow" scope="core">Roman lowercase</type>
+			<type key="numbers" type="segment" scope="core">Segmented</type>
 			<type key="numbers" type="taml">Tamil na Mga Numeral</type>
 			<type key="numbers" type="tamldec">Mga Tamil na Digit</type>
+			<type key="numbers" type="tamldec" scope="core">Modern Tamil</type>
 			<type key="numbers" type="telu">Mga Telugu na Digit</type>
 			<type key="numbers" type="thai">Mga Thai na Digit</type>
 			<type key="numbers" type="tibt">Mga Tibetan na Digit</type>
 			<type key="numbers" type="traditional">Mga Tradisyunal na Numeral</type>
+			<type key="numbers" type="traditional" scope="core">Mga tradisyonal na numeral</type>
 			<type key="numbers" type="vaii">Mga Vai na Digit</type>
 			<type key="ss" type="none" scope="core">Naka-off</type>
 			<type key="ss" type="standard" scope="core">Naka-on</type>
+			<type key="t0" type="und">Hindi Natukoy na Machine Translation</type>
+			<type key="va" type="posix" scope="core">Variant ng POSIX</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">Naka-off</typeValue>
+			<typeValue type="yes">Naka-on</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metriko</measurementSystemName>
 		</measurementSystemNames>
@@ -1246,6 +1341,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
 							<greatestDifference id="M">E, MMM d – E, MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">MMMM d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y G</greatestDifference>
@@ -1487,6 +1585,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -1524,6 +1625,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">MMMM d, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, MMMM d, y G</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
@@ -1542,11 +1646,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">MMMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, MMMM d, y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">'ika'-w 'linggo' 'ng' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'linggo' w 'ng' Y</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Day-Of-Week">{1}, {0}</appendItem>
+						<appendItem request="Era">{0} {1}</appendItem>
+						<appendItem request="Time-Day-Of-Week">{1}, {0}</appendItem>
+					</appendItems>
 					<intervalFormats>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="h">h – h B</greatestDifference>
@@ -1620,6 +1731,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
 							<greatestDifference id="M">E, MMM d – E, MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">MMMM d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M/y – M/y</greatestDifference>
@@ -2184,15 +2298,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>Makipot na Look ng Rankin</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>Oras sa Tag-init ng Britain</daylight>
-				</long>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Standard na Oras sa Ireland</daylight>
-				</long>
+			<zone type="Indian/Chagos">
+				<exemplarCity>Chagos Archipelago</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>Canton Island</exemplarCity>
@@ -2218,6 +2325,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Cancun">
 				<exemplarCity>Cancun</exemplarCity>
 			</zone>
+			<zone type="Indian/Kerguelen">
+				<exemplarCity>Kerguelen Islands</exemplarCity>
+			</zone>
 			<zone type="America/Port_of_Spain">
 				<exemplarCity>Puwerto ng Espanya</exemplarCity>
 			</zone>
@@ -2227,6 +2337,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Saigon">
 				<exemplarCity>Lungsod ng Ho Chi Minh</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Acre Time</generic>
+					<standard>Acre Standard Time</standard>
+					<daylight>Acre Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Oras sa Afghanistan</standard>
@@ -2234,7 +2351,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Central">
 				<long>
-					<standard>Oras sa Gitnang Africa</standard>
+					<standard>Central Africa Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Eastern">
@@ -2249,7 +2366,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<standard>Oras sa Kanlurang Africa</standard>
+					<standard>West Africa Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -2409,6 +2526,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Oras sa Tag-init ng Brasilia</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>British Time</generic>
+					<daylight>British Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>Oras sa Brunei Darussalam</standard>
@@ -2416,9 +2539,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Cape_Verde">
 				<long>
-					<generic>Oras sa Cape Verde</generic>
+					<generic>Cape Verde Time</generic>
 					<standard>Standard na Oras sa Cape Verde</standard>
-					<daylight>Oras sa Tag-init ng Cape Verde</daylight>
+					<daylight>Cape Verde Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chamorro">
@@ -2552,7 +2675,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="French_Southern">
 				<long>
-					<standard>Oras sa Katimugang France at Antartiko</standard>
+					<standard>French Southern Territories Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Galapagos">
@@ -2582,6 +2705,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Greenwich Mean Time</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Greenland Time</generic>
+					<standard>Greenland Standard Time</standard>
+					<daylight>Greenland Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Oras sa Silangang Greenland</generic>
@@ -2608,7 +2738,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Standard na Oras sa Hawaii-Aleutian</standard>
+					<standard>Hawaii Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -2639,7 +2769,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Indian_Ocean">
 				<long>
-					<standard>Oras sa Indian Ocean</standard>
+					<standard>Indian Ocean Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Indochina">
@@ -2669,6 +2799,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Daylight Time sa Iran</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Irish Time</generic>
+					<daylight>Irish Standard Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Oras sa Irkutsk</generic>
@@ -2692,14 +2828,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
-					<generic>Oras sa Petropavlovsk-Kamchatski</generic>
-					<standard>Standard Time sa Petropavlovsk-Kamchatski</standard>
-					<daylight>Summer Time sa Petropavlovsk-Kamchatski</daylight>
+					<generic>Kamchatka Time</generic>
+					<standard>Kamchatka Standard Time</standard>
+					<daylight>Kamchatka Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
 				<long>
-					<standard>Oras ng Kazakhstan</standard>
+					<standard>Kazakhstan Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -2777,9 +2913,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Mauritius">
 				<long>
-					<generic>Oras sa Mauritius</generic>
-					<standard>Standard na Oras sa Mauritius</standard>
-					<daylight>Oras sa Tag-init ng Mauritius</daylight>
+					<generic>Mauritius Time</generic>
+					<standard>Mauritius Standard Time</standard>
+					<daylight>Mauritius Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mawson">
@@ -2944,7 +3080,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Reunion">
 				<long>
-					<standard>Oras sa Reunion</standard>
+					<standard>Réunion Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Rothera">
@@ -2961,21 +3097,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samara">
 				<long>
-					<generic>Oras sa Samara</generic>
-					<standard>Standard Time sa Samara</standard>
-					<daylight>Samara Daylight</daylight>
+					<generic>Samara Time</generic>
+					<standard>Samara Standard Time</standard>
+					<daylight>Samara Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Oras sa Samoa</generic>
 					<standard>Standard na Oras sa Samoa</standard>
-					<daylight>Daylight Time sa Samoa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
 				<long>
-					<standard>Oras sa Seychelles</standard>
+					<standard>Seychelles Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Singapore">
@@ -3037,6 +3171,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Oras sa Chuuk</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Türkiye Time</generic>
+					<standard>Türkiye Standard Time</standard>
+					<daylight>Türkiye Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Oras sa Turkmenistan</generic>
@@ -3054,6 +3195,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Oras sa Uruguay</generic>
 					<standard>Standard na Oras sa Uruguay</standard>
 					<daylight>Oras sa Tag-init ng Uruguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Ürümqi Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -3348,8 +3494,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="BYN">
 				<displayName>Ruble ng Belarus</displayName>
-				<displayName count="one">ruble ng Belarus</displayName>
-				<displayName count="other">rubles ng Belarus</displayName>
+				<displayName count="one">Belarusian ruble</displayName>
+				<displayName count="other">na Belarusian ruble</displayName>
 				<symbol alt="narrow">р.</symbol>
 			</currency>
 			<currency type="BYR">
@@ -3475,7 +3621,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="FKP">
 				<displayName>Pound ng Falkland Islands</displayName>
-				<displayName count="one">pound ng Falkland Islands</displayName>
+				<displayName count="one">Falkland Islands pound</displayName>
 				<displayName count="other">pounds ng Falkland Islands</displayName>
 			</currency>
 			<currency type="FRF">
@@ -3693,7 +3839,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">Malagasy Ariaries</displayName>
 			</currency>
 			<currency type="MKD">
-				<displayName>Denar ng Macedonia</displayName>
+				<displayName>Macedonian Denar</displayName>
 				<displayName count="one">denar ng North Macedonia</displayName>
 				<displayName count="other">denari ng North Macedonia</displayName>
 			</currency>
@@ -4093,9 +4239,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pattern type="range">{0}-{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="one">{0} mansanas</pluralMinimalPairs>
-			<pluralMinimalPairs count="other">{0} na mansanas</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="other">Kunin ang ika-{0} (na) kanan.</ordinalMinimalPairs>
+			<pluralMinimalPairs count="one">{0} araw</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} na araw</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">Lumiko sa ika-{0} kanan.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Lumiko sa ika-{0} (na) kanan.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -4293,10 +4440,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} na karat</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
-				<unitPattern count="one">{0} milligram per deciliter</unitPattern>
-				<unitPattern count="other">{0} milligrams per deciliter</unitPattern>
+				<displayName>mga miligramo kada desilitro</displayName>
+				<unitPattern count="one">{0} miligramo kada desilitro</unitPattern>
+				<unitPattern count="other">{0} na miligramo kada desilitro</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
+				<displayName>mga millimole kada litro</displayName>
 				<unitPattern count="one">{0} millimole per liter</unitPattern>
 				<unitPattern count="other">{0} millimoles per liter</unitPattern>
 			</unit>
@@ -4307,7 +4456,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-part">
 				<displayName>parts</displayName>
-				<unitPattern count="one" draft="contributed">{0} part</unitPattern>
+				<unitPattern count="one">{0} part</unitPattern>
 				<unitPattern count="other">{0} parts</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e6">
@@ -4717,6 +4866,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} lumen</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
+				<displayName>mga solar luminosity</displayName>
 				<unitPattern count="one">{0} solar luminosity</unitPattern>
 				<unitPattern count="other">{0} solar luminosity</unitPattern>
 			</unit>
@@ -4908,7 +5058,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="torque-pound-force-foot">
 				<displayName>pound-force-feet</displayName>
 				<unitPattern count="one">{0} pound-force-foot</unitPattern>
-				<unitPattern count="other">{0} pound-feet</unitPattern>
+				<unitPattern count="other">{0} na pound-force-foot</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
 				<displayName>newton-meter</displayName>
@@ -4992,6 +5142,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} metric cup</unitPattern>
 				<unitPattern count="other">{0} na metric cup</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>mga metric fluid ounce</displayName>
+				<unitPattern count="one">{0} metric fluid ounce</unitPattern>
+				<unitPattern count="other">{0} na metric fluid ounce</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>acre-feet</displayName>
 				<unitPattern count="one">{0} acre-foot</unitPattern>
@@ -5013,7 +5168,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart">
 				<displayName>quarts</displayName>
 				<unitPattern count="one">{0} quart</unitPattern>
-				<unitPattern count="other">{0} na quarts</unitPattern>
+				<unitPattern count="other">{0} na quart</unitPattern>
 			</unit>
 			<unit type="volume-pint">
 				<unitPattern count="one">{0} pint</unitPattern>
@@ -5074,6 +5229,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-katal">
 				<displayName>katals</displayName>
+				<unitPattern count="one">{0} katal</unitPattern>
+				<unitPattern count="other">{0} na katal</unitPattern>
 			</unit>
 			<unit type="electric-coulomb">
 				<displayName>coulombs</displayName>
@@ -5122,8 +5279,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="magnetic-tesla">
 				<displayName>teslas</displayName>
+				<unitPattern count="one">{0} tesla</unitPattern>
+				<unitPattern count="other">{0} na tesla</unitPattern>
 			</unit>
 			<unit type="magnetic-weber">
+				<displayName>mga weber</displayName>
 				<unitPattern count="one">{0} weber</unitPattern>
 				<unitPattern count="other">{0} webers</unitPattern>
 			</unit>
@@ -5198,6 +5358,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-karat">
 				<displayName>karat</displayName>
 			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>millimol/litro</displayName>
+			</unit>
+			<unit type="concentr-part">
+				<unitPattern count="one">{0} part</unitPattern>
+				<unitPattern count="other">{0} na part</unitPattern>
+			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName>parts/million</displayName>
 			</unit>
@@ -5209,6 +5376,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-ofglucose">
 				<displayName>Glc</displayName>
+				<unitPattern count="one">{0} Glc</unitPattern>
+				<unitPattern count="other">{0} Glc</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>litro/km</displayName>
@@ -5426,8 +5595,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-lux">
 				<displayName>lux</displayName>
 			</unit>
+			<unit type="light-candela">
+				<displayName>candela</displayName>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lumen</displayName>
+			</unit>
 			<unit type="light-solar-luminosity">
-				<displayName>solar luminosity</displayName>
+				<displayName>mga solar luminosity</displayName>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>gramo</displayName>
@@ -5526,6 +5701,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mc</unitPattern>
 				<unitPattern count="other">{0} na mc</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<unitPattern count="one">{0} fl oz m.</unitPattern>
+				<unitPattern count="other">{0} fl oz m.</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>acre ft</displayName>
 			</unit>
@@ -5568,6 +5747,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<displayName>Imp na kuwart</displayName>
 			</unit>
+			<unit type="angle-steradian">
+				<unitPattern count="one">{0} sr</unitPattern>
+				<unitPattern count="other">{0} sr</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<unitPattern count="one">{0} kat</unitPattern>
+				<unitPattern count="other">{0} kat</unitPattern>
+			</unit>
 			<unit type="electric-coulomb">
 				<unitPattern count="one">{0} C</unitPattern>
 				<unitPattern count="other">{0} C</unitPattern>
@@ -5597,6 +5784,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Gy</unitPattern>
 				<unitPattern count="other">{0} Gy</unitPattern>
 			</unit>
+			<unit type="force-kilogram-force">
+				<unitPattern count="one">{0} kgf</unitPattern>
+				<unitPattern count="other">{0} kgf</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<unitPattern count="one">{0} T</unitPattern>
+				<unitPattern count="other">{0} T</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<unitPattern count="one">{0} Wb</unitPattern>
+				<unitPattern count="other">{0} Wb</unitPattern>
+			</unit>
 			<unit type="concentr-part-per-1e9">
 				<displayName>parts/billion</displayName>
 			</unit>
@@ -5624,11 +5823,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}m/s²</unitPattern>
 			</unit>
 			<unit type="angle-radian">
+				<displayName>rad</displayName>
 				<unitPattern count="one">{0}rad</unitPattern>
 				<unitPattern count="other">{0}rad</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<displayName>deg</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
 				<unitPattern count="one">{0}′</unitPattern>
@@ -5675,6 +5877,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} item</unitPattern>
 				<unitPattern count="other">{0}item</unitPattern>
 			</unit>
+			<unit type="concentr-part">
+				<unitPattern count="one">{0} part</unitPattern>
+				<unitPattern count="other">{0} na part</unitPattern>
+			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 			</unit>
@@ -5683,9 +5889,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>mol</displayName>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>
@@ -5701,14 +5904,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>mpg UK</displayName>
-				<unitPattern count="one">{0}mpg</unitPattern>
-				<unitPattern count="other">{0}mpg</unitPattern>
+				<unitPattern count="one">{0}m/gUK</unitPattern>
+				<unitPattern count="other">{0}m/gUK</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>PB</displayName>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>TB</displayName>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>Tb</displayName>
 			</unit>
 			<unit type="digital-gigabyte">
 				<displayName>GB</displayName>
 			</unit>
 			<unit type="digital-gigabit">
 				<displayName>Gb</displayName>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>MB</displayName>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>Mb</displayName>
 			</unit>
 			<unit type="digital-kilobyte">
 				<displayName>kB</displayName>
@@ -5754,6 +5972,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mseg</displayName>
 				<unitPattern count="one">{0}ms</unitPattern>
 				<unitPattern count="other">{0}ms</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>amp</displayName>
 			</unit>
 			<unit type="electric-milliampere">
 				<displayName>mA</displayName>
@@ -5858,6 +6079,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-solar-radius">
 				<displayName>R☉</displayName>
 			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>L☉</displayName>
+			</unit>
 			<unit type="mass-tonne">
 				<unitPattern count="one">{0}t</unitPattern>
 				<unitPattern count="other">{0}t</unitPattern>
@@ -5932,7 +6156,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}mmHg</unitPattern>
 			</unit>
 			<unit type="pressure-ofhg">
-				<displayName>ng Hg</displayName>
 				<unitPattern count="one">{0} ng Hg</unitPattern>
 				<unitPattern count="other">{0} ng Hg</unitPattern>
 			</unit>
@@ -6008,8 +6231,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mpt</unitPattern>
 				<unitPattern count="other">{0} mpt</unitPattern>
 			</unit>
+			<unit type="volume-cup-metric">
+				<unitPattern count="one">{0} mc</unitPattern>
+				<unitPattern count="other">{0}mc</unitPattern>
+			</unit>
 			<unit type="volume-bushel">
 				<displayName>bushel</displayName>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>qt</displayName>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>pt</displayName>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
 				<displayName>Imp fl oz</displayName>
@@ -6056,10 +6289,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} qt Imp.</unitPattern>
 				<unitPattern count="other">{0}qt-Imp.</unitPattern>
 			</unit>
+			<unit type="electric-coulomb">
+				<unitPattern count="one">{0} C</unitPattern>
+				<unitPattern count="other">{0} C</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<unitPattern count="one">{0} F</unitPattern>
+				<unitPattern count="other">{0} F</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<unitPattern count="one">{0} H</unitPattern>
+				<unitPattern count="other">{0} H</unitPattern>
+			</unit>
 			<unit type="energy-calorie-it">
-				<displayName>cal-IT</displayName>
+				<unitPattern count="one">{0} cal-IT</unitPattern>
+				<unitPattern count="other">{0} cal-IT</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<unitPattern count="one">{0} Bq</unitPattern>
+				<unitPattern count="other">{0} Bq</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<unitPattern count="one">{0} Sv</unitPattern>
+				<unitPattern count="other">{0} Sv</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<unitPattern count="one">{0} Gy</unitPattern>
+				<unitPattern count="other">{0} Gy</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e9">
+				<displayName>ppb</displayName>
 				<unitPattern count="one">{0}ppb</unitPattern>
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>

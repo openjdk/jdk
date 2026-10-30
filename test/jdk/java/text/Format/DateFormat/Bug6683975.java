@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,13 +41,13 @@ public class Bug6683975 {
         "\u0e27\u0e31\u0e19\u0e2d\u0e31\u0e07\u0e04\u0e32\u0e23\u0e17\u0e35\u0e48 30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 \u0e04.\u0e28. 2008 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 00 \u0e19\u0e32\u0e17\u0e35 00 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 \u0e40\u0e27\u0e25\u0e32\u0e2d\u0e2d\u0e21\u0e41\u0e2a\u0e07\u0e41\u0e1b\u0e0b\u0e34\u0e1f\u0e34\u0e01\u0e43\u0e19\u0e2d\u0e40\u0e21\u0e23\u0e34\u0e01\u0e32\u0e40\u0e2b\u0e19\u0e37\u0e2d",  // 0: FULL
         "30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 \u0e04.\u0e28. 2008 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 00 \u0e19\u0e32\u0e17\u0e35 00 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 PDT",  // 1: LONG
         "30 \u0e01.\u0e22. 2008 08:00:00",  // 2: MEDIUM
-        "30/9/08 08:00",  // 3: SHORT
+        "30/9/08 08:00 \u0e19.",  // 3: SHORT
     };
     private static String expected_th_TH[] = {
         "\u0e27\u0e31\u0e19\u0e2d\u0e31\u0e07\u0e04\u0e32\u0e23\u0e17\u0e35\u0e48 30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 \u0e1e\u0e38\u0e17\u0e18\u0e28\u0e31\u0e01\u0e23\u0e32\u0e0a 2551 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 00 \u0e19\u0e32\u0e17\u0e35 00 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 \u0e40\u0e27\u0e25\u0e32\u0e2d\u0e2d\u0e21\u0e41\u0e2a\u0e07\u0e41\u0e1b\u0e0b\u0e34\u0e1f\u0e34\u0e01\u0e43\u0e19\u0e2d\u0e40\u0e21\u0e23\u0e34\u0e01\u0e32\u0e40\u0e2b\u0e19\u0e37\u0e2d",  // 0: FULL
         "30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 2551 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 00 \u0e19\u0e32\u0e17\u0e35 00 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 PDT",  // 1: LONG
         "30 \u0e01.\u0e22. 2551 08:00:00",  // 2: MEDIUM
-        "30/9/51 08:00"  // 3: SHORT
+        "30/9/51 08:00 \u0e19."  // 3: SHORT
     };
     private static String stylePattern[] =  {
         "FULL", "LONG", "MEDIUM", "SHORT"

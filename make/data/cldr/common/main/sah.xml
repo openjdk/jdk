@@ -120,6 +120,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="hebrew">Дьэбириэй халандаара</type>
 			<type key="calendar" type="islamic" draft="provisional">Ислаам халандаара</type>
 			<type key="calendar" type="japanese">Дьоппуон халандаара</type>
+			<type key="hc" type="c12">12 чаастаах тиһик</type>
+			<type key="hc" type="c24">24 чаастаах тиһик</type>
 			<type key="hc" type="h11">12 чаастаах тиһик (0–11)</type>
 			<type key="hc" type="h12">12 чаастаах тиһик (0–12)</type>
 			<type key="hc" type="h23">24 чаастаах тиһик (0–23)</type>
@@ -412,6 +414,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">Y 'сыл' w 'нэдиэлэтэ'</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>

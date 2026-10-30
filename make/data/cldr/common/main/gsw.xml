@@ -192,7 +192,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="io">Ido</language>
 			<language type="is">Iisländisch</language>
 			<language type="it">Italiänisch</language>
-			<language type="iu">Inukitut</language>
+			<language type="iu">Inuktitut</language>
 			<language type="ja">Japanisch</language>
 			<language type="jbo">Lojbanisch</language>
 			<language type="jpr">Jüüdisch-Persisch</language>
@@ -1316,6 +1316,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d.–d.</greatestDifference>
 						</intervalFormatItem>
@@ -1745,13 +1750,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Alaska-Ziit</generic>
 					<standard>Alaska-Schtandardziit</standard>
 					<daylight>Alaska-Summerziit</daylight>
-				</long>
-			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>Almaty-Ziit</generic>
-					<standard>Almaty-Schtandardziit</standard>
-					<daylight>Almaty-Summerziit</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">

@@ -332,6 +332,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pcm">нигерийн пиджин</language>
 			<language type="pis">пижин</language>
 			<language type="pl">польш</language>
+			<language type="pms">пьемонт</language>
 			<language type="pqm">малесит-пассамакводди</language>
 			<language type="prg">прусс</language>
 			<language type="ps">пушту</language>
@@ -973,15 +974,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<keys>
 			<key type="calendar">цаглавар</key>
 			<key type="cf">мөнгөн тэмдэгтийн хэлбэр</key>
+			<key type="colAlternate">Тэмдэгтүүдийг алгасаж эрэмбэлэх</key>
+			<key type="colBackwards">Өргөлтийг урвуугаар эрэмбэлэх</key>
+			<key type="colCaseFirst">Том/жижиг үсгийн дараалал</key>
+			<key type="colCaseLevel">Том, жижиг үсгийг ялгаж эрэмбэлэх</key>
 			<key type="collation">эрэмбэлэх дараалал</key>
+			<key type="colNormalization">Стандартчилж эрэмбэлэх</key>
+			<key type="colNumeric">Тоон утгаар эрэмбэлэх</key>
+			<key type="colReorder">Бичиглэл/Блокийн дарааллыг өөрчлөх</key>
+			<key type="colStrength">Эрэмбэлэх нарийвчлал</key>
 			<key type="currency">мөнгөн тэмдэгт</key>
+			<key type="d0">Хувиргах байршил</key>
+			<key type="dx">Толь бичгийн үг таслах дүрэмд үл хамаарах зүйлс</key>
 			<key type="em">Эможи үзүүлэн</key>
+			<key type="fw">Долоо хоногийн эхний өдөр</key>
+			<key type="h0">Холимог</key>
 			<key type="hc">цагийн мөчлөг (12 эсвэл 24)</key>
+			<key type="i0">Оролтын арга</key>
+			<key type="k0">Гар</key>
+			<key type="kv">Хамгийн дээд түвшний алгасах тэмдэгт</key>
 			<key type="lb">мөрийн зайн загвар</key>
 			<key type="lw">үг хоорондын мөрийн зай</key>
+			<key type="m0">Хувиргах дүрэм</key>
 			<key type="ms">нэгжийн систем</key>
+			<key type="mu">Хэмжих нэгж</key>
 			<key type="numbers">тоо</key>
+			<key type="rg">Нэмэлт өгөгдлийн муж</key>
+			<key type="s0">Хувиргах эх сурвалж</key>
+			<key type="sd">Дэд бүс</key>
 			<key type="ss">Товчилсон үгийн дараа өгүүлбэр таслах</key>
+			<key type="t">Хувиргах</key>
+			<key type="t0">Машинаар орчуулсан</key>
+			<key type="timezone">Цагийн бүс</key>
+			<key type="va">Хэлний тохиргооны хувилбар</key>
+			<key type="x">Хувийн хэрэгцээний</key>
+			<key type="x0">Хувийн хэрэгцээний хувиргалт</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">буддын цаглавар</type>
@@ -1001,15 +1028,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">еврей цаглавар</type>
 			<type key="calendar" type="hebrew" scope="core">еврей</type>
 			<type key="calendar" type="indian">энэтхэгийн үндэсний цаглавар</type>
+			<type key="calendar" type="indian" scope="core">энэтхэгийн үндэсний цаглавар</type>
 			<type key="calendar" type="islamic">исламын цаглавар</type>
 			<type key="calendar" type="islamic" scope="core">исламын</type>
 			<type key="calendar" type="islamic-civil">исламын цаглавар (хүснэгт, иргэний эрин үе)</type>
 			<type key="calendar" type="islamic-civil" scope="core">исламын (хүснэгт, иргэний эрин үе)</type>
 			<type key="calendar" type="islamic-rgsa">исламийн цаглавар (саудын араб, газарзүйн)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">исламын (Саудын Арабын шинэ сар харах арга)</type>
 			<type key="calendar" type="islamic-tbla">исламийн цаглавар (хүснэгтэн, одон орны эрин)</type>
+			<type key="calendar" type="islamic-tbla" scope="core">исламын (хүснэгт, одон орны тооцоолол)</type>
 			<type key="calendar" type="islamic-umalqura">исламын цаглавар (Umm al-Qura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">исламын (Umm al-Qura)</type>
-			<type key="calendar" type="iso8601">ISO-8601 цаглавар</type>
+			<type key="calendar" type="iso8601">Григорийн цаглавар (ISO 8601 долоо хоног)</type>
+			<type key="calendar" type="iso8601" scope="core">Григорийн</type>
 			<type key="calendar" type="japanese">япон цаглавар</type>
 			<type key="calendar" type="japanese" scope="core">японы</type>
 			<type key="calendar" type="persian">перс цаглавар</type>
@@ -1020,25 +1051,56 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="cf" type="account" scope="core">Нягтлан бодох бүртгэл</type>
 			<type key="cf" type="standard">мөнгөн тэмдэгтийн стандарт хэлбэр</type>
 			<type key="cf" type="standard" scope="core">Стандарт</type>
+			<type key="colCaseFirst" type="lower" scope="core">Жижиг үсгээр эхлэх</type>
+			<type key="colCaseFirst" type="no" scope="core">Жижиг үсгээр эхлэх</type>
+			<type key="colCaseFirst" type="upper" scope="core">Том үсгээр эхлэх</type>
 			<type key="collation" type="compat">Нийцлийн үүднээс өмнөх эрэмбэлэх дараалал</type>
+			<type key="collation" type="compat" scope="core">Зохицол</type>
 			<type key="collation" type="dictionary">Тольны эрэмбэлэх дараалал</type>
+			<type key="collation" type="dictionary" scope="core">Толь бичиг</type>
 			<type key="collation" type="ducet">юникодын үндсэн эрэмбэлэх дараалал</type>
 			<type key="collation" type="ducet" scope="core">өгөгдмөл юникод</type>
 			<type key="collation" type="emoji">Эможи эрэмбэлэх дараалал</type>
+			<type key="collation" type="emoji" scope="core">эможи</type>
 			<type key="collation" type="eor">Европийн эрэмбэлэх дүрэм</type>
+			<type key="collation" type="eor" scope="core">Европын стандарт дүрэм</type>
 			<type key="collation" type="phonebook">Утасны дэвтрийн эрэмбэлэх дараалал</type>
+			<type key="collation" type="phonebook" scope="core">Утасны жагсаалт</type>
+			<type key="collation" type="phonetic" scope="core">Авианы</type>
 			<type key="collation" type="pinyin">Пиньян эрэмбэлэх дараалал</type>
+			<type key="collation" type="pinyin" scope="core">Пиньинь</type>
 			<type key="collation" type="search">ерөнхий хайлт</type>
 			<type key="collation" type="search" scope="core">хайлт</type>
 			<type key="collation" type="searchjl">Хангүлээр эхний гийгүүлэгчээр хайх</type>
+			<type key="collation" type="searchjl" scope="core">Солонгос хэлний эхний гийгүүлэгч</type>
 			<type key="collation" type="standard">стандарт эрэмбэлэх дараалал</type>
 			<type key="collation" type="standard" scope="core">стандарт</type>
+			<type key="collation" type="stroke" scope="core">Зуулт</type>
 			<type key="collation" type="traditional">Хуучин эрэмбэлэх дараалал</type>
+			<type key="collation" type="traditional" scope="core">Уламжлалт</type>
 			<type key="collation" type="unihan">Язгуурын зураасны эрэмбэлэх дараалал</type>
+			<type key="collation" type="unihan" scope="core">Түлхүүр үсэг ба зураасны тоо</type>
 			<type key="collation" type="zhuyin">Жүяин эрэмбэлэх дараалал</type>
+			<type key="collation" type="zhuyin" scope="core">Жуинь</type>
+			<type key="colReorder" type="currency" scope="core">Мөнгөн тэмдэгт</type>
+			<type key="colReorder" type="digit" scope="core">Цифр</type>
+			<type key="colReorder" type="punct" scope="core">Цэг</type>
+			<type key="colReorder" type="space" scope="core">Сул зай</type>
+			<type key="colReorder" type="symbol" scope="core">Тусгай тэмдэгт</type>
+			<type key="colStrength" type="identical" scope="core">Бүгд</type>
+			<type key="colStrength" type="primary" scope="core">Зөвхөн үндсэн үсгээр</type>
+			<type key="colStrength" type="quaternary" scope="core">Үндсэн үсэг, өргөлт, том/жижиг, хувилбарууд, кана</type>
+			<type key="colStrength" type="secondary" scope="core">Үндсэн үсэг, өргөлт</type>
+			<type key="colStrength" type="tertiary" scope="core">Үндсэн үсэг, өргөлт, том/жижиг, хувилбарууд</type>
+			<type key="d0" type="fwidth">Бүтэн хэмжээст рүү</type>
+			<type key="d0" type="hwidth">Хагас хэмжээст рүү</type>
 			<type key="em" type="default" scope="core">Өгөгдмөл</type>
 			<type key="em" type="emoji" scope="core">Эможи</type>
 			<type key="em" type="text" scope="core">Текст</type>
+			<type key="hc" type="c12">12 цагийн систем</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24 цагийн систем</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12 цагийн систем (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 цагийн систем (1–12)</type>
@@ -1047,6 +1109,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 цагийн систем (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Сул зай, цэг, бүх тэмдэгтийг шилжүүлэх</type>
+			<type key="kv" type="punct" scope="core">Сул зай, цэг шилжүүлэх</type>
+			<type key="kv" type="space" scope="core">Сул зай, цэг шилжүүлэх</type>
+			<type key="kv" type="symbol" scope="core">Сул зай, цэг, валютын бус тэмдэгтүүдийг шилжүүлэх</type>
 			<type key="lb" type="loose">урт мөрийн зайн загвар</type>
 			<type key="lb" type="loose" scope="core">урт</type>
 			<type key="lb" type="normal">энгийн мөрийн зайн загвар</type>
@@ -1057,6 +1123,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="lw" type="keepall" scope="core">Бүгдийг хадгалах</type>
 			<type key="lw" type="normal" scope="core">Хэвийн</type>
 			<type key="lw" type="phrase" scope="core">Үг хэллэгээр хадгалах</type>
+			<type key="m0" type="bgn">АНУ-ын BGN стандарт галигчлал</type>
+			<type key="m0" type="ungegn">НҮБ-ын GEGN стандарт галигчлал</type>
 			<type key="ms" type="metric">метрийн систем</type>
 			<type key="ms" type="metric" scope="core">метрийн</type>
 			<type key="ms" type="uksystem">Англи нэгжийн систем</type>
@@ -1066,8 +1134,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="ahom">Ахом тоо</type>
 			<type key="numbers" type="arab">араб-энэтхэг тоо</type>
 			<type key="numbers" type="arabext">өргөтгөсөн араб-энэтхэг тоо</type>
+			<type key="numbers" type="arabext" scope="core">өргөтгөсөн араб-энэтхэг</type>
 			<type key="numbers" type="armn">армен тоо</type>
 			<type key="numbers" type="armnlow">жижиг армен тоо</type>
+			<type key="numbers" type="armnlow" scope="core">жижиг армен үсэг</type>
 			<type key="numbers" type="bali">Бали тоо</type>
 			<type key="numbers" type="beng">бенгал тоо</type>
 			<type key="numbers" type="brah">Брахми тоо</type>
@@ -1077,57 +1147,82 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="deva">деванагари тоо</type>
 			<type key="numbers" type="diak">Дивэс Акүрү Тоо</type>
 			<type key="numbers" type="ethi">этиоп тоо</type>
+			<type key="numbers" type="finance" scope="core">Санхүүгийн</type>
 			<type key="numbers" type="fullwide">бүтэн-өргөнтэй тоо</type>
+			<type key="numbers" type="fullwide" scope="core">Бүтэн өргөн</type>
 			<type key="numbers" type="geor">гүрж тоо</type>
 			<type key="numbers" type="gong">Гунжала Гонди тоо</type>
 			<type key="numbers" type="gonm">Масарам Гонди тоо</type>
 			<type key="numbers" type="grek">грек тоо</type>
 			<type key="numbers" type="greklow">жижиг грек тоо</type>
+			<type key="numbers" type="greklow" scope="core">Жижиг грек үсэг</type>
 			<type key="numbers" type="gujr">гүжарати тоо</type>
 			<type key="numbers" type="guru">гүрмүхи тоо</type>
+			<type key="numbers" type="hanidays" scope="core">Уламжлалт цаглаварын сарын өдрийн ханз үсгийн дугаарлалт</type>
 			<type key="numbers" type="hanidec">хятад аравтын тоо</type>
+			<type key="numbers" type="hanidec" scope="core">Ханз үсгийг цифр болгон ашиглах байрлалт аравтын систем</type>
 			<type key="numbers" type="hans">хялбаршуулсан хятад тоо</type>
 			<type key="numbers" type="hansfin">хялбаршуулсан хятад санхүүгийн тоо</type>
+			<type key="numbers" type="hansfin" scope="core">Хялбаршуулсан хятад санхүүгийн</type>
 			<type key="numbers" type="hant">уламжлалт хятад тоо</type>
 			<type key="numbers" type="hantfin">уламжлалт хятад санхүүгийн тоо</type>
+			<type key="numbers" type="hantfin" scope="core">уламжлалт хятад санхүүгийн</type>
 			<type key="numbers" type="hebr">еврей тоо</type>
 			<type key="numbers" type="hmng">Пахав Хмонг тоо</type>
 			<type key="numbers" type="hmnp">Няакенг Пуачэ Хмонг тоо</type>
 			<type key="numbers" type="java">жава тоо</type>
 			<type key="numbers" type="jpan">япон тоо</type>
 			<type key="numbers" type="jpanfin">япон санхүүгийн тоо</type>
+			<type key="numbers" type="jpanfin" scope="core">Японы санхүүгийн</type>
+			<type key="numbers" type="jpanyear" scope="core">Японы эриний эхний жилийг Ганнэнээр тэмдэглэх хэлбэр</type>
 			<type key="numbers" type="kali">Каяа Ли тоо</type>
 			<type key="numbers" type="kawi">Кави тоо</type>
 			<type key="numbers" type="khmr">кхмер тоо</type>
 			<type key="numbers" type="knda">каннада тоо</type>
 			<type key="numbers" type="lana">Тай Там Хора тоо</type>
 			<type key="numbers" type="lanatham">Тай Там Там тоо</type>
+			<type key="numbers" type="lanatham" scope="core">Тай Там Там бичиг (шашны хэлбэр)</type>
 			<type key="numbers" type="laoo">лаос тоо</type>
 			<type key="numbers" type="latn">араб тоо</type>
 			<type key="numbers" type="lepc">Лепча тоо</type>
 			<type key="numbers" type="limb">Лимбу тоо</type>
 			<type key="numbers" type="mathbold">Математикийн бүдүүн тоо</type>
+			<type key="numbers" type="mathbold" scope="core">Математикийн тод хэв</type>
 			<type key="numbers" type="mathdbl">Математикийн хос зурлагат тоо</type>
+			<type key="numbers" type="mathdbl" scope="core">Математикийн давхар зураастай хэв</type>
 			<type key="numbers" type="mathmono">Математикийн Monospace тоо</type>
+			<type key="numbers" type="mathmono" scope="core">Математикийн ижил зайтай хэв</type>
 			<type key="numbers" type="mathsanb">Математикийн Sans-Serif Бүдүүн тоо</type>
+			<type key="numbers" type="mathsanb" scope="core">Математикийн шулуун тод хэв</type>
 			<type key="numbers" type="mathsans">Математикийн Sans-Serif тоо</type>
+			<type key="numbers" type="mathsans" scope="core">Математикийн шулуун хэв</type>
 			<type key="numbers" type="mlym">малаялам тоо</type>
 			<type key="numbers" type="modi">Моди тоо</type>
 			<type key="numbers" type="mong">монгол тоо</type>
 			<type key="numbers" type="mroo">Мро тоо</type>
 			<type key="numbers" type="mtei">мейтей маек тоо</type>
 			<type key="numbers" type="mymr">мьянмар тоо</type>
+			<type key="numbers" type="mymrepka" scope="core">Мьянмарын Зүүн Пво Карен хэл</type>
+			<type key="numbers" type="mymrpao" scope="core">Мьянмарын Па-О хэл</type>
 			<type key="numbers" type="mymrshan">Мьянмар Шан тоо</type>
+			<type key="numbers" type="mymrshan" scope="core">Мьянмарын Шан хэл</type>
 			<type key="numbers" type="mymrtlng">Мьянмар Тай Лайнг тоо</type>
+			<type key="numbers" type="mymrtlng" scope="core">Мьянмарын Тай Лаинг хэл</type>
 			<type key="numbers" type="nagm">Наг Мундари тоо</type>
+			<type key="numbers" type="native">Үндэсний тоо</type>
+			<type key="numbers" type="native" scope="core">Үндэсний тоо</type>
 			<type key="numbers" type="nkoo">N’Ko тоо</type>
 			<type key="numbers" type="olck">ол чики тоо</type>
 			<type key="numbers" type="orya">ория тоо</type>
 			<type key="numbers" type="osma">Османи тоо</type>
+			<type key="numbers" type="outlined" scope="core">Хүрээлсэн хэв</type>
 			<type key="numbers" type="rohg">Ханифи Рохинж тоо</type>
 			<type key="numbers" type="roman">ром тоо</type>
+			<type key="numbers" type="roman" scope="core">Ром том тоо</type>
 			<type key="numbers" type="romanlow">жижиг ром тоо</type>
+			<type key="numbers" type="romanlow" scope="core">Ром жижиг тоо</type>
 			<type key="numbers" type="saur">Саураштра тоо</type>
+			<type key="numbers" type="segment" scope="core">Хэсэгчилсэн</type>
 			<type key="numbers" type="shrd">Шарада тоо</type>
 			<type key="numbers" type="sind">Күдавади тоо</type>
 			<type key="numbers" type="sinh">Синхала Лит тоо</type>
@@ -1137,17 +1232,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="talu">Шинэ тай луэ тоо</type>
 			<type key="numbers" type="taml">уламжлалт тамил тоо</type>
 			<type key="numbers" type="tamldec">тамил тоо</type>
+			<type key="numbers" type="tamldec" scope="core">Орчин үеийн Тамил хэл</type>
 			<type key="numbers" type="telu">тэлүгү тоо</type>
 			<type key="numbers" type="thai">тай тоо</type>
 			<type key="numbers" type="tibt">төвд тоо</type>
 			<type key="numbers" type="tirh">Тирхута тоо</type>
 			<type key="numbers" type="tnsa">Тангса тоо</type>
+			<type key="numbers" type="traditional" scope="core">Уламжлалт тоо</type>
 			<type key="numbers" type="vaii">вай тоо</type>
 			<type key="numbers" type="wara">Варанг сити тоо</type>
 			<type key="numbers" type="wcho">Ванчо тоо</type>
 			<type key="ss" type="none" scope="core">Унтраалттай</type>
 			<type key="ss" type="standard" scope="core">Асаалттай</type>
+			<type key="t0" type="und">Тодорхойгүй машины орчуулга</type>
+			<type key="va" type="posix" scope="core">POSIX хувилбар</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">Унтраалттай</typeValue>
+			<typeValue type="yes">Асаалттай</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">метрийн систем</measurementSystemName>
 			<measurementSystemName type="UK">ИБ</measurementSystemName>
@@ -1214,7 +1317,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>G y 'оны' MMMM'ын' d. cccc 'гараг'</pattern>
-							<datetimeSkeleton>GyMMMMccccd</datetimeSkeleton>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -1295,6 +1398,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">G y 'оны' QQQQ</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="numeric">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
@@ -1338,6 +1444,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">MMMMM/d E – MMMMM/d E</greatestDifference>
 							<greatestDifference id="M">MMMMM/d E – MMMMM/d E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">MM-'р' 'сарын' d–d</greatestDifference>
+							<greatestDifference id="M">MM-'р' 'сарын' d – MM-'р' 'сарын' d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">GGGGG y 'оны' MMMMM–MMMMM 'сар'</greatestDifference>
@@ -1574,6 +1684,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>.</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -1608,6 +1721,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">G y 'оны' MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y 'оны' MMM'ын' d</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y 'оны' MMM'ын' d. E</dateFormatItem>
+						<dateFormatItem id="GyMMMM">G y 'оны' MMMM</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">G y 'оны' MMMM'ын' d</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">G y 'оны' MMMM'ын' d, E</dateFormatItem>
 						<dateFormatItem id="h">h 'ц' a</dateFormatItem>
 						<dateFormatItem id="H">HH 'ц'</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
@@ -1623,6 +1739,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMd">MMM'ын' d</dateFormatItem>
 						<dateFormatItem id="MMMEd">MMM'ын' d. E</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM'ын' d</dateFormatItem>
+						<dateFormatItem id="MMMMEd">MMMM'ын' d, E</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">MMMM'ын' W-'р' 'долоо' 'хоног'</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM'ын' W-'р' 'долоо' 'хоног'</dateFormatItem>
 						<dateFormatItem id="yM">y MMMMM</dateFormatItem>
@@ -1632,15 +1749,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">y 'оны' MMM'ын' d</dateFormatItem>
 						<dateFormatItem id="yMMMEd">y 'оны' MMM'ын' d. E</dateFormatItem>
 						<dateFormatItem id="yMMMM">y 'оны' MMMM</dateFormatItem>
+						<dateFormatItem id="yMMMMd">y 'оны' MMMM'ын' d</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">y 'оны' MMMM'ын' d, E</dateFormatItem>
 						<dateFormatItem id="yQQQ">y 'оны' QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y 'оны' QQQQ</dateFormatItem>
 						<dateFormatItem id="yw" count="one">Y 'оны' w-'р' 'долоо' 'хоног'</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y 'оны' w-'р' 'долоо' 'хоног'</dateFormatItem>
 					</availableFormats>
 					<appendItems>
+						<appendItem request="Day-Of-Week">{0}, {1}</appendItem>
+						<appendItem request="Time-Day-Of-Week">{0}, {1}</appendItem>
 						<appendItem request="Timezone">{0} ({1})</appendItem>
 					</appendItems>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
@@ -1701,6 +1827,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">MMMMM/d E – MMMMM/d E</greatestDifference>
 							<greatestDifference id="M">MMMMM/d E – MMMMM/d E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">MMMM'ын' d–d</greatestDifference>
+							<greatestDifference id="M">MMMM'ын' d – MMMM'ын' d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y – y</greatestDifference>
@@ -2587,9 +2717,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Либревиль</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Британийн зуны цаг</daylight>
-				</long>
 				<exemplarCity>Лондон</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2680,9 +2807,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Жайпур</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Ирландын стандарт цаг</daylight>
-				</long>
 				<exemplarCity>Дублин</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -3378,6 +3502,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Harare">
 				<exemplarCity>Хараре</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Акрийн цаг</generic>
+					<standard>Акрийн стандарт цаг</standard>
+					<daylight>Акрийн зуны цаг</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Афганистаны цаг</standard>
@@ -3553,6 +3684,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Бразилийн зуны цаг</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Британийн цаг</generic>
+					<daylight>Британийн зуны цаг</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>Бруней Даруссаламын цаг</standard>
@@ -3726,6 +3863,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Гринвичийн цаг</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Гренландын цаг</generic>
+					<standard>Гренландын стандарт цаг</standard>
+					<daylight>Гренландын зуны цаг</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Зүүн Гренландын цаг</generic>
@@ -3752,7 +3896,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Хавай-Алеутын стандарт цаг</standard>
+					<standard>Хавайн цаг</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3813,6 +3957,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Ираны зуны цаг</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Ирландын цаг</generic>
+					<daylight>Ирландын стандарт цаг</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Эрхүүгийн цаг</generic>
@@ -3832,6 +3982,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Японы цаг</generic>
 					<standard>Японы стандарт цаг</standard>
 					<daylight>Японы зуны цаг</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>Камчаткын цаг</generic>
+					<standard>Камчаткын стандарт цаг</standard>
+					<daylight>Камчаткын зуны цаг</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -4096,11 +4253,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Сахалины зуны цаг</daylight>
 				</long>
 			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>Самарын цаг</generic>
+					<standard>Самарын стандарт цаг</standard>
+					<daylight>Самарын зуны цаг</daylight>
+				</long>
+			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Самоагийн цаг</generic>
 					<standard>Самоагийн стандарт цаг</standard>
-					<daylight>Самоагийн зуны цаг</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4167,6 +4329,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Чүүкийн цаг</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Туркийн цаг</generic>
+					<standard>Туркийн стандарт цаг</standard>
+					<daylight>Туркийн зуны цаг</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Туркменистаны цаг</generic>
@@ -4184,6 +4353,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Уругвайн цаг</generic>
 					<standard>Уругвайн стандарт цаг</standard>
 					<daylight>Уругвайн зуны цаг</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Өрөмчийн цаг</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -4291,11 +4465,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
 				<decimalFormat>
-					<pattern type="1000" count="one">0 мян'.'</pattern>
+					<pattern type="1000" count="one">0 мян</pattern>
 					<pattern type="1000" count="other">0 мян</pattern>
-					<pattern type="10000" count="one">00 мян'.'</pattern>
+					<pattern type="10000" count="one">00 мян</pattern>
 					<pattern type="10000" count="other">00 мян</pattern>
-					<pattern type="100000" count="one">000 мян'.'</pattern>
+					<pattern type="100000" count="one">000 мян</pattern>
 					<pattern type="100000" count="other">000 мян</pattern>
 					<pattern type="1000000" count="one">0 сая</pattern>
 					<pattern type="1000000" count="other">0 сая</pattern>
@@ -4307,14 +4481,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="1000000000" count="other">0 тэрбум</pattern>
 					<pattern type="10000000000" count="one">00 тэрбум</pattern>
 					<pattern type="10000000000" count="other">00 тэрбум</pattern>
-					<pattern type="100000000000" count="one">000Т</pattern>
-					<pattern type="100000000000" count="other">000Т</pattern>
-					<pattern type="1000000000000" count="one">0ИН</pattern>
-					<pattern type="1000000000000" count="other">0ИН</pattern>
-					<pattern type="10000000000000" count="one">00ИН</pattern>
-					<pattern type="10000000000000" count="other">00ИН</pattern>
-					<pattern type="100000000000000" count="one">000ИН</pattern>
-					<pattern type="100000000000000" count="other">000ИН</pattern>
+					<pattern type="100000000000" count="one">000 т'.'бум</pattern>
+					<pattern type="100000000000" count="other">000 т'.'бум</pattern>
+					<pattern type="1000000000000" count="one">0 их наяд</pattern>
+					<pattern type="1000000000000" count="other">0 их наяд</pattern>
+					<pattern type="10000000000000" count="one">00 и'.'наяд</pattern>
+					<pattern type="10000000000000" count="other">00 и'.'наяд</pattern>
+					<pattern type="100000000000000" count="one">000 их наяд</pattern>
+					<pattern type="100000000000000" count="other">000 их наяд</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
@@ -4561,30 +4735,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one">¤ 0 мян'.'</pattern>
-					<pattern type="1000" count="other">¤ 0 мян</pattern>
-					<pattern type="10000" count="one">¤ 00 мян'.'</pattern>
-					<pattern type="10000" count="other">¤ 00 мян</pattern>
-					<pattern type="100000" count="one">¤ 000 мян'.'</pattern>
-					<pattern type="100000" count="other">¤ 000 мян</pattern>
-					<pattern type="1000000" count="one">¤ 0 сая</pattern>
-					<pattern type="1000000" count="other">¤ 0 сая</pattern>
-					<pattern type="10000000" count="one">¤ 00 сая</pattern>
-					<pattern type="10000000" count="other">¤ 00 сая</pattern>
-					<pattern type="100000000" count="one">¤ 000 сая</pattern>
-					<pattern type="100000000" count="other">¤ 000 сая</pattern>
-					<pattern type="1000000000" count="one">¤ 0 тэрбум</pattern>
-					<pattern type="1000000000" count="other">¤ 0 тэрбум</pattern>
-					<pattern type="10000000000" count="one">¤ 00 тэрбум</pattern>
-					<pattern type="10000000000" count="other">¤ 00 тэрбум</pattern>
-					<pattern type="100000000000" count="one">¤ 000Т</pattern>
-					<pattern type="100000000000" count="other">¤ 000Т</pattern>
-					<pattern type="1000000000000" count="one">¤ 0ИН</pattern>
-					<pattern type="1000000000000" count="other">¤ 0ИН</pattern>
-					<pattern type="10000000000000" count="one">¤ 00ИН</pattern>
-					<pattern type="10000000000000" count="other">¤ 00ИН</pattern>
-					<pattern type="100000000000000" count="one">¤ 000ИН</pattern>
+					<pattern type="1000" count="one">0 мян ¤</pattern>
+					<pattern type="1000" count="other">0 мян ¤</pattern>
+					<pattern type="10000" count="one">00 мян ¤</pattern>
+					<pattern type="10000" count="other">00 мян ¤</pattern>
+					<pattern type="100000" count="one">000 мян ¤</pattern>
+					<pattern type="100000" count="other">000 мян ¤</pattern>
+					<pattern type="1000000" count="one">0 сая ¤</pattern>
+					<pattern type="1000000" count="other">0 сая ¤</pattern>
+					<pattern type="10000000" count="one">00 сая ¤</pattern>
+					<pattern type="10000000" count="other">00 сая ¤</pattern>
+					<pattern type="100000000" count="one">000 сая ¤</pattern>
+					<pattern type="100000000" count="other">000 сая ¤</pattern>
+					<pattern type="1000000000" count="one">0 тэрбум ¤</pattern>
+					<pattern type="1000000000" count="other">0 тэрбум ¤</pattern>
+					<pattern type="10000000000" count="one">00 тэрбум ¤</pattern>
+					<pattern type="10000000000" count="other">00 тэрбум ¤</pattern>
+					<pattern type="100000000000" count="one">000 тэрбум ¤</pattern>
+					<pattern type="100000000000" count="other">000 тэрбум ¤</pattern>
+					<pattern type="1000000000000" count="one">0 их наяд ¤</pattern>
+					<pattern type="1000000000000" count="other">0 их наяд ¤</pattern>
+					<pattern type="10000000000000" count="one">00 их наяд ¤</pattern>
+					<pattern type="10000000000000" count="other">00 их наяд ¤</pattern>
+					<pattern type="100000000000000" count="one">000 их наяд ¤</pattern>
+					<pattern type="100000000000000" count="one" alt="alphaNextToNumber">000 их наяд ¤</pattern>
 					<pattern type="100000000000000" count="other">¤ 000ИН</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">000 их наяд ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -4623,9 +4799,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</currencyFormats>
 		<currencyFormats numberSystem="mong">
 			<currencyFormatLength>
-				<currencyFormat type="standard">
-					<pattern alt="alphaNextToNumber">¤ #,##0.00</pattern>
-				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern alt="alphaNextToNumber">¤ #,##0.00</pattern>
 					<pattern alt="noCurrency">#,##0.00</pattern>
@@ -5328,8 +5501,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName>Карибын гулдер</displayName>
-				<displayName count="one">Карибын гулдер</displayName>
-				<displayName count="other">Карибын гулдер</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>Баруун Африкийн франк</displayName>
@@ -5356,8 +5527,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName>Зимбабвегийн гоулд</displayName>
-				<displayName count="one">Зимбабвегийн гоулд</displayName>
-				<displayName count="other">Зимбабвегийн гоулд</displayName>
 			</currency>
 		</currencies>
 		<minimalPairs>
@@ -6231,11 +6400,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>вебер</displayName>
 				<unitPattern count="one">{0} вебер</unitPattern>
 				<unitPattern count="other">{0} вебер</unitPattern>
-			</unit>
-			<unit type="speed-light-speed">
-				<displayName>гэрэл</displayName>
-				<unitPattern count="one">{0} гэрэл</unitPattern>
-				<unitPattern count="other">{0} гэрэл</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e9">
 				<displayName>мкг/кг</displayName>
@@ -7280,9 +7444,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-permyriad">
 				<displayName>‱</displayName>
 			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
-			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>л/км</displayName>
 			</unit>
@@ -7424,25 +7585,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-cup">
 				<unitPattern count="one">{0} аяга</unitPattern>
 				<unitPattern count="other">{0} аяга</unitPattern>
-			</unit>
-			<unit type="concentr-katal">
-				<displayName>кат</displayName>
-				<unitPattern count="one">{0} кат</unitPattern>
-				<unitPattern count="other">{0} кат</unitPattern>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>кал-IT</displayName>
-				<unitPattern count="one">{0} кал-IT</unitPattern>
-				<unitPattern count="other">{0} кал-IT</unitPattern>
-			</unit>
-			<unit type="force-kilogram-force">
-				<unitPattern count="one">{0} kgf</unitPattern>
-				<unitPattern count="other">{0} kgf</unitPattern>
-			</unit>
-			<unit type="speed-light-speed">
-				<displayName>гэрэл</displayName>
-				<unitPattern count="one">{0} гэрэл</unitPattern>
-				<unitPattern count="other">{0} гэрэл</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e9">
 				<displayName>мкг/кг</displayName>

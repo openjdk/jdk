@@ -346,6 +346,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pcm">නෛජීරියන් පෙන්ගින්</language>
 			<language type="pis">පිජින්</language>
 			<language type="pl">පෝලන්ත</language>
+			<language type="pms">පීඩ්මොන්ටේස්</language>
 			<language type="pqm">මලිසීට්-පස්සමකුඩි</language>
 			<language type="prg">පෘශියන්</language>
 			<language type="ps">පෂ්ටො</language>
@@ -867,15 +868,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<keys>
 			<key type="calendar">දින දසුන</key>
 			<key type="cf">මුදල් ආකෘති</key>
+			<key type="colAlternate">සංකේත නොසලකා පෙළගැස්වීම</key>
+			<key type="colBackwards">ප්‍රතිලෝම ස්වර ලකුණු අනුව පෙළගැස්වීම</key>
+			<key type="colCaseFirst">ලොකු අකුරු/කුඩා අකුරු අනුපිළිවෙල</key>
+			<key type="colCaseLevel">අකුරු වර්ගය සලකා පෙළගැස්වීම</key>
 			<key type="collation">පෙළගැස්ම</key>
+			<key type="colNormalization">ප්‍රමිතිගත පෙළගැස්වීම</key>
+			<key type="colNumeric">සංඛ්‍යාත්මක පෙළගැස්වීම</key>
+			<key type="colReorder">ස්ක්‍රිප්ට්/බ්ලොක් නැවත අනුපිළිවෙලට සැකසීම</key>
+			<key type="colStrength">පෙළගැස්වීමේ ප්‍රබලතාවය</key>
 			<key type="currency">විනිමය</key>
+			<key type="d0">පරිවර්තන ගමනාන්තය</key>
+			<key type="dx">ශබ්දකෝෂ පාදක පද බෙදීම් බැහැර කිරීම්</key>
 			<key type="em">ඉමොජි ඉදිරිපත් කිරීම</key>
+			<key type="fw">සතියේ පළමු දිනය</key>
+			<key type="h0">කලවම් කරන ලද</key>
 			<key type="hc">පැය චක්‍රය (12 එදිරිව 24)</key>
+			<key type="i0">ආදාන ක්‍රමය</key>
+			<key type="k0">යතුරුපුවරුව</key>
+			<key type="kv">වැඩිම නොසලකා හරින ලද</key>
 			<key type="lb">පේළි කඩන විලාසය</key>
 			<key type="lw">වචන තුළ රේඛා බිඳීම්</key>
+			<key type="m0">පරිවර්තන රීති</key>
 			<key type="ms">මිනුම් ක්‍රමය</key>
+			<key type="mu">මිනුම් ඒකකය</key>
 			<key type="numbers">ඉලක්කම්</key>
+			<key type="rg">අතිරේක දත්ත සඳහා කලාපය</key>
+			<key type="s0">පරිවර්තන ප්‍රභවය</key>
+			<key type="sd">කලාපීය අනුබෙදීම</key>
 			<key type="ss">කෙටි යෙදු. පසු වාක්‍ය බිඳීම</key>
+			<key type="t">පරිවර්තනය කරන්න</key>
+			<key type="t0">යන්ත්‍ර මඟින් පරිවර්තනය කළ</key>
+			<key type="timezone">වේලා කලාපය</key>
+			<key type="va">පෙදෙසි ප්‍රභේදය</key>
+			<key type="x">පෞද්ගලික භාවිතය</key>
+			<key type="x0">පෞද්ගලික-භාවිත පරිවර්තනය</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">බෞද්ධ දින දසුන</type>
@@ -894,13 +921,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian" scope="core">ග්‍රෙගරියානු</type>
 			<type key="calendar" type="hebrew">හීබෲ දින දසුන</type>
 			<type key="calendar" type="hebrew" scope="core">හීබෲ</type>
+			<type key="calendar" type="indian" scope="core">ඉන්දීය ජාතික</type>
 			<type key="calendar" type="islamic">හිජ්රි දින දසුන</type>
 			<type key="calendar" type="islamic" scope="core">හිජ්රි</type>
 			<type key="calendar" type="islamic-civil">හිජ්රි දින දසුන (වගුව, සිවිල් වීර කාව්‍යය)</type>
 			<type key="calendar" type="islamic-civil" scope="core">හිජ්රි දින දසුන (වගුව, සිවිල් වීර කාව්‍යය)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">හිජ්රි, සෞදි අරාබි චන්ද්‍ර දර්ශනය</type>
+			<type key="calendar" type="islamic-tbla" scope="core">හිජ්රි (වගුගත, තාරකා විද්‍යාත්මක යුගය)</type>
 			<type key="calendar" type="islamic-umalqura">හිජ්රි දින දසුන (උම් අල් කුරා)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">හිජ්රි (උම් අල් කුරා)</type>
 			<type key="calendar" type="iso8601">අයිඑස්ඕ-8601 දින දසුන</type>
+			<type key="calendar" type="iso8601" scope="core">ග්‍රෙගෝරියානු</type>
 			<type key="calendar" type="japanese">ජපන් දින දසුන</type>
 			<type key="calendar" type="japanese" scope="core">ජපන්</type>
 			<type key="calendar" type="persian">පර්සියානු දින දසුන</type>
@@ -911,17 +942,47 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="cf" type="account" scope="core">ගිණුම්කරණය</type>
 			<type key="cf" type="standard">සම්මත මුදල් ආකෘති</type>
 			<type key="cf" type="standard" scope="core">සම්මත</type>
+			<type key="colCaseFirst" type="lower" scope="core">කුඩා අකුරු</type>
+			<type key="colCaseFirst" type="no" scope="core">කුඩා අකුරු</type>
+			<type key="colCaseFirst" type="upper" scope="core">ලොකු අකුරු</type>
+			<type key="collation" type="compat" scope="core">ගැළපීම</type>
 			<type key="collation" type="dictionary">අකාරාදිය පෙළගැස්ම</type>
 			<type key="collation" type="dictionary" scope="core">අකාරාදිය</type>
 			<type key="collation" type="ducet">පෙරනිමි යුනිකේත පෙළගැස්ම</type>
 			<type key="collation" type="ducet" scope="core">පෙරනිමි යුනිකේත</type>
+			<type key="collation" type="emoji" scope="core">ඉමෝජි</type>
+			<type key="collation" type="eor" scope="core">යුරෝපීය රීති</type>
+			<type key="collation" type="phonebook" scope="core">දුරකථන නාමාවලිය</type>
+			<type key="collation" type="phonetic" scope="core">ශබ්ද අනුව</type>
+			<type key="collation" type="pinyin" scope="core">පින්යින්</type>
 			<type key="collation" type="search">සාමාන්‍ය සෙවීම</type>
 			<type key="collation" type="search" scope="core">සෙවීම</type>
+			<type key="collation" type="searchjl" scope="core">කොරියානු ආරම්භක ව්‍යාංජනාක්ෂර</type>
 			<type key="collation" type="standard">සම්මත පෙළගැස්ම</type>
 			<type key="collation" type="standard" scope="core">සම්මත</type>
+			<type key="collation" type="stroke" scope="core">රේඛාව</type>
+			<type key="collation" type="traditional" scope="core">සම්ප්‍රදායික</type>
+			<type key="collation" type="unihan" scope="core">මූලිකාංග සහ රේඛා ක්‍රමය</type>
+			<type key="collation" type="zhuyin" scope="core">ජුයින්</type>
+			<type key="colReorder" type="currency" scope="core">මුදල් වර්ගය</type>
+			<type key="colReorder" type="digit" scope="core">ඉලක්කම්</type>
+			<type key="colReorder" type="punct" scope="core">විරාම ලකුණු</type>
+			<type key="colReorder" type="space" scope="core">හිස්තැන්</type>
+			<type key="colReorder" type="symbol" scope="core">සංකේතය</type>
+			<type key="colStrength" type="identical" scope="core">සියල්ල</type>
+			<type key="colStrength" type="primary" scope="core">මූලික අකුරු පමණි</type>
+			<type key="colStrength" type="quaternary" scope="core">මූලික, ස්වර ලකුණු, අකුරු වර්ගය, ප්‍රභේද, කානා අකුරු</type>
+			<type key="colStrength" type="secondary" scope="core">මූලික, ස්වර ලකුණු</type>
+			<type key="colStrength" type="tertiary" scope="core">මූලික, ස්වර ලකුණු, අකුරු වර්ගය, ප්‍රභේද</type>
+			<type key="d0" type="fwidth">සම්පූර්ණ පළලට</type>
+			<type key="d0" type="hwidth">අර්ධ පළලට</type>
 			<type key="em" type="default" scope="core">පෙරනිමිය</type>
 			<type key="em" type="emoji" scope="core">ඉමොජි</type>
 			<type key="em" type="text" scope="core">පෙළ</type>
+			<type key="hc" type="c12">පැය 12 ක්‍රමය</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">පැය 24 ක්‍රමය</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">පැය 12 ක්‍රමය (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">පැය 12 ක්‍රමය (1–12)</type>
@@ -930,6 +991,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">පැය 24 ක්‍රමය (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">හිස් ඉඩ, විරාම ලකුණු, සියලුම සංකේත මාරු කරන්න</type>
+			<type key="kv" type="punct" scope="core">හිස් ඉඩ, විරාම ලකුණු මාරු කරන්න</type>
+			<type key="kv" type="space" scope="core">හිස් ඉඩ, විරාම ලකුණු මාරු කරන්න</type>
+			<type key="kv" type="symbol" scope="core">හිස් ඉඩ, විරාම ලකුණු, මුදල් නොවන සංකේත මාරු කරන්න</type>
 			<type key="lb" type="loose">ලිහිල් කඩන විලාසය</type>
 			<type key="lb" type="loose" scope="core">ලිහිල්</type>
 			<type key="lb" type="normal">සාමාන්‍ය පේළි කඩන විලාසය</type>
@@ -940,6 +1005,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="lw" type="keepall" scope="core">සියල්ල තබා ගන්න</type>
 			<type key="lw" type="normal" scope="core">සාමාන්‍ය</type>
 			<type key="lw" type="phrase" scope="core">වාක්‍ය ඛණ්ඩ තුළ තබා ගන්න</type>
+			<type key="m0" type="bgn">US BGN අක්ෂර පරිවර්තනය</type>
+			<type key="m0" type="ungegn">UN GEGN අක්ෂර පරිවර්තනය</type>
 			<type key="ms" type="metric">මෙට්‍රික් ක්‍රමය</type>
 			<type key="ms" type="metric" scope="core">මෙට්‍රික්</type>
 			<type key="ms" type="uksystem">රාජකීය මිනුම් ක්‍රමය</type>
@@ -948,47 +1015,82 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="ussystem" scope="core">එජ</type>
 			<type key="numbers" type="arab">ඉන්දු අරාබි ඉලක්කම්</type>
 			<type key="numbers" type="arabext">වැඩි කළ ඉන්දු අරාබි ඉලක්කම්</type>
+			<type key="numbers" type="arabext" scope="core">විස්තීරණ අරාබි-ඉන්දු</type>
 			<type key="numbers" type="armn">ඇමරිකානු සංඛ්‍යාංකන</type>
 			<type key="numbers" type="armnlow">ඇමරිකානු කුඩා සංඛ්‍යාංකන</type>
+			<type key="numbers" type="armnlow" scope="core">ආර්මේනියානු කුඩා අකුරු</type>
 			<type key="numbers" type="beng">බෙංගාලි ඉලක්කම්</type>
 			<type key="numbers" type="cakm">චක්මා ඉලක්කම්</type>
 			<type key="numbers" type="deva">දේවනාගරී ඉලක්කම්</type>
 			<type key="numbers" type="ethi">ඉතියෝපියානු සංඛ්‍යාංකන</type>
+			<type key="numbers" type="finance" scope="core">මූල්‍ය</type>
 			<type key="numbers" type="fullwide">සම්පූර්ණ පළල ඉලක්කම්</type>
+			<type key="numbers" type="fullwide" scope="core">සම්පූර්ණ පළල</type>
 			<type key="numbers" type="geor">ජෝජියානු සංඛ්‍යාංකන</type>
 			<type key="numbers" type="grek">ග්‍රීක සංඛ්‍යාංකන</type>
 			<type key="numbers" type="greklow">ග්‍රීක කුඩා සංඛ්‍යාංකන</type>
+			<type key="numbers" type="greklow" scope="core">ග්‍රීක කුඩා අකුරු</type>
 			<type key="numbers" type="gujr">ගුජරාටි ඉලක්කම්</type>
 			<type key="numbers" type="guru">ගුර්මුකී ඉලක්කම්</type>
+			<type key="numbers" type="hanidays" scope="core">සම්ප්‍රදායික දින දර්ශන සඳහා හන්-අක්ෂර මඟින් මාසයේ දින අංකනය</type>
 			<type key="numbers" type="hanidec">චීන දශමය සංඛ්‍යාංකන</type>
+			<type key="numbers" type="hanidec" scope="core">චීන සංඛ්‍යා අක්ෂර භාවිතයෙන් ස්ථානීය දශම පද්ධතිය</type>
 			<type key="numbers" type="hans">සුළුකළ චීන සංඛ්‍යාංකන</type>
 			<type key="numbers" type="hansfin">සුළුකළ චීන මුල්‍යමය සංඛ්‍යාංකන</type>
+			<type key="numbers" type="hansfin" scope="core">සුළුකළ චීන මූල්‍ය</type>
 			<type key="numbers" type="hant">සාම්ප්‍රදායික චීන සංඛ්‍යාංකන</type>
 			<type key="numbers" type="hantfin">සාම්ප්‍රදායික චීන මුල්‍යමය සංඛ්‍යාංකන</type>
+			<type key="numbers" type="hantfin" scope="core">සම්ප්‍රදායික චීන මූල්‍ය</type>
 			<type key="numbers" type="hebr">හීබෲ සංඛ්‍යාංකන</type>
 			<type key="numbers" type="java">ජාවානු ඉලක්කම්</type>
 			<type key="numbers" type="jpan">ජපාන සංඛ්‍යාංකන</type>
 			<type key="numbers" type="jpanfin">ජපාන මුල්‍යමය සංඛ්‍යාංකන</type>
+			<type key="numbers" type="jpanfin" scope="core">ජපන් මූල්‍ය</type>
+			<type key="numbers" type="jpanyear" scope="core">ජපන් පළමු වසර ගන්නෙන් අංකනය</type>
 			<type key="numbers" type="khmr">කමර් ඉලක්කම්</type>
 			<type key="numbers" type="knda">කන්නඩ ඉලක්කම්</type>
+			<type key="numbers" type="lanatham" scope="core">තායි තාම් තාම් (ආගමික)</type>
 			<type key="numbers" type="laoo">ලාඕ ඉලක්කම්</type>
 			<type key="numbers" type="latn">බටහිර ඉලක්කම්</type>
+			<type key="numbers" type="mathbold" scope="core">ගණිතමය තද අකුරු</type>
+			<type key="numbers" type="mathdbl" scope="core">ගණිතමය ද්විත්ව-රේඛීය</type>
+			<type key="numbers" type="mathmono" scope="core">ගණිතමය ඒක-අවකාශ</type>
+			<type key="numbers" type="mathsanb" scope="core">ගණිතමය සංස් සෙරිෆ් තද අකුරු</type>
+			<type key="numbers" type="mathsans" scope="core">ගණිතමය සංස් සෙරිෆ්</type>
 			<type key="numbers" type="mlym">මලයාලම් ඉලක්කම්</type>
 			<type key="numbers" type="mtei">මීටේයි මයෙක් ඉලක්කම්</type>
 			<type key="numbers" type="mymr">බුරුම ඉලක්කම්</type>
+			<type key="numbers" type="mymrepka" scope="core">මියන්මාර නැගෙනහිර ප්වෝ කරෙන්</type>
+			<type key="numbers" type="mymrpao" scope="core">මියන්මාර පාඕ</type>
+			<type key="numbers" type="mymrshan" scope="core">මියන්මාර ශාන්</type>
+			<type key="numbers" type="mymrtlng" scope="core">මියන්මාර තායි ලේං</type>
+			<type key="numbers" type="native">දේශීය ඉලක්කම්</type>
+			<type key="numbers" type="native" scope="core">දේශීය ඉලක්කම්</type>
 			<type key="numbers" type="olck">ඔල් චිකි ඉලක්කම්</type>
 			<type key="numbers" type="orya">ඔරියා ඉලක්කම්</type>
+			<type key="numbers" type="outlined" scope="core">වටසන් කළ</type>
 			<type key="numbers" type="roman">රෝමානු සංඛ්‍යාංකන</type>
+			<type key="numbers" type="roman" scope="core">රෝමානු ලොකු අකුරු</type>
 			<type key="numbers" type="romanlow">රෝමානු කුඩා සංඛ්‍යාංකන</type>
+			<type key="numbers" type="romanlow" scope="core">රෝමානු කුඩා අකුරු</type>
+			<type key="numbers" type="segment" scope="core">ඛණ්ඩනය කළ</type>
 			<type key="numbers" type="taml">සාම්ප්‍රදායික දෙමළ සංඛ්‍යාංකන</type>
 			<type key="numbers" type="tamldec">දෙමළ ඉලක්කම්</type>
+			<type key="numbers" type="tamldec" scope="core">නූතන දෙමළ</type>
 			<type key="numbers" type="telu">තෙළිඟු ඉලක්කම්</type>
 			<type key="numbers" type="thai">තායි ඉලක්කම්</type>
 			<type key="numbers" type="tibt">ටිබෙට ඉලක්කම්</type>
+			<type key="numbers" type="traditional" scope="core">සම්ප්‍රදායික සංඛ්‍යාංකන</type>
 			<type key="numbers" type="vaii">වායි ඉලක්කම්</type>
 			<type key="ss" type="none" scope="core">ක්‍රියාවිරහිතයි</type>
 			<type key="ss" type="standard" scope="core">ක්‍රියාත්මකයි</type>
+			<type key="t0" type="und">සඳහන් නොකළ යන්ත්‍ර මඟින් පරිවර්තනය කළ</type>
+			<type key="va" type="posix" scope="core">POSIX ප්‍රභේදය</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">ක්‍රියාවිරහිතයි</typeValue>
+			<typeValue type="yes">ක්‍රියාත්මකයි</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">මෙට්රික්</measurementSystemName>
 			<measurementSystemName type="UK">එංගලන්ත</measurementSystemName>
@@ -1033,11 +1135,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>G y-MM-dd</pattern>
+							<pattern>G y/MM/dd</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+						<numericTimeSeparator>:</numericTimeSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -1079,20 +1185,43 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Eh">E a h</dateFormatItem>
+						<dateFormatItem id="Ehm">E a h:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E a h:mm:ss</dateFormatItem>
+						<dateFormatItem id="GyM">G y/M</dateFormatItem>
+						<dateFormatItem id="GyMd">G y/MM/dd</dateFormatItem>
+						<dateFormatItem id="GyMEd">G y/MM/dd, E</dateFormatItem>
 						<dateFormatItem id="h">a h</dateFormatItem>
-						<dateFormatItem id="hm">a h.mm</dateFormatItem>
-						<dateFormatItem id="hms">a h.mm.ss</dateFormatItem>
+						<dateFormatItem id="hm">a h:mm</dateFormatItem>
+						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="hv">v a h</dateFormatItem>
-						<dateFormatItem id="Md">M-d</dateFormatItem>
-						<dateFormatItem id="MEd">M-d, E</dateFormatItem>
+						<dateFormatItem id="Md">M/d</dateFormatItem>
+						<dateFormatItem id="MEd">M/d, E</dateFormatItem>
 						<dateFormatItem id="MMMEd">MMM d E</dateFormatItem>
-						<dateFormatItem id="ms">mm.ss</dateFormatItem>
-						<dateFormatItem id="yyyyM">G y-M</dateFormatItem>
-						<dateFormatItem id="yyyyMd">G y-M-d</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">G y-M-d, E</dateFormatItem>
+						<dateFormatItem id="yyyyM">G y/M</dateFormatItem>
+						<dateFormatItem id="yyyyMd">G y/M/d</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">G y/M/d, E</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">B h – B h</greatestDifference>
+							<greatestDifference id="h">B h–h</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">B h:mm – B h:mm</greatestDifference>
+							<greatestDifference id="h">B h:mm–h:mm</greatestDifference>
+							<greatestDifference id="m">B h:mm–h:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">G y/M – G y/M</greatestDifference>
+							<greatestDifference id="M">y/M – y/M G</greatestDifference>
+							<greatestDifference id="y">y/M – y/M G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">G d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="G">G d/M/y – G d/M/y</greatestDifference>
+							<greatestDifference id="M">d/M/y – G d/M/y</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">a h – a h</greatestDifference>
 							<greatestDifference id="h">a h–h</greatestDifference>
@@ -1123,7 +1252,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">M-d – M-d</greatestDifference>
+							<greatestDifference id="d">M/d – M/d</greatestDifference>
 							<greatestDifference id="M">M-d – M-d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
@@ -1134,19 +1263,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">MMM-d, E – MMM-d, E</greatestDifference>
 							<greatestDifference id="M">MMM-dd, E – MMM-dd, E</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">MMMM d – d</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">G y-M – y-M</greatestDifference>
-							<greatestDifference id="y">G y-M – y-M</greatestDifference>
+							<greatestDifference id="M">G y/M – y/M</greatestDifference>
+							<greatestDifference id="y">G y/M – y/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">G y-M-d – y-M-d</greatestDifference>
-							<greatestDifference id="M">G y-M-d – y-M-d</greatestDifference>
-							<greatestDifference id="y">G y-M-d – y-M-d</greatestDifference>
+							<greatestDifference id="d">G y/M/d – y/M/d</greatestDifference>
+							<greatestDifference id="M">G y/M/d – y/M/d</greatestDifference>
+							<greatestDifference id="y">G y/M/d – y/M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">G y-M-d, E – y-M-d, E</greatestDifference>
-							<greatestDifference id="M">G y-M-d, E – y-M-d, E</greatestDifference>
-							<greatestDifference id="y">G y-M-d, E – y-M-d, E</greatestDifference>
+							<greatestDifference id="d">G y/M/d, E – y/M/d, E</greatestDifference>
+							<greatestDifference id="M">G y/M/d, E – y/M/d, E</greatestDifference>
+							<greatestDifference id="y">G y/M/d, E – y/M/d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">G y MMM d – d</greatestDifference>
@@ -1164,34 +1296,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<calendar type="gregorian">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1">දුරුතු</month>
-							<month type="2">නවම්</month>
-							<month type="3">මැදින්</month>
-							<month type="4">බක්</month>
-							<month type="5">වෙසක්</month>
-							<month type="6">පොසොන්</month>
-							<month type="7">ඇසළ</month>
-							<month type="8">නිකිණි</month>
-							<month type="9">බිනර</month>
-							<month type="10">වප්</month>
-							<month type="11">ඉල්</month>
-							<month type="12">උඳුවප්</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">දු</month>
-							<month type="2">න</month>
-							<month type="3">මැ</month>
-							<month type="4">බ</month>
-							<month type="5">වෙ</month>
-							<month type="6">පො</month>
-							<month type="7">ඇ</month>
-							<month type="8">නි</month>
-							<month type="9">බි</month>
-							<month type="10">ව</month>
-							<month type="11">ඉ</month>
-							<month type="12">උ</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">දුරුතු</month>
 							<month type="2">නවම්</month>
@@ -1208,20 +1312,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">දුරුතු</month>
-							<month type="2">නවම්</month>
-							<month type="3">මැදින්</month>
-							<month type="4">බක්</month>
-							<month type="5">වෙසක්</month>
-							<month type="6">පොසොන්</month>
-							<month type="7">ඇසළ</month>
-							<month type="8">නිකිණි</month>
-							<month type="9">බිනර</month>
-							<month type="10">වප්</month>
-							<month type="11">ඉල්</month>
-							<month type="12">උඳුවප්</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">දු</month>
 							<month type="2">න</month>
@@ -1235,20 +1325,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="10">ව</month>
 							<month type="11">ඉ</month>
 							<month type="12">උ</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">දුරුතු</month>
-							<month type="2">නවම්</month>
-							<month type="3">මැදින්</month>
-							<month type="4">බක්</month>
-							<month type="5">වෙසක්</month>
-							<month type="6">පොසොන්</month>
-							<month type="7">ඇසළ</month>
-							<month type="8">නිකිණි</month>
-							<month type="9">බිනර</month>
-							<month type="10">වප්</month>
-							<month type="11">ඉල්</month>
-							<month type="12">උඳුවප්</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -1377,22 +1453,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>HH.mm.ss zzzz</pattern>
+							<pattern>HH:mm:ss zzzz</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern>HH.mm.ss z</pattern>
+							<pattern>HH:mm:ss z</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>HH.mm.ss</pattern>
+							<pattern>HH:mm:ss</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>HH.mm</pattern>
+							<pattern>HH:mm</pattern>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -1450,19 +1526,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Eh">E a h</dateFormatItem>
-						<dateFormatItem id="Ehm">E a h.mm</dateFormatItem>
-						<dateFormatItem id="EHm">E HH.mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E a h.mm.ss</dateFormatItem>
-						<dateFormatItem id="EHms">E HH.mm.ss</dateFormatItem>
+						<dateFormatItem id="Ehm">E a h:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="h">a h</dateFormatItem>
-						<dateFormatItem id="hm">a h.mm</dateFormatItem>
-						<dateFormatItem id="Hm">HH.mm</dateFormatItem>
-						<dateFormatItem id="hms">a h.mm.ss</dateFormatItem>
-						<dateFormatItem id="Hms">HH.mm.ss</dateFormatItem>
+						<dateFormatItem id="hm">a h:mm</dateFormatItem>
+						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmsv">v a h:mm:ss</dateFormatItem>
-						<dateFormatItem id="Hmsv">v HH.mm.ss</dateFormatItem>
-						<dateFormatItem id="hmv">v a h.mm</dateFormatItem>
-						<dateFormatItem id="Hmv">v HH.mm</dateFormatItem>
+						<dateFormatItem id="Hmsv">v HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hmv">v a h:mm</dateFormatItem>
+						<dateFormatItem id="Hmv">v HH:mm</dateFormatItem>
 						<dateFormatItem id="hv">v a h</dateFormatItem>
 						<dateFormatItem id="Hv">v HH</dateFormatItem>
 						<dateFormatItem id="Md">M-d</dateFormatItem>
@@ -1470,13 +1542,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMEd">MMM d E</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">MMMM සතිය W</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM සතිය W</dateFormatItem>
-						<dateFormatItem id="ms">mm.ss</dateFormatItem>
 						<dateFormatItem id="yM">y-M</dateFormatItem>
 						<dateFormatItem id="yMd">y-M-d</dateFormatItem>
 						<dateFormatItem id="yMEd">y-M-d, E</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="contributed">y MMMM d</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="contributed">y MMMM d, EEE</dateFormatItem>
 						<dateFormatItem id="yw" count="one">Y සතිය w</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y සතිය w</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Day-Of-Week">{0}, {1}</appendItem>
+					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="GyM">
@@ -1501,22 +1577,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="h">a h–h</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">a h.mm – a h.mm</greatestDifference>
-							<greatestDifference id="h">a h.mm – h.mm</greatestDifference>
-							<greatestDifference id="m">a h.mm – h.mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH.mm–HH.mm</greatestDifference>
-							<greatestDifference id="m">HH.mm–HH.mm</greatestDifference>
+							<greatestDifference id="a">a h:mm – a h:mm</greatestDifference>
+							<greatestDifference id="h">a h:mm – h:mm</greatestDifference>
+							<greatestDifference id="m">a h:mm – h:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">a h.mm – a h.mm v</greatestDifference>
-							<greatestDifference id="h">a h.mm – h.mm v</greatestDifference>
-							<greatestDifference id="m">a h.mm – h.mm v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH.mm–HH.mm v</greatestDifference>
-							<greatestDifference id="m">HH.mm–HH.mm v</greatestDifference>
+							<greatestDifference id="a">a h:mm – a h:mm v</greatestDifference>
+							<greatestDifference id="h">a h:mm – h:mm v</greatestDifference>
+							<greatestDifference id="m">a h:mm – h:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">a h – a h v</greatestDifference>
@@ -1536,6 +1604,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">MMM-d, E – MMM-d, E</greatestDifference>
 							<greatestDifference id="M">MMM-dd, E – MMM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">MMMM d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
 							<greatestDifference id="d">y-M-d – y-M-d</greatestDifference>
@@ -1870,9 +1941,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="minute-short">
 				<displayName>විනා.</displayName>
 			</field>
-			<field type="minute-narrow">
-				<displayName>විනා.</displayName>
-			</field>
 			<field type="second">
 				<displayName>තත්පරය</displayName>
 				<relative type="0">දැන්</relative>
@@ -1898,8 +1966,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<timeZoneNames>
 			<hourFormat>+HH.mm;-HH.mm</hourFormat>
 			<gmtFormat>ග්‍රිමවේ{0}</gmtFormat>
-			<gmtZeroFormat>ග්‍රිමවේ</gmtZeroFormat>
+			<gmtFormat alt="utc">සවිවේ{0}</gmtFormat>
 			<gmtUnknownFormat>ග්‍රිමවේ+?</gmtUnknownFormat>
+			<gmtUnknownFormat alt="utc">සවිවේ+?</gmtUnknownFormat>
 			<regionFormat>{0} වේලාව</regionFormat>
 			<regionFormat type="daylight">{0} දිවාආලෝක වේලාව</regionFormat>
 			<regionFormat type="standard">{0} සම්මත වේලාව</regionFormat>
@@ -1910,6 +1979,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<long>
 					<standard>සමකක්ෂ සාර්ව වේලාව</standard>
 				</long>
+				<short>
+					<standard>සවිවේ</standard>
+				</short>
 			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>හඳුනා නොගත් නගරය</exemplarCity>
@@ -2380,9 +2452,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ලිබ්රවිල්</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>බ්‍රිතාන්‍ය ගිම්හාන වේලාව</daylight>
-				</long>
 				<exemplarCity>ලන්ඩන්</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2473,9 +2542,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ජයපුර</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>අයර්ලන්ත සම්මත වේලාව</daylight>
-				</long>
 				<exemplarCity>ඩබ්ලින්</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -3171,6 +3237,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Harare">
 				<exemplarCity>හරාරේ</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>ඒකර් වේලාව</generic>
+					<standard>ඒකර් සම්මත වේලාව</standard>
+					<daylight>ඒකර් ගිම්හාන වේලාව</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>ඇෆ්ගනිස්ථාන වේලාව</standard>
@@ -3346,6 +3419,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>බ්‍රසීල ග්‍රීෂ්ම කාලය</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>බ්‍රිතාන්‍ය වේලාව</generic>
+					<daylight>බ්‍රිතාන්‍ය ගිම්හාන වේලාව</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>බෘනායි දරුස්සලාම් වේලාව</standard>
@@ -3519,6 +3598,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>ග්‍රිනිච් මධ්‍යම වේලාව</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>ග්‍රීන්ලන්ත වේලාව</generic>
+					<standard>ග්‍රීන්ලන්ත සම්මත වේලාව</standard>
+					<daylight>ග්‍රීන්ලන්ත ගිම්හාන වේලාව</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>නැගෙනහිර ග්‍රීන්ලන්ත වේලාව</generic>
@@ -3545,7 +3631,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>හවායි-අලෙයුතියාන් සම්මත වේලාව</standard>
+					<standard>හවායි වේලාව</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3606,6 +3692,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ඉරාන දිවා කාලය</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>අයර්ලන්ත වේලාව</generic>
+					<daylight>අයර්ලන්ත සම්මත වේලාව</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>ඉර්කුට්ස්ක් වේලාව</generic>
@@ -3625,6 +3717,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ජපාන වේලාව</generic>
 					<standard>ජපාන සම්මත වේලාව</standard>
 					<daylight>ජපාන දහවල් වේලාව</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>කම්චැට්කා වේලාව</generic>
+					<standard>කම්චැට්කා සම්මත වේලාව</standard>
+					<daylight>කම්චැට්කා ගිම්හාන වේලාව</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -3664,11 +3763,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Kyrgystan">
 				<long>
 					<standard>කිර්ගිස්තාන වේලාව</standard>
-				</long>
-			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard>ශ්‍රී ලංකා වේලාව</standard>
 				</long>
 			</metazone>
 			<metazone type="Line_Islands">
@@ -3894,11 +3988,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>සඛලින් ග්‍රීෂ්ම වේලාව</daylight>
 				</long>
 			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>සමාරා වේලාව</generic>
+					<standard>සමාරා සම්මත වේලාව</standard>
+					<daylight>සමාරා ගිම්හාන වේලාව</daylight>
+				</long>
+			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>සැමෝවා වේලාව</generic>
 					<standard>සැමෝවා සම්මත වේලාව</standard>
-					<daylight>සැමෝවා ග්‍රීෂ්ම වේලාව</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3965,6 +4064,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>චුක් වේලාව</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>තුර්කියේ වේලාව</generic>
+					<standard>තුර්කියේ සම්මත වේලාව</standard>
+					<daylight>තුර්කියේ ගිම්හාන වේලාව</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>ටර්ක්මෙනිස්තාන වේලාව</generic>
@@ -3982,6 +4088,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>උරුගුවේ වේලාව</generic>
 					<standard>උරුගුවේ සම්මත වේලාව</standard>
 					<daylight>උරුගුවේ ග්‍රීෂ්ම කාලය</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>උරුම්කි වේලාව</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -4054,9 +4165,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<symbols numberSystem="latn">
-			<timeSeparator>.</timeSeparator>
-		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength type="long">
 				<decimalFormat>
@@ -4279,6 +4387,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="CHF">
 				<displayName>ස්විස් ෆ්‍රෑන්ක්</displayName>
+				<symbol alt="narrow" draft="contributed">ෆ්‍රෑ.</symbol>
 			</currency>
 			<currency type="CLP">
 				<displayName>චිලි පැසෝ</displayName>
@@ -4708,8 +4817,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName>සිම්බාබ්වේ රත්තරන්</displayName>
-				<displayName count="one">සිම්බාබ්වේ රත්තරන්</displayName>
-				<displayName count="other">සිම්බාබ්වේ රත්තරන්</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -4887,11 +4994,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-item">
 				<displayName>අයිතම</displayName>
-			</unit>
-			<unit type="concentr-part">
-				<displayName>කොටස</displayName>
-				<unitPattern count="one">කොටස {0}</unitPattern>
-				<unitPattern count="other">කොටස {0}</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName>මිලියනයට කොටස්</displayName>
@@ -5658,11 +5760,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>සීවර්ට්</displayName>
 				<unitPattern count="one">සීවර්ට් {0}</unitPattern>
 				<unitPattern count="other">සීවර්ට් {0}</unitPattern>
-			</unit>
-			<unit type="energy-gray">
-				<displayName>අළු</displayName>
-				<unitPattern count="one">අළු {0}</unitPattern>
-				<unitPattern count="other">අළු {0}</unitPattern>
 			</unit>
 			<unit type="force-kilogram-force">
 				<displayName>කිලෝග්‍රෑම්-බලය</displayName>
@@ -6889,11 +6986,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}වඅඟ²</unitPattern>
 				<perUnitPattern>{0}/වඅඟ²</perUnitPattern>
 			</unit>
-			<unit type="concentr-part">
-				<displayName>කොටස</displayName>
-				<unitPattern count="one">කොටස {0}</unitPattern>
-				<unitPattern count="other">කොටස {0}</unitPattern>
-			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName>මිලිකො</displayName>
 			</unit>
@@ -7035,11 +7127,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">ඇ {0}</unitPattern>
 				<unitPattern count="other">ඇ {0}</unitPattern>
 			</unit>
-			<unit type="pressure-ofhg">
-				<displayName>ර</displayName>
-				<unitPattern count="one">ර {0}</unitPattern>
-				<unitPattern count="other">ර {0}</unitPattern>
-			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>&quot; ර</displayName>
 				<unitPattern count="one">ර {0}&quot;</unitPattern>
@@ -7062,6 +7149,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">බි{0}</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
+				<displayName>°C</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
@@ -7085,70 +7173,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-dessert-spoon-imperial">
 				<displayName>ඉම්පී. අතුරුපස හැඳි</displayName>
 			</unit>
-			<unit type="angle-steradian">
-				<displayName>ස්ට</displayName>
-				<unitPattern count="one">ස්ට {0}</unitPattern>
-				<unitPattern count="other">ස්ට {0}</unitPattern>
-			</unit>
-			<unit type="concentr-katal">
-				<displayName>කැට</displayName>
-				<unitPattern count="one">කැට {0}</unitPattern>
-				<unitPattern count="other">කැට {0}</unitPattern>
-			</unit>
-			<unit type="electric-coulomb">
-				<displayName>කූ</displayName>
-				<unitPattern count="one">කූ {0}</unitPattern>
-				<unitPattern count="other">කූ {0}</unitPattern>
-			</unit>
-			<unit type="electric-farad">
-				<displayName>ෆැ</displayName>
-				<unitPattern count="one">ෆැ {0}</unitPattern>
-				<unitPattern count="other">ෆැ {0}</unitPattern>
-			</unit>
-			<unit type="electric-henry">
-				<displayName>හෙ</displayName>
-				<unitPattern count="one">හෙ {0}</unitPattern>
-				<unitPattern count="other">හෙ {0}</unitPattern>
-			</unit>
-			<unit type="electric-siemens">
-				<displayName>සී</displayName>
-				<unitPattern count="one">සී {0}</unitPattern>
-				<unitPattern count="other">සී {0}</unitPattern>
-			</unit>
 			<unit type="energy-calorie-it">
 				<displayName>කැ [IT]</displayName>
 				<unitPattern count="one">කැ [IT] {0}</unitPattern>
 				<unitPattern count="other">කැ [IT] {0}</unitPattern>
-			</unit>
-			<unit type="energy-becquerel">
-				<displayName>බෙක</displayName>
-				<unitPattern count="one">බෙක {0}</unitPattern>
-				<unitPattern count="other">බෙක {0}</unitPattern>
-			</unit>
-			<unit type="energy-sievert">
-				<displayName>සීව</displayName>
-				<unitPattern count="one">සීව {0}</unitPattern>
-				<unitPattern count="other">සීව {0}</unitPattern>
-			</unit>
-			<unit type="energy-gray">
-				<displayName>අළු</displayName>
-				<unitPattern count="one">අළු {0}</unitPattern>
-				<unitPattern count="other">අළු {0}</unitPattern>
-			</unit>
-			<unit type="force-kilogram-force">
-				<displayName>කිග්‍රෑබ</displayName>
-				<unitPattern count="one">කිග්‍රෑබ {0}</unitPattern>
-				<unitPattern count="other">කිග්‍රෑබ {0}</unitPattern>
-			</unit>
-			<unit type="magnetic-tesla">
-				<displayName>ටෙ</displayName>
-				<unitPattern count="one">ටෙ {0}</unitPattern>
-				<unitPattern count="other">ටෙ {0}</unitPattern>
-			</unit>
-			<unit type="magnetic-weber">
-				<displayName>වේබ</displayName>
-				<unitPattern count="one">වේබ {0}</unitPattern>
-				<unitPattern count="other">වේබ {0}</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e9">
 				<displayName>බිකො</displayName>

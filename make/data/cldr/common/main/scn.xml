@@ -368,7 +368,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="014">Àfrica livantina</territory>
 			<territory type="015">Àfrica di tramuntana</territory>
 			<territory type="017">Àfrica di menzu</territory>
-			<territory type="018">Àfrica di sciroccu</territory>
 			<territory type="019">Mèrichi</territory>
 			<territory type="021">Mèrica di tramuntana</territory>
 			<territory type="029">Caràibbi</territory>
@@ -1149,6 +1148,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">'simana' w 'dû' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bhm">
 							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
 							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
@@ -1611,9 +1615,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Pariggi</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Ura ligali Britànnica</daylight>
-				</long>
 				<exemplarCity>Lònnira</exemplarCity>
 			</zone>
 			<zone type="Europe/Gibraltar">
@@ -1641,9 +1642,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Giacarta</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Ura sulari Irlannisi</daylight>
-				</long>
 				<exemplarCity>Dubblinu</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -1842,11 +1840,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Ura sulari di l’Alaska</standard>
 					<daylight>Ura ligali di l’Alaska</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AKT</generic>
-					<standard draft="contributed">AKST</standard>
-					<daylight draft="contributed">AKDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Amazon">
 				<long>
@@ -1861,11 +1854,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Ura sulari cintrali</standard>
 					<daylight>Ura ligali cintrali</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">CT</generic>
-					<standard draft="contributed">CST</standard>
-					<daylight draft="contributed">CDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
@@ -1873,11 +1861,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Ura sulari livantina</standard>
 					<daylight>Ura ligali livantina</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">ET</generic>
-					<standard draft="contributed">EST</standard>
-					<daylight draft="contributed">EDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
@@ -1885,11 +1868,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Ura sulari dî muntagni</standard>
 					<daylight>Ura ligali dî muntagni</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">MT</generic>
-					<standard draft="contributed">MST</standard>
-					<daylight draft="contributed">MDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
@@ -1897,11 +1875,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Ura sulari dû Pacìficu</standard>
 					<daylight>Ura ligali dû Pacìficu</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">PT</generic>
-					<standard draft="contributed">PST</standard>
-					<daylight draft="contributed">PDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Apia">
 				<long>
@@ -1944,11 +1917,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Ura sulari di l’Atlànticu</standard>
 					<daylight>Ura ligali di l’Atlànticu</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AT</generic>
-					<standard draft="contributed">AST</standard>
-					<daylight draft="contributed">ADT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
@@ -2014,6 +1982,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Ura di Brasilia</generic>
 					<standard>Ura sulari di Brasilia</standard>
 					<daylight>Ura ligali di Brasilia</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight>Ura ligali Britànnica</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -2084,11 +2057,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Ura sulari di Cubba</standard>
 					<daylight>Ura ligali di Cubba</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">CuT</generic>
-					<standard draft="contributed">CuST</standard>
-					<daylight draft="contributed">CuDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Davis">
 				<long>
@@ -2229,9 +2197,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<standard>Ura sulari di l’Hawaai</standard>
 				</long>
-				<short>
-					<standard draft="contributed">HAST</standard>
-				</short>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
@@ -2239,11 +2204,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Ura sulari di l’Hawaai</standard>
 					<daylight>Ura ligali di l’Hawaai</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">HAT</generic>
-					<standard draft="contributed">HAST</standard>
-					<daylight draft="contributed">HADT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
@@ -2294,6 +2254,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Ura di l’Iran</generic>
 					<standard>Ura sulari di l’Iran</standard>
 					<daylight>Ura ligali di l’Iran</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight>Ura sulari Irlannisi</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -2581,9 +2546,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Ura dî Samoa miricani</generic>
 					<standard>Ura sulari dî Samoa miricani</standard>
-					<daylight>Ura ligali dî Samoa miricani</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">

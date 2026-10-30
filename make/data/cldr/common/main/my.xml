@@ -181,6 +181,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">တောင် ဟိုင်ဒါ</language>
 			<language type="he">ဟီဘရူး</language>
 			<language type="hi">ဟိန္ဒီ</language>
+			<language type="hi_Latn" alt="variant">ဟင်္ဂလိပ်</language>
 			<language type="hil">ဟီလီဂေနွန်</language>
 			<language type="hmn">မုံ</language>
 			<language type="hr">ခရိုအေးရှား</language>
@@ -361,6 +362,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pi">ပါဠိ</language>
 			<language type="pis">ပီဂျင်</language>
 			<language type="pl">ပိုလန်</language>
+			<language type="pms">ပီဒ်မွန်တီးဇ်</language>
 			<language type="pqm">မလိဇိ ပါစမ်မကွာဒီ</language>
 			<language type="prg">ပရူရှန်</language>
 			<language type="ps">ပက်ရှ်တွန်း</language>
@@ -610,7 +612,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="AL">အယ်လ်ဘေးနီးယား</territory>
 			<territory type="AM">အာမေးနီးယား</territory>
 			<territory type="AO">အန်ဂိုလာ</territory>
-			<territory type="AQ">အန်တာတိက</territory>
+			<territory type="AQ">အန္တာတိက</territory>
 			<territory type="AR">အာဂျင်တီးနား</territory>
 			<territory type="AS">အမေရိကန် ဆမိုးအား</territory>
 			<territory type="AT">ဩစတြီးယား</territory>
@@ -703,7 +705,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="GP">ဂွါဒီလု</territory>
 			<territory type="GQ">အီကွေတာ ဂီနီ</territory>
 			<territory type="GR">ဂရိ</territory>
-			<territory type="GS">တောင် ဂျော်ဂျီယာ နှင့် တောင် ဆင်းဒဝစ်ဂျ် ကျွန်းစုများ</territory>
+			<territory type="GS">တောင် ဂျော်ဂျီယာနှင့် တောင် ဆင်းဒဝစ်ဂျ် ကျွန်းစုများ</territory>
 			<territory type="GT">ဂွါတီမာလာ</territory>
 			<territory type="GU">ဂူအမ်</territory>
 			<territory type="GW">ဂီနီ-ဘီစော</territory>
@@ -773,7 +775,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="MU">မောရစ်ရှ</territory>
 			<territory type="MV">မော်လ်ဒိုက်</territory>
 			<territory type="MW">မာလာဝီ</territory>
-			<territory type="MX">မက်ကဆီကို</territory>
+			<territory type="MX">မက္ကဆီကို</territory>
 			<territory type="MY">မလေးရှား</territory>
 			<territory type="MZ">မိုဇမ်ဘစ်</territory>
 			<territory type="NA">နမီးဘီးယား</territory>
@@ -899,15 +901,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<keys>
 			<key type="calendar">ပြက္ခဒိန်</key>
 			<key type="cf">ငွေရေတွက်ပုံစနစ်</key>
+			<key type="colAlternate">သင်္ကေတအရ စီခြင်း ရှောင်ရန်</key>
+			<key type="colBackwards">လေယူလေသိမ်းအလိုက် ပြန်စီခြင်း</key>
+			<key type="colCaseFirst">စာလုံး ကြီး/သေး စီခြင်း</key>
+			<key type="colCaseLevel">စာလုံးအကြီးအသေး ခွဲစီခြင်း</key>
 			<key type="collation">အစဉ်လိုက်စီရန်</key>
+			<key type="colNormalization">စံညှိ စီခြင်း</key>
+			<key type="colNumeric">နံပါတ်အလိုက် စီခြင်း</key>
+			<key type="colReorder">အက္ခရာစနစ်/ဘလောက် ပြန်စီခြင်း</key>
+			<key type="colStrength">စီခြင်း အဆင့်</key>
 			<key type="currency">ငွေကြေး</key>
+			<key type="d0">ပြောင်းမည့် နေရာ</key>
+			<key type="dx">အဘိဓာန် ဖြတ်တောက်မှု မပါသည့်အရာများ</key>
 			<key type="em">အီမိုဂျီဖော်ပြချက်</key>
+			<key type="fw">သီတင်းပတ် ပထမနေ့</key>
+			<key type="h0">အရော</key>
 			<key type="hc">နာရီစက်ဝန်း (၁၂ နှင့် ၂၄)</key>
+			<key type="i0">ထည့်သွင်းမှု စနစ်</key>
+			<key type="k0">ကီးဘုတ်</key>
+			<key type="kv">အမြင့်ဆုံး လျစ်လျူရှုမှု</key>
 			<key type="lb">စာပိုဒ်ခွဲပုံစံ</key>
 			<key type="lw">စာပုဒ်ခြား</key>
+			<key type="m0">အသွင်ပြောင်း စည်းမျဉ်းများ</key>
 			<key type="ms">တိုင်းတာရေးစနစ်</key>
+			<key type="mu">တိုင်းတာမှု စနစ်</key>
 			<key type="numbers">ကိန်းဂဏန်း</key>
+			<key type="rg">ဖြည့်စွက်ဒေတာဆိုင်ရာ ဒေသ</key>
+			<key type="s0">ပြောင်းလဲမှု မူရင်း</key>
+			<key type="sd">ဒေသခွဲ</key>
 			<key type="ss">စာလုံးခြား</key>
+			<key type="t">ပြောင်းလဲမှု</key>
+			<key type="t0">စက်ဘာသာပြန်</key>
+			<key type="timezone">အချိန်ဇုန်</key>
+			<key type="va">ဒေသန္တရ မူကွဲ</key>
+			<key type="x">ကိုယ်ပိုင်သုံး</key>
+			<key type="x0">ကိုယ်ပိုင်သုံး အသွင်ပြောင်းလဲမှု</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">ဗုဒ္ဓ ပြက္ခဒိန်</type>
@@ -927,13 +955,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">ဟီဘရူး ပြက္ခဒိန်</type>
 			<type key="calendar" type="hebrew" scope="core">ဟီဘရူး</type>
 			<type key="calendar" type="indian">အိန္ဒြိယ အမျိုးသား ပြက္ခဒိန်</type>
+			<type key="calendar" type="indian" scope="core">အိန္ဒိယ အမျိုးသားပြက္ခဒိန်</type>
 			<type key="calendar" type="islamic">အစ္စလာမ် ပြက္ခဒိန်</type>
 			<type key="calendar" type="islamic" scope="core">အစ္စလာမ်</type>
 			<type key="calendar" type="islamic-civil">အစ္စလာမ်မစ် ပြက္ခဒိန်</type>
 			<type key="calendar" type="islamic-civil" scope="core">အစ္စလာမ်</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">အစ္စလာမ်၊ ဆော်ဒီ လကြည့်ပြက္ခဒိန်</type>
+			<type key="calendar" type="islamic-tbla" scope="core">အစ္စလာမ် နက္ခတ်ပြက္ခဒိန်</type>
 			<type key="calendar" type="islamic-umalqura">အယ်လ်ကူရာ အစ္စလာမ်မစ် ပြက္ခဒိန်</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">အစ္စလာမ်</type>
 			<type key="calendar" type="iso8601">ISO-8601 ပြက္ခဒိန်</type>
+			<type key="calendar" type="iso8601" scope="core">ဂရီဂိုရီရန် ပြက္ခဒိန်</type>
 			<type key="calendar" type="japanese">ဂျပန် ပြက္ခဒိန်</type>
 			<type key="calendar" type="japanese" scope="core">ဂျပန်</type>
 			<type key="calendar" type="persian">ပါရှား ပြက္ခဒိန်</type>
@@ -944,16 +976,47 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="cf" type="account" scope="core">စာရင်းကိုင်</type>
 			<type key="cf" type="standard">ပုံမှန် ငွေရေတွက်ပုံစနစ်</type>
 			<type key="cf" type="standard" scope="core">ပုံမှန်</type>
-			<type key="collation" type="ducet">အစဉ်လိုက်စီထားသော ယူနီကုတ်</type>
-			<type key="collation" type="ducet" scope="core">ပုံသေယူနီကုတ်</type>
+			<type key="colCaseFirst" type="lower" scope="core">စာလုံးသေး</type>
+			<type key="colCaseFirst" type="no" scope="core">စာလုံးသေး</type>
+			<type key="colCaseFirst" type="upper" scope="core">စာလုံးကြီး</type>
+			<type key="collation" type="compat" scope="core">လိုက်ဖက်ညီမှု</type>
+			<type key="collation" type="dictionary" scope="core">အဘိဓာန်</type>
+			<type key="collation" type="ducet">အစဉ်လိုက်စီထားသော ယူနီကုဒ်</type>
+			<type key="collation" type="ducet" scope="core">ပုသေယူနီကုဒ်</type>
+			<type key="collation" type="emoji" scope="core">အီမိုဂျီ</type>
+			<type key="collation" type="eor" scope="core">ဥရောပ စည်းမျဉ်းများ</type>
 			<type key="collation" type="phonebook">ဖုန်းစာအုပ် အစီအစဉ်</type>
+			<type key="collation" type="phonebook" scope="core">ဖုန်းလမ်းညွှန်စာအုပ်</type>
+			<type key="collation" type="phonetic" scope="core">အသံထွက်</type>
+			<type key="collation" type="pinyin" scope="core">ပင်ယင်</type>
 			<type key="collation" type="search">ယေဘုယျရှာခြင်း</type>
 			<type key="collation" type="search" scope="core">ရှာဖွေမှု</type>
+			<type key="collation" type="searchjl" scope="core">ကိုရီးယား အခြေခံ ဗျည်း</type>
 			<type key="collation" type="standard">ပုံမှန်စီထားသော</type>
 			<type key="collation" type="standard" scope="core">ပုံမှန်</type>
+			<type key="collation" type="stroke" scope="core">ရေးဆွဲချက်</type>
+			<type key="collation" type="traditional" scope="core">ရိုးရာ</type>
+			<type key="collation" type="unihan" scope="core">အခြေခံအက္ခရာနှင့် ရေးဆွဲချက်</type>
+			<type key="collation" type="zhuyin" scope="core">ရှူယင်</type>
+			<type key="colReorder" type="currency" scope="core">ငွေကြေးစနစ်</type>
+			<type key="colReorder" type="digit" scope="core">ဂဏန်းခြေများ</type>
+			<type key="colReorder" type="punct" scope="core">ပုဒ်ဖြတ်ပုဒ်ရပ်များ</type>
+			<type key="colReorder" type="space" scope="core">နေရာလွတ်</type>
+			<type key="colReorder" type="symbol" scope="core">သင်္ကေတ</type>
+			<type key="colStrength" type="identical" scope="core">အားလုံး</type>
+			<type key="colStrength" type="primary" scope="core">အခြေခံ အက္ခရာများသာ</type>
+			<type key="colStrength" type="quaternary" scope="core">အခြေခံ၊ လေယူလေသိမ်း၊ စာလုံးအကြီးအသေး၊ မူကွဲများ၊ ခန</type>
+			<type key="colStrength" type="secondary" scope="core">အခြေခံ၊ လေယူလေသိမ်း</type>
+			<type key="colStrength" type="tertiary" scope="core">အခြေခံ၊ လေယူလေသိမ်း၊ စာလုံးအကြီးအသေး၊ မူကွဲများ</type>
+			<type key="d0" type="fwidth">ဗြက်အပြည့်သို့</type>
+			<type key="d0" type="hwidth">ဗြက်တစ်ဝက်သို့</type>
 			<type key="em" type="default" scope="core">ပုံသေ | မူသေ | မူရင်း | ပင်တိုင်</type>
 			<type key="em" type="emoji" scope="core">အီမိုဂျီ</type>
 			<type key="em" type="text" scope="core">စာသား</type>
+			<type key="hc" type="c12">၁၂ နာရီစနစ်</type>
+			<type key="hc" type="c12" scope="core">၁၂</type>
+			<type key="hc" type="c24">၂၄ နာရီ စနစ်</type>
+			<type key="hc" type="c24" scope="core">၂၄</type>
 			<type key="hc" type="h11">၁၂ နာရီ စနစ် (၀–၁၁)</type>
 			<type key="hc" type="h11" scope="core">၁၂ (၀−၁၁)</type>
 			<type key="hc" type="h12">၁၂ နာရီစနစ် (၁–၁၂)</type>
@@ -962,6 +1025,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">၂၄ (၀−၂၃)</type>
 			<type key="hc" type="h24">၂၄ နာရီ စနစ်(၁–၂၄)</type>
 			<type key="hc" type="h24" scope="core">၂၄ (၁−၂၄)</type>
+			<type key="kv" type="currency" scope="core">ကွက်လပ်များ ရွှေ့ရန်၊ ပုဒ်ဖြတ်ပုဒ်ရပ်၊ သင်္ကေတအားလုံး</type>
+			<type key="kv" type="punct" scope="core">ကွက်လပ်များ ရွှေ့ရန်၊ ပုဒ်ဖြတ်ပုဒ်ရပ်</type>
+			<type key="kv" type="space" scope="core">ကွက်လပ်များ ရွှေ့ရန်၊ ပုဒ်ဖြတ်ပုဒ်ရပ်</type>
+			<type key="kv" type="symbol" scope="core">ကွက်လပ်များ ရွှေ့ရန်၊ ပုဒ်ဖြတ်ပုဒ်ရပ်၊ ငွေကြေးမဟုတ်သည့် သင်္ကေတများ</type>
 			<type key="lb" type="loose">ကန့်သတ်မထားသော စာပိုဒ်ခွဲပုံစံ</type>
 			<type key="lb" type="loose" scope="core">ကန့်သတ်မထား</type>
 			<type key="lb" type="normal">ပုံမှန်စာပိုဒ်ခွဲပုံစံ</type>
@@ -972,6 +1039,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="lw" type="keepall" scope="core">အားလုံးတွဲထားရန်</type>
 			<type key="lw" type="normal" scope="core">ပုံမှန်</type>
 			<type key="lw" type="phrase" scope="core">စကားစုအလိုက် တွဲထားရန်</type>
+			<type key="m0" type="bgn">US BGN ရောမအက္ခရာဖလှယ်စနစ်</type>
+			<type key="m0" type="ungegn">US GEGN ရောမအက္ခရာဖလှယ်စနစ်</type>
 			<type key="ms" type="metric">မက်ထရစ်စနစ်</type>
 			<type key="ms" type="metric" scope="core">မက်ထရစ်</type>
 			<type key="ms" type="uksystem">ဗြိတိသျှတိုင်းတာစနစ်</type>
@@ -980,48 +1049,83 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="ussystem" scope="core">အမေရိကန်</type>
 			<type key="numbers" type="arab">အာရပ် ဂဏန်းခြေ</type>
 			<type key="numbers" type="arabext">တိုးချဲ့အာရပ် ဂဏန်းခြေ</type>
+			<type key="numbers" type="arabext" scope="core">တိုးချဲ့အာရပ် ဂဏန်း</type>
 			<type key="numbers" type="armn">အာမေးနီးယား ဂဏန်းခြေ</type>
 			<type key="numbers" type="armnlow">အာမေးနီးယား ဂဏန်းခြေ စာလုံးသေး</type>
+			<type key="numbers" type="armnlow" scope="core">အာမေးနီးယား စာလုံးသေး</type>
 			<type key="numbers" type="beng">ဘင်္ဂါလီ ဂဏန်းခြေ</type>
 			<type key="numbers" type="cakm">ချာ့ခ်မာ ဂဏန်းခြေ</type>
 			<type key="numbers" type="deva">ဒီဗာနာဂရီ ဂဏန်းခြေ</type>
 			<type key="numbers" type="ethi">အီသီယိုပီးယား ဂဏန်းခြေ</type>
+			<type key="numbers" type="finance" scope="core">ငွေကြေးဆိုင်ရာ</type>
 			<type key="numbers" type="fullwide">ဗြက်ပြည့် ဂဏန်းခြေ</type>
+			<type key="numbers" type="fullwide" scope="core">ဗြက်ပြည့်</type>
 			<type key="numbers" type="geor">နိုင်ငံတကာသုံးဂဏန်းခြေ</type>
 			<type key="numbers" type="grek">ဂရိ ဂဏန်းခြေ</type>
 			<type key="numbers" type="greklow">ဂရိ ဂဏန်းခြေ စာလုံးသေး</type>
+			<type key="numbers" type="greklow" scope="core">ဂရိ စာလုံးသေး</type>
 			<type key="numbers" type="gujr">ဂုဂျာရတီ ဂဏန်းခြေ</type>
 			<type key="numbers" type="guru">ဂူမူခီ ဂဏန်းခြေ</type>
+			<type key="numbers" type="hanidays" scope="core">ရိုးရာပြက္ခဒိန်များအတွက် ဟန်အက္ခရာ ရက်စွဲဂဏန်းခြေ</type>
 			<type key="numbers" type="hanidec">တရုတ် ဆယ်လီစနစ် ဂဏန်းခြေ</type>
+			<type key="numbers" type="hanidec" scope="core">တရုတ်ကိန်းဂဏန်းသင်္ကေတသုံး ဆယ်လီစနစ်</type>
 			<type key="numbers" type="hans">ရိုးရှင်း တရုတ် ဂဏန်းခြေ</type>
 			<type key="numbers" type="hansfin">ရိုးရှင်း တရုတ် ဘဏ္ဍာရေးသုံး ဂဏန်းခြေ</type>
+			<type key="numbers" type="hansfin" scope="core">ရိုးရှင်း တရုတ် ဘဏ္ဍာရေးသုံး</type>
 			<type key="numbers" type="hant">ရိုးရာ တရုတ် ဂဏန်းခြေ</type>
 			<type key="numbers" type="hantfin">ရိုးရာ တရုတ် ဘဏ္ဍာရေးသုံး ဂဏန်းခြေ</type>
+			<type key="numbers" type="hantfin" scope="core">ရိုးရာ တရုတ် ဘဏ္ဍာရေးသုံး</type>
 			<type key="numbers" type="hebr">ဟီဘရူး ဂဏန်းခြေ</type>
 			<type key="numbers" type="java">ဂျာဗား ဂဏန်းခြေ</type>
 			<type key="numbers" type="jpan">ဂျပန် ဂဏန်းခြေ</type>
 			<type key="numbers" type="jpanfin">ဂျပန် ဘဏ္ဍာရေးသုံး ဂဏန်းခြေ</type>
+			<type key="numbers" type="jpanfin" scope="core">ဂျပန် ဘဏ္ဍာရေးသုံး</type>
+			<type key="numbers" type="jpanyear" scope="core">ဂျပန်ပထမနှစ် (ဂန်းနန်း) နှစ်ရေတွက်ပုံစနစ်</type>
 			<type key="numbers" type="khmr">ခမာ ဂဏန်းခြေ</type>
 			<type key="numbers" type="knda">ခန္နဒါ ဂဏန်းခြေ</type>
+			<type key="numbers" type="lanatham" scope="core">တိုင်သမ်ဓမ္မ (သာသနာရေးဆိုင်ရာ) အက္ခရာစနစ်</type>
 			<type key="numbers" type="laoo">လာအို ဂဏန်းခြေ</type>
 			<type key="numbers" type="latn">အနောက်တိုင်း ဂဏန်းခြေ</type>
+			<type key="numbers" type="mathbold" scope="core">သင်္ချာသုံး စာလုံးအထူ</type>
+			<type key="numbers" type="mathdbl" scope="core">သင်္ချာသုံး နှစ်ထပ်စာလုံး</type>
+			<type key="numbers" type="mathmono" scope="core">သင်္ချာသုံး တစ်ပြေးညီစာလုံး</type>
+			<type key="numbers" type="mathsanb" scope="core">သင်္ချာသုံး ဆန်းဆာရစ် စာလုံးအထူ</type>
+			<type key="numbers" type="mathsans" scope="core">သင်္ချာသုံး ဆန်းဆာရစ်</type>
 			<type key="numbers" type="mlym">မလေယာလမ် ဂဏန်းခြေ</type>
 			<type key="numbers" type="mtei">မီတဲမာယစ်ခ် ဂဏန်းခြေ</type>
 			<type key="numbers" type="mymr">မြန်မာ ဂဏန်းခြေ</type>
+			<type key="numbers" type="mymrepka" scope="core">မြန်မာ အရှေ့ပိုးကရင်</type>
+			<type key="numbers" type="mymrpao" scope="core">မြန်မာ ပအို့</type>
 			<type key="numbers" type="mymrshan">ရှမ်း ဂဏန်းခြေ</type>
+			<type key="numbers" type="mymrshan" scope="core">မြန်မာ ရှမ်း</type>
+			<type key="numbers" type="mymrtlng" scope="core">မြန်မာ ရှမ်းနီ</type>
+			<type key="numbers" type="native">မူရင်းဂဏန်းများ</type>
+			<type key="numbers" type="native" scope="core">မူရင်းဂဏန်းများ</type>
 			<type key="numbers" type="olck">အိုလ်ချီကီ ဂဏန်းခြေ</type>
 			<type key="numbers" type="orya">ဩရီရာ ဂဏန်းခြေ</type>
+			<type key="numbers" type="outlined" scope="core">ဘောင်ကွက်</type>
 			<type key="numbers" type="roman">ရောမ ဂဏန်းခြေ</type>
+			<type key="numbers" type="roman" scope="core">ရောမ စာလုံးအကြီး</type>
 			<type key="numbers" type="romanlow">ရောမ ဂဏန်းခြေ စာလုံးသေး</type>
+			<type key="numbers" type="romanlow" scope="core">ရောမ စာလုံးအသေး</type>
+			<type key="numbers" type="segment" scope="core">အပိုင်းခွဲ</type>
 			<type key="numbers" type="taml">ရိုးရာ တမီးလ် ဂဏန်းခြေ</type>
 			<type key="numbers" type="tamldec">တမီးလ် ဂဏန်းခြေ</type>
+			<type key="numbers" type="tamldec" scope="core">ခေတ်သစ် တမီးလ်</type>
 			<type key="numbers" type="telu">တလုဂု ဂဏန်းခြေ</type>
 			<type key="numbers" type="thai">ထိုင်း ဂဏန်းခြေ</type>
 			<type key="numbers" type="tibt">တိဘက် ဂဏန်းခြေ</type>
+			<type key="numbers" type="traditional" scope="core">ရိုးရာ ဂဏန်း</type>
 			<type key="numbers" type="vaii">ဗိုင်း ဂဏန်းခြေ</type>
 			<type key="ss" type="none" scope="core">ပိတ်</type>
 			<type key="ss" type="standard" scope="core">ဖွင့်</type>
+			<type key="t0" type="und">သတ်မှတ်မထားသော စက်ဘာသာပြန်</type>
+			<type key="va" type="posix" scope="core">POSIX မူကွဲ</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">ပိတ်</typeValue>
+			<typeValue type="yes">ဖွင့်</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">မက်ထရစ်စနစ်</measurementSystemName>
 			<measurementSystemName type="UK">ဗြိတိန်စနစ်</measurementSystemName>
@@ -1052,6 +1156,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</characters>
 	<dates>
 		<calendars>
+			<calendar type="chinese">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>-</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="dangi">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>-</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -1122,13 +1240,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">MM-dd၊ E</dateFormatItem>
 						<dateFormatItem id="MMMEd">MMM d E</dateFormatItem>
-						<dateFormatItem id="MMMMEd">MMMM d Eနေ့</dateFormatItem>
+						<dateFormatItem id="MMMMEd">MMMM d၊ E</dateFormatItem>
 						<dateFormatItem id="yyyyM">G M/y</dateFormatItem>
 						<dateFormatItem id="yyyyMd">GGGGG dd/MM/Y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">G d MMM y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">G y MMM d၊ E</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="h">h – h B</greatestDifference>
@@ -1339,14 +1461,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<eraAbbr>
 						<era type="0">ဘီစီ</era>
 						<era type="0" alt="variant">ဘီစီအီး</era>
-						<era type="1">အဒေီ</era>
+						<era type="1">အေဒီ</era>
 						<era type="1" alt="variant">စီအီး</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>y MMMM d EEEE</pattern>
+							<pattern>y MMMM d၊ EEEE</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -1390,6 +1512,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -1421,9 +1546,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Eh">E a h</dateFormatItem>
 						<dateFormatItem id="Ehm">E a h:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E a h:mm:ss</dateFormatItem>
+						<dateFormatItem id="GyM">G y/MM</dateFormatItem>
 						<dateFormatItem id="GyMd">G y/M/d</dateFormatItem>
-						<dateFormatItem id="GyMEd">G y-MM-dd၊ E</dateFormatItem>
+						<dateFormatItem id="GyMEd">G y/MM/dd/ E</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y MMM d၊ E</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">G y MMMM d၊ E</dateFormatItem>
 						<dateFormatItem id="h">a h</dateFormatItem>
 						<dateFormatItem id="hm">a h:mm</dateFormatItem>
 						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
@@ -1435,12 +1562,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Hv">v HH</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">d/M E</dateFormatItem>
-						<dateFormatItem id="MMMEd">MMM d E</dateFormatItem>
-						<dateFormatItem id="MMMMEd">MMMM d E</dateFormatItem>
+						<dateFormatItem id="MMMEd">MMM d၊ E</dateFormatItem>
+						<dateFormatItem id="MMMMEd">MMMM d၊ E</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM လ W ပတ်မြောက်</dateFormatItem>
+						<dateFormatItem id="yM">y/MM</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
 						<dateFormatItem id="yMEd">d/M/y E</dateFormatItem>
-						<dateFormatItem id="yMMMEd">y MMM d E</dateFormatItem>
+						<dateFormatItem id="yMMMEd">y MMM d၊ E</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="contributed">y MMMM d</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">y MMMM d၊ E</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y ခု w ပတ်မြောက်</dateFormatItem>
 					</availableFormats>
 					<appendItems>
@@ -1742,6 +1872,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="dayperiod">
 				<displayName>နံနက်/ညနေ</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>AM/PM</displayName>
+			</field>
 			<field type="hour">
 				<displayName>နာရီ</displayName>
 				<relative type="0">ဤအချိန်</relative>
@@ -1939,7 +2072,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ဘာဘေးဒိုးစ်</exemplarCity>
 			</zone>
 			<zone type="Asia/Dhaka">
-				<exemplarCity>ဒက်ကာ</exemplarCity>
+				<exemplarCity>ဒက္ကား</exemplarCity>
 			</zone>
 			<zone type="Europe/Brussels">
 				<exemplarCity>ဘရပ်ဆဲလ်</exemplarCity>
@@ -2257,9 +2390,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>လီဗရာဗီးလ်</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>ဗြိတိန် နွေရာသီ အချိန်</daylight>
-				</long>
 				<exemplarCity>လန်ဒန်</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2350,9 +2480,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ဂျာရာပူရာ</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>အိုင်းရစ်ရှ် စံတော်ချိန်</daylight>
-				</long>
 				<exemplarCity>ဒတ်ဘလင်</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -2362,7 +2489,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>မန်းကျွန်း</exemplarCity>
 			</zone>
 			<zone type="Asia/Calcutta">
-				<exemplarCity>ကိုလျကတ်တား</exemplarCity>
+				<exemplarCity>ကိုလ်ကတ္တား</exemplarCity>
 			</zone>
 			<zone type="Indian/Chagos">
 				<exemplarCity>ချာဂိုစ်</exemplarCity>
@@ -2416,7 +2543,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>စိန့်ကိစ်</exemplarCity>
 			</zone>
 			<zone type="Asia/Pyongyang">
-				<exemplarCity>ပြုံယန်း</exemplarCity>
+				<exemplarCity>ပြုံယမ်း</exemplarCity>
 			</zone>
 			<zone type="Asia/Seoul">
 				<exemplarCity>ဆိုးလ်</exemplarCity>
@@ -2572,7 +2699,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>မွန်တဲရေး</exemplarCity>
 			</zone>
 			<zone type="America/Mexico_City">
-				<exemplarCity>မက်ကဆီကို စီးတီး</exemplarCity>
+				<exemplarCity>မက္ကဆီကို စီးတီး</exemplarCity>
 			</zone>
 			<zone type="America/Matamoros">
 				<exemplarCity>မာတာမိုရိုစ်</exemplarCity>
@@ -2617,7 +2744,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>အော်စလို</exemplarCity>
 			</zone>
 			<zone type="Asia/Katmandu">
-				<exemplarCity>ခတ်တမန်ဒူ</exemplarCity>
+				<exemplarCity>ခတ္တမန်ဒူ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Nauru">
 				<exemplarCity>နာဥူရူ</exemplarCity>
@@ -2779,7 +2906,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ဆရစ်နစ်ကာလင်မ်စ်</exemplarCity>
 			</zone>
 			<zone type="Asia/Kamchatka">
-				<exemplarCity>ခမ်ချာ့ခါ</exemplarCity>
+				<exemplarCity>ကမ်ချတ်ကာ</exemplarCity>
 			</zone>
 			<zone type="Asia/Anadyr">
 				<exemplarCity>အန်အာဒီအာ</exemplarCity>
@@ -2914,13 +3041,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ဝိတ်ခ်</exemplarCity>
 			</zone>
 			<zone type="America/Adak">
-				<exemplarCity>အာဒချ</exemplarCity>
+				<exemplarCity>အာဒတ်</exemplarCity>
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>နိုမီ</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
-				<exemplarCity>အန်ကာရေ့ဂျ်</exemplarCity>
+				<exemplarCity>အန်ကာရေ့</exemplarCity>
 			</zone>
 			<zone type="America/Yakutat">
 				<exemplarCity>ရာကုတတ်</exemplarCity>
@@ -3048,6 +3175,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Harare">
 				<exemplarCity>ဟာရားရဲယ်</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>ဧကာ အချိန်</generic>
+					<standard>ဧကာ စံတော်ချိန်</standard>
+					<daylight>ဧကာ နွေရာသီ စံတော်ချိန်</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>အာဖဂန်နစ္စတန် အချိန်</standard>
@@ -3117,9 +3251,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic>အပီယာ အချိန်</generic>
-					<standard>အပီယာ စံတော်ချိန်</standard>
-					<daylight>အပီယာ နွေရာသီ အချိန်</daylight>
+					<generic>အာပီယာ အချိန်</generic>
+					<standard>အာပီယာ စံတော်ချိန်</standard>
+					<daylight>အာပီယာ နွေရာသီ အချိန်</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3221,6 +3355,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ဘရာဇီး အချိန်</generic>
 					<standard>ဘရာဇီး စံတော်ချိန်</standard>
 					<daylight>ဘရာဇီး နွေရာသီ အချိန်</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>ဗြိတိန် အချိန်</generic>
+					<daylight>ဗြိတိန် နွေရာသီ အချိန်</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3396,6 +3536,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>ဂရင်းနစ် စံတော်ချိန်</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>ဂရင်းလန် အချိန်</generic>
+					<standard>ဂရင်းလန် စံတော်ချိန်</standard>
+					<daylight>ဂရင်းလန် နွေရာသီ စံတော်ချိန်</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>အရှေ့ဂရင်းလန်း အချိန်</generic>
@@ -3422,7 +3569,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>ဟာဝိုင်ယီ အယ်လူးရှန်း စံတော်ချိန်</standard>
+					<standard>ဟာဝိုင်ယီ အယ်လူးရှန်း ဒေသစံတော်ချိန်</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3483,6 +3630,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>အီရန် နွေရာသီ အချိန်</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>အိုင်းရစ်ရှ် အချိန်</generic>
+					<daylight>အိုင်းရစ်ရှ် စံတော်ချိန်</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>အီရူခူတ် အချိန်</generic>
@@ -3502,6 +3655,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ဂျပန် အချိန်</generic>
 					<standard>ဂျပန် စံတော်ချိန်</standard>
 					<daylight>ဂျပန် နွေရာသီ အချိန်</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>ကမ်ချတ်ကာ အချိန်</generic>
+					<standard>ကမ်ချတ်ကာ စံတော်ချိန်</standard>
+					<daylight>ကမ်ချတ်ကာ နွေရာသီ စံတော်ချိန်</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -3543,11 +3703,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>ကာဂျစ္စတန် အချိန်</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard>သီရိလင်္ကာ အချိန်</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>လိုင်းကျွန်းစု အချိန်</standard>
@@ -3558,13 +3713,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>လော့ဒ်ဟောင် အချိန်</generic>
 					<standard>လော့ဒ်ဟောင် စံတော်ချိန်</standard>
 					<daylight>လော့ဒ်ဟောင် နွေရာသီ အချိန်</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic>မကာအို အချိန်</generic>
-					<standard>မကာအို စံတော်ချိန်</standard>
-					<daylight>မကာအို နွေရာသီ အချိန်</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -3778,11 +3926,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ဆာခါလင် နွေရာသီ အချိန်</daylight>
 				</long>
 			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>ဆမာရ အချိန်</generic>
+					<standard>ဆမာရ စံတော်ချိန်</standard>
+					<daylight>စမာရ နွေရာသီ စံတော်ချိန်</daylight>
+				</long>
+			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>ဆမိုအာ အချိန်</generic>
-					<standard>ဆမိုအာ စံတော်ချိန်</standard>
-					<daylight>ဆမိုးအား နွေရာသီ အချိန်</daylight>
+					<standard>အမေရိကန် ဆမိုးအား အချိန်</standard>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3873,6 +4026,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ဥရုဂွေး အချိန်</generic>
 					<standard>ဥရုဂွေး စံတော်ချိန်</standard>
 					<daylight>ဥရုဂွေး နွေရာသီ အချိန်</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>အူရုမ်ချီ အချိန်</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -4366,7 +4524,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>မာလာဝီ ခွါးချာ</displayName>
 			</currency>
 			<currency type="MXN">
-				<displayName>မက်ကဆီကို ပီဆို</displayName>
+				<displayName>မက္ကဆီကို ပီဆို</displayName>
+				<displayName count="other">မက္ကဆီကို ပီဆို</displayName>
 			</currency>
 			<currency type="MYR">
 				<displayName>မလေးရှား ရင်းဂစ်</displayName>
@@ -4575,7 +4734,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName>ကာရစ်ဘီယံ ဂင်းဒါး</displayName>
-				<displayName count="other">ကာရစ်ဘီယံ ဂင်းဒါး</displayName>
 			</currency>
 			<currency type="XDR">
 				<displayName>အထူးထုတ်ယူခွင့်</displayName>
@@ -4611,7 +4769,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName>ဇင်ဘာဘွေ ရွှေ</displayName>
-				<displayName count="other">ဇင်ဘာဘွေ ရွှေ</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -4798,8 +4955,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">တစ်လီတာရှိ {0} မီလီမိုးလ်</unitPattern>
 			</unit>
 			<unit type="concentr-part">
-				<displayName>ပတ်</displayName>
-				<unitPattern count="other">{0} ပတ်</unitPattern>
+				<displayName>ပိုင်း</displayName>
+				<unitPattern count="other">{0} ပိုင်း</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e6">
 				<unitPattern count="other">တစ်သန်းပုံ {0} ပုံ</unitPattern>
@@ -4817,10 +4974,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>မိုး</displayName>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>ဂလူးကို့စ်</displayName>
-				<unitPattern count="other">{0} ဂလူးကို့စ်</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>တစ်ကီလိုမီတာရှိ လီတာ</displayName>
@@ -5405,8 +5558,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ကာရက်</displayName>
 			</unit>
 			<unit type="concentr-part">
-				<displayName>ပတ်</displayName>
-				<unitPattern count="other">{0} ပတ်</unitPattern>
+				<displayName>ပိုင်း</displayName>
+				<unitPattern count="other">{0} ပိုင်း</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName>တစ်သန်းပုံ တစ်ပုံ</displayName>
@@ -5848,8 +6001,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="concentr-part">
-				<displayName>ပတ်</displayName>
-				<unitPattern count="other">{0} ပတ်</unitPattern>
+				<displayName>ပိုင်း</displayName>
+				<unitPattern count="other">{0} ပိုင်း</unitPattern>
 			</unit>
 			<unit type="concentr-ofglucose">
 				<displayName>Glc</displayName>
@@ -5976,10 +6129,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-drop">
 				<displayName>စက်</displayName>
 			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>ကယ်လိုရီ-IT</displayName>
-				<unitPattern count="other">{0} ကယ်လိုရီ-IT</unitPattern>
-			</unit>
 			<unit type="speed-light-speed">
 				<unitPattern count="other">{0}အလင်း</unitPattern>
 			</unit>
@@ -5996,24 +6145,54 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</units>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="start">{0} - {1}</listPatternPart>
-			<listPatternPart type="middle">{0} - {1}</listPatternPart>
-			<listPatternPart type="end">{0}နှင့် {1}</listPatternPart>
-			<listPatternPart type="2">{0}နှင့် {1}</listPatternPart>
+			<listPatternPart type="start">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="end">{0} နှင့် {1}</listPatternPart>
+			<listPatternPart type="2">{0} နှင့် {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or">
-			<listPatternPart type="start">{0} - {1}</listPatternPart>
-			<listPatternPart type="middle">{0} - {1}</listPatternPart>
+			<listPatternPart type="start">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}၊ {1}</listPatternPart>
 			<listPatternPart type="end">{0} သို့မဟုတ် {1}</listPatternPart>
 			<listPatternPart type="2">{0} သို့မဟုတ် {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}၊ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}၊ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="end">{0} နှင့် {1}</listPatternPart>
+			<listPatternPart type="2">{0} နှင့် {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="end">{0} နှင့် {1}</listPatternPart>
+			<listPatternPart type="2">{0} နှင့် {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="unit">
-			<listPatternPart type="start">{0}- {1}</listPatternPart>
-			<listPatternPart type="middle">{0}- {1}</listPatternPart>
+			<listPatternPart type="start">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="end">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="2">{0}၊ {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
-			<listPatternPart type="start">{0} {1}</listPatternPart>
-			<listPatternPart type="middle">{0} {1}</listPatternPart>
+			<listPatternPart type="start">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="end">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="2">{0}၊ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="start">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="end">{0}၊ {1}</listPatternPart>
+			<listPatternPart type="2">{0}၊ {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>

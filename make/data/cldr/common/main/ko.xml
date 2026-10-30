@@ -433,6 +433,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pi">팔리어</language>
 			<language type="pis">피진어</language>
 			<language type="pl">폴란드어</language>
+			<language type="pms">피에몬테어</language>
 			<language type="pnt">폰틱어</language>
 			<language type="pon">폼페이어</language>
 			<language type="pqm">말리시트 파사마쿼디어</language>
@@ -1161,24 +1162,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="collation">정렬 순서</key>
 			<key type="colNormalization">표준 정렬</key>
 			<key type="colNumeric">숫자 정렬</key>
+			<key type="colReorder">스크립트/블록 순서 변경</key>
 			<key type="colStrength">정렬 강도</key>
 			<key type="currency">통화</key>
+			<key type="d0">변환 대상</key>
+			<key type="dx">사전 단어 분리 제외</key>
 			<key type="em" draft="contributed">이모티콘 표시</key>
+			<key type="fw">일주일의 첫날</key>
+			<key type="h0">혼합</key>
 			<key type="hc">시간표시법(12시, 24시)</key>
+			<key type="i0">입력기</key>
+			<key type="k0">키보드</key>
+			<key type="kv">최상위 무시 항목</key>
 			<key type="lb">줄바꿈 스타일</key>
 			<key type="lw" draft="contributed">단어의 줄바꿈</key>
+			<key type="m0">변환 규칙</key>
 			<key type="ms">계량법</key>
+			<key type="mu">측정 단위</key>
 			<key type="numbers">숫자</key>
+			<key type="rg">추가 데이터용 지역</key>
+			<key type="s0">변환 원본</key>
+			<key type="sd">지역 하위 구분</key>
 			<key type="ss" draft="contributed">약어 뒤 문장 구분</key>
+			<key type="t">변환</key>
+			<key type="t0">기계 번역</key>
 			<key type="timezone">시간대</key>
 			<key type="va">방언</key>
-			<key type="x">공개 여부</key>
+			<key type="x">사용자 정의</key>
+			<key type="x0">사용자 정의 변환</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">불교력</type>
 			<type key="calendar" type="buddhist" scope="core" draft="contributed">불교</type>
 			<type key="calendar" type="chinese">음력</type>
-			<type key="calendar" type="chinese" scope="core" draft="contributed">음</type>
+			<type key="calendar" type="chinese" scope="core">음력</type>
 			<type key="calendar" type="coptic">콥트력</type>
 			<type key="calendar" type="coptic" scope="core" draft="contributed">콥트</type>
 			<type key="calendar" type="dangi">단기력</type>
@@ -1188,17 +1205,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="ethiopic-amete-alem">에티오피아 아메테 알렘력</type>
 			<type key="calendar" type="ethiopic-amete-alem" scope="core" draft="contributed">에티오피아 아메테 알렘</type>
 			<type key="calendar" type="gregorian">양력</type>
-			<type key="calendar" type="gregorian" scope="core" draft="contributed">양</type>
+			<type key="calendar" type="gregorian" scope="core">양력</type>
 			<type key="calendar" type="hebrew">히브리력</type>
 			<type key="calendar" type="hebrew" scope="core" draft="contributed">히브리</type>
 			<type key="calendar" type="indian">인도력</type>
+			<type key="calendar" type="indian" scope="core">인도 국정력</type>
 			<type key="calendar" type="islamic">히즈라력</type>
 			<type key="calendar" type="islamic" scope="core" draft="contributed">히즈라</type>
 			<type key="calendar" type="islamic-civil">히즈라 상용력</type>
 			<type key="calendar" type="islamic-civil" scope="core" draft="contributed">히즈라 상용</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">히즈라력(사우디아라비아 초승달 관측)</type>
+			<type key="calendar" type="islamic-tbla" scope="core">히즈라력(표 계산 방식, 천문학적 기준)</type>
 			<type key="calendar" type="islamic-umalqura">히즈라력(움 알 쿠라)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core" draft="contributed">히즈라(움 알 쿠라)</type>
-			<type key="calendar" type="iso8601">ISO-8601 달력</type>
+			<type key="calendar" type="iso8601">양력(ISO-8601)</type>
+			<type key="calendar" type="iso8601" scope="core">양력</type>
 			<type key="calendar" type="japanese">일본력</type>
 			<type key="calendar" type="japanese" scope="core" draft="contributed">일본</type>
 			<type key="calendar" type="persian">페르시안력</type>
@@ -1214,59 +1235,83 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colBackwards" type="no" draft="contributed">악센트 일반 정렬</type>
 			<type key="colBackwards" type="yes" draft="contributed">악센트 역순 정렬</type>
 			<type key="colCaseFirst" type="lower" draft="contributed">첫 소문자 정렬</type>
+			<type key="colCaseFirst" type="lower" scope="core">소문자</type>
 			<type key="colCaseFirst" type="no" draft="contributed">일반 대/소문자 정렬 순서</type>
+			<type key="colCaseFirst" type="no" scope="core">소문자</type>
 			<type key="colCaseFirst" type="upper" draft="contributed">대문자 우선 정렬</type>
+			<type key="colCaseFirst" type="upper" scope="core">대문자</type>
 			<type key="colCaseLevel" type="no" draft="contributed">대/소문자 무시 정렬</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">대/소문자 구분 정렬</type>
 			<type key="collation" type="compat">호환성을 위해 이전 정렬 순서</type>
-			<type key="collation" type="compat" scope="core" draft="contributed">호환성</type>
-			<type key="collation" type="dictionary">사전 정렬순</type>
-			<type key="collation" type="dictionary" scope="core" draft="contributed">사전</type>
+			<type key="collation" type="compat" scope="core">호환성</type>
+			<type key="collation" type="dictionary">사전 정렬 순서</type>
+			<type key="collation" type="dictionary" scope="core">사전</type>
 			<type key="collation" type="ducet">기본 유니코드 정렬 순서</type>
-			<type key="collation" type="ducet" scope="core" draft="contributed">기본 유니코드</type>
+			<type key="collation" type="ducet" scope="core">기본 유니코드</type>
+			<type key="collation" type="emoji" scope="core">이모티콘</type>
 			<type key="collation" type="eor" draft="contributed">유럽 정렬 규칙</type>
-			<type key="collation" type="phonebook">전화번호부순</type>
+			<type key="collation" type="eor" scope="core">유럽 규칙</type>
+			<type key="collation" type="phonebook">전화번호부 정렬 순서</type>
 			<type key="collation" type="phonebook" scope="core" draft="contributed">전화번호부</type>
-			<type key="collation" type="phonetic">소리나는 대로 정렬 순서</type>
-			<type key="collation" type="phonetic" scope="core" draft="contributed">소리나는 대로</type>
-			<type key="collation" type="pinyin">병음순</type>
+			<type key="collation" type="phonetic">발음 정렬 순서</type>
+			<type key="collation" type="phonetic" scope="core">발음</type>
+			<type key="collation" type="pinyin">병음 정렬 순서</type>
 			<type key="collation" type="pinyin" scope="core" draft="contributed">병음</type>
 			<type key="collation" type="search">범용 검색</type>
 			<type key="collation" type="search" scope="core" draft="contributed">검색</type>
 			<type key="collation" type="searchjl" draft="contributed">한글 자음으로 검색</type>
+			<type key="collation" type="searchjl" scope="core">한글 초성</type>
 			<type key="collation" type="standard">표준 정렬 순서</type>
 			<type key="collation" type="standard" scope="core" draft="contributed">표준</type>
-			<type key="collation" type="stroke">자획순</type>
+			<type key="collation" type="stroke">자획 정렬 순서</type>
 			<type key="collation" type="stroke" scope="core" draft="contributed">자획</type>
-			<type key="collation" type="traditional">전통 역법</type>
+			<type key="collation" type="traditional">전통 역법 정렬 순서</type>
 			<type key="collation" type="traditional" scope="core" draft="contributed">전통</type>
-			<type key="collation" type="unihan">부수순</type>
+			<type key="collation" type="unihan">부수 정렬 순서</type>
 			<type key="collation" type="unihan" scope="core" draft="contributed">부수</type>
-			<type key="collation" type="zhuyin">주음순</type>
+			<type key="collation" type="zhuyin">주음 정렬 순서</type>
 			<type key="collation" type="zhuyin" scope="core" draft="contributed">주음</type>
 			<type key="colNormalization" type="no" draft="contributed">표준화 없이 정렬</type>
 			<type key="colNormalization" type="yes" draft="contributed">유니코드 표준화 정렬</type>
 			<type key="colNumeric" type="no" draft="contributed">숫자별 정렬</type>
 			<type key="colNumeric" type="yes" draft="contributed">숫자 정렬</type>
+			<type key="colReorder" type="currency" scope="core">통화</type>
+			<type key="colReorder" type="digit" scope="core">숫자</type>
+			<type key="colReorder" type="punct" scope="core">구두점</type>
+			<type key="colReorder" type="space" scope="core">공백</type>
+			<type key="colReorder" type="symbol" scope="core">기호</type>
 			<type key="colStrength" type="identical" draft="contributed">모두 정렬</type>
+			<type key="colStrength" type="identical" scope="core">모두</type>
 			<type key="colStrength" type="primary" draft="contributed">기본 문자만 정렬</type>
+			<type key="colStrength" type="primary" scope="core">기본 문자만</type>
 			<type key="colStrength" type="quaternary" draft="contributed">악센트/대소문자/전반각/가나 정렬</type>
+			<type key="colStrength" type="quaternary" scope="core">기본, 악센트, 대소문자, 변형, 가나</type>
 			<type key="colStrength" type="secondary" draft="contributed">악센트 정렬</type>
+			<type key="colStrength" type="secondary" scope="core">기본, 악센트</type>
 			<type key="colStrength" type="tertiary" draft="contributed">악센트/대소문자/전반각 정렬</type>
+			<type key="colStrength" type="tertiary" scope="core">기본, 악센트, 대소문자, 변형</type>
 			<type key="d0" type="fwidth">전각</type>
 			<type key="d0" type="hwidth">반각</type>
 			<type key="d0" type="npinyin" draft="contributed">숫자</type>
 			<type key="em" type="default" scope="core" draft="contributed">기본</type>
 			<type key="em" type="emoji" scope="core" draft="contributed">이모티콘</type>
 			<type key="em" type="text" scope="core" draft="contributed">텍스트</type>
-			<type key="hc" type="h11">12시간제(0–11)</type>
-			<type key="hc" type="h11" scope="core" draft="contributed">12(0–11)</type>
-			<type key="hc" type="h12">12시간제(1–12)</type>
-			<type key="hc" type="h12" scope="core" draft="contributed">12(1–12)</type>
-			<type key="hc" type="h23">24시간제(0–23)</type>
-			<type key="hc" type="h23" scope="core" draft="contributed">24(0–23)</type>
-			<type key="hc" type="h24">24시간제(1–24)</type>
-			<type key="hc" type="h24" scope="core" draft="contributed">24(1–24)</type>
+			<type key="hc" type="c12">12시간제</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24시간제</type>
+			<type key="hc" type="c24" scope="core">24</type>
+			<type key="hc" type="h11">12시간제(0~11)</type>
+			<type key="hc" type="h11" scope="core">12(0~11)</type>
+			<type key="hc" type="h12">12시간제(1~12)</type>
+			<type key="hc" type="h12" scope="core">12(1~12)</type>
+			<type key="hc" type="h23">24시간제(0~23)</type>
+			<type key="hc" type="h23" scope="core">24(0~23)</type>
+			<type key="hc" type="h24">24시간제(1~24)</type>
+			<type key="hc" type="h24" scope="core">24(1~24)</type>
+			<type key="kv" type="currency" scope="core">공백, 구두점, 모든 기호</type>
+			<type key="kv" type="punct" scope="core">공백, 구두점</type>
+			<type key="kv" type="space" scope="core">공백, 구두점</type>
+			<type key="kv" type="symbol" scope="core">공백, 구두점, 통화 이외의 기호</type>
 			<type key="lb" type="loose">줄바꿈 - 넓게</type>
 			<type key="lb" type="loose" scope="core" draft="contributed">넓게</type>
 			<type key="lb" type="normal">줄바꿈 - 보통</type>
@@ -1287,8 +1332,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="ussystem" scope="core" draft="contributed">미국식</type>
 			<type key="numbers" type="arab">아라비아-인도식 숫자</type>
 			<type key="numbers" type="arabext">확장형 아라비아-인도식 숫자</type>
+			<type key="numbers" type="arabext" scope="core">확장형 아라비아-인도식</type>
 			<type key="numbers" type="armn">아르메니아 숫자</type>
 			<type key="numbers" type="armnlow">아르메니아 소문자 숫자</type>
+			<type key="numbers" type="armnlow" scope="core">아르메니아 소문자</type>
 			<type key="numbers" type="bali" draft="contributed">발리 숫자</type>
 			<type key="numbers" type="beng">뱅골 숫자</type>
 			<type key="numbers" type="brah" draft="contributed">브라미 숫자</type>
@@ -1297,54 +1344,86 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="deva">데바나가리 숫자</type>
 			<type key="numbers" type="ethi">에티오피아 숫자</type>
 			<type key="numbers" type="finance" draft="contributed">재무 숫자</type>
+			<type key="numbers" type="finance" scope="core">재무</type>
 			<type key="numbers" type="fullwide">전자 숫자</type>
+			<type key="numbers" type="fullwide" scope="core">전자</type>
 			<type key="numbers" type="geor">조지아 숫자</type>
 			<type key="numbers" type="grek">그리스 숫자</type>
 			<type key="numbers" type="greklow">그리스어 소문자 숫자</type>
+			<type key="numbers" type="greklow" scope="core">그리스어 소문자</type>
 			<type key="numbers" type="gujr">구자라트 숫자</type>
 			<type key="numbers" type="guru">굴묵키 숫자</type>
+			<type key="numbers" type="hanidays" scope="core">전통 달력용 한자 날짜 표기</type>
 			<type key="numbers" type="hanidec">중국어 십진 숫자</type>
+			<type key="numbers" type="hanidec" scope="core">중국 숫자 한자 기반 십진법 표기 체계</type>
 			<type key="numbers" type="hans">중국어 간체 숫자</type>
-			<type key="numbers" type="hansfin">중국어 간체 재무 숫자</type>
+			<type key="numbers" type="hansfin">중국어 간체 금융 회계용 숫자</type>
+			<type key="numbers" type="hansfin" scope="core">중국어 간체 금융 회계용</type>
 			<type key="numbers" type="hant">중국어 번체 숫자</type>
-			<type key="numbers" type="hantfin">중국어 번체 재무 숫자</type>
+			<type key="numbers" type="hantfin">중국어 번체 금융 회계용 숫자</type>
+			<type key="numbers" type="hantfin" scope="core">중국어 번체 금융 회계용</type>
 			<type key="numbers" type="hebr">히브리 숫자</type>
 			<type key="numbers" type="java">자바 숫자</type>
 			<type key="numbers" type="jpan">일본 숫자</type>
-			<type key="numbers" type="jpanfin">일본 재무 숫자</type>
+			<type key="numbers" type="jpanfin">일본어 금융 회계용 숫자</type>
+			<type key="numbers" type="jpanfin" scope="core">일본어 금융 회계용</type>
+			<type key="numbers" type="jpanyear" scope="core">일본 연호 원년 표기</type>
 			<type key="numbers" type="kali" draft="contributed">카야 리식 숫자</type>
 			<type key="numbers" type="khmr">크메르 숫자</type>
 			<type key="numbers" type="knda">칸나다 숫자</type>
 			<type key="numbers" type="lana" draft="contributed">타이 탐 호라 숫자</type>
 			<type key="numbers" type="lanatham" draft="contributed">타이 탐탐 숫자</type>
+			<type key="numbers" type="lanatham" scope="core">타이탐 문자(종교용)</type>
 			<type key="numbers" type="laoo">라오 숫자</type>
 			<type key="numbers" type="latn">서양 숫자</type>
 			<type key="numbers" type="lepc" draft="contributed">렙차 숫자</type>
 			<type key="numbers" type="limb" draft="contributed">림부 숫자</type>
+			<type key="numbers" type="mathbold" scope="core">수학용 굵은체</type>
+			<type key="numbers" type="mathdbl" scope="core">수학용 이중 획</type>
+			<type key="numbers" type="mathmono" scope="core">수학용 고정폭</type>
+			<type key="numbers" type="mathsanb" scope="core">수학용 산세리프 굵은체</type>
+			<type key="numbers" type="mathsans" scope="core">수학용 산세리프</type>
 			<type key="numbers" type="mlym">말라얄람 숫자</type>
 			<type key="numbers" type="mong">몽골 숫자</type>
 			<type key="numbers" type="mtei">메이테이 마옉 숫자</type>
 			<type key="numbers" type="mymr">미얀마 숫자</type>
+			<type key="numbers" type="mymrepka" scope="core">미얀마 동부 포 카렌어</type>
+			<type key="numbers" type="mymrpao" scope="core">미얀마 파오어</type>
 			<type key="numbers" type="mymrshan" draft="contributed">미얀마 샨 숫자</type>
-			<type key="numbers" type="native">기본 숫자</type>
+			<type key="numbers" type="mymrshan" scope="core">미얀마 샨어</type>
+			<type key="numbers" type="mymrtlng" scope="core">미얀마 타이 라잉어</type>
+			<type key="numbers" type="native">고유 숫자</type>
+			<type key="numbers" type="native" scope="core">고유 숫자</type>
 			<type key="numbers" type="olck">올치키 숫자</type>
 			<type key="numbers" type="orya">오리야 숫자</type>
 			<type key="numbers" type="osma" draft="contributed">오스마냐 숫자</type>
+			<type key="numbers" type="outlined" scope="core">윤곽선</type>
 			<type key="numbers" type="roman">로마 숫자</type>
+			<type key="numbers" type="roman" scope="core">로마 대문자</type>
 			<type key="numbers" type="romanlow">로마 소문자 숫자</type>
+			<type key="numbers" type="romanlow" scope="core">로마 소문자</type>
 			<type key="numbers" type="saur" draft="contributed">사우라슈트라 숫자</type>
+			<type key="numbers" type="segment" scope="core">구획형</type>
 			<type key="numbers" type="shrd" draft="contributed">샤라다 숫자</type>
 			<type key="numbers" type="sund" draft="contributed">순다 숫자</type>
 			<type key="numbers" type="taml">고대 타밀 숫자</type>
 			<type key="numbers" type="tamldec">타밀 숫자</type>
+			<type key="numbers" type="tamldec" scope="core">현대 타밀어</type>
 			<type key="numbers" type="telu">텔루구 숫자</type>
 			<type key="numbers" type="thai">태국 숫자</type>
 			<type key="numbers" type="tibt">티벳 숫자</type>
 			<type key="numbers" type="traditional" draft="contributed">전통적인 숫자</type>
+			<type key="numbers" type="traditional" scope="core">전통 숫자</type>
 			<type key="numbers" type="vaii">바이 숫자</type>
 			<type key="ss" type="none" scope="core" draft="contributed">끔</type>
 			<type key="ss" type="standard" scope="core" draft="contributed">켬</type>
+			<type key="t0" type="und">지정되지 않은 기계 번역</type>
+			<type key="va" type="posix" scope="core">POSIX 변형</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">끔</typeValue>
+			<typeValue type="yes">켬</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">미터법</measurementSystemName>
 			<measurementSystemName type="UK">영국식</measurementSystemName>
@@ -1766,18 +1845,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>G y. M. d.</pattern>
+							<pattern>G y/M/d</pattern>
 							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>G y. M. d.</pattern>
+							<pattern>G y/M/d</pattern>
 							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -1827,19 +1909,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="hv" draft="contributed">a h시 v</dateFormatItem>
 						<dateFormatItem id="Hv" draft="contributed">H시 v</dateFormatItem>
 						<dateFormatItem id="M">M월</dateFormatItem>
-						<dateFormatItem id="Md">M. d.</dateFormatItem>
-						<dateFormatItem id="MEd">M. d. (E)</dateFormatItem>
-						<dateFormatItem id="MEEEEd">M. d. EEEE</dateFormatItem>
+						<dateFormatItem id="Md">M/d</dateFormatItem>
+						<dateFormatItem id="MEd">M/d E</dateFormatItem>
+						<dateFormatItem id="MEEEEd">M/d EEEE</dateFormatItem>
 						<dateFormatItem id="MMMd">M월 d일</dateFormatItem>
 						<dateFormatItem id="MMMEd">M월 d일 (E)</dateFormatItem>
 						<dateFormatItem id="MMMEEEEd">M월 d일 EEEE</dateFormatItem>
 						<dateFormatItem id="MMMMd">M월 d일</dateFormatItem>
 						<dateFormatItem id="y">G y년</dateFormatItem>
 						<dateFormatItem id="yyyy">G y년</dateFormatItem>
-						<dateFormatItem id="yyyyM">G y. M.</dateFormatItem>
-						<dateFormatItem id="yyyyMd">G y. M. d.</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">G y. M. d. (E)</dateFormatItem>
-						<dateFormatItem id="yyyyMEEEEd">G y. M. d. EEEE</dateFormatItem>
+						<dateFormatItem id="yyyyM">G y/M</dateFormatItem>
+						<dateFormatItem id="yyyyMd">G y/M/d</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">G y/M/d E</dateFormatItem>
+						<dateFormatItem id="yyyyMEEEEd">G y/M/d EEEE</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">G y년 M월</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">G y년 M월 d일</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">G y년 M월 d일 (E)</dateFormatItem>
@@ -1849,56 +1931,56 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">G y년 QQQQ</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} ~ {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0}~{1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">B h시 ~ B h시</greatestDifference>
-							<greatestDifference id="h">B h시 ~ h시</greatestDifference>
+							<greatestDifference id="B">B h시~B h시</greatestDifference>
+							<greatestDifference id="h">B h시~h시</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">B h:mm ~ B h:mm</greatestDifference>
-							<greatestDifference id="h">B h:mm ~ h:mm</greatestDifference>
-							<greatestDifference id="m">B h:mm ~ h:mm</greatestDifference>
+							<greatestDifference id="B">B h:mm~B h:mm</greatestDifference>
+							<greatestDifference id="h">B h:mm~h:mm</greatestDifference>
+							<greatestDifference id="m">B h:mm~h:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="d">
-							<greatestDifference id="d">d일 ~ d일</greatestDifference>
+							<greatestDifference id="d">d일~d일</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">G y년 ~ G y년</greatestDifference>
+							<greatestDifference id="G">G y년~G y년</greatestDifference>
 							<greatestDifference id="y">G y년~y년</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">GGGGG y년 M월 ~ GGGGG y년 M월</greatestDifference>
-							<greatestDifference id="M">GGGGG y년 M월 ~ y년 M월</greatestDifference>
-							<greatestDifference id="y">GGGGG y년 M월 ~ y년 M월</greatestDifference>
+							<greatestDifference id="G">G y/M~G y/M</greatestDifference>
+							<greatestDifference id="M">G y/M~y/M</greatestDifference>
+							<greatestDifference id="y">G y/M~y/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">GGGGG y년 M월 d일 ~ y년 M월 d일</greatestDifference>
-							<greatestDifference id="G">GGGGG y년 M월 d일 ~ GGGGG y년 M월 d일</greatestDifference>
-							<greatestDifference id="M">GGGGG y년 M월 d일 ~ y년 M월 d일</greatestDifference>
-							<greatestDifference id="y">GGGGG y년 M월 d일 ~ y년 M월 d일</greatestDifference>
+							<greatestDifference id="d">G y/M/d~y/M/d</greatestDifference>
+							<greatestDifference id="G">G y/M/d~G y/M/d</greatestDifference>
+							<greatestDifference id="M">G y/M/d~y/M/d</greatestDifference>
+							<greatestDifference id="y">G y/M/d~y/M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">GGGGG y년 M월 d일 E요일 ~ y년 M월 d일 E요일</greatestDifference>
-							<greatestDifference id="G">GGGGG y년 M월 d일 E요일 ~ GGGGG y년 M월 d일 E요일</greatestDifference>
-							<greatestDifference id="M">GGGGG y년 M월 d일 E요일 ~ y년 M월 d일 E요일</greatestDifference>
-							<greatestDifference id="y">GGGGG y년 M월 d일 E요일 ~ y년 M월 d일 E요일</greatestDifference>
+							<greatestDifference id="d">G y/M/d E~y/M/d E</greatestDifference>
+							<greatestDifference id="G">G y/M/d E~G y/M/d E</greatestDifference>
+							<greatestDifference id="M">G y/M/d E~y/M/d E</greatestDifference>
+							<greatestDifference id="y">G y/M/d E~y/M/d E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">G y년 M월 ~ G y년 M월</greatestDifference>
-							<greatestDifference id="M">G y년 M월 ~ y년 M월</greatestDifference>
-							<greatestDifference id="y">G y년 M월 ~ y년 M월</greatestDifference>
+							<greatestDifference id="G">G y년 MMM~G y년 MMM</greatestDifference>
+							<greatestDifference id="M">G y년 M월~y년 M월</greatestDifference>
+							<greatestDifference id="y">G y년 M월~y년 M월</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">G y년 M월 d일 ~ d일</greatestDifference>
-							<greatestDifference id="G">G y년 M월 d일 ~ y년 M월 d일</greatestDifference>
-							<greatestDifference id="M">G y년 M월 d일 ~ M월 d일</greatestDifference>
-							<greatestDifference id="y">G y년 M월 d일 ~ y년 M월 d일</greatestDifference>
+							<greatestDifference id="d">G y년 M월 d일~d일</greatestDifference>
+							<greatestDifference id="G">G y년 M월 d일~y년 M월 d일</greatestDifference>
+							<greatestDifference id="M">G y년 M월 d일~M월 d일</greatestDifference>
+							<greatestDifference id="y">G y년 M월 d일~y년 M월 d일</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">G y년 M월 d일 e요일 – M월 d일 e요일</greatestDifference>
-							<greatestDifference id="G">G y년 M월 d일 E요일 ~ G y년 M월 d일 E요일</greatestDifference>
-							<greatestDifference id="M">G y년 M월 d일 E요일 ~ M월 d일 E요일</greatestDifference>
-							<greatestDifference id="y">G y년 M월 d일 E요일 ~ y년 M월 d일 E요일</greatestDifference>
+							<greatestDifference id="d">G y년 MMM d일 E요일~MMM d일 E요일</greatestDifference>
+							<greatestDifference id="G">G y년 M월 d일 E요일~G y년 M월 d일 E요일</greatestDifference>
+							<greatestDifference id="M">G y년 M월 d일 E요일~M월 d일 E요일</greatestDifference>
+							<greatestDifference id="y">G y년 M월 d일 E요일~y년 M월 d일 E요일</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">a h시 ~ a h시</greatestDifference>
@@ -1933,26 +2015,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="H">HH ~ HH시 v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M">M월 ~ M월</greatestDifference>
+							<greatestDifference id="M">M월~M월</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">M. d ~ M. d</greatestDifference>
-							<greatestDifference id="M">M. d ~ M. d</greatestDifference>
+							<greatestDifference id="d">M/d~M/d</greatestDifference>
+							<greatestDifference id="M">M/d~M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">M. d (E) ~ M. d (E)</greatestDifference>
-							<greatestDifference id="M">M. d (E) ~ M. d (E)</greatestDifference>
+							<greatestDifference id="d">M/d E~M/d E</greatestDifference>
+							<greatestDifference id="M">M/d E~M/d E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">M월 ~ M월</greatestDifference>
+							<greatestDifference id="M">M월~M월</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">M월 d일 ~ d일</greatestDifference>
-							<greatestDifference id="M">M월 d일 ~ M월 d일</greatestDifference>
+							<greatestDifference id="d">M월 d일~d일</greatestDifference>
+							<greatestDifference id="M">M월 d일~M월 d일</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">M월 d일 (E) ~ d일 (E)</greatestDifference>
-							<greatestDifference id="M">M월 d일 (E) ~ M월 d일 (E)</greatestDifference>
+							<greatestDifference id="d">M월 d일 (E)~d일 (E)</greatestDifference>
+							<greatestDifference id="M">MMM d일 (E)~MMM d일 (E)</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEEEEd">
 							<greatestDifference id="d">M월 d일 EEEE ~ d일 EEEE</greatestDifference>
@@ -1961,36 +2043,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMM">
 							<greatestDifference id="M">LLLL ~ LLLL</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">MMMM d일~d일</greatestDifference>
+							<greatestDifference id="M">MMMM d일~MMMM d일</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y">G y년 ~ y년</greatestDifference>
+							<greatestDifference id="y">G y년~y년</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">G y. M ~ y. M</greatestDifference>
-							<greatestDifference id="y">G y. M ~ y. M</greatestDifference>
+							<greatestDifference id="M">G y/M~y/M</greatestDifference>
+							<greatestDifference id="y">G y/M~y/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">G y. M. d. ~ y. M. d.</greatestDifference>
-							<greatestDifference id="M">G y. M. d. ~ y. M. d.</greatestDifference>
-							<greatestDifference id="y">G y. M. d. ~ y. M. d.</greatestDifference>
+							<greatestDifference id="d">G y/M/d~y/M/d</greatestDifference>
+							<greatestDifference id="M">G y/M/d~y/M/d</greatestDifference>
+							<greatestDifference id="y">G y/M/d~y/M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">G y. M. d. (E) ~ y. M. d. (E)</greatestDifference>
-							<greatestDifference id="M">G y. M. d. (E) ~ y. M. d. (E)</greatestDifference>
-							<greatestDifference id="y">G y. M. d. (E) ~ y. M. d. (E)</greatestDifference>
+							<greatestDifference id="d">G y/M/d E~y/M/d E</greatestDifference>
+							<greatestDifference id="M">G y/M/d E ~y/M/d E</greatestDifference>
+							<greatestDifference id="y">G y/M/d E ~y/M/d E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">G y년 M월~M월</greatestDifference>
-							<greatestDifference id="y">G y년 M월 ~ y년 M월</greatestDifference>
+							<greatestDifference id="y">G y년 M월~y년 M월</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">G y년 M월 d일~d일</greatestDifference>
-							<greatestDifference id="M">G y년 M월 d일 ~ M월 d일</greatestDifference>
-							<greatestDifference id="y">G y년 M월 d일 ~ y년 M월 d일</greatestDifference>
+							<greatestDifference id="M">G y년 M월 d일~M월 d일</greatestDifference>
+							<greatestDifference id="y">G y년 M월 d일~y년 M월 d일</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">G y년 M월 d일 (E) ~ d일 (E)</greatestDifference>
-							<greatestDifference id="M">G y년 M월 d일 (E) ~ M월 d일 (E)</greatestDifference>
-							<greatestDifference id="y">G y년 M월 d일 (E) ~ y년 M월 d일 (E)</greatestDifference>
+							<greatestDifference id="d">G y년 M월 d일 (E)~d일 (E)</greatestDifference>
+							<greatestDifference id="M">G y년 M월 d일 (E)~M월 d일 (E)</greatestDifference>
+							<greatestDifference id="y">G y년 M월 d일 (E)~y년 M월 d일 (E)</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEEEEd">
 							<greatestDifference id="d">G y년 M월 d일 EEEE ~ d일 EEEE</greatestDifference>
@@ -1998,8 +2084,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">G y년 M월 d일 EEEE ~ y년 M월 d일 EEEE</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">G y년 MM월 ~ MM월</greatestDifference>
-							<greatestDifference id="y">G y년 MM월 ~ y년 MM월</greatestDifference>
+							<greatestDifference id="M">G y년 MM월~MM월</greatestDifference>
+							<greatestDifference id="y">G y년 MM월~y년 MM월</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -2101,28 +2187,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="evening1">저녁</dayPeriod>
 							<dayPeriod type="night1">밤</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">오전</dayPeriod>
-							<dayPeriod type="pm">오후</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">오전</dayPeriod>
-							<dayPeriod type="pm">오후</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">오전</dayPeriod>
-							<dayPeriod type="pm">오후</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">오전</dayPeriod>
-							<dayPeriod type="pm">오후</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">오전</dayPeriod>
-							<dayPeriod type="pm">오후</dayPeriod>
-						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
@@ -2222,7 +2286,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhms">(E) B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d일 (E)</dateFormatItem>
 						<dateFormatItem id="EEEEd">d일 EEEE</dateFormatItem>
-						<dateFormatItem id="Eh" draft="contributed">(E) a h</dateFormatItem>
+						<dateFormatItem id="Eh">E a h시</dateFormatItem>
 						<dateFormatItem id="Ehm">(E) a h:mm</dateFormatItem>
 						<dateFormatItem id="EHm">(E) HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">(E) a h:mm:ss</dateFormatItem>
@@ -2235,14 +2299,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMMd">G y년 MMM d일</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y년 MMM d일 (E)</dateFormatItem>
 						<dateFormatItem id="GyMMMEEEEd">G y년 MMM d일 EEEE</dateFormatItem>
+						<dateFormatItem id="GyMMMM" draft="contributed">G y년 MMMM</dateFormatItem>
+						<dateFormatItem id="GyMMMMd" draft="contributed">G y년 MMMM d일</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd" draft="contributed">G y년 MMMM d일 (E)</dateFormatItem>
 						<dateFormatItem id="h">a h시</dateFormatItem>
 						<dateFormatItem id="H">H시</dateFormatItem>
 						<dateFormatItem id="HHmmss">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="hm">a h:mm</dateFormatItem>
 						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
-						<dateFormatItem id="Hms">H시 m분 s초</dateFormatItem>
 						<dateFormatItem id="hmsv">a h:mm:ss v</dateFormatItem>
-						<dateFormatItem id="Hmsv">H시 m분 s초 v</dateFormatItem>
 						<dateFormatItem id="hmv">a h:mm v</dateFormatItem>
 						<dateFormatItem id="hv" draft="contributed">a h시 v</dateFormatItem>
 						<dateFormatItem id="Hv" draft="contributed">H시 v</dateFormatItem>
@@ -2254,24 +2319,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMEd">MMM d일 (E)</dateFormatItem>
 						<dateFormatItem id="MMMEEEEd">MMM d일 EEEE</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d일</dateFormatItem>
+						<dateFormatItem id="MMMMEd" draft="contributed">MMMM d일 (E)</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM W번째 주</dateFormatItem>
 						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y년</dateFormatItem>
-						<dateFormatItem id="yM">y. M.</dateFormatItem>
-						<dateFormatItem id="yMd">y. M. d.</dateFormatItem>
-						<dateFormatItem id="yMEd">y. M. d. (E)</dateFormatItem>
-						<dateFormatItem id="yMEEEEd">y. M. d. EEEE</dateFormatItem>
-						<dateFormatItem id="yMM">y. M.</dateFormatItem>
+						<dateFormatItem id="yM">y/M</dateFormatItem>
+						<dateFormatItem id="yMd">y/M/d</dateFormatItem>
+						<dateFormatItem id="yMEd">y/M/d E</dateFormatItem>
+						<dateFormatItem id="yMEEEEd">y/M/d EEEE</dateFormatItem>
+						<dateFormatItem id="yMM">y/M</dateFormatItem>
 						<dateFormatItem id="yMMM">y년 MMM</dateFormatItem>
 						<dateFormatItem id="yMMMd">y년 MMM d일</dateFormatItem>
 						<dateFormatItem id="yMMMEd">y년 MMM d일 (E)</dateFormatItem>
 						<dateFormatItem id="yMMMEEEEd">y년 MMM d일 EEEE</dateFormatItem>
 						<dateFormatItem id="yMMMM">y년 MMMM</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="contributed">y년 MMMM d일</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="contributed">y년 MMMM d일 (E)</dateFormatItem>
 						<dateFormatItem id="yQQQ">y년 QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y년 QQQQ</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y년 w번째 주</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Day-Of-Week">{0} ({1})</appendItem>
+						<appendItem request="Time-Day-Of-Week">({1}) {0}</appendItem>
+					</appendItems>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0}~{1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric">{0}~{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0}~{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} ~ {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">B h시 ~ B h시</greatestDifference>
@@ -2379,6 +2456,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
 							<greatestDifference id="M">LLLL–LLLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d" draft="contributed">MMMM d일 – d일</greatestDifference>
+							<greatestDifference id="M" draft="contributed">MMMM d일 – MMMM d일</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y년 ~ y년</greatestDifference>
@@ -2518,238 +2599,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<calendar type="japanese">
 				<eras>
 					<eraAbbr>
-						<era type="0">다이카 (645 ~ 650)</era>
-						<era type="1">하쿠치 (650 ~ 671)</era>
-						<era type="2">하쿠호 (672 ~ 686)</era>
-						<era type="3">슈초 (686 ~ 701)</era>
-						<era type="4">다이호 (701 ~ 704)</era>
-						<era type="5">게이운 (704 ~ 708)</era>
-						<era type="6">와도 (708 ~ 715)</era>
-						<era type="7">레이키 (715 ~ 717)</era>
-						<era type="8">요로 (717 ~ 724)</era>
-						<era type="9">진키 (724 ~ 729)</era>
-						<era type="10">덴표 (729 ~ 749)</era>
-						<era type="11">덴표칸포 (749 ~ 749)</era>
-						<era type="12">덴표쇼호 (749 ~ 757)</era>
-						<era type="13">덴표호지 (757 ~ 765)</era>
-						<era type="14">덴표진고 (765 ~ 767)</era>
-						<era type="15">진고케이운 (767 ~ 770)</era>
-						<era type="16">호키 (770 ~ 780)</era>
-						<era type="17">덴오 (781 ~ 782)</era>
-						<era type="18">엔랴쿠 (782 ~ 806)</era>
-						<era type="19">다이도 (806 ~ 810)</era>
-						<era type="20">고닌 (810 ~ 824)</era>
-						<era type="21">덴초 (824 ~ 834)</era>
-						<era type="22">조와 (834 ~ 848)</era>
-						<era type="23">가쇼 (848 ~ 851)</era>
-						<era type="24">닌주 (851 ~ 854)</era>
-						<era type="25">사이코 (854 ~ 857)</era>
-						<era type="26">덴난 (857 ~ 859)</era>
-						<era type="27">조간 (859 ~ 877)</era>
-						<era type="28">간교 (877 ~ 885)</era>
-						<era type="29">닌나 (885 ~ 889)</era>
-						<era type="30">간표 (889 ~ 898)</era>
-						<era type="31">쇼타이 (898 ~ 901)</era>
-						<era type="32">엔기 (901 ~ 923)</era>
-						<era type="33">엔초 (923 ~ 931)</era>
-						<era type="34">조헤이 (931 ~ 938)</era>
-						<era type="35">덴교 (938 ~ 947)</era>
-						<era type="36">덴랴쿠 (947 ~ 957)</era>
-						<era type="37">덴토쿠 (957 ~ 961)</era>
-						<era type="38">오와 (961 ~ 964)</era>
-						<era type="39">고호 (964 ~ 968)</era>
-						<era type="40">안나 (968 ~ 970)</era>
-						<era type="41">덴로쿠 (970 ~ 973)</era>
-						<era type="42">덴엔 (973 ~ 976)</era>
-						<era type="43">조겐 (976 ~ 978)</era>
-						<era type="44">덴겐 (978 ~ 983)</era>
-						<era type="45">에이간 (983 ~ 985)</era>
-						<era type="46">간나 (985 ~ 987)</era>
-						<era type="47">에이엔 (987 ~ 989)</era>
-						<era type="48">에이소 (989 ~ 990)</era>
-						<era type="49">쇼랴쿠 (990 ~ 995)</era>
-						<era type="50">조토쿠 (995 ~ 999)</era>
-						<era type="51">조호 (999 ~ 1004)</era>
-						<era type="52">간코 (1004 ~ 1012)</era>
-						<era type="53">조와 (1012 ~ 1017)</era>
-						<era type="54">간닌 (1017 ~ 1021)</era>
-						<era type="55">지안 (1021 ~ 1024)</era>
-						<era type="56">만주 (1024 ~ 1028)</era>
-						<era type="57">조겐 (1028 ~ 1037)</era>
-						<era type="58">조랴쿠 (1037 ~ 1040)</era>
-						<era type="59">조큐 (1040 ~ 1044)</era>
-						<era type="60">간토쿠 (1044 ~ 1046)</era>
-						<era type="61">에이쇼 (1046 ~ 1053)</era>
-						<era type="62">덴기 (1053 ~ 1058)</era>
-						<era type="63">고헤이 (1058 ~ 1065)</era>
-						<era type="64">지랴쿠 (1065 ~ 1069)</era>
-						<era type="65">엔큐 (1069 ~ 1074)</era>
-						<era type="66">조호 (1074 ~ 1077)</era>
-						<era type="67">쇼랴쿠 (1077 ~ 1081)</era>
-						<era type="68">에이호 (1081 ~ 1084)</era>
-						<era type="69">오토쿠 (1084 ~ 1087)</era>
-						<era type="70">간지 (1087 ~ 1094)</era>
-						<era type="71">가호 (1094 ~ 1096)</era>
-						<era type="72">에이초 (1096 ~ 1097)</era>
-						<era type="73">조토쿠 (1097 ~ 1099)</era>
-						<era type="74">고와 (1099 ~ 1104)</era>
-						<era type="75">조지 (1104 ~ 1106)</era>
-						<era type="76">가쇼 (1106 ~ 1108)</era>
-						<era type="77">덴닌 (1108 ~ 1110)</era>
-						<era type="78">덴에이 (1110 ~ 1113)</era>
-						<era type="79">에이큐 (1113 ~ 1118)</era>
-						<era type="80">겐에이 (1118 ~ 1120)</era>
-						<era type="81">호안 (1120 ~ 1124)</era>
-						<era type="82">덴지 (1124 ~ 1126)</era>
-						<era type="83">다이지 (1126 ~ 1131)</era>
-						<era type="84">덴쇼 (1131 ~ 1132)</era>
-						<era type="85">조쇼 (1132 ~ 1135)</era>
-						<era type="86">호엔 (1135 ~ 1141)</era>
-						<era type="87">에이지 (1141 ~ 1142)</era>
-						<era type="88">고지 (1142 ~ 1144)</era>
-						<era type="89">덴요 (1144 ~ 1145)</era>
-						<era type="90">규안 (1145 ~ 1151)</era>
-						<era type="91">닌페이 (1151 ~ 1154)</era>
-						<era type="92">규주 (1154 ~ 1156)</era>
-						<era type="93">호겐 (1156 ~ 1159)</era>
-						<era type="94">헤이지 (1159 ~ 1160)</era>
-						<era type="95">에이랴쿠 (1160 ~ 1161)</era>
-						<era type="96">오호 (1161 ~ 1163)</era>
-						<era type="97">조칸 (1163 ~ 1165)</era>
-						<era type="98">에이만 (1165 ~ 1166)</era>
-						<era type="99">닌난 (1166 ~ 1169)</era>
-						<era type="100">가오 (1169 ~ 1171)</era>
-						<era type="101">조안 (1171 ~ 1175)</era>
-						<era type="102">안겐 (1175 ~ 1177)</era>
-						<era type="103">지쇼 (1177 ~ 1181)</era>
-						<era type="104">요와 (1181 ~ 1182)</era>
-						<era type="105">주에이 (1182 ~ 1184)</era>
-						<era type="106">겐랴쿠 (1184 ~ 1185)</era>
-						<era type="107">분지 (1185 ~ 1190)</era>
-						<era type="108">겐큐 (1190 ~ 1199)</era>
-						<era type="109">쇼지 (1199 ~ 1201)</era>
-						<era type="110">겐닌 (1201 ~ 1204)</era>
-						<era type="111">겐큐 (1204 ~ 1206)</era>
-						<era type="112">겐에이 (1206 ~ 1207)</era>
-						<era type="113">조겐 (1207 ~ 1211)</era>
-						<era type="114">겐랴쿠 (1211 ~ 1213)</era>
-						<era type="115">겐포 (1213 ~ 1219)</era>
-						<era type="116">조큐 (1219 ~ 1222)</era>
-						<era type="117">조오 (1222 ~ 1224)</era>
-						<era type="118">겐닌 (1224 ~ 1225)</era>
-						<era type="119">가로쿠 (1225 ~ 1227)</era>
-						<era type="120">안테이 (1227 ~ 1229)</era>
-						<era type="121">간키 (1229 ~ 1232)</era>
-						<era type="122">조에이 (1232 ~ 1233)</era>
-						<era type="123">덴푸쿠 (1233 ~ 1234)</era>
-						<era type="124">분랴쿠 (1234 ~ 1235)</era>
-						<era type="125">가테이 (1235 ~ 1238)</era>
-						<era type="126">랴쿠닌 (1238 ~ 1239)</era>
-						<era type="127">엔오 (1239 ~ 1240)</era>
-						<era type="128">닌지 (1240 ~ 1243)</era>
-						<era type="129">간겐 (1243 ~ 1247)</era>
-						<era type="130">호지 (1247 ~ 1249)</era>
-						<era type="131">겐초 (1249 ~ 1256)</era>
-						<era type="132">고겐 (1256 ~ 1257)</era>
-						<era type="133">쇼카 (1257 ~ 1259)</era>
-						<era type="134">쇼겐 (1259 ~ 1260)</era>
-						<era type="135">분오 (1260 ~ 1261)</era>
-						<era type="136">고초 (1261 ~ 1264)</era>
-						<era type="137">분에이 (1264 ~ 1275)</era>
-						<era type="138">겐지 (1275 ~ 1278)</era>
-						<era type="139">고안 (1278 ~ 1288)</era>
-						<era type="140">쇼오 (1288 ~ 1293)</era>
-						<era type="141">에이닌 (1293 ~ 1299)</era>
-						<era type="142">쇼안 (1299 ~ 1302)</era>
-						<era type="143">겐겐 (1302 ~ 1303)</era>
-						<era type="144">가겐 (1303 ~ 1306)</era>
-						<era type="145">도쿠지 (1306 ~ 1308)</era>
-						<era type="146">엔쿄 (1308 ~ 1311)</era>
-						<era type="147">오초 (1311 ~ 1312)</era>
-						<era type="148">쇼와 (1312 ~ 1317)</era>
-						<era type="149">분포 (1317 ~ 1319)</era>
-						<era type="150">겐오 (1319 ~ 1321)</era>
-						<era type="151">겐코 (1321 ~ 1324)</era>
-						<era type="152">쇼추 (1324 ~ 1326)</era>
-						<era type="153">가랴쿠 (1326 ~ 1329)</era>
-						<era type="154">겐토쿠 (1329 ~ 1331)</era>
-						<era type="155">겐코 (1331 ~ 1334)</era>
-						<era type="156">겐무 (1334 ~ 1336)</era>
-						<era type="157">엔겐 (1336 ~ 1340)</era>
-						<era type="158">고코쿠 (1340 ~ 1346)</era>
-						<era type="159">쇼헤이 (1346 ~ 1370)</era>
-						<era type="160">겐토쿠 (1370 ~ 1372)</era>
-						<era type="161">분추 (1372 ~ 1375)</era>
-						<era type="162">덴주 (1375 ~ 1379)</era>
-						<era type="163">고랴쿠 (1379 ~ 1381)</era>
-						<era type="164">고와 (1381 ~ 1384)</era>
-						<era type="165">겐추 (1384 ~ 1392)</era>
-						<era type="166">메이토쿠 (1384 ~ 1387)</era>
-						<era type="167">가쿄 (1387 ~ 1389)</era>
-						<era type="168">고오 (1389 ~ 1390)</era>
-						<era type="169">메이토쿠 (1390 ~ 1394)</era>
-						<era type="170">오에이 (1394 ~ 1428)</era>
-						<era type="171">쇼초 (1428 ~ 1429)</era>
-						<era type="172">에이쿄 (1429 ~ 1441)</era>
-						<era type="173">가키쓰 (1441 ~ 1444)</era>
-						<era type="174">분안 (1444 ~ 1449)</era>
-						<era type="175">호토쿠 (1449 ~ 1452)</era>
-						<era type="176">교토쿠 (1452 ~ 1455)</era>
-						<era type="177">고쇼 (1455 ~ 1457)</era>
-						<era type="178">조로쿠 (1457 ~ 1460)</era>
-						<era type="179">간쇼 (1460 ~ 1466)</era>
-						<era type="180">분쇼 (1466 ~ 1467)</era>
-						<era type="181">오닌 (1467 ~ 1469)</era>
-						<era type="182">분메이 (1469 ~ 1487)</era>
-						<era type="183">조쿄 (1487 ~ 1489)</era>
-						<era type="184">엔토쿠 (1489 ~ 1492)</era>
-						<era type="185">메이오 (1492 ~ 1501)</era>
-						<era type="186">분키 (1501 ~ 1504)</era>
-						<era type="187">에이쇼 (1504 ~ 1521)</era>
-						<era type="188">다이에이 (1521 ~ 1528)</era>
-						<era type="189">교로쿠 (1528 ~ 1532)</era>
-						<era type="190">덴분 (1532 ~ 1555)</era>
-						<era type="191">고지 (1555 ~ 1558)</era>
-						<era type="192">에이로쿠 (1558 ~ 1570)</era>
-						<era type="193">겐키 (1570 ~ 1573)</era>
-						<era type="194">덴쇼 (1573 ~ 1592)</era>
-						<era type="195">분로쿠 (1592 ~ 1596)</era>
-						<era type="196">게이초 (1596 ~ 1615)</era>
-						<era type="197">겐나 (1615 ~ 1624)</era>
-						<era type="198">간에이 (1624 ~ 1644)</era>
-						<era type="199">쇼호 (1644 ~ 1648)</era>
-						<era type="200">게이안 (1648 ~ 1652)</era>
-						<era type="201">조오 (1652 ~ 1655)</era>
-						<era type="202">메이레키 (1655 ~ 1658)</era>
-						<era type="203">만지 (1658 ~ 1661)</era>
-						<era type="204">간분 (1661 ~ 1673)</era>
-						<era type="205">엔포 (1673 ~ 1681)</era>
-						<era type="206">덴나 (1681 ~ 1684)</era>
-						<era type="207">조쿄 (1684 ~ 1688)</era>
-						<era type="208">겐로쿠 (1688 ~ 1704)</era>
-						<era type="209">호에이 (1704 ~ 1711)</era>
-						<era type="210">쇼토쿠 (1711 ~ 1716)</era>
-						<era type="211">교호 (1716 ~ 1736)</era>
-						<era type="212">겐분 (1736 ~ 1741)</era>
-						<era type="213">간포 (1741 ~ 1744)</era>
-						<era type="214">엔쿄 (1744 ~ 1748)</era>
-						<era type="215">간엔 (1748 ~ 1751)</era>
-						<era type="216">호레키 (1751 ~ 1764)</era>
-						<era type="217">메이와 (1764 ~ 1772)</era>
-						<era type="218">안에이 (1772 ~ 1781)</era>
-						<era type="219">덴메이 (1781 ~ 1789)</era>
-						<era type="220">간세이 (1789 ~ 1801)</era>
-						<era type="221">교와 (1801 ~ 1804)</era>
-						<era type="222">분카 (1804 ~ 1818)</era>
-						<era type="223">분세이 (1818 ~ 1830)</era>
-						<era type="224">덴포 (1830 ~ 1844)</era>
-						<era type="225">고카 (1844 ~ 1848)</era>
-						<era type="226">가에이 (1848 ~ 1854)</era>
-						<era type="227">안세이 (1854 ~ 1860)</era>
-						<era type="228">만엔 (1860 ~ 1861)</era>
-						<era type="229">분큐 (1861 ~ 1864)</era>
-						<era type="230">겐지 (1864 ~ 1865)</era>
-						<era type="231">게이오 (1865 ~ 1868)</era>
 						<era type="232">메이지</era>
 						<era type="233">다이쇼</era>
 						<era type="234">쇼와</era>
@@ -3496,9 +3345,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>리브르빌</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>영국 하계 표준시</daylight>
-				</long>
 				<exemplarCity>런던</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -3589,9 +3435,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>자야푸라</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>아일랜드 표준시</daylight>
-				</long>
 				<exemplarCity>더블린</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -4326,13 +4169,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>알래스카 하계 표준시</daylight>
 				</long>
 			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>알마티 표준 시간</generic>
-					<standard>알마티 표준 표준시</standard>
-					<daylight>알마티 하계 표준시</daylight>
-				</long>
-			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic>아마존 시간</generic>
@@ -4356,7 +4192,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
-					<generic>미 산지 시간</generic>
+					<generic>미 산악 시간</generic>
 					<standard>미 산악 표준시</standard>
 					<daylight>미 산지 하계 표준시</daylight>
 				</long>
@@ -4380,20 +4216,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>아피아 시간</generic>
 					<standard>아피아 표준시</standard>
 					<daylight>아피아 하계 표준시</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>악타우 표준 시간</generic>
-					<standard>악타우 표준 표준시</standard>
-					<daylight>악타우 하계 표준시</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>악퇴베 표준 시간</generic>
-					<standard>악퇴베 표준 표준시</standard>
-					<daylight>악퇴베 하계 표준시</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -4495,6 +4317,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>브라질리아 시간</generic>
 					<standard>브라질리아 표준시</standard>
 					<daylight>브라질리아 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>영국 시간</generic>
+					<daylight>영국 하계 표준시</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -4675,6 +4503,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>그리니치 표준시</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic draft="contributed">그린란드 시간</generic>
+					<standard draft="contributed">그린란드 표준시</standard>
+					<daylight draft="contributed">그린란드 하계 표준시</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>그린란드 동부 시간</generic>
@@ -4689,11 +4524,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>그린란드 서부 하계 표준시</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard draft="provisional">괌 표준 시간</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>걸프만 표준시</standard>
@@ -4706,7 +4536,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>하와이 알류샨 표준시</standard>
+					<standard>하와이 시간</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -4767,6 +4597,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>이란 하계 표준시</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>아일랜드 시간</generic>
+					<daylight>아일랜드 표준시</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>이르쿠츠크 시간</generic>
@@ -4790,9 +4626,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
-					<generic draft="contributed">페트로파블롭스크-캄차츠키 시간</generic>
-					<standard draft="contributed">페트로파블롭스크-캄차츠키 표준시</standard>
-					<daylight draft="contributed">페트로파블롭스크-캄차츠키 하계 표준시</daylight>
+					<generic>캄차카 시간</generic>
+					<standard>캄차카 표준시</standard>
+					<daylight>캄차카 하계 표준시</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -4834,11 +4670,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>키르기스스탄 시간</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard draft="provisional">랑카 표준 시간</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>라인 제도 시간</standard>
@@ -4849,13 +4680,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>로드 하우 시간</generic>
 					<standard>로드 하우 표준시</standard>
 					<daylight>로드 하우 하계 표준시</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic>마카오 시간</generic>
-					<standard>마카오 표준 시간</standard>
-					<daylight>마카오 하계 표준시</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -4973,11 +4797,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>페르난도 데 노로냐 하계 표준시</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard draft="provisional">북마리아나 제도 표준 시간</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>노보시비르스크 시간</generic>
@@ -5057,13 +4876,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>평양 시간</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>키질로르다 시간</generic>
-					<standard>키질로르다 표준 시간</standard>
-					<daylight>키질로르다 하계 표준시</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>레위니옹 시간</standard>
@@ -5090,9 +4902,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>사모아 시간</generic>
 					<standard>사모아 표준시</standard>
-					<daylight>사모아 하계 표준시</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -5161,9 +4971,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Turkey">
 				<long>
-					<generic draft="provisional">터키 시간</generic>
-					<standard draft="provisional">터키 표준시</standard>
-					<daylight draft="provisional">터키 일광 절약 시간</daylight>
+					<generic draft="contributed">튀르키예 시간</generic>
+					<standard draft="contributed">튀르키예 표준시</standard>
+					<daylight draft="contributed">튀르키예 하계 표준시</daylight>
 				</long>
 			</metazone>
 			<metazone type="Turkmenistan">
@@ -5183,6 +4993,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>우루과이 시간</generic>
 					<standard>우루과이 표준시</standard>
 					<daylight>우루과이 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>우루무치 시간</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -6130,7 +5945,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName draft="contributed">카리브 길더</displayName>
-				<displayName count="other">카리브 길더</displayName>
 			</currency>
 			<currency type="XDR">
 				<displayName>특별인출권</displayName>
@@ -6204,7 +6018,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName draft="contributed">짐바브웨 골드</displayName>
-				<displayName count="other">짐바브웨 골드</displayName>
 			</currency>
 			<currency type="ZWL">
 				<displayName draft="contributed">짐바브웨 달러 (2009)</displayName>
@@ -7721,13 +7534,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<unit type="concentr-part">
-				<unitPattern count="other" draft="contributed">{0}part</unitPattern>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName draft="contributed">Glc</displayName>
-				<unitPattern count="other" draft="contributed">{0}Glc</unitPattern>
-			</unit>
 			<unit type="digital-byte">
 				<displayName>B</displayName>
 			</unit>
@@ -7755,64 +7561,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="power-horsepower">
 				<unitPattern count="other">{0}HP</unitPattern>
 			</unit>
-			<unit type="pressure-ofhg">
-				<unitPattern count="other" draft="contributed">{0}Hg</unitPattern>
-			</unit>
 			<unit type="speed-mile-per-hour">
 				<unitPattern count="other">{0}mph</unitPattern>
 			</unit>
 			<unit type="speed-beaufort">
 				<unitPattern count="other">B{0}</unitPattern>
 			</unit>
-			<unit type="volume-fluid-ounce-metric">
-				<unitPattern count="other" draft="contributed">{0}fl oz m.</unitPattern>
-			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<displayName>dsp Imp</displayName>
 				<unitPattern count="other">{0}dsp-Imp</unitPattern>
-			</unit>
-			<unit type="angle-steradian">
-				<unitPattern count="other" draft="contributed">{0}sr</unitPattern>
-			</unit>
-			<unit type="concentr-katal">
-				<unitPattern count="other" draft="contributed">{0}kat</unitPattern>
-			</unit>
-			<unit type="electric-coulomb">
-				<unitPattern count="other" draft="contributed">{0}C</unitPattern>
-			</unit>
-			<unit type="electric-farad">
-				<unitPattern count="other" draft="contributed">{0}F</unitPattern>
-			</unit>
-			<unit type="electric-henry">
-				<unitPattern count="other" draft="contributed">{0}H</unitPattern>
-			</unit>
-			<unit type="electric-siemens">
-				<unitPattern count="other" draft="contributed">{0}S</unitPattern>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName draft="contributed">cal-IT</displayName>
-				<unitPattern count="other" draft="contributed">{0}cal-IT</unitPattern>
-			</unit>
-			<unit type="energy-becquerel">
-				<unitPattern count="other" draft="contributed">{0}Bq</unitPattern>
-			</unit>
-			<unit type="energy-sievert">
-				<unitPattern count="other" draft="contributed">{0}Sv</unitPattern>
-			</unit>
-			<unit type="energy-gray">
-				<unitPattern count="other" draft="contributed">{0}Gy</unitPattern>
-			</unit>
-			<unit type="force-kilogram-force">
-				<unitPattern count="other" draft="contributed">{0}kgf</unitPattern>
-			</unit>
-			<unit type="magnetic-tesla">
-				<unitPattern count="other" draft="contributed">{0}T</unitPattern>
-			</unit>
-			<unit type="magnetic-weber">
-				<unitPattern count="other" draft="contributed">{0}Wb</unitPattern>
-			</unit>
-			<unit type="speed-light-speed">
-				<unitPattern count="other" draft="contributed">{0}light</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

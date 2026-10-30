@@ -21,7 +21,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Latn">latin</script>
 		</scripts>
 		<territories>
+			<territory type="AT">Àustria</territory>
+			<territory type="CH">Svìssera</territory>
+			<territory type="FR">Fransa</territory>
 			<territory type="IT">Italia</territory>
+			<territory type="SI">Slovenia</territory>
+			<territory type="SM">Repùblica ëd San Marin</territory>
 		</territories>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">metrico</measurementSystemName>
@@ -35,7 +40,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[aà b c {cc} {ch} d eéèë {eu} f g {gg} {gh} iì j l m n {n\-} oò p q r s {s\-c} {ss} t uù v z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[h]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[h w]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‑ — , ; \: ! ? . … '’ &quot;“” « » ( ) \[ \] \{ \} @ /]</exemplarCharacters>
 	</characters>
 	<delimiters>
@@ -49,6 +54,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="gregorian">
 				<months>
 					<monthContext type="format">
+						<monthWidth type="narrow">
+							<month type="1">g</month>
+							<month type="2">f</month>
+							<month type="3">m</month>
+							<month type="4">a</month>
+							<month type="5">m</month>
+							<month type="6">g</month>
+							<month type="7">l</month>
+							<month type="8">a</month>
+							<month type="9">s</month>
+							<month type="10">u</month>
+							<month type="11">n</month>
+							<month type="12">d</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">gené</month>
 							<month type="2">fërvé</month>
@@ -85,14 +104,38 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="yMd">dd/MM/y</dateFormatItem>
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">d MMMM y, E</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
+		<fields>
+			<field type="year">
+				<displayName>Ann</displayName>
+			</field>
+			<field type="month">
+				<displayName>Mèis</displayName>
+			</field>
+			<field type="day">
+				<displayName>Di</displayName>
+			</field>
+			<field type="hour">
+				<displayName>Ora</displayName>
+			</field>
+			<field type="minute">
+				<displayName>Minuta</displayName>
+			</field>
+		</fields>
 		<timeZoneNames>
 			<regionFormat>Ora {0}</regionFormat>
 			<regionFormat type="daylight">Ora legal: {0}</regionFormat>
 			<regionFormat type="standard">Ora stàndar: {0}</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Temp Universal Coordinà</standard>
+				</long>
+			</zone>
 			<metazone type="GMT">
 				<long>
 					<standard>Ora dë Greenwich</standard>

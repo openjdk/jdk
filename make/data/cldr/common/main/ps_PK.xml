@@ -227,11 +227,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>سینټ پییرا و ميکلين رڼا ورځے وخت</daylight>
 				</long>
 			</metazone>
-			<metazone type="Samoa">
-				<long>
-					<daylight>د سموا د ورځے روښانه کول</daylight>
-				</long>
-			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
@@ -243,7 +238,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XXX">
 				<displayName>نامعلومه مروجه پېسے</displayName>
-				<displayName count="one">(د نامعلومه مروجه پېسو واحد)</displayName>
+				<displayName count="one">(د نامعلومه اسعارو واحد)</displayName>
 				<displayName count="other">(نامعلومه مروجه پېسے)</displayName>
 			</currency>
 		</currencies>

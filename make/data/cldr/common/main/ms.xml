@@ -376,6 +376,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pcm">Nigerian Pidgin</language>
 			<language type="pis">Pijin</language>
 			<language type="pl">Poland</language>
+			<language type="pms">Piedmont</language>
 			<language type="pqm">Maliseet-Passamaquoddy</language>
 			<language type="prg">Prusia</language>
 			<language type="ps">Pashto</language>
@@ -1119,18 +1120,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="collation">Tertib Isihan</key>
 			<key type="colNormalization">Pengisihan Ternormal</key>
 			<key type="colNumeric">Pengisihan Berangka</key>
+			<key type="colReorder">Atur Skrip/Blok Semula</key>
 			<key type="colStrength">Kekuatan Pengisihan</key>
 			<key type="currency">Mata wang</key>
+			<key type="d0">Sasaran Transformasi</key>
+			<key type="dx">Pengecualian Pemisahan Kamus</key>
 			<key type="em">Paparan Emoji</key>
+			<key type="fw">Hari pertama dalam minggu</key>
+			<key type="h0">Campuran</key>
 			<key type="hc">Kitaran Jam (12 berbanding 24)</key>
+			<key type="i0">Kaedah Input</key>
+			<key type="k0">Papan Kekunci</key>
+			<key type="kv">Tahap Abaian Tertinggi</key>
 			<key type="lb">Gaya Pemisah Baris</key>
 			<key type="lw">Penggalan Baris dalam Perkataan</key>
+			<key type="m0">Peraturan Transformasi</key>
 			<key type="ms">Sistem Ukuran</key>
+			<key type="mu">Unit Ukuran</key>
 			<key type="numbers">Nombor</key>
+			<key type="rg">Rantau Untuk Data Tambahan</key>
+			<key type="s0">Sumber Transformasi</key>
+			<key type="sd">Subbahagian Rantau</key>
 			<key type="ss">Penggalan Ayat Selepas Singkatan</key>
+			<key type="t">Transformasi</key>
+			<key type="t0">Terjemahan Mesin</key>
 			<key type="timezone">Zon Waktu</key>
 			<key type="va">Varian Tempat</key>
 			<key type="x">Penggunaan Peribadi</key>
+			<key type="x0">Transformasi Penggunaan Peribadi</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Kalendar Buddha</type>
@@ -1150,16 +1167,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">Kalendar Ibrani</type>
 			<type key="calendar" type="hebrew" scope="core">Ibrani</type>
 			<type key="calendar" type="indian">Kalendar Kebangsaan India</type>
+			<type key="calendar" type="indian" scope="core">India Nasional</type>
 			<type key="calendar" type="islamic">Kalendar Hijrah</type>
 			<type key="calendar" type="islamic" scope="core">Hijrah</type>
 			<type key="calendar" type="islamic-civil">Kalendar Hijrah (jadual, zaman sivil)</type>
 			<type key="calendar" type="islamic-civil" scope="core">Hijrah (jadual, zaman sivil)</type>
 			<type key="calendar" type="islamic-rgsa">Kalendar Islam (Arab Saudi, cerapan)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">Hijrah, Cerapan Arab Saudi</type>
 			<type key="calendar" type="islamic-tbla">Kalendar Hijrah (jadual, zaman astronomi)</type>
 			<type key="calendar" type="islamic-tbla" scope="core">Hijrah (jadual, zaman astronomi)</type>
 			<type key="calendar" type="islamic-umalqura">Kalendar Islam (Umm Al-Quran)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">Hijrah (Umm al-Quran)</type>
-			<type key="calendar" type="iso8601">Kalendar Gregorian (Tahun Pertama)</type>
+			<type key="calendar" type="iso8601">Kalendar Gregorian (Minggu ISO 8601)</type>
+			<type key="calendar" type="iso8601" scope="core">Gregorian</type>
 			<type key="calendar" type="japanese">Kalendar Jepun</type>
 			<type key="calendar" type="japanese" scope="core">Jepun</type>
 			<type key="calendar" type="persian">Kalendar Parsi</type>
@@ -1175,8 +1195,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colBackwards" type="no">Isih Aksen Secara Biasa</type>
 			<type key="colBackwards" type="yes">Isih Aksen Terbalik</type>
 			<type key="colCaseFirst" type="lower">Isih Huruf Kecil Dahulu</type>
+			<type key="colCaseFirst" type="lower" scope="core">Huruf Kecil</type>
 			<type key="colCaseFirst" type="no">Isih Urutan Atur Biasa</type>
+			<type key="colCaseFirst" type="no" scope="core">Huruf kecil</type>
 			<type key="colCaseFirst" type="upper">Isih Huruf Besar Dahulu</type>
+			<type key="colCaseFirst" type="upper" scope="core">Huruf besar</type>
 			<type key="colCaseLevel" type="no">Isih Tidak Sensitif Atur</type>
 			<type key="colCaseLevel" type="yes">Isih Sensitif Atur</type>
 			<type key="collation" type="compat">Tertib Isihan Sebelumnya</type>
@@ -1186,7 +1209,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="ducet">Tertib Isih Unikod Lalai</type>
 			<type key="collation" type="ducet" scope="core">Unikod Lalai</type>
 			<type key="collation" type="emoji">Aturan Isih Emoji</type>
+			<type key="collation" type="emoji" scope="core">Emoji</type>
 			<type key="collation" type="eor">Peraturan Isihan Eropah</type>
+			<type key="collation" type="eor" scope="core">Peraturan Eropah</type>
 			<type key="collation" type="phonebook">Aturan Isih Buku Telefon</type>
 			<type key="collation" type="phonebook" scope="core">Buku Telefon</type>
 			<type key="collation" type="phonetic">Urutan Isih Fonetik</type>
@@ -1196,6 +1221,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="search">Carian Tujuan Umum</type>
 			<type key="collation" type="search" scope="core">Carian</type>
 			<type key="collation" type="searchjl">Cari Mengikut Konsonan Awal Hangul</type>
+			<type key="collation" type="searchjl" scope="core">Konsonan awal Korea</type>
 			<type key="collation" type="standard">Tertib Isih Standard</type>
 			<type key="collation" type="standard" scope="core">Standard</type>
 			<type key="collation" type="stroke">Aturan Isih Coretan</type>
@@ -1210,17 +1236,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colNormalization" type="yes">Isih Unikod Ternormal</type>
 			<type key="colNumeric" type="no">Isih Digit Secara Berasingan</type>
 			<type key="colNumeric" type="yes">Isih Digit Mengikut Nombor</type>
+			<type key="colReorder" type="currency" scope="core">Mata wang</type>
+			<type key="colReorder" type="digit" scope="core">Digit</type>
+			<type key="colReorder" type="punct" scope="core">Tanda baca</type>
+			<type key="colReorder" type="space" scope="core">Ruang kosong</type>
+			<type key="colReorder" type="symbol" scope="core">Simbol</type>
 			<type key="colStrength" type="identical">Isih Semua</type>
+			<type key="colStrength" type="identical" scope="core">Semua</type>
 			<type key="colStrength" type="primary">Isih Huruf Asas Sahaja</type>
+			<type key="colStrength" type="primary" scope="core">Huruf Asas Sahaja</type>
 			<type key="colStrength" type="quaternary">Isih Aksen/Atur/Lebar/Kana</type>
+			<type key="colStrength" type="quaternary" scope="core">Huruf Asas, Aksen, Huruf Besar/Kecil, Varian, Kana</type>
 			<type key="colStrength" type="secondary">Isih Aksen</type>
+			<type key="colStrength" type="secondary" scope="core">Huruf Asas, Aksen</type>
 			<type key="colStrength" type="tertiary">Isih Aksen/Atur/Lebar</type>
+			<type key="colStrength" type="tertiary" scope="core">Huruf Asas, Aksen, Huruf Besar/Kecil, Varian</type>
 			<type key="d0" type="fwidth">Ke Kelebaran Penuh</type>
 			<type key="d0" type="hwidth">Ke Kelebaran Separa</type>
 			<type key="d0" type="npinyin">Bernombor</type>
 			<type key="em" type="default" scope="core">Lalai</type>
 			<type key="em" type="emoji" scope="core">Emoji</type>
 			<type key="em" type="text" scope="core">Teks</type>
+			<type key="hc" type="c12">Sistem 12 Jam</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">Sistem 24 Jam</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">Sistem 12 Jam (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">Sistem 12 Jam (1–12)</type>
@@ -1229,6 +1269,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">Sistem 24 Jam (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Ruang Anjak, tanda baca, semua simbol</type>
+			<type key="kv" type="punct" scope="core">Ruang anjak, tanda baca</type>
+			<type key="kv" type="space" scope="core">Ruang anjak, tanda baca</type>
+			<type key="kv" type="symbol" scope="core">Ruang anjak, tanda baca, simbol bukan mata wang</type>
 			<type key="lb" type="loose">Gaya Pemisah Baris Bebas</type>
 			<type key="lb" type="loose" scope="core">Bebas</type>
 			<type key="lb" type="normal">Gaya Pemisah Baris Biasa</type>
@@ -1248,10 +1292,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="ussystem">Sistem Ukuran AS</type>
 			<type key="ms" type="ussystem" scope="core">AS</type>
 			<type key="numbers" type="ahom">Digit Ahom</type>
-			<type key="numbers" type="arab">Digit Indi-Arab</type>
-			<type key="numbers" type="arabext">Digit Indi Arab Lanjutan</type>
+			<type key="numbers" type="arab">Digit Arab-India</type>
+			<type key="numbers" type="arabext">Digit Arab-India Lanjutan</type>
+			<type key="numbers" type="arabext" scope="core">Arab-India Lanjutan</type>
 			<type key="numbers" type="armn">Angka Armenia</type>
 			<type key="numbers" type="armnlow">Angka Kecil Armenia</type>
+			<type key="numbers" type="armnlow" scope="core">Angka kecil Armenia</type>
 			<type key="numbers" type="bali">Digit Bali</type>
 			<type key="numbers" type="beng">Digit Benggali</type>
 			<type key="numbers" type="brah">Digit Brahmi</type>
@@ -1261,56 +1307,81 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="deva">Digit Devanagari</type>
 			<type key="numbers" type="ethi">Angka Ethiopia</type>
 			<type key="numbers" type="finance">Angka Kewangan</type>
+			<type key="numbers" type="finance" scope="core">Kewangan</type>
 			<type key="numbers" type="fullwide">Digit Lebar Penuh</type>
+			<type key="numbers" type="fullwide" scope="core">Lebar penuh</type>
 			<type key="numbers" type="geor">Angka Georgia</type>
 			<type key="numbers" type="gong" draft="contributed">Digit Gunjala Gondi</type>
 			<type key="numbers" type="gonm">Digit Masaram Gondi</type>
 			<type key="numbers" type="grek">Angka Greek</type>
 			<type key="numbers" type="greklow">Angka Huruf Kecil Greek</type>
+			<type key="numbers" type="greklow" scope="core">Angka kecil Greek</type>
 			<type key="numbers" type="gujr">Digit Gujarat</type>
 			<type key="numbers" type="guru">Digit Gurmukhi</type>
+			<type key="numbers" type="hanidays" scope="core">Penomboran hari bulan aksara Han untuk kalendar tradisional</type>
 			<type key="numbers" type="hanidec">Angka Perpuluhan Cina</type>
+			<type key="numbers" type="hanidec" scope="core">Sistem perpuluhan kedudukan menggunakan ideograf nombor Cina sebagai digit</type>
 			<type key="numbers" type="hans">Angka Cina Ringkas</type>
 			<type key="numbers" type="hansfin">Angka Kewangan Cina Ringkas</type>
+			<type key="numbers" type="hansfin" scope="core">Kewangan Cina Ringkas</type>
 			<type key="numbers" type="hant">Angka Cina Tradisional</type>
 			<type key="numbers" type="hantfin">Angka Kewangan Cina Tradisional</type>
+			<type key="numbers" type="hantfin" scope="core">Kewangan Cina Tradisional</type>
 			<type key="numbers" type="hebr">Angka Ibrani</type>
 			<type key="numbers" type="hmng">Digit Pahawh Hmong</type>
 			<type key="numbers" type="hmnp" draft="contributed">Digit Nyiakeng Puachue Hmong</type>
 			<type key="numbers" type="java">Digit Jawa</type>
 			<type key="numbers" type="jpan">Angka Jepun</type>
 			<type key="numbers" type="jpanfin">Angka Kewangan Jepun</type>
+			<type key="numbers" type="jpanfin" scope="core">Kewangan Jepun</type>
+			<type key="numbers" type="jpanyear" scope="core">Angka gannen bagi tahun pertama Jepun</type>
 			<type key="numbers" type="kali">Digit Kayah Li</type>
 			<type key="numbers" type="khmr">Digit Khmer</type>
 			<type key="numbers" type="knda">Digit Kannada</type>
 			<type key="numbers" type="lana">Digit Tai Tham Hora</type>
 			<type key="numbers" type="lanatham">Digit Tai Tham Tham</type>
+			<type key="numbers" type="lanatham" scope="core">Tai Tham Tham (eklesiastikal)</type>
 			<type key="numbers" type="laoo">Digit Lao</type>
 			<type key="numbers" type="latn">Digit Barat</type>
 			<type key="numbers" type="lepc">Digit Lepcha</type>
 			<type key="numbers" type="limb">Digit Limbu</type>
 			<type key="numbers" type="mathbold">Digit Matematik Tebal</type>
+			<type key="numbers" type="mathbold" scope="core">Matematik tebal</type>
 			<type key="numbers" type="mathdbl">Digit Matematik Dwilejang</type>
+			<type key="numbers" type="mathdbl" scope="core">Matematik dwigarisan</type>
 			<type key="numbers" type="mathmono">Digit Matematik Monospace</type>
+			<type key="numbers" type="mathmono" scope="core">Matematik monospace</type>
 			<type key="numbers" type="mathsanb">Digit Matematik San Serif Tebal</type>
+			<type key="numbers" type="mathsanb" scope="core">Matematik sans-serif tebal</type>
 			<type key="numbers" type="mathsans">Digit Matematik San Serif</type>
+			<type key="numbers" type="mathsans" scope="core">Matematik sans-serif</type>
 			<type key="numbers" type="mlym">Digit Malayalam</type>
 			<type key="numbers" type="modi">Digit Modi</type>
 			<type key="numbers" type="mong">Digit Mongolia</type>
 			<type key="numbers" type="mroo">Digit Mro</type>
 			<type key="numbers" type="mtei">Digit Meetei Mayek</type>
 			<type key="numbers" type="mymr">Digit Myammar</type>
+			<type key="numbers" type="mymrepka" scope="core">Pwo Karen Timur Myanmar</type>
+			<type key="numbers" type="mymrpao" scope="core">Pao Myanmar</type>
 			<type key="numbers" type="mymrshan">Digit Myanmar Shan</type>
+			<type key="numbers" type="mymrshan" scope="core">Shan Myanmar</type>
 			<type key="numbers" type="mymrtlng">Digit Myanmar Tai Laing</type>
+			<type key="numbers" type="mymrtlng" scope="core">Tai Laing Myanmar</type>
 			<type key="numbers" type="native">Digit Asal</type>
+			<type key="numbers" type="native" scope="core">Digit asal</type>
 			<type key="numbers" type="nkoo">Digit N’Ko</type>
 			<type key="numbers" type="olck">Digit Ol Chiki</type>
 			<type key="numbers" type="orya">Digit Oriya</type>
 			<type key="numbers" type="osma">Digit Osmanya</type>
+			<type key="numbers" type="outlined" draft="contributed">Digit Rongga</type>
+			<type key="numbers" type="outlined" scope="core">Digit Rongga</type>
 			<type key="numbers" type="rohg" draft="contributed">Digit Hanifi Rohingya</type>
 			<type key="numbers" type="roman">Angka Roman</type>
+			<type key="numbers" type="roman" scope="core">Huruf besar Roman</type>
 			<type key="numbers" type="romanlow">Angka Huruf Kecil Roman</type>
+			<type key="numbers" type="romanlow" scope="core">Huruf kecil Roman</type>
 			<type key="numbers" type="saur">Digit Saurashtra</type>
+			<type key="numbers" type="segment" scope="core">Bersegmen</type>
 			<type key="numbers" type="shrd">Digit Sharada</type>
 			<type key="numbers" type="sind">Digit Khudawadi</type>
 			<type key="numbers" type="sinh">Digit Sinhala Lith</type>
@@ -1320,17 +1391,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="talu">Digit Tai Lue Baru</type>
 			<type key="numbers" type="taml">Angka Tamil Tradisional</type>
 			<type key="numbers" type="tamldec">Digit Tamil</type>
+			<type key="numbers" type="tamldec" scope="core">Tamil Moden</type>
 			<type key="numbers" type="telu">Digit Telugu</type>
 			<type key="numbers" type="thai">Digit Thai</type>
 			<type key="numbers" type="tibt">Digit Tibet</type>
 			<type key="numbers" type="tirh">Digit Tirhuta</type>
 			<type key="numbers" type="traditional">Angka Tradisional</type>
+			<type key="numbers" type="traditional" scope="core">Angka tradisional</type>
 			<type key="numbers" type="vaii">Digit Vai</type>
 			<type key="numbers" type="wara">Digit Warang Citi</type>
 			<type key="numbers" type="wcho" draft="contributed">Digit Wancho</type>
 			<type key="ss" type="none" scope="core">Matikan</type>
 			<type key="ss" type="standard" scope="core">Hidupkan</type>
+			<type key="t0" type="und">Terjemahan Mesin Tidak Tentu</type>
+			<type key="va" type="posix" scope="core">Varian POSIX</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">Matikan</typeValue>
+			<typeValue type="yes">Hidupkan</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metrik</measurementSystemName>
 			<measurementSystemName type="US">AS</measurementSystemName>
@@ -1610,6 +1689,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
 							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
@@ -1847,6 +1930,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -1889,6 +1975,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d MMMM y G</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
@@ -1899,6 +1988,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">'minggu' W 'daripada' MMMM</dateFormatItem>
 						<dateFormatItem id="yM">M-y</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
@@ -1907,6 +1997,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'minggu' w 'daripada' Y</dateFormatItem>
@@ -2109,9 +2201,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</eras>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="GyM">M/y G</dateFormatItem>
-						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">E, d/M/y GGGGG</dateFormatItem>
@@ -2123,9 +2212,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<eraNames>
 						<era type="0" draft="contributed">Sebelum R.O.C</era>
 					</eraNames>
-					<eraNarrow>
-						<era type="0" draft="contributed">Sblm R.O.C</era>
-					</eraNarrow>
 				</eras>
 			</calendar>
 		</calendars>
@@ -2546,16 +2632,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Cairo">
 				<exemplarCity>Kaherah</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>Waktu Musim Panas British</daylight>
-				</long>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Waktu Piawai Ireland</daylight>
-				</long>
-			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity>Baitulmuqaddis</exemplarCity>
 			</zone>
@@ -2588,9 +2664,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<metazone type="Acre">
 				<long>
-					<generic draft="contributed">Waktu Acre</generic>
-					<standard draft="contributed">Waktu Piawai Acre</standard>
-					<daylight draft="contributed">Waktu Musim Panas Acre</daylight>
+					<generic>Waktu Acre</generic>
+					<standard>Waktu Piawai Acre</standard>
+					<daylight>Waktu Musim Panas Acre</daylight>
 				</long>
 			</metazone>
 			<metazone type="Afghanistan">
@@ -2623,13 +2699,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Waktu Alaska</generic>
 					<standard>Waktu Piawai Alaska</standard>
 					<daylight>Waktu Siang Alaska</daylight>
-				</long>
-			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic draft="contributed">Waktu Almaty</generic>
-					<standard draft="contributed">Waktu Piawai Almaty</standard>
-					<daylight draft="contributed">Waktu Musim Panas Almaty</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">
@@ -2676,23 +2745,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic>Waktu Apia</generic>
-					<standard>Waktu Piawai Apia</standard>
-					<daylight>Waktu Siang Apia</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic draft="contributed">Waktu Aqtau</generic>
-					<standard draft="contributed">Waktu Standard Aqtau</standard>
-					<daylight draft="contributed">Waktu Musim Panas Aqtau</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic draft="contributed">Waktu Aqtobe</generic>
-					<standard draft="contributed">Waktu Piawai Aqtobe</standard>
-					<daylight draft="contributed">Waktu Musim Panas Aqtobe</daylight>
+					<generic>Waktu Samoa</generic>
+					<standard>Waktu Piawai Samoa</standard>
+					<daylight>Waktu Siang Samoa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -2794,6 +2849,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Waktu Brasilia</generic>
 					<standard>Waktu Piawai Brasilia</standard>
 					<daylight>Waktu Musim Panas Brasilia</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Waktu British</generic>
+					<daylight>Waktu Musim Panas British</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -2969,8 +3030,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Waktu Min Greenwich</standard>
 				</long>
 				<short>
-					<standard draft="contributed">GMT</standard>
+					<standard>GMT</standard>
 				</short>
+			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Waktu Greenland</generic>
+					<standard>Waktu Piawai Greenland</standard>
+					<daylight>Waktu Musim Panas Greenland</daylight>
+				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
@@ -2998,7 +3066,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Waktu Piawai Hawaii-Aleutian</standard>
+					<standard>Waktu Hawaii</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3059,6 +3127,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Waktu Siang Iran</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Waktu Ireland</generic>
+					<daylight>Waktu Piawai Ireland</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Waktu Irkutsk</generic>
@@ -3082,9 +3156,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
-					<generic>Waktu Petropavlovsk-Kamchatski</generic>
-					<standard>Waktu Piawai Petropavlovsk-Kamchatski</standard>
-					<daylight>Waktu Musim Panas Petropavlovsk-Kamchatski</daylight>
+					<generic>Waktu Kamchatka</generic>
+					<standard>Waktu Piawai Kamchatka</standard>
+					<daylight>Waktu Musim Panas Kamchatka</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -3136,13 +3210,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Waktu Lord Howe</generic>
 					<standard>Waktu Piawai Lord Howe</standard>
 					<daylight>Waktu Siang Lord Howe</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic draft="contributed">Waktu Macao</generic>
-					<standard draft="contributed">Waktu Piawai Macao</standard>
-					<daylight draft="contributed">Waktu Musim Panas Macao</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -3263,11 +3330,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Waktu Musim Panas Fernando de Noronha</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard draft="contributed">Waktu Kepulauan Mariana Utara</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>Waktu Novosibirsk</generic>
@@ -3347,13 +3409,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Waktu Pyongyang</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic draft="contributed">Waktu Qyzylorda</generic>
-					<standard draft="contributed">Waktu Piawai Qyzylorda</standard>
-					<daylight draft="contributed">Waktu Musim Panas Qyzylorda</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>Waktu Reunion</standard>
@@ -3380,9 +3435,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Waktu Samoa</generic>
-					<standard>Waktu Piawai Samoa</standard>
-					<daylight>Waktu Musim Panas Samoa</daylight>
+					<standard>Waktu Samoa Amerika</standard>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3452,6 +3505,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Waktu Chuuk</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Waktu Turkiye</generic>
+					<standard>Waktu Piawai Turkiye</standard>
+					<daylight>Waktu Musim Panas Turkiye</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Waktu Turkmenistan</generic>
@@ -3469,6 +3529,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Waktu Uruguay</generic>
 					<standard>Waktu Piawai Uruguay</standard>
 					<daylight>Waktu Musim Panas Uruguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Waktu Urumqi</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -3896,7 +3961,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="MMK">
 				<displayName>Kyat Myanmar</displayName>
-				<displayName count="other">Kyat Myanmar</displayName>
 			</currency>
 			<currency type="MNT">
 				<displayName>Tugrik Mongolia</displayName>
@@ -4115,7 +4179,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName>Guilder Caribbean</displayName>
-				<displayName count="other">Guilder Caribbean</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>Franc CFA BCEAO</displayName>
@@ -4144,7 +4207,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName>Emas Zimbabwe</displayName>
-				<displayName count="other">Emas Zimbabwe</displayName>
 			</currency>
 			<currency type="ZWL">
 				<displayName draft="contributed">Dolar Zimbabwe (2009)</displayName>
@@ -4333,10 +4395,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-millimole-per-liter">
 				<displayName>milimol setiap liter</displayName>
 				<unitPattern count="other">{0} milimol setiap liter</unitPattern>
-			</unit>
-			<unit type="concentr-part">
-				<displayName>bahagian</displayName>
-				<unitPattern count="other">{0} bahagian</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName>bahagian setiap juta</displayName>
@@ -5037,6 +5095,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>bahagian</displayName>
 				<unitPattern count="other">{0} bahagian</unitPattern>
 			</unit>
+			<unit type="concentr-part-per-1e6">
+				<displayName>bahagian/juta</displayName>
+			</unit>
 			<unit type="concentr-percent">
 				<displayName>peratus</displayName>
 			</unit>
@@ -5360,18 +5421,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="area-square-inch">
 				<displayName>in²</displayName>
 			</unit>
-			<unit type="concentr-part">
-				<displayName>bahagian</displayName>
-				<unitPattern count="other">{0} bahagian</unitPattern>
-			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 			</unit>
 			<unit type="concentr-mole">
 				<unitPattern count="other">{0}mol</unitPattern>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>mpg UK</displayName>
@@ -5601,7 +5655,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}dr.fl.</unitPattern>
 			</unit>
 			<unit type="energy-calorie-it">
-				<displayName>kal-IT</displayName>
 				<unitPattern count="other">{0} kal-IT</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e9">

@@ -13,23 +13,38 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<localeDisplayNames>
 		<languages>
 			<language type="af">IsiBhulu</language>
+			<language type="ak">IsiAkan</language>
 			<language type="am">IsiAmharic</language>
 			<language type="ar">Isi-Arabhu</language>
 			<language type="ar_001">Isi-Arabhu (Sale mihla)</language>
 			<language type="as">IsiAssamese</language>
+			<language type="ast">IsiAsturian</language>
 			<language type="az">Isi-Azerbaijani</language>
+			<language type="ba">IsiBashkir</language>
+			<language type="bal">IsiBaluchi</language>
 			<language type="be">Isi-Belarusian</language>
 			<language type="bg">Isi-Bulgaria</language>
+			<language type="bgc">IsiHaryanvi</language>
+			<language type="bho">IsiBhojpuri</language>
+			<language type="blo">IsiAnii</language>
 			<language type="bn">IsiBangla</language>
 			<language type="br">IsiBreton</language>
+			<language type="brx">IsiBodo</language>
 			<language type="bs">Isi-Bosnia</language>
 			<language type="ca">Isi-Calatan</language>
+			<language type="ceb">IsiCebuano</language>
+			<language type="chr">IsiCherokee</language>
 			<language type="cs">Isi-Czech</language>
+			<language type="csw">IsiSwampy Cree</language>
+			<language type="cv">IsiChuvash</language>
 			<language type="cy">Isi-Welsh</language>
 			<language type="da">Isi-Danish</language>
 			<language type="de">IsiJamani</language>
 			<language type="de_AT">IsiJamani Sase-Austria</language>
 			<language type="de_CH">IsiJamani Esiyi-High Swiss</language>
+			<language type="doi">IsiDogri</language>
+			<language type="dsb">IsiLower Sorbian</language>
+			<language type="ee">IsiEwe</language>
 			<language type="el">Isi-Greek</language>
 			<language type="en">IsiNgesi</language>
 			<language type="en_AU">IsiNgesi Sase-Australia</language>
@@ -46,6 +61,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="et">Isi-Estonian</language>
 			<language type="eu">Isi-Basque</language>
 			<language type="fa">Isi-Persia</language>
+			<language type="ff">IsiFula</language>
 			<language type="fi">Isi-Finnish</language>
 			<language type="fil">Isi-Taglog</language>
 			<language type="fo">Isi-Faroese</language>
@@ -54,59 +70,96 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fr_CH">IsiFrentshi SaseSwitzerland</language>
 			<language type="fy">Isi-Frisian</language>
 			<language type="ga">Isi-Irish</language>
+			<language type="gaa">IsiGa</language>
 			<language type="gd">Scots Gaelic</language>
 			<language type="gl">Isi-Galician</language>
 			<language type="gn" draft="unconfirmed">Guarani</language>
 			<language type="gu">Isi-Gujarati</language>
+			<language type="ha">IsiHausa</language>
 			<language type="he">Isi-Hebrew</language>
 			<language type="hi">IsiHindi</language>
 			<language type="hi_Latn">IsiHindi (Latin)</language>
 			<language type="hi_Latn" alt="variant">IsiHinglish</language>
 			<language type="hr">Isi-Croatia</language>
+			<language type="hsb">IsiUpper Sorbian</language>
 			<language type="hu">Isi-Hungarian</language>
 			<language type="hy">IsiArmenia</language>
 			<language type="ia">Isi-Interlingua</language>
 			<language type="id">Isi-Indonesia</language>
 			<language type="ie">Isi-Interlingue</language>
+			<language type="ig">Isi-Igbo</language>
+			<language type="ii">IsiSichuan Yi</language>
 			<language type="is">Isi-Icelandic</language>
 			<language type="it">IsiTaliyane</language>
 			<language type="ja">IsiJapan</language>
 			<language type="jv">Isi-Javanese</language>
 			<language type="ka">Isi-Georgia</language>
+			<language type="kea">IsiKabuverdianu</language>
+			<language type="kgp">IsiKaingang</language>
+			<language type="kk">IsiKazakh</language>
 			<language type="km">IsiCambodia</language>
 			<language type="kn">Isi-Kannada</language>
 			<language type="ko">Isi-Korean</language>
+			<language type="kok">IsiKonkani</language>
+			<language type="ks">IsiKashmiri</language>
 			<language type="ku">IsiKurdish</language>
+			<language type="ku" menu="core">IsiKurdish</language>
+			<language type="ku" menu="extension">IsiKurmanji</language>
+			<language type="kxv">IsiKuvi</language>
 			<language type="ky">IsiKyrgz</language>
 			<language type="la" draft="unconfirmed">Isi-Latin</language>
+			<language type="lb">IsiLuxembourgish</language>
+			<language type="lij">IsiLigurian</language>
+			<language type="lmo">IsiLombard</language>
 			<language type="ln" draft="unconfirmed">Iilwimi</language>
 			<language type="lo">IsiLoathian</language>
 			<language type="lt">Isi-Lithuanian</language>
 			<language type="lv">Isi-Latvian</language>
+			<language type="mai">IsiMaithili</language>
+			<language type="mi">IsiMāori</language>
 			<language type="mk">Isi-Macedonian</language>
 			<language type="ml">Isi-Malayalam</language>
 			<language type="mn">IsiMongolian</language>
+			<language type="mni">IsiManipuri</language>
 			<language type="mr">Isi-Marathi</language>
 			<language type="ms">Isi-Malay</language>
 			<language type="mt">Isi-Maltese</language>
+			<language type="mul">Iilwimi Ezininzi</language>
+			<language type="my">IsiBurmese</language>
+			<language type="nds">IsiLow German</language>
 			<language type="ne">Isi-Nepali</language>
 			<language type="nl">IsiDatshi</language>
 			<language type="nl_BE">IsiFlemish</language>
 			<language type="nn">Isi-Norwegia (Nynorsk)</language>
 			<language type="no">Isi-Norwegian</language>
+			<language type="nqo">IsiN’Ko</language>
+			<language type="nso">IsiPedi</language>
 			<language type="oc">Iso-Occitan</language>
+			<language type="om">IsiOromo</language>
 			<language type="or">Oriya</language>
 			<language type="pa">Isi-Punjabi</language>
+			<language type="pcm">IsiNigerian Pidgin</language>
 			<language type="pl">Isi-Polish</language>
+			<language type="pms">IsiPiedmontese</language>
+			<language type="prg">IsiPrussian</language>
 			<language type="ps">IsiPashto</language>
 			<language type="pt">IsiPhuthukezi</language>
 			<language type="pt_BR">IsiPhuthukezi SaseBrazil</language>
 			<language type="pt_PT">IsiPhuthukezi SasePortugal</language>
+			<language type="qu">IsiQuechua</language>
+			<language type="raj">IsiRajasthani</language>
+			<language type="rm">IsiRomansh</language>
 			<language type="ro">Isi-Romanian</language>
 			<language type="ru">Isi-Russian</language>
+			<language type="rw">IsiKinyarwanda</language>
 			<language type="sa">IsiSanskrit</language>
+			<language type="sah">IsiYakut</language>
+			<language type="sat">IsiSantali</language>
+			<language type="sc">IsiSardinian</language>
+			<language type="scn">IsiSicilian</language>
 			<language type="sd">IsiSindhi</language>
 			<language type="sh" draft="unconfirmed">Serbo-Croatian</language>
+			<language type="shn">IsiShan</language>
 			<language type="si">Isi-Sinhalese</language>
 			<language type="sk">Isi-Slovak</language>
 			<language type="sl">Isi-Slovenian</language>
@@ -117,22 +170,38 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="su">Isi-Sudanese</language>
 			<language type="sv">Isi-Swedish</language>
 			<language type="sw">Isi-Swahili</language>
+			<language type="syr">IsiSyriac</language>
+			<language type="szl">IsiSilesian</language>
 			<language type="ta">Isi-Tamil</language>
 			<language type="te">Isi-Telegu</language>
+			<language type="tg">IsiTajik</language>
 			<language type="th">Isi-Thai</language>
 			<language type="ti">Isi-Tigrinya</language>
 			<language type="tk">IsiTurkmen</language>
 			<language type="tlh" draft="unconfirmed">Klingon</language>
+			<language type="tn">IsiTswana</language>
+			<language type="to">IsiTonga</language>
 			<language type="tr">Isi-Turkish</language>
+			<language type="tt">IsiTatar</language>
 			<language type="tw" draft="unconfirmed">Twi</language>
+			<language type="tyv">IsiTuvinian</language>
 			<language type="ug">Isi Uighur</language>
 			<language type="uk">Isi-Ukranian</language>
 			<language type="und">Ulwimi olungaziwayo</language>
 			<language type="ur">IsiUrdu</language>
 			<language type="uz">Isi-Uzbek</language>
+			<language type="vec">IsiVenetian</language>
 			<language type="vi">Isi-Vietnamese</language>
+			<language type="vmw">IsiMakhuwa</language>
+			<language type="wo">IsiWolof</language>
 			<language type="xh">IsiXhosa</language>
+			<language type="xnr">IsiKangri</language>
 			<language type="yi" draft="unconfirmed">Yiddish</language>
+			<language type="yo">IsiYoruba</language>
+			<language type="yrl">IsiNheengatu</language>
+			<language type="yue">IsiCantonese</language>
+			<language type="yue" alt="menu">IsiTshayina, isiCantonse</language>
+			<language type="za">IsiZhuang</language>
 			<language type="zh">IsiMandarin</language>
 			<language type="zh" alt="menu">IsiTshayina, IsiMandarin</language>
 			<language type="zh_Hans">IsiTshayina Esenziwe Lula</language>
@@ -140,18 +209,68 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh_Hant">IsiTshayina Esiqhelekileyo</language>
 			<language type="zh_Hant" alt="long">IsiMandarin Esiqhelekileyo</language>
 			<language type="zu">IsiZulu</language>
+			<language type="zxx">Akukho Khontenti</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">IsiAdlam</script>
 			<script type="Arab">Isi-Arabhu</script>
+			<script type="Aran">IsiNastaliq</script>
+			<script type="Armn">IsiArmenian</script>
+			<script type="Beng">IsiBangla</script>
+			<script type="Bopo">IsiBopomofo</script>
+			<script type="Brai">IBraille</script>
+			<script type="Cakm">IsiChakma</script>
+			<script type="Cans">IUnified Canadian Aboriginal Syllabics</script>
+			<script type="Cher">IsiCherokee</script>
 			<script type="Cyrl">IsiCyrillic</script>
+			<script type="Deva">IsiDevanagari</script>
+			<script type="Ethi">IsiEthiopic</script>
+			<script type="Geor">IsiGeorgian</script>
+			<script type="Grek">IsiGreek</script>
+			<script type="Gujr">IsiGujarati</script>
+			<script type="Guru">IsiGurmukhi</script>
+			<script type="Hanb">IsiHan with Bopomofo</script>
+			<script type="Hang">IsiHangul</script>
+			<script type="Hani">IsiHan</script>
 			<script type="Hans">IsiHans Esenziwe Lula</script>
 			<script type="Hans" alt="stand-alone">IsiHan Esenziwe Lula</script>
 			<script type="Hant">IsiHant Esiqhelekileyo</script>
 			<script type="Hant" alt="stand-alone">IsiHan Esiqhelekileyo</script>
+			<script type="Hebr">IsiHebrew</script>
+			<script type="Hira">IsiHirgana</script>
+			<script type="Hrkt">IJapanese syllabaries</script>
+			<script type="Jamo">IsiJamo</script>
 			<script type="Jpan">IsiJapanese</script>
+			<script type="Kana">IsiKatakana</script>
+			<script type="Khmr">IsiKhmer</script>
+			<script type="Knda">IsiKannada</script>
 			<script type="Kore">IsiKorean</script>
+			<script type="Laoo">IsiLao</script>
 			<script type="Latn">IsiLatin</script>
+			<script type="Mlym">IsiMalayalam</script>
+			<script type="Mong">IsiMongolian</script>
+			<script type="Mtei">IsiMeitei Mayek</script>
+			<script type="Mymr">IsiMyanmar</script>
+			<script type="Nkoo">IsiN’Ko</script>
+			<script type="Olck">IsiOl Chiki</script>
+			<script type="Orya">IsiOdia</script>
+			<script type="Rohg">IsiHanifi</script>
+			<script type="Sinh">IsiSinhala</script>
+			<script type="Sund">IsiSundanese</script>
+			<script type="Syrc">IsiSyriac</script>
+			<script type="Taml">IsiTamil</script>
+			<script type="Telu">IsiTelugu</script>
+			<script type="Tfng">IsiTifinagh</script>
+			<script type="Thaa">IsiThaana</script>
+			<script type="Thai">IsiThai</script>
+			<script type="Tibt">IsiTibetan</script>
+			<script type="Vaii">IsiVai</script>
+			<script type="Yiii">IsiYi</script>
+			<script type="Zmth">IMathematical Notation</script>
+			<script type="Zsye">I-Emoji</script>
+			<script type="Zsym">Amaphawu</script>
 			<script type="Zxxx">Engabhalwanga</script>
+			<script type="Zyyy">Eziqhelekileyo</script>
 			<script type="Zzzz">Ulwimi Olungaziwayo</script>
 		</scripts>
 		<territories>
@@ -466,10 +585,50 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">EZimbabwe</territory>
 			<territory type="ZZ">Ingingqi Engaziwayo</territory>
 		</territories>
+		<keys>
+			<key type="calendar">Khalenda</key>
+			<key type="colAlternate">Ungahoyi Ukuhlela Ngeesimboli</key>
+			<key type="colBackwards">Ukihlela Okubuyela Umva Ngobukhulu</key>
+			<key type="colCaseFirst">Ukuhlel Ngokoonobumba Abancinci/Abakhulu</key>
+			<key type="colCaseLevel">Unobumba omkhulu</key>
+		</keys>
 		<types>
+			<type key="calendar" type="buddhist">Ikhalenda yamaBhuda</type>
+			<type key="calendar" type="buddhist" scope="core">EyamaBhuda</type>
+			<type key="calendar" type="chinese">Ikhalenda yamaTshayina</type>
+			<type key="calendar" type="chinese" scope="core">IsiTshayina</type>
+			<type key="calendar" type="coptic">I-Coptic Calendar</type>
+			<type key="calendar" type="coptic" scope="core">I-Coptic</type>
+			<type key="calendar" type="dangi">IKhalenda yesiDangi</type>
+			<type key="calendar" type="dangi" scope="core">IsiDangi</type>
+			<type key="calendar" type="ethiopic">I-Ethiopic Calendar</type>
+			<type key="calendar" type="ethiopic" scope="core">I-Ethiopic</type>
+			<type key="calendar" type="ethiopic-amete-alem">I-Ethiopic Amete Alem Calendar</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">I-Ethiopic Amete Alem</type>
 			<type key="calendar" type="gregorian">Ngokwekhalenda KaGregorian</type>
 			<type key="calendar" type="gregorian" scope="core">IGregorian</type>
+			<type key="calendar" type="hebrew">IKhalenda yamaHebhere</type>
+			<type key="calendar" type="hebrew" scope="core">IsiHebere</type>
+			<type key="calendar" type="indian" scope="core">EyeIndian National</type>
+			<type key="calendar" type="islamic">I-Hijri Calendar</type>
+			<type key="calendar" type="islamic" scope="core">I-Hijri</type>
+			<type key="calendar" type="islamic-civil">I-Hijri Calendar (tabular, civil epoch)</type>
+			<type key="calendar" type="islamic-civil" scope="core">I-Hijri (tabular, civil epoch)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">I-Hijri, Saudi Arabia sighting</type>
+			<type key="calendar" type="islamic-tbla" scope="core">I-Hijri (tabular, astronomical epoch)</type>
+			<type key="calendar" type="islamic-umalqura">I-Hijri Calendar (Umm al-Qura)</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">I-Hijri (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Ikhalenda kaGregorian</type>
+			<type key="calendar" type="iso8601" scope="core">IGregorian</type>
+			<type key="calendar" type="japanese">IJapanese Calendar</type>
+			<type key="calendar" type="japanese" scope="core">IJapanese</type>
+			<type key="calendar" type="persian">I-Persian Calendar</type>
+			<type key="calendar" type="persian" scope="core">I-Persian</type>
+			<type key="calendar" type="roc">I-Minguo Calendar</type>
+			<type key="calendar" type="roc" scope="core">-Minguo</type>
+			<type key="colCaseFirst" type="lower" scope="core">Unobumba omncinci</type>
+			<type key="colCaseFirst" type="no" scope="core">Unobumba omncinci</type>
+			<type key="colCaseFirst" type="upper" scope="core">Unobumba omkhulu</type>
 			<type key="collation" type="standard">Standard Sort Order</type>
 			<type key="collation" type="standard" scope="core">Eqhelekileyo</type>
 			<type key="numbers" type="latn">Western Digits</type>
@@ -565,6 +724,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
@@ -627,6 +790,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
 							<greatestDifference id="M">E, MMM d – E, MMM d</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">MMMM d – d</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
@@ -681,20 +847,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10">Okt</month>
 							<month type="11">Nov</month>
 							<month type="12">Dis</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">J</month>
-							<month type="2">F</month>
-							<month type="3">M</month>
-							<month type="4">A</month>
-							<month type="5">M</month>
-							<month type="6">J</month>
-							<month type="7">J</month>
-							<month type="8">A</month>
-							<month type="9">S</month>
-							<month type="10">O</month>
-							<month type="11">N</month>
-							<month type="12">D</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Janyuwari</month>
@@ -882,6 +1034,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -939,6 +1094,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="contributed">MMMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="contributed">EEE, MMMM d, y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">'iveki' w 'ka' Y</dateFormatItem>
@@ -1102,27 +1259,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">kule iCawa</relative>
 				<relative type="1">kwiCawa ezayo</relative>
 			</field>
-			<field type="sun-short">
-				<relative type="-1">kwiCawa edlulileyo</relative>
-				<relative type="0">kule iCawa</relative>
-				<relative type="1">kwiCawa ezayo</relative>
-			</field>
-			<field type="sun-narrow">
-				<relative type="-1">kwiCawa edlulileyo</relative>
-				<relative type="0">kule iCawa</relative>
-				<relative type="1">kwiCawa ezayo</relative>
-			</field>
 			<field type="mon">
-				<relative type="-1">uMvulo odlulileyo</relative>
-				<relative type="0">ngalo Mvulo</relative>
-				<relative type="1">ngoMvulo ozayi</relative>
-			</field>
-			<field type="mon-short">
-				<relative type="-1">uMvulo odlulileyo</relative>
-				<relative type="0">ngalo Mvulo</relative>
-				<relative type="1">ngoMvulo ozayi</relative>
-			</field>
-			<field type="mon-narrow">
 				<relative type="-1">uMvulo odlulileyo</relative>
 				<relative type="0">ngalo Mvulo</relative>
 				<relative type="1">ngoMvulo ozayi</relative>
@@ -1132,22 +1269,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ngalo uLwesibini</relative>
 				<relative type="1">ngoLwesibini ozayo</relative>
 			</field>
-			<field type="tue-short">
-				<relative type="-1">ngoLwesibini odlulileyo</relative>
-				<relative type="0">ngalo uLwesibini</relative>
-				<relative type="1">ngoLwesibini ozayo</relative>
-			</field>
-			<field type="tue-narrow">
-				<relative type="-1">ngoLwesibini odlulileyo</relative>
-				<relative type="0">ngalo uLwesibini</relative>
-				<relative type="1">ngoLwesibini ozayo</relative>
-			</field>
 			<field type="wed">
-				<relative type="-1">ngoLwesithathu odlulileyo</relative>
-				<relative type="0">ngalo Lwesithathu</relative>
-				<relative type="1">ngoLwesithathu ozayo</relative>
-			</field>
-			<field type="wed-short">
 				<relative type="-1">ngoLwesithathu odlulileyo</relative>
 				<relative type="0">ngalo Lwesithathu</relative>
 				<relative type="1">ngoLwesithathu ozayo</relative>
@@ -1162,42 +1284,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ngalo Lwesine</relative>
 				<relative type="1">ngoLwesine ozayo</relative>
 			</field>
-			<field type="thu-short">
-				<relative type="-1">ngoLwesine odlulileyo</relative>
-				<relative type="0">ngalo Lwesine</relative>
-				<relative type="1">ngoLwesine ozayo</relative>
-			</field>
-			<field type="thu-narrow">
-				<relative type="-1">ngoLwesine odlulileyo</relative>
-				<relative type="0">ngalo Lwesine</relative>
-				<relative type="1">ngoLwesine ozayo</relative>
-			</field>
 			<field type="fri">
 				<relative type="-1">ngoLwesihlanu odlulileyo</relative>
 				<relative type="0">ngalo Lwesihlanu</relative>
 				<relative type="1">ngoLwesihlanu ozayo</relative>
 			</field>
-			<field type="fri-short">
-				<relative type="-1">ngoLwesihlanu odlulileyo</relative>
-				<relative type="0">ngalo Lwesihlanu</relative>
-				<relative type="1">ngoLwesihlanu ozayo</relative>
-			</field>
-			<field type="fri-narrow">
-				<relative type="-1">ngoLwesihlanu odlulileyo</relative>
-				<relative type="0">ngalo Lwesihlanu</relative>
-				<relative type="1">ngoLwesihlanu ozayo</relative>
-			</field>
 			<field type="sat">
-				<relative type="-1">ngoMgqibelo odlulileyo</relative>
-				<relative type="0">ngalo Mgqibelo</relative>
-				<relative type="1">ngoMgqibelo ozayo</relative>
-			</field>
-			<field type="sat-short">
-				<relative type="-1">ngoMgqibelo odlulileyo</relative>
-				<relative type="0">ngalo Mgqibelo</relative>
-				<relative type="1">ngoMgqibelo ozayo</relative>
-			</field>
-			<field type="sat-narrow">
 				<relative type="-1">ngoMgqibelo odlulileyo</relative>
 				<relative type="0">ngalo Mgqibelo</relative>
 				<relative type="1">ngoMgqibelo ozayo</relative>
@@ -1251,16 +1343,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Etc/Unknown">
 				<exemplarCity>Indawo Engaziwayo</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>British Summer Time</daylight>
-				</long>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Irish Standard Time</daylight>
-				</long>
-			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>ICanton Island</exemplarCity>
 			</zone>
@@ -1279,6 +1361,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Saigon">
 				<exemplarCity>Ho Chi Minh City</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Acre Time</generic>
+					<standard>Acre Standard Time</standard>
+					<daylight>Acre Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Afghanistan Time</standard>
@@ -1454,6 +1543,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Brasilia Summer Time</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Ixesha laseBritane</generic>
+					<daylight>British Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>Brunei Darussalam Time</standard>
@@ -1627,6 +1722,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Greenwich Mean Time</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Greenland Time</generic>
+					<standard>Greenland Standard Time</standard>
+					<daylight>Greenland Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>East Greenland Time</generic>
@@ -1659,7 +1761,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Hawaii-Aleutian Time</generic>
-					<standard>Hawaii-Aleutian Standard Time</standard>
+					<standard>I-Hawaii-Aleutian Standard Time</standard>
 					<daylight>Hawaii-Aleutian Daylight Time</daylight>
 				</long>
 			</metazone>
@@ -1714,6 +1816,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Iran Daylight Time</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Ixesha lase-Ireland</generic>
+					<daylight>Irish Standard Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Irkutsk Time</generic>
@@ -1733,6 +1841,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Japan Time</generic>
 					<standard>Japan Standard Time</standard>
 					<daylight>Japan Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>Kamchatka Time</generic>
+					<standard>Kamchatka Standard Time</standard>
+					<daylight>Kamchatka Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -1997,11 +2112,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Sakhalin Summer Time</daylight>
 				</long>
 			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>Samara Time</generic>
+					<standard>Samara Standard Time</standard>
+					<daylight>Samara Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samoa Time</generic>
 					<standard>Samoa Standard Time</standard>
-					<daylight>Samoa Daylight Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -2068,6 +2188,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Chuuk Time</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Türkiye Time</generic>
+					<standard>Türkiye Standard Time</standard>
+					<daylight>Türkiye Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Turkmenistan Time</generic>
@@ -2085,6 +2212,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Uruguay Time</generic>
 					<standard>Uruguay Standard Time</standard>
 					<daylight>Uruguay Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Ürümqi Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -2192,17 +2324,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000000" count="one" alt="alphaNextToNumber">¤ 000M</pattern>
 					<pattern type="100000000" count="other">¤000M</pattern>
 					<pattern type="100000000" count="other" alt="alphaNextToNumber">¤ 000M</pattern>
-					<pattern type="1000000000" count="one">¤0G</pattern>
+					<pattern type="1000000000" count="one">¤0B</pattern>
 					<pattern type="1000000000" count="one" alt="alphaNextToNumber">¤ 0G</pattern>
-					<pattern type="1000000000" count="other">¤0G</pattern>
+					<pattern type="1000000000" count="other">¤0B</pattern>
 					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0G</pattern>
-					<pattern type="10000000000" count="one">¤00G</pattern>
+					<pattern type="10000000000" count="one">¤00B</pattern>
 					<pattern type="10000000000" count="one" alt="alphaNextToNumber">¤ 00G</pattern>
-					<pattern type="10000000000" count="other">¤00G</pattern>
+					<pattern type="10000000000" count="other">¤00B</pattern>
 					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 00G</pattern>
-					<pattern type="100000000000" count="one">¤000G</pattern>
+					<pattern type="100000000000" count="one">¤000B</pattern>
 					<pattern type="100000000000" count="one" alt="alphaNextToNumber">¤ 000G</pattern>
-					<pattern type="100000000000" count="other">¤000G</pattern>
+					<pattern type="100000000000" count="other">¤000B</pattern>
 					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 000G</pattern>
 					<pattern type="1000000000000" count="one">¤0T</pattern>
 					<pattern type="1000000000000" count="one" alt="alphaNextToNumber">¤ 0T</pattern>
@@ -2985,8 +3117,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XCG">
 				<displayName>ICaribbean guilder</displayName>
-				<displayName count="one">ICaribbean guilder</displayName>
-				<displayName count="other">ICaribbean guilder</displayName>
 				<symbol draft="contributed">ICg.</symbol>
 			</currency>
 			<currency type="XOF">

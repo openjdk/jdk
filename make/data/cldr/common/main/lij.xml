@@ -30,8 +30,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="an" draft="unconfirmed">aragoneise</language>
 			<language type="ann" draft="unconfirmed">obolo</language>
 			<language type="anp" draft="unconfirmed">angika</language>
-			<language type="ar" draft="unconfirmed">arabo</language>
-			<language type="ar_001" draft="unconfirmed">arabo moderno standard</language>
+			<language type="ar">arabo</language>
+			<language type="ar_001">arabo moderno standard</language>
 			<language type="arn" draft="unconfirmed">mapuche</language>
 			<language type="arp" draft="unconfirmed">arpaho</language>
 			<language type="ars" draft="unconfirmed">arabo najd</language>
@@ -45,16 +45,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="az" draft="unconfirmed">azerbaigian</language>
 			<language type="az" alt="short" draft="unconfirmed">azero</language>
 			<language type="ba" draft="unconfirmed">baschiro</language>
+			<language type="bal">baloci</language>
 			<language type="ban" draft="unconfirmed">balineise</language>
 			<language type="bas" draft="unconfirmed">basaa</language>
 			<language type="be" draft="unconfirmed">bielloruscio</language>
 			<language type="bem" draft="unconfirmed">bemba</language>
 			<language type="bez" draft="unconfirmed">bena</language>
 			<language type="bg" draft="unconfirmed">burgao</language>
+			<language type="bgc">haryanvi</language>
 			<language type="bho" draft="unconfirmed">bhojpuri</language>
 			<language type="bi" draft="unconfirmed">bislama</language>
 			<language type="bin" draft="unconfirmed">bini</language>
 			<language type="bla" draft="unconfirmed">siksika</language>
+			<language type="blo">anii</language>
 			<language type="bm" draft="unconfirmed">bambara</language>
 			<language type="bn" draft="unconfirmed">bengaleise</language>
 			<language type="bo" draft="unconfirmed">tibetan</language>
@@ -111,7 +114,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="efi" draft="unconfirmed">efik</language>
 			<language type="eka" draft="unconfirmed">ekajuk</language>
 			<language type="el" draft="unconfirmed">grego</language>
-			<language type="en" draft="contributed">ingleise</language>
+			<language type="en">ingleise</language>
 			<language type="en_AU" draft="unconfirmed">ingleise d’Australia</language>
 			<language type="en_CA" draft="unconfirmed">ingleise do Canadà</language>
 			<language type="en_GB" draft="unconfirmed">ingleise britannico</language>
@@ -119,14 +122,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_US" draft="unconfirmed">ingleise d’America</language>
 			<language type="en_US" alt="short" draft="unconfirmed">ingleise (SUA)</language>
 			<language type="eo" draft="unconfirmed">esperanto</language>
-			<language type="es" draft="unconfirmed">spagnòllo</language>
-			<language type="es_419" draft="unconfirmed">spagnòllo d’America</language>
-			<language type="es_ES" draft="unconfirmed">spagnòllo da Spagna</language>
-			<language type="es_MX" draft="unconfirmed">spagnòllo do Mescico</language>
+			<language type="es">spagnòllo</language>
+			<language type="es_419">spagnòllo d’America</language>
+			<language type="es_ES">spagnòllo da Spagna</language>
+			<language type="es_MX">spagnòllo do Mescico</language>
 			<language type="et" draft="unconfirmed">estone</language>
 			<language type="eu" draft="unconfirmed">basco</language>
 			<language type="ewo" draft="unconfirmed">ewondo</language>
-			<language type="fa" draft="unconfirmed">perscian</language>
+			<language type="fa">perscian</language>
 			<language type="fa_AF" draft="unconfirmed">dari</language>
 			<language type="ff" draft="unconfirmed">fulah</language>
 			<language type="fi" draft="unconfirmed">finlandeise</language>
@@ -143,7 +146,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fy" draft="unconfirmed">frisian de ponente</language>
 			<language type="ga" draft="unconfirmed">irlandeise</language>
 			<language type="gaa" draft="unconfirmed">ga</language>
-			<language type="gd" draft="unconfirmed">gaelico scoçeise</language>
+			<language type="gd">gaelico scoçeise</language>
 			<language type="gez" draft="unconfirmed">geez</language>
 			<language type="gil" draft="unconfirmed">gilberteise</language>
 			<language type="gl" draft="unconfirmed">galiçian</language>
@@ -160,7 +163,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax" draft="unconfirmed">haida do meridion</language>
 			<language type="he" draft="unconfirmed">ebreo</language>
 			<language type="hi" draft="unconfirmed">hindi</language>
-			<language type="hi_Latn" alt="variant" draft="unconfirmed">hinglish</language>
+			<language type="hi_Latn" alt="variant">hinglish</language>
 			<language type="hil" draft="unconfirmed">hiligaynon</language>
 			<language type="hmn" draft="unconfirmed">hmong</language>
 			<language type="hr" draft="unconfirmed">croato</language>
@@ -175,6 +178,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="iba" draft="unconfirmed">iban</language>
 			<language type="ibb" draft="unconfirmed">ibibio</language>
 			<language type="id" draft="unconfirmed">indonesian</language>
+			<language type="ie">interlingue</language>
 			<language type="ig" draft="unconfirmed">igbo</language>
 			<language type="ii" draft="unconfirmed">yi do settentrion</language>
 			<language type="ikt" draft="unconfirmed">inuktitut canadeise de ponente</language>
@@ -184,7 +188,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="is" draft="unconfirmed">islandeise</language>
 			<language type="it" draft="unconfirmed">italian</language>
 			<language type="iu" draft="unconfirmed">inuktitut</language>
-			<language type="ja" draft="unconfirmed">giapponeise</language>
+			<language type="ja">giaponeise</language>
 			<language type="jbo" draft="unconfirmed">lojban</language>
 			<language type="jgo" draft="unconfirmed">ngomba</language>
 			<language type="jmc" draft="unconfirmed">machame</language>
@@ -223,10 +227,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ksf" draft="unconfirmed">bafia</language>
 			<language type="ksh" draft="unconfirmed">colonieise</language>
 			<language type="ku" draft="unconfirmed">curdo</language>
+			<language type="ku" menu="core">curdo</language>
+			<language type="ku" menu="extension">kurmangi</language>
 			<language type="kum" draft="unconfirmed">kumyk</language>
 			<language type="kv" draft="unconfirmed">komi</language>
 			<language type="kw" draft="unconfirmed">còrnico</language>
 			<language type="kwk" draft="unconfirmed">kwakʼwala</language>
+			<language type="kxv">kuvi</language>
 			<language type="ky" draft="unconfirmed">kirghiso</language>
 			<language type="la" draft="unconfirmed">latin</language>
 			<language type="lad" draft="unconfirmed">giudeo-spagnòllo</language>
@@ -238,6 +245,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lij">ligure</language>
 			<language type="lil" draft="unconfirmed">lillooet</language>
 			<language type="lkt" draft="unconfirmed">lakota</language>
+			<language type="lmo">lombardo</language>
 			<language type="ln" draft="unconfirmed">lingala</language>
 			<language type="lo" draft="unconfirmed">lao</language>
 			<language type="lou" draft="unconfirmed">creolo da Louisiana</language>
@@ -319,7 +327,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="om" draft="unconfirmed">oromo</language>
 			<language type="or" draft="unconfirmed">ödia</language>
 			<language type="os" draft="unconfirmed">oscetico</language>
-			<language type="pa" draft="unconfirmed">punjabi</language>
+			<language type="pa">punjabi</language>
 			<language type="pag" draft="unconfirmed">pangasinan</language>
 			<language type="pam" draft="unconfirmed">pampanga</language>
 			<language type="pap" draft="unconfirmed">papiamento</language>
@@ -327,12 +335,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pcm" draft="unconfirmed">pidgin nigerian</language>
 			<language type="pis" draft="unconfirmed">pijin</language>
 			<language type="pl" draft="unconfirmed">polacco</language>
+			<language type="pms">piemonteise</language>
 			<language type="pqm" draft="unconfirmed">malecite-passamaquoddy</language>
-			<language type="ps" draft="unconfirmed">pashto</language>
-			<language type="pt" draft="unconfirmed">portogheise</language>
-			<language type="pt_BR" draft="unconfirmed">portogheise do Braxî</language>
-			<language type="pt_PT" draft="unconfirmed">portogheise d’Euröpa</language>
-			<language type="qu" draft="unconfirmed">quechua</language>
+			<language type="prg">pruscio</language>
+			<language type="ps">pashto</language>
+			<language type="pt">portogheise</language>
+			<language type="pt_BR">portogheise do Braxî</language>
+			<language type="pt_PT">portogheise d’Euröpa</language>
+			<language type="qu">quechua</language>
+			<language type="raj">rajasthani</language>
 			<language type="rap" draft="unconfirmed">rapanui</language>
 			<language type="rar" draft="unconfirmed">rarotonga</language>
 			<language type="rhg" draft="unconfirmed">rohingya</language>
@@ -340,7 +351,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="rn" draft="unconfirmed">rundi</language>
 			<language type="ro" draft="unconfirmed">romen</language>
 			<language type="rof" draft="unconfirmed">rombo</language>
-			<language type="ru" draft="unconfirmed">ruscio</language>
+			<language type="ru">ruscio</language>
 			<language type="rup" draft="unconfirmed">aromen</language>
 			<language type="rw" draft="unconfirmed">kinyarwanda</language>
 			<language type="rwk" draft="unconfirmed">rwa</language>
@@ -351,8 +362,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sat" draft="unconfirmed">santali</language>
 			<language type="sba" draft="unconfirmed">ngambay</language>
 			<language type="sbp" draft="unconfirmed">sangu</language>
-			<language type="sc" draft="unconfirmed">sardo</language>
-			<language type="scn" draft="unconfirmed">siçilian</language>
+			<language type="sc">sardo</language>
+			<language type="scn">siçilian</language>
 			<language type="sco" draft="unconfirmed">scoçeise</language>
 			<language type="sd" draft="unconfirmed">sindhi</language>
 			<language type="se" draft="unconfirmed">sami do settentrion</language>
@@ -363,7 +374,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="shn" draft="unconfirmed">shan</language>
 			<language type="si" draft="unconfirmed">sinhala</language>
 			<language type="sk" draft="unconfirmed">slovacco</language>
-			<language type="sl" draft="unconfirmed">sloven</language>
+			<language type="sl">sloven</language>
 			<language type="slh" draft="unconfirmed">lushootseed do meridion</language>
 			<language type="sm" draft="unconfirmed">samoan</language>
 			<language type="smn" draft="unconfirmed">sami de Inari</language>
@@ -372,17 +383,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="snk" draft="unconfirmed">soninke</language>
 			<language type="so" draft="unconfirmed">sòmalo</language>
 			<language type="sq" draft="unconfirmed">arbaneise</language>
-			<language type="sr" draft="unconfirmed">serbo</language>
+			<language type="sr">serbo</language>
 			<language type="srn" draft="unconfirmed">sranan tongo</language>
 			<language type="ss" draft="unconfirmed">swati</language>
 			<language type="st" draft="unconfirmed">sotho do meridion</language>
 			<language type="str" draft="unconfirmed">salish di streiti</language>
 			<language type="su" draft="unconfirmed">sundaneise</language>
 			<language type="suk" draft="unconfirmed">sukuma</language>
-			<language type="sv" draft="unconfirmed">svedeise</language>
-			<language type="sw" draft="unconfirmed">swahili</language>
+			<language type="sv">svedeise</language>
+			<language type="sw">swahili</language>
 			<language type="swb" draft="unconfirmed">comörian</language>
-			<language type="syr" draft="unconfirmed">sciriaco</language>
+			<language type="syr">sciriaco</language>
+			<language type="szl">silesian</language>
 			<language type="ta" draft="unconfirmed">tamil</language>
 			<language type="tce" draft="unconfirmed">tutchone do meridion</language>
 			<language type="te" draft="unconfirmed">telugu</language>
@@ -422,7 +434,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="uz" draft="unconfirmed">uzbeco</language>
 			<language type="vai" draft="unconfirmed">vai</language>
 			<language type="ve" draft="unconfirmed">venda</language>
+			<language type="vec">veneto</language>
 			<language type="vi" draft="unconfirmed">vietnamita</language>
+			<language type="vmw">makhuwa</language>
 			<language type="vun" draft="unconfirmed">vunjo</language>
 			<language type="wa" draft="unconfirmed">vallon</language>
 			<language type="wae" draft="unconfirmed">walser</language>
@@ -432,6 +446,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu" draft="unconfirmed">cineise wu</language>
 			<language type="xal" draft="unconfirmed">kalmyk</language>
 			<language type="xh" draft="unconfirmed">xhosa</language>
+			<language type="xnr">kangri</language>
 			<language type="xog" draft="unconfirmed">soga</language>
 			<language type="yav" draft="unconfirmed">yangben</language>
 			<language type="ybb" draft="unconfirmed">yemba</language>
@@ -440,6 +455,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yrl" draft="unconfirmed">nheengatu</language>
 			<language type="yue" draft="unconfirmed">cantoneise</language>
 			<language type="yue" alt="menu" draft="unconfirmed">cineise cantoneise</language>
+			<language type="za">zhuang</language>
 			<language type="zgh" draft="unconfirmed">tamazight standard do Maròcco</language>
 			<language type="zh" draft="unconfirmed">cineise</language>
 			<language type="zh" alt="menu" draft="unconfirmed">cineise mandarin</language>
@@ -600,6 +616,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CN" draft="unconfirmed">Ciña</territory>
 			<territory type="CO" draft="unconfirmed">Colombia</territory>
 			<territory type="CP" draft="unconfirmed">Isoa de Clipperton</territory>
+			<territory type="CQ">Sark</territory>
 			<territory type="CR" draft="unconfirmed">Còsta Rica</territory>
 			<territory type="CU" draft="unconfirmed">Cubba</territory>
 			<territory type="CV" draft="unconfirmed">Cappo Verde</territory>
@@ -824,60 +841,162 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZZ" draft="unconfirmed">region desconosciua</territory>
 		</territories>
 		<keys>
-			<key type="calendar" draft="unconfirmed">lunäio</key>
-			<key type="cf" draft="unconfirmed">formato de monæa</key>
-			<key type="collation" draft="unconfirmed">ordine</key>
-			<key type="currency" draft="unconfirmed">monæa</key>
-			<key type="hc" draft="unconfirmed">scistema oräio (12 ò 24 oe)</key>
-			<key type="lb" draft="unconfirmed">stilo de interruçion de linia</key>
-			<key type="ms" draft="unconfirmed">scistema de mesuaçion</key>
-			<key type="numbers" draft="unconfirmed">numeri</key>
+			<key type="calendar">lunäio</key>
+			<key type="cf">formato de monæa</key>
+			<key type="colAlternate">ordinamento sensa scimboli</key>
+			<key type="colBackwards">ordinamento di açenti con inverscion</key>
+			<key type="colCaseFirst">ordinamento maiuscole/minuscole</key>
+			<key type="colCaseLevel">ordinamento maiuscole/minuscole</key>
+			<key type="collation">ordinamento</key>
+			<key type="colNormalization">ordinamento normalizzou</key>
+			<key type="colNumeric">ordinamento numerico</key>
+			<key type="colReorder">reordinamento scrittue/blòcchi</key>
+			<key type="colStrength">prioritæ de l’ordinamento</key>
+			<key type="currency">monæa</key>
+			<key type="d0">trasforma destinaçion</key>
+			<key type="dx">escluxoin de separaçion pe diçionäio</key>
+			<key type="em">Presentaçion emoji</key>
+			<key type="fw">Primmo giorno da settemaña</key>
+			<key type="h0">Mescciou</key>
+			<key type="hc">scistema oräio (12 ò 24 oe)</key>
+			<key type="i0">metodo d’inserçion</key>
+			<key type="k0">tastea</key>
+			<key type="kv">livello mascimo ignorou</key>
+			<key type="lb">stilo de interruçion de linia</key>
+			<key type="lw">Interruçioin de linia drento de poule</key>
+			<key type="m0">regole de trasformaçion</key>
+			<key type="ms">scistema de mesuaçion</key>
+			<key type="mu">unitæ de mesua</key>
+			<key type="numbers">numeri</key>
+			<key type="ss">Interruçion de frase dòppo abbr.</key>
 		</keys>
 		<types>
-			<type key="calendar" type="buddhist" draft="unconfirmed">lunäio buddista</type>
-			<type key="calendar" type="chinese" draft="unconfirmed">lunäio cineise</type>
-			<type key="calendar" type="coptic" draft="unconfirmed">lunäio còpto</type>
-			<type key="calendar" type="dangi" draft="unconfirmed">lunäio dangi</type>
-			<type key="calendar" type="ethiopic" draft="unconfirmed">lunäio etiope</type>
-			<type key="calendar" type="ethiopic-amete-alem" draft="unconfirmed">lunäio etiope Amete Alem</type>
-			<type key="calendar" type="gregorian" draft="unconfirmed">lunäio gregorian</type>
-			<type key="calendar" type="hebrew" draft="unconfirmed">lunäio ebraico</type>
-			<type key="calendar" type="islamic" draft="unconfirmed">lunäio egirian</type>
-			<type key="calendar" type="islamic-civil" draft="unconfirmed">lunäio çivile egirian</type>
-			<type key="calendar" type="islamic-umalqura" draft="unconfirmed">lunäio egirian (Umm al-Qura)</type>
-			<type key="calendar" type="iso8601" draft="unconfirmed">lunäio ISO-8601</type>
-			<type key="calendar" type="japanese" draft="unconfirmed">lunäio giapponeise</type>
-			<type key="calendar" type="persian" draft="unconfirmed">lunäio perscian</type>
-			<type key="calendar" type="roc" draft="unconfirmed">lunäio repubrican cineise</type>
-			<type key="cf" type="account" draft="unconfirmed">formato de monæa contabile</type>
-			<type key="cf" type="standard" draft="unconfirmed">formato de monæa standard</type>
-			<type key="collation" type="ducet" draft="unconfirmed">ordine predefinio de Unicode</type>
-			<type key="collation" type="search" draft="unconfirmed">reçerca generica</type>
-			<type key="collation" type="standard" draft="unconfirmed">ordine standard</type>
-			<type key="hc" type="h11" draft="unconfirmed">scistema oräio à 12 oe (0–11)</type>
-			<type key="hc" type="h12" draft="unconfirmed">scistema oräio à 12 oe (1–12)</type>
-			<type key="hc" type="h23" draft="unconfirmed">scistema oräio à 24 oe (0–23)</type>
-			<type key="hc" type="h24" draft="unconfirmed">scistema oräio à 24 oe (1–24)</type>
-			<type key="lb" type="loose" draft="unconfirmed">stilo de interruçion de linia flescibile</type>
-			<type key="lb" type="normal" draft="unconfirmed">stilo de interruçion de linia standard</type>
-			<type key="lb" type="strict" draft="unconfirmed">stilo de interruçion de linia sforsou</type>
-			<type key="ms" type="metric" draft="unconfirmed">scistema metrico</type>
-			<type key="ms" type="uksystem" draft="unconfirmed">scistema de mesuaçion imperiale</type>
-			<type key="ms" type="ussystem" draft="unconfirmed">scistema de mesuaçion american</type>
-			<type key="numbers" type="arab" draft="unconfirmed">giffre indo-arabe</type>
-			<type key="numbers" type="arabext" draft="unconfirmed">giffre indo-arabe esteise</type>
-			<type key="numbers" type="armn" draft="unconfirmed">numeri ermeni</type>
-			<type key="numbers" type="armnlow" draft="unconfirmed">numeri ermeni piccin</type>
-			<type key="numbers" type="beng" draft="unconfirmed">giffre bengaleixi</type>
-			<type key="numbers" type="cakm" draft="unconfirmed">giffre chakma</type>
-			<type key="numbers" type="deva" draft="unconfirmed">giffre devanagari</type>
-			<type key="numbers" type="ethi" draft="unconfirmed">numeri etiopi</type>
-			<type key="numbers" type="fullwide" draft="unconfirmed">giffre à ampiessa intrega</type>
-			<type key="numbers" type="geor" draft="unconfirmed">numeri georgien</type>
-			<type key="numbers" type="grek" draft="unconfirmed">numeri greghi</type>
-			<type key="numbers" type="greklow" draft="unconfirmed">numeri greghi piccin</type>
-			<type key="numbers" type="gujr" draft="unconfirmed">giffre gujarati</type>
-			<type key="numbers" type="guru" draft="unconfirmed">giffre gurmuki</type>
+			<type key="calendar" type="buddhist">lunäio buddista</type>
+			<type key="calendar" type="buddhist" scope="core">buddista</type>
+			<type key="calendar" type="chinese">lunäio cineise</type>
+			<type key="calendar" type="chinese" scope="core">cineise</type>
+			<type key="calendar" type="coptic">lunäio còpto</type>
+			<type key="calendar" type="coptic" scope="core">còpto</type>
+			<type key="calendar" type="dangi">lunäio dangi</type>
+			<type key="calendar" type="dangi" scope="core">dangi</type>
+			<type key="calendar" type="ethiopic">lunäio etiope</type>
+			<type key="calendar" type="ethiopic" scope="core">etiope</type>
+			<type key="calendar" type="ethiopic-amete-alem">lunäio etiope Amete Alem</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">etiope Amete Alem</type>
+			<type key="calendar" type="gregorian">lunäio gregorian</type>
+			<type key="calendar" type="gregorian" scope="core">gregorian</type>
+			<type key="calendar" type="hebrew">lunäio ebraico</type>
+			<type key="calendar" type="hebrew" scope="core">ebraico</type>
+			<type key="calendar" type="indian" scope="core">naçionale indian</type>
+			<type key="calendar" type="islamic">lunäio egirian</type>
+			<type key="calendar" type="islamic" scope="core">egirian</type>
+			<type key="calendar" type="islamic-civil">lunäio çivile egirian</type>
+			<type key="calendar" type="islamic-civil" scope="core">egirian (çivile)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">egirian, osservaçion saudita</type>
+			<type key="calendar" type="islamic-tbla" scope="core">egirian (tabulare, epoca astronòmica)</type>
+			<type key="calendar" type="islamic-umalqura">lunäio egirian (Umm al-Qura)</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">egirian (Umm al-Qura)</type>
+			<type key="calendar" type="iso8601">lunäio ISO-8601</type>
+			<type key="calendar" type="iso8601" scope="core">gregorian</type>
+			<type key="calendar" type="japanese">lunäio giaponeise</type>
+			<type key="calendar" type="japanese" scope="core">giaponeise</type>
+			<type key="calendar" type="persian">lunäio perscian</type>
+			<type key="calendar" type="persian" scope="core">perscian</type>
+			<type key="calendar" type="roc">lunäio repubrican cineise</type>
+			<type key="calendar" type="roc" scope="core">cineise</type>
+			<type key="cf" type="account">formato de monæa contabile</type>
+			<type key="cf" type="account" scope="core">contabile</type>
+			<type key="cf" type="standard">formato de monæa standard</type>
+			<type key="cf" type="standard" scope="core">standard</type>
+			<type key="colCaseFirst" type="lower" scope="core">minuscole</type>
+			<type key="colCaseFirst" type="no" scope="core">minuscole</type>
+			<type key="colCaseFirst" type="upper" scope="core">maiuscole</type>
+			<type key="collation" type="compat" scope="core">compatibilitæ</type>
+			<type key="collation" type="dictionary" scope="core">diçionäio</type>
+			<type key="collation" type="ducet">ordinamento predefinio de Unicode</type>
+			<type key="collation" type="ducet" scope="core">Unicode predefinio</type>
+			<type key="collation" type="emoji" scope="core">emoji</type>
+			<type key="collation" type="eor" scope="core">regole europee</type>
+			<type key="collation" type="phonebook" scope="core">elenco telefònico</type>
+			<type key="collation" type="phonetic" scope="core">fonetico</type>
+			<type key="collation" type="pinyin" scope="core">pinyin</type>
+			<type key="collation" type="search">reçerca generica</type>
+			<type key="collation" type="search" scope="core">reçerca</type>
+			<type key="collation" type="searchjl" scope="core">consonante iniçiale coreaña</type>
+			<type key="collation" type="standard">ordinamento standard</type>
+			<type key="collation" type="standard" scope="core">standard</type>
+			<type key="collation" type="stroke" scope="core">træti</type>
+			<type key="collation" type="traditional" scope="core">tradiçionale</type>
+			<type key="collation" type="unihan" scope="core">træti radicali</type>
+			<type key="collation" type="zhuyin" scope="core">zhuyin</type>
+			<type key="colReorder" type="currency" scope="core">monæa</type>
+			<type key="colReorder" type="digit" scope="core">giffre</type>
+			<type key="colReorder" type="punct" scope="core">pontezzatua</type>
+			<type key="colReorder" type="space" scope="core">spaçi</type>
+			<type key="colReorder" type="symbol" scope="core">scimboli</type>
+			<type key="colStrength" type="identical" scope="core">tutti</type>
+			<type key="colStrength" type="primary" scope="core">solo lettie base</type>
+			<type key="colStrength" type="quaternary" scope="core">base, açenti, maiuscole/minuscole, variante, kana</type>
+			<type key="colStrength" type="secondary" scope="core">base, açenti</type>
+			<type key="colStrength" type="tertiary" scope="core">base, açenti, maiuscole/minuscole, variante</type>
+			<type key="d0" type="fwidth">à larghixe intrega</type>
+			<type key="d0" type="hwidth">à meza larghixe</type>
+			<type key="em" type="default" scope="core">Default</type>
+			<type key="em" type="emoji" scope="core">Emoji</type>
+			<type key="em" type="text" scope="core">Testo</type>
+			<type key="hc" type="c12" draft="unconfirmed">scistema oräio à 12 oe</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24" draft="unconfirmed">scistema oräio à 24 oe</type>
+			<type key="hc" type="c24" scope="core">24</type>
+			<type key="hc" type="h11">scistema oräio à 12 oe (0–11)</type>
+			<type key="hc" type="h11" scope="core">12 oe (0–11)</type>
+			<type key="hc" type="h12">scistema oräio à 12 oe (1–12)</type>
+			<type key="hc" type="h12" scope="core">12 oe (1–12)</type>
+			<type key="hc" type="h23">scistema oräio à 24 oe (0–23)</type>
+			<type key="hc" type="h23" scope="core">24 oe (0–23)</type>
+			<type key="hc" type="h24">scistema oräio à 24 oe (1–24)</type>
+			<type key="hc" type="h24" scope="core">24 oe (1–24)</type>
+			<type key="kv" type="currency" scope="core">spaçi, pontezzatua, tutti i scimboli</type>
+			<type key="kv" type="punct" scope="core">spaçi, pontezzatua</type>
+			<type key="kv" type="space" scope="core">spaçi, pontezzatua</type>
+			<type key="kv" type="symbol" scope="core">spaçi, pontezzatua, scimboli che no en de monæe</type>
+			<type key="lb" type="loose">stilo de interruçion de linia flescibile</type>
+			<type key="lb" type="loose" scope="core">flescibile</type>
+			<type key="lb" type="normal">stilo de interruçion de linia standard</type>
+			<type key="lb" type="normal" scope="core">standard</type>
+			<type key="lb" type="strict">stilo de interruçion de linia sforsou</type>
+			<type key="lb" type="strict" scope="core">sforsou</type>
+			<type key="lw" type="breakall" scope="core">Dividdi tutte</type>
+			<type key="lw" type="keepall" scope="core">Conserva tutte</type>
+			<type key="lw" type="normal" scope="core">Normale</type>
+			<type key="lw" type="phrase" scope="core">Conserva inti sintagmi</type>
+			<type key="m0" type="bgn">trasliteraçion US BGN</type>
+			<type key="m0" type="ungegn">trasliteraçion US GEGN</type>
+			<type key="ms" type="metric">scistema metrico</type>
+			<type key="ms" type="metric" scope="core">metrico</type>
+			<type key="ms" type="uksystem">scistema de mesuaçion imperiale</type>
+			<type key="ms" type="uksystem" scope="core">imperiale britannico</type>
+			<type key="ms" type="ussystem">scistema de mesuaçion american</type>
+			<type key="ms" type="ussystem" scope="core">imperiale american</type>
+			<type key="numbers" type="arab">giffre indo-arabe</type>
+			<type key="numbers" type="arabext">giffre indo-arabe esteise</type>
+			<type key="numbers" type="arabext" scope="core">indo-arabe esteise</type>
+			<type key="numbers" type="armn">numeri ermeni</type>
+			<type key="numbers" type="armnlow">numeri ermeni piccin</type>
+			<type key="numbers" type="armnlow" scope="core">ermeni piccin</type>
+			<type key="numbers" type="beng">giffre bengaleixi</type>
+			<type key="numbers" type="cakm">giffre chakma</type>
+			<type key="numbers" type="deva">giffre devanagari</type>
+			<type key="numbers" type="ethi">numeri etiopi</type>
+			<type key="numbers" type="finance" scope="core">finançiäi</type>
+			<type key="numbers" type="fullwide">giffre à larghixe intrega</type>
+			<type key="numbers" type="fullwide" scope="core">larghixe intrega</type>
+			<type key="numbers" type="geor">numeri georgien</type>
+			<type key="numbers" type="grek">numeri greghi</type>
+			<type key="numbers" type="greklow">numeri greghi piccin</type>
+			<type key="numbers" type="greklow" scope="core">greghi piccin</type>
+			<type key="numbers" type="gujr">giffre gujarati</type>
+			<type key="numbers" type="guru">giffre gurmuki</type>
 			<type key="numbers" type="hanidec" draft="unconfirmed">numeri deçimali cineixi</type>
 			<type key="numbers" type="hans" draft="unconfirmed">numeri cineixi semplificæ</type>
 			<type key="numbers" type="hansfin" draft="unconfirmed">numeri finansiäi in cineise semplificou</type>
@@ -890,7 +1009,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="khmr" draft="unconfirmed">giffre khmer</type>
 			<type key="numbers" type="knda" draft="unconfirmed">giffre kannada</type>
 			<type key="numbers" type="laoo" draft="unconfirmed">giffre lao</type>
-			<type key="numbers" type="latn" draft="unconfirmed">giffre occidentale</type>
+			<type key="numbers" type="latn">giffre occidentale</type>
 			<type key="numbers" type="mlym" draft="unconfirmed">giffre malayalam</type>
 			<type key="numbers" type="mtei" draft="unconfirmed">giffre meetei mayek</type>
 			<type key="numbers" type="mymr" draft="unconfirmed">giffre birmañe</type>
@@ -905,15 +1024,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="tibt" draft="unconfirmed">giffre tibetañe</type>
 			<type key="numbers" type="vaii" draft="unconfirmed">giffre vaii</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">Off</typeValue>
+			<typeValue type="yes">On</typeValue>
+		</typeValues>
 		<measurementSystemNames>
-			<measurementSystemName type="metric" draft="contributed">metrico</measurementSystemName>
-			<measurementSystemName type="UK" draft="contributed">imperiale</measurementSystemName>
-			<measurementSystemName type="US" draft="contributed">american</measurementSystemName>
+			<measurementSystemName type="metric">metrico</measurementSystemName>
+			<measurementSystemName type="UK">imperiale</measurementSystemName>
+			<measurementSystemName type="US">american</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="language" draft="contributed">Lengua: {0}</codePattern>
-			<codePattern type="script" draft="contributed">Scrittua: {0}</codePattern>
-			<codePattern type="territory" draft="contributed">Region: {0}</codePattern>
+			<codePattern type="language">Lengua: {0}</codePattern>
+			<codePattern type="script">Scrittua: {0}</codePattern>
+			<codePattern type="territory">Region: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
@@ -935,171 +1058,187 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern draft="unconfirmed">EEEE d 'de' MMMM 'do' y G</pattern>
+							<pattern>EEEE d 'de' MMMM 'do' y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern draft="unconfirmed">d 'de' MMMM 'do' y G</pattern>
+							<pattern>d 'de' MMMM 'do' y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern draft="unconfirmed">d/M/y G</pattern>
+							<pattern>d/M/y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern draft="unconfirmed">d/M/yy GGGGG</pattern>
+							<pattern>d/M/yy GGGGG</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
-							<pattern draft="unconfirmed">{1} 'à' {0}</pattern>
+							<pattern>{1} 'à' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'à' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
-							<pattern draft="unconfirmed">{1} 'à' {0}</pattern>
+							<pattern>{1} 'à' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'à' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Ed" draft="unconfirmed">E d</dateFormatItem>
-						<dateFormatItem id="Gy" draft="unconfirmed">y G</dateFormatItem>
-						<dateFormatItem id="GyMd" draft="unconfirmed">d/M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="GyMMM" draft="unconfirmed">LLL y G</dateFormatItem>
-						<dateFormatItem id="GyMMMd" draft="unconfirmed">d MMM y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E d MMM y G</dateFormatItem>
-						<dateFormatItem id="Md" draft="unconfirmed">d/M</dateFormatItem>
-						<dateFormatItem id="MEd" draft="unconfirmed">E d/M</dateFormatItem>
-						<dateFormatItem id="MMMd" draft="unconfirmed">d MMM</dateFormatItem>
-						<dateFormatItem id="MMMEd" draft="unconfirmed">E d MMM</dateFormatItem>
-						<dateFormatItem id="MMMMd" draft="unconfirmed">d MMMM</dateFormatItem>
-						<dateFormatItem id="y" draft="unconfirmed">y G</dateFormatItem>
-						<dateFormatItem id="yyyy" draft="unconfirmed">y G</dateFormatItem>
-						<dateFormatItem id="yyyyM" draft="unconfirmed">M/y G</dateFormatItem>
-						<dateFormatItem id="yyyyMd" draft="unconfirmed">d/M/y G</dateFormatItem>
-						<dateFormatItem id="yyyyMEd" draft="unconfirmed">E d/M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMMM" draft="unconfirmed">LLL y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMd" draft="unconfirmed">d MMM y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd" draft="unconfirmed">E d MMM y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM" draft="unconfirmed">LLLL 'do' y G</dateFormatItem>
-						<dateFormatItem id="yyyyQQQ" draft="unconfirmed">QQQ y G</dateFormatItem>
-						<dateFormatItem id="yyyyQQQQ" draft="unconfirmed">QQQQ y G</dateFormatItem>
+						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM">LLL y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
+						<dateFormatItem id="Hv">'h'HH v</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E d/M</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="y">y G</dateFormatItem>
+						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d/M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">LLL y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">LLLL 'do' y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G" draft="unconfirmed">y G – y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">y–y G</greatestDifference>
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G" draft="unconfirmed">M/y GGGGG – M/y GGGGG</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="G" draft="unconfirmed">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d" draft="unconfirmed">E d/M/y – E d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="G" draft="unconfirmed">E d/M/y GGGGG – E d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E d/M/y – E d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">E d/M/y GGGGG – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E d/M/y – E d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G" draft="unconfirmed">MMM y G – MMM y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">MMM–MMM y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d" draft="unconfirmed">d–d MMM, y G</greatestDifference>
-							<greatestDifference id="G" draft="unconfirmed">d MMM y G – d MMM y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">d MMM y G – d MMM y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="d">d–d MMM, y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y G – d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="G" draft="unconfirmed">E d MMM y G – E d MMM y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E d MMM y – E d MMM y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E d MMM y – E d MMM y G</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="G">E d MMM y G – E d MMM y G</greatestDifference>
+							<greatestDifference id="M">E d MMM y – E d MMM y G</greatestDifference>
+							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M" draft="unconfirmed">M–M</greatestDifference>
+							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="unconfirmed">d/M – d/M</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">d/M – d/M</greatestDifference>
+							<greatestDifference id="d">d/M – d/M</greatestDifference>
+							<greatestDifference id="M">d/M – d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="unconfirmed">E d/M – E d/M</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E d/M – E d/M</greatestDifference>
+							<greatestDifference id="d">E d/M – E d/M</greatestDifference>
+							<greatestDifference id="M">E d/M – E d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M" draft="unconfirmed">MMM–MMM</greatestDifference>
+							<greatestDifference id="M">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d" draft="unconfirmed">d–d MMM</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM</greatestDifference>
+							<greatestDifference id="d">d–d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E d – E d MMM</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="d">E d – E d MMM</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y" draft="unconfirmed">y–y G</greatestDifference>
+							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="unconfirmed">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="unconfirmed">E d/M/y – E d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E d/M/y – E d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E d/M/y – E d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M" draft="unconfirmed">MMM–MMM y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">MMM 'do' y – MMM 'do' y G</greatestDifference>
+							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM 'do' y – MMM 'do' y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d" draft="unconfirmed">d–d MMM 'do' y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM 'do' y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">d MMM 'do' y – d MMM 'do' y G</greatestDifference>
+							<greatestDifference id="d">d–d MMM 'do' y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM 'do' y G</greatestDifference>
+							<greatestDifference id="y">d MMM 'do' y – d MMM 'do' y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E d MMM – E d MMM 'do' y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E d MMM – E d MMM 'do' y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E d MMM 'do' y – E d MMM 'do' y G</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM 'do' y G</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM 'do' y G</greatestDifference>
+							<greatestDifference id="y">E d MMM 'do' y – E d MMM 'do' y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M" draft="unconfirmed">MMMM–MMMM 'do' y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">MMMM 'do' y – MMMM 'do' y G</greatestDifference>
+							<greatestDifference id="M">MMMM–MMMM 'do' y G</greatestDifference>
+							<greatestDifference id="y">MMMM 'do' y – MMMM 'do' y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1108,272 +1247,315 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">de zen.</month>
-							<month type="2" draft="unconfirmed">de fre.</month>
-							<month type="3" draft="unconfirmed">de mar.</month>
-							<month type="4" draft="unconfirmed">d’arv.</month>
-							<month type="5" draft="unconfirmed">de maz.</month>
-							<month type="6" draft="unconfirmed">de zug.</month>
-							<month type="7" draft="unconfirmed">de lug.</month>
-							<month type="8" draft="unconfirmed">d’ago.</month>
-							<month type="9" draft="unconfirmed">de set.</month>
-							<month type="10" draft="unconfirmed">d’ott.</month>
-							<month type="11" draft="unconfirmed">de nov.</month>
-							<month type="12" draft="unconfirmed">de dex.</month>
+							<month type="1">de zen.</month>
+							<month type="2">de fre.</month>
+							<month type="3">de mar.</month>
+							<month type="4">d’arv.</month>
+							<month type="5">de maz.</month>
+							<month type="6">de zug.</month>
+							<month type="7">de lug.</month>
+							<month type="8">d’ago.</month>
+							<month type="9">de set.</month>
+							<month type="10">d’ott.</month>
+							<month type="11">de nov.</month>
+							<month type="12">de dex.</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">de zenâ</month>
-							<month type="2" draft="contributed">de frevâ</month>
-							<month type="3" draft="contributed">de marso</month>
-							<month type="4" draft="contributed">d’arvî</month>
-							<month type="5" draft="contributed">de mazzo</month>
-							<month type="6" draft="contributed">de zugno</month>
-							<month type="7" draft="contributed">de luggio</month>
-							<month type="8" draft="contributed">d’agosto</month>
-							<month type="9" draft="contributed">de settembre</month>
-							<month type="10" draft="contributed">d’ottobre</month>
-							<month type="11" draft="contributed">de novembre</month>
-							<month type="12" draft="contributed">de dexembre</month>
+							<month type="1">de zenâ</month>
+							<month type="2">de frevâ</month>
+							<month type="3">de marso</month>
+							<month type="4">d’arvî</month>
+							<month type="5">de mazzo</month>
+							<month type="6">de zugno</month>
+							<month type="7">de luggio</month>
+							<month type="8">d’agosto</month>
+							<month type="9">de settembre</month>
+							<month type="10">d’ottobre</month>
+							<month type="11">de novembre</month>
+							<month type="12">de dexembre</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">zen.</month>
-							<month type="2" draft="unconfirmed">fre.</month>
-							<month type="3" draft="unconfirmed">mar.</month>
-							<month type="4" draft="unconfirmed">arv.</month>
-							<month type="5" draft="unconfirmed">maz.</month>
-							<month type="6" draft="unconfirmed">zug.</month>
-							<month type="7" draft="unconfirmed">lug.</month>
-							<month type="8" draft="unconfirmed">ago.</month>
-							<month type="9" draft="unconfirmed">set.</month>
-							<month type="10" draft="unconfirmed">ott.</month>
-							<month type="11" draft="unconfirmed">nov.</month>
-							<month type="12" draft="unconfirmed">dex.</month>
+							<month type="1">zen.</month>
+							<month type="2">fre.</month>
+							<month type="3">mar.</month>
+							<month type="4">arv.</month>
+							<month type="5">maz.</month>
+							<month type="6">zug.</month>
+							<month type="7">lug.</month>
+							<month type="8">ago.</month>
+							<month type="9">set.</month>
+							<month type="10">ott.</month>
+							<month type="11">nov.</month>
+							<month type="12">dex.</month>
 						</monthWidth>
 						<monthWidth type="narrow">
-							<month type="1" draft="unconfirmed">ZN</month>
-							<month type="2" draft="unconfirmed">FR</month>
-							<month type="3" draft="unconfirmed">MR</month>
-							<month type="4" draft="unconfirmed">AR</month>
-							<month type="5" draft="unconfirmed">MZ</month>
-							<month type="6" draft="unconfirmed">ZG</month>
-							<month type="7" draft="unconfirmed">LG</month>
-							<month type="8" draft="unconfirmed">AG</month>
-							<month type="9" draft="unconfirmed">ST</month>
-							<month type="10" draft="unconfirmed">OT</month>
-							<month type="11" draft="unconfirmed">NV</month>
-							<month type="12" draft="unconfirmed">DX</month>
+							<month type="1">ZN</month>
+							<month type="2">FR</month>
+							<month type="3">MR</month>
+							<month type="4">AR</month>
+							<month type="5">MZ</month>
+							<month type="6">ZG</month>
+							<month type="7">LG</month>
+							<month type="8">AG</month>
+							<month type="9">ST</month>
+							<month type="10">OT</month>
+							<month type="11">NV</month>
+							<month type="12">DX</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">zenâ</month>
-							<month type="2" draft="unconfirmed">frevâ</month>
-							<month type="3" draft="unconfirmed">marso</month>
-							<month type="4" draft="unconfirmed">arvî</month>
-							<month type="5" draft="unconfirmed">mazzo</month>
-							<month type="6" draft="unconfirmed">zugno</month>
-							<month type="7" draft="unconfirmed">luggio</month>
-							<month type="8" draft="unconfirmed">agosto</month>
-							<month type="9" draft="unconfirmed">settembre</month>
-							<month type="10" draft="unconfirmed">ottobre</month>
-							<month type="11" draft="unconfirmed">novembre</month>
-							<month type="12" draft="unconfirmed">dexembre</month>
+							<month type="1">zenâ</month>
+							<month type="2">frevâ</month>
+							<month type="3">marso</month>
+							<month type="4">arvî</month>
+							<month type="5">mazzo</month>
+							<month type="6">zugno</month>
+							<month type="7">luggio</month>
+							<month type="8">agosto</month>
+							<month type="9">settembre</month>
+							<month type="10">ottobre</month>
+							<month type="11">novembre</month>
+							<month type="12">dexembre</month>
 						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun" draft="unconfirmed">dom.</day>
-							<day type="mon" draft="unconfirmed">lun.</day>
-							<day type="tue" draft="unconfirmed">mät.</day>
-							<day type="wed" draft="unconfirmed">mäc.</day>
-							<day type="thu" draft="unconfirmed">zeu.</day>
-							<day type="fri" draft="unconfirmed">ven.</day>
-							<day type="sat" draft="unconfirmed">sab.</day>
+							<day type="sun">dom.</day>
+							<day type="mon">lun.</day>
+							<day type="tue">mät.</day>
+							<day type="wed">mäc.</day>
+							<day type="thu">zeu.</day>
+							<day type="fri">ven.</day>
+							<day type="sat">sab.</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun" draft="contributed">domenega</day>
-							<day type="mon" draft="contributed">lunesdì</day>
-							<day type="tue" draft="contributed">mätesdì</day>
-							<day type="wed" draft="contributed">mäcordì</day>
-							<day type="thu" draft="contributed">zeuggia</day>
-							<day type="fri" draft="contributed">venardì</day>
-							<day type="sat" draft="contributed">sabbo</day>
+							<day type="sun">domenega</day>
+							<day type="mon">lunesdì</day>
+							<day type="tue">mätesdì</day>
+							<day type="wed">mäcordì</day>
+							<day type="thu">zeuggia</day>
+							<day type="fri">venardì</day>
+							<day type="sat">sabbo</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="narrow">
-							<day type="sun" draft="unconfirmed">D</day>
-							<day type="mon" draft="unconfirmed">L</day>
-							<day type="tue" draft="unconfirmed">M</day>
-							<day type="wed" draft="unconfirmed">M</day>
-							<day type="thu" draft="unconfirmed">Z</day>
-							<day type="fri" draft="unconfirmed">V</day>
-							<day type="sat" draft="unconfirmed">S</day>
+							<day type="sun">D</day>
+							<day type="mon">L</day>
+							<day type="tue">M</day>
+							<day type="wed">M</day>
+							<day type="thu">Z</day>
+							<day type="fri">V</day>
+							<day type="sat">S</day>
 						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
 					<quarterContext type="format">
 						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="unconfirmed">T1</quarter>
-							<quarter type="2" draft="unconfirmed">T2</quarter>
-							<quarter type="3" draft="unconfirmed">T3</quarter>
-							<quarter type="4" draft="unconfirmed">T4</quarter>
+							<quarter type="1">Q1</quarter>
+							<quarter type="2">Q2</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
-							<quarter type="1" draft="unconfirmed">1º trimestre</quarter>
-							<quarter type="2" draft="unconfirmed">2º trimestre</quarter>
-							<quarter type="3" draft="unconfirmed">3º trimestre</quarter>
-							<quarter type="4" draft="unconfirmed">4º trimestre</quarter>
+							<quarter type="1">1º quadrimestre</quarter>
+							<quarter type="2">2º quadrimestre</quarter>
+							<quarter type="3">3º quadrimestre</quarter>
+							<quarter type="4">4º quadrimestre</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Q1</quarter>
+							<quarter type="2">Q2</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight" draft="unconfirmed">mëzaneutte</dayPeriod>
-							<dayPeriod type="noon" draft="unconfirmed">mëzogiorno</dayPeriod>
-							<dayPeriod type="morning1" draft="unconfirmed">da mattin</dayPeriod>
-							<dayPeriod type="afternoon1" draft="unconfirmed">do poidisnâ</dayPeriod>
-							<dayPeriod type="evening1" draft="unconfirmed">da seia</dayPeriod>
-							<dayPeriod type="night1" draft="unconfirmed">da neutte</dayPeriod>
+							<dayPeriod type="midnight">mëzaneutte</dayPeriod>
+							<dayPeriod type="noon">mëzogiorno</dayPeriod>
+							<dayPeriod type="morning1">da mattin</dayPeriod>
+							<dayPeriod type="afternoon1">de poidisnâ</dayPeriod>
+							<dayPeriod type="evening1">da seia</dayPeriod>
+							<dayPeriod type="night1">da neutte</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am" draft="unconfirmed">m.</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">p.</dayPeriod>
+							<dayPeriod type="midnight">mëzaneutte</dayPeriod>
+							<dayPeriod type="am">m.</dayPeriod>
+							<dayPeriod type="noon">mëzogiorno</dayPeriod>
+							<dayPeriod type="pm">p.</dayPeriod>
+							<dayPeriod type="morning1">da mattin</dayPeriod>
+							<dayPeriod type="afternoon1">de poidisnâ</dayPeriod>
+							<dayPeriod type="evening1">da seia</dayPeriod>
+							<dayPeriod type="night1">da neutte</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="midnight">mëzaneutte</dayPeriod>
+							<dayPeriod type="noon">mëzogiorno</dayPeriod>
+							<dayPeriod type="morning1">da mattin</dayPeriod>
+							<dayPeriod type="afternoon1">de poidisnâ</dayPeriod>
+							<dayPeriod type="evening1">da seia</dayPeriod>
+							<dayPeriod type="night1">da neutte</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="morning1" draft="unconfirmed">mattin</dayPeriod>
-							<dayPeriod type="afternoon1" draft="unconfirmed">poidisnâ</dayPeriod>
-							<dayPeriod type="evening1" draft="unconfirmed">seia</dayPeriod>
-							<dayPeriod type="night1" draft="unconfirmed">neutte</dayPeriod>
+							<dayPeriod type="morning1">mattin</dayPeriod>
+							<dayPeriod type="afternoon1">poidisnâ</dayPeriod>
+							<dayPeriod type="evening1">seia</dayPeriod>
+							<dayPeriod type="night1">neutte</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am" draft="unconfirmed">m.</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">p.</dayPeriod>
+							<dayPeriod type="am">m.</dayPeriod>
+							<dayPeriod type="pm">p.</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0" draft="unconfirmed">avanti de Cristo</era>
-						<era type="0" alt="variant" draft="unconfirmed">avanti de l’era commun</era>
-						<era type="1" draft="unconfirmed">dòppo de Cristo</era>
-						<era type="1" alt="variant" draft="unconfirmed">de l’era commun</era>
+						<era type="0">avanti de Cristo</era>
+						<era type="0" alt="variant">avanti de l’era commun</era>
+						<era type="1">dòppo de Cristo</era>
+						<era type="1" alt="variant">de l’era commun</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0" draft="unconfirmed">aC</era>
-						<era type="0" alt="variant" draft="unconfirmed">AEC</era>
-						<era type="1" draft="unconfirmed">dC</era>
-						<era type="1" alt="variant" draft="unconfirmed">EC</era>
+						<era type="0">aC</era>
+						<era type="0" alt="variant">AEC</era>
+						<era type="1">dC</era>
+						<era type="1" alt="variant">EC</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern draft="unconfirmed">EEEE d MMMM 'do' y</pattern>
+							<pattern>EEEE d MMMM 'do' y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern draft="unconfirmed">d MMMM 'do' y</pattern>
+							<pattern>d MMMM 'do' y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern draft="unconfirmed">d MMM 'do' y</pattern>
+							<pattern>d MMM 'do' y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern draft="unconfirmed">dd/MM/yy</pattern>
+							<pattern>dd/MM/yy</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern draft="unconfirmed">HH:mm:ss zzzz</pattern>
+							<pattern>HH:mm:ss zzzz</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern draft="unconfirmed">HH:mm:ss z</pattern>
+							<pattern>HH:mm:ss z</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern draft="unconfirmed">HH:mm:ss</pattern>
+							<pattern>HH:mm:ss</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern draft="unconfirmed">HH:mm</pattern>
+							<pattern>HH:mm</pattern>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
-							<pattern draft="unconfirmed">{1} 'à' {0}</pattern>
+							<pattern>{1} 'à' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'à' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
-							<pattern draft="unconfirmed">{1} 'à' {0}</pattern>
+							<pattern>{1} 'à' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'à' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1} {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Ed" draft="unconfirmed">E d</dateFormatItem>
-						<dateFormatItem id="Gy" draft="unconfirmed">y G</dateFormatItem>
-						<dateFormatItem id="GyMd" draft="unconfirmed">d/M/y G</dateFormatItem>
-						<dateFormatItem id="GyMMM" draft="unconfirmed">MMM y G</dateFormatItem>
-						<dateFormatItem id="GyMMMd" draft="unconfirmed">d MMM 'do' y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E d MMM 'do' y G</dateFormatItem>
-						<dateFormatItem id="hmsv" draft="contributed">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="hmv" draft="unconfirmed">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Md" draft="unconfirmed">d/M</dateFormatItem>
-						<dateFormatItem id="MEd" draft="unconfirmed">E d/M</dateFormatItem>
-						<dateFormatItem id="MMMd" draft="unconfirmed">d MMM</dateFormatItem>
-						<dateFormatItem id="MMMEd" draft="unconfirmed">E d MMM</dateFormatItem>
-						<dateFormatItem id="MMMMd" draft="unconfirmed">d MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one" draft="unconfirmed">W'ª' 'settemaña' MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other" draft="unconfirmed">W'ª' 'settemaña' MMMM</dateFormatItem>
-						<dateFormatItem id="yM" draft="unconfirmed">M/y</dateFormatItem>
-						<dateFormatItem id="yMd" draft="contributed">d/M/y</dateFormatItem>
-						<dateFormatItem id="yMEd" draft="unconfirmed">E d/M/y</dateFormatItem>
-						<dateFormatItem id="yMMM" draft="unconfirmed">LLL 'do' y</dateFormatItem>
-						<dateFormatItem id="yMMMd" draft="contributed">d MMM 'do' y</dateFormatItem>
-						<dateFormatItem id="yMMMEd" draft="unconfirmed">E d MMM 'do' y</dateFormatItem>
-						<dateFormatItem id="yMMMM" draft="unconfirmed">LLLL 'do' y</dateFormatItem>
-						<dateFormatItem id="yQQQ" draft="unconfirmed">QQQ y</dateFormatItem>
-						<dateFormatItem id="yQQQQ" draft="unconfirmed">QQQQ 'do' y</dateFormatItem>
-						<dateFormatItem id="yw" count="one" draft="unconfirmed">w'ª' 'settemaña' 'do' Y</dateFormatItem>
-						<dateFormatItem id="yw" count="other" draft="unconfirmed">w'ª' 'settemaña' 'do' Y</dateFormatItem>
+						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E d/M/y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">LLL y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM 'do' y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E d MMM 'do' y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">LLLL 'do' y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d MMMM 'do' y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E d MMMM 'do' y G</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E d/M</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">W'ª' 'settemaña' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">W'ª' 'settemaña' MMMM</dateFormatItem>
+						<dateFormatItem id="yM">M/y</dateFormatItem>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E d/M/y</dateFormatItem>
+						<dateFormatItem id="yMMM">LLL 'do' y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM 'do' y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E d MMM 'do' y</dateFormatItem>
+						<dateFormatItem id="yMMMM">LLLL 'do' y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM 'do' y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E d MMMM 'do' y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+						<dateFormatItem id="yQQQQ">QQQQ 'do' y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">w'ª' 'settemaña' 'do' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">w'ª' 'settemaña' 'do' Y</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Era">{0} {1}</appendItem>
+					</appendItems>
 					<intervalFormats>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B" draft="unconfirmed">h B – h B</greatestDifference>
@@ -1382,102 +1564,102 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="B" draft="unconfirmed">h:mm B – h:mm B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G" draft="unconfirmed">y G – y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">y–y G</greatestDifference>
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G" draft="unconfirmed">M/y G – M/y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">M/y – M/y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="G">M/y G – M/y G</greatestDifference>
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d" draft="unconfirmed">d/M/y – d/M/y G</greatestDifference>
-							<greatestDifference id="G" draft="unconfirmed">d/M/y G – d/M/y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">d/M/y – d/M/y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="G">d/M/y G – d/M/y G</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d" draft="unconfirmed">E d/M/y – E d/M/y G</greatestDifference>
-							<greatestDifference id="G" draft="unconfirmed">E d/M/y – E d/M/y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E d/M/y – E d/M/y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E d/M/y – E d/M/y G</greatestDifference>
+							<greatestDifference id="d">E d/M/y – E d/M/y G</greatestDifference>
+							<greatestDifference id="G">E d/M/y – E d/M/y G</greatestDifference>
+							<greatestDifference id="M">E d/M/y – E d/M/y G</greatestDifference>
+							<greatestDifference id="y">E d/M/y – E d/M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G" draft="unconfirmed">LLL 'do' y G – LLL 'do' y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">LLL – LLL 'do' y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">LLL 'do' y – LLL 'do' y G</greatestDifference>
+							<greatestDifference id="G">LLL 'do' y G – LLL 'do' y G</greatestDifference>
+							<greatestDifference id="M">LLL – LLL 'do' y G</greatestDifference>
+							<greatestDifference id="y">LLL 'do' y – LLL 'do' y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d" draft="unconfirmed">d–d MMM 'do' y G</greatestDifference>
-							<greatestDifference id="G" draft="unconfirmed">d MMM 'do' y G – d MMM 'do' y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM 'do' y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">d MMM 'do' y – d MMM 'do' y G</greatestDifference>
+							<greatestDifference id="d">d–d MMM 'do' y G</greatestDifference>
+							<greatestDifference id="G">d MMM 'do' y G – d MMM 'do' y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM 'do' y G</greatestDifference>
+							<greatestDifference id="y">d MMM 'do' y – d MMM 'do' y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E d MMM – E d MMM 'do' y G</greatestDifference>
-							<greatestDifference id="G" draft="unconfirmed">E, d MMM 'do' y G – E d MMM 'do' y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E d MMM – E d MMM 'do' y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E d MMM 'do' y – E d MMM 'do' y G</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM 'do' y G</greatestDifference>
+							<greatestDifference id="G">E d MMM 'do' y G – E d MMM 'do' y G</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM 'do' y G</greatestDifference>
+							<greatestDifference id="y">E d MMM 'do' y – E d MMM 'do' y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="unconfirmed">h a – h a v</greatestDifference>
-							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M" draft="unconfirmed">M–M</greatestDifference>
+							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="unconfirmed">d/M – d/M</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">d/M – d/M</greatestDifference>
+							<greatestDifference id="d">d/M – d/M</greatestDifference>
+							<greatestDifference id="M">d/M – d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="unconfirmed">E d/M – E d/M</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E d/M – E d/M</greatestDifference>
+							<greatestDifference id="d">E d/M – E d/M</greatestDifference>
+							<greatestDifference id="M">E d/M – E d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d" draft="unconfirmed">d–d MMM</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM</greatestDifference>
+							<greatestDifference id="d">d–d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E d – E d MMM</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="d">E d – E d MMM</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="unconfirmed">M/y – M/y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">M/y – M/y</greatestDifference>
+							<greatestDifference id="M">M/y – M/y</greatestDifference>
+							<greatestDifference id="y">M/y – M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="unconfirmed">d/M/y – d/M/y</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">d/M/y – d/M/y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="unconfirmed">E d/M/y – E d/M/y</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E d/M/y – E d/M/y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E d/M/y – E d/M/y</greatestDifference>
+							<greatestDifference id="d">E d/M/y – E d/M/y</greatestDifference>
+							<greatestDifference id="M">E d/M/y – E d/M/y</greatestDifference>
+							<greatestDifference id="y">E d/M/y – E d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M" draft="unconfirmed">LLL–LLL 'do' y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">LLL 'do' y – LLL 'do' y</greatestDifference>
+							<greatestDifference id="M">LLL–LLL 'do' y</greatestDifference>
+							<greatestDifference id="y">LLL 'do' y – LLL 'do' y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d" draft="unconfirmed">d–d MMM 'do' y</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM 'do' y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">d MMM 'do' y – d MMM 'do' y</greatestDifference>
+							<greatestDifference id="d">d–d MMM 'do' y</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM 'do' y</greatestDifference>
+							<greatestDifference id="y">d MMM 'do' y – d MMM 'do' y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E d – E d MMM 'do' y</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E d MMM – E d MMM 'do' y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E d MMM 'do' y – E d MMM 'do' y</greatestDifference>
+							<greatestDifference id="d">E d – E d MMM 'do' y</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM 'do' y</greatestDifference>
+							<greatestDifference id="y">E d MMM 'do' y – E d MMM 'do' y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M" draft="unconfirmed">LLLL–LLLL 'do' y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">LLLL 'do' y – LLLL 'do' y</greatestDifference>
+							<greatestDifference id="M">LLLL–LLLL 'do' y</greatestDifference>
+							<greatestDifference id="y">LLLL 'do' y – LLLL 'do' y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1977,19 +2159,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat draft="contributed">+HH:mm;−HH:mm</hourFormat>
-			<gmtFormat draft="contributed">UTC{0}</gmtFormat>
-			<gmtZeroFormat draft="contributed">UTC</gmtZeroFormat>
-			<regionFormat draft="contributed">oa: {0}</regionFormat>
-			<regionFormat type="daylight" draft="contributed">oa de stæ: {0}</regionFormat>
-			<regionFormat type="standard" draft="contributed">oa standard: {0}</regionFormat>
+			<hourFormat>+HH:mm;−HH:mm</hourFormat>
+			<gmtUnknownFormat>UTC+?</gmtUnknownFormat>
+			<regionFormat>oa: {0}</regionFormat>
+			<regionFormat type="daylight">oa de stæ: {0}</regionFormat>
+			<regionFormat type="standard">oa standard: {0}</regionFormat>
 			<zone type="Etc/UTC">
 				<long>
-					<standard draft="unconfirmed">tempo universale coordinou</standard>
+					<standard>tempo universale coordinou</standard>
 				</long>
 			</zone>
 			<zone type="Etc/Unknown">
-				<exemplarCity draft="unconfirmed">çittæ desconosciua</exemplarCity>
+				<exemplarCity>pòsto desconosciuo</exemplarCity>
 			</zone>
 			<zone type="Europe/Andorra">
 				<exemplarCity draft="unconfirmed">Andòrra</exemplarCity>
@@ -2007,7 +2188,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity draft="unconfirmed">Bahrein</exemplarCity>
 			</zone>
 			<zone type="America/St_Barthelemy">
-				<exemplarCity draft="unconfirmed">San Bertomê</exemplarCity>
+				<exemplarCity>San Bertomê</exemplarCity>
 			</zone>
 			<zone type="America/Sao_Paulo">
 				<exemplarCity draft="unconfirmed">San Poulo</exemplarCity>
@@ -2022,13 +2203,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity draft="unconfirmed">Bogotà</exemplarCity>
 			</zone>
 			<zone type="America/Costa_Rica">
-				<exemplarCity draft="unconfirmed">Còsta Rica</exemplarCity>
+				<exemplarCity>Còsta Rica</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity draft="unconfirmed">Cappo Verde</exemplarCity>
-			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity draft="unconfirmed">Curaçao</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity draft="unconfirmed">Praga</exemplarCity>
@@ -2055,13 +2233,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity draft="unconfirmed">Pariggi</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight draft="unconfirmed">oa de stæ britannica</daylight>
-				</long>
 				<exemplarCity draft="unconfirmed">Londra</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
-				<exemplarCity draft="unconfirmed">Granada</exemplarCity>
+				<exemplarCity>Granada</exemplarCity>
 			</zone>
 			<zone type="America/Cayenne">
 				<exemplarCity draft="unconfirmed">Caieña</exemplarCity>
@@ -2070,7 +2245,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity draft="unconfirmed">Gibertâ</exemplarCity>
 			</zone>
 			<zone type="America/Guadeloupe">
-				<exemplarCity draft="unconfirmed">Guadaluppa</exemplarCity>
+				<exemplarCity>Guadaluppa</exemplarCity>
 			</zone>
 			<zone type="Europe/Athens">
 				<exemplarCity draft="unconfirmed">Atene</exemplarCity>
@@ -2085,9 +2260,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity draft="unconfirmed">Giacarta</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight draft="unconfirmed">oa de stæ d’Irlanda</daylight>
-				</long>
 				<exemplarCity draft="unconfirmed">Doblin</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -2108,12 +2280,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Indian/Comoro">
 				<exemplarCity draft="unconfirmed">Comöre</exemplarCity>
 			</zone>
-			<zone type="America/St_Kitts">
-				<exemplarCity draft="unconfirmed">San Cristoffa</exemplarCity>
-			</zone>
-			<zone type="America/St_Lucia">
-				<exemplarCity draft="unconfirmed">Santa Luçia</exemplarCity>
-			</zone>
 			<zone type="Europe/Luxembourg">
 				<exemplarCity draft="unconfirmed">Luxemburgo</exemplarCity>
 			</zone>
@@ -2124,13 +2290,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity draft="unconfirmed">Ulan Bator</exemplarCity>
 			</zone>
 			<zone type="America/Martinique">
-				<exemplarCity draft="unconfirmed">Martinica</exemplarCity>
+				<exemplarCity>Martinica</exemplarCity>
 			</zone>
 			<zone type="Indian/Maldives">
 				<exemplarCity draft="unconfirmed">Maldive</exemplarCity>
 			</zone>
 			<zone type="America/Mexico_City">
-				<exemplarCity draft="unconfirmed">Çittæ do Mescico</exemplarCity>
+				<exemplarCity>Çittæ do Mescico</exemplarCity>
 			</zone>
 			<zone type="Pacific/Noumea">
 				<exemplarCity draft="unconfirmed">Nouméa</exemplarCity>
@@ -2201,9 +2367,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Samarkand">
 				<exemplarCity draft="unconfirmed">Samarcanda</exemplarCity>
 			</zone>
-			<zone type="America/St_Vincent">
-				<exemplarCity draft="unconfirmed">San Viçenso</exemplarCity>
-			</zone>
 			<zone type="Indian/Mayotte">
 				<exemplarCity draft="unconfirmed">Maiòtta</exemplarCity>
 			</zone>
@@ -2234,9 +2397,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Alaska">
 				<long>
-					<generic draft="unconfirmed">oa de l’Alaska</generic>
-					<standard draft="unconfirmed">oa standard de l’Alaska</standard>
-					<daylight draft="unconfirmed">oa de stæ de l’Alaska</daylight>
+					<generic>oa de l’Alaska</generic>
+					<standard>oa standard de l’Alaska</standard>
+					<daylight>oa de stæ de l’Alaska</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">
@@ -2276,9 +2439,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic draft="unconfirmed">oa de Apia</generic>
-					<standard draft="unconfirmed">oa standard de Apia</standard>
-					<daylight draft="unconfirmed">oa de stæ de Apia</daylight>
+					<generic>oa de Samoa</generic>
+					<standard>oa standard de Samoa</standard>
+					<daylight>oa de stæ de Samoa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -2382,16 +2545,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="unconfirmed">oa de stæ de Brasilia</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>oa britannica</generic>
+					<daylight>oa de stæ britannica</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
-					<standard draft="unconfirmed">oa do Brunei Darussalam</standard>
+					<standard>oa do Brunei</standard>
 				</long>
 			</metazone>
 			<metazone type="Cape_Verde">
 				<long>
-					<generic draft="unconfirmed">oa de Cappo Verde</generic>
-					<standard draft="unconfirmed">oa standard de Cappo Verde</standard>
-					<daylight draft="unconfirmed">oa de stæ de Cappo Verde</daylight>
+					<generic>oa de Cao Verde</generic>
+					<standard>oa standard de Cao Verde</standard>
+					<daylight>oa de stæ de Cao Verde</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chamorro">
@@ -2458,12 +2627,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="DumontDUrville">
 				<long>
-					<standard draft="unconfirmed">oa de Dumont-d’Urville</standard>
+					<standard>oa de Dumont d’Urville</standard>
 				</long>
 			</metazone>
 			<metazone type="East_Timor">
 				<long>
-					<standard draft="unconfirmed">oa de Timor Est</standard>
+					<standard>oa de Timor-Leste</standard>
 				</long>
 			</metazone>
 			<metazone type="Easter">
@@ -2552,21 +2721,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard draft="contributed">oa do meridian de Greenwich</standard>
+					<standard>oa do meridian de Greenwich</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>oa da Groenlandia</generic>
+					<standard>oa standard da Groenlandia</standard>
+					<daylight>oa de stæ da Groenlandia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
-					<generic draft="unconfirmed">oa da Groenlandia de levante</generic>
-					<standard draft="unconfirmed">oa standard da Groenlandia de levante</standard>
-					<daylight draft="unconfirmed">oa de stæ da Groenlandia de levante</daylight>
+					<generic>oa da Groenlandia de levante</generic>
+					<standard>oa standard da Groenlandia de levante</standard>
+					<daylight>oa de stæ da Groenlandia de levante</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
-					<generic draft="unconfirmed">oa da Groenlandia de ponente</generic>
-					<standard draft="unconfirmed">oa standard da Groenlandia de ponente</standard>
-					<daylight draft="unconfirmed">oa de stæ da Groenlandia de ponente</daylight>
+					<generic>oa da Groenlandia de ponente</generic>
+					<standard>oa standard da Groenlandia de ponente</standard>
+					<daylight>oa de stæ da Groenlandia de ponente</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gulf">
@@ -2581,14 +2757,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard draft="unconfirmed">oa standard de Hawaii-Aleutiñe</standard>
+					<standard>oa standard de Hawaii</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic draft="unconfirmed">oa de Hawaii-Aleutiñe</generic>
-					<standard draft="unconfirmed">oa standard de Hawaii-Aleutiñe</standard>
-					<daylight draft="unconfirmed">oa de stæ de Hawaii-Aleutiñe</daylight>
+					<generic>oa de Hawaii-Aleutiñe</generic>
+					<standard>oa standard de Hawaii-Aleutiñe</standard>
+					<daylight>oa de stæ de Hawaii-Aleutiñe</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
@@ -2600,9 +2776,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hovd">
 				<long>
-					<generic draft="unconfirmed">oa de Hovd</generic>
-					<standard draft="unconfirmed">oa standard de Hovd</standard>
-					<daylight draft="unconfirmed">oa de stæ de Hovd</daylight>
+					<generic>oa de Khovd</generic>
+					<standard>oa standard de Khovd</standard>
+					<daylight>oa de stæ de Khovd</daylight>
 				</long>
 			</metazone>
 			<metazone type="India">
@@ -2642,6 +2818,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="unconfirmed">oa de stæ de l’Iran</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>oa d’Irlanda</generic>
+					<daylight>oa de stæ d’Irlanda</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic draft="unconfirmed">oa de Irkutsk</generic>
@@ -2658,9 +2840,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Japan">
 				<long>
-					<generic draft="unconfirmed">oa do Giappon</generic>
-					<standard draft="unconfirmed">oa standard do Giappon</standard>
-					<daylight draft="unconfirmed">oa de stæ do Giappon</daylight>
+					<generic>oa do Giapon</generic>
+					<standard>oa standard do Giapon</standard>
+					<daylight>oa de stæ do Giapon</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>oa do Kazakistan</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -2750,9 +2937,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
-					<generic draft="unconfirmed">oa do Paçifico mescicaña</generic>
-					<standard draft="unconfirmed">oa standard do Paçifico mescicaña</standard>
-					<daylight draft="unconfirmed">oa de stæ do Paçifico mescicaña</daylight>
+					<generic>oa do Paçifico mescicaña</generic>
+					<standard>oa standard do Paçifico mescicaña</standard>
+					<daylight>oa de stæ do Paçifico mescicaña</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
@@ -2800,9 +2987,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Newfoundland">
 				<long>
-					<generic draft="unconfirmed">oa de Tæraneuva</generic>
-					<standard draft="unconfirmed">oa standard de Tæraneuva</standard>
-					<daylight draft="unconfirmed">oa de stæ de Tæraneuva</daylight>
+					<generic>oa de Tæraneuva</generic>
+					<standard>oa standard de Tæraneuva</standard>
+					<daylight>oa de stæ de Tæraneuva</daylight>
 				</long>
 			</metazone>
 			<metazone type="Niue">
@@ -2883,9 +3070,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
-					<generic draft="unconfirmed">oa de San Pê e Miquelon</generic>
-					<standard draft="unconfirmed">oa standard de San Pê e Miquelon</standard>
-					<daylight draft="unconfirmed">oa de stæ de San Pê e Miquelon</daylight>
+					<generic>oa de San Pê e Miquelon</generic>
+					<standard>oa standard de San Pê e Miquelon</standard>
+					<daylight>oa de stæ de San Pê e Miquelon</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pitcairn">
@@ -2900,7 +3087,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Pyongyang">
 				<long>
-					<standard draft="unconfirmed">oa de Pyongyang</standard>
+					<standard>oa da Corea do Nòrd</standard>
 				</long>
 			</metazone>
 			<metazone type="Reunion">
@@ -2922,9 +3109,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic draft="unconfirmed">oa de Samoa</generic>
-					<standard draft="unconfirmed">oa standard de Samoa</standard>
-					<daylight draft="unconfirmed">oa de stæ de Samoa</daylight>
+					<standard>oa standard de Samoa americañe</standard>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -2964,9 +3149,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Taipei">
 				<long>
-					<generic draft="unconfirmed">oa de Taipei</generic>
-					<standard draft="unconfirmed">oa standard de Taipei</standard>
-					<daylight draft="unconfirmed">oa de stæ de Taipei</daylight>
+					<generic>oa de Taiwan</generic>
+					<standard>oa standard de Taiwan</standard>
+					<daylight>oa de stæ de Taiwan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tajikistan">
@@ -3074,7 +3259,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Yukon">
 				<long>
-					<standard draft="unconfirmed">oa do Yukon</standard>
+					<standard>oa do Yukon</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -3145,13 +3330,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern draft="contributed">#,##0.00 ¤</pattern>
+					<pattern>#,##0.00 ¤</pattern>
 					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
-					<pattern draft="unconfirmed">#,##0.00 ¤;(#,##0.00 ¤)</pattern>
+					<pattern>#,##0.00 ¤;(#,##0.00 ¤)</pattern>
 					<pattern alt="alphaNextToNumber">#,##0.00 ¤;(#,##0.00 ¤)</pattern>
-					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00;(#,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -3182,14 +3367,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other" draft="unconfirmed">000 Bio ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one" draft="unconfirmed">{0} {1}</unitPattern>
-			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
-				<displayName draft="unconfirmed">dirham di Emirati Arabi Unii</displayName>
-				<displayName count="one" draft="unconfirmed">dirham di EAU</displayName>
-				<displayName count="other" draft="unconfirmed">dirham di EAU</displayName>
+				<displayName>dirham di Emirati Arabi Unii</displayName>
+				<displayName count="one">dirham di EAU</displayName>
+				<displayName count="other">dirham di EAU</displayName>
 			</currency>
 			<currency type="AFN">
 				<displayName draft="unconfirmed">afghani</displayName>
@@ -3200,9 +3383,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other" draft="unconfirmed">lekë arbaneixi</displayName>
 			</currency>
 			<currency type="AMD">
-				<displayName draft="unconfirmed">dram ermeno</displayName>
-				<displayName count="one" draft="unconfirmed">dram ermeno</displayName>
-				<displayName count="other" draft="unconfirmed">dram ermeni</displayName>
+				<displayName>dram ermeno</displayName>
+				<displayName count="one">dram ermeno</displayName>
+				<displayName count="other">dram ermeni</displayName>
 			</currency>
 			<currency type="ANG">
 				<displayName draft="unconfirmed">fiorin de Antille olandeixi</displayName>
@@ -3227,9 +3410,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="unconfirmed">fiorin d’Aruba</displayName>
 			</currency>
 			<currency type="AZN">
-				<displayName draft="unconfirmed">manat azero</displayName>
-				<displayName count="one" draft="unconfirmed">manat azero</displayName>
-				<displayName count="other" draft="unconfirmed">manat azeri</displayName>
+				<displayName>manat azero</displayName>
+				<displayName count="one">manat azero</displayName>
+				<displayName count="other">manat azeri</displayName>
 			</currency>
 			<currency type="BAM">
 				<displayName draft="unconfirmed">marco convertibile da Bòsnia-Herzegòvina</displayName>
@@ -3252,7 +3435,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other" draft="unconfirmed">leva burgai</displayName>
 			</currency>
 			<currency type="BHD">
-				<displayName draft="unconfirmed">dinar do Bahrein</displayName>
+				<displayName>dinar do Bahrein</displayName>
 			</currency>
 			<currency type="BIF">
 				<displayName draft="unconfirmed">franco do Burundi</displayName>
@@ -3420,9 +3603,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol draft="unconfirmed">GBP</symbol>
 			</currency>
 			<currency type="GEL">
-				<displayName draft="unconfirmed">lari georgian</displayName>
-				<displayName count="one" draft="unconfirmed">lari georgian</displayName>
-				<displayName count="other" draft="unconfirmed">lari georgien</displayName>
+				<displayName>lari georgian</displayName>
+				<displayName count="one">lari georgian</displayName>
+				<displayName count="other">lari georgien</displayName>
 			</currency>
 			<currency type="GHS">
 				<displayName draft="unconfirmed">cedi ghaneise</displayName>
@@ -3486,9 +3669,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other" draft="unconfirmed">rupie indonesiañe</displayName>
 			</currency>
 			<currency type="ILS">
-				<displayName draft="unconfirmed">neuvo sciclo israelian</displayName>
-				<displayName count="one" draft="unconfirmed">neuvo sciclo israelian</displayName>
-				<displayName count="other" draft="unconfirmed">neuvi scicli israelian</displayName>
+				<displayName>neuvo sciclo israelian</displayName>
+				<displayName count="one">neuvo sciclo israelian</displayName>
+				<displayName count="other">neuvi scicli israelien</displayName>
 			</currency>
 			<currency type="INR">
 				<displayName draft="unconfirmed">rupia indiaña</displayName>
@@ -3497,7 +3680,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol draft="unconfirmed">INR</symbol>
 			</currency>
 			<currency type="IQD">
-				<displayName draft="unconfirmed">dinar irachen</displayName>
+				<displayName>dinar irachen</displayName>
 			</currency>
 			<currency type="IRR">
 				<displayName draft="unconfirmed">rial iranian</displayName>
@@ -3515,9 +3698,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other" draft="unconfirmed">dòllai giamaichen</displayName>
 			</currency>
 			<currency type="JOD">
-				<displayName draft="unconfirmed">dinar giordan</displayName>
-				<displayName count="one" draft="unconfirmed">dinar giordan</displayName>
-				<displayName count="other" draft="unconfirmed">dinar giorden</displayName>
+				<displayName>dinar giordan</displayName>
+				<displayName count="one">dinar giordan</displayName>
+				<displayName count="other">dinar giorden</displayName>
 			</currency>
 			<currency type="JPY">
 				<displayName draft="unconfirmed">yie giapponeise</displayName>
@@ -3557,7 +3740,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol draft="unconfirmed">KRW</symbol>
 			</currency>
 			<currency type="KWD">
-				<displayName draft="unconfirmed">dinar do Kuwait</displayName>
+				<displayName>dinar do Kuwait</displayName>
 			</currency>
 			<currency type="KYD">
 				<displayName draft="unconfirmed">dòllao de isoe Cayman</displayName>
@@ -3575,9 +3758,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other" draft="unconfirmed">kip laotien</displayName>
 			</currency>
 			<currency type="LBP">
-				<displayName draft="unconfirmed">sterliña libaneise</displayName>
-				<displayName count="one" draft="unconfirmed">sterliña libaneise</displayName>
-				<displayName count="other" draft="unconfirmed">sterliña libaneixi</displayName>
+				<displayName>sterliña libaneise</displayName>
+				<displayName count="one">sterliña libaneise</displayName>
+				<displayName count="other">sterliñe libaneixi</displayName>
 			</currency>
 			<currency type="LKR">
 				<displayName draft="unconfirmed">rupia do Sri Lanka</displayName>
@@ -3694,7 +3877,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol draft="unconfirmed">NZD</symbol>
 			</currency>
 			<currency type="OMR">
-				<displayName draft="unconfirmed">rial de l’Oman</displayName>
+				<displayName>rial de l’Oman</displayName>
 			</currency>
 			<currency type="PAB">
 				<displayName draft="unconfirmed">balboa de Panama</displayName>
@@ -3733,7 +3916,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other" draft="unconfirmed">guaraníes paraguayen</displayName>
 			</currency>
 			<currency type="QAR">
-				<displayName draft="unconfirmed">rial do Qatar</displayName>
+				<displayName>rial do Qatar</displayName>
 			</currency>
 			<currency type="RON">
 				<displayName draft="unconfirmed">leu romen</displayName>
@@ -3756,9 +3939,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other" draft="unconfirmed">franchi do Rwanda</displayName>
 			</currency>
 			<currency type="SAR">
-				<displayName draft="unconfirmed">rial saudita</displayName>
-				<displayName count="one" draft="unconfirmed">rial saudita</displayName>
-				<displayName count="other" draft="unconfirmed">rial sauditi</displayName>
+				<displayName>rial saudita</displayName>
+				<displayName count="one">rial saudita</displayName>
+				<displayName count="other">rial sauditi</displayName>
 			</currency>
 			<currency type="SBD">
 				<displayName draft="unconfirmed">dòllao de Isoe Salomon</displayName>
@@ -3815,9 +3998,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other" draft="unconfirmed">dobras de Sao Tomé e Prinçipe</displayName>
 			</currency>
 			<currency type="SYP">
-				<displayName draft="unconfirmed">sterliña sciriaña</displayName>
-				<displayName count="one" draft="unconfirmed">sterliña sciriaña</displayName>
-				<displayName count="other" draft="unconfirmed">sterliñe sciriañe</displayName>
+				<displayName>sterliña sciriaña</displayName>
+				<displayName count="one">sterliña sciriaña</displayName>
+				<displayName count="other">sterliñe sciriañe</displayName>
 			</currency>
 			<currency type="SZL">
 				<displayName draft="unconfirmed">lilangeni do Swaziland</displayName>
@@ -3850,9 +4033,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other" draft="unconfirmed">paʻanga tonghen</displayName>
 			</currency>
 			<currency type="TRY">
-				<displayName draft="unconfirmed">lia turca</displayName>
-				<displayName count="one" draft="unconfirmed">lia turca</displayName>
-				<displayName count="other" draft="unconfirmed">lie turche</displayName>
+				<displayName>lia turca</displayName>
+				<displayName count="one">lia turca</displayName>
+				<displayName count="other">lie turche</displayName>
 			</currency>
 			<currency type="TTD">
 				<displayName draft="unconfirmed">dòllao de Trinidad e Tobago</displayName>
@@ -3922,6 +4105,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other" draft="unconfirmed">dòllai di Caraibi de levante</displayName>
 				<symbol draft="unconfirmed">XCD</symbol>
 			</currency>
+			<currency type="XCG">
+				<displayName>fiorin di Caraibi</displayName>
+				<displayName count="one">fiorin di Caraibi</displayName>
+				<displayName count="other">fiorin di Caraibi</displayName>
+			</currency>
 			<currency type="XOF">
 				<displayName draft="unconfirmed">franco CFA BCEAO</displayName>
 				<displayName count="one" draft="unconfirmed">franco CFA BCEAO</displayName>
@@ -3938,7 +4126,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other" draft="unconfirmed">(monæe desconosciue)</displayName>
 			</currency>
 			<currency type="YER">
-				<displayName draft="unconfirmed">rial do Yemen</displayName>
+				<displayName>rial do Yemen</displayName>
 			</currency>
 			<currency type="ZAR">
 				<displayName draft="unconfirmed">rand sudafrican</displayName>
@@ -3949,6 +4137,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="unconfirmed">kwacha zambian</displayName>
 				<displayName count="one" draft="unconfirmed">kwacha zambian</displayName>
 				<displayName count="other" draft="unconfirmed">kwacha zambien</displayName>
+			</currency>
+			<currency type="ZWG">
+				<displayName>öo do Zimbabwe</displayName>
+				<displayName count="one">öo do Zimbabwe</displayName>
+				<displayName count="other">öi do Zimbabwe</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -3993,6 +4186,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p-24">
 				<unitPrefixPattern draft="unconfirmed">yocto{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="10p-27">
+				<unitPrefixPattern>ronto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-30">
+				<unitPrefixPattern>quecto{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="10p1">
 				<unitPrefixPattern draft="unconfirmed">deca{0}</unitPrefixPattern>
 			</compoundUnit>
@@ -4022,6 +4221,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern draft="unconfirmed">yotta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p27">
+				<unitPrefixPattern>ronna{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p30">
+				<unitPrefixPattern>quetta{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p1">
 				<unitPrefixPattern draft="unconfirmed">kibi{0}</unitPrefixPattern>
@@ -4165,6 +4370,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0} elemento</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} elementi</unitPattern>
 			</unit>
+			<unit type="concentr-part">
+				<displayName>parte</displayName>
+				<unitPattern count="one">{0} parte</unitPattern>
+				<unitPattern count="other">{0} parte</unitPattern>
+			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName draft="unconfirmed">parte pe mion</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} parte pe mion</unitPattern>
@@ -4189,6 +4399,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="unconfirmed">möle</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} möle</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} möle</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>de glucòsio</displayName>
+				<unitPattern count="one">{0} de glucòsio</unitPattern>
+				<unitPattern count="other">{0} de glucòsio</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName draft="unconfirmed">litri pe chillòmetri</displayName>
@@ -4679,6 +4894,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0} millimetro de mercuio</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} millimetri de mercuio</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>de mercuio</displayName>
+				<unitPattern count="one">{0} de mercuio</unitPattern>
+				<unitPattern count="other">{0} de mercuio</unitPattern>
+			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName draft="unconfirmed">lie-fòrsa pe pòlliçe quaddro</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} lia-fòrsa pe pòlliçe quaddro</unitPattern>
@@ -4738,6 +4958,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="unconfirmed">nödi</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} nödo</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} nödi</unitPattern>
+			</unit>
+			<unit type="speed-beaufort">
+				<displayName>Beaufort</displayName>
 			</unit>
 			<unit type="temperature-generic">
 				<displayName draft="unconfirmed">graddi</displayName>
@@ -4847,6 +5070,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0} tassa metrica</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} tasse metriche</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>onse fluide metriche</displayName>
+				<unitPattern count="one">{0} onsa fluida metrica</unitPattern>
+				<unitPattern count="other">{0} onse fluide metriche</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName draft="unconfirmed">acri-pê</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} acro-pê</unitPattern>
@@ -4929,6 +5157,87 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0} quarto imperiale</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} quarti imperiali</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<displayName>steradianti</displayName>
+				<unitPattern count="one">{0} steradiante</unitPattern>
+				<unitPattern count="other">{0} steradianti</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>katal</displayName>
+				<unitPattern count="one">{0} katal</unitPattern>
+				<unitPattern count="other">{0} katal</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>coulomb</displayName>
+				<unitPattern count="one">{0} coulomb</unitPattern>
+				<unitPattern count="other">{0} coulomb</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>farad</displayName>
+				<unitPattern count="one">{0} farad</unitPattern>
+				<unitPattern count="other">{0} farad</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>henry</displayName>
+				<unitPattern count="one">{0} henry</unitPattern>
+				<unitPattern count="other">{0} henry</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>siemens</displayName>
+				<unitPattern count="one">{0} siemens</unitPattern>
+				<unitPattern count="other">{0} siemens</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>calorie [IT]</displayName>
+				<unitPattern count="one">{0} calorie [IT]</unitPattern>
+				<unitPattern count="other">{0} calorie [IT]</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>becquerel</displayName>
+				<unitPattern count="one">{0} becquerel</unitPattern>
+				<unitPattern count="other">{0} becquerel</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>sievert</displayName>
+				<unitPattern count="one">{0} sievert</unitPattern>
+				<unitPattern count="other">{0} sievert</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>gray</displayName>
+				<unitPattern count="one">{0} gray</unitPattern>
+				<unitPattern count="other">{0} gray</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>chillogrammi-fòrsa</displayName>
+				<unitPattern count="one">{0} chillogrammo-fòrsa</unitPattern>
+				<unitPattern count="other">{0} chillogrammi-fòrsa</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>tesla</displayName>
+				<unitPattern count="one">{0} tesla</unitPattern>
+				<unitPattern count="other">{0} tesla</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>weber</displayName>
+				<unitPattern count="one">{0} weber</unitPattern>
+				<unitPattern count="other">{0} weber</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>luxe</displayName>
+				<unitPattern count="one">{0} luxe</unitPattern>
+				<unitPattern count="other">{0} luxe</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
+				<displayName>parte pe miliardo</displayName>
+				<unitPattern count="one">{0} parte pe miliardo</unitPattern>
+				<unitPattern count="other">{0} parte pe miliardo</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>neutte</displayName>
+				<unitPattern count="one">{0} neutte</unitPattern>
+				<unitPattern count="other">{0} neutte</unitPattern>
+				<perUnitPattern>{0} pe neutte</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName draft="unconfirmed">ponto cardinâ</displayName>
 				<coordinateUnitPattern type="east" draft="unconfirmed">{0} est</coordinateUnitPattern>
@@ -4971,6 +5280,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0} elem.</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} elem.</unitPattern>
 			</unit>
+			<unit type="concentr-part">
+				<displayName>parte</displayName>
+				<unitPattern count="one">{0} parte</unitPattern>
+				<unitPattern count="other">{0} parte</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName draft="unconfirmed">l/km</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} l/km</unitPattern>
@@ -4998,8 +5315,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-century">
 				<displayName draft="unconfirmed">sec.</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} sec.</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} sec.</unitPattern>
+				<unitPattern count="one">{0} sec.</unitPattern>
+				<unitPattern count="other">{0} sec.</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<displayName draft="unconfirmed">dëx.</displayName>
@@ -5114,6 +5431,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0} mmHg</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} mmHg</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>de Hg</displayName>
+				<unitPattern count="one">{0} de Hg</unitPattern>
+				<unitPattern count="other">{0} de Hg</unitPattern>
+			</unit>
 			<unit type="volume-megaliter">
 				<displayName draft="unconfirmed">Ml</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} Ml</unitPattern>
@@ -5193,6 +5515,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0} qt imp.</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} qt imp.</unitPattern>
 			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>cal-IT</displayName>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>luxe</displayName>
+				<unitPattern count="one">{0} luxe</unitPattern>
+				<unitPattern count="other">{0} luxe</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
+				<displayName>parte/miliardo</displayName>
+				<unitPattern count="one">{0} ppmd</unitPattern>
+				<unitPattern count="other">{0} ppmd</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>neutte</displayName>
+				<unitPattern count="one">{0} neutte</unitPattern>
+				<unitPattern count="other">{0} neutte</unitPattern>
+				<perUnitPattern>{0}/neutte</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName draft="unconfirmed">ponto</displayName>
 				<coordinateUnitPattern type="east" draft="unconfirmed">{0} E</coordinateUnitPattern>
@@ -5267,6 +5608,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0}elem</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}elem</unitPattern>
 			</unit>
+			<unit type="concentr-part">
+				<displayName>parte</displayName>
+				<unitPattern count="one">{0} parte</unitPattern>
+				<unitPattern count="other">{0} parte</unitPattern>
+			</unit>
 			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one" draft="unconfirmed">{0}ppm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}ppm</unitPattern>
@@ -5274,6 +5620,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-mole">
 				<unitPattern count="one" draft="unconfirmed">{0}mol</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mol</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<unitPattern count="one" draft="unconfirmed">{0}l/km</unitPattern>
@@ -5683,6 +6032,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0}mmHg</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mmHg</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>de Hg</displayName>
+				<unitPattern count="one">{0} de Hg</unitPattern>
+				<unitPattern count="other">{0} de Hg</unitPattern>
+			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<unitPattern count="one" draft="unconfirmed">{0}psi</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}psi</unitPattern>
@@ -5893,6 +6247,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0}qt im</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}qt im</unitPattern>
 			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>cal-IT</displayName>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>luxe</displayName>
+				<unitPattern count="one">{0}luxe</unitPattern>
+				<unitPattern count="other">{0}luxe</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
+				<displayName>ppmd</displayName>
+				<unitPattern count="one">{0} ppmd</unitPattern>
+				<unitPattern count="other">{0} ppmd</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>neutte</displayName>
+				<unitPattern count="one">{0}neutte</unitPattern>
+				<unitPattern count="other">{0}neutte</unitPattern>
+				<perUnitPattern>{0}/neutte</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east" draft="unconfirmed">{0}E</coordinateUnitPattern>
 				<coordinateUnitPattern type="north" draft="unconfirmed">{0}N</coordinateUnitPattern>
@@ -5922,6 +6295,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="compatibility" draft="unconfirmed">{0} — compatibilitæ</characterLabelPattern>
 		<characterLabelPattern type="enclosed" draft="unconfirmed">{0} — çerciou</characterLabelPattern>
 		<characterLabelPattern type="extended" draft="unconfirmed">{0} — esteiso</characterLabelPattern>
+		<characterLabelPattern type="facing-left">{0} in sciâ manciña</characterLabelPattern>
+		<characterLabelPattern type="facing-right">{0} in sciâ drita</characterLabelPattern>
 		<characterLabelPattern type="historic" draft="unconfirmed">{0} — stòrico</characterLabelPattern>
 		<characterLabelPattern type="miscellaneous" draft="unconfirmed">{0} — vario</characterLabelPattern>
 		<characterLabelPattern type="other" draft="unconfirmed">{0} — atro</characterLabelPattern>
@@ -6065,143 +6440,167 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<personNames>
 		<nameOrderLocales order="givenFirst" draft="unconfirmed">und lij</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
-			<namePattern draft="unconfirmed">{title} {given} {given2} {surname}</namePattern>
+			<namePattern>{title} {given} {given2} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
-			<namePattern draft="unconfirmed">{given-informal} {surname}</namePattern>
+			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern draft="unconfirmed">{title} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
-			<namePattern draft="unconfirmed">{given-informal}</namePattern>
+			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
-			<namePattern draft="unconfirmed">{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern draft="unconfirmed">{given} {given2-initial} {surname}</namePattern>
+			<namePattern>{given} {given2-initial} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
-			<namePattern draft="unconfirmed">{given-informal} {surname}</namePattern>
+			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern draft="unconfirmed">{title} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
-			<namePattern draft="unconfirmed">{given-informal}</namePattern>
+			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern draft="unconfirmed">{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="formal">
-			<namePattern draft="unconfirmed">{given-initial} {given2-initial} {surname}</namePattern>
+			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="informal">
-			<namePattern draft="unconfirmed">{given-informal} {surname-initial}</namePattern>
+			<namePattern>{given-informal} {surname-initial}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern draft="unconfirmed">{title} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
-			<namePattern draft="unconfirmed">{given-informal}</namePattern>
+			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
-			<namePattern draft="unconfirmed">{surname-monogram-allCaps}</namePattern>
+			<namePattern>{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
-			<namePattern draft="unconfirmed">{given-informal-monogram-allCaps}</namePattern>
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern draft="unconfirmed">{surname} {given} {given2}</namePattern>
+			<namePattern>{surname} {given} {given2}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
-			<namePattern draft="unconfirmed">{surname} {given-informal}</namePattern>
+			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern draft="unconfirmed">{title} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
-			<namePattern draft="unconfirmed">{given-informal}</namePattern>
+			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
-			<namePattern draft="unconfirmed">{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern draft="unconfirmed">{surname} {given} {given2-initial}</namePattern>
+			<namePattern>{surname} {given} {given2-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
-			<namePattern draft="unconfirmed">{surname} {given-informal}</namePattern>
+			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern draft="unconfirmed">{title} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
-			<namePattern draft="unconfirmed">{given-informal}</namePattern>
+			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern draft="unconfirmed">{surname-monogram-allCaps}{given-monogram-allCaps}</namePattern>
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern draft="unconfirmed">{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
-			<namePattern draft="unconfirmed">{surname} {given-initial} {given2-initial}</namePattern>
+			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
-			<namePattern draft="unconfirmed">{surname} {given-informal-initial}</namePattern>
+			<namePattern>{surname} {given-informal-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern draft="unconfirmed">{title} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
-			<namePattern draft="unconfirmed">{given-informal}</namePattern>
+			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
-			<namePattern draft="unconfirmed">{surname-monogram-allCaps}</namePattern>
+			<namePattern>{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
-			<namePattern draft="unconfirmed">{given-informal-monogram-allCaps}</namePattern>
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
-			<namePattern draft="unconfirmed">{surname-core}, {title} {given} {given2} {surname-prefix}</namePattern>
+			<namePattern>{surname-core}, {title} {given} {given2} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
-			<namePattern draft="unconfirmed">{surname-core}, {given-informal} {surname-prefix}</namePattern>
+			<namePattern>{surname-core}, {given-informal} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern draft="unconfirmed">{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
+			<namePattern>{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
-			<namePattern draft="unconfirmed">{surname-core}, {given-informal} {surname-prefix}</namePattern>
+			<namePattern>{surname-core}, {given-informal} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
-			<namePattern draft="unconfirmed">{surname-core}, {given-initial} {given2-initial} {surname-prefix}</namePattern>
+			<namePattern>{surname-core}, {given-initial} {given2-initial} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
-			<namePattern draft="unconfirmed">{surname-core}, {given-informal-initial} {surname-prefix}</namePattern>
+			<namePattern>{surname-core}, {given-informal-initial} {surname-prefix}</namePattern>
 		</personName>
 		<sampleName item="nativeG">
-			<nameField type="given" draft="provisional">Zane</nameField>
+			<nameField type="given">Zane</nameField>
 		</sampleName>
 		<sampleName item="nativeGS">
-			<nameField type="given" draft="provisional">Luçia</nameField>
-			<nameField type="surname" draft="provisional">Cangiaxo</nameField>
+			<nameField type="given">Luçia</nameField>
+			<nameField type="surname">Cangiaxo</nameField>
 		</sampleName>
 		<sampleName item="nativeGGS">
-			<nameField type="given" draft="provisional">Françesco</nameField>
-			<nameField type="given2" draft="provisional">Maria</nameField>
-			<nameField type="surname" draft="provisional">Parödi</nameField>
+			<nameField type="given">Françesco</nameField>
+			<nameField type="given2">Maria</nameField>
+			<nameField type="surname">Parödi</nameField>
 		</sampleName>
 		<sampleName item="nativeFull">
-			<nameField type="title" draft="provisional">Dott.a Prof.a</nameField>
-			<nameField type="given" draft="provisional">Maria Giöxeppiña</nameField>
-			<nameField type="given-informal" draft="provisional">Maiòllo</nameField>
-			<nameField type="given2" draft="provisional">Reusa Texa</nameField>
-			<nameField type="surname-prefix" draft="provisional">De</nameField>
-			<nameField type="surname-core" draft="provisional">Franchi</nameField>
-			<nameField type="surname2" draft="provisional">Carcagno Baçigalô</nameField>
-			<nameField type="credentials" draft="provisional">OMRI</nameField>
+			<nameField type="title">Dott.a Prof.a</nameField>
+			<nameField type="given">Maria Giöxeppiña</nameField>
+			<nameField type="given-informal">Maiòllo</nameField>
+			<nameField type="given2">Reusa Texa</nameField>
+			<nameField type="surname-prefix">De</nameField>
+			<nameField type="surname-core">Franchi</nameField>
+			<nameField type="surname2">Carcagno Baçigalô</nameField>
+			<nameField type="generation">II</nameField>
+			<nameField type="credentials">OMRI</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">Sinbad</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">Käthe</nameField>
+			<nameField type="surname">Müller</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">Zäzilia</nameField>
+			<nameField type="given2">Hamish</nameField>
+			<nameField type="surname">Stöber</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">Prof. Dr.</nameField>
+			<nameField type="given">Ada Cornelia</nameField>
+			<nameField type="given-informal">Neele</nameField>
+			<nameField type="given2">César Martín</nameField>
+			<nameField type="surname-prefix">von</nameField>
+			<nameField type="surname-core">Brühl</nameField>
+			<nameField type="surname2">González Domingo</nameField>
+			<nameField type="generation">Jr</nameField>
+			<nameField type="credentials">MD DDS</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

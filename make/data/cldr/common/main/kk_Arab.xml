@@ -990,15 +990,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<keys>
 			<key type="calendar">كۇنتىزبە</key>
 			<key type="cf">اقشا ءپىشىمى</key>
+			<key type="colAlternate">تاڭبالاردى ەلەمەي سۇراپتاۋ</key>
+			<key type="colBackwards">كەرى ەكپىندى سۇرىپتاۋ</key>
+			<key type="colCaseFirst">باس نە كىشى ارىپتەر بويىنشا سۇرىپتاۋ</key>
+			<key type="colCaseLevel">باس پەن كىشى ءارىپتى ەسكەرىپ سۇرىپتاۋ</key>
 			<key type="collation">سۇرىپتاۋ رەتى</key>
+			<key type="colNormalization">قالىپتى سۇرىپتاۋ</key>
+			<key type="colNumeric">ساندىق سۇرىپتاۋ</key>
+			<key type="colReorder">جازۋ جۇيەسى نە بلوك بويىنشا قايتا سۇرىپتاۋ</key>
+			<key type="colStrength">سۇرىپتاۋ تيىمدىلىگى</key>
 			<key type="currency">اقشا</key>
+			<key type="d0">تۇرلەندىرۋ ورنى</key>
+			<key type="dx">سوزدىك ءبولۋ ەرەكشەلىكتەرى</key>
 			<key type="em">ەمودجي كورسەتىلىمى</key>
+			<key type="fw">اپتانىڭ ءبىرىنشى كۇنى</key>
+			<key type="h0">ارالاس</key>
 			<key type="hc">ۋاقىت فورماتى (12 نە 24)</key>
+			<key type="i0">ەنگىزۋ ءادىسى</key>
+			<key type="k0">پەرنەتاقتا</key>
+			<key type="kv">ەلەنبەيتىن ەڭ جوعارعى دەڭگەي</key>
 			<key type="lb">جولدى تاسىمالداۋ ءستيلى</key>
 			<key type="lw">سوزدەردەگى جول بولىنىستەرى</key>
+			<key type="m0">تۇرلەندىرۋ ەرەجەسى</key>
 			<key type="ms">ولشەمدەر جۇيەسى</key>
+			<key type="mu">ولشەم بىرلىگى</key>
 			<key type="numbers">ساندار</key>
+			<key type="rg">قوسىمشا دەرەكتەر ايماعى</key>
+			<key type="s0">تۇرلەندىرۋ كوزى</key>
+			<key type="sd">ايماقتىڭ اكىمشىلىك ءبولىنىسى</key>
 			<key type="ss">قىسقارعان سوزدەن كەيىنگى سويلەم ءبولىنىسى</key>
+			<key type="t">تۇرلەندىرۋ</key>
+			<key type="t0">اۆتوماتتى اۋدارما</key>
+			<key type="timezone">ۋاقىت ايماعى</key>
+			<key type="va">ءتىل نۇسقاسى</key>
+			<key type="x">جەكە قولدانۋعا ارنالعان</key>
+			<key type="x0">جەكە قولدانۋعا ارنالعان تۇرلەندىرۋ</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">بۋددا كۇنتىزبەسى</type>
@@ -1024,11 +1050,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="islamic-civil">يسلام كۇنتىزبەسى (كەستەلىك، ازاماتتىق ءداۋىر)</type>
 			<type key="calendar" type="islamic-civil" scope="core">يسلام (كەستەلىك، ازاماتتىق ءداۋىر)</type>
 			<type key="calendar" type="islamic-rgsa">يسلام كۇنتىزبەسى (ساۋد ارابياسى، جاڭا اي)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">يسلام، ساۋد ارابياسى</type>
 			<type key="calendar" type="islamic-tbla">يسلام كۇنتىزبەسى (كەستەلىك، استرونوميالىق ءداۋىر)</type>
 			<type key="calendar" type="islamic-tbla" scope="core">يسلام (كەستەلىك، استرونوميالىق ءداۋىر)</type>
 			<type key="calendar" type="islamic-umalqura">يسلام كۇنتىزبەسى (ۋمم ءال-قۇرا)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">يسلام (ۋمم ءال-قۇرا)</type>
-			<type key="calendar" type="iso8601">ISO-8601 كۇنتىزبەسى</type>
+			<type key="calendar" type="iso8601">گرەگوريان كۇنتىزبەسى (ISO 8601)</type>
+			<type key="calendar" type="iso8601" scope="core">گرەگوريان</type>
 			<type key="calendar" type="japanese">جاپون كۇنتىزبەسى</type>
 			<type key="calendar" type="japanese" scope="core">جاپون</type>
 			<type key="calendar" type="persian">پارسى كۇنتىزبەسى</type>
@@ -1039,6 +1067,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="cf" type="account" scope="core">ەسەپتىك</type>
 			<type key="cf" type="standard">ستاندارتتى اقشا ءپىشىمى</type>
 			<type key="cf" type="standard" scope="core">ستاندارت</type>
+			<type key="colCaseFirst" type="lower" scope="core">كىشى ءارىپ</type>
+			<type key="colCaseFirst" type="no" scope="core">كىشى ءارىپ</type>
+			<type key="colCaseFirst" type="upper" scope="core">باس ءارىپ</type>
 			<type key="collation" type="compat">سايكەستىككە ارنالعان الدىڭعى سۇرىپتاۋ رەتى</type>
 			<type key="collation" type="compat" scope="core">سايكەستىك</type>
 			<type key="collation" type="dictionary">سوزدىك بويىنشا سۇرىپتاۋ رەتى</type>
@@ -1046,7 +1077,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="ducet">ادەپكى ۋنيكود سۇرىپتاۋ رەتى</type>
 			<type key="collation" type="ducet" scope="core">ادەپكى ۋنيكود</type>
 			<type key="collation" type="emoji">ەموجي سۇرىپتاۋ رەتى</type>
+			<type key="collation" type="emoji" scope="core">ەمودجي</type>
 			<type key="collation" type="eor">ەۋروپالىق رەتتەۋ ەرەجەلەرى</type>
+			<type key="collation" type="eor" scope="core">ەۋروپا ەرەجەلەرى</type>
 			<type key="collation" type="phonebook">تەلەفون كىتاپشاسىنىڭ سۇرىپتاۋ رەتى</type>
 			<type key="collation" type="phonebook" scope="core">تەلەفون كىتاپشاسى</type>
 			<type key="collation" type="phonetic" scope="core">فونەتيكالىق</type>
@@ -1055,6 +1088,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="search">جالپى ماقساتتاعى ىزدەۋ</type>
 			<type key="collation" type="search" scope="core">ىزدەۋ</type>
 			<type key="collation" type="searchjl">كورەي ءتىلىنىڭ باستاپقى داۋىسسىزى بويىنشا ىزدەۋ</type>
+			<type key="collation" type="searchjl" scope="core">كورەي ءارپىنىڭ باستاپقى داۋىسسىزى</type>
 			<type key="collation" type="standard">ستاندارتتى سۇرىپتاۋ رەتى</type>
 			<type key="collation" type="standard" scope="core">ستاندارت</type>
 			<type key="collation" type="stroke">يەروگليفتەر سىزىقتارىن سۇرىپتاۋ رەتى</type>
@@ -1065,9 +1099,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="unihan" scope="core">يەروگليفتەر سىزىقتارى</type>
 			<type key="collation" type="zhuyin">جۋين سۇرىپتاۋ رەتى</type>
 			<type key="collation" type="zhuyin" scope="core">جۋين</type>
+			<type key="colReorder" type="currency" scope="core">ۆاليۋتا</type>
+			<type key="colReorder" type="digit" scope="core">ساندار</type>
+			<type key="colReorder" type="punct" scope="core">تىنىس بەلگىلەرى</type>
+			<type key="colReorder" type="space" scope="core">بوس ورىن</type>
+			<type key="colReorder" type="symbol" scope="core">تاڭبا</type>
+			<type key="colStrength" type="identical" scope="core">ءبارى</type>
+			<type key="colStrength" type="primary" scope="core">تەك نەگىزگى ارىپتەر</type>
+			<type key="colStrength" type="quaternary" scope="core">نەگىزگى، تاڭبالار، باس نە كىشىلەر، نۇسقالار، كانا</type>
+			<type key="colStrength" type="secondary" scope="core">نەگىزگى، تاڭبالار</type>
+			<type key="colStrength" type="tertiary" scope="core">نەگىزگى، تاڭبالار، باس نە كىشىلەر، نۇسقالار</type>
+			<type key="d0" type="fwidth">تولىق ەندى</type>
+			<type key="d0" type="hwidth">جارتى ەندى</type>
 			<type key="em" type="default" scope="core">ادەپكى</type>
 			<type key="em" type="emoji" scope="core">ەمودجي</type>
 			<type key="em" type="text" scope="core">ءماتىن</type>
+			<type key="hc" type="c12">12 ساعاتتىق جۇيە</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24 ساعاتتىق جۇيە</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12 ساعاتتىق جۇيە (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 ساعاتتىق جۇيە (0–12)</type>
@@ -1076,6 +1126,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 ساعاتتىق جۇيە (0–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">بوس ورىندار، تىنىس بەلگىلەرى مەن بارلىق تاڭبا</type>
+			<type key="kv" type="punct" scope="core">بوس ورىندار، تىنىس بەلگىلەرى</type>
+			<type key="kv" type="space" scope="core">بوس ورىندار، تىنىس بەلگىلەرى</type>
+			<type key="kv" type="symbol" scope="core">بوس ورىندار، تىنىس بەلگىلەرى مەن ۆاليۋتاعا جاتپايتىن تاڭبالار</type>
 			<type key="lb" type="loose">جولدى تاسىمالداۋدىڭ ەركىن ءستيلى</type>
 			<type key="lb" type="loose" scope="core">ەركىن</type>
 			<type key="lb" type="normal">جولدى تاسىمالداۋدىڭ قالىپتى ءستيلى</type>
@@ -1086,6 +1140,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="lw" type="keepall" scope="core">ءبارىن ساقتاۋ</type>
 			<type key="lw" type="normal" scope="core">قالىپتى</type>
 			<type key="lw" type="phrase" scope="core">فرازالاردا ساقتاۋ</type>
+			<type key="m0" type="bgn">US BGN دىبىستىق اۋدارماسى</type>
+			<type key="m0" type="ungegn">UN GEGN دىبىستىق اۋدارماسى</type>
 			<type key="ms" type="metric">مەترلىك جۇيە</type>
 			<type key="ms" type="metric" scope="core">مەترلىك</type>
 			<type key="ms" type="uksystem">بريتانيالىق ولشەمدەر جۇيەسى</type>
@@ -1095,8 +1151,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="ahom">احوم تسيفرلارى</type>
 			<type key="numbers" type="arab">ءۇندى-اراب ساندارى</type>
 			<type key="numbers" type="arabext">ءۇندى-اراب ساندارىنىڭ كەڭەيتىلگەن جۇيەسى</type>
+			<type key="numbers" type="arabext" scope="core">ءۇندى-اراب كەڭەيتىلگەن جۇيەسى</type>
 			<type key="numbers" type="armn">ارميان ساندارى</type>
 			<type key="numbers" type="armnlow">كىشى ارىپپەن بەرىلگەن ارميان ساندارى</type>
+			<type key="numbers" type="armnlow" scope="core">كىشى ارىپپەن بەرىلگەن ارميان</type>
 			<type key="numbers" type="bali">بالي ساندارى</type>
 			<type key="numbers" type="beng">بەنگال ساندارى</type>
 			<type key="numbers" type="brah">براحمي ساندارى</type>
@@ -1106,27 +1164,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="deva">دەۆاناگاري ساندارى</type>
 			<type key="numbers" type="diak">دەۆيس اكۋرۋ ساندارى</type>
 			<type key="numbers" type="ethi">ەفيوپيا ساندارى</type>
+			<type key="numbers" type="finance" scope="core">قارجى</type>
 			<type key="numbers" type="fullwide">تولىق ەندى ساندار</type>
+			<type key="numbers" type="fullwide" scope="core">تولىق ەندى</type>
 			<type key="numbers" type="gara">گاراي ساندارى</type>
 			<type key="numbers" type="geor">گرۋزين ساندارى</type>
 			<type key="numbers" type="gong">گۋنجالا گوندي ساندارى</type>
 			<type key="numbers" type="gonm">ماساراما گوندي ساندارى</type>
 			<type key="numbers" type="grek">گرەك ساندارى</type>
 			<type key="numbers" type="greklow">كىشى ارىپپەن بەرىلگەن گرەك ساندارى</type>
+			<type key="numbers" type="greklow" scope="core">كىشى ارىپپەن بەرىلگەن گرەك</type>
 			<type key="numbers" type="gujr">گۋجاراتي ساندارى</type>
 			<type key="numbers" type="gukh">گۋرۋڭ حەما ساندارى</type>
 			<type key="numbers" type="guru">گۋرمۋكحي ساندارى</type>
+			<type key="numbers" type="hanidays" scope="core">ءداستۇرلى كۇنتىزبەلەردەگى اي كۇندەرىن قىتاي يەروگليفتەرىمەن بەلگىلەۋ</type>
 			<type key="numbers" type="hanidec">قىتاي وندىق ساندارى</type>
+			<type key="numbers" type="hanidec" scope="core">قىتاي سان يەروگليفتەرىنە نەگىزدەلگەن وندىق جۇيە</type>
 			<type key="numbers" type="hans">جەڭىلدەتىلگەن قىتاي ساندارى</type>
 			<type key="numbers" type="hansfin">قارجى سالاسىنداعى جەڭىلدەتىلگەن قىتاي ساندارى</type>
+			<type key="numbers" type="hansfin" scope="core">قارجى سالاسىنداعى جەڭىلدەتىلگەن قىتاي</type>
 			<type key="numbers" type="hant">ءداستۇرلى قىتاي ساندارى</type>
 			<type key="numbers" type="hantfin">قارجى سالاسىنداعى ءداستۇرلى قىتاي ساندارى</type>
+			<type key="numbers" type="hantfin" scope="core">قارجى سالاسىنداعى ءداستۇرلى قىتاي</type>
 			<type key="numbers" type="hebr">يۆريت ساندارى</type>
 			<type key="numbers" type="hmng">پاحاۋ ساندارى</type>
 			<type key="numbers" type="hmnp">نياكەڭ پۋاچۋە حموڭ ساندارى</type>
 			<type key="numbers" type="java">ياۆا ساندارى</type>
 			<type key="numbers" type="jpan">جاپون ساندارى</type>
 			<type key="numbers" type="jpanfin">قارجى سالاسىنداعى جاپون ساندارى</type>
+			<type key="numbers" type="jpanfin" scope="core">قارجى سالاسىنداعى جاپون</type>
+			<type key="numbers" type="jpanyear" scope="core">جاپون كۇنتىزبەسىندە ءبىرىنشى جىلدى «گاننەن» دەپ بەلگىلەۋ</type>
 			<type key="numbers" type="kali">كاياح لي ساندارى</type>
 			<type key="numbers" type="kawi">كاۋي ساندارى</type>
 			<type key="numbers" type="khmr">كحمەر ساندارى</type>
@@ -1134,15 +1201,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="krai">كيرات راي ساندارى</type>
 			<type key="numbers" type="lana">تاي تحام حورا ساندارى</type>
 			<type key="numbers" type="lanatham">تاي تحام تحام ساندارى</type>
+			<type key="numbers" type="lanatham" scope="core">تاي تحام تحام (ءدىني)</type>
 			<type key="numbers" type="laoo">لاوس ساندارى</type>
 			<type key="numbers" type="latn">باتىس ساندارى</type>
 			<type key="numbers" type="lepc">لەپچا ساندارى</type>
 			<type key="numbers" type="limb">ليمبۋ ساندارى</type>
 			<type key="numbers" type="mathbold">ماتەماتيكالىق قالىڭ قارىپتى ساندار</type>
+			<type key="numbers" type="mathbold" scope="core">ماتەماتيكالىق قالىڭ قارىپ</type>
 			<type key="numbers" type="mathdbl">ماتەماتيكالىق قوس سىزىقتى ساندار</type>
+			<type key="numbers" type="mathdbl" scope="core">ماتەماتيكالىق قوس سىزىقتى قارىپ</type>
 			<type key="numbers" type="mathmono">ەنى بەكىتىلگەن ماتەماتيكالىق ساندار</type>
+			<type key="numbers" type="mathmono" scope="core">ماتەماتيكالىق بىرقادامدى قارىپ</type>
 			<type key="numbers" type="mathsanb">ماتەماتيكالىق قالىڭ قارىپتى سانسەريف ساندار</type>
+			<type key="numbers" type="mathsanb" scope="core">ماتەماتيكالىق قالىڭ گروتەسك قارىپ</type>
 			<type key="numbers" type="mathsans">ماتەماتيكالىق سانسەريف ساندار</type>
+			<type key="numbers" type="mathsans" scope="core">ماتەماتيكالىق گروتەسك قارىپ</type>
 			<type key="numbers" type="mlym">مالايالام ساندارى</type>
 			<type key="numbers" type="modi">مودي ساندارى</type>
 			<type key="numbers" type="mong">موڭعول ساندارى</type>
@@ -1150,20 +1223,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="mtei">مەيتەي-مايەك ساندارى</type>
 			<type key="numbers" type="mymr">ميانمار ساندارى</type>
 			<type key="numbers" type="mymrepka">ميانمار شىعىس پحو كارەن ساندارى</type>
+			<type key="numbers" type="mymrepka" scope="core">ميانما شىعىس پۆو-كارەن ساندارى</type>
 			<type key="numbers" type="mymrpao">ميانمار پاو ساندارى</type>
+			<type key="numbers" type="mymrpao" scope="core">ميانما پا-و ساندارى</type>
 			<type key="numbers" type="mymrshan">ميانمار شان ساندارى</type>
+			<type key="numbers" type="mymrshan" scope="core">ميانما شان ساندارى</type>
 			<type key="numbers" type="mymrtlng">ميانمار تاي لايڭ ساندارى</type>
+			<type key="numbers" type="mymrtlng" scope="core">ميانما تاي-لايڭ ساندارى</type>
 			<type key="numbers" type="nagm">ناگ مۋنداري ساندارى</type>
+			<type key="numbers" type="native">جەرگىلىكتى ساندار</type>
+			<type key="numbers" type="native" scope="core">جەرگىلىكتى ساندار</type>
 			<type key="numbers" type="nkoo">نكو ساندارى</type>
 			<type key="numbers" type="olck">ول-چيكي ساندارى</type>
 			<type key="numbers" type="onao">ول-ونال ساندارى</type>
 			<type key="numbers" type="orya">وريا ساندارى</type>
 			<type key="numbers" type="osma">يسمانيا ساندارى</type>
 			<type key="numbers" type="outlined">سىزىلعان ساندار</type>
+			<type key="numbers" type="outlined" scope="core">جيەكتەلگەن</type>
 			<type key="numbers" type="rohg">حانيفي ساندارى</type>
 			<type key="numbers" type="roman">ريم ساندارى</type>
+			<type key="numbers" type="roman" scope="core">باس ءارىپتى ريم ساندارى</type>
 			<type key="numbers" type="romanlow">كىشى ارىپپەن بەرىلگەن ريم ساندارى</type>
+			<type key="numbers" type="romanlow" scope="core">كىشى ءارىپتى ريم ساندارى</type>
 			<type key="numbers" type="saur">ساۋراشترا ساندارى</type>
+			<type key="numbers" type="segment" scope="core">بولشەكتەلگەن</type>
 			<type key="numbers" type="shrd">شارادا ساندارى</type>
 			<type key="numbers" type="sind">كحۋدابادي ساندارى</type>
 			<type key="numbers" type="sinh">سينگالا ليت ساندارى</type>
@@ -1174,17 +1257,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="talu">جاڭا لۋ جازۋىنىڭ ساندارى</type>
 			<type key="numbers" type="taml">ءداستۇرلى تاميل ساندارى</type>
 			<type key="numbers" type="tamldec">تاميل ساندارى</type>
+			<type key="numbers" type="tamldec" scope="core">زاماناۋي تاميل ساندارى</type>
 			<type key="numbers" type="telu">تەلۋگۋ ساندارى</type>
 			<type key="numbers" type="thai">تاي ساندارى</type>
 			<type key="numbers" type="tibt">تيبەر ساندارى</type>
 			<type key="numbers" type="tirh">تيرحۋتا ساندارى</type>
 			<type key="numbers" type="tnsa">تاڭسا ساندارى</type>
+			<type key="numbers" type="tols">تولوڭ سيكي ساندارى</type>
+			<type key="numbers" type="traditional" scope="core">ءداستۇرلى ساندار</type>
 			<type key="numbers" type="vaii">ۆاي ساندارى</type>
 			<type key="numbers" type="wara">ۋاراڭ سيتي ساندارى</type>
 			<type key="numbers" type="wcho">ۋانچو ساندارى</type>
 			<type key="ss" type="none" scope="core">ءوشىرۋ</type>
 			<type key="ss" type="standard" scope="core">قوسۋ</type>
+			<type key="t0" type="und">كورسەتىلمەگەن اۆتوماتتى اۋدارما</type>
+			<type key="va" type="posix" scope="core">POSIX نۇسقاسى</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">ءوشىرۋ</typeValue>
+			<typeValue type="yes">قوسۋ</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">مەترلىك</measurementSystemName>
 			<measurementSystemName type="UK">اعىلشىن</measurementSystemName>
@@ -1279,91 +1371,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 								<cyclicName type="23">از سۋىق</cyclicName>
 								<cyclicName type="24">قاتتى سۋىق</cyclicName>
 							</cyclicNameWidth>
-							<cyclicNameWidth type="narrow">
-								<cyclicName type="1">كوكتەم باسى</cyclicName>
-								<cyclicName type="2">جاڭبىر سۋى</cyclicName>
-								<cyclicName type="3">جاندىكتەر ويانۋى</cyclicName>
-								<cyclicName type="4">كوكتەمگى توقىراۋ</cyclicName>
-								<cyclicName type="5">اشىق اسپان</cyclicName>
-								<cyclicName type="6">استىق جاڭبىر</cyclicName>
-								<cyclicName type="7">جاز باسى</cyclicName>
-								<cyclicName type="8">از تولۋ</cyclicName>
-								<cyclicName type="9">استىق ەگۋ</cyclicName>
-								<cyclicName type="10">جازعى توقىراۋ</cyclicName>
-								<cyclicName type="11">وتكىر ىستىق</cyclicName>
-								<cyclicName type="12">شىلىڭگىر ىستىق</cyclicName>
-								<cyclicName type="13">كۇزدىڭ باسى</cyclicName>
-								<cyclicName type="14">قوڭىر سالقىن</cyclicName>
-								<cyclicName type="15">اق شىق</cyclicName>
-								<cyclicName type="16">كۇزگى توقىراۋ</cyclicName>
-								<cyclicName type="17">سۋىق شىق</cyclicName>
-								<cyclicName type="18">قىراۋ ءتۇسۋ</cyclicName>
-								<cyclicName type="19">قىس باسى</cyclicName>
-								<cyclicName type="20">از قار</cyclicName>
-								<cyclicName type="21">قالىڭ قار</cyclicName>
-								<cyclicName type="22">قىسقى توقىراۋ</cyclicName>
-								<cyclicName type="23">از سۋىق</cyclicName>
-								<cyclicName type="24">قاتتى سۋىق</cyclicName>
-							</cyclicNameWidth>
-							<cyclicNameWidth type="wide">
-								<cyclicName type="1">كوكتەم باسى</cyclicName>
-								<cyclicName type="2">جاڭبىر سۋى</cyclicName>
-								<cyclicName type="3">جاندىكتەر ويانۋى</cyclicName>
-								<cyclicName type="4">كوكتەمگى توقىراۋ</cyclicName>
-								<cyclicName type="5">اشىق اسپان</cyclicName>
-								<cyclicName type="6">استىق جاڭبىر</cyclicName>
-								<cyclicName type="7">جاز باسى</cyclicName>
-								<cyclicName type="8">از تولۋ</cyclicName>
-								<cyclicName type="9">استىق ەگۋ</cyclicName>
-								<cyclicName type="10">جازعى توقىراۋ</cyclicName>
-								<cyclicName type="11">وتكىر ىستىق</cyclicName>
-								<cyclicName type="12">شىلىڭگىر ىستىق</cyclicName>
-								<cyclicName type="13">كۇزدىڭ باسى</cyclicName>
-								<cyclicName type="14">قوڭىر سالقىن</cyclicName>
-								<cyclicName type="15">اق شىق</cyclicName>
-								<cyclicName type="16">كۇزگى توقىراۋ</cyclicName>
-								<cyclicName type="17">سۋىق شىق</cyclicName>
-								<cyclicName type="18">قىراۋ ءتۇسۋ</cyclicName>
-								<cyclicName type="19">قىس باسى</cyclicName>
-								<cyclicName type="20">از قار</cyclicName>
-								<cyclicName type="21">قالىڭ قار</cyclicName>
-								<cyclicName type="22">قىسقى توقىراۋ</cyclicName>
-								<cyclicName type="23">از سۋىق</cyclicName>
-								<cyclicName type="24">قاتتى سۋىق</cyclicName>
-							</cyclicNameWidth>
 						</cyclicNameContext>
 					</cyclicNameSet>
 					<cyclicNameSet type="zodiacs">
 						<cyclicNameContext type="format">
 							<cyclicNameWidth type="abbreviated">
-								<cyclicName type="1">تىشقان</cyclicName>
-								<cyclicName type="2">سيىر</cyclicName>
-								<cyclicName type="3">بارىس</cyclicName>
-								<cyclicName type="4">قويان</cyclicName>
-								<cyclicName type="5">ۇلۋ</cyclicName>
-								<cyclicName type="6">جىلان</cyclicName>
-								<cyclicName type="7">جىلقى</cyclicName>
-								<cyclicName type="8">قوي</cyclicName>
-								<cyclicName type="9">مەشىن</cyclicName>
-								<cyclicName type="10">تاۋىق</cyclicName>
-								<cyclicName type="11">يت</cyclicName>
-								<cyclicName type="12">دوڭىز</cyclicName>
-							</cyclicNameWidth>
-							<cyclicNameWidth type="narrow">
-								<cyclicName type="1">تىشقان</cyclicName>
-								<cyclicName type="2">سيىر</cyclicName>
-								<cyclicName type="3">بارىس</cyclicName>
-								<cyclicName type="4">قويان</cyclicName>
-								<cyclicName type="5">ۇلۋ</cyclicName>
-								<cyclicName type="6">جىلان</cyclicName>
-								<cyclicName type="7">جىلقى</cyclicName>
-								<cyclicName type="8">قوي</cyclicName>
-								<cyclicName type="9">مەشىن</cyclicName>
-								<cyclicName type="10">تاۋىق</cyclicName>
-								<cyclicName type="11">يت</cyclicName>
-								<cyclicName type="12">دوڭىز</cyclicName>
-							</cyclicNameWidth>
-							<cyclicNameWidth type="wide">
 								<cyclicName type="1">تىشقان</cyclicName>
 								<cyclicName type="2">سيىر</cyclicName>
 								<cyclicName type="3">بارىس</cyclicName>
@@ -1477,6 +1489,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d، y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E، MMM d، y G</dateFormatItem>
+						<dateFormatItem id="Hv">HHس v</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E، M/d</dateFormatItem>
 						<dateFormatItem id="MMMEd">E، MMM d</dateFormatItem>
@@ -1493,6 +1506,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G">y G – y G</greatestDifference>
 							<greatestDifference id="y">y – y G</greatestDifference>
@@ -1654,10 +1670,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<quarters>
 					<quarterContext type="format">
 						<quarterWidth type="abbreviated">
-							<quarter type="1">1- توقسان</quarter>
-							<quarter type="2">2- توقسان</quarter>
-							<quarter type="3">3- توقسان</quarter>
-							<quarter type="4">4- توقسان</quarter>
+							<quarter type="1">1-توقسان</quarter>
+							<quarter type="2">2-توقسان</quarter>
+							<quarter type="3">3-توقسان</quarter>
+							<quarter type="4">4-توقسان</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">ءبىرىنشى توقسان</quarter>
@@ -1668,10 +1684,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</quarterContext>
 					<quarterContext type="stand-alone">
 						<quarterWidth type="abbreviated">
-							<quarter type="1">1- توقسان</quarter>
-							<quarter type="2">2- توقسان</quarter>
-							<quarter type="3">3- توقسان</quarter>
-							<quarter type="4">4- توقسان</quarter>
+							<quarter type="1">1-توقسان</quarter>
+							<quarter type="2">2-توقسان</quarter>
+							<quarter type="3">3-توقسان</quarter>
+							<quarter type="4">4-توقسان</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
@@ -1714,12 +1730,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="evening1">كەش</dayPeriod>
 							<dayPeriod type="night1">ءتۇن</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="noon">تال ءتۇس</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">ت د</dayPeriod>
-							<dayPeriod type="noon">تال ءتۇس</dayPeriod>
 							<dayPeriod type="pm">ت ك</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
@@ -1739,17 +1751,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>y، d- MMMM، EEEE</pattern>
+							<pattern>y، d-MMMM، EEEE</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>y، d- MMMM</pattern>
+							<pattern>y، d-MMMM</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>y، d- MMM</pattern>
+							<pattern>y، d-MMM</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -1811,22 +1823,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="GyMd">G d-M-y</dateFormatItem>
 						<dateFormatItem id="GyMEd">G y-MM-dd، E</dateFormatItem>
-						<dateFormatItem id="GyMMMd">G y، d- MMM</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">G y، d- MMM، E</dateFormatItem>
+						<dateFormatItem id="GyMMMd">G y، d-MMM</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G y، d-MMM، E</dateFormatItem>
+						<dateFormatItem id="Hv">HHس v</dateFormatItem>
 						<dateFormatItem id="Md">d-M</dateFormatItem>
 						<dateFormatItem id="MEd">d-M، E</dateFormatItem>
-						<dateFormatItem id="MMMd">d- MMM</dateFormatItem>
-						<dateFormatItem id="MMMEd">d- MMM، E</dateFormatItem>
-						<dateFormatItem id="MMMMd">d- MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">MMMM ايىنىڭ W اپتاسى</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">MMMM ايىنىڭ W اپتاسى</dateFormatItem>
+						<dateFormatItem id="MMMd">d-MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">d-MMM، E</dateFormatItem>
+						<dateFormatItem id="MMMMd">d-MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMMM ايىنىڭ W-اپتاسى</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMMM ايىنىڭ W-اپتاسى</dateFormatItem>
 						<dateFormatItem id="yM">M-y</dateFormatItem>
 						<dateFormatItem id="yMd">y-d-M</dateFormatItem>
 						<dateFormatItem id="yMEd">y-d-M، E</dateFormatItem>
 						<dateFormatItem id="yMMMd">y d- MMM</dateFormatItem>
 						<dateFormatItem id="yMMMEd">y d- MMM، E</dateFormatItem>
-						<dateFormatItem id="yw" count="one">Y جىلدىڭ w اپتاسى</dateFormatItem>
-						<dateFormatItem id="yw" count="other">Y جىلدىڭ w اپتاسى</dateFormatItem>
+						<dateFormatItem id="yw" count="one">Y جىلدىڭ w-اپتاسى</dateFormatItem>
+						<dateFormatItem id="yw" count="other">Y جىلدىڭ w-اپتاسى</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="GyM">
@@ -1910,8 +1923,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year">
 				<displayName>جىل</displayName>
-				<relative type="-1">بىلتىرعى جىل</relative>
-				<relative type="0">بيىلعى جىل</relative>
+				<relative type="-1">بىلتىر</relative>
+				<relative type="0">بيىل</relative>
 				<relative type="1">كەلەسى جىل</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} جىلدان كەيىن</relativeTimePattern>
@@ -1921,6 +1934,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="one">{0} جىل بۇرىن</relativeTimePattern>
 					<relativeTimePattern count="other">{0} جىل بۇرىن</relativeTimePattern>
 				</relativeTime>
+			</field>
+			<field type="year-short">
+				<relative type="-1">بىلتىر</relative>
+				<relative type="0">بيىل</relative>
+				<relative type="1">كەلەسى جىل</relative>
+			</field>
+			<field type="year-narrow">
+				<relative type="-1">بىلتىر</relative>
+				<relative type="0">بيىل</relative>
+				<relative type="1">كەلەسى جىل</relative>
 			</field>
 			<field type="quarter">
 				<displayName>شيرەك</displayName>
@@ -2133,9 +2156,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<standard>دۇنيەجۇزىلىك ۇيلەستىرىلگەن ۋاقىت</standard>
 				</long>
+				<short>
+					<standard>دۇنيەجۇزىلىك ۋاقىت</standard>
+				</short>
 			</zone>
 			<zone type="Etc/Unknown">
-				<exemplarCity>بەلگىسىز قالا</exemplarCity>
+				<exemplarCity>بەلگىسىز ورىن</exemplarCity>
 			</zone>
 			<zone type="Europe/Andorra">
 				<exemplarCity>اندوررا</exemplarCity>
@@ -2603,9 +2629,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ليبرەۆيل</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>ۇلىبريتانيا جازعى ۋاقىتى</daylight>
-				</long>
 				<exemplarCity>لوندون</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2696,9 +2719,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>جاياپۋرا</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>يرلانديا ستاندارتتى ۋاقىتى</daylight>
-				</long>
 				<exemplarCity>دۋبلين</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -3394,6 +3414,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Harare">
 				<exemplarCity>حارارە</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>اكري ۋاقىتى</generic>
+					<standard>اكري ستاندارتتى ۋاقىتى</standard>
+					<daylight>اكري جازعى ۋاقىتى</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>اۋعانستان ۋاقىتى</standard>
@@ -3425,18 +3452,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>الاسكا ستاندارتتى ۋاقىتى</standard>
 					<daylight>الاسكا جازعى ۋاقىتى</daylight>
 				</long>
-			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>الماتى ۋاقىتى</generic>
-					<standard>الماتى ستاندارتتى ۋاقىتى</standard>
-					<daylight>الماتى جازعى ۋاقىتى</daylight>
-				</long>
-				<short>
-					<generic draft="contributed">الماتى</generic>
-					<standard draft="contributed">الماتى</standard>
-					<daylight draft="contributed">الماتى قالاسى</daylight>
-				</short>
 			</metazone>
 			<metazone type="Amazon">
 				<long>
@@ -3475,34 +3490,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic>اپيا ۋاقىتى</generic>
-					<standard>اپيا ستاندارتتى ۋاقىتى</standard>
-					<daylight>اپيا جازعى ۋاقىتى</daylight>
+					<generic>ساموا ۋاقىتى</generic>
+					<standard>ساموا ستاندارتتى ۋاقىتى</standard>
+					<daylight>ساموا جازعى ۋاقىتى</daylight>
 				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>اقتاۋ ۋاقىتى</generic>
-					<standard>اقتاۋ ستاندارتتى ۋاقىتى</standard>
-					<daylight>اقتاۋ جازعى ۋاقىتى</daylight>
-				</long>
-				<short>
-					<generic draft="contributed">اقتاۋ</generic>
-					<standard draft="contributed">اقتاۋ</standard>
-					<daylight draft="contributed">اقتاۋ قالاسى</daylight>
-				</short>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>اقتوبە ۋاقىتى</generic>
-					<standard>اقتوبە ستاندارتتى ۋاقىتى</standard>
-					<daylight>اقتوبە جازعى ۋاقىتى</daylight>
-				</long>
-				<short>
-					<generic draft="contributed">اقتوبە</generic>
-					<standard draft="contributed">اقتوبە</standard>
-					<daylight draft="contributed">اقتوبە قالاسى</daylight>
-				</short>
 			</metazone>
 			<metazone type="Arabian">
 				<long>
@@ -3541,7 +3532,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
-					<generic>ورتالىق اۋستراليا ۋاقىتى</generic>
+					<generic>اۋستراليا ورتالىق ۋاقىتى</generic>
 					<standard>اۋستراليا ستاندارتتى ورتالىق ۋاقىتى</standard>
 					<daylight>اۋستراليا جازعى ورتالىق ۋاقىتى</daylight>
 				</long>
@@ -3555,14 +3546,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Australia_Eastern">
 				<long>
-					<generic>شىعىس اۋستراليا ۋاقىتى</generic>
+					<generic>اۋستراليا شىعىس ۋاقىتى</generic>
 					<standard>اۋستراليا ستاندارتتى شىعىس ۋاقىتى</standard>
 					<daylight>اۋستراليا جازعى شىعىس ۋاقىتى</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Western">
 				<long>
-					<generic>باتىس اۋستراليا ۋاقىتى</generic>
+					<generic>اۋستراليا باتىس ۋاقىتى</generic>
 					<standard>اۋستراليا ستاندارتتى باتىس ۋاقىتى</standard>
 					<daylight>اۋستراليا جازعى باتىس ۋاقىتى</daylight>
 				</long>
@@ -3605,9 +3596,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>برازيليا جازعى ۋاقىتى</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>ۇلىبريتانيا ۋاقىتى</generic>
+					<daylight>ۇلىبريتانيا جازعى ۋاقىتى</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
-					<standard>برۋنەي-دارۋسسالام ۋاقىتى</standard>
+					<standard>برۋنەي ۋاقىتى</standard>
 				</long>
 			</metazone>
 			<metazone type="Cape_Verde">
@@ -3681,12 +3678,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="DumontDUrville">
 				<long>
-					<standard>ديۋمون-ديۋرۆيل ۋاقىتى</standard>
+					<standard>ديۋمون ديۋرۆيل ۋاقىتى</standard>
 				</long>
 			</metazone>
 			<metazone type="East_Timor">
 				<long>
-					<standard>شىعىس تيمور ۋاقىتى</standard>
+					<standard>تيمور-لەستە ۋاقىتى</standard>
 				</long>
 			</metazone>
 			<metazone type="Easter">
@@ -3778,6 +3775,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>گرينۆيچ ۋاقىتى</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>گرەنلانديا ۋاقىتى</generic>
+					<standard>گرەنلانديا ستاندارتتى ۋاقىتى</standard>
+					<daylight>گرەنلانديا جازعى ۋاقىتى</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>شىعىس گرەنلانديا ۋاقىتى</generic>
@@ -3804,14 +3808,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>گاۆاي جانە الەۋت ارالدارى ستاندارتتى ۋاقىتى</standard>
+					<standard>حاۋاي ۋاقىتى</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic>گاۆاي جانە الەۋت ارالدارى ۋاقىتى</generic>
-					<standard>گاۆاي جانە الەۋت ارالدارى ستاندارتتى ۋاقىتى</standard>
-					<daylight>گاۆاي جانە الەۋت ارالدارى جازعى ۋاقىتى</daylight>
+					<generic>حاۋاي جانە الەۋت ارالدارى ۋاقىتى</generic>
+					<standard>حاۋاي جانە الەۋت ارالدارى ستاندارتتى ۋاقىتى</standard>
+					<daylight>حاۋاي جانە الەۋت ارالدارى جازعى ۋاقىتى</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
@@ -3865,6 +3869,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>يران جازعى ۋاقىتى</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>يرلانديا ۋاقىتى</generic>
+					<daylight>يرلانديا ستاندارتتى ۋاقىتى</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>يركۋتسك ۋاقىتى</generic>
@@ -3884,6 +3894,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>جاپونيا ۋاقىتى</generic>
 					<standard>جاپونيا ستاندارتتى ۋاقىتى</standard>
 					<daylight>جاپونيا جازعى ۋاقىتى</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>كامشاتكا ۋاقىتى</generic>
+					<standard>كامشاتكا ستاندارتتى ۋاقىتى</standard>
+					<daylight>كامشاتكا جازعى ۋاقىتى</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -4140,20 +4157,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Pyongyang">
 				<long>
-					<standard>پحەنيان ۋاقىتى</standard>
+					<standard>سولتۇستىك كورەيا ۋاقىتى</standard>
 				</long>
-			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>قىزىلوردا ۋاقىتى</generic>
-					<standard>قىزىلوردا ستاندارتتى ۋاقىتى</standard>
-					<daylight>قىزىلوردا جازعى ۋاقىتى</daylight>
-				</long>
-				<short>
-					<generic draft="contributed">قىزىلوردا</generic>
-					<standard draft="contributed">قىزىلوردا</standard>
-					<daylight draft="contributed">قىزىلوردا قالاسى</daylight>
-				</short>
 			</metazone>
 			<metazone type="Reunion">
 				<long>
@@ -4172,11 +4177,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>ساحالين جازعى ۋاقىتى</daylight>
 				</long>
 			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>سامارا ۋاقىتى</generic>
+					<standard>سامارا ستاندارتتى ۋاقىتى</standard>
+					<daylight>سامارا جازعى ۋاقىتى</daylight>
+				</long>
+			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>ساموا ۋاقىتى</generic>
-					<standard>ساموا ستاندارتتى ۋاقىتى</standard>
-					<daylight>ساموا جازعى ۋاقىتى</daylight>
+					<standard>امەريكا ساموا ستاندارتتى ۋاقىتى</standard>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4216,9 +4226,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Taipei">
 				<long>
-					<generic>تايبەي ۋاقىتى</generic>
-					<standard>تايبەي ستاندارتتى ۋاقىتى</standard>
-					<daylight>تايبەي جازعى ۋاقىتى</daylight>
+					<generic>تايۋان ۋاقىتى</generic>
+					<standard>تايۋان ستاندارتتى ۋاقىتى</standard>
+					<daylight>تايۋان جازعى ۋاقىتى</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tajikistan">
@@ -4243,6 +4253,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>ترۋك ۋاقىتى</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>تۇركيا ۋاقىتى</generic>
+					<standard>تۇركيا ستاندارتتى ۋاقىتى</standard>
+					<daylight>تۇركيا جازعى ۋاقىتى</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>تۇرىكمەنستان ۋاقىتى</generic>
@@ -4260,6 +4277,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>ۋرۋگۆاي ۋاقىتى</generic>
 					<standard>ۋرۋگۆاي ستاندارتتى ۋاقىتى</standard>
 					<daylight>ۋرۋگۆاي جازعى ۋاقىتى</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>ءۇرىمجى ۋاقىتى</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -4333,6 +4355,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</dates>
 	<numbers>
 		<symbols numberSystem="latn">
+			<group> </group>
 			<nan>سان ەمەس</nan>
 		</symbols>
 		<decimalFormats numberSystem="latn">
@@ -4394,32 +4417,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</decimalFormatLength>
 		</decimalFormats>
 		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤;(#,##0.00 ¤)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one">¤ 0 مىڭ</pattern>
-					<pattern type="1000" count="other">¤ 0 مىڭ</pattern>
-					<pattern type="10000" count="one">¤ 00 مىڭ</pattern>
-					<pattern type="10000" count="other">¤ 00 مىڭ</pattern>
-					<pattern type="100000" count="one">¤ 000 مىڭ</pattern>
-					<pattern type="100000" count="other">¤ 000 مىڭ</pattern>
-					<pattern type="1000000" count="one">¤ 0 ميلليون</pattern>
-					<pattern type="1000000" count="other">¤ 0 ميلليون</pattern>
-					<pattern type="10000000" count="one">¤ 00 ميلليون</pattern>
-					<pattern type="10000000" count="other">¤ 00 ميلليون</pattern>
-					<pattern type="100000000" count="one">¤ 000 ملن</pattern>
-					<pattern type="100000000" count="other">¤ 000 ملن</pattern>
-					<pattern type="1000000000" count="one">¤ 0 ميلليارد</pattern>
-					<pattern type="1000000000" count="other">¤ 0 ميلليارد</pattern>
-					<pattern type="10000000000" count="one">¤ 00 ملرد</pattern>
-					<pattern type="10000000000" count="other">¤ 00 ملرد</pattern>
-					<pattern type="100000000000" count="one">¤ 000 ملرد</pattern>
-					<pattern type="100000000000" count="other">¤ 000 ملرد</pattern>
-					<pattern type="1000000000000" count="one">¤ 0 تريلليون</pattern>
-					<pattern type="1000000000000" count="other">¤ 0 تريلليون</pattern>
-					<pattern type="10000000000000" count="one">¤ 00 ترلن</pattern>
-					<pattern type="10000000000000" count="other">¤ 00 ترلن</pattern>
-					<pattern type="100000000000000" count="one">¤ 000 ترلن</pattern>
-					<pattern type="100000000000000" count="other">¤ 000 ترلن</pattern>
+					<pattern type="1000" count="one">0 مىڭ ¤</pattern>
+					<pattern type="1000" count="other">0 مىڭ ¤</pattern>
+					<pattern type="10000" count="one">00 مىڭ ¤</pattern>
+					<pattern type="10000" count="other">00 مىڭ ¤</pattern>
+					<pattern type="100000" count="one">000 مىڭ ¤</pattern>
+					<pattern type="100000" count="other">000 مىڭ ¤</pattern>
+					<pattern type="1000000" count="one">0 ميلليون ¤</pattern>
+					<pattern type="1000000" count="other">0 ميلليون ¤</pattern>
+					<pattern type="10000000" count="one">00 ميلليون ¤</pattern>
+					<pattern type="10000000" count="other">00 ميلليون ¤</pattern>
+					<pattern type="100000000" count="one">000 ملن ¤</pattern>
+					<pattern type="100000000" count="other">000 ملن ¤</pattern>
+					<pattern type="1000000000" count="one">0 ميلليارد ¤</pattern>
+					<pattern type="1000000000" count="other">0 ميلليارد ¤</pattern>
+					<pattern type="10000000000" count="one">00 ملرد ¤</pattern>
+					<pattern type="10000000000" count="other">00 ملرد ¤</pattern>
+					<pattern type="100000000000" count="one">000 ملرد ¤</pattern>
+					<pattern type="100000000000" count="other">000 ملرد ¤</pattern>
+					<pattern type="1000000000000" count="one">0 تريلليون ¤</pattern>
+					<pattern type="1000000000000" count="other">0 تريلليون ¤</pattern>
+					<pattern type="10000000000000" count="one">00 ترلن ¤</pattern>
+					<pattern type="10000000000000" count="other">00 ترلن ¤</pattern>
+					<pattern type="100000000000000" count="one">000 ترلن ¤</pattern>
+					<pattern type="100000000000000" count="other">000 ترلن ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -4635,8 +4668,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="KES">
 				<displayName>كەنيا شيللينگى</displayName>
-				<displayName count="one">كەنيا شيللينگى</displayName>
-				<displayName count="other">كەنيا شيللينگى</displayName>
 			</currency>
 			<currency type="KGS">
 				<displayName>قىرعىس سومى</displayName>
@@ -4887,8 +4918,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XCG">
 				<displayName>كاريب گۋلدەرى</displayName>
-				<displayName count="one">كاريب گۋلدەرى</displayName>
-				<displayName count="other">كاريب گۋلدەرى</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>باتىس افريكانىڭ فرانكى</displayName>
@@ -4912,14 +4941,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ZWG">
 				<displayName>زيمباب التىنى</displayName>
-				<displayName count="one">زيمباب التىنى</displayName>
-				<displayName count="other">زيمباب التىنى</displayName>
 			</currency>
 		</currencies>
 		<minimalPairs>
 			<pluralMinimalPairs count="one" draft="contributed">{0} كۇن</pluralMinimalPairs>
 			<pluralMinimalPairs count="other" draft="contributed">{0} كۇن</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="other">مۇرات {0}- سىنىپقا كوشتى.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="many">مۇرات {0}-مەكتەپكە كوشتى.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">مۇرات {0}-سىنىپقا كوشتى.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -5036,15 +5064,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ميليمول/ليتىر</unitPattern>
 				<unitPattern count="other">{0} ميليمول/ليتىر</unitPattern>
 			</unit>
-			<unit type="concentr-part">
-				<displayName>بولىك</displayName>
-				<unitPattern count="one">{0} بولىك</unitPattern>
-				<unitPattern count="other">{0} بولىك</unitPattern>
-			</unit>
-			<unit type="concentr-part-per-1e6">
-				<unitPattern count="one">{0} ميلليوندىق ۇلەس</unitPattern>
-				<unitPattern count="other">{0} ميلليوندىق ۇلەس</unitPattern>
-			</unit>
 			<unit type="concentr-percent">
 				<unitPattern count="one">{0} پايىز</unitPattern>
 				<unitPattern count="other">{0} پايىز</unitPattern>
@@ -5056,11 +5075,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-permyriad">
 				<unitPattern count="one">{0} پروميرياد</unitPattern>
 				<unitPattern count="other">{0} پروميرياد</unitPattern>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>گليۋكوزا</displayName>
-				<unitPattern count="one">{0} گليۋكوزا</unitPattern>
-				<unitPattern count="other">{0} گليۋكوزا</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<unitPattern count="one">{0} ليتىر/كيلومەتىر</unitPattern>
@@ -5171,17 +5185,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} مەتىرلىك توننا</unitPattern>
 				<unitPattern count="other">{0} مەتىرلىك توننا</unitPattern>
 			</unit>
-			<unit type="mass-gram">
-				<perUnitPattern>{0}/g</perUnitPattern>
-			</unit>
-			<unit type="mass-pound">
-				<displayName>lb</displayName>
-			</unit>
-			<unit type="pressure-ofhg">
-				<displayName>مەركۋري ءديۋيمى</displayName>
-				<unitPattern count="one">{0} مەركۋري ءديۋيمى</unitPattern>
-				<unitPattern count="other">{0} مەركۋري ءديۋيمى</unitPattern>
-			</unit>
 			<unit type="temperature-generic">
 				<displayName>تەمپەراتۋرا گرادۋسى</displayName>
 				<unitPattern count="one">{0} گرادۋس</unitPattern>
@@ -5203,83 +5206,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} نيۋتون-مەتىر</unitPattern>
 				<unitPattern count="other">{0} نيۋتون-مەتىر</unitPattern>
 			</unit>
-			<unit type="volume-fluid-ounce-metric">
-				<displayName>سۇ. ۋن.</displayName>
-				<unitPattern count="one">{0} سۇ. ۋن.</unitPattern>
-				<unitPattern count="other">{0} سۇ. ۋن.</unitPattern>
-			</unit>
 			<unit type="volume-fluid-ounce-imperial">
 				<unitPattern count="one">يمپ سۇيىق ۋنسيا</unitPattern>
 				<unitPattern count="other">{0} يمپ سۇيىق ۋنسيا</unitPattern>
 			</unit>
 			<unit type="angle-steradian">
-				<displayName>ستەراديان</displayName>
 				<unitPattern count="one">{0} ستەراديان</unitPattern>
 				<unitPattern count="other">{0} ستەراديان</unitPattern>
 			</unit>
-			<unit type="concentr-katal">
-				<displayName>كاتال</displayName>
-				<unitPattern count="one">{0} كاتال</unitPattern>
-				<unitPattern count="other">{0} كاتال</unitPattern>
-			</unit>
-			<unit type="electric-coulomb">
-				<displayName>كۋلون</displayName>
-				<unitPattern count="one">{0} كۋلون</unitPattern>
-				<unitPattern count="other">{0} كۋلون</unitPattern>
-			</unit>
-			<unit type="electric-farad">
-				<displayName>فاراد</displayName>
-				<unitPattern count="one">{0} فاراد</unitPattern>
-				<unitPattern count="other">{0} فاراد</unitPattern>
-			</unit>
-			<unit type="electric-henry">
-				<displayName>حەنري</displayName>
-				<unitPattern count="one">{0} حەنري</unitPattern>
-				<unitPattern count="other">{0} حەنري</unitPattern>
-			</unit>
 			<unit type="electric-siemens">
-				<displayName>سيمەنس</displayName>
 				<unitPattern count="one">{0} سيمەنس</unitPattern>
 				<unitPattern count="other">{0} سيمەنس</unitPattern>
 			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>كالو.</displayName>
-				<unitPattern count="one">{0} كالو.</unitPattern>
-				<unitPattern count="other">{0} كالو.</unitPattern>
-			</unit>
 			<unit type="energy-becquerel">
-				<displayName>بەككەرەل</displayName>
 				<unitPattern count="one">{0} بەككەرەل</unitPattern>
 				<unitPattern count="other">{0} بەككەرەل</unitPattern>
-			</unit>
-			<unit type="energy-sievert">
-				<displayName>زيۆەرت</displayName>
-				<unitPattern count="one">{0} زيۆەرت</unitPattern>
-				<unitPattern count="other">{0} زيۆەرت</unitPattern>
-			</unit>
-			<unit type="energy-gray">
-				<displayName>گىرەي</displayName>
-				<unitPattern count="one">{0} گىرەي</unitPattern>
-				<unitPattern count="other">{0} گىرەي</unitPattern>
-			</unit>
-			<unit type="force-kilogram-force">
-				<displayName>كيلوگرام-كۇش</displayName>
-				<unitPattern count="one">{0} كيلوگرام-كۇش</unitPattern>
-				<unitPattern count="other">{0} كيلوگرام-كۇش</unitPattern>
-			</unit>
-			<unit type="magnetic-tesla">
-				<displayName>ت</displayName>
-				<unitPattern count="one">{0} تەسلا</unitPattern>
-				<unitPattern count="other">{0} تەسلا</unitPattern>
-			</unit>
-			<unit type="magnetic-weber">
-				<displayName>ۋەبەر</displayName>
-				<unitPattern count="one">{0} ۋەبەر</unitPattern>
-				<unitPattern count="other">{0} ۋەبەر</unitPattern>
-			</unit>
-			<unit type="concentr-part-per-1e9">
-				<unitPattern count="one">{0} ميللياردتىق ۇلەس</unitPattern>
-				<unitPattern count="other">{0} ميللياردتىق ۇلەس</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>نەگىزگى باعىت</displayName>
@@ -5534,8 +5475,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>ميل/يمپ گاللون</displayName>
-				<unitPattern count="one">{0} ميل/يمپ گاللون</unitPattern>
-				<unitPattern count="other">{0} ميل/يمپ گاللون</unitPattern>
+				<unitPattern count="one">{0} mpg Imp.</unitPattern>
+				<unitPattern count="other">{0} mpg Imp.</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
 				<displayName>پەتابايت</displayName>
@@ -5860,8 +5801,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>كۇن جارىقتىعى</displayName>
-				<unitPattern count="one">{0} كۇن جارىقتىعى</unitPattern>
-				<unitPattern count="other">{0} كۇن جارىقتىعى</unitPattern>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<displayName>مەتىرلىك توننا</displayName>
@@ -5926,13 +5867,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>جەر ماسساسى</displayName>
-				<unitPattern count="one">{0} M⊕</unitPattern>
-				<unitPattern count="other">{0} M⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>كۇن ماسساسى</displayName>
-				<unitPattern count="one">{0} M☉</unitPattern>
-				<unitPattern count="other">{0} M☉</unitPattern>
 			</unit>
 			<unit type="mass-grain">
 				<displayName>گران</displayName>
@@ -6318,8 +6255,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="concentr-part-per-1e9">
 				<displayName>ميللياردتىق ۇلەس</displayName>
-				<unitPattern count="one">{0} ميللياردتىق ۇلەس</unitPattern>
-				<unitPattern count="other">{0} ميللياردتىق ۇلەس</unitPattern>
+				<unitPattern count="one">{0} ppb</unitPattern>
+				<unitPattern count="other">{0} ppb</unitPattern>
 			</unit>
 			<unit type="duration-night">
 				<displayName>ءتۇن</displayName>
@@ -6329,43 +6266,170 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<coordinateUnit>
 				<displayName>باعىت</displayName>
-				<coordinateUnitPattern type="east">{0} ش</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0} س</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0} و</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0} ب</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} شىعىس</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} سولتۇستىك</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} وڭتۇستىك</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} باتىس</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<unit type="concentr-part">
-				<displayName>بولىك</displayName>
-				<unitPattern count="one">{0} بولىك</unitPattern>
-				<unitPattern count="other">{0} بولىك</unitPattern>
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>d{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>c{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>m{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>μ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>n{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>p{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>f{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>a{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-27">
+				<unitPrefixPattern>r{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-30">
+				<unitPrefixPattern>q{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>da{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>h{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>k{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>M{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>G{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>T{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>P{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>E{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>Z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>Y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p27">
+				<unitPrefixPattern>R{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p30">
+				<unitPrefixPattern>Q{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<unit type="angle-radian">
+				<unitPattern count="one">{0}rad</unitPattern>
+				<unitPattern count="other">{0}rad</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-1e6">
-				<unitPattern count="one">{0} ميلليوندىق ۇلەس</unitPattern>
-				<unitPattern count="other">{0} ميلليوندىق ۇلەس</unitPattern>
+			<unit type="angle-degree">
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
+			</unit>
+			<unit type="angle-arc-minute">
+				<unitPattern count="one">{0}′</unitPattern>
+				<unitPattern count="other">{0}′</unitPattern>
+			</unit>
+			<unit type="angle-arc-second">
+				<unitPattern count="one">{0}″</unitPattern>
+				<unitPattern count="other">{0}″</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<unitPattern count="one">{0}kt</unitPattern>
+				<unitPattern count="other">{0}kt</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<unitPattern count="one">{0}ەلەمەنت</unitPattern>
+				<unitPattern count="other">{0}ەلەمەنت</unitPattern>
+			</unit>
+			<unit type="concentr-part">
+				<unitPattern count="one">{0} بولىك</unitPattern>
+				<unitPattern count="other">{0} بولىك</unitPattern>
 			</unit>
 			<unit type="concentr-ofglucose">
-				<displayName>گليۋكوزا</displayName>
-				<unitPattern count="one">{0} گليۋكوزا</unitPattern>
-				<unitPattern count="other">{0} گليۋكوزا</unitPattern>
+				<unitPattern count="one">{0} گليۋكوزا</unitPattern>
+				<unitPattern count="other">{0} گليۋكوزا</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<unitPattern count="one">{0}mpg</unitPattern>
+				<unitPattern count="other">{0}mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<unitPattern count="one">{0}m/gUK</unitPattern>
+				<unitPattern count="other">{0}m/gUK</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<displayName>B</displayName>
+			</unit>
+			<unit type="force-pound-force">
+				<unitPattern count="one">{0}lbf</unitPattern>
+				<unitPattern count="other">{0}lbf</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<unitPattern count="one">{0}L☉</unitPattern>
+				<unitPattern count="other">{0}L☉</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kg</displayName>
 				<unitPattern count="one">{0}kg</unitPattern>
 				<unitPattern count="other">{0}kg</unitPattern>
-				<perUnitPattern>{0}‎/kg</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<unitPattern count="one">{0}g</unitPattern>
 				<unitPattern count="other">{0}g</unitPattern>
-				<perUnitPattern>{0}/g</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
-				<displayName>mg</displayName>
 				<unitPattern count="one">{0}mg</unitPattern>
 				<unitPattern count="other">{0}mg</unitPattern>
 			</unit>
@@ -6378,7 +6442,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}tn</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<displayName>lb</displayName>
 				<unitPattern count="one">{0}lb</unitPattern>
 				<unitPattern count="other">{0}lb</unitPattern>
 			</unit>
@@ -6417,75 +6480,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}gr</unitPattern>
 				<unitPattern count="other">{0}gr</unitPattern>
 			</unit>
-			<unit type="pressure-ofhg">
-				<displayName>مەركۋري ءديۋيمى</displayName>
-				<unitPattern count="one">{0} مەركۋري ءديۋيمى</unitPattern>
-				<unitPattern count="other">{0} مەركۋري ءديۋيمى</unitPattern>
+			<unit type="torque-pound-force-foot">
+				<unitPattern count="one">{0}lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0}lbf⋅ft</unitPattern>
 			</unit>
-			<unit type="volume-fluid-ounce-metric">
-				<displayName>سۇ. ۋن.</displayName>
-				<unitPattern count="one">{0} سۇ. ۋن.</unitPattern>
-				<unitPattern count="other">{0} سۇ. ۋن.</unitPattern>
+			<unit type="angle-steradian">
+				<unitPattern count="one">{0} sr</unitPattern>
+				<unitPattern count="other">{0} sr</unitPattern>
 			</unit>
 			<unit type="concentr-katal">
-				<displayName>كاتال</displayName>
-				<unitPattern count="one">{0} كاتال</unitPattern>
-				<unitPattern count="other">{0} كاتال</unitPattern>
-			</unit>
-			<unit type="electric-coulomb">
-				<displayName>كۋلون</displayName>
-				<unitPattern count="one">{0} كۋلون</unitPattern>
-				<unitPattern count="other">{0} كۋلون</unitPattern>
-			</unit>
-			<unit type="electric-farad">
-				<displayName>فاراد</displayName>
-				<unitPattern count="one">{0} فاراد</unitPattern>
-				<unitPattern count="other">{0} فاراد</unitPattern>
-			</unit>
-			<unit type="electric-henry">
-				<displayName>حەنري</displayName>
-				<unitPattern count="one">{0} حەنري</unitPattern>
-				<unitPattern count="other">{0} حەنري</unitPattern>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>كالو.</displayName>
-				<unitPattern count="one">{0} كالو.</unitPattern>
-				<unitPattern count="other">{0} كالو.</unitPattern>
+				<unitPattern count="one">{0} kat</unitPattern>
+				<unitPattern count="other">{0} kat</unitPattern>
 			</unit>
 			<unit type="energy-becquerel">
-				<displayName>بەككەرەل</displayName>
 				<unitPattern count="one">{0} بك</unitPattern>
 				<unitPattern count="other">{0} بك</unitPattern>
 			</unit>
-			<unit type="energy-sievert">
-				<displayName>زيۆەرت</displayName>
-				<unitPattern count="one">{0} زيۆەرت</unitPattern>
-				<unitPattern count="other">{0} زيۆەرت</unitPattern>
-			</unit>
-			<unit type="energy-gray">
-				<displayName>گىرەي</displayName>
-				<unitPattern count="one">{0} گىرەي</unitPattern>
-				<unitPattern count="other">{0} گىرەي</unitPattern>
-			</unit>
 			<unit type="force-kilogram-force">
-				<displayName>كيلوگرام-كۇش</displayName>
-				<unitPattern count="one">{0} كيلوگرام-كۇش</unitPattern>
-				<unitPattern count="other">{0} كيلوگرام-كۇش</unitPattern>
+				<unitPattern count="one">{0} kgf</unitPattern>
+				<unitPattern count="other">{0} kgf</unitPattern>
 			</unit>
 			<unit type="magnetic-tesla">
-				<displayName>ت</displayName>
-				<unitPattern count="one">{0} ت</unitPattern>
-				<unitPattern count="other">{0} ت</unitPattern>
+				<unitPattern count="one">{0} T</unitPattern>
+				<unitPattern count="other">{0} T</unitPattern>
 			</unit>
 			<unit type="magnetic-weber">
-				<displayName>ۋەبەر</displayName>
-				<unitPattern count="one">{0} ۋەبەر</unitPattern>
-				<unitPattern count="other">{0} ۋەبەر</unitPattern>
+				<unitPattern count="one">{0} Wb</unitPattern>
+				<unitPattern count="other">{0} Wb</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e9">
-				<unitPattern count="one">{0} ميللياردتىق ۇلەس</unitPattern>
-				<unitPattern count="other">{0} ميللياردتىق ۇلەس</unitPattern>
+				<unitPattern count="one">{0}ppb</unitPattern>
+				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>
+			<coordinateUnit>
+				<coordinateUnitPattern type="east">{0} شىعىس</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} سولتۇستىك</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} وڭتۇستىك</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} باتىس</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 	</units>
 	<listPatterns>
@@ -6672,13 +6704,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<personNames>
 		<nameOrderLocales order="givenFirst">und kk</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{given} {surname} {generation}، {credentials}</namePattern>
+			<namePattern>{title} {given} {given2} {surname} {generation}, {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
-			<namePattern>{given-informal}</namePattern>
+			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -6689,11 +6721,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{given} {given2-initial} {surname} {generation}, {credentials}</namePattern>
+		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
-			<namePattern>{given-informal}</namePattern>
+			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -6705,13 +6740,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="formal">
-			<namePattern>{given-initial} {surname}</namePattern>
+			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{given-informal}</namePattern>
+			<namePattern>{given-informal} {surname-initial}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -6723,13 +6758,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{surname} {given}</namePattern>
+			<namePattern>{surname} {title} {given} {given2} {generation}, {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -6740,11 +6775,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
 			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
 		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2-initial} {generation}, {credentials}</namePattern>
+		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -6762,7 +6800,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{surname} {given-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>

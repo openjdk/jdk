@@ -1537,7 +1537,7 @@ public final class DateTimeFormatterBuilder {
      * @return this, for chaining, not null
      * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
      *
-     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
+     * @spec https://www.unicode.org/reports/tr35 Unicode Common Locale Data {@literal &} Rules (CLDR)
      * @see #appendPattern(String)
      * @since 19
      */
@@ -1622,7 +1622,7 @@ public final class DateTimeFormatterBuilder {
      * @param style the text style to use, not null
      * @return this, for chaining, not null
      *
-     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
+     * @spec https://www.unicode.org/reports/tr35 Unicode Common Locale Data {@literal &} Rules (CLDR)
      * @since 16
      */
     public DateTimeFormatterBuilder appendDayPeriodText(TextStyle style) {
@@ -1894,7 +1894,7 @@ public final class DateTimeFormatterBuilder {
      * Note that the pattern string is similar, but not identical, to
      * {@link java.text.SimpleDateFormat SimpleDateFormat}.
      * The pattern string is also similar, but not identical, to that defined by the
-     * Unicode Common Locale Data Repository (CLDR/LDML).
+     * Unicode Common Locale Data {@literal &} Rules (CLDR/LDML).
      * Pattern letters 'X' and 'u' are aligned with Unicode CLDR/LDML.
      * By contrast, {@code SimpleDateFormat} uses 'u' for the numeric day of week.
      * Pattern letters 'y' and 'Y' parse years of two digits and more than 4 digits differently.
@@ -4293,11 +4293,7 @@ public final class DateTimeFormatterBuilder {
             if (offsetSecs == null) {
                 return false;
             }
-            String key = "timezone.gmtZeroFormat";
-            String gmtText = DateTimeTextProvider.getLocalizedResource(key, context.getLocale());
-            if (gmtText == null) {
-                gmtText = "GMT";  // Default to "GMT"
-            }
+            String gmtText = TimeZoneNameUtility.gmtZeroFormat(context.getLocale());
             buf.append(gmtText);
             int totalSecs = Math.toIntExact(offsetSecs);
             if (totalSecs != 0) {
@@ -4343,11 +4339,7 @@ public final class DateTimeFormatterBuilder {
         public int parse(DateTimeParseContext context, CharSequence text, int position) {
             int pos = position;
             int end = text.length();
-            String key = "timezone.gmtZeroFormat";
-            String gmtText = DateTimeTextProvider.getLocalizedResource(key, context.getLocale());
-            if (gmtText == null) {
-                gmtText = "GMT";  // Default to "GMT"
-            }
+            String gmtText = TimeZoneNameUtility.gmtZeroFormat(context.getLocale());
             if (!context.subSequenceEquals(text, pos, gmtText, 0, gmtText.length())) {
                     return ~position;
                 }
@@ -4685,6 +4677,19 @@ public final class DateTimeFormatterBuilder {
             // handle fixed time-zone IDs
             char nextChar = text.charAt(position);
             if (nextChar == '+' || nextChar == '-') {
+                // Prefer a complete localized zone name over its leading offset.
+                PrefixTree tree = getTree(context);
+                ParsePosition ppos = new ParsePosition(position);
+                PrefixTree parsedZoneId = tree.match(text, ppos);
+
+                DateTimeParseContext offsetContext = context.copy();
+                int offsetEnd = OffsetIdPrinterParser.INSTANCE_ID_Z
+                        .parse(offsetContext, text, position);
+                if (parsedZoneId.value != null && ppos.getIndex() > offsetEnd) {
+                    context.setParsed(ZoneId.of(parsedZoneId.value));
+                    context.setParsedZoneNameType(parsedZoneId.type);
+                    return ppos.getIndex();
+                }
                 return parseOffsetBased(context, text, position, position, OffsetIdPrinterParser.INSTANCE_ID_Z);
             } else if (length >= position + 2) {
                 char nextNextChar = text.charAt(position + 1);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6530336 6537997 8008577 8174269 8333582
+ * @bug 6530336 6537997 8008577 8174269 8333582 8384532
  * @library /java/text/testlib
  * @run junit/othervm Bug6530336
  */
@@ -79,13 +79,16 @@ public class Bug6530336 {
         for (int j = 0; j < timezones.length; j++) {
             sdf.setTimeZone(timezones[j]);
             String date = sdf.format(dates[j]);
-            // CLDR localizes GMT format into for some locales. Ignore those cases
+            // CLDR localizes GMT formats in some locales. Ignore those cases.
             if (date.matches(".*GMT[\\s+-]\\D.*") ||
                     date.contains("UTC") ||
                     date.contains("TMG") || // Interlingue
                     date.contains("ߜ߭ߕߖ") || // N’Ko
                     date.contains("ꋧꃅꎕꏦꄮꈉ") || // Sichuan Yi, Nuosu
-                    date.contains("گرینیچ")) { // Central Kurdish
+                    date.contains("گرینیچ") || // Central Kurdish
+                    date.contains("ГГС") || // Adyghe
+                    date.contains("ГКС") || // Kabardian
+                    date.contains("GMT\u2212")) { // Ligurian
                 continue;
             }
             sdf.setTimeZone(timezone_LA);

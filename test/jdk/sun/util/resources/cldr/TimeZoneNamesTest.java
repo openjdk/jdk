@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8181157 8202537 8234347 8236548 8261279 8322647 8174269 8346948
- *      8354548 8381379 8382020 8384043 8371842
+ *      8354548 8381379 8382020 8384043 8371842 8384532
  * @modules jdk.localedata
  * @summary Checks CLDR time zone names are generated correctly at
  * either build or runtime
@@ -57,11 +57,26 @@ public class TimeZoneNamesTest {
         return new Object[][] {
             // tzid, locale, style, expected
 
-            // This list is current as of CLDR 48.2 and should be reviewed
+            // This list is current as of CLDR 49 and should be reviewed
             // whenever the CLDR data is upgraded.
 
-            // no "metazone" zones (some of them were assigned metazones
-            // over time, thus they are not "generated" per se
+            // no "metazone" zones
+            {"Pacific/Bougainville", Locale.US,
+                "Bougainville Standard Time",
+                "GMT+11:00",
+                "Bougainville Daylight Time",
+                "GMT+11:00",
+                "Bougainville Time",
+                "GMT+11:00"},
+            {"Pacific/Bougainville", Locale.FRANCE,
+                "Bougainville (heure standard)",
+                "UTC+11:00",
+                "Bougainville (heure d’été)",
+                "UTC+11:00",
+                "heure : Bougainville",
+                "UTC+11:00"},
+
+            // zones used to have no assigned metazones.
             {"Asia/Srednekolymsk", Locale.US,
                 "Magadan Standard Time",
                 "GMT+11:00",
@@ -77,18 +92,18 @@ public class TimeZoneNamesTest {
                 "heure de Magadan",
                 "UTC+11:00"},
             {"America/Punta_Arenas", Locale.US,
-                "Punta Arenas Standard Time",
+                "Chile Standard Time",
                 "GMT-03:00",
-                "Punta Arenas Daylight Time",
+                "Chile Summer Time",
                 "GMT-02:00",
-                "Punta Arenas Time",
+                "Chile Time",
                 "GMT-03:00"},
             {"America/Punta_Arenas", Locale.FRANCE,
-                "Punta Arenas (heure standard)",
+                "heure normale du Chili",
                 "UTC−03:00",
-                "Punta Arenas (heure d’été)",
+                "heure d’été du Chili",
                 "UTC−02:00",
-                "heure : Punta Arenas",
+                "heure du Chili",
                 "UTC−03:00"},
             {"Asia/Famagusta", Locale.US,
                 "Eastern European Standard Time",
@@ -146,20 +161,6 @@ public class TimeZoneNamesTest {
                 "UTC+05:00",
                 "heure de Samara",
                 "UTC+04:00"},
-            {"Pacific/Bougainville", Locale.US,
-                "Bougainville Standard Time",
-                "GMT+11:00",
-                "Bougainville Daylight Time",
-                "GMT+11:00",
-                "Bougainville Time",
-                "GMT+11:00"},
-            {"Pacific/Bougainville", Locale.FRANCE,
-                "Bougainville (heure standard)",
-                "UTC+11:00",
-                "Bougainville (heure d’été)",
-                "UTC+11:00",
-                "heure : Bougainville",
-                "UTC+11:00"},
             {"Europe/Istanbul", Locale.US,
                 "Türkiye Standard Time",
                 "GMT+03:00",
@@ -170,7 +171,7 @@ public class TimeZoneNamesTest {
             {"Europe/Istanbul", Locale.FRANCE,
                 "heure normale de Turquie",
                 "UTC+03:00",
-                "heure avancée de Turquie",
+                "heure d’été de Turquie",
                 "UTC+04:00",
                 "heure de Turquie",
                 "UTC+03:00"},
@@ -184,7 +185,7 @@ public class TimeZoneNamesTest {
             {"Asia/Istanbul", Locale.FRANCE,
                 "heure normale de Turquie",
                 "UTC+03:00",
-                "heure avancée de Turquie",
+                "heure d’été de Turquie",
                 "UTC+04:00",
                 "heure de Turquie",
                 "UTC+03:00"},
@@ -198,7 +199,7 @@ public class TimeZoneNamesTest {
             {"Turkey", Locale.FRANCE,
                 "heure normale de Turquie",
                 "UTC+03:00",
-                "heure avancée de Turquie",
+                "heure d’été de Turquie",
                 "UTC+04:00",
                 "heure de Turquie",
                 "UTC+03:00"},
@@ -237,7 +238,7 @@ public class TimeZoneNamesTest {
                 "GMT",
                 "Irish Standard Time",
                 "IST",
-                "Dublin Time",
+                "Irish Time",
                 "GMT"},
             {"Pacific/Gambier", Locale.US,
                 "Gambier Time",
@@ -282,7 +283,7 @@ public class TimeZoneNamesTest {
             // from TZDB. "America/Adak" reflects the "Hawaii_Aleutian" metazone
             // names.
             {"Pacific/Honolulu", Locale.US,
-                "Hawaii-Aleutian Standard Time",
+                "Hawaii Time",
                 "HST",
                 "Honolulu Daylight Time",
                 "HST",
@@ -295,6 +296,44 @@ public class TimeZoneNamesTest {
                 "HADT",
                 "Hawaii-Aleutian Time",
                 "HAT"},
+
+            // British/Irish metazones. "Europe/Dublin" for US locale
+            // is already tested above
+            {"Europe/London", Locale.US,
+                "Greenwich Mean Time",
+                "GMT",
+                "British Summer Time",
+                "BST",
+                "British Time",
+                "GMT"},
+            {"Europe/London", Locale.FRANCE,
+                "heure moyenne de Greenwich",
+                "GMT",
+                "heure d’été britannique",
+                "BST",
+                "heure britannique",
+                "GMT"},
+            {"Europe/London", Locale.JAPAN,
+                "グリニッジ標準時",
+                "GMT",
+                "英国夏時間",
+                "BST",
+                "英国時間",
+                "GMT"},
+            {"Europe/Dublin", Locale.FRANCE,
+                "heure moyenne de Greenwich",
+                "GMT",
+                "heure d’été irlandaise",
+                "IST",
+                "heure irlandaise",
+                "GMT"},
+            {"Europe/Dublin", Locale.JAPAN,
+                "グリニッジ標準時",
+                "GMT",
+                "アイルランド標準時",
+                "IST",
+                "アイルランド時間",
+                "GMT"},
         };
     }
 
@@ -307,9 +346,28 @@ public class TimeZoneNamesTest {
             Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("Europe/Dublin")), irl, "Greenwich Mean Time", "GMT"),
             Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("Eire")), irl, "Irish Standard Time", "IST"),
             Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("Eire")), irl, "Greenwich Mean Time", "GMT"),
-            // CLDR v48.2 & tz2026b. America/Vancouver switched to permanent DST
+            // CLDR v48.2 & tz2026b. America/Vancouver (and its alias) switched to permanent DST
             Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("America/Vancouver")), Locale.CANADA, "Pacific Daylight Time", "PDT"),
-            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("America/Vancouver")), Locale.CANADA, "Pacific Daylight Time", "PDT")
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("America/Vancouver")), Locale.CANADA, "Pacific Daylight Time", "PDT"),
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("Canada/Pacific")), Locale.CANADA, "Pacific Daylight Time", "PDT"),
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("Canada/Pacific")), Locale.CANADA, "Pacific Daylight Time", "PDT"),
+            // CLDR v49 & tz2026c. America/Edmonton (and its aliases) switched to permanent DST
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("America/Edmonton")), Locale.CANADA, "Mountain Daylight Time", "MDT"),
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("America/Edmonton")), Locale.CANADA, "Mountain Daylight Time", "MDT"),
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("America/Yellowknife")), Locale.CANADA, "Mountain Daylight Time", "MDT"),
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("America/Yellowknife")), Locale.CANADA, "Mountain Daylight Time", "MDT"),
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("Canada/Mountain")), Locale.CANADA, "Mountain Daylight Time", "MDT"),
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("Canada/Mountain")), Locale.CANADA, "Mountain Daylight Time", "MDT"),
+            // CLDR v49 & tz2026d. America/Inuvik switched to permanent DST
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("America/Inuvik")), Locale.CANADA, "Mountain Daylight Time", "MDT"),
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("America/Inuvik")), Locale.CANADA, "Mountain Daylight Time", "MDT"),
+            // CLDR v49 & tz2026e. America/Winnipeg switched to permanent DST
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("America/Winnipeg")), Locale.CANADA, "Central Daylight Time", "CDT"),
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("America/Winnipeg")), Locale.CANADA, "Central Daylight Time", "CDT"),
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("America/Rainy_River")), Locale.CANADA, "Central Daylight Time", "CDT"),
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("America/Rainy_River")), Locale.CANADA, "Central Daylight Time", "CDT"),
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("Canada/Central")), Locale.CANADA, "Central Daylight Time", "CDT"),
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("Canada/Central")), Locale.CANADA, "Central Daylight Time", "CDT")
         );
     }
 

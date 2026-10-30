@@ -1566,6 +1566,11 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 						<dateFormatItem id="yw" count="other">Y، w-ھەپتە</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="contributed">d – d</greatestDifference>
@@ -1915,16 +1920,6 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<zone type="America/Curacao">
 				<exemplarCity draft="contributed">كۇراسو</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight draft="contributed">ئەنگلىيە يازلىق ۋاقتى</daylight>
-				</long>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight draft="contributed">ئىرېلاند يازلىق ۋاقتى</daylight>
-				</long>
-			</zone>
 			<zone type="America/Asuncion">
 				<exemplarCity draft="contributed">ئاسۇنسىيون</exemplarCity>
 			</zone>
@@ -1976,13 +1971,6 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 					<daylight draft="contributed">ئالياسكا يازلىق ۋاقتى</daylight>
 				</long>
 			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic draft="contributed">ئالمۇتا ۋاقتى</generic>
-					<standard draft="contributed">ئالمۇتا ئۆلچەملىك ۋاقتى</standard>
-					<daylight draft="contributed">ئالمۇتا يازلىق ۋاقتى</daylight>
-				</long>
-			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic draft="contributed">ئامازون ۋاقتى</generic>
@@ -2023,20 +2011,6 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 					<generic draft="contributed">ئانادىر ۋاقتى</generic>
 					<standard draft="contributed">ئانادىر ئۆلچەملىك ۋاقتى</standard>
 					<daylight draft="contributed">ئانادىر يازلىق ۋاقتى</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic draft="contributed">ئاقتاي ۋاقتى</generic>
-					<standard draft="contributed">ئاقتاي ئۆلچەملىك ۋاقتى</standard>
-					<daylight draft="contributed">ئاقتاي يازلىق ۋاقتى</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic draft="contributed">ئاقتۆبە ۋاقتى</generic>
-					<standard draft="contributed">ئاقتۆبە ئۆلچەملىك ۋاقتى</standard>
-					<daylight draft="contributed">ئاقتۆبە يازلىق ۋاقتى</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -2138,6 +2112,11 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 					<generic draft="contributed">بىرازىلىيە ۋاقتى</generic>
 					<standard draft="contributed">بىرازىلىيە ئۆلچەملىك ۋاقتى</standard>
 					<daylight draft="contributed">بىرازىلىيە يازلىق ۋاقتى</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight draft="contributed">ئەنگلىيە يازلىق ۋاقتى</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -2327,11 +2306,6 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 					<daylight draft="contributed">غەربىي گىرېنلاند يازلىق ۋاقتى</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard draft="contributed">گۇئام ئۆلچەملىك ۋاقتى</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard draft="contributed">گۇلف ئۆلچەملىك ۋاقتى</standard>
@@ -2405,6 +2379,11 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 					<daylight draft="contributed">ئىران يازلىق ۋاقتى</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight draft="contributed">ئىرېلاند يازلىق ۋاقتى</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic draft="contributed">ئىركۇتسك ۋاقتى</generic>
@@ -2467,11 +2446,6 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 					<standard draft="contributed">قىرغىزىستان ۋاقتى</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard draft="contributed">سىرى لانكا ۋاقتى</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard draft="contributed">لاين ئاراللىرى ۋاقتى</standard>
@@ -2482,13 +2456,6 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 					<generic draft="contributed">لورد-خاي ۋاقتى</generic>
 					<standard draft="contributed">لورد-خاي ئۆلچەملىك ۋاقتى</standard>
 					<daylight draft="contributed">لورد-خاي يازلىق ۋاقتى</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic draft="contributed">ئاۋمېن ۋاقتى</generic>
-					<standard draft="contributed">ئاۋمېن ئۆلچەملىك ۋاقتى</standard>
-					<daylight draft="contributed">ئاۋمېن يازلىق ۋاقتى</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -2606,11 +2573,6 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 					<daylight draft="contributed">فېرناندو-نورونخا يازلىق ۋاقتى</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard draft="contributed">شىمالىي مارىيانا ئاراللىرى ۋاقتى</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic draft="contributed">نوۋوسىبىرسك ۋاقتى</generic>
@@ -2685,13 +2647,6 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 					<standard draft="contributed">پونپېي ۋاقتى</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic draft="contributed">قىزىلئوردا ۋاقتى</generic>
-					<standard draft="contributed">قىزىلئوردا ئۆلچەملىك ۋاقتى</standard>
-					<daylight draft="contributed">قىزىلئوردا يازلىق ۋاقتى</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard draft="contributed">رېئونىيون ۋاقتى</standard>
@@ -2718,9 +2673,7 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic draft="contributed">ساموئا ۋاقتى</generic>
 					<standard draft="contributed">ساموئا ئۆلچەملىك ۋاقتى</standard>
-					<daylight draft="contributed">سەمەرقەنت يازلىق ۋاقتى</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3192,9 +3145,6 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			</currency>
 			<currency type="CLP">
 				<displayName draft="contributed">چىلى پېسوسى</displayName>
-			</currency>
-			<currency type="CNX">
-				<displayName draft="contributed">جۇڭگو خەلق بانكىسى دوللىرى</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName draft="contributed">جۇڭگو يۈەنى</displayName>

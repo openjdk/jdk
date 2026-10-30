@@ -900,6 +900,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="standard">मानक सॉर्ट क्रम</type>
 			<type key="collation" type="stroke">स्ट्रोक वर्गीकरण</type>
 			<type key="collation" type="traditional">पारम्पारिक वर्गीकरण</type>
+			<type key="hc" type="c12">12 घंटेयां दी प्रणाली</type>
+			<type key="hc" type="c24">24 घंटेयां दी प्रणाली</type>
 			<type key="hc" type="h11">12 घंटेयां दी प्रणाली (0–11)</type>
 			<type key="hc" type="h12">12 घंटेयां दी प्रणाली (1–12)</type>
 			<type key="hc" type="h23">24 घंटेयां दी प्रणाली (0–23)</type>
@@ -1317,6 +1319,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">Y दा सप्ताह w</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
@@ -2199,9 +2206,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>लिब्रेविले</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>ब्रिटिश दी तोंदिया दा टैम</daylight>
-				</long>
 				<exemplarCity>लंदन</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2292,9 +2296,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>जयापुरा</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>आइरिश दा मानक टैम</daylight>
-				</long>
 				<exemplarCity>डबलिन</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -3162,6 +3163,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>ब्राज़ीलिया दी तोंदिया दा टैम</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight>ब्रिटिश दी तोंदिया दा टैम</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>ब्रूनेई दारूस्सलम दा टैम</standard>
@@ -3420,6 +3426,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>ईरान दा टैम</generic>
 					<standard>ईरान दा मानक टैम</standard>
 					<daylight>ईरान दे ध्याड़े दे उजाले दा टैम</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight>आइरिश दा मानक टैम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -3702,9 +3713,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>समोआ दा टैम</generic>
 					<standard>समोआ दा मानक टैम</standard>
-					<daylight>समोआ दे ध्याड़े दे उजाले दा टैम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">

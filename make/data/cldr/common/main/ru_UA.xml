@@ -78,6 +78,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMEd" draft="contributed">ccc, d.MM.y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatFallback draft="provisional">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="y" draft="contributed">LLL y – LLL y</greatestDifference>
 						</intervalFormatItem>
