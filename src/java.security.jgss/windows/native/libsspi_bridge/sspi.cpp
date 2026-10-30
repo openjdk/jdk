@@ -312,6 +312,71 @@ get_full_name(WCHAR* input)
     return fullname;
 }
 
+// Convert input channel binding to the windows cbt
+static SECURITY_STATUS
+convert_chan_bindings(gss_const_channel_bindings_t input_cb, PBYTE* cbBuffer, size_t* cbBufferLength) {
+
+    size_t length = sizeof(SEC_CHANNEL_BINDINGS);
+    if ((input_cb->initiator_address.length != 0 && input_cb->initiator_address.value == NULL) ||
+        input_cb->initiator_address.length > ULONG_MAX - length) {
+        return SEC_E_INVALID_TOKEN;
+    }
+    length += input_cb->initiator_address.length;
+    if ((input_cb->acceptor_address.length != 0 && input_cb->acceptor_address.value == NULL) ||
+        input_cb->acceptor_address.length > ULONG_MAX - length) {
+        return SEC_E_INVALID_TOKEN;
+    }
+    length += input_cb->acceptor_address.length;
+    if ((input_cb->application_data.length != 0 && input_cb->application_data.value == NULL) ||
+        input_cb->application_data.length > ULONG_MAX - length) {
+        return SEC_E_INVALID_TOKEN;
+    }
+    length += input_cb->application_data.length;
+
+    *cbBuffer = (PBYTE)calloc(1, length);
+    if (*cbBuffer == NULL) {
+        return SEC_E_INSUFFICIENT_MEMORY;
+    }
+
+    PBYTE data = *cbBuffer + sizeof(SEC_CHANNEL_BINDINGS);
+    PSEC_CHANNEL_BINDINGS windowsCbt = (PSEC_CHANNEL_BINDINGS)*cbBuffer;
+
+    windowsCbt->dwInitiatorAddrType = input_cb->initiator_addrtype;
+    if (input_cb->initiator_address.length != 0) {
+        windowsCbt->cbInitiatorLength =
+                (ULONG)input_cb->initiator_address.length;
+        windowsCbt->dwInitiatorOffset = (ULONG)(data - *cbBuffer);
+        memcpy(data,
+                input_cb->initiator_address.value,
+                input_cb->initiator_address.length);
+        data += input_cb->initiator_address.length;
+    }
+
+    windowsCbt->dwAcceptorAddrType = input_cb->acceptor_addrtype;
+    if (input_cb->acceptor_address.length != 0) {
+        windowsCbt->cbAcceptorLength =
+                (ULONG)input_cb->acceptor_address.length;
+        windowsCbt->dwAcceptorOffset = (ULONG)(data - *cbBuffer);
+        memcpy(data,
+                input_cb->acceptor_address.value,
+                input_cb->acceptor_address.length);
+        data += input_cb->acceptor_address.length;
+    }
+
+    if (input_cb->application_data.length != 0) {
+        windowsCbt->cbApplicationDataLength =
+                (ULONG)input_cb->application_data.length;
+        windowsCbt->dwApplicationDataOffset = (ULONG)(data - *cbBuffer);
+        memcpy(data,
+                input_cb->application_data.value,
+                input_cb->application_data.length);
+    }
+
+    *cbBufferLength = length;
+
+    return SEC_E_OK;
+}
+
 /* End support section */
 
 /* This section holds GSS-API exported functions */
@@ -868,7 +933,10 @@ gss_init_sec_context(OM_uint32 *minor_status,
     SECURITY_STATUS ss;
     TimeStamp lifeTime;
     SecBufferDesc inBuffDesc;
-    SecBuffer inSecBuff;
+    SecBuffer inSecBuff[2];
+    PBYTE cbBuffer = NULL;
+    size_t cbBufferLength = 0;
+    size_t inSecBuffCount = 0;
     SecBufferDesc outBuffDesc;
     SecBuffer outSecBuff;
     BOOLEAN isSPNEGO = is_same_oid(mech_type, &SPNEGO_OID);
@@ -918,13 +986,10 @@ gss_init_sec_context(OM_uint32 *minor_status,
     outSecBuff.BufferType = SECBUFFER_TOKEN;
 
     if (!firstTime) {
-        inBuffDesc.ulVersion = SECBUFFER_VERSION;
-        inBuffDesc.cBuffers = 1;
-        inBuffDesc.pBuffers = &inSecBuff;
-
-        inSecBuff.BufferType = SECBUFFER_TOKEN;
-        inSecBuff.cbBuffer = (ULONG)input_token->length;
-        inSecBuff.pvBuffer = input_token->value;
+        inSecBuff[0].BufferType = SECBUFFER_TOKEN;
+        inSecBuff[0].cbBuffer = (ULONG)input_token->length;
+        inSecBuff[0].pvBuffer = input_token->value;
+        inSecBuffCount = 1;
     } else if (!pc->phCred) {
         if (isSPNEGO && initiator_cred_handle
                 && initiator_cred_handle->phCredS) {
@@ -966,6 +1031,22 @@ gss_init_sec_context(OM_uint32 *minor_status,
             pc->isLocalCred = TRUE;
         }
     }
+
+    if (input_chan_bindings != GSS_C_NO_CHANNEL_BINDINGS) {
+        ss = convert_chan_bindings(input_chan_bindings, &cbBuffer, &cbBufferLength);
+        if (!SEC_SUCCESS(ss)) {
+            goto err;
+        }
+        inSecBuff[inSecBuffCount].BufferType = SECBUFFER_CHANNEL_BINDINGS;
+        inSecBuff[inSecBuffCount].cbBuffer = (ULONG)cbBufferLength;
+        inSecBuff[inSecBuffCount].pvBuffer = cbBuffer;
+        inSecBuffCount++;
+    }
+    if (inSecBuffCount) {
+        inBuffDesc.ulVersion = SECBUFFER_VERSION;
+        inBuffDesc.cBuffers = (ULONG)inSecBuffCount;
+        inBuffDesc.pBuffers = inSecBuff;
+    }
     ss = InitializeSecurityContext(
             pc->phCred,
             firstTime ? NULL : &pc->hCtxt,
@@ -973,12 +1054,17 @@ gss_init_sec_context(OM_uint32 *minor_status,
             flag,
             0,
             SECURITY_NATIVE_DREP,
-            firstTime ? NULL : &inBuffDesc,
+            inSecBuffCount ? &inBuffDesc : NULL,
             0,
             &pc->hCtxt,
             &outBuffDesc,
             &outFlag,
             &lifeTime);
+
+    if (cbBuffer != NULL) {
+        free(cbBuffer);
+        cbBuffer = NULL;
+    }
 
     if (!SEC_SUCCESS(ss)) {
         PP("InitializeSecurityContext failed");
