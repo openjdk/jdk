@@ -37,7 +37,6 @@ import java.net.http.HttpResponse;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
 import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Implements chunked/fixed transfer encodings of HTTP/1.1 responses.

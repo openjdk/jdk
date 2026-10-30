@@ -58,7 +58,6 @@ import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.HttpClientImpl.DelegatingExecutor;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ResponseSubscribers {
 
