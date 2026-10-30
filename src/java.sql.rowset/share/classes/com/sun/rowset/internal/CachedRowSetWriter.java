@@ -334,7 +334,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
         int rows =1;
         String[] primaryKeys = null;
         PreparedStatement pstmtIns = null;
-        Throwable cause = null;
+        Throwable originalEx = null;
         try {
             while (crs.next()) {
                 if (crs.rowDeleted()) {
@@ -405,7 +405,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
                 rows++;
             } //end while
         } catch (Throwable e) {
-            cause = e;
+            originalEx = e;
             throw e;
         } finally {
             // close the insert statement
@@ -413,9 +413,11 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
                 if (pstmtIns != null) {
                     pstmtIns.close();
                 }
-            } catch (SQLException e) {
-                if (cause == null) {
-                    throw e;
+            } catch (Throwable closeEx) {
+                if (originalEx == null) {
+                    throw closeEx;
+                } else {
+                    originalEx.addSuppressed(closeEx);
                 }
             }
         }
