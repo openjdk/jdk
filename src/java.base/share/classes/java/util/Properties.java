@@ -236,6 +236,13 @@ public class Properties extends Hashtable<Object,Object> {
      * Reads a property list (key and element pairs) from the input
      * character stream in a simple line-oriented format.
      * <p>
+     * If a key in the loaded property list already exists in this
+     * {@code Properties}, the associated element is replaced with the value
+     * loaded from the list.
+     * <p>
+     * If a key occurs more than once in the loaded property list, the
+     * associated element is set to the value of the last occurrence.
+     * <p>
      * Properties are processed in terms of lines. There are two
      * kinds of lines, <i>natural lines</i> and <i>logical lines</i>.
      * A natural line is defined as a line of
@@ -368,13 +375,6 @@ public class Properties extends Hashtable<Object,Object> {
      * sequence.
      *
      * </ul>
-     * <p>
-     * If the loaded property list includes a key that is already present
-     * in this {@code Properties}, the associated element is set to the value
-     * loaded from the property list.
-     * <p>
-     * If a key occurs more than once in the loaded property list, the
-     * associated element is set to the value of the last occurrence.
      * <p>
      * The specified stream remains open after this method returns.
      *
