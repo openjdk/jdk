@@ -42,7 +42,7 @@ public class PacketNumbersTest {
 
     record EncodeResult(String expected, boolean assertion, Class<? extends Throwable> failure) {
         public static EncodeResult illegal() {
-            return new EncodeResult(null, true, IllegalArgumentException.class);
+            return new EncodeResult(null, false, IllegalArgumentException.class);
         }
         public static EncodeResult asserting() {
             return new EncodeResult(null, true, AssertionError.class);
@@ -151,16 +151,12 @@ public class PacketNumbersTest {
     void testEncodePacketNumber(TestCase test) {
         System.out.println(test);
         if (test.result().assertion()) {
-            Assumptions.assumeFalse(!QuicPacketNumbers.class.desiredAssertionStatus(), "needs assertion enabled (-esa)");
-            Throwable t = Assertions.assertThrows(test.result().failure(), test::encode);
-            System.out.println("Got expected assertion: " + t);
-            return;
+            Assumptions.assumeTrue(QuicPacketNumbers.class.desiredAssertionStatus(), "needs assertion enabled (-ea)");
         }
         if (test.result().fail()) {
             Throwable t = Assertions.assertThrows(test.result().failure(), test::encode);
             System.out.println("Got expected exception: " + t);
             return;
-
         }
         byte[] res = test.encode();
         String expected = HexFormat.of().withUpperCase().formatHex(res);
