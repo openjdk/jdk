@@ -563,6 +563,10 @@ static int max_va_bits() {
     }
   }
 
+  static bool is_low_canonical_address(address addr) {
+    return ((uintptr_t)addr >> (max_va_bits() - 1)) == 0;
+  }
+
   // Check if an address is canonical for the current VA mode.
   // Canonical addresses have bits [63:va_bits] equal to bit va_bits-1.
   static bool is_canonical_address(address addr) {
