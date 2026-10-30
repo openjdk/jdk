@@ -68,16 +68,16 @@ Java_ValueGetCtorLocal_testCtorThis(JNIEnv *jni, jclass thisClass, jthread threa
   err = jvmti->GetLocalObject(thread, depth, 0, & obj0);
   if (err != JVMTI_ERROR_OPAQUE_FRAME) {
     LOG("Failed: unexpected error from GetLocalObject: %s (%d), expected: JVMTI_ERROR_OPAQUE_FRAME\n", TranslateError(err), err);
-    jni->FatalError("Failed: expected JVMTI_ERROR_OPAQUE_FRAME from JVMTI GetLocalObject for THIS value object in construction");
+    jni->FatalError("Failed: expected JVMTI_ERROR_OPAQUE_FRAME from JVMTI GetLocalObject for THIS object in Ctor with strict-init instance fields");
   }
   LOG("Got expected JVMTI_ERROR_OPAQUE_FRAME error code from GetLocalObject for THIS value object in construction\n");
 
   err = jvmti->GetLocalInstance(thread, depth, & obj_this);
   if (err != JVMTI_ERROR_OPAQUE_FRAME) {
     LOG("Failed: unexpected error from GetLocalInstance: %s (%d), expected: JVMTI_ERROR_OPAQUE_FRAME\n", TranslateError(err), err);
-    jni->FatalError("Failed: expected JVMTI_ERROR_OPAQUE_FRAME from JVMTI GetLocalInstance for value object in construction");
+    jni->FatalError("Failed: expected JVMTI_ERROR_OPAQUE_FRAME from JVMTI GetLocalInstance for object in Ctor with strict-init instance fields");
   }
-  LOG("Got expected JVMTI_ERROR_OPAQUE_FRAME error code from GetLocalInstance for value object in construction\n");
+  LOG("Got expected JVMTI_ERROR_OPAQUE_FRAME error code from GetLocalInstance for object in Ctor with strict-init instance fields\n");
   deallocate(jvmti, jni, (void*)mname);
 }
 
