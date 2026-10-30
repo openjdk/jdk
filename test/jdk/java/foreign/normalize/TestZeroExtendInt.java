@@ -24,13 +24,10 @@
 /*
  * @test
  * @requires jdk.foreign.linker != "FALLBACK"
- * @requires (os.name == "Mac OS X")
- *               | (os.name == "Linux"
- *                   & (os.arch == "amd64" | os.arch == "ppc64" | os.arch == "ppc64le" | os.arch == "riscv64"))
  * @library ../
  * @run junit/othervm/native
  *   --enable-native-access=ALL-UNNAMED
- *   TestZeroExtend
+ *   TestZeroExtendInt
  */
 
 import org.junit.jupiter.api.TestInstance;
@@ -39,28 +36,48 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class TestZeroExtend extends NativeTestHelper {
+public class TestZeroExtendInt extends NativeTestHelper {
+
+    static final MethodHandle MH_CAPTURE;
 
     static {
-        System.loadLibrary("Normalize");
+        try {
+            MH_CAPTURE = MethodHandles.lookup().findStatic(TestZeroExtendInt.class, "capture",
+                            MethodType.methodType(int.class, AtomicInteger.class, int.class));
+        } catch (ReflectiveOperationException e) {
+            throw new ExceptionInInitializerError(e);
+        }
     }
 
-    // some platforms (see @requires) require zero-extension of types smaller than int
     @ParameterizedTest
     @MethodSource("cases")
     public void testZeroExtend(MemoryLayout layout, Object input, Object expectedOutput) throws Throwable {
-        MethodHandle mh = downcallHandle("int_identity", FunctionDescriptor.of(C_INT, layout));
-        int output = (int) mh.invoke(input);
+        AtomicInteger captured = new AtomicInteger();
+        // We pass a type smaller than int, but receive back an int
+        // make sure it gets widened correctly according to its sign by the binding recipe.
+        MemorySegment stub = LINKER.upcallStub(MH_CAPTURE.bindTo(captured),
+                FunctionDescriptor.of(C_INT, C_INT), Arena.ofAuto());
+        MethodHandle mh = LINKER.downcallHandle(FunctionDescriptor.of(C_INT, layout));
+        int output = (int) mh.invoke(stub, input);
+        assertEquals(expectedOutput, captured.get());
         assertEquals(expectedOutput, output);
+    }
+
+    private static int capture(AtomicInteger captured, int arg) {
+        captured.set(arg);
+        return arg;
     }
 
     public static Object[][] cases() {
         return new Object[][] {
-                // when MIN_VALUE gets sign-extended the sign should be dropped
+                // when MIN_VALUE gets zero-extended the sign should be dropped
                 { UCHAR,  Byte.MIN_VALUE,  Byte.toUnsignedInt(Byte.MIN_VALUE)   },
                 { USHORT, Short.MIN_VALUE, Short.toUnsignedInt(Short.MIN_VALUE) },
                 { UINT8,  Byte.MIN_VALUE,  Byte.toUnsignedInt(Byte.MIN_VALUE)   },

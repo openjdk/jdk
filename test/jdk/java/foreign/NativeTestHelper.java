@@ -131,8 +131,10 @@ public class NativeTestHelper {
 
     public static final ValueLayout.OfByte UCHAR = (ValueLayout.OfByte) LINKER.canonicalLayouts().get("unsigned char");
     public static final ValueLayout.OfShort USHORT = (ValueLayout.OfShort) LINKER.canonicalLayouts().get("unsigned short");
+    public static final ValueLayout.OfInt UINT = (ValueLayout.OfInt) LINKER.canonicalLayouts().get("unsigned int");
     public static final ValueLayout.OfByte UINT8 = (ValueLayout.OfByte) LINKER.canonicalLayouts().get("uint8_t");
     public static final ValueLayout.OfShort UINT16 = (ValueLayout.OfShort) LINKER.canonicalLayouts().get("uint16_t");
+    public static final ValueLayout.OfInt UINT32 = (ValueLayout.OfInt) LINKER.canonicalLayouts().get("uint32_t");
 
     // Common layout shared by some tests
     // struct S_PDI { void* p0; double p1; int p2; };
