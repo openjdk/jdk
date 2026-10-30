@@ -392,8 +392,6 @@ class MacroAssembler: public Assembler {
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
 
-  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register value_field_layout_info);
-
   // value type data payload offsets...
   void payload_offset(Register value_klass, Register offset);
   void payload_addr(Register oop, Register data, Register value_klass);
@@ -553,8 +551,6 @@ public:
     Label&   slow_case                 // continuation point if fast allocation fails
   );
   void zero_memory(Register address, Register length_in_bytes, int offset_in_bytes, Register temp);
-
-  void value_field_layout_info(Register klass, Register index, Register layout_info);
 
   void population_count(Register dst, Register src, Register scratch1, Register scratch2);
 
@@ -2070,10 +2066,6 @@ public:
   void fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, XMMRegister xbuf);
   // Fold 512-bit data chunk
   void fold512bit_crc32_avx512(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, Register buf, Register pos, int offset);
-  // Fold 8-bit data
-  void fold_8bit_crc32(Register crc, Register table, Register tmp);
-  void fold_8bit_crc32(XMMRegister crc, Register table, XMMRegister xtmp, Register tmp);
-
   // Compress char[] array to byte[].
   void char_array_compress(Register src, Register dst, Register len,
                            XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3,
