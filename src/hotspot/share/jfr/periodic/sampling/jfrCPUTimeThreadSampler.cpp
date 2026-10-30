@@ -48,6 +48,39 @@
 
 static const int64_t RECOMPUTE_INTERVAL_MS = 100;
 
+static const int CPUTIME_SIGNAL = SIGPROF;
+
+static bool create_timer_for_thread(JavaThread* thread, timer_t& timerid) {
+  struct sigevent sev;
+  sev.sigev_notify = SIGEV_THREAD_ID;
+  sev.sigev_signo = CPUTIME_SIGNAL;
+  sev.sigev_value.sival_ptr = nullptr;
+  ((int*)&sev.sigev_notify)[1] = thread->osthread()->thread_id();
+
+  clockid_t clock;
+  int err = pthread_getcpuclockid(thread->osthread()->pthread_id(), &clock);
+  if (err != 0) {
+    log_error(jfr)("Failed to get clock for thread sampling: %s", os::strerror(err));
+    return false;
+  }
+  return timer_create(clock, &sev, &timerid) == 0;
+}
+
+static void set_timer_time(timer_t timerid, int64_t period_nanos) {
+  struct itimerspec its;
+  if (period_nanos == 0) {
+    its.it_interval.tv_sec = 0;
+    its.it_interval.tv_nsec = 0;
+  } else {
+    its.it_interval.tv_sec = period_nanos / NANOSECS_PER_SEC;
+    its.it_interval.tv_nsec = period_nanos % NANOSECS_PER_SEC;
+  }
+  its.it_value = its.it_interval;
+  if (timer_settime(timerid, 0, &its, nullptr) != 0) {
+    log_warning(jfr)("Failed to set timer for thread sampling: %s", os::strerror(os::get_last_error()));
+  }
+}
+
 static bool is_excluded(JavaThread* jt) {
   return jt->is_hidden_from_external_view() ||
          jt->jfr_thread_local()->is_excluded() ||
@@ -68,29 +101,31 @@ static JavaThread* get_java_thread_if_valid() {
   return jt;
 }
 
-JfrCPUTimeTraceQueue::JfrCPUTimeTraceQueue(u4 capacity) :
-   _lock(UNLOCKED), _data(nullptr), _capacity(capacity), _head(0), _lost_samples(0), _lost_samples_due_to_queue_full(0) {
-  if (capacity != 0) {
-    _data = JfrCHeapObj::new_array<JfrCPUTimeSampleRequest>(capacity);
-  }
+JfrCPUSamplerState::JfrCPUSamplerState() :
+    _lock(UNLOCKED), _has_cpu_timer(false), _queue(nullptr), _capacity(0), _head(0),
+    _lost_samples(0), _lost_samples_due_to_queue_full(0) {
 }
 
-JfrCPUTimeTraceQueue::~JfrCPUTimeTraceQueue() {
-  if (_data != nullptr) {
+JfrCPUSamplerState::~JfrCPUSamplerState() {
+  if (_queue != nullptr) {
     assert(_capacity != 0, "invariant");
-    JfrCHeapObj::free(_data, _capacity * sizeof(JfrCPUTimeSampleRequest));
+    JfrCHeapObj::free(_queue, _capacity * sizeof(JfrCPUTimeSampleRequest));
+  }
+  if (_has_cpu_timer) {
+    timer_delete(_cpu_timer);
   }
 }
 
-JfrCPUTimeTraceQueue::LockState JfrCPUTimeTraceQueue::lock_state() const {
+JfrCPUSamplerState::LockState JfrCPUSamplerState::lock_state() const {
   return AtomicAccess::load_acquire(&_lock);
 }
 
-bool JfrCPUTimeTraceQueue::try_acquire_enqueue_lock() {
+bool JfrCPUSamplerState::try_acquire_enqueue_lock() {
   return AtomicAccess::cmpxchg(&_lock, UNLOCKED, ENQUEUE, memory_order_seq_cst) == UNLOCKED;
 }
 
-bool JfrCPUTimeTraceQueue::try_acquire_dequeue_lock() {
+bool JfrCPUSamplerState::try_acquire_dequeue_lock() {
+  SpinYield s;
   while (true) {
     LockState state = lock_state();
     if (state == UNLOCKED &&
@@ -100,11 +135,11 @@ bool JfrCPUTimeTraceQueue::try_acquire_dequeue_lock() {
     if (state == DEQUEUE) {
       return false; // already locked for dequeuing
     }
-    // else wait for the lock to be released by a signal handler
+    s.wait(); // else wait for the lock to be released by a signal handler
   }
 }
 
-void JfrCPUTimeTraceQueue::acquire_dequeue_lock() {
+void JfrCPUSamplerState::acquire_dequeue_lock() {
   SpinYield s;
   while (lock_state() != UNLOCKED ||
          AtomicAccess::cmpxchg(&_lock, UNLOCKED, DEQUEUE, memory_order_seq_cst) != UNLOCKED) {
@@ -112,87 +147,116 @@ void JfrCPUTimeTraceQueue::acquire_dequeue_lock() {
   }
 }
 
-void JfrCPUTimeTraceQueue::release_lock() {
+void JfrCPUSamplerState::release_lock() {
   assert(lock_state() != UNLOCKED, "invariant");
   AtomicAccess::release_store(&_lock, UNLOCKED);
 }
 
-bool JfrCPUTimeTraceQueue::enqueue(JfrCPUTimeSampleRequest& request) {
+bool JfrCPUSamplerState::enqueue(JfrCPUTimeSampleRequest& request) {
   assert(lock_state() == ENQUEUE, "invariant");
-  assert(&JavaThread::current()->jfr_thread_local()->cpu_time_jfr_queue() == this, "invariant");
+  assert(&JavaThread::current()->jfr_thread_local()->cpu_sampler_state() == this, "invariant");
   if (_head >= _capacity) {
     return false;
   }
-  _data[_head++] = request;
+  _queue[_head++] = request;
   return true;
 }
 
-JfrCPUTimeSampleRequest& JfrCPUTimeTraceQueue::at(u4 index) {
+JfrCPUTimeSampleRequest& JfrCPUSamplerState::request_at(u4 index) {
   assert(lock_state() == DEQUEUE, "invariant");
   assert(index < _head, "invariant");
-  return _data[index];
+  return _queue[index];
 }
 
-u4 JfrCPUTimeTraceQueue::size() const {
+u4 JfrCPUSamplerState::request_count() const {
   assert(lock_state() != UNLOCKED, "invariant");
   return _head;
 }
 
 static volatile u4 _lost_samples_sum = 0;
 
-void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
+void JfrCPUSamplerState::set_capacity(u4 capacity) {
   assert(lock_state() == DEQUEUE, "invariant");
   if (capacity == _capacity) {
     return;
   }
   _head = 0;
-  if (_data != nullptr) {
+  if (_queue != nullptr) {
     assert(_capacity != 0, "invariant");
-    JfrCHeapObj::free(_data, _capacity * sizeof(JfrCPUTimeSampleRequest));
+    JfrCHeapObj::free(_queue, _capacity * sizeof(JfrCPUTimeSampleRequest));
   }
   if (capacity != 0) {
-    _data = JfrCHeapObj::new_array<JfrCPUTimeSampleRequest>(capacity);
+    _queue = JfrCHeapObj::new_array<JfrCPUTimeSampleRequest>(capacity);
   } else {
-    _data = nullptr;
+    _queue = nullptr;
   }
   _capacity = capacity;
 }
 
-u4 JfrCPUTimeTraceQueue::lost_samples() const {
+u4 JfrCPUSamplerState::lost_samples() const {
   return AtomicAccess::load(&_lost_samples);
 }
 
-void JfrCPUTimeTraceQueue::increment_lost_samples() {
+void JfrCPUSamplerState::increment_lost_samples() {
   AtomicAccess::inc(&_lost_samples_sum);
   AtomicAccess::inc(&_lost_samples);
 }
 
-void JfrCPUTimeTraceQueue::increment_lost_samples_due_to_queue_full() {
+void JfrCPUSamplerState::increment_lost_samples_due_to_queue_full() {
   AtomicAccess::inc(&_lost_samples_due_to_queue_full);
 }
 
-u4 JfrCPUTimeTraceQueue::get_and_reset_lost_samples() {
+u4 JfrCPUSamplerState::get_and_reset_lost_samples() {
   return AtomicAccess::xchg(&_lost_samples, (u4)0);
 }
 
-u4 JfrCPUTimeTraceQueue::get_and_reset_lost_samples_due_to_queue_full() {
+u4 JfrCPUSamplerState::get_and_reset_lost_samples_due_to_queue_full() {
   return AtomicAccess::xchg(&_lost_samples_due_to_queue_full, (u4)0);
 }
 
-void JfrCPUTimeTraceQueue::init() {
+bool JfrCPUSamplerState::has_cpu_timer() const {
+  assert(lock_state() == DEQUEUE, "invariant");
+  return _has_cpu_timer;
+}
+
+void JfrCPUSamplerState::init(timer_t timer, int64_t period_nanos) {
+  assert(lock_state() == DEQUEUE, "invariant");
+  assert(!_has_cpu_timer, "timer leak");
   set_capacity(CPU_TIME_QUEUE_INITIAL_CAPACITY);
+  _cpu_timer = timer;
+  _has_cpu_timer = true;
+
+  // Reset counters left from the previous profiling session
+  AtomicAccess::store(&_lost_samples, (u4)0);
+  AtomicAccess::store(&_lost_samples_due_to_queue_full, (u4)0);
+
+  if (period_nanos != 0) {
+    set_timer_time(timer, period_nanos);
+  }
 }
 
-void JfrCPUTimeTraceQueue::deallocate() {
+void JfrCPUSamplerState::deallocate() {
+  assert(lock_state() == DEQUEUE, "invariant");
   set_capacity(0);
+  if (_has_cpu_timer) {
+    timer_delete(_cpu_timer);
+    _has_cpu_timer = false;
+  }
 }
 
-void JfrCPUTimeTraceQueue::clear() {
+void JfrCPUSamplerState::update_timer_period(int64_t period_nanos) {
+  assert(lock_state() == DEQUEUE, "invariant");
+  if (_has_cpu_timer) {
+    set_timer_time(_cpu_timer, period_nanos);
+  }
+}
+
+void JfrCPUSamplerState::clear() {
   assert(lock_state() == DEQUEUE, "invariant");
   _head = 0;
 }
 
-void JfrCPUTimeTraceQueue::resize_if_needed() {
+void JfrCPUSamplerState::resize_if_needed() {
   u4 lost_samples_due_to_queue_full = get_and_reset_lost_samples_due_to_queue_full();
   if (lost_samples_due_to_queue_full == 0) {
     return;
@@ -254,12 +318,11 @@ class JfrCPUSamplerThread : public NonJavaThread {
   NonJavaThread* _sampler_thread;
   JfrCPUSamplerThrottle _throttle;
   volatile int64_t _current_sampling_period_ns;
-  volatile bool _disenrolled;
   // top bit is used to indicate that no signal handler should proceed
   volatile u4 _active_signal_handlers;
+  volatile bool _enrolled;
   volatile bool _is_async_processing_of_cpu_time_jfr_requests_triggered;
   volatile bool _warned_about_timer_creation_failure;
-  volatile bool _signal_handler_installed;
   DEBUG_ONLY(volatile bool _out_of_stack_walking_enabled = true;)
 
   static const u4 STOP_SIGNAL_BIT = 0x80000000;
@@ -270,7 +333,7 @@ class JfrCPUSamplerThread : public NonJavaThread {
 
   void enroll();
   void disenroll();
-  void update_all_thread_timers();
+  bool is_enrolled() const { return AtomicAccess::load_acquire(&_enrolled); }
 
   void recompute_period_if_needed();
 
@@ -281,7 +344,11 @@ class JfrCPUSamplerThread : public NonJavaThread {
 
   // process the queues for all threads that are in native state (and requested to be processed)
   void stackwalk_threads_in_native();
-  bool create_timer_for_thread(JavaThread* thread, timer_t &timerid);
+
+  bool install_timer_signal_handler();
+  void init_timers();
+  void stop_timers();
+  void update_all_thread_timers();
 
   void allow_signal_handlers();
   void stop_signal_handlers();
@@ -301,8 +368,6 @@ public:
   void on_javathread_terminate(JavaThread* thread);
 
   void handle_timer_signal(siginfo_t* info, void* context);
-  bool init_timers();
-  void stop_timers();
   virtual void print_on(outputStream* st) const;
 
   void trigger_async_processing_of_cpu_time_jfr_requests();
@@ -319,11 +384,10 @@ JfrCPUSamplerThread::JfrCPUSamplerThread(JfrCPUSamplerThrottle& throttle) :
   _sampler_thread(nullptr),
   _throttle(throttle),
   _current_sampling_period_ns(throttle.compute_sampling_period()),
-  _disenrolled(true),
   _active_signal_handlers(STOP_SIGNAL_BIT),
+  _enrolled(false),
   _is_async_processing_of_cpu_time_jfr_requests_triggered(false),
-  _warned_about_timer_creation_failure(false),
-  _signal_handler_installed(false) {
+  _warned_about_timer_creation_failure(false) {
 }
 
 void JfrCPUSamplerThread::trigger_async_processing_of_cpu_time_jfr_requests() {
@@ -331,45 +395,35 @@ void JfrCPUSamplerThread::trigger_async_processing_of_cpu_time_jfr_requests() {
 }
 
 void JfrCPUSamplerThread::on_javathread_create(JavaThread* thread) {
-  if (thread->is_hidden_from_external_view() || thread->is_JfrRecorder_thread() ||
-      !AtomicAccess::load_acquire(&_signal_handler_installed)) {
+  if (thread->is_hidden_from_external_view() || thread->is_JfrRecorder_thread() || !is_enrolled()) {
     return;
   }
-  JfrThreadLocal* tl = thread->jfr_thread_local();
-  assert(tl != nullptr, "invariant");
 
-  JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
-  queue.acquire_dequeue_lock();
-  queue.init();
-  timer_t timerid;
-  if (create_timer_for_thread(thread, timerid)) {
-    tl->set_cpu_timer(&timerid);
-  } else {
-    if (!AtomicAccess::or_then_fetch(&_warned_about_timer_creation_failure, true)) {
+  JfrCPUSamplerState& css = thread->jfr_thread_local()->cpu_sampler_state();
+  css.acquire_dequeue_lock();
+  // A thread started during enrollment may have already initialized the timer
+  if (!css.has_cpu_timer()) {
+    timer_t timerid;
+    if (create_timer_for_thread(thread, timerid)) {
+      css.init(timerid, get_sampling_period());
+    } else if (!AtomicAccess::fetch_then_or(&_warned_about_timer_creation_failure, true)) {
       log_warning(jfr)("Failed to create timer for a thread");
     }
-    queue.deallocate();
   }
-  queue.release_lock();
+  css.release_lock();
 }
 
 void JfrCPUSamplerThread::on_javathread_terminate(JavaThread* thread) {
-  JfrThreadLocal* tl = thread->jfr_thread_local();
-  assert(tl != nullptr, "invariant");
-  timer_t* timer = tl->cpu_timer();
-  if (timer == nullptr) {
-    return; // no timer was created for this thread
-  }
+  JfrCPUSamplerState& css = thread->jfr_thread_local()->cpu_sampler_state();
+  css.acquire_dequeue_lock();
+  css.deallocate();
+  css.release_lock();
 
-  JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
-  queue.acquire_dequeue_lock();
-  tl->unset_cpu_timer();
-  queue.deallocate();
-  s4 lost_samples = queue.lost_samples();
-  if (lost_samples > 0) {
+  u4 lost_samples = css.lost_samples();
+  if (lost_samples > 0 && is_enrolled()) {
+    // Report lost samples only if CPU-time profiler is still running
     JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), lost_samples);
   }
-  queue.release_lock();
 }
 
 void JfrCPUSamplerThread::start_thread() {
@@ -381,28 +435,26 @@ void JfrCPUSamplerThread::start_thread() {
 }
 
 void JfrCPUSamplerThread::enroll() {
-  if (AtomicAccess::cmpxchg(&_disenrolled, true, false)) {
+  if (!is_enrolled() && !install_timer_signal_handler()) {
+    return; // error should have been already logged
+  }
+
+  if (!AtomicAccess::cmpxchg(&_enrolled, false, true, memory_order_seq_cst)) {
     AtomicAccess::store(&_warned_about_timer_creation_failure, false);
     log_trace(jfr)("Enrolling CPU thread sampler");
     _sample.signal();
-    if (!init_timers()) {
-      log_error(jfr)("Failed to initialize timers for CPU thread sampler");
-      disenroll();
-      return;
-    }
+    init_timers();
     allow_signal_handlers();
     log_trace(jfr)("Enrolled CPU thread sampler");
   }
 }
 
 void JfrCPUSamplerThread::disenroll() {
-  if (!AtomicAccess::cmpxchg(&_disenrolled, false, true)) {
+  if (AtomicAccess::cmpxchg(&_enrolled, true, false, memory_order_seq_cst)) {
     log_trace(jfr)("Disenrolling CPU thread sampler");
-    if (AtomicAccess::load_acquire(&_signal_handler_installed)) {
-      // Ensure no signal handlers are running before deleting timers and queues
-      stop_signal_handlers();
-      stop_timers();
-    }
+    // Ensure no signal handlers are running before deleting timers and queues
+    stop_signal_handlers();
+    stop_timers();
     _sample.wait();
     log_trace(jfr)("Disenrolled CPU thread sampler");
   }
@@ -442,7 +494,7 @@ void JfrCPUSamplerThread::stackwalk_threads_in_native() {
     JavaThread* jt = tlh.list()->thread_at(i);
     JfrThreadLocal* tl = jt->jfr_thread_local();
     if (tl->wants_async_processing_of_cpu_time_jfr_requests()) {
-      if (jt->thread_state() != _thread_in_native || !tl->cpu_time_jfr_queue().try_acquire_dequeue_lock()) {
+      if (jt->thread_state() != _thread_in_native || !tl->cpu_sampler_state().try_acquire_dequeue_lock()) {
         tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
         continue;
       }
@@ -451,7 +503,7 @@ void JfrCPUSamplerThread::stackwalk_threads_in_native() {
       } else {
         tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
       }
-      tl->cpu_time_jfr_queue().release_lock();
+      tl->cpu_sampler_state().release_lock();
     }
   }
 }
@@ -646,13 +698,13 @@ void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
     return;
   }
   JfrThreadLocal* tl = jt->jfr_thread_local();
-  JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
+  JfrCPUSamplerState& css = tl->cpu_sampler_state();
   if (!check_state(jt)) {
-    queue.increment_lost_samples();
+    css.increment_lost_samples();
     return;
   }
-  if (!queue.try_acquire_enqueue_lock()) {
-    queue.increment_lost_samples();
+  if (!css.try_acquire_enqueue_lock()) {
+    css.increment_lost_samples();
     return;
   }
 
@@ -663,14 +715,14 @@ void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
   request._cpu_time_period = Ticks(period / 1000000000.0 * JfrTime::frequency()) - Ticks(0);
   sample_thread(request._request, context, jt, tl, now);
 
-  if (queue.enqueue(request)) {
-    if (queue.size() == 1) {
+  if (css.enqueue(request)) {
+    if (css.request_count() == 1) {
       tl->set_has_cpu_time_jfr_requests(true);
       SafepointMechanism::arm_local_poll_release(jt);
     }
   } else {
-    queue.increment_lost_samples();
-    queue.increment_lost_samples_due_to_queue_full();
+    css.increment_lost_samples();
+    css.increment_lost_samples_due_to_queue_full();
   }
 
   if (jt->thread_state() == _thread_in_native) {
@@ -682,48 +734,8 @@ void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
     tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
   }
 
-  queue.release_lock();
+  css.release_lock();
 }
-
-static const int SIG = SIGPROF;
-
-static void set_timer_time(timer_t timerid, int64_t period_nanos) {
-  struct itimerspec its;
-  if (period_nanos == 0) {
-    its.it_interval.tv_sec = 0;
-    its.it_interval.tv_nsec = 0;
-  } else {
-    its.it_interval.tv_sec = period_nanos / NANOSECS_PER_SEC;
-    its.it_interval.tv_nsec = period_nanos % NANOSECS_PER_SEC;
-  }
-  its.it_value = its.it_interval;
-  if (timer_settime(timerid, 0, &its, nullptr) == -1) {
-    warning("Failed to set timer for thread sampling: %s", os::strerror(os::get_last_error()));
-  }
-}
-
-bool JfrCPUSamplerThread::create_timer_for_thread(JavaThread* thread, timer_t& timerid) {
-  struct sigevent sev;
-  sev.sigev_notify = SIGEV_THREAD_ID;
-  sev.sigev_signo = SIG;
-  sev.sigev_value.sival_ptr = nullptr;
-  ((int*)&sev.sigev_notify)[1] = thread->osthread()->thread_id();
-  clockid_t clock;
-  int err = pthread_getcpuclockid(thread->osthread()->pthread_id(), &clock);
-  if (err != 0) {
-    log_error(jfr)("Failed to get clock for thread sampling: %s", os::strerror(err));
-    return false;
-  }
-  if (timer_create(clock, &sev, &timerid) < 0) {
-    return false;
-  }
-  int64_t period = get_sampling_period();
-  if (period != 0) {
-    set_timer_time(timerid, period);
-  }
-  return true;
-}
-
 
 void JfrCPUSamplerThread::allow_signal_handlers() {
   assert_no_active_signal_handlers();
@@ -765,6 +777,22 @@ void JfrCPUSamplerThread::decrement_signal_handler_count() {
   AtomicAccess::dec(&_active_signal_handlers, memory_order_acq_rel);
 }
 
+bool JfrCPUSamplerThread::install_timer_signal_handler() {
+  void* prev_handler = PosixSignals::get_signal_handler_for_signal(CPUTIME_SIGNAL);
+  if (prev_handler == (void*)::handle_timer_signal) {
+    return true; // our handler is already in place
+  }
+  if (prev_handler != SIG_DFL && prev_handler != SIG_IGN) {
+    log_error(jfr)("Conflicting SIGPROF handler found: %p. CPUTimeSample events will not be recorded", prev_handler);
+    return false;
+  }
+  if (PosixSignals::install_generic_signal_handler(CPUTIME_SIGNAL, (void*)::handle_timer_signal) == (void*)-1) {
+    log_error(jfr)("Failed to install SIGPROF handler. CPUTimeSample events will not be recorded");
+    return false;
+  }
+  return true;
+}
+
 class VM_JFRInitializeCPUTimeSampler : public VM_Operation {
  private:
   JfrCPUSamplerThread* const _sampler;
@@ -781,20 +809,10 @@ class VM_JFRInitializeCPUTimeSampler : public VM_Operation {
   };
 };
 
-bool JfrCPUSamplerThread::init_timers() {
-  // install sig handler for sig
-  void* prev_handler = PosixSignals::get_signal_handler_for_signal(SIG);
-  if ((prev_handler != SIG_DFL && prev_handler != SIG_IGN && prev_handler != (void*)::handle_timer_signal) ||
-      PosixSignals::install_generic_signal_handler(SIG, (void*)::handle_timer_signal) == (void*)-1) {
-    log_error(jfr)("Conflicting SIGPROF handler found: %p. CPUTimeSample events will not be recorded", prev_handler);
-    return false;
-  }
-  AtomicAccess::release_store(&_signal_handler_installed, true);
-
+void JfrCPUSamplerThread::init_timers() {
   assert_no_active_signal_handlers();
   VM_JFRInitializeCPUTimeSampler op(this);
   VMThread::execute(&op);
-  return true;
 }
 
 class VM_JFRTerminateCPUTimeSampler : public VM_Operation {
@@ -808,17 +826,7 @@ class VM_JFRTerminateCPUTimeSampler : public VM_Operation {
   void doit() {
     JfrJavaThreadIterator iter;
     while (iter.has_next()) {
-      JavaThread *thread = iter.next();
-      JfrThreadLocal* tl = thread->jfr_thread_local();
-      timer_t* timer = tl->cpu_timer();
-      if (timer == nullptr) {
-        continue;
-      }
-      JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
-      queue.acquire_dequeue_lock();
-      queue.deallocate();
-      tl->unset_cpu_timer();
-      queue.release_lock();
+      _sampler->on_javathread_terminate(iter.next());
     }
   };
 };
@@ -846,7 +854,7 @@ void JfrCPUSamplerThread::recompute_period_if_needed() {
 
 void JfrCPUSamplerThread::set_throttle(JfrCPUSamplerThrottle& throttle) {
   _throttle = throttle;
-  if (_throttle.enabled() && AtomicAccess::load_acquire(&_disenrolled) == false) {
+  if (_throttle.enabled() && is_enrolled()) {
     recompute_period_if_needed();
   } else {
     AtomicAccess::store(&_current_sampling_period_ns, _throttle.compute_sampling_period());
@@ -854,16 +862,14 @@ void JfrCPUSamplerThread::set_throttle(JfrCPUSamplerThrottle& throttle) {
 }
 
 void JfrCPUSamplerThread::update_all_thread_timers() {
-  int64_t period_millis = get_sampling_period();
+  int64_t period_nanos = get_sampling_period();
   ThreadsListHandle tlh;
   for (size_t i = 0; i < tlh.length(); i++) {
     JavaThread* thread = tlh.thread_at(i);
-    JfrThreadLocal* tl = thread->jfr_thread_local();
-    assert(tl != nullptr, "invariant");
-    timer_t* timer = tl->cpu_timer();
-    if (timer != nullptr) {
-      set_timer_time(*timer, period_millis);
-    }
+    JfrCPUSamplerState& css = thread->jfr_thread_local()->cpu_sampler_state();
+    css.acquire_dequeue_lock();
+    css.update_timer_period(period_nanos);
+    css.release_lock();
   }
 }
 

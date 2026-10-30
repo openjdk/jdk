@@ -45,7 +45,7 @@ public class TestCPUTimeSamplingStop {
     private static final int DELAY_MILLIS = 2;
 
     public static void main(String[] args) throws Exception {
-        int threads = Math.max(Runtime.getRuntime().availableProcessors() - 1, 2);
+        int threads = Math.clamp(Runtime.getRuntime().availableProcessors() - 1, 2, 15);
         for (int i = 0; i < threads; i++) {
             Thread t = new Thread(TestCPUTimeSamplingStop::nativeBurner, "Native CPU burner " + i);
             t.setDaemon(true);
