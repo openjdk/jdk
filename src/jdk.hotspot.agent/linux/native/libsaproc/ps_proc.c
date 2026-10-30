@@ -128,6 +128,11 @@ static bool process_write_data(struct ps_prochandle* ph,
   return false;
 }
 
+// Available since Linux 2.6.34, but on older distros like RHEL/OL 6 it might not be in the header
+#ifndef PTRACE_GETREGSET
+#define PTRACE_GETREGSET 0x4204
+#endif
+
 // "user" should be a pointer to a user_regs_struct
 static bool process_get_lwp_regs(struct ps_prochandle* ph, pid_t pid, struct user_regs_struct *user) {
   // we have already attached to all thread 'pid's, just use ptrace call
