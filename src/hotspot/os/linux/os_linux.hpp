@@ -185,12 +185,8 @@ class os::Linux {
   // fields will contain -1.
   static bool query_accurate_process_memory_info(accurate_meminfo_t* info);
 
-  // Tells if the user asked for transparent huge pages.
-  static bool _thp_requested;
-
   static void large_page_init();
 
-  static bool thp_requested();
   static bool should_madvise_anonymous_thps();
   static bool should_madvise_shmem_thps();
 

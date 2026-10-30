@@ -166,8 +166,6 @@ pthread_t os::Linux::_main_thread;
 const char * os::Linux::_libc_version = nullptr;
 const char * os::Linux::_libpthread_version = nullptr;
 
-bool os::Linux::_thp_requested{false};
-
 #ifdef __GLIBC__
 // We want to be buildable and runnable on older and newer glibcs, so resolve both
 // mallinfo and mallinfo2 dynamically.
@@ -4067,7 +4065,7 @@ struct LargePageInitializationLoggerMark {
   static bool uses_zgc_shmem_thp() {
     return UseZGC &&
         // If user requested THP
-        ((os::Linux::thp_requested() && HugePages::supports_shmem_thp()) ||
+        ((HugePages::is_thp_requested_on() && HugePages::supports_shmem_thp()) ||
         // If OS forced THP
          HugePages::forced_shmem_thp());
   }
@@ -4075,7 +4073,7 @@ struct LargePageInitializationLoggerMark {
 
 static bool validate_thps_configured() {
   assert(UseTransparentHugePages, "Sanity");
-  assert(os::Linux::thp_requested(), "Sanity");
+  assert(HugePages::is_thp_requested_on(), "Sanity");
 
   if (UseZGC) {
     if (!HugePages::supports_shmem_thp()) {
@@ -4084,7 +4082,7 @@ static bool validate_thps_configured() {
       // UseTransparentHugePages has historically been tightly coupled with
       // anonymous THPs. Fall through here and let the validity be determined
       // by the OS configuration for anonymous THPs. ZGC doesn't use the flag
-      // but instead checks os::Linux::thp_requested().
+      // but instead checks HugePages::is_thp_requested_on().
     }
   }
 
@@ -4105,12 +4103,19 @@ void os::large_page_init() {
 void os::Linux::large_page_init() {
   LargePageInitializationLoggerMark logger;
 
-  // Decide if the user asked for THPs before we update UseTransparentHugePages.
-  const bool large_pages_turned_off = !FLAG_IS_DEFAULT(UseLargePages) && !UseLargePages;
-  _thp_requested = UseTransparentHugePages && !large_pages_turned_off;
-
   // Query OS information first.
-  HugePages::initialize();
+  HugePages::scan_os();
+
+  // Record if the user requested that large pages should be on or off.
+  if (!FLAG_IS_DEFAULT(UseLargePages)) {
+    HugePages::set_requested(UseLargePages);
+  }
+
+  // Record if the user requested THP to be on or off, unless large pages has
+  // been turned completely off.
+  if (!FLAG_IS_DEFAULT(UseTransparentHugePages) && !HugePages::is_requested_off()) {
+    HugePages::set_thp_requested(UseTransparentHugePages);
+  }
 
   // If THPs are unconditionally enabled (THP mode "always"), khugepaged may attempt to
   // coalesce small pages in thread stacks to huge pages. That costs a lot of memory and
@@ -4227,16 +4232,12 @@ void os::Linux::large_page_init() {
   set_coredump_filter(LARGEPAGES_BIT);
 }
 
-bool os::Linux::thp_requested() {
-  return _thp_requested;
-}
-
 bool os::Linux::should_madvise_anonymous_thps() {
-  return _thp_requested && HugePages::thp_mode() == THPMode::madvise;
+  return HugePages::is_thp_requested_on() && HugePages::thp_mode() == THPMode::madvise;
 }
 
 bool os::Linux::should_madvise_shmem_thps() {
-  return _thp_requested && HugePages::shmem_thp_mode() == ShmemTHPMode::advise;
+  return HugePages::is_thp_requested_on() && HugePages::shmem_thp_mode() == ShmemTHPMode::advise;
 }
 
 static void log_on_commit_special_failure(char* req_addr, size_t bytes,
