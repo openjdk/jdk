@@ -177,10 +177,10 @@ final class AixPollPort
             closed = true;
         }
         Pollset.freePollArray(address);
-        Pollset.close0(sp[0]);
-        Pollset.close0(sp[1]);
-        Pollset.close0(ctlSp[0]);
-        Pollset.close0(ctlSp[1]);
+        try { Pollset.close0(sp[0]); } catch (IOException ioe) { }
+        try { Pollset.close0(sp[1]); } catch (IOException ioe) { }
+        try { Pollset.close0(ctlSp[0]); } catch (IOException ioe) { }
+        try { Pollset.close0(ctlSp[1]); } catch (IOException ioe) { }
         Pollset.pollsetDestroy(pollset);
     }
 
