@@ -2000,9 +2000,9 @@ bool FileMapHeader::validate() {
       return false;
     }
     if (_type_profile_parms_limit != TypeProfileParmsLimit) {
-      AOTMetaspace::report_loading_error("The %s's TypeProfileParamsLimit setting (%d)"
-                                            " does not equal the current TypeProfileParamsLimit setting (%d).", file_type,
-                                            _type_profile_args_limit, TypeProfileArgsLimit);
+      AOTMetaspace::report_loading_error("The %s's TypeProfileParmsLimit setting (%d)"
+                                            " does not equal the current TypeProfileParmsLimit setting (%d).", file_type,
+                                            _type_profile_parms_limit, TypeProfileParmsLimit);
       return false;
 
     }
