@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,8 +211,8 @@ public final class NTLMAuthentication extends AuthenticationInfo {
         //   already locked by s.n.w.p.h.HttpURLConnection
         assert conn.isLockHeldByCurrentThread();
 
+        NTLMAuthSequence seq = (NTLMAuthSequence)conn.authObj();
         try {
-            NTLMAuthSequence seq = (NTLMAuthSequence)conn.authObj();
             if (seq == null) {
                 seq = new NTLMAuthSequence (username, password, ntdomain);
                 conn.authObj(seq);
@@ -220,9 +220,11 @@ public final class NTLMAuthentication extends AuthenticationInfo {
             String response = "NTLM " + seq.getAuthHeader (raw.length()>6?raw.substring(5):null);
             conn.setAuthenticationProperty(getHeaderName(), response);
             if (seq.isComplete()) {
+                seq.close();
                 conn.authObj(null);
             }
         } catch (IOException e) {
+            if (seq != null) seq.close();
             conn.authObj(null);
             throw e;
         }
