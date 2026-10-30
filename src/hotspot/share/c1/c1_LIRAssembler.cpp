@@ -508,6 +508,10 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       }
       break;
 
+    case lir_decode_heap_oop:
+      decode_heap_oop(op->in_opr(), op->result_opr());
+      break;
+
     case lir_abs:
     case lir_sqrt:
     case lir_f2hf:

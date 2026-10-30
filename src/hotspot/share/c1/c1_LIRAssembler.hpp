@@ -177,6 +177,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void mem2reg    (LIR_Opr src, LIR_Opr dest, BasicType type,
                    LIR_PatchCode patch_code,
                    CodeEmitInfo* info, bool wide);
+  void decode_heap_oop(LIR_Opr src, LIR_Opr dest);
 
   void shift_op(LIR_Code code, LIR_Opr left, LIR_Opr count, LIR_Opr dest, LIR_Opr tmp);
   void shift_op(LIR_Code code, LIR_Opr left, jint  count, LIR_Opr dest);
