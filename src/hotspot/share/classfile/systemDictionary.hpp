@@ -327,7 +327,7 @@ private:
   static void restore_archived_method_handle_intrinsics_impl(TRAPS) NOT_CDS_RETURN;
 
 protected:
-  // Used by AOTLinkedClassBulkLoader, LambdaProxyClassDictionary, VMClasses and SystemDictionaryShared
+  // Used by AOTLinkedClassBulkLoader, LambdaProxyClassDictionary, VMClasses and AOTSystemDictionary
 
   static bool add_loader_constraint(Symbol* name, Klass* klass_being_linked,  Handle loader1,
                                     Handle loader2);

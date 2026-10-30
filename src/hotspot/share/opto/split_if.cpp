@@ -238,7 +238,7 @@ bool PhaseIdealLoop::clone_cmp_loadklass_down(Node* n, const Node* blk1, const N
       tty->print_cr("  Cloning down (LoadKlass): %d %s", n->_idx, n->Name());
     }
 #endif
-    Node_List cmp_nodes;
+    Node_List<Node> cmp_nodes;
     uint old = C->unique();
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* u1 = n->fast_out(i);

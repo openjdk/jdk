@@ -640,7 +640,9 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       break;
     case vmIntrinsics::_dabs: // fall through
     case vmIntrinsics::_dsqrt: // fall through
-    case vmIntrinsics::_dsqrt_strict: {
+    case vmIntrinsics::_dsqrt_strict: // fall through
+    case vmIntrinsics::_floatToFloat16: // fall through
+    case vmIntrinsics::_float16ToFloat: {
       assert(x->number_of_arguments() == 1, "wrong type");
       LIRItem value(x->argument_at(0), this);
       value.load_item();
@@ -654,6 +656,17 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
         }
         case vmIntrinsics::_dabs: {
           __ abs(value.result(), dst, LIR_OprFact::illegalOpr);
+          break;
+        }
+        case vmIntrinsics::_floatToFloat16: {
+          // flt_to_flt16 needs a float temporary to move the result through.
+          LIR_Opr tmp = new_register(T_FLOAT);
+          __ f2hf(value.result(), dst, tmp);
+          break;
+        }
+        case vmIntrinsics::_float16ToFloat: {
+          // flt16_to_flt only needs t0/t1, which are not visible to the allocator.
+          __ hf2f(value.result(), dst, LIR_OprFact::illegalOpr);
           break;
         }
         default:
@@ -1028,7 +1041,8 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   // in case of patching (i.e., object class is not yet loaded), we need to reexecute the instruction
   // and therefore provide the state before the parameters have been consumed
   CodeEmitInfo* patching_info = nullptr;
-  if (!x->klass()->is_loaded() || PatchALot) {
+  ciKlass* obj = ciObjArrayKlass::make(x->klass());
+  if (!x->klass()->is_loaded() || !obj->is_loaded() || PatchALot) {
     patching_info =  state_for(x, x->state_before());
   }
 
@@ -1044,16 +1058,14 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   length.load_item_force(FrameMap::r9_opr);
   LIR_Opr len = length.result();
 
-  ciKlass* obj = ciObjArrayKlass::make(x->klass());
-
   // TODO 8265122 Implement a fast path for this
   bool is_flat = obj->is_loaded() && obj->is_flat_array_klass();
   bool is_null_free = obj->is_loaded() && obj->as_array_klass()->is_elem_null_free();
 
   CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info, is_null_free);
 
-  if (obj == ciEnv::unloaded_ciobjarrayklass()) {
-    BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
+  if (x->klass()->is_loaded() && !obj->is_loaded()) {
+    BAILOUT("encountered unloaded ciobjarrayklass due to out of memory error");
   }
   klass2reg_with_patching(klass_reg, obj, patching_info);
   bool always_slow_path = is_null_free || is_flat;

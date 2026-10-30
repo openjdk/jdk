@@ -33,23 +33,18 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-PartialArrayState::PartialArrayState(oop src, oop dst,
+PartialArrayState::PartialArrayState(objArrayOop array,
                                      size_t index, size_t length,
-                                     size_t chunk_size,
-                                     size_t initial_refcount)
-  : _source(src),
-    _destination(dst),
+                                     size_t chunk_size)
+  : _array(array),
     _length(length),
     _chunk_size(chunk_size),
     _index(index),
-    _refcount(initial_refcount)
+    _num_remaining_chunks((length - index) / chunk_size)
 {
-  assert(index <= length, "precondition");
-}
-
-void PartialArrayState::add_references(size_t count) {
-  size_t new_count = _refcount.add_then_fetch(count, memory_order_relaxed);
-  assert(new_count >= count, "reference count overflow");
+  assert(index < length, "precondition");
+  assert(chunk_size > 0, "precondition");
+  assert((length - index) % chunk_size == 0, "whole chunks remain");
 }
 
 class PartialArrayStateAllocator::FreeListEntry {
@@ -76,11 +71,10 @@ PartialArrayStateAllocator::~PartialArrayStateAllocator() {
   _manager->release_allocator();
 }
 
-PartialArrayState* PartialArrayStateAllocator::allocate(oop src, oop dst,
+PartialArrayState* PartialArrayStateAllocator::allocate(objArrayOop array,
                                                         size_t index,
                                                         size_t length,
-                                                        size_t chunk_size,
-                                                        size_t initial_refcount) {
+                                                        size_t chunk_size) {
   void* p;
   FreeListEntry* head = _free_list;
   if (head == nullptr) {
@@ -90,13 +84,13 @@ PartialArrayState* PartialArrayStateAllocator::allocate(oop src, oop dst,
     head->~FreeListEntry();
     p = head;
   }
-  return ::new (p) PartialArrayState(src, dst, index, length, chunk_size, initial_refcount);
+  return ::new (p) PartialArrayState(array, index, length, chunk_size);
 }
 
 void PartialArrayStateAllocator::release(PartialArrayState* state) {
-  size_t refcount = state->_refcount.sub_then_fetch(1u, memory_order_release);
-  if (refcount != 0) {
-    assert(refcount + 1 != 0, "refcount underflow");
+  size_t num_remaining_chunks = state->_num_remaining_chunks.sub_then_fetch(1u, memory_order_release);
+  if (num_remaining_chunks != 0) {
+    assert(num_remaining_chunks + 1 != 0, "remaining chunk count underflow");
   } else {
     OrderAccess::acquire();
     // Don't need to call destructor; can't if not destructible.
@@ -118,6 +112,7 @@ PartialArrayStateManager::~PartialArrayStateManager() {
 }
 
 Arena* PartialArrayStateManager::register_allocator() {
+  assert(_released_allocators.load_relaxed() == 0, "allocator destruction has begun");
   uint idx = _registered_allocators.fetch_then_add(1u, memory_order_relaxed);
   assert(idx < _max_allocators, "exceeded configured max number of allocators");
   return ::new (&_arenas[idx]) Arena(mtGC);

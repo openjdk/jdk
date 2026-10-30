@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,23 @@
 
 package com.sun.security.auth.module;
 
-import javax.security.auth.*;
-import javax.security.auth.callback.*;
-import javax.security.auth.login.*;
-import javax.security.auth.spi.*;
-import javax.naming.*;
-import javax.naming.directory.*;
+import javax.naming.InitialContext;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.BasicAttributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.SearchResult;
+import javax.security.auth.Subject;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.security.auth.login.FailedLoginException;
+import javax.security.auth.login.LoginException;
+import javax.security.auth.spi.LoginModule;
 
 import java.util.Map;
 import java.util.LinkedList;
@@ -200,9 +211,8 @@ public class JndiLoginModule implements LoginModule {
 
     private static final String CRYPT = "{crypt}";
     private static final String USER_PWD = "userPassword";
-    private static final String USER_UID = "uidNumber";
-    private static final String USER_GID = "gidNumber";
-    private static final String GROUP_ID = "gidNumber";
+    private static final String UID_NUMBER = "uidNumber";
+    private static final String GID_NUMBER = "gidNumber";
     private static final String NAME = "javax.security.auth.login.name";
     private static final String PWD = "javax.security.auth.login.password";
 
@@ -381,7 +391,7 @@ public class JndiLoginModule implements LoginModule {
      */
     public boolean commit() throws LoginException {
 
-        if (succeeded == false) {
+        if (!succeeded) {
             return false;
         } else {
             if (subject.isReadOnly()) {
@@ -389,11 +399,11 @@ public class JndiLoginModule implements LoginModule {
                 throw new LoginException ("Subject is Readonly");
             }
             // add Principals to the Subject
-            if (!subject.getPrincipals().contains(userPrincipal))
+            if (userPrincipal != null && !subject.getPrincipals().contains(userPrincipal))
                 subject.getPrincipals().add(userPrincipal);
-            if (!subject.getPrincipals().contains(UIDPrincipal))
+            if (UIDPrincipal != null && !subject.getPrincipals().contains(UIDPrincipal))
                 subject.getPrincipals().add(UIDPrincipal);
-            if (!subject.getPrincipals().contains(GIDPrincipal))
+            if (GIDPrincipal != null && !subject.getPrincipals().contains(GIDPrincipal))
                 subject.getPrincipals().add(GIDPrincipal);
             for (int i = 0; i < supplementaryGroups.size(); i++) {
                 if (!subject.getPrincipals().contains
@@ -436,9 +446,9 @@ public class JndiLoginModule implements LoginModule {
             System.out.println("\t\t[JndiLoginModule]: " +
                 "aborted authentication failed");
 
-        if (succeeded == false) {
+        if (!succeeded) {
             return false;
-        } else if (succeeded == true && commitSucceeded == false) {
+        } else if (!commitSucceeded) {
 
             // Clean out state
             succeeded = false;
@@ -510,34 +520,25 @@ public class JndiLoginModule implements LoginModule {
      * @param getPasswdFromSharedState boolean that tells this method whether
      *          to retrieve the password from the sharedState.
      */
-    private void attemptAuthentication(boolean getPasswdFromSharedState)
-    throws LoginException {
-
+    private void attemptAuthentication(boolean getPasswdFromSharedState) throws LoginException {
         String encryptedPassword = null;
-
         // first get the username and password
         getUsernamePassword(getPasswdFromSharedState);
-
+        if (username == null) {
+            throw new FailedLoginException("No username provided");
+        }
         try {
-
             // get the user's passwd entry from the user provider URL
             InitialContext iCtx = new InitialContext();
             ctx = (DirContext)iCtx.lookup(userProvider);
-
-            /*
-            SearchControls controls = new SearchControls
-                                        (SearchControls.ONELEVEL_SCOPE,
-                                        0,
-                                        5000,
-                                        new String[] { USER_PWD },
-                                        false,
-                                        false);
-            */
-
-            SearchControls controls = new SearchControls();
-            NamingEnumeration<SearchResult> ne = ctx.search("",
-                                        "(uid=" + username + ")",
-                                        controls);
+            // Search for the user with the given "uid" and obtain all their attributes.
+            // Then verify the user's password attribute matches with the one set on
+            // this LoginModule
+            NamingEnumeration<SearchResult> ne = ctx.search("", new BasicAttributes("uid", username));
+            // Create an exception instance beforehand, to use it in the case of a failed login due
+            // to a missing user or due to an incorrect credential. It's OK for it to go unused
+            // in the case of a successful authentication.
+            final FailedLoginException failedLogin = new FailedLoginException("Login failed");
             if (ne.hasMore()) {
                 SearchResult result = ne.next();
                 Attributes attributes = result.getAttributes();
@@ -559,14 +560,17 @@ public class JndiLoginModule implements LoginModule {
                 // authentication for LDAP is recommended only for secure
                 // channels. For nonsecure channels, SSL is recommended.
 
+                final boolean passwordMatches;
                 Attribute pwd = attributes.get(USER_PWD);
-                String encryptedPwd = new String((byte[])pwd.get(), UTF_8);
-                encryptedPassword = encryptedPwd.substring(CRYPT.length());
-
-                // check the password
-                if (verifyPassword
-                    (encryptedPassword, new String(password)) == true) {
-
+                if (pwd == null) {
+                    passwordMatches = false;
+                } else {
+                    String encryptedPwd = new String((byte[]) pwd.get(), UTF_8);
+                    encryptedPassword = encryptedPwd.substring(CRYPT.length());
+                    // check the password
+                    passwordMatches = verifyPassword(encryptedPassword, new String(password));
+                }
+                if (passwordMatches) {
                     // authentication succeeded
                     if (debug)
                         System.out.println("\t\t[JndiLoginModule] " +
@@ -577,7 +581,7 @@ public class JndiLoginModule implements LoginModule {
                     if (debug)
                         System.out.println("\t\t[JndiLoginModule] " +
                                 "attemptAuthentication() failed");
-                    throw new FailedLoginException("Login incorrect");
+                    throw failedLogin;
                 }
 
                 // save input as shared state only if
@@ -592,27 +596,36 @@ public class JndiLoginModule implements LoginModule {
                 // create the user principal
                 userPrincipal = new UnixPrincipal(username);
 
-                // get the UID
-                Attribute uid = attributes.get(USER_UID);
-                String uidNumber = (String)uid.get();
-                UIDPrincipal = new UnixNumericUserPrincipal(uidNumber);
-                if (debug && uidNumber != null) {
-                    System.out.println("\t\t[JndiLoginModule] " +
-                                "user: '" + username + "' has UID: " +
+                // get the uidNumber
+                Attribute uid = attributes.get(UID_NUMBER);
+                if (uid == null) {
+                    UIDPrincipal = null;
+                } else {
+                    String uidNumber = (String) uid.get();
+                    UIDPrincipal = uidNumber == null
+                            ? null
+                            : new UnixNumericUserPrincipal(uidNumber);
+                    if (debug && UIDPrincipal != null) {
+                        System.out.println("\t\t[JndiLoginModule] " +
+                                "user: '" + username + "' has uidNumber: " +
                                 uidNumber);
+                    }
                 }
-
                 // get the GID
-                Attribute gid = attributes.get(USER_GID);
-                String gidNumber = (String)gid.get();
-                GIDPrincipal = new UnixNumericGroupPrincipal
-                                (gidNumber, true);
-                if (debug && gidNumber != null) {
-                    System.out.println("\t\t[JndiLoginModule] " +
-                                "user: '" + username + "' has GID: " +
+                Attribute gid = attributes.get(GID_NUMBER);
+                if (gid == null) {
+                    GIDPrincipal = null;
+                } else {
+                    String gidNumber = (String) gid.get();
+                    GIDPrincipal = gidNumber == null
+                            ? null
+                            : new UnixNumericGroupPrincipal(gidNumber, true);
+                    if (debug && GIDPrincipal != null) {
+                        System.out.println("\t\t[JndiLoginModule] " +
+                                "user: '" + username + "' has gidNumber: " +
                                 gidNumber);
+                    }
                 }
-
                 // get the supplementary groups from the group provider URL
                 ctx = (DirContext)iCtx.lookup(groupProvider);
                 ne = ctx.search("", new BasicAttributes("memberUid", username));
@@ -621,13 +634,19 @@ public class JndiLoginModule implements LoginModule {
                     result = ne.next();
                     attributes = result.getAttributes();
 
-                    gid = attributes.get(GROUP_ID);
-                    String suppGid = (String)gid.get();
-                    if (!gidNumber.equals(suppGid)) {
+                    gid = attributes.get(GID_NUMBER);
+                    if (gid == null) {
+                        continue;
+                    }
+                    String suppGid = (String) gid.get();
+                    if (suppGid == null) {
+                        continue;
+                    }
+                    if (GIDPrincipal == null || !GIDPrincipal.getName().equals(suppGid)) {
                         UnixNumericGroupPrincipal suppPrincipal =
                             new UnixNumericGroupPrincipal(suppGid, false);
                         supplementaryGroups.add(suppPrincipal);
-                        if (debug && suppGid != null) {
+                        if (debug) {
                             System.out.println("\t\t[JndiLoginModule] " +
                                 "user: '" + username +
                                 "' has Supplementary Group: " +
@@ -641,17 +660,15 @@ public class JndiLoginModule implements LoginModule {
                 if (debug) {
                     System.out.println("\t\t[JndiLoginModule]: User not found");
                 }
-                throw new FailedLoginException("User not found");
+                throw failedLogin;
             }
         } catch (NamingException ne) {
-            // bad username
             if (debug) {
-                System.out.println("\t\t[JndiLoginModule]:  User not found");
+                System.out.println("\t\t[JndiLoginModule]:  exception when finding user");
                 ne.printStackTrace();
             }
-            throw new FailedLoginException("User not found");
+            throw new FailedLoginException("Login failed");
         }
-
         // authentication succeeded
     }
 
