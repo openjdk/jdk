@@ -198,8 +198,8 @@ private:
   static bool has_been_redefined(InstanceKlass* k);
   DEBUG_ONLY(static bool _class_loading_may_happen;)
 
-  static void copy_verification_info_from_preimage(InstanceKlass* klass);
-  static void copy_linking_constraints_from_preimage(InstanceKlass* klass);
+  static void copy_verification_info_from_input_archive(InstanceKlass* klass);
+  static void copy_linking_constraints_from_input_archive(InstanceKlass* klass);
 
   template<typename Function>
   static void iterate_verification_constraint_names(InstanceKlass* k, DumpTimeClassInfo* info, Function func);
@@ -231,7 +231,7 @@ public:
 
   static void initialize() NOT_CDS_RETURN;
   static void init_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
-  static void init_dumptime_info_from_preimage(InstanceKlass* k) NOT_CDS_RETURN;
+  static void init_dumptime_info_from_input_archive(InstanceKlass* k) NOT_CDS_RETURN;
   static void handle_class_unloading(InstanceKlass* k) NOT_CDS_RETURN;
 
   static Dictionary* boot_loader_dictionary() {
@@ -275,6 +275,8 @@ public:
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
   static InstanceKlass* get_unregistered_class(Symbol* name);
   static void copy_unregistered_class_size_and_crc32(InstanceKlass* klass);
+  static void copy_unregistered_classes_for_retraining(JavaThread* current);
+  static void copy_unregistered_class(JavaThread* current, InstanceKlass* k);
 
   static void finish_exclusion_checks();
   static DumpTimeSharedClassTable* dumptime_table() { return _dumptime_table; }

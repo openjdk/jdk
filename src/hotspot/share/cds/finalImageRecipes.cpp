@@ -190,9 +190,7 @@ void FinalImageRecipes::load_all_classes(TRAPS) {
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (ik->defined_by_other_loaders()) {
-        AOTSystemDictionary::init_dumptime_info(ik);
-        AOTSystemDictionary::add_unregistered_class(THREAD, ik);
-        AOTSystemDictionary::copy_unregistered_class_size_and_crc32(ik);
+        AOTSystemDictionary::copy_unregistered_class(THREAD, ik);
       } else if (!ik->is_hidden()) {
         Klass* actual = SystemDictionary::resolve_or_fail(ik->name(), class_loader, true, CHECK);
         if (actual != ik) {

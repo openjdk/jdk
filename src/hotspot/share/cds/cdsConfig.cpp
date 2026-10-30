@@ -43,6 +43,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
+#include "runtime/vmOperation.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -86,17 +87,9 @@ DEBUG_ONLY(static bool _cds_ergo_initialize_started = false);
 void CDSConfig::ergo_initialize() {
   DEBUG_ONLY(_cds_ergo_initialize_started = true);
 
-  if (is_dumping_static_archive() && !is_dumping_final_static_archive()) {
-    // Note: -Xshare and -XX:AOTMode flags are mutually exclusive.
-    // - Classic CDS workflow: -Xshare:on and -Xshare:dump cannot take effect at the same time.
-    // - AOT workflow: -XX:AOTMode:record and -XX:AOTMode=required cannot take effect at the same time.
-    // So we can never come to here with RequireSharedSpaces==true.
+  if (is_dumping_classic_static_archive()) {
+    // - Classic workflow: -Xshare:on and -Xshare:dump cannot take effect at the same time.
     assert(!RequireSharedSpaces, "sanity");
-
-    // If dumping the classic archive, or making an AOT training run (dumping a preimage archive),
-    // for sanity, parse all classes from classfiles.
-    // TODO: in the future, if we want to support re-training on top of an existing AOT cache, this
-    // needs to be changed.
     UseSharedSpaces = false;
   }
 
@@ -481,17 +474,17 @@ void CDSConfig::check_aot_flags() {
     return;
   }
 
-  if (has_cache && has_cache_output) {
-    vm_exit_during_initialization("Only one of AOTCache or AOTCacheOutput can be specified");
+  if (has_mode && strcmp(AOTMode, "create") == 0) {
+    if (has_cache && has_cache_output) {
+      vm_exit_during_initialization("Only one of AOTCache or AOTCacheOutput can be specified");
+    }
   }
 
-  if (!has_cache && (!has_mode || strcmp(AOTMode, "auto") == 0)) {
-    if (has_cache_output) {
-      // If AOTCacheOutput has been set, effective mode is "record".
-      // Default value for AOTConfiguration, if necessary, will be assigned in check_aotmode_record().
-      log_info(aot)("Selected AOTMode=record because AOTCacheOutput is specified");
-      FLAG_SET_ERGO(AOTMode, "record");
-    }
+  if ((!has_mode || strcmp(AOTMode, "auto") == 0) && has_cache_output) {
+    // If AOTCacheOutput has been set, effective mode is "record".
+    // Default value for AOTConfiguration, if necessary, will be assigned in check_aotmode_record().
+    log_info(aot)("Selected AOTMode=record because AOTCacheOutput is specified");
+    FLAG_SET_ERGO(AOTMode, "record");
   }
 
   // At least one AOT flag has been used
@@ -585,20 +578,38 @@ void CDSConfig::check_aotmode_record() {
     }
   }
 
-  if (!FLAG_IS_DEFAULT(AOTCache)) {
-    vm_exit_during_initialization("AOTCache must not be specified when using -XX:AOTMode=record");
-  }
-
   substitute_aot_filename(FLAG_MEMBER_ENUM(AOTConfiguration));
 
-  UseSharedSpaces = false;
-  RequireSharedSpaces = false;
+  if (FLAG_IS_DEFAULT(AOTCache)) {
+    UseSharedSpaces = false;
+    RequireSharedSpaces = false;
+    _is_using_full_module_graph = false;
+  } else {
+    if (!FLAG_IS_DEFAULT(AOTMode)) {
+      FLAG_SET_ERGO_IF_DEFAULT(AOTClassLinking, true);
+    }
+    if (!AOTClassLinking) {
+      if (has_config) {
+        vm_exit_during_initialization("AOTClassLinking cannot be disabled when both AOTCache and AOTConfiguration are specified");
+      } else {
+        assert(has_output, "checked above");
+        vm_exit_during_initialization("AOTClassLinking cannot be disabled when both AOTCache and AOTCacheOutput are specified");
+      }
+    }
+    // Re-training -- we must be able to load the specified AOTCache
+    log_info(aot)("re-training: loading AOTCache=%s and writing AOTConfiguration=%s",
+                  AOTCache, AOTConfiguration);
+    UseSharedSpaces = true;
+    if (!AOTIgnoreIncompatibleCacheInTraining) {
+      RequireSharedSpaces = true;
+    }
+  }
+
   _is_dumping_static_archive = true;
   _is_dumping_preimage_static_archive = true;
 
   // At the end of the training run, the module graph may be contaminated with program states.
   // We will rebuild the module graph when dumping the CDS final image.
-  _is_using_full_module_graph = false;
   _is_dumping_full_module_graph = false;
 }
 
@@ -647,6 +658,7 @@ void CDSConfig::ergo_init_aot_paths() {
   assert(_cds_ergo_initialize_started, "sanity");
   if (is_dumping_static_archive()) {
     if (is_dumping_preimage_static_archive()) {
+      _input_static_archive_path = AOTCache; // non-null when re-training
       _output_archive_path = AOTConfiguration;
     } else {
       assert(is_dumping_final_static_archive(), "must be");
@@ -761,34 +773,55 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
       BytecodeVerificationRemote = true;
       aot_log_info(aot)("All non-system classes will be verified (-Xverify:remote) during CDS dump time.");
     }
+    aot_log_info(aot)("AOT class linking is %s", is_dumping_aot_linked_classes() ? "enabled" : "disabled");
   }
 
   return true;
 }
 
 void CDSConfig::setup_compiler_args() {
-  // AOT profiles and AOT-compiled code are supported only in the JEP 483 workflow.
-  bool can_dump_profile_and_compiled_code = !CompilerConfig::is_interpreter_only() && AOTClassLinking && new_aot_flags_used();
-  bool can_use_profile_and_compiled_code = !CompilerConfig::is_interpreter_only() && new_aot_flags_used();
+  if (!new_aot_flags_used() || CompilerConfig::is_interpreter_only()) {
+    disable_profile_and_compiled_code();
+    return;
+  }
 
-  if (is_dumping_preimage_static_archive() && can_dump_profile_and_compiled_code) {
-    // JEP 483 workflow -- training
+  assert(new_aot_flags_used(), "");
+
+  if (is_dumping_aot_configuration()) {
+    // --- AOT training
+    if (!AOTClassLinking) { // Note: is_dumping_aot_linked_classes() is false in training run.
+      disable_profile_and_compiled_code();
+      return;
+    }
+
     FLAG_SET_ERGO_IF_DEFAULT(AOTRecordTraining, true);
-    FLAG_SET_ERGO(AOTReplayTraining, false);
-    AOTCodeCache::disable_caching(); // No AOT code generation during training run
-  } else if (is_dumping_final_static_archive() && can_dump_profile_and_compiled_code) {
-    // JEP 483 workflow -- assembly
+    if (is_using_archive()) {
+      // Re-training
+      FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
+      if (AOTReplayTraining) {
+        AOTCodeCache::enable_caching();
+      }
+    } else {
+      FLAG_SET_ERGO(AOTReplayTraining, false);
+      AOTCodeCache::disable_caching();
+    }
+    disable_dumping_aot_code(); // No AOT code generation during training run
+  } else if (is_dumping_aot_cache()) {
+    // --- AOT assembly
+    if (!is_dumping_aot_linked_classes()) {
+      disable_profile_and_compiled_code();
+      return;
+    }
+
     FLAG_SET_ERGO(AOTRecordTraining, false);
     FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
     // Generate AOT code only when training data enabled
     if (AOTReplayTraining) {
       AOTCodeCache::enable_caching();
-    } else {
-      AOTCodeCache::disable_caching();
     }
-    disable_dumping_aot_code();     // Don't dump AOT code until metadata and heap are dumped.
-  } else if (is_using_archive() && can_use_profile_and_compiled_code) {
-    // JEP 483 workflow -- production
+    disable_dumping_aot_code(); // Don't dump AOT code until metadata and heap are dumped.
+  } else if (is_using_archive()) {
+    // --- AOT production
     FLAG_SET_ERGO(AOTRecordTraining, false);
     FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
     // Use AOT code only when training data enabled
@@ -798,10 +831,16 @@ void CDSConfig::setup_compiler_args() {
       AOTCodeCache::disable_caching();
     }
   } else {
-    FLAG_SET_ERGO(AOTReplayTraining, false);
-    FLAG_SET_ERGO(AOTRecordTraining, false);
-    AOTCodeCache::disable_caching();
+    disable_profile_and_compiled_code();
   }
+}
+
+// Disable all loading and dumping of profile and compiled code.
+void CDSConfig::disable_profile_and_compiled_code() {
+  FLAG_SET_ERGO(AOTReplayTraining, false);
+  FLAG_SET_ERGO(AOTRecordTraining, false);
+  disable_dumping_aot_code();
+  AOTCodeCache::disable_caching();
 }
 
 void CDSConfig::prepare_for_dumping() {
@@ -905,6 +944,12 @@ bool CDSConfig::is_dumping_regenerated_lambdaform_invokers() {
     // that point to the lambda form invokers in the base archive. Such pointers will
     // be invalid if lambda form invokers are regenerated in the dynamic archive.
     return false;
+  } else if (CDSConfig::is_redumping_aot_configuration()) {
+    // We are not keeping track of the lambda form invokers needed by previous training
+    // runs. If we regenerate, we might get a smaller set of regenerated invokers.
+    // For now, just reuse the same set of lambda form invokers generated by the very
+    // first training run. We might rethink about this in the future.
+    return false;
   } else {
     return is_dumping_archive();
   }
@@ -920,12 +965,12 @@ CDSConfig::DumperThreadMark::~DumperThreadMark() {
   _dumper_thread = nullptr;
 }
 
-bool CDSConfig::current_thread_is_vm_or_dumper() {
+bool CDSConfig::in_aot_safepoint() {
   Thread* t = Thread::current();
-  return t->is_VM_thread() || t == _dumper_thread;
+  return t->is_VM_thread() && VMThread::vm_op_type() == VM_Operation::VMOp_PopulateDumpSharedSpace;
 }
 
-bool CDSConfig::current_thread_is_dumper() {
+bool CDSConfig::in_dumper_thread() {
   return Thread::current() == _dumper_thread;
 }
 
@@ -1026,6 +1071,19 @@ bool CDSConfig::is_dumping_heap() {
 
 bool CDSConfig::is_loading_heap() {
   return AOTHeap::is_archived_heap_in_use();
+}
+
+bool CDSConfig::can_allocate_scratch_oops() {
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    // AOTLinkedClassBulkLoader::preload_classes() is called before the heap is ready
+    // for allocation. The scratch oops for the preloaded classes will be allocated later
+    // inside AOTLinkedClassBulkLoader::link_classes_impl().
+    return Universe::is_fully_initialized();
+  } else {
+    // When not loading aot-linked classes, we try to allocate scratch oops only when
+    // the the heap is ready for allocation.
+    return true;
+  }
 }
 
 bool CDSConfig::is_dumping_klass_subgraphs() {

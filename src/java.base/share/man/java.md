@@ -4146,10 +4146,9 @@ application is executed. One example is Class Data Sharing (CDS), as described a
 that parses classes ahead of time. AOT optimizations can improve the start-up and
 warm-up performance of Java applications.
 
-The Ahead-of-Time Cache (AOT cache) is a container introduced in JDK 24 for
-storing artifacts produced by AOT optimizations. The AOT cache currently contains
-Java classes and heap objects. In future JDK releases, the AOT cache may contain additional
-artifacts, such as execution profiles and compiled methods.
+The Ahead-of-Time Cache (AOT cache) is a container for
+storing artifacts produced by AOT optimizations. The AOT cache contains
+Java classes, heap objects, execution profiles, and compiled methods.
 
 An AOT cache is specific to a combination of the following:
 
@@ -4176,10 +4175,18 @@ The AOT cache can be used with the following command-line options:
 :   Specifies the location of the AOT cache. The standard extension for *cachefile* is `.aot`.
     This option cannot be used together with `-XX:AOTCacheOutput`.
 
-    This option is compatible with `AOTMode` settings of `required`, `create`, or `auto` (the default).
-    The *cachefile* is read in AOT modes `required` and `auto`, and is ignored by mode `off`.
+    The *cachefile* is read in AOT modes `record`, `required` and `auto`, and is ignored by mode `off`.
+
     The *cachefile* is written by AOT mode `create`.  In that case, this option is
     equivalent to `-XX:AOTCacheOutput=`*cachefile*.
+
+    The `-XX:AOTCache=<oldcache>` option is allowed when a JVM process is executed with the AOT mode
+    of `record` (i.e., this JVM process is executing an AOT training run). If this option is specified,
+    `<oldcache>` must be a valid AOT cache. The AOT configuration file written by this JVM process will
+    contain:
+      - Statistical data previously recorded in `<oldcache>`, and,
+      - New statistical data recorded in the current JVM process.
+
 
 [`-XX:AOTCacheOutput=`]{#-XX_AOTCacheOutput}*cachefile*
 :   Specifies the location of the AOT cache to write. The standard extension for *cachefile* is `.aot`.
