@@ -1393,6 +1393,22 @@ int CallLeafNoFPDirectNode::compute_padding(int current_offset) const
 
 //=============================================================================
 
+void MachUncommonTrapNode::emit_impl(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {
+  Assembler::IncompressibleScope scope(masm);
+  __ far_call(RuntimeAddress(OptoRuntime::uncommon_trap_blob()->entry_point()));
+  __ emit_int32(trap_request());
+}
+
+uint MachUncommonTrapNode::size_impl(PhaseRegAlloc* ra_) const {
+  return MacroAssembler::far_branch_size() + sizeof(int32_t);
+}
+
+int MachUncommonTrapNode::ret_addr_offset_impl() const {
+  return MacroAssembler::far_branch_size();
+}
+
+//=============================================================================
+
 #ifndef PRODUCT
 void MachBreakpointNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   assert_cond(st != nullptr);
@@ -2513,7 +2529,12 @@ encode %{
       }
     }
 
-    __ post_call_nop();
+    int trap_request;
+    if (is_uncommon_trap(&trap_request)) {
+      __ emit_int32(trap_request);
+    } else {
+      __ post_call_nop();
+    }
   %}
 
   enc_class riscv_enc_java_dynamic_call(method meth) %{

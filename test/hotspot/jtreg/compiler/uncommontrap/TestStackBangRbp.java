@@ -37,7 +37,7 @@
  * @bug 8028308
  * @summary rbp not restored when stack overflow is thrown from deopt/uncommon trap blobs
  *
- * @requires os.arch == "aarch64"
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
  * @requires vm.compiler2.enabled
  * @run main/othervm -XX:-BackgroundCompilation -Xss512K -XX:-UseOnStackReplacement
  *      -XX:CompileCommand=dontinline,compiler.uncommontrap.TestStackBangRbp::m1
