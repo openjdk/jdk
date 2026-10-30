@@ -896,7 +896,7 @@ class CompileReplay : public StackObj {
       // Ignore Valhalla-specific properties
       array_properties = ArrayProperties::Default();
     }
-    return obj_array_klass->klass_with_properties(array_properties, THREAD);
+    return ObjArrayKlass::klass_with_properties(obj_array_klass->element_klass(), array_properties, THREAD);
   }
 
   // instanceKlass <name>
