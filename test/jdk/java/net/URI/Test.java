@@ -1588,13 +1588,13 @@ public class Test {
 
         ByteArrayInputStream bi = new ByteArrayInputStream(bo.toByteArray());
         ObjectInputStream oi = new ObjectInputStream(bi);
+        final URI uri;
         try {
-            Object o = oi.readObject();
-            xeq(u, o);
+            uri = (URI) oi.readObject();
         } catch (ClassNotFoundException x) {
-            x.printStackTrace();
-            throw new RuntimeException(x.toString());
+            throw new RuntimeException(x);
         }
+        xeq(u, uri);
 
         testCount++;
     }
