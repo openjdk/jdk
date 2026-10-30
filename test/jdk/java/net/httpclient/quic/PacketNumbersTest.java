@@ -22,7 +22,7 @@
  */
 
 import java.nio.ByteBuffer;
-import java.util.List;
+import java.util.HexFormat;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -30,7 +30,6 @@ import jdk.internal.net.http.quic.packets.QuicPacketNumbers;
 
 import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -41,18 +40,18 @@ import org.junit.jupiter.params.provider.MethodSource;
  */
 public class PacketNumbersTest {
 
-    record EncodeResult(int expected, boolean assertion, Class<? extends Throwable> failure) {
+    record EncodeResult(String expected, boolean assertion, Class<? extends Throwable> failure) {
         public static EncodeResult illegal() {
-            return new EncodeResult(-1, true, IllegalArgumentException.class);
+            return new EncodeResult(null, true, IllegalArgumentException.class);
         }
         public static EncodeResult asserting() {
-            return new EncodeResult(-1, true, AssertionError.class);
+            return new EncodeResult(null, true, AssertionError.class);
         }
-        public static EncodeResult success(int result) {
+        public static EncodeResult success(String result) {
             return new EncodeResult(result, false, null);
         }
         public static EncodeResult fail(Class<? extends Throwable> failure) {
-            return new EncodeResult(-1, false, failure);
+            return new EncodeResult(null, false, failure);
         }
         public boolean fail() {
             return failure() != null;
@@ -86,50 +85,70 @@ public class PacketNumbersTest {
         }
     }
 
-    public static Object[][] encode() {
-        return List.of(
+    static Stream<TestCase> encode() {
+        return Stream.of(
                 // these first three test cases are extracted from RFC 9000, appendix A.2 and A.3
-                new TestCase("success",  0xa82f9b32L, 0xa82f30eaL, EncodeResult.success(0x9b32)),
-                new TestCase("success",  0xace8feL, 0xabe8b3L, EncodeResult.success(0xace8fe & 0xFFFFFF)),
-                new TestCase("success",  0xac5c02L, 0xabe8b3L, EncodeResult.success(0xac5c02 & 0xFFFF)),
+                new TestCase("success",  0xa82f9b32L, 0xa82f30eaL, EncodeResult.success("9B32")),
+                new TestCase("success",  0xace8feL, 0xabe8b3L, EncodeResult.success("ACE8FE")),
+                new TestCase("success",  0xac5c02L, 0xabe8b3L, EncodeResult.success("5C02")),
                 // additional test cases - these have been obtained empirically to test at the limits
-                new TestCase("success",  0x7FFFFFFFFFFFL, 0x7FFFFFFFFF00L, EncodeResult.success(0x0000FFFF)),
-                new TestCase("success",  0xFFFFFFFFFFL, 0xFFFFFFFF00L, EncodeResult.success(0x0000FFFF)),
-                new TestCase("success",  0xFFFFFFFFL, 0xFFFFFFFEL, EncodeResult.success(0x000000FF)),
-                new TestCase("success",  0xFFFFFFFFL, 0xFFFFFF00L, EncodeResult.success(0x0000FFFF)),
-                new TestCase("success",  0xFFFFFFFFL, 0xFFFF0000L, EncodeResult.success(0x00FFFFFF)),
-                new TestCase("success",  0xFFFFFFFFL, 0xFF000000L, EncodeResult.success(0xFFFFFFFF)),
-                new TestCase("success",  0xFFFFFFFFL, 0xF0000000L, EncodeResult.success(0xFFFFFFFF)),
-                new TestCase("success",  0xFFFFFFFFL, 0x80000000L, EncodeResult.success(0xFFFFFFFF)),
+                new TestCase("success",  0x7FFFFFFFFFFFL, 0x7FFFFFFFFF00L, EncodeResult.success("FFFF")),
+                new TestCase("success",  0xFFFFFFFFFFL, 0xFFFFFFFF00L, EncodeResult.success("FFFF")),
+                new TestCase("success",  0xFFFFFFFFL, 0xFFFFFFFEL, EncodeResult.success("FF")),
+                new TestCase("success",  0xFFFFFFFFL, 0xFFFFFF00L, EncodeResult.success("FFFF")),
+                new TestCase("success",  0xFFFFFFFFL, 0xFFFF0000L, EncodeResult.success("FFFFFF")),
+                new TestCase("success",  0xFFFFFFFFL, 0xFF000000L, EncodeResult.success("FFFFFFFF")),
+                new TestCase("success",  0xFFFFFFFFL, 0xF0000000L, EncodeResult.success("FFFFFFFF")),
+                new TestCase("success",  0xFFFFFFFFL, 0x80000000L, EncodeResult.success("FFFFFFFF")),
                 new TestCase("illegal(5)",0xFFFFFFFFL, 0x7FFFFFFFL, EncodeResult.illegal()),
-                new TestCase("success",  0x8FFFFFFFL, 0x10000000L, EncodeResult.success(0x8FFFFFFF)),
+                new TestCase("success",  0x8FFFFFFFL, 0x10000000L, EncodeResult.success("8FFFFFFF")),
                 new TestCase("illegal(5)",0x8FFFFFFFL, 0x0FFFFFFFL, EncodeResult.illegal()),
                 new TestCase("illegal(5)",0x8FFFFFFFL, 256L, EncodeResult.illegal()),
-                new TestCase("success",  0x7FFFFFFFL, 255L, EncodeResult.success(0x7FFFFFFF)),
-                new TestCase("success",  0x7FFFFFFFL, 0L, EncodeResult.success(0x7FFFFFFF)),
+                new TestCase("success",  0x7FFFFFFFL, 255L, EncodeResult.success("7FFFFFFF")),
+                new TestCase("success",  0x7FFFFFFFL, 0L, EncodeResult.success("7FFFFFFF")),
                 new TestCase("illegal(5)",0x7FFFFFFFL, -1L, EncodeResult.illegal()),
-                new TestCase("success",  0x6FFFFFFFL, 0L, EncodeResult.success(0x6FFFFFFF)),
-                new TestCase("success",  0xFFFFFFL, 0L, EncodeResult.success(0xFFFFFF)),
-                new TestCase("success",  0xFFFFL, 0L, EncodeResult.success(0xFFFF)),
-                new TestCase("success",  255L, 0L, EncodeResult.success(255)),
-                new TestCase("success",  1L, 0L, EncodeResult.success(1)),
-                new TestCase("success",  0x6FFFFFFFL, -1L, EncodeResult.success(0x6FFFFFFF)),
-                new TestCase("success",  0xFFFFFFL, -1L, EncodeResult.success(0xFFFFFF)),
-                new TestCase("success",  0xFFFFL, -1L, EncodeResult.success(0xFFFF)),
-                new TestCase("success",  255L, -1L, EncodeResult.success(255)),
-                new TestCase("success",  1L, -1L, EncodeResult.success(1)),
-                new TestCase("success",  0L, -1L, EncodeResult.success(0)),
+                new TestCase("illegal(5)",0x80000000L, 0L, EncodeResult.illegal()),
+                new TestCase("success",  0x6FFFFFFFL, 0L, EncodeResult.success("6FFFFFFF")),
+                new TestCase("success",  0xFFFFFFL, 0L, EncodeResult.success("00FFFFFF")),
+                new TestCase("success",  0xFFFFL, 0L, EncodeResult.success("00FFFF")),
+                new TestCase("success",  255L, 0L, EncodeResult.success("00FF")),
+                new TestCase("success",  1L, 0L, EncodeResult.success("01")),
+                new TestCase("success",  0x6FFFFFFFL, -1L, EncodeResult.success("6FFFFFFF")),
+                new TestCase("success",  0xFFFFFFL, -1L, EncodeResult.success("00FFFFFF")),
+                new TestCase("success",  0xFFFFL, -1L, EncodeResult.success("00FFFF")),
+                new TestCase("success",  255L, -1L, EncodeResult.success("00FF")),
+                new TestCase("success",  1L, -1L, EncodeResult.success("01")),
+                new TestCase("success",  0L, -1L, EncodeResult.success("00")),
                 new TestCase("assert",   0L, 1L, EncodeResult.asserting()),
                 new TestCase("assert",   0L, 0L, EncodeResult.asserting()),
-                new TestCase("assert",   1L, 1L, EncodeResult.asserting())
-        ).stream().map(Stream::of)
-                .map(Stream::toArray)
-                .toArray(Object[][]::new);
+                new TestCase("assert",   1L, 1L, EncodeResult.asserting()),
+                // Various other checks for first-packet encodings.
+                new TestCase("success",  5L, -1L, EncodeResult.success("05")),
+                new TestCase("success",  0x7EL, -1L, EncodeResult.success("7E")),
+                new TestCase("success",  0x7FL, -1L, EncodeResult.success("007F")),
+                new TestCase("success",  0x80L, -1L, EncodeResult.success("0080")),
+                new TestCase("success",  0x100L, -1L, EncodeResult.success("0100")),
+                // Various checks for a packet 0 that has been ack'd.
+                new TestCase("success",  0x7FL, 0L, EncodeResult.success("7F")),
+                new TestCase("success",  0x80L, 0L, EncodeResult.success("0080")),
+                new TestCase("success",  0x100L, 0L, EncodeResult.success("0100")),
+                new TestCase("success",  0x7FFFL, 0L, EncodeResult.success("7FFF")),
+                new TestCase("success",  0x8000L, 0L, EncodeResult.success("008000")),
+                new TestCase("success",  0x7FFFFFL, 0L, EncodeResult.success("7FFFFF")),
+                new TestCase("success",  0x800000L, 0L, EncodeResult.success("00800000")),
+                // Check some similar truncations.
+                new TestCase("success",  0x0101L, 0x82L, EncodeResult.success("01")),
+                new TestCase("success",  0x0101L, 0x81L, EncodeResult.success("0101")),
+                new TestCase("success",  0x010001L, 0xFF82L, EncodeResult.success("01")),
+                new TestCase("success",  0x010001L, 0xFF81L, EncodeResult.success("0001")),
+                new TestCase("success",  0x01000001L, 0xFFFF82L, EncodeResult.success("01")),
+                new TestCase("success",  0x01000001L, 0xFFFF81L, EncodeResult.success("0001"))
+        );
     }
 
     @ParameterizedTest
     @MethodSource("encode")
-    public void testEncodePacketNumber(TestCase test) {
+    void testEncodePacketNumber(TestCase test) {
         System.out.println(test);
         if (test.result().assertion()) {
             Assumptions.assumeFalse(!QuicPacketNumbers.class.desiredAssertionStatus(), "needs assertion enabled (-esa)");
@@ -144,14 +163,10 @@ public class PacketNumbersTest {
 
         }
         byte[] res = test.encode();
-        int truncated = 0;
-        for (int i=0; i<res.length; i++) {
-            truncated = truncated << 8;
-            truncated = truncated | (res[i] & 0xFF);
-        }
+        String expected = HexFormat.of().withUpperCase().formatHex(res);
 
         // encode the full PN - check that the truncated PN == expected
-        assertEquals(test.result().expected(), truncated);
+        assertEquals(test.result().expected(), expected);
         // check that decode(encoded) == fullPN
         assertEquals(test.fullPN(), test.decode());
     }
