@@ -455,6 +455,7 @@ public:
   do_var(bool,  UseDilithiumIntrinsics) \
   do_var(bool,  UseGHASHIntrinsics) \
   do_var(bool,  UseIntPoly25519Intrinsics) \
+  do_var(bool,  UseIntPolyP384Intrinsics) \
   do_var(bool,  UseKyberIntrinsics) \
   do_var(bool,  UseMD5Intrinsics) \
   do_var(bool,  UsePoly1305Intrinsics) \

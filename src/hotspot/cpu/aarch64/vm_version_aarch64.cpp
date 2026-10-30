@@ -665,6 +665,10 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseIntPoly25519Intrinsics, true);
   }
 
+  if (FLAG_IS_DEFAULT(UseIntPolyP384Intrinsics)) {
+    FLAG_SET_DEFAULT(UseIntPolyP384Intrinsics, true);
+  }
+
   if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
     FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
   }
