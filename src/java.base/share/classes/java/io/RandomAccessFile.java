@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -524,17 +524,10 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     public int skipBytes(int n) throws IOException {
         long pos;
         long len;
-        long newpos;
-
-        if (n <= 0) {
+        if (n <= 0 || ((pos = getFilePointer()) >= (len = length()))) {
             return 0;
         }
-        pos = getFilePointer();
-        len = length();
-        newpos = pos + n;
-        if (newpos > len) {
-            newpos = len;
-        }
+        long newpos = len - pos > n ? pos + n : len;
         seek(newpos);
 
         /* return the actual number of bytes skipped */
