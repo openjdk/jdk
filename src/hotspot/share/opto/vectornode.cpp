@@ -28,7 +28,7 @@
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
-#include "opto/genericOpts.hpp"
+#include "opto/genericopts.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
@@ -923,7 +923,8 @@ VectorNode* VectorNode::scalar2vector(Node* s, uint vlen, BasicType bt, bool is_
 
 // Build an integer constant vector, or a vector mask when is_mask is true,
 // with vlen lanes of element type bt.
-VectorNode* VectorNode::make_con(PhaseGVN* phase, uint vlen, BasicType bt, jlong value, bool is_mask) {
+VectorNode* VectorNode::make_con(PhaseGVN* phase, uint vlen, BasicType bt,
+                                 jlong value, bool is_mask) {
   assert(is_integral_type(bt), "expected an integral type");
   Node* const_node = bt == T_LONG
                       ? (Node*)phase->longcon(value)
@@ -1921,7 +1922,8 @@ static Node* convertFromLongToMaskAll(PhaseGVN* phase, const TypeLong* bits_type
   if (VectorNode::is_maskall_type(bits_type, vlen) &&
       Matcher::match_rule_supported_vector(Op_Replicate, vlen, maskall_bt)) {
     int con_value = bits_type->get_con() == 0L ? 0 : -1;
-    Node* res = VectorNode::make_con(phase, vlen, maskall_bt, con_value, vt->isa_pvectmask() != nullptr);
+    Node* res = VectorNode::make_con(phase, vlen, maskall_bt, con_value,
+                                     vt->isa_pvectmask() != nullptr);
     // Convert back to the original floating-point data type.
     if (is_floating_point_type(bt)) {
       res = new VectorMaskCastNode(phase->transform(res), vt);
@@ -2881,7 +2883,8 @@ Node* XorVNode::Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_resha
   return new VectorBlendNode(a, blend, in(3));
 }
 
-Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+// Optimizations shared by XorV and XorVMask.
+Node* XorVNode::Ideal_common(PhaseGVN* phase, bool can_reshape) {
   // (XorV src src)      => (Replicate zero)
   // (XorVMask src src)  => (MaskAll zero)
   //
@@ -2895,7 +2898,11 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return VectorNode::scalar2vector(zero, length(), bt, bottom_type()->isa_pvectmask() != nullptr);
   }
 
-  Node* res = Ideal_XorV_VectorMaskCmp(phase, can_reshape);
+  return Ideal_XorV_VectorMaskCmp(phase, can_reshape);
+}
+
+Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* res = Ideal_common(phase, can_reshape);
   if (res != nullptr) {
     return res;
   }
@@ -2905,7 +2912,20 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return res;
   }
 
-  // (XorV (AndV A B) B)         => (AndV B (XorV A (Replicate -1)))
+  // (XorV (AndV A B) B) => (AndV B (XorV A (Replicate -1)))
+  res = GenericOpts::Ideal_XorAnd_to_AndNot(this, phase);
+  if (res != nullptr) {
+    return res;
+  }
+  return VectorNode::Ideal(phase, can_reshape);
+}
+
+Node* XorVMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* res = Ideal_common(phase, can_reshape);
+  if (res != nullptr) {
+    return res;
+  }
+
   // (XorVMask (AndVMask A B) B) => (AndVMask B (XorVMask A (MaskAll -1)))
   res = GenericOpts::Ideal_XorAnd_to_AndNot(this, phase);
   if (res != nullptr) {

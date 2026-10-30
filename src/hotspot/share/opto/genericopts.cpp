@@ -22,54 +22,33 @@
  *
  */
 
-#include "opto/genericOpts.hpp"
+#include "opto/genericopts.hpp"
 #include "opto/vectornode.hpp"
 
 // This file implements the generic optimization framework.
 //
-// Each optimization is a GenericOpts method written against NodeOps<NT>.
-// NodeOps<NT> declares the fixed primitive operation interfaces.
-// NodeOpsTraits<NT> defines them for one type of node. The interface stays
-// the same across node types; the traits supply the matching and construction
-// for that node type.
+// Each optimization is a GenericOpts method written against a NT type.
+// NodeOps<NT> supplies the primitive operations, the matching and
+// construction, for one NT type.
 //
-// A node type is represented by a NodeTypeCon, such as VECTOR for vector and
-// PVectMask nodes. Nodes of the same type have essentially the same primitive
-// operations, so the optimization decouples from each specific node.
+// A NT type is represented by a NodeTypeCon, such as VECTOR for vector
+// nodes and PVECTMASK for PVectMask nodes. Nodes of the same NT type have
+// essentially the same primitive operations, so the optimization decouples
+// from each specific node type.
 //
-// NodeType maps the root node class to a NodeTypeCon. Define one specialization
-// for each root class so a call site can deduce NodeTypeCon from that class.
+// NodeType maps the root node class to a NT type. Define one specialization
+// for each root class so a call site can deduce the NT type from that class.
 
 enum class NodeTypeCon {
-  VECTOR  // Vector and PVectMask (e.g. XorV / XorVMask)
+  VECTOR,    // Vector, e.g. XorV
+  PVECTMASK  // PVectMask, e.g. XorVMask
 };
 
 template<typename NodeClass>
 struct NodeType;
 
 template<NodeTypeCon NT>
-struct NodeOpsTraits;
-
-// Fixed interface. Every NodeTypeCon implements these functions through
-// NodeOpsTraits<NT>.
-template<NodeTypeCon NT>
-struct NodeOps {
-  static bool is_and(const Node* n) {
-    return NodeOpsTraits<NT>::is_and(n);
-  }
-  static bool is_xor(const Node* n) {
-    return NodeOpsTraits<NT>::is_xor(n);
-  }
-  static Node* make_and(Node* in1, Node* in2) {
-    return NodeOpsTraits<NT>::make_and(in1, in2);
-  }
-  static Node* make_xor(Node* in1, Node* in2) {
-    return NodeOpsTraits<NT>::make_xor(in1, in2);
-  }
-  static Node* make_not(PhaseGVN* phase, Node* in) {
-    return NodeOpsTraits<NT>::make_not(phase, in);
-  }
-};
+struct NodeOps;
 
 template<>
 struct NodeType<XorVNode> {
@@ -77,44 +56,69 @@ struct NodeType<XorVNode> {
 };
 
 template<>
-struct NodeOpsTraits<NodeTypeCon::VECTOR> {
-  // Unpredicated AndV, or AndVMask when n is a PVectMask.
+struct NodeType<XorVMaskNode> {
+  static constexpr NodeTypeCon value = NodeTypeCon::PVECTMASK;
+};
+
+template<>
+struct NodeOps<NodeTypeCon::VECTOR> {
+  // Unpredicated AndV.
   static bool is_and(const Node* n) {
-    return !n->is_predicated_vector() &&
-           n->Opcode() == (is_pvectmask(n) ? Op_AndVMask : Op_AndV);
+    return n->Opcode() == Op_AndV && !n->is_predicated_vector();
   }
 
-  // Unpredicated XorV, or XorVMask when n is a PVectMask.
+  // Unpredicated XorV.
   static bool is_xor(const Node* n) {
-    return !n->is_predicated_vector() &&
-           n->Opcode() == (is_pvectmask(n) ? Op_XorVMask : Op_XorV);
+    return n->Opcode() == Op_XorV && !n->is_predicated_vector();
   }
 
   static Node* make_and(Node* in1, Node* in2) {
-    return VectorNode::make(Op_AndV, in1, in2, vect_type(in1), is_pvectmask(in1));
+    return new AndVNode(in1, in2, in1->bottom_type()->is_vect());
   }
 
   static Node* make_xor(Node* in1, Node* in2) {
-    return VectorNode::make(Op_XorV, in1, in2, vect_type(in1), is_pvectmask(in1));
+    return new XorVNode(in1, in2, in1->bottom_type()->is_vect());
   }
 
-  // XorV / XorVMask with an all-ones vector.
+  // XorV with a Replicate -1.
   static Node* make_not(PhaseGVN* phase, Node* in) {
-    const TypeVect* vt = vect_type(in);
+    const TypeVect* vt = in->bottom_type()->is_vect();
     uint vlen = vt->length();
     BasicType bt = vt->element_basic_type();
-    bool is_mask = is_pvectmask(in);
-    Node* all_ones = phase->transform(VectorNode::make_con(phase, vlen, bt, -1, is_mask));
+    Node* all_ones = phase->transform(VectorNode::make_con(phase, vlen, bt,
+                                                           -1, false));
     return make_xor(in, all_ones);
   }
+};
 
- private:
-  static bool is_pvectmask(const Node* n) {
-    return n->bottom_type()->isa_pvectmask() != nullptr;
+template<>
+struct NodeOps<NodeTypeCon::PVECTMASK> {
+  // Unpredicated AndVMask.
+  static bool is_and(const Node* n) {
+    return n->Opcode() == Op_AndVMask && !n->is_predicated_vector();
   }
 
-  static const TypeVect* vect_type(const Node* n) {
-    return n->bottom_type()->is_vect();
+  // Unpredicated XorVMask.
+  static bool is_xor(const Node* n) {
+    return n->Opcode() == Op_XorVMask && !n->is_predicated_vector();
+  }
+
+  static Node* make_and(Node* in1, Node* in2) {
+    return new AndVMaskNode(in1, in2, in1->bottom_type()->is_pvectmask());
+  }
+
+  static Node* make_xor(Node* in1, Node* in2) {
+    return new XorVMaskNode(in1, in2, in1->bottom_type()->is_pvectmask());
+  }
+
+  // XorVMask with a MaskAll -1.
+  static Node* make_not(PhaseGVN* phase, Node* in) {
+    const TypeVect* vt = in->bottom_type()->is_pvectmask();
+    uint vlen = vt->length();
+    BasicType bt = vt->element_basic_type();
+    Node* all_ones = phase->transform(VectorNode::make_con(phase, vlen, bt,
+                                                           -1, true));
+    return make_xor(in, all_ones);
   }
 };
 
@@ -165,3 +169,4 @@ Node* GenericOpts::Ideal_XorAnd_to_AndNot(NodeClass* n, PhaseGVN* phase) {
 }
 
 template Node* GenericOpts::Ideal_XorAnd_to_AndNot<XorVNode>(XorVNode* n, PhaseGVN* phase);
+template Node* GenericOpts::Ideal_XorAnd_to_AndNot<XorVMaskNode>(XorVMaskNode* n, PhaseGVN* phase);

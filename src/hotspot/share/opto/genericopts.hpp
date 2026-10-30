@@ -36,15 +36,10 @@
 // every optimization takes a root IR node, matches an IR pattern rooted at it,
 // and returns a node. What is returned when the pattern does not match follows
 // the caller's convention, e.g. nullptr for Ideal and the root for Identity.
-// So each optimization is declared with this macro.
-#define DECLARE_GENERIC_OPT(opt_name) template<typename NodeClass> \
-  static Node* opt_name(NodeClass* root, PhaseGVN* phase);
-
 class GenericOpts : public AllStatic {
  public:
-  DECLARE_GENERIC_OPT(Ideal_XorAnd_to_AndNot)
+  template<typename NodeClass>
+  static Node* Ideal_XorAnd_to_AndNot(NodeClass* root, PhaseGVN* phase);
 };
-
-#undef DECLARE_GENERIC_OPT
 
 #endif // SHARE_OPTO_GENERICOPTS_HPP

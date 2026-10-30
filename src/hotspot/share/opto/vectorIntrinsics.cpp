@@ -2099,7 +2099,9 @@ bool LibraryCallKit::inline_vector_rearrange() {
   }
 
   assert(is_power_of_2(num_elem), "wrapping invalid");
-  Node* wrapping_mask = gvn().transform(VectorNode::make_con(&gvn(), num_elem, shuffle_bt, num_elem - 1));
+  Node* wrapping_mask = gvn().transform(VectorNode::make_con(&gvn(), num_elem,
+                                                             shuffle_bt,
+                                                             num_elem - 1));
   shuffle = gvn().transform(new AndVNode(shuffle, wrapping_mask, st));
 
   Node* mask = nullptr;
@@ -2264,7 +2266,9 @@ bool LibraryCallKit::inline_vector_select_from() {
 
   // wrap the byte vector lanes to (num_elem - 1) to form the shuffle vector where num_elem is vector length
   // this is a simple AND operation as we come here only for power of two vector length
-  Node* bcast_mod = gvn().transform(VectorNode::make_con(&gvn(), num_elem, shuffle_bt, num_elem - 1));
+  Node* bcast_mod = gvn().transform(VectorNode::make_con(&gvn(), num_elem,
+                                                         shuffle_bt,
+                                                         num_elem - 1));
   shuffle = gvn().transform(VectorNode::make(Op_AndV, shuffle, bcast_mod, shuffle_vt));
 
   // load the shuffle to use in rearrange
