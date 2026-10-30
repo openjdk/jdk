@@ -2066,10 +2066,6 @@ public:
   void fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, XMMRegister xbuf);
   // Fold 512-bit data chunk
   void fold512bit_crc32_avx512(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, Register buf, Register pos, int offset);
-  // Fold 8-bit data
-  void fold_8bit_crc32(Register crc, Register table, Register tmp);
-  void fold_8bit_crc32(XMMRegister crc, Register table, XMMRegister xtmp, Register tmp);
-
   // Compress char[] array to byte[].
   void char_array_compress(Register src, Register dst, Register len,
                            XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3,
