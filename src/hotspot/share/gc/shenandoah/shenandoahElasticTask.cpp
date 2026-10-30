@@ -56,7 +56,7 @@ void ShenandoahElasticTaskCoordinator::increase_workers(size_t max_concurrent_wo
     return;
   }
 
-  const uint delta = max_concurrent_workers - _admitted;
+  const size_t delta = max_concurrent_workers - _admitted;
   _admitted += delta;
   _capable += delta;
   locker.notify_all();

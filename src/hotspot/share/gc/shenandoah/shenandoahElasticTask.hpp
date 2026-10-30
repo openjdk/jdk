@@ -60,9 +60,9 @@ void shenandoah_elastic_loop(ShenandoahHeap* heap, TaskTerminator* terminator, W
 // Holds fields to be shared by elastic tasks, needs to be
 // reachable by shController so that _admitted can be increased.
 class ShenandoahElasticTaskCoordinator {
-  uint _admitted; // allowed concurrent worker count
-  uint _capable;  // outstanding participants (must be less than or equal to _admitted).
-  Monitor _gate;  // serialize admitted/capable changes
+  size_t _admitted; // allowed concurrent worker count
+  size_t _capable;  // outstanding participants (must be less than or equal to _admitted).
+  Monitor _gate;    // serialize admitted/capable changes
 
 public:
   ShenandoahElasticTaskCoordinator();
