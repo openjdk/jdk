@@ -1319,9 +1319,23 @@ public class Properties extends Hashtable<Object,Object> {
         return Collections.enumeration(map.values());
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @deprecated
+     * This method predates the collections framework; the method name,
+     * {@code contains}, is highly misleading with {@link #containsKey(Object)
+     * containsKey}. It is recommended to call the identical {@link
+     * #containsValue(Object) containsValue} (which is part of the
+     * {@link Map} interface in the collections framework) instead.
+     *
+     * @param value {@inheritDoc}
+     * @return {@inheritDoc}
+     */
     @Override
+    @Deprecated(since = "28")
     public boolean contains(Object value) {
-        return map.contains(value);
+        return map.containsValue(value);
     }
 
     @Override
