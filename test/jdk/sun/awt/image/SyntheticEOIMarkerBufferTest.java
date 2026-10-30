@@ -23,11 +23,14 @@
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.Arrays;
-
-import sun.awt.image.ByteArrayImageSource;
-import sun.awt.image.ImageDecoder;
-import sun.awt.image.ImageFormatException;
-import sun.awt.image.JPEGImageDecoder;
+import java.awt.Canvas;
+import java.awt.Image;
+import java.awt.MediaTracker;
+import java.awt.Toolkit;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
 
 /**
  * @test
@@ -35,7 +38,6 @@ import sun.awt.image.JPEGImageDecoder;
  * @summary The AWT JPEG decoder must not write past the end of its input
  *          buffer when it appends a synthetic EOI marker to a truncated
  *          progressive image.
- * @modules java.desktop/sun.awt.image
  * @run main/othervm -Xcheck:jni SyntheticEOIMarkerBufferTest
  */
 
@@ -48,15 +50,47 @@ public class SyntheticEOIMarkerBufferTest {
     public static void main(String[] args) throws Exception {
         byte[] jpeg = truncatedProgressiveJpeg();
 
-        ImageDecoder decoder =
-            new JPEGImageDecoder(new ByteArrayImageSource(jpeg),
-                                 new TruncatedStream(jpeg));
+        // Decode through the public AWT API using the crafted stream.
+        URL url = URL.of(URI.create("testjpeg:/truncated.jpg"),
+                new URLStreamHandler() {
+                    @Override
+                    protected URLConnection openConnection(URL url) {
+                        return new URLConnection(url) {
+                            @Override
+                            public void connect() {
+                            }
+
+                            @Override
+                            public String getContentType() {
+                                return "image/jpeg";
+                            }
+
+                            @Override
+                            public InputStream getInputStream() {
+                                return new TruncatedStream(jpeg);
+                            }
+                        };
+                    }
+                });
+
+        Image image = Toolkit.getDefaultToolkit().createImage(url);
+        MediaTracker tracker = new MediaTracker(new Canvas());
+        tracker.addImage(image, 0);
+
         try {
-            decoder.produceImage();
-            throw new RuntimeException(
-                "truncated progressive image was silently accepted");
-        } catch (ImageFormatException e) {
-            System.out.println("Rejected as expected: " + e.getMessage());
+            tracker.waitForID(0, 30_000);
+
+            int status = tracker.statusID(0, false);
+            if ((status & MediaTracker.ERRORED) == 0) {
+                throw new RuntimeException(
+                        "Expected a decoding error, status: " + status);
+            }
+
+            System.out.println("Rejected as expected");
+
+        } finally {
+            tracker.removeImage(image, 0);
+            image.flush();
         }
     }
 
