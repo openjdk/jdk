@@ -439,7 +439,7 @@ void ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
     // for an old cycle and because cycle waiters would have requested a global cycle that would
     // have cancelled the old mark anyway.
     clear_allocation_failure_and_notify_waiters();
-  } else if (cause == GCCause::_shenandoah_concurrent_gc) {
+  } else {
     _heap->shenandoah_policy()->record_interrupted_old();
   }
 }
@@ -499,8 +499,8 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
       }
     }
   } else {
-    assert(generation->is_global(), "If not young, must be GLOBAL");
-    assert(!do_old_gc_bootstrap, "Do not bootstrap with GLOBAL GC");
+    assert(generation->is_global(), "If not young, must be Global");
+    assert(!do_old_gc_bootstrap, "Do not bootstrap with Global GC");
     if (_heap->cancelled_gc()) {
       msg = "At end of Interrupted Concurrent Global GC";
     } else {

@@ -90,7 +90,7 @@ public:
     return _table[table_index];
   }
 
-  void   remove_useless_nodes(VectorSet& useful); // replace with sentinel
+  void   remove_useless_nodes(const VectorSet& useful); // replace with sentinel
   void   check_no_speculative_types(); // Check no speculative part for type nodes in table
 
   Node  *sentinel() { return _sentinel; }
@@ -150,12 +150,12 @@ public:
 // Remove useless nodes from GVN hash-table, worklist, and graph
 class PhaseRemoveUseless : public Phase {
 protected:
-  Unique_Node_List _useful;   // Nodes reachable from root
+  Unique_Node_List<Node> _useful;   // Nodes reachable from root
                               // list is allocated from current resource area
 public:
-  PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List& worklist, PhaseNumber phase_num = Remove_Useless);
+  PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List<Node>& worklist, PhaseNumber phase_num = Remove_Useless);
 
-  Unique_Node_List *get_useful() { return &_useful; }
+  Unique_Node_List<Node>* get_useful() { return &_useful; }
 };
 
 //------------------------------PhaseRenumber----------------------------------
@@ -165,7 +165,7 @@ class PhaseRenumberLive : public PhaseRemoveUseless {
 protected:
   Type_Array _new_type_array; // Storage for the updated type information.
   GrowableArray<int> _old2new_map;
-  Node_List _delayed;
+  Node_List<Node> _delayed;
   bool _is_pass_finished;
   uint _live_node_count;
 
@@ -174,7 +174,7 @@ protected:
 
 public:
   PhaseRenumberLive(PhaseGVN* gvn,
-                    Unique_Node_List& worklist,
+                    Unique_Node_List<Node>& worklist,
                     PhaseNumber phase_num = Remove_Useless_And_Renumber_Live);
 };
 
@@ -290,7 +290,7 @@ public:
   Node*  hash_find(const Node* n) { return _table.hash_find(n); }
 
   // Used after parsing to eliminate values that are no longer in program
-  void   remove_useless_nodes(VectorSet &useful) {
+  void   remove_useless_nodes(const VectorSet& useful) {
     _table.remove_useless_nodes(useful);
     // this may invalidate cached cons so reset the cache
     init_con_caches();
@@ -510,6 +510,10 @@ protected:
   // Usually returns new_type.  Returns old_type if new_type is only a slight
   // improvement, such that it would take many (>>10) steps to reach 2**32.
 
+  DeadPathNode* dead_path();
+
+  void make_dependent_paths_dead_if_top(Node* dead_node, const Type* t);
+
 public:
 
   PhaseIterGVN(PhaseIterGVN* igvn); // Used by CCP constructor
@@ -536,7 +540,7 @@ public:
   virtual void record_for_igvn(Node *n) { _worklist.push(n); }
 
   // Iterative worklist. Reference to "C->igvn_worklist()".
-  Unique_Node_List &_worklist;
+  Unique_Node_List<Node>& _worklist;
 
   // Given def-use info and an initial worklist, apply Node::Ideal,
   // Node::Value, Node::Identity, hash-based value numbering, Node::Ideal_DU
@@ -593,7 +597,7 @@ public:
   }
 
   // Add users of 'n' to worklist
-  static void add_users_to_worklist0(Node* n, Unique_Node_List& worklist);
+  static void add_users_to_worklist0(Node* n, Unique_Node_List<Node>& worklist);
 
   // Add one or more users of 'use' to the worklist if it appears that a
   // known optimization could be applied to those users.
@@ -602,7 +606,7 @@ public:
   // Certain optimizations have dependencies that extend beyond a node's
   // direct inputs, so it is necessary to ensure the appropriate
   // notifications are made here.
-  static void add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_List& worklist);
+  static void add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_List<Node>& worklist);
 
   // Add users of 'n', and any other nodes that could be directly
   // affected by changes to 'n', to the worklist.
@@ -614,7 +618,7 @@ public:
   void add_users_to_worklist(Node* n) const;
   // The generic version that will add it to a given worklist instead of
   // the current this->_worklist.
-  static void add_users_to_worklist(Node* n, Unique_Node_List& worklist);
+  static void add_users_to_worklist(Node* n, Unique_Node_List<Node>& worklist);
 
   // Replace old node with new one.
   void replace_node( Node *old, Node *nn ) {
@@ -704,29 +708,29 @@ protected:
 // Phase for performing global Conditional Constant Propagation.
 // Should be replaced with combined CCP & GVN someday.
 class PhaseCCP : public PhaseIterGVN {
-  Unique_Node_List _root_and_safepoints;
-  Unique_Node_List _maybe_top_type_nodes;
+  Unique_Node_List<Node> _root_and_safepoints;
+  Unique_Node_List<Node> _maybe_top_type_or_div_mod_nodes;
   // Non-recursive.  Use analysis to transform single Node.
   virtual Node* transform_once(Node* n);
 
-  Node* fetch_next_node(Unique_Node_List& worklist);
+  Node* fetch_next_node(Unique_Node_List<Node>& worklist);
   static void dump_type_and_node(const Node* n, const Type* t) PRODUCT_RETURN;
 
   bool not_bottom_type(Node* n) const;
-  void push_child_nodes_to_worklist(Unique_Node_List& worklist, Node* n) const;
-  void push_if_not_bottom_type(Unique_Node_List& worklist, Node* n) const;
-  void push_more_uses(Unique_Node_List& worklist, Node* parent, const Node* use) const;
-  void push_phis(Unique_Node_List& worklist, const Node* use) const;
-  static void push_catch(Unique_Node_List& worklist, const Node* use);
-  void push_cmpu(Unique_Node_List& worklist, const Node* use) const;
-  static void push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, const Node* use);
-  static void push_cast(Unique_Node_List& worklist, const Node* use);
-  void push_loadp(Unique_Node_List& worklist, const Node* use) const;
-  void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
-  void push_cast_ii(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
-  void push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Node* use) const;
-  void push_bool_with_cmpu_and_mask(Unique_Node_List& worklist, const Node* use) const;
-  void push_bool_matching_case1b(Unique_Node_List& worklist, const Node* cmpu) const;
+  void push_child_nodes_to_worklist(Unique_Node_List<Node>& worklist, Node* n) const;
+  void push_if_not_bottom_type(Unique_Node_List<Node>& worklist, Node* n) const;
+  void push_more_uses(Unique_Node_List<Node>& worklist, Node* parent, const Node* use) const;
+  void push_phis(Unique_Node_List<Node>& worklist, const Node* use) const;
+  static void push_catch(Unique_Node_List<Node>& worklist, const Node* use);
+  void push_cmpu(Unique_Node_List<Node>& worklist, const Node* use) const;
+  static void push_counted_loop_phi(Unique_Node_List<Node>& worklist, Node* parent, const Node* use);
+  static void push_cast(Unique_Node_List<Node>& worklist, const Node* use);
+  void push_loadp(Unique_Node_List<Node>& worklist, const Node* use) const;
+  void push_and(Unique_Node_List<Node>& worklist, const Node* parent, const Node* use) const;
+  void push_cast_ii(Unique_Node_List<Node>& worklist, const Node* parent, const Node* use) const;
+  void push_opaque_zero_trip_guard(Unique_Node_List<Node>& worklist, const Node* use) const;
+  void push_bool_with_cmpu_and_mask(Unique_Node_List<Node>& worklist, const Node* use) const;
+  void push_bool_matching_case1b(Unique_Node_List<Node>& worklist, const Node* cmpu) const;
 
  public:
   PhaseCCP( PhaseIterGVN *igvn ); // Compute conditional constants
@@ -734,12 +738,12 @@ class PhaseCCP : public PhaseIterGVN {
 
   // Worklist algorithm identifies constants
   void analyze();
-  bool analyze_step(Unique_Node_List& worklist, Node* n);
+  bool analyze_step(Unique_Node_List<Node>& worklist, Node* n);
   bool needs_revisit(Node* n) const;
 #ifdef ASSERT
   void verify_type(Node* n, const Type* tnew, const Type* told);
   // For every node n on verify list, check if type(n) == n->Value()
-  void verify_analyze(Unique_Node_List& worklist_verify);
+  void verify_analyze(Unique_Node_List<Node>& worklist_verify);
 #endif
   // Recursive traversal of program.  Used analysis to modify program.
   virtual Node *transform( Node *n );

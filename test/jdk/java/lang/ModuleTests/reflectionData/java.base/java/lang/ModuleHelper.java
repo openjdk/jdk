@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,19 @@
  * questions.
  */
 
-#include "gc/shared/gc_globals.hpp"
-#include "gc/shared/gcLogPrecious.hpp"
-#include "gc/z/zRuntimeWorkers.hpp"
-#include "runtime/java.hpp"
+package java.lang;
 
-ZRuntimeWorkers::ZRuntimeWorkers()
-  : _workers("RuntimeWorker", ParallelGCThreads) {
+/**
+ * Helper class to patch to java.base and provide access to java.lang.Module internals.
+ */
+public class ModuleHelper {
+    ModuleHelper() { }
 
-  log_info_p(gc, init)("Runtime Workers: %u", _workers.max_workers());
-
-  // Initialize worker threads
-  _workers.initialize_workers();
-  _workers.set_active_workers(_workers.max_workers());
-  if (_workers.active_workers() != _workers.max_workers()) {
-    vm_exit_during_initialization("Failed to create ZRuntimeWorkers");
-  }
-}
-
-WorkerThreads* ZRuntimeWorkers::workers() {
-  return &_workers;
-}
-
-void ZRuntimeWorkers::threads_do(ThreadClosure* tc) const {
-  _workers.threads_do(tc);
+    /**
+     * Returns true if there are readability, exports/uses, or service uses that were added
+     * reflectively.
+     */
+    public static boolean hasReflectionData() {
+        return Module.hasReflectionData();
+    }
 }

@@ -60,6 +60,11 @@ public class SuspendInCritical {
      */
     public static void main(String[] args) throws Throwable {
         int mode = Integer.parseInt(args[0]);
+        // This assert is just to load the Asserts class before the
+        // main thread starts anything interesting. This avoids classloading
+        // during a critical part of the test where the main thread must
+        // not itself try to use a JNI critical region.
+        Asserts.assertTrue(mode >= 1 && mode <= 3);
         final byte[] bytes = (mode == 1 || mode == 3) ? new byte[16] : null;
         final String str = (mode == 2 || mode == 3) ? "A String" : null;
 
