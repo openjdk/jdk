@@ -61,27 +61,17 @@ import java.util.Arrays;
  */
 public class DHasKEM implements KEMSpi {
 
-    static EncapsulatorSpi newEncapsulator(PublicKey publicKey,
-            SecureRandom secureRandom) throws InvalidKeyException {
-        return new Handler(publicKey, null, secureRandom);
-    }
-
-    static DecapsulatorSpi newDecapsulator(PrivateKey privateKey)
-            throws InvalidKeyException {
-        return new Handler(null, privateKey, null);
-    }
-
     @Override
     public EncapsulatorSpi engineNewEncapsulator(
             PublicKey publicKey, AlgorithmParameterSpec spec,
             SecureRandom secureRandom) throws InvalidKeyException {
-        return newEncapsulator(publicKey, secureRandom);
+        return new Handler(publicKey, null, secureRandom);
     }
 
     @Override
     public DecapsulatorSpi engineNewDecapsulator(PrivateKey privateKey,
             AlgorithmParameterSpec spec) throws InvalidKeyException {
-        return newDecapsulator(privateKey);
+        return new Handler(null, privateKey, null);
     }
 
     private static final class Handler
