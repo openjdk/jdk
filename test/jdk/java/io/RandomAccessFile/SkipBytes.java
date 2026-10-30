@@ -29,6 +29,8 @@
 
 
 import java.io.*;
+import java.nio.file.Files;
+import java.util.List;
 
 public class SkipBytes{
 
@@ -94,21 +96,22 @@ public class SkipBytes{
     }
 
     public static void main(String[] args) throws Exception {
-
-        RandomAccessFile raf = new RandomAccessFile("input.txt" , "rw");
+        var path = Files.createTempFile("RAF-SkipBytes-", ".txt");
         try {
-            int length = (int)raf.length();
+            Files.write(path, List.of("foo", "bar", "baz"));
+            try (var raf = new RandomAccessFile(path.toFile(), "rw")) {
+                int length = (int) raf.length();
 
-            doTest(raf , 0 , 2*length);
-            doTest(raf , 0 , length);
-            doTest(raf , 0 , length/2);
-            doTest(raf , length/2 , -2);
-            doTest(raf , length , 0);
-            doTest(raf , 0 , -1);
-        } finally{
-            raf.close();
+                doTest(raf, 0, 2 * length);
+                doTest(raf, 0, length);
+                doTest(raf, 0, length / 2);
+                doTest(raf, length / 2, -2);
+                doTest(raf, length, 0);
+                doTest(raf, 0, -1);
+            }
+        } finally {
+            Files.delete(path);
         }
-
     }
 
 }
