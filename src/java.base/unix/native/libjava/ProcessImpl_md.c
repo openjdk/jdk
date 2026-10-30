@@ -548,7 +548,10 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     assert(child_childenv > STDERR_FILENO);
 
     /* Slot in dup2 file actions. */
-    posix_spawn_file_actions_init(&file_actions);
+    rval = posix_spawn_file_actions_init(&file_actions);
+    if (rval != 0) {
+        return -1;
+    }
 
 #ifdef __APPLE__
     /* On MacOS, posix_spawn does not behave in a POSIX-conform way in that the
