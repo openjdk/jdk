@@ -26,6 +26,7 @@
 package sun.security.util;
 
 import java.io.IOException;
+import java.lang.ref.Cleaner;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.interfaces.*;
@@ -41,6 +42,7 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.DestroyFailedException;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.ref.CleanerFactory;
 
 import com.sun.crypto.provider.PBKDF2KeyImpl;
 import sun.security.jca.JCAUtil;
@@ -551,6 +553,14 @@ public final class KeyUtil {
 
         }
         throw new IOException("No algorithm detected");
+    }
+
+    // methods for generating cleanables which clears arrays
+    public static Cleaner.Cleanable getCleanable(Object obj, byte[] b) {
+        return CleanerFactory.cleaner().register(obj,
+                ()->{
+                    Arrays.fill(b, (byte) 0);
+                });
     }
 
     // Generic method for zeroing arrays and objects
