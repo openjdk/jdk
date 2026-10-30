@@ -43,7 +43,6 @@
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
 #include "gc/shared/bufferNode.hpp"
-#include "gc/shared/partialArrayState.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -929,8 +928,6 @@ public:
 
   void do_work(uint worker_id) override {
     _per_thread_states->destroy_worker_states();
-    // This must be here after above destroyed the per-thread allocators.
-    G1CollectedHeap::heap()->partial_array_state_manager()->reset();
   }
 };
 

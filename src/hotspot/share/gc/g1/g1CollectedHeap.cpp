@@ -84,7 +84,6 @@
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorageParState.hpp"
-#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
@@ -1333,7 +1332,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _cm(nullptr),
   _cr(nullptr),
   _task_queues(nullptr),
-  _partial_array_state_manager(nullptr),
   _ref_processor_stw(nullptr),
   _is_alive_closure_stw(this),
   _is_subject_to_discovery_stw(this),
@@ -1367,13 +1365,7 @@ G1CollectedHeap::G1CollectedHeap() :
     _task_queues->register_queue(i, q);
   }
 
-  _partial_array_state_manager = new PartialArrayStateManager(num_queues);
-
   _gc_tracer_stw->initialize();
-}
-
-PartialArrayStateManager* G1CollectedHeap::partial_array_state_manager() const {
-  return _partial_array_state_manager;
 }
 
 G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* description,

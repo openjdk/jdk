@@ -26,15 +26,14 @@
 #define SHARE_GC_SHARED_PARTIALARRAYSTATE_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/arena.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-class Arena;
 class PartialArrayStateAllocator;
-class PartialArrayStateManager;
 
 // Instances of this class are used to represent processing progress for an
 // array task in a taskqueue.  When a sufficiently large array needs to be
@@ -86,14 +85,14 @@ public:
 
 // This class provides memory management for PartialArrayStates.
 //
-// States are initially arena allocated from the manager, using a per-thread
-// allocator.  This allows the entire set of allocated states to be discarded
-// without the need to keep track of or find them under some circumstances.
+// Each per-thread allocator owns an arena for allocating states.  This allows
+// the entire set of allocated states to be discarded without the need to keep
+// track of or find them under some circumstances.
 // For example, if G1 concurrent marking is aborted and needs to restart
 // because of a full marking queue, the queue doesn't need to be searched for
 // tasks referring to states to allow releasing them.  Instead the queue
 // contents can just be discarded, and the memory for the no longer referenced
-// states will eventually be reclaimed when the arena is reset.
+// states will eventually be reclaimed when the allocator is reset or destroyed.
 //
 // The allocators each provide a free-list of states.  When a state is
 // released and its remaining chunk count has reached zero, it is added to the
@@ -102,17 +101,30 @@ public:
 // in-progress arrays, rather than the total number of arrays that need to be
 // processed.
 //
+// A state may be allocated from one allocator's arena and recycled on another
+// allocator's free-list after work stealing.  Reclamation follows the owning
+// splitter's lifetime contract and is coordinated by the collector.
+// Before reclaiming any arena, all workers that can exchange partial-array tasks
+// must have stopped using states.  All their allocators must be reset/destroyed
+// before processing resumes.  Cleanup does not traverse free-lists, whose
+// entries may belong to an already reclaimed arena.
+//
 // An allocator object is not thread-safe.
 class PartialArrayStateAllocator : public CHeapObj<mtGC> {
+  friend class PartialArraySplitter;
+
   class FreeListEntry;
 
-  PartialArrayStateManager* _manager;
   FreeListEntry* _free_list;
-  Arena* _arena;
+  Arena _arena;
+
+  // Reclaim states and reconstruct the arena.  Called only by the owning
+  // splitter after all workers have stopped using states.
+  void reset();
 
 public:
-  explicit PartialArrayStateAllocator(PartialArrayStateManager* manager);
-  ~PartialArrayStateAllocator();
+  PartialArrayStateAllocator();
+  ~PartialArrayStateAllocator() = default;
 
   NONCOPYABLE(PartialArrayStateAllocator);
 
@@ -122,71 +134,8 @@ public:
 
   // Decrement the state's remaining chunk count by one.  If it reaches zero,
   // recycle on this allocator's free-list.  The caller must have finished
-  // accessing the state.  The state must belong to the same manager.
+  // accessing the state.
   void release(PartialArrayState* state);
-};
-
-// This class provides memory management for PartialArrayStates.
-//
-// States are allocated using an allocator object. Those allocators in turn
-// may request memory for a state from their associated manager. The manager
-// is responsible for obtaining and releasing memory used for states by the
-// associated allocators.
-//
-// A state may be allocated by one allocator, but end up on the free-list of a
-// different allocator.  This can happen because a task referring to the state
-// may be stolen from the queue where it was initially added.  This is permitted
-// because a state's memory won't be reclaimed until all of the allocators
-// associated with the manager that is ultimately providing the memory have
-// been deleted and the manager is reset.
-//
-// A manager is used in two distinct and non-overlapping phases.
-//
-// - allocating: This is the initial phase.  During this phase, new allocators
-// may be created, and allocators may request memory from the manager.
-//
-// - releasing: When an allocator is destroyed the manager transitions to this
-// phase.  It remains in this phase until all extent allocators associated with
-// this manager have been destroyed.  During this phase, new allocators may not
-// be created, nor may extent allocators request memory from this manager.
-//
-// Once all the associated allocators have been destroyed the releasing phase
-// ends and the manager may be reset or deleted.  Resetting transitions back
-// to the allocating phase.
-class PartialArrayStateManager : public CHeapObj<mtGC> {
-  friend class PartialArrayStateAllocator;
-
-  // Use an arena for each allocator, for thread-safe concurrent allocation by
-  // different allocators.
-  Arena* _arenas;
-
-  // Limit on the number of allocators this manager supports.
-  uint _max_allocators;
-
-  // The number of allocators that have been registered/released.
-  // Atomic to support concurrent registration, and concurrent release.
-  // Phasing restriction forbids registration concurrent with release.
-  Atomic<uint> _registered_allocators;
-  DEBUG_ONLY(Atomic<uint> _released_allocators;)
-
-  // These are all for sole use of the befriended allocator class.
-  Arena* register_allocator();
-  void release_allocator() NOT_DEBUG_RETURN;
-
-public:
-  explicit PartialArrayStateManager(uint max_allocators);
-
-  // Release the memory that has been requested by allocators associated with
-  // this manager.
-  // precondition: all associated allocators have been deleted.
-  ~PartialArrayStateManager();
-
-  NONCOPYABLE(PartialArrayStateManager);
-
-  // Recycle the memory that has been requested by allocators associated with
-  // this manager.
-  // precondition: all associated allocators have been deleted.
-  void reset();
 };
 
 #endif // SHARE_GC_SHARED_PARTIALARRAYSTATE_HPP

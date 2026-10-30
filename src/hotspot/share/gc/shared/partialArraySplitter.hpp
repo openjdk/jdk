@@ -35,6 +35,13 @@
 // Each worker uses its own splitter to scan arrays in parallel.
 // Queued tasks share an atomic progress record; each claim returns a
 // disjoint, self-contained chunk and decrements the record's remaining chunk count.
+//
+// Each splitter owns its allocator, but work stealing can put slots from one
+// splitter's arena on another splitter's free-list.  Before resetting or
+// destroying any splitter, all workers that can exchange partial-array tasks
+// must have stopped using states.  All their splitters must be reset or
+// destroyed before any worker resumes processing.  Cleanup never traverses
+// free-lists, whose entries may belong to an already reclaimed arena.
 class PartialArraySplitter {
   PartialArrayStateAllocator _allocator;
   PartialArrayTaskStepper _stepper;
@@ -45,11 +52,14 @@ class PartialArraySplitter {
   void enqueue(Queue* queue, PartialArrayState* state, uint count);
 
 public:
-  PartialArraySplitter(PartialArrayStateManager* manager,
-                       uint num_workers);
+  explicit PartialArraySplitter(uint num_workers);
   ~PartialArraySplitter() = default;
 
   NONCOPYABLE(PartialArraySplitter);
+
+  // Reclaim states and reset statistics.  Requires the worker quiescence and
+  // coordinated cleanup described above; never use for a marking restart.
+  void reset();
 
   // A chunk remains valid after its progress record has been recycled.  It
   // does not own or keep the array alive; that is the collector's responsibility.
