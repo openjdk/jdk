@@ -208,7 +208,7 @@
 
 /* Create a pool and initiate a try block to catch any exception */
 #define JNI_COCOA_ENTER(env) \
- NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
+ @autoreleasepool { \
  @try {
 
 /* Don't allow NSExceptions to escape to Java.
@@ -220,8 +220,6 @@
  @catch (NSException *e) { \
      NSLog(@"%@", [e callStackSymbols]); \
  } \
- @finally { \
-    [pool drain]; \
  };
 
 /* Same as above but adds a clean up action.
@@ -233,9 +231,7 @@
      { action; }; \
      NSLog(@"%@", [e callStackSymbols]); \
  } \
- @finally { \
-    [pool drain]; \
- };
+};
 
 /********        STRING CONVERSION SUPPORT    *********/
 

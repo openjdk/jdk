@@ -28,7 +28,7 @@ static NSWindow *testWindow;
 static NSColorPanel *colorPanel;
 
 #define JNI_COCOA_ENTER(env) \
- NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
+ @autorelease pool { \
  @try {
 
 #define JNI_COCOA_EXIT(env) \
@@ -36,9 +36,7 @@ static NSColorPanel *colorPanel;
  @catch (NSException *e) { \
      NSLog(@"%@", [e callStackSymbols]); \
  } \
- @finally { \
-    [pool drain]; \
-  };
+};
 
 /*
  * Pass the block to a selector of a class that extends NSObject
