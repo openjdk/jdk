@@ -1569,20 +1569,22 @@ void TemplateTable::convert() {
       break;
 
     case Bytecodes::_i2d:
-      __ extsw(R17_tos, R17_tos);
+      __ mtfprwa(F15_ftos, R17_tos);
+      __ fcfid(F15_ftos, F15_ftos);
+      break;
+
     case Bytecodes::_l2d:
-      __ move_l_to_d();
+      __ mtfprd(F15_ftos, R17_tos);
       __ fcfid(F15_ftos, F15_ftos);
       break;
 
     case Bytecodes::_i2f:
-      __ extsw(R17_tos, R17_tos);
-      __ move_l_to_d();
+      __ mtfprwa(F15_ftos, R17_tos);
       __ fcfids(F15_ftos, F15_ftos);
       break;
 
     case Bytecodes::_l2f:
-      __ move_l_to_d();
+      __ mtfprd(F15_ftos, R17_tos);
       __ fcfids(F15_ftos, F15_ftos);
       break;
 
@@ -1600,7 +1602,7 @@ void TemplateTable::convert() {
       __ li(R17_tos, 0); // 0 in case of NAN
       __ bso(CR0, done);
       __ fctiwz(F15_ftos, F15_ftos);
-      __ move_d_to_l();
+      __ mffprd(R17_tos, F15_ftos);
       break;
 
     case Bytecodes::_d2l:
@@ -1609,7 +1611,7 @@ void TemplateTable::convert() {
       __ li(R17_tos, 0); // 0 in case of NAN
       __ bso(CR0, done);
       __ fctidz(F15_ftos, F15_ftos);
-      __ move_d_to_l();
+      __ mffprd(R17_tos, F15_ftos);
       break;
 
     default: ShouldNotReachHere();
