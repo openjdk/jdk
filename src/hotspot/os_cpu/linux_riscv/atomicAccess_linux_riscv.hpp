@@ -219,6 +219,89 @@ inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest _
   return compare_value;
 }
 
+// Use AMOs rather than a cmpxchg loop for word-sized bitwise operations.
+// As for add and xchg, use .aqrl for every non-relaxed order, including
+// memory_order_conservative, which requires a strong two-way barrier.
+template<size_t byte_size>
+class AtomicAccess::PlatformBitops<byte_size, true>
+  : public PostfetchBitopsUsingPrefetch {
+  static_assert(byte_size == 4 || byte_size == 8);
+
+public:
+  template<typename T>
+  T fetch_then_and(T volatile* dest, T bits, atomic_memory_order order) const {
+    static_assert(byte_size == sizeof(T));
+    if (order == memory_order_relaxed) {
+      return __atomic_fetch_and(dest, bits, __ATOMIC_RELAXED);
+    }
+
+    T old_value;
+    if constexpr (byte_size == 4) {
+      __asm__ __volatile__ ("amoand.w.aqrl %0, %2, %1"
+                            : "=r" (old_value), "+A" (*dest)
+                            : "r" (bits)
+                            : "memory");
+    } else {
+      __asm__ __volatile__ ("amoand.d.aqrl %0, %2, %1"
+                            : "=r" (old_value), "+A" (*dest)
+                            : "r" (bits)
+                            : "memory");
+    }
+    return old_value;
+  }
+
+  template<typename T>
+  T fetch_then_or(T volatile* dest, T bits, atomic_memory_order order) const {
+    static_assert(byte_size == sizeof(T));
+    if (order == memory_order_relaxed) {
+      return __atomic_fetch_or(dest, bits, __ATOMIC_RELAXED);
+    }
+
+    T old_value;
+    if constexpr (byte_size == 4) {
+      __asm__ __volatile__ ("amoor.w.aqrl %0, %2, %1"
+                            : "=r" (old_value), "+A" (*dest)
+                            : "r" (bits)
+                            : "memory");
+    } else {
+      __asm__ __volatile__ ("amoor.d.aqrl %0, %2, %1"
+                            : "=r" (old_value), "+A" (*dest)
+                            : "r" (bits)
+                            : "memory");
+    }
+    return old_value;
+  }
+
+  template<typename T>
+  T fetch_then_xor(T volatile* dest, T bits, atomic_memory_order order) const {
+    static_assert(byte_size == sizeof(T));
+    if (order == memory_order_relaxed) {
+      return __atomic_fetch_xor(dest, bits, __ATOMIC_RELAXED);
+    }
+
+    T old_value;
+    if constexpr (byte_size == 4) {
+      __asm__ __volatile__ ("amoxor.w.aqrl %0, %2, %1"
+                            : "=r" (old_value), "+A" (*dest)
+                            : "r" (bits)
+                            : "memory");
+    } else {
+      __asm__ __volatile__ ("amoxor.d.aqrl %0, %2, %1"
+                            : "=r" (old_value), "+A" (*dest)
+                            : "r" (bits)
+                            : "memory");
+    }
+    return old_value;
+  }
+};
+
+// Byte-sized AMOs require Zabha. Keep the existing cmpxchg-based fallback.
+template<>
+class AtomicAccess::PlatformBitops<1, true>
+  : public PrefetchBitopsUsingCmpxchg,
+    public PostfetchBitopsUsingCmpxchg
+{};
+
 // Zalasr load-acquire and store-release.
 //
 // With UseZalasr the JIT compiles a Java volatile store to a bare
