@@ -51,7 +51,7 @@ public class AOTLoggingTag {
 
         //----------------------------------------------------------------------
         printTestCase("Training Run");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-Xlog:aot",
@@ -63,7 +63,7 @@ public class AOTLoggingTag {
 
         //----------------------------------------------------------------------
         printTestCase("Assembly Phase");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
@@ -75,7 +75,7 @@ public class AOTLoggingTag {
 
         //----------------------------------------------------------------------
         printTestCase("Production Run with AOTCache");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTCache=" + aotCacheFile,
             "-Xlog:aot",
             "-cp", appJar, helloClass);
@@ -85,7 +85,7 @@ public class AOTLoggingTag {
 
         //----------------------------------------------------------------------
         printTestCase("Production Run: errors should be printed with [aot] decoration");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTCache=nosuchfile.aot",
             "-XX:AOTMode=on",
             "-cp", appJar, helloClass);
