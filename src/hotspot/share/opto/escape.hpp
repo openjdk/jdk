@@ -349,6 +349,9 @@ private:
   int        _build_iterations; // Number of iterations took to build graph
   double           _build_time; // Time (sec) took to build graph
 
+  // Virtual AddP nodes, created to make array initialization explicit in the CG.
+  GrowableArray<AddPNode*> _virtual_array_init_nodes;
+
 public:
   JavaObjectNode* phantom_obj; // Unknown object
 
@@ -675,6 +678,13 @@ public:
   // To be used by, e.g., BarrierSetC2 impls
   Node* get_addp_base(Node* addp);
   DEBUG_ONLY(static bool is_load_array_klass_related(const Node* uncast_base));
+
+  // Whether n is a virtual AddP node introduced to model array initialization
+  // explicitly in the CG.
+  bool is_virtual_array_init(Node* n) const {
+    precond(n->is_AddP());
+    return _virtual_array_init_nodes.contains(n->as_AddP());
+  }
 
   // Utility function for nodes that load an object
   void add_objload_to_connection_graph(Node* n, Unique_Node_List<Node>* delayed_worklist);

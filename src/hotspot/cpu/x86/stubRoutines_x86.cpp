@@ -96,8 +96,10 @@ const uint64_t StubRoutines::x86::_crc_by128_masks[] =
    * with an irrelevant constant.
    */
 
-  ((uint64_t) 0xffffffffUL),     /* low  of K_M_64    */
-  ((uint64_t) 0xb1e6b092U << 1), /* high of K_M_64    */
+  ((uint64_t) 0xfb808b20U << 1), /* low  of K_64_32   */
+  ((uint64_t) 0xedb88320U << 1), /* high of K_64_32   */
+  ((uint64_t) 0x6655004fU << 1), /* low  of K_128_64  */
+  ((uint64_t) 0xb1e6b092U << 1), /* high of K_128_64  */
   ((uint64_t) 0xba8ccbe8U << 1), /* low  of K_160_96  */
   ((uint64_t) 0x6655004fU << 1), /* high of K_160_96  */
   ((uint64_t) 0xaa2215eaU << 1), /* low  of K_544_480 */
@@ -451,6 +453,7 @@ void StubRoutines::x86::init_AOTAddressTable(GrowableArray<address>& external_ad
   ADD(crc_by128_masks_addr());
   ADD(crc_by128_masks_addr() + 16);
   ADD(crc_by128_masks_addr() + 32);
+  ADD(crc_by128_masks_addr() + 48);
   // this is added in generic code
   // ADD(_crc_table);
   ADD(crc_by128_masks_avx512_addr());

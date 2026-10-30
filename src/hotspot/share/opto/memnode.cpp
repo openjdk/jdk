@@ -2580,8 +2580,8 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     if (mem->is_Parm() && mem->in(0)->is_Start()) {
       assert(mem->as_Parm()->_con == TypeFunc::Memory, "must be memory Parm");
       // TODO 8350865 Scalar replacement does not work well for flat arrays.
-      // Escape Analysis assumes that arrays are always zeroed during allocation which is not true for null-free arrays
-      // ConnectionGraph::split_unique_types will re-wire the memory of loads from such arrays around the allocation
+      // Scalar replacement assumes that arrays are zero-initialized, which is not true for null-free arrays.
+      // ConnectionGraph::split_unique_types will re-wire the memory of loads from such arrays around the allocation.
       // TestArrays::test6 and test152 and TestBasicFunctionality::test20 are affected by this.
       if (tp->isa_aryptr() && tp->is_aryptr()->is_flat() && tp->is_aryptr()->is_null_free()) {
         intptr_t offset = 0;
@@ -3968,14 +3968,23 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
     }
   }
 
-  // Store of zero anywhere into a freshly-allocated object?
-  // Then the store is useless.
+  // Check if this store is redundant with the initialization of a freshly allocated object
   // (It must already have been captured by the InitializeNode.)
   if (result == this && ReduceFieldZeroing) {
-    // a newly allocated object is already all-zeroes everywhere
-    if (mem->is_Proj() && mem->in(0)->is_Allocate() &&
-        (phase->type(val)->is_zero_type() || mem->in(0)->in(AllocateNode::InitValue) == val)) {
-      result = mem;
+    if (mem->is_Proj() && mem->in(0)->is_Allocate()) {
+      AllocateNode* alloc = mem->in(0)->as_Allocate();
+      Node* init_value = alloc->in(AllocateNode::InitValue);
+      if (init_value == nullptr && phase->type(val)->is_zero_type()) {
+        // No initial value. A zero store is redundant because memory is already zeroed.
+        result = mem;
+      } else if (init_value == val && alloc->is_AllocateArray()) {
+        // Initial value. A store with the same value is redundant if it initializes
+        // the entire array element. This is only guaranteed with a non-flat array.
+        const TypeAryKlassPtr* ary_klass = phase->type(alloc->in(AllocateNode::KlassNode))->isa_aryklassptr();
+        if (ary_klass != nullptr && ary_klass->is_not_flat()) {
+          result = mem;
+        }
+      }
     }
 
     if (result == this && phase->type(val)->is_zero_type()) {
