@@ -149,8 +149,13 @@ public class KAKeyDerivation implements SSLKeyDerivation {
             // Delayed provider selection lets a provider that created an
             // opaque KEM secret supply the compatible TLS HKDF service.
             KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
-            var spec = HKDFParameterSpec.ofExtract().addSalt(saltSecret)
-                    .addIKM(sharedSecret);
+            var spec = HKDFParameterSpec.ofExtract().addSalt(saltSecret);
+            if (sharedSecret instanceof Hybrid.SecretKeyImpl hybridSecret) {
+                spec = spec.addIKM(hybridSecret.k1)
+                        .addIKM(hybridSecret.k2);
+            } else {
+                spec = spec.addIKM(sharedSecret);
+            }
 
             return hkdf.deriveKey(label, spec.extractOnly());
         } finally {
@@ -158,8 +163,8 @@ public class KAKeyDerivation implements SSLKeyDerivation {
         }
     }
 
-    private Provider getKEMProvider() {
-        return (namedGroup != null) ? namedGroup.getKEMProvider() : null;
+    private Provider getHybridKEMProvider() {
+        return (namedGroup != null) ? namedGroup.getHybridKEMProvider() : null;
     }
 
     /**
@@ -186,7 +191,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
             // Hybrid TLS keys have no X.509 encoding. The KEM receives the
             // TLS key_share directly as a RAW public key.
             PublicKey pk = KeyUtil.newRawPublicKey(algorithmName, keyshare);
-            Provider provider = getKEMProvider();
+            Provider provider = getHybridKEMProvider();
             KEM kem = (provider != null) ?
                     KEM.getInstance(algorithmName, provider) :
                     KEM.getInstance(algorithmName);
@@ -231,7 +236,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
                 // to TLS fatal alerts:
                 // illegal_parameter alert or internal_error alert.
                 try {
-                    Provider provider = getKEMProvider();
+                    Provider provider = getHybridKEMProvider();
                     KEM kem = (provider != null)
                             ? KEM.getInstance(algorithmName, provider)
                             : KEM.getInstance(algorithmName);

@@ -302,7 +302,7 @@ enum NamedGroup {
                 // and KEM. It does not require a KeyFactory because TLS
                 // passes a RAW key_share directly to the KEM encapsulator.
                 if (namedGroupSpec == NamedGroupSpec.NAMED_GROUP_KEM) {
-                    Provider provider = getKEMProvider();
+                    Provider provider = getHybridKEMProvider();
                     if (provider == null) {
                         throw new NoSuchAlgorithmException(
                                 "No KeyPairGenerator and KEM provider for " +
@@ -358,25 +358,7 @@ enum NamedGroup {
         this.keAlgParams = mediator ? algParams : null;
     }
 
-    private Provider getConfiguredProvider(String service) {
-        Provider[] providers = Security.getProviders(service + "." + name);
-        if (providers != null && providers.length > 0) {
-            return providers[0];
-        }
-
-        return null;
-    }
-
-    Provider getKPGProvider() {
-        return (spec == NamedGroupSpec.NAMED_GROUP_KEM) ?
-                getKEMProvider() : getConfiguredProvider("KeyPairGenerator");
-    }
-
-    Provider getKEMProvider() {
-        if (spec != NamedGroupSpec.NAMED_GROUP_KEM) {
-            return getConfiguredProvider("KEM");
-        }
-
+    Provider getHybridKEMProvider() {
         Provider[] providers = Security.getProviders("KEM." + name);
         if (providers != null) {
             for (Provider provider : providers) {
