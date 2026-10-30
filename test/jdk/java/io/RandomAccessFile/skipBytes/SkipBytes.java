@@ -46,9 +46,9 @@ public class SkipBytes{
 
         raf.seek(start);
 
-        long cur_ptr = raf.getFilePointer();
+        long cur_ptr0 = raf.getFilePointer();
         int length = (int) raf.length();
-        System.err.println("\nCurrent pointer = " + cur_ptr + " length = " +
+        System.err.println("\nCurrent pointer = " + cur_ptr0 + " length = " +
                            length + " num_to_skip = " + num_to_skip);
 
         //Do the Skip test
@@ -66,11 +66,11 @@ public class SkipBytes{
             }
         }
 
-        cur_ptr = raf.getFilePointer();
+        long cur_ptr = raf.getFilePointer();
         System.err.println("Current pointer = " + cur_ptr);
 
         // Check if skip has gone beyond EOF.
-        if (cur_ptr > length) {
+        if (cur_ptr0 <= length && cur_ptr > length) {
             System.err.println("Past EOF Skip Test Failed");
             throw new RuntimeException("Past EOF Skip Test Failed");
         }
