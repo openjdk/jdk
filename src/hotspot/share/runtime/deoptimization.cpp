@@ -309,11 +309,11 @@ static Klass* get_refined_array_klass(Klass* k, frame* fr, RegisterMap* map, Obj
   // If it's an array, get the properties
   if (k->is_array_klass() && !k->is_typeArray_klass()) {
     assert(k->is_unrefined_objArray_klass(), "Expected unrefined array klass");
-    nmethod* nm = fr->cb()->as_nmethod_or_null();
     assert(sv->has_properties(), "Property information is missing");
     uint32_t value = checked_cast<uint32_t>(StackValue::create_stack_value(fr, map, sv->properties())->get_jint());
     ArrayDescription description = ArrayDescription::from_value(value);
-    k = ObjArrayKlass::cast(k)->klass_from_description(description, THREAD);
+    Klass* elem_klass = ObjArrayKlass::cast(k)->element_klass();
+    k = ObjArrayKlass::klass_from_description(elem_klass, description, THREAD);
   }
   return k;
 }
