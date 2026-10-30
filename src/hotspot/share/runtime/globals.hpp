@@ -1396,11 +1396,14 @@ const int ObjectAlignmentInBytes = 8;
   product(size_t, MetaspaceSize, NOT_LP64(16 * M) LP64_ONLY(21 * M),        \
           "Initial threshold (in bytes) at which a garbage collection "     \
           "is done to reduce Metaspace usage")                              \
-          constraint(MetaspaceSizeConstraintFunc,AfterErgo)                 \
+          constraint(MetaspaceSizeConstraintFunc,AtParse)                   \
                                                                             \
   product(size_t, MaxMetaspaceSize, max_uintx,                              \
           "Maximum size of Metaspaces (in bytes)")                          \
-          constraint(MaxMetaspaceSizeConstraintFunc,AfterErgo)              \
+          /* Zero is unreasonable, but perhaps we shouldn't allow a */      \
+          /* value less than the default value for MetaspaceSize. */        \
+          range(1, max_uintx)                                               \
+          constraint(MaxMetaspaceSizeConstraintFunc,AtParse)                \
                                                                             \
   product(size_t, CompressedClassSpaceSize, 1*G,                            \
           "Maximum size of class area in Metaspace when compressed "        \
