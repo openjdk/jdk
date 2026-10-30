@@ -23,6 +23,7 @@
 
 /*
  * @test id=default
+ * @bug 8396162
  * @summary RISC-V ZGC constant null stores do not need a register holding null
  * @requires vm.gc.Z & vm.compiler2.enabled & (os.arch == "riscv64")
  * @library /test/lib /
@@ -31,6 +32,7 @@
 
 /*
  * @test id=zalasr
+ * @bug 8396162
  * @summary RISC-V ZGC constant null stores using Zalasr
  * @requires vm.gc.Z & vm.compiler2.enabled & (os.arch == "riscv64")
  * @requires vm.cpu.features ~= ".*zalasr.*"
