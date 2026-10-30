@@ -151,6 +151,8 @@ inline void FieldInfoReader::read_field_info(FieldInfo& fi) {
   }
   if (fi._field_flags.is_flat()) {
     fi._layout_kind = static_cast<LayoutKind>(next_uint());
+  } else {
+    fi._layout_kind = LayoutKind::REFERENCE;
   }
   if (fi._field_flags.has_null_marker()) {
     fi._null_marker_offset = next_uint();
