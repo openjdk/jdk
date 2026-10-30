@@ -162,6 +162,9 @@ Mutex*   Bootclasspath_lock           = nullptr;
 // Only one RecursiveMutex
 RecursiveMutex* MultiArray_lock       = nullptr;
 
+// StripedMutex for MethodDataExtra
+StripedMutex*   MethodDataExtra_lock  = nullptr;
+
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Mutex* lock) {
   if (DebuggingContext::is_enabled() || VMError::is_error_reported()) return;
@@ -354,6 +357,10 @@ void mutex_init() {
 
   // Allocate RecursiveMutex
   MultiArray_lock = new RecursiveMutex();
+
+  // Allocate StripedMutex
+  // These locks could be acquired while we are holding DumpTimeTable_lock/nosafepoint, thus the rank.
+  MethodDataExtra_lock = new StripedMutex(Mutex::nosafepoint-1, "MDOExtraData_lock");
 }
 
 #undef MUTEX_DEFL
