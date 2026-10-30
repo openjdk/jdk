@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8386597 8385855 8386482 8386591 8386830
+ * @bug 8386597 8385855 8386482 8386591 8386830 8336759
  * @summary Fuzz patterns for CountedLoopConverter::has_truncation_wrap
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
@@ -79,6 +79,10 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  * - Extra check dominating the loop: compare against constant of limit.
  *   Note: has_truncation_wrap can use such checks to constrain the entry type.
  *   Note2: We've had bugs around this, confusing CmpI/CmpU, see JDK-8385855.
+ * - Extra checks for speculative long limit narrowing with JDK-8336759: long exit test is
+ *   speculative narrowed to int exit test, which turns a long counted loop into a loop counted loop.
+ *   We verify that the result is correct for limits inside and outside the int range with
+ *   TestMethodGeneratorVarsLongLimit.
  */
 public class TestTruncationWrapFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -439,13 +443,34 @@ public class TestTruncationWrapFuzzer {
         };
     }
 
-    private static String randomExtraCheck() {
+    private static String randomExtraCheck(Comparator cmp) {
         // We can constrain the init value with limit or a constant.
         String other = RANDOM.nextBoolean() ? "limit" : INT_GEN.next().toString();
-        Comparison check = new Comparison("init", Comparator.random(), other).permuteRandom();
+        Comparison check = new Comparison("init", cmp, other).permuteRandom();
         return RANDOM.nextBoolean()
                ? "// No extra check.\n"
                : "if (" + check + ") { return -1; }\n";
+    }
+
+    private static String randomExtraCheck() {
+        return randomExtraCheck(Comparator.random());
+    }
+
+    // JDK-8336759: extra checks for signed comparisons for speculative narrowing of long limits
+    private static Comparator randomSignedComparator() {
+        return switch (RANDOM.nextInt(6)) {
+            case 0 -> Comparator.LT;
+            case 1 -> Comparator.LE;
+            case 2 -> Comparator.GT;
+            case 3 -> Comparator.GE;
+            case 4 -> Comparator.EQ;
+            case 5 -> Comparator.NE;
+            default -> throw new RuntimeException("not expected");
+        };
+    }
+
+    private static String randomSignedExtraCheck() {
+        return randomExtraCheck(randomSignedComparator());
     }
 
     // Loop init/limit are variables.
@@ -480,10 +505,91 @@ public class TestTruncationWrapFuzzer {
 
         public Template.OneArg<String> getTestTemplate() { return testTemplate; }
     }
+
+    // Loop init/limit are variables but with speculative long limit narrowing.
+    static class TestMethodGeneratorVarsLongLimit implements TestMethodGenerator {
+        private final String ivMutation  = randomIVMutation();
+        private final String loopShape   = randomLoopShape();
+        private final String addValue = RANDOM.nextBoolean() ? "0" : "i";
+        private final String modifyInit  = randomModifyValue("init");
+        private final String modifyLimit = randomModifyValue("limit");
+        private final String extraCheck  = randomSignedExtraCheck();
+
+        private final Comparison exitCheck = new Comparison("i", randomSignedComparator(), "limit").permuteRandom();
+
+        @Override
+        public Template.ZeroArgs getInputTemplate() {
+            return Template.make(() -> scope(
+                switch (RANDOM.nextInt(6)) {
+                    case 0 -> """
+                              int init  = (int)RANDOM.nextLong();
+                              long limit = RANDOM.nextLong();
+                              """;
+                    case 1 -> """
+                              int init  = (byte)RANDOM.nextInt();
+                              long limit = (byte)RANDOM.nextLong();
+                              """;
+                    case 2 -> """
+                              int init  = (short)RANDOM.nextInt();
+                              long limit = (short)RANDOM.nextLong();
+                              """;
+                    case 3 -> """
+                              int init  = (char)RANDOM.nextInt();
+                              long limit = (char)RANDOM.nextLong();
+                              """;
+                    case 4 -> """
+                              int e0 = RANDOM.nextInt(32);
+                              int e1 = RANDOM.nextInt(33);
+                              int r0 = RANDOM.nextInt(32);
+                              int r1 = RANDOM.nextInt(32);
+                              int init  = (1 << e0) + r0;
+                              long limit = (1L << e1) + r1;
+                              """;
+                    // Values around the int range boundaries:
+                    case 5 -> """
+                              int init = RANDOM.nextInt();
+                              long limit = switch (RANDOM.nextInt(8)) {
+                                  case 0 -> Integer.MIN_VALUE;
+                                  case 1 -> Integer.MAX_VALUE;
+                                  case 2 -> (long)Integer.MAX_VALUE + 1;
+                                  case 3 -> (long)Integer.MIN_VALUE - 1;
+                                  case 4 -> Integer.MAX_VALUE - RANDOM.nextInt(1000);
+                                  case 5 -> (long)Integer.MIN_VALUE + RANDOM.nextInt(1000);
+                                  case 6 -> (long)Integer.MAX_VALUE + 1 + RANDOM.nextInt(1000);
+                                  default -> (long)Integer.MIN_VALUE - 1 - RANDOM.nextInt(1000);
+                              };
+                              """;
+                    default -> throw new RuntimeException("not expected");
+                }
+            ));
+        }
+
+        private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
+            let("ivMutation", ivMutation),
+            let("exitCheck", exitCheck),
+            let("addValue", addValue),
+            """
+            static int #methodName(int init, long limit) {
+                opaqueReset();
+                int sum = 0;
+            """,
+            modifyInit,  // modify type of init
+            modifyLimit, // modify type of limit
+            extraCheck,  // extra CmpI/CmpL dominating the loop, might constrain entry value.
+            loopShape,
+            """
+                return sum + #addValue;
+            }
+            """
+        ));
+
+        public Template.OneArg<String> getTestTemplate() { return testTemplate; }
+    }
     public static TemplateToken generateTest(int warmup) {
-        TestMethodGenerator tg = switch(RANDOM.nextInt(2)) {
+        TestMethodGenerator tg = switch(RANDOM.nextInt(3)) {
             case 0 -> new TestMethodGeneratorConst();
             case 1 -> new TestMethodGeneratorVars();
+            case 2 -> new TestMethodGeneratorVarsLongLimit();
             default -> throw new RuntimeException("not expected");
         };
         Template.ZeroArgs testInputTemplate = tg.getInputTemplate();
