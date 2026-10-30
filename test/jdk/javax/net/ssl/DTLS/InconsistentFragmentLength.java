@@ -19,7 +19,7 @@
 
 /*
  * @test
- * bug 8396112
+ * @bug 8396112
  * @summary Reject inconsistent lengths in DTLS handshake fragments
  * @run main InconsistentFragmentLength
  */
@@ -35,19 +35,27 @@ public class InconsistentFragmentLength {
 
     static ByteBuffer record(int sequence, int length, int offset, int size) {
         var b = ByteBuffer.allocate(25 + size);
+
+        // DTLS 1.2 handshake record in epoch 0, with a 48-bit record
+        // sequence number and a payload containing one handshake fragment.
         b.put((byte)22).put((byte)0xfe).put((byte)0xfd).putShort((short)0);
         b.putInt(0).putShort((short)sequence).putShort((short)(12 + size));
+
+        // HelloRequest fragment: total message length, message sequence 0,
+        // fragment offset, fragment length, and zero-filled payload.
         b.put((byte)0);
         uint24(b, length);
         b.putShort((short)0);
         uint24(b, offset);
         uint24(b, size);
         b.put(new byte[size]);
+
         return b.flip();
     }
 
     static SSLEngine engine() throws Exception {
-        var context = SSLContext.getInstance("DTLS"); context.init(null, null, null);
+        var context = SSLContext.getInstance("DTLS");
+        context.init(null, null, null);
         var engine = context.createSSLEngine("localhost", 4433);
         engine.setUseClientMode(true);
         engine.beginHandshake();
@@ -56,7 +64,8 @@ public class InconsistentFragmentLength {
     }
 
     public static void main(String[] args) throws Exception {
-        var engine = engine(); var app = ByteBuffer.allocate(65536);
+        var engine = engine();
+        var app = ByteBuffer.allocate(65536);
         engine.unwrap(record(0, 100, 5, 50), app);
         try {
             engine.unwrap(record(1, 10, 0, 5), app);
