@@ -60,7 +60,7 @@ ifelse($7,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
   ins_encode %{
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
                Assembler::$4, ifelse($7,Acq,memory_order_seq_cst,memory_order_release), $res$$Register);
-    __ $6($res$$Register, $res$$Register);
+    __ narrow_subword_type($res$$Register, $6);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
@@ -86,15 +86,15 @@ ifelse($1$6,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_Lo
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
-CAE_INSN1(B,    I,  byte,       byte,       b,  sxtbw,  )
-CAE_INSN1(S,    I,  short,      halfword,   s,  sxthw,  )
+CAE_INSN1(B,    I,  byte,       byte,       b,  T_BYTE,  )
+CAE_INSN1(S,    I,  short,      halfword,   s,  T_SHORT, )
 CAE_INSN2(I,    I,  int,        word,       w,  ,   )
 CAE_INSN2(L,    L,  long,       xword,      ,   ,   )
 CAE_INSN2(N,    N,  narrow oop, word,       w,  ,   )
 CAE_INSN2(P,    P,  ptr,        xword,      ,   ,   )
 dnl
-CAE_INSN1(B,    I,  byte,       byte,       b,  sxtbw,  Acq)
-CAE_INSN1(S,    I,  short,      halfword,   s,  sxthw,  Acq)
+CAE_INSN1(B,    I,  byte,       byte,       b,  T_BYTE,  Acq)
+CAE_INSN1(S,    I,  short,      halfword,   s,  T_SHORT, Acq)
 CAE_INSN2(I,    I,  int,        word,       w,  Acq)
 CAE_INSN2(L,    L,  long,       xword,      ,   Acq)
 CAE_INSN2(N,    N,  narrow oop, word,       w,  Acq)
