@@ -237,8 +237,8 @@ public class Properties extends Hashtable<Object,Object> {
      * character stream in a simple line-oriented format.
      * <p>
      * If a key in the loaded property list already exists in this
-     * {@code Properties}, the associated element is replaced with the value
-     * loaded from the list.
+     * {@code Properties} object, the associated element is replaced with the
+     * value loaded from the list.
      * <p>
      * If a key occurs more than once in the loaded property list, the
      * associated element is set to the value of the last occurrence.
