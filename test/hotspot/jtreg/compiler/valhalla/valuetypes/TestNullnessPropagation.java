@@ -33,7 +33,7 @@ import static compiler.lib.ir_framework.IRNode.LSHIFT_L;
  * @test
  * @bug 8395611
  * @summary Test nullness propagation during parsing
- * @library /test/lib /test/jdk/java/lang/invoke/common /
+ * @library /test/lib  /
  * @enablePreview
  * @run driver ${test.main.class}
  */
@@ -54,6 +54,14 @@ public class TestNullnessPropagation {
         MyValue v;
     }
 
+    // Why IR verification is looking for a LSHIFT_L node?
+    // Without the nullness propagation fix, C2 reconstructs the value v using
+    // a formulae like this one:
+    //   (I2L(null_marker) << 32) | (I2L(L2I(CastP2X(EncodeP(v.o_ref)))) & 0ffff_ffff)
+    // The value of the null marker dynamically read from a buffered value or
+    // a method argument has to be shifted to be put at the right place.
+    // With the nullness propagation fixed, C2 uses a ConL node to directly get
+    // the null_marker bit set in place, and no shift operation is needed.
     @Test
     @IR(failOn = {LSHIFT_L})
     public Holder test0(MyValue v) {
@@ -75,6 +83,7 @@ public class TestNullnessPropagation {
         Asserts.assertNull(nh);
     }
 
+    // Same IR verification rule as for test0
     @Test
     @IR(failOn = {LSHIFT_L})
     public Holder test1(MyValue v) {

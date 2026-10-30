@@ -3751,7 +3751,7 @@ void Parse::do_one_bytecode() {
       b = null_assert(b);
       dec_sp(1);
     }
-    c = _gvn.transform( new CmpPNode(b, a) );
+    c = _gvn.transform(new CmpPNode(b, a));
     do_ifnull(btest, c);
     break;
 
