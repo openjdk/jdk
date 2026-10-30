@@ -362,6 +362,7 @@ const TypePtr* MachNode::out_adr_type_impl() const {
 
   if (const TypePtr* res = _out_adr_type; res != TYPE_PTR_SENTINAL) {
 #ifdef ASSERT
+    // Should not crash when printing the graph, or when another VM error has been reported
     if (!Node::in_dump() && !VMError::is_error_reported()) {
       if (produce_memory) {
         assert(res != nullptr, "must declare an out_adr_type");
@@ -383,6 +384,7 @@ const TypePtr* MachNode::out_adr_type_impl() const {
 const TypePtr* MachNode::in_adr_type_impl() const {
   if (const TypePtr* res = _in_adr_type; res != TYPE_PTR_SENTINAL) {
 #ifdef ASSERT
+    // Should not crash when printing the graph, or when another VM error has been reported
     if (!Node::in_dump() && !VMError::is_error_reported()) {
       verify_adr_type(res, compute_adr_type_from_inputs());
     }

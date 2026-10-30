@@ -23,10 +23,9 @@
 package compiler.c2;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
-import jdk.test.whitebox.WhiteBox;
-
 import java.util.ArrayList;
 import java.util.Arrays;
+import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test
