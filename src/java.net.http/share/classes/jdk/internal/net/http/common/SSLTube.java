@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import static javax.net.ssl.SSLEngineResult.HandshakeStatus.FINISHED;
  * the SSLTube wraps a SocketTube on the right hand side, and is connected
  * to an HttpConnection on the left hand side.
  *
- * <preformatted>{@code
+ * <pre>{@code
  *                  +----------  SSLTube -------------------------+
  *                  |                                             |
  *                  |                    +---SSLFlowDelegate---+  |
@@ -63,7 +63,7 @@ import static javax.net.ssl.SSLEngineResult.HandshakeStatus.FINISHED;
  *                  |                    +---------------------+  |
  *                  |                                             |
  *                  +---------------------------------------------+
- * }</preformatted>
+ * }</pre>
  */
 public class SSLTube implements FlowTube {
 

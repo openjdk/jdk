@@ -68,7 +68,6 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     private volatile int state;
     final ReentrantLock subscriptionLock = new ReentrantLock();
     volatile SubscriptionWrapper subscription;
-    volatile Throwable withError;
     public HttpBodySubscriberWrapper(BodySubscriber<T> userSubscriber) {
         Objects.requireNonNull(userSubscriber, "BodySubscriber");
         this.userSubscriber = userSubscriber;
@@ -298,7 +297,7 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
             onTermination();
             logComplete(t);
             tryUnregister();
-            t  = withError = Utils.getCompletionCause(t);
+            t  = Utils.getCompletionCause(t);
             if (t == null) {
                 try {
                     var state = this.state;
@@ -317,7 +316,7 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
                     // race that might cause the next send() operation to
                     // fail as the connection has already been put back
                     // into the cache when we reach here.
-                    propagateError(t = withError = Utils.getCompletionCause(x));
+                    propagateError(t = Utils.getCompletionCause(x));
                 }
             } else {
                 propagateError(t);
