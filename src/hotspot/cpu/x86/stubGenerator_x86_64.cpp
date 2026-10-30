@@ -1425,7 +1425,7 @@ address StubGenerator::generate_vector_byte_perm_mask() {
   return start;
 }
 
-// 24 matrices: logical-left, logical-right, arithmetic-right, each for counts 0..7.
+// 3 * 32 matrices: logical-left, logical-right, arithmetic-right, counts 0..31.
 address StubGenerator::generate_vector_byte_shift_gfni_matrix() {
   StubId stub_id = StubId::stubgen_vector_byte_shift_gfni_matrix_id;
   int entry_count = StubInfo::entry_count(stub_id);
@@ -1438,19 +1438,28 @@ address StubGenerator::generate_vector_byte_shift_gfni_matrix() {
   StubCodeMark mark(this, stub_id);
   start = __ pc();
 
-  static const uint64_t mats[24] = {
+  // Counts 0..7. Counts 8..31 have shifted the byte out of the low 8 bits.
+  static const uint64_t mats[3][8] = {
     // logical left
-    0x0102040810204080ULL, 0x0001020408102040ULL, 0x0000010204081020ULL, 0x0000000102040810ULL,
-    0x0000000001020408ULL, 0x0000000000010204ULL, 0x0000000000000102ULL, 0x0000000000000001ULL,
+    { 0x0102040810204080ULL, 0x0001020408102040ULL, 0x0000010204081020ULL, 0x0000000102040810ULL,
+      0x0000000001020408ULL, 0x0000000000010204ULL, 0x0000000000000102ULL, 0x0000000000000001ULL },
     // logical right
-    0x0102040810204080ULL, 0x0204081020408000ULL, 0x0408102040800000ULL, 0x0810204080000000ULL,
-    0x1020408000000000ULL, 0x2040800000000000ULL, 0x4080000000000000ULL, 0x8000000000000000ULL,
+    { 0x0102040810204080ULL, 0x0204081020408000ULL, 0x0408102040800000ULL, 0x0810204080000000ULL,
+      0x1020408000000000ULL, 0x2040800000000000ULL, 0x4080000000000000ULL, 0x8000000000000000ULL },
     // arithmetic right
-    0x0102040810204080ULL, 0x0204081020408080ULL, 0x0408102040808080ULL, 0x0810204080808080ULL,
-    0x1020408080808080ULL, 0x2040808080808080ULL, 0x4080808080808080ULL, 0x8080808080808080ULL
+    { 0x0102040810204080ULL, 0x0204081020408080ULL, 0x0408102040808080ULL, 0x0810204080808080ULL,
+      0x1020408080808080ULL, 0x2040808080808080ULL, 0x4080808080808080ULL, 0x8080808080808080ULL }
   };
-  for (int i = 0; i < 24; i++) {
-    __ emit_data64((jlong)mats[i], relocInfo::none);
+  static const uint64_t saturated[3] = {
+    0,                       // logical left
+    0,                       // logical right
+    0x8080808080808080ULL    // arithmetic right, sign fill
+  };
+  for (int kind = 0; kind < 3; kind++) {
+    for (int n = 0; n < 32; n++) {
+      uint64_t m = (n < 8) ? mats[kind][n] : saturated[kind];
+      __ emit_data64((jlong)m, relocInfo::none);
+    }
   }
 
   store_archive_data(stub_id, start, __ pc());

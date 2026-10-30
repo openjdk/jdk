@@ -1403,9 +1403,10 @@ void C2_MacroAssembler::varshiftbw(int opcode, XMMRegister dst, XMMRegister src,
 //
 //   A_sra(n) = A_srl(n) | (low n bytes each equal to 0x80)
 //
-// The count is masked to 0..7. A count of 0 leaves I for all three. The stub
-// vector_byte_shift_gfni_matrix stores A_sll(0..7), then A_srl(0..7), then
-// A_sra(0..7).
+// A count of 0 leaves I for all three. The stub holds one matrix per count in
+// 0..31, the Java int shift mask. A Vector API byte shift is already in 0..7.
+// Counts 8..31 empty a byte: the logical matrices are 0 and the arithmetic
+// right matrices fill the sign bit.
 //
 // Check A_srl(2). I << 16 = 0x0408102040800000, bytes 0x04, 0x08, 0x10, 0x20,
 // 0x40, 0x80, 0x00, 0x00 from the MSB: source bits 2, 3, 4, 5, 6, 7 and then
@@ -1426,8 +1427,10 @@ void C2_MacroAssembler::vshiftb_gfni(int opcode, XMMRegister dst, XMMRegister sr
     assert(opcode == Op_LShiftVB, "%s", NodeClassNames[opcode]);
   }
   movdl(rtmp, shift);
-  andl(rtmp, 7);
-  lea(rbase, ExternalAddress(StubRoutines::x86::vector_byte_shift_gfni_matrix() + kind * 8 * BytesPerLong));
+  andl(rtmp, 31);
+  // One matrix per count in 0..31.
+  const int mats_per_kind = 32;
+  lea(rbase, ExternalAddress(StubRoutines::x86::vector_byte_shift_gfni_matrix() + kind * mats_per_kind * BytesPerLong));
   if (vlen_enc == Assembler::AVX_128bit) {
     movddup(dst, Address(rbase, rtmp, Address::times_8));
   } else {

@@ -21127,7 +21127,7 @@ instruct vshiftB(vec dst, vec src, vec shift, vec tmp) %{
 
 instruct vshift16B(vec dst, vec src, vec shift, vec tmp1, vec tmp2) %{
   predicate(Matcher::vector_length(n) == 16 && !n->as_ShiftV()->is_var_shift() &&
-            UseAVX <= 1 && !(VM_Version::supports_gfni() && UseAVX > 0));
+            (UseAVX == 0 || (UseAVX == 1 && !VM_Version::supports_gfni())));
   match(Set dst ( LShiftVB src shift));
   match(Set dst ( RShiftVB src shift));
   match(Set dst (URShiftVB src shift));
@@ -21226,14 +21226,14 @@ instruct vshift64B_avx(vec dst, vec src, vec shift, vec tmp1, vec tmp2) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vshiftB_gfni(vec dst, vec src, vec shift, rRegL rtmp, rRegL rbase) %{
+instruct vshiftB_gfni(vec dst, vec src, vec shift, rRegL rtmp, rRegL rbase, rFlagsReg cr) %{
   predicate(!n->as_ShiftV()->is_var_shift() &&
-            VM_Version::supports_gfni() &&
+            VM_Version::supports_gfni() && UseAVX > 0 &&
             Matcher::vector_length(n) >= 16);
   match(Set dst ( LShiftVB src shift));
   match(Set dst ( RShiftVB src shift));
   match(Set dst (URShiftVB src shift));
-  effect(TEMP dst, TEMP rtmp, TEMP rbase);
+  effect(TEMP dst, TEMP rtmp, TEMP rbase, KILL cr);
   format %{ "vector_byte_shift_gfni $dst,$src,$shift\t! using $rtmp and $rbase as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);

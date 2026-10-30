@@ -59,6 +59,11 @@ public class TestGFNIUniformByteShift {
     static final byte[][] ASHR = new byte[8][LENGTH];
     static final byte[][] LSHR = new byte[8][LENGTH];
 
+    // Auto-vectorized Java shifts mask the count to 0..31.
+    static final int SHIFT = 32;
+    static final byte[] DST_L = new byte[SHIFT * LENGTH];
+    static final byte[] DST_A = new byte[SHIFT * LENGTH];
+
     static final Generators RD = Generators.G;
 
     static {
@@ -78,6 +83,7 @@ public class TestGFNIUniformByteShift {
     @Test
     @IR(counts = {IRNode.X86_VSHIFT_B_GFNI, ">= 3"},
         phase = CompilePhase.FINAL_CODE,
+        applyIf = {"UseAVX", "> 0"},
         applyIfCPUFeatureAnd = {"gfni", "true", "avx", "true"})
     public static void test128() {
         for (int s = 0; s < 8; s++) {
@@ -98,6 +104,7 @@ public class TestGFNIUniformByteShift {
     @Test
     @IR(counts = {IRNode.X86_VSHIFT_B_GFNI, ">= 3"},
         phase = CompilePhase.FINAL_CODE,
+        applyIf = {"UseAVX", "> 1"},
         applyIfCPUFeatureAnd = {"gfni", "true", "avx2", "true"})
     public static void test256() {
         for (int s = 0; s < 8; s++) {
@@ -118,6 +125,7 @@ public class TestGFNIUniformByteShift {
     @Test
     @IR(counts = {IRNode.X86_VSHIFT_B_GFNI, ">= 3"},
         phase = CompilePhase.FINAL_CODE,
+        applyIf = {"UseAVX", "> 2"},
         applyIfCPUFeatureAnd = {"gfni", "true", "avx512bw", "true"})
     public static void test512() {
         for (int s = 0; s < 8; s++) {
@@ -149,6 +157,58 @@ public class TestGFNIUniformByteShift {
             Verify.checkEQ(LSHL[s], expL);
             Verify.checkEQ(ASHR[s], expA);
             Verify.checkEQ(LSHR[s], expU);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.X86_VSHIFT_B_GFNI, ">= 1"},
+        phase = CompilePhase.FINAL_CODE,
+        applyIf = {"UseAVX", "> 0"},
+        applyIfCPUFeatureAnd = {"gfni", "true", "avx", "true"})
+    public static void testAutoVecLogicalLeftShift() {
+        for (int s = 0; s < SHIFT; s++) {
+            int base = s * LENGTH;
+            for (int i = 0; i < LENGTH; i++) {
+                DST_L[base + i] = (byte) (SRC[i] << s);
+            }
+        }
+    }
+
+    @Check(test = "testAutoVecLogicalLeftShift", when = CheckAt.COMPILED)
+    public static void checkAutoVecLogicalLeftShift() {
+        checkVariableShiftForAllCounts(DST_L, true);
+    }
+
+    @Test
+    @IR(counts = {IRNode.X86_VSHIFT_B_GFNI, ">= 1"},
+        phase = CompilePhase.FINAL_CODE,
+        applyIf = {"UseAVX", "> 0"},
+        applyIfCPUFeatureAnd = {"gfni", "true", "avx", "true"})
+    public static void testAutoVecArithmeticRightShift() {
+        for (int s = 0; s < SHIFT; s++) {
+            int base = s * LENGTH;
+            for (int i = 0; i < LENGTH; i++) {
+                DST_A[base + i] = (byte) (SRC[i] >> s);
+            }
+        }
+    }
+
+    @Check(test = "testAutoVecArithmeticRightShift", when = CheckAt.COMPILED)
+    public static void checkAutoVecArithmeticRightShift() {
+        checkVariableShiftForAllCounts(DST_A, false);
+    }
+
+    static void checkVariableShiftForAllCounts(byte[] actual, boolean leftShift) {
+        for (int s = 0; s < SHIFT; s++) {
+            int base = s * LENGTH;
+            byte[] ref = new byte[LENGTH];
+            byte[] slice = new byte[LENGTH];
+            for (int i = 0; i < LENGTH; i++) {
+                int x = SRC[i];
+                ref[i] = leftShift ? (byte) (x << s) : (byte) (x >> s);
+                slice[i] = actual[base + i];
+            }
+            Verify.checkEQ(slice, ref);
         }
     }
 }
