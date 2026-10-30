@@ -76,7 +76,7 @@ public class PrintProgressBarTest {
                If the progressbars are printed along with progress string
                test PASSED else FAILED.
        """;
- 
+
     private static int orientation;
     private static String instruction;
 ;
