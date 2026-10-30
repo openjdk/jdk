@@ -197,7 +197,7 @@ ZActivatedArray<T>::ZActivatedArray(bool locked)
 
 template <typename T>
 ZActivatedArray<T>::~ZActivatedArray() {
-  FreeHeap(_lock);
+  delete _lock;
 }
 
 template <typename T>
