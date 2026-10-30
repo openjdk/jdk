@@ -21,143 +21,123 @@
  * questions.
  */
 
-
-/* @test
-   @bug 4027717 8396040
-   @summary Check for correct implementation of RandomAccessFile.skipBytes
-   @library /test/lib
-   */
-
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.*;
-import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import static jdk.test.lib.Utils.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class SkipBytes{
+/*
+ * @test
+ * @bug 4027717 8396040
+ * @summary Check for correct implementation of RandomAccessFile.skipBytes
+ * @library /test/lib
+ * @run junit ${test.main.class}
+ */
 
+class SkipBytes {
 
-    /*
-     * doTest attempts to skip num_to_skip bytes in raf starting from position 0.
-     * It also does a read after the skip to check if EOF has been reached
-     * correctly or incorrectly.
-     */
+    static List<Arguments> args() throws IOException {
+        List<Arguments> args = new ArrayList<>();
+        for (long size : List.of(0L, 1L, 100L)) {
 
-
-    private static void doTest(RandomAccessFile raf, long start, int num_to_skip)
-        throws Exception
-    {
-
-        int length = (int) raf.length();
-        System.err.printf(
-                "size: %s, position: %s, requestedPosition: %s, requestedSkip: %s%n",
-                length, raf.getFilePointer(), start, num_to_skip);
-
-        raf.seek(start);
-        long cur_ptr0 = raf.getFilePointer();
-        if (start != cur_ptr0) {
-            throw new RuntimeException(
-                    "cur_ptr0: expected: %s, actual: %s"
-                            .formatted(start, cur_ptr0));
-        }
-
-        //Do the Skip test
-        int num_skipped = raf.skipBytes(num_to_skip);
-        System.err.println("After skipBytes -- no. skipped = " + num_skipped);
-
-        final int expected_num_skipped;
-        if (num_to_skip <= 0 || cur_ptr0 >= length) {
-            expected_num_skipped = 0;
-        } else if (length - cur_ptr0 > num_to_skip) {
-            expected_num_skipped = num_to_skip;
-        } else {
-            expected_num_skipped = Math.toIntExact(length - cur_ptr0);
-        }
-        if (expected_num_skipped != num_skipped) {
-            throw new RuntimeException(
-                    "num_skipped: expected: %s, actual: %s"
-                            .formatted(expected_num_skipped, num_skipped));
-        }
-
-        long cur_ptr = raf.getFilePointer();
-        System.err.println("Current pointer = " + cur_ptr);
-
-        final long expected_cur_ptr;
-        if (cur_ptr0 >= length || num_to_skip <= 0) {
-            expected_cur_ptr = cur_ptr0;
-        } else if (length - cur_ptr0 > num_to_skip) {
-            expected_cur_ptr = cur_ptr0 + num_to_skip;
-        } else {
-            expected_cur_ptr = length;
-        }
-        if (expected_cur_ptr != cur_ptr) {
-            throw new RuntimeException(
-                    "cur_ptr: expected: %s, actual: %s"
-                            .formatted(expected_cur_ptr, cur_ptr));
-        }
-
-        // do read test
-        int byte_read = raf.read();
-        if ( (cur_ptr == length) &&
-             (byte_read != -1) ) {
-            System.err.println("byte_read = " + byte_read +
-                               " Read Test Failed ......");
-            throw new RuntimeException("Read Test Failed");
-        }
-        else {
-            System.err.println("byte_read = " + byte_read +
-                               " Read Test Succeeded");
-        }
-
-    }
-
-    public static void main(String[] args) throws Exception {
-        for (long size : List.of(0, 1, 100)) {
+            // Populate the file
             var fileNamePrefix = "RAF-%s-%s-".formatted(SkipBytes.class.getSimpleName(), size);
-            var filePath = createTempFileOfSize(fileNamePrefix, ".dat", size);
-            try {
-                long[] positions = {
-                        0,
-                        1,
-                        2,
-                        size - 1,
-                        size,
-                        size + 1,
-                        Integer.MAX_VALUE - 1L,
-                        Integer.MAX_VALUE
-                };
-                long[] skips = {
-                        Integer.MIN_VALUE,
-                        Integer.MIN_VALUE + 1L,
-                        -size - 1,
-                        -size,
-                        -size + 1,
-                        -2,
-                        -1,
-                        0,
-                        1,
-                        2,
-                        size - 1,
-                        size,
-                        size + 1,
-                        Integer.MAX_VALUE - 1L,
-                        Integer.MAX_VALUE
-                };
-                for (long position : positions) {
-                    if (position >= 0) {
-                        for (long skip : skips) {
-                            if (skip <= Integer.MAX_VALUE) {
-                                try (var raf = new RandomAccessFile(filePath.toFile(), "rw")) {
-                                    doTest(raf, position, (int) skip);
-                                }
-                            }
+            Path filePath = createTempFileOfSize(fileNamePrefix, ".dat", size);
+
+            // Start positions
+            long[] positions = {
+                    0,
+                    1,
+                    2,
+                    size - 1,
+                    size,
+                    size + 1,
+                    Integer.MAX_VALUE - 1,
+                    Integer.MAX_VALUE
+            };
+
+            // Skip lengths
+            long[] skips = {
+                    Integer.MIN_VALUE,
+                    Integer.MIN_VALUE + 1L,
+                    -size - 1,
+                    -size,
+                    -size + 1,
+                    -2,
+                    -1,
+                    0,
+                    1,
+                    2,
+                    size - 1,
+                    size,
+                    size + 1,
+                    Integer.MAX_VALUE - 1L,
+                    Integer.MAX_VALUE
+            };
+
+            // Generate test cases
+            for (long position : positions) {
+                if (position >= 0) {
+                    for (long skip : skips) {
+                        if (skip <= Integer.MAX_VALUE) {
+                            args.add(Arguments.of(size, filePath, position, (int) skip));
                         }
                     }
                 }
-            } finally {
-                Files.delete(filePath);
             }
+
+        }
+        return args;
+    }
+
+    @ParameterizedTest(name = "{0}, {2}, {3}")
+    @MethodSource("args")
+    void test(long size, Path path, long expectedPosition0, int requestedSkip) throws IOException {
+        try (var raf = new RandomAccessFile(path.toFile(), "rw")) {
+
+            // Seek to the requested start position
+            raf.seek(expectedPosition0);
+            long position0 = raf.getFilePointer();
+            assertEquals(expectedPosition0, position0);
+
+            // Skip requested bytes
+            int skip = raf.skipBytes(requestedSkip);
+            final int expectedSkip;
+            if (requestedSkip <= 0 || position0 >= size) {
+                expectedSkip = 0;
+            } else if (size - position0 > requestedSkip) {
+                expectedSkip = requestedSkip;
+            } else {
+                expectedSkip = Math.toIntExact(size - position0);
+            }
+            assertEquals(expectedSkip, skip);
+
+            // Verify the new position
+            long position1 = raf.getFilePointer();
+            final long expectedPosition1;
+            if (position0 >= size || requestedSkip <= 0) {
+                expectedPosition1 = position0;
+            } else if (size - position0 > requestedSkip) {
+                expectedPosition1 = position0 + requestedSkip;
+            } else {
+                expectedPosition1 = size;
+            }
+            assertEquals(expectedPosition1, position1);
+
+            // Verify the read
+            int read = raf.read();
+            assertEquals(
+                    position1 >= size, read < 0,
+                    "Unexpected read of %s at position %s/%s"
+                            .formatted(read, position1, size));
+
         }
     }
 
