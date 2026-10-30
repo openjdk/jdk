@@ -34,6 +34,34 @@
 class ShenandoahSpaceInfo;
 class ShenandoahHeuristics;
 
+class ShenandoahHeuristicsFlag : public AllStatic {
+public:
+  enum class Heuristic {
+    ADAPTIVE, PASSIVE, AGGRESSIVE, COMPACT, STATIC
+  };
+
+  static void initialize();
+  static Heuristic value() {
+    return _value;
+  }
+private:
+  static Heuristic _value;
+};
+
+class ShenandoahModeFlag : public AllStatic {
+public:
+  enum class Mode {
+    GENERATIONAL, SATB, PASSIVE
+  };
+
+  static void initialize();
+  static Mode value() {
+    return _value;
+  }
+private:
+  static Mode _value;
+};
+
 #define SHENANDOAH_CHECK_FLAG_SET(name)                                     \
   do {                                                                      \
     if (!(name)) {                                                          \

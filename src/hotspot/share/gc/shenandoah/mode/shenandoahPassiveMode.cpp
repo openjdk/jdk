@@ -43,6 +43,15 @@ void ShenandoahPassiveMode::initialize_flags() const {
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahSATBBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCloneBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCardBarrier);
+
+  // TLAB sizing policy makes resizing decisions before each GC cycle. It averages
+  // historical data, assigning more recent data the weight according to TLABAllocationWeight.
+  // Current default is good for generational collectors that run frequent young GCs.
+  // With Shenandoah, GC cycles are much less frequent, so we need sizing policy
+  // to converge faster over smaller number of resizing decisions.
+  if (FLAG_IS_DEFAULT(TLABAllocationWeight)) {
+    FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
+  }
 }
 
 ShenandoahHeuristics* ShenandoahPassiveMode::initialize_heuristics(ShenandoahSpaceInfo* space_info) const {
