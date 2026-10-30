@@ -34,6 +34,8 @@
  */
 class ShenandoahCompactHeuristics : public ShenandoahHeuristics {
 public:
+  static void configure();
+
   explicit ShenandoahCompactHeuristics(ShenandoahSpaceInfo* space_info);
 
   bool should_start_gc() override;

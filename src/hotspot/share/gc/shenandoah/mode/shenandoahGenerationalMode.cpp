@@ -22,9 +22,10 @@
  *
  */
 
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
+
+#include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "runtime/globals_extension.hpp"
@@ -59,10 +60,31 @@ void ShenandoahGenerationalMode::initialize_flags() const {
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCardBarrier);
 
-  if (ShenandoahHeuristicsFlag::value() != ShenandoahHeuristicsFlag::Heuristic::ADAPTIVE) {
-    log_warning(gc)("Ignoring -XX:ShenandoahGCHeuristics input: %s, because generational shenandoah only"
-      " supports adaptive heuristics", ShenandoahGCHeuristics);
-    // This changes nothing downstream, but is here so that PrintFlagsFinal shows the effective value
-    FLAG_SET_ERGO(ShenandoahGCHeuristics, "adaptive");
+  switch (ShenandoahHeuristicsFlag::value()) {
+    case ShenandoahHeuristicsFlag::Heuristic::ADAPTIVE:
+      // Nothing to do, this is the default
+      break;
+    case ShenandoahHeuristicsFlag::Heuristic::COMPACT:
+      // Configure flags in accordance with the heuristic
+      ShenandoahCompactHeuristics::configure();
+      break;
+    case  ShenandoahHeuristicsFlag::Heuristic::AGGRESSIVE:
+      // This will configure the periodic gc interval to 1ms, effectively running
+      // continuous collections as the aggressive heuristic would do in the single
+      // generation mode. Note that global cycles will still only run when there is
+      // a need to unload classes. The young collector will still be subject to the
+      // rule which guarantees old cycles a 100ms time slice.
+      SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahGuaranteedGCInterval, 1);
+      SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahGuaranteedYoungGCInterval, 1);
+      SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahGuaranteedOldGCInterval, 1);
+
+      // Configure other flags in accordance with the heuristic
+      ShenandoahAggressiveHeuristics::configure();
+      break;
+    default:
+      log_warning(gc)("Ignoring -XX:ShenandoahGCHeuristics input: %s, "
+                      "because generational mode does not support it", ShenandoahGCHeuristics);
+      // This changes nothing downstream, but is here so that PrintFlagsFinal shows the effective value
+      FLAG_SET_ERGO(ShenandoahGCHeuristics, "adaptive");
   }
 }

@@ -33,6 +33,8 @@
  */
 class ShenandoahAggressiveHeuristics : public ShenandoahHeuristics {
 public:
+  static void configure();
+
   ShenandoahAggressiveHeuristics(ShenandoahSpaceInfo* space_info);
 
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
