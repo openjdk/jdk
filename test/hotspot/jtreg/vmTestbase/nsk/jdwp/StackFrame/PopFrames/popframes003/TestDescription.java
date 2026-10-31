@@ -84,6 +84,5 @@
  *                       -XX:CompileCommand=dontinline,*::testedMethod
  *                       -XX:CompileCommand=dontinline,*::stop
  *                       -Dtest.thread.factory=Virtual
- *                       -Dpopframes001.compiledCaller=true
- *                       -Dpopframes001.unmount=true"
+ *                       -Dpopframes001.compiledCaller=true"
  */

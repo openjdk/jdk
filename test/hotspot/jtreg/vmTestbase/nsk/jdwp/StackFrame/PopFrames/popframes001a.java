@@ -65,9 +65,10 @@ public class popframes001a {
         TestedThreadClass thread = new TestedThreadClass(THREAD_NAME);
         log.display("  ... thread created");
 
-        if (TestedThreadClass.UNMOUNT) {
-            // the thread the tested method joins, it ends once the tested thread is parked in that join.
-            // It is made here so testedMethod has nothing before the join that could deoptimize it
+        if (thread.isVirtual()) {
+            // The thread joined by the virtual thread in testedMethod. It exits once the
+            // virtual thread has unmounted. Created here to avoid setup code in testedMethod
+            // that could trigger deoptimization before join().
             Thread tested = thread.getThread();
             TestedThreadClass.parker = Thread.ofVirtual().start(() -> {
                 while (tested.getState() != Thread.State.WAITING) {
@@ -92,9 +93,9 @@ public class popframes001a {
             return popframes001.FAILED;
         }
 
-        // popping only stop() would reach the breakpoint twice as well
-        if (TestedThreadClass.COMPILED_CALLER && TestedThreadClass.invokations != 2) {
-            log.complain("Tested method invoked " + TestedThreadClass.invokations + " times, expected 2");
+        // the popped frame runs again, so the tested method is invoked exactly twice
+        if (TestedThreadClass.invocations != 2) {
+            log.complain("Tested method invoked " + TestedThreadClass.invocations + " times, expected 2");
             log.display("Debugee FAILED");
             return popframes001.FAILED;
         }
@@ -112,18 +113,17 @@ public class popframes001a {
     // tested thread class
     public static class TestedThreadClass extends ThreadWrapper {
 
-        // number of invokations of tested method
-        public static volatile int invokations = 0;
+        // number of invocations of tested method
+        public static volatile int invocations = 0;
 
         // arguments run() passes to testedMethod, checked on every invocation
         static final long LONG_ARG = 0x1234567890ABL;
         public static volatile String argsMismatch = null;
 
-        // popframes002 and popframes003 run this debuggee with these set
-        private static final boolean UNMOUNT = Boolean.getBoolean("popframes001.unmount");
+        // popframes003 runs this debuggee with this set
         private static final boolean COMPILED_CALLER = Boolean.getBoolean("popframes001.compiledCaller");
 
-        // joined by the tested method when UNMOUNT is set, started in runIt
+        // joined by the tested method when the tested thread is virtual, started in runIt
         public static Thread parker = null;
 
         public TestedThreadClass(String name) {
@@ -140,20 +140,20 @@ public class popframes001a {
 
         // tested method to pop frames
         public int testedMethod(int arg, long arg2, Object arg3) {
-            invokations++;
+            invocations++;
             int boo = 0;
 
-            if (UNMOUNT) {
-                // the first join unmounts a virtual tested thread, so the frame below is frozen when popped,
-                // the parker is gone by the second one. Nothing before this join may deoptimize this frame
-                // or the thaw brings the caller out with it
+            if (isVirtual()) {
+                // The first join unmounts the tested thread, leaving its caller in the
+                // heap when PopFrame is executed. Code before this join must not deoptimize
+                // this frame, as thawing an interpreted frame also thaws its compiled caller.
                 try {
                     parker.join();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
-            log.display("Tested method invoked " + invokations + " time");
+            log.display("Tested method invoked " + invocations + " time");
 
             log.display("Breakpoint line reached");
             // next line is for breakpoint

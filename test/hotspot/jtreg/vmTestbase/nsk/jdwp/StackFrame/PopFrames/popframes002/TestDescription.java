@@ -76,6 +76,5 @@
  *      -transport.address=dynamic
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}
  *                       -XX:CompileCommand=exclude,*TestedThreadClass::run
- *                       -Dtest.thread.factory=Virtual
- *                       -Dpopframes001.unmount=true"
+ *                       -Dtest.thread.factory=Virtual"
  */
