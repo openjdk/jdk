@@ -30,7 +30,7 @@ import jdk.internal.vm.vector.VectorSupport;
 
 import static jdk.incubator.vector.VectorOperators.*;
 
-abstract sealed class AbstractMask<E> extends VectorMask<E>
+abstract sealed /*value*/ class AbstractMask<E> extends VectorMask<E>
         permits ByteVector64.ByteMask64, ByteVector128.ByteMask128, ByteVector256.ByteMask256, ByteVector512.ByteMask512, ByteVectorMax.ByteMaskMax,
         DoubleVector64.DoubleMask64, DoubleVector128.DoubleMask128, DoubleVector256.DoubleMask256, DoubleVector512.DoubleMask512, DoubleVectorMax.DoubleMaskMax,
         FloatVector64.FloatMask64, FloatVector128.FloatMask128, FloatVector256.FloatMask256, FloatVector512.FloatMask512, FloatVectorMax.FloatMaskMax,

@@ -177,8 +177,8 @@ static JVMState* clone_jvms(Compile* C, SafePointNode* sfpt) {
 }
 
 void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) const {
+  ResourceMark rm;
   Node* vec_value = vec_box->in(VectorBoxNode::Value);
-  PhaseGVN& gvn = *C->initial_gvn();
 
   // Process merged VBAs
 
@@ -200,7 +200,6 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) const {
 
       JVMState* jvms = clone_jvms(C, call);
       GraphKit kit(jvms);
-      PhaseGVN& gvn = kit.gvn();
 
       // Adjust JVMS from post-call to pre-call state: put args on stack
       uint nargs = call->method()->arg_size();
@@ -213,7 +212,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) const {
           bool nullable = arg_type->maybe_null();
           ciValueKlass* vk = arg_type->value_klass();
           ValueTypeNode* it = ValueTypeNode::make_from_multi(&kit, call, vk, in_idx, true, !nullable);
-          kit.push(gvn.transform(it));
+          kit.push(kit.gvn().transform(it));
         } else {
           kit.push(call->in(in_idx));
           in_idx++;
@@ -255,10 +254,10 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) const {
   // Process debug uses at safepoints
   Unique_Node_List<SafePointNode> safepoints;
 
-  Unique_Node_List<const Node> worklist;
-  worklist.push(vec_box);
-  while (worklist.size() > 0) {
-    const Node* n = worklist.pop();
+  Unique_Node_List<const Node> casts;
+  casts.push(vec_box);
+  for (uint index = 0; index < casts.size(); index++) {
+    const Node* n = casts.at(index);
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* use = n->fast_out(i);
       if (use->is_SafePoint()) {
@@ -267,11 +266,15 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) const {
           safepoints.push(sfpt);
         }
       } else if (use->is_ConstraintCast()) {
-        worklist.push(use); // reversed version of Node::uncast()
+        casts.push(use); // reversed version of uncast()
+      } else if (use->is_ValueType()) {
+        assert(use->as_ValueType()->get_oop() == n, "unrelated");
+        casts.push(use);
       }
     }
   }
 
+  PhaseGVN& gvn = *C->initial_gvn();
   ciInstanceKlass* iklass = vec_box->box_type()->instance_klass();
   int n_fields = iklass->nof_nonstatic_fields();
   assert(n_fields == 1, "sanity");
@@ -293,6 +296,9 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) const {
     uint first_ind = (sfpt->req() - sfpt->jvms()->scloff());
     Node* sobj = new SafePointScalarObjectNode(vec_box->box_type(), vec_box, first_ind, sfpt->jvms()->depth(), n_fields);
     sobj->init_req(0, C->root());
+    if (iklass->is_value_klass()) {
+      sfpt->add_req(gvn.intcon(1)); // null marker
+    }
     sfpt->add_req(vec_value);
 
     sobj = gvn.transform(sobj);
@@ -304,11 +310,18 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) const {
     // to the allocated object with vector value.
     for (uint i = jvms->debug_start(); i < jvms->debug_end(); i++) {
       Node* debug = sfpt->in(i);
-      if (debug != nullptr && debug->uncast(/*keep_deps*/false) == vec_box) {
-        sfpt->set_req(i, sobj);
+      if (debug != nullptr && casts.member(debug)) {
+        sfpt->set_req_X(i, sobj, &gvn);
       }
     }
     C->record_for_igvn(sfpt);
+  }
+
+  for (uint index = 0; index < casts.size(); index++) {
+    ValueTypeNode* vt = casts.at(index)->isa_ValueType();
+    if (vt != nullptr && vt->outcnt() == 0) {
+      _igvn.remove_dead_node(vt, PhaseIterGVN::NodeOrigin::Graph);
+    }
   }
 }
 
@@ -440,6 +453,7 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
 }
 
 void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
+  assert(vec_unbox->outcnt() > 0, "interesting");
   if (vec_unbox->outcnt() > 0) {
     GraphKit kit;
     PhaseGVN& gvn = kit.gvn();

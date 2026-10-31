@@ -42,7 +42,7 @@ import static jdk.internal.vm.vector.VectorSupport.*;
 
 @SuppressWarnings("cast")  // warning: redundant cast
 @ValueBased
-final class LongVectorMax extends LongVector {
+final /*value*/ class LongVectorMax extends LongVector {
     static final LongSpecies VSPECIES =
         (LongSpecies) LongVector.SPECIES_MAX;
 
@@ -560,7 +560,7 @@ final class LongVectorMax extends LongVector {
 
     // Mask
     @ValueBased
-    static final class LongMaskMax extends AbstractMask<Long> {
+    static final /*value*/ class LongMaskMax extends AbstractMask<Long> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
         static final Class<Long> CTYPE = long.class; // used by the JVM
@@ -793,7 +793,7 @@ final class LongVectorMax extends LongVector {
 
     // Shuffle
     @ValueBased
-    static final class LongShuffleMax extends AbstractShuffle<Long> {
+    static final /*value*/ class LongShuffleMax extends AbstractShuffle<Long> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
         static final Class<Long> CTYPE = long.class; // used by the JVM
