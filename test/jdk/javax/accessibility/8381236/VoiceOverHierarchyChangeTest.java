@@ -49,7 +49,7 @@ public class VoiceOverHierarchyChangeTest {
         String INSTRUCTIONS = """
                 INSTRUCTIONS:
                 1. Open VoiceOver
-                2. Move the mouse over the both labels
+                2. Move the mouse over both of the labels
                 3. Click the "Move To Other Window" button
                 4. Move the mouse over both labels again.
 
