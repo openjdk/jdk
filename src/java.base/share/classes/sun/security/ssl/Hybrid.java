@@ -38,9 +38,7 @@ import javax.crypto.SecretKey;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.Key;
 import java.security.KeyFactory;
-import java.security.KeyFactorySpi;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyPairGeneratorSpi;
@@ -53,14 +51,25 @@ import java.security.spec.*;
 import java.util.Arrays;
 import java.util.Locale;
 
-// The Hybrid class wraps two underlying algorithms (left and right sides)
-// in a single TLS hybrid named group.
-// It implements:
-// - Hybrid KeyPair generation
-// - Hybrid KeyFactory for decoding concatenated hybrid public keys
-// - Hybrid KEM implementation for performing encapsulation and
-//   decapsulation over two underlying algorithms (traditional
-//   algorithm and post-quantum KEM algorithm)
+// The Hybrid class contains internal implementations for the TLS 1.3
+// hybrid key exchange named groups: X25519MLKEM768, SecP256r1MLKEM768,
+// and SecP384r1MLKEM1024. It wraps two underlying algorithms (left and
+// right sides) in a single TLS hybrid named group.
+//
+// These hybrid key exchange algorithms are registered in SunJCE so that
+// SunJSSE can select them. They are not general purpose KEM algorithms.
+// They are exposed through the JCA KeyPairGenerator and KEM APIs so that
+// SunJSSE can use them. Applications should not use them as general purpose
+// KEM algorithms.
+//
+// Their public key encoding is the TLS 1.3 key_share encoding, not an
+// X.509 SubjectPublicKeyInfo encoding, and the algorithms have no object
+// identifiers. Hence, the public key’s getFormat() method must return "RAW",
+// and getEncoded() must return the raw format of key_share encoding.
+//
+// A provider can represent a negotiated shared secret as an opaque SecretKey.
+// If its key cannot be used with the selected TLS HKDF implementation, the
+// provider must supply a compatible TLS HKDF implementation.
 
 public class Hybrid {
 
@@ -81,63 +90,91 @@ public class Hybrid {
         }
     }
 
-    private static KeyPairGenerator getKeyPairGenerator(String name) throws
-            NoSuchAlgorithmException {
+    // The layouts below describe only the TLS hybrid groups currently
+    // supported by the JDK. It assumes an EC component on the left or
+    // X25519 on the right, and ML-KEM as the only PQC component.
+    private static KeyPairGenerator getKeyPairGenerator(String name)
+            throws NoSuchAlgorithmException {
         if (name.startsWith("secp")) {
             name = "EC";
         }
         return KeyPairGenerator.getInstance(name);
     }
 
-    private static KeyFactory getKeyFactory(String name) throws
-            NoSuchAlgorithmException {
+    private static KeyFactory getKeyFactory(String name)
+            throws NoSuchAlgorithmException {
         if (name.startsWith("secp")) {
             name = "EC";
         }
         return KeyFactory.getInstance(name);
     }
 
-    /**
-     * Returns a KEM instance for each side of the hybrid algorithm.
-     * For traditional key exchange algorithms, we use the DH-based KEM
-     * implementation provided by DHasKEM class.
-     * For ML-KEM post-quantum algorithms, we obtain a KEM instance
-     * with "ML-KEM". This is done to work with 3rd-party providers that
-     * only have "ML-KEM" KEM algorithm.
-     */
-    private static KEM getKEM(String name) throws NoSuchAlgorithmException {
+    private static KEM getKEM(String name)
+            throws NoSuchAlgorithmException {
         if (name.startsWith("secp") || name.equals("X25519")) {
-            return KEM.getInstance("DH", HybridProvider.PROVIDER);
-        } else {
-            return KEM.getInstance("ML-KEM");
+            return KEM.getInstance("DH", DHasKEM.PROVIDER);
         }
+        return KEM.getInstance("ML-KEM");
     }
 
+    /**
+     * A KeyPairGenerator implementation for a TLS 1.3 hybrid key exchange
+     * named group.
+     *
+     * This implementation is exposed through the JCA KeyPairGenerator API
+     * only so that TLS can obtain a key pair for a hybrid key_share. It is
+     * not a general purpose keypair generator. The generated public key has
+     * RAW format and its encoding is the TLS 1.3 key_share value. It is not
+     * an X.509 SubjectPublicKeyInfo value.
+     */
     public static class KeyPairGeneratorImpl extends KeyPairGeneratorSpi {
+        private final String name;
         private final KeyPairGenerator left;
         private final KeyPairGenerator right;
         private final AlgorithmParameterSpec leftSpec;
         private final AlgorithmParameterSpec rightSpec;
 
-        public KeyPairGeneratorImpl(String leftAlg, String rightAlg)
+        public KeyPairGeneratorImpl(String name, String leftAlg, String rightAlg)
                 throws NoSuchAlgorithmException  {
+            this.name = name;
             left = getKeyPairGenerator(leftAlg);
             right = getKeyPairGenerator(rightAlg);
             leftSpec = getSpec(leftAlg);
             rightSpec = getSpec(rightAlg);
+            try {
+                initComponents(null);
+            } catch (InvalidAlgorithmParameterException e) {
+                throw new NoSuchAlgorithmException(
+                        "Cannot initialize hybrid key pair generator", e);
+            }
         }
 
-        @Override
-        public void initialize(AlgorithmParameterSpec params,
-                SecureRandom random)
+        private void initComponents(SecureRandom random)
                 throws InvalidAlgorithmParameterException {
             left.initialize(leftSpec, random);
             right.initialize(rightSpec, random);
         }
 
         @Override
+        public void initialize(AlgorithmParameterSpec params,
+                SecureRandom random)
+                throws InvalidAlgorithmParameterException {
+            if (!(params instanceof NamedParameterSpec namedSpec) ||
+                    !name.equals(namedSpec.getName())) {
+                throw new InvalidAlgorithmParameterException(
+                        "Expected NamedParameterSpec for " + name);
+            }
+            initComponents(random);
+        }
+
+        @Override
         public void initialize(int keysize, SecureRandom random) {
-            // NO-OP (do nothing)
+            try {
+                initComponents(random);
+            } catch (InvalidAlgorithmParameterException e) {
+                throw new ProviderException(
+                        "Cannot initialize hybrid key pair generator", e);
+            }
         }
 
         @Override
@@ -145,45 +182,32 @@ public class Hybrid {
             var kp1 = left.generateKeyPair();
             var kp2 = right.generateKeyPair();
             return new KeyPair(
-                    new PublicKeyImpl("Hybrid", kp1.getPublic(),
+                    new PublicKeyImpl(name, kp1.getPublic(),
                             kp2.getPublic()),
-                    new PrivateKeyImpl("Hybrid", kp1.getPrivate(),
+                    new PrivateKeyImpl(name, kp1.getPrivate(),
                             kp2.getPrivate()));
         }
     }
 
-    public static class KeyFactoryImpl extends KeyFactorySpi {
+    // Decodes the RAW TLS key_share accepted by the built-in hybrid KEM.
+    // This is not a JCA KeyFactory service.
+    private static final class RawPublicKeyDecoder {
         private final KeyFactory left;
         private final KeyFactory right;
         private final int leftlen;
         private final String leftname;
         private final String rightname;
 
-        public KeyFactoryImpl(String left, String right)
+        private final String name;
+
+        RawPublicKeyDecoder(String name, String left, String right)
                 throws NoSuchAlgorithmException {
+            this.name = name;
             this.left = getKeyFactory(left);
             this.right = getKeyFactory(right);
             this.leftlen = leftPublicLength(left);
             this.leftname = left;
             this.rightname = right;
-        }
-
-        @Override
-        protected PublicKey engineGeneratePublic(KeySpec keySpec)
-                throws InvalidKeySpecException {
-            throw new InvalidKeySpecException("Not supported");
-        }
-
-        @Override
-        protected PrivateKey engineGeneratePrivate(KeySpec keySpec) throws
-                InvalidKeySpecException {
-            throw new InvalidKeySpecException("Not supported");
-        }
-
-        @Override
-        protected <T extends KeySpec> T engineGetKeySpec(Key key,
-                Class<T> keySpec) throws InvalidKeySpecException {
-            throw new InvalidKeySpecException("Not supported");
         }
 
         private static int leftPublicLength(String name) {
@@ -196,14 +220,12 @@ public class Hybrid {
             };
         }
 
-        @Override
-        protected Key engineTranslateKey(Key inKey) throws InvalidKeyException {
+        PublicKeyImpl decode(PublicKey inKey) throws InvalidKeyException {
             if (inKey == null) {
                 throw new InvalidKeyException("key must not be null");
             }
 
-            if (inKey instanceof PublicKey
-                    && "RAW".equalsIgnoreCase(inKey.getFormat())) {
+            if ("RAW".equalsIgnoreCase(inKey.getFormat())) {
                 byte[] key = inKey.getEncoded();
                 if (key == null) {
                     throw new InvalidKeyException(
@@ -264,7 +286,7 @@ public class Hybrid {
                                 " algorithm: " + rightname);
                     }
 
-                    return new PublicKeyImpl("Hybrid", leftKey, rightKey);
+                    return new PublicKeyImpl(name, leftKey, rightKey);
                 } catch (Exception e) {
                     throw new InvalidKeyException("Failed to decode " +
                             "hybrid key", e);
@@ -277,21 +299,42 @@ public class Hybrid {
         }
     }
 
+    /**
+     * A KEM implementation for a TLS 1.3 hybrid key exchange named group.
+     *
+     * This implementation is exposed through the JCA KEM API only so
+     * that TLS can perform hybrid key exchange.  It is not a general
+     * purpose KEM.  Its encapsulator accepts a public key with RAW
+     * format containing the TLS 1.3 key_share value, and it does not
+     * accept an X.509 SubjectPublicKeyInfo encoding.
+     */
     public static class KEMImpl implements KEMSpi {
+        private final String name;
         private final KEM left;
         private final KEM right;
+        private final RawPublicKeyDecoder keyDecoder;
 
-        public KEMImpl(String left, String right)
+        public KEMImpl(String name, String left, String right)
                 throws NoSuchAlgorithmException {
+            this.name = name;
             this.left = getKEM(left);
             this.right = getKEM(right);
+            this.keyDecoder = new RawPublicKeyDecoder(name, left, right);
         }
 
         @Override
         public EncapsulatorSpi engineNewEncapsulator(PublicKey publicKey,
                 AlgorithmParameterSpec spec, SecureRandom secureRandom) throws
                 InvalidAlgorithmParameterException, InvalidKeyException {
-            if (publicKey instanceof PublicKeyImpl pk) {
+            if (spec != null) {
+                throw new InvalidAlgorithmParameterException(
+                        "KEM parameters are not supported for " + name);
+            }
+            if (!(publicKey instanceof PublicKeyImpl)) {
+                publicKey = keyDecoder.decode(publicKey);
+            }
+            if (publicKey instanceof PublicKeyImpl pk &&
+                    name.equals(pk.getAlgorithm())) {
                 return new Handler(left.newEncapsulator(pk.left, secureRandom),
                         right.newEncapsulator(pk.right, secureRandom),
                         null, null);
@@ -303,7 +346,12 @@ public class Hybrid {
         public DecapsulatorSpi engineNewDecapsulator(PrivateKey privateKey,
                 AlgorithmParameterSpec spec)
                 throws InvalidAlgorithmParameterException, InvalidKeyException {
-            if (privateKey instanceof PrivateKeyImpl pk) {
+            if (spec != null) {
+                throw new InvalidAlgorithmParameterException(
+                        "KEM parameters are not supported for " + name);
+            }
+            if (privateKey instanceof PrivateKeyImpl pk &&
+                    name.equals(pk.getAlgorithm())) {
                 return new Handler(null, null, left.newDecapsulator(pk.left),
                         right.newDecapsulator(pk.right));
             }
@@ -342,7 +390,7 @@ public class Hybrid {
             var left  = le.encapsulate();
             var right = re.encapsulate();
             return new KEM.Encapsulated(
-                    new SecretKeyImpl(left.key(), right.key()),
+                    new SecretKeyImpl(algorithm, left.key(), right.key()),
                     concat(left.encapsulation(), right.encapsulation()),
                     null);
         }
@@ -387,19 +435,31 @@ public class Hybrid {
             var left = Arrays.copyOf(encapsulation, ld.encapsulationSize());
             var right = Arrays.copyOfRange(encapsulation,
                     ld.encapsulationSize(), encapsulation.length);
-            return new SecretKeyImpl(
-                    ld.decapsulate(left),
-                    rd.decapsulate(right)
+            return new SecretKeyImpl(algorithm,
+                    ld.decapsulate(left, 0, ld.secretSize(), "Generic"),
+                    rd.decapsulate(right, 0, rd.secretSize(), "Generic")
             );
         }
     }
 
     // Package-private
-    record SecretKeyImpl(SecretKey k1, SecretKey k2)
-            implements SecretKey {
+    static final class SecretKeyImpl implements SecretKey {
+        private static final long serialVersionUID = 1L;
+
+        final SecretKey k1;
+        final SecretKey k2;
+        private final String algorithm;
+        private boolean destroyed;
+
+        SecretKeyImpl(String algorithm, SecretKey k1, SecretKey k2) {
+            this.algorithm = algorithm;
+            this.k1 = k1;
+            this.k2 = k2;
+        }
+
         @Override
         public String getAlgorithm() {
-            return "Generic";
+            return algorithm;
         }
 
         @Override
@@ -409,7 +469,25 @@ public class Hybrid {
 
         @Override
         public byte[] getEncoded() {
+            if (destroyed) {
+                throw new IllegalStateException("Key has been destroyed");
+            }
+            // The component secrets are passed independently to HKDF so that
+            // a provider can keep either component opaque.
             return null;
+        }
+
+        @Override
+        public void destroy() {
+            if (!destroyed) {
+                KeyUtil.destroySecretKeys(k1, k2);
+                destroyed = true;
+            }
+        }
+
+        @Override
+        public boolean isDestroyed() {
+            return destroyed;
         }
     }
 
@@ -464,8 +542,18 @@ public class Hybrid {
      * Hybrid private key combines two underlying private keys (left and right).
      * It is for internal use only. The private keys should never be exported.
      */
-    private record PrivateKeyImpl(String algorithm, PrivateKey left,
-            PrivateKey right) implements PrivateKey {
+    private static final class PrivateKeyImpl implements PrivateKey {
+        private static final long serialVersionUID = 1L;
+
+        private final String algorithm;
+        private final PrivateKey left;
+        private final PrivateKey right;
+
+        PrivateKeyImpl(String algorithm, PrivateKey left, PrivateKey right) {
+            this.algorithm = algorithm;
+            this.left = left;
+            this.right = right;
+        }
 
         @Override
         public String getAlgorithm() {
@@ -479,7 +567,7 @@ public class Hybrid {
             return null;
         }
 
-        // getEncoded() returns an empty byte array because there is no
+        // getEncoded() returns null because there is no
         // standard encoding format for a hybrid private key.
         @Override
         public byte[] getEncoded() {

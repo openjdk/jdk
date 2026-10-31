@@ -35,12 +35,9 @@ import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
-import java.security.KeyFactory;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.spec.X509EncodedKeySpec;
 
 import sun.security.util.KeyUtil;
 
@@ -57,7 +54,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
     private final PrivateKey localPrivateKey;
     private final PublicKey peerPublicKey;
     private final byte[] keyshare;
-    private final Provider provider;
+    private final NamedGroup namedGroup;
 
     // Constructor called by Key Agreement
     KAKeyDerivation(String algorithmName,
@@ -81,7 +78,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
         this.localPrivateKey = localPrivateKey;
         this.peerPublicKey = peerPublicKey;
         this.keyshare = keyshare;
-        this.provider = (namedGroup != null) ? namedGroup.getProvider() : null;
+        this.namedGroup = namedGroup;
     }
 
     @Override
@@ -148,10 +145,13 @@ public class KAKeyDerivation implements SSLKeyDerivation {
             // NOTE: do not reuse the HKDF object for "TlsEarlySecret" for
             // the handshake secret key derivation (below) as it may not
             // work with the "sharedSecret" obj.
+            // Delayed provider selection lets a provider that created an
+            // opaque KEM secret supply the compatible TLS HKDF service.
             KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
             var spec = HKDFParameterSpec.ofExtract().addSalt(saltSecret);
-            if (sharedSecret instanceof Hybrid.SecretKeyImpl hsk) {
-                spec = spec.addIKM(hsk.k1()).addIKM(hsk.k2());
+            if (sharedSecret instanceof Hybrid.SecretKeyImpl hybridSecret) {
+                spec = spec.addIKM(hybridSecret.k1)
+                        .addIKM(hybridSecret.k2);
             } else {
                 spec = spec.addIKM(sharedSecret);
             }
@@ -161,6 +161,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
             KeyUtil.destroySecretKeys(earlySecret, saltSecret);
         }
     }
+
     /**
      * This method is called by the server to perform KEM encapsulation.
      * It uses the client's public key (sent by the client as a keyshare)
@@ -182,28 +183,10 @@ public class KAKeyDerivation implements SSLKeyDerivation {
         // to TLS fatal alerts:
         // illegal_parameter alert or internal_error alert.
         try {
-            KeyFactory kf = (provider != null) ?
-                    KeyFactory.getInstance(algorithmName, provider) :
-                    KeyFactory.getInstance(algorithmName);
-            PublicKey pk;
-            try {
-                pk = (PublicKey) kf.translateKey(
-                        KeyUtil.newRawPublicKey(algorithmName, keyshare));
-            } catch (InvalidKeyException e) {
-                // Fallback to X.509 encoding if ML-KEM impl
-                // does not support translating from RAW
-                try {
-                    pk = kf.generatePublic(new X509EncodedKeySpec(
-                            KeyUtil.rawToX509(algorithmName, keyshare)));
-                } catch (GeneralSecurityException e2) {
-                    e2.addSuppressed(e);
-                    throw new InvalidKeyException(e2);
-                }
-            }
-
-            KEM kem = (provider != null) ?
-                    KEM.getInstance(algorithmName, provider) :
-                    KEM.getInstance(algorithmName);
+            // Hybrid TLS keys have no X.509 encoding. The KEM receives the
+            // TLS key_share directly as a RAW public key.
+            PublicKey pk = KeyUtil.newRawPublicKey(algorithmName, keyshare);
+            KEM kem = KEM.getInstance(algorithmName);
             KEM.Encapsulator e = kem.newEncapsulator(pk, random);
             KEM.Encapsulated enc = e.encapsulate();
             sharedSecret = enc.key();
@@ -245,9 +228,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
                 // to TLS fatal alerts:
                 // illegal_parameter alert or internal_error alert.
                 try {
-                    KEM kem = (provider != null)
-                            ? KEM.getInstance(algorithmName, provider)
-                            : KEM.getInstance(algorithmName);
+                    KEM kem = KEM.getInstance(algorithmName);
                     var decapsulator = kem.newDecapsulator(localPrivateKey);
                     sharedSecret = decapsulator.decapsulate(
                             keyshare, 0, decapsulator.secretSize(),

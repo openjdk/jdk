@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import javax.crypto.KeyGenerator;
 
 /*
  * @test
- * @bug 8185127
+ * @bug 8185127 8385968
  * @summary Test key comparison for the Keys generated through KeyGenerator
  * @run main CompareKeys
  */
@@ -54,6 +54,15 @@ public class CompareKeys {
         }
 
         for (KeygenAlgo alg : getSupportedAlgo("KeyPairGenerator")) {
+            // TLS hybrid KEM public keys use RAW key_share encoding and
+            // have no KeyFactory or X.509 encoding.
+            if (alg.provider().getService("KeyFactory", alg.algoName())
+                    == null) {
+                System.out.printf("Skipping provider %s and algorithm %s: "
+                        + "no KeyFactory%n", alg.provider().getName(),
+                        alg.algoName());
+                continue;
+            }
             System.out.printf("Verifying provider %s and algorithm %s%n",
                     alg.provider().getName(), alg.algoName());
             KeyPair kp = genKeyPair(alg.algoName(), alg.provider());
