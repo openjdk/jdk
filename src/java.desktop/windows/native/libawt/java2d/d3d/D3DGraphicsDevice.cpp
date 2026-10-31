@@ -390,7 +390,6 @@ Java_sun_java2d_d3d_D3DGraphicsDevice_enumDisplayModesNative
 {
     D3DPipelineManager *pMgr;
     IDirect3D9 *pd3d9;
-    jobject ret = NULL;
     D3DDISPLAYMODE mode;
     UINT formatNum, modeNum, modesCount;
     UINT adapter;

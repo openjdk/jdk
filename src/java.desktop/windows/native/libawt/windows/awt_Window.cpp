@@ -1331,7 +1331,7 @@ MsgRouting AwtWindow::WmSize(UINT type, int w, int h)
         return mrDoDefault;
     jobject target = GetTarget(env);
     // fix 4167248 : ensure the insets are up-to-date before using
-    BOOL insetsChanged = UpdateInsets(NULL);
+    UpdateInsets(NULL);
     (env)->SetIntField(target, AwtComponent::widthID, ScaleDownX(w));
     (env)->SetIntField(target, AwtComponent::heightID, ScaleDownY(h));
 
@@ -2004,7 +2004,6 @@ void AwtWindow::_ReshapeFrame(void *param)
             // Fix for 4459064 : do not enforce thresholds for embedded frames
             if (!p->IsEmbeddedFrame())
             {
-                jobject peer = p->GetPeer(env);
                 int minWidth = p->ScaleDownX(::GetSystemMetrics(SM_CXMIN));
                 int minHeight = p->ScaleDownY(::GetSystemMetrics(SM_CYMIN));
                 if (w < minWidth)
@@ -2991,7 +2990,6 @@ Java_sun_awt_windows_WWindowPeer_reshapeFrame(JNIEnv *env, jobject self,
 JNIEXPORT jobject JNICALL Java_sun_awt_windows_WWindowPeer_getNativeWindowSize
 (JNIEnv *env, jobject self) {
 
-    jobject res = NULL;
     TRY;
     SizeStruct *ss = new SizeStruct;
     ss->window = env->NewGlobalRef(self);

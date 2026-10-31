@@ -562,7 +562,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_shell_Win32ShellFolder2_getAttributes0
         return 0;
     }
     ULONG attrs = attrsMask;
-    HRESULT res = pParentIShellFolder->GetAttributesOf(1, &pIDL, &attrs);
+    pParentIShellFolder->GetAttributesOf(1, &pIDL, &attrs);
     return attrs;
 }
 

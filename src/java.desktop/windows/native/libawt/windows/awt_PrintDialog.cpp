@@ -204,7 +204,6 @@ Java_sun_awt_windows_WPrintDialogPeer__1show(JNIEnv *env, jobject peer)
     }
 
     AwtComponent *awtParent = (parent != NULL) ? (AwtComponent *)JNI_GET_PDATA(parent) : NULL;
-    HWND hwndOwner = awtParent ? awtParent->GetHWnd() : NULL;
 
     PRINTDLG pd;
     memset(&pd, 0, sizeof(PRINTDLG));

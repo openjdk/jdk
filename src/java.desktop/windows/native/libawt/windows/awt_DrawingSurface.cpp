@@ -174,7 +174,6 @@ void JNICALL JAWTDrawingSurface::UnlockSurface
         DTRACE_PRINTLN("Drawing Surface is NULL");
         return;
     }
-    JAWTDrawingSurface* pds = static_cast<JAWTDrawingSurface*>(ds);
 
     CATCH_BAD_ALLOC;
 }

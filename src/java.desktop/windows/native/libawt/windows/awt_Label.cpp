@@ -265,8 +265,6 @@ void AwtLabel::_SetAlignment(void *param)
 
     SetAlignmentStruct *sas = (SetAlignmentStruct *)param;
     jobject self = sas->label;
-    jint alignment = sas->alignment;
-
     AwtLabel *l = NULL;
 
     PDATA pData;

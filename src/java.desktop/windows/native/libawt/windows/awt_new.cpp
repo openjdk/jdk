@@ -49,8 +49,6 @@
 
 void
 NewHandler::init() {
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-
 #ifdef OUTOFMEM_TEST
     alloc_lock = new CriticalSection();
     logfile = fopen("java.awt.outofmem.txt", "w");

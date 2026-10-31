@@ -203,7 +203,6 @@ OGLSD_SetScratchSurface(JNIEnv *env, jlong pConfigInfo)
 OGLContext *
 OGLSD_MakeOGLContextCurrent(JNIEnv *env, OGLSDOps *srcOps, OGLSDOps *dstOps)
 {
-    WGLSDOps *srcWGLOps = (WGLSDOps *)srcOps->privOps;
     WGLSDOps *dstWGLOps = (WGLSDOps *)dstOps->privOps;
     OGLContext *oglc;
     WGLCtxInfo *ctxinfo;
