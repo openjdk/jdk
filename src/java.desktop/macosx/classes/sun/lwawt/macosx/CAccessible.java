@@ -61,6 +61,9 @@ final class CAccessible extends CFRetainedResource implements Accessible {
     }
 
     /**
+     * This returns immediately if `a` is null, and it throws a NPE if
+     * `a.getAccessibleContext()` is null.
+     *
      * @param createIfUndefined if there is not yet a cached CAccessible for
      *                          the given Accessible, then this boolean
      *                          controls whether this method creates a new
@@ -100,7 +103,7 @@ final class CAccessible extends CFRetainedResource implements Accessible {
                         disposeRecursively(child);
                     }
                 }
-                if (c instanceof Accessible ax) {
+                if (c instanceof Accessible ax && ax.getAccessibleContext() != null) {
                     CAccessible ca = getCAccessible(ax, false);
                     if (ca != null) {
                         ca.dispose();
