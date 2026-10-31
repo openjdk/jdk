@@ -1367,10 +1367,11 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   const uint vlen    = vector_length();
   const BasicType bt = element_basic_type();
   const int vopc     = VectorNode::opcode(sopc, bt);
+  const int ropc     = vector_reduction_opcode();
   PhaseIdealLoop* phase = vtoptimize.vloop_analyzer().vloop().phase();
 
   // Create a vector of identity values.
-  Node* identity = ReductionNode::make_identity_con_scalar(phase->igvn(), sopc, bt);
+  Node* identity = ReductionNode::make_identity_con_scalar(phase->igvn(), ropc, bt);
   phase->set_root_as_ctrl(identity);
   VTransformNode* vtn_identity = new (vtransform.arena()) VTransformOuterNode(vtransform, identity);
 
@@ -1447,7 +1448,8 @@ VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState&
   Node* init = apply_state.transformed_node(in_req(1));
   Node* vec  = apply_state.transformed_node(in_req(2));
 
-  ReductionNode* vn = ReductionNode::make(scalar_opcode(), nullptr, init, vec, element_basic_type());
+  int vopc = vector_reduction_opcode();
+  ReductionNode* vn = ReductionNode::make(vopc, nullptr, init, vec, element_basic_type());
   register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vn->vect_type());
 }
