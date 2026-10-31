@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import jdk.incubator.vector.Float16;
 import jdk.incubator.vector.Vector;
@@ -77,7 +78,9 @@ public class VectorLanewiseOpCompatibleWithTest {
     private static Object[][] operatorProvider(boolean compatible,
                                                Predicate<VectorOperators.Operator> opFilter) {
         return ELEMENT_TYPES.stream()
-                .flatMap(elementType -> Arrays.stream(VectorShape.values())
+                .flatMap(elementType -> Stream.of(VectorShape.S_64_BIT,
+                                VectorShape.S_128_BIT, VectorShape.S_256_BIT,
+                                VectorShape.S_512_BIT, VectorShape.S_Max_BIT)
                         .map(shape -> VectorSpecies.of(elementType, shape)))
                 .flatMap(species -> OPERATORS.stream()
                         // These operators are more restrictive, exclude for now.

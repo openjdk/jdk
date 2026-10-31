@@ -43,7 +43,7 @@ import static jdk.internal.vm.vector.VectorSupport.*;
 @ValueBased
 final class Float16VectorMax extends Float16Vector {
     static final Float16Species VSPECIES =
-        (Float16Species) Float16Vector.SPECIES_MAX;
+        (Float16Species) Float16Vector.SPECIES_DISTINCT_MAX;
 
     static final VectorShape VSHAPE =
         VSPECIES.vectorShape();

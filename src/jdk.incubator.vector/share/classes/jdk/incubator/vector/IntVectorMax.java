@@ -43,7 +43,7 @@ import static jdk.internal.vm.vector.VectorSupport.*;
 @ValueBased
 final class IntVectorMax extends IntVector {
     static final IntSpecies VSPECIES =
-        (IntSpecies) IntVector.SPECIES_MAX;
+        (IntSpecies) IntVector.SPECIES_DISTINCT_MAX;
 
     static final VectorShape VSHAPE =
         VSPECIES.vectorShape();
