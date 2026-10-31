@@ -82,6 +82,13 @@ JvmtiAgent::JvmtiAgent(const char* name, const char* options, bool is_absolute_p
   _dynamic(dynamic),
   _xrun(false) {}
 
+JvmtiAgent::~JvmtiAgent() {
+  os::free(const_cast<char*>(_name));
+  os::free(const_cast<char*>(_options));
+  // lib handle is managed at the load site (on error, either unloaded or the process is shut down)
+  os::free(const_cast<char*>(_os_lib_path));
+}
+
 JvmtiAgent* JvmtiAgent::next() const {
   return AtomicAccess::load_acquire(&_next);
 }
