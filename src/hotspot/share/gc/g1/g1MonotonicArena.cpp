@@ -71,15 +71,25 @@ void G1MonotonicArena::SegmentFreeList::print_on(outputStream* out, const char* 
 
 G1MonotonicArena::Segment* G1MonotonicArena::SegmentFreeList::get_all(size_t& num_segments,
                                                                       size_t& mem_size) {
-  GlobalCounter::CriticalSection cs(Thread::current());
-
-  Segment* result = _list.pop_all();
-  num_segments = _num_segments.load_relaxed();
-  mem_size = _mem_size.load_relaxed();
+  Segment* result;
+  {
+    GlobalCounter::CriticalSection cs(Thread::current());
+    result = _list.pop_all();
+  }
 
   if (result != nullptr) {
+    // Let concurrent get() calls finish the counter updates before doing the
+    // snapshot and the subtraction. Later get() call will see the empty list
+    // and not update the counters.
+    GlobalCounter::write_synchronize();
+    num_segments = _num_segments.load_relaxed();
+    mem_size = _mem_size.load_relaxed();
+
     _num_segments.sub_then_fetch(num_segments, memory_order_relaxed);
     _mem_size.sub_then_fetch(mem_size, memory_order_relaxed);
+  } else {
+    num_segments = 0;
+    mem_size = 0;
   }
   return result;
 }
