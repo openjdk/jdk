@@ -1139,6 +1139,7 @@ public:
   bool is_adjacent_to_and_before(const MemPointer& other) const;
   bool never_overlaps_with(const MemPointer& other) const;
   bool always_overlaps_with(const MemPointer& other) const;
+  bool always_contains(const MemPointer& other) const;
 
 #ifndef PRODUCT
   void print_form_on(outputStream* st) const {
