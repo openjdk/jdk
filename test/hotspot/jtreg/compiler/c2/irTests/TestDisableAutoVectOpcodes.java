@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2026, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8275275
+ * @bug 8275275 8370677
  * @summary Fix performance regression after auto-vectorization on aarch64 NEON.
  * @requires os.arch=="aarch64"
  * @library /test/lib /
@@ -74,46 +74,6 @@ public class TestDisableAutoVectOpcodes {
         for(int i = 0; i < SIZE; i++) {
             longa[i] = longa[i] * longb[i];
         }
-    }
-
-    @Test
-    @IR(failOn = {IRNode.ADD_REDUCTION_VF})
-    private static void testAddReductionVF() {
-        float result = 1;
-        for(int i = 0; i < SIZE; i++) {
-            result += (floata[i] + floatb[i]);
-        }
-        fresult += result;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.ADD_REDUCTION_VD})
-    private static void testAddReductionVD() {
-        double result = 1;
-        for(int i = 0; i < SIZE; i++) {
-            result += (doublea[i] + doubleb[i]);
-        }
-        dresult += result;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.MUL_REDUCTION_VF})
-    private static void testMulReductionVF() {
-        float result = 1;
-        for(int i = 0; i < SIZE; i++) {
-            result *= (floata[i] + floatb[i]);
-        }
-        fresult += result;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.MUL_REDUCTION_VD})
-    private static void testMulReductionVD() {
-        double result = 1;
-        for(int i = 0; i < SIZE; i++) {
-            result *= (doublea[i] + doubleb[i]);
-        }
-        dresult += result;
     }
 
     @Test

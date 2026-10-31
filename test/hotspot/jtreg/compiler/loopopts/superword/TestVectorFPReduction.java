@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Arm Limited. All rights reserved.
+ * Copyright (c) 2024, 2026, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8320725
+ * @bug 8320725 8370677
  * @summary Ensure strictly ordered AddReductionVF/VD and MulReductionVF/VD nodes
             are generated when these operations are auto-vectorized
  * @library /test/lib /
@@ -50,8 +50,10 @@ public class TestVectorFPReduction {
     }
 
     @Test
-    @IR(failOn = {IRNode.ADD_REDUCTION_VF},
-        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+    @IR(counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VF, ">=1"},
+        failOn = {"no_strict_order"},
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"},
+        phase = CompilePhase.PRINT_IDEAL)
     @IR(counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VF, ">=1"},
         failOn = {"no_strict_order"},
         applyIfCPUFeatureOr = {"sve", "true", "sse2", "true", "rvv", "true"},
@@ -65,8 +67,10 @@ public class TestVectorFPReduction {
     }
 
     @Test
-    @IR(failOn = {IRNode.ADD_REDUCTION_VD},
-        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+    @IR(counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VD, ">=1"},
+        failOn = {"no_strict_order"},
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"},
+        phase = CompilePhase.PRINT_IDEAL)
     @IR(counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VD, ">=1"},
         failOn = {"no_strict_order"},
         applyIfCPUFeatureOr = {"sve", "true", "sse2", "true", "rvv", "true"},
@@ -80,8 +84,10 @@ public class TestVectorFPReduction {
     }
 
     @Test
-    @IR(failOn = {IRNode.MUL_REDUCTION_VF},
-        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+    @IR(counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VF, ">=1"},
+        failOn = {"no_strict_order"},
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"},
+        phase = CompilePhase.PRINT_IDEAL)
     @IR(counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VF, ">=1"},
         failOn = {"no_strict_order"},
         applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
@@ -95,8 +101,10 @@ public class TestVectorFPReduction {
     }
 
     @Test
-    @IR(failOn = {IRNode.MUL_REDUCTION_VD},
-        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+    @IR(counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VD, ">=1"},
+        failOn = {"no_strict_order"},
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"},
+        phase = CompilePhase.PRINT_IDEAL)
     @IR(counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VD, ">=1"},
         failOn = {"no_strict_order"},
         applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
