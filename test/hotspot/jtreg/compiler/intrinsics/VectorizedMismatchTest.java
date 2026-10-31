@@ -24,8 +24,9 @@
 package compiler.intrinsics;
 
 /*
- * @test
+ * @test id=x86
  * @requires vm.opt.final.UseVectorizedMismatchIntrinsic == true
+ * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.util
  *
@@ -37,6 +38,22 @@ package compiler.intrinsics;
  *  @run main/othervm -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,*::test*
  *                    -Xbatch -XX:-TieredCompilation
  *                    -XX:+UnlockDiagnosticVMOptions -XX:UseAVX=3 -XX:AVX3Threshold=0
+ *                     compiler.intrinsics.VectorizedMismatchTest
+ */
+
+/*
+ * @test id=riscv64
+ * @requires vm.opt.final.UseVectorizedMismatchIntrinsic == true
+ * @requires os.arch=="riscv64"
+ * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.util
+ *
+ *  @run main/othervm -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,*::test*
+ *                    -Xbatch -XX:-TieredCompilation
+ *                     compiler.intrinsics.VectorizedMismatchTest
+ *
+ *  @run main/othervm -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,*::test*
+ *                    -Xbatch -XX:TieredStopAtLevel=1
  *                     compiler.intrinsics.VectorizedMismatchTest
  */
 
