@@ -735,6 +735,18 @@ void CallNode::dump_spec(outputStream *st) const {
   if (jvms() != nullptr)  jvms()->dump_spec(st);
 }
 
+ciKlass* AllocateNode::allocation_klass() const {
+  const Node* const klass_node = in(KlassNode);
+  if (klass_node == nullptr) {
+    return nullptr;
+  }
+  const TypeKlassPtr* const klass_ptr = klass_node->bottom_type()->isa_klassptr();
+  if (klass_ptr == nullptr || !klass_ptr->klass_is_exact()) {
+    return nullptr;
+  }
+  return klass_ptr->exact_klass();
+}
+
 void AllocateNode::dump_spec(outputStream* st) const {
   st->print(" ");
   if (tf() != nullptr) {
@@ -743,20 +755,16 @@ void AllocateNode::dump_spec(outputStream* st) const {
   if (_cnt != COUNT_UNKNOWN) {
     st->print(" C=%f", _cnt);
   }
-  const Node* const klass_node = in(KlassNode);
-  if (klass_node != nullptr) {
-    const TypeKlassPtr* const klass_ptr = klass_node->bottom_type()->isa_klassptr();
-
-    if (klass_ptr != nullptr && klass_ptr->klass_is_exact()) {
-      st->print(" allocationKlass:");
-      klass_ptr->exact_klass()->print_name_on(st);
-    }
+  ciKlass* alloc_klass = allocation_klass();
+  if (alloc_klass != nullptr) {
+    st->print(" allocationKlass:");
+    alloc_klass->print_name_on(st);
   }
   if (jvms() != nullptr) {
     jvms()->dump_spec(st);
   }
 }
-#endif
+#endif // !PRODUCT
 
 const Type *CallNode::bottom_type() const { return tf()->range_cc(); }
 const Type* CallNode::Value(PhaseGVN* phase) const {
@@ -1365,7 +1373,7 @@ bool CallStaticJavaNode::remove_unknown_flat_array_load(PhaseIterGVN* igvn, Node
   }
 
   address call_addr = OptoRuntime::uncommon_trap_blob()->entry_point();
-  CallNode* unc = new CallStaticJavaNode(OptoRuntime::uncommon_trap_Type(), call_addr, "uncommon_trap", nullptr);
+  CallNode* unc = new CallStaticJavaNode(OptoRuntime::uncommon_trap_Type(), call_addr, "uncommon_trap", nullptr, TypePtr::BOTTOM);
   unc->init_req(TypeFunc::Control, call->in(0));
   unc->init_req(TypeFunc::I_O, call->in(TypeFunc::I_O));
   unc->init_req(TypeFunc::Memory, call->in(TypeFunc::Memory));
@@ -1448,7 +1456,7 @@ Node* CallStaticJavaNode::replace_identity_hash_code(PhaseIterGVN* igvn) {
   }
   Node* new_mem = kit.reset_memory();
   assert(in(TypeFunc::Memory) == new_mem, "must not modify memory");
-  return TupleNode::make(tf()->range_cc(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
+  return TupleNode::make(tf()->range_cc(), out_adr_type(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
 }
 
 // Try to replace a runtime call to the substitutability test by either a simple pointer comparison
@@ -1495,7 +1503,7 @@ Node* CallStaticJavaNode::replace_is_substitutable(PhaseIterGVN* igvn) {
   }
   Node* new_mem = kit.reset_memory();
   assert(in(TypeFunc::Memory) == new_mem, "must not modify memory");
-  return TupleNode::make(tf()->range_cc(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
+  return TupleNode::make(tf()->range_cc(), out_adr_type(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
 }
 
 #ifndef PRODUCT
@@ -1664,7 +1672,7 @@ bool CallLeafPureNode::is_dead() const {
 TupleNode* CallLeafPureNode::make_tuple_of_input_state_and_top_return_values(const Compile* C) const {
   // Transparently propagate input state but parameters
   TupleNode* tuple = TupleNode::make(
-      tf()->range_cc(),
+      tf()->range_cc(), nullptr,
       in(TypeFunc::Control),
       in(TypeFunc::I_O),
       in(TypeFunc::Memory),
@@ -1878,15 +1886,15 @@ void SafePointNode::grow_stack(JVMState* jvms, uint grow_by) {
   jvms->set_endoff(endoff + grow_by);
 }
 
-void SafePointNode::push_monitor(const FastLockNode *lock) {
+void SafePointNode::push_monitor(BoxLockNode* box, Node* obj) {
   // Add a LockNode, which points to both the original BoxLockNode (the
   // stack space for the monitor) and the Object being locked.
   const int MonitorEdges = 2;
   assert(JVMState::logMonitorEdges == exact_log2(MonitorEdges), "correct MonitorEdges");
   assert(req() == jvms()->endoff(), "correct sizing");
   int nextmon = jvms()->scloff();
-  ins_req(nextmon,   lock->box_node());
-  ins_req(nextmon+1, lock->obj_node());
+  ins_req(nextmon, box);
+  ins_req(nextmon+1, obj);
   jvms()->set_scloff(nextmon + MonitorEdges);
   jvms()->set_endoff(req());
 }
@@ -1906,13 +1914,13 @@ void SafePointNode::pop_monitor() {
   assert(jvms()->nof_monitors() == num_before_pop-1, "");
 }
 
-Node *SafePointNode::peek_monitor_box() const {
+BoxLockNode* SafePointNode::peek_monitor_box() const {
   int mon = jvms()->nof_monitors() - 1;
   assert(mon >= 0, "must have a monitor");
   return monitor_box(jvms(), mon);
 }
 
-Node *SafePointNode::peek_monitor_obj() const {
+Node* SafePointNode::peek_monitor_obj() const {
   int mon = jvms()->nof_monitors() - 1;
   assert(mon >= 0, "must have a monitor");
   return monitor_obj(jvms(), mon);
@@ -2082,10 +2090,9 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
                            Node *size, Node *klass_node,
                            Node* initial_test,
                            ValueTypeNode* value_type_node)
-  : CallNode(atype, nullptr, TypeRawPtr::BOTTOM)
+  : CallNode(atype, nullptr, TypeRawPtr::BOTTOM, TypePtr::BOTTOM)
 {
   init_class_id(Class_Allocate);
-  init_flags(Flag_is_macro);
   _is_scalar_replaceable = false;
   _is_non_escaping = false;
   _is_allocation_MemBar_redundant = false;
@@ -2265,17 +2272,8 @@ uint LockNode::size_of() const { return sizeof(*this); }
 // Locking and unlocking have a canonical form in ideal that looks
 // roughly like this:
 //
-//              <obj>
-//                | \\------+
-//                |  \       \
-//                | BoxLock   \
-//                |  |   |     \
-//                |  |    \     \
-//                |  |   FastLock
-//                |  |   /
-//                |  |  /
-//                |  |  |
-//
+//             obj  BoxLock
+//               \   /
 //               Lock
 //                |
 //            Proj #0
@@ -2352,50 +2350,6 @@ bool AbstractLockNode::find_matching_unlock(const Node* ctrl, LockNode* lock,
     }
   }
   return false;
-}
-
-//
-// Find the lock matching an unlock.  Returns null if a safepoint
-// or complicated control is encountered first.
-LockNode *AbstractLockNode::find_matching_lock(UnlockNode* unlock) {
-  LockNode *lock_result = nullptr;
-  // find the matching lock, or an intervening safepoint
-  Node *ctrl = next_control(unlock->in(0));
-  while (1) {
-    assert(ctrl != nullptr, "invalid control graph");
-    assert(!ctrl->is_Start(), "missing lock for unlock");
-    if (ctrl->is_top()) break;  // dead control path
-    if (ctrl->is_Proj()) ctrl = ctrl->in(0);
-    if (ctrl->is_SafePoint()) {
-        break;  // found a safepoint (may be the lock we are searching for)
-    } else if (ctrl->is_Region()) {
-      // Check for a simple diamond pattern.  Punt on anything more complicated
-      if (ctrl->req() == 3 && ctrl->in(1) != nullptr && ctrl->in(2) != nullptr) {
-        Node *in1 = next_control(ctrl->in(1));
-        Node *in2 = next_control(ctrl->in(2));
-        if (((in1->is_IfTrue() && in2->is_IfFalse()) ||
-             (in2->is_IfTrue() && in1->is_IfFalse())) && (in1->in(0) == in2->in(0))) {
-          ctrl = next_control(in1->in(0)->in(0));
-        } else {
-          break;
-        }
-      } else {
-        break;
-      }
-    } else {
-      ctrl = next_control(ctrl->in(0));  // keep searching
-    }
-  }
-  if (ctrl->is_Lock()) {
-    LockNode *lock = ctrl->as_Lock();
-    Node* lock_obj = lock->obj_node();
-    Node* unlock_obj = unlock->obj_node();
-    if (lock_obj->eqv_uncast(unlock_obj) &&
-        BoxLockNode::same_slot(lock->box_node(), unlock->box_node())) {
-      lock_result = lock;
-    }
-  }
-  return lock_result;
 }
 
 // This code corresponds to case 3 above.
@@ -2512,8 +2466,7 @@ void AbstractLockNode::dump_compact_spec(outputStream* st) const {
 #endif
 
 //=============================================================================
-Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-
+Node* LockNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // perform any generic optimizations first (returns 'this' or null)
   Node *result = SafePointNode::Ideal(phase, can_reshape);
   if (result != nullptr)  return result;
@@ -2693,7 +2646,7 @@ bool LockNode::is_nested_lock_region(Compile * c) {
     // Loop over monitors
     for (int idx = 0; idx < num_mon; idx++) {
       Node* obj_node = sfn->monitor_obj(jvms, idx);
-      BoxLockNode* box_node = sfn->monitor_box(jvms, idx)->as_BoxLock();
+      BoxLockNode* box_node = sfn->monitor_box(jvms, idx);
       if ((box_node->stack_slot() < stk_slot) && obj_node->eqv_uncast(obj)) {
         box->set_nested();
         return true;
@@ -2821,7 +2774,6 @@ PowDNode::PowDNode(Compile* C, Node* base, Node* exp)
         OptoRuntime::Math_DD_D_Type(),
         StubRoutines::dpow() != nullptr ? StubRoutines::dpow() : CAST_FROM_FN_PTR(address, SharedRuntime::dpow),
         "pow") {
-  add_flag(Flag_is_macro);
   C->add_macro_node(this);
 
   init_req(TypeFunc::Parms + 0, base);
@@ -2959,7 +2911,7 @@ TupleNode* PowDNode::make_tuple_of_input_state_and_result(PhaseIterGVN* phase, N
   Compile* C = phase->C;
   C->remove_macro_node(this);
   TupleNode* tuple = TupleNode::make(
-      tf()->range_cc(),
+      tf()->range_cc(), nullptr,
       control,
       in(TypeFunc::I_O),
       in(TypeFunc::Memory),

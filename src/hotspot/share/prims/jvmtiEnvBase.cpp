@@ -408,22 +408,22 @@ JvmtiEnvBase::set_native_method_prefixes(jint prefix_count, char** prefixes) {
     _native_method_prefixes = nullptr;
   } else {
     // there are prefixes, allocate an array to hold them, and fill it
-    char** new_prefixes = (char**)os::malloc((prefix_count) * sizeof(char*), mtInternal);
+    char** new_prefixes = (char**)os::malloc((prefix_count) * sizeof(char*), mtServiceability);
     if (new_prefixes == nullptr) {
       return JVMTI_ERROR_OUT_OF_MEMORY;
     }
     for (int i = 0; i < prefix_count; i++) {
       char* prefix = prefixes[i];
       if (prefix == nullptr) {
-        for (int j = 0; j < (i-1); j++) {
+        for (int j = 0; j < i; j++) {
           os::free(new_prefixes[j]);
         }
         os::free(new_prefixes);
         return JVMTI_ERROR_NULL_POINTER;
       }
-      prefix = os::strdup(prefixes[i]);
+      prefix = os::strdup(prefixes[i], mtServiceability);
       if (prefix == nullptr) {
-        for (int j = 0; j < (i-1); j++) {
+        for (int j = 0; j < i; j++) {
           os::free(new_prefixes[j]);
         }
         os::free(new_prefixes);

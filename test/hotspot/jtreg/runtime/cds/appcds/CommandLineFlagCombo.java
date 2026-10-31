@@ -30,6 +30,7 @@
  * via the -vmoptions command line option of JTREG. vm.gc==null will help the test case to discard the explicitly passed
  * vm options.
  * @requires (vm.gc=="null")
+ * @requires vm.cds.default.archive.available
  * @summary Test command line flag combinations that
  *          could likely affect the behaviour of AppCDS
  * @library /test/lib

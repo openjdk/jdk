@@ -343,6 +343,12 @@ public class IRNode {
         superWordNodes(ADD_REDUCTION_VL, "AddReductionVL");
     }
 
+    public static final String ARRAY_COPY = PREFIX + "ARRAY_COPY" + POSTFIX;
+    static {
+        String regex = START + "ArrayCopy" + MID + END;
+        macroNodes(ARRAY_COPY, regex);
+    }
+
     public static final String OPAQUE_MULTIVERSIONING = PREFIX + "OPAQUE_MULTIVERSIONING" + POSTFIX;
     static {
         beforeMatchingNameRegex(OPAQUE_MULTIVERSIONING, "OpaqueMultiversioning");
@@ -490,6 +496,12 @@ public class IRNode {
         superWordNodes(AND_REDUCTION_V, "AndReductionV");
     }
 
+    public static final String ANY_LOOP = PREFIX + "ANY_LOOP" + POSTFIX;
+    static {
+        String regex = START + "(Counted|LongCounted|OuterStripMined)?Loop\\b" + MID + END;
+        fromBeforeCountedLoops(ANY_LOOP, regex);
+    }
+
     public static final String CALL = PREFIX + "CALL" + POSTFIX;
     static {
         beforeMatchingNameRegex(CALL, "Call.*Java");
@@ -570,13 +582,13 @@ public class IRNode {
 
     public static final String CHECKCAST_ARRAY = PREFIX + "CHECKCAST_ARRAY" + POSTFIX;
     static {
-        String regex = "(((?i:cmp|CLFI|CLR).*aryklassptr:\\[.*:Constant|.*(?i:mov|mv|or).*aryklassptr:\\[.*:Constant.*\\R.*(cmp|CMP|CLR))" + END;
+        String regex = "(((?i:cmp|CLFI|CLR).*aryklassptr:\\[.*:Constant|.*(?i:mov|mv|or|load).*aryklassptr:\\[.*:Constant.*\\R.*(cmp|CMP|CLR))" + END;
         optoOnly(CHECKCAST_ARRAY, regex);
     }
 
     public static final String CHECKCAST_ARRAY_OF = COMPOSITE_PREFIX + "CHECKCAST_ARRAY_OF" + POSTFIX;
     static {
-        String regex = "(((?i:cmp|CLFI|CLR).*aryklassptr:\\[.*" + IS_REPLACED + ":.*:Constant|.*(?i:mov|mv|or).*aryklassptr:\\[.*" + IS_REPLACED + ":.*:Constant.*\\R.*(cmp|CMP|CLR))" + END;
+        String regex = "(((?i:cmp|CLFI|CLR).*aryklassptr:\\[.*" + IS_REPLACED + ":.*:Constant|.*(?i:mov|mv|or|load).*aryklassptr:\\[.*" + IS_REPLACED + ":.*:Constant.*\\R.*(cmp|CMP|CLR))" + END;
         optoOnly(CHECKCAST_ARRAY_OF, regex);
     }
 
@@ -1705,6 +1717,16 @@ public class IRNode {
         superWordNodes(UMAX_REDUCTION_V, "UMaxReductionV");
     }
 
+    public static final String NEG_F = PREFIX + "NEG_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(NEG_F, "NegF");
+    }
+
+    public static final String NEG_D = PREFIX + "NEG_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(NEG_D, "NegD");
+    }
+
     public static final String NEG_VF = VECTOR_PREFIX + "NEG_VF" + POSTFIX;
     static {
         vectorNode(NEG_VF, "NegVF", TYPE_FLOAT);
@@ -2482,6 +2504,23 @@ public class IRNode {
         machOnlyNameRegex(RISCV_VAND_NOTL_VX, "vand_notL_vx");
     }
 
+    public static final String RISCV_LOAD_N2P_UNSCALED = PREFIX + "RISCV_LOAD_N2P_UNSCALED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_LOAD_N2P_UNSCALED, "loadN2P_unscaled");
+    }
+
+    // Conditional move whose condition is a VectorTest. One rule per value type.
+    // Exclude the separate _negate rules that materialize boolean results.
+    public static final String RISCV_CMOVE_VTEST_ANYTRUE = PREFIX + "RISCV_CMOVE_VTEST_ANYTRUE" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_CMOVE_VTEST_ANYTRUE, "cmov[ILFDPN]_vtest_anytrue\\b");
+    }
+
+    public static final String RISCV_CMOVE_VTEST_ALLTRUE = PREFIX + "RISCV_CMOVE_VTEST_ALLTRUE" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_CMOVE_VTEST_ALLTRUE, "cmov[ILFDPN]_vtest_alltrue\\b");
+    }
+
     public static final String RISCV_VAND_NOTI_VX_MASKED = PREFIX + "RISCV_VAND_NOTI_VX_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(RISCV_VAND_NOTI_VX_MASKED, "vand_notI_vx_masked");
@@ -2490,6 +2529,16 @@ public class IRNode {
     public static final String RISCV_VAND_NOTL_VX_MASKED = PREFIX + "RISCV_VAND_NOTL_VX_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(RISCV_VAND_NOTL_VX_MASKED, "vand_notL_vx_masked");
+    }
+
+    public static final String RISCV_VCOMPRESS_BITS_MASKED = PREFIX + "RISCV_VCOMPRESS_BITS_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VCOMPRESS_BITS_MASKED, "vcompressBits_masked");
+    }
+
+    public static final String RISCV_VEXPAND_BITS_MASKED = PREFIX + "RISCV_VEXPAND_BITS_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VEXPAND_BITS_MASKED, "vexpandBits_masked");
     }
 
     public static final String VECTOR_SLICE_B = VECTOR_PREFIX + "VECTOR_SLICE_B" + POSTFIX;
@@ -2748,9 +2797,44 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_MASK_CAST, "VectorMaskCast");
     }
 
-    public static final String VECTOR_REINTERPRET = PREFIX + "VECTOR_REINTERPRET" + POSTFIX;
+    public static final String VECTOR_REINTERPRET_B = VECTOR_PREFIX + "VECTOR_REINTERPRET_B" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_REINTERPRET, "VectorReinterpret");
+        vectorNode(VECTOR_REINTERPRET_B, "VectorReinterpret", TYPE_BYTE);
+    }
+
+    public static final String VECTOR_REINTERPRET_C = VECTOR_PREFIX + "VECTOR_REINTERPRET_C" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_C, "VectorReinterpret", TYPE_CHAR);
+    }
+
+    public static final String VECTOR_REINTERPRET_S = VECTOR_PREFIX + "VECTOR_REINTERPRET_S" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_S, "VectorReinterpret", TYPE_SHORT);
+    }
+
+    public static final String VECTOR_REINTERPRET_I = VECTOR_PREFIX + "VECTOR_REINTERPRET_I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_I, "VectorReinterpret", TYPE_INT);
+    }
+
+    public static final String VECTOR_REINTERPRET_L = VECTOR_PREFIX + "VECTOR_REINTERPRET_L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_L, "VectorReinterpret", TYPE_LONG);
+    }
+
+    public static final String VECTOR_REINTERPRET_F = VECTOR_PREFIX + "VECTOR_REINTERPRET_F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_F, "VectorReinterpret", TYPE_FLOAT);
+    }
+
+    public static final String VECTOR_REINTERPRET_D = VECTOR_PREFIX + "VECTOR_REINTERPRET_D" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_D, "VectorReinterpret", TYPE_DOUBLE);
+    }
+
+    public static final String VECTOR_REINTERPRET_Z = VECTOR_PREFIX + "VECTOR_REINTERPRET_Z" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_Z, "VectorReinterpret", TYPE_BOOLEAN);
     }
 
     public static final String VECTOR_UCAST_B2S = VECTOR_PREFIX + "VECTOR_UCAST_B2S" + POSTFIX;
@@ -3116,6 +3200,11 @@ public class IRNode {
     public static final String X86_VCAST_HF2X = PREFIX + "X86_VCAST_HF2X" + POSTFIX;
     static {
         machOnlyNameRegex(X86_VCAST_HF2X, "castHFtoX_reg_evex");
+    }
+
+    public static final String X86_VCONV_HF2F = PREFIX + "X86_VCONV_HF2F" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCONV_HF2F, "vconvHF2F_reg_(reg|mem)");
     }
 
     public static final String XOR = PREFIX + "XOR" + POSTFIX;

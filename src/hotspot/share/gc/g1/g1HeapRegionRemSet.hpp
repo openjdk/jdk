@@ -26,9 +26,9 @@
 #define SHARE_GC_G1_G1HEAPREGIONREMSET_HPP
 
 #include "gc/g1/g1CardSet.hpp"
+#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CodeRootSet.hpp"
-#include "gc/g1/g1CollectionSetCandidates.hpp"
 
 class G1FromCardCache;
 class outputStream;
@@ -94,15 +94,6 @@ public:
   bool occupancy_less_or_equal_than(size_t occ) const {
     return (code_roots_length() == 0) && card_set()->occupancy_less_or_equal_to(occ);
   }
-
-  // Iterate the cards in this remembered set for merging them into the card table.
-  // The passed closure must be a CardOrRangeVisitor; we use a template parameter
-  // to pass it in to facilitate inlining as much as possible.
-  template <class CardOrRangeVisitor>
-  inline void iterate_for_merge(CardOrRangeVisitor& cl);
-
-  template <class CardOrRangeVisitor>
-  inline static void iterate_for_merge(G1CardSet* card_set, CardOrRangeVisitor& cl);
 
   size_t occupied() {
     assert(has_card_set_group(), "pre-condition");

@@ -131,14 +131,9 @@ void G1FreeRegionList::add_list_common_start(G1FreeRegionList* from_list) {
   }
 
   #ifdef ASSERT
-  G1FreeRegionListIterator iter(from_list);
-  while (iter.more_available()) {
-    G1HeapRegion* hr = iter.get_next();
-    // In set_containing_set() we check that we either set the value
-    // from null to non-null or vice versa to catch bugs. So, we have
-    // to null it first before setting it to the value.
-    hr->set_containing_set(nullptr);
-    hr->set_containing_set(this);
+  for (G1HeapRegion* r = from_list->_head; r != nullptr; r = r->next()) {
+    r->set_containing_set(nullptr);
+    r->set_containing_set(this);
   }
   #endif // ASSERT
 }
@@ -373,8 +368,8 @@ G1FreeRegionList::~G1FreeRegionList() {
   }
 }
 
-G1FreeRegionList::NodeInfo::NodeInfo() : _numa(G1NUMA::numa()), _num_regions_on_node(nullptr),
-                                         _num_nodes(_numa->num_active_nodes()) {
+G1FreeRegionList::NodeInfo::NodeInfo() : _num_regions_on_node(nullptr),
+                                         _num_nodes(G1NUMA::numa()->num_active_nodes()) {
   assert(UseNUMA, "Invariant");
 
   _num_regions_on_node = NEW_C_HEAP_ARRAY(uint, _num_nodes, mtGC);

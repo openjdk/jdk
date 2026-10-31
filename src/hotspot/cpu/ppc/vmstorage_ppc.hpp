@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,8 +22,8 @@
  * questions.
  */
 
-#ifndef CPU_PPC_VMSTORAGE_PPC_INLINE_HPP
-#define CPU_PPC_VMSTORAGE_PPC_INLINE_HPP
+#ifndef CPU_PPC_VMSTORAGE_PPC_HPP
+#define CPU_PPC_VMSTORAGE_PPC_HPP
 
 #include <cstdint>
 
@@ -107,4 +107,4 @@ inline VMStorage as_VMStorage(VMReg reg, BasicType bt) {
   return VMStorage::invalid();
 }
 
-#endif // CPU_PPC_VMSTORAGE_PPC_INLINE_HPP
+#endif // CPU_PPC_VMSTORAGE_PPC_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ Disposer_AddRecord(JNIEnv *env, jobject obj, GeneralDisposeFunc disposer, jlong 
 
     if (dispClass == NULL) {
         /* Needed to initialize the Disposer class as it may be not yet referenced */
-        jclass clazz = (*env)->FindClass(env, "sun/java2d/Disposer");
+        (*env)->FindClass(env, "sun/java2d/Disposer");
         if ((*env)->ExceptionCheck(env)) {
             // If there's exception pending, we'll just return.
             return;

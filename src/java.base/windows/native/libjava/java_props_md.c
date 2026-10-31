@@ -40,10 +40,6 @@
 #include "locale_str.h"
 #include "java_props.h"
 
-#ifndef PROCESSOR_ARCHITECTURE_AMD64
-#define PROCESSOR_ARCHITECTURE_AMD64 9
-#endif
-
 typedef void (WINAPI *PGNSI)(LPSYSTEM_INFO);
 static BOOL SetupI18nProps(LCID lcid, char** language, char** script, char** country,
                char** variant);
@@ -225,36 +221,6 @@ getHomeFromShell32()
         }
     }
     return u_path;
-}
-
-static BOOL
-haveMMX(void)
-{
-    return IsProcessorFeaturePresent(PF_MMX_INSTRUCTIONS_AVAILABLE);
-}
-
-static const char *
-cpu_isalist(void)
-{
-    SYSTEM_INFO info;
-    GetSystemInfo(&info);
-    switch (info.wProcessorArchitecture) {
-#ifdef PROCESSOR_ARCHITECTURE_AMD64
-    case PROCESSOR_ARCHITECTURE_AMD64: return "amd64";
-#endif
-    case PROCESSOR_ARCHITECTURE_INTEL:
-        switch (info.wProcessorLevel) {
-        case 6: return haveMMX()
-            ? "pentium_pro+mmx pentium_pro pentium+mmx pentium i486 i386 i86"
-            : "pentium_pro pentium i486 i386 i86";
-        case 5: return haveMMX()
-            ? "pentium+mmx pentium i486 i386 i86"
-            : "pentium i486 i386 i86";
-        case 4: return "i486 i386 i86";
-        case 3: return "i386 i86";
-        }
-    }
-    return NULL;
 }
 
 static BOOL
@@ -516,9 +482,6 @@ GetJavaProperties(JNIEnv* env)
             sprops.cpu_endian = "little";
         }
     }
-
-    /* CPU ISA list */
-    sprops.cpu_isalist = cpu_isalist();
 
     /*
      * User name

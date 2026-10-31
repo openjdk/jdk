@@ -47,7 +47,7 @@
  *   0 = idle, 1 = marking, 2 = evacuating, 3 = updating refs
  *
  *   For mode:
- *   0 = concurrent, 1 = degenerated, 2 = full
+ *   0 = concurrent, 1 = evacuation failures, 2 = full
  *
  * two variable counters per region, with $max_regions (see above) counters:
  * - sun.gc.shenandoah.regions.region.$i.data

@@ -54,7 +54,3 @@ void DAssert_SetCallback(DASSERT_CALLBACK pfn) {
 
 #endif  /* defined(DEBUG) */
 
-/* The following line is only here to prevent compiler warnings
- * on release (non-debug) builds
- */
-static int dummyVariable = 0;

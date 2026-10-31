@@ -92,8 +92,7 @@ public:
   virtual bool lock(nmethod* nm) {
     ShenandoahNMethodLock* const lock = ShenandoahNMethod::ic_lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
-    lock->lock();
-    return true;
+    return lock->lock();
   }
 
   virtual void unlock(nmethod* nm) {
