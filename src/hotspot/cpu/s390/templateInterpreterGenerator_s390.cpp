@@ -713,6 +713,15 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   return entry;
 }
 
+// Entry for the caller of a frame popped by JVMTI PopFrame when that caller was
+// thawed for the return. Only jumps to the deopt entry, the resize to top_frame_sp
+// the return entry does is not done here.
+address TemplateInterpreterGenerator::generate_popframe_reexecute_entry() {
+  address entry = __ pc();
+  __ jump_to_entry(Interpreter::deopt_entry(vtos, 0), Z_R1_scratch);
+  return entry;
+}
+
 address TemplateInterpreterGenerator::generate_safept_entry_for (TosState state,
                                                                 address runtime_entry) {
   address entry = __ pc();

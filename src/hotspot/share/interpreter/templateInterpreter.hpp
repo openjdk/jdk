@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,7 @@ class TemplateInterpreter: public AbstractInterpreter {
   static EntryPoint _earlyret_entry;                            // entry point to return early from a call
   static EntryPoint _deopt_entry[number_of_deopt_entries];      // entry points to return to from a deoptimization
   static address    _deopt_reexecute_return_entry;
+  static address    _popframe_reexecute_entry;                  // reexecutes the invoke in a caller thawed after JVMTI PopFrame
   static EntryPoint _safept_entry;
 
   static address _invoke_return_entry[number_of_return_addrs];           // for invokestatic, invokespecial, invokevirtual return entries
@@ -177,6 +178,7 @@ class TemplateInterpreter: public AbstractInterpreter {
 
   static address deopt_entry(TosState state, int length);
   static address deopt_reexecute_return_entry()                 { return _deopt_reexecute_return_entry; }
+  static address popframe_reexecute_entry()                     { return _popframe_reexecute_entry; }
   static address return_entry(TosState state, int length, Bytecodes::Code code);
 
   // Safepoint support

@@ -689,6 +689,15 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   return entry;
 }
 
+// Entry for the caller of a frame popped by JVMTI PopFrame when that caller was
+// thawed for the return. Only jumps to the deopt entry, the interpreter state the
+// deopt blob restores before that entry is not restored here.
+address TemplateInterpreterGenerator::generate_popframe_reexecute_entry() {
+  address entry = __ pc();
+  __ jump_to_entry(Interpreter::deopt_entry(vtos, 0), R11_scratch1);
+  return entry;
+}
+
 address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, address runtime_entry) {
   address entry = __ pc();
 

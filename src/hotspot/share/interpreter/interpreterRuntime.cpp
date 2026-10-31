@@ -1563,6 +1563,7 @@ JRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* curre
 JRT_END
 #endif
 
+#if INCLUDE_JVMTI
 // This is a support of the JVMTI PopFrame interface.
 // Make sure it is an invokestatic of a polymorphic intrinsic that has a member_name argument
 // and return it so that it can be reloaded in the list of invokestatic parameters.
@@ -1598,7 +1599,6 @@ oop InterpreterRuntime::popframe_member_name_arg_or_null(address member_name, Me
   return member_name_oop;
 }
 
-#if INCLUDE_JVMTI
 JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current, address member_name,
                                                             Method* method, address bcp))
   current->set_vm_result_oop(popframe_member_name_arg_or_null(member_name, method, bcp));

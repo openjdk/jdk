@@ -510,6 +510,15 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   return entry;
 }
 
+// Entry for the caller of a frame popped by JVMTI PopFrame when that caller was
+// thawed for the return, the invoke is reexecuted. The deopt entry already
+// restores sp and esp from the frame.
+address TemplateInterpreterGenerator::generate_popframe_reexecute_entry() {
+  address entry = __ pc();
+  __ jump_to_entry(Interpreter::deopt_entry(vtos, 0));
+  return entry;
+}
+
 address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type) {
   address entry = __ pc();
   if (type == T_OBJECT) {

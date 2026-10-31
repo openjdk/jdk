@@ -223,17 +223,6 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
 address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step, address continuation) {
   address entry = __ pc();
-  // Restore stack bottom from last_sp when it is set, like the return entry
-  // does. A frame thawed for reexecution after a PopFrame arrives here with
-  // an aligned sp that can sit below the expression stack top.
-  {
-    Label L;
-    __ movptr(rscratch1, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
-    __ testptr(rscratch1, rscratch1);
-    __ jcc(Assembler::zero, L);
-    __ lea(rsp, Address(rbp, rscratch1, Address::times_ptr));
-    __ bind(L);
-  }
 
   // null last_sp until next java call
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
@@ -256,6 +245,19 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   } else {
     __ jump_to_entry(continuation);
   }
+  return entry;
+}
+
+// Entry for the caller of a frame popped by JVMTI PopFrame when that caller was
+// thawed for the return, the invoke is reexecuted with its arguments back on the
+// expression stack.
+address TemplateInterpreterGenerator::generate_popframe_reexecute_entry() {
+  address entry = __ pc();
+  // The thawed frame arrives with an aligned rsp that can sit below the
+  // expression stack top, last_sp has the stack bottom at the call.
+  __ movptr(rscratch1, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(rsp, Address(rbp, rscratch1, Address::times_ptr));
+  __ jump_to_entry(Interpreter::deopt_entry(vtos, 0));
   return entry;
 }
 

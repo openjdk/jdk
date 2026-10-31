@@ -2548,20 +2548,21 @@ UpdateForPopTopFrameClosure::doit(Thread *target) {
       return;
     }
     is_interpreted[frame_count] = vfs.is_interpreted_frame();
-    if (!is_interpreted[frame_count] && vfs.reg_map()->in_cont()) {
-      // A compiled caller frozen in a chunk is deoptimized the way set_frame_pop does it,
-      // the frame being popped stays opaque when it is frozen too.
-      assert(_state->is_virtual(), "invariant");
-      if (frame_count == 0) {
-        _result = JVMTI_ERROR_OPAQUE_FRAME;
-        return;
-      }
+    if (!is_interpreted[frame_count]) {
       javaVFrame* jvf = vfs.asJavaVFrame();
+      if (vfs.reg_map()->in_cont()) {
+        assert(_state->is_virtual(), "invariant");
+        if (frame_count == 0) {
+          // If the top frame is in the heap, PopFrame is not supported.
+          _result = JVMTI_ERROR_OPAQUE_FRAME;
+          return;
+        }
+        heap_jvf[frame_count] = jvf;
+      }
       if (!jvf->fr().can_be_deoptimized()) {
         _result = JVMTI_ERROR_OPAQUE_FRAME;
         return;
       }
-      heap_jvf[frame_count] = jvf;
     }
     frame_sp[frame_count] = vfs.frame_id();
     if (++frame_count > 1) break;
