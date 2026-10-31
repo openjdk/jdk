@@ -121,24 +121,24 @@ class TemplateFrame {
 
     public String $(String name) {
         if (name == null) {
-            throw new RendererException("A '$' name should not be null.");
+            throw new TemplateFrameworkException("A '$' name should not be null.");
         }
         if (!Renderer.isValidHashtagOrDollarName(name)) {
-            throw new RendererException("Is not a valid '$' name: '" + name + "'.");
+            throw new TemplateFrameworkException("Is not a valid '$' name: '" + name + "'.");
         }
         return name + "_" + id;
     }
 
     void addHashtagReplacement(String key, String value) {
         if (key == null) {
-            throw new RendererException("A hashtag replacement should not be null.");
+            throw new TemplateFrameworkException("A hashtag replacement should not be null.");
         }
         if (!Renderer.isValidHashtagOrDollarName(key)) {
-            throw new RendererException("Is not a valid hashtag replacement name: '" + key + "'.");
+            throw new TemplateFrameworkException("Is not a valid hashtag replacement name: '" + key + "'.");
         }
         String previous = findHashtagReplacementInScopes(key);
         if (previous != null) {
-            throw new RendererException("Duplicate hashtag replacement for #" + key + ". " +
+            throw new TemplateFrameworkException("Duplicate hashtag replacement for #" + key + ". " +
                                         "previous: " + previous + ", new: " + value);
         }
         if (isTransparentForHashtag) {
@@ -150,13 +150,13 @@ class TemplateFrame {
 
     String getHashtagReplacement(String key) {
         if (!Renderer.isValidHashtagOrDollarName(key)) {
-            throw new RendererException("Is not a valid hashtag replacement name: '" + key + "'.");
+            throw new TemplateFrameworkException("Is not a valid hashtag replacement name: '" + key + "'.");
         }
         String value = findHashtagReplacementInScopes(key);
         if (value != null) {
             return value;
         }
-        throw new RendererException("Missing hashtag replacement for #" + key);
+        throw new TemplateFrameworkException("Missing hashtag replacement for #" + key);
     }
 
     private String findHashtagReplacementInScopes(String key) {

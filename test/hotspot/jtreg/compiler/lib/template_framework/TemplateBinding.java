@@ -46,11 +46,11 @@ public class TemplateBinding<T extends Template> {
      * Retrieve the Template that was previously bound to the binding.
      *
      * @return The Template that was previously bound with {@link #bind}.
-     * @throws RendererException if no Template was bound yet.
+     * @throws TemplateFrameworkException if no Template was bound yet.
      */
     public T get() {
         if (template == null) {
-            throw new RendererException("Cannot 'get' before 'bind'.");
+            throw new TemplateFrameworkException("Cannot 'get' before 'bind'.");
         }
         return template;
     }
@@ -59,11 +59,11 @@ public class TemplateBinding<T extends Template> {
      * Binds a Template for future reference using {@link #get}.
      *
      * @param template The Template to be bound.
-     * @throws RendererException if a Template was already bound.
+     * @throws TemplateFrameworkException if a Template was already bound.
      */
     public void bind(T template) {
          if (this.template != null) {
-            throw new RendererException("Duplicate 'bind' not allowed.");
+            throw new TemplateFrameworkException("Duplicate 'bind' not allowed.");
         }
         this.template = template;
     }
