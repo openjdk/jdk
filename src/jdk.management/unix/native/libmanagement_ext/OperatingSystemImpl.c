@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,11 +66,6 @@ static jlong page_size = 0;
 #if defined(_ALLBSD_SOURCE) || defined(_AIX)
 #define MB      (1024UL * 1024UL)
 #else
-
-/* This gets us the new structured proc interfaces of 5.6 & later */
-/* - see comment in <sys/procfs.h> */
-#define _STRUCTURED_PROC 1
-#include <sys/procfs.h>
 
 #endif /* _ALLBSD_SOURCE */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 #include <sys/time.h>
 #include "java.h"
-
-#define JAVA_DLL "libjava.so"
 
 /*
  * Find the last occurrence of a string
@@ -116,7 +114,7 @@ LibjavaExists(const char *path)
 {
     char tmp[PATH_MAX + 1];
     struct stat statbuf;
-    JLI_Snprintf(tmp, PATH_MAX, "%s/%s", path, JAVA_DLL);
+    JLI_Snprintf(tmp, PATH_MAX, "%s/%s", path, "libjava.so");
     if (stat(tmp, &statbuf) == 0) {
         return JNI_TRUE;
     }
