@@ -50,14 +50,12 @@ bool IntelJccErratum::is_jcc_erratum_branch(const MachNode* node) {
   return node->is_MachBranch();
 }
 
-int IntelJccErratum::jcc_erratum_taint_node(MachNode* node, PhaseRegAlloc* regalloc) {
+void IntelJccErratum::jcc_erratum_taint_node(MachNode* node) {
   node->add_flag(Node::PD::Flag_intel_jcc_erratum);
-  return node->size(regalloc);
 }
 
-int IntelJccErratum::tag_affected_machnodes(Compile* C, PhaseCFG* cfg, PhaseRegAlloc* regalloc) {
+void IntelJccErratum::tag_affected_machnodes(PhaseCFG* cfg) {
   ResourceMark rm;
-  int nop_size = 0;
   MachNode* last_m = nullptr;
 
   for (uint i = 0; i < cfg->number_of_blocks(); ++i) {
@@ -70,7 +68,7 @@ int IntelJccErratum::tag_affected_machnodes(Compile* C, PhaseCFG* cfg, PhaseRegA
       MachNode* m = node->as_Mach();
       if (is_jcc_erratum_branch(m)) {
         // Found a root jcc erratum branch, flag it as problematic
-        nop_size += jcc_erratum_taint_node(m, regalloc);
+        jcc_erratum_taint_node(m);
 
         if (!m->is_MachReturn() && !m->is_MachCall()) {
           // We might fuse a problematic jcc erratum branch with a preceding
@@ -80,7 +78,7 @@ int IntelJccErratum::tag_affected_machnodes(Compile* C, PhaseCFG* cfg, PhaseRegA
             const Node* const use = m->in(k);
             if (use == last_m && !m->is_MachReturn()) {
               // Flag fused conditions too
-              nop_size += jcc_erratum_taint_node(last_m, regalloc);
+              jcc_erratum_taint_node(last_m);
             }
           }
         }
@@ -90,7 +88,6 @@ int IntelJccErratum::tag_affected_machnodes(Compile* C, PhaseCFG* cfg, PhaseRegA
       }
     }
   }
-  return nop_size;
 }
 
 int IntelJccErratum::compute_padding(uintptr_t current_offset, const MachNode* mach, Block* block, uint index_in_block, PhaseRegAlloc* regalloc) {

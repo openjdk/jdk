@@ -39,14 +39,13 @@ class IntelJccErratum : public AllStatic {
 private:
   // Compute which 32 byte boundary an address corresponds to
   static uintptr_t boundary(uintptr_t addr);
-  static int jcc_erratum_taint_node(MachNode* node, PhaseRegAlloc* regalloc);
+  static void jcc_erratum_taint_node(MachNode* node);
 
 public:
   static bool is_crossing_or_ending_at_32_byte_boundary(uintptr_t start_pc, uintptr_t end_pc);
   static bool is_jcc_erratum_branch(const MachNode* node);
   // Analyze JCC erratum branches. Affected nodes get tagged with Flag_intel_jcc_erratum.
-  // The function returns a conservative estimate of all required nops on all mach nodes.
-  static int tag_affected_machnodes(Compile* C, PhaseCFG* cfg, PhaseRegAlloc* regalloc);
+  static void tag_affected_machnodes(PhaseCFG* cfg);
   // Computes the exact padding for a mach node
   static int compute_padding(uintptr_t current_offset, const MachNode* mach, Block* block, uint index_in_block, PhaseRegAlloc* regalloc);
   static int largest_jcc_size() { return 20; }
