@@ -524,6 +524,9 @@ private:
   // atomics mapping. This flag is false by default and is latched to the final
   // UseZalasr value after all validation completes.
   static bool _use_zalasr_atomics;
+  // Keep native CAS on the baseline ISA until CPU feature initialization completes.
+  static bool _use_zacas_atomics;
+  static bool _use_zabha_atomics;
 
   static void common_initialize();
 
@@ -539,6 +542,8 @@ private:
   static uint32_t initial_vector_length() { return _initial_vector_length; }
 
   static bool use_zalasr_atomics() { return _use_zalasr_atomics; }
+  static bool use_zacas_atomics() { return _use_zacas_atomics; }
+  static bool use_zabha_atomics() { return _use_zabha_atomics; }
 
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 

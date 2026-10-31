@@ -53,6 +53,8 @@ static constexpr bool toolchain_uses_psabi_atomics() {
 
 uint32_t VM_Version::_initial_vector_length = 0;
 bool VM_Version::_use_zalasr_atomics = false;
+bool VM_Version::_use_zacas_atomics = false;
+bool VM_Version::_use_zabha_atomics = false;
 
 #define DEF_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
 VM_Version::ext_##PRETTY##RVExtFeatureValue VM_Version::ext_##PRETTY;
@@ -215,6 +217,8 @@ void VM_Version::common_initialize() {
   // adjustment above has settled. See the comment on _use_zalasr_atomics in
   // vm_version_riscv.hpp.
   _use_zalasr_atomics = UseZalasr;
+  _use_zacas_atomics = UseZacas;
+  _use_zabha_atomics = UseZabha;
 
   if (UseZbb) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {

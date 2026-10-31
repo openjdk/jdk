@@ -32,7 +32,7 @@
 
 // Note that memory_order_conservative requires a strong two-way barrier.
 // For 32- and 64-bit add and xchg that barrier is provided by an explicit
-// AMO with .aqrl. Cmpxchg still uses explicit full barriers.
+// AMO with .aqrl. Cmpxchg needs explicit barriers, including on failure.
 
 #if defined(__clang_major__)
 #define FULL_COMPILER_ATOMIC_SUPPORT
@@ -79,6 +79,72 @@ inline D AtomicAccess::PlatformAdd<byte_size>::fetch_then_add(D volatile* dest, 
   return old_value;
 }
 
+// aqrl encodes [aq, rl]: 0b00 relaxed, 0b10 acquire, 0b01 release, 0b11 acquire-release.
+static constexpr int riscv_amo_aqrl(atomic_memory_order order) {
+  switch (order) {
+    case memory_order_relaxed:
+      return 0b00;
+    case memory_order_acquire:
+      return 0b10;
+    case memory_order_release:
+      return 0b01;
+    case memory_order_acq_rel:
+    case memory_order_seq_cst:
+    case memory_order_conservative:
+      return 0b11;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+// Use .insn so baseline builds do not require assembler support for Zacas/Zabha.
+// .insn r opcode, funct3, funct7, rd, rs1, rs2.
+// opcode: 0x2f selects the AMO instruction group.
+// funct3: 0b000 for byte, 0b010 for word, 0b011 for doubleword.
+// funct7: (AMOCAS funct5 0b00101 << 2) | aqrl = 0x14 | aqrl.
+// rd: expected value in, observed value out; rs1: address; rs2: replacement.
+template<size_t byte_size, atomic_memory_order order, typename T>
+inline T riscv_amocas(T volatile* dest, T compare_value, T exchange_value) {
+  static_assert(byte_size == sizeof(T));
+  static_assert(byte_size == 1 || byte_size == 4 || byte_size == 8);
+  constexpr int width = byte_size == 1 ? 0 : byte_size == 4 ? 2 : 3;
+  constexpr int aqrl = riscv_amo_aqrl(order);
+
+  if constexpr (order == memory_order_seq_cst || order == memory_order_conservative) {
+    // Failed AMOCAS has no release semantics, even with .rl.
+    FULL_MEM_BARRIER;
+  }
+
+  uint64_t old_value = (uint64_t)compare_value;
+  __asm__ __volatile__ (".insn r 0x2f, %3, %4, %0, %1, %2"
+                        : "+r" (old_value)
+                        : "r" (dest), "r" ((uint64_t)exchange_value),
+                          "i" (width), "i" (0x14 | aqrl)
+                        : "memory");
+  return (T)old_value;
+}
+
+template<size_t byte_size, typename T>
+inline T riscv_amocas(T volatile* dest, T compare_value, T exchange_value,
+                     atomic_memory_order order) {
+  switch (order) {
+    case memory_order_relaxed:
+      return riscv_amocas<byte_size, memory_order_relaxed>(dest, compare_value, exchange_value);
+    case memory_order_acquire:
+      return riscv_amocas<byte_size, memory_order_acquire>(dest, compare_value, exchange_value);
+    case memory_order_release:
+      return riscv_amocas<byte_size, memory_order_release>(dest, compare_value, exchange_value);
+    case memory_order_acq_rel:
+      return riscv_amocas<byte_size, memory_order_acq_rel>(dest, compare_value, exchange_value);
+    case memory_order_seq_cst:
+      return riscv_amocas<byte_size, memory_order_seq_cst>(dest, compare_value, exchange_value);
+    case memory_order_conservative:
+      return riscv_amocas<byte_size, memory_order_conservative>(dest, compare_value, exchange_value);
+    default:
+      ShouldNotReachHere();
+  }
+}
+
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
 template<>
 template<typename T>
@@ -87,6 +153,10 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest __attribu
                                                       T exchange_value,
                                                       atomic_memory_order order) const {
   static_assert(1 == sizeof(T));
+
+  if (VM_Version::use_zacas_atomics() && VM_Version::use_zabha_atomics()) {
+    return riscv_amocas<1>(dest, compare_value, exchange_value, order);
+  }
 
   if (order != memory_order_relaxed) {
     FULL_MEM_BARRIER;
@@ -138,6 +208,10 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest __attribu
                                                       T exchange_value,
                                                       atomic_memory_order order) const {
   static_assert(4 == sizeof(T));
+
+  if (VM_Version::use_zacas_atomics()) {
+    return riscv_amocas<4>(dest, compare_value, exchange_value, order);
+  }
 
   int32_t old_value;
   uint64_t rc_temp;
@@ -206,6 +280,16 @@ inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest _
 #endif
 
   static_assert(byte_size == sizeof(T));
+  if constexpr (byte_size == 1) {
+    if (VM_Version::use_zacas_atomics() && VM_Version::use_zabha_atomics()) {
+      return riscv_amocas<1>(dest, compare_value, exchange_value, order);
+    }
+  } else if constexpr (byte_size == 4 || byte_size == 8) {
+    if (VM_Version::use_zacas_atomics()) {
+      return riscv_amocas<byte_size>(dest, compare_value, exchange_value, order);
+    }
+  }
+
   if (order != memory_order_relaxed) {
     FULL_MEM_BARRIER;
   }
