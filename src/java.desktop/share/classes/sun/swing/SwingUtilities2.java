@@ -1411,6 +1411,7 @@ public class SwingUtilities2 {
 
         }
 
+        @Override
         public boolean equals(Object entry) {
             if (entry == this) {
                 return true;
@@ -1423,6 +1424,7 @@ public class SwingUtilities2 {
                     frc.equals(oEntry.frc));
         }
 
+        @Override
         public int hashCode() {
             int result = 17;
             if (font != null) {

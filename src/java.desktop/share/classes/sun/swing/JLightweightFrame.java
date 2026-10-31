@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -535,6 +535,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
     }
 
 
+    @Override
     public <T extends DragGestureRecognizer> T createDragGestureRecognizer(
             Class<T> abstractRecognizerClass,
             DragSource ds, Component c, int srcActions,
@@ -544,15 +545,18 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
                 abstractRecognizerClass, ds, c, srcActions, dgl);
     }
 
+    @Override
     public DragSourceContextPeer createDragSourceContextPeer(DragGestureEvent dge) throws InvalidDnDOperationException {
         return content == null ? null : content.createDragSourceContextPeer(dge);
     }
 
+    @Override
     public void addDropTarget(DropTarget dt) {
         if (content == null) return;
         content.addDropTarget(dt);
     }
 
+    @Override
     public void removeDropTarget(DropTarget dt) {
         if (content == null) return;
         content.removeDropTarget(dt);

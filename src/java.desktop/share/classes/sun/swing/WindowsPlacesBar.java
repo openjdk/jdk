@@ -168,6 +168,7 @@ public class WindowsPlacesBar extends JToolBar
         }
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent e) {
         String prop = e.getPropertyName();
         if (prop == JFileChooser.DIRECTORY_CHANGED_PROPERTY) {
@@ -175,6 +176,7 @@ public class WindowsPlacesBar extends JToolBar
         }
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         JToggleButton b = (JToggleButton)e.getSource();
         for (int i=0; i<buttons.length; i++) {
@@ -185,6 +187,7 @@ public class WindowsPlacesBar extends JToolBar
         }
     }
 
+    @Override
     public Dimension getPreferredSize() {
         Dimension min  = super.getMinimumSize();
         Dimension pref = super.getPreferredSize();
