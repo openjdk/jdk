@@ -30,6 +30,16 @@
 
 /*
  * @test
+ * @summary test SVE String indexOf() intrinsic
+ * @requires vm.cpu.features ~= ".*sve2.*"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:UseSVE=0 IndexOf
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:UseSVE=1 IndexOf
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:UseSVE=2 IndexOf
+ */
+
+/*
+ * @test
  * @bug 8320448
  * @summary test String indexOf() intrinsic
  * @requires vm.cpu.features ~= ".*avx2.*"
@@ -177,7 +187,7 @@
       for (int nSize = 2; nSize<scope; nSize++) {
           String needle = newNeedle(nSize, -1);
           for (int hSize = nSize; hSize<scope; hSize++) {
-              for (int i = 0; i<hSize-nSize; i++) {
+              for (int i = 0; i<=hSize-nSize; i++) {
                   String haystack = newHaystack(hSize, needle, i);
                   for (int j = 0; j<=i; j++) {
                       int found = haystack.indexOf(needle, j);

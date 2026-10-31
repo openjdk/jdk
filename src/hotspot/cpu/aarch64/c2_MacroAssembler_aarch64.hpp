@@ -107,6 +107,20 @@
                       Register tmp5, Register tmp6,
                       int int_cnt1, Register result, int ae);
 
+  void string_indexof_sve(Register str1, Register str2,
+                          Register cnt1, Register cnt2,
+                          Register tmp1, Register tmp2,
+                          Register tmp3, Register tmp4,
+                          Register tmp5, Register tmp6,
+                          Register tmp7, Register tmp8,
+                          FloatRegister fp1, FloatRegister fp2,
+                          FloatRegister fp3, FloatRegister fp4,
+                          FloatRegister fp5,
+                          PRegister prd1, PRegister prd2,
+                          PRegister prd3, PRegister prd4,
+                          PRegister prd5,
+                          Register result, int ae);
+
   void string_indexof_char(Register str1, Register cnt1,
                            Register ch, Register result,
                            Register tmp1, Register tmp2, Register tmp3);
