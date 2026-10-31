@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ public final class EdDSAPublicKeyImpl extends X509Key implements EdECPublicKey {
         EdDSAParameters params =
             EdDSAParameters.get(InvalidKeyException::new, algid);
         this.paramSpec = new NamedParameterSpec(params.getName());
+        checkLength(params);
         // construct the EdECPoint representation
         byte[] encodedPoint = getKey().toByteArray();
         byte msb = encodedPoint[encodedPoint.length - 1];
@@ -82,8 +83,6 @@ public final class EdDSAPublicKeyImpl extends X509Key implements EdECPublicKey {
         reverse(encodedPoint);
         BigInteger y = new BigInteger(1, encodedPoint);
         this.point = new EdECPoint(xOdd, y);
-
-        checkLength(params);
     }
 
     void checkLength(EdDSAParameters params) throws InvalidKeyException {
