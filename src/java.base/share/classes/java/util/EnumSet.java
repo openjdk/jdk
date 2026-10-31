@@ -502,8 +502,26 @@ public abstract sealed class EnumSet<E extends Enum<E>> extends AbstractSet<E>
         throw new java.io.InvalidObjectException("Proxy required");
     }
 
+    /**
+     * Creates a <em><a href="Spliterator.html#binding">late-binding</a></em>
+     * and <em>non-fail-fast</em> {@code Spliterator} over the elements in this set.
+     *
+     * <p>The {@code Spliterator} reports {@link Spliterator#SIZED},
+     * {@link Spliterator#DISTINCT}, {@link Spliterator#SORTED},
+     * {@link Spliterator#NONNULL}, and {@link Spliterator#ORDERED}.
+     *
+     * @implSpec
+     * The implementation creates a
+     * <em><a href="Spliterator.html#binding">late-binding</a></em> spliterator
+     * from the set's {@code Iterator}.  The spliterator inherits the
+     * <em>non-fail-fast</em> properties of the set's iterator.
+     * The created {@code Spliterator} additionally reports
+     * {@link Spliterator#SUBSIZED}.
+     *
+     * @return a {@code Spliterator} over the elements in this set
+     */
     @Override
-    public Spliterator<E> spliterator() {
+    public final Spliterator<E> spliterator() {
         return Spliterators.spliterator(this,
                 Spliterator.DISTINCT | Spliterator.SORTED | Spliterator.ORDERED | Spliterator.NONNULL);
     }
