@@ -468,14 +468,6 @@ static int call_posix_spawn_file_actions_adddup2(posix_spawn_file_actions_t *fil
     return posix_spawn_file_actions_adddup2(file_actions, filedes, newfiledes);
 }
 
-/* Preserve errno so cleanup does not change the IOException message that forkAndExec
- * creates when spawnChild fails. */
-static void destroyFileActionsPreservingErrno(posix_spawn_file_actions_t *file_actions) {
-    int saved_errno = errno;
-    posix_spawn_file_actions_destroy(file_actions);
-    errno = saved_errno;
-}
-
 static pid_t
 spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) {
     pid_t resultPid;
@@ -572,7 +564,7 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
         /* Order matters: stderr may be redirected to stdout, so this dup2 must happen after the stdout one. */
         call_posix_spawn_file_actions_adddup2(&file_actions, child_stderr, STDERR_FILENO) != 0)
     {
-        destroyFileActionsPreservingErrno(&file_actions);
+        posix_spawn_file_actions_destroy(&file_actions);
         return -1;
     }
 
@@ -582,7 +574,7 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
         call_posix_spawn_file_actions_adddup2(&file_actions, child_fail, FAIL_FILENO) != 0 ||
         call_posix_spawn_file_actions_adddup2(&file_actions, tmp_child_childenv, CHILDENV_FILENO) != 0)
     {
-        destroyFileActionsPreservingErrno(&file_actions);
+        posix_spawn_file_actions_destroy(&file_actions);
         return -1;
     }
 
@@ -594,7 +586,7 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
 
     rval = posix_spawn(&resultPid, helperpath, &file_actions, 0, (char * const *) hlpargs, environ);
 
-    destroyFileActionsPreservingErrno(&file_actions);
+    posix_spawn_file_actions_destroy(&file_actions);
 
     if (rval != 0) {
         return -1;
