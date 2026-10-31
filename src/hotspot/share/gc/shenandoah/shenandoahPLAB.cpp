@@ -40,7 +40,7 @@ ShenandoahPLAB::ShenandoahPLAB() :
   _allows_promotion(true),
   _retries_enabled(false),
   _heap(ShenandoahGenerationalHeap::heap()) {
-  _plab = new PLAB(PLAB::min_size());
+  _plab = new PLAB(ShenandoahHeap::plab_min_size());
 }
 
 ShenandoahPLAB::~ShenandoahPLAB() {

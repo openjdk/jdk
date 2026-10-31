@@ -96,7 +96,7 @@ inline void ShenandoahMarkingContext::capture_top_at_mark_start(ShenandoahHeapRe
 
   size_t idx = r->index();
   HeapWord* old_tams = _top_at_mark_starts_base[idx];
-  HeapWord* new_tams = r->top();
+  HeapWord* new_tams = r->top_relaxed();
 
   assert(new_tams >= old_tams,
          "Region %zu, TAMS updates should be monotonic: " PTR_FORMAT " -> " PTR_FORMAT,
