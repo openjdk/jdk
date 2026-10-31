@@ -24,7 +24,6 @@
 #include "gc/z/zAdaptiveHeap.inline.hpp"
 #include "gc/z/zLargePages.hpp"
 #include "hugepages.hpp"
-#include "os_linux.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 
@@ -88,7 +87,7 @@ void ZLargePages::pd_initialize() {
     return ZMemoryHeating && madv_collapse_available();
   };
 
-  if (os::Linux::thp_requested()) {
+  if (HugePages::is_thp_requested_on()) {
     if (can_collapse()) {
       _state = Collapse;
       return;
@@ -98,6 +97,8 @@ void ZLargePages::pd_initialize() {
     _state = _os_enforced_transparent_mode ? Disabled : Transparent;
     return;
   }
+
+  assert(!UseTransparentHugePages, "Currently only set by user-request");
 
   if (UseLargePages) {
     if (!ZAdaptiveHeapSizing || ZAdaptiveHeap::explicit_max_capacity()) {
@@ -109,15 +110,7 @@ void ZLargePages::pd_initialize() {
                           "Disabling the use of explicit large pages for the heap");
   }
 
-  // Because os::Linux::large_page_init does not set the origin, we cannot tell
-  // whether the user explicitly disabled large pages or explicitly requested
-  // large pages which the OS configuration did not support.
-  // Look into adding a similar cached user request as os::Linux::thp_requested
-  // for UseLargePages.
-  const bool large_pages_explicitly_disabled = !FLAG_IS_DEFAULT(UseLargePages) && !UseLargePages;
-  const bool thp_explicitly_disabled = !FLAG_IS_DEFAULT(UseTransparentHugePages) && !UseTransparentHugePages;
-
-  if (!large_pages_explicitly_disabled && !thp_explicitly_disabled && can_collapse()) {
+  if (!HugePages::is_requested_off() && !HugePages::is_thp_requested_off() && can_collapse()) {
     _state = Collapse;
     return;
   }
