@@ -1441,16 +1441,19 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ movl(Address(thread, JavaThread::popframe_condition_offset()), rdx);
 
   {
-    // Check to see whether we are returning to a deoptimized frame.
-    // (The PopFrame call ensures that the caller of the popped frame is
-    // either interpreted or compiled and deoptimizes it if compiled.)
-    // In this case, we can't call dispatch_next() after the frame is
-    // popped, but instead must save the incoming arguments and restore
-    // them after deoptimization has occurred.
+    // Check to see whether we are returning to a deoptimized frame or into
+    // the continuation return barrier, the caller of a popped frame on a
+    // virtual thread can still be frozen. (The PopFrame call ensures that
+    // the caller of the popped frame is either interpreted or compiled and
+    // deoptimizes it if compiled.) In both cases, we can't call
+    // dispatch_next() after the frame is popped, but instead must save the
+    // incoming arguments and restore them after deoptimization or thaw has
+    // occurred.
     //
     // Note that we don't compare the return PC against the
     // deoptimization blob's unpack entry because of the presence of
-    // adapter frames in C2.
+    // adapter frames in C2. Checking for an interpreter return PC covers
+    // the return barrier as well.
     Label caller_not_deoptimized;
     __ movptr(c_rarg1, Address(rbp, frame::return_addr_offset * wordSize));
     __ super_call_VM_leaf(CAST_FROM_FN_PTR(address,
