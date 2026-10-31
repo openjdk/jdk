@@ -5852,7 +5852,9 @@ void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
   relocate(metadata_Relocation::spec(index), [&] {
     li32(dst, nk);
   });
-  zext(dst, dst, 32);
+  if ((int32_t)nk < 0 || AOTCodeCache::is_on_for_dump()) {
+    zext(dst, dst, 32);
+  }
 }
 
 address MacroAssembler::reloc_call(Address entry, Register tmp) {
