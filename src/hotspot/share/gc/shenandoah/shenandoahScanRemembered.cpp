@@ -646,8 +646,8 @@ void ShenandoahScanRemembered::roots_do(OopIterateClosure* cl) {
 
       // Remembered set scanner
       if (region->is_humongous()) {
-        process_humongous_clusters(region->humongous_start_region(), start_cluster_no, num_clusters, end_of_range, cl,
-                                   false /* use_write_table */);
+        process_humongous_clusters(heap->get_region(region->humongous_start_region()),
+                                   start_cluster_no, num_clusters, end_of_range, cl, false /* use_write_table */);
       } else {
         process_clusters(start_cluster_no, num_clusters, end_of_range, cl,
                          false /* use_write_table */, 0 /* fake worker id */);

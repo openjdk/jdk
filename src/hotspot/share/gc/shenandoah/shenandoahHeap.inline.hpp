@@ -542,7 +542,7 @@ inline void ShenandoahHeap::marked_object_oop_iterate(ShenandoahHeapRegion* regi
   if (region->is_humongous()) {
     HeapWord* bottom = region->bottom();
     if (top > bottom) {
-      region = region->humongous_start_region();
+      region = get_region(region->humongous_start_region());
       ShenandoahObjectToOopBoundedClosure<T> objs(cl, bottom, top);
       marked_object_iterate(region, &objs);
     }

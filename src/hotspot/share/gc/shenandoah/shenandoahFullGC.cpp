@@ -618,7 +618,7 @@ public:
       }
     } else if (r->is_humongous_continuation()) {
       // If we hit continuation, the non-live humongous starts should have been trashed already
-      assert(r->humongous_start_region()->has_live(), "Region %zu should have live", r->index());
+      assert(_heap->get_region(r->humongous_start_region())->has_live(), "Region %zu should have live", r->index());
     } else if (r->is_regular()) {
       if (!r->has_live()) {
         r->make_trash_immediate();
@@ -1089,7 +1089,7 @@ void ShenandoahFullGC::compact_humongous_objects() {
           if (c == new_start) {
             r->make_humongous_start_bypass(original_affiliation);
           } else {
-            r->make_humongous_cont_bypass(original_affiliation);
+            r->make_humongous_cont_bypass(original_affiliation, new_start);
           }
 
           // Trailing region may be non-full, record the remainder there
