@@ -35,6 +35,7 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "utilities/align.hpp"
+#include "utilities/bytes.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 
@@ -494,6 +495,27 @@ void trampoline_stub_Relocation::unpack_data() {
   _owner = address_from_scaled_offset(unpack_1_int(), base);
 }
 
+void address_stub_Relocation::pack_data_to(CodeSection* dest) {
+  short* p = (short*) dest->locs_end();
+  CodeSection* insts = dest->outer()->insts();
+  normalize_address(_owner, insts);
+  p = pack_1_int_to(p, scaled_offset(_owner, insts->start()));
+  dest->set_locs_end((relocInfo*) p);
+}
+
+void address_stub_Relocation::unpack_data() {
+  address base = binding()->section_start(CodeBuffer::SECT_INSTS);
+  _owner = address_from_scaled_offset(unpack_1_int(), base);
+}
+
+address address_stub_Relocation::destination() {
+  return reinterpret_cast<address>(Bytes::get_native<uintptr_t>(addr()));
+}
+
+void address_stub_Relocation::set_destination(address x) {
+  Bytes::put_native<uintptr_t>(addr(), reinterpret_cast<uintptr_t>(x));
+}
+
 void external_word_Relocation::pack_data_to(CodeSection* dest) {
   short* p = (short*) dest->locs_end();
   int index = ExternalsRecorder::find_index(_target);
@@ -781,6 +803,21 @@ address trampoline_stub_Relocation::get_trampoline_for(address call, nmethod* co
   return nullptr;
 }
 
+address address_stub_Relocation::get_stub_for(address call, nmethod* code) {
+  if (code->relocation_size() == 0) {
+    return nullptr;
+  }
+
+  RelocIterator iter(code, call);
+  while (iter.next()) {
+    if (iter.type() == relocInfo::address_stub_type &&
+        iter.address_stub_reloc()->owner() == call) {
+      return iter.addr();
+    }
+  }
+  return nullptr;
+}
+
 void static_stub_Relocation::clear_inline_cache() {
   // Call stub is only used when calling the interpreted code.
   // It does not really need to be cleared, except that we want to clean out the methodoop.
@@ -990,6 +1027,12 @@ void RelocIterator::print_current_on(outputStream* st) {
     {
       trampoline_stub_Relocation* r = (trampoline_stub_Relocation*) reloc();
       st->print(" | [trampoline owner=" INTPTR_FORMAT "]", p2i(r->owner()));
+      break;
+    }
+  case relocInfo::address_stub_type:
+    {
+      address_stub_Relocation* r = (address_stub_Relocation*) reloc();
+      st->print(" | [address stub owner=" INTPTR_FORMAT "]", p2i(r->owner()));
       break;
     }
   case relocInfo::opt_virtual_call_type:
