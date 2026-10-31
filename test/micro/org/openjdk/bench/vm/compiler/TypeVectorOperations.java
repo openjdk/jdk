@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025 IBM Corporation. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +50,10 @@ public abstract class TypeVectorOperations {
     private short[] resS;
     private int[] ints;
     private int[] resI;
-    private long[] longs;
+    private long[] longsA;
+    private long[] longsB;
+    private long[] longsC;
+    private long[] longsD;
     private long[] resL;
     private double[] doubles;
     private double[] resD;
@@ -72,7 +76,10 @@ public abstract class TypeVectorOperations {
         resS = new short[COUNT];
         ints = new int[COUNT];
         resI = new int[COUNT];
-        longs = new long[COUNT];
+        longsA = new long[COUNT];
+        longsB = new long[COUNT];
+        longsC = new long[COUNT];
+        longsD = new long[COUNT];
         resL = new long[COUNT];
         doubles = new double[COUNT];
         resD = new double[COUNT];
@@ -84,7 +91,10 @@ public abstract class TypeVectorOperations {
             boolsB[i] = r.nextBoolean();
             shorts[i] = (short) r.nextInt(Short.MAX_VALUE + 1);
             ints[i] = r.nextInt();
-            longs[i] = r.nextLong();
+            longsA[i] = r.nextLong();
+            longsB[i] = r.nextLong();
+            longsC[i] = r.nextLong();
+            longsD[i] = r.nextLong();
             floats[i] = r.nextFloat();
             doubles[i] = r.nextDouble();
         }
@@ -158,14 +168,43 @@ public abstract class TypeVectorOperations {
     @Benchmark
     public void mulL() {
         for (int i = 0; i < COUNT; i++) {
-            resL[i] = (longs[i] * longs[i]);
+            resL[i] = (longsA[i] * longsA[i]);
+        }
+    }
+
+    @Benchmark
+    public void mlaL() {
+        for (int i = 0; i < COUNT; i++) {
+            resL[i] = longsA[i] + longsA[i] * longsB[i];
+        }
+    }
+
+    @Benchmark
+    public void mlsL() {
+        for (int i = 0; i < COUNT; i++) {
+            resL[i] = longsA[i] - longsA[i] * longsB[i];
+        }
+    }
+
+    @Benchmark
+    public void mulMlaLIndependent() {
+        for (int i = 0; i < COUNT; i++) {
+            resL[i] = longsA[i] * longsB[i] + longsC[i] * longsD[i];
+        }
+    }
+
+    @Benchmark
+    public void mulMlaLDependent() {
+        for (int i = 0; i < COUNT; i++) {
+            long res = longsA[i] * longsB[i];
+            resL[i] = res + res * longsC[i];
         }
     }
 
     @Benchmark
     public void absL() {
         for (int i = 0; i < COUNT; i++) {
-            long a = longs[i];
+            long a = longsA[i];
             resL[i] = (long) (Math.abs((long) a));
         }
     }
@@ -173,7 +212,7 @@ public abstract class TypeVectorOperations {
     @Benchmark
     public void rShiftL() {
         for (int i = 0; i < COUNT; i++) {
-            resL[i] = longs[i] >> 3;
+            resL[i] = longsA[i] >> 3;
         }
     }
 
@@ -357,42 +396,42 @@ public abstract class TypeVectorOperations {
     @Benchmark
     public void convertL2D() {
         for (int i = 0; i < COUNT; i++) {
-            resD[i] = (double) longs[i];
+            resD[i] = (double) longsA[i];
         }
     }
 
     @Benchmark
     public void convertLBits2D() {
         for (int i = 0; i < COUNT; i++) {
-            resD[i] = Double.longBitsToDouble(longs[i]);
+            resD[i] = Double.longBitsToDouble(longsA[i]);
         }
     }
 
     @Benchmark
     public void convertL2B() {
         for (int i = 0; i < COUNT; i++) {
-            resB[i] = (byte) longs[i];
+            resB[i] = (byte) longsA[i];
         }
     }
 
     @Benchmark
     public void convertL2F() {
         for (int i = 0; i < COUNT; i++) {
-            resF[i] = (float) longs[i];
+            resF[i] = (float) longsA[i];
         }
     }
 
     @Benchmark
     public void convertL2I() {
         for (int i = 0; i < COUNT; i++) {
-            resI[i] = (int) longs[i];
+            resI[i] = (int) longsA[i];
         }
     }
 
     @Benchmark
     public void convertL2S() {
         for (int i = 0; i < COUNT; i++) {
-            resS[i] = (short) longs[i];
+            resS[i] = (short) longsA[i];
         }
     }
 

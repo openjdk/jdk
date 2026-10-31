@@ -491,6 +491,58 @@ bool VectorNode::is_muladds2i(const Node* n) {
   return n->Opcode() == Op_MulAddS2I;
 }
 
+bool VectorNode::is_unpredicated_vector_long_multiply(const Node* n) {
+  return n->Opcode() == Op_MulVL && !n->is_predicated_vector();
+}
+
+bool VectorNode::is_vector_long_mul_or_muladdsub(const Node* n) {
+  return is_vector_long_multiply_addsub(n) || is_unpredicated_vector_long_multiply(n);
+}
+
+bool VectorNode::phi_has_vector_long_mul_or_muladdsub_input(Node* n) {
+  if (!n->is_Phi()) {
+    return false;
+  }
+
+  for (uint i = 1; i < n->req(); i++) {
+    if (VectorNode::is_vector_long_mul_or_muladdsub(n->in(i))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool VectorNode::is_vector_long_multiply_addsub(const Node* n) {
+  if (n->Opcode() != Op_SubVL && n->Opcode() != Op_AddVL) {
+    return false;
+  }
+
+  Node* in1 = nullptr;
+  Node* in2 = nullptr;
+  if (n->is_predicated_vector()) {
+    // Masked AD rules use (AddVL/SubVL (Binary src1 src2) pg).
+    assert(n->in(1)->Opcode() == Op_Binary, "");
+    in1 = n->in(1)->in(1);
+    in2 = n->in(1)->in(2);
+  } else {
+    in1 = n->in(1);
+    in2 = n->in(2);
+  }
+
+  if (is_unpredicated_vector_long_multiply(in2)) {
+    return true;
+  }
+
+  // AddVL is commutative.
+  if (n->Opcode() == Op_AddVL && !n->is_predicated_vector() &&
+      is_unpredicated_vector_long_multiply(in1)) {
+    return true;
+  }
+
+  return false;
+}
+
 bool VectorNode::is_roundopD(Node* n) {
   return n->Opcode() == Op_RoundDoubleMode;
 }
