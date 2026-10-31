@@ -41,6 +41,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/layoutKind.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -371,9 +372,9 @@ oop MethodHandles::init_field_MemberName(Handle mname, fieldDescriptor& fd, bool
   flags |= IS_FIELD | ((fd.is_static() ? JVM_REF_getStatic : JVM_REF_getField) << REFERENCE_KIND_SHIFT);
   if (fd.is_trusted_final()) flags |= TRUSTED_FINAL;
   if (fd.is_flat()) {
-    int layout_kind = (int)fd.layout_kind();
-    assert((layout_kind & LAYOUT_MASK) == layout_kind, "Layout information loss");
-    flags |= layout_kind << LAYOUT_SHIFT;
+    int layout_value = FlatLayoutEncoding::encode_flat(fd.flat_layout());
+    assert((layout_value & LAYOUT_MASK) == layout_value, "Layout information loss");
+    flags |= layout_value << LAYOUT_SHIFT;
   }
   if (fd.is_null_free_value_type()) flags |= NULL_RESTRICTED;
   if (is_setter)  flags += ((JVM_REF_putField - JVM_REF_getField) << REFERENCE_KIND_SHIFT);
