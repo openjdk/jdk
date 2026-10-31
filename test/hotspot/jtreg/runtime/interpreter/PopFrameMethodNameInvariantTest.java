@@ -46,9 +46,9 @@ import java.nio.file.Path;
 import java.util.Map;
 
 /*
- * @test
+ * @test id=platform
  * @bug 8380080
- * @summary MemberName in local0 must be preserved when PopFrame re-executes direct MethodHandles.linkToStatic
+ * @summary MemberName in local0 must be preserved when PopFrame re-executes direct MethodHandle.linkToStatic
  * @requires vm.jvmti
  * @requires vm.flavor != "zero"
  * @library ../../compiler/jsr292/patches /test/lib
@@ -58,21 +58,112 @@ import java.util.Map;
  * @run driver runtime.interpreter.PopFrameMethodNameInvariantTest
  */
 
+/*
+ * @test id=unmount
+ * @bug 8391440
+ * @summary MemberName in local0 must be preserved when PopFrame re-executes direct MethodHandle.linkToStatic
+ *          also when that caller is frozen in a virtual thread's stack chunk
+ * @requires vm.jvmti
+ * @requires vm.flavor != "zero"
+ * @requires vm.continuations
+ * @library ../../compiler/jsr292/patches /test/lib
+ * @modules java.base/jdk.internal.vm.annotation
+ *          jdk.jdi
+ * @build   java.base/java.lang.invoke.MethodHandleHelper
+ * @run driver runtime.interpreter.PopFrameMethodNameInvariantTest unmount
+ */
+
+/*
+ * @test id=platform-mh
+ * @bug 8391440
+ * @summary MemberName must be restored from the DirectMethodHandle in local0 when PopFrame re-executes
+ *          linkToStatic in a LambdaForm frame
+ * @requires vm.jvmti
+ * @requires vm.flavor != "zero"
+ * @library ../../compiler/jsr292/patches /test/lib
+ * @modules java.base/jdk.internal.vm.annotation
+ *          jdk.jdi
+ * @build   java.base/java.lang.invoke.MethodHandleHelper
+ * @run driver runtime.interpreter.PopFrameMethodNameInvariantTest mh
+ */
+
+/*
+ * @test id=unmount-mh
+ * @bug 8391440
+ * @summary MemberName must be restored from the DirectMethodHandle in local0 when PopFrame re-executes
+ *          linkToStatic in a LambdaForm frame frozen in a virtual thread's stack chunk
+ * @requires vm.jvmti
+ * @requires vm.flavor != "zero"
+ * @requires vm.continuations
+ * @library ../../compiler/jsr292/patches /test/lib
+ * @modules java.base/jdk.internal.vm.annotation
+ *          jdk.jdi
+ * @build   java.base/java.lang.invoke.MethodHandleHelper
+ * @run driver runtime.interpreter.PopFrameMethodNameInvariantTest unmount mh
+ */
+
 public class PopFrameMethodNameInvariantTest {
     public static class Target {
-        static void body(float x) {}
+        static final boolean UNMOUNT = Boolean.getBoolean("popframe.unmount");
+        static int entered;
+        static final long LONG_ARG = 0x1234567890ABL;
+        static final Object MARKER = new Object();
+        static final boolean USE_MH = Boolean.getBoolean("popframe.mh");
+
+        // the debugger pops body, the caller of this one
+        static void stop() {}
+
+        static void body(int a, long b, Object c) throws InterruptedException {
+            entered++;
+            if (UNMOUNT) {
+                // sleeping unmounts this virtual thread, when it comes back the
+                // frames below body stay frozen until they are returned into
+                Thread.sleep(1000);
+            }
+            stop();
+            // only the reexecuted invocation gets here
+            if (entered != 2 || a != 7 || b != LONG_ARG || c != MARKER) {
+                throw new RuntimeException("entered " + entered + " times, a = " + a + ", b = " + b + ", c = " + c);
+            }
+        }
+
+        // invokeExact reaches body through a LambdaForm frame that keeps the DirectMethodHandle in local0,
+        // the helper keeps the MemberName there
+        static void call(MethodHandle target, Object name) throws Throwable {
+            if (USE_MH) {
+                target.invokeExact(7, LONG_ARG, MARKER);
+            } else {
+                MethodHandleHelper.linkToStatic(name, 7, LONG_ARG, MARKER);
+            }
+        }
+
         public static void main(String[] args) throws Throwable {
             MethodHandle target = MethodHandles.lookup().findStatic(
                     Target.class,
                     "body",
-                    MethodType.methodType(void.class, float.class));
+                    MethodType.methodType(void.class, int.class, long.class, Object.class));
             Object name = MethodHandleHelper.internalMemberName(target);
-            MethodHandleHelper.linkToStatic(name, (float)1.0);
+            if (!UNMOUNT) {
+                call(target, name);
+                return;
+            }
+            Throwable[] failure = new Throwable[1];
+            Thread thread = Thread.ofVirtual().start(() -> {
+                try {
+                    call(target, name);
+                } catch (Throwable t) {
+                    failure[0] = t;
+                }
+            });
+            thread.join();
+            if (failure[0] != null) {
+                throw failure[0];
+            }
         }
     }
 
     public static void main(String[] args) throws Exception {
-        VirtualMachine vm = getVm();
+        VirtualMachine vm = getVm(args);
         EventRequestManager eventRequestManager = vm.eventRequestManager();
         ClassPrepareRequest classPrepareRequest = eventRequestManager.createClassPrepareRequest();
         classPrepareRequest.addClassFilter(Target.class.getName());
@@ -84,14 +175,14 @@ public class PopFrameMethodNameInvariantTest {
                 if (event instanceof ClassPrepareEvent prepareEvent) {
                     eventRequestManager.createBreakpointRequest(
                             prepareEvent.referenceType()
-                                    .methodsByName("body")
+                                    .methodsByName("stop")
                                     .get(0)
                                     .location()
                     ).enable();
                 }
                 if (event instanceof BreakpointEvent breakpointEvent) {
                     breakpointEvent.request().disable();
-                    breakpointEvent.thread().popFrames(breakpointEvent.thread().frame(0));
+                    breakpointEvent.thread().popFrames(breakpointEvent.thread().frame(1));
                     eventSet.resume();
                     break outerLoop;
                 }
@@ -104,7 +195,7 @@ public class PopFrameMethodNameInvariantTest {
         }
     }
 
-    private static VirtualMachine getVm() throws IOException, IllegalConnectorArgumentsException, VMStartException {
+    private static VirtualMachine getVm(String[] args) throws IOException, IllegalConnectorArgumentsException, VMStartException {
         LaunchingConnector connector = Bootstrap.virtualMachineManager().defaultConnector();
         Map<String, Connector.Argument> argumentMap = connector.defaultArguments();
         argumentMap.get("main").setValue(Target.class.getName());
@@ -112,6 +203,13 @@ public class PopFrameMethodNameInvariantTest {
         String patchPath = System.getProperty("test.patch.path");
         if (patchPath != null) {
             options += " --patch-module=java.base=\"" + Path.of(patchPath, "java.base") + "\"";
+        }
+        for (String arg : args) {
+            if (arg.equals("unmount")) {
+                options += " -Dpopframe.unmount=true";
+            } else if (arg.equals("mh")) {
+                options += " -Dpopframe.mh=true";
+            }
         }
         argumentMap.get("options").setValue((options + " -Xint").trim());
         return connector.launch(argumentMap);

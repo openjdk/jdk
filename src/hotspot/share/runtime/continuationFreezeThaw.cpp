@@ -46,6 +46,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/continuation.hpp"
@@ -70,6 +71,7 @@
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
@@ -3077,6 +3079,48 @@ void ThawBase::recurse_thaw_native_frame(const frame& hf, frame& caller, int num
   caller = f;
 }
 
+// A frame popped by JVMTI PopFrame returned into the continuation return
+// barrier, its caller here was still frozen. The interpreter's popframe entry
+// preserved the arguments and set the deopt reexecution bit as for a
+// deoptimized caller. A compiled caller was deoptimized by PopFrame and
+// unpack_on_stack puts the arguments back. An interpreted caller was copied
+// without them, so put them back on its expression stack and resume at the
+// invoke, like vframeArrayElement::unpack_on_stack does.
+static bool popframe_reexecutes_interpreted_caller(JavaThread* thread, const frame& f) {
+  if (!JvmtiExport::can_pop_frame() || !thread->popframe_forcing_deopt_reexecution()) {
+    return false;
+  }
+  if (!f.is_interpreted_frame()) {
+    assert(f.is_deoptimized_frame(), "popframe reexecution into a frozen compiled caller that was not deoptimized");
+    return false;
+  }
+  return true;
+}
+
+// Called after fix_thawed_frame, the locals must be in their thawed form to
+// read the MemberName.
+static void popframe_restore_args(JavaThread* thread, const frame& f) {
+  // the thawed frame's sp already covers the argument slots, last_sp was
+  // saved after the arguments were pushed
+  int top_element = f.interpreter_frame_expression_stack_size() - 1;
+  // for a linkTo* call the trailing MemberName was consumed by the linker and
+  // is not among the preserved arguments, take it from local 0 like the
+  // interpreter's popframe entry does
+  Method* method = f.interpreter_frame_method();
+  address local0 = method->max_locals() > 0 ? (address)*f.interpreter_frame_local_at(0) : nullptr;
+  oop member_name = InterpreterRuntime::popframe_member_name_arg_or_null(local0, method, f.interpreter_frame_bcp());
+  int words = in_words(thread->popframe_preserved_args_size_in_words());
+  if (words > 0) {
+    int first = top_element - (member_name != nullptr ? 1 : 0);
+    Copy::conjoint_jbytes(thread->popframe_preserved_args(), f.interpreter_frame_expression_stack_at(first), words * wordSize);
+    thread->popframe_free_preserved_args();
+  }
+  if (member_name != nullptr) {
+    *f.interpreter_frame_expression_stack_at(top_element) = cast_from_oop<intptr_t>(member_name);
+  }
+  thread->clear_popframe_condition();
+}
+
 void ThawBase::finish_thaw(frame& f) {
   stackChunkOop chunk = _cont.tail();
 
@@ -3093,16 +3137,24 @@ void ThawBase::finish_thaw(frame& f) {
   }
   assert(chunk->is_empty() == (chunk->max_thawing_size() == 0), "");
 
+  bool popframe_reexecute = popframe_reexecutes_interpreted_caller(_thread, f);
   if (!is_aligned(f.sp(), frame::frame_alignment)) {
     assert(f.is_interpreted_frame(), "");
     f.set_sp(align_down(f.sp(), frame::frame_alignment));
   }
   push_return_frame(f);
+  if (popframe_reexecute) {
+    // reexecute the invoke instead of returning after it
+    ContinuationHelper::Frame::patch_pc(f, Interpreter::deopt_entry(vtos, 0));
+  }
    // can only fix caller after push_return_frame (due to callee saved regs)
   if (_process_args_at_top) {
     chunk->fix_thawed_frame(f, SmallRegisterMap::instance_with_args());
   } else {
     chunk->fix_thawed_frame(f, SmallRegisterMap::instance_no_args());
+  }
+  if (popframe_reexecute) {
+    popframe_restore_args(_thread, f);
   }
 
   assert(_cont.is_empty() == _cont.last_frame().is_empty(), "");
