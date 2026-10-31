@@ -2434,6 +2434,7 @@ enum VectorMask {
   INSN(vrsub_vx, 0b1010111, 0b100, 0b000011);
 
   // Vector Slide Instructions
+  INSN(vslideup_vx,   0b1010111, 0b100, 0b001110);
   INSN(vslidedown_vx, 0b1010111, 0b100, 0b001111);
 
 #undef INSN
