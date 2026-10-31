@@ -286,15 +286,4 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
         return Map.copyOf(options);
     }
 
-    public static Map<HttpOption<?>, Object> copySupportedOptions(Map<HttpOption<?>, Object> options) {
-        Objects.requireNonNull(options, "option");
-        Map<HttpOption<?>, Object> result = new HashMap<>();
-        for (HttpOption<?> option : supportedOptions) {
-            var val =  options.get(option);
-            if (val == null) continue;
-            result.put(option, option.type().cast(val));
-        }
-        return Map.copyOf(result);
-    }
-
 }

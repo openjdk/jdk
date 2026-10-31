@@ -23,16 +23,16 @@
  */
 
 #include "cds/aotCompressedPointers.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
 #include "cds/runTimeClassInfo.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 
 void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   InstanceKlass* k = info._klass;
   _klass = AOTCompressedPointers::encode_not_null(k);
 
-  if (!SystemDictionaryShared::is_builtin(k)) {
+  if (!AOTSystemDictionary::is_builtin(k)) {
     CrcInfo* c = crc();
     c->_clsfile_size = info._clsfile_size;
     c->_clsfile_crc32 = info._clsfile_crc32;
@@ -41,7 +41,7 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   _num_loader_constraints   = info.num_loader_constraints();
   int i;
 
-  if (CDSConfig::is_preserving_verification_constraints()) {
+  if (CDSConfig::is_preserving_verification_constraints() && !k->defined_by_other_loaders()) {
     // The production run doesn't need the verifier constraints, as we can guarantee that all classes checked by
     // the verifier during AOT training/assembly phases cannot be replaced in the production run.
     _num_verifier_constraints = 0;
@@ -93,7 +93,7 @@ InstanceKlass* RunTimeClassInfo::klass() const {
 }
 
 size_t RunTimeClassInfo::crc_size(InstanceKlass* klass) {
-  if (!SystemDictionaryShared::is_builtin(klass)) {
+  if (!AOTSystemDictionary::is_builtin(klass)) {
     return sizeof(CrcInfo);
   } else {
     return 0;

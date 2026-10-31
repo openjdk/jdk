@@ -351,14 +351,12 @@ class Http2Connection implements Closeable {
 
     private final class PushPromiseDecoder extends HeaderDecoder implements DecodingCallback {
 
-        final int parentStreamId;
         final int pushPromiseStreamId;
         final Stream<?> parent;
         final AtomicReference<Throwable> errorRef = new AtomicReference<>();
 
-        PushPromiseDecoder(int parentStreamId, int pushPromiseStreamId, Stream<?> parent) {
+        PushPromiseDecoder(int pushPromiseStreamId, Stream<?> parent) {
             super(Context.REQUEST);
-            this.parentStreamId = parentStreamId;
             this.pushPromiseStreamId = pushPromiseStreamId;
             this.parent = parent;
         }
@@ -1161,7 +1159,7 @@ class Http2Connection implements Closeable {
         // always decode the headers as they may affect connection-level HPACK
         // decoding state
         assert pushContinuationState == null;
-        PushPromiseDecoder decoder = new PushPromiseDecoder(streamId, promisedStreamid, parent);
+        PushPromiseDecoder decoder = new PushPromiseDecoder(promisedStreamid, parent);
         decodeHeaders(pp, decoder);
         if (pp.endHeaders()) {
             if (decoder.errorRef.get() == null) {

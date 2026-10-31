@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
 class ShenandoahCollectionSet;
 class ShenandoahHeap;
@@ -55,6 +56,10 @@ private:
   // Bytes reserved within this generation to hold evacuated objects from the collection set
   size_t _evacuation_reserve;
 
+  // Read by mutators, written by control thread. This records the id of the last gc cycle
+  // to collect this generation.
+  Atomic<size_t> _completed_gc_id;
+
 protected:
   ShenandoahFreeSet* _free_set;
   ShenandoahHeuristics* _heuristics;
@@ -67,6 +72,14 @@ public:
   ShenandoahGeneration(ShenandoahGenerationType type,
                        uint max_workers);
   ~ShenandoahGeneration();
+
+  void update_completed_gc_id(size_t gc_id) {
+    _completed_gc_id.store_relaxed(gc_id);
+  }
+
+  size_t completed_gc_id() const {
+    return _completed_gc_id.load_relaxed();
+  }
 
   inline bool is_young() const                 { return _type == YOUNG; }
   inline bool is_old() const                   { return _type == OLD; }

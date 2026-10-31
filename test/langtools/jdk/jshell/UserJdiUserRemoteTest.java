@@ -37,6 +37,7 @@ import jdk.jshell.VarSnippet;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionControl.ExecutionControlException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -63,8 +64,8 @@ public class UserJdiUserRemoteTest extends ExecutionControlTestBase {
     @Test
     public void testExtension() throws ExecutionControlException {
         assertEval("42;");
-        Object res = currentEC.extensionCommand("FROG", "test");
-        assertEquals("ribbit", res);
+        Assertions.assertThrows(ExecutionControl.NotImplementedException.class,
+                                () -> currentEC.extensionCommand("FROG", "test"));
     }
 
     @Test

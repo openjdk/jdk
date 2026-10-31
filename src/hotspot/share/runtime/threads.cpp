@@ -100,6 +100,7 @@
 #include "runtime/vmOperations.hpp"
 #include "sanitizers/address.hpp"
 #include "services/attachListener.hpp"
+#include "services/diagnosticWorkers.hpp"
 #include "services/management.hpp"
 #include "services/threadIdTable.hpp"
 #include "services/threadService.hpp"
@@ -889,6 +890,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   } else if (CDSConfig::is_dumping_final_static_archive()) {
     tty->print_cr("Reading AOTConfiguration %s and writing AOTCache %s", AOTConfiguration, AOTCache);
     AOTMetaspace::dump_static_archive(CHECK_JNI_ERR);
+  } else if (CDSConfig::is_redumping_aot_configuration()) {
+    tty->print_cr("Reading AOTCache %s and writing AOTConfiguration %s", AOTCache, AOTConfiguration);
   }
 
   if (log_is_enabled(Info, perf, class, link)) {
@@ -1466,6 +1469,7 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   if (Universe::heap() != nullptr) {
     PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
     Universe::heap()->gc_threads_do(&print_closure);
+    DiagnosticWorkers::threads_do(&print_closure);
     num_other += print_closure.num_printed();
   }
 

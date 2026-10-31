@@ -613,8 +613,8 @@ Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub, Phase
     // Check all control edges of 'dom'.
 
     ResourceMark rm;
-    Node_List nlist;
-    Unique_Node_List dom_list;
+    Node_List<Node> nlist;
+    Unique_Node_List<Node> dom_list;
 
     dom_list.push(dom);
     bool only_dominating_controls = false;
@@ -2580,8 +2580,8 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     if (mem->is_Parm() && mem->in(0)->is_Start()) {
       assert(mem->as_Parm()->_con == TypeFunc::Memory, "must be memory Parm");
       // TODO 8350865 Scalar replacement does not work well for flat arrays.
-      // Escape Analysis assumes that arrays are always zeroed during allocation which is not true for null-free arrays
-      // ConnectionGraph::split_unique_types will re-wire the memory of loads from such arrays around the allocation
+      // Scalar replacement assumes that arrays are zero-initialized, which is not true for null-free arrays.
+      // ConnectionGraph::split_unique_types will re-wire the memory of loads from such arrays around the allocation.
       // TestArrays::test6 and test152 and TestBasicFunctionality::test20 are affected by this.
       if (tp->isa_aryptr() && tp->is_aryptr()->is_flat() && tp->is_aryptr()->is_null_free()) {
         intptr_t offset = 0;
@@ -3280,9 +3280,9 @@ private:
   Status find_use_store_unidirectional(const StoreNode* def_store) const;
   Status find_def_store_unidirectional(const StoreNode* use_store) const;
 
-  void collect_merge_list(Node_List& merge_list) const;
-  Node* make_merged_input_value(const Node_List& merge_list);
-  StoreNode* make_merged_store(const Node_List& merge_list, Node* merged_input_value);
+  void collect_merge_list(Node_List<const StoreNode>& merge_list) const;
+  Node* make_merged_input_value(const Node_List<const StoreNode>& merge_list) const;
+  StoreNode* make_merged_store(const Node_List<const StoreNode>& merge_list, Node* merged_input_value) const;
 
 #ifndef PRODUCT
   // Access to TraceMergeStores tags
@@ -3311,7 +3311,7 @@ private:
   }
 #endif
 
-  NOT_PRODUCT( void trace(const Node_List& merge_list, const Node* merged_input_value, const StoreNode* merged_store) const; )
+  NOT_PRODUCT(static void trace(const Node_List<const StoreNode>& merge_list, const Node* merged_input_value, const StoreNode* merged_store); )
 };
 
 StoreNode* MergePrimitiveStores::run() {
@@ -3346,7 +3346,7 @@ StoreNode* MergePrimitiveStores::run() {
   assert(_value_order != ValueOrder::NotAdjacent && _value_order != ValueOrder::Unknown, "Order should be checked");
 
   ResourceMark rm;
-  Node_List merge_list;
+  Node_List<const StoreNode> merge_list;
   collect_merge_list(merge_list);
 
   Node* merged_input_value = make_merged_input_value(merge_list);
@@ -3609,7 +3609,7 @@ MergePrimitiveStores::Status MergePrimitiveStores::find_def_store_unidirectional
   return Status::make(def_store, cfg_status_for_pair(use_store, def_store));
 }
 
-void MergePrimitiveStores::collect_merge_list(Node_List& merge_list) const {
+void MergePrimitiveStores::collect_merge_list(Node_List<const StoreNode>& merge_list) const {
   // The merged store can be at most 8 bytes.
   const uint merge_list_max_size = 8 / _store->memory_size();
   assert(merge_list_max_size >= 2 &&
@@ -3647,9 +3647,9 @@ void MergePrimitiveStores::collect_merge_list(Node_List& merge_list) const {
 }
 
 // Merge the input values of the smaller stores to a single larger input value.
-Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list) {
+Node* MergePrimitiveStores::make_merged_input_value(const Node_List<const StoreNode>& merge_list) const {
   int new_memory_size = _store->memory_size() * merge_list.size();
-  Node* first = merge_list.at(merge_list.size()-1);
+  const StoreNode* first = merge_list.at(merge_list.size()-1);
   Node* merged_input_value = nullptr;
   if (_store->in(MemNode::ValueIn)->Opcode() == Op_ConI) {
     assert(_value_order == ValueOrder::Const, "must match");
@@ -3749,8 +3749,8 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list)
 //                 | | |  |                                           | | |  |                              //
 //                last_store (= _store)                              merged_store                           //
 //                                                                                                          //
-StoreNode* MergePrimitiveStores::make_merged_store(const Node_List& merge_list, Node* merged_input_value) {
-  Node* first_store = merge_list.at(merge_list.size()-1);
+StoreNode* MergePrimitiveStores::make_merged_store(const Node_List<const StoreNode>& merge_list, Node* merged_input_value) const {
+  const StoreNode* first_store = merge_list.at(merge_list.size()-1);
   Node* last_ctrl   = _store->in(MemNode::Control); // after (optional) RangeCheck
   Node* first_mem   = first_store->in(MemNode::Memory);
   Node* first_adr   = first_store->in(MemNode::Address);
@@ -3779,7 +3779,7 @@ StoreNode* MergePrimitiveStores::make_merged_store(const Node_List& merge_list, 
 }
 
 #ifndef PRODUCT
-void MergePrimitiveStores::trace(const Node_List& merge_list, const Node* merged_input_value, const StoreNode* merged_store) const {
+void MergePrimitiveStores::trace(const Node_List<const StoreNode>& merge_list, const Node* merged_input_value, const StoreNode* merged_store) {
   stringStream ss;
   ss.print_cr("[TraceMergeStores]: Replace");
   for (int i = (int)merge_list.size() - 1; i >= 0; i--) {
@@ -3968,14 +3968,23 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
     }
   }
 
-  // Store of zero anywhere into a freshly-allocated object?
-  // Then the store is useless.
+  // Check if this store is redundant with the initialization of a freshly allocated object
   // (It must already have been captured by the InitializeNode.)
   if (result == this && ReduceFieldZeroing) {
-    // a newly allocated object is already all-zeroes everywhere
-    if (mem->is_Proj() && mem->in(0)->is_Allocate() &&
-        (phase->type(val)->is_zero_type() || mem->in(0)->in(AllocateNode::InitValue) == val)) {
-      result = mem;
+    if (mem->is_Proj() && mem->in(0)->is_Allocate()) {
+      AllocateNode* alloc = mem->in(0)->as_Allocate();
+      Node* init_value = alloc->in(AllocateNode::InitValue);
+      if (init_value == nullptr && phase->type(val)->is_zero_type()) {
+        // No initial value. A zero store is redundant because memory is already zeroed.
+        result = mem;
+      } else if (init_value == val && alloc->is_AllocateArray()) {
+        // Initial value. A store with the same value is redundant if it initializes
+        // the entire array element. This is only guaranteed with a non-flat array.
+        const TypeAryKlassPtr* ary_klass = phase->type(alloc->in(AllocateNode::KlassNode))->isa_aryklassptr();
+        if (ary_klass != nullptr && ary_klass->is_not_flat()) {
+          result = mem;
+        }
+      }
     }
 
     if (result == this && phase->type(val)->is_zero_type()) {
@@ -4252,27 +4261,6 @@ Node* StoreNode::Ideal_sign_extended_input(PhaseGVN* phase, int num_rejected_bit
     }
   }
   return nullptr;
-}
-
-//------------------------------value_never_loaded-----------------------------------
-// Determine whether there are any possible loads of the value stored.
-// For simplicity, we actually check if there are any loads from the
-// address stored to, not just for loads of the value stored by this node.
-//
-bool StoreNode::value_never_loaded(PhaseValues* phase) const {
-  Node *adr = in(Address);
-  const TypeOopPtr *adr_oop = phase->type(adr)->isa_oopptr();
-  if (adr_oop == nullptr)
-    return false;
-  if (!adr_oop->is_known_instance_field())
-    return false; // if not a distinct instance, there may be aliases of the address
-  for (DUIterator_Fast imax, i = adr->fast_outs(imax); i < imax; i++) {
-    Node *use = adr->fast_out(i);
-    if (use->is_Load() || use->is_LoadStore()) {
-      return false;
-    }
-  }
-  return true;
 }
 
 MemBarNode* StoreNode::trailing_membar() const {
@@ -4881,9 +4869,9 @@ MemBarNode* MemBarNode::trailing_membar() const {
   ResourceMark rm;
   Node* trailing = (Node*)this;
   VectorSet seen;
-  Node_Stack multis(0);
+  Node_Stack<const MultiBranchNode> multis(0);
   do {
-    Node* c = trailing;
+    const Node* c = trailing;
     uint i = 0;
     do {
       trailing = nullptr;
@@ -4894,7 +4882,7 @@ MemBarNode* MemBarNode::trailing_membar() const {
             if (multis.node() == c) {
               multis.set_index(i+1);
             } else {
-              multis.push(c, i+1);
+              multis.push(c->as_MultiBranch(), i+1);
             }
           }
           trailing = next;
@@ -4925,13 +4913,13 @@ MemBarNode* MemBarNode::trailing_membar() const {
 MemBarNode* MemBarNode::leading_membar() const {
   ResourceMark rm;
   VectorSet seen;
-  Node_Stack regions(0);
+  Node_Stack<const RegionNode> regions(0);
   Node* leading = in(0);
   while (leading != nullptr && (!leading->is_MemBar() || !leading->as_MemBar()->leading())) {
     while (leading == nullptr || leading->is_top() || seen.test_set(leading->_idx)) {
       leading = nullptr;
       while (regions.size() > 0 && leading == nullptr) {
-        Node* r = regions.node();
+        const RegionNode* r = regions.node();
         uint i = regions.index();
         if (i < r->req()) {
           leading = r->in(i);
@@ -4946,18 +4934,18 @@ MemBarNode* MemBarNode::leading_membar() const {
       }
     }
     if (leading->is_Region()) {
-      regions.push(leading, 2);
+      regions.push(leading->as_Region(), 2);
       leading = leading->in(1);
     } else {
       leading = leading->in(0);
     }
   }
 #ifdef ASSERT
-  Unique_Node_List wq;
-  wq.push((Node*)this);
+  Unique_Node_List<const Node> wq;
+  wq.push(this);
   uint found = 0;
   for (uint i = 0; i < wq.size(); i++) {
-    Node* n = wq.at(i);
+    const Node* n = wq.at(i);
     if (n->is_Region()) {
       for (uint j = 1; j < n->req(); j++) {
         Node* in = n->in(j);
@@ -5179,7 +5167,7 @@ intptr_t InitializeNode::get_store_offset(Node* st, PhaseValues* phase) {
 // True for constants and parameters and small combinations thereof.
 bool InitializeNode::detect_init_independence(Node* value, PhaseGVN* phase) {
   ResourceMark rm;
-  Unique_Node_List worklist;
+  Unique_Node_List<Node> worklist;
   worklist.push(value);
 
   uint complexity_limit = 20;
@@ -5277,7 +5265,7 @@ intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseGVN* phase, bool 
     const TypePtr* t_adr = phase->type(adr)->isa_ptr();
     int alias_idx = phase->C->get_alias_index(t_adr);
     ResourceMark rm;
-    Unique_Node_List mems;
+    Unique_Node_List<Node> mems;
     mems.push(mem);
     Node* unique_merge = nullptr;
     for (uint next = 0; next < mems.size(); ++next) {

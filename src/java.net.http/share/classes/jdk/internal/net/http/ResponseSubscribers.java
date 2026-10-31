@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,6 @@ import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.HttpClientImpl.DelegatingExecutor;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ResponseSubscribers {
 
@@ -569,10 +568,6 @@ public class ResponseSubscribers {
             }
         }
 
-    }
-
-    public static BodySubscriber<Stream<String>> createLineStream() {
-        return createLineStream(UTF_8);
     }
 
     public static BodySubscriber<Stream<String>> createLineStream(Charset charset) {

@@ -26,6 +26,7 @@
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotHeap.hpp"
 #include "cds/aotLinkedClassTable.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cdsConfig.hpp"
@@ -33,7 +34,6 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
@@ -127,7 +127,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
   assert(is_initialized(), "sanity");
   assert(CDSConfig::is_dumping_aot_linked_classes(), "sanity");
 
-  if (!SystemDictionaryShared::is_builtin(ik)) {
+  if (!AOTSystemDictionary::is_builtin(ik)) {
     // not loaded by a class loader which we know about
     return false;
   }
@@ -136,7 +136,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
     return true;
   }
 
-  if (!ik->is_linked() && SystemDictionaryShared::has_class_failed_verification(ik)) {
+  if (!ik->is_linked() && AOTSystemDictionary::has_class_failed_verification(ik)) {
     return false;
   }
 
@@ -171,7 +171,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
 
   // There are no loops in the class hierarchy, and this function is always called single-threaded, so
   // we know ik has not been added yet.
-  assert(CDSConfig::current_thread_is_vm_or_dumper(), "that's why we don't need locks");
+  assert(CDSConfig::in_dumper_thread_or_aot_safepoint(), "that's why we don't need locks");
   add_new_candidate(ik);
 
   return true;

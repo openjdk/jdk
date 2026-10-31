@@ -829,21 +829,9 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, stub_id);
     Label done;
 
-    const Register base = x28, cnt = x29, tmp1 = x30, tmp2 = x31;
+    const Register base = x28, cnt = x29, tmp1 = x30;
 
     start = __ pc();
-
-    if (UseBlockZeroing) {
-      int zicboz_block_size = VM_Version::zicboz_block_size.value();
-      // Ensure count >= 2 * zicboz_block_size so that it still deserves
-      // a cbo.zero after alignment.
-      Label small;
-      int low_limit = MAX2(2 * zicboz_block_size, (int)BlockZeroingLowLimit) / wordSize;
-      __ mv(tmp1, low_limit);
-      __ blt(cnt, tmp1, small);
-      __ zero_dcache_blocks(base, cnt, tmp1, tmp2);
-      __ bind(small);
-    }
 
     {
       // Clear the remaining blocks.
@@ -1054,6 +1042,10 @@ class StubGenerator: public StubCodeGenerator {
     const Register src = x30, dst = x31, vl = x14, cnt = x15, tmp1 = x16, tmp2 = x17;
     assert_different_registers(s, d, cnt, vl, tmp1, tmp2);
     Assembler::SEW sew = Assembler::elembytes_to_sew(granularity);
+    // Use a 128-byte tuning target for vector group capacity, with a minimum LMUL of m1.
+    const int vector_length = static_cast<int>(VM_Version::initial_vector_length());
+    const int lmul_multiplier = MAX2(128 / vector_length, 1);
+    const Assembler::LMUL lmul = static_cast<Assembler::LMUL>(exact_log2(lmul_multiplier));
     Label loop_forward, loop_backward, done;
 
     __ mv(dst, d);
@@ -1061,7 +1053,7 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(cnt, count);
 
     __ bind(loop_forward);
-    __ vsetvli(vl, cnt, sew, Assembler::m8);
+    __ vsetvli(vl, cnt, sew, lmul);
     if (is_backward) {
       __ bne(vl, cnt, loop_backward);
     }
@@ -3767,8 +3759,7 @@ class StubGenerator: public StubCodeGenerator {
     if (bs_asm->nmethod_patching_type() == NMethodPatchingType::conc_instruction_and_data_patch) {
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
       Address thread_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()) + 4);
-      __ la(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
-      __ lwu(t1, t1);
+      __ lwu(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
       __ sw(t1, thread_epoch_addr);
       // There are two ways this can work:
       // - The writer did system icache shootdown after the instruction stream update.
@@ -5427,8 +5418,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(preemption_cancelled);
     __ sb(zr, Address(xthread, JavaThread::preemption_cancelled_offset()));
     __ la(fp, Address(sp, checked_cast<int32_t>(ContinuationEntry::size() + 2 * wordSize)));
-    __ la(t1, ExternalAddress(ContinuationEntry::thaw_call_pc_address()));
-    __ ld(t1, Address(t1));
+    __ ld(t1, ExternalAddress(ContinuationEntry::thaw_call_pc_address()));
     __ jr(t1);
 
     // record the stub start and end
@@ -7432,6 +7422,7 @@ class StubGenerator: public StubCodeGenerator {
   __ bind(L_combine);
     __ slli(s2, s2, 16);
     __ orr(s1, s1, s2);
+    __ sext(s1, s1, 32);
 
     __ leave(); // Required for proper stackwalking of RuntimeStub frame
     __ ret();
@@ -7838,6 +7829,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     __ kernel_crc32(crc, buf, len,
                     c_rarg3, c_rarg4, c_rarg5, c_rarg6, // tmp's for tables
                     c_rarg7, t2, t3, t4, t5, t6);       // misc tmps
+    __ sext(crc, crc, 32);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();
@@ -7875,6 +7867,7 @@ static const int64_t right_3_bits = right_n_bits(3);
                      c_rarg3, c_rarg4,           // byte_table, clmul_table
                      c_rarg5, c_rarg6, c_rarg7,  // accum_hi, k1, k2
                      t2, t3, t4);                // scratch1, scratch2, fold_end
+    __ sext(crc, crc, 32);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();

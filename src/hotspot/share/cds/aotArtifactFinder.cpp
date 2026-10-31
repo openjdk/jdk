@@ -28,10 +28,10 @@
 #include "cds/aotHeap.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/regeneratedClasses.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -77,7 +77,7 @@ void AOTArtifactFinder::find_artifacts() {
   //
   // Note, if a class is not excluded, it does NOT mean it will be automatically included
   // into the AOT cache -- that will be decided by the code below.
-  SystemDictionaryShared::finish_exclusion_checks();
+  AOTSystemDictionary::finish_exclusion_checks();
   AOTReferenceObjSupport::init_keep_alive_objs_table();
 
   start_scanning_for_oops();
@@ -114,7 +114,7 @@ void AOTArtifactFinder::find_artifacts() {
 #endif
 
   // Add all the InstanceKlasses (and their array classes) that are always included.
-  SystemDictionaryShared::dumptime_table()->iterate_all_live_classes([&] (InstanceKlass* ik, DumpTimeClassInfo& info) {
+  AOTSystemDictionary::dumptime_table()->iterate_all_live_classes([&] (InstanceKlass* ik, DumpTimeClassInfo& info) {
     bool skip = info.is_excluded();
     if (!(ik->is_initialized() && ik->has_aot_safe_initializer())) {
       if (info.is_aot_tooling_class()) {
@@ -163,7 +163,7 @@ void AOTArtifactFinder::find_artifacts() {
 #endif
 
   // Exclude all the (hidden) classes that have not been discovered by the code above.
-  SystemDictionaryShared::dumptime_table()->iterate_all_live_classes([&] (InstanceKlass* k, DumpTimeClassInfo& info) {
+  AOTSystemDictionary::dumptime_table()->iterate_all_live_classes([&] (InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded() && _seen_classes->get(k) == nullptr) {
       info.set_excluded();
       info.set_has_checked_exclusion();
@@ -231,7 +231,7 @@ void AOTArtifactFinder::add_aot_inited_class(InstanceKlass* ik) {
 }
 
 void AOTArtifactFinder::append_to_all_cached_classes(Klass* k) {
-  precond(!SystemDictionaryShared::should_be_excluded(k));
+  precond(!AOTSystemDictionary::should_be_excluded(k));
   _all_cached_classes->append(k);
 }
 
@@ -266,10 +266,6 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
       add_cached_instance_class(nest_host);
     }
 
-    if (CDSConfig::is_dumping_final_static_archive() && ik->defined_by_other_loaders()) {
-      // The following are not appliable to unregistered classes
-      return;
-    }
     ConstantPoolCache* cpCache = ik->constants()->cache();
     if (cpCache != nullptr) {
       // Resolved{Field,Indy,Method}Entries in cpCache are not walked by MetaspaceClosure,
@@ -277,11 +273,13 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
       // discover the anonymous classes that are reachable only from the archivable entries.
       cpCache->record_classes_in_archivable_entries();
     }
-    scan_oops_in_instance_class(ik);
-    if (ik->is_hidden() && CDSConfig::is_dumping_aot_linked_classes()) {
-      bool succeed = AOTClassLinker::try_add_candidate(ik);
-      guarantee(succeed, "All cached hidden classes must be aot-linkable");
-      add_aot_inited_class(ik);
+    if (!ik->defined_by_other_loaders()) {
+      scan_oops_in_instance_class(ik);
+      if (ik->is_hidden() && CDSConfig::is_dumping_aot_linked_classes()) {
+        bool succeed = AOTClassLinker::try_add_candidate(ik);
+        guarantee(succeed, "All cached hidden classes must be aot-linkable");
+        add_aot_inited_class(ik);
+      }
     }
   }
 }
@@ -343,7 +341,7 @@ void AOTArtifactFinder::check_critical_classes() {
 }
 
 void AOTArtifactFinder::check_critical_class(InstanceKlass* ik) {
-  if (SystemDictionaryShared::is_excluded_class(ik)) {
+  if (AOTSystemDictionary::is_excluded_class(ik)) {
     ResourceMark rm;
     const char* msg = err_msg("Critical class %s has been excluded. %s cannot be written.",
                               ik->external_name(),

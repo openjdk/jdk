@@ -65,6 +65,7 @@ class CDSConfig : public AllStatic {
                                     const char** top_archive_path);
   static int num_archive_paths(const char* path_spec);
   static void check_flag_single_path(const char* flag_name, const char* value);
+  static void disable_profile_and_compiled_code();
 
   // Checks before Arguments::apply_ergo()
   static void check_new_flag(bool new_flag_is_default, const char* new_flag_name);
@@ -109,6 +110,30 @@ public:
 
   // --- Basic CDS features
 
+  // There are 4 types of AOT archives:
+  //
+  // [1] Classic static CDS archive
+  //     This is the output of the traditional CDS static archive creation workflow, e.g.:
+  //         java -Xshare:dump -XX:SharedClassListFile=file.txt -XX:SharedArchiveFile=static.jsa
+  //
+  // [2] AOT configuration file
+  //     This is the output of the AOT training run, e.g.:
+  //         java -XX:AOTMode=record -XX:AOTConfiguration=app.aotconfig -cp app.jar App
+  //
+  // [3] AOT cache
+  //     This is the output of the AOT assembly phase, e.g.:
+  //         java -XX:AOTMode=create -XX:AOTConfiguration=app.aotconfig -XX:AOTCache=app.aot -cp app.jar
+  //
+  // [4] Dynamic CDS archive
+  //     The is the output of the traditional CDS dynamic archive creation workflow, e.g.:
+  //         java -XX:ArchiveClassesAtExit=dynamic.jsa -cp app.jar App
+  //
+  // The first 3 types are also referred to as "static archives". At any time, a JVM can load
+  // at most one static archive, and at most one dynamic archive.
+  //
+  // Note: [2] is also known as the "preimage static archive". [3] is also known as the "final static archive".
+  // These are outdated terminology and will be removed in the future.
+
   // archive(s) in general
   static bool is_dumping_archive()                           { return is_dumping_static_archive() || is_dumping_dynamic_archive(); }
 
@@ -120,29 +145,19 @@ public:
   static bool is_dumping_static_archive()                    { return CDS_ONLY(_is_dumping_static_archive) NOT_CDS(false); }
   static void enable_dumping_static_archive()                { CDS_ONLY(_is_dumping_static_archive = true); }
 
-  // A static CDS archive can be dumped in three modes:
-  //
-  // "classic"   - This is the traditional CDS workflow of
-  //               "java -Xshare:dump -XX:SharedClassListFile=file.txt".
-  //
-  // "preimage"  - This happens when we execute the JEP 483 training run, e.g:
-  //               "java -XX:AOTMode=record -XX:AOTConfiguration=app.aotconfig -cp app.jar App"
-  //               The above command writes app.aotconfig as a "CDS preimage". This
-  //               is a binary file that contains all the classes loaded during the
-  //               training run, plus profiling data (e.g., the resolved constant pool entries).
-  //
-  // "final"     - This happens when we execute the JEP 483 assembly phase, e.g:
-  //               "java -XX:AOTMode=create -XX:AOTConfiguration=app.aotconfig -XX:AOTCache=app.aot -cp app.jar"
-  //               The above command loads all classes from app.aotconfig, perform additional linking,
-  //               and writes app.aot as a "CDS final image" file.
-  //
-  // The main structural difference between "preimage" and "final" is that the preimage
-  // - has a different magic number (0xcafea07c)
-  // - does not have any archived Java heap objects
-  // - does not have aot-linked classes
   static bool is_dumping_classic_static_archive()            NOT_CDS_RETURN_(false);
   static bool is_dumping_preimage_static_archive()           NOT_CDS_RETURN_(false);
   static bool is_dumping_final_static_archive()              NOT_CDS_RETURN_(false);
+
+  // Is the current JVM loading classes from an input archive and dumping into an output archive.
+  static bool is_dumping_with_input_archive() { return is_dumping_aot_cache() || is_redumping_aot_configuration(); }
+
+  // New names:
+  static bool is_dumping_aot_configuration() { return is_dumping_preimage_static_archive(); }
+  static bool is_dumping_aot_cache()         { return is_dumping_final_static_archive(); }
+
+  // Iterative training
+  static bool is_redumping_aot_configuration() { return is_dumping_aot_configuration() && is_using_archive(); }
 
   // dynamic_archive
   static bool is_dumping_dynamic_archive()                   { return CDS_ONLY(_is_dumping_dynamic_archive) NOT_CDS(false); }
@@ -181,6 +196,7 @@ public:
 
   static bool are_vm_options_incompatible_with_dumping_heap() NOT_CDS_JAVA_HEAP_RETURN_(true);
   static void log_reasons_for_not_dumping_heap();
+  static bool can_allocate_scratch_oops()                     NOT_CDS_JAVA_HEAP_RETURN_(false);
 
   static void disable_heap_dumping()                         { CDS_ONLY(_disable_heap_dumping = true); }
   static bool is_dumping_heap()                              NOT_CDS_JAVA_HEAP_RETURN_(false);
@@ -210,7 +226,7 @@ public:
 
   // Some CDS functions assume that they are called only within a single-threaded context. I.e.,
   // they are called from:
-  //    - The VM thread (e.g., inside VM_PopulateDumpSharedSpace)
+  //    - A VMOp_PopulateDumpSharedSpace operation in the VMThread, or
   //    - The thread that performs prepatory steps before switching to the VM thread
   // Since these two threads never execute concurrently, we can avoid using locks in these CDS
   // function. For safety, these functions should assert with CDSConfig::current_thread_is_vm_or_dumper().
@@ -220,8 +236,9 @@ public:
     ~DumperThreadMark();
   };
 
-  static bool current_thread_is_dumper() NOT_CDS_RETURN_(false);
-  static bool current_thread_is_vm_or_dumper() NOT_CDS_RETURN_(false);
+  static bool in_dumper_thread() NOT_CDS_RETURN_(false);
+  static bool in_aot_safepoint() NOT_CDS_RETURN_(false);
+  static bool in_dumper_thread_or_aot_safepoint() { return in_dumper_thread() || in_aot_safepoint(); }
 };
 
 #endif // SHARE_CDS_CDSCONFIG_HPP

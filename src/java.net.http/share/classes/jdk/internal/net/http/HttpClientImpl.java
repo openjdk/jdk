@@ -1135,8 +1135,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             Executor executor = exchangeExecutor == null
                     ? this.delegatingExecutor : exchangeExecutor;
 
-            MultiExchange<T> mex = new MultiExchange<>(userRequest,
-                                                            requestImpl,
+            MultiExchange<T> mex = new MultiExchange<>(requestImpl,
                                                             this,
                                                             responseHandler,
                                                             pushPromiseHandler);
@@ -1839,8 +1838,8 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     }
 
     private void initFilters() {
-        addFilter(AuthenticationFilter.class);
         addFilter(RedirectFilter.class);
+        addFilter(AuthenticationFilter.class);
         if (this.cookieHandler != null) {
             addFilter(CookieFilter.class);
         }

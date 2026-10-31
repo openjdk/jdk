@@ -270,9 +270,7 @@ void PSPromotionManager::process_array_chunk(PartialArrayState* state, bool stol
   process_array_chunk(claim._array, claim._start, claim._end);
 }
 
-void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
-  assert(old_obj->is_forwarded(), "precondition");
-  assert(old_obj->forwardee() == new_obj, "precondition");
+void PSPromotionManager::push_objArray(oop new_obj) {
   precond(new_obj->is_array_with_oops());
 
   objArrayOop to_array = objArrayOop(new_obj);
