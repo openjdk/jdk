@@ -25,7 +25,7 @@
 #include "opto/intrinsicnode.hpp"
 #include "opto/rangeinference.hpp"
 #include "opto/type.hpp"
-#include "runtime/os.hpp"
+#include "gtestRandom.hpp"
 #include "unittest.hpp"
 #include "utilities/intn_t.hpp"
 #include "utilities/rbTree.hpp"
@@ -35,12 +35,12 @@
 
 template <class U>
 static U uniform_random() {
-  return U(juint(os::random()));
+  return U(juint(GtestRandom::random()));
 }
 
 template <>
 julong uniform_random<julong>() {
-  return (julong(os::random()) << 32) | julong(juint(os::random()));
+  return (julong(GtestRandom::random()) << 32) | julong(juint(GtestRandom::random()));
 }
 
 static void test_canonicalize_constraints_trivial() {
