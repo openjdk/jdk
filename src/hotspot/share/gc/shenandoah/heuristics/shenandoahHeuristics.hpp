@@ -289,9 +289,19 @@ public:
   // Format prefix and emit log message indicating a GC cycle hs been triggered
   void log_trigger(const char* fmt, ...) const ATTRIBUTE_PRINTF(2, 3);
 
+  // Trigger when bytes allocated since last gc cycle exceeds threshold
+  bool trigger_allocation_threshold(size_t used, size_t capacity);
+
+  // Trigger when bytes available falls below min free threshold
+  bool trigger_min_free_threshold(size_t available, size_t capacity);
+
   PenaltyData consume_penalty_data();
 
   DEBUG_ONLY(static void assert_humongous_mark_consistency(ShenandoahHeapRegion* region));
+
+private:
+  // for allocation threshold trigger
+  size_t _bytes_used_at_end_of_gc;
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
