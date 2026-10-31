@@ -71,7 +71,7 @@ public class JMap extends Tool {
     public static final int MODE_CLSTATS = 2;
     public static final int MODE_PMAP = 3;
     public static final int MODE_HEAP_GRAPH_HPROF_BIN = 4;
-    public static final int MODE_HEAP_GRAPH_GXL = 5; // retierd
+    public static final int MODE_HEAP_GRAPH_GXL = 5; // retired
     public static final int MODE_FINALIZERINFO = 6;
 
     private static String dumpfile = "heap.bin";
