@@ -26,7 +26,6 @@
 package sun.security.ssl;
 
 import sun.security.ssl.Authenticator.MAC;
-import sun.security.util.Debug;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -372,7 +371,7 @@ enum SSLCipher {
             ProtocolVersion[]>[] writeCipherGenerators;
 
     // Map of Ciphers listed in jdk.tls.keyLimits
-    static final HashMap<String, Long> cipherLimits = new HashMap<>();
+    private static final HashMap<String, Long> cipherLimits = new HashMap<>();
 
     // Keywords found on the jdk.tls.keyLimits security property.
     static final String[] tag = {"KEYUPDATE"};
