@@ -85,6 +85,33 @@ const RegMask &IfNode::out_RegMask() const {
   return RegMask::EMPTY;
 }
 
+void IfNode::pin_nodes_dependent_on(Node* ctrl, int old_iff_opcode, PhaseIterGVN* igvn, PhaseIdealLoop* loop) {
+  for (DUIterator i = ctrl->outs(); ctrl->has_out(i); i++) {
+    Node* use = ctrl->out(i);
+    if (!use->depends_only_on_test()) {
+      continue;
+    }
+
+    // When a RangeCheckNode is folded because its condition is a constant, IfProjNode::Identity
+    // returns the control input of the RangeCheckNode. As a result, when the old IfNode is not a
+    // RangeCheckNode, and a Load output of it depends_only_on_test, we don't need to pin the Load.
+    if (use->is_Load() && (old_iff_opcode != Op_RangeCheck)) {
+      continue;
+    }
+
+    Node* pinned = use->pin_node_under_control();
+    if (pinned != nullptr) {
+      if (loop != nullptr) {
+        loop->register_new_node_with_ctrl_of(pinned, use);
+      } else {
+        igvn->register_new_node_with_optimizer(pinned, use);
+      }
+      igvn->replace_node(use, pinned);
+      --i;
+    }
+  }
+}
+
 //------------------------------split_if---------------------------------------
 // Look for places where we merge constants, then test on the merged value.
 // If the IF test will be constant folded on the path with the constant, we
@@ -424,7 +451,9 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   }
 
   // Now replace the original iff's True/False with region_s/region_t.
-  // This makes the original iff go dead.
+  // This makes the original iff go dead. Record old iff opcode.
+  int old_iff_opcode = iff->Opcode();
+
   for (DUIterator_Last i3min, i3 = iff->last_outs(i3min); i3 >= i3min; --i3) {
     Node* p = iff->last_out(i3);
     assert( p->Opcode() == Op_IfTrue || p->Opcode() == Op_IfFalse, "" );
@@ -463,6 +492,11 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
 
   // Now remove the bogus extra edges used to keep things alive
   igvn->remove_dead_node(hook, PhaseIterGVN::NodeOrigin::Speculative);
+
+  // Control is updated here to a region, which is not a test, so any node that
+  // depends_only_on_test must be pinned
+  IfNode::pin_nodes_dependent_on(region_s, old_iff_opcode, igvn, nullptr);
+  IfNode::pin_nodes_dependent_on(region_f, old_iff_opcode, igvn, nullptr);
 
   // Must return either the original node (now dead) or a new node
   // (Do not return a top here, since that would break the uniqueness of top.)
