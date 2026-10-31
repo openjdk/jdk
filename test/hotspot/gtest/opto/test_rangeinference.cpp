@@ -741,6 +741,38 @@ public:
 };
 
 template <class U>
+class OpAdd {
+public:
+  U operator()(U v1, U v2) const {
+    return v1 + v2;
+  }
+};
+
+template <class CTP>
+class InferAdd {
+public:
+  CTP operator()(CTP t1, CTP t2) const {
+    return RangeInference::infer_add(t1, t2);
+  }
+};
+
+template <class U>
+class OpSub {
+public:
+  U operator()(U v1, U v2) const {
+    return v1 - v2;
+  }
+};
+
+template <class CTP>
+class InferSub {
+public:
+  CTP operator()(CTP t1, CTP t2) const {
+    return RangeInference::infer_sub(t1, t2);
+  }
+};
+
+template <class U>
 class OpCompressBits {
 public:
   U operator()(U v1, U v2) const {
@@ -765,6 +797,8 @@ TEST(opto, range_inference) {
   test_binary<OpAnd, InferAnd>();
   test_binary<OpOr, InferOr>();
   test_binary<OpXor, InferXor>();
+  test_binary<OpAdd, InferAdd>();
+  test_binary<OpSub, InferSub>();
   test_binary<OpCompressBits, InferCompressBits>();
   test_lshift();
 }

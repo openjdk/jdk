@@ -30,7 +30,7 @@ import compiler.lib.ir_framework.*;
  * @bug 8267265 8389218
  * @summary Test that Ideal transformations of AddINode* are being performed as expected.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.AddINodeIdealizationTests
+ * @run driver ${test.main.class}
  */
 public class AddINodeIdealizationTests {
     public static void main(String[] args) {
@@ -46,7 +46,8 @@ public class AddINodeIdealizationTests {
                  "test17", "test18", "test19",
                  "test20", "test21", "test22",
                  "test23", "test24", "test25",
-                 "test26", "test27"})
+                 "test26", "test27", "test28",
+                 "test29"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
@@ -93,6 +94,8 @@ public class AddINodeIdealizationTests {
         Asserts.assertEQ(Math.min(a, b) + Math.max(a, b), test25(a, b));
         Asserts.assertEQ(Math.max((a | -2) + Integer.MIN_VALUE, 0), test26(a));
         Asserts.assertEQ(Math.min(((a & 1) | 2) + Integer.MAX_VALUE, 0), test27(a));
+        Asserts.assertEQ(0                              , test28(a, b));
+        Asserts.assertEQ(8                              , test29(a, b));
     }
 
     @Test
@@ -331,5 +334,24 @@ public class AddINodeIdealizationTests {
     public int test27(int x) {
         int value = ((x & 1) | 2) + Integer.MAX_VALUE;
         return Math.min(value, 0);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD, IRNode.AND, IRNode.LSHIFT})
+    // Both x and y have 3 trailing zeros, so (x + y) has 3 trailing zeros
+    public int test28(int x, int y) {
+        x <<= 3;
+        y <<= 3;
+        return (x + y) & 7;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD, IRNode.AND, IRNode.LSHIFT, IRNode.OR})
+    // The compiler should be able to conclude that x + y ends with 0b010xx and constant-fold the
+    // method
+    public int test29(int x, int y) {
+        x = (x & -31) | 0b100; // x ends with 0b0010x
+        y = (y & -31) | 0b100; // y ends with 0b0010x
+        return (x + y) & 0b11100;
     }
 }

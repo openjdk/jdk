@@ -2200,7 +2200,7 @@ bool TypeLong::empty(void) const {
 //------------------------------dump2------------------------------------------
 #ifndef PRODUCT
 void TypeInt::dump2(Dict& d, uint depth, outputStream* st) const {
-  TypeIntHelper::int_type_dump(this, st, false);
+  TypeIntHelper::int_type_dump(this, st, Verbose);
 }
 
 void TypeInt::dump_verbose() const {
@@ -2208,7 +2208,7 @@ void TypeInt::dump_verbose() const {
 }
 
 void TypeLong::dump2(Dict& d, uint depth, outputStream* st) const {
-  TypeIntHelper::int_type_dump(this, st, false);
+  TypeIntHelper::int_type_dump(this, st, Verbose);
 }
 
 void TypeLong::dump_verbose() const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import compiler.lib.ir_framework.*;
  * @bug 8267265 8272735
  * @summary Test that Ideal transformations of SubLNode* are being performed as expected.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.SubLNodeIdealizationTests
+ * @run driver ${test.main.class}
  */
 public class SubLNodeIdealizationTests {
     public static void main(String[] args) {
@@ -43,7 +43,8 @@ public class SubLNodeIdealizationTests {
                  "test10", "test11", "test12",
                  "test13", "test14", "test15",
                  "test16", "test17", "test18",
-                 "test19", "test20", "test21"})
+                 "test19", "test20", "test21",
+                 "test22", "test23"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -81,6 +82,8 @@ public class SubLNodeIdealizationTests {
         Asserts.assertEQ(a*b - b*c        , test19(a, b, c));
         Asserts.assertEQ(a*c - b*c        , test20(a, b, c));
         Asserts.assertEQ(a*b - c*a        , test21(a, b, c));
+        Asserts.assertEQ(0L               , test22(a, b));
+        Asserts.assertEQ(8L               , test23(a, b));
     }
 
     @Test
@@ -248,5 +251,24 @@ public class SubLNodeIdealizationTests {
     // Checks a*b-c*a => a*(b-c)
     public long test21(long a, long b, long c) {
         return a*b - c*a;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.AND, IRNode.LSHIFT, IRNode.SUB})
+    // Both x and y have 3 trailing zeros, so (x - y) has 3 trailing zeros
+    public long test22(long x, long y) {
+        x <<= 3;
+        y <<= 3;
+        return (x - y) & 7;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD, IRNode.AND, IRNode.OR, IRNode.SUB})
+    // The compiler should be able to conclude that x - y ends with 0b010xx and constant-fold the
+    // method
+    public long test23(long x, long y) {
+        x = (x & -31) | 0b10010; // x ends with 0b1001x
+        y = (y & -31) | 0b1000;  // y ends with 0b0100x
+        return (x - y) & 0b11100;
     }
 }
