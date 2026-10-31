@@ -517,13 +517,37 @@ void ShenandoahBarrierSetC2::analyze_dominating_barriers() const {
 }
 
 uint ShenandoahBarrierSetC2::estimated_barrier_size(const Node* node) const {
-  // Barrier impact on fast-path is driven by GC state checks emitted very late.
-  // These checks are tight load-test-branch sequences, with no impact on C2 graph
-  // size. Limiting unrolling in presence of GC barriers might turn some loops
-  // tighter than with default unrolling, which may benefit performance due to denser
-  // code. Testing shows it is still counter-productive.
-  // Therefore, we report zero barrier size to let C2 do its normal thing.
-  return 0;
+  // Barrier cost drives how deep C2 optimizations go, to avoid emitting too many
+  // GC barriers, for example during loop unrolling. This is a heuristic question,
+  // and it is asked before final barrier elision code is able to remove some
+  // of the barriers. It also asks for a node count, which for late-expanded barriers
+  // forces us to make assumptions. We give an approximate answer, estimating
+  // how many Ideal nodes our barrier shapes would correspond to. This model tries
+  // to match other GCs as much as possible to avoid accidental performance differences.
+
+  uint8_t bd = MemNode::barrier_data(node) & ShenandoahBitsReal;
+
+  if (bd == 0) {
+    // No real barriers.
+    return 0;
+  }
+
+  uint nodes = 0;
+
+  if ((bd & ~ShenandoahBitCardMark) != 0) {
+    // Hot-patched GC state checks are either a single nop or a jump.
+    nodes += 1;
+  }
+
+  if ((bd & ShenandoahBitCardMark) != 0) {
+    // Card mark is not covered by hot-patching.
+    nodes += 4;
+    if (UseCondCardMark) {
+      nodes += 4;
+    }
+  }
+
+  return nodes;
 }
 
 bool ShenandoahBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, bool is_clone_instance, ArrayCopyPhase phase) const {
