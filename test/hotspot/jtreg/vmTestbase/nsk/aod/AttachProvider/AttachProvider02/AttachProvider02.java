@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@
 
 package nsk.aod.AttachProvider.AttachProvider02;
 
+import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 import com.sun.tools.attach.spi.AttachProvider;
@@ -73,7 +74,12 @@ public class AttachProvider02 extends AODTestRunner {
 
         String currentVMId = getCurrentVMId();
 
+        // An AttachProvider for core files is expected to fail on a PID, but check that not all providers fail.
+        int providers = 0;
+        int failedProviders = 0;
+
         for (AttachProvider provider : AttachProvider.providers()) {
+            providers++;
             log.display("Provider: " + provider);
             log.display("Provider.name(): " + provider.name());
             log.display("Provider.type(): " + provider.type());
@@ -81,12 +87,18 @@ public class AttachProvider02 extends AODTestRunner {
             TestUtils.assertNotNull(provider.name(), "Provider.name() returns null");
             TestUtils.assertNotNull(provider.type(), "Provider.type() returns null");
 
-            tryAttach(provider, currentVMId, false);
-            tryAttach(provider, currentVMId, true);
+            try {
+                tryAttach(provider, currentVMId, false);
+                tryAttach(provider, currentVMId, true);
 
-            tryAttach(provider, targetVMId, false);
-            tryAttach(provider, targetVMId, true);
+                tryAttach(provider, targetVMId, false);
+                tryAttach(provider, targetVMId, true);
+            } catch (AttachNotSupportedException anse) {
+                failedProviders++;
+                log.display(anse);
+            }
         }
+        TestUtils.assertTrue(providers != failedProviders, "Must have one AttachProvider that does not fail.");
     }
 
     void tryAttach(AttachProvider provider, String vmId, boolean useVMDescriptor) throws Throwable {

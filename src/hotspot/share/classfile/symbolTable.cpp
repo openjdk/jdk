@@ -562,8 +562,7 @@ Symbol* SymbolTable::new_permanent_symbol(const char* name) {
   return sym;
 }
 
-TableStatistics SymbolTable::get_table_statistics() {
-  static TableStatistics ts;
+bool SymbolTable::get_table_statistics(TableStatistics& ts) {
   auto sz = [&](Symbol* value) {
     assert(value != nullptr, "expected valid value");
     return (value)->size() * HeapWordSize;
@@ -572,7 +571,7 @@ TableStatistics SymbolTable::get_table_statistics() {
   Thread* jt = Thread::current();
   SymbolTableHash::StatisticsTask sts(_local_table);
   if (!sts.prepare(jt)) {
-    return ts;  // return old table statistics
+    return false;
   }
   {
     TraceTime timer("GetStatistics", TRACETIME_LOG(Debug, symboltable, perf));
@@ -585,11 +584,15 @@ TableStatistics SymbolTable::get_table_statistics() {
     }
   }
   ts = sts.done(jt);
-  return ts;
+  return true;
 };
 
 void SymbolTable::print_table_statistics(outputStream* st) {
-  TableStatistics ts = get_table_statistics();
+  TableStatistics ts;
+  if (!get_table_statistics(ts)) {
+    st->print("Failed to take statistics");
+    return;
+  }
   ts.print(st, "SymbolTable");
 
   if (!_shared_table.empty()) {

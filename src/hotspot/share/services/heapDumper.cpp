@@ -2607,7 +2607,8 @@ WorkerThreads* VM_HeapDumper::prepare_parallel_dump() {
   uint num_active_workers = 0;
   WorkerThreads* workers = nullptr;
 
-  if (Universe::heap()->supports_parallel_object_iteration() && _num_dumper_threads > 1) {
+  if (Universe::heap()->supports_parallel_object_iteration() && _num_dumper_threads > 1
+      && !Thread::is_revived()) {
     num_active_workers = DiagnosticWorkers::try_and_set_active_workers(_num_dumper_threads);
   }
 
@@ -2667,7 +2668,6 @@ void VM_HeapDumper::doit() {
   }
 
   WorkerThreads* workers = prepare_parallel_dump();
-
   if (!is_parallel_dump()) {
     work(VMDumperId);
   } else {

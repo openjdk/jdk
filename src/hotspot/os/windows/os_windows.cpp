@@ -63,6 +63,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/suspendedThreadTask.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
@@ -1334,6 +1335,14 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   info_ptr->may_skip_forward = false;
 
   info_ptr->kind = JVMTI_TIMER_ELAPSED;                // elapsed not CPU time
+}
+
+jlong os::initial_time_count() {
+  return 0;
+}
+
+uint64_t os::initial_time_date() {
+  return 0;
 }
 
 char* os::local_time_string(char *buf, size_t buflen) {
@@ -4250,7 +4259,7 @@ OSReturn os::get_native_priority(const Thread* const thread,
   }
   int os_prio = GetThreadPriority(thread->osthread()->thread_handle());
   if (os_prio == THREAD_PRIORITY_ERROR_RETURN) {
-    assert(false, "GetThreadPriority failed");
+    assert(Thread::is_revived(), "GetThreadPriority failed"); // Always assert, unless revived.
     return OS_ERR;
   }
   *priority_ptr = os_prio;
@@ -5358,7 +5367,11 @@ void os::exit(int num) {
 }
 
 void os::_exit(int num) {
-  exit_process_or_thread(EPT_PROCESS_DIE, num);
+  if (!Thread::is_revived()) {
+    exit_process_or_thread(EPT_PROCESS_DIE, num);
+  } else {
+    TerminateProcess(GetCurrentProcess(), num);
+  }
 }
 
 // Is a (classpath) directory empty?
@@ -6054,6 +6067,12 @@ PlatformMonitor::PlatformMonitor() {
 
 PlatformMonitor::~PlatformMonitor() {
   // There is no DeleteConditionVariable API
+}
+
+void PlatformMutex::clear_for_revive() {
+  guarantee(Thread::is_revived(), "Must be in revived VM to revive PlatformMutex");
+  memset(&_mutex, 0, sizeof(CRITICAL_SECTION));
+  InitializeCriticalSection(&_mutex);
 }
 
 // Must already be locked

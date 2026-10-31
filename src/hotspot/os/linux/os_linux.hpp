@@ -200,6 +200,8 @@ class os::Linux {
 
   // none present
 
+  static void revive_init();
+
  private:
   static void numa_init();
 

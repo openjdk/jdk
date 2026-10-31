@@ -204,7 +204,7 @@ void VM_GC_HeapInspection::doit() {
     }
   }
   HeapInspection inspect;
-  inspect.heap_inspection(_out, _parallel_thread_num);
+  inspect.heap_inspection(_out, Thread::is_revived() ? 1:  _parallel_thread_num);
 }
 
 VM_CollectForMetadataAllocation::VM_CollectForMetadataAllocation(ClassLoaderData* loader_data,

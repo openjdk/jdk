@@ -51,7 +51,7 @@ import sun.jvmstat.PlatformSupport;
  * Linux implementation of HotSpotVirtualMachine
  */
 @SuppressWarnings("restricted")
-public class VirtualMachineImpl extends HotSpotVirtualMachine {
+public class VirtualMachineImpl extends HotSpotVirtualMachineLive {
     // "/tmp" is used as a global well-known location for the files
     // .java_pid<pid>. and .attach_pid<pid>. It is important that this
     // location is the same for all processes, otherwise the tools
@@ -75,7 +75,12 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         super(provider, vmid);
 
         // This provider only understands pids
-        int pid = Integer.parseInt(vmid);
+        int pid = -1;
+        try {
+            pid = Integer.parseInt(vmid);
+        } catch (NumberFormatException nfe) {
+            throw new AttachNotSupportedException("Invalid process identifier: " + vmid);
+        }
         if (pid < 1) {
             throw new AttachNotSupportedException("Invalid process identifier: " + vmid);
         }
