@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,17 +126,15 @@ final class StringCharBuffer                                  // package-private
     }
 
     public final CharBuffer subSequence(int start, int end) {
-        try {
-            int pos = position();
-            return new StringCharBuffer(str,
-                                        -1,
-                                        pos + checkIndex(start, pos),
-                                        pos + checkIndex(end, pos),
-                                        capacity(),
-                                        offset);
-        } catch (IllegalArgumentException x) {
-            throw new IndexOutOfBoundsException();
-        }
+        int pos = position();
+        int rem = limit() - pos;
+        Objects.checkFromToIndex(start, end, rem);
+        return new StringCharBuffer(str,
+                                    -1,
+                                    pos + start,
+                                    pos + end,
+                                    capacity(),
+                                    offset);
     }
 
     public boolean isDirect() {

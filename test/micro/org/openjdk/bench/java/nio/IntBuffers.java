@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 import java.nio.*;
 import java.util.concurrent.TimeUnit;
 import static java.nio.ByteOrder.*;
@@ -112,6 +113,23 @@ public class IntBuffers {
     private void innerLoopPutInt(IntBuffer buf) {
         for (int i = 0; i < buf.capacity(); i++) {
             buf.put(i, intValue);
+        }
+    }
+
+    // -- Heap `wrap(int[] array, int offset, int length)`
+
+    @Benchmark
+    public IntBuffer testHeapArrayWrapValidRange() {
+        return IntBuffer.wrap(intArray, 1, intArray.length - 1);
+    }
+
+    @Benchmark
+    public void testHeapArrayWrapBogusRange(Blackhole bh) {
+        try {
+            bh.consume(IntBuffer.wrap(intArray, -1, intArray.length));
+            throw new AssertionError();
+        } catch (IndexOutOfBoundsException ioobe) {
+            bh.consume(ioobe);
         }
     }
 

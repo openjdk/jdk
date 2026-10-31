@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -439,11 +439,8 @@ public abstract sealed class $Type$Buffer
     public static $Type$Buffer wrap($type$[] array,
                                     int offset, int length)
     {
-        try {
-            return new Heap$Type$Buffer(array, offset, length, null);
-        } catch (IllegalArgumentException x) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromIndexSize(offset, length, array.length);   // Implicit null check on `array`
+        return new Heap$Type$Buffer(array, offset, length, null);
     }
 
     /**
@@ -548,11 +545,8 @@ public abstract sealed class $Type$Buffer
      *          parameters do not hold
      */
     public static CharBuffer wrap(CharSequence csq, int start, int end) {
-        try {
-            return new StringCharBuffer(csq, start, end);
-        } catch (IllegalArgumentException x) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromToIndex(start, end, csq.length());   // Implicit null check on `csq`
+        return new StringCharBuffer(csq, start, end);
     }
 
     /**
