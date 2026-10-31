@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,12 @@ class LogOutput : public CHeapObj<mtLogging> {
   virtual void describe(outputStream *out);
 
   virtual const char* name() const = 0;
+
+  // Match a normalized output name. File outputs also recognize equivalent paths.
+  virtual bool matches_name(const char* name) const {
+    return strcmp(this->name(), name) == 0;
+  }
+
   virtual bool initialize(const char* options, outputStream* errstream) = 0;
   virtual bool set_option(const char* key, const char* value, outputStream* errstream) = 0;
   virtual int write(const LogDecorations& decorations, const char* msg) = 0;

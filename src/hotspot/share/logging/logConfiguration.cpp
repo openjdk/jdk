@@ -177,7 +177,7 @@ static bool normalize_output_name(const char* full_name, char* buffer, size_t le
 
 size_t LogConfiguration::find_output(const char* name) {
   for (size_t i = 0; i < _n_outputs; i++) {
-    if (strcmp(_outputs[i]->name(), name) == 0) {
+    if (_outputs[i]->matches_name(name)) {
       return i;
     }
   }
