@@ -2404,6 +2404,7 @@ void MacroAssembler::null_check(Register reg, int offset) {
 }
 
 void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert_different_registers(markword, rscratch2);
   mov(rscratch2, markWord::value_type_pattern_mask);
   andr(markword, markword, rscratch2);
@@ -2413,6 +2414,7 @@ void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_va
 }
 
 void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert_different_registers(tmp, rscratch1);
   if (can_be_null) {
     cbz(object, not_value_type);
@@ -2426,16 +2428,19 @@ void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, L
 }
 
 void MacroAssembler::test_field_is_null_free_value_type(Register flags, Register temp_reg, Label& is_null_free_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert(temp_reg == noreg, "not needed"); // keep signature uniform with x86
   tbnz(flags, ResolvedFieldEntry::is_null_free_value_type_shift, is_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_not_null_free_value_type(Register flags, Register temp_reg, Label& not_null_free_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert(temp_reg == noreg, "not needed"); // keep signature uniform with x86
   tbz(flags, ResolvedFieldEntry::is_null_free_value_type_shift, not_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label& is_flat) {
+  assert(UseFieldFlattening, "should not be used without field flattening enabled");
   assert(temp_reg == noreg, "not needed"); // keep signature uniform with x86
   tbnz(flags, ResolvedFieldEntry::is_flat_shift, is_flat);
 }
@@ -2452,23 +2457,28 @@ void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int
 }
 
 void MacroAssembler::test_flat_array_oop(Register oop, Register temp_reg, Label& is_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, true, is_flat_array);
 }
 
 void MacroAssembler::test_non_flat_array_oop(Register oop, Register temp_reg,
                                                   Label&is_non_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, false, is_non_flat_array);
 }
 
 void MacroAssembler::test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, true, is_null_free_array);
 }
 
 void MacroAssembler::test_non_null_free_array_oop(Register oop, Register temp_reg, Label&is_non_null_free_array) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, false, is_non_null_free_array);
 }
 
 void MacroAssembler::test_flat_array_layout(Register lh, Label& is_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   tst(lh, Klass::_lh_array_tag_flat_value_bit_inplace);
   br(Assembler::NE, is_flat_array);
 }
@@ -5695,11 +5705,13 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
 }
 
 void MacroAssembler::payload_offset(Register value_klass, Register offset) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   ldr(offset, Address(value_klass, ValueKlass::adr_members_offset()));
   ldrw(offset, Address(offset, ValueKlass::payload_offset_offset()));
 }
 
 void MacroAssembler::payload_address(Register oop, Register data, Register value_klass) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   // ((address) (void*) o) + vk->payload_offset();
   Register offset = (data == oop) ? rscratch1 : data;
   payload_offset(value_klass, offset);
@@ -5887,7 +5899,11 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
   code_section()->relocate(inst_mark(), dest.rspec());
   // 8143067: Ensure that the adrp can reach the dest from anywhere within
   // the code cache so that if it is relocated we know it will still reach
-  if (offset_high >= -(1<<20) && offset_low < (1<<20)) {
+  // For AOT code force far distance for external_word relocation.
+  const bool force_far = AOTCodeCache::is_on_for_dump() &&
+                         (dest.rspec().type() == relocInfo::external_word_type) &&
+                         !CodeCache::contains(dest.target());
+  if (!force_far && offset_high >= -(1<<20) && offset_low < (1<<20)) {
     _adrp(reg1, dest.target());
   } else {
     uint64_t target = (uint64_t)dest.target();
@@ -7152,6 +7168,7 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
 
 // Move a value between registers/stack slots and update the reg_state
 bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState reg_state[]) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   assert(from->is_valid() && to->is_valid(), "source and destination must be valid");
   if (reg_state[to->value()] == reg_written) {
     return true; // Already written
@@ -7214,6 +7231,7 @@ bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState re
 // Calculate the extra stack space required for packing or unpacking value
 // args and adjust the stack pointer
 int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   int sp_inc = args_on_stack * VMRegImpl::stack_slot_size;
   sp_inc = align_up(sp_inc, StackAlignmentInBytes);
   assert(sp_inc > 0, "sanity");
@@ -7245,6 +7263,7 @@ int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
 bool MacroAssembler::unpack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
                                          VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
                                          RegState reg_state[]) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   assert(sig->at(sig_index)._bt == T_VOID, "should be at end delimiter");
   assert(from->is_valid(), "source must be valid");
   bool progress = false;
@@ -7391,6 +7410,7 @@ bool MacroAssembler::unpack_value_helper(const GrowableArray<SigEntry>* sig, int
 bool MacroAssembler::pack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
                                        VMRegPair* from, int from_count, int& from_index, VMReg to,
                                        RegState reg_state[], Register val_array) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   assert(sig->at(sig_index)._bt == T_METADATA, "should be at delimiter");
   assert(to->is_valid(), "destination must be valid");
 

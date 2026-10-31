@@ -1732,9 +1732,8 @@ LIR_Opr LIRGenerator::get_and_load_element_address(LIRItem& array, LIRItem& inde
   // We need to be careful with overflows in 32-bit arithmetic
   Unimplemented();
 #endif
-  ciType* array_type = array.value()->declared_type();
-  ciFlatArrayKlass* flat_array_klass = array_type->as_flat_array_klass();
-  assert(flat_array_klass->is_loaded(), "must be");
+  ciFlatArrayKlass* flat_array_klass = array.value()->as_loaded_flat_array_klass_or_null();
+  assert(flat_array_klass != nullptr && flat_array_klass->is_loaded(), "must be");
 
   int array_header_size = flat_array_klass->array_header_in_bytes();
   int shift = flat_array_klass->log2_element_size();
@@ -1778,7 +1777,8 @@ LIR_Opr LIRGenerator::access_flat_array(bool is_load, LIRItem& array, LIRItem& i
   // Find the starting address of the source (inside the array)
   LIR_Opr elm_op = get_and_load_element_address(array, index);
 
-  ciFlatArrayKlass* array_klass = array.value()->declared_type()->as_flat_array_klass();
+  ciFlatArrayKlass* array_klass = array.value()->as_loaded_flat_array_klass_or_null();
+  assert(array_klass != nullptr, "must be");
   ciValueKlass* elem_klass = nullptr;
   if (field != nullptr) {
     elem_klass = field->type()->as_value_klass();
@@ -1921,7 +1921,8 @@ bool LIRGenerator::needs_null_free_array_store_check(StoreIndexed* x) {
 void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
   assert(x->is_pinned(),"");
   assert(x->elt_type() != T_ARRAY, "never used");
-  bool is_loaded_flat_array = x->array()->is_loaded_flat_array();
+  ciFlatArrayKlass* array_klass = x->array()->as_loaded_flat_array_klass_or_null();
+  bool is_loaded_flat_array = array_klass != nullptr;
   bool needs_range_check = x->compute_needs_range_check();
   bool use_length = x->length() != nullptr;
   bool obj_store = is_reference_type(x->elt_type());
@@ -1997,7 +1998,6 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
   }
 
   if (is_loaded_flat_array) {
-    ciFlatArrayKlass* array_klass = x->array()->declared_type()->as_flat_array_klass();
     ciValueKlass* elem_klass = array_klass->element_klass()->as_value_klass();
     bool null_free = array_klass->is_elem_null_free();
     if (null_free && !x->value()->is_null_free()) {
@@ -2391,8 +2391,7 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
     }
   }
 
-  ciFlatArrayKlass* flat_array_klass = x->array()->is_loaded_flat_array() ?
-                                       x->array()->declared_type()->as_flat_array_klass() : nullptr;
+  ciFlatArrayKlass* flat_array_klass = x->array()->as_loaded_flat_array_klass_or_null();
   bool assert_null = flat_array_klass != nullptr && !flat_array_klass->is_elem_null_free() &&
                      !flat_array_klass->element_klass()->as_value_klass()->is_initialized();
   if (assert_null) {
@@ -2423,12 +2422,11 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
     LIR_Opr payload = access_flat_array(true, array, index, buffer,
                                         x->delayed() == nullptr ? nullptr : x->delayed()->field(),
                                         x->delayed() == nullptr ? 0 : x->delayed()->offset());
-    ciFlatArrayKlass* array_klass = x->array()->declared_type()->as_flat_array_klass();
-    if (array_klass->is_elem_null_free()) {
+    if (flat_array_klass->is_elem_null_free()) {
       set_result(x, x->buffer()->operand());
     } else {
       // Check the null marker and set result to null if it's not set
-      ciValueKlass* elem_klass = array_klass->element_klass()->as_value_klass();
+      ciValueKlass* elem_klass = flat_array_klass->element_klass()->as_value_klass();
       BasicType bt = elem_klass->atomic_size_to_basic_type(false);
       assert(payload->is_valid(), "nullable flat array load must return the atomic payload");
       __ logical_and(payload, null_marker_mask(bt, elem_klass->null_marker_offset_in_payload()), payload);
