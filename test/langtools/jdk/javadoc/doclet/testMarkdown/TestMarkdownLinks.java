@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8298405 8390674
+ * @bug      8298405 8390674 8371504
  * @summary  Markdown support in the standard doclet
  * @library  /tools/lib ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
@@ -357,6 +357,7 @@ public class TestMarkdownLinks extends JavadocTester {
                     /// First sentence.
                     /// @see "A reference"
                     /// @see <a href="http://www.example.com">Example</a>
+                    /// @see [Example site](https://example.com/)
                     /// @see D a _Markdown_ description
                     public class C { }
                     """,
@@ -375,9 +376,85 @@ public class TestMarkdownLinks extends JavadocTester {
                     <ul class="tag-list">
                     <li>"A reference"</li>
                     <li><a href="http://www.example.com">Example</a></li>
+                    <li><a href="https://example.com/">Example site</a></li>
                     <li><a href="D.html" title="class in p">a <em>Markdown</em> description</a></li>
                     </ul>
                     </dd>""");
 
+    }
+
+    @Test
+    public void testSeeTagLinks(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                public class C {
+                    /// text
+                    /// @see [Example](https://example.com)
+                    public void simple() { }
+
+                    /// text
+                    /// @see [Example with *markup*](https://example.com/markup)
+                    public void markup() { }
+                }
+                """);
+
+        javadoc("-d", base.resolve("api").toString(),
+                "-Xdoclint:none",
+                "--source-path",
+                src.toString(),
+                "p");
+
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", true,
+                """
+                <ul class="tag-list">
+                <li><a href="https://example.com">Example</a></li>
+                </ul>""", """
+                <li><a href="https://example.com/markup">Example with <em>markup</em></a></li>""");
+
+    }
+
+    @Test
+    public void testInvalidSeeTagLinks(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                public class C {
+                    /// text
+                    /// @see [Example](https://example.com) trailing text
+                    public void trailing() { }
+
+                    /// text
+                    /// @see [One](https://a) [Two](https://b)
+                    public void multiple() { }
+
+                    /// text
+                    /// @see [String]
+                    public void shorthand() { }
+                }
+                """);
+
+        javadoc("-d", base.resolve("api").toString(),
+                "-Xdoclint:none",
+                "--source-path",
+                src.toString(),
+                "p");
+
+        checkExit(Exit.ERROR);
+
+        checkOutput(Output.OUT, true,
+                "error: invalid usage of tag @see",
+                "/// @see [Example](https://example.com) trailing text",
+                "/// @see [One](https://a) [Two](https://b)",
+                "/// @see [String]");
+        checkOutput(Output.OUT, false,
+                "IllegalStateException: LINK");
+        checkOutput("p/C.html", false,
+                """
+                <a href="https://example.com">Example</a> trailing text""", """
+                <a href="https://a">One</a>""", """
+                <a href="https://b">Two</a>""");
     }
 }
