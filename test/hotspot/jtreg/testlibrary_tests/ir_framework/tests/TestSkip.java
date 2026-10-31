@@ -50,6 +50,7 @@ public class TestSkip {
 
     private static void runGood() {
         TestFramework.run(SkipBasics.class);
+        TestFramework.run(SkipEarly.class);
     }
 
     private static void runMix() {
@@ -171,6 +172,32 @@ public class TestSkip {
             testWithMultipleTestsAllSkipFail1();
             testWithMultipleTestsAllSkipFail2();
         }
+    }
+
+    static class SkipEarly {
+        SkipEarly() {
+            throw new RuntimeException("should not be constructed");
+        }
+
+        @Test
+        @Skip
+        void baseTest() {}
+
+        @Test
+        @Skip
+        void runTest() {}
+
+        @Run(test = "runTest")
+        void run() {
+            runTest();
+        }
+
+        @Test
+        @Skip
+        void checkedTest() {}
+
+        @Check(test = "checkedTest")
+        void check() {}
     }
 
     static class IRVerification {

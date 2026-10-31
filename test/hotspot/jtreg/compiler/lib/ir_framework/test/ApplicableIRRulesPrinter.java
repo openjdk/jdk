@@ -138,23 +138,21 @@ public class ApplicableIRRulesPrinter {
      * - indices of all @IR rules that should be applied, separated by a comma
      * - "-1" if no @IR rule should not be applied
      */
-    public void emitApplicableIRRules(Method m, boolean skipped) {
+    public void emitApplicableIRRules(Method m) {
         method = m;
         int i = 0;
         ArrayList<Integer> validRules = new ArrayList<>();
         IR[] irAnnos = m.getAnnotationsByType(IR.class);
-        if (!skipped) {
-            for (IR irAnno : irAnnos) {
-                ruleIndex = i + 1;
-                try {
-                    if (shouldApplyIrRule(irAnno, m.getName(), ruleIndex, irAnnos.length)) {
-                        validRules.add(ruleIndex);
-                    }
-                } catch (TestFormatException e) {
-                    // Catch logged failure and continue to check other IR annotations.
+        for (IR irAnno : irAnnos) {
+            ruleIndex = i + 1;
+            try {
+                if (shouldApplyIrRule(irAnno, m.getName(), ruleIndex, irAnnos.length)) {
+                    validRules.add(ruleIndex);
                 }
-                i++;
+            } catch (TestFormatException e) {
+                // Catch logged failure and continue to check other IR annotations.
             }
+            i++;
         }
 
         if (irAnnos.length == 0 || validRules.isEmpty()) {

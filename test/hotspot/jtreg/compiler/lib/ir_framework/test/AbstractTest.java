@@ -44,11 +44,9 @@ abstract class AbstractTest {
     protected static final boolean VERIFY_OOPS = (Boolean)WHITE_BOX.getVMFlag("VerifyOops");
 
     protected final int warmupIterations;
-    protected final boolean skip;
 
-    AbstractTest(int warmupIterations, boolean skip) {
+    AbstractTest(int warmupIterations) {
         this.warmupIterations = warmupIterations;
-        this.skip = skip;
     }
 
     protected boolean shouldCompile(DeclaredTest test) {
@@ -56,13 +54,6 @@ abstract class AbstractTest {
     }
 
     abstract String getName();
-
-    /**
-     * Should test be executed?
-     */
-    public boolean isSkipped() {
-        return skip;
-    }
 
     /**
      * See {@link CompLevel#WAIT_FOR_COMPILATION}.
@@ -93,9 +84,6 @@ abstract class AbstractTest {
      * Run the associated test.
      */
     public void run() {
-        if (skip) {
-            return;
-        }
         for (int i = 0; i < warmupIterations; i++) {
             invokeTest();
         }

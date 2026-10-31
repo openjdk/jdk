@@ -814,6 +814,15 @@ class BadSkip {
     @Run(test = {"testSkipOnlyOneTestWithRunMultiple1",
                  "testSkipOnlyOneTestWithRunMultiple2"})
     public static void runTestSkipOnlyOneTestWithRunMultiple() {}
+
+    @Test
+    @NoFail // Bad warmup is reported only for runBadWarmupAtSkip()
+    @Skip
+    public static void testBadWarmupAtSkip() {}
+
+    @Warmup(-1)
+    @Run(test = {"testBadWarmupAtSkip"})
+    public static void runBadWarmupAtSkip() {}
 }
 
 class BadIRAnnotationBeforeFlagVM {
