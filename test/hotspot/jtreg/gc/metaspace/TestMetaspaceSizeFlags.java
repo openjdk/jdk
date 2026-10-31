@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test TestMetaspaceSizeFlags
- * @bug 8024650
+ * @bug 8024650 8395825
  * @summary Test that metaspace size flags can be set correctly
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -43,11 +43,19 @@ public class TestMetaspaceSizeFlags {
   // HotSpot uses a number of different values to align memory size flags.
   // This is currently the largest alignment (unless huge large pages are used).
   public static final long MAX_ALIGNMENT = 32 * M;
+  // If we set a MaxMetaspaceSize value less than the default MetaspaceSize
+  // value, then MetaspaceSize should be silently adjusted down.
+  public static final long LOWER_THAN_DEFAULT = 8 * M;
 
   public static void main(String [] args) throws Exception {
     testMaxMetaspaceSizeEQMetaspaceSize(MAX_ALIGNMENT, MAX_ALIGNMENT);
     // 8024650: MaxMetaspaceSize was adjusted instead of MetaspaceSize.
+    // 8395825: Specifying MaxMetaspaceSize < MetaspaceSize, both on the
+    //          cmd line is now an error.
     testMaxMetaspaceSizeLTMetaspaceSize(MAX_ALIGNMENT, MAX_ALIGNMENT * 2);
+    // 8395825: Specifying MaxMetaspaceSize < default MetaspaceSize on the
+    //          cmd line silently lowers MetaspaceSize to MaxMetaspaceSize.
+    testMaxMetaspaceSizeLTDefaultMetaspaceSize(LOWER_THAN_DEFAULT);
     testMaxMetaspaceSizeGTMetaspaceSize(MAX_ALIGNMENT * 2, MAX_ALIGNMENT);
   }
 
@@ -59,7 +67,11 @@ public class TestMetaspaceSizeFlags {
   }
 
   private static void testMaxMetaspaceSizeLTMetaspaceSize(long maxMetaspaceSize, long metaspaceSize) throws Exception {
-    MetaspaceFlags mf = runAndGetValue(maxMetaspaceSize, metaspaceSize);
+    runAndFail(maxMetaspaceSize, metaspaceSize);
+  }
+
+  private static void testMaxMetaspaceSizeLTDefaultMetaspaceSize(long maxMetaspaceSize) throws Exception {
+    MetaspaceFlags mf = runAndGetValue(maxMetaspaceSize, -1L);
     Asserts.assertEQ(mf.maxMetaspaceSize, maxMetaspaceSize);
     Asserts.assertEQ(mf.metaspaceSize, maxMetaspaceSize);
   }
@@ -70,6 +82,13 @@ public class TestMetaspaceSizeFlags {
     Asserts.assertGT(mf.maxMetaspaceSize, mf.metaspaceSize);
     Asserts.assertEQ(mf.maxMetaspaceSize, maxMetaspaceSize);
     Asserts.assertEQ(mf.metaspaceSize, metaspaceSize);
+  }
+
+  private static void runAndFail(long maxMetaspaceSize, long metaspaceSize) throws Exception {
+    OutputAnalyzer output = run(maxMetaspaceSize, metaspaceSize);
+    output.shouldContain("MetaspaceSize (" + metaspaceSize +
+                         ") must be less than or equal to MaxMetaspaceSize (" +
+                         maxMetaspaceSize + ")");
   }
 
   private static MetaspaceFlags runAndGetValue(long maxMetaspaceSize, long metaspaceSize) throws Exception {
@@ -84,12 +103,20 @@ public class TestMetaspaceSizeFlags {
   }
 
   private static OutputAnalyzer run(long maxMetaspaceSize, long metaspaceSize) throws Exception {
-    return ProcessTools.executeLimitedTestJava(
-        "-XX:MaxMetaspaceSize=" + maxMetaspaceSize,
-        "-XX:MetaspaceSize=" + metaspaceSize,
-        "-XX:-UseLargePages", // Prevent us from using 2GB large pages on solaris + sparc.
-        "-XX:+PrintFlagsFinal",
-        "-version");
+    if (metaspaceSize != -1L) {
+      return ProcessTools.executeLimitedTestJava(
+          "-XX:MaxMetaspaceSize=" + maxMetaspaceSize,
+          "-XX:MetaspaceSize=" + metaspaceSize,
+          "-XX:-UseLargePages", // Prevent us from using 2GB large pages on solaris + sparc.
+          "-XX:+PrintFlagsFinal",
+          "-version");
+    } else {
+      return ProcessTools.executeLimitedTestJava(
+          "-XX:MaxMetaspaceSize=" + maxMetaspaceSize,
+          "-XX:-UseLargePages", // Prevent us from using 2GB large pages on solaris + sparc.
+          "-XX:+PrintFlagsFinal",
+          "-version");
+    }
   }
 
   private static class MetaspaceFlags {
