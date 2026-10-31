@@ -1736,10 +1736,10 @@ public final class LdapCtx extends ComponentDirContext
 
         Attribute schemaEntryAttr =
             result.getAttributes().get("subschemasubentry");
-        //System.err.println("schema entry attrs: " + schemaEntryAttr);
 
-        if (schemaEntryAttr == null || schemaEntryAttr.size() < 0) {
-            if (currentDN.length() == 0 && name.isEmpty()) {
+        // either the attribute is absent or doesn't have any value
+        if (schemaEntryAttr == null || schemaEntryAttr.size() == 0) {
+            if (currentDN.isEmpty() && name.isEmpty()) {
                 // the server doesn't have a subschemasubentry in its root DSE.
                 // therefore, it doesn't support schema.
                 throw new OperationNotSupportedException(
