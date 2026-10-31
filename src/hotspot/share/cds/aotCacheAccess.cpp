@@ -153,3 +153,10 @@ void AOTCacheAccess::set_pointer(address* ptr, address value) {
   *ptr = value;
   ArchivePtrMarker::mark_pointer(ptr);
 }
+
+void* AOTCacheAccess::archived_cpu_features(int& cpu_features_size) {
+  FileMapInfo* static_mapinfo = FileMapInfo::current_info();
+  assert(UseSharedSpaces && static_mapinfo != nullptr, "must be");
+  cpu_features_size = static_mapinfo->cpu_features_size();
+  return static_mapinfo->archived_cpu_features();
+}

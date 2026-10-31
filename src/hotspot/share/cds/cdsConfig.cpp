@@ -833,6 +833,11 @@ void CDSConfig::setup_compiler_args() {
   } else {
     disable_profile_and_compiled_code();
   }
+  // Explicitly disable UseAOTCacheCpuFeaturesOnly in scenarios where it should not be specified,
+  // for example during training or assembly phase.
+  if (!CDSConfig::is_using_archive() || !AOTCodeCache::is_caching_enabled() || CDSConfig::is_dumping_final_static_archive()) {
+    FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+  }
 }
 
 // Disable all loading and dumping of profile and compiled code.

@@ -132,7 +132,7 @@ jint init_globals() {
   compilationPolicy_init();
   AOTMetaspace::get_aot_code_region_size();
   codeCache_init();
-  VM_Version_init();              // depends on codeCache_init for emitting code
+  VM_Version_init(); // depends on codeCache_init for emitting code
   VMRegImpl::set_regName();       // need this before generate_stubs (for printing oop maps).
   icache_init2();                 // depends on VM_Version for choosing the mechanism
   // ensure we know about all blobs, stubs and entries

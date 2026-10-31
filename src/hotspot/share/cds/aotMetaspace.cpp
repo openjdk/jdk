@@ -1644,6 +1644,21 @@ void AOTMetaspace::get_aot_code_region_size() {
   }
 }
 
+char* AOTMetaspace::get_archived_cpu_features() {
+  FileMapInfo* static_mapinfo = FileMapInfo::current_info();
+  // may have been opened by get_aot_code_region_size()
+  if (static_mapinfo == nullptr) {
+    static_mapinfo = open_static_archive();
+  }
+  if (static_mapinfo == nullptr) {
+    return nullptr;
+  }
+  if (static_mapinfo->cpu_features_size() != VM_Version::cpu_features_size()) {
+    return nullptr;
+  }
+  return (char *)static_mapinfo->archived_cpu_features();
+}
+
 FileMapInfo* AOTMetaspace::open_static_archive() {
   const char* static_archive = CDSConfig::input_static_archive_path();
   assert(static_archive != nullptr, "sanity");

@@ -114,19 +114,14 @@ public class AOTCodeCPUFeatureIncompatibilityTest {
             }
             @Override
             public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
-                if (runMode == RunMode.ASSEMBLY || runMode == RunMode.PRODUCTION) {
+                if (runMode == RunMode.PRODUCTION) {
                     if (mode == IncompatibilityMode.MISSING) {
                         out.shouldMatch("CPU features recorded in AOTCodeCache:.*" + featureName + ".*");
-                    } else {
-                        out.shouldNotMatch("CPU features recorded in AOTCodeCache:.*" + featureName + ".*");
-                    }
-                }
-
-                if (runMode == RunMode.PRODUCTION) {
-                    out.shouldMatch("AOT Code Cache disabled: cpu features are incompatible");
-                    if (mode == IncompatibilityMode.MISSING) {
+                        out.shouldMatch("AOT Code Cache disabled: cpu features are incompatible");
                         out.shouldMatch("cpu features that are required:.*" + featureName + ".*");
                     } else {
+                        out.shouldNotMatch("CPU features recorded in AOTCodeCache:.*" + featureName + ".*");
+                        out.shouldMatch("AOT Code Cache disabled: cpu features are incompatible");
                         out.shouldMatch("cpu features that are additional:.*" + featureName + ".*");
                     }
                 }
