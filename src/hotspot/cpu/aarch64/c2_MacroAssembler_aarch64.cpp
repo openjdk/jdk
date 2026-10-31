@@ -3022,6 +3022,13 @@ int C2_MacroAssembler::vector_iota_entry_index(BasicType bt) {
   }
 }
 
+void C2_MacroAssembler::neon_load_iota_indices(FloatRegister dst, BasicType bt) {
+  int type_index = vector_iota_entry_index(bt);
+  lea(rscratch1,
+      ExternalAddress(StubRoutines::aarch64::vector_iota_indices(type_index)));
+  ldrq(dst, rscratch1);
+}
+
 // Vector integer division for BYTE elements. Each BYTE is widened to SHORT for
 // the low and high halves of the register, divided using the SHORT helper
 // (which widens further to INT), and the two SHORT result halves are narrowed
