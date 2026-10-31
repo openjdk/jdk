@@ -1,7 +1,7 @@
-#! /bin/sh
+#!/bin/bash
 
 #
-# Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,19 @@
 # questions.
 #
 
-javac -d . ../../../../../make/jdk/src/classes/build/tools/spp/Spp.java
+# Toggle Bash strict mode
+set -euo pipefail
+IFS=$'\n\t'
+
+# Switch to the directory this script is located in
+cd "$(dirname "$0")"
+
+SPP="../../../../../make/jdk/src/classes/build/tools/spp/Spp.java"
 
 gen() {
     out=Basic$2.java
     rm -f $out
-    java build.tools.spp.Spp -K$1 -Dtype=$1 -DType=$2 -DFulltype=$3 -iBasic-X.java.template -o$out
+    java $SPP -K$1 -Dtype=$1 -DType=$2 -DFulltype=$3 -iBasic-X.java.template -o$out
 }
 
 gen byte Byte Byte

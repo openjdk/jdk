@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,13 @@
 # questions.
 #
 
-javac -d . ../../../../../make/jdk/src/classes/build/tools/spp/Spp.java
+# Toggle Bash strict mode
+set -euo pipefail
 
-SPP=build.tools.spp.Spp
+# Switch to the directory this script is located in
+cd "$(dirname "$0")"
+
+SPP="../../../../../make/jdk/src/classes/build/tools/spp/Spp.java"
 
 # Generates unsafe access tests for objects and all primitive types
 # $1 = package name to Unsafe, sun.misc | jdk.internal.misc
@@ -138,5 +142,3 @@ function generate {
 
 generate sun.misc SunMisc jdk.unsupported
 generate jdk.internal.misc JdkInternalMisc java.base
-
-rm -fr build

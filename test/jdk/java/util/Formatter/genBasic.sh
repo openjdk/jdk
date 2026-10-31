@@ -1,7 +1,7 @@
-#! /bin/sh
+#!/bin/bash
 
 #
-# Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,14 @@
 # questions.
 #
 
-javac -d . ../../../../../make/jdk/src/classes/build/tools/spp/Spp.java
+# Enable Bash strict mode
+set -euo pipefail
+IFS=$'\n\t'
+
+# Switch to the directory this script is located in
+cd "$(dirname "$0")"
+
+SPP="../../../../../make/jdk/src/classes/build/tools/spp/Spp.java"
 
 gen() {
 #  if [ $3 = "true" ]
@@ -32,7 +39,7 @@ gen() {
 #  fi
     out=Basic$2.java
     rm -f $out
-    java build.tools.spp.Spp -K$1 -Dtype=$1 -DType=$2 -K$3 -K$4 -K$5 -K$6 -iBasic-X.java.template -nel -o$out
+    java $SPP -K$1 -Dtype=$1 -DType=$2 -K$3 -K$4 -K$5 -K$6 -iBasic-X.java.template -nel -o$out
 }
 
 gen boolean Boolean       prim  ""  ""   ""
@@ -56,5 +63,3 @@ gen Double DoubleObject   ""    fp  ""   ""
 gen BigDecimal BigDecimal ""    fp  ""   ""
 
 gen Calendar DateTime     ""    ""  ""   datetime
-
-rm -rf build
