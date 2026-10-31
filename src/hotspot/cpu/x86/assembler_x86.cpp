@@ -3915,6 +3915,19 @@ void Assembler::evmovntdquq(Address dst, XMMRegister src, int vector_len) {
   evmovntdquq(dst, k0, src, /*merge*/ true, vector_len);
 }
 
+// Non-temporal 256-bit vector store
+void Assembler::vmovntdq(Address dst, XMMRegister src) {
+  assert(UseAVX >= 2, "");
+  InstructionMark im(this);
+  InstructionAttr attributes(AVX_256bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FVM, /* input_size_in_bits */ EVEX_NObit);
+  attributes.reset_is_clear_context();
+  assert(src != xnoreg, "sanity");
+  vex_prefix(dst, 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int8(0xE7);
+  emit_operand(src, dst, 0);
+}
+
 void Assembler::evmovntdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
   assert(VM_Version::supports_evex(), "");
   assert(src != xnoreg, "sanity");
@@ -17086,4 +17099,3 @@ void Assembler::evfmadd231ph(XMMRegister dst, XMMRegister nds, Address src, int 
   emit_int8((unsigned char)0xB8);
   emit_operand(dst, src, 0);
 }
-
