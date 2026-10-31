@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8246330 8314323
+ * @bug 8246330 8314323 8371736
  * @library /javax/net/ssl/templates /test/lib
  * @run main/othervm -Djdk.tls.namedGroups="secp384r1"
         DisabledCurve DISABLE_NONE PASS
@@ -41,6 +41,10 @@
         DisabledCurve DISABLE_NONE PASS
  * @run main/othervm -Djdk.tls.namedGroups="SecP384r1MLKEM1024"
         DisabledCurve SecP384r1MLKEM1024 FAIL
+ * @run main/othervm -Djdk.tls.namedGroups="MLKEM768"
+        DisabledCurve MLKEM768 FAIL
+ * @run main/othervm -Djdk.tls.namedGroups="MLKEM768"
+        DisabledCurve DISABLE_NONE PASS
 */
 import java.security.Security;
 import java.util.Arrays;
