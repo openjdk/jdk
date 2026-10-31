@@ -302,7 +302,8 @@ struct AtomicAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
       return (T)zalasr_load_acquire<byte_size>((const void*)p);
     } else {
       T data;
-      __atomic_load(const_cast<T*>(p), &data, __ATOMIC_ACQUIRE);
+      __atomic_load(const_cast<T*>(p), &data, __ATOMIC_RELAXED);
+      OrderAccess::acquire();
       return data;
     }
   }
@@ -320,7 +321,8 @@ struct AtomicAccess::PlatformOrderedStore<byte_size, RELEASE_X>
       // widening v here is value-preserving for both signed and unsigned T.
       zalasr_store_release<byte_size>((void*)p, (uint64_t)v);
     } else {
-      __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELEASE);
+      OrderAccess::release();
+      __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELAXED);
     }
   }
 };
