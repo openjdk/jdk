@@ -343,6 +343,12 @@ public class IRNode {
         superWordNodes(ADD_REDUCTION_VL, "AddReductionVL");
     }
 
+    public static final String ARRAY_COPY = PREFIX + "ARRAY_COPY" + POSTFIX;
+    static {
+        String regex = START + "ArrayCopy" + MID + END;
+        macroNodes(ARRAY_COPY, regex);
+    }
+
     public static final String OPAQUE_MULTIVERSIONING = PREFIX + "OPAQUE_MULTIVERSIONING" + POSTFIX;
     static {
         beforeMatchingNameRegex(OPAQUE_MULTIVERSIONING, "OpaqueMultiversioning");
