@@ -2623,7 +2623,6 @@ void MacroAssembler::kernel_crc32_vclmul_fold(Register crc, Register buf, Regist
   update_word_crc32(crc, tmp2, tmp3, tmp4, tmp5, table0, table1, table2, table3, false);
   update_word_crc32(crc, tmp2, tmp3, tmp4, tmp5, table0, table1, table2, table3, true);
 }
-
 #endif // COMPILER2
 
 /**
@@ -2738,8 +2737,8 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     lbu(tmp1, Address(buf, 2));
     update_byte_crc32(crc, tmp1, table0);
 
-#ifdef COMPILER2
   // put vector code here, otherwise "offset is too large" error occurs.
+#ifdef COMPILER2
   if (UseRVV) {
     // only need to jump exit when UseRVV == true, it's a jump from end of block `L_by1_loop`.
     j(L_exit);
