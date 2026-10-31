@@ -42,7 +42,8 @@ import java.util.Map;
 public final class SysVx64Linker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
-            SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT);
+            SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG,
+                    ValueLayout.JAVA_BYTE, UINT);
 
     public static SysVx64Linker getInstance() {
         final class Holder {
@@ -54,6 +55,13 @@ public final class SysVx64Linker extends AbstractLinker {
 
     private SysVx64Linker() {
         // Ensure there is only one instance
+    }
+
+    @Override
+    protected ValueLayout maybeEraseSign(ValueLayout valueLayout) {
+        return valueLayout.byteSize() < 4 // smaller than int
+            ? valueLayout // keep, if any
+            : super.maybeEraseSign(valueLayout);
     }
 
     @Override

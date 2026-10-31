@@ -27,23 +27,18 @@ package jdk.internal.foreign.abi.fallback;
 
 import jdk.internal.foreign.Utils;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.PaddingLayout;
-import java.lang.foreign.SequenceLayout;
-import java.lang.foreign.StructLayout;
-import java.lang.foreign.UnionLayout;
-import java.lang.foreign.ValueLayout;
+import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Predicate;
 
-import static java.lang.foreign.ValueLayout.*;
+import static java.lang.foreign.ValueLayout.ADDRESS;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
 /**
  * typedef struct _ffi_type
@@ -56,8 +51,8 @@ import static java.lang.foreign.ValueLayout.*;
  */
 class FFIType {
 
-    static final ValueLayout SIZE_T = layoutFor((int)ADDRESS.byteSize());
-    private static final ValueLayout UNSIGNED_SHORT = JAVA_SHORT;
+    static final ValueLayout SIZE_T = layoutFor((int)ADDRESS.byteSize()).withSignedness(false);
+    private static final ValueLayout UNSIGNED_SHORT = JAVA_SHORT.withSignedness(false);
     private static final StructLayout LAYOUT = Utils.computePaddedStructLayout(
             SIZE_T, UNSIGNED_SHORT, UNSIGNED_SHORT.withName("type"), ADDRESS.withName("elements"));
 
@@ -83,37 +78,46 @@ class FFIType {
         return ffiType;
     }
 
-    private static final Map<Class<?>, MemorySegment> CARRIER_TO_TYPE = Map.of(
-        boolean.class, LibFallback.uint8Type(),
-        byte.class, LibFallback.sint8Type(),
-        short.class, LibFallback.sint16Type(),
-        char.class, LibFallback.uint16Type(),
-        int.class, LibFallback.sint32Type(),
-        long.class, LibFallback.sint64Type(),
-        float.class, LibFallback.floatType(),
-        double.class, LibFallback.doubleType(),
-        MemorySegment.class, LibFallback.pointerType()
-    );
+    private static final Map<Long, MemorySegment> UNSIGNED_INTEGRAL_TYPES = Map.of(
+            1L, LibFallback.uint8Type(),
+            2L, LibFallback.uint16Type(),
+            4L, LibFallback.uint32Type(),
+            8L, LibFallback.uint64Type());
+
+    private static final Map<Long, MemorySegment> SIGNED_INTEGRAL_TYPES = Map.of(
+            1L, LibFallback.sint8Type(),
+            2L, LibFallback.sint16Type(),
+            4L, LibFallback.sint32Type(),
+            8L, LibFallback.sint64Type());
 
     static MemorySegment toFFIType(MemoryLayout layout, FFIABI abi, Arena scope) {
-        if (layout instanceof GroupLayout grpl) {
-            if (grpl instanceof StructLayout strl) {
-                // libffi doesn't want our padding
-                List<MemoryLayout> filteredLayouts = strl.memberLayouts().stream()
-                        .filter(Predicate.not(PaddingLayout.class::isInstance))
-                        .toList();
-                MemorySegment structType = make(filteredLayouts, abi, scope);
-                verifyStructType(strl, filteredLayouts, structType, abi);
-                return structType;
+        return switch (layout) {
+            case GroupLayout grpl -> {
+                if (grpl instanceof StructLayout strl) {
+                    // libffi doesn't want our padding
+                    List<MemoryLayout> filteredLayouts = strl.memberLayouts().stream()
+                            .filter(Predicate.not(PaddingLayout.class::isInstance))
+                            .toList();
+                    MemorySegment structType = make(filteredLayouts, abi, scope);
+                    verifyStructType(strl, filteredLayouts, structType, abi);
+                    yield structType;
+                }
+                assert grpl instanceof UnionLayout;
+                // JDK-8301800
+                throw new IllegalArgumentException("Fallback linker does not support by-value unions: " + grpl);
             }
-            assert grpl instanceof UnionLayout;
-            // JDK-8301800
-            throw new IllegalArgumentException("Fallback linker does not support by-value unions: " + grpl);
-        } else if (layout instanceof SequenceLayout sl) {
-            List<MemoryLayout> elements = Collections.nCopies(Math.toIntExact(sl.elementCount()), sl.elementLayout());
-            return make(elements, abi, scope);
-        }
-        return Objects.requireNonNull(CARRIER_TO_TYPE.get(((ValueLayout) layout).carrier()));
+            case SequenceLayout sl -> {
+                List<MemoryLayout> elements = Collections.nCopies(Math.toIntExact(sl.elementCount()), sl.elementLayout());
+                yield make(elements, abi, scope);
+            }
+            case ValueLayout.OfFloat _ -> LibFallback.floatType();
+            case ValueLayout.OfDouble _ -> LibFallback.doubleType();
+            case AddressLayout _ -> LibFallback.pointerType();
+            case ValueLayout.OfBoolean _ -> LibFallback.uint8Type();
+            case ValueLayout.OfIntegral integral ->
+                (integral.isSigned() ? SIGNED_INTEGRAL_TYPES : UNSIGNED_INTEGRAL_TYPES).get(layout.byteSize());
+            case null, default -> throw new IllegalArgumentException("Unsupported value layout type: " + layout);
+        };
     }
 
     // verify layout against what libffi sets
@@ -138,7 +142,7 @@ class FFIType {
         }
     }
 
-    static ValueLayout layoutFor(int byteSize) {
+    static ValueLayout.OfIntegral layoutFor(int byteSize) {
         return switch (byteSize) {
             case 1 -> JAVA_BYTE;
             case 2 -> JAVA_SHORT;

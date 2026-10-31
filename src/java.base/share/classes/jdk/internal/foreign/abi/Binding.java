@@ -29,10 +29,7 @@ import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.BindingInterpreter.LoadFunc;
 import jdk.internal.foreign.abi.BindingInterpreter.StoreFunc;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -303,6 +300,10 @@ public sealed interface Binding {
     }
 
     static Binding cast(Class<?> fromType, Class<?> toType) {
+        return cast(fromType, toType, true);
+    }
+
+    static Binding cast(Class<?> fromType, Class<?> toType, boolean isSigned) {
         if (fromType == int.class) {
             if (toType == boolean.class) {
                 return Cast.INT_TO_BOOLEAN;
@@ -313,15 +314,15 @@ public sealed interface Binding {
             } else if (toType == char.class) {
                 return Cast.INT_TO_CHAR;
             } else if (toType == long.class) {
-                return Cast.INT_TO_LONG;
+                return isSigned ? Cast.INT_TO_LONG : Cast.UINT_TO_LONG;
             }
         } else if (toType == int.class) {
             if (fromType == boolean.class) {
                 return Cast.BOOLEAN_TO_INT;
             } else if (fromType == byte.class) {
-                return Cast.BYTE_TO_INT;
+                return isSigned ? Cast.BYTE_TO_INT : Cast.UBYTE_TO_INT;
             } else if (fromType == short.class) {
-                return Cast.SHORT_TO_INT;
+                return isSigned ? Cast.SHORT_TO_INT : Cast.USHORT_TO_INT;
             } else if (fromType == char.class) {
                 return Cast.CHAR_TO_INT;
             } else if (fromType == long.class) {
@@ -337,9 +338,9 @@ public sealed interface Binding {
             }
         } else if (toType == long.class) {
             if (fromType == byte.class) {
-                return Cast.BYTE_TO_LONG;
+                return isSigned ? Cast.BYTE_TO_LONG : Cast.UBYTE_TO_LONG;
             } else if (fromType == short.class) {
-                return Cast.SHORT_TO_LONG;
+                return isSigned ? Cast.SHORT_TO_LONG : Cast.USHORT_TO_LONG;
             } else if (fromType == char.class) {
                 return Cast.CHAR_TO_LONG;
             }
@@ -363,8 +364,12 @@ public sealed interface Binding {
         }
 
         public Binding.Builder vmStore(VMStorage storage, Class<?> type) {
+            return vmStore(storage, type, true);
+        }
+
+        public Binding.Builder vmStore(VMStorage storage, Class<?> type, boolean isSigned) {
             if (isSubIntType(type)) {
-                bindings.add(Binding.cast(type, int.class));
+                bindings.add(Binding.cast(type, int.class, isSigned));
                 type = int.class;
             }
             bindings.add(Binding.vmStore(storage, type));
@@ -380,6 +385,15 @@ public sealed interface Binding {
             if (isSubIntType(type)) {
                 bindings.add(Binding.cast(int.class, type));
             }
+            return this;
+        }
+
+        public Binding.Builder cast(Class<?> fromType, Class<?> toType) {
+            return cast(fromType, toType, true);
+        }
+
+        public Binding.Builder cast(Class<?> fromType, Class<?> toType, boolean isSigned) {
+            bindings.add(Binding.cast(fromType, toType, isSigned));
             return this;
         }
 
@@ -848,11 +862,14 @@ public sealed interface Binding {
         INT_TO_CHAR(int.class, char.class),
         INT_TO_SHORT(int.class, short.class),
         INT_TO_LONG(int.class, long.class),
+        UINT_TO_LONG(int.class, long.class),
 
         BOOLEAN_TO_INT(boolean.class, int.class),
         BYTE_TO_INT(byte.class, int.class),
+        UBYTE_TO_INT(byte.class, int.class),
         CHAR_TO_INT(char.class, int.class),
         SHORT_TO_INT(short.class, int.class),
+        USHORT_TO_INT(short.class, int.class),
         LONG_TO_INT(long.class, int.class),
 
         LONG_TO_BYTE(long.class, byte.class),
@@ -860,7 +877,9 @@ public sealed interface Binding {
         LONG_TO_CHAR(long.class, char.class),
 
         BYTE_TO_LONG(byte.class, long.class),
+        UBYTE_TO_LONG(byte.class, long.class),
         SHORT_TO_LONG(short.class, long.class),
+        USHORT_TO_LONG(short.class, long.class),
         CHAR_TO_LONG(char.class, long.class);
 
         private final Class<?> fromType;
@@ -886,12 +905,43 @@ public sealed interface Binding {
             stack.push(toType);
         }
 
+        private static final MethodHandle BYTE_TO_INT_UNSIGNED;
+        private static final MethodHandle BYTE_TO_LONG_UNSIGNED;
+        private static final MethodHandle SHORT_TO_INT_UNSIGNED;
+        private static final MethodHandle SHORT_TO_LONG_UNSIGNED;
+        private static final MethodHandle INT_TO_LONG_UNSIGNED;
+
+        static {
+            MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+            try {
+                BYTE_TO_INT_UNSIGNED = lookup.findStatic(Byte.class, "toUnsignedInt",
+                        MethodType.methodType(int.class, byte.class));
+                SHORT_TO_INT_UNSIGNED = lookup.findStatic(Short.class, "toUnsignedInt",
+                        MethodType.methodType(int.class, short.class));
+                BYTE_TO_LONG_UNSIGNED = lookup.findStatic(Byte.class, "toUnsignedLong",
+                        MethodType.methodType(long.class, byte.class));
+                SHORT_TO_LONG_UNSIGNED = lookup.findStatic(Short.class, "toUnsignedLong",
+                        MethodType.methodType(long.class, short.class));
+                INT_TO_LONG_UNSIGNED = lookup.findStatic(Integer.class, "toUnsignedLong",
+                        MethodType.methodType(long.class, int.class));
+            } catch (ReflectiveOperationException e) {
+                throw new ExceptionInInitializerError(e);
+            }
+        }
+
         @Override
         public void interpret(Deque<Object> stack, StoreFunc storeFunc,
                               LoadFunc loadFunc, SegmentAllocator allocator) {
             Object arg = stack.pop();
-            MethodHandle converter = MethodHandles.explicitCastArguments(MethodHandles.identity(toType),
-                    MethodType.methodType(toType, fromType));
+            MethodHandle converter = switch (this) {
+                case UBYTE_TO_INT -> BYTE_TO_INT_UNSIGNED;
+                case USHORT_TO_INT -> SHORT_TO_INT_UNSIGNED;
+                case UBYTE_TO_LONG -> BYTE_TO_LONG_UNSIGNED;
+                case USHORT_TO_LONG -> SHORT_TO_LONG_UNSIGNED;
+                case UINT_TO_LONG -> INT_TO_LONG_UNSIGNED;
+                default -> MethodHandles.explicitCastArguments(MethodHandles.identity(toType),
+                        MethodType.methodType(toType, fromType));
+            };
             try {
                 Object result = converter.invoke(arg);
                 stack.push(result);

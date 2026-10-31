@@ -390,6 +390,10 @@ public final class SharedUtils {
                 : chunkOffset;
     }
 
+    public static boolean isSigned(MemoryLayout layout) {
+        return !(layout instanceof OfIntegral integral) || integral.isSigned();
+    }
+
     @ForceInline
     static Arena newBoundedArena(long size) {
         return BoundedArena.of(size);
@@ -501,11 +505,12 @@ public final class SharedUtils {
         }
     }
 
-    public static Map<String, MemoryLayout> canonicalLayouts(ValueLayout longLayout, ValueLayout sizetLayout, ValueLayout wchartLayout) {
+    public static Map<String, MemoryLayout> canonicalLayouts(ValueLayout.OfIntegral longLayout, ValueLayout sizetLayout,
+                                                             ValueLayout charLayout, ValueLayout wchartLayout) {
         return Map.ofEntries(
                 // specified canonical layouts
                 Map.entry("bool", ValueLayout.JAVA_BOOLEAN),
-                Map.entry("char", ValueLayout.JAVA_BYTE),
+                Map.entry("char", charLayout),
                 Map.entry("short", ValueLayout.JAVA_SHORT),
                 Map.entry("int", ValueLayout.JAVA_INT),
                 Map.entry("float", ValueLayout.JAVA_FLOAT),
@@ -515,11 +520,20 @@ public final class SharedUtils {
                 Map.entry("void*", ValueLayout.ADDRESS),
                 Map.entry("size_t", sizetLayout),
                 Map.entry("wchar_t", wchartLayout),
-                // unspecified size-dependent layouts
+                Map.entry("unsigned char", ValueLayout.JAVA_BYTE.withSignedness(false)),
+                Map.entry("unsigned short", ValueLayout.JAVA_SHORT.withSignedness(false)),
+                Map.entry("unsigned int", ValueLayout.JAVA_INT.withSignedness(false)),
+                Map.entry("unsigned long", longLayout.withSignedness(false)),
+                Map.entry("unsigned long long", ValueLayout.JAVA_LONG.withSignedness(false)),
+                // size/sign-dependent layouts
                 Map.entry("int8_t", ValueLayout.JAVA_BYTE),
                 Map.entry("int16_t", ValueLayout.JAVA_SHORT),
                 Map.entry("int32_t", ValueLayout.JAVA_INT),
                 Map.entry("int64_t", ValueLayout.JAVA_LONG),
+                Map.entry("uint8_t", ValueLayout.JAVA_BYTE.withSignedness(false)),
+                Map.entry("uint16_t", ValueLayout.JAVA_SHORT.withSignedness(false)),
+                Map.entry("uint32_t", ValueLayout.JAVA_INT.withSignedness(false)),
+                Map.entry("uint64_t", ValueLayout.JAVA_LONG.withSignedness(false)),
                 // unspecified JNI layouts
                 Map.entry("jboolean", ValueLayout.JAVA_BOOLEAN),
                 Map.entry("jchar", ValueLayout.JAVA_CHAR),

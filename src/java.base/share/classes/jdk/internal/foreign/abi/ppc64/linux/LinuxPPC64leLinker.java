@@ -41,7 +41,8 @@ import java.util.Map;
 public final class LinuxPPC64leLinker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
-            SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT);
+            SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG,
+                    UBYTE, UINT);
 
     public static LinuxPPC64leLinker getInstance() {
         final class Holder {
@@ -53,6 +54,13 @@ public final class LinuxPPC64leLinker extends AbstractLinker {
 
     private LinuxPPC64leLinker() {
         // Ensure there is only one instance
+    }
+
+    @Override
+    protected ValueLayout maybeEraseSign(ValueLayout valueLayout) {
+        return valueLayout.byteSize() < 8 // smaller than long
+                ? valueLayout // keep, if any
+                : super.maybeEraseSign(valueLayout);
     }
 
     @Override
