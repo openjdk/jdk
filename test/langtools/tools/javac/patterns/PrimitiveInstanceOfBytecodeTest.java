@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.instruction.LoadInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
 import java.lang.classfile.instruction.StoreInstruction;
 import java.util.BitSet;
 import java.util.Map;
@@ -35,13 +36,25 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
- * @bug 8357185
+ * @bug 8357185 8383479
  * @enablePreview
  * @summary No unused local variable in unconditionally exact primitive patterns
  * @library /test/lib
  * @run junit PrimitiveInstanceOfBytecodeTest
  */
 public class PrimitiveInstanceOfBytecodeTest {
+
+    private static final String CONSTANT_SOURCE = """
+            public class Test {
+                public int getConstant() {
+                    final int i = 42;
+                    if (i instanceof byte b) {
+                        return b;
+                    }
+                    return -1;
+                }
+            }
+            """;
 
     private static final String SOURCE = """
             public class Test {
@@ -80,4 +93,20 @@ public class PrimitiveInstanceOfBytecodeTest {
             fail("Store and load mismatch, see stderr");
         }
     }
+
+    @Test
+    public void testConstantPrimitivePattern() {
+        var testBytes = InMemoryJavaCompiler.compile("Test", CONSTANT_SOURCE,
+                "--enable-preview", "--source", String.valueOf(Runtime.version().feature()));
+        var code = ClassFile.of().parse(testBytes).methods().stream()
+                .filter(m -> m.methodName().equalsString("getConstant")).findFirst()
+                .orElseThrow().findAttribute(Attributes.code()).orElseThrow();
+        boolean hasExactnessCall = code.elementList().stream()
+                .filter(ce -> ce instanceof InvokeInstruction)
+                .map(ce -> ((InvokeInstruction) ce).method())
+                .anyMatch(ref -> ref.owner().name().equalsString("java/lang/runtime/ExactConversionsSupport")
+                        && ref.name().equalsString("isIntToByteExact"));
+        assertFalse(hasExactnessCall, code.toDebugString());
+    }
+
 }
