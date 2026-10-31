@@ -55,7 +55,7 @@ public class KeyPairGeneratorBench extends CryptoBase {
         }
     }
 
-    private static Provider getInternalJce() {
+    private static Provider getSunJCE() {
         Provider provider = Security.getProvider("SunJCE");
         if (provider == null) {
             throw new RuntimeException("SunJCE provider not found");
@@ -138,7 +138,7 @@ public class KeyPairGeneratorBench extends CryptoBase {
         @Setup
         public void init() {
             try {
-                prov = getInternalJce();
+                prov = getSunJCE();
                 super.setup();
             } catch (GeneralSecurityException gse) {
                 throw new RuntimeException(gse);

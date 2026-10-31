@@ -208,10 +208,6 @@ public class Deterministic {
     static KeyPair generateKeyPair(String alg, int offset) throws Exception {
         var g = KeyPairGenerator.getInstance(alg);
         var random = new SeededSecureRandom(SEED + offset);
-        if (isTlsHybridGroup(alg)) {
-            g.initialize(new NamedParameterSpec(alg), random);
-            return g.generateKeyPair();
-        }
         var size = switch (g.getAlgorithm()) {
             case "RSA", "RSASSA-PSS", "DSA", "DiffieHellman" -> 1024;
             case "EC" -> 256;
@@ -225,14 +221,6 @@ public class Deterministic {
         };
         g.initialize(size, random);
         return g.generateKeyPair();
-    }
-
-    static boolean isTlsHybridGroup(String alg) {
-        return switch (alg) {
-            case "X25519MLKEM768", "SecP256r1MLKEM768",
-                 "SecP384r1MLKEM1024" -> true;
-            default -> false;
-        };
     }
 
     static void testKeyGenerator(Provider.Service s) throws Exception {
@@ -308,7 +296,7 @@ public class Deterministic {
 
     static String getKeyAlgFromKEM(String algorithm) {
         return switch (algorithm) {
-            case "DHKEM", "DH" -> "X25519";
+            case "DHKEM" -> "X25519";
             case "ECDH" -> "EC";
             default -> algorithm;
         };

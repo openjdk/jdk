@@ -44,7 +44,6 @@ import java.security.KeyPairGenerator;
 import java.security.KeyPairGeneratorSpi;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.ProviderException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -60,7 +59,7 @@ import java.util.Locale;
 // These hybrid key exchange algorithms are registered in SunJCE so that
 // SunJSSE can select them. They are not general purpose KEM algorithms.
 // They are exposed through the JCA KeyPairGenerator and KEM APIs so that
-// SunJSSE can use them. Applications must not use them as general purpose
+// SunJSSE can use them. Applications should not use them as general purpose
 // KEM algorithms.
 //
 // Their public key encoding is the TLS 1.3 key_share encoding, not an
@@ -68,9 +67,9 @@ import java.util.Locale;
 // identifiers. Hence, the public key’s getFormat() method must return "RAW",
 // and getEncoded() must return the raw format of key_share encoding.
 //
-// For the negotiated shared secret represented as a SecretKey, getFormat()
-// must return "RAW", and getEncoded() must return the combined key material
-// as a byte array.
+// A provider can represent a negotiated shared secret as an opaque SecretKey.
+// If its key cannot be used with the selected TLS HKDF implementation, the
+// provider must supply a compatible TLS HKDF implementation.
 
 public class Hybrid {
 
@@ -91,39 +90,31 @@ public class Hybrid {
         }
     }
 
-    private static KeyPairGenerator getKeyPairGenerator(String name,
-            Provider provider) throws NoSuchAlgorithmException {
+    // The layouts below describe only the TLS hybrid groups currently
+    // supported by the JDK. It assumes an EC component on the left or
+    // X25519 on the right, and ML-KEM as the only PQC component.
+    private static KeyPairGenerator getKeyPairGenerator(String name)
+            throws NoSuchAlgorithmException {
         if (name.startsWith("secp")) {
             name = "EC";
-        }
-        if (name.startsWith("ML-KEM")) {
-            // This internal hybrid implementation must use SunJCE's
-            // ML-KEM service.
-            return KeyPairGenerator.getInstance(name, provider);
         }
         return KeyPairGenerator.getInstance(name);
     }
 
-    private static KeyFactory getKeyFactory(String name, Provider provider)
+    private static KeyFactory getKeyFactory(String name)
             throws NoSuchAlgorithmException {
         if (name.startsWith("secp")) {
             name = "EC";
         }
-        if (name.startsWith("ML-KEM")) {
-            // See getKeyPairGenerator(): ML-KEM is part of this SunJCE
-            // implementation, and the classical component uses normal
-            // provider selection.
-            return KeyFactory.getInstance(name, provider);
-        }
         return KeyFactory.getInstance(name);
     }
 
-    private static KEM getKEM(String name, Provider provider)
+    private static KEM getKEM(String name)
             throws NoSuchAlgorithmException {
         if (name.startsWith("secp") || name.equals("X25519")) {
-            return KEM.getInstance("DH", HybridProvider.PROVIDER);
+            return KEM.getInstance("DH", DHasKEM.PROVIDER);
         }
-        return KEM.getInstance("ML-KEM", provider);
+        return KEM.getInstance("ML-KEM");
     }
 
     /**
@@ -137,34 +128,53 @@ public class Hybrid {
      * an X.509 SubjectPublicKeyInfo value.
      */
     public static class KeyPairGeneratorImpl extends KeyPairGeneratorSpi {
+        private final String name;
         private final KeyPairGenerator left;
         private final KeyPairGenerator right;
         private final AlgorithmParameterSpec leftSpec;
         private final AlgorithmParameterSpec rightSpec;
 
-        public KeyPairGeneratorImpl(Provider provider, String leftAlg,
-                String rightAlg)
+        public KeyPairGeneratorImpl(String name, String leftAlg, String rightAlg)
                 throws NoSuchAlgorithmException  {
-            // The provider is SunJCE. It is used for ML-KEM only, and
-            // ECDH/XDH services are selected because they are implemented
-            // by a classical provider.
-            left = getKeyPairGenerator(leftAlg, provider);
-            right = getKeyPairGenerator(rightAlg, provider);
+            this.name = name;
+            left = getKeyPairGenerator(leftAlg);
+            right = getKeyPairGenerator(rightAlg);
             leftSpec = getSpec(leftAlg);
             rightSpec = getSpec(rightAlg);
+            try {
+                initComponents(null);
+            } catch (InvalidAlgorithmParameterException e) {
+                throw new NoSuchAlgorithmException(
+                        "Cannot initialize hybrid key pair generator", e);
+            }
         }
 
-        @Override
-        public void initialize(AlgorithmParameterSpec params,
-                SecureRandom random)
+        private void initComponents(SecureRandom random)
                 throws InvalidAlgorithmParameterException {
             left.initialize(leftSpec, random);
             right.initialize(rightSpec, random);
         }
 
         @Override
+        public void initialize(AlgorithmParameterSpec params,
+                SecureRandom random)
+                throws InvalidAlgorithmParameterException {
+            if (!(params instanceof NamedParameterSpec namedSpec) ||
+                    !name.equals(namedSpec.getName())) {
+                throw new InvalidAlgorithmParameterException(
+                        "Expected NamedParameterSpec for " + name);
+            }
+            initComponents(random);
+        }
+
+        @Override
         public void initialize(int keysize, SecureRandom random) {
-            // NO-OP (do nothing)
+            try {
+                initComponents(random);
+            } catch (InvalidAlgorithmParameterException e) {
+                throw new ProviderException(
+                        "Cannot initialize hybrid key pair generator", e);
+            }
         }
 
         @Override
@@ -172,9 +182,9 @@ public class Hybrid {
             var kp1 = left.generateKeyPair();
             var kp2 = right.generateKeyPair();
             return new KeyPair(
-                    new PublicKeyImpl("Hybrid", kp1.getPublic(),
+                    new PublicKeyImpl(name, kp1.getPublic(),
                             kp2.getPublic()),
-                    new PrivateKeyImpl("Hybrid", kp1.getPrivate(),
+                    new PrivateKeyImpl(name, kp1.getPrivate(),
                             kp2.getPrivate()));
         }
     }
@@ -188,10 +198,13 @@ public class Hybrid {
         private final String leftname;
         private final String rightname;
 
-        RawPublicKeyDecoder(Provider provider, String left, String right)
+        private final String name;
+
+        RawPublicKeyDecoder(String name, String left, String right)
                 throws NoSuchAlgorithmException {
-            this.left = getKeyFactory(left, provider);
-            this.right = getKeyFactory(right, provider);
+            this.name = name;
+            this.left = getKeyFactory(left);
+            this.right = getKeyFactory(right);
             this.leftlen = leftPublicLength(left);
             this.leftname = left;
             this.rightname = right;
@@ -207,7 +220,7 @@ public class Hybrid {
             };
         }
 
-        PublicKey decode(PublicKey inKey) throws InvalidKeyException {
+        PublicKeyImpl decode(PublicKey inKey) throws InvalidKeyException {
             if (inKey == null) {
                 throw new InvalidKeyException("key must not be null");
             }
@@ -273,7 +286,7 @@ public class Hybrid {
                                 " algorithm: " + rightname);
                     }
 
-                    return new PublicKeyImpl("Hybrid", leftKey, rightKey);
+                    return new PublicKeyImpl(name, leftKey, rightKey);
                 } catch (Exception e) {
                     throw new InvalidKeyException("Failed to decode " +
                             "hybrid key", e);
@@ -296,25 +309,32 @@ public class Hybrid {
      * accept an X.509 SubjectPublicKeyInfo encoding.
      */
     public static class KEMImpl implements KEMSpi {
+        private final String name;
         private final KEM left;
         private final KEM right;
         private final RawPublicKeyDecoder keyDecoder;
 
-        public KEMImpl(Provider provider, String left, String right)
+        public KEMImpl(String name, String left, String right)
                 throws NoSuchAlgorithmException {
-            this.left = getKEM(left, provider);
-            this.right = getKEM(right, provider);
-            this.keyDecoder = new RawPublicKeyDecoder(provider, left, right);
+            this.name = name;
+            this.left = getKEM(left);
+            this.right = getKEM(right);
+            this.keyDecoder = new RawPublicKeyDecoder(name, left, right);
         }
 
         @Override
         public EncapsulatorSpi engineNewEncapsulator(PublicKey publicKey,
                 AlgorithmParameterSpec spec, SecureRandom secureRandom) throws
                 InvalidAlgorithmParameterException, InvalidKeyException {
+            if (spec != null) {
+                throw new InvalidAlgorithmParameterException(
+                        "KEM parameters are not supported for " + name);
+            }
             if (!(publicKey instanceof PublicKeyImpl)) {
                 publicKey = keyDecoder.decode(publicKey);
             }
-            if (publicKey instanceof PublicKeyImpl pk) {
+            if (publicKey instanceof PublicKeyImpl pk &&
+                    name.equals(pk.getAlgorithm())) {
                 return new Handler(left.newEncapsulator(pk.left, secureRandom),
                         right.newEncapsulator(pk.right, secureRandom),
                         null, null);
@@ -326,7 +346,12 @@ public class Hybrid {
         public DecapsulatorSpi engineNewDecapsulator(PrivateKey privateKey,
                 AlgorithmParameterSpec spec)
                 throws InvalidAlgorithmParameterException, InvalidKeyException {
-            if (privateKey instanceof PrivateKeyImpl pk) {
+            if (spec != null) {
+                throw new InvalidAlgorithmParameterException(
+                        "KEM parameters are not supported for " + name);
+            }
+            if (privateKey instanceof PrivateKeyImpl pk &&
+                    name.equals(pk.getAlgorithm())) {
                 return new Handler(null, null, left.newDecapsulator(pk.left),
                         right.newDecapsulator(pk.right));
             }
@@ -365,7 +390,7 @@ public class Hybrid {
             var left  = le.encapsulate();
             var right = re.encapsulate();
             return new KEM.Encapsulated(
-                    new SecretKeyImpl(left.key(), right.key()),
+                    new SecretKeyImpl(algorithm, left.key(), right.key()),
                     concat(left.encapsulation(), right.encapsulation()),
                     null);
         }
@@ -410,7 +435,7 @@ public class Hybrid {
             var left = Arrays.copyOf(encapsulation, ld.encapsulationSize());
             var right = Arrays.copyOfRange(encapsulation,
                     ld.encapsulationSize(), encapsulation.length);
-            return new SecretKeyImpl(
+            return new SecretKeyImpl(algorithm,
                     ld.decapsulate(left, 0, ld.secretSize(), "Generic"),
                     rd.decapsulate(right, 0, rd.secretSize(), "Generic")
             );
@@ -423,21 +448,23 @@ public class Hybrid {
 
         final SecretKey k1;
         final SecretKey k2;
+        private final String algorithm;
         private boolean destroyed;
 
-        SecretKeyImpl(SecretKey k1, SecretKey k2) {
+        SecretKeyImpl(String algorithm, SecretKey k1, SecretKey k2) {
+            this.algorithm = algorithm;
             this.k1 = k1;
             this.k2 = k2;
         }
 
         @Override
         public String getAlgorithm() {
-            return "Generic";
+            return algorithm;
         }
 
         @Override
         public String getFormat() {
-            return "RAW";
+            return null;
         }
 
         @Override
@@ -540,7 +567,7 @@ public class Hybrid {
             return null;
         }
 
-        // getEncoded() returns an empty byte array because there is no
+        // getEncoded() returns null because there is no
         // standard encoding format for a hybrid private key.
         @Override
         public byte[] getEncoded() {

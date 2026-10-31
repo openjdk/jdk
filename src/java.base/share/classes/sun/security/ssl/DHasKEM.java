@@ -51,6 +51,8 @@ import java.security.spec.NamedParameterSpec;
 import java.security.spec.XECPublicKeySpec;
 import java.util.Arrays;
 
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
+
 /**
  * The DHasKEM class presents a KEM abstraction layer over traditional
  * DH-based key exchange, which can be used for either straight
@@ -60,6 +62,22 @@ import java.util.Arrays;
  * when hybrid implementations are required.
  */
 public class DHasKEM implements KEMSpi {
+    // This provider is used only by SunJSSE and is never installed in the
+    // system provider list. It exposes the internal DH-as-KEM adapter to
+    // Hybrid.KEMImpl through the public KEM API without exposing KEM.DH
+    // as a system provider service.
+    static final Provider PROVIDER = new ProviderImpl();
+
+    private static final class ProviderImpl extends Provider {
+        @java.io.Serial
+        private static final long serialVersionUID = 0L;
+
+        ProviderImpl() {
+            super("DHAsKEM", PROVIDER_VER,
+                    "Internal DH-as-KEM provider");
+            put("KEM.DH", DHasKEM.class.getName());
+        }
+    }
 
     @Override
     public EncapsulatorSpi engineNewEncapsulator(

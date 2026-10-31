@@ -98,13 +98,24 @@ public abstract class KEMBench extends CryptoBase {
         }
     }
 
-    private static Provider getInternalJce() {
+    private static Provider getSunJCE() {
         Provider provider = Security.getProvider("SunJCE");
         if (provider == null) {
             throw new RuntimeException("SunJCE provider not found");
         }
 
         return provider;
+    }
+
+    private static Provider getInternalDHAsKEM() {
+        try {
+            Class<?> dhClass = Class.forName("sun.security.ssl.DHasKEM");
+            var provider = dhClass.getDeclaredField("PROVIDER");
+            provider.setAccessible(true);
+            return (Provider) provider.get(null);
+        } catch (ReflectiveOperationException exc) {
+            throw new RuntimeException(exc);
+        }
     }
 
     @Benchmark
@@ -140,7 +151,7 @@ public abstract class KEMBench extends CryptoBase {
         @Setup
         public void init() {
             try {
-                prov = getInternalJce();
+                prov = getInternalDHAsKEM();
                 super.setup();
             } catch (GeneralSecurityException gse) {
                 throw new RuntimeException(gse);
@@ -160,7 +171,7 @@ public abstract class KEMBench extends CryptoBase {
         @Setup
         public void init() {
             try {
-                prov = getInternalJce();
+                prov = getSunJCE();
                 super.setup();
             } catch (GeneralSecurityException gse) {
                 throw new RuntimeException(gse);

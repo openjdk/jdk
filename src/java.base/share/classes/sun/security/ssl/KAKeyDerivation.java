@@ -36,7 +36,6 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 
@@ -163,10 +162,6 @@ public class KAKeyDerivation implements SSLKeyDerivation {
         }
     }
 
-    private Provider getHybridKEMProvider() {
-        return (namedGroup != null) ? namedGroup.getHybridKEMProvider() : null;
-    }
-
     /**
      * This method is called by the server to perform KEM encapsulation.
      * It uses the client's public key (sent by the client as a keyshare)
@@ -191,10 +186,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
             // Hybrid TLS keys have no X.509 encoding. The KEM receives the
             // TLS key_share directly as a RAW public key.
             PublicKey pk = KeyUtil.newRawPublicKey(algorithmName, keyshare);
-            Provider provider = getHybridKEMProvider();
-            KEM kem = (provider != null) ?
-                    KEM.getInstance(algorithmName, provider) :
-                    KEM.getInstance(algorithmName);
+            KEM kem = KEM.getInstance(algorithmName);
             KEM.Encapsulator e = kem.newEncapsulator(pk, random);
             KEM.Encapsulated enc = e.encapsulate();
             sharedSecret = enc.key();
@@ -236,10 +228,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
                 // to TLS fatal alerts:
                 // illegal_parameter alert or internal_error alert.
                 try {
-                    Provider provider = getHybridKEMProvider();
-                    KEM kem = (provider != null)
-                            ? KEM.getInstance(algorithmName, provider)
-                            : KEM.getInstance(algorithmName);
+                    KEM kem = KEM.getInstance(algorithmName);
                     var decapsulator = kem.newDecapsulator(localPrivateKey);
                     sharedSecret = decapsulator.decapsulate(
                             keyshare, 0, decapsulator.secretSize(),

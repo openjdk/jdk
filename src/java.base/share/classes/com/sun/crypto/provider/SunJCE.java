@@ -871,10 +871,10 @@ public final class SunJCE extends Provider {
                 throws NoSuchAlgorithmException {
             return switch (getType()) {
                 case "KeyPairGenerator" -> new Hybrid.KeyPairGeneratorImpl(
-                        getProvider(), getAttribute("left"),
+                        getAlgorithm(), getAttribute("left"),
                         getAttribute("right"));
                 case "KEM" -> new Hybrid.KEMImpl(
-                        getProvider(), getAttribute("left"),
+                        getAlgorithm(), getAttribute("left"),
                         getAttribute("right"));
                 default -> throw new NoSuchAlgorithmException(
                         "Unexpected value: " + getType());

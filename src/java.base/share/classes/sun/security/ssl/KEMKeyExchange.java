@@ -121,10 +121,7 @@ final class KEMKeyExchange {
                 // For KEM: This receiver side (client) generates a key pair.
                 algName = ((NamedParameterSpec)namedGroup.keAlgParamSpec).
                         getName();
-                Provider provider = namedGroup.getHybridKEMProvider();
-                KeyPairGenerator kpg = (provider != null) ?
-                        KeyPairGenerator.getInstance(algName, provider) :
-                        KeyPairGenerator.getInstance(algName);
+                KeyPairGenerator kpg = KeyPairGenerator.getInstance(algName);
 
                 kpg.initialize(namedGroup.keAlgParamSpec, random);
                 KeyPair kp = kpg.generateKeyPair();
