@@ -1626,7 +1626,7 @@ ValueTypeNode* ValueTypeNode::make_from_flat_impl(GraphKit* kit, ciValueKlass* v
   return LoadFlatNode::load(kit, vk, base, ptr, null_free, trust_null_free_oop, decorators);
 }
 
-ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* vk, Node* base, Node* idx) {
+ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* vk, Node* base, Node* idx, float null_free_prob, float null_free_atomic_prob) {
   assert(vk->maybe_flat_in_array(), "element type %s cannot be flat in array", vk->name()->as_utf8());
   PhaseGVN& gvn = kit->gvn();
   // The flat field loads are dependent on both the array layout checks as well as the range check.
@@ -1654,14 +1654,19 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
   FlatArrayAccessContext faac(kit, nullptr, region, mem, io, base, idx, vk, decorators, /* stack_adj */ 2);
 
   Node* bol_null_free = kit->null_free_array_test(base); // Argument evaluation order is undefined in C++ and since this sets control, it needs to come first
-  IfNode* iff_null_free = kit->create_and_map_if(kit->control(), bol_null_free, PROB_FAIR, COUNT_UNKNOWN);
+  IfNode* iff_null_free = kit->create_and_map_if(kit->control(), bol_null_free, clamp(null_free_prob, PROB_MIN, PROB_MAX), COUNT_UNKNOWN);
 
   // Nullable
   kit->set_control(kit->IfFalse(iff_null_free));
   if (!kit->stopped()) {
     assert(vk->has_nullable_atomic_layout(), "element type %s does not have a nullable flat layout", vk->name()->as_utf8());
     kit->set_all_memory(input_memory_state);
-    vt_nullable = do_flat_array_access(faac, true, false, 1, true);
+    if (null_free_prob == 1 && !kit->too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+      PreserveJVMState pjvms(kit);
+      kit->uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+    } else {
+      vt_nullable = do_flat_array_access(faac, true, false, 1, true);
+    }
   }
 
   // Null-free
@@ -1669,23 +1674,41 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
   if (!kit->stopped()) {
     kit->set_all_memory(input_memory_state);
 
-    Node* bol_atomic = kit->null_free_atomic_array_test(base, vk);
-    IfNode* iff_atomic = kit->create_and_map_if(kit->control(), bol_atomic, PROB_FAIR, COUNT_UNKNOWN);
+    if (null_free_prob == 0 && !kit->too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+      PreserveJVMState pjvms(kit);
+      kit->uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+    } else {
+      Node *bol_atomic = kit->null_free_atomic_array_test(base, vk);
+      IfNode *iff_atomic = kit->create_and_map_if(kit->control(), bol_atomic,
+                                                  clamp(null_free_atomic_prob, PROB_MIN, PROB_MAX), COUNT_UNKNOWN);
 
-    // Atomic
-    kit->set_control(kit->IfTrue(iff_atomic));
-    if (!kit->stopped()) {
-      assert(vk->has_null_free_atomic_layout(), "element type %s does not have a null-free atomic flat layout", vk->name()->as_utf8());
-      kit->set_all_memory(input_memory_state);
-      vt_null_free = do_flat_array_access(faac, true, true, 2, true);
-    }
+      // Atomic
+      kit->set_control(kit->IfTrue(iff_atomic));
+      if (!kit->stopped()) {
+        assert(vk->has_null_free_atomic_layout(), "element type %s does not have a null-free atomic flat layout",
+               vk->name()->as_utf8());
+        kit->set_all_memory(input_memory_state);
+        if (null_free_atomic_prob == 0 && !kit->too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+          PreserveJVMState pjvms(kit);
+          kit->uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+        } else {
+          vt_null_free = do_flat_array_access(faac, true, true, 2, true);
+        }
+      }
 
-    // Non-Atomic
-    kit->set_control(kit->IfFalse(iff_atomic));
-    if (!kit->stopped()) {
-      assert(vk->has_null_free_non_atomic_layout(), "element type %s does not have a null-free non-atomic flat layout", vk->name()->as_utf8());
-      kit->set_all_memory(input_memory_state);
-      vt_non_atomic = do_flat_array_access(faac, false, true, 3, true);
+      // Non-Atomic
+      kit->set_control(kit->IfFalse(iff_atomic));
+      if (!kit->stopped()) {
+        assert(vk->has_null_free_non_atomic_layout(),
+               "element type %s does not have a null-free non-atomic flat layout", vk->name()->as_utf8());
+        kit->set_all_memory(input_memory_state);
+        if (null_free_atomic_prob == 1 && !kit->too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+          PreserveJVMState pjvms(kit);
+          kit->uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+        } else {
+          vt_non_atomic = do_flat_array_access(faac, false, true, 3, true);
+        }
+      }
     }
   }
 

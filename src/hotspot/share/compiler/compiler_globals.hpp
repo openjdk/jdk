@@ -389,6 +389,10 @@
           "available.")                                                     \
           range(0, max_juint)                                               \
                                                                             \
+  product(intx, TypeProfileMajorReceiverPercent, 90,                        \
+          "% of major receiver type to all profiled receivers")             \
+          range(0, 100)                                                     \
+                                                                            \
   /* AOT Code Caching flags */                                              \
                                                                             \
   product(uint, DisableAOTCode, 0, DIAGNOSTIC,                              \
