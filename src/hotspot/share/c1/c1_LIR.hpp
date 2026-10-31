@@ -929,6 +929,7 @@ enum LIR_Code {
       , lir_return
       , lir_leal
       , lir_move
+      , lir_decode_heap_oop
       , lir_convert
       , lir_alloc_object
       , lir_monaddr
@@ -2288,6 +2289,11 @@ class LIR_List: public CompilationResourceObj {
     } else {
       move(src, dst, info);
     }
+  }
+  void decode_heap_oop(LIR_Opr src, LIR_Opr dst) {
+    assert(UseCompressedOops, "should only be used with compressed oops");
+    assert(src->type() == T_LONG && dst->type() == T_OBJECT, "unexpected types");
+    append(new LIR_Op1(lir_decode_heap_oop, src, dst));
   }
   void volatile_move(LIR_Opr src, LIR_Opr dst, BasicType type, CodeEmitInfo* info = nullptr, LIR_PatchCode patch_code = lir_patch_none) { append(new LIR_Op1(lir_move, src, dst, type, patch_code, info, lir_move_volatile)); }
 

@@ -28,7 +28,21 @@ import jdk.test.lib.Asserts;
 import jdk.test.whitebox.WhiteBox;
 
 /*
- * @test
+ * @test id=plain
+ * @bug 8395981 8396139
+ * @summary Test C1 GC post-barriers for flat field stores.
+ * @enablePreview
+ * @requires vm.compiler1.enabled
+ * @modules java.base/jdk.internal.vm.annotation
+ * @library /test/lib /compiler/whitebox /
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   ${test.main.class}
+ */
+
+/*
+ * @test id=shift
  * @bug 8395981
  * @summary Test C1's constant long shift in GC barrier.
  * @enablePreview
@@ -38,9 +52,24 @@ import jdk.test.whitebox.WhiteBox;
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:+VerifyAfterGC -Xbatch -XX:TieredStopAtLevel=1
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::store
  *                   ${test.main.class}
+ */
+
+/*
+ * @test id=decode
+ * @bug 8396139
+ * @summary Test C1 GC post-barriers for flat field stores with narrow oop fields.
+ * @enablePreview
+ * @requires vm.compiler1.enabled & os.maxMemory >= 6G
+ * @modules java.base/jdk.internal.vm.annotation
+ * @library /test/lib /compiler/whitebox /
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+VerifyAfterGC -Xbatch -XX:TieredStopAtLevel=1
+ *                   -XX:+UseG1GC -XX:HeapBaseMinAddress=584m -Xms4g -Xmx4g
  *                   -XX:CompileCommand=compileonly,${test.main.class}::store
  *                   ${test.main.class}
  */
