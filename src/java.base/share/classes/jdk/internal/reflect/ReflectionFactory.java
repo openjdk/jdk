@@ -214,12 +214,16 @@ public class ReflectionFactory {
     public final Constructor<?> newConstructorForSerialization(Class<?> cl,
                                                                Constructor<?> constructorToCall)
     {
-        if (constructorToCall.getDeclaringClass() == cl) {
-            constructorToCall.setAccessible(true);
-            return constructorToCall;
+        if (config().allowNonSerializableConstruction()) {
+            if (constructorToCall.getDeclaringClass() == cl) {
+                constructorToCall.setAccessible(true);
+                return constructorToCall;
+            }
+            return generateConstructor(cl, constructorToCall);
         }
-
-        return generateConstructor(cl, constructorToCall);
+        throw new UnsupportedOperationException(
+                "Run with -Djdk.reflect.allowNonSerializableConstruction=true to temporarily re-enable this method"
+        );
     }
 
     /**
@@ -269,8 +273,8 @@ public class ReflectionFactory {
      * Returns a constructor that allocates an instance of cl and that then initializes
      * the instance by calling the no-arg constructor of its first non-serializable
      * superclass. This is specified in the Serialization Specification, section 3.1,
-     * in step 11 of the deserialization process. If cl is not serializable, returns
-     * cl's no-arg constructor. If no accessible constructor is found, or if the
+     * in step 12 of the deserialization process. If cl is not serializable,
+     * no accessible constructor is found, or if the
      * class hierarchy is somehow malformed (e.g., a serializable class has no
      * superclass), or if this serializable class or a serializable superclass
      * declares a strictly-initialized non-static field, null is returned.
@@ -279,6 +283,11 @@ public class ReflectionFactory {
      * @return the generated constructor, or null if none is available
      */
     public final Constructor<?> newConstructorForSerialization(Class<?> cl) {
+        if (!config().allowNonSerializableConstruction()
+                && !Serializable.class.isAssignableFrom(cl)) {
+            return null;
+        }
+
         if (cl.isValue()) {
             return null;
         }
@@ -304,7 +313,11 @@ public class ReflectionFactory {
             return null;
         }
 
-        return newConstructorForSerialization(cl, constructorToCall);
+        if (constructorToCall.getDeclaringClass() == cl) {
+            constructorToCall.setAccessible(true);
+            return constructorToCall;
+        }
+        return generateConstructor(cl, constructorToCall);
     }
 
     private final Constructor<?> generateConstructor(Class<?> cl,
@@ -331,9 +344,9 @@ public class ReflectionFactory {
         return findReadWriteObjectForSerialization(cl, "writeObject", ObjectOutputStream.class);
     }
 
-    private final MethodHandle findReadWriteObjectForSerialization(Class<?> cl,
-                                                                   String methodName,
-                                                                   Class<?> streamClass) {
+    private MethodHandle findReadWriteObjectForSerialization(Class<?> cl,
+                                                             String methodName,
+                                                             Class<?> streamClass) {
         if (!Serializable.class.isAssignableFrom(cl)) {
             return null;
         }
@@ -552,7 +565,8 @@ public class ReflectionFactory {
     private static @Stable Config config;
 
     private static final Config DEFAULT_CONFIG = new Config(false, // useNativeAccessorOnly
-                                                            false); // disableSerialConstructorChecks
+                                                            false, // disableSerialConstructorChecks
+                                                            false); // allowNonSerializableConstruction
 
     /**
      * The configurations for the reflection factory. Configurable via
@@ -566,7 +580,8 @@ public class ReflectionFactory {
      * is to override them.
      */
     private record Config(boolean useNativeAccessorOnly,
-                          boolean disableSerialConstructorChecks) {
+                          boolean disableSerialConstructorChecks,
+                          boolean allowNonSerializableConstruction) {
     }
 
     private static Config config() {
@@ -587,11 +602,13 @@ public class ReflectionFactory {
         assert VM.isModuleSystemInited();
 
         boolean useNativeAccessorOnly =
-            "true".equals(System.getProperty("jdk.reflect.useNativeAccessorOnly"));
+            "true".equals(VM.getSavedProperty("jdk.reflect.useNativeAccessorOnly"));
         boolean disableSerialConstructorChecks =
-            "true".equals(System.getProperty("jdk.disableSerialConstructorChecks"));
+            "true".equals(VM.getSavedProperty("jdk.disableSerialConstructorChecks"));
+        boolean allowNonSerializableConstruction =
+            "true".equals(VM.getSavedProperty("jdk.reflect.allowNonSerializableConstruction"));
 
-        return new Config(useNativeAccessorOnly, disableSerialConstructorChecks);
+        return new Config(useNativeAccessorOnly, disableSerialConstructorChecks, allowNonSerializableConstruction);
     }
 
     /**
