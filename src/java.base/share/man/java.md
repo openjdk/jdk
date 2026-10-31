@@ -1186,6 +1186,11 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
         `g` or `G` to specify the size in gigabytes (GB). By default, the
         memory size is set to 10 MB.
 
+    `nativestackdepth=`*depth*
+    :   Maximum number of native frames recorded in stack traces of
+        `jdk.CPUTimeSample` events. Native frames do not count towards `stackdepth`.
+        The default of 0 disables native frames. The maximum is 128.
+
     `numglobalbuffers`
     :   Specifies the number of global buffers used. The default value is based
         on the memory size specified. Change the `memorysize` parameter to

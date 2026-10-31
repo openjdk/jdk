@@ -88,6 +88,7 @@ class JfrStackTrace : public JfrCHeapObj {
 
   bool record(JavaThread* current_thread, int skip, int64_t stack_filter_id);
   bool record(JavaThread* jt, const frame& frame, bool in_continuation, const JfrSampleRequest& request);
+  void record_native_frames(const address* pcs, u4 count);
   bool should_write() const { return !_written; }
 };
 

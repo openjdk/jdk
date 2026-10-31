@@ -114,7 +114,7 @@ public class FieldFormatter {
             if (f.isJavaFrame()) {
                 return format(field, f.getMethod(), compact);
             }
-            return "<unknown>";
+            return ValueFormatter.formatNativeFunction(f.getValue("nativeFunction"));
         }
         if (object instanceof Duration d) {
             if (d.getSeconds() == Long.MIN_VALUE && d.getNano() == 0) {
