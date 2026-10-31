@@ -98,6 +98,8 @@ class MacroAssembler: public Assembler {
 
   void call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions = true);
 
+  virtual bool is_C1_masm() { return false; }
+
  private:
 
   enum KlassDecodeMode {
@@ -1181,7 +1183,12 @@ public:
 
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
-  void profile_receiver_type(Register recv, Register mdp, int mdp_offset);
+  static void increment_mdo(MacroAssembler *masm, Address dst, int32_t src) {
+    masm->increment(dst, src);
+  }
+  typedef void (*increment_mdo_insn_t)(MacroAssembler *masm, Address dst, int32_t src);
+  void profile_receiver_type(Register recv, Register mdp, int mdp_offset,
+                             increment_mdo_insn_t inc = &increment_mdo);
 
   void verify_sve_vector_length(Register tmp = rscratch1);
   void reinitialize_ptrue() {

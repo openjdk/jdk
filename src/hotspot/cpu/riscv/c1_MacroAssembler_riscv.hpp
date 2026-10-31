@@ -28,6 +28,7 @@
 #define CPU_RISCV_C1_MACROASSEMBLER_RISCV_HPP
 
 using MacroAssembler::build_frame;
+using MacroAssembler::remove_frame;
 using MacroAssembler::null_check;
 
 // C1_MacroAssembler contains high-level macros for C1

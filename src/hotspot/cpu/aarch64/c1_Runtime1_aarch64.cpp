@@ -572,6 +572,8 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
 
   __ verify_not_null_oop(exception_oop);
 
+  __ restore_profile_rng();
+
   // continue at exception handler (return address removed)
   // note: do *not* remove arguments when unwinding the
   //       activation since the caller assumes having

@@ -48,6 +48,7 @@ LIR_Opr FrameMap::R3_metadata_opr;
 LIR_Opr FrameMap::R4_metadata_opr;
 LIR_Opr FrameMap::R5_metadata_opr;
 
+LIR_Opr FrameMap::profile_rng_opr;
 
 LIR_Opr FrameMap::LR_opr;
 LIR_Opr FrameMap::LR_oop_opr;
@@ -141,6 +142,10 @@ void FrameMap::initialize() {
   FP_opr      = as_pointer_opr(FP);
   SP_opr      = as_pointer_opr(SP);
   Rthread_opr = as_pointer_opr(Rthread);
+
+  if (ProfileCaptureRatio > 1) {
+    profile_rng_opr = LIR_OprFact::single_cpu(cpu_reg2rnr(r_profile_rng));
+  }
 
   // LIR operands for result
   Int_result_opr = R0_opr;
