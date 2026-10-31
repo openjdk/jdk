@@ -81,6 +81,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.*;
 
@@ -726,6 +727,39 @@ class DumpThreads {
             assertEquals(scopeId, ti.parkBlocker());
         } finally {
             thread.interrupt();
+            thread.join();
+        }
+    }
+
+    /**
+     * Test thread names with control characters.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "worker-\u0000nul",
+            "worker-\u0001soh",
+            "worker-\u0007bell",
+            "worker-\u000Bvertical-tab",
+            "worker-\u001Bescape",
+            "worker-\u001Funit-separator",
+            "worker-\nnewline",
+            "worker-\ttab",
+            "worker-\"quote",
+            "worker-\\backslash"
+    })
+    void testThreadName(String threadName) throws Exception {
+        var thread = Thread.ofPlatform().name(threadName).start(LockSupport::park);
+        try {
+            ThreadDump threadDump = dumpThreadsToJson();
+
+            long tid = thread.threadId();
+            ThreadDump.ThreadInfo ti = threadDump.rootThreadContainer()
+                    .findThread(tid)
+                    .orElse(null);
+            assertNotNull(ti, "thread not found");
+            assertEquals(threadName, ti.name());
+        } finally {
+            LockSupport.unpark(thread);
             thread.join();
         }
     }
