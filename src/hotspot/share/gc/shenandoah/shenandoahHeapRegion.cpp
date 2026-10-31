@@ -332,8 +332,8 @@ void ShenandoahHeapRegion::make_empty() {
   reset_age();
   switch (state()) {
     case _trash:
+      _empty_time.store_relaxed(os::elapsedTime());
       set_state(_empty_committed);
-      _empty_time = os::elapsedTime();
       return;
     default:
       report_illegal_transition("emptying");
@@ -359,6 +359,7 @@ void ShenandoahHeapRegion::make_committed_bypass() {
   switch (state()) {
     case _empty_uncommitted:
       do_commit();
+      _empty_time.store_relaxed(os::elapsedTime());
       set_state(_empty_committed);
       return;
     default:
