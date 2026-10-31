@@ -46,8 +46,8 @@ protected:
   ShenandoahObjToScanQueueSet* const _old_gen_task_queues;
   bool const _string_dedup;
   bool const _bootstrapping;
+  Atomic<size_t> _workers_watermark;
 
-protected:
   ShenandoahMark(ShenandoahGeneration* generation, bool bootstrapping);
 
 public:
@@ -69,6 +69,10 @@ public:
   inline ShenandoahObjToScanQueue* get_old_queue(uint index) const;
 
   ShenandoahGeneration* generation() const { return _generation; };
+
+  void set_eligible_workers(uint workers) {
+    _workers_watermark.store_relaxed(workers);
+  }
 
 private:
 // ---------- Marking loop and tasks
@@ -108,7 +112,8 @@ private:
 
   template <class T, class OT, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
   NOINLINE // Main hot loop, start inlining from here
-  void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t, StringDedup::Requests* const req);
+  bool mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator* t,
+                      StringDedup::Requests* const req);
 
 protected:
   template<bool CANCELLABLE, bool STRING_DEDUP>

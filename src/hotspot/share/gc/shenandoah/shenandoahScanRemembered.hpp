@@ -933,9 +933,8 @@ public:
   // Fills in assignment with next chunk of work and returns true iff there is more work.
   // Otherwise, returns false.  This is multi-thread-safe. Chunk assignments pertain only to
   // memory affiliated with the Old generation.
-  inline bool next(struct ShenandoahRegionChunk* assignment);
+  inline bool next(ShenandoahRegionChunk* assignment);
 };
-
 
 class ShenandoahScanRememberedTask : public WorkerTask {
  private:

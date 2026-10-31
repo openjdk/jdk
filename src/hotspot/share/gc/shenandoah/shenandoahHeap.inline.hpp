@@ -63,9 +63,9 @@ inline ShenandoahHeap* ShenandoahHeap::heap() {
 }
 
 inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {
-  size_t new_index = _index.add_then_fetch((size_t) 1, memory_order_relaxed);
+  const size_t index = _index.fetch_then_add(1UL, memory_order_relaxed);
   // get_region() provides the bounds-check and returns null on OOB.
-  return _heap->get_region(new_index - 1);
+  return _heap->get_region(index);
 }
 
 inline WorkerThreads* ShenandoahHeap::workers() const {

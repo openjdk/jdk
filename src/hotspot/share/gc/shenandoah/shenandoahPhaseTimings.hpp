@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/timer.hpp"
 
 class ShenandoahCollectorPolicy;
 class outputStream;
@@ -181,6 +182,8 @@ typedef WorkerDataArray<double> ShenandoahWorkerData;
 class ShenandoahPhaseTimings : public CHeapObj<mtGC> {
   friend class ShenandoahGCPhase;
   friend class ShenandoahWorkerTimingsTracker;
+  friend class ShenandoahCumulativeTimingsTracker;
+
 public:
 #define SHENANDOAH_PHASE_DECLARE_ENUM(name, desc, has_worker_phase) name,
 
@@ -255,6 +258,45 @@ public:
                                  uint worker_id,
                                  bool cumulative = false);
   ~ShenandoahWorkerTimingsTracker();
+};
+
+class ShenandoahCumulativeTimingsTracker : public StackObj {
+  elapsedTimer _cumulative_work_timer;
+  ShenandoahPhaseTimings* const _timings;
+  bool _activated;
+  ShenandoahPhaseTimings::Phase const _phase;
+  ShenandoahPhaseTimings::WorkerPhase const _worker_phase;
+  uint const _worker_id;
+  EventGCPhaseParallel _event;
+
+public:
+  ShenandoahCumulativeTimingsTracker(ShenandoahPhaseTimings::Phase phase,
+                                     ShenandoahPhaseTimings::WorkerPhase worker_phase,
+                                     uint worker_id);
+
+  ~ShenandoahCumulativeTimingsTracker();
+
+  void start() {
+    _activated = true;
+    _cumulative_work_timer.start();
+  }
+
+  void stop() {
+    _cumulative_work_timer.stop();
+  }
+};
+
+class ShenandoahActualWorkTimingsTracker : public StackObj {
+  ShenandoahCumulativeTimingsTracker* _timer;
+
+public:
+  explicit ShenandoahActualWorkTimingsTracker(ShenandoahCumulativeTimingsTracker* timer) : _timer(timer) {
+    _timer->start();
+  }
+
+  ~ShenandoahActualWorkTimingsTracker() {
+    _timer->stop();
+  }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHPHASETIMINGS_HPP

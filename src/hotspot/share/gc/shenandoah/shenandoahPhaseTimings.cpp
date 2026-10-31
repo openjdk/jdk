@@ -281,3 +281,22 @@ ShenandoahWorkerTimingsTracker::~ShenandoahWorkerTimingsTracker() {
     _event.commit(GCId::current(), _worker_id, ShenandoahPhaseTimings::phase_desc(cur_phase));
   }
 }
+
+ShenandoahCumulativeTimingsTracker::ShenandoahCumulativeTimingsTracker(ShenandoahPhaseTimings::Phase phase,
+                                                                       ShenandoahPhaseTimings::WorkerPhase worker_phase,
+                                                                       uint worker_id)
+  : _timings(ShenandoahHeap::heap()->phase_timings()), _activated(false)
+  , _phase(phase), _worker_phase(worker_phase), _worker_id(worker_id) {
+}
+
+ShenandoahCumulativeTimingsTracker::~ShenandoahCumulativeTimingsTracker() {
+  if (_activated) {
+    _timings->worker_data(_phase, _worker_phase)->set_or_add(_worker_id, _cumulative_work_timer.seconds());
+  }
+
+  if (ShenandoahPhaseTimings::is_root_work_phase(_phase)) {
+    ShenandoahPhaseTimings::Phase root_phase = _phase;
+    ShenandoahPhaseTimings::Phase cur_phase = _timings->compute_phase_slot(root_phase, _worker_phase);
+    _event.commit(GCId::current(), _worker_id, ShenandoahPhaseTimings::phase_desc(cur_phase));
+  }
+}
