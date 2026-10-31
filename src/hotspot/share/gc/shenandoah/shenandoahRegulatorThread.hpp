@@ -64,7 +64,7 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
 
   // The generational mode can only unload classes in a global cycle. The regulator
   // thread itself will trigger a global cycle if metaspace is out of memory.
-  bool should_start_metaspace_gc();
+  bool should_start_metaspace_gc() const;
 
   // Regulator will sleep longer when the allocation rate is lower.
   void regulator_sleep();
