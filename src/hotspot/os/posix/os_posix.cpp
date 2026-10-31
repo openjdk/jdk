@@ -1715,18 +1715,16 @@ struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
 //    Having three states allows for some detection of bad usage - see
 //    comments on unpark().
 
-PlatformEvent::PlatformEvent(bool immortal) {
+PlatformEvent::PlatformEvent() {
   int status = pthread_cond_init(_cond, _condAttr);
   assert_status(status == 0, status, "cond_init");
   status = pthread_mutex_init(_mutex, _mutexAttr);
   assert_status(status == 0, status, "mutex_init");
   _event   = 0;
   _nParked = 0;
-  _immortal = immortal;
 }
 
 PlatformEvent::~PlatformEvent() {
-  guarantee(!_immortal, "Destructor called on an immortal PlatformEvent");
   assert(_nParked == 0, "%d thread(s) still parked", _nParked);
   int status = pthread_cond_destroy(_cond);
   assert_status(status == 0, status, "cond_destroy");

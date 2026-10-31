@@ -25,6 +25,8 @@
 #ifndef SHARE_RUNTIME_PARK_HPP
 #define SHARE_RUNTIME_PARK_HPP
 
+#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -71,29 +73,50 @@ class Parker : public PlatformParker {
 
 /////////////////////////////////////////////////////////////
 //
-// ParkEvents are type-stable and immortal.
+// Lifecycle:
 //
-// Lifecycle: Once a ParkEvent is associated with a thread that ParkEvent remains
-// associated with the thread for the thread's entire lifetime - the relationship is
-// stable. A thread will be associated at most one ParkEvent.  When the thread
-// expires, the ParkEvent moves to the EventFreeList.  New threads attempt to allocate from
-// the EventFreeList before creating a new Event.  Type-stability frees us from
-// worrying about stale Event or Thread references in the objectMonitor subsystem.
-// (A reference to ParkEvent is always valid, even though the event may no longer be associated
-// with the desired or expected thread.  A key aspect of this design is that the callers of
-// park, unpark, etc must tolerate stale references and spurious wakeups).
+// 1. Dynamic ParkEvent:
+//
+//    Each Thread will have a dynamically created _ParkEvent, which will rely
+//    on a "usage counter" to track when it's in use, and when it's safe to
+//    delete.
+//
+//    To make sure the park event is not destroyed between getting hold of the
+//    reference to it, and unparking the thread, we can "retain the usage".
+//    This means that we increase the park event's usage counter when we can
+//    guarantee that the thread to be unparked is still alive, until we have
+//    completed the retention. Later after unparking we can "drop the usage",
+//    which will decrease the usage counter by one, and if it gets down to
+//    zero the park event will be deleted.
+//
+//    This way we can make sure that a (retained) reference to the park event
+//    is still valid, even though the park event has outlived the associated
+//    thread.
+//
+// 2. Embedded ParkEvent:
+//
+//    Each JavaThread will have an embedded _SleepEvent. Because it's embedded
+//    in the JavaThread, its usage counter does not matter, instead it will be
+//    destroyed with its associated thread. Note: JavaThread::interrupt() does
+//    not need to retain usage of the _SleepEvent, since the thread in which
+//    the _SleepEvent is embedded, is kept alive by a ThreadsListHandle until
+//    after unparking has finished.
+//
+// 3. Immortal ParkEvent:
+//
+//    ObjectMonitor::_vthread_unparker_ParkEvent is used to wake up virtual
+//    threads, and is never destroyed.
 //
 // Only the "associated" thread can block (park) on the ParkEvent, although
-// any other thread can unpark a reachable parkevent.  Park() is allowed to
-// return spuriously.  In fact park-unpark a really just an optimization to
-// avoid unbounded spinning and surrender the CPU to be a polite system citizen.
-// A degenerate albeit "impolite" park-unpark implementation could simply return.
-// See http://blogs.sun.com/dave for more details.
+// any other thread can unpark it using a live park event. The usage counter
+// (retain usage) is one such mechanism to keep the park event live during the
+// unpark operation. Using a ThreadsListHandle (TLH) is another. But, since a
+// TLH can not protect a non-Java thread waiting on a raw monitor, we don't
+// use TLH, only usage counting.
 //
-// Eventually I'd like to eliminate Events and ObjectWaiters, both of which serve as
-// thread proxies, and simply make the THREAD structure type-stable and persistent.
-// Currently, we unpark events associated with threads, but ideally we'd just
-// unpark threads.
+// Park() is allowed to return spuriously. In fact park-unpark is really just
+// an optimization to avoid unbounded spinning and surrender the CPU to be a
+// polite system citizen.
 //
 // The base-class, PlatformEvent, is platform-specific while the ParkEvent is
 // platform-independent.  PlatformEvent provides park(), unpark(), etc., and
@@ -112,29 +135,46 @@ class Parker : public PlatformParker {
 
 class ParkEvent : public PlatformEvent {
   private:
-    ParkEvent * FreeNext ;
+    Atomic<int> _in_use_cnt;
+    DEBUG_ONLY(uint32_t _canary;)
 
-    // Current association
-    Thread * AssociatedWith ;
-
-  private:
-    static ParkEvent * volatile FreeList ;
-    static volatile int ListLock ;
-    bool _immortal ;
+#ifdef ASSERT
+    static const uint32_t _canary_live_park_event = 0x5041524b; // "PARK"
+    static const uint32_t _canary_dead_park_event = 0x7061726b; // "park"
+    static constexpr char _canary_assert_msg[] = "ParkEvent is not alive";
+#endif
 
   public:
-    ~ParkEvent() { guarantee(!_immortal, "Destructor called on an immortal ParkEvent"); }
-
-    ParkEvent(bool immortal = true) : PlatformEvent(immortal) {
-       AssociatedWith = nullptr ;
-       FreeNext       = nullptr ;
-       _immortal      = immortal ;
+    ~ParkEvent() {
+      assert(_canary == _canary_live_park_event, _canary_assert_msg);
+      DEBUG_ONLY(_canary = _canary_dead_park_event;)
     }
 
-    void operator delete (void * a) ;
+    ParkEvent() : PlatformEvent() {
+      _in_use_cnt.store_relaxed(1);
+      DEBUG_ONLY(_canary = _canary_live_park_event;)
+    }
 
-    static ParkEvent * Allocate (Thread * t) ;
-    static void Release (ParkEvent * e) ;
+    ParkEvent *retain_usage() {
+      assert(_canary == _canary_live_park_event, _canary_assert_msg);
+      int old = _in_use_cnt.fetch_then_add(1);
+      assert(old > 0, "Can not retain a non-used (%d) ParkEvent", old);
+      return this;
+    }
+
+    void drop_usage() {
+      assert(_canary == _canary_live_park_event, _canary_assert_msg);
+      int remain = this->_in_use_cnt.sub_then_fetch(1);
+      assert(remain >= 0, "Can not drop usage of a non-used (%d) ParkEvent", remain);
+      if (remain == 0) {
+        delete this;
+      }
+    }
+
+    void unpark_and_drop_usage() {
+      unpark();
+      drop_usage();
+    }
 } ;
 
 #endif // SHARE_RUNTIME_PARK_HPP

@@ -34,19 +34,15 @@ class PlatformEvent : public CHeapObj<mtSynchronizer> {
     double CachePad [4] ;   // increase odds that _Event is sole occupant of cache line
     volatile int _Event ;
     HANDLE _ParkHandle ;
-    bool _immortal ;
 
   public:
-    ~PlatformEvent() {
-      guarantee(!_immortal, "Destructor called on an immortal PlatformEvent");
-      CloseHandle(_ParkHandle);
-    }
+    ~PlatformEvent() { CloseHandle(_ParkHandle); }
 
-    PlatformEvent(bool immortal) {
+  public:
+    PlatformEvent() {
       _Event   = 0 ;
       _ParkHandle = CreateEvent (nullptr, false, false, nullptr) ;
       guarantee (_ParkHandle != nullptr, "invariant") ;
-      _immortal = immortal;
     }
 
     // Exercise caution using reset() and fired() - they may require MEMBARs

@@ -35,10 +35,6 @@
  * This is the platform-specific implementation underpinning
  * the ParkEvent class, which itself underpins Java-level monitor
  * operations. See park.hpp for details.
- * These event objects might be type-stable and immortal. I.e., a java
- * thread's _ParkEvent is immortal and is never deleted. On the other
- * hand, the _SleepEvent is embedded in the JavaThread and is not
- * immortal. It will be destroyed when the java thread is deleted.
  */
 class PlatformEvent : public CHeapObj<mtSynchronizer> {
  private:
@@ -48,10 +44,9 @@ class PlatformEvent : public CHeapObj<mtSynchronizer> {
   pthread_mutex_t _mutex[1]; // Native mutex for locking
   pthread_cond_t  _cond[1];  // Native condition variable for blocking
   double postPad[2];
-  bool _immortal;
 
  public:
-  PlatformEvent(bool immortal = true);
+  PlatformEvent();
   ~PlatformEvent();
   void park();
   int  park(jlong millis);

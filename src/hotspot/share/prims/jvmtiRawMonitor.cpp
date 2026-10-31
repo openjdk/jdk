@@ -180,13 +180,14 @@ void JvmtiRawMonitor::simple_exit(Thread* self) {
     guarantee(w ->_t_state == QNode::TS_ENTER, "invariant");
     // Once we set _t_state to TS_RUN the waiting thread can complete
     // simple_enter and 'w' is pointing into random stack space. So we have
-    // to ensure we extract the ParkEvent (which is in type-stable memory)
-    // before we set the state, and then don't access 'w'.
-    ParkEvent* ev = w->_event;
+    // to ensure we extract (and retain the usage of) the ParkEvent before
+    // we set the TS_RUN state, and then don't access 'w', only the
+    // retained 'ev'.
+    ParkEvent* ev = w->_event->retain_usage();
     OrderAccess::loadstore();
     w->_t_state = QNode::TS_RUN;
     OrderAccess::fence();
-    ev->unpark();
+    ev->unpark_and_drop_usage();
   }
   return;
 }
@@ -305,10 +306,16 @@ void JvmtiRawMonitor::simple_notify(Thread* self, bool all) {
     if (w == nullptr) break;
     _wait_set = w->_next;
     if (ev != nullptr) {
-      ev->unpark();
+      ev->unpark_and_drop_usage();
       ev = nullptr;
     }
-    ev = w->_event;
+    // The RawMonitor_lock will protect 'w' from being removed by an
+    // interrupt or timeout. Once we set _t_state to TS_RUN the
+    // waiting thread can complete simple_wait and 'w' is pointing
+    // into random stack space. So we have to ensure we extract (and
+    // retain the usage of) the ParkEvent before we set the TS_RUN
+    // state, and then don't access 'w', only the retained 'ev'.
+    ev = w->_event->retain_usage();
     OrderAccess::loadstore();
     w->_t_state = QNode::TS_RUN;
     OrderAccess::storeload();
@@ -318,7 +325,7 @@ void JvmtiRawMonitor::simple_notify(Thread* self, bool all) {
   }
   RawMonitor_lock->unlock();
   if (ev != nullptr) {
-    ev->unpark();
+    ev->unpark_and_drop_usage();
   }
   return;
 }
