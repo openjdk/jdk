@@ -226,6 +226,7 @@ public class TestBufferVectorization {
                   IRNode.LOAD_VECTOR_I, ">0",
                   IRNode.ADD_VI,        ">0",
                   IRNode.STORE_VECTOR,  ">0"},
+        applyIf = {"UseUnalignedAccesses", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public static void testArrayView(byte[] b_arr) {
         for (int k = 0; k < b_arr.length; k += 4) {
