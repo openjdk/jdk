@@ -258,6 +258,15 @@ public final class ThreadDump {
         }
 
         /**
+         * Returns the thread's threadObj member or null.
+         */
+        public String threadObj() {
+            return threadObj.getOrAbsent("threadObj")
+                    .map(JSONValue::asString)
+                    .orElse(null);
+        }
+
+        /**
          * Returns true if virtual thread.
          */
         public boolean isVirtual() {

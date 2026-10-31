@@ -69,7 +69,8 @@ final class StructuredTaskScopeImpl<T, R, R_X extends Throwable>
                                     String name) {
         this.joiner = joiner;
         this.threadFactory = threadFactory;
-        this.flock = ThreadFlock.open((name != null) ? name : Objects.toIdentityString(this));
+        String id = Objects.toIdentityString(this);
+        this.flock = ThreadFlock.open((name != null) ? name + "/" + id : id);
     }
 
     /**
@@ -252,7 +253,7 @@ final class StructuredTaskScopeImpl<T, R, R_X extends Throwable>
 
         // wait for all subtasks, the scope to be cancelled, or interrupt
         try {
-            flock.awaitAll();
+            flock.awaitAll(this);
         } catch (InterruptedException e) {
             state = ST_JOIN_STARTED;  // joining not completed, prevent new forks
             throw e;
