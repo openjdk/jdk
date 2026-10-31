@@ -41,7 +41,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @bug 8389844 8391307
+ * @bug 8389844 8391307 8392465
  * @modules jdk.incubator.vector
  * @run testng VectorLanewiseOpCompatibleWithTest
  */
@@ -80,9 +80,6 @@ public class VectorLanewiseOpCompatibleWithTest {
                 .flatMap(elementType -> Arrays.stream(VectorShape.values())
                         .map(shape -> VectorSpecies.of(elementType, shape)))
                 .flatMap(species -> OPERATORS.stream()
-                        // These operators are more restrictive, exclude for now.
-                        .filter(op -> op != VectorOperators.COMPRESS_BITS &&
-                                      op != VectorOperators.EXPAND_BITS)
                         .filter(opFilter)
                         .filter(op -> op.compatibleWith(species.elementType()) == compatible)
                         .map(op -> new Object[] {species, op}))

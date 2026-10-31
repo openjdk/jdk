@@ -1523,6 +1523,14 @@ public class LongVector256Tests extends AbstractVectorTest {
         return Long.numberOfLeadingZeros(a);
     }
 
+    static long compress(long a, long b) {
+        return Long.compress(a, b);
+    }
+
+    static long expand(long a, long b) {
+        return Long.expand(a, b);
+    }
+
     static long REVERSE_scalar(long a) {
         return Long.reverse(a);
     }
@@ -2300,7 +2308,7 @@ public class LongVector256Tests extends AbstractVectorTest {
     }
 
     static long COMPRESS_BITS(long a, long b) {
-        return (long)(Long.compress(a, b));
+        return (long)(compress(a, b));
     }
 
     @Test(dataProvider = "longBinaryOpProvider")
@@ -2341,7 +2349,7 @@ public class LongVector256Tests extends AbstractVectorTest {
     }
 
     static long EXPAND_BITS(long a, long b) {
-        return (long)(Long.expand(a, b));
+        return (long)(expand(a, b));
     }
 
     @Test(dataProvider = "longBinaryOpProvider")
