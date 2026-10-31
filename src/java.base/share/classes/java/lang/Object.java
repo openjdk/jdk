@@ -69,7 +69,9 @@ public class Object {
     public Object() {}
 
     /**
-     * Returns the runtime class of this {@code Object}. The returned
+     * {@return the {@code Class} object that represents the class of this
+     * {@code Object}} The class of an object is a non-abstract class for
+     * a class instance or an array type for an array. The returned
      * {@code Class} object is the object that is locked by {@code
      * static synchronized} methods of the represented class.
      *
@@ -83,8 +85,6 @@ public class Object {
      * {@code Class<? extends Number> c = n.getClass(); }
      * </p>
      *
-     * @return The {@code Class} object that represents the runtime
-     *         class of this object.
      * @jls 15.8.2 Class Literals
      */
     @IntrinsicCandidate
