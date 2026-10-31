@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ class FrameSetView extends javax.swing.text.BoxView {
     int[] percentChildren;
     int[] absoluteChildren;
     int[] relativeChildren;
-    int percentTotals;
+    long percentTotals;
     int absoluteTotals;
     int relativeTotals;
 
@@ -147,7 +147,7 @@ class FrameSetView extends javax.swing.text.BoxView {
             for (int i = 0; i < percentChildren.length; i++) {
                 if (percentChildren[i] > 0) {
                     percentChildren[i] =
-                        (percentChildren[i] * 100) / percentTotals;
+                      (int)((percentChildren[i] * 100L) / percentTotals);
                 }
             }
             percentTotals = 100;
@@ -239,7 +239,7 @@ class FrameSetView extends javax.swing.text.BoxView {
         tempSpace = remainingSpace;
         for (int i = 0; i < span.length; i++) {
             if (percentChildren[i] > 0 && tempSpace > 0) {
-                span[i] = (percentChildren[i] * tempSpace) / 100;
+                span[i] = (int)((percentChildren[i] * (long)tempSpace) / 100);
                 remainingSpace -= span[i];
             } else if (percentChildren[i] > 0 && tempSpace <= 0) {
                 span[i] = targetSpan / span.length;
@@ -317,7 +317,11 @@ class FrameSetView extends javax.swing.text.BoxView {
         for (int i = 0; i < mixedStr.length(); i++) {
             char ch = mixedStr.charAt(i);
             if (Character.isDigit(ch)) {
-                result = (result * 10) + Character.digit(ch, 10);
+                int digit = Character.digit(ch, 10);
+                if (result > (Integer.MAX_VALUE - digit) / 10) {
+                    return Integer.MAX_VALUE;
+                }
+                result = result * 10 + digit;
             }
         }
         return result;
