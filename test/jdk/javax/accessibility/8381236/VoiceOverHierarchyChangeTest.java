@@ -23,6 +23,7 @@
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
@@ -30,11 +31,12 @@ import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import javax.accessibility.AccessibleContext;
 
 /*
  * @test
  * @key headful
- * @bug 8381236
+ * @bug 8381236 8395930
  * @summary manual test for VoiceOver that moves Components across Windows
  * @requires os.family == "mac"
  * @library /java/awt/regtesthelpers
@@ -47,12 +49,13 @@ public class VoiceOverHierarchyChangeTest {
         String INSTRUCTIONS = """
                 INSTRUCTIONS:
                 1. Open VoiceOver
-                2. Move the mouse over the "Does Nothing" button
+                2. Move the mouse over both of the labels
                 3. Click the "Move To Other Window" button
-                4. Move the mouse over the "Does Nothing" button
+                4. Move the mouse over both labels again.
 
-                Expected behavior: VoiceOver reads "Does Nothing" after steps
-                2 and 4.
+                Expected behavior: VoiceOver reads "Normal Label" after steps
+                2 and 4, and it does not read "Unreadable Label". There
+                should not be an exception in System.err.
                 """;
 
         PassFailJFrame.builder()
@@ -70,10 +73,21 @@ public class VoiceOverHierarchyChangeTest {
         f2.getContentPane().setPreferredSize(new Dimension(300, 100));
 
         JButton hopButton = new JButton("Move To Other Window");
-        JButton noopButton = new JButton("Does Nothing");
+        JLabel label = new JLabel("Normal Label");
+
+        // the "Unreadable Label" is testing JDK-8395930:
+        // When there is a null AccessibleContext are we safely skipping it?
+        JLabel unreadableLabel = new JLabel("Unreadable Label") {
+            @Override
+            public AccessibleContext getAccessibleContext() {
+                return null;
+            }
+        };
+
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(hopButton, BorderLayout.NORTH);
-        panel.add(noopButton, BorderLayout.SOUTH);
+        panel.add(label, BorderLayout.CENTER);
+        panel.add(unreadableLabel, BorderLayout.SOUTH);
 
         hopButton.addActionListener(e -> {
             if (SwingUtilities.isDescendingFrom(hopButton, f1)) {
