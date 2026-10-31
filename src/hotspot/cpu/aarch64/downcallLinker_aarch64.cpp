@@ -217,6 +217,20 @@ void DowncallLinker::StubGenerator::generate() {
   _oop_maps  = _needs_transition ? new OopMapSet() : nullptr;
   address start = __ pc();
 
+#ifdef _WINDOWS
+  Register target = as_Register(_abi._scratch1);
+  assert(target == rscratch2, "unexpected AArch64 target register");
+  assert(target != r16, "target preservation register in use");
+
+  // `generate_stack_overflow_check()` calls `bang_stack_with_offset()`, which
+  // writes `rscratch2`, but `rscratch2` (which aliases with `_abi._scratch1`
+  // and `r9`) contains the target address, so before the call, we save the
+  // target address in `r16` and restore it later.
+  __ mov(r16, target);
+  __ generate_stack_overflow_check(allocated_frame_size);
+  __ mov(target, r16);
+#endif
+
   __ enter();
 
   // lr and fp are already in place

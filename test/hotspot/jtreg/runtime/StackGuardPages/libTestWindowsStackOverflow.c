@@ -21,29 +21,26 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8390002
- * @summary Verifies that on Windows, there is are three yellow stack pages,
- *          since Windows requires an additional yellow stack page for the
- *          OS-managed stack-growth guard page
- * @requires os.family == "windows"
- * @library /test/lib
- * @run driver TestWindowsStackYellowPages
- */
+#include <jni.h>
+#include <stdint.h>
+#include <windows.h>
 
-import jdk.test.lib.process.ProcessTools;
+__declspec(noinline) static void bang_to_red(void) {
+  SIZE_T offset;
+  SYSTEM_INFO system_info;
+  volatile unsigned char marker = 0;
 
-public class TestWindowsStackYellowPages {
-    private static final String FLAG = "StackYellowPages";
+  // Query the page size information.
+  GetSystemInfo(&system_info);
 
-    public static void main(String[] args) throws Exception {
-        ProcessTools.executeTestJava("-XX:+PrintFlagsFinal", "-version")
-                    .shouldMatch(FLAG + "[ ]+=[ ]+3")
-                    .shouldHaveExitValue(0);
+  for (offset = system_info.dwPageSize; ; offset += system_info.dwPageSize) {
+    uintptr_t target_ptr = (uintptr_t)&marker - offset;
+    volatile unsigned char* target = (volatile unsigned char*)target_ptr;
+    *target = marker;
+  }
+}
 
-        ProcessTools.executeTestJava("-XX:" + FLAG + "=2", "-version")
-                    .shouldContain(FLAG + "=2 is outside the allowed range")
-                    .shouldNotHaveExitValue(0);
-    }
+JNIEXPORT void JNICALL
+Java_TestWindowsStackOverflow_bangToRed(JNIEnv* env, jclass cls) {
+  bang_to_red();
 }

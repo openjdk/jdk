@@ -196,7 +196,11 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_CPU_DEP],
     if test "x${OPENJDK_$1_CPU_BITS}" = "x32"; then
       $1_CPU_EXECUTABLE_LDFLAGS="-stack:327680"
     elif test "x${OPENJDK_$1_CPU_BITS}" = "x64"; then
-      $1_CPU_EXECUTABLE_LDFLAGS="-stack:1048576"
+      if test "x${OPENJDK_$1_CPU}" = "xaarch64"; then
+        $1_CPU_EXECUTABLE_LDFLAGS="-stack:2097152"
+      else
+        $1_CPU_EXECUTABLE_LDFLAGS="-stack:1048576"
+      fi
     fi
     if test "x${OPENJDK_$1_CPU}" = "xx86"; then
       $1_CPU_LDFLAGS="-safeseh"

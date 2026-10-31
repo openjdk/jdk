@@ -259,7 +259,7 @@ class StackOverflow {
   // Returns base of the reserved zone (one-beyond the highest reserved zone address).
   address stack_reserved_zone_base() const {
     return (address)(stack_end() +
-                     (stack_red_zone_size() + stack_yellow_zone_size() + stack_reserved_zone_size()));
+                     (stack_red_zone_size() + stack_yellow_reserved_zone_size()));
   }
 
   // Returns true if address points into the reserved zone.
@@ -268,9 +268,7 @@ class StackOverflow {
            (a >= (address)((intptr_t)stack_reserved_zone_base() - stack_reserved_zone_size()));
   }
 
-  static size_t stack_yellow_reserved_zone_size() {
-    return _stack_yellow_zone_size + _stack_reserved_zone_size;
-  }
+  static size_t stack_yellow_reserved_zone_size();
 
   // Returns true if a points into either yellow or reserved zone.
   bool in_stack_yellow_reserved_zone(address a) const {
