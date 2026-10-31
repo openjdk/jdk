@@ -33,6 +33,8 @@
   // Whether this platform implements the scalable vector feature
   static const bool implements_scalable_vector = false;
 
+  static const bool use_branch_jump_table = false;
+
   static constexpr bool supports_scalable_vector() {
     return false;
   }
