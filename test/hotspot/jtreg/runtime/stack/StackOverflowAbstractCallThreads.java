@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @key stress
  *
- * @summary converted from VM testbase nsk/stress/stack/stack013.
+ * @summary Provoke stack overflow in worker threads entering recursion through an abstract method.
  * VM testbase keywords: [stress, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
@@ -47,15 +47,15 @@
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 Stack013
+ * @run main/othervm/timeout=900 StackOverflowAbstractCallThreads
  */
 
-public class Stack013 extends Stack013i {
+public class StackOverflowAbstractCallThreads extends StackOverflowAbstractCallThread {
     final static int THREADS = 10;
     final static int CYCLES = 10;
 
     public static void main(String[] args) {
-        Stack013i test = new Stack013();
+        StackOverflowAbstractCallThread test = new StackOverflowAbstractCallThreads();
         //
         // Measure maximal recursion depth until stack overflow:
         //
@@ -73,9 +73,9 @@ public class Stack013 extends Stack013i {
         //
         // Execute multiple threads repeatedly provoking stack overflows:
         //
-        Stack013i threads[] = new Stack013i[THREADS];
+        StackOverflowAbstractCallThread threads[] = new StackOverflowAbstractCallThread[THREADS];
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new Stack013();
+            threads[i] = new StackOverflowAbstractCallThreads();
             threads[i].depthToTry = 100 * maxDepth;
             threads[i].cycles = CYCLES;
             threads[i].start();
@@ -107,7 +107,7 @@ public class Stack013 extends Stack013i {
     }
 }
 
-abstract class Stack013i extends Thread {
+abstract class StackOverflowAbstractCallThread extends Thread {
     //
     // Pure virtual method:
     //

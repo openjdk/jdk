@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @key stress
  *
- * @summary converted from VM testbase nsk/stress/stack/stack001.
+ * @summary Retry recursion near the stack limit before fully unwinding after an overflow.
  * VM testbase keywords: [stress, quick, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
@@ -52,12 +52,12 @@
  *     4302288 the second stack overflow causes Classic VM to exit on win32
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 Stack001
+ * @run main/othervm/timeout=900 StackOverflowRetryNearLimit
  */
 
-public class Stack001 {
+public class StackOverflowRetryNearLimit {
     public static void main(String[] args) {
-        Stack001 test = new Stack001();
+        StackOverflowRetryNearLimit test = new StackOverflowRetryNearLimit();
         test.recurse(0);
         System.out.println("Maximal depth: " + test.maxdepth);
     }

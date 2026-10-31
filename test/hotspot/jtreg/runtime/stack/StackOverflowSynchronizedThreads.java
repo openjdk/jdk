@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,16 @@
  * @test
  * @key stress
  *
- * @summary converted from VM testbase nsk/stress/stack/stack011.
+ * @summary Provoke stack overflow with synchronized recursion on separate objects in multiple threads.
  * VM testbase keywords: [stress, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
  *     This test provokes multiple stack overflows in the multiple
- *     threads -- by invoking final static recursive method for the
- *     given fixed depth of recursion (though, for a large depth).
+ *     threads -- by invoking synchronized virtual recursive method
+ *     for the given fixed depth of recursion (though, for a large
+ *     depth). Note however, that different threads are not actual
+ *     synchronized, because different instances having the recursive
+ *     method are used.
  *     This test measures a number of recursive invocations until
  *     stack overflow, and then tries to provoke similar stack overflows
  *     10 times in each of 10 threads. Each provocation consists of
@@ -41,29 +44,30 @@
  *     if exception other than due to stack overflow was not
  *     thrown.
  * COMMENTS
- *     This test crashes HS versions 2.0, 1.3, 1.4 on Win32 and Solaris
- *     platforms.
+ *     This test crashes HS versions 2.0, 1.3, and 1.4 on Solaris.
+ *     However, it passes against all these HS versions on Win32.
  *     See the bug:
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 Stack011
+ * @run main/othervm/timeout=900 StackOverflowSynchronizedThreads
  */
 
-public class Stack011 extends Thread {
+public class StackOverflowSynchronizedThreads extends StackOverflowSynchronizedThread {
     final static int THREADS = 10;
     final static int CYCLES = 10;
 
     public static void main(String[] args) {
+        StackOverflowSynchronizedThread test = new StackOverflowSynchronizedThreads();
         //
         // Measure maximal recursion depth until stack overflow:
         //
         int maxDepth = 0;
         for (int depth = 10; ; depth += 10) {
             try {
-                recurse(depth);
+                test.recurse(depth);
                 maxDepth = depth;
-            } catch (StackOverflowError | OutOfMemoryError soe) {
+            } catch (StackOverflowError | OutOfMemoryError err) {
                 break;
             }
         }
@@ -72,10 +76,11 @@ public class Stack011 extends Thread {
         //
         // Execute multiple threads repeatedly provoking stack overflows:
         //
-        Stack011 threads[] = new Stack011[THREADS];
+        StackOverflowSynchronizedThread threads[] = new StackOverflowSynchronizedThread[THREADS];
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new Stack011();
+            threads[i] = new StackOverflowSynchronizedThreads();
             threads[i].depthToTry = 100 * maxDepth;
+            threads[i].cycles = CYCLES;
             threads[i].start();
         }
         for (int i = 0; i < threads.length; i++) {
@@ -88,7 +93,7 @@ public class Stack011 extends Thread {
             }
         }
         //
-        // Check if unexpected exceptions were not thrown:
+        // Check if unexpected exceptions were thrown:
         //
         for (int i = 0; i < threads.length; i++) {
             if (threads[i].thrown != null) {
@@ -98,11 +103,28 @@ public class Stack011 extends Thread {
         }
     }
 
-    int depthToTry = 0;
+    synchronized void recurse(int depth) {
+        if (depth > 0) {
+            recurse(depth - 1);
+        }
+    }
+}
+
+abstract class StackOverflowSynchronizedThread extends Thread {
+    //
+    // Pure virtual method:
+    //
+    abstract void recurse(int depth);
+
     Throwable thrown = null;
+    int depthToTry;
+    int cycles;
 
     public void run() {
-        for (int i = 0; i < CYCLES; i++) {
+        //
+        // Provoke multiple stack overflows:
+        //
+        for (int i = 0; i < cycles; i++) {
             try {
                 recurse(depthToTry);
                 throw new Exception(
@@ -116,12 +138,6 @@ public class Stack011 extends Thread {
                 thrown = throwable;
                 break;
             }
-        }
-    }
-
-    final static void recurse(int depth) {
-        if (depth > 0) {
-            recurse(depth - 1);
         }
     }
 }
