@@ -38,7 +38,7 @@ import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
-import javax.swing.SwingConstants;
+import javax.swing.JPopupMenu;
 import javax.swing.UIManager;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
@@ -160,6 +160,16 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
                 foreground, defaultTextIconGap);
     }
 
+    static boolean isCheckBulletAndIconPresent(JMenuItem item) {
+        return item != null
+                && item.getParent() instanceof JPopupMenu popup
+                && Boolean.TRUE.equals(popup.getClientProperty(
+                        CHECK_BULLET_AND_ICON_PRESENT));
+    }
+
+    static final String CHECK_BULLET_AND_ICON_PRESENT =
+            "WindowsMenuItemUI.checkBulletAndIconPresent";
+
     static void paintMenuItem(WindowsMenuItemUIAccessor accessor, Graphics g,
                               JComponent c,
                               Icon checkIcon, Icon arrowIcon,
@@ -200,22 +210,6 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
         SwingUtilities3.paintCheckIcon(g, lh, lr, holdc, foreground);
         SwingUtilities3.paintIcon(g, lh, lr, holdc);
 
-        if (lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
-            Rectangle rect = lr.getTextRect();
-            if (menuItem.getComponentOrientation().isLeftToRight()) {
-                if (menuItem.getHorizontalTextPosition() != SwingConstants.LEADING
-                    && menuItem.getHorizontalTextPosition() != SwingConstants.LEFT) {
-                    rect.x += lh.getAfterCheckIconGap();
-                }
-            } else {
-                if (menuItem.getHorizontalTextPosition() != SwingConstants.LEADING
-                    && menuItem.getHorizontalTextPosition() != SwingConstants.RIGHT) {
-                    rect.x -= lh.getAfterCheckIconGap();
-                }
-            }
-
-            lr.setTextRect(rect);
-        }
         if (!lh.getText().isEmpty()) {
             if (lh.getHtmlView() != null) {
                 // Text is HTML
@@ -226,27 +220,9 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
                           lr.getTextRect(), lh.getText());
             }
         }
-        if (lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
-            Rectangle rect = lr.getAccRect();
-            if (menuItem.getComponentOrientation().isLeftToRight()) {
-                rect.x += lh.getAfterCheckIconGap();
-            } else {
-                rect.x -= lh.getAfterCheckIconGap();
-            }
-            lr.setAccRect(rect);
-        }
         SwingUtilities3.paintAccText(g, lh, lr, disabledForeground,
                                      acceleratorSelectionForeground,
                                      acceleratorForeground);
-        if (lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
-            Rectangle rect = lr.getArrowRect();
-            if (menuItem.getComponentOrientation().isLeftToRight()) {
-                rect.x += lh.getAfterCheckIconGap();
-            } else {
-                rect.x -= lh.getAfterCheckIconGap();
-            }
-            lr.setArrowRect(rect);
-        }
         SwingUtilities3.paintArrowIcon(g, lh, lr, foreground);
 
         // Restore original graphics font and color
