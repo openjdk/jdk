@@ -110,6 +110,8 @@ protected:
   // bytes of headroom at which we should trigger GC
   size_t _headroom_adjustment;
 
+  jlong _last_alloc_sample_time;
+
   // A conservative minimum threshold of free space that we'll try to maintain when possible.
   // For example, we might trigger a concurrent gc if we are likely to drop below
   // this threshold, or we might consider this when dynamically resizing generations

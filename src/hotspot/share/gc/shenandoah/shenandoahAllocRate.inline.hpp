@@ -46,10 +46,6 @@ inline size_t ShenandoahAnticipatedConsumption::accelerated_consumption() const 
   return shenandoah_safe_size_cast(consumption);
 }
 
-inline void ShenandoahDecayAllocRate::task() {
-  _rate->force_update();
-}
-
 template<typename Clock>
 void ShenandoahAllocRate<Clock>::update_minimum_sample_size(const size_t available) {
   const size_t min_sample_size = clamp(available / ALLOC_SAMPLE_PORTION, ALLOC_SAMPLE_MIN, ALLOC_SAMPLE_MAX);
@@ -84,7 +80,7 @@ void ShenandoahAllocRate<Clock>::maybe_take_sample(const size_t minimum_sample_s
     return;
   }
   const jlong now = Clock::elapsed_counter();
-  const jlong elapsed = now - _last_sample_time;
+  const jlong elapsed = now - _last_sample_time.load_relaxed();
   if (elapsed <= 0) {
     // Avoid sampling nonsense allocation rates.
     _sample_lock.unlock();
@@ -109,33 +105,12 @@ void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
 }
 
 template<typename Clock>
-void ShenandoahAllocRate<Clock>::force_update() {
-  if (!_sample_lock.try_lock()) {
-    // Another thread has the lock and will take the sample
-    return;
-  }
-
-  const jlong now = Clock::elapsed_counter();
-  const jlong elapsed = now - _last_sample_time;
-
-  if (elapsed <= 0) {
-    // Avoid sampling nonsense allocation rates
-    _sample_lock.unlock();
-    return;
-  }
-
-  take_sample(now, elapsed, _unsampled.drain());
-
-  _sample_lock.unlock();
-}
-
-template<typename Clock>
 void ShenandoahAllocRate<Clock>::take_sample(jlong now, jlong elapsed, size_t unsampled) {
   assert(_sample_lock.owned_by_self(), "Caller must hold lock");
 
-  _last_sample_time = now;
+  _last_sample_time.store_relaxed(now);
 
-  const double timestamp = static_cast<double>(_last_sample_time) / Clock::elapsed_frequency();
+  const double timestamp = static_cast<double>(now) / Clock::elapsed_frequency();
   const double rate_seconds = static_cast<double>(unsampled) * Clock::elapsed_frequency() / elapsed;
 
   _baseline.add(timestamp, rate_seconds);

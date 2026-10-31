@@ -63,7 +63,8 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
   _margin_of_error_sd(ShenandoahAdaptiveInitialConfidence),
   _last_trigger(OTHER),
   _available(Moving_Average_Samples),
-  _headroom_adjustment(0) {
+  _headroom_adjustment(0),
+  _last_alloc_sample_time(0) {
 }
 
 void ShenandoahAdaptiveHeuristics::initialize() {
@@ -228,19 +229,24 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     return true;
   }
 
-  const double anticipated_gc_start_time = get_most_recent_wake_time() + get_planned_sleep_interval();
-  const double anticipated_gc_duration = _cycles.predict_duration(anticipated_gc_start_time, _margin_of_error_sd);
   ShenandoahAllocationRate& alloc_rate = ShenandoahHeap::heap()->alloc_rate();
-  const ShenandoahAnticipatedConsumption consumption = alloc_rate.snapshot(anticipated_gc_duration, _margin_of_error_sd);
-  const size_t allocatable_bytes = allocatable(available);
-  maybe_log_rate_trigger_parameters(consumption, allocatable_bytes);
+  const jlong last_alloc_sample_time = alloc_rate.last_sample_time();
+  if (last_alloc_sample_time != _last_alloc_sample_time) {
+    _last_alloc_sample_time = last_alloc_sample_time;
 
-  if (trigger_accelerating_allocation_rate(consumption, allocatable_bytes)) {
-    return true;
-  }
+    const double anticipated_gc_start_time = get_most_recent_wake_time() + get_planned_sleep_interval();
+    const double anticipated_gc_duration = _cycles.predict_duration(anticipated_gc_start_time, _margin_of_error_sd);
+    const ShenandoahAnticipatedConsumption consumption = alloc_rate.snapshot(anticipated_gc_duration, _margin_of_error_sd);
+    const size_t allocatable_bytes = allocatable(available);
+    maybe_log_rate_trigger_parameters(consumption, allocatable_bytes);
 
-  if (trigger_average_allocation_rate(consumption, allocatable_bytes)) {
-    return true;
+    if (trigger_accelerating_allocation_rate(consumption, allocatable_bytes)) {
+      return true;
+    }
+
+    if (trigger_average_allocation_rate(consumption, allocatable_bytes)) {
+      return true;
+    }
   }
 
   return ShenandoahHeuristics::should_start_gc();
