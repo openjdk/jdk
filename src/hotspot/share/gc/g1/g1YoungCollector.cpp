@@ -428,7 +428,9 @@ class G1PrepareEvacuationTask : public WorkerTask {
 
       // Sample card set sizes for humongous regions before GC: this makes the policy
       // to give back memory to the OS keep the most recent amount of memory for these regions.
-      _humongous_card_set_stats.add(hr->rem_set()->card_set_memory_stats());
+      if (hr->rem_set()->is_tracked()) {
+        _humongous_card_set_stats.add(hr->rem_set()->card_set_memory_stats());
+      }
 
       log_debug(gc, humongous)("Humongous region %u (object size %zu @ " PTR_FORMAT ") remset %zu code roots %zu "
                                "marked %d pinned count %zu reclaim candidate %d type %s",
@@ -521,7 +523,6 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     phase_times()->record_pre_evacuate_prepare_time_ms((Ticks::now() - start).seconds() * 1000.0);
   }
 
-  // Needs log buffers flushed.
   calculate_collection_set(evacuation_info, policy()->max_pause_time_ms());
 
   if (collector_state()->is_in_concurrent_start_gc()) {
@@ -547,6 +548,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     rem_set()->prepare_for_scan_heap_roots();
 
     _g1h->collection_set()->prepare_for_scan();
+    _g1h->humongous_card_set_groups()->prepare_for_scan();
 
     phase_times()->record_prepare_heap_roots_time_ms((Ticks::now() - start).seconds() * 1000.0);
   }

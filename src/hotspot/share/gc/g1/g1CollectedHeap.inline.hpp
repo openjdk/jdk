@@ -220,7 +220,8 @@ void G1CollectedHeap::register_old_collection_set_region_with_region_attr(G1Heap
 }
 
 void G1CollectedHeap::register_optional_region_with_region_attr(G1HeapRegion* r) {
-  _region_attr.set_optional(r->hrm_index(), r->rem_set()->is_tracked());
+  precond(r->rem_set()->is_tracked());
+  _region_attr.set_optional(r->hrm_index(), true /* is_remset_tracked */);
 }
 
 inline bool G1CollectedHeap::is_in_young(const oop obj) const {
