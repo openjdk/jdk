@@ -454,8 +454,15 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
-  if (FLAG_IS_DEFAULT(UseIntPolyIntrinsics)) {
-     UseIntPolyIntrinsics = true;
+  if (supports_feature(CPU_ASIMD)) {
+    if (FLAG_IS_DEFAULT(UseIntPolyIntrinsics)) {
+      UseIntPolyIntrinsics = true;
+    }
+  } else if (UseIntPolyIntrinsics) {
+    if (!FLAG_IS_DEFAULT(UseIntPolyIntrinsics)) {
+      warning("Integer polynomial intrinsics require ASIMD instructions");
+    }
+    FLAG_SET_DEFAULT(UseIntPolyIntrinsics, false);
   }
 
   if (supports_feature(CPU_ASIMD)) {
