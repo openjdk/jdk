@@ -1590,6 +1590,7 @@
   declare_constant(Location::lng)                                         \
   declare_constant(Location::float_in_dbl)                                \
   declare_constant(Location::dbl)                                         \
+  declare_constant(Location::vector)                                      \
   declare_constant(Location::addr)                                        \
   declare_constant(Location::invalid)                                     \
                                                                           \
