@@ -26,71 +26,78 @@
  * @test
  * @bug 8387067
  * @summary C2 should not crash with node limit exceeded for large int string concatenations
+ * @library /test/lib /
  * @run main/othervm -Xbatch compiler.stringopts.TestLargeIntConcat
+ * @run main/othervm -Xcomp -XX:-TieredCompilation
+ *                   -XX:CompileCommand=compileonly,*GeneratedTest::test*
+ *                   compiler.stringopts.TestLargeIntConcat
  */
 
 package compiler.stringopts;
 
+import java.util.List;
+
+import compiler.lib.compile_framework.CompileFramework;
+import compiler.lib.template_framework.Template;
+
+import static compiler.lib.template_framework.Template.*;
+
 public class TestLargeIntConcat {
+    private static final String GENERATED_CLASS_NAME = "GeneratedTest";
+
+    // Number of int appends per concat. Small counts are expanded by stringopts,
+    // large ones exceed the estimated node budget and must bail out gracefully.
+    // The appends must form a single fluent chain to be recognized as one concat,
+    // and javac cannot compile chains much longer than this.
+    private static final List<Integer> APPEND_COUNTS = List.of(1, 10, 100, 200, 500);
 
     public static void main(String[] args) {
-        for (int i = 0; i < 20_000; i++) {
-            test(i);
-        }
+        CompileFramework compileFramework = new CompileFramework();
+        compileFramework.addJavaSourceCode(GENERATED_CLASS_NAME, generate());
+        compileFramework.compile();
+        compileFramework.invoke(GENERATED_CLASS_NAME, "main", new Object[] {new String[] {}});
     }
 
-    public static String test(int i) {
-        return new StringBuilder()
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i).append(i)
-            .toString();
+    static String generate() {
+        var testTemplate = Template.make("count", (Integer count) -> scope(
+            """
+                public static String test#count(int i) {
+                    return new StringBuilder()
+            """,
+            repeat(count, scope("            .append(i)\n")),
+            """
+                        .toString();
+                }
+
+                static void run#count() {
+                    for (int i = 0; i < 20_000; i++) {
+                        String expected = String.valueOf(i).repeat(#count);
+                        String actual = test#count(i);
+                        if (!expected.equals(actual)) {
+                            throw new RuntimeException("test#count(" + i + ") returned wrong result: " + actual);
+                        }
+                    }
+                }
+
+            """
+        ));
+
+        var classTemplate = Template.make(() -> scope(
+            let("className", GENERATED_CLASS_NAME),
+            """
+            public class #className {
+                public static void main(String[] args) {
+            """,
+            APPEND_COUNTS.stream().map(n -> "        run" + n + "();\n").toList(),
+            """
+                }
+
+            """,
+            APPEND_COUNTS.stream().map(n -> testTemplate.asToken(n)).toList(),
+            """
+            }
+            """
+        ));
+        return classTemplate.render();
     }
 }

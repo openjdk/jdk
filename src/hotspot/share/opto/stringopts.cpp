@@ -789,20 +789,23 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
   for (int c = 0; c < concats.length(); c++) {
     StringConcat* sc = concats.at(c);
 
-    // Skip string concat optimization if the estimated node expansion
-    // would exceed the node budget. Each argument can generate up to
-    // estimated_nodes_per_concat_arg nodes; the extra "+ 1" reserves one
-    // argument's worth of headroom for the fixed per-concat overhead (the
-    // StringBuilder allocation elision, array setup and toString replacement)
-    // that is not attributable to any single argument. Without it a concat
-    // with zero arguments would get a budget of 0 yet still create nodes.
+    // If the estimated node expansion would exceed the node budget, bail out
+    // and recompile without string concat optimization. Skipping just this
+    // concat is not enough: the unoptimized StringBuilder calls are late
+    // inlined afterwards, which can be very slow for large (stacked) concats.
+    //
+    // Each argument can generate up to estimated_nodes_per_concat_arg nodes;
+    // the extra "+ 1" reserves one argument's worth of headroom for the fixed
+    // per-concat overhead (the StringBuilder allocation elision, array setup
+    // and toString replacement) that is not attributable to any single
+    // argument. Without it a concat with zero arguments would get a budget of
+    // 0 yet still create nodes.
     uint estimated_nodes = ((uint)sc->num_arguments() + 1) * estimated_nodes_per_concat_arg;
     if (C->live_nodes() + estimated_nodes > C->max_node_limit() - NodeLimitFudgeFactor) {
-      continue;
+      C->record_failure(C2Compiler::retry_no_stringopts());
+      return;
     }
 
-    // Assert to verify that a replacement did not create
-    // more than the estimated number of nodes.
 #ifdef ASSERT
     uint nodes_before = C->live_nodes();
 #endif
@@ -813,10 +816,16 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
     }
 
 #ifdef ASSERT
-    uint nodes_created = C->live_nodes() - nodes_before;
+    // Sanity check the estimate. Note that this only verifies the net growth
+    // in live nodes after the replacement, not the peak number of live nodes
+    // reached during the transformation. The replacement can also remove more
+    // nodes than it creates (e.g. when the concat consumes the result of a
+    // previous concat), so guard against an unsigned underflow.
+    uint nodes_after = C->live_nodes();
+    uint nodes_created = nodes_after > nodes_before ? nodes_after - nodes_before : 0;
     assert(nodes_created <= estimated_nodes,
-          "StringConcat node expansion estimate exceeded: estimated max %u, created %u",
-          estimated_nodes, nodes_created);
+           "StringConcat node expansion estimate exceeded: estimated max %u, created %u",
+           estimated_nodes, nodes_created);
 #endif
   }
 

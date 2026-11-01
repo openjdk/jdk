@@ -105,6 +105,11 @@ class PhaseStringOpts : public Phase {
     unroll_string_copy_length = 6,
     // Estimated worst-case number of IR nodes a single concat argument can expand to.
     // Used to estimate whether expanding a concat would exceed the node limit.
+    // The most expensive argument kind is an int (or char) appended to a concat
+    // whose coder is not known at compile time: int_getChars() then emits both
+    // the Latin1 and the UTF16 digit conversion loops. Measured with fastdebug
+    // and -Xcomp, the marginal cost of such an argument is ~329 nodes (see
+    // TestWorstCaseIntConcat.java), which is rounded up to 330.
     estimated_nodes_per_concat_arg = 330
   };
 
