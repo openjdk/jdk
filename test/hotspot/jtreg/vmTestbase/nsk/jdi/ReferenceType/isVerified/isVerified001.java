@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.io.*;
  * for ClassType, InterfaceType
  */
 
-public class isVerified001 extends Log {
+public class isVerified001 {
     static java.io.PrintStream out_stream;
     static boolean verbose_mode = false;
 
@@ -47,7 +47,6 @@ public class isVerified001 extends Log {
 //        package_prefix = "",    //  for DEBUG without package
         thisClassName = package_prefix + "isVerified001",
         debugeeName   = thisClassName + "a";
-
 
     static ArgumentHandler      argsHandler;
     private static Log  logHandler;
@@ -69,7 +68,6 @@ public class isVerified001 extends Log {
         {package_prefix + "verif_subcl", "verified", "class"}
 
     };
-
 
     public static void main (String argv[]) {
         int result = run(argv,System.out);
@@ -97,7 +95,7 @@ public class isVerified001 extends Log {
     }
 
     private void print_log_on_verbose(String message) {
-        display(message);
+        logHandler.display(message);
     }
 
     /**
@@ -114,13 +112,9 @@ public class isVerified001 extends Log {
         print_log_on_verbose("    of the com.sun.jdi package for ClassType, InterfaceType\n");
 
         String debugee_launch_command = debugeeName;
-        if (verbose_mode) {
-            debugee_launch_command = debugeeName + " -vbs";
-        }
 
         Debugee debugee = binder.bindToDebugee(debugee_launch_command);
         IOPipe pipe = new IOPipe(debugee);
-
 
         debugee.redirectStderr(out);
         print_log_on_verbose("--> isVerified001: isVerified001a debugee launched");

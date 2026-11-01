@@ -45,6 +45,15 @@ else
   GTEST_COPY_DEBUG_SYMBOLS := false
 endif
 
+GTEST_LIBJVM_CFLAGS := $(JVM_CFLAGS)
+# Decoder does not work with debuginfo of the gtest libjvm when sections are used,
+# so we get wrong file names. That's why we filter out the section flags.
+ifeq ($(ENABLE_LINKTIME_GC), true)
+  ifeq ($(TOOLCHAIN_TYPE), gcc)
+    GTEST_LIBJVM_CFLAGS := $(filter-out -ffunction-sections -fdata-sections, $(JVM_CFLAGS))
+  endif
+endif
+
 ################################################################################
 ## Build libgtest
 ################################################################################
@@ -99,7 +108,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     EXCLUDE_PATTERNS := $(JVM_EXCLUDE_PATTERNS), \
     EXTRA_OBJECT_FILES := $(BUILD_LIBJVM_ALL_OBJS), \
     DEFAULT_CFLAGS := false, \
-    CFLAGS := $(JVM_CFLAGS) \
+    CFLAGS := $(GTEST_LIBJVM_CFLAGS) \
         -DHOTSPOT_GTEST \
         -I$(GTEST_FRAMEWORK_SRC)/googletest/include \
         -I$(GTEST_FRAMEWORK_SRC)/googlemock/include \

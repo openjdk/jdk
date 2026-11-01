@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public final class CDSPlugin extends AbstractPlugin implements PostProcessor {
         }
     }
 
-    private void generateCDSArchive(ExecutableImage image, boolean noCoops) {
+    private void generateCDSArchive(ExecutableImage image, boolean noCoops, boolean noCoh) {
         List<String> javaCmd = new ArrayList<String>();
         Path javaPath = image.getHome().resolve("bin").resolve(javaExecutableName());
         if (!Files.exists(javaPath)) {
@@ -72,6 +72,10 @@ public final class CDSPlugin extends AbstractPlugin implements PostProcessor {
         if (noCoops) {
             javaCmd.add("-XX:-UseCompressedOops");
             archiveMsg += "-NOCOOPS";
+        }
+        if (noCoh) {
+            javaCmd.add("-XX:-UseCompactObjectHeaders");
+            archiveMsg += "-NOCOH";
         }
         ProcessBuilder builder = new ProcessBuilder(javaCmd);
         int status = -1;
@@ -100,12 +104,13 @@ public final class CDSPlugin extends AbstractPlugin implements PostProcessor {
 
         Path classListPath = image.getHome().resolve("lib").resolve("classlist");
         if (Files.exists(classListPath)) {
-            generateCDSArchive(image,false);
+            generateCDSArchive(image, false, false);
 
-            // The targetPlatform is the same as the runtimePlatform.
-            // For a 64-bit platform, generate the non-compressed oop CDS archive
+            // Generate all of the CDS archive combinations: nocoops, nocoh, nocoops_nocoh.
             if (Architecture.is64bit()) {
-                generateCDSArchive(image,true);
+                generateCDSArchive(image, true, false);
+                generateCDSArchive(image, false, true);
+                generateCDSArchive(image, true, true);
             }
             System.out.println("Created CDS archive successfully");
         } else {

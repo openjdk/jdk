@@ -45,9 +45,9 @@ G1NUMAStats::NodeDataArray::NodeDataArray(uint num_nodes) {
 
 G1NUMAStats::NodeDataArray::~NodeDataArray() {
   for (uint row = 0; row < _num_row; row++) {
-    FREE_C_HEAP_ARRAY(size_t, _data[row]);
+    FREE_C_HEAP_ARRAY(_data[row]);
   }
-  FREE_C_HEAP_ARRAY(size_t*, _data);
+  FREE_C_HEAP_ARRAY(_data);
 }
 
 void G1NUMAStats::NodeDataArray::create_hit_rate(Stat* result) const {

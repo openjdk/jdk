@@ -229,6 +229,19 @@ public class CompletenessTest extends KullaTesting {
         "void t(int i) { int v = switch (i) { case 0 -> throw new IllegalStateException();",
     };
 
+    static final String[] empty = new String[] {
+        "    ",
+        "/*comment*/",
+        "/**/",
+        "//",
+    };
+
+    static final String[] prefix = new String[] {
+        "/**comment*/",
+        "/***/",
+        "///comment",
+    };
+
     static final String[] unknown = new String[] {
         "new ;",
         "\"",
@@ -259,6 +272,7 @@ public class CompletenessTest extends KullaTesting {
                 break;
 
             case EMPTY:
+            case PREFIX:
             case COMPLETE:
             case UNKNOWN:
                 augSrc = source;
@@ -299,6 +313,16 @@ public class CompletenessTest extends KullaTesting {
     @Test
     public void test_definitely_incomplete() {
         assertStatus(definitely_incomplete, DEFINITELY_INCOMPLETE);
+    }
+
+    @Test
+    public void test_prefix() {
+        assertStatus(prefix, PREFIX);
+    }
+
+    @Test
+    public void test_empty() {
+        assertStatus(empty, EMPTY);
     }
 
     @Test

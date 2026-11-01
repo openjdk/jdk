@@ -66,7 +66,7 @@ HSpaceCounters::HSpaceCounters(const char* name_space,
 }
 
 HSpaceCounters::~HSpaceCounters() {
-  FREE_C_HEAP_ARRAY(char, _name_space);
+  FREE_C_HEAP_ARRAY(_name_space);
 }
 
 void HSpaceCounters::update_capacity(size_t v) {

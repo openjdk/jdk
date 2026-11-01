@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -89,37 +89,37 @@ void startChild(const char *path, char *const argv[]) {
 
 //
 
-#define child_d_d(funcStr, arg) do {                                    \
-    char str[256];                                                      \
-    uint64_t u;                                                         \
-    sprintf(str, funcStr " %" PRIx64 "\n", d2u(arg));                   \
-    write(ptoc[1], str, strlen(str));                                   \
+#define child_d_d(funcStr, arg) do {                                        \
+    char str[256];                                                        \
+    uint64_t u;                                                                \
+    sprintf(str, funcStr " %" PRIx64 "\n", d2u(arg));                        \
+    write(ptoc[1], str, strlen(str));                                        \
     if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
     sscanf(str, "%" PRIx64, &u);                                        \
-    return u2d(u);                                                      \
+    return u2d(u);                                                        \
   } while(0)
 
-#define child_d2_d(funcStr, arg) do {                                   \
-    char str[256];                                                      \
-    uint64_t u, v;                                                      \
-    sprintf(str, funcStr " %" PRIx64 "\n", d2u(arg));                   \
-    write(ptoc[1], str, strlen(str));                                   \
+#define child_d2_d(funcStr, arg) do {                                        \
+    char str[256];                                                        \
+    uint64_t u, v;                                                        \
+    sprintf(str, funcStr " %" PRIx64 "\n", d2u(arg));                        \
+    write(ptoc[1], str, strlen(str));                                        \
     if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
     sscanf(str, "%" PRIx64 " %" PRIx64, &u, &v);                        \
-    Sleef_double2 ret;                                                  \
-    ret.x = u2d(u);                                                     \
-    ret.y = u2d(v);                                                     \
-    return ret;                                                         \
+    Sleef_double2 ret;                                                        \
+    ret.x = u2d(u);                                                        \
+    ret.y = u2d(v);                                                        \
+    return ret;                                                                \
   } while(0)
 
-#define child_d_d_d(funcStr, arg1, arg2) do {                           \
-    char str[256];                                                      \
-    uint64_t u;                                                         \
+#define child_d_d_d(funcStr, arg1, arg2) do {                                \
+    char str[256];                                                        \
+    uint64_t u;                                                                \
     sprintf(str, funcStr " %" PRIx64 " %" PRIx64 "\n", d2u(arg1), d2u(arg2)); \
-    write(ptoc[1], str, strlen(str));                                   \
+    write(ptoc[1], str, strlen(str));                                        \
     if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
     sscanf(str, "%" PRIx64, &u);                                        \
-    return u2d(u);                                                      \
+    return u2d(u);                                                        \
   } while(0)
 
 double child_sin(double x) { child_d_d("sin", x); }
@@ -224,37 +224,37 @@ int child_ilogb(double x) {
 
 //
 
-#define child_f_f(funcStr, arg) do {                                    \
-    char str[256];                                                      \
-    uint32_t u;                                                         \
-    sprintf(str, funcStr " %x\n", f2u(arg));                            \
-    write(ptoc[1], str, strlen(str));                                   \
+#define child_f_f(funcStr, arg) do {                                        \
+    char str[256];                                                        \
+    uint32_t u;                                                                \
+    sprintf(str, funcStr " %x\n", f2u(arg));                                \
+    write(ptoc[1], str, strlen(str));                                        \
     if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
-    sscanf(str, "%x", &u);                                              \
-    return u2f(u);                                                      \
+    sscanf(str, "%x", &u);                                                \
+    return u2f(u);                                                        \
   } while(0)
 
-#define child_f2_f(funcStr, arg) do {                                   \
-    char str[256];                                                      \
-    uint32_t u, v;                                                      \
-    sprintf(str, funcStr " %x\n", f2u(arg));                            \
-    write(ptoc[1], str, strlen(str));                                   \
+#define child_f2_f(funcStr, arg) do {                                        \
+    char str[256];                                                        \
+    uint32_t u, v;                                                        \
+    sprintf(str, funcStr " %x\n", f2u(arg));                                \
+    write(ptoc[1], str, strlen(str));                                        \
     if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
-    sscanf(str, "%x %x", &u, &v);                                       \
-    Sleef_float2 ret;                                                   \
-    ret.x = u2f(u);                                                     \
-    ret.y = u2f(v);                                                     \
-    return ret;                                                         \
+    sscanf(str, "%x %x", &u, &v);                                        \
+    Sleef_float2 ret;                                                        \
+    ret.x = u2f(u);                                                        \
+    ret.y = u2f(v);                                                        \
+    return ret;                                                                \
   } while(0)
 
-#define child_f_f_f(funcStr, arg1, arg2) do {                           \
-    char str[256];                                                      \
-    uint32_t u;                                                         \
-    sprintf(str, funcStr " %x %x\n", f2u(arg1), f2u(arg2));             \
-    write(ptoc[1], str, strlen(str));                                   \
+#define child_f_f_f(funcStr, arg1, arg2) do {                                \
+    char str[256];                                                        \
+    uint32_t u;                                                                \
+    sprintf(str, funcStr " %x %x\n", f2u(arg1), f2u(arg2));                \
+    write(ptoc[1], str, strlen(str));                                        \
     if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
-    sscanf(str, "%x", &u);                                              \
-    return u2f(u);                                                      \
+    sscanf(str, "%x", &u);                                                \
+    return u2f(u);                                                        \
   } while(0)
 
 float child_sinf(float x) { child_f_f("sinf", x); }
@@ -1142,62 +1142,62 @@ void do_test() {
 
   //
 
-#define cmpDenorm_f(mpfrFunc, childFunc, argx) do {                     \
+#define cmpDenorm_f(mpfrFunc, childFunc, argx) do {                        \
     mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
-    mpfrFunc(frc, frx, GMP_RNDN);                                       \
-    if (!cmpDenormsp(childFunc((float)flushToZero(argx)), frc)) {       \
-      fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n",   \
+    mpfrFunc(frc, frx, GMP_RNDN);                                        \
+    if (!cmpDenormsp(childFunc((float)flushToZero(argx)), frc)) {        \
+      fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n",        \
               (float)flushToZero(argx), childFunc((float)flushToZero(argx)), flushToZero(mpfr_get_d(frc, GMP_RNDN))); \
-      success = 0;                                                      \
-      break;                                                            \
-    }                                                                   \
+      success = 0;                                                        \
+      break;                                                                \
+    }                                                                        \
   } while(0)
 
-#define cmpDenormNR_f(mpfrFunc, childFunc, argx) do {                   \
+#define cmpDenormNR_f(mpfrFunc, childFunc, argx) do {                        \
     mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
-    mpfrFunc(frc, frx);                                                 \
-    if (!cmpDenormsp(childFunc((float)flushToZero(argx)), frc)) {       \
-      fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n",   \
+    mpfrFunc(frc, frx);                                                        \
+    if (!cmpDenormsp(childFunc((float)flushToZero(argx)), frc)) {        \
+      fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n",        \
               (float)flushToZero(argx), childFunc((float)flushToZero(argx)), mpfr_get_d(frc, GMP_RNDN)); \
-      success = 0;                                                      \
-      break;                                                            \
-    }                                                                   \
+      success = 0;                                                        \
+      break;                                                                \
+    }                                                                        \
   } while(0)
 
-#define cmpDenorm_f_f(mpfrFunc, childFunc, argx, argy) do {             \
+#define cmpDenorm_f_f(mpfrFunc, childFunc, argx, argy) do {                \
     mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
     mpfr_set_d(fry, (float)flushToZero(argy), GMP_RNDN);                \
-    mpfrFunc(frc, frx, fry, GMP_RNDN);                                  \
+    mpfrFunc(frc, frx, fry, GMP_RNDN);                                        \
     if (!cmpDenormsp(childFunc((float)flushToZero(argx), (float)flushToZero(argy)), frc)) { \
       fprintf(stderr, "arg = %.20g, %.20g, test = %.20g, correct = %.20g\n", \
               (float)flushToZero(argx), (float)flushToZero(argy), childFunc((float)flushToZero(argx), (float)flushToZero(argy)), mpfr_get_d(frc, GMP_RNDN)); \
-      success = 0;                                                      \
-      break;                                                            \
-    }                                                                   \
+      success = 0;                                                        \
+      break;                                                                \
+    }                                                                        \
   } while(0)
 
-#define cmpDenormX_f(mpfrFunc, childFunc, argx) do {                    \
+#define cmpDenormX_f(mpfrFunc, childFunc, argx) do {                        \
     mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
-    mpfrFunc(frc, frx, GMP_RNDN);                                       \
-    Sleef_float2 d2 = childFunc((float)flushToZero(argx));              \
-    if (!cmpDenormsp(d2.x, frc)) {                                      \
-      fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n",   \
+    mpfrFunc(frc, frx, GMP_RNDN);                                        \
+    Sleef_float2 d2 = childFunc((float)flushToZero(argx));                \
+    if (!cmpDenormsp(d2.x, frc)) {                                        \
+      fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n",        \
               (float)flushToZero(argx), d2.x, mpfr_get_d(frc, GMP_RNDN)); \
-      success = 0;                                                      \
-      break;                                                            \
-    }                                                                   \
+      success = 0;                                                        \
+      break;                                                                \
+    }                                                                        \
   } while(0)
 
-#define cmpDenormY_f(mpfrFunc, childFunc, argx) do {                    \
+#define cmpDenormY_f(mpfrFunc, childFunc, argx) do {                        \
     mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
-    mpfrFunc(frc, frx, GMP_RNDN);                                       \
-    Sleef_float2 d2 = childFunc((float)flushToZero(argx));              \
-    if (!cmpDenormsp(d2.y, frc)) {                                      \
-      fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n",   \
+    mpfrFunc(frc, frx, GMP_RNDN);                                        \
+    Sleef_float2 d2 = childFunc((float)flushToZero(argx));                \
+    if (!cmpDenormsp(d2.y, frc)) {                                        \
+      fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n",        \
               (float)flushToZero(argx), d2.y, mpfr_get_d(frc, GMP_RNDN)); \
-      success = 0;                                                      \
-      break;                                                            \
-    }                                                                   \
+      success = 0;                                                        \
+      break;                                                                \
+    }                                                                        \
   } while(0)
 
   //
@@ -2157,57 +2157,57 @@ void do_test() {
 
   //
 
-#define cmpDenorm_d(mpfrFunc, childFunc, argx) do {                     \
-      mpfr_set_d(frx, argx, GMP_RNDN);                                  \
-      mpfrFunc(frc, frx, GMP_RNDN);                                     \
-      if (!cmpDenormdp(childFunc(argx), frc)) {                         \
+#define cmpDenorm_d(mpfrFunc, childFunc, argx) do {                        \
+      mpfr_set_d(frx, argx, GMP_RNDN);                                        \
+      mpfrFunc(frc, frx, GMP_RNDN);                                        \
+      if (!cmpDenormdp(childFunc(argx), frc)) {                                \
         fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n", argx, childFunc(argx), mpfr_get_d(frc, GMP_RNDN)); \
-        success = 0;                                                    \
-        break;                                                          \
-      }                                                                 \
+        success = 0;                                                        \
+        break;                                                                \
+      }                                                                        \
     } while(0)
 
-#define cmpDenormNR_d(mpfrFunc, childFunc, argx) do {                   \
-      mpfr_set_d(frx, argx, GMP_RNDN);                                  \
-      mpfrFunc(frc, frx);                                               \
-      if (!cmpDenormdp(childFunc(argx), frc)) {                         \
+#define cmpDenormNR_d(mpfrFunc, childFunc, argx) do {                        \
+      mpfr_set_d(frx, argx, GMP_RNDN);                                        \
+      mpfrFunc(frc, frx);                                                \
+      if (!cmpDenormdp(childFunc(argx), frc)) {                                \
         fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n", argx, childFunc(argx), mpfr_get_d(frc, GMP_RNDN)); \
-        success = 0;                                                    \
-        break;                                                          \
-      }                                                                 \
+        success = 0;                                                        \
+        break;                                                                \
+      }                                                                        \
     } while(0)
 
-#define cmpDenorm_d_d(mpfrFunc, childFunc, argx, argy) do {             \
-      mpfr_set_d(frx, argx, GMP_RNDN);                                  \
-      mpfr_set_d(fry, argy, GMP_RNDN);                                  \
+#define cmpDenorm_d_d(mpfrFunc, childFunc, argx, argy) do {                \
+      mpfr_set_d(frx, argx, GMP_RNDN);                                        \
+      mpfr_set_d(fry, argy, GMP_RNDN);                                        \
       mpfrFunc(frc, frx, fry, GMP_RNDN);                                \
-      if (!cmpDenormdp(childFunc(argx, argy), frc)) {                   \
+      if (!cmpDenormdp(childFunc(argx, argy), frc)) {                        \
         fprintf(stderr, "arg = %.20g, %.20g, test = %.20g, correct = %.20g\n", argx, argy, childFunc(argx, argy), mpfr_get_d(frc, GMP_RNDN)); \
-        success = 0;                                                    \
-        break;                                                          \
-      }                                                                 \
+        success = 0;                                                        \
+        break;                                                                \
+      }                                                                        \
     } while(0)
 
-#define cmpDenormX_d(mpfrFunc, childFunc, argx) do {                    \
-      mpfr_set_d(frx, argx, GMP_RNDN);                                  \
-      mpfrFunc(frc, frx, GMP_RNDN);                                     \
-      Sleef_double2 d2 = childFunc(argx);                               \
-      if (!cmpDenormdp(d2.x, frc)) {                                    \
+#define cmpDenormX_d(mpfrFunc, childFunc, argx) do {                        \
+      mpfr_set_d(frx, argx, GMP_RNDN);                                        \
+      mpfrFunc(frc, frx, GMP_RNDN);                                        \
+      Sleef_double2 d2 = childFunc(argx);                                \
+      if (!cmpDenormdp(d2.x, frc)) {                                        \
         fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n", argx, d2.x, mpfr_get_d(frc, GMP_RNDN)); \
-        success = 0;                                                    \
-        break;                                                          \
-      }                                                                 \
+        success = 0;                                                        \
+        break;                                                                \
+      }                                                                        \
     } while(0)
 
-#define cmpDenormY_d(mpfrFunc, childFunc, argx) do {                    \
-      mpfr_set_d(frx, argx, GMP_RNDN);                                  \
-      mpfrFunc(frc, frx, GMP_RNDN);                                     \
-      Sleef_double2 d2 = childFunc(argx);                               \
-      if (!cmpDenormdp(d2.y, frc)) {                                    \
+#define cmpDenormY_d(mpfrFunc, childFunc, argx) do {                        \
+      mpfr_set_d(frx, argx, GMP_RNDN);                                        \
+      mpfrFunc(frc, frx, GMP_RNDN);                                        \
+      Sleef_double2 d2 = childFunc(argx);                                \
+      if (!cmpDenormdp(d2.y, frc)) {                                        \
         fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n", argx, d2.y, mpfr_get_d(frc, GMP_RNDN)); \
-        success = 0;                                                    \
-        break;                                                          \
-      }                                                                 \
+        success = 0;                                                        \
+        break;                                                                \
+      }                                                                        \
     } while(0)
 
   //
@@ -3435,58 +3435,58 @@ void do_test() {
 
   //
 
-#define checkAccuracy_d(mpfrFunc, childFunc, argx, bound) do {          \
-    mpfr_set_d(frx, argx, GMP_RNDN);                                    \
-    mpfrFunc(frc, frx, GMP_RNDN);                                       \
-    if (countULPdp(childFunc(argx), frc) > bound) {                     \
+#define checkAccuracy_d(mpfrFunc, childFunc, argx, bound) do {                \
+    mpfr_set_d(frx, argx, GMP_RNDN);                                        \
+    mpfrFunc(frc, frx, GMP_RNDN);                                        \
+    if (countULPdp(childFunc(argx), frc) > bound) {                        \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", argx, childFunc(argx), mpfr_get_d(frc, GMP_RNDN), countULPdp(childFunc(argx), frc)); \
-      success = 0;                                                      \
-      break;                                                            \
-    }                                                                   \
+      success = 0;                                                        \
+      break;                                                                \
+    }                                                                        \
   } while(0)
 
 #define checkAccuracyNR_d(mpfrFunc, childFunc, argx, bound) do {        \
-    mpfr_set_d(frx, argx, GMP_RNDN);                                    \
-    mpfrFunc(frc, frx);                                                 \
-    if (countULPdp(childFunc(argx), frc) > bound) {                     \
+    mpfr_set_d(frx, argx, GMP_RNDN);                                        \
+    mpfrFunc(frc, frx);                                                        \
+    if (countULPdp(childFunc(argx), frc) > bound) {                        \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", argx, childFunc(argx), mpfr_get_d(frc, GMP_RNDN), countULPdp(childFunc(argx), frc)); \
-      success = 0;                                                      \
-      break;                                                            \
-    }                                                                   \
+      success = 0;                                                        \
+      break;                                                                \
+    }                                                                        \
   } while(0)
 
-#define checkAccuracy_d_d(mpfrFunc, childFunc, argx, argy, bound) do {  \
-    mpfr_set_d(frx, argx, GMP_RNDN);                                    \
-    mpfr_set_d(fry, argy, GMP_RNDN);                                    \
-    mpfrFunc(frc, frx, fry, GMP_RNDN);                                  \
-    if (countULPdp(childFunc(argx, argy), frc) > bound) {               \
+#define checkAccuracy_d_d(mpfrFunc, childFunc, argx, argy, bound) do {        \
+    mpfr_set_d(frx, argx, GMP_RNDN);                                        \
+    mpfr_set_d(fry, argy, GMP_RNDN);                                        \
+    mpfrFunc(frc, frx, fry, GMP_RNDN);                                        \
+    if (countULPdp(childFunc(argx, argy), frc) > bound) {                \
       fprintf(stderr, "\narg = %.20g, %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", \
               argx, argy, childFunc(argx, argy), mpfr_get_d(frc, GMP_RNDN), countULPdp(childFunc(argx, argy), frc)); \
-      success = 0;                                                      \
-      break;                                                            \
-    }                                                                   \
+      success = 0;                                                        \
+      break;                                                                \
+    }                                                                        \
   } while(0)
 
-#define checkAccuracyX_d(mpfrFunc, childFunc, argx, bound) do {         \
-    mpfr_set_d(frx, argx, GMP_RNDN);                                    \
-    mpfrFunc(frc, frx, GMP_RNDN);                                       \
-    Sleef_double2 d2 = childFunc(argx);                                 \
+#define checkAccuracyX_d(mpfrFunc, childFunc, argx, bound) do {                \
+    mpfr_set_d(frx, argx, GMP_RNDN);                                        \
+    mpfrFunc(frc, frx, GMP_RNDN);                                        \
+    Sleef_double2 d2 = childFunc(argx);                                        \
     if (countULPdp(d2.x, frc) > bound) {                                \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", argx, d2.x, mpfr_get_d(frc, GMP_RNDN), countULPdp(d2.x, frc)); \
-      success = 0;                                                      \
-      break;                                                            \
-    }                                                                   \
+      success = 0;                                                        \
+      break;                                                                \
+    }                                                                        \
   } while(0)
 
-#define checkAccuracyY_d(mpfrFunc, childFunc, argx, bound) do {         \
-    mpfr_set_d(frx, argx, GMP_RNDN);                                    \
-    mpfrFunc(frc, frx, GMP_RNDN);                                       \
-    Sleef_double2 d2 = childFunc(argx);                                 \
+#define checkAccuracyY_d(mpfrFunc, childFunc, argx, bound) do {                \
+    mpfr_set_d(frx, argx, GMP_RNDN);                                        \
+    mpfrFunc(frc, frx, GMP_RNDN);                                        \
+    Sleef_double2 d2 = childFunc(argx);                                        \
     if (countULPdp(d2.y, frc) > bound) {                                \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", argx, d2.y, mpfr_get_d(frc, GMP_RNDN), countULPdp(d2.y, frc)); \
-      success = 0;                                                      \
-      break;                                                            \
-    }                                                                   \
+      success = 0;                                                        \
+      break;                                                                \
+    }                                                                        \
   } while(0)
 
   //
@@ -3903,6 +3903,8 @@ void do_test() {
     fprintf(stderr, "exp : ");
     for(d = -10;d < 10 && success;d += 0.002) checkAccuracy_d(mpfr_exp, child_exp, d, 1.0);
     for(d = -1000;d < 1000 && success;d += 1.1) checkAccuracy_d(mpfr_exp, child_exp, d, 1.0);
+    // Test for early or late overflow, e.g before or after x = LOG_DBL_MAX
+    for(d = LOG_DBL_MAX - 0.0001;(d < LOG_DBL_MAX + 0.0001) && success;d += 0.00001) checkAccuracy_d(mpfr_exp, child_exp, d, 1.0);
     showResult(success);
 
     //
@@ -3914,6 +3916,8 @@ void do_test() {
       }
     }
     for(y = -1000;y < 1000 && success;y += 0.1) checkAccuracy_d_d(mpfr_pow, child_pow, 2.1, y, 1.0);
+    // Test for early or late overflow (test limited to x = e)
+    for(d = LOG_DBL_MAX - 0.0001;(d < LOG_DBL_MAX + 0.0001) && success;d += 0.00001) checkAccuracy_d_d(mpfr_pow, child_pow, exp(1.0), d, 1.0);
     showResult(success);
 
     //
@@ -4141,6 +4145,7 @@ void do_test() {
 
     fprintf(stderr, "log1p : ");
     for(d = 0.0001;d < 10 && success;d += 0.001) checkAccuracy_d(mpfr_log1p, child_log1p, d, 1.0);
+    for(d = 1.0e+307;d < DBL_MAX && success;d += 1.0e+306) checkAccuracy_d(mpfr_log1p, child_log1p, d, 1.0);
     showResult(success);
 
     //
@@ -4222,73 +4227,73 @@ void do_test() {
 
   //
 
-#define checkAccuracy_f(mpfrFunc, childFunc, argx, bound) do {          \
+#define checkAccuracy_f(mpfrFunc, childFunc, argx, bound) do {                \
     mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
-    mpfrFunc(frc, frx, GMP_RNDN);                                       \
-    if (countULPsp(childFunc((float)flushToZero(argx)), frc) > bound) { \
+    mpfrFunc(frc, frx, GMP_RNDN);                                        \
+    if (countULPsp(childFunc((float)flushToZero(argx)), frc) > bound) {        \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", \
               (float)flushToZero(argx), (double)childFunc((float)flushToZero(argx)), mpfr_get_d(frc, GMP_RNDN), countULPsp(childFunc((float)flushToZero(argx)), frc)); \
-      success = 0;                                                      \
-      break;                                                            \
-    }                                                                   \
+      success = 0;                                                        \
+      break;                                                                \
+    }                                                                        \
   } while(0)
 
 #define checkAccuracyNR_f(mpfrFunc, childFunc, argx, bound) do {        \
     mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
-    mpfrFunc(frc, frx);                                                 \
-    if (countULPsp(childFunc((float)flushToZero(argx)), frc) > bound) { \
+    mpfrFunc(frc, frx);                                                        \
+    if (countULPsp(childFunc((float)flushToZero(argx)), frc) > bound) {        \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", \
               (float)flushToZero(argx), (double)childFunc((float)flushToZero(argx)), mpfr_get_d(frc, GMP_RNDN), countULPsp(childFunc((float)flushToZero(argx)), frc)); \
-      success = 0;                                                      \
-      break;                                                            \
-    }                                                                   \
+      success = 0;                                                        \
+      break;                                                                \
+    }                                                                        \
   } while(0)
 
-#define checkAccuracy_f_f(mpfrFunc, childFunc, argx, argy, bound) do {  \
+#define checkAccuracy_f_f(mpfrFunc, childFunc, argx, argy, bound) do {        \
     mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
     mpfr_set_d(fry, (float)flushToZero(argy), GMP_RNDN);                \
-    mpfrFunc(frc, frx, fry, GMP_RNDN);                                  \
-    if (countULPsp(childFunc((float)flushToZero(argx), (float)flushToZero(argy)), frc) > bound) {       \
+    mpfrFunc(frc, frx, fry, GMP_RNDN);                                        \
+    if (countULPsp(childFunc((float)flushToZero(argx), (float)flushToZero(argy)), frc) > bound) {        \
       fprintf(stderr, "\narg = %.20g, %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", \
               (float)flushToZero(argx), (float)flushToZero(argy), childFunc((float)flushToZero(argx), (float)flushToZero(argy)), mpfr_get_d(frc, GMP_RNDN), countULPsp(childFunc((float)flushToZero(argx), (float)flushToZero(argy)), frc)); \
-      success = 0;                                                      \
-      break;                                                            \
-    }                                                                   \
+      success = 0;                                                        \
+      break;                                                                \
+    }                                                                        \
   } while(0)
 
-#define checkAccuracyX_f(mpfrFunc, childFunc, argx, bound) do {         \
+#define checkAccuracyX_f(mpfrFunc, childFunc, argx, bound) do {                \
     mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                                \
-    mpfrFunc(frc, frx, GMP_RNDN);                                       \
-    Sleef_float2 d2 = childFunc((float)flushToZero(argx));                              \
+    mpfrFunc(frc, frx, GMP_RNDN);                                        \
+    Sleef_float2 d2 = childFunc((float)flushToZero(argx));                                \
     if (countULPsp(d2.x, frc) > bound) {                                \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", (float)flushToZero(argx), (double)d2.x, mpfr_get_d(frc, GMP_RNDN), countULPsp(d2.x, frc)); \
-      success = 0;                                                      \
-      break;                                                            \
-    }                                                                   \
+      success = 0;                                                        \
+      break;                                                                \
+    }                                                                        \
   } while(0)
 
-#define checkAccuracyY_f(mpfrFunc, childFunc, argx, bound) do {         \
+#define checkAccuracyY_f(mpfrFunc, childFunc, argx, bound) do {                \
     mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                                \
-    mpfrFunc(frc, frx, GMP_RNDN);                                       \
-    Sleef_float2 d2 = childFunc((float)flushToZero(argx));                              \
+    mpfrFunc(frc, frx, GMP_RNDN);                                        \
+    Sleef_float2 d2 = childFunc((float)flushToZero(argx));                                \
     if (countULPsp(d2.y, frc) > bound) {                                \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", (float)flushToZero(argx), (double)d2.y, mpfr_get_d(frc, GMP_RNDN), countULPsp(d2.y, frc)); \
-      success = 0;                                                      \
-      break;                                                            \
-    }                                                                   \
+      success = 0;                                                        \
+      break;                                                                \
+    }                                                                        \
   } while(0)
 
-#define checkAccuracy2_f(mpfrFunc, childFunc, argx, bound, abound) do { \
+#define checkAccuracy2_f(mpfrFunc, childFunc, argx, bound, abound) do {        \
     mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
-    mpfrFunc(frc, frx, GMP_RNDN);                                       \
-    double t = childFunc((float)flushToZero(argx));                     \
-    double ae = fabs(mpfr_get_d(frc, GMP_RNDN) - t);                    \
-    if (countULPsp(t, frc) > bound && ae > abound) {                    \
+    mpfrFunc(frc, frx, GMP_RNDN);                                        \
+    double t = childFunc((float)flushToZero(argx));                        \
+    double ae = fabs(mpfr_get_d(frc, GMP_RNDN) - t);                        \
+    if (countULPsp(t, frc) > bound && ae > abound) {                        \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf, abserror = %g\n", \
               (float)flushToZero(argx), (double)childFunc((float)flushToZero(argx)), mpfr_get_d(frc, GMP_RNDN), countULPsp(childFunc((float)flushToZero(argx)), frc), ae); \
-      success = 0;                                                      \
-      break;                                                            \
-    }                                                                   \
+      success = 0;                                                        \
+      break;                                                                \
+    }                                                                        \
   } while(0)
 
   //
@@ -4825,6 +4830,8 @@ void do_test() {
     fprintf(stderr, "atanf : ");
     for(d = -10;d < 10 && success;d += 0.002) checkAccuracy_f(mpfr_atan, child_atanf, d, 3.5);
     for(d = -10000;d < 10000 && success;d += 2.1) checkAccuracy_f(mpfr_atan, child_atanf, d, 3.5);
+    checkAccuracy_f(mpfr_atan, child_atanf, +INFINITY, 3.5);
+    checkAccuracy_f(mpfr_atan, child_atanf, -INFINITY, 3.5);
     showResult(success);
 
     //
@@ -5012,6 +5019,7 @@ void do_test() {
 
     fprintf(stderr, "log1pf : ");
     for(d = 0.0001;d < 10 && success;d += 0.001) checkAccuracy_f(mpfr_log1p, child_log1pf, d, 1.0);
+    for(d = 1.0e+38;d < FLT_MAX && success;d += 1.0e+37) checkAccuracy_f(mpfr_log1p, child_log1pf, d, 1.0);
     showResult(success);
 
     //

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.jfr.internal.event;
 
+import java.lang.reflect.Field;
 import jdk.jfr.EventType;
 import jdk.jfr.SettingControl;
 import jdk.jfr.internal.EventControl;
@@ -103,4 +104,6 @@ public record EventConfiguration(
     public boolean isRegistered() {
         return platformEventType.isRegistered();
     }
+
+    public static boolean tryUpdateEpoch(Field root) { return JVM.tryUpdateEpoch(root); }
 }

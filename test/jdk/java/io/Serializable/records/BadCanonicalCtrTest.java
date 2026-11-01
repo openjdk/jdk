@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,16 +40,14 @@ import java.io.ObjectStreamClass;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.MethodModel;
+import java.lang.classfile.TypeKind;
 import java.lang.constant.MethodTypeDesc;
 
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.ByteCodeLoader;
 import static java.lang.System.out;
-import static java.lang.classfile.ClassFile.ACC_PUBLIC;
-import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.constant.ConstantDescs.CD_void;
-import static java.lang.constant.ConstantDescs.INIT_NAME;
-import static java.lang.constant.ConstantDescs.MTD_void;
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
 
 import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -220,10 +218,29 @@ public class BadCanonicalCtrTest {
      */
     static byte[] modifyConstructor(byte[] classBytes) {
         var cf = ClassFile.of();
+        var classModel = cf.parse(classBytes);
         return cf.transformClass(cf.parse(classBytes), ClassTransform.dropping(ce ->
                         ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME))
                 .andThen(ClassTransform.endHandler(clb -> clb.withMethodBody(INIT_NAME,
                         MethodTypeDesc.of(CD_void, CD_Object), ACC_PUBLIC, cob -> {
+                            // Initialize strict fields, if any
+                            for (var field : classModel.fields()) {
+                                if ((field.flags().flagsMask() & (ACC_STRICT_INIT | ACC_STATIC)) != ACC_STRICT_INIT) {
+                                    continue;
+                                }
+                                var fieldType = field.fieldTypeSymbol();
+                                cob.aload(0);
+                                switch (TypeKind.from(fieldType).asLoadable()) {
+                                    case INT -> cob.iconst_0();
+                                    case LONG -> cob.lconst_0();
+                                    case FLOAT -> cob.fconst_0();
+                                    case DOUBLE -> cob.dconst_0();
+                                    case REFERENCE -> cob.aconst_null();
+                                    default -> throw new IllegalArgumentException(fieldType.descriptorString());
+                                }
+                                var cp = cob.constantPool();
+                                cob.putfield(cp.fieldRefEntry(classModel.thisClass(), cp.nameAndTypeEntry(field.fieldName(), field.fieldType())));
+                            }
                             cob.aload(0);
                             cob.invokespecial(Record.class.describeConstable().orElseThrow(),
                                     INIT_NAME, MTD_void);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,16 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import jdk.test.lib.RandomFactory;
-import org.testng.annotations.*;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static org.testng.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.TestInstance;
 
 /**
  * Not a test, but infra for channel tests.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AbstractChannelsTest {
 
     static final Class<IOException> IOE = IOException.class;
@@ -120,28 +122,24 @@ public class AbstractChannelsTest {
         }
     }
 
-    @DataProvider(name = "confinedArenas")
     public static Object[][] confinedArenas() {
         return new Object[][] {
                 { ArenaSupplier.NEW_CONFINED          },
         };
     }
 
-    @DataProvider(name = "sharedArenas")
     public static Object[][] sharedArenas() {
         return new Object[][] {
                 { ArenaSupplier.NEW_SHARED          },
         };
     }
 
-    @DataProvider(name = "closeableArenas")
     public static Object[][] closeableArenas() {
         return Stream.of(sharedArenas(), confinedArenas())
                 .flatMap(Arrays::stream)
                 .toArray(Object[][]::new);
     }
 
-    @DataProvider(name = "sharedArenasAndTimeouts")
     public static Object[][] sharedArenasAndTimeouts() {
         return new Object[][] {
                 { ArenaSupplier.NEW_SHARED          ,  0 },

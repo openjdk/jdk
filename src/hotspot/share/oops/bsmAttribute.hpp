@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class ClassLoaderData;
+class MetaspaceClosure;
 
 class BSMAttributeEntry {
   friend class ConstantPool;
@@ -61,19 +62,19 @@ public:
     _argv_offset = 2
   };
 
-  int bootstrap_method_index() const {
+  u2 bootstrap_method_index() const {
     return _bootstrap_method_index;
   }
-  int argument_count() const {
+  u2 argument_count() const {
     return _argument_count;
   }
-  int argument(int n) const {
-    assert(checked_cast<u2>(n) < _argument_count, "oob");
+  u2 argument(u2 n) const {
+    assert(n < _argument_count, "oob");
     return argument_indexes()[n];
   }
 
-  void set_argument(int index, u2 value) {
-    assert(index >= 0 && index < argument_count(), "invariant");
+  void set_argument(u2 index, u2 value) {
+    assert(index < argument_count(), "invariant");
     argument_indexes()[index] = value;
   }
 
@@ -86,7 +87,6 @@ public:
 // The BSMAttributeEntries stores the state of the BootstrapMethods attribute.
 class BSMAttributeEntries {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
 public:
   class InsertionIterator {
@@ -131,10 +131,8 @@ public:
     return _offsets == nullptr && _bootstrap_methods == nullptr;
   }
 
-  Array<u4>*& offsets() { return _offsets; }
-  const Array<u4>* const& offsets() const { return _offsets; }
-  Array<u2>*& bootstrap_methods() { return _bootstrap_methods; }
-  const Array<u2>* const& bootstrap_methods() const { return _bootstrap_methods; }
+  Array<u4>* offsets() const { return _offsets; }
+  Array<u2>* bootstrap_methods() const { return _bootstrap_methods; }
 
   BSMAttributeEntry* entry(int bsms_attribute_index) {
     return reinterpret_cast<BSMAttributeEntry*>(_bootstrap_methods->adr_at(_offsets->at(bsms_attribute_index)));
@@ -165,6 +163,8 @@ public:
   void end_extension(InsertionIterator& iter, ClassLoaderData* loader_data, TRAPS);
   // Append all of the BSMAEs in other into this.
   void append(const BSMAttributeEntries& other, ClassLoaderData* loader_data, TRAPS);
+
+  void metaspace_pointers_do(MetaspaceClosure* it);
 };
 
 #endif // SHARE_OOPS_BSMATTRIBUTE_HPP

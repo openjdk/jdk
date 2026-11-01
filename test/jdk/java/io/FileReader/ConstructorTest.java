@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,15 +30,19 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @test
  * @bug 8183554
  * @summary Test to verify the new Constructors that take a Charset.
- * @run testng ConstructorTest
+ * @run junit ConstructorTest
  */
 public class ConstructorTest {
     static String USER_DIR = System.getProperty("user.dir", ".");
@@ -51,17 +55,15 @@ public class ConstructorTest {
     static final String TEST_STRING = "abc \u0100 \u0101 \u0555 \u07FD \u07FF";
     static final int BUFFER_SIZE = 8192;
 
-    @DataProvider(name = "parameters")
-    public Object[][] getParameters() throws IOException {
+    public static Stream<Arguments> parameters() throws IOException {
         File file1 = new File(USER_DIR, "FileReaderTest1.txt");
         File file2 = new File(USER_DIR, "FileReaderTest2.txt");
 
-        return new Object[][]{
-            {ConstructorType.STRING, file1, file2, StandardCharsets.UTF_8},
-            {ConstructorType.FILE, file1, file2, StandardCharsets.UTF_8},
-            {ConstructorType.STRING, file1, file2, StandardCharsets.ISO_8859_1},
-            {ConstructorType.FILE, file1, file2, StandardCharsets.ISO_8859_1},
-        };
+        return Stream.of
+            (Arguments.of(ConstructorType.STRING, file1, file2, StandardCharsets.UTF_8),
+             Arguments.of(ConstructorType.FILE, file1, file2, StandardCharsets.UTF_8),
+             Arguments.of(ConstructorType.STRING, file1, file2, StandardCharsets.ISO_8859_1),
+             Arguments.of(ConstructorType.FILE, file1, file2, StandardCharsets.ISO_8859_1));
     }
 
     /**
@@ -75,7 +77,8 @@ public class ConstructorTest {
      * @param charset the charset
      * @throws IOException
      */
-    @Test(dataProvider = "parameters")
+    @ParameterizedTest
+    @MethodSource("parameters")
     void test(ConstructorType type, File file1, File file2, Charset charset)
             throws Exception {
         prepareFile(file1, TEST_STRING, charset);
@@ -86,7 +89,7 @@ public class ConstructorTest {
                 InputStreamReader isr = new InputStreamReader(is, charset);) {
             String result1 = readAll(fr, BUFFER_SIZE);
             String result2 = readAll(isr, BUFFER_SIZE);
-            Assert.assertEquals(result1, result2);
+            assertEquals(result2, result1);
         }
     }
 

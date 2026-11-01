@@ -99,7 +99,7 @@ public class CmpUNodeValueTests {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true"}, counts = {IRNode.CMP_U, "1"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = {IRNode.CMP_U, "1"})
     int testIntControl(boolean b1, boolean b2) {
         int v1 = b1 ? 1 : -1;
         int v2 = b2 ? 1 : 0;
@@ -107,7 +107,7 @@ public class CmpUNodeValueTests {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true"}, failOn = {IRNode.CMP_U, IRNode.CALL})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, failOn = {IRNode.CMP_U, IRNode.CALL})
     int testIntLT(int x) {
         int v1 = x & Integer.MAX_VALUE; // Unset the highest bit, make v1 non-negative
         int v2 = Integer.MIN_VALUE;
@@ -115,7 +115,7 @@ public class CmpUNodeValueTests {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true"}, failOn = {IRNode.CMP_U, IRNode.CALL})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, failOn = {IRNode.CMP_U, IRNode.CALL})
     int testIntLE(boolean b1, boolean b2) {
         int v1 = b1 ? 2 : 0;
         int v2 = b2 ? -1 : 2;
@@ -123,7 +123,7 @@ public class CmpUNodeValueTests {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true"}, failOn = {IRNode.CMP_U, IRNode.CALL})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, failOn = {IRNode.CMP_U, IRNode.CALL})
     int testIntGT(boolean b1, boolean b2) {
         int v1 = b1 ? Integer.MIN_VALUE : Integer.MAX_VALUE;
         int v2 = b2 ? 0 : 2;
@@ -131,7 +131,7 @@ public class CmpUNodeValueTests {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true"}, failOn = {IRNode.CMP_U, IRNode.CALL})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, failOn = {IRNode.CMP_U, IRNode.CALL})
     int testIntGE(int x, int y) {
         int v1 = x | Integer.MIN_VALUE; // Set the highest bit, make v1 negative
         int v2 = y & Integer.MAX_VALUE; // Unset the highest bit, make v2 non-negative
@@ -139,13 +139,13 @@ public class CmpUNodeValueTests {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true"}, failOn = {IRNode.CMP_U, IRNode.CALL})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, failOn = {IRNode.CMP_U, IRNode.CALL})
     int testIntEQ() {
         return Integer.compareUnsigned(oneInline(), 1) == 0 ? 0 : one();
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true"}, failOn = {IRNode.CMP_U, IRNode.CALL})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, failOn = {IRNode.CMP_U, IRNode.CALL})
     int testIntNE(boolean b1, boolean b2) {
         int v1 = b1 ? 1 : -1;
         int v2 = b2 ? 0 : 2;
@@ -153,7 +153,7 @@ public class CmpUNodeValueTests {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true"}, counts = {IRNode.CMP_UL, "1"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = {IRNode.CMP_UL, "1"})
     int testLongControl(boolean b1, boolean b2) {
         long v1 = b1 ? 1 : -1;
         long v2 = b2 ? 1 : 0;
@@ -162,7 +162,7 @@ public class CmpUNodeValueTests {
 
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true"}, failOn = {IRNode.CMP_UL, IRNode.CALL})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, failOn = {IRNode.CMP_UL, IRNode.CALL})
     int testLongLT(int x, boolean b2) {
         long v1 = Integer.toUnsignedLong(x);
         long v2 = Integer.MIN_VALUE;
@@ -170,7 +170,7 @@ public class CmpUNodeValueTests {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true"}, failOn = {IRNode.CMP_UL, IRNode.CALL})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, failOn = {IRNode.CMP_UL, IRNode.CALL})
     int testLongLE(boolean b1, boolean b2) {
         long v1 = b1 ? 2 : 0;
         long v2 = b2 ? -1 : 2;
@@ -178,7 +178,7 @@ public class CmpUNodeValueTests {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true"}, failOn = {IRNode.CMP_UL, IRNode.CALL})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, failOn = {IRNode.CMP_UL, IRNode.CALL})
     int testLongGT(boolean b1, boolean b2) {
         long v1 = b1 ? Long.MIN_VALUE : Long.MAX_VALUE;
         long v2 = b2 ? 0 : 2;
@@ -186,7 +186,7 @@ public class CmpUNodeValueTests {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true"}, failOn = {IRNode.CMP_UL, IRNode.CALL})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, failOn = {IRNode.CMP_UL, IRNode.CALL})
     int testLongGE(int x, int y) {
         long v1 = x | Long.MIN_VALUE; // Set the highest bit, make v1 negative
         long v2 = y & Long.MAX_VALUE; // Unset the highest bit, make v2 non-negative
@@ -194,13 +194,13 @@ public class CmpUNodeValueTests {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true"}, failOn = {IRNode.CMP_UL, IRNode.CALL})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, failOn = {IRNode.CMP_UL, IRNode.CALL})
     int testLongEQ() {
         return Long.compareUnsigned(oneInline(), 1L) == 0 ? 0 : one();
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true"}, failOn = {IRNode.CMP_UL, IRNode.CALL})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, failOn = {IRNode.CMP_UL, IRNode.CALL})
     int testLongNE(boolean b1, boolean b2) {
         long v1 = b1 ? 1 : -1;
         long v2 = b2 ? 0 : 2;

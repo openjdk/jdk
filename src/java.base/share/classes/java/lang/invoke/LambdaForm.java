@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,10 +268,14 @@ class LambdaForm {
         DIRECT_NEW_INVOKE_SPECIAL("DMH.newInvokeSpecial", "newInvokeSpecial"),
         DIRECT_INVOKE_INTERFACE("DMH.invokeInterface", "invokeInterface"),
         DIRECT_INVOKE_STATIC_INIT("DMH.invokeStaticInit", "invokeStaticInit"),
+        // Start field forms
+        // IJFDL, instance/static differ in method type, can share form
+        // init form only applicable to static
         FIELD_ACCESS("fieldAccess"),
         FIELD_ACCESS_INIT("fieldAccessInit"),
         VOLATILE_FIELD_ACCESS("volatileFieldAccess"),
         VOLATILE_FIELD_ACCESS_INIT("volatileFieldAccessInit"),
+        // BCSZ need own forms to avoid clashing with basic type I, +-init/volatile
         FIELD_ACCESS_B("fieldAccessB"),
         FIELD_ACCESS_INIT_B("fieldAccessInitB"),
         VOLATILE_FIELD_ACCESS_B("volatileFieldAccessB"),
@@ -288,12 +292,33 @@ class LambdaForm {
         FIELD_ACCESS_INIT_Z("fieldAccessInitZ"),
         VOLATILE_FIELD_ACCESS_Z("volatileFieldAccessZ"),
         VOLATILE_FIELD_ACCESS_INIT_Z("volatileFieldAccessInitZ"),
+        // cast, nr, flat need their own forms to avoid clashing with L
         FIELD_ACCESS_CAST("fieldAccessCast"),
         FIELD_ACCESS_INIT_CAST("fieldAccessInitCast"),
         VOLATILE_FIELD_ACCESS_CAST("volatileFieldAccessCast"),
         VOLATILE_FIELD_ACCESS_INIT_CAST("volatileFieldAccessInitCast"),
+        // null-check and put reference, +-cast, +-init/volatile
+        // non-cast forms serve bytecode emulation purpose, which always enforces null checks
+        PUT_NULL_RESTRICTED_REFERENCE("putNullRestrictedReference"),
+        PUT_NULL_RESTRICTED_REFERENCE_INIT("putNullRestrictedReferenceInit"),
+        VOLATILE_PUT_NULL_RESTRICTED_REFERENCE("volatilePutNullRestrictedReference"),
+        VOLATILE_PUT_NULL_RESTRICTED_REFERENCE_INIT("volatilePutNullRestrictedReferenceInit"),
+        PUT_NULL_RESTRICTED_REFERENCE_CAST("putNullRestrictedReferenceCast"),
+        PUT_NULL_RESTRICTED_REFERENCE_CAST_INIT("putNullRestrictedReferenceInitCast"),
+        VOLATILE_PUT_NULL_RESTRICTED_REFERENCE_CAST("volatilePutNullRestrictedReferenceCast"),
+        VOLATILE_PUT_NULL_RESTRICTED_REFERENCE_CAST_INIT("volatilePutNullRestrictedReferenceCastInit"),
+        // flat implies cast, +-init/volatile
+        FIELD_ACCESS_FLAT("fieldAccessFlat"),
+        FIELD_ACCESS_INIT_FLAT("fieldAccessInitFlat"),
+        VOLATILE_FIELD_ACCESS_FLAT("volatileFieldAccessFlat"),
+        VOLATILE_FIELD_ACCESS_INIT_FLAT("volatileFieldAccessInitFlat"),
+        // write guard NR flat, implies cast; +-volatile; no init forms - no flat in static fields yet
+        PUT_NULL_RESTRICTED_FLAT_VALUE("putNullRestrictedFlatValue"),
+        VOLATILE_PUT_NULL_RESTRICTED_FLAT_VALUE("volatilePutNullRestrictedFlatValue"),
+        // End fields
         TRY_FINALLY("tryFinally"),
         TABLE_SWITCH("tableSwitch"),
+        SYNCHRONIZE("synchronize"),
         COLLECTOR("collector"),
         LOOP("loop"),
         GUARD("guard"),
@@ -681,6 +706,32 @@ class LambdaForm {
                 lastUseIndex(collectArgs) == POS_TABLE_SWITCH &&  // t_{n} is local: used only in t_{n+1}
                 unboxResult.lastUseIndex(tableSwitch) == 1 &&     // t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
                 lastUseIndex(tableSwitch) == POS_UNBOX_RESULT;    // t_{n+1} is local: used only in t_{n+2}
+    }
+
+    /**
+     * Check if i-th name is a start of the synchronize idiom.
+     */
+    boolean isSynchronize(int pos) {
+        // synchronize idiom:
+        //   t_{n}:L=MethodHandle.invokeBasic(...)     // args
+        //   t_{n+1}:L=MethodHandleImpl.synchronize(*, *, *, t_{n})
+        //   t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
+        if (pos + 2 >= names.length)  return false;
+
+        final int POS_COLLECT_ARGS = pos;
+        final int POS_SYNCHRONIZE = pos + 1;
+        final int POS_UNBOX_RESULT = pos + 2;
+
+        Name collectArgs = names[POS_COLLECT_ARGS];
+        Name synchronize = names[POS_SYNCHRONIZE];
+        Name unboxResult = names[POS_UNBOX_RESULT];
+        return synchronize.refersTo(MethodHandleImpl.class, "synchronize") &&
+                collectArgs.isInvokeBasic() &&
+                unboxResult.isInvokeBasic() &&
+                synchronize.lastUseIndex(collectArgs) == 2 &&     // t_{n+1}:L=MethodHandleImpl.<invoker>(*, *, *, t_{n});
+                lastUseIndex(collectArgs) == POS_SYNCHRONIZE &&  // t_{n} is local: used only in t_{n+1}
+                unboxResult.lastUseIndex(synchronize) == 1 &&     // t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
+                lastUseIndex(synchronize) == POS_UNBOX_RESULT;    // t_{n+1} is local: used only in t_{n+2}
     }
 
     /**

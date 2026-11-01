@@ -91,7 +91,7 @@ public:
 // A very simple fixed-width FIFO buffer, used for the phase timeline
 template <typename T, int size>
 class SimpleFifo {
-  STATIC_ASSERT((size * 2) < INT_MAX);
+  static_assert((size * 2) < INT_MAX);
   T _v[size];
   int _pos;
   int _oldest;
@@ -257,7 +257,6 @@ public:
   void on_arena_chunk_deallocation(size_t size, uint64_t stamp);
 
   void print_peak_state_on(outputStream* st) const;
-  void print_error_state_on(outputStream* st) const;
 
   size_t limit() const                  { return _limit; }
   bool   hit_limit() const              { return _hit_limit; }

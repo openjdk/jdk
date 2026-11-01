@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 /**
  * Exception used to signal that a {@link Constraint} should always succeed.
  */
+@SuppressWarnings("serial")
 public class SuccessOnlyConstraintException extends RuntimeException {
     public SuccessOnlyConstraintException(String message) {
         super("Unhandled SuccessOnlyConstraintException, should have created a Constraint that always succeeds:" + System.lineSeparator() + message);

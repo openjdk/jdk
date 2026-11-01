@@ -158,6 +158,9 @@ public class DerValue {
      */
     public static final byte    tag_SetOf = 0x31;
 
+    // Max nested depth for constructed data
+    private static final int MAX_CONSTRUCTED_NEST = 30;
+
     // This class is mostly immutable except that:
     //
     // 1. resetTag() modifies the tag
@@ -565,6 +568,14 @@ public class DerValue {
      * @return the octet string held in this DER value
      */
     public byte[] getOctetString() throws IOException {
+        return getOctetString(0);
+    }
+
+    private byte[] getOctetString(int limit) throws IOException {
+        if (++limit > MAX_CONSTRUCTED_NEST) {
+            throw new IOException("Nested OctetString limit reached ("
+                + MAX_CONSTRUCTED_NEST + ").");
+        }
 
         if (tag != tag_OctetString && !isConstructed(tag_OctetString)) {
             throw new IOException(
@@ -583,7 +594,7 @@ public class DerValue {
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
             DerInputStream dis = data();
             while (dis.available() > 0) {
-                bout.write(dis.getDerValue().getOctetString());
+                bout.write(dis.getDerValue().getOctetString(limit));
             }
             return bout.toByteArray();
         }

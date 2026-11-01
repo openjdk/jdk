@@ -80,9 +80,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
 #include "utilities/vmError.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 
 SerialHeap* SerialHeap::heap() {
   return named_heap<SerialHeap>(CollectedHeap::Serial);
@@ -309,10 +306,24 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
 
   for (uint try_count = 1; /* break */; try_count++) {
     {
+      // This lock is needed to sync with the VM-init expansion below.
       ConditionalMutexLocker locker(Heap_lock, !is_init_completed());
       result = mem_allocate_cas_noexpand(size, is_tlab);
       if (result != nullptr) {
         break;
+      }
+
+      // Ensure that is_init_completed() does not transition while expanding the heap.
+      ConditionalMutexLocker ml_init(InitCompleted_lock, !is_init_completed(), Mutex::_no_safepoint_check_flag);
+      if (!is_init_completed()) {
+        // Rechecked !is_init_completed() implies we have mutual exclusion via
+        // `Heap_lock` and `InitCompleted_lock`
+        result = expand_heap_and_allocate(size, is_tlab);
+        // Return the result if it's tlab-allocation. If the result is null,
+        // callers will retry non-tlab allocation.
+        if (result != nullptr || is_tlab) {
+          return result;
+        }
       }
     }
     uint gc_count_before;  // Read inside the Heap_lock locked region.
@@ -324,19 +335,6 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
       result = mem_allocate_cas_noexpand(size, is_tlab);
       if (result != nullptr) {
         break;
-      }
-
-      if (!is_init_completed()) {
-        // Double checked locking, this ensure that is_init_completed() does not
-        // transition while expanding the heap.
-        MonitorLocker ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
-        if (!is_init_completed()) {
-          // Can't do GC; try heap expansion to satisfy the request.
-          result = expand_heap_and_allocate(size, is_tlab);
-          if (result != nullptr) {
-            return result;
-          }
-        }
       }
 
       gc_count_before = total_collections();
@@ -394,13 +392,13 @@ bool SerialHeap::do_young_collection(bool clear_soft_refs) {
     Universe::verify("Before GC");
   }
   gc_prologue();
-  COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
+  COMPILER2_PRESENT(DerivedPointerTable::clear());
 
   save_marks();
 
   bool result = _young_gen->collect(clear_soft_refs);
 
-  COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::update_pointers());
+  COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 
   // Only update stats for successful young-gc
   if (result) {
@@ -573,7 +571,7 @@ void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
   }
 
   gc_prologue();
-  COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
+  COMPILER2_PRESENT(DerivedPointerTable::clear());
   CodeCache::on_gc_marking_cycle_start();
 
   STWGCTimer* gc_timer = SerialFullGC::gc_timer();
@@ -591,9 +589,8 @@ void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
   gc_timer->register_gc_end();
 
   gc_tracer->report_gc_end(gc_timer->gc_end(), gc_timer->time_partitions());
-  CodeCache::on_gc_marking_cycle_finish();
   CodeCache::arm_all_nmethods();
-  COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::update_pointers());
+  COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 
   // Adjust generation sizes.
   _old_gen->compute_new_size();
@@ -784,9 +781,9 @@ void SerialHeap::gc_prologue() {
 };
 
 void SerialHeap::gc_epilogue(bool full) {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   assert(DerivedPointerTable::is_empty(), "derived pointer present");
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
   resize_all_tlabs();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ class Bytecode {
     public static final int INSTANCEOF         = 193;
     public static final int MULTIANEWARRAY     = 197;
     public static final int WIDE               = 196;
+    public static final int ACONSTINIT         = 203;
+    public static final int WITHFIELD          = 204;
 
     private static final int lengths[] = {
         1,
@@ -246,7 +248,9 @@ class Bytecode {
         3,
         5,
         5,
-        1
+        1,
+        3,
+        3
     };
 
     public static int getLength(int bc) throws IllegalArgumentException {

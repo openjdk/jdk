@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * @test
  * @bug 8224477
  * @summary Basic test for NPE, UOE, and IAE for get/setOption
- * @run testng NullsAndBadValues
- * @run testng/othervm -Dsun.net.useExclusiveBind=false NullsAndBadValues
+ * @run junit ${test.main.class}
+ * @run junit/othervm -Dsun.net.useExclusiveBind=false ${test.main.class}
  */
 
 import java.net.DatagramSocket;
@@ -43,11 +43,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.Boolean.*;
 import static java.net.StandardSocketOptions.*;
-import static org.testng.Assert.expectThrows;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class NullsAndBadValues {
 
@@ -58,46 +60,46 @@ public class NullsAndBadValues {
     @Test
     public void nulls() throws Exception {
         try (Socket s = new Socket()) {
-            expectThrows(NPE, () -> s.setOption(null, null));
-            expectThrows(NPE, () -> s.setOption(null, ""));
-            expectThrows(NPE, () -> s.setOption(null, 1));
-            expectThrows(NPE, () -> s.getOption(null));
+            assertThrows(NPE, () -> s.setOption(null, null));
+            assertThrows(NPE, () -> s.setOption(null, ""));
+            assertThrows(NPE, () -> s.setOption(null, 1));
+            assertThrows(NPE, () -> s.getOption(null));
         }
         try (ServerSocket ss = new ServerSocket()) {
-            expectThrows(NPE, () -> ss.setOption(null, null));
-            expectThrows(NPE, () -> ss.setOption(null, ""));
-            expectThrows(NPE, () -> ss.setOption(null, 1));
-            expectThrows(NPE, () -> ss.getOption(null));
+            assertThrows(NPE, () -> ss.setOption(null, null));
+            assertThrows(NPE, () -> ss.setOption(null, ""));
+            assertThrows(NPE, () -> ss.setOption(null, 1));
+            assertThrows(NPE, () -> ss.getOption(null));
         }
         try (DatagramSocket ds = new DatagramSocket()) {
-            expectThrows(NPE, () -> ds.setOption(null, null));
-            expectThrows(NPE, () -> ds.setOption(null, ""));
-            expectThrows(NPE, () -> ds.setOption(null, 1));
-            expectThrows(NPE, () -> ds.getOption(null));
+            assertThrows(NPE, () -> ds.setOption(null, null));
+            assertThrows(NPE, () -> ds.setOption(null, ""));
+            assertThrows(NPE, () -> ds.setOption(null, 1));
+            assertThrows(NPE, () -> ds.getOption(null));
         }
         try (MulticastSocket ms = new MulticastSocket()) {
-            expectThrows(NPE, () -> ms.setOption(null, null));
-            expectThrows(NPE, () -> ms.setOption(null, ""));
-            expectThrows(NPE, () -> ms.setOption(null, 1));
-            expectThrows(NPE, () -> ms.getOption(null));
+            assertThrows(NPE, () -> ms.setOption(null, null));
+            assertThrows(NPE, () -> ms.setOption(null, ""));
+            assertThrows(NPE, () -> ms.setOption(null, 1));
+            assertThrows(NPE, () -> ms.getOption(null));
         }
         try (Socket sa = SocketChannel.open().socket()) {
-            expectThrows(NPE, () -> sa.setOption(null, null));
-            expectThrows(NPE, () -> sa.setOption(null, ""));
-            expectThrows(NPE, () -> sa.setOption(null, 1));
-            expectThrows(NPE, () -> sa.getOption(null));
+            assertThrows(NPE, () -> sa.setOption(null, null));
+            assertThrows(NPE, () -> sa.setOption(null, ""));
+            assertThrows(NPE, () -> sa.setOption(null, 1));
+            assertThrows(NPE, () -> sa.getOption(null));
         }
         try (ServerSocket ssa = ServerSocketChannel.open().socket()) {
-            expectThrows(NPE, () -> ssa.setOption(null, null));
-            expectThrows(NPE, () -> ssa.setOption(null, ""));
-            expectThrows(NPE, () -> ssa.setOption(null, 1));
-            expectThrows(NPE, () -> ssa.getOption(null));
+            assertThrows(NPE, () -> ssa.setOption(null, null));
+            assertThrows(NPE, () -> ssa.setOption(null, ""));
+            assertThrows(NPE, () -> ssa.setOption(null, 1));
+            assertThrows(NPE, () -> ssa.getOption(null));
         }
         try (DatagramSocket dsa = DatagramChannel.open().socket()) {
-            expectThrows(NPE, () -> dsa.setOption(null, null));
-            expectThrows(NPE, () -> dsa.setOption(null, ""));
-            expectThrows(NPE, () -> dsa.setOption(null, 1));
-            expectThrows(NPE, () -> dsa.getOption(null));
+            assertThrows(NPE, () -> dsa.setOption(null, null));
+            assertThrows(NPE, () -> dsa.setOption(null, ""));
+            assertThrows(NPE, () -> dsa.setOption(null, 1));
+            assertThrows(NPE, () -> dsa.getOption(null));
         }
     }
 
@@ -114,67 +116,67 @@ public class NullsAndBadValues {
     @Test
     public void uoe() throws Exception {
         try (Socket s = new Socket()) {
-            expectThrows(UOE, () -> s.setOption(FAKE_SOCK_OPT, null));
-            expectThrows(UOE, () -> s.setOption(FAKE_SOCK_OPT, TRUE));
-            expectThrows(UOE, () -> s.setOption(FAKE_SOCK_OPT, FALSE));
-            expectThrows(UOE, () -> s.setOption(RAW_SOCK_OPT, ""));
-            expectThrows(UOE, () -> s.setOption(RAW_SOCK_OPT, 1));
-            expectThrows(UOE, () -> s.getOption(FAKE_SOCK_OPT));
-            expectThrows(UOE, () -> s.getOption(RAW_SOCK_OPT));
+            assertThrows(UOE, () -> s.setOption(FAKE_SOCK_OPT, null));
+            assertThrows(UOE, () -> s.setOption(FAKE_SOCK_OPT, TRUE));
+            assertThrows(UOE, () -> s.setOption(FAKE_SOCK_OPT, FALSE));
+            assertThrows(UOE, () -> s.setOption(RAW_SOCK_OPT, ""));
+            assertThrows(UOE, () -> s.setOption(RAW_SOCK_OPT, 1));
+            assertThrows(UOE, () -> s.getOption(FAKE_SOCK_OPT));
+            assertThrows(UOE, () -> s.getOption(RAW_SOCK_OPT));
         }
         try (ServerSocket ss = new ServerSocket()) {
-            expectThrows(UOE, () -> ss.setOption(FAKE_SOCK_OPT, null));
-            expectThrows(UOE, () -> ss.setOption(FAKE_SOCK_OPT, TRUE));
-            expectThrows(UOE, () -> ss.setOption(FAKE_SOCK_OPT, FALSE));
-            expectThrows(UOE, () -> ss.setOption(RAW_SOCK_OPT, ""));
-            expectThrows(UOE, () -> ss.setOption(RAW_SOCK_OPT, 1));
-            expectThrows(UOE, () -> ss.getOption(FAKE_SOCK_OPT));
-            expectThrows(UOE, () -> ss.getOption(RAW_SOCK_OPT));
+            assertThrows(UOE, () -> ss.setOption(FAKE_SOCK_OPT, null));
+            assertThrows(UOE, () -> ss.setOption(FAKE_SOCK_OPT, TRUE));
+            assertThrows(UOE, () -> ss.setOption(FAKE_SOCK_OPT, FALSE));
+            assertThrows(UOE, () -> ss.setOption(RAW_SOCK_OPT, ""));
+            assertThrows(UOE, () -> ss.setOption(RAW_SOCK_OPT, 1));
+            assertThrows(UOE, () -> ss.getOption(FAKE_SOCK_OPT));
+            assertThrows(UOE, () -> ss.getOption(RAW_SOCK_OPT));
         }
         try (DatagramSocket ds = new DatagramSocket()) {
-            expectThrows(UOE, () -> ds.setOption(FAKE_SOCK_OPT, null));
-            expectThrows(UOE, () -> ds.setOption(FAKE_SOCK_OPT, TRUE));
-            expectThrows(UOE, () -> ds.setOption(FAKE_SOCK_OPT, FALSE));
-            expectThrows(UOE, () -> ds.setOption(RAW_SOCK_OPT, ""));
-            expectThrows(UOE, () -> ds.setOption(RAW_SOCK_OPT, 1));
-            expectThrows(UOE, () -> ds.getOption(FAKE_SOCK_OPT));
-            expectThrows(UOE, () -> ds.getOption(RAW_SOCK_OPT));
+            assertThrows(UOE, () -> ds.setOption(FAKE_SOCK_OPT, null));
+            assertThrows(UOE, () -> ds.setOption(FAKE_SOCK_OPT, TRUE));
+            assertThrows(UOE, () -> ds.setOption(FAKE_SOCK_OPT, FALSE));
+            assertThrows(UOE, () -> ds.setOption(RAW_SOCK_OPT, ""));
+            assertThrows(UOE, () -> ds.setOption(RAW_SOCK_OPT, 1));
+            assertThrows(UOE, () -> ds.getOption(FAKE_SOCK_OPT));
+            assertThrows(UOE, () -> ds.getOption(RAW_SOCK_OPT));
         }
         try (MulticastSocket ms = new MulticastSocket()) {
-            expectThrows(UOE, () -> ms.setOption(FAKE_SOCK_OPT, null));
-            expectThrows(UOE, () -> ms.setOption(FAKE_SOCK_OPT, TRUE));
-            expectThrows(UOE, () -> ms.setOption(FAKE_SOCK_OPT, FALSE));
-            expectThrows(UOE, () -> ms.setOption(RAW_SOCK_OPT, ""));
-            expectThrows(UOE, () -> ms.setOption(RAW_SOCK_OPT, 1));
-            expectThrows(UOE, () -> ms.getOption(FAKE_SOCK_OPT));
-            expectThrows(UOE, () -> ms.getOption(RAW_SOCK_OPT));
+            assertThrows(UOE, () -> ms.setOption(FAKE_SOCK_OPT, null));
+            assertThrows(UOE, () -> ms.setOption(FAKE_SOCK_OPT, TRUE));
+            assertThrows(UOE, () -> ms.setOption(FAKE_SOCK_OPT, FALSE));
+            assertThrows(UOE, () -> ms.setOption(RAW_SOCK_OPT, ""));
+            assertThrows(UOE, () -> ms.setOption(RAW_SOCK_OPT, 1));
+            assertThrows(UOE, () -> ms.getOption(FAKE_SOCK_OPT));
+            assertThrows(UOE, () -> ms.getOption(RAW_SOCK_OPT));
         }
         try (Socket sa = SocketChannel.open().socket()) {
-            expectThrows(UOE, () -> sa.setOption(FAKE_SOCK_OPT, null));
-            expectThrows(UOE, () -> sa.setOption(FAKE_SOCK_OPT, TRUE));
-            expectThrows(UOE, () -> sa.setOption(FAKE_SOCK_OPT, FALSE));
-            expectThrows(UOE, () -> sa.setOption(RAW_SOCK_OPT, ""));
-            expectThrows(UOE, () -> sa.setOption(RAW_SOCK_OPT, 1));
-            expectThrows(UOE, () -> sa.getOption(FAKE_SOCK_OPT));
-            expectThrows(UOE, () -> sa.getOption(RAW_SOCK_OPT));
+            assertThrows(UOE, () -> sa.setOption(FAKE_SOCK_OPT, null));
+            assertThrows(UOE, () -> sa.setOption(FAKE_SOCK_OPT, TRUE));
+            assertThrows(UOE, () -> sa.setOption(FAKE_SOCK_OPT, FALSE));
+            assertThrows(UOE, () -> sa.setOption(RAW_SOCK_OPT, ""));
+            assertThrows(UOE, () -> sa.setOption(RAW_SOCK_OPT, 1));
+            assertThrows(UOE, () -> sa.getOption(FAKE_SOCK_OPT));
+            assertThrows(UOE, () -> sa.getOption(RAW_SOCK_OPT));
         }
         try (ServerSocket ssa = ServerSocketChannel.open().socket()) {
-            expectThrows(UOE, () -> ssa.setOption(FAKE_SOCK_OPT, null));
-            expectThrows(UOE, () -> ssa.setOption(FAKE_SOCK_OPT, TRUE));
-            expectThrows(UOE, () -> ssa.setOption(FAKE_SOCK_OPT, FALSE));
-            expectThrows(UOE, () -> ssa.setOption(RAW_SOCK_OPT, ""));
-            expectThrows(UOE, () -> ssa.setOption(RAW_SOCK_OPT, 1));
-            expectThrows(UOE, () -> ssa.getOption(FAKE_SOCK_OPT));
-            expectThrows(UOE, () -> ssa.getOption(RAW_SOCK_OPT));
+            assertThrows(UOE, () -> ssa.setOption(FAKE_SOCK_OPT, null));
+            assertThrows(UOE, () -> ssa.setOption(FAKE_SOCK_OPT, TRUE));
+            assertThrows(UOE, () -> ssa.setOption(FAKE_SOCK_OPT, FALSE));
+            assertThrows(UOE, () -> ssa.setOption(RAW_SOCK_OPT, ""));
+            assertThrows(UOE, () -> ssa.setOption(RAW_SOCK_OPT, 1));
+            assertThrows(UOE, () -> ssa.getOption(FAKE_SOCK_OPT));
+            assertThrows(UOE, () -> ssa.getOption(RAW_SOCK_OPT));
         }
         try (DatagramSocket dsa = DatagramChannel.open().socket()) {
-            expectThrows(UOE, () -> dsa.setOption(FAKE_SOCK_OPT, null));
-            expectThrows(UOE, () -> dsa.setOption(FAKE_SOCK_OPT, TRUE));
-            expectThrows(UOE, () -> dsa.setOption(FAKE_SOCK_OPT, FALSE));
-            expectThrows(UOE, () -> dsa.setOption(RAW_SOCK_OPT, ""));
-            expectThrows(UOE, () -> dsa.setOption(RAW_SOCK_OPT, 1));
-            expectThrows(UOE, () -> dsa.getOption(FAKE_SOCK_OPT));
-            expectThrows(UOE, () -> dsa.getOption(RAW_SOCK_OPT));
+            assertThrows(UOE, () -> dsa.setOption(FAKE_SOCK_OPT, null));
+            assertThrows(UOE, () -> dsa.setOption(FAKE_SOCK_OPT, TRUE));
+            assertThrows(UOE, () -> dsa.setOption(FAKE_SOCK_OPT, FALSE));
+            assertThrows(UOE, () -> dsa.setOption(RAW_SOCK_OPT, ""));
+            assertThrows(UOE, () -> dsa.setOption(RAW_SOCK_OPT, 1));
+            assertThrows(UOE, () -> dsa.getOption(FAKE_SOCK_OPT));
+            assertThrows(UOE, () -> dsa.getOption(RAW_SOCK_OPT));
         }
     }
 
@@ -200,8 +202,7 @@ public class NullsAndBadValues {
 
     // -- Socket
 
-    @DataProvider(name = "socketBadOptionValues")
-    public Object[][] socketBadOptionValues() throws Exception {
+    public static Object[][] socketBadOptionValues() throws Exception {
         try (Socket s = new Socket()) {
             return s.supportedOptions().stream()
                     .flatMap(NullsAndBadValues::socketOptionToBadValues)
@@ -209,28 +210,29 @@ public class NullsAndBadValues {
         }
     }
 
-    @Test(dataProvider = "socketBadOptionValues")
+    @ParameterizedTest
+    @MethodSource("socketBadOptionValues")
     public <T> void socket(SocketOption<T> option, T value)
         throws Exception
     {
         try (Socket s = new Socket()) {
-            expectThrows(IAE, () -> s.setOption(option, value));
+            assertThrows(IAE, () -> s.setOption(option, value));
         }
     }
 
-    @Test(dataProvider = "socketBadOptionValues")
+    @ParameterizedTest
+    @MethodSource("socketBadOptionValues")
     public <T> void socketAdapter(SocketOption<T> option, T value)
         throws Exception
     {
         try (Socket s = SocketChannel.open().socket()) {
-            expectThrows(IAE, () -> s.setOption(option, value));
+            assertThrows(IAE, () -> s.setOption(option, value));
         }
     }
 
     // -- ServerSocket
 
-    @DataProvider(name = "serverSocketBadOptionValues")
-    public Object[][] serverSocketBadOptionValues() throws Exception {
+    public static Object[][] serverSocketBadOptionValues() throws Exception {
         try (ServerSocket ss = new ServerSocket()) {
             return ss.supportedOptions().stream()
                      .flatMap(NullsAndBadValues::socketOptionToBadValues)
@@ -238,16 +240,18 @@ public class NullsAndBadValues {
         }
     }
 
-    @Test(dataProvider = "serverSocketBadOptionValues")
+    @ParameterizedTest
+    @MethodSource("serverSocketBadOptionValues")
     public <T> void serverSocket(SocketOption<T> option, T value)
         throws Exception
     {
         try (ServerSocket ss = new ServerSocket()) {
-            expectThrows(IAE, () -> ss.setOption(option, value));
+            assertThrows(IAE, () -> ss.setOption(option, value));
         }
     }
 
-    @Test(dataProvider = "serverSocketBadOptionValues")
+    @ParameterizedTest
+    @MethodSource("serverSocketBadOptionValues")
     public <T> void serverSocketAdapter(SocketOption<T> option, T value)
         throws Exception
     {
@@ -255,14 +259,13 @@ public class NullsAndBadValues {
             return;  // SSC does not support IP_TOS
 
         try (ServerSocket ss = ServerSocketChannel.open().socket()) {
-            expectThrows(IAE, () -> ss.setOption(option, value));
+            assertThrows(IAE, () -> ss.setOption(option, value));
         }
     }
 
     // -- DatagramSocket
 
-    @DataProvider(name = "datagramSocketBadOptionValues")
-    public Object[][] datagramSocketBadOptionValues() throws Exception {
+    public static Object[][] datagramSocketBadOptionValues() throws Exception {
         try (DatagramSocket ds = new DatagramSocket()) {
             return ds.supportedOptions().stream()
                      .flatMap(NullsAndBadValues::socketOptionToBadValues)
@@ -270,28 +273,29 @@ public class NullsAndBadValues {
         }
     }
 
-    @Test(dataProvider = "datagramSocketBadOptionValues")
+    @ParameterizedTest
+    @MethodSource("datagramSocketBadOptionValues")
     public <T> void datagramSocket(SocketOption<T> option, T value)
         throws Exception
     {
         try (DatagramSocket ds = new DatagramSocket()) {
-            expectThrows(IAE, () -> ds.setOption(option, value));
+            assertThrows(IAE, () -> ds.setOption(option, value));
         }
     }
 
-    @Test(dataProvider = "datagramSocketBadOptionValues")
+    @ParameterizedTest
+    @MethodSource("datagramSocketBadOptionValues")
     public <T> void datagramSocketAdapter(SocketOption<T> option, T value)
         throws Exception
     {
         try (DatagramSocket ds = DatagramChannel.open().socket()) {
-            expectThrows(IAE, () -> ds.setOption(option, value));
+            assertThrows(IAE, () -> ds.setOption(option, value));
         }
     }
 
     // -- MulticastSocket
 
-    @DataProvider(name = "multicastSocketBadOptionValues")
-    public Object[][] multicastSocketBadOptionValues() throws Exception {
+    public static Object[][] multicastSocketBadOptionValues() throws Exception {
         try (MulticastSocket ms = new MulticastSocket()) {
             return ms.supportedOptions().stream()
                      .flatMap(NullsAndBadValues::socketOptionToBadValues)
@@ -299,12 +303,13 @@ public class NullsAndBadValues {
         }
     }
 
-    @Test(dataProvider = "multicastSocketBadOptionValues")
+    @ParameterizedTest
+    @MethodSource("multicastSocketBadOptionValues")
     public <T> void multicastSocket(SocketOption<T> option, T value)
         throws Exception
     {
         try (MulticastSocket ms = new MulticastSocket()) {
-            expectThrows(IAE, () -> ms.setOption(option, value));
+            assertThrows(IAE, () -> ms.setOption(option, value));
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,13 @@
  * questions.
  */
 
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 
 /**
  * TestCase contains source code to be compiled
@@ -74,7 +77,11 @@ public class TestCase {
         return null;
     }
 
-    record MethodData(String methodName, Collection<Integer> expectedLines, boolean exactLines) {
+    record MethodData(String methodName, Collection<Integer> expectedLines, boolean exactLines, BiConsumer<ClassModel, MethodModel> validator) {
+
+        public MethodData(String methodName, Collection<Integer> expectedLines, boolean exactLines) {
+            this(methodName, expectedLines, exactLines, (_, _) -> {});
+        }
 
         public MethodData {
             expectedLines = new HashSet<>(expectedLines);

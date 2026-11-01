@@ -31,7 +31,7 @@
  * @compile ../ReferenceTracker.java
  * @run junit/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors
  *       -Djdk.internal.httpclient.debug=true
- *       HTTP3NoBodyTest
+ *       ${test.main.class}
  * @summary this is a copy of http2/NoBodyTest over HTTP/3
  */
 

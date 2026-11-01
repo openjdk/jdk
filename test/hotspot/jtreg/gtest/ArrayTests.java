@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,31 +26,18 @@
  * This tests object array sizes by running gtests with different settings.
  */
 
-/* @test id=with-coops-with-ccp
- * @summary Run object array size tests with compressed oops and compressed class pointers
+/* @test id=with-coops
+ * @summary Run object array size tests with compressed oops
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:+UseCompressedClassPointers -XX:+UseCompressedOops
+ * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:+UseCompressedOops
  */
-/* @test id=with-coops-no-ccp
- * @summary Run object array size tests with compressed oops and compressed class pointers
+
+/* @test id=no-coops
+ * @summary Run object array size tests with compressed oops
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:-UseCompressedClassPointers -XX:+UseCompressedOops
- */
-/* @test id=no-coops-with-ccp
- * @summary Run object array size tests with compressed oops and compressed class pointers
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.xml
- * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:+UseCompressedClassPointers -XX:-UseCompressedOops
- */
-/* @test id=no-coops-no-ccp
- * @summary Run object array size tests with compressed oops and compressed class pointers
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.xml
- * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:-UseCompressedClassPointers -XX:-UseCompressedOops
+ * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:-UseCompressedOops
  */

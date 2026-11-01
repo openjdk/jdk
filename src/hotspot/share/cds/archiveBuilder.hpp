@@ -221,13 +221,14 @@ private:
   DumpRegion _ro_region;
   DumpRegion _ac_region; // AOT code
 
-  // Combined bitmap to track pointers in both RW and RO regions. This is updated
-  // as objects are copied into RW and RO.
+  // Combined bitmap to track pointers in RW, RO and AC regions. This is updated
+  // as objects are copied into RW, RO and AC.
   CHeapBitMap _ptrmap;
 
-  // _ptrmap is split into these two bitmaps which are written into the archive.
+  // _ptrmap is split into these bitmaps which are written into the archive.
   CHeapBitMap _rw_ptrmap;   // marks pointers in the RW region
   CHeapBitMap _ro_ptrmap;   // marks pointers in the RO region
+  CHeapBitMap _ac_ptrmap;   // marks pointers in the AC region
 
   SourceObjList _rw_src_objs;                 // objs to put in rw region
   SourceObjList _ro_src_objs;                 // objs to put in ro region
@@ -484,7 +485,6 @@ public:
   void print_stats();
   void report_out_of_space(const char* name, size_t needed_bytes);
 
-#ifdef _LP64
   // The CDS archive contains pre-computed narrow Klass IDs. It carries them in the headers of
   // archived heap objects. With +UseCompactObjectHeaders, it also carries them in prototypes
   // in Klass.
@@ -504,7 +504,6 @@ public:
   // TinyClassPointer Mode:
   //    We use the highest possible shift value to maximize the encoding range size.
   static int precomputed_narrow_klass_shift();
-#endif // _LP64
 
 };
 

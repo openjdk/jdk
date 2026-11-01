@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,8 +149,8 @@ WB_ENTRY(jobjectArray, WB_ParseCommandLine(JNIEnv* env, jobject o, jstring j_cmd
 
   const char* c_cmdline = java_lang_String::as_utf8_string(JNIHandles::resolve(j_cmdline));
   const char c_delim = (char)(j_delim & 0xff);
-  objArrayOop argumentArray = objArrayOop(JNIHandles::resolve_non_null(arguments));
-  objArrayHandle argumentArray_ah(THREAD, argumentArray);
+  refArrayOop argumentArray = refArrayOop(JNIHandles::resolve_non_null(arguments));
+  refArrayHandle argumentArray_ah(THREAD, argumentArray);
 
   int length = argumentArray_ah->length();
 

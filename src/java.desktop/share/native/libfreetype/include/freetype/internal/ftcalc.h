@@ -4,7 +4,7 @@
  *
  *   Arithmetic computations (specification).
  *
- * Copyright (C) 1996-2025 by
+ * Copyright (C) 1996-2026 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -75,6 +75,10 @@ FT_BEGIN_HEADER
           (FT_Int64)( (FT_UInt64)0 - (FT_UInt64)(a) )
 
 #endif /* FT_INT64 */
+
+
+#define ULABS( a )  ( a >= 0 ? (FT_ULong)a : 0UL - (FT_ULong)a )
+#define  UABS( a )  ( a >= 0 ?  (FT_UInt)a : 0U  -  (FT_UInt)a )
 
 
   /**************************************************************************

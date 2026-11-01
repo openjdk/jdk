@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8222968
  * @summary ByteArrayPublisher is not thread-safe resulting in broken re-use of HttpRequests
- * @run main/othervm -Dsun.net.httpserver.idleInterval=50000 ByteArrayPublishers
+ * @run main/othervm -Dsun.net.httpserver.idleInterval=50000 ${test.main.class}
  */
 
 import java.net.InetAddress;

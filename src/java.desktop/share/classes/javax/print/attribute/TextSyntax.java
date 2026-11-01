@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,7 @@ public abstract class TextSyntax implements Serializable, Cloneable {
      *
      * @return a hashcode value for this object
      */
+    @Override
     public int hashCode() {
         return value.hashCode() ^ locale.hashCode();
     }
@@ -131,6 +132,7 @@ public abstract class TextSyntax implements Serializable, Cloneable {
      * @return {@code true} if {@code object} is equivalent to this text
      *         attribute, {@code false} otherwise
      */
+    @Override
     public boolean equals(Object object) {
         return object instanceof TextSyntax other &&
                 this.value.equals(other.value) &&
@@ -143,6 +145,7 @@ public abstract class TextSyntax implements Serializable, Cloneable {
      *
      * @return a {@code String} identifying this object
      */
+    @Override
     public String toString(){
         return value;
     }

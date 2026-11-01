@@ -76,7 +76,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *                      -Djavax.net.debug=all
- *                     BasicHTTP3Test
+ *                     ${test.main.class}
  * @summary Basic HTTP/3 test
  */
 public class BasicHTTP3Test implements HttpServerAdapters {

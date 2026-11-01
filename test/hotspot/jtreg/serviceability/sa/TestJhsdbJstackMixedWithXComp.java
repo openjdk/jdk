@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2025, NTT DATA
+ * Copyright (c) 2025, 2026, NTT DATA
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,40 +27,43 @@ import java.util.Arrays;
 import java.util.List;
 
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.Platform;
 import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import jtreg.SkippedException;
+
 /**
  * @test id=xcomp
- * @bug 8370176
+ * @bug 8370176 8390621
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
- * @requires os.arch == "amd64"
+ * @requires (os.arch == "amd64") | (os.arch == "aarch64")
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedWithXComp
  */
 
 /**
  * @test id=xcomp-preserve-frame-pointer
- * @bug 8370176
+ * @bug 8370176 8390621
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
- * @requires os.arch == "amd64"
+ * @requires (os.arch == "amd64") | (os.arch == "aarch64")
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedWithXComp -XX:+PreserveFramePointer
  */
 
 /**
  * @test id=xcomp-disable-tiered-compilation
- * @bug 8370176
+ * @bug 8370176 8390621
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
- * @requires os.arch == "amd64"
+ * @requires (os.arch == "amd64") | (os.arch == "aarch64")
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedWithXComp -XX:-TieredCompilation
  */
@@ -111,6 +114,17 @@ public class TestJhsdbJstackMixedWithXComp {
     }
 
     public static void main(String... args) throws Exception {
+        if (Platform.isMusl()) {
+            if (!Platform.isX64()) {
+                throw new SkippedException("This platform is not supported.");
+            }
+
+            var libc = SATestUtils.getLibCPath();
+            if (SATestUtils.getDebugInfo(libc) == null) {
+                throw new SkippedException("libc debug info is not available.");
+            }
+        }
+
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
         LingeredApp app = null;
 

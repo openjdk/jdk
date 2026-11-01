@@ -4,7 +4,7 @@
  *
  *   The FreeType private base classes (specification).
  *
- * Copyright (C) 1996-2025 by
+ * Copyright (C) 1996-2026 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -214,8 +214,8 @@ FT_BEGIN_HEADER
     FT_CMap_CharIndexFunc  char_index;
     FT_CMap_CharNextFunc   char_next;
 
-    /* Subsequent entries are special ones for format 14 -- the variant */
-    /* selector subtable which behaves like no other                    */
+    /* Subsequent entries are special ones for formats 14 and 15 -- */
+    /* the variant selector subtables which behave like no other    */
 
     FT_CMap_CharVarIndexFunc      char_var_index;
     FT_CMap_CharVarIsDefaultFunc  char_var_default;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,6 @@ public:
     static jfieldID graphicsConfigID;
     static jfieldID peerGCID;
     static jfieldID focusableID;
-    static jfieldID appContextID;
     static jfieldID hwndID;
 
     static jmethodID getFontMID;
@@ -310,7 +309,7 @@ public:
         DASSERT(GetHWnd());
         // SetWindowLong() error handling as recommended by Win32 API doc.
         ::SetLastError(0);
-        DWORD ret = ::SetWindowLong(GetHWnd(), GWL_STYLE, style);
+        [[maybe_unused]] DWORD ret = ::SetWindowLong(GetHWnd(), GWL_STYLE, style);
         DASSERT(ret != 0 || ::GetLastError() == 0);
     }
     INLINE virtual LONG GetStyleEx() {
@@ -321,7 +320,7 @@ public:
         DASSERT(GetHWnd());
         // SetWindowLong() error handling as recommended by Win32 API doc.
         ::SetLastError(0);
-        DWORD ret = ::SetWindowLong(GetHWnd(), GWL_EXSTYLE, style);
+        [[maybe_unused]] DWORD ret = ::SetWindowLong(GetHWnd(), GWL_EXSTYLE, style);
         DASSERT(ret != 0 || ::GetLastError() == 0);
     }
 
@@ -781,7 +780,6 @@ private:
     AwtPen*  m_penForeground;
     AwtBrush* m_brushBackground;
 
-    WNDPROC  m_DefWindowProc;
     // counter for messages being processed by this component
     UINT     m_MessagesProcessing;
 

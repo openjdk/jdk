@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,9 @@ public class TempDirTest {
         Path targetTmpDir = Files.createTempDirectory("TempDirTest-target");
         targetTmpDir.toFile().deleteOnExit();
 
-        // run the test with all possible combinations of setting java.io.tmpdir
+        // Run the test with all possible combinations of setting java.io.tmpdir.
+        // Note that the attach mechanism doesn't really use java.io.tmpdir, but this test verifies
+        // that different java.io.tmpdir settings for client and target don't break the attach mechanism.
         runExperiment(null, null);
         runExperiment(clientTmpDir, null);
         runExperiment(clientTmpDir, targetTmpDir);

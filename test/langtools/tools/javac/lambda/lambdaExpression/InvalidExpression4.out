@@ -1,2 +1,2 @@
-InvalidExpression4.java:16:17: compiler.err.prob.found.req: (compiler.misc.incompatible.arg.types.in.lambda)
+InvalidExpression4.java:16:17: compiler.err.prob.found.req: (compiler.misc.incompatible.arg.types.in.lambda: int, java.lang.Integer)
 1 error

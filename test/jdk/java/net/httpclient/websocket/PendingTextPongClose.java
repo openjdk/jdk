@@ -28,7 +28,7 @@
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.internal.httpclient.websocket.debug=true
  *      -Djdk.httpclient.sendBufferSize=8192
- *       PendingTextPongClose
+ *       ${test.main.class}
  */
 
 import java.net.http.WebSocket;

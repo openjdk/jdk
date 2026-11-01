@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test TestCDSVMCrash
  * @summary Verify that an exception is thrown when the VM crashes during executeAndLog
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -61,8 +62,8 @@ public class TestCDSVMCrash {
             CDSTestUtils.executeAndLog(pb, "cds_vm_crash");
             throw new Error("Expected VM to crash");
         } catch(RuntimeException e) {
-            if (!e.getMessage().equals("Hotspot crashed")) {
-                throw new Error("Expected message: Hotspot crashed");
+            if (!e.getMessage().contains("A fatal error has been detected")) {
+                throw new Error("Expected message: A fatal error has been detected. Instead message is: " + e.getMessage());
             }
         }
         System.out.println("PASSED");

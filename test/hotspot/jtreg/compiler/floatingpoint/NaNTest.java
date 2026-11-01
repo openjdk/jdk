@@ -73,35 +73,7 @@ public class NaNTest {
     }
 
     public static void main(String args[]) {
-        // Some platforms are known to strip signaling NaNs.
-        // The block below can be used to except them.
-        boolean expectStableFloats = true;
-        boolean expectStableDoubles = true;
-
-        // On x86_32 without relevant SSE-enabled stubs, we are entering
-        // native methods that use FPU instructions, and those strip the
-        // signaling NaNs.
-        if (Platform.isX86()) {
-            int sse = WHITE_BOX.getIntVMFlag("UseSSE").intValue();
-            boolean stubsPresent = WHITE_BOX.getBooleanVMFlag("InlineIntrinsics");
-            expectStableFloats = (sse >= 1) && stubsPresent;
-            expectStableDoubles = (sse >= 2) && stubsPresent;
-        }
-
-        if (expectStableFloats) {
-           testFloat();
-        } else {
-           System.out.println("Stable floats cannot be expected, skipping");
-        }
-
-        if (expectStableDoubles) {
-           testDouble();
-        } else {
-           System.out.println("Stable doubles cannot be expected, skipping");
-        }
-
-        if (!expectStableFloats && !expectStableDoubles) {
-           throw new SkippedException("No tests were run.");
-        }
+        testFloat();
+        testDouble();
     }
 }

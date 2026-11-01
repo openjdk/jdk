@@ -31,16 +31,17 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
+import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
 @SuppressWarnings("cast")  // warning: redundant cast
+@ValueBased
 final class LongVectorMax extends LongVector {
     static final LongSpecies VSPECIES =
         (LongSpecies) LongVector.SPECIES_MAX;
@@ -366,7 +367,7 @@ final class LongVectorMax extends LongVector {
     @Override
     @ForceInline
     public final LongShuffleMax toShuffle() {
-        return (LongShuffleMax) toShuffle(vspecies(), false);
+        return (LongShuffleMax) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -558,7 +559,7 @@ final class LongVectorMax extends LongVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class LongMaskMax extends AbstractMask<Long> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -606,7 +607,7 @@ final class LongVectorMax extends LongVector {
 
         @Override
         LongMaskMax uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -616,7 +617,7 @@ final class LongVectorMax extends LongVector {
 
         @Override
         LongMaskMax bOp(VectorMask<Long> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = ((LongMaskMax)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -766,16 +767,16 @@ final class LongVectorMax extends LongVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, LongMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((LongMaskMax)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper(((LongMaskMax)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, LongMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((LongMaskMax)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper(((LongMaskMax)m).getBits()));
         }
 
         @ForceInline
@@ -783,7 +784,7 @@ final class LongVectorMax extends LongVector {
         static LongMaskMax maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(LongMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final LongMaskMax  TRUE_MASK = new LongMaskMax(true);
         private static final LongMaskMax FALSE_MASK = new LongMaskMax(false);
@@ -791,7 +792,7 @@ final class LongVectorMax extends LongVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class LongShuffleMax extends AbstractShuffle<Long> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -843,7 +844,7 @@ final class LongVectorMax extends LongVector {
 
         @Override
         LongVectorMax toBitsVector0() {
-            return ((LongVectorMax) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return ((LongVectorMax) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -917,7 +918,7 @@ final class LongVectorMax extends LongVector {
         @ForceInline
         public final LongMaskMax laneIsValid() {
             return (LongMaskMax) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -925,7 +926,7 @@ final class LongVectorMax extends LongVector {
         public final LongShuffleMax rearrange(VectorShuffle<Long> shuffle) {
             LongShuffleMax concreteShuffle = (LongShuffleMax) shuffle;
             return (LongShuffleMax) toBitsVector().rearrange(concreteShuffle)
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
         }
 
         @ForceInline
@@ -938,7 +939,7 @@ final class LongVectorMax extends LongVector {
                 v = (LongVectorMax) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return (LongShuffleMax) v.toShuffle(vspecies(), false);
+            return (LongShuffleMax) v.toShuffle(VSPECIES, false);
         }
 
         private static long[] prepare(int[] indices, int offset) {

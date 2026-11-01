@@ -913,18 +913,20 @@ public final class CommandOutputControl {
             });
         }
 
-        public Result expectExitCode(int main, int... other) throws UnexpectedExitCodeException {
+        public Result expectExitCode(int main, int... other) throws UnexpectedResultException {
             return expectExitCode(v -> {
                 return IntStream.concat(IntStream.of(main), IntStream.of(other)).boxed().anyMatch(Predicate.isEqual(v));
             });
         }
 
-        public Result expectExitCode(Collection<Integer> expected) throws UnexpectedExitCodeException {
+        public Result expectExitCode(Collection<Integer> expected) throws UnexpectedResultException {
             return expectExitCode(expected::contains);
         }
 
-        public Result expectExitCode(IntPredicate expected) throws UnexpectedExitCodeException {
-            if (!expected.test(getExitCode())) {
+        public Result expectExitCode(IntPredicate expected) throws UnexpectedResultException {
+            if (!expected.test(exitCode.orElseThrow(() -> {
+                return new UnavailableExitCodeException(this);
+            }))) {
                 throw new UnexpectedExitCodeException(this);
             }
             return this;
@@ -1084,6 +1086,23 @@ public final class CommandOutputControl {
             } else {
                 throw new IllegalArgumentException();
             }
+        }
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    public static final class UnavailableExitCodeException extends UnexpectedResultException {
+
+        public UnavailableExitCodeException(Result value, String message) {
+            super(value, message);
+            if (value.exitCode.isPresent()) {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        public UnavailableExitCodeException(Result value) {
+            this(value, String.format("Exit code unavailable from executing the command %s",
+                    value.execAttrs().printableCommandLine()));
         }
 
         private static final long serialVersionUID = 1L;
@@ -1536,7 +1555,9 @@ public final class CommandOutputControl {
         }
 
         Optional<String> bufferContents() {
-            return buf.map(ByteArrayOutputStream::toString);
+            return buf.map(in -> {
+                return in.toString(ps.charset());
+            });
         }
 
         static Builder build(Charset charset) {
@@ -1581,7 +1602,7 @@ public final class CommandOutputControl {
 
                 final PrintStream ps;
                 if (buf.isPresent() && dumpStream != null) {
-                    ps = new PrintStream(new TeeOutputStream(List.of(buf.get(), dumpStream)), true, dumpStream.charset());
+                    ps = new PrintStream(new TeeOutputStream(List.of(buf.get(), dumpStream)), true, charset);
                 } else if (!discard) {
                     ps = buf.map(in -> {
                         return new PrintStream(in, false, charset);

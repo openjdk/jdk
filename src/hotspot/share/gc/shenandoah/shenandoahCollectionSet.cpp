@@ -49,7 +49,6 @@ ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedS
   _live(0),
   _region_count(0),
   _old_garbage(0),
-  _preselected_regions(nullptr),
   _young_available_bytes_collected(0),
   _old_available_bytes_collected(0),
   _current_index(0) {
@@ -186,6 +185,16 @@ ShenandoahHeapRegion* ShenandoahCollectionSet::next() {
   }
 
   return nullptr;
+}
+
+bool ShenandoahCollectionSet::all_regions_claimed() const {
+  const size_t max = _heap->num_regions();
+  for (size_t index = _current_index.load_relaxed(); index < max; index++) {
+    if (is_in(index)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void ShenandoahCollectionSet::print_on(outputStream* out) const {

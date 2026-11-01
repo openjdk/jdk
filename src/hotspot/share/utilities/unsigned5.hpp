@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@ class UNSIGNED5 : AllStatic {
   template<typename ARR, typename OFF, typename GET = ArrayGetSet<ARR,OFF>>
   static uint32_t read_uint(ARR array, OFF& offset_rw, OFF limit, GET get = GET()) {
     const OFF pos = offset_rw;
-    STATIC_ASSERT(sizeof(get(array, pos)) == 1);  // must be a byte-getter
+    static_assert(sizeof(get(array, pos)) == 1);  // must be a byte-getter
     const uint32_t b_0 = (uint8_t) get(array, pos);  //b_0 = a[0]
     assert(b_0 >= X, "avoid excluded bytes");
     uint32_t sum = b_0 - X;
@@ -217,7 +217,7 @@ class UNSIGNED5 : AllStatic {
   static int check_length(ARR array, OFF offset, OFF limit = 0,
                           GET get = GET()) {
     const OFF pos = offset;
-    STATIC_ASSERT(sizeof(get(array, pos)) == 1);  // must be a byte-getter
+    static_assert(sizeof(get(array, pos)) == 1);  // must be a byte-getter
     const uint32_t b_0 = (uint8_t) get(array, pos);  //b_0 = a[0]
     if (b_0 < X+L) {
       return (b_0 < X) ? 0 : 1;
@@ -280,6 +280,7 @@ class UNSIGNED5 : AllStatic {
         int len = next_length();  // 0 or length in [1..5]
         if (len == 0)  break;
         _position += len;
+        ++actual;
       }
       return actual;
     }

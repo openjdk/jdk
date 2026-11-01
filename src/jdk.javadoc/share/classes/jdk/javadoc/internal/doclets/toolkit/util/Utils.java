@@ -1152,6 +1152,24 @@ public class Utils {
     }
 
     /**
+     * {@return {@code true} if the {@code fileName} represents an HTML file}
+     * Note that the doc comment spec requires a lower-case extension.
+     * @param fileName the file name
+     */
+    public static boolean isHtmlFile(String fileName) {
+        return fileName.endsWith(".html");
+    }
+
+    /**
+     * {@return {@code true} if the {@code fileName} represents a Markdown file}
+     * Note that the doc comment spec requires a lower-case extension.
+     * @param fileName the file name
+     */
+    public static boolean isMarkdownFile(String fileName) {
+        return fileName.endsWith(".md");
+    }
+
+    /**
      * Return true if the given Element is deprecated.
      *
      * @param e the Element to check.
@@ -1618,7 +1636,7 @@ public class Utils {
         CompilationUnitTree cu = path.getCompilationUnit();
         LineMap lineMap = cu.getLineMap();
         DocSourcePositions spos = docTrees.getSourcePositions();
-        long pos = spos.getStartPosition(cu, path.getLeaf());
+        long pos = spos.getStartPosition(path.getLeaf());
         return lineMap.getLineNumber(pos);
     }
 
@@ -2525,7 +2543,7 @@ public class Utils {
                     usedInDeclaration.addAll(types2Classes(tpe.getBounds()));
                 }
                 usedInDeclaration.addAll(types2Classes(List.of(te.getSuperclass())));
-                usedInDeclaration.addAll(types2Classes(te.getPermittedSubclasses()));
+                // Intentionally allow preview permitted subclasses
                 usedInDeclaration.addAll(types2Classes(te.getRecordComponents().stream().map(Element::asType).toList())); //TODO: annotations on record components???
             }
             case CONSTRUCTOR, METHOD -> {

@@ -25,7 +25,6 @@
 #ifndef SHARE_CLASSFILE_MODULEENTRY_HPP
 #define SHARE_CLASSFILE_MODULEENTRY_HPP
 
-#include "cds/aotGrowableArray.hpp"
 #include "jni.h"
 #include "memory/metaspaceClosureType.hpp"
 #include "oops/oopHandle.hpp"
@@ -70,7 +69,7 @@ private:
                                        // for shared classes from this module
   Symbol*          _name;              // name of this module
   ClassLoaderData* _loader_data;
-  AOTGrowableArray<ModuleEntry*>* _reads;  // list of modules that are readable by this module
+  GrowableArray<ModuleEntry*>* _reads; // list of modules that are readable by this module
 
   Symbol* _version;                    // module version number
   Symbol* _location;                   // module location
@@ -118,10 +117,10 @@ public:
 
   bool             can_read(ModuleEntry* m) const;
   bool             has_reads_list() const;
-  AOTGrowableArray<ModuleEntry*>* reads() const {
+  GrowableArray<ModuleEntry*>* reads() const {
     return _reads;
   }
-  void set_reads(AOTGrowableArray<ModuleEntry*>* r) {
+  void set_reads(GrowableArray<ModuleEntry*>* r) {
     _reads = r;
   }
   void pack_reads() {

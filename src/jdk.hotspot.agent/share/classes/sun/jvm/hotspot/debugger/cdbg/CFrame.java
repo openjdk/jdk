@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public interface CFrame {
   public CFrame sender(ThreadProxy th);
 
   /** Find sender frame with given FP and PC */
-  public default CFrame sender(ThreadProxy th, Address sp, Address fp, Address pc) {
+  public default CFrame sender(ThreadProxy th, Address senderSP, Address senderFP, Address senderPC) {
     return sender(th);
   }
 

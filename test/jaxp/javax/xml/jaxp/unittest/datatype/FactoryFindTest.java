@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,48 +23,48 @@
 
 package datatype;
 
+import org.junit.jupiter.api.Test;
+
+import javax.xml.datatype.DatatypeFactory;
 import java.net.URL;
 import java.net.URLClassLoader;
-import javax.xml.datatype.DatatypeFactory;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm datatype.FactoryFindTest
+ * @run junit/othervm datatype.FactoryFindTest
  * @summary Test Classloader for DatatypeFactory.
  */
 public class FactoryFindTest {
 
-    boolean myClassLoaderUsed = false;
-
     @Test
     public void testFactoryFind() throws Exception {
         DatatypeFactory factory = DatatypeFactory.newInstance();
-        Assert.assertTrue(factory.getClass().getClassLoader() == null);
+        assertNull(factory.getClass().getClassLoader());
 
         Thread.currentThread().setContextClassLoader(null);
-
         factory = DatatypeFactory.newInstance();
-        Assert.assertTrue(factory.getClass().getClassLoader() == null);
+        assertNull(factory.getClass().getClassLoader());
 
-        Thread.currentThread().setContextClassLoader(new MyClassLoader());
-        factory = DatatypeFactory.newInstance();
-        if (System.getSecurityManager() == null)
-            Assert.assertTrue(myClassLoaderUsed);
-        else
-            Assert.assertFalse(myClassLoaderUsed);
+        MyClassLoader customLoader = new MyClassLoader();
+        Thread.currentThread().setContextClassLoader(customLoader);
+        assertNotNull(DatatypeFactory.newInstance());
+        assertTrue(customLoader.wasUsed);
     }
 
-    class MyClassLoader extends URLClassLoader {
+    static class MyClassLoader extends URLClassLoader {
+        boolean wasUsed = false;
 
         public MyClassLoader() {
             super(new URL[0]);
         }
 
-        public Class loadClass(String name) throws ClassNotFoundException {
-            myClassLoaderUsed = true;
+        public Class<?> loadClass(String name) throws ClassNotFoundException {
+            wasUsed = true;
             return super.loadClass(name);
         }
     }

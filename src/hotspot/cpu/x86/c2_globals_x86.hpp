@@ -58,7 +58,6 @@ define_pd_global(intx, RegisterCostAreaRatio,        16000);
 define_pd_global(bool, OptoPeephole,                 true);
 define_pd_global(bool, UseCISCSpill,                 true);
 define_pd_global(bool, OptoScheduling,               false);
-define_pd_global(bool, OptoBundling,                 false);
 define_pd_global(bool, OptoRegScheduling,            true);
 define_pd_global(bool, SuperWordLoopUnrollAnalysis,  true);
 define_pd_global(uint, SuperWordStoreToLoadForwardingFailureDetection, 16);
@@ -72,8 +71,5 @@ define_pd_global(size_t, CodeCacheMinBlockLength,    6);
 define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 
 define_pd_global(bool,  TrapBasedRangeChecks,        false); // Not needed on x86.
-
-// Ergonomics related flags
-define_pd_global(bool, NeverActAsServerClassMachine, false);
 
 #endif // CPU_X86_C2_GLOBALS_X86_HPP

@@ -4,7 +4,7 @@
  *
  *   OpenType objects manager (body).
  *
- * Copyright (C) 1996-2025 by
+ * Copyright (C) 1996-2026 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -14,7 +14,6 @@
  * understand and accept it fully.
  *
  */
-
 
 
 #include <freetype/internal/ftdebug.h>
@@ -44,6 +43,7 @@
 
 #define CFF_fixedToInt( x )                          \
           ( (FT_Short)( ( (x) + 0x8000U ) >> 16 ) )
+
 
   /**************************************************************************
    *
@@ -624,7 +624,13 @@
       /* Note that this is only necessary for pure CFF and CEF fonts; */
       /* SFNT based fonts use the `name' table instead.               */
 
-      cffface->num_glyphs = (FT_Long)cff->num_glyphs;
+      /* VARC can define glyphs beyond the CFF2 CharStrings INDEX. */
+#ifdef TT_CONFIG_OPTION_VARC
+      if ( !cff2                                         ||
+           !face->varc                                   ||
+           cff->num_glyphs > face->max_profile.numGlyphs )
+#endif
+        cffface->num_glyphs = (FT_Long)cff->num_glyphs;
 
       dict = &cff->top_font.font_dict;
 

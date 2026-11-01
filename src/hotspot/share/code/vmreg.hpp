@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,6 +211,8 @@ public:
   VMRegPair(VMReg s, VMReg f) {  _second = s; _first = f; }
   VMRegPair(VMReg f) { _second = VMRegImpl::Bad(); _first = f; }
   VMRegPair() { _second = VMRegImpl::Bad(); _first = VMRegImpl::Bad(); }
+
+  void print_on(outputStream* st) const;
 };
 
 #endif // SHARE_CODE_VMREG_HPP

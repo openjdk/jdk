@@ -1148,6 +1148,29 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::free_node(RBNode<K, V>* node) {
 }
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::update_key(const Cursor& node_cursor, const K& new_key) {
+  precond(node_cursor.valid());
+  precond(node_cursor.found());
+
+  RBNode<K, V>* node = node_cursor.node();
+  update_key(node, new_key);
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::update_key(RBNode<K, V>* node, const K& new_key) {
+  precond(node != nullptr);
+  #ifdef ASSERT
+    const RBNode<K, V>* prev = node->prev();
+    const RBNode<K, V>* next = node->next();
+
+    if (prev != nullptr) assert(COMPARATOR::cmp(new_key, prev->key()) == RBTreeOrdering::GT, "updated key not GT previous node's key.");
+    if (next != nullptr) assert(COMPARATOR::cmp(new_key, next->key()) == RBTreeOrdering::LT, "updated key not LT next node's key.");
+  #endif // ASSERT
+
+  node->_key = new_key;
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline bool RBTree<K, V, COMPARATOR, ALLOCATOR>::upsert(const K& key, const V& val, const RBNode<K, V>* hint_node) {
   Cursor node_cursor = cursor(key, hint_node);
   RBNode<K, V>* node = node_cursor.node();

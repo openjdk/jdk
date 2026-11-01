@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,17 @@
  * @library /test/lib
  * @summary checks that the DatagramSocket supportedOptions set contains all
  *  MulticastSocket socket options
- * @run testng SupportedOptionsCheck
+ * @run junit ${test.main.class}
  */
 
 import jdk.test.lib.Platform;
-import org.testng.annotations.Test;
 
 import java.net.DatagramSocket;
 import java.net.StandardSocketOptions;
 import java.util.Set;
 
-import static org.testng.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SupportedOptionsCheck {
 

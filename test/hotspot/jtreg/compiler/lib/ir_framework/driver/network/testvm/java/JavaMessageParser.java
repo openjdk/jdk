@@ -24,6 +24,10 @@
 package compiler.lib.ir_framework.driver.network.testvm.java;
 
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.network.testvm.TestVmMessageParser;
+import compiler.lib.ir_framework.driver.network.testvm.java.multiline.ApplicableIRRulesStrategy;
+import compiler.lib.ir_framework.driver.network.testvm.java.multiline.MultiLineParser;
+import compiler.lib.ir_framework.driver.network.testvm.java.multiline.VMInfoStrategy;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 import compiler.lib.ir_framework.test.network.MessageTag;
 
@@ -37,26 +41,27 @@ import static compiler.lib.ir_framework.test.network.MessageTag.*;
  * Dedicated parser for {@link JavaMessages} received from the Test VM. Depending on the parsed {@link MessageTag}, the
  * message is parsed differently.
  */
-public class JavaMessageParser {
+public class JavaMessageParser implements TestVmMessageParser<JavaMessages> {
     private static final Pattern TAG_PATTERN = Pattern.compile("^(\\[[^]]+])\\s*(.*)$");
 
     private final List<String> stdoutMessages;
-    private final List<String> executedTests;
     private final Map<String, Long> methodTimes;
-    private final StringBuilder vmInfoBuilder;
-    private final StringBuilder applicableIrRules;
+    private final List<String> executedTests;
+    private final MultiLineParser<VMInfo> vmInfoParser;
+    private final MultiLineParser<ApplicableIRRules> applicableIRRulesParser;
 
-    private StringBuilder currentBuilder;
+    private MultiLineParser<? extends JavaMessage> currentMultiLineParser;
 
     public JavaMessageParser() {
         this.stdoutMessages = new ArrayList<>();
         this.methodTimes = new HashMap<>();
         this.executedTests = new ArrayList<>();
-        this.vmInfoBuilder = new StringBuilder();
-        this.applicableIrRules = new StringBuilder();
-        this.currentBuilder = null;
+        this.vmInfoParser = new MultiLineParser<>(new VMInfoStrategy());
+        this.applicableIRRulesParser = new MultiLineParser<>(new ApplicableIRRulesStrategy());
+        this.currentMultiLineParser = null;
     }
 
+    @Override
     public void parseLine(String line) {
         line = line.trim();
         Matcher tagLineMatcher = TAG_PATTERN.matcher(line);
@@ -74,12 +79,11 @@ public class JavaMessageParser {
             return;
         }
 
-        // Multi-line message for single tag.
-        currentBuilder.append(line).append(System.lineSeparator());
+        currentMultiLineParser.parseLine(line);
     }
 
     private void assertNoActiveParser() {
-        TestFramework.check(currentBuilder == null, "Unexpected new tag while parsing block");
+        TestFramework.check(currentMultiLineParser == null, "Unexpected new tag while parsing block");
     }
 
     private void parseTagLine(Matcher tagLineMatcher) {
@@ -89,18 +93,19 @@ public class JavaMessageParser {
             case STDOUT -> stdoutMessages.add(message);
             case TEST_LIST -> executedTests.add(message);
             case PRINT_TIMES -> parsePrintTimes(message);
-            case VM_INFO -> currentBuilder = vmInfoBuilder;
-            case APPLICABLE_IR_RULES -> currentBuilder = applicableIrRules;
+            case VM_INFO -> currentMultiLineParser = vmInfoParser;
+            case APPLICABLE_IR_RULES -> currentMultiLineParser = applicableIRRulesParser;
             default -> throw new TestFrameworkException("unknown tag");
         }
     }
 
     private void parsePrintTimes(String message) {
-        String[] split = message.split(",");
-        TestFramework.check(split.length == 2, "unexpected format");
-        String methodName = split[0];
+        // When using @Run with multiple tests, we could have several commas in the message
+        int lastCommaIndex = message.lastIndexOf(',');
+        TestFramework.check(lastCommaIndex > 0 && lastCommaIndex < message.length() - 1, "unexpected format");
+        String methodName = message.substring(0, lastCommaIndex);
         try {
-            long duration = Long.parseLong(split[1]);
+            long duration = Long.parseLong(message.substring(lastCommaIndex + 1));
             methodTimes.put(methodName, duration);
         } catch (NumberFormatException e) {
             throw new TestFrameworkException("invalid duration", e);
@@ -108,18 +113,20 @@ public class JavaMessageParser {
     }
 
     private void assertActiveParser() {
-        TestFramework.check(currentBuilder != null, "Received non-tag line outside of any tag block");
+        TestFramework.check(currentMultiLineParser != null, "Received non-tag line outside of any tag block");
     }
 
     private void parseEndTag() {
-        currentBuilder = null;
+        currentMultiLineParser.markFinished();
+        currentMultiLineParser = null;
     }
 
+    @Override
     public JavaMessages output() {
         return new JavaMessages(new StdoutMessages(stdoutMessages),
-                                new ExecutedTests(executedTests),
                                 new MethodTimes(methodTimes),
-                                applicableIrRules.toString(),
-                                vmInfoBuilder.toString());
+                                new ExecutedTests(executedTests),
+                                applicableIRRulesParser.output(),
+                                vmInfoParser.output());
     }
 }

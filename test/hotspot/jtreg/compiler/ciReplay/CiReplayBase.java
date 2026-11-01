@@ -58,9 +58,7 @@ public abstract class CiReplayBase {
     public static final String CLIENT_VM_OPTION = "-client";
     public static final String SERVER_VM_OPTION = "-server";
     public static final String TEST_CORE_FILE_NAME = "test_core";
-    public static final String RUN_SHELL_NO_LIMIT = "ulimit -c unlimited && ";
     private static final String REPLAY_FILE_OPTION = "-XX:ReplayDataFile=" + REPLAY_FILE_NAME;
-    private static final String LOCATIONS_STRING = "location: ";
     private static final String HS_ERR_NAME = "hs_err_pid";
     private static final String RUN_SHELL_ZERO_LIMIT = "ulimit -S -c 0 && ";
     private static final String VERSION_OPTION = "-version";

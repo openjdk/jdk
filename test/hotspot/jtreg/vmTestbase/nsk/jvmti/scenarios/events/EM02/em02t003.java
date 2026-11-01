@@ -33,6 +33,8 @@ import nsk.share.jvmti.*;
 import java.util.*;
 import java.math.*;
 
+import jdk.test.lib.thread.ThreadWrapper;
+
 public class em02t003 extends DebugeeClass {
 
     // run test from command line
@@ -74,7 +76,7 @@ public class em02t003 extends DebugeeClass {
         }
 
         Class<?> loadedClass;
-        Thread thrd;
+        ThreadWrapper thrd;
 
         ClassUnloader unloader = new ClassUnloader();
         for (int i = 0; i < 3; i++) {
@@ -90,7 +92,7 @@ public class em02t003 extends DebugeeClass {
             loadedClass = unloader.getLoadedClass();
 
             try {
-                thrd = (Thread )loadedClass.newInstance();
+                thrd = ((ThreadWrapper)loadedClass.newInstance());
             } catch (Exception e) {
                 logger.complain("Unexpected exception " + e);
                 e.printStackTrace();
@@ -139,7 +141,7 @@ public class em02t003 extends DebugeeClass {
         return status;
     }
 
-    boolean invokeMethod(Class<?> cls, Thread thrd, String methodName) {
+    boolean invokeMethod(Class<?> cls, ThreadWrapper thrd, String methodName) {
 
         Method method;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,6 @@ public:
   virtual int         is_ideal_copy() const;    // node matches ideal 'Copy*'
   virtual bool        is_ideal_negD() const;    // node matches ideal 'NegD'
   virtual bool        is_ideal_if()   const;    // node matches ideal 'If'
-  virtual bool        is_ideal_fastlock() const; // node matches 'FastLock'
   virtual bool        is_ideal_membar() const;  // node matches ideal 'MemBarXXX'
   virtual bool        is_ideal_loadPC() const;  // node matches ideal 'LoadPC'
   virtual bool        is_ideal_box() const;     // node matches ideal 'Box'
@@ -169,7 +168,6 @@ public:
   virtual bool        is_ideal_safepoint() const; // node matches 'SafePoint'
   virtual bool        is_ideal_nop() const;     // node matches 'Nop'
   virtual bool        is_ideal_control() const; // control node
-  virtual bool        is_vector() const;        // vector instruction
 
   virtual Form::CallType is_ideal_call() const; // matches ideal 'Call'
   virtual Form::DataType is_ideal_load() const; // node matches ideal 'LoadXNode'
@@ -198,11 +196,6 @@ public:
     NO_MEMORY_OPERAND = -1,
     MANY_MEMORY_OPERANDS = 999999
   };
-
-
-  // This instruction captures the machine-independent bottom_type
-  // Expected use is for pointer vs oop determination for LoadP
-  virtual bool        captures_bottom_type(FormDict& globals) const;
 
   virtual const char *cost();      // Access ins_cost attribute
   virtual uint        num_opnds(); // Count of num_opnds for MachNode class
@@ -1013,7 +1006,7 @@ public:
   // Recursive version of check in MatchRule
   int        cisc_spill_match(FormDict& globals, RegisterForm* registers,
                               MatchNode* mRule2, const char* &operand,
-                              const char* &reg_type);
+                              const char* &reg_type, InstructForm *from_instr, InstructForm *to_instr);
   int        cisc_spill_merge(int left_result, int right_result);
 
   virtual bool equivalent(FormDict& globals, MatchNode* mNode2);
@@ -1057,7 +1050,6 @@ public:
   int        is_ideal_copy() const;
   int        is_expensive() const;     // node matches ideal 'CosD'
   bool       is_ideal_if()   const;    // node matches ideal 'If'
-  bool       is_ideal_fastlock() const; // node matches ideal 'FastLock'
   bool       is_ideal_jump()   const;  // node matches ideal 'Jump'
   bool       is_ideal_membar() const;  // node matches ideal 'MemBarXXX'
   bool       is_ideal_loadPC() const;  // node matches ideal 'LoadPC'
@@ -1065,7 +1057,6 @@ public:
   bool       is_ideal_goto() const;    // node matches ideal 'Goto'
   bool       is_ideal_loopEnd() const; // node matches ideal 'LoopEnd'
   bool       is_ideal_bool() const;    // node matches ideal 'Bool'
-  bool       is_vector() const;        // vector instruction
   Form::DataType is_ideal_load() const;// node matches ideal 'LoadXNode'
   // Should antidep checks be disabled for this rule
   // See definition of MatchRule::skip_antidep_check
@@ -1075,7 +1066,7 @@ public:
   // Check if 'mRule2' is a cisc-spill variant of this MatchRule
   int        matchrule_cisc_spill_match(FormDict &globals, RegisterForm* registers,
                                         MatchRule* mRule2, const char* &operand,
-                                        const char* &reg_type);
+                                        const char* &reg_type, InstructForm *from_instr, InstructForm *to_instr);
 
   // Check if 'mRule2' is equivalent to this MatchRule
   virtual bool equivalent(FormDict& globals, MatchNode* mRule2);

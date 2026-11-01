@@ -39,6 +39,7 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -79,10 +80,6 @@
 # include <poll.h>
 #ifndef __OpenBSD__
 # include <ucontext.h>
-#endif
-
-#if !defined(__APPLE__) && !defined(__NetBSD__)
-# include <pthread_np.h>
 #endif
 
 #define SPELL_REG_SP "sp"
@@ -378,7 +375,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
     // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks in
     // and the heap gets shrunk before the field access.
-    if ((sig == SIGSEGV) || (sig == SIGBUS)) {
+    if (stub == nullptr && ((sig == SIGSEGV) || (sig == SIGBUS))) {
       address addr = JNI_FastGetField::find_slowcase_pc(pc);
       if (addr != (address)-1) {
         stub = addr;
@@ -414,49 +411,6 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
   // default stack size (compiler thread needs larger stack)
   size_t s = (thr_type == os::compiler_thread ? 4 * M : 1 * M);
   return s;
-}
-void os::current_stack_base_and_size(address* base, size_t* size) {
-  address bottom;
-#ifdef __APPLE__
-  pthread_t self = pthread_self();
-  *base = (address) pthread_get_stackaddr_np(self);
-  *size = pthread_get_stacksize_np(self);
-  bottom = *base - *size;
-#elif defined(__OpenBSD__)
-  stack_t ss;
-  int rslt = pthread_stackseg_np(pthread_self(), &ss);
-
-  if (rslt != 0)
-    fatal("pthread_stackseg_np failed with error = %d", rslt);
-
-  *base = (address) ss.ss_sp;
-  *size = ss.ss_size;
-  bottom = *base - *size;
-#else
-  pthread_attr_t attr;
-
-  int rslt = pthread_attr_init(&attr);
-
-  // JVM needs to know exact stack location, abort if it fails
-  if (rslt != 0)
-    fatal("pthread_attr_init failed with error = %d", rslt);
-
-  rslt = pthread_attr_get_np(pthread_self(), &attr);
-
-  if (rslt != 0)
-    fatal("pthread_attr_get_np failed with error = %d", rslt);
-
-  if (pthread_attr_getstackaddr(&attr, (void **)&bottom) != 0 ||
-      pthread_attr_getstacksize(&attr, size) != 0) {
-    fatal("Can not locate current stack attributes!");
-  }
-
-  *base = bottom + *size;
-
-  pthread_attr_destroy(&attr);
-#endif
-  assert(os::current_stack_pointer() >= bottom &&
-         os::current_stack_pointer() < *base, "just checking");
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -594,10 +548,6 @@ void os::thread_wx_enable_write_impl() {
 
 #endif // MACOS_AARCH64
 
-static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
-  *(jlong *) dst = *(const jlong *) src;
-}
-
 extern "C" {
   int SpinPause() {
     // We don't use StubRoutines::aarch64::spin_wait stub in order to
@@ -620,6 +570,8 @@ extern "C" {
       assert(VM_Version::supports_sb(), "current CPU does not support SB instruction");
       asm volatile(".inst 0xd50330ff" : : : "memory");
       break;
+    case SpinWait::WFET:
+      ShouldNotReachHere();
 #ifdef ASSERT
     default:
       ShouldNotReachHere();
@@ -661,14 +613,14 @@ extern "C" {
     if (from > to) {
       const jlong *end = from + count;
       while (from < end)
-        atomic_copy64(from++, to++);
+        AtomicAccess::store(to++, AtomicAccess::load(from++));
     }
     else if (from < to) {
       const jlong *end = from;
       from += count - 1;
       to   += count - 1;
       while (from >= end)
-        atomic_copy64(from--, to--);
+        AtomicAccess::store(to--, AtomicAccess::load(from--));
     }
   }
 

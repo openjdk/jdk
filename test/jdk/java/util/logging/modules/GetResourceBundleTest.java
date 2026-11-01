@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static jdk.test.lib.process.ProcessTools.*;
-import jdk.test.lib.compiler.CompilerUtils;
-import static org.testng.Assert.*;
 
-/**
+import jdk.test.lib.compiler.CompilerUtils;
+import static jdk.test.lib.process.ProcessTools.executeTestJava;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/*
  * @test
  * @bug 8129126 8136802 8137316 8137317 8136804 8139350
  * @library /test/lib
@@ -41,7 +44,7 @@ import static org.testng.Assert.*;
  *          java.logging
  * @build GetResourceBundleTest jdk.test.lib.process.ProcessTools
  *        jdk.test.lib.compiler.CompilerUtils
- * @run testng GetResourceBundleTest
+ * @run junit ${test.main.class}
  * @summary Tests Logger.getLogger + logger.getResourceBundle in an named/unnamed module,
  *          resources are in named and unnamed modules respectively.
  *          Positive tests to ensure that a Logger can retrieve ResourceBundle in its current module.
@@ -63,8 +66,8 @@ public class GetResourceBundleTest {
     /**
      * Compiles all modules used by the test, copy resource files.
      */
-    @BeforeClass
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         // compile all modules
         for (String mn : modules) {
             Path msrc = MOD_SRC_DIR.resolve(mn);
@@ -93,6 +96,6 @@ public class GetResourceBundleTest {
                 .outputTo(System.out)
                 .errorTo(System.err)
                 .getExitValue();
-        assertTrue(exitValue == 0);
+        assertEquals(0, exitValue);
     }
 }

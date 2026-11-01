@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,23 @@
  */
 
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Button;
+import java.awt.Dialog;
+import java.awt.Frame;
+import java.awt.GridLayout;
+import java.awt.Panel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
+import java.awt.event.WindowListener;
 
-import static jdk.test.lib.Asserts.*;
-
+import static jdk.test.lib.Asserts.assertEQ;
+import static jdk.test.lib.Asserts.assertFalse;
+import static jdk.test.lib.Asserts.assertTrue;
 
 
 public class TestDialog extends Dialog implements ActionListener,
@@ -207,9 +219,9 @@ public class TestDialog extends Dialog implements ActionListener,
             dummyButton.equals(b)) && robot != null) {
             robot.mouseMove((int) b.getLocationOnScreen().x + b.getSize().width / 2,
                             (int) b.getLocationOnScreen().y + b.getSize().height / 2);
-            robot.delay(delay);
+            robot.waitForIdle(delay);
             robot.click();
-            robot.delay(delay);
+            robot.waitForIdle(delay);
         }
     }
 
@@ -280,9 +292,9 @@ public class TestDialog extends Dialog implements ActionListener,
         if (robot != null) {
             robot.mouseMove((int) topPanel.getLocationOnScreen().x + topPanel.getSize().width / 2,
                             (int) topPanel.getLocationOnScreen().y + topPanel.getSize().height / 2);
-            robot.delay(delay);
+            robot.waitForIdle(delay);
             robot.click();
-            robot.delay(delay);
+            robot.waitForIdle(delay);
         }
     }
 

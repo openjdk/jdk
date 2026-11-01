@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,6 @@
 
 extern "C" {
 
-#define STATUS_FAILED 2
-#define PASSED 0
-
-static volatile jint result = PASSED;
-static volatile long wrongStepEv = 0;
 
 static jvmtiEnv *jvmti = nullptr;
 
@@ -44,31 +39,25 @@ SingleStep(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jmethodID method, jloca
   jvmtiError err;
 
   err = jvmti->GetPhase(&phase);
-  if (err != JVMTI_ERROR_NONE) {
-    result = STATUS_FAILED;
-    COMPLAIN("TEST FAILED: unable to obtain phase of the VM execution during SingleStep callback\n\n");
-  } else {
-    if (phase != JVMTI_PHASE_LIVE) {
-      wrongStepEv++;
-      result = STATUS_FAILED;
-      COMPLAIN("TEST FAILED: SingleStep event received during non-live phase %s\n", TranslatePhase(phase));
-    }
+  check_jvmti_status(jni, err, "Error in GetPhase");
+  if (phase != JVMTI_PHASE_LIVE) {
+    COMPLAIN("TEST FAILED: SingleStep event received during non-live phase %s\n", TranslatePhase(phase));
+    jni->FatalError("Event SingleStep event received during non-live phase.");
   }
 }
 
+/*
+ * The ClassLoad event is not used. This is thread filtered event that should
+ * be sent during start phase. It is enabled to trigger creation of jvmti thread state
+ * in the START phase. So test ensures that even jvmti state for thread is created
+ * before live phase the SingleStep event is sent only during live phase.
+ */
 void JNICALL
-VMDeath(jvmtiEnv *jvmti, JNIEnv *jni) {
-  LOG("VMDeath event received\n");
+ClassLoad(jvmtiEnv *jvmti_env,
+            JNIEnv* jni_env,
+            jthread thread,
+            jclass klass) {
 
-  if (wrongStepEv != 0) {
-    LOG("TEST FAILED: there are %ld SingleStep events\n"
-        "sent during non-live phase of the VM execution\n", wrongStepEv);
-    jni->FatalError("Test Failed.");
-  }
-
-  if (result == STATUS_FAILED) {
-    jni->FatalError("Test Failed.");
-  }
 }
 
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
@@ -105,19 +94,20 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   /* set event callback */
   LOG("setting event callbacks ...\n");
   (void) memset(&callbacks, 0, sizeof(callbacks));
+  callbacks.ClassLoad = &ClassLoad;
   callbacks.SingleStep = &SingleStep;
-  callbacks.VMDeath = &VMDeath;
   err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
 
   LOG("setting event callbacks done\nenabling JVMTI events ...\n");
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, nullptr);
+
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }

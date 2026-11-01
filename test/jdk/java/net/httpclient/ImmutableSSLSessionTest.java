@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,6 @@ import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
-import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -79,7 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        java.net.http/jdk.internal.net.http.common.ImmutableSSLSessionAccess
  * @run junit/othervm -Djdk.httpclient.HttpClient.log=request,response,headers,errors
- *                    ImmutableSSLSessionTest
+ *                    ${test.main.class}
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ImmutableSSLSessionTest implements HttpServerAdapters {
@@ -242,6 +241,7 @@ public class ImmutableSSLSessionTest implements HttpServerAdapters {
             assertEquals(List.of("foo", "bar"),
                     Arrays.asList(ext.getLocalSupportedSignatureAlgorithms()));
             assertEquals(List.of(new SNIHostName("localhost")), ((ExtendedSSLSession) session).getRequestedServerNames());
+            assertEquals("MyNamedGroup", ((ExtendedSSLSession) session).getNamedGroup());
             List<byte[]> status = ext.getStatusResponses();
             assertEquals(1, status.size());
             assertEquals("42", new String(status.get(0), US_ASCII));
@@ -361,6 +361,11 @@ public class ImmutableSSLSessionTest implements HttpServerAdapters {
         @Override
         public String[] getPeerSupportedSignatureAlgorithms() {
             return new String[] {"bar", "foo"};
+        }
+
+        @Override
+        public String getNamedGroup() {
+            return "MyNamedGroup";
         }
 
         @Override

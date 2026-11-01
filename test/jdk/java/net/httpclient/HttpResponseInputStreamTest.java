@@ -45,7 +45,7 @@ import org.junit.jupiter.api.Test;
  * @test
  * @bug 8197564 8228970
  * @summary Simple smoke test for BodySubscriber.asInputStream();
- * @run junit/othervm HttpResponseInputStreamTest
+ * @run junit/othervm ${test.main.class}
  * @author daniel fuchs
  */
 public class HttpResponseInputStreamTest {

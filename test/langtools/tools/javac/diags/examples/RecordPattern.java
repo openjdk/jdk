@@ -23,6 +23,7 @@
 
 // key: compiler.err.not.exhaustive.statement.details
 // key: compiler.misc.record.pattern
+// key: compiler.misc.missing.case
 
 class RecordPattern {
     void t(R r) {

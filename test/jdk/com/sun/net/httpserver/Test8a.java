@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,6 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 6270015
- * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.URIBuilder
- * @run main/othervm Test8a
- * @run main/othervm -Djava.net.preferIPv6Addresses=true Test8a
- * @summary Light weight HTTP server
- */
 
 import com.sun.net.httpserver.*;
 
@@ -43,15 +34,18 @@ import jdk.test.lib.net.URIBuilder;
 /**
  * Test POST large file via fixed len encoding
  */
-
+/*
+ * @test
+ * @bug 6270015
+ * @summary Light weight HTTP server
+ * @library /test/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.URIBuilder
+ * @run main/othervm ${test.main.class}
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
+ */
 public class Test8a extends Test {
 
     public static void main (String[] args) throws Exception {
-        //Logger log = Logger.getLogger ("com.sun.net.httpserver");
-        //ConsoleHandler h = new ConsoleHandler();
-        //h.setLevel (Level.INFO);
-        //log.addHandler (h);
-        //log.setLevel (Level.INFO);
         HttpsServer server = null;
         ExecutorService executor = null;
         try {

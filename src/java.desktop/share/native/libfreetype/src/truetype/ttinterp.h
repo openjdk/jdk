@@ -4,7 +4,7 @@
  *
  *   TrueType bytecode interpreter (specification).
  *
- * Copyright (C) 1996-2025 by
+ * Copyright (C) 1996-2026 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -377,6 +377,14 @@ FT_BEGIN_HEADER
      *     SimSun, NSimSun, and Yu Gothic.
      *
      */
+
+    /*
+     * Native ClearType horizontal execution state.  Microsoft ClearType
+     * uses a 1/16-pixel grid in the ClearType direction; version 40
+     * approximates this by leaving rounded horizontal point moves
+     * unrounded.
+     */
+    FT_Bool  native_cleartype_x;
 
     /* Activate backward compatibility (bit 2) and track IUP (bits 0-1). */
     /* If this is zero, it means that the interpreter is either in v35   */

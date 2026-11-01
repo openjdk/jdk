@@ -67,7 +67,7 @@ import org.junit.jupiter.api.Test;
  *                     -Dhttp3.test.server.encoderTableCapacityLimit=4096
  *                     -Djdk.httpclient.maxLiteralWithIndexing=32
  *                     -Djdk.internal.httpclient.qpack.log.level=EXTRA
- *                     H3InsertionsLimitTest
+ *                     ${test.main.class}
  */
 public class H3InsertionsLimitTest implements HttpServerAdapters {
 

@@ -220,9 +220,9 @@ public:
   void verify_before_evacuation(ShenandoahGeneration* generation);
   void verify_before_update_refs(ShenandoahGeneration* generation);
   void verify_after_update_refs(ShenandoahGeneration* generation);
+  void verify_after_gc(ShenandoahGeneration* generation);
   void verify_before_fullgc(ShenandoahGeneration* generation);
   void verify_after_fullgc(ShenandoahGeneration* generation);
-  void verify_after_degenerated(ShenandoahGeneration* generation);
   void verify_generic(ShenandoahGeneration* generation, VerifyOption option);
 
   // Roots should only contain to-space oops

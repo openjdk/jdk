@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,15 +49,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @run junit/othervm
  *      -Djdk.httpclient.HttpClient.log=errors
  *      -Djdk.httpclient.bufsize=-1
- *      BufferSizePropertyClampTest
+ *      ${test.main.class}
  * @run junit/othervm
  *      -Djdk.httpclient.HttpClient.log=errors
  *      -Djdk.httpclient.bufsize=0
- *      BufferSizePropertyClampTest
+ *      ${test.main.class}
  * @run junit/othervm
  *      -Djdk.httpclient.HttpClient.log=errors
  *      -Djdk.httpclient.bufsize=16385
- *      BufferSizePropertyClampTest
+ *      ${test.main.class}
  */
 
 class BufferSizePropertyClampTest {

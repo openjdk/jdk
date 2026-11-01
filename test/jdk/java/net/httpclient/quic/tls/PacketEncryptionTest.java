@@ -52,7 +52,7 @@ import org.junit.jupiter.api.Test;
  *          java.base/jdk.internal.net.quic
  * @build java.base/sun.security.ssl.QuicTLSEngineImplAccessor
  * @summary known-answer test for packet encryption and decryption
- * @run junit/othervm PacketEncryptionTest
+ * @run junit/othervm ${test.main.class}
  */
 public class PacketEncryptionTest {
 

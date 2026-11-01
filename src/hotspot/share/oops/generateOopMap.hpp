@@ -91,7 +91,7 @@ class CellTypeState {
   unsigned int _state;
 
   // Masks for separating the BITS and INFO portions of a CellTypeState
-  enum { info_mask            = right_n_bits(28),
+  enum { info_mask            = right_n_bits(27),
          bits_mask            = (int)(~info_mask) };
 
   // These constant are used for manipulating the BITS portion of a
@@ -104,18 +104,23 @@ class CellTypeState {
 
   // These constants are used for manipulating the INFO portion of a
   // CellTypeState
-  enum { top_info_bit         = nth_bit(27),
-         not_bottom_info_bit  = nth_bit(26),
-         info_data_mask       = right_n_bits(26),
+  enum { top_info_bit         = nth_bit(26),
+         not_bottom_info_bit  = nth_bit(25),
+         info_data_mask       = right_n_bits(25),
          info_conflict        = info_mask };
 
   // Within the INFO data, these values are used to distinguish different
   // kinds of references.
-  enum { ref_not_lock_bit     = nth_bit(25),  // 0 if this reference is locked as a monitor
-         ref_slot_bit         = nth_bit(24),  // 1 if this reference is a "slot" reference,
+  enum { ref_not_lock_bit     = nth_bit(24),  // 0 if this reference is locked as a monitor
+         ref_slot_bit         = nth_bit(23),  // 1 if this reference is a "slot" reference,
                                               // 0 if it is a "line" reference.
-         ref_data_mask        = right_n_bits(24) };
+         ref_data_mask        = right_n_bits(23) };
 
+  // Within the INFO data, these values are used to distinguish different
+  // kinds of value types.
+  enum { valuetype_slot_bit   = nth_bit(24),  // 1 if this reference is a "slot" value type,
+    // 0 if it is a "line" value type.
+    valuetype_data_mask  = right_n_bits(24) };
 
   // These values are used to initialize commonly used CellTypeState
   // constants.
@@ -307,6 +312,7 @@ class GenerateOopMap {
   bool         _did_relocation;             // was relocation necessary
   bool         _monitor_safe;               // The monitors in this method have been determined
                                             // to be safe.
+  bool         _all_exception_edges;        // All bytecodes can reach containing exception handler.
 
   // Working Cell type state
   int            _state_len;                // Size of states
@@ -395,7 +401,7 @@ class GenerateOopMap {
   void  do_astore                           (int idx);
   void  do_jsr                              (int delta);
   void  do_field                            (int is_get, int is_static, int idx, int bci, Bytecodes::Code bc);
-  void  do_method                           (int is_static, int is_interface, int idx, int bci, Bytecodes::Code bc);
+  void  do_method                           (int is_static, int idx, int bci, Bytecodes::Code bc);
   void  do_multianewarray                   (int dims, int bci);
   void  do_monitorenter                     (int bci);
   void  do_monitorexit                      (int bci);
@@ -455,7 +461,7 @@ class GenerateOopMap {
 
   friend class RelocCallback;
  public:
-  GenerateOopMap(const methodHandle& method);
+  GenerateOopMap(const methodHandle& method, bool all_exception_edges);
 
   // Compute the map - returns true on success and false on error.
   bool compute_map(Thread* current);
@@ -516,7 +522,7 @@ class ResolveOopMapConflicts: public GenerateOopMap {
 #endif
 
  public:
-  ResolveOopMapConflicts(const methodHandle& method) : GenerateOopMap(method) { }
+  ResolveOopMapConflicts(const methodHandle& method) : GenerateOopMap(method, true) { }
   methodHandle do_potential_rewrite(TRAPS);
 };
 
@@ -535,7 +541,7 @@ class GeneratePairingInfo: public GenerateOopMap {
                                            CellTypeState* stack,
                                            int stack_top)                 {}
  public:
-  GeneratePairingInfo(const methodHandle& method) : GenerateOopMap(method)       {};
+  GeneratePairingInfo(const methodHandle& method) : GenerateOopMap(method, false)       {};
 
   // Call compute_map() to generate info.
 };

@@ -76,7 +76,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @run junit/othervm -Dtest.requiresHost=true
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.debug=false
- *                   HttpRedirectTest
+ *                   ${test.main.class}
  *
  */
 public class HttpRedirectTest implements HttpServerAdapters {

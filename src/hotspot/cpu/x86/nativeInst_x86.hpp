@@ -97,11 +97,7 @@ class NativeInstruction {
 };
 
 inline NativeInstruction* nativeInstruction_at(address address) {
-  NativeInstruction* inst = (NativeInstruction*)address;
-#ifdef ASSERT
-  //inst->verify();
-#endif
-  return inst;
+  return (NativeInstruction*)address;
 }
 
 class NativeCall;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,19 @@
  * @bug 4091803 7021373
  * @summary this tests that the constructor of DatagramPacket rejects
  *          bogus arguments properly.
- * @run testng Constructor
+ * @run junit ${test.main.class}
  */
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.expectThrows;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class Constructor {
 
@@ -48,35 +49,33 @@ public class Constructor {
 
     @Test
     public void testNullPacket() {
-        expectThrows(NPE,
+        assertThrows(NPE,
                 () -> new DatagramPacket(null, 100));
     }
     @Test
     public void testNull() throws Exception {
-        expectThrows(NPE, () -> new DatagramPacket(null, 100));
-        expectThrows(NPE, () -> new DatagramPacket(null, 0, 10));
-        expectThrows(NPE, () -> new DatagramPacket(null, 0, 10, LOOPBACK, 80));
-        expectThrows(NPE, () -> new DatagramPacket(null, 10, LOOPBACK, 80));
-        expectThrows(NPE, () -> new DatagramPacket(null, 0, 10, new InetSocketAddress(80)));
-        expectThrows(NPE, () -> new DatagramPacket(null, 10, new InetSocketAddress(80)));
+        assertThrows(NPE, () -> new DatagramPacket(null, 100));
+        assertThrows(NPE, () -> new DatagramPacket(null, 0, 10));
+        assertThrows(NPE, () -> new DatagramPacket(null, 0, 10, LOOPBACK, 80));
+        assertThrows(NPE, () -> new DatagramPacket(null, 10, LOOPBACK, 80));
+        assertThrows(NPE, () -> new DatagramPacket(null, 0, 10, new InetSocketAddress(80)));
+        assertThrows(NPE, () -> new DatagramPacket(null, 10, new InetSocketAddress(80)));
 
         // no Exception expected for null addresses
-        new DatagramPacket(buf, 10, null, 0);
-        new DatagramPacket(buf, 10, 10, null, 0);
+        assertDoesNotThrow(() -> new DatagramPacket(buf, 10, null, 0));
+        assertDoesNotThrow(() -> new DatagramPacket(buf, 10, 10, null, 0));
     }
 
     @Test
     public void testNegativeBufferLength() {
         /* length lesser than buffer length */
-        expectThrows(IAE,
-                () -> new DatagramPacket(buf, -128));
+        assertThrows(IAE, () -> new DatagramPacket(buf, -128));
     }
 
     @Test
     public void testPacketLengthTooLarge() {
         /* length greater than buffer length */
-        expectThrows(IAE,
-                () -> new DatagramPacket(buf, 256));
+        assertThrows(IAE, () -> new DatagramPacket(buf, 256));
     }
 
     @Test
@@ -84,14 +83,14 @@ public class Constructor {
         /* negative port */
         InetAddress addr = InetAddress.getLocalHost();
 
-        expectThrows(IAE,
+        assertThrows(IAE,
                 () -> new DatagramPacket(buf, 100, addr, -1));
     }
 
     @Test
     public void testPortValueTooLarge() {
         /* invalid port value */
-        expectThrows(IAE,
+        assertThrows(IAE,
                 () -> new DatagramPacket(buf, 128, LOOPBACK, Integer.MAX_VALUE));
     }
 
@@ -101,8 +100,9 @@ public class Constructor {
         int length = 50;
         DatagramPacket pkt = new DatagramPacket(buf, offset, length);
 
-        assertFalse((pkt.getData() != buf || pkt.getOffset() != offset ||
-                pkt.getLength() != length), "simple constructor failed");
+        assertSame(buf, pkt.getData());
+        assertEquals(offset, pkt.getOffset());
+        assertEquals(length, pkt.getLength());
     }
 
     @Test
@@ -112,20 +112,21 @@ public class Constructor {
         int port = 8080;
         DatagramPacket packet = new DatagramPacket(buf, offset, length, LOOPBACK, port);
 
-        assertFalse((packet.getData() != buf || packet.getOffset() != offset ||
-                packet.getLength() != length ||
-                packet.getAddress() != LOOPBACK ||
-                packet.getPort() != port), "full constructor failed");
+        assertSame(buf, packet.getData());
+        assertEquals(offset, packet.getOffset());
+        assertEquals(length, packet.getLength());
+        assertSame(LOOPBACK, packet.getAddress());
+        assertEquals(port, packet.getPort());
     }
 
     @Test
     public void testDefaultValues() {
         DatagramPacket packet = new DatagramPacket(buf, 0);
-        assertTrue(packet.getAddress() == null);
-        assertTrue(packet.getPort() == 0);
+        assertNull(packet.getAddress());
+        assertEquals(0, packet.getPort());
 
         DatagramPacket packet1 = new DatagramPacket(buf, 0, 0);
-        assertTrue(packet1.getAddress() == null);
-        assertTrue(packet1.getPort() == 0);
+        assertNull(packet1.getAddress());
+        assertEquals(0, packet1.getPort());
     }
 }

@@ -42,6 +42,29 @@
  *                   compiler.uncommontrap.Decompile
  */
 
+/*
+ * @test
+ * @bug 8275908
+ * @summary Quick test for the new WhiteBox methods of JDK-8275908
+ *
+ * @requires vm.compiler2.enabled & vm.compMode != "Xcomp"
+ * @requires vm.opt.DeoptimizeALot != true
+ * @requires os.arch == "aarch64"
+ *
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -Xbatch -XX:-UseOnStackReplacement -XX:-TieredCompilation
+ *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=100 -XX:PerBytecodeTrapLimit=4
+ *                   -XX:TypeProfileLevel=0
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-AlwaysIncrementalInline -XX:-StressIncrementalInlining
+ *                   -XX:CompileCommand=compileonly,compiler.uncommontrap.Decompile::uncommonTrap
+ *                   -XX:CompileCommand=inline,compiler.uncommontrap.Decompile*::foo
+ *                   -XX:+PreferCallBasedUncommonTraps
+ *                   compiler.uncommontrap.Decompile
+ */
+
 package compiler.uncommontrap;
 
 import java.lang.reflect.Method;
@@ -56,11 +79,7 @@ public class Decompile {
     private static final int PerBytecodeTrapLimit = WB.getIntxVMFlag("PerBytecodeTrapLimit").intValue();
     // The number of interpreter invocations after which a decompiled method will be re-compiled.
     private static final int Tier0InvokeNotifyFreq = (int)Math.pow(2, WB.getIntxVMFlag("Tier0InvokeNotifyFreqLog"));
-    // VM builds without JVMCI like x86_32 call the bimorphic inlining trap just 'bimorphic'
-    // while all the other builds with JVMCI call it 'bimorphic_or_optimized_type_check'.
-    // Only builds with JVMCI have the "EnableJVMCI" flag.
-    private static final boolean isJVMCISupported = (WB.getBooleanVMFlag("EnableJVMCI") != null);
-    private static final String bimorphicTrapName = isJVMCISupported ? "bimorphic_or_optimized_type_check" : "bimorphic";
+    private static final String bimorphicTrapName = "bimorphic";
 
     static class Base {
         void foo() {}

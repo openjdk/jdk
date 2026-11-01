@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.nio.ByteBuffer;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -51,15 +52,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @test
  * @bug 8226303 8235459 8358688 8364733
  * @summary Verify all specified `HttpRequest.BodyPublishers::ofFile` behavior
+ *
  * @build ByteBufferUtils
  *        RecordingSubscriber
- * @run junit OfFileTest
+ *        ReplayTestSupport
+ *
+ * @run junit ${test.main.class}
  *
  * @comment Using `main/othervm` to initiate tests that depend on a custom-configured JVM
- * @run main/othervm -Xmx64m OfFileTest testOOM
+ * @run main/othervm -Xmx64m ${test.main.class} testOOM
  */
 
-public class OfFileTest {
+public class OfFileTest extends ReplayTestSupport {
 
     private static final Path DEFAULT_FS_DIR = Path.of(System.getProperty("user.dir", "."));
 
@@ -89,14 +93,14 @@ public class OfFileTest {
 
     @Test
     void testNullPath() {
-        assertThrows(NullPointerException.class, () -> HttpRequest.BodyPublishers.ofFile(null));
+        assertThrows(NullPointerException.class, () -> BodyPublishers.ofFile(null));
     }
 
     @ParameterizedTest
     @MethodSource("parentDirs")
     void testNonExistentPath(Path parentDir) {
         Path nonExistentPath = createFilePath(parentDir, "testNonExistentPath");
-        assertThrows(FileNotFoundException.class, () -> HttpRequest.BodyPublishers.ofFile(nonExistentPath));
+        assertThrows(FileNotFoundException.class, () -> BodyPublishers.ofFile(nonExistentPath));
     }
 
     @ParameterizedTest
@@ -106,7 +110,7 @@ public class OfFileTest {
         // Create the publisher
         byte[] fileBytes = ByteBufferUtils.byteArrayOfLength(3);
         Path filePath = createFile(parentDir, "testNonExistentPathAtSubscribe", fileBytes);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofFile(filePath);
+        BodyPublisher publisher = BodyPublishers.ofFile(filePath);
 
         // Delete the file
         Files.delete(filePath);
@@ -131,7 +135,7 @@ public class OfFileTest {
     void testIrregularFile(Path parentDir) throws Exception {
 
         // Create the publisher
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofFile(parentDir);
+        BodyPublisher publisher = BodyPublishers.ofFile(parentDir);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -167,7 +171,7 @@ public class OfFileTest {
         // Create the publisher
         byte[] fileBytes = ByteBufferUtils.byteArrayOfLength(BIG_FILE_LENGTH);
         Path filePath = createFile(parentDir, "testFileModificationWhileReading", fileBytes);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofFile(filePath);
+        BodyPublisher publisher = BodyPublishers.ofFile(filePath);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -210,7 +214,7 @@ public class OfFileTest {
         // Create the publisher
         byte[] fileBytes = ByteBufferUtils.byteArrayOfLength(fileLength);
         Path filePath = createFile(parentDir, "testFileOfLength", fileBytes);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofFile(filePath);
+        BodyPublisher publisher = BodyPublishers.ofFile(filePath);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -220,6 +224,24 @@ public class OfFileTest {
         byte[] readBytes = subscriber.drainToByteArray(subscription, Long.MAX_VALUE);
         ByteBufferUtils.assertEquals(fileBytes, readBytes, null);
 
+    }
+
+    @Override
+    Iterable<ReplayTarget> createReplayTargets() {
+        byte[] fileBytes = ByteBufferUtils.byteArrayOfLength(3);
+        ByteBuffer expectedBuffer = ByteBuffer.wrap(fileBytes);
+        return parentDirs()
+                .stream()
+                .map(parentDir -> {
+                    try {
+                        Path filePath = createFile(parentDir, "replayTest", fileBytes);
+                        BodyPublisher publisher = BodyPublishers.ofFile(filePath);
+                        return new ReplayTarget(expectedBuffer, publisher);
+                    } catch (IOException ioe) {
+                        throw new UncheckedIOException(ioe);
+                    }
+                })
+                .toList();
     }
 
     /**
@@ -248,7 +270,7 @@ public class OfFileTest {
         // Create the publisher
         int fileLength = ByteBufferUtils.findLengthExceedingMaxMemory();
         Path filePath = createFileOfLength(parentDir, "testOOM", fileLength);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofFile(filePath);
+        BodyPublisher publisher = BodyPublishers.ofFile(filePath);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();

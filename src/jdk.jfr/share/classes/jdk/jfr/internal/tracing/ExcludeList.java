@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,14 @@ public final class ExcludeList {
         "java.lang.String::checkIndex", // Used by charAt(int)
         "java.lang.String::isLatin1", // Used by charAt()
         "java.lang.String::equals", // Used by StringPool
-        "java.lang.String::hashCode" // Used by StringPool
+        "java.lang.String::hashCode", // Used by StringPool
+        // Used by Bits during Event::commit(), directly or indirectly
+        "java.lang.Integer::reverseBytes",
+        "java.lang.Long::reverseBytes",
+        "java.lang.Float::floatToIntBits",
+        "java.lang.Float::isNaN",
+        "java.lang.Double::doubleToLongBits",
+        "java.lang.Double::isNaN"
     );
 
     public static boolean containsMethod(String methodName) {

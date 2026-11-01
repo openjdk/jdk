@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,15 +156,15 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
 
 GCStatInfo::GCStatInfo(int num_pools) {
   // initialize the arrays for memory usage
-  _before_gc_usage_array = NEW_C_HEAP_ARRAY(MemoryUsage, num_pools, mtInternal);
-  _after_gc_usage_array  = NEW_C_HEAP_ARRAY(MemoryUsage, num_pools, mtInternal);
+  _before_gc_usage_array = NEW_C_HEAP_ARRAY(MemoryUsage, num_pools, mtServiceability);
+  _after_gc_usage_array  = NEW_C_HEAP_ARRAY(MemoryUsage, num_pools, mtServiceability);
   _usage_array_size = num_pools;
   clear();
 }
 
 GCStatInfo::~GCStatInfo() {
-  FREE_C_HEAP_ARRAY(MemoryUsage*, _before_gc_usage_array);
-  FREE_C_HEAP_ARRAY(MemoryUsage*, _after_gc_usage_array);
+  FREE_C_HEAP_ARRAY(_before_gc_usage_array);
+  FREE_C_HEAP_ARRAY(_after_gc_usage_array);
 }
 
 void GCStatInfo::set_gc_usage(int pool_index, MemoryUsage usage, bool before_gc) {

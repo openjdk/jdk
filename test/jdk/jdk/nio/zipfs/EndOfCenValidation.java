@@ -142,9 +142,8 @@ public class EndOfCenValidation {
      * @param msg exception message to expect
      */
     private static void verifyRejection(Path zip, String msg) {
-        ZipException ex = assertThrows(ZipException.class, () -> {
-            FileSystems.newFileSystem(zip);
-        });
+        ZipException ex = assertThrows(ZipException.class,
+                () -> FileSystems.newFileSystem(zip));
         assertEquals(msg, ex.getMessage());
     }
 }

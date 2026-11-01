@@ -34,6 +34,7 @@ import java.util.Set;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
+import jdk.internal.reflect.PreviewAccessFlags;
 
 /**
  * Models a single entry in the {@link InnerClassesAttribute}.
@@ -84,7 +85,7 @@ public sealed interface InnerClassInfo
      * @see AccessFlag.Location#INNER_CLASS
      */
     default Set<AccessFlag> flags() {
-        return AccessFlag.maskToAccessFlags(flagsMask(), AccessFlag.Location.INNER_CLASS);
+        return PreviewAccessFlags.maskToAccessFlags(flagsMask(), AccessFlag.Location.INNER_CLASS);
     }
 
     /**

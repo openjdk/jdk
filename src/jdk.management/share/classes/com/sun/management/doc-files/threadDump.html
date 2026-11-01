@@ -1,0 +1,283 @@
+<!doctype html>
+<!--
+ Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+<html lang="en">
+<head>
+    <title>JSON Thread Dump Format</title>
+</head>
+<body>
+
+<h1>JSON Thread Dump Format</h1>
+
+The JSON text is an object with a member named "threadDump" that is an object with the
+following members:
+<table class="striped">
+    <caption style="display:none">threadDump members</caption>
+    <thead>
+    <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Data type</th>
+        <th scope="col">Optional</th>
+        <th scope="col">Description</th>
+    </tr>
+</thead>
+    <tbody>
+    <tr>
+        <th scope="row"> formatVersion </th>
+        <td> number </td>
+        <td> no </td>
+        <td> The format version. Its value is 2. </td>
+    </tr>
+    <tr>
+        <th scope="row"> processId </th>
+        <td> number </td>
+        <td> no </td>
+        <td> The process identifier (pid) of the VM that generated the thread dump. </td>
+    </tr>
+    <tr>
+        <th scope="row"> time </th>
+        <td> string </td>
+        <td> no </td>
+        <td> The timestamp, in ISO 8601 format, when the thread dump was generated. </td>
+    </tr>
+    <tr>
+        <th scope="row"> runtimeVersion </th>
+        <td> string </td>
+        <td> no </td>
+        <td> The {@linkplain java.lang.Runtime.Version runtime version} of the VM that
+            generated the thread dump. </td>
+    </tr>
+    <tr>
+        <th scope="row"> threadContainers </th>
+        <td> array </td>
+        <td> no </td>
+        <td> The array of thread "groupings". The first element is the root grouping/container
+            with name "&lt;root&gt;". </td>
+    </tr>
+    </tbody>
+</table>
+
+<p> Each element in the "threadContainers" array is an object that represents a
+    grouping/container of threads with the following members:
+<table class="striped">
+    <caption style="display:none">threadContainers members</caption>
+    <thead>
+    <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Data type</th>
+        <th scope="col">Optional</th>
+        <th scope="col">Description</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row"> container </th>
+        <td> string </td>
+        <td> no </td>
+        <td> The thread container name. The name is unique. </td>
+    </tr>
+    <tr>
+        <th scope="row"> parent </th>
+        <td> string or null </td>
+        <td> no </td>
+        <td> The thread container parent's name or {@code null} for the root container. </td>
+    </tr>
+    <tr>
+        <th scope="row"> owner </th>
+        <td> number or null </td>
+        <td> no </td>
+        <td> The {@linkplain java.lang.Thread#threadId() thread identifier} of the thread
+            that owns the thread container or {@code null} if no owner. </td>
+    </tr>
+    <tr>
+        <th scope="row"> threads </th>
+        <td> array </td>
+        <td> no </td>
+        <td> The array of threads in the thread grouping/container. </td>
+    </tr>
+    <tr>
+        <th scope="row"> threadCount </th>
+        <td> number </td>
+        <td> yes </td>
+        <td> The number of threads in the thread grouping/container. If the thread dump
+            includes all virtual threads then this count is the same as the number of
+            elements in the threads array. If all virtual threads are not included then
+            it may be larger than the number of elements in the threads array. </td>
+    </tr>
+    </tbody>
+</table>
+
+<p> Each element in a "threads" array is an object with the following members:
+<table class="striped">
+    <caption style="display:none">threads members</caption>
+    <thead>
+    <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Data type</th>
+        <th scope="col">Optional</th>
+        <th scope="col">Description</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row"> tid </th>
+        <td> number </td>
+        <td> no </td>
+        <td> The {@linkplain java.lang.Thread#threadId() thread identifier}. </td>
+    </tr>
+    <tr>
+        <th scope="row"> time </th>
+        <td> string </td>
+        <td> no </td>
+        <td> The timestamp, in ISO 8601 format, when the thread was sampled. </td>
+    </tr>
+    <tr>
+        <th scope="row"> name </th>
+        <td> string </td>
+        <td> no </td>
+        <td> The {@linkplain java.lang.Thread#getName() thread name}. </td>
+    </tr>
+    <tr>
+        <th scope="row"> state </th>
+        <td> string </td>
+        <td> no </td>
+        <td> The string representation of the {@linkplain java.lang.Thread#getState() thread state}. </td>
+    </tr>
+    <tr>
+        <th scope="row"> virtual </th>
+        <td> boolean </td>
+        <td> yes </td>
+        <td> {@code true} if the thread is a {@linkplain java.lang.Thread#isVirtual() virtual thread}. </td>
+    </tr>
+    <tr>
+        <th scope="row"> carrier </th>
+        <td> number </td>
+        <td> yes </td>
+        <td> The thread identifier of the carrier thread when this thread is a <em>mounted</em>
+            virtual thread. </td>
+    </tr>
+    <tr>
+        <th scope="row"> stack </th>
+        <td> array </td>
+        <td> no </td>
+        <td> The thread stack. The elements in the array are of type string with the string
+            representation of a {@linkplain java.lang.StackTraceElement stack trace element}.
+            If the thread stack has one or more elements, then the first element is the top
+            of the stack. </td>
+    </tr>
+    <tr>
+        <th scope="row"> parkBlocker </th>
+        <td> object </td>
+        <td> yes </td>
+        <td> The object responsible for the thread parking. Its members identify the
+             blocker object, and the exclusive owner thread if owned. </td>
+    </tr>
+    <tr>
+        <th scope="row"> blockedOn </th>
+        <td> string </td>
+        <td> yes </td>
+        <td> The {@linkplain java.util.Objects#toIdentityString(Object) identity string} of the
+            object that the thread is blocked on waiting to enter/re-enter a synchronization
+            method or block. </td>
+    </tr>
+    <tr>
+        <th scope="row"> waitingOn </th>
+        <td> string </td>
+        <td> yes </td>
+        <td> The {@linkplain java.util.Objects#toIdentityString(Object) identity string}
+            of the object that the thread is {@linkplain java.lang.Object#wait() waiting}
+            to be notified. </td>
+    </tr>
+    <tr>
+        <th scope="row"> monitorsOwned </th>
+        <td> array </td>
+        <td> yes </td>
+        <td> The objects for which a monitor is owned by the thread. </td>
+    </tr>
+    </tbody>
+</table>
+
+<p> A "parkBlocker" object has the following members:
+<table class="striped">
+    <caption style="display:none">parkBlocker members</caption>
+    <thead>
+    <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Data type</th>
+        <th scope="col">Optional</th>
+        <th scope="col">Description</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row"> object </th>
+        <td> string </td>
+        <td> no </td>
+        <td> The {@linkplain java.util.Objects#toIdentityString(Object) identity string}
+             of the {@linkplain java.util.concurrent.locks.LockSupport#park(Object) blocker
+             object} responsible for the thread parking. </td>
+    </tr>
+    <tr>
+        <th scope="row"> owner </th>
+        <td> number </td>
+        <td> yes </td>
+        <td> The thread identifier of the exclusive owner thread when the parkBlocker is
+             an {@link java.util.concurrent.locks.AbstractOwnableSynchronizer}. </td>
+    </tr>
+    </tbody>
+</table>
+
+<p> Each element in a "monitorsOwned" array is an object with the following members: </p>
+<table class="striped">
+    <caption style="display:none">monitorsOwned members</caption>
+    <thead>
+    <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Data type</th>
+        <th scope="col">Optional</th>
+        <th scope="col">Description</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row"> depth </th>
+        <td> number </td>
+        <td> no </td>
+        <td> The stack depth at which the monitors are owned. </td>
+    </tr>
+    <tr>
+        <th scope="row"> locks </th>
+        <td> array </td>
+        <td> no </td>
+        <td> The elements of the array are of type string or null. An element of type string
+            has a value that is the {@linkplain java.util.Objects#toIdentityString(Object)
+            identity string} of the object for which the monitor is owned by the thread.
+            The element is of type null when the object has been eliminated. </td>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>

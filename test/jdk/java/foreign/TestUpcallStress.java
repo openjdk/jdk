@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,13 @@
 /*
  * @test
  * @requires jdk.foreign.linker != "FALLBACK"
- * @requires (os.arch == "aarch64" | os.arch=="riscv64") & os.name == "Linux"
- * @requires os.maxMemory > 4G
  * @requires vm.compMode != "Xcomp"
  * @modules java.base/jdk.internal.foreign
+ * @library /test/lib
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  * @bug 8337753
  *
- * @run testng/native/othervm/timeout=3200
+ * @run junit/native/othervm
  *   -Xcheck:jni
  *   -XX:+IgnoreUnrecognizedVMOptions
  *   -XX:-VerifyDependencies
@@ -44,7 +43,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 
-import org.testng.annotations.Test;
+import jdk.test.lib.Utils;
 
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
@@ -53,17 +52,41 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestUpcallStress extends TestUpcallBase {
 
     static {
         System.loadLibrary("TestUpcall");
     }
 
-    @Test(dataProvider="functions", dataProviderClass=CallGeneratorHelper.class)
+    static final int THREAD_COUNT = 100;
+
+    ExecutorService executor;
+
+    @BeforeAll
+    public void setup() {
+        executor = Executors.newFixedThreadPool(THREAD_COUNT);
+    }
+
+    @AfterAll
+    public void tearDown() throws InterruptedException {
+        executor.shutdown();
+        // Let it run for a while, and then just terminate
+        executor.awaitTermination(Utils.adjustTimeout(30), TimeUnit.SECONDS);
+    }
+
+
+    @ParameterizedTest
+    @MethodSource("functions")
     public void testUpcallsStress(int count, String fName, Ret ret, List<ParamType> paramTypes,
-                                  List<StructFieldType> fields) throws Throwable {
-        ExecutorService executor = Executors.newFixedThreadPool(16);
-        for (int threadIdx = 0; threadIdx < 16; threadIdx++) {
+                                  List<StructFieldType> fields) {
+        for (int threadIdx = 0; threadIdx < THREAD_COUNT; threadIdx++) {
             executor.submit(() -> {
                 for (int iter = 0; iter < 10000; iter++) {
                     List<Consumer<Object>> returnChecks = new ArrayList<>();
@@ -91,8 +114,5 @@ public class TestUpcallStress extends TestUpcallBase {
                 }
             });
         }
-        // This shutdownNow is 'wrong', since it doesn't wait for tasks to terminate,
-        // but it seems to be the only way to reproduce the race of JDK-8337753
-        executor.shutdownNow();
     }
 }

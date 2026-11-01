@@ -29,7 +29,7 @@
  *        ReferenceTracker
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
- *                     BasicHTTP2Test
+ *                     ${test.main.class}
  * @summary Basic HTTP/2 test when HTTP/3 is requested
  */
 

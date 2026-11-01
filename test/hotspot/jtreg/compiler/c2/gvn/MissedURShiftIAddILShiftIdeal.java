@@ -30,7 +30,7 @@ import java.util.Random;
 
 /*
  * @test
- * @bug 8378413
+ * @bug 8378413 8379544
  * @key randomness
  * @summary Verify that URShift{I,L}Node::Ideal optimizes ((x << C) + y) >>> C
  *          regardless of Add input order, i.e. it is commutative w.r.t. the addition.
@@ -50,8 +50,8 @@ public class MissedURShiftIAddILShiftIdeal {
         framework.start();
     }
 
-    @Run(test = {"testI", "testICommuted", "testIComputedY",
-                  "testL", "testLCommuted", "testLComputedY"})
+    @Run(test = {"testI", "testICommuted", "testIComputedY", "testIComputedX",
+                  "testL", "testLCommuted", "testLComputedY", "testLComputedX"})
     public void runMethod() {
         int xi = RANDOM.nextInt();
         int yi = RANDOM.nextInt();
@@ -71,6 +71,7 @@ public class MissedURShiftIAddILShiftIdeal {
         Asserts.assertEQ(((x << 3) + y) >>> 3, testI(x, y));
         Asserts.assertEQ((y + (x << 5)) >>> 5, testICommuted(x, y));
         Asserts.assertEQ(((x << 7) + (a ^ b)) >>> 7, testIComputedY(x, a, b));
+        Asserts.assertEQ((((a ^ b) << 19) + y) >>> 19, testIComputedX(a, b, y));
     }
 
     @DontCompile
@@ -78,6 +79,7 @@ public class MissedURShiftIAddILShiftIdeal {
         Asserts.assertEQ(((x << 9) + y) >>> 9, testL(x, y));
         Asserts.assertEQ((y + (x << 11)) >>> 11, testLCommuted(x, y));
         Asserts.assertEQ(((x << 13) + (a ^ b)) >>> 13, testLComputedY(x, a, b));
+        Asserts.assertEQ((((a ^ b) << 19) + y) >>> 19, testLComputedX(a, b, y));
     }
 
     @Test
@@ -135,4 +137,39 @@ public class MissedURShiftIAddILShiftIdeal {
     static long testLComputedY(long x, long a, long b) {
         return ((x << 13) + (a ^ b)) >>> 13;
     }
+
+    @Test
+    // (((a ^ b) << v) + y) >>> 19  =>  ((a ^ b) + (y >>> 19)) & mask
+    // v is only known to be 19 after loop optimization, so LShiftI's shift count
+    // changes mid-IGVN. URShiftI must be notified through AddI (Case 2).
+    @IR(counts = {IRNode.LSHIFT_I,  "0",
+                  IRNode.URSHIFT_I, "1",
+                  IRNode.AND_I,     "1"})
+    static int testIComputedX(int a, int b, int y) {
+        int u = 19;
+        int v = 0;
+        do {
+            u--;
+            v++;
+        } while (u > 0);
+        return (((a ^ b) << v) + y) >>> 19;
+    }
+
+    @Test
+    // (((a ^ b) << v) + y) >>> 19  =>  ((a ^ b) + (y >>> 19)) & mask
+    // v is only known to be 19 after loop optimization, so LShiftL's shift count
+    // changes mid-IGVN. URShiftL must be notified through AddL (Case 2).
+    @IR(counts = {IRNode.LSHIFT_L,  "0",
+                  IRNode.URSHIFT_L, "1",
+                  IRNode.AND_L,     "1"})
+    static long testLComputedX(long a, long b, long y) {
+        int u = 19;
+        int v = 0;
+        do {
+            u--;
+            v++;
+        } while (u > 0);
+        return (((a ^ b) << v) + y) >>> 19;
+    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,17 +33,17 @@
  * @run main/othervm/timeout=300
  *          -Djdk.internal.httpclient.debug=err
  *          -Djdk.httpclient.HttpClient.log=headers
- *          DigestEchoClientSSL SSL SERVER307
+ *          ${test.main.class} SSL SERVER307
  * @run main/othervm/timeout=300
  *          -Djdk.httpclient.http3.maxDirectConnectionTimeout=100
  *          -Djdk.httpclient.HttpClient.log=headers
- *          DigestEchoClientSSL SSL SERVER PROXY
+ *          ${test.main.class} SSL SERVER PROXY
  * @run main/othervm/timeout=300
  *          -Djdk.http.auth.proxying.disabledSchemes=
  *          -Djdk.http.auth.tunneling.disabledSchemes=
  *          -Djdk.httpclient.http3.maxDirectConnectionTimeout=100
  *          -Djdk.httpclient.HttpClient.log=headers
- *          DigestEchoClientSSL SSL PROXY
+ *          ${test.main.class} SSL PROXY
  *
  */
 

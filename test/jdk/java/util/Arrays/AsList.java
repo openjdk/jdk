@@ -25,13 +25,18 @@
  * @test
  * @bug 8155600
  * @summary Tests for Arrays.asList()
+ * @library /test/lib
  * @run junit AsList
  */
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.IntStream;
+
+import jdk.test.lib.valueclass.AsValueClass;
 
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -41,6 +46,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AsList {
+
+    @AsValueClass
+    record V(int x) {}
+
     /*
      * Iterator contract test
      */
@@ -74,7 +83,12 @@ public class AsList {
             { new Object[] { null, null, null } },
             { new Object[] { 1, 2, 3, null, 4 } },
             { new Object[] { "a", "a", "a", "a" } },
-            { IntStream.range(0, 100).boxed().toArray() }
+            { IntStream.range(0, 100).boxed().toArray() },
+            { new Object[] { new V(1), new V(2), null, new V(3) } },
+            { new Object[] { Integer.valueOf(1), Integer.valueOf(2), null, Integer.valueOf(3) } },
+            { new Object[] { LocalDate.of(2000, 1, 1), LocalDate.of(2000, 12, 31), LocalDate.now() } },
+            { new Object[] { Optional.of(1), Optional.empty(), Optional.of("a") } },
+            { new Object[] { Boolean.TRUE, Boolean.FALSE, null } }
         };
     }
 }

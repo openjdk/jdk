@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,11 +117,8 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      * does not exist.
      *
      * <p> When the format is specified as {@link ThreadDumpFormat#JSON JSON}, the
-     * thread dump is generated in JavaScript Object Notation.
-     * <a href="doc-files/threadDump.schema.json">threadDump.schema.json</a>
-     * describes the thread dump format in draft
-     * <a href="https://tools.ietf.org/html/draft-json-schema-language-02">
-     * JSON Schema Language version 2</a>.
+     * thread dump is generated as JSON text in the <a href="doc-files/threadDump.html">
+     * JSON Thread Dump Format</a>.
      *
      * <p> The thread dump will include output for all platform threads. It may
      * include output for some or all virtual threads.

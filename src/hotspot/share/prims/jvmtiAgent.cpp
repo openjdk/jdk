@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,7 +247,7 @@ static void vm_exit(const JvmtiAgent* agent, const char* sub_msg1, const char* s
     jio_snprintf(buf, len, "%s%s%s%s", not_found_error_msg, agent->name(), sub_msg1, &ebuf[0]);
   }
   vm_exit_during_initialization(buf, nullptr);
-  FREE_C_HEAP_ARRAY(char, buf);
+  FREE_C_HEAP_ARRAY(buf);
 }
 
 #ifdef ASSERT
@@ -578,7 +578,7 @@ static bool invoke_Agent_OnAttach(JvmtiAgent* agent, outputStream* st) {
 #if INCLUDE_CDS
 static void check_cds_dump(JvmtiAgent* agent) {
   if (CDSConfig::new_aot_flags_used()) { // JEP 483
-    // Agents are allowed with -XX:AOTMode=record and -XX:AOTMode=on/auto.
+    // Agents are allowed with -XX:AOTMode=record and -XX:AOTMode=required/auto.
     // Agents are completely disabled when -XX:AOTMode=create (see cdsConfig.cpp)
     assert(!CDSConfig::is_dumping_final_static_archive(), "agents should have been disabled with -XX:AOTMode=create");
   } else if (CDSConfig::is_dumping_classic_static_archive() || CDSConfig::is_dumping_dynamic_archive()) {

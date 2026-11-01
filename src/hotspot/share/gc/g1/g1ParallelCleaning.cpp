@@ -24,45 +24,16 @@
 
 
 #include "gc/g1/g1ParallelCleaning.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
-
-#if INCLUDE_JVMCI
-JVMCICleaningTask::JVMCICleaningTask() :
-  _cleaning_claimed(false) {
-}
-
-bool JVMCICleaningTask::claim_cleaning_task() {
-  if (_cleaning_claimed.load_relaxed()) {
-    return false;
-  }
-
-  return _cleaning_claimed.compare_set(false, true);
-}
-
-void JVMCICleaningTask::work(bool unloading_occurred) {
-  // One worker will clean JVMCI metadata handles.
-  if (unloading_occurred && EnableJVMCI && claim_cleaning_task()) {
-    JVMCI::do_unloading(unloading_occurred);
-  }
-}
-#endif // INCLUDE_JVMCI
 
 G1ParallelCleaningTask::G1ParallelCleaningTask(bool unloading_occurred) :
   WorkerTask("G1 Parallel Cleaning"),
   _unloading_occurred(unloading_occurred),
   _code_cache_task(unloading_occurred),
-  JVMCI_ONLY(_jvmci_cleaning_task() COMMA)
   _klass_cleaning_task() {
 }
 
 // The parallel work done by all worker threads.
 void G1ParallelCleaningTask::work(uint worker_id) {
-  // Clean JVMCI metadata handles.
-  // Execute this task first because it is serial task.
-  JVMCI_ONLY(_jvmci_cleaning_task.work(_unloading_occurred);)
-
   // Do first pass of code cache cleaning.
   _code_cache_task.work(worker_id);
 

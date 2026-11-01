@@ -49,7 +49,7 @@ import org.junit.jupiter.api.Test;
  * @test
  * @summary Basic tests for API specified exceptions from Handler,
  *          and Subscriber convenience static factory methods.
- * @run junit SubscriberAPIExceptions
+ * @run junit ${test.main.class}
  */
 
 public class SubscriberAPIExceptions {

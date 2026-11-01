@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
   jobjectArray args;
   jobject obj;
   jmmOptionalSupport mos;
-  jint ret = jmm_interface_management_ext->GetOptionalSupport(env, &mos);
+  jmm_interface_management_ext->GetOptionalSupport(env, &mos);
   jsize num_commands;
   dcmdInfo* dcmd_info_array;
   jstring jname, jdesc, jimpact, cmd;

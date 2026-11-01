@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,8 +130,10 @@ public class Locations {
     static final Path thisSystemModules = javaHome.resolve("lib").resolve("modules");
 
     Map<Path, FileSystem> fileSystems = new LinkedHashMap<>();
-    List<Closeable> closeables = new ArrayList<>();
+    // List of resources to be closed (self-sychronized).
+    private final List<Closeable> closeables = new ArrayList<>();
     private String releaseVersion = null;
+    private boolean previewMode = false;
 
     Locations() {
         initHandlers();
@@ -145,15 +147,26 @@ public class Locations {
         }
     }
 
+    private void addCloseable(Closeable c) {
+        synchronized (closeables) {
+            closeables.add(c);
+        }
+    }
+
     public void close() throws IOException {
         ListBuffer<IOException> list = new ListBuffer<>();
-        closeables.forEach(closeable -> {
+        Closeable[] arr;
+        synchronized (closeables) {
+            arr = closeables.toArray(Closeable[]::new);
+            closeables.clear();
+        }
+        for (Closeable closeable : arr) {
             try {
                 closeable.close();
             } catch (IOException ex) {
                 list.add(ex);
             }
-        });
+        }
         if (list.nonEmpty()) {
             IOException ex = new IOException();
             for (IOException e: list)
@@ -224,6 +237,11 @@ public class Locations {
     public void setMultiReleaseValue(String multiReleaseValue) {
         // Null is implicitly allowed and unsets the value.
         this.releaseVersion = multiReleaseValue;
+    }
+
+    public void setPreviewMode(boolean previewMode) {
+        // Null is implicitly allowed and unsets the value.
+        this.previewMode = previewMode;
     }
 
     private boolean contains(Collection<Path> searchPath, Path file) throws IOException {
@@ -1459,7 +1477,7 @@ public class Locations {
                                 String moduleName = readModuleName(moduleInfoClass);
                                 Path modulePath = fs.getPath("classes");
                                 fileSystems.put(p, fs);
-                                closeables.add(fs);
+                                addCloseable(fs);
                                 fs = null; // prevent fs being closed in the finally clause
                                 return new Pair<>(moduleName, modulePath);
                             } finally {
@@ -1950,24 +1968,33 @@ public class Locations {
                     FileSystem jrtfs;
 
                     if (isCurrentPlatform(systemJavaHome)) {
-                        jrtfs = FileSystems.getFileSystem(jrtURI);
+                        JRTIndex jrtIndex = JRTIndex.instance(previewMode);
+                        addCloseable(jrtIndex);
+                        jrtfs = jrtIndex.getFileSystem();
                     } else {
+                        ClassLoader currentLoader = Locations.class.getClassLoader();
                         try {
                             Map<String, String> attrMap =
-                                    Collections.singletonMap("java.home", systemJavaHome.toString());
+                                    Map.of("java.home", systemJavaHome.toString(),
+                                            "previewMode", String.valueOf(previewMode));
                             jrtfs = FileSystems.newFileSystem(jrtURI, attrMap);
+                            // Ensure the file system’s class loader is closed so that
+                            // the ${systemJavaHome}/lib/jrt-fs.jar is not left open.
+                            ClassLoader cl = jrtfs.provider().getClass().getClassLoader();
+                            if (cl != currentLoader && cl instanceof URLClassLoader urlcl) {
+                                closeables.add(urlcl);
+                            }
                         } catch (ProviderNotFoundException ex) {
                             URL jfsJar = resolveInJavaHomeLib(systemJavaHome, "jrt-fs.jar").toUri().toURL();
-                            ClassLoader currentLoader = Locations.class.getClassLoader();
                             URLClassLoader fsLoader =
                                     new URLClassLoader(new URL[] {jfsJar}, currentLoader);
 
                             jrtfs = FileSystems.newFileSystem(jrtURI, Collections.emptyMap(), fsLoader);
 
-                            closeables.add(fsLoader);
+                            addCloseable(fsLoader);
                         }
 
-                        closeables.add(jrtfs);
+                        addCloseable(jrtfs);
                     }
 
                     modules = jrtfs.getPath("/modules");

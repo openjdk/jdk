@@ -1450,7 +1450,8 @@ public class StampedLock implements java.io.Serializable {
                 if (q.status < 0) {              // cancelled
                     if ((s == null ? casTail(q, p) : s.casPrev(q, p)) &&
                         q.prev == p) {
-                        p.casNext(q, s);         // OK if fails
+                        if (s != null)
+                            p.casNext(q, s);     // OK if fails
                         if (p.prev == null)
                             signalNext(p);
                     }

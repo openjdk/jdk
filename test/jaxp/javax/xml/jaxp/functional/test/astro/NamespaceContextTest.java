@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,18 @@
  */
 package test.astro;
 
-import static javax.xml.XMLConstants.DEFAULT_NS_PREFIX;
-import static javax.xml.XMLConstants.NULL_NS_URI;
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.namespace.QName;
 
-import org.testng.annotations.Test;
+import static javax.xml.XMLConstants.DEFAULT_NS_PREFIX;
+import static javax.xml.XMLConstants.NULL_NS_URI;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm test.astro.NamespaceContextTest
+ * @run junit/othervm test.astro.NamespaceContextTest
  * @summary javax.xml.namespace.QName tests
  */
 public class NamespaceContextTest {
@@ -47,9 +47,9 @@ public class NamespaceContextTest {
     @Test
     public void testQNameConstructor() {
         QName qname = new QName(NS_URI, LOCAL_PART, PREFIX);
-        assertEquals(qname.getNamespaceURI(), NS_URI);
-        assertEquals(qname.getLocalPart(), LOCAL_PART);
-        assertEquals(qname.getPrefix(), PREFIX);
+        assertEquals(NS_URI, qname.getNamespaceURI());
+        assertEquals(LOCAL_PART, qname.getLocalPart());
+        assertEquals(PREFIX, qname.getPrefix());
     }
 
     /*
@@ -59,9 +59,9 @@ public class NamespaceContextTest {
     @Test
     public void testDefaultFields() {
         QName qname = new QName(LOCAL_PART); // just the local part specified
-        assertEquals(qname.getNamespaceURI(), NULL_NS_URI);
-        assertEquals(qname.getLocalPart(), LOCAL_PART);
-        assertEquals(qname.getPrefix(), DEFAULT_NS_PREFIX);
+        assertEquals(NULL_NS_URI, qname.getNamespaceURI());
+        assertEquals(LOCAL_PART, qname.getLocalPart());
+        assertEquals(DEFAULT_NS_PREFIX, qname.getPrefix());
     }
 
     /*
@@ -71,9 +71,9 @@ public class NamespaceContextTest {
     @Test
     public void testDefaultPrefix() {
         QName qname = new QName(NS_URI, LOCAL_PART); // no pref
-        assertEquals(qname.getNamespaceURI(), NS_URI);
-        assertEquals(qname.getLocalPart(), LOCAL_PART);
-        assertEquals(qname.getPrefix(), DEFAULT_NS_PREFIX);
+        assertEquals(NS_URI, qname.getNamespaceURI());
+        assertEquals(LOCAL_PART, qname.getLocalPart());
+        assertEquals(DEFAULT_NS_PREFIX, qname.getPrefix());
     }
 
     /*
@@ -83,6 +83,6 @@ public class NamespaceContextTest {
     @Test
     public void testQNameString() {
         QName qname = new QName(NS_URI, LOCAL_PART, PREFIX);
-        assertEquals(QName.valueOf(qname.toString()), qname);
+        assertEquals(qname, QName.valueOf(qname.toString()));
     }
 }

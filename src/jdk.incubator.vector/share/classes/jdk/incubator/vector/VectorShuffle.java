@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,7 @@ import java.util.function.IntUnaryOperator;
  *           the element type of a vector
  */
 @SuppressWarnings("exports")
-public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupport.VectorShuffle<E> {
+public abstract sealed class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupport.VectorShuffle<E> permits AbstractShuffle {
     VectorShuffle(Object indices) {
         super(indices);
     }

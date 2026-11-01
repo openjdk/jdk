@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @run testng TestMemoryDereference
+ * @run junit TestMemoryDereference
  */
 
 import java.lang.foreign.MemorySegment;
@@ -32,11 +32,15 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import java.lang.foreign.ValueLayout;
-import org.testng.annotations.*;
 
 import static java.lang.foreign.ValueLayout.*;
-import static org.testng.Assert.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestMemoryDereference {
 
     static class Accessor<X> {
@@ -77,9 +81,9 @@ public class TestMemoryDereference {
             MemorySegment segment = MemorySegment.ofArray(new byte[32]);
             ByteBuffer buffer = segment.asByteBuffer();
             segmentSetter.set(segment, value);
-            assertEquals(bufferGetter.get(buffer), value);
+            assertEquals(value, bufferGetter.get(buffer));
             bufferSetter.set(buffer, value);
-            assertEquals(value, segmentGetter.get(segment));
+            assertEquals(segmentGetter.get(segment), value);
         }
 
         <Z> Accessor<Z> of(Z value,
@@ -89,7 +93,8 @@ public class TestMemoryDereference {
         }
     }
 
-    @Test(dataProvider = "accessors")
+    @ParameterizedTest
+    @MethodSource("accessors")
     public void testMemoryAccess(String testName, Accessor<?> accessor) {
         accessor.test();
     }
@@ -98,7 +103,6 @@ public class TestMemoryDereference {
     static final ByteOrder LE = ByteOrder.LITTLE_ENDIAN;
     static final ByteOrder NE = ByteOrder.nativeOrder();
 
-    @DataProvider(name = "accessors")
     static Object[][] accessors() {
         return new Object[][]{
 

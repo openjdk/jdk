@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @library /test/lib
  * @build jdk.test.lib.util.JarUtils jdk.test.lib.process.*
  *        PrefsSpi StubPreferencesFactory StubPreferences
- * @run testng PrefsSpiTest
+ * @run junit PrefsSpiTest
  */
 
 import java.io.File;
@@ -36,15 +36,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
-
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -53,14 +50,19 @@ import static java.util.Arrays.asList;
 import static jdk.test.lib.Utils.TEST_CLASSES;
 import static jdk.test.lib.Utils.TEST_CLASS_PATH;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
 public class PrefsSpiTest {
 
     private static final Path SPIJAR = Path.of("extDir", "PrefsSpi.jar");
     private static final String SPIJAR_CP = TEST_CLASS_PATH
             + File.pathSeparator + SPIJAR.toString();
 
-    @BeforeClass
-    public void initialize() throws Exception {
+    @BeforeAll
+    public static void initialize() throws Exception {
         Path xdir = Path.of("jarDir");
 
         Path config = xdir.resolve("META-INF/services/java.util.prefs.PreferencesFactory");
@@ -77,19 +79,18 @@ public class PrefsSpiTest {
         JarUtils.createJarFile(SPIJAR, xdir);
     }
 
-    @DataProvider
-    public Object[][] testCases() {
-        return new Object[][]{
-            // CLI options,                        runtime arguments
-            {List.of("-cp", SPIJAR_CP,
-                     "-Djava.util.prefs.PreferencesFactory=StubPreferencesFactory"),
-                                                   "StubPreferences"},
-            {List.of("-cp", TEST_CLASS_PATH),      "java.util.prefs.*"},
-            {List.of("-cp", SPIJAR_CP),            "StubPreferences"}
-        };
+    public static Stream<Arguments> testCases() {
+        return Stream.of
+            (// CLI options,             runtime arguments
+             Arguments.of(List.of("-cp", SPIJAR_CP,
+                 "-Djava.util.prefs.PreferencesFactory=StubPreferencesFactory"),
+                 "StubPreferences"),
+             Arguments.of(List.of("-cp", TEST_CLASS_PATH), "java.util.prefs.*"),
+             Arguments.of(List.of("-cp", SPIJAR_CP), "StubPreferences"));
     }
 
-    @Test(dataProvider = "testCases")
+    @ParameterizedTest
+    @MethodSource("testCases")
     public void testProvider(List<String> opts, String pattern) throws Throwable {
         List<String> args = new ArrayList<>();
         args.add(JDKToolFinder.getJDKTool("java"));

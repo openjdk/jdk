@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,17 @@
 
 package javax.xml.transform.ptests;
 
-import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
-
-import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.function.Supplier;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.w3c.dom.Document;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -56,30 +55,32 @@ import javax.xml.transform.stax.StAXResult;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.function.Supplier;
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.w3c.dom.Document;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.Locator;
-import org.xml.sax.SAXException;
+import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm javax.xml.transform.ptests.TransformTest
+ * @run junit/othervm javax.xml.transform.ptests.TransformTest
  * @summary Tests for variable combination of Transformer.transform(Source, Result)
  */
-@Test(singleThreaded = true)
+@TestInstance(Lifecycle.PER_CLASS)
 public class TransformTest {
 
     /*
      * Initialize the share objects.
      */
-    @BeforeClass
+    @BeforeAll
     public void setup() throws Exception {
         ifac = XMLInputFactory.newInstance();
         ofac = XMLOutputFactory.newInstance();
@@ -95,7 +96,6 @@ public class TransformTest {
         xmlDoc = db.parse(xmlInputStream());
     }
 
-    @DataProvider(name = "input-provider")
     public Object[][] prepareTestCombination() throws Exception {
 
         Supplier<Source> staxStreamSource = () -> new StAXSource(getXMLStreamReader());
@@ -160,7 +160,8 @@ public class TransformTest {
     /*
      * run Transformer.transform(Source, Result)
      */
-    @Test(dataProvider = "input-provider")
+    @ParameterizedTest
+    @MethodSource("prepareTestCombination")
     public void testTransform(Supplier<Source> src, Supplier<Result> res, Transformer transformer) throws Throwable {
         try {
             transformer.transform(src.get(), res.get());
@@ -257,7 +258,7 @@ public class TransformTest {
         public void setDocumentLocator(Locator locator) {
         }
 
-        public void startDocument() throws SAXException {
+        public void startDocument() {
             String str = "startDocument";
             try {
                 bWriter.write(str, 0, str.length());
@@ -267,7 +268,7 @@ public class TransformTest {
             }
         }
 
-        public void endDocument() throws SAXException {
+        public void endDocument() {
             String str = "endDocument";
             try {
                 bWriter.write(str, 0, str.length());
@@ -279,7 +280,7 @@ public class TransformTest {
             }
         }
 
-        public void startPrefixMapping(String prefix, String uri) throws SAXException {
+        public void startPrefixMapping(String prefix, String uri) {
             String str = "startPrefixMapping: " + prefix + ", " + uri;
             try {
                 bWriter.write(str, 0, str.length());
@@ -289,7 +290,7 @@ public class TransformTest {
             }
         }
 
-        public void endPrefixMapping(String prefix) throws SAXException {
+        public void endPrefixMapping(String prefix) {
             String str = "endPrefixMapping: " + prefix;
             try {
                 bWriter.write(str, 0, str.length());
@@ -299,7 +300,7 @@ public class TransformTest {
             }
         }
 
-        public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
+        public void startElement(String namespaceURI, String localName, String qName, Attributes atts) {
             StringBuilder str = new StringBuilder("startElement: ").append(namespaceURI).append(", ").append(namespaceURI).append(", ").append(qName).append(" : ");
             int n = atts.getLength();
             for (int i = 0; i < n; i++) {
@@ -314,7 +315,7 @@ public class TransformTest {
             }
         }
 
-        public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
+        public void endElement(String namespaceURI, String localName, String qName) {
             String str = "endElement: " + namespaceURI + ", " + namespaceURI + ", " + qName;
             try {
                 bWriter.write(str, 0, str.length());
@@ -325,7 +326,7 @@ public class TransformTest {
 
         }
 
-        public void characters(char ch[], int start, int length) throws SAXException {
+        public void characters(char ch[], int start, int length) {
             String str = new String(ch, start, length);
             try {
                 bWriter.write(str, 0, str.length());
@@ -335,7 +336,7 @@ public class TransformTest {
             }
         }
 
-        public void ignorableWhitespace(char ch[], int start, int length) throws SAXException {
+        public void ignorableWhitespace(char ch[], int start, int length) {
             String str = "ignorableWhitespace";
             try {
                 bWriter.write(str, 0, str.length());
@@ -345,7 +346,7 @@ public class TransformTest {
             }
         }
 
-        public void processingInstruction(String target, String data) throws SAXException {
+        public void processingInstruction(String target, String data) {
             String str = "processingInstruction: " + target + ", " + target;
             try {
                 bWriter.write(str, 0, str.length());
@@ -355,7 +356,7 @@ public class TransformTest {
             }
         }
 
-        public void skippedEntity(String name) throws SAXException {
+        public void skippedEntity(String name) {
             String str = "skippedEntity: " + name;
             try {
                 bWriter.write(str, 0, str.length());

@@ -706,6 +706,11 @@ public class MetalLookAndFeel extends BasicLookAndFeel
         // DEFAULTS TABLE
         //
 
+        Object commonInputMap = new UIDefaults.LazyInputMap(new Object[] {
+                "SPACE", "pressed",
+                "released SPACE", "released"
+        });
+
         Object[] defaults = {
             // *** Auditory Feedback
             "AuditoryCues.defaultCueList", defaultCueList,
@@ -791,6 +796,8 @@ public class MetalLookAndFeel extends BasicLookAndFeel
               }),
 
 
+
+
             // Buttons
             "Button.defaultButtonFollowsFocus", Boolean.FALSE,
             "Button.disabledText", inactiveControlTextColor,
@@ -798,10 +805,8 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             "Button.border", buttonBorder,
             "Button.font", controlTextValue,
             "Button.focus", focusColor,
-            "Button.focusInputMap", new UIDefaults.LazyInputMap(new Object[] {
-                          "SPACE", "pressed",
-                 "released SPACE", "released"
-              }),
+            "Button.focusInputMap", commonInputMap,
+
             // Button default margin is (2, 14, 2, 14), defined in
             // BasicLookAndFeel via "Button.margin" UI property.
 
@@ -810,11 +815,8 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             "CheckBox.font", controlTextValue,
             "CheckBox.focus", focusColor,
             "CheckBox.icon",(LazyValue) t -> MetalIconFactory.getCheckBoxIcon(),
-            "CheckBox.focusInputMap",
-               new UIDefaults.LazyInputMap(new Object[] {
-                            "SPACE", "pressed",
-                   "released SPACE", "released"
-                 }),
+            "CheckBox.focusInputMap", commonInputMap,
+
             // margin is 2 all the way around, BasicBorders.RadioButtonBorder
             // (checkbox uses RadioButtonBorder) is 2 all the way around too.
             "CheckBox.totalInsets", new Insets(4, 4, 4, 4),
@@ -824,11 +826,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             "RadioButton.icon",(LazyValue) t -> MetalIconFactory.getRadioButtonIcon(),
             "RadioButton.font", controlTextValue,
             "RadioButton.focus", focusColor,
-            "RadioButton.focusInputMap",
-               new UIDefaults.LazyInputMap(new Object[] {
-                          "SPACE", "pressed",
-                 "released SPACE", "released"
-              }),
+            "RadioButton.focusInputMap", commonInputMap,
             // margin is 2 all the way around, BasicBorders.RadioButtonBorder
             // is 2 all the way around too.
             "RadioButton.totalInsets", new Insets(4, 4, 4, 4),
@@ -838,11 +836,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             "ToggleButton.focus", focusColor,
             "ToggleButton.border", toggleButtonBorder,
             "ToggleButton.font", controlTextValue,
-            "ToggleButton.focusInputMap",
-              new UIDefaults.LazyInputMap(new Object[] {
-                            "SPACE", "pressed",
-                   "released SPACE", "released"
-                }),
+            "ToggleButton.focusInputMap", commonInputMap,
 
 
             // File View

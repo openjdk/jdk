@@ -51,9 +51,10 @@ int pathmap_open(const char* name) {
     return open(name, O_RDONLY);
   }
 
-
   if (strlen(alt_root) + strlen(name) > PATH_MAX) {
     // Buffer too small.
+    print_error("SA_ALTROOT length(%d) + filename length(%d) is bigger than PATH_MAX(%d)\n",
+                strlen(alt_root), strlen(name), PATH_MAX);
     return -1;
   }
 
@@ -101,10 +102,18 @@ void print_debug(const char* format,...) {
    }
 }
 
+void print_warning(const char* format,...) {
+  va_list alist;
+  va_start(alist, format);
+  fputs("libsaproc WARNING: ", stdout);
+  vfprintf(stdout, format, alist);
+  va_end(alist);
+}
+
 void print_error(const char* format,...) {
   va_list alist;
   va_start(alist, format);
-  fputs("ERROR: ", stderr);
+  fputs("libsaproc ERROR: ", stderr);
   vfprintf(stderr, format, alist);
   va_end(alist);
 }
@@ -128,7 +137,16 @@ static void destroy_lib_info(struct ps_prochandle* ph) {
      if (lib->symtab) {
         destroy_symtab(lib->symtab);
      }
-     free(lib->eh_frame.data);
+     if (lib->fd >= 0) {
+       if (ph->core == NULL) {
+         close(lib->fd);
+       } else if (lib->fd != ph->core->exec_fd) {
+         // Prevents double-close in core mode.
+         // exec_fd would be closed at close_files().
+         close(lib->fd);
+       }
+     }
+     free(lib->frame.data);
      free(lib);
      lib = next;
    }
@@ -148,9 +166,8 @@ static void destroy_thread_info(struct ps_prochandle* ph) {
 // ps_prochandle cleanup
 JNIEXPORT void JNICALL
 Prelease(struct ps_prochandle* ph) {
-   // do the "derived class" clean-up first
-   ph->ops->release(ph);
    destroy_lib_info(ph);
+   ph->ops->release(ph);
    destroy_thread_info(ph);
    free(ph);
 }
@@ -182,13 +199,14 @@ static bool fill_addr_info(lib_info* lib) {
     return false;
   }
 
+  long page_size = sysconf(_SC_PAGE_SIZE);
   lib->end = (uintptr_t)-1L;
   lib->exec_start = (uintptr_t)-1L;
   lib->exec_end = (uintptr_t)-1L;
   for (ph = phbuf, cnt = 0; cnt < ehdr.e_phnum; cnt++, ph++) {
     if (ph->p_type == PT_LOAD) {
       uintptr_t aligned_start = lib->base + align_down(ph->p_vaddr, ph->p_align);
-      uintptr_t aligned_end = aligned_start + align_up(ph->p_memsz, ph->p_align);
+      uintptr_t aligned_end = aligned_start + align_up(ph->p_memsz, page_size);
       if ((lib->end == (uintptr_t)-1L) || (lib->end < aligned_end)) {
         lib->end = aligned_end;
       }
@@ -213,7 +231,7 @@ static bool fill_addr_info(lib_info* lib) {
   return (lib->end != -1L) && (lib->exec_start != -1L) && (lib->exec_end != -1L);
 }
 
-bool read_eh_frame(struct ps_prochandle* ph, lib_info* lib) {
+bool read_frame(const char* section, int fd, frame_info* frame) {
   off_t current_pos = -1;
   ELF_EHDR ehdr;
   ELF_SHDR* shbuf = NULL;
@@ -221,27 +239,27 @@ bool read_eh_frame(struct ps_prochandle* ph, lib_info* lib) {
   char* strtab = NULL;
   int cnt;
 
-  current_pos = lseek(lib->fd, (off_t)0L, SEEK_CUR);
-  lseek(lib->fd, (off_t)0L, SEEK_SET);
+  current_pos = lseek(fd, (off_t)0L, SEEK_CUR);
+  lseek(fd, (off_t)0L, SEEK_SET);
 
-  read_elf_header(lib->fd, &ehdr);
-  shbuf = read_section_header_table(lib->fd, &ehdr);
-  strtab = read_section_data(lib->fd, &ehdr, &shbuf[ehdr.e_shstrndx]);
+  read_elf_header(fd, &ehdr);
+  shbuf = read_section_header_table(fd, &ehdr);
+  strtab = read_section_data(fd, &ehdr, &shbuf[ehdr.e_shstrndx]);
 
   for (cnt = 0, sh = shbuf; cnt < ehdr.e_shnum; cnt++, sh++) {
-    if (strcmp(".eh_frame", sh->sh_name + strtab) == 0) {
-      lib->eh_frame.library_base_addr = lib->base;
-      lib->eh_frame.v_addr = sh->sh_addr;
-      lib->eh_frame.data = read_section_data(lib->fd, &ehdr, sh);
-      lib->eh_frame.size = sh->sh_size;
+    if (strcmp(section, sh->sh_name + strtab) == 0) {
+      frame->v_addr = sh->sh_addr;
+      frame->data = read_section_data(fd, &ehdr, sh);
+      frame->size = sh->sh_size;
+      frame->is_debug_frame = strcmp(section, ".debug_frame") == 0;
       break;
     }
   }
 
   free(strtab);
   free(shbuf);
-  lseek(lib->fd, current_pos, SEEK_SET);
-  return lib->eh_frame.data != NULL;
+  lseek(fd, current_pos, SEEK_SET);
+  return frame->data != NULL;
 }
 
 lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd, uintptr_t base) {
@@ -285,7 +303,7 @@ lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd,
    }
 
    if (fill_addr_info(newlib)) {
-     if (!read_eh_frame(ph, newlib)) {
+     if (!read_frame(".eh_frame", newlib->fd, &newlib->frame)) {
        print_debug("Could not find .eh_frame section in %s\n", newlib->name);
      }
    } else {
@@ -476,6 +494,12 @@ struct lib_info *find_lib_by_address(struct ps_prochandle* ph, uintptr_t pc) {
   }
   return NULL;
 }
+
+#ifdef __aarch64__
+bool pac_enabled(struct ps_prochandle* ph) {
+  return ph->pac_enabled;
+}
+#endif
 
 //--------------------------------------------------------------------------
 // proc service functions

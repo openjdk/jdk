@@ -34,4 +34,6 @@
   static void index_check(Register array, Register index);
   static void index_check_without_pop(Register array, Register index);
 
+  static void invoke_is_substitutable(Register aobj, Register bobj, Label& is_subst, Label& not_subst);
+
 #endif // CPU_AARCH64_TEMPLATETABLE_AARCH64_HPP

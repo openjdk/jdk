@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,14 +66,21 @@ public class CanEncode {
         Charset cs = Charset.forName(csn);
         CharsetEncoder ce = cs.newEncoder();
 
-        if (cs.name().equals("US-ASCII")) {
-            ck(ce, 'x', true);
-            ck(ce, '\u00B6', false);
-            ck(ce, "x", true);
-            ck(ce, "\u00B6", false);
-            ck(ce, "xyzzy", true);
-            ck(ce, "xy\u00B6", false);
-        }
+        // Basic multilingual plane
+        boolean utf = csn.startsWith("UTF-");
+        ck(ce, 'x', true);
+        ck(ce, '\u00B6', utf);
+        ck(ce, "", true);
+        ck(ce, "x", true);
+        ck(ce, "\u00B6", utf);
+        ck(ce, "xyzzy", true);
+        ck(ce, "xy\u00B6", utf);
+
+        // Paired surrogates
+        ck(ce, "\uD83D\uDE00", utf);
+        ck(ce, "XX\uD83D\uDE00", utf);
+        ck(ce, "\uD83D\uDE00XX", utf);
+        ck(ce, "X\uD83D\uDE00X", utf);
 
         // Unpaired surrogates should never be encodable
         ck(ce, '\ud800', false);
@@ -81,15 +88,36 @@ public class CanEncode {
         ck(ce, '\udffe', false);
         ck(ce, '\udfff', false);
         ck(ce, "\ud800", false);
+        ck(ce, "XX\ud800", false);
+        ck(ce, "\ud800XX", false);
+        ck(ce, "X\ud800X", false);
         ck(ce, "\ud801", false);
+        ck(ce, "XX\ud801", false);
+        ck(ce, "\ud801XX", false);
+        ck(ce, "X\ud801X", false);
         ck(ce, "\udffe", false);
+        ck(ce, "XX\udffe", false);
+        ck(ce, "\udffeXX", false);
+        ck(ce, "X\udffeX", false);
         ck(ce, "\udfff", false);
+        ck(ce, "XX\udfff", false);
+        ck(ce, "\udfffXX", false);
+        ck(ce, "X\udfffX", false);
 
+        if (errors > 0) {
+            throw new RuntimeException(errors + " errors for Charset " + csn);
+        }
     }
 
     public static void main(String[] args) throws Exception {
         test("US-ASCII");
         test("UTF-8");
+        test("UTF-16");
+        test("UTF-16LE");
+        test("UTF-16BE");
+        test("UTF-32");
+        test("UTF-32LE");
+        test("UTF-32BE");
     }
 
 }

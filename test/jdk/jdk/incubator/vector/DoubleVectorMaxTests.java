@@ -1245,6 +1245,10 @@ relativeError));
                 return fill(s * BUFFER_REPS,
                             i -> (((double)(i + 1) == 0) ? 1 : (double)(i + 1)));
             }),
+            withToString("double[smallOddValue(i)]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (double)(i % 7 == 0 ? -3 : (i % 3 == 0 ? -1 : 1)));
+            }),
             withToString("double[0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (double)0.01 + ((double)i / (i + 1)));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -443,7 +443,7 @@ public interface IIOMetadataFormat {
      * interpretation of the value of the given attribute within the
      * named element.  If {@code getAttributeValueType} returns
      * {@code VALUE_LIST}, then the legal value is a
-     * whitespace-spearated list of values of the returned datatype.
+     * whitespace-separated list of values of the returned datatype.
      *
      * @param elementName the name of the element being queried.
      * @param attrName the name of the attribute being queried.

@@ -148,8 +148,17 @@ public final class MonitorVmStartTerminate {
         }
 
         private void releaseStarted(Integer id) {
+            String monitoredArgs = readMainArgs(id);
+            if (monitoredArgs == null || monitoredArgs.equals("Unknown")) {
+                System.out.println("releaseStarted: not a test pid: " + id);
+                return;
+            }
+
             for (JavaProcess jp : processes) {
-                if (hasMainArgs(id, jp.getMainArgsIdentifier())) {
+                if (jp.getId() != null) {
+                    continue;
+                }
+                if (monitoredArgs.contains(jp.getMainArgsIdentifier())) {
                     // store id for terminated identification
                     jp.setId(id);
                     System.out.println("RELEASED started (id=" + jp.getId() + ", args=" + jp.getMainArgsIdentifier() + ")");
@@ -177,40 +186,39 @@ public final class MonitorVmStartTerminate {
             }
         }
 
-        private boolean hasMainArgs(Integer id, String args) {
-            VmIdentifier vmid = null;
+        private String readMainArgs(Integer id) {
+            VmIdentifier vmid;
             try {
                 vmid = new VmIdentifier("//" + id.intValue());
             } catch (URISyntaxException e) {
-                System.out.println("hasMainArgs(" + id + "): " + e);
-                return false;
+                System.out.println("readMainArgs(" + id + "): " + e);
+                return null;
             }
-            // Retry a failing attempt to check arguments for a match,
+            // Retry a failing attempt to read arguments,
             // as not recognizing a test process will cause timeout and failure.
             for (int i = 0; i < ARGS_ATTEMPTS; i++) {
                 try {
                     MonitoredVm target = host.getMonitoredVm(vmid);
                     String monitoredArgs = MonitoredVmUtil.mainArgs(target);
-                    System.out.println("hasMainArgs(" + id + "): has main args: '" + monitoredArgs + "'");
+                    System.out.println("readMainArgs(" + id + "): has main args: '" + monitoredArgs + "'");
                     if (monitoredArgs == null || monitoredArgs.equals("Unknown")) {
-                        System.out.println("hasMainArgs(" + id + "): retry" );
+                        System.out.println("readMainArgs(" + id + "): retry");
                         takeNap();
                         continue;
-                    } else if (monitoredArgs.contains(args)) {
-                        return true;
                     } else {
-                        return false;
+                        return monitoredArgs;
                     }
                 } catch (MonitorException e) {
                     // Process probably not running or not ours, e.g.
                     // sun.jvmstat.monitor.MonitorException: Could not attach to PID
                     // Only log if something else, to avoid filling log:
-                    if (!e.getMessage().contains("Could not attach")) {
-                        System.out.println("hasMainArgs(" + id + "): " + e);
+                    String message = e.getMessage();
+                    if (message == null || !message.contains("Could not attach")) {
+                        System.out.println("readMainArgs(" + id + "): " + e);
                     }
                 }
             }
-            return false;
+            return null;
         }
     }
 

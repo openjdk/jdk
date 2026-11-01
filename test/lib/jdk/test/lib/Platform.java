@@ -75,10 +75,6 @@ public class Platform {
         return vmInfo.contains("static");
     }
 
-    public static boolean isEmulatedClient() {
-        return vmInfo.contains(" emulated-client");
-    }
-
     public static boolean isTieredSupported() {
         return (compiler != null) && compiler.contains("Tiered Compilers");
     }
@@ -129,6 +125,10 @@ public class Platform {
 
     public static boolean isWindows() {
         return isOs("win");
+    }
+
+    public static boolean isBSD() {
+        return osName.toLowerCase(ROOT).endsWith("bsd");
     }
 
     private static boolean isOs(String osname) {

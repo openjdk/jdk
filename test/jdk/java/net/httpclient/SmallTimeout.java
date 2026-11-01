@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,12 +46,12 @@ import static java.lang.System.out;
  * @bug 8178147
  * @modules java.net.http/jdk.internal.net.http.common
  * @summary Ensures that small timeouts do not cause hangs due to race conditions
- * @run main/othervm -Djdk.internal.httpclient.debug=true SmallTimeout
+ * @run main/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 
 // To enable logging use. Not enabled by default as it changes the dynamics
 // of the test.
-// @run main/othervm -Djdk.httpclient.HttpClient.log=all,frames:all SmallTimeout
+// @run main/othervm -Djdk.httpclient.HttpClient.log=all,frames:all ${test.main.class}
 
 public class SmallTimeout {
 

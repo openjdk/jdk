@@ -5,7 +5,7 @@
  *   FreeType glyph image formats and default raster interface
  *   (specification).
  *
- * Copyright (C) 1996-2025 by
+ * Copyright (C) 1996-2026 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -471,7 +471,7 @@ FT_BEGIN_HEADER
 
   /* */
 
-#define FT_CURVE_TAG( flag )  ( flag & 0x03 )
+#define FT_CURVE_TAG( flag )  ( ( flag & 0x01 ) ? 0x01 : ( flag & 0x03 ) )
 
   /* see the `tags` field in `FT_Outline` for a description of the values */
 #define FT_CURVE_TAG_ON            0x01
@@ -875,7 +875,7 @@ FT_BEGIN_HEADER
    */
   typedef struct  FT_Span_
   {
-    unsigned short  x;
+    short           x;
     unsigned short  len;
     unsigned char   coverage;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ package jit.verifier.VerifyMergeStack;
 import nsk.share.TestFailure;
 
 /**
- * @(#)VerifyMergeStack.java      1.1 01/25/01
  * @bug 4336916
  * @summary Make sure verifier fails when two distinct types meet on operand stack
  */

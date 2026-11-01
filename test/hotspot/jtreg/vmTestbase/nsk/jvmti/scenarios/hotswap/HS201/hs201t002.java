@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.util.concurrent.CountDownLatch;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
+import jdk.test.lib.thread.ThreadWrapper;
 
 public class hs201t002 extends DebugeeClass {
 
@@ -74,7 +75,8 @@ public class hs201t002 extends DebugeeClass {
         timeout = argHandler.getWaitTime() * 60 * 1000; // milliseconds
 
         log.display(">>> starting tested thread");
-        hs201t002Thread thread = new hs201t002Thread();
+        hs201t002Thread wrappedThread = new hs201t002Thread();
+        Thread thread = wrappedThread.getThread();
 
         // testing sync
         status = checkStatus(status);
@@ -84,12 +86,12 @@ public class hs201t002 extends DebugeeClass {
         // setThread(thread) enables JVMTI events, and that can only be done on a live thread,
         // so wait until the thread has started.
         try {
-            thread.ready.await();
+            wrappedThread.ready.await();
         } catch (InterruptedException e) {
         }
         setThread(thread);
 
-        thread.go.countDown();
+        wrappedThread.go.countDown();
 
         while (currentStep != 4) {
             try {
@@ -148,7 +150,7 @@ public class hs201t002 extends DebugeeClass {
         return status;
     }
 
-class hs201t002Thread extends Thread {
+class hs201t002Thread extends ThreadWrapper {
 
     CountDownLatch ready = new CountDownLatch(1);
     CountDownLatch go = new CountDownLatch(1);

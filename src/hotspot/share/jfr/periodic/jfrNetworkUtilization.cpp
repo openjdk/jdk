@@ -46,7 +46,7 @@ static GrowableArray<InterfaceEntry>* _interfaces = nullptr;
 void JfrNetworkUtilization::destroy() {
   if (_interfaces != nullptr) {
     for (int i = 0; i < _interfaces->length(); ++i) {
-      FREE_C_HEAP_ARRAY(char, _interfaces->at(i).name);
+      FREE_C_HEAP_ARRAY(_interfaces->at(i).name);
     }
     delete _interfaces;
     _interfaces = nullptr;

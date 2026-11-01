@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,16 @@
  * @test
  * @bug 8003948 8133686
  * @modules java.base/sun.net.www
- * @run testng MessageHeaderTest
+ * @run junit ${test.main.class}
  */
 
 import java.io.*;
 import java.util.*;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import sun.net.www.MessageHeader;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MessageHeaderTest {
     /* This test checks to see if the MessageHeader.getHeaders method
@@ -53,12 +54,12 @@ public class MessageHeaderTest {
 
         var actualHeaders = testHeader.getHeaders().get("test");
 
-        Assert.assertEquals(expectedHeaders, actualHeaders, String.format(errorMessageTemplate, expectedHeaders.toString(), actualHeaders.toString()));
+        assertEquals(expectedHeaders, actualHeaders, String.format(errorMessageTemplate, expectedHeaders.toString(), actualHeaders.toString()));
     }
 
     @Test
     public void ntlmNegotiateTest () throws Exception {
-        String expected[] = {
+        String[] expected = {
             "{null: HTTP/1.1 200 Ok}{Foo: bar}{Bar: foo}{WWW-Authenticate: NTLM sdsds}",
             "{null: HTTP/1.1 200 Ok}{Foo: bar}{Bar: foo}{WWW-Authenticate: }",
             "{null: HTTP/1.1 200 Ok}{Foo: bar}{Bar: foo}{WWW-Authenticate: NTLM sdsds}",
@@ -90,8 +91,8 @@ public class MessageHeaderTest {
             boolean result = h.filterNTLMResponses("WWW-Authenticate");
             String after = h.toString();
             after = after.substring(after.indexOf('{'));
-            Assert.assertEquals(expected[i], after, i + " expected != after");
-            Assert.assertEquals(result, expectedResult[i], i + " result != expectedResult");
+            assertEquals(expected[i], after, i + " expected != after");
+            assertEquals(expectedResult[i], result, i + " result != expectedResult");
         }
     }
 }

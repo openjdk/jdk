@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Stream;
 
-import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.Utils;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.ProcessTools;
 
@@ -183,32 +181,6 @@ public class ModuleTestUtil {
                         + "from the jar file specified by the class-path failed. "
                         + "Unexpected exit code: " + exitCode);
             }
-        }
-    }
-
-    /**
-     * Run the module test with "useOldISOCodes=true".
-     *
-     * @param mp module path
-     * @param mn module name
-     * @param localeList locale list
-     */
-    public static void runModuleWithLegacyCode(String mp, String mn, List<String> localeList)
-            throws Throwable {
-        List<String> args = List.of(
-                "-ea", "-esa",
-                "-Djava.locale.useOldISOCodes=true",
-                "-p", mp,
-                "-m", mn);
-        // Build process (with VM flags)
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                Stream.concat(args.stream(), localeList.stream()).toList());
-        // Evaluate process status
-        int exitCode = ProcessTools.executeCommand(pb).getExitValue();
-
-        if (exitCode != 0) {
-            throw new RuntimeException("Execution of the test failed. "
-                    + "Unexpected exit code: " + exitCode);
         }
     }
 }

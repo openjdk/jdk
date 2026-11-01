@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,7 @@
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  * @build nsk.aod.VirtualMachine.VirtualMachine04.VM04Target
- * @run main/othervm
- *      -XX:+UsePerfData
+ * @run driver
  *      nsk.aod.VirtualMachine.VirtualMachine04.VirtualMachine04
  *      -jdk ${test.jdk}
  *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"

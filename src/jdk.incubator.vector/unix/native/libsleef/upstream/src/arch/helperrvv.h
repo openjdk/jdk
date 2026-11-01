@@ -91,6 +91,7 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuninitialized"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 static INLINE vfloat64m1x4_t __riscv_vcreate_v_f64m1x4(vfloat64m1_t x, vfloat64m1_t y, vfloat64m1_t z, vfloat64m1_t w) {
     vfloat64m1x4_t unused;
     return __riscv_vset(__riscv_vset(__riscv_vset(__riscv_vset(unused, 0, x), 1, y), 2, z), 3, w);
@@ -158,14 +159,14 @@ typedef vfloat64m1x4_t tdi_t;
 
 #define SLEEF_RVV_SP_LMUL 1
 #define SLEEF_RVV_DP_LMUL 1
-#define SLEEF_RVV_DP_RUNTIME_VL() __riscv_vsetvlmax_e64m1()
+#define SLEEF_RVV_DP_RUNTIME_VL() ((int)__riscv_vsetvlmax_e64m1())
 #if SLEEF_RVV_VLEN == 0
 // The configuration didn't provide a constant vector length, meaning it'll
 // have to be determined at run-time.  RVV offers per-data-width operations for
 // this so the result doesn't need to be adjusted and that operation is likely
 // to fold into the surrounding code for free.
 //
-#define VECTLENSP (__riscv_vsetvlmax_e32m1())
+#define VECTLENSP ((int)__riscv_vsetvlmax_e32m1())
 #define VECTLENDP SLEEF_RVV_DP_RUNTIME_VL()
 //@#define VECTLENSP __riscv_vsetvlmax_e32m1()
 //@#define VECTLENDP  __riscv_vsetvlmax_e64m1()
@@ -268,7 +269,7 @@ typedef vfloat64m2x4_t tdi_t;
 
 #define SLEEF_RVV_SP_LMUL 2
 #define SLEEF_RVV_DP_LMUL 2
-#define SLEEF_RVV_DP_RUNTIME_VL() __riscv_vsetvlmax_e64m2()
+#define SLEEF_RVV_DP_RUNTIME_VL() ((int)__riscv_vsetvlmax_e64m2())
 #if SLEEF_RVV_VLEN == 0
 // The configuration didn't provide a constant vector length, meaning it'll
 // have to be determined at run-time.  RVV offers per-data-width operations for
@@ -605,7 +606,7 @@ static INLINE vmask vreinterpret_vm_vf(vfloat vf) {
 // needed.
 //
 static INLINE int vtestallones_i_vo32(rvv_sp_vopmask g) {
-  return __riscv_vcpop(g, VECTLENSP) == VECTLENSP;
+  return (int)__riscv_vcpop(g, VECTLENSP) == (int)VECTLENSP;
 }
 static INLINE vmask vor_vm_vo32_vm(rvv_sp_vopmask x, vmask y) {
   rvv_vmask32 y32 = SLEEF_RVV_SP_VREINTERPRET_VM(y);
@@ -1080,7 +1081,7 @@ static INLINE vdouble vsel_vd_vo_vo_vo_d_d_d_d(rvv_dp_vopmask o0, rvv_dp_vopmask
   return __riscv_vfmerge(__riscv_vfmerge(__riscv_vfmerge(vcast_vd_d(d3), d2, o2, VECTLENDP), d1, o1, VECTLENDP), d0, o0, VECTLENDP);
 }
 static INLINE int vtestallones_i_vo64(rvv_dp_vopmask g) {
-  return __riscv_vcpop(g, VECTLENDP) == VECTLENDP;
+  return (int)__riscv_vcpop(g, VECTLENDP) == (int)VECTLENDP;
 }
 // integer comparison
 static INLINE rvv_dp_vopmask veq_vo_vi_vi(vint x, vint y) {
@@ -1171,7 +1172,7 @@ static INLINE void vscatter2_v_p_i_i_vd(double *ptr, int offset, int step, vdoub
   // probably only iterate 2 or 4 times.
   //
   ptr += offset * 2;
-  for (int i = 0; i < VECTLENDP; i += 2) {
+  for (int i = 0; i < (int)VECTLENDP; i += 2) {
     // PROTIP: Avoid modifying `v` within the loop, and just extract the useful
     // part directly in each iteration, because we can.  This avoids a
     // loop-carried dependency.
@@ -1185,7 +1186,7 @@ static INLINE void vscatter2_v_p_i_i_vd(double *ptr, int offset, int step, vdoub
 static INLINE void vscatter2_v_p_i_i_vf(float *ptr, int offset, int step, vfloat v) {
   // as above re: looping
   ptr += offset * 2;
-  for (int i = 0; i < VECTLENSP; i += 2) {
+  for (int i = 0; i < (int)VECTLENSP; i += 2) {
     vfloat vv = __riscv_vslidedown(v, i, 2);
     __riscv_vse32(ptr, vv, 2);
     ptr += step * 2;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,15 +43,16 @@ class RegeneratedClasses : public AllStatic {
   static void add_class(InstanceKlass* orig_klass, InstanceKlass* regen_klass);
   static void cleanup();
   static bool has_been_regenerated(address orig_obj);
-  static address get_regenerated_object(address orig_obj); // orig_obj -> regen_obj
+  static address maybe_get_regenerated_object(address orig_obj);
+  static oop maybe_get_regenerated_mirror(oop orig_java_mirror);
   static void record_regenerated_objects();
 
   // Handy functions to avoid type casts
   template <class T> static bool has_been_regenerated(T orig_obj) {
     return has_been_regenerated((address)orig_obj);
   }
-  template <class T> static T get_regenerated_object(T orig_obj) {
-    return (T)get_regenerated_object((address)orig_obj);
+  template <class T> static T maybe_get_regenerated_object(T orig_obj) {
+    return (T)maybe_get_regenerated_object((address)orig_obj);
   }
 
   static bool is_regenerated_object(address regen_obj);

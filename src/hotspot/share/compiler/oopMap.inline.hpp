@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_COMPILER_OOPMAP_INLINE_HPP
-#define SHARE_VM_COMPILER_OOPMAP_INLINE_HPP
+#ifndef SHARE_COMPILER_OOPMAP_INLINE_HPP
+#define SHARE_COMPILER_OOPMAP_INLINE_HPP
 
 #include "compiler/oopMap.hpp"
 
@@ -31,10 +31,6 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/ostream.hpp"
-
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci_globals.hpp"
-#endif
 
 inline const ImmutableOopMap* ImmutableOopMapSet::find_map_at_slot(int slot, int pc_offset) const {
   assert(slot >= 0 && slot < _count, "bounds count: %d slot: %d", _count, slot);
@@ -65,13 +61,6 @@ void OopMapDo<OopFnT, DerivedOopFnT, ValueFilterT>::iterate_oops_do(const frame 
       OopMapValue omv = oms.current();
       if (omv.type() != OopMapValue::derived_oop_value)
         continue;
-
-  #ifndef COMPILER2
-  #if INCLUDE_JVMCI
-      if (!EnableJVMCI)
-  #endif
-        ShouldNotReachHere();
-  #endif // !COMPILER2
 
       address loc = fr->oopmapreg_to_location(omv.reg(), reg_map);
 
@@ -156,5 +145,4 @@ void OopMapDo<OopFnT, DerivedOopFnT, ValueFilterT>::oops_do(const frame *fr, con
   iterate_oops_do(fr, reg_map, oopmap);
 }
 
-#endif // SHARE_VM_COMPILER_OOPMAP_INLINE_HPP
-
+#endif // SHARE_COMPILER_OOPMAP_INLINE_HPP

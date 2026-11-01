@@ -25,7 +25,7 @@
  * @test
  * @summary Basic sanity checks for WebSocket URI from the Builder
  * @compile ../DummyWebSocketServer.java ../../ProxyServer.java
- * @run junit/othervm WSSanityTest
+ * @run junit/othervm ${test.main.class}
  */
 
 import java.io.IOException;

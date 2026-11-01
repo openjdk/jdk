@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,9 @@
  */
 package org.w3c.dom.ptests;
 
-import static javax.xml.XMLConstants.XML_NS_URI;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
-import static org.w3c.dom.DOMException.INUSE_ATTRIBUTE_ERR;
-import static org.w3c.dom.ptests.DOMTestUtil.DOMEXCEPTION_EXPECTED;
-import static org.w3c.dom.ptests.DOMTestUtil.createDOM;
-import static org.w3c.dom.ptests.DOMTestUtil.createDOMWithNS;
-import static org.w3c.dom.ptests.DOMTestUtil.createNewDocument;
-
-import java.io.StringReader;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -47,10 +33,25 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.StringReader;
+
+import static javax.xml.XMLConstants.XML_NS_URI;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.w3c.dom.DOMException.INUSE_ATTRIBUTE_ERR;
+import static org.w3c.dom.ptests.DOMTestUtil.DOMEXCEPTION_EXPECTED;
+import static org.w3c.dom.ptests.DOMTestUtil.createDOM;
+import static org.w3c.dom.ptests.DOMTestUtil.createDOMWithNS;
+import static org.w3c.dom.ptests.DOMTestUtil.createNewDocument;
+
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.w3c.dom.ptests.ElementTest
+ * @run junit/othervm org.w3c.dom.ptests.ElementTest
  * @summary Test for the methods of Element Interface
  */
 public class ElementTest {
@@ -59,7 +60,7 @@ public class ElementTest {
         Document document = createDOMWithNS("ElementSample01.xml");
         Element elemNode = (Element) document.getElementsByTagName("book").item(0);
         String s = elemNode.getAttributeNS("urn:BooksAreUs.org:BookInfo", "category");
-        assertEquals(s, "research");
+        assertEquals("research", s);
     }
 
     @Test
@@ -67,7 +68,7 @@ public class ElementTest {
         Document document = createDOMWithNS("ElementSample01.xml");
         Element elemNode = (Element) document.getElementsByTagName("book").item(0);
         Attr attr = elemNode.getAttributeNodeNS("urn:BooksAreUs.org:BookInfo", "category");
-        assertEquals(attr.getValue(), "research");
+        assertEquals("research", attr.getValue());
 
     }
 
@@ -80,11 +81,11 @@ public class ElementTest {
         Document document = createDOMWithNS("ElementSample01.xml");
         Element elemNode = (Element) document.getElementsByTagName("book").item(1);
         Attr attr = elemNode.getAttributeNode("category1");
-        assertEquals(attr.getValue(), "research");
+        assertEquals("research", attr.getValue());
 
-        assertEquals(elemNode.getTagName(), "book");
+        assertEquals("book", elemNode.getTagName());
         elemNode.removeAttributeNode(attr);
-        assertEquals(elemNode.getAttribute("category1"), "");
+        assertEquals("", elemNode.getAttribute("category1"));
     }
 
     /*
@@ -112,8 +113,8 @@ public class ElementTest {
         elemNode.normalize();
         Node firstChild = elemNode.getFirstChild();
         Node lastChild = elemNode.getLastChild();
-        assertEquals(firstChild.getNodeValue(), "fjfjf");
-        assertEquals(lastChild.getNodeValue(), "fjfjf");
+        assertEquals("fjfjf", firstChild.getNodeValue());
+        assertEquals("fjfjf", lastChild.getNodeValue());
     }
 
     /*
@@ -129,32 +130,32 @@ public class ElementTest {
         myAttr.setValue(attrValue);
 
         assertNull(elemNode.setAttributeNode(myAttr));
-        assertEquals(elemNode.getAttribute(attrName), attrValue);
+        assertEquals(attrValue, elemNode.getAttribute(attrName));
     }
 
-    @DataProvider(name = "attribute")
-    public Object[][] getAttributeData() {
+    public static Object[][] getAttributeData() {
         return new Object[][] {
                 { "thisisname", "thisisitsvalue" },
                 { "style", "font-Family" } };
     }
 
-    @Test(dataProvider = "attribute")
+    @ParameterizedTest
+    @MethodSource("getAttributeData")
     public void testSetAttribute(String name, String value) throws Exception {
         Document document = createDOM("ElementSample02.xml");
         Element elemNode = document.createElement("pricetag2");
         elemNode.setAttribute(name, value);
-        assertEquals(elemNode.getAttribute(name), value);
+        assertEquals(value, elemNode.getAttribute(name));
     }
 
     /*
      * Negative test for setAttribute, null is not a valid name.
      */
-    @Test(expectedExceptions = DOMException.class)
+    @Test
     public void testSetAttributeNeg() throws Exception {
         Document document = createDOM("ElementSample02.xml");
         Element elemNode = document.createElement("pricetag2");
-        elemNode.setAttribute(null, null);
+        assertThrows(DOMException.class, () -> elemNode.setAttribute(null, null));
     }
 
     /*
@@ -182,7 +183,7 @@ public class ElementTest {
             element3.setAttributeNode(attr);
             fail(DOMEXCEPTION_EXPECTED);
         } catch (DOMException doe) {
-            assertEquals(doe.code, INUSE_ATTRIBUTE_ERR);
+            assertEquals(INUSE_ATTRIBUTE_ERR, doe.code);
         }
     }
 
@@ -201,8 +202,7 @@ public class ElementTest {
         assertNull(nl.item(0));
     }
 
-    @DataProvider(name = "nsattribute")
-    public Object[][] getNSAttributeData() {
+    public static Object[][] getNSAttributeData() {
         return new Object[][] {
                 { "h:html", "html", "attrValue" },
                 { "b:style", "style",  "attrValue" } };
@@ -211,14 +211,15 @@ public class ElementTest {
     /*
      * setAttributeNodeNS and verify it with getAttributeNS.
      */
-    @Test(dataProvider = "nsattribute")
+    @ParameterizedTest
+    @MethodSource("getNSAttributeData")
     public void testSetAttributeNodeNS(String qualifiedName, String localName, String value) throws Exception {
         Document document = createDOM("ElementSample03.xml");
         Element elemNode = document.createElement("pricetag2");
         Attr myAttr = document.createAttributeNS(XML_NS_URI, qualifiedName);
         myAttr.setValue(value);
         assertNull(elemNode.setAttributeNodeNS(myAttr));
-        assertEquals(elemNode.getAttributeNS(XML_NS_URI, localName), value);
+        assertEquals(value, elemNode.getAttributeNS(XML_NS_URI, localName));
     }
 
     @Test
@@ -233,22 +234,23 @@ public class ElementTest {
     @Test
     public void testToString() throws Exception {
         final String xml =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-                + "<!DOCTYPE datacenterlist>"
-                + "<datacenterlist>"
-                + "  <datacenterinfo"
-                + "    id=\"0\""
-                + "    naddrs=\"1\""
-                + "    nnodes=\"1\""
-                + "    ismaster=\"0\">\n"
-                + "    <gateway ipaddr=\"192.168.100.27:26000\"/>"
-                + "  </datacenterinfo>"
-                + "</datacenterlist>";
+                """
+                <?xml version="1.0" encoding="UTF-8" standalone="yes"?>\
+                <!DOCTYPE datacenterlist>\
+                <datacenterlist>\
+                  <datacenterinfo\
+                    id="0"\
+                    naddrs="1"\
+                    nnodes="1"\
+                    ismaster="0">
+                    <gateway ipaddr="192.168.100.27:26000"/>\
+                  </datacenterinfo>\
+                </datacenterlist>""";
 
         Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new StringReader(xml)));
         Element root = doc.getDocumentElement();
 
-        assertEquals(root.toString(), "[datacenterlist: null]");
+        assertEquals("[datacenterlist: null]", root.toString());
     }
 
 }

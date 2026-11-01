@@ -120,16 +120,12 @@ void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind,
   __ z_nilf(temp, java_lang_invoke_MemberName::MN_REFERENCE_KIND_MASK);
   __ compare32_and_branch(temp, constant(ref_kind), Assembler::bcondEqual, L);
 
-  {
-    char *buf = NEW_C_HEAP_ARRAY(char, 100, mtInternal);
-
-    jio_snprintf(buf, 100, "verify_ref_kind expected %x", ref_kind);
-    if (ref_kind == JVM_REF_invokeVirtual || ref_kind == JVM_REF_invokeSpecial) {
-      // Could do this for all ref_kinds, but would explode assembly code size.
-      trace_method_handle(_masm, buf);
-    }
-    __ stop(buf);
+  const char* msg = ref_kind_to_verify_msg(ref_kind);
+  if (ref_kind == JVM_REF_invokeVirtual || ref_kind == JVM_REF_invokeSpecial) {
+    // Could do this for all ref_kinds, but would explode assembly code size.
+    trace_method_handle(_masm, msg);
   }
+  __ stop(msg);
 
   BLOCK_COMMENT("} verify_ref_kind");
 
@@ -142,7 +138,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   assert(method == Z_method, "interpreter calling convention");
   __ verify_method_ptr(method);
 
-  assert(target != method, "don 't you kill the method reg!");
+  assert(target != method, "don't you kill the method reg!");
 
   Label L_no_such_method;
 
@@ -157,7 +153,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
     __ load_and_test_int(temp, Address(Z_thread, JavaThread::interp_only_mode_offset()));
     __ z_bre(run_compiled_code);
 
-    // Null method test is replicated below in compiled case.,
+    // Null method test is replicated below in compiled case.
     __ z_ltgr(temp, method);
     __ z_bre(L_no_such_method);
 
@@ -172,7 +168,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ z_bre(L_no_such_method);
 
   ByteSize offset = for_compiler_entry ?
-                       Method::from_compiled_offset() : Method::from_interpreted_offset();
+                       Method::from_compiled_value_offset() : Method::from_interpreted_offset();
   Address method_from(method, offset);
 
   __ z_lg(target, method_from);
@@ -201,17 +197,17 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   __ load_heap_oop(method_temp,
                    Address(recv,
                            NONZERO(java_lang_invoke_MethodHandle::form_offset())),
-                   noreg, noreg, IS_NOT_NULL);
+                   temp2, temp3, IS_NOT_NULL);
   __ verify_oop(method_temp, FILE_AND_LINE);
   __ load_heap_oop(method_temp,
                    Address(method_temp,
                            NONZERO(java_lang_invoke_LambdaForm::vmentry_offset())),
-                   noreg, noreg, IS_NOT_NULL);
+                   temp2, temp3, IS_NOT_NULL);
   __ verify_oop(method_temp, FILE_AND_LINE);
   __ load_heap_oop(method_temp,
                    Address(method_temp,
                            NONZERO(java_lang_invoke_MemberName::method_offset())),
-                   noreg, noreg, IS_NOT_NULL);
+                   temp2, temp3, IS_NOT_NULL);
   __ verify_oop(method_temp, FILE_AND_LINE);
   __ z_lg(method_temp,
           Address(method_temp,
@@ -437,7 +433,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       Register temp2_defc = temp2;
 
       __ load_heap_oop(temp2_defc, member_clazz,
-                       noreg, noreg, IS_NOT_NULL);
+                       temp3, temp4, IS_NOT_NULL);
       load_klass_from_Class(_masm, temp2_defc, temp3, temp4);
       __ verify_klass_ptr(temp2_defc);
       __ check_klass_subtype(temp1_recv_klass, temp2_defc, temp3, temp4, L_ok);
@@ -464,7 +460,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp3);
       }
       __ load_heap_oop(Z_method, member_vmtarget,
-                       noreg, noreg, IS_NOT_NULL);
+                       temp1, temp2, IS_NOT_NULL);
       __ z_lg(Z_method, vmtarget_method);
       method_is_live = true;
       break;
@@ -474,7 +470,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp3);
       }
       __ load_heap_oop(Z_method, member_vmtarget,
-                       noreg, noreg, IS_NOT_NULL);
+                       temp1, temp2, IS_NOT_NULL);
       __ z_lg(Z_method, vmtarget_method);
       method_is_live = true;
       break;
@@ -516,7 +512,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       Register temp3_intf = temp3;
 
       __ load_heap_oop(temp3_intf, member_clazz,
-                       noreg, noreg, IS_NOT_NULL);
+                       temp2, temp4, IS_NOT_NULL);
       load_klass_from_Class(_masm, temp3_intf, temp2, temp4);
 
       Register Z_index = Z_method;

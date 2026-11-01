@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,26 +161,5 @@ inline jbyte typeArrayOopDesc::byte_at_acquire(int which) const {
 inline void typeArrayOopDesc::release_byte_at_put(int which, jbyte contents) {
   AtomicAccess::release_store(byte_at_addr(which), contents);
 }
-
-// Java thinks Symbol arrays are just arrays of either long or int, since
-// there doesn't seem to be T_ADDRESS, so this is a bit of unfortunate
-// casting
-#ifdef _LP64
-inline Symbol* typeArrayOopDesc::symbol_at(int which) const {
-  return *reinterpret_cast<Symbol**>(long_at_addr(which));
-}
-
-inline void typeArrayOopDesc::symbol_at_put(int which, Symbol* contents) {
-  *reinterpret_cast<Symbol**>(long_at_addr(which)) = contents;
-}
-#else
-inline Symbol* typeArrayOopDesc::symbol_at(int which) const {
-  return *reinterpret_cast<Symbol**>(int_at_addr(which));
-}
-inline void typeArrayOopDesc::symbol_at_put(int which, Symbol* contents) {
-  *reinterpret_cast<Symbol**>(int_at_addr(which)) = contents;
-}
-#endif // _LP64
-
 
 #endif // SHARE_OOPS_TYPEARRAYOOP_INLINE_HPP

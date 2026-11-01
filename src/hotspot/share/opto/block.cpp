@@ -179,9 +179,11 @@ int Block::is_Empty() const {
 
   // Ideal nodes (except BoxLock) are allowable in empty blocks: skip them. Only
   // Mach and BoxLock nodes turn directly into code via emit().
+  // Keep ReachabilityFence for diagnostic purposes.
   while ((end_idx > 0) &&
          !get_node(end_idx)->is_Mach() &&
-         !get_node(end_idx)->is_BoxLock()) {
+         !get_node(end_idx)->is_BoxLock() &&
+         !get_node(end_idx)->is_ReachabilityFence()) {
     end_idx--;
   }
 
@@ -203,13 +205,17 @@ bool Block::has_uncommon_code() const {
     en = en->in(0);
   if (en->is_Catch())
     en = en->in(0);
-  if (en->is_MachProj() && en->in(0)->is_MachCall()) {
-    MachCallNode* call = en->in(0)->as_MachCall();
-    if (call->cnt() != COUNT_UNKNOWN && call->cnt() <= PROB_UNLIKELY_MAG(4)) {
-      // This is true for slow-path stubs like new_{instance,array},
-      // slow_arraycopy, complete_monitor_locking, uncommon_trap.
-      // The magic number corresponds to the probability of an uncommon_trap,
-      // even though it is a count not a probability.
+  if (en->is_MachProj()) {
+    if (en->in(0)->is_MachCall()) {
+      MachCallNode* call = en->in(0)->as_MachCall();
+      if (call->cnt() != COUNT_UNKNOWN && call->cnt() <= PROB_UNLIKELY_MAG(4)) {
+        // This is true for slow-path stubs like new_{instance,array},
+        // slow_arraycopy, complete_monitor_locking, uncommon_trap.
+        // The magic number corresponds to the probability of an uncommon_trap,
+        // even though it is a count not a probability.
+        return true;
+      }
+    } else if (en->in(0)->is_MachUncommonTrap()) {
       return true;
     }
   }
@@ -414,7 +420,7 @@ uint PhaseCFG::build_cfg() {
   VectorSet visited;
 
   // Allocate stack with enough space to avoid frequent realloc
-  Node_Stack nstack(C->live_nodes() >> 1);
+  Node_Stack<Node> nstack(C->live_nodes() >> 1);
   nstack.push(_root, 0);
   uint sum = 0;                 // Counter for blocks
 
@@ -1428,7 +1434,7 @@ void UnionFind::extend( uint from_idx, uint to_idx ) {
   if( from_idx >= _max ) {
     uint size = 16;
     while( size <= from_idx ) size <<=1;
-    _indices = REALLOC_RESOURCE_ARRAY( uint, _indices, _max, size );
+    _indices = REALLOC_RESOURCE_ARRAY( _indices, _max, size );
     _max = size;
   }
   while( _cnt <= from_idx ) _indices[_cnt++] = 0;

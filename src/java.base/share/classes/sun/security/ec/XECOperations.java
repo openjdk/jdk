@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,11 @@ public class XECOperations {
      */
     public byte[] encodedPointMultiply(byte[] k, BigInteger u) {
         pruneK(k);
-        ImmutableIntegerModuloP elemU = field.getElement(u);
+
+        ImmutableIntegerModuloP elemU = (params == XECParameters.X448) ?
+            field.getElement(u) :
+            field.getElement(u.clearBit(255));
+
         return pointMultiply(k, elemU).asByteArray(params.getBytes());
     }
 

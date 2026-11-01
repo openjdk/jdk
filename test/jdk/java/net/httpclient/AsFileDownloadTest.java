@@ -87,7 +87,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  *        jdk.test.lib.Platform jdk.test.lib.util.FileUtils
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.common.TestServerConfigurator
- * @run junit/othervm/timeout=480 AsFileDownloadTest
+ * @run junit/othervm/timeout=480 ${test.main.class}
  */
 public class AsFileDownloadTest {
 

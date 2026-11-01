@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266666 8275788 8276964 8299080 8276966
+ * @bug 8266666 8275788 8276964 8299080 8276966 8385738
  * @summary Implementation for snippets
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -39,6 +39,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -2684,5 +2685,95 @@ public class TestSnippetTag extends SnippetTester {
                         </details>
                         """);
         checkNoCrashes();
+    }
+
+    @Test
+    public void testSnippetIdCounterResetsPerPage(Path base) throws IOException {
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                """
+                package p;
+                import java.lang.annotation.Target;
+                import java.lang.annotation.ElementType;
+                @Target({ElementType.TYPE, ElementType.METHOD})
+                public @interface ACustomAnnotation {
+                }
+                """,
+                """
+                package p;
+                import java.lang.annotation.Target;
+                import java.lang.annotation.ElementType;
+                @Target({ElementType.TYPE, ElementType.METHOD})
+                public @interface ZCustomAnnotation {
+                }
+                """,
+                """
+                package p;
+                /** Class A. */
+                public class A {
+                    /**
+                     * First snippet on A.foo:
+                     * {@snippet :
+                     *     int x = 1; // first
+                     * }
+                     * Second snippet on A.foo:
+                     * {@snippet :
+                     *     int y = 2; // second
+                     * }
+                     */
+                    @ACustomAnnotation
+                    @ZCustomAnnotation
+                    public void foo() {}
+                }
+                """,
+                """
+                package p;
+                /** Class B. */
+                public class B {
+                    /**
+                     * First snippet on B.foo:
+                     * {@snippet :
+                     *     int x = 1; // first
+                     * }
+                     * Second snippet on B.foo:
+                     * {@snippet :
+                     *     int y = 2; // second
+                     * }
+                     */
+                    @ACustomAnnotation
+                    @ZCustomAnnotation
+                    public void foo() {}
+                }
+                """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-use",
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+        for (String cls : new String[] {
+                "A.html",
+                "B.html",
+                "class-use/ACustomAnnotation.html",
+                "class-use/ZCustomAnnotation.html"}) {
+            var file = base
+                .resolve("out")
+                .resolve("p")
+                .resolve(cls);
+            String content = Files.readString(file);
+            for (var snippetId : new String[] {"snippet-foo()1", "snippet-foo()2"}) {
+                checking("id \"" + snippetId + "\" present in " + cls);
+                if (content.contains("id=\"" + snippetId + "\"")) {
+                    passed("found");
+                } else {
+                    failed("" + snippetId + " not found in " +
+                        String.join("\n", Arrays.asList(content.split("\n"))
+                            .stream()
+                            .filter(l -> l.contains("pre class=\"snippet\""))
+                            .toList()));
+                }
+            }
+        }
     }
 }

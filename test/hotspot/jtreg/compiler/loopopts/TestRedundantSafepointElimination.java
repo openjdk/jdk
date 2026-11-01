@@ -30,7 +30,7 @@ import compiler.lib.ir_framework.*;
  * @bug 8347499
  * @summary Tests that redundant safepoints can be eliminated in loops.
  * @library /test/lib /
- * @run main compiler.loopopts.TestRedundantSafepointElimination
+ * @run driver ${test.main.class}
  */
 public class TestRedundantSafepointElimination {
     public static void main(String[] args) {

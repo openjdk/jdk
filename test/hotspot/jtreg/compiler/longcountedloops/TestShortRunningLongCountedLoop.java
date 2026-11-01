@@ -32,14 +32,11 @@ import java.util.Objects;
  * @bug 8342692
  * @summary C2: long counted loop/long range checks: don't create loop-nest for short running loops
  * @library /test/lib /
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.longcountedloops.TestShortRunningLongCountedLoop
+ * @run driver ${test.main.class}
  */
 
 public class TestShortRunningLongCountedLoop {
     private static volatile int volatileField;
-    private final static WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) {
         // IR rules expect a single loop so disable unrolling
@@ -351,8 +348,9 @@ public class TestShortRunningLongCountedLoop {
                     throw new RuntimeException("incorrect result: " + res);
                 }
             }
-            wb.enqueueMethodForCompilation(info.getTest(), CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-            if (!wb.isMethodCompiled(info.getTest())) {
+            WhiteBox whitebox = WhiteBox.getWhiteBox();
+            whitebox.enqueueMethodForCompilation(info.getTest(), CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
+            if (!whitebox.isMethodCompiled(info.getTest())) {
                 throw new RuntimeException("Should be compiled now");
             }
             for (int i = 0; i < 10; i++) {

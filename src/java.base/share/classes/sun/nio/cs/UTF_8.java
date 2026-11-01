@@ -424,6 +424,10 @@ public final class UTF_8 extends Unicode {
             return !Character.isSurrogate(c);
         }
 
+        public boolean canEncode(CharSequence cs) {
+            return Unicode.isValidUnicode(cs);
+        }
+
         public boolean isLegalReplacement(byte[] repl) {
             return ((repl.length == 1 && repl[0] >= 0) ||
                     super.isLegalReplacement(repl));

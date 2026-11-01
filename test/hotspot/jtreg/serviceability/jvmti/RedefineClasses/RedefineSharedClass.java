@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Verify should_clean_previous_versions when run with retransformation and CDS
  * @requires vm.jvmti
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires vm.opt.final.ClassUnloading
  * @requires vm.flagless
  * @library /test/lib

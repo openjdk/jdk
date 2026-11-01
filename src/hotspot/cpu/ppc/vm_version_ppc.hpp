@@ -49,7 +49,7 @@ protected:
 
   static void print_features();
   static void determine_features(); // also measures cache line size
-  static void config_dscr(); // Power 8: Configure Data Stream Control Register.
+  static void config_dscr(); // Configure Data Stream Control Register.
 
 public:
   // Initialization
@@ -66,6 +66,8 @@ public:
   constexpr static bool supports_secondary_supers_table() { return true; }
 
   static bool supports_float16() { return PowerArchitecturePPC64 >= 9; }
+
+  static bool supports_on_spin_wait() { return true; }
 
   static bool is_determine_features_test_running() { return _is_determine_features_test_running; }
   // CPU instruction support

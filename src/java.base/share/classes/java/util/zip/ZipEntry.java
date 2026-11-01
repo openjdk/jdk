@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -651,8 +651,9 @@ public class ZipEntry implements ZipConstants, Cloneable {
     }
 
     /**
-     * Sets the optional comment string for the entry.
-     * @param comment the comment string
+     * Sets the optional comment string for the entry. If {@code comment} is an
+     * empty string or {@code null} then the entry will have no comment.
+     * @param comment the comment string, or an empty string or null for no comment
      * @throws IllegalArgumentException if the combined length
      * of the specified entry comment, the {@linkplain #getName() entry name},
      * the {@linkplain #getExtra() extra field data}, and the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import static java.lang.System.out;
  *                   -Djdk.http.auth.tunneling.disabledSchemes
  *                   -Djdk.httpclient.allowRestrictedHeaders=connection
  *                   -Djdk.internal.httpclient.debug=true
- *                   HttpsTunnelAuthTest
+ *                   ${test.main.class}
  *
  */
 //-Djdk.internal.httpclient.debug=true -Dtest.debug=true

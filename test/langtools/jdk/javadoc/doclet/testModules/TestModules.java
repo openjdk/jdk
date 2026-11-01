@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  *      8175823 8166306 8178043 8181622 8183511 8169819 8074407 8183037 8191464
  *      8164407 8192007 8182765 8196200 8196201 8196202 8196202 8205593 8202462
  *      8184205 8219060 8223378 8234746 8239804 8239816 8253117 8245058 8261976
+ *      8373526
  * @summary Test modules support in javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -587,16 +588,16 @@ public class TestModules extends JavadocTester {
                     <li class="nav-bar-cell1-rev">Module</li>""");
         checkOutput("moduleA/testpkgmdlA/class-use/TestClassInModuleA.html", true,
                 """
-                    <li><a href="../../module-summary.html">moduleA</a></li>""");
+                    <li><a href="../../module-summary.html" title="Module moduleA">moduleA</a></li>""");
         checkOutput("moduleB/testpkgmdlB/package-summary.html", true,
                 """
-                    <li><a href="../module-summary.html">moduleB</a></li>""");
+                    <li><a href="../module-summary.html" title="Module moduleB">moduleB</a></li>""");
         checkOutput("moduleB/testpkgmdlB/TestClassInModuleB.html", false,
                 """
                     <li><a href="../module-summary.html">Module</a></li>""");
         checkOutput("moduleB/testpkgmdlB/class-use/TestClassInModuleB.html", true,
                 """
-                    <li><a href="../../module-summary.html">moduleB</a></li>""");
+                    <li><a href="../../module-summary.html" title="Module moduleB">moduleB</a></li>""");
     }
 
     void checkNoModuleLink() {
@@ -823,19 +824,19 @@ public class TestModules extends JavadocTester {
     void checkModuleFilesAndLinks(boolean found) {
         checkFileAndOutput("moduleA/testpkgmdlA/package-summary.html", found,
                 """
-                    <li><a href="../module-summary.html">moduleA</a></li>""",
+                    <li><a href="../module-summary.html" title="Module moduleA">moduleA</a></li>""",
                 """
-                    <li><a href="../module-summary.html">moduleA</a></li>""");
+                    <li><a href="../module-summary.html" title="Module moduleA">moduleA</a></li>""");
         checkFileAndOutput("moduleA/testpkgmdlA/TestClassInModuleA.html", found,
                 """
-                    <li><a href="../module-summary.html">moduleA</a></li>""",
+                    <li><a href="../module-summary.html" title="Module moduleA">moduleA</a></li>""",
                 """
-                    <li><a href="../module-summary.html">moduleA</a></li>""");
+                    <li><a href="../module-summary.html" title="Module moduleA">moduleA</a></li>""");
         checkFileAndOutput("moduleB/testpkgmdlB/AnnotationType.html", found,
                 """
-                    <li><a href="../module-summary.html">moduleB</a></li>""",
+                    <li><a href="../module-summary.html" title="Module moduleB">moduleB</a></li>""",
                 """
-                    <li><a href="package-summary.html">testpkgmdlB</a></li>""");
+                    <li><a href="package-summary.html" title="Package testpkgmdlB">testpkgmdlB</a></li>""");
         checkFiles(found,
                 "moduleA/module-summary.html");
     }

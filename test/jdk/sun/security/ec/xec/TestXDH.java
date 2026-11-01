@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,32 @@
 
 /*
  * @test
- * @bug 8171277 8206915
+ * @bug 8171277 8206915 8368841
  * @summary Test XDH key agreement
  * @library /test/lib
- * @build jdk.test.lib.Convert
  * @run main TestXDH
  */
 
-import java.security.*;
-import java.security.spec.*;
-import javax.crypto.*;
+import java.math.BigInteger;
+import java.security.InvalidKeyException;
+import java.security.InvalidParameterException;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PublicKey;
+import java.security.PrivateKey;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.security.spec.NamedParameterSpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.XECPublicKeySpec;
+import java.security.spec.XECPrivateKeySpec;
+import javax.crypto.KeyAgreement;
 import java.util.Arrays;
 import java.util.HexFormat;
 
-import jdk.test.lib.Convert;
 import jdk.test.lib.hexdump.ASN1Formatter;
 import jdk.test.lib.hexdump.HexPrinter;
 
@@ -354,7 +366,6 @@ public class TestXDH {
             throw new RuntimeException("fail: expected=" + result + ", actual="
                 + HexFormat.of().withUpperCase().formatHex(sharedSecret));
         }
-
     }
 
     private static void runDiffieHellmanTest(String curveName, String a_pri,
@@ -365,9 +376,8 @@ public class TestXDH {
         KeySpec privateSpec = new XECPrivateKeySpec(paramSpec,
             HexFormat.of().parseHex(a_pri));
         PrivateKey privateKey = kf.generatePrivate(privateSpec);
-        boolean clearHighBit = curveName.equals("X25519");
         KeySpec publicSpec = new XECPublicKeySpec(paramSpec,
-            Convert.hexStringToBigInteger(clearHighBit, b_pub));
+            hexStringToBigInteger(b_pub));
         PublicKey publicKey = kf.generatePublic(publicSpec);
 
         byte[] encodedPrivateKey = privateKey.getEncoded();
@@ -392,6 +402,21 @@ public class TestXDH {
             throw new RuntimeException("fail: expected=" + result + ", actual="
                 + HexFormat.of().withUpperCase().formatHex(sharedSecret));
         }
+    }
+
+    /*
+     * Converts a hexidecimal string to the corresponding little-endian
+     * number as a BigInteger
+     */
+    private static BigInteger hexStringToBigInteger(String str) {
+        BigInteger result = BigInteger.ZERO;
+        for (int i = 0; i < str.length() / 2; i++) {
+            int curVal = Character.digit(str.charAt(2 * i), 16);
+            curVal <<= 4;
+            curVal += Character.digit(str.charAt(2 * i + 1), 16);
+            result = result.add(BigInteger.valueOf(curVal).shiftLeft(8 * i));
+        }
+        return result;
     }
 
     /*

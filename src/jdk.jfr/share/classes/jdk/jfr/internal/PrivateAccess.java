@@ -33,7 +33,6 @@ import jdk.jfr.Configuration;
 import jdk.jfr.EventSettings;
 import jdk.jfr.EventType;
 import jdk.jfr.Recording;
-import jdk.jfr.RecordingState;
 import jdk.jfr.SettingDescriptor;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.management.EventSettingsModifier;
@@ -75,15 +74,13 @@ public abstract class PrivateAccess {
 
     public abstract AnnotationElement newAnnotation(Type annotationType, List<Object> values, boolean boot);
 
-    public abstract ValueDescriptor newValueDescriptor(String name, Type fieldType, List<AnnotationElement> annotations, int dimension, boolean constantPool, String fieldName);
+    public abstract ValueDescriptor newValueDescriptor(String name, Type fieldType, List<AnnotationElement> annotations, int dimension, boolean constantPool);
 
     public abstract PlatformRecording getPlatformRecording(Recording r);
 
     public abstract PlatformEventType getPlatformEventType(EventType eventType);
 
     public abstract boolean isConstantPool(ValueDescriptor v);
-
-    public abstract String getFieldName(ValueDescriptor v);
 
     public abstract ValueDescriptor newValueDescriptor(Class<?> type, String name);
 
@@ -97,7 +94,7 @@ public abstract class PrivateAccess {
 
     public abstract PlatformRecorder getPlatformRecorder();
 
-    public abstract Recording newRecording(RecordingState state);
+    public abstract Recording newRecording(Boolean register);
 
     public abstract EventSettings newEventSettings(EventSettingsModifier esm);
 

@@ -233,7 +233,7 @@ class PerfData : public CHeapObj<mtInternal> {
   public:
 
     // the Variability enum must be kept in synchronization with the
-    // the com.sun.hotspot.perfdata.Variability class
+    // the sun.management.counter.Variability class
     enum Variability {
       V_Constant = 1,
       V_Monotonic = 2,
@@ -242,7 +242,7 @@ class PerfData : public CHeapObj<mtInternal> {
     };
 
     // the Units enum must be kept in synchronization with the
-    // the com.sun.hotspot.perfdata.Units class
+    // the sun.management.counter.Units class
     enum Units {
       U_None = 1,
       U_Bytes = 2,

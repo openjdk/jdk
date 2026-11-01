@@ -27,7 +27,7 @@
  * @summary barrier expansion breaks if barrier is right after call to rethrow stub
  * @requires vm.gc.Shenandoah
  *
- * @run main/othervm -XX:CompileOnly=CallMultipleCatchProjs::test -Xcomp -Xverify:none -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC CallMultipleCatchProjs
+ * @run main/othervm -XX:CompileOnly=CallMultipleCatchProjs::test -Xcomp -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC CallMultipleCatchProjs
  *
  */
 

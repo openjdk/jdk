@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,6 +157,7 @@ class verification_type_info {
 };
 
 #define FOR_EACH_STACKMAP_FRAME_TYPE(macro, arg1, arg2) \
+  macro(early_larval, arg1, arg2) \
   macro(same_frame, arg1, arg2) \
   macro(same_frame_extended, arg1, arg2) \
   macro(same_locals_1_stack_item_frame, arg1, arg2) \
@@ -221,9 +222,11 @@ class stack_map_frame {
 class same_frame : public stack_map_frame {
  private:
   static int frame_type_to_offset_delta(u1 frame_type) {
-      return frame_type + 1; }
+    return frame_type + 1;
+  }
   static u1 offset_delta_to_frame_type(int offset_delta) {
-      return checked_cast<u1>(offset_delta - 1); }
+    return checked_cast<u1>(offset_delta - 1);
+  }
 
  public:
 
@@ -327,9 +330,11 @@ class same_locals_1_stack_item_frame : public stack_map_frame {
   address type_addr() const { return frame_type_addr() + sizeof(u1); }
 
   static int frame_type_to_offset_delta(u1 frame_type) {
-      return frame_type - 63; }
+    return frame_type - 63;
+  }
   static u1 offset_delta_to_frame_type(int offset_delta) {
-      return (u1)(offset_delta + 63); }
+    return (u1)(offset_delta + 63);
+  }
 
  public:
   static bool is_frame_type(u1 tag) {
@@ -396,6 +401,75 @@ class same_locals_1_stack_item_frame : public stack_map_frame {
   void print_truncated(outputStream* st, int current_offset = -1) const {
     st->print("same_locals_1_stack_item_frame(@%d), output truncated, Stackmap exceeds table size.",
               offset_delta() + current_offset);
+  }
+};
+
+class early_larval : public stack_map_frame {
+ private:
+  static int frame_type_to_offset_delta(u1 frame_type) {
+    return 0;
+  }
+  static u1 offset_delta_to_frame_type(int offset_delta) {
+    return checked_cast<u1>(246);
+  }
+
+  address num_unset_fields_addr() const { return frame_type_addr() + sizeof(u1); }
+  int number_of_unset_fields() const { return Bytes::get_Java_u2(num_unset_fields_addr()); }
+
+  // EARLY_LARVAL frames wrap regular stack map frames
+  stack_map_frame* nested_frame() const { return (stack_map_frame*)(frame_type_addr() + calculate_size(number_of_unset_fields())); }
+
+ public:
+  static bool is_frame_type(u1 tag) {
+    return tag == 246;
+  }
+
+  static early_larval* at(address addr) {
+    assert(is_frame_type(*addr), "Wrong frame id");
+    return (early_larval*)addr;
+  }
+
+  static early_larval* create_at(address addr, int offset_delta) {
+    early_larval* sm = (early_larval*)addr;
+    return sm;
+  }
+
+  static size_t calculate_size(u2 num_unset_fields) { return sizeof(u1) + sizeof(u2) + (sizeof(u2) * num_unset_fields); }
+
+  size_t size() const { return calculate_size(number_of_unset_fields()) + nested_frame()->size(); }
+  int offset_delta() const { return nested_frame()->offset_delta(); }
+
+  void set_offset_delta(int offset_delta) {
+    assert(offset_delta == 0, "early_larval should not have an offset");
+    set_frame_type(offset_delta_to_frame_type(offset_delta));
+  }
+
+  int number_of_types() const { return 0; }
+  verification_type_info* types() const { return nullptr; }
+
+  bool is_valid_offset(int offset_delta) const {
+    return is_frame_type(offset_delta_to_frame_type(offset_delta));
+  }
+
+  bool verify_subtype(address start, address end) const {
+    return nested_frame()->verify(start, end);
+  }
+
+  void print_on(outputStream* st, int current_offset = -1) const {
+    st->print("early_larval(%d unset fields: ", number_of_unset_fields());
+    st->print("[ ");
+    address addr = num_unset_fields_addr() + sizeof(u2);
+    for (int i = 0; i < number_of_unset_fields(); i++) {
+      st->print("%u ", Bytes::get_Java_u2(addr + (i * sizeof(u2))));
+    }
+    st->print_cr("])");
+    st->print("\t");
+    nested_frame()->print_on(st, current_offset);
+  }
+
+  void print_truncated(outputStream* st, int current_offset = -1) const {
+    // If we fail to verify, we may have a nested early_larval
+    st->print("early_larval(%d unset fields), output truncated, Stackmap exceeds table size.", number_of_unset_fields());
   }
 };
 
@@ -657,9 +731,11 @@ class full_frame : public stack_map_frame {
   address num_locals_addr() const { return offset_delta_addr() + sizeof(u2); }
   address locals_addr() const { return num_locals_addr() + sizeof(u2); }
   address stack_slots_addr(address end_of_locals) const {
-      return end_of_locals; }
+    return end_of_locals;
+  }
   address stack_addr(address end_of_locals) const {
-      return stack_slots_addr(end_of_locals) + sizeof(u2); }
+    return stack_slots_addr(end_of_locals) + sizeof(u2);
+  }
 
   enum { _frame_id = 255 };
 
@@ -930,11 +1006,14 @@ class stack_map_table {
 class stack_map_table_attribute {
  private:
   address name_index_addr() const {
-      return (address)this; }
+    return (address)this;
+  }
   address attribute_length_addr() const {
-      return name_index_addr() + sizeof(u2); }
+    return name_index_addr() + sizeof(u2);
+  }
   address stack_map_table_addr() const {
-      return attribute_length_addr() + sizeof(u4); }
+    return attribute_length_addr() + sizeof(u4);
+  }
   NONCOPYABLE(stack_map_table_attribute);
 
  protected:
@@ -948,9 +1027,11 @@ class stack_map_table_attribute {
   }
 
   u2 name_index() const {
-    return Bytes::get_Java_u2(name_index_addr()); }
+    return Bytes::get_Java_u2(name_index_addr());
+  }
   u4 attribute_length() const {
-    return Bytes::get_Java_u4(attribute_length_addr()); }
+    return Bytes::get_Java_u4(attribute_length_addr());
+  }
   stack_map_table* table() const {
     return stack_map_table::at(stack_map_table_addr());
   }

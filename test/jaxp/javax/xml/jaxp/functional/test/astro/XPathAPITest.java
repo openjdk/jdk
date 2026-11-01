@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,17 @@
  */
 package test.astro;
 
-import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
-import static javax.xml.xpath.XPathConstants.DOM_OBJECT_MODEL;
-import static javax.xml.xpath.XPathConstants.NODESET;
-import static jaxp.library.JAXPTestUtilities.filenameToURL;
-import static org.testng.Assert.assertEquals;
-import static test.astro.AstroConstants.ASTROCAT;
-import static test.astro.AstroConstants.JAXP_SCHEMA_LANGUAGE;
-import static test.astro.AstroConstants.JAXP_SCHEMA_SOURCE;
-
-import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Iterator;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
@@ -44,21 +43,26 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathVariableResolver;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Iterator;
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
+import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
+import static javax.xml.xpath.XPathConstants.DOM_OBJECT_MODEL;
+import static javax.xml.xpath.XPathConstants.NODESET;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static test.astro.AstroConstants.ASTROCAT;
+import static test.astro.AstroConstants.JAXP_SCHEMA_LANGUAGE;
+import static test.astro.AstroConstants.JAXP_SCHEMA_SOURCE;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm test.astro.XPathAPITest
+ * @run junit/othervm test.astro.XPathAPITest
  * @summary test XPath API
  */
-@Test(singleThreaded = true)
+@Execution(ExecutionMode.SAME_THREAD)
+@TestInstance(Lifecycle.PER_CLASS)
 public class XPathAPITest {
     private static final String STARDB_STAR_3_CONSTELLATION = "//astro:stardb/astro:star[3]/astro:constellation";
     private static final String STARDB_STAR = "//astro:stardb/astro:star";
@@ -66,7 +70,7 @@ public class XPathAPITest {
     private XPathFactory xpf;
     private NamespaceContext nsContext;
 
-    @BeforeClass
+    @BeforeAll
     public void setup() throws Exception {
         DocumentBuilderFactory df = DocumentBuilderFactory.newInstance();
         df.setNamespaceAware(true);
@@ -81,45 +85,49 @@ public class XPathAPITest {
         nsContext = new MyNamespaceContext();
     }
 
-    @DataProvider(name = "nodelist-evaluator")
-    public Object[][] getNodeListEvaluator() throws MalformedURLException {
-        return new Object[][] { { (XPathEvaluator) expression -> getXPath().evaluate(expression, doc.getDocumentElement(), NODESET) },
-                { (XPathEvaluator) expression -> getXPath().evaluate(expression, createXMLInputSource(), NODESET) },
-                { (XPathEvaluator) expression -> getXPathExpression(expression).evaluate(doc.getDocumentElement(), NODESET) },
-                { (XPathEvaluator) expression -> getXPathExpression(expression).evaluate(createXMLInputSource(), NODESET) } };
+    public Object[] getNodeListEvaluator() {
+        return new Object[] {
+                (XPathEvaluator) expression -> getXPath().evaluate(expression, doc.getDocumentElement(), NODESET),
+                (XPathEvaluator) expression -> getXPath().evaluate(expression, createXMLInputSource(), NODESET),
+                (XPathEvaluator) expression -> getXPathExpression(expression).evaluate(doc.getDocumentElement(), NODESET),
+                (XPathEvaluator) expression -> getXPathExpression(expression).evaluate(createXMLInputSource(), NODESET),
+        };
     }
 
     /*
      * Test xpath expression evaluations method that returns type indicated by
      * QName
      */
-    @Test(dataProvider = "nodelist-evaluator")
+    @ParameterizedTest
+    @MethodSource("getNodeListEvaluator")
     public void testEvaluateNodeList(XPathEvaluator evaluator) throws Exception {
         NodeList o = (NodeList) evaluator.evaluate(STARDB_STAR);
-        assertEquals(o.getLength(), 10);
+        assertEquals(10, o.getLength());
     }
 
-    @DataProvider(name = "string-evaluator")
-    public Object[][] getStringEvaluator() throws MalformedURLException {
-        return new Object[][] { { (XPathEvaluator) expression -> getXPath().evaluate(expression, doc.getDocumentElement()) },
-                { (XPathEvaluator) expression -> getXPath().evaluate(expression, createXMLInputSource()) },
-                { (XPathEvaluator) expression -> getXPathExpression(expression).evaluate(doc.getDocumentElement()) },
-                { (XPathEvaluator) expression -> getXPathExpression(expression).evaluate(createXMLInputSource()) } };
+    public Object[] getStringEvaluator() {
+        return new Object[] {
+                (XPathEvaluator) expression -> getXPath().evaluate(expression, doc.getDocumentElement()),
+                (XPathEvaluator) expression -> getXPath().evaluate(expression, createXMLInputSource()),
+                (XPathEvaluator) expression -> getXPathExpression(expression).evaluate(doc.getDocumentElement()),
+                (XPathEvaluator) expression -> getXPathExpression(expression).evaluate(createXMLInputSource()),
+        };
     }
 
     /*
      * Test xpath expression evaluations method that returns String
      */
-    @Test(dataProvider = "string-evaluator")
+    @ParameterizedTest
+    @MethodSource("getStringEvaluator")
     public void testEvaluateString(XPathEvaluator evaluator) throws Exception {
-        assertEquals(evaluator.evaluate(STARDB_STAR_3_CONSTELLATION), "Psc");
+        assertEquals("Psc", evaluator.evaluate(STARDB_STAR_3_CONSTELLATION));
     }
 
     @Test
     public void testXPathVariableResolver() throws Exception {
         XPath xpath = getXPath();
         xpath.setXPathVariableResolver(new MyXPathVariableResolver());
-        assertEquals(xpath.evaluate("//astro:stardb/astro:star[astro:hr=$id]/astro:constellation", doc.getDocumentElement()), "Peg");
+        assertEquals("Peg", xpath.evaluate("//astro:stardb/astro:star[astro:hr=$id]/astro:constellation", doc.getDocumentElement()));
 
     }
 
@@ -142,15 +150,15 @@ public class XPathAPITest {
             return "http://www.astro.com/astro".equals(nsURI) ? "astro" : "";
         }
 
-        public Iterator getPrefixes(String nsURI) {
-            ArrayList list = new ArrayList();
+        public Iterator<String> getPrefixes(String nsURI) {
+            ArrayList<String> list = new ArrayList<>();
             list.add("astro");
             return list.iterator();
         }
     }
 
     @FunctionalInterface
-    private interface XPathEvaluator {
+    public interface XPathEvaluator {
         Object evaluate(String expression) throws XPathExpressionException;
     }
 
@@ -165,6 +173,6 @@ public class XPathAPITest {
     }
 
     private InputSource createXMLInputSource() {
-        return new InputSource(filenameToURL(ASTROCAT));
+        return new InputSource(Path.of(ASTROCAT).toUri().toASCIIString());
     }
 }

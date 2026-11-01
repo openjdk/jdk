@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2025 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1935,7 +1935,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="hm">h:mma</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ssa</dateFormatItem>
 						<dateFormatItem id="hv">ha v</dateFormatItem>
-						<dateFormatItem id="Hv">HH'u' v</dateFormatItem>
+						<dateFormatItem id="Hv">HH v</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
 						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
@@ -2359,7 +2359,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="hmv">h:mma v</dateFormatItem>
 						<dateFormatItem id="hv">ha v</dateFormatItem>
-						<dateFormatItem id="Hv">HH'u' v</dateFormatItem>
+						<dateFormatItem id="Hv">HH v</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
 						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>

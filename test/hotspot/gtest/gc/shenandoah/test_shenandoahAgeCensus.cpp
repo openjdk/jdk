@@ -22,7 +22,7 @@
  *
  */
 
-#include "gc/shenandoah/shenandoahAgeCensus.hpp"
+#include "gc/shenandoah/shenandoahAgeCensus.inline.hpp"
 #include "unittest.hpp"
 
 class ShenandoahAgeCensusTest : public ::testing::Test {
@@ -41,8 +41,7 @@ protected:
   }
 
   static void add_population(ShenandoahAgeCensus& census, const uint age, const size_t population_words) {
-    CENSUS_NOISE(census.add(age, 0, 0, population_words, 0));
-    NO_CENSUS_NOISE(census.add(age, 0, population_words, 0));
+    census.add(age, 0, population_words, 0);
   }
 
   void update(ShenandoahAgeCensus& census, size_t cohorts) const {
@@ -63,7 +62,7 @@ protected:
         total += _cohort_populations[i];
       }
     }
-    return total;
+    return total * HeapWordSize;
   }
 
   void promote_all_tenurable(const size_t tenuring_threshold) {
@@ -85,6 +84,13 @@ protected:
 TEST_F(ShenandoahAgeCensusTest, initialize) {
   const ShenandoahAgeCensus census(1);
   EXPECT_EQ(census.tenuring_threshold(), ShenandoahAgeCensus::MAX_COHORTS);
+}
+
+TEST_F(ShenandoahAgeCensusTest, get_tenurable_bytes) {
+  ShenandoahAgeCensus census(1);
+  update(census);
+  EXPECT_EQ(get_total_population_older_than(1), census.get_tenurable_bytes(1));
+  EXPECT_LT(census.get_tenurable_bytes(2), census.get_tenurable_bytes(1));
 }
 
 TEST_F(ShenandoahAgeCensusTest, ignore_small_populations) {

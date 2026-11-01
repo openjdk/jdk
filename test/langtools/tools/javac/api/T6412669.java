@@ -81,8 +81,8 @@ public class T6412669 extends AbstractProcessor {
             for (Element e: roundEnv.getElementsAnnotatedWith(anno)) {
                 m.printNote("    processing element " + e);
                 TreePath p = trees.getPath(e);
-                long start = sp.getStartPosition(p.getCompilationUnit(), p.getLeaf());
-                long end = sp.getEndPosition(p.getCompilationUnit(), p.getLeaf());
+                long start = sp.getStartPosition(p.getLeaf());
+                long end = sp.getEndPosition(p.getLeaf());
                 Diagnostic.Kind k = (start > 0 && end > 0 && start < end
                                      ? Diagnostic.Kind.NOTE : Diagnostic.Kind.ERROR);
                 m.printMessage(k, "test [" + start + "," + end + "]", e);

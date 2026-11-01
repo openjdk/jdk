@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,6 +206,11 @@ public class AMD64Frame extends Frame {
   public Address getSP() { return raw_sp; }
   public Address getID() { return raw_sp; }
 
+  @Override
+  public void setSP(Address newSP) {
+    raw_sp = newSP;
+  }
+
   // FIXME: not implemented yet (should be done for Solaris)
   public boolean isSignalHandlerFrameDbg() { return false; }
   public int     getSignalNumberDbg()      { return 0;     }
@@ -257,6 +262,23 @@ public class AMD64Frame extends Frame {
     // Default is we done have to follow them. The sender_for_xxx will
     // update it accordingly
     map.setIncludeArgumentOops(false);
+
+    // HotSpot has following code in frame::sender_raw() at frame_x86.inline.hpp, however
+    // in_cont() should be false.
+    //
+    //   if (map->in_cont()) { // already in an h-stack
+    //     return map->stack_chunk()->sender(*this, map);
+    //   }
+    //
+    // in_cont() returns true if _chunk() is not null.
+    //
+    // frame::next_frame() creates RegisterMap instance with 4 arguments.
+    // It sets RegisterMap::WalkContinuation::skip to final argument (walk_cont),
+    // therefore _chunk will not be initialized by the following code in c'tor of RegisterMap.
+    //
+    //   if (walk_cont == WalkContinuation::include && thread != nullptr && thread->last_continuation() != nullptr) {
+    //     _chunk = stackChunkHandle(Thread::current()->handle_area()->allocate_null_handle(), true /* dummy */);
+    //   }
 
     if (isEntryFrame())       return senderForEntryFrame(map);
     if (isInterpretedFrame()) return senderForInterpreterFrame(map);
@@ -360,16 +382,6 @@ public class AMD64Frame extends Frame {
     map.setLocation(rbp, savedFPAddr);
   }
 
-  private Frame senderForContinuationStub(AMD64RegisterMap map, CodeBlob cb) {
-    var contEntry = map.getThread().getContEntry();
-
-    Address senderSP = contEntry.getEntrySP();
-    Address senderPC = contEntry.getEntryPC();
-    Address senderFP = contEntry.getEntryFP();
-
-    return new AMD64Frame(senderSP, senderFP, senderPC);
-  }
-
   private Frame senderForCompiledFrame(AMD64RegisterMap map, CodeBlob cb) {
     if (DEBUG) {
       System.out.println("senderForCompiledFrame");
@@ -406,6 +418,22 @@ public class AMD64Frame extends Frame {
       // for it so we must fill in its location as if there was an oopmap entry
       // since if our caller was compiled code there could be live jvm state in it.
       updateMapWithSavedLink(map, savedFPAddr);
+    }
+
+    if (Continuation.isReturnBarrierEntry(senderPC)) {
+      // We assume WalkContinuation is "WalkContinuation::skip".
+      // It is same with c'tor arguments of RegisterMap in frame::next_frame().
+      //
+      // HotSpot code in cpu/x86/frame_x86.inline.hpp:
+      //
+      //   if (Continuation::is_return_barrier_entry(sender_pc)) {
+      //     if (map->walk_cont()) { // about to walk into an h-stack
+      //       return Continuation::top_frame(*this, map);
+      //     } else {
+      //       return Continuation::continuation_bottom_sender(map->thread(), *this, sender_sp);
+      //     }
+      //   }
+      return Continuation.continuationBottomSender(map.getThread(), this, senderSP);
     }
 
     return new AMD64Frame(senderSP, savedFPAddr.getAddressAt(0), senderPC);

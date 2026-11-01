@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,13 +154,6 @@ public:
 
   void set_size( uint size );
   void append( uint exec_off, uint cont_off );
-
-#if INCLUDE_JVMCI
-  void add_deoptimize(uint exec_off) {
-    // Use the same offset as a marker value for deoptimization
-    append(exec_off, exec_off);
-  }
-#endif
 
   // Returns the offset to continue execution at.  If the returned
   // value equals exec_off then the dispatch is expected to be a

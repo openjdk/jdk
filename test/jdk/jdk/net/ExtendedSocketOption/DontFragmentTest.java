@@ -27,8 +27,8 @@
  * @modules jdk.net
  * @library /test/lib
  * @build jdk.test.lib.Platform jdk.test.lib.net.IPSupport
- * @run main/othervm DontFragmentTest ipv4
- * @run main/othervm DontFragmentTest ipv6
+ * @run main/othervm ${test.main.class} ipv4
+ * @run main/othervm ${test.main.class} ipv6
  */
 
 import java.io.IOException;

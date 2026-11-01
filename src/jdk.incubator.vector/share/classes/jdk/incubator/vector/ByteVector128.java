@@ -25,22 +25,22 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
+import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
 @SuppressWarnings("cast")  // warning: redundant cast
+@ValueBased
 final class ByteVector128 extends ByteVector {
     static final ByteSpecies VSPECIES =
         (ByteSpecies) ByteVector.SPECIES_128;
@@ -371,7 +371,7 @@ final class ByteVector128 extends ByteVector {
     @Override
     @ForceInline
     public final ByteShuffle128 toShuffle() {
-        return (ByteShuffle128) toShuffle(vspecies(), false);
+        return (ByteShuffle128) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -598,7 +598,7 @@ final class ByteVector128 extends ByteVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class ByteMask128 extends AbstractMask<Byte> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -646,7 +646,7 @@ final class ByteVector128 extends ByteVector {
 
         @Override
         ByteMask128 uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -656,7 +656,7 @@ final class ByteVector128 extends ByteVector {
 
         @Override
         ByteMask128 bOp(VectorMask<Byte> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = ((ByteMask128)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -806,16 +806,16 @@ final class ByteVector128 extends ByteVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, ByteMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((ByteMask128)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper(((ByteMask128)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, ByteMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((ByteMask128)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper(((ByteMask128)m).getBits()));
         }
 
         @ForceInline
@@ -823,7 +823,7 @@ final class ByteVector128 extends ByteVector {
         static ByteMask128 maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(ByteMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final ByteMask128  TRUE_MASK = new ByteMask128(true);
         private static final ByteMask128 FALSE_MASK = new ByteMask128(false);
@@ -831,7 +831,7 @@ final class ByteVector128 extends ByteVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class ByteShuffle128 extends AbstractShuffle<Byte> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -883,7 +883,7 @@ final class ByteVector128 extends ByteVector {
 
         @Override
         ByteVector128 toBitsVector0() {
-            return ((ByteVector128) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return ((ByteVector128) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -934,7 +934,7 @@ final class ByteVector128 extends ByteVector {
         @ForceInline
         public final ByteMask128 laneIsValid() {
             return (ByteMask128) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -942,7 +942,7 @@ final class ByteVector128 extends ByteVector {
         public final ByteShuffle128 rearrange(VectorShuffle<Byte> shuffle) {
             ByteShuffle128 concreteShuffle = (ByteShuffle128) shuffle;
             return (ByteShuffle128) toBitsVector().rearrange(concreteShuffle)
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
         }
 
         @ForceInline
@@ -955,7 +955,7 @@ final class ByteVector128 extends ByteVector {
                 v = (ByteVector128) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return (ByteShuffle128) v.toShuffle(vspecies(), false);
+            return (ByteShuffle128) v.toShuffle(VSPECIES, false);
         }
 
         private static byte[] prepare(int[] indices, int offset) {

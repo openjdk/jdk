@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
+ * @key headful
  * @bug 5100806
  * @summary TextArea.select(0,0) does not de-select the selected text properly
- * @key headful
  * @run main CorrectTextComponentSelectionTest
  */
 
@@ -38,7 +38,6 @@ import java.awt.Robot;
 import java.awt.TextArea;
 import java.awt.TextComponent;
 import java.awt.TextField;
-import java.lang.reflect.InvocationTargetException;
 
 public class CorrectTextComponentSelectionTest {
     static TextField tf = new TextField("TextField");
@@ -46,14 +45,11 @@ public class CorrectTextComponentSelectionTest {
     static Robot r;
     static Frame frame;
     static volatile Color color_center;
-    static volatile Point loc;
 
     public static void main(String[] args) throws Exception {
         try {
             r = new Robot();
-            EventQueue.invokeAndWait(() -> {
-                initialize();
-            });
+            EventQueue.invokeAndWait(() -> initialize());
             r.waitForIdle();
             r.delay(1000);
 
@@ -75,24 +71,13 @@ public class CorrectTextComponentSelectionTest {
 
         // We should place to the text components the long strings in order to
         // cover the components by the selection completely
-        String sf = "";
-        for (int i = 0; i < 50; i++) {
-            sf = sf + " ";
-        }
-        tf.setText(sf);
+        tf.setText(" ".repeat(50));
         // We check the color of the text component in order to find out the
         // bug reproducible situation
         tf.setForeground(Color.WHITE);
         tf.setBackground(Color.WHITE);
 
-        String sa = "";
-        for (int i = 0; i < 50; i++) {
-            for (int j = 0; j < 50; j++) {
-                sa = sa + " ";
-            }
-            sa = sa + "\n";
-        }
-        ta.setText(sa);
+        ta.setText((" ".repeat(50) + "\n").repeat(50));
         ta.setForeground(Color.WHITE);
         ta.setBackground(Color.WHITE);
 
@@ -111,6 +96,7 @@ public class CorrectTextComponentSelectionTest {
 
         r.waitForIdle();
         r.delay(100);
+
         EventQueue.invokeAndWait(() -> {
             tc.requestFocus();
             tc.selectAll();
@@ -119,18 +105,15 @@ public class CorrectTextComponentSelectionTest {
 
         r.waitForIdle();
         r.delay(100);
-        EventQueue.invokeAndWait(() -> {
-            loc = tc.getLocationOnScreen();
-        });
-        r.waitForIdle();
-        r.delay(100);
 
         EventQueue.invokeAndWait(() -> {
-            color_center = r.getPixelColor(loc.x + tc.getWidth() / 2, loc.y + tc.getHeight() / 2);
+            Point p = tc.getLocationOnScreen();
+            p.translate(tc.getWidth() / 2, tc.getHeight() / 2);
+            color_center = r.getPixelColor(p.x, p.y);
         });
 
-        System.out.println("Color of the text component (CENTER) =" + color_center);
-        System.out.println("White color=" + Color.WHITE);
+        System.out.println("Color of the text component (CENTER) = " + color_center);
+        System.out.println("White color = " + Color.WHITE);
 
         if (color_center.getRGB() != Color.WHITE.getRGB()) {
             throw new RuntimeException("Test Failed");

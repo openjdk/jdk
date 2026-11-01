@@ -98,6 +98,12 @@ public class SimpleCDSAppTester {
         return this;
     }
 
+    // Replace VM args with new list
+    public SimpleCDSAppTester setVmArgs(String... args) {
+        vmArgs = args;
+        return this;
+    }
+
     public SimpleCDSAppTester appCommandLine(String... args) {
         this.appCommandLine = args;
         return this;
@@ -207,8 +213,37 @@ public class SimpleCDSAppTester {
         return this;
     }
 
+    public SimpleCDSAppTester runAOTTrainingAndAssemblyWorkflow() throws Exception {
+        tester.runAOTTrainingAndAssemblyWorkflow();
+        return this;
+    }
+
+    public SimpleCDSAppTester productionRun() throws Exception {
+        tester.productionRun();
+        return this;
+    }
+
     public SimpleCDSAppTester run(String args[])  throws Exception {
         tester.run(args);
+        return this;
+    }
+
+    public SimpleCDSAppTester rerunProduction(String... extraVmArgs) throws Exception {
+        tester.productionRun(extraVmArgs);
+        return this;
+    }
+
+    public SimpleCDSAppTester rerunProduction(String[] extraVmArgs, String... extraAppArgs) throws Exception {
+        tester.productionRun(extraVmArgs, extraAppArgs);
+        return this;
+    }
+
+    public String aotCacheFile() {
+        return tester.aotCacheFile();
+    }
+
+    public SimpleCDSAppTester setCheckExitValue(boolean b) {
+        tester.setCheckExitValue(b);
         return this;
     }
 }

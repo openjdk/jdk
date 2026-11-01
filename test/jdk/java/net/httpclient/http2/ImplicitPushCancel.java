@@ -28,7 +28,7 @@
  * @run junit/othervm
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.HttpClient.log=errors,requests,responses,trace
- *      ImplicitPushCancel
+ *      ${test.main.class}
  */
 
 import java.io.ByteArrayInputStream;

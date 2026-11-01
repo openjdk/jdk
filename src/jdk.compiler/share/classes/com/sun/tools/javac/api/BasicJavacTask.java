@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,6 +106,11 @@ public class BasicJavacTask extends JavacTask {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Iterable<? extends JavaFileObject> generate() {
+        throw new IllegalStateException();
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public void close() {
         throw new IllegalStateException();
     }
 

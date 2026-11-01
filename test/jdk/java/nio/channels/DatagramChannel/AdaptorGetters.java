@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @bug 8232673
  * @summary Test the DatagramChannel socket adaptor getter methods
- * @run testng AdaptorGetters
+ * @run junit AdaptorGetters
  */
 
 import java.net.DatagramSocket;
@@ -32,15 +32,15 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.DatagramChannel;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-@Test
 public class AdaptorGetters {
 
     /**
      * Test getters on unbound socket, before and after it is closed.
      */
+    @Test
     public void testUnboundSocket() throws Exception {
         DatagramChannel dc = DatagramChannel.open();
         DatagramSocket s = dc.socket();
@@ -53,12 +53,12 @@ public class AdaptorGetters {
 
             // local address
             assertTrue(s.getLocalAddress().isAnyLocalAddress());
-            assertTrue(s.getLocalPort() == 0);
-            assertTrue(s.getLocalSocketAddress() == null);
+            assertEquals(0, s.getLocalPort());
+            assertNull(s.getLocalSocketAddress());
 
             // remote address
-            assertTrue(s.getInetAddress() == null);
-            assertTrue(s.getPort() == -1);
+            assertNull(s.getInetAddress());
+            assertEquals(-1, s.getPort());
 
         } finally {
             dc.close();
@@ -70,19 +70,20 @@ public class AdaptorGetters {
         assertTrue(s.isClosed());
 
         // local address
-        assertTrue(s.getLocalAddress() == null);
-        assertTrue(s.getLocalPort() == -1);
-        assertTrue(s.getLocalSocketAddress() == null);
+        assertNull(s.getLocalAddress());
+        assertEquals(-1, s.getLocalPort());
+        assertNull(s.getLocalSocketAddress());
 
         // remote address
-        assertTrue(s.getInetAddress() == null);
-        assertTrue(s.getPort() == -1);
-        assertTrue((s.getRemoteSocketAddress() == null));
+        assertNull(s.getInetAddress());
+        assertEquals(-1, s.getPort());
+        assertNull(s.getRemoteSocketAddress());
     }
 
     /**
      * Test getters on bound socket, before and after it is closed.
      */
+    @Test
     public void testBoundSocket() throws Exception {
         DatagramChannel dc = DatagramChannel.open();
         DatagramSocket s = dc.socket();
@@ -96,14 +97,14 @@ public class AdaptorGetters {
             assertFalse(s.isClosed());
 
             // local address
-            assertEquals(s.getLocalAddress(), localAddress.getAddress());
-            assertTrue(s.getLocalPort() == localAddress.getPort());
-            assertEquals(s.getLocalSocketAddress(), localAddress);
+            assertEquals(localAddress.getAddress(), s.getLocalAddress());
+            assertEquals(localAddress.getPort(), s.getLocalPort());
+            assertEquals(localAddress, s.getLocalSocketAddress());
 
             // remote address
-            assertTrue(s.getInetAddress() == null);
-            assertTrue(s.getPort() == -1);
-            assertTrue((s.getRemoteSocketAddress() == null));
+            assertNull(s.getInetAddress());
+            assertEquals(-1, s.getPort());
+            assertNull(s.getRemoteSocketAddress());
 
         } finally {
             dc.close();
@@ -115,19 +116,20 @@ public class AdaptorGetters {
         assertTrue(s.isClosed());
 
         // local address
-        assertTrue(s.getLocalAddress() == null);
-        assertTrue(s.getLocalPort() == -1);
-        assertTrue(s.getLocalSocketAddress() == null);
+        assertNull(s.getLocalAddress());
+        assertEquals(-1, s.getLocalPort());
+        assertNull(s.getLocalSocketAddress());
 
         // remote address
-        assertTrue(s.getInetAddress() == null);
-        assertTrue(s.getPort() == -1);
-        assertTrue((s.getRemoteSocketAddress() == null));
+        assertNull(s.getInetAddress());
+        assertEquals(-1, s.getPort());
+        assertNull(s.getRemoteSocketAddress());
     }
 
     /**
      * Test getters on connected socket, before and after it is closed.
      */
+    @Test
     public void testConnectedSocket() throws Exception {
         var loopback = InetAddress.getLoopbackAddress();
         var remoteAddress = new InetSocketAddress(loopback, 7777);
@@ -143,14 +145,14 @@ public class AdaptorGetters {
             assertFalse(s.isClosed());
 
             // local address
-            assertEquals(s.getLocalAddress(), localAddress.getAddress());
-            assertTrue(s.getLocalPort() == localAddress.getPort());
-            assertEquals(s.getLocalSocketAddress(), localAddress);
+            assertEquals(localAddress.getAddress(), s.getLocalAddress());
+            assertEquals(localAddress.getPort(), s.getLocalPort());
+            assertEquals(localAddress, s.getLocalSocketAddress());
 
             // remote address
-            assertEquals(s.getInetAddress(), remoteAddress.getAddress());
-            assertTrue(s.getPort() == remoteAddress.getPort());
-            assertEquals(s.getRemoteSocketAddress(), remoteAddress);
+            assertEquals(remoteAddress.getAddress(), s.getInetAddress());
+            assertEquals(remoteAddress.getPort(), s.getPort());
+            assertEquals(remoteAddress, s.getRemoteSocketAddress());
 
         } finally {
             dc.close();
@@ -162,19 +164,20 @@ public class AdaptorGetters {
         assertTrue(s.isClosed());
 
         // local address
-        assertTrue(s.getLocalAddress() == null);
-        assertTrue(s.getLocalPort() == -1);
-        assertTrue(s.getLocalSocketAddress() == null);
+        assertNull(s.getLocalAddress());
+        assertEquals(-1, s.getLocalPort());
+        assertNull(s.getLocalSocketAddress());
 
         // remote address
-        assertEquals(s.getInetAddress(), remoteAddress.getAddress());
-        assertTrue(s.getPort() == remoteAddress.getPort());
-        assertEquals(s.getRemoteSocketAddress(), remoteAddress);
+        assertEquals(remoteAddress.getAddress(), s.getInetAddress());
+        assertEquals(remoteAddress.getPort(), s.getPort());
+        assertEquals(remoteAddress, s.getRemoteSocketAddress());
     }
 
     /**
      * Test getters on disconnected socket, before and after it is closed.
      */
+    @Test
     public void testDisconnectedSocket() throws Exception {
         DatagramChannel dc = DatagramChannel.open();
         DatagramSocket s = dc.socket();
@@ -191,14 +194,14 @@ public class AdaptorGetters {
             assertFalse(s.isClosed());
 
             // local address
-            assertEquals(s.getLocalAddress(), localAddress.getAddress());
-            assertTrue(s.getLocalPort() == localAddress.getPort());
-            assertEquals(s.getLocalSocketAddress(), localAddress);
+            assertEquals(localAddress.getAddress(), s.getLocalAddress());
+            assertEquals(localAddress.getPort(), s.getLocalPort());
+            assertEquals(localAddress, s.getLocalSocketAddress());
 
             // remote address
-            assertTrue(s.getInetAddress() == null);
-            assertTrue(s.getPort() == -1);
-            assertTrue((s.getRemoteSocketAddress() == null));
+            assertNull(s.getInetAddress());
+            assertEquals(-1, s.getPort());
+            assertNull(s.getRemoteSocketAddress());
 
 
         } finally {
@@ -211,13 +214,13 @@ public class AdaptorGetters {
         assertTrue(s.isClosed());
 
         // local address
-        assertTrue(s.getLocalAddress() == null);
-        assertTrue(s.getLocalPort() == -1);
-        assertTrue(s.getLocalSocketAddress() == null);
+        assertNull(s.getLocalAddress());
+        assertEquals(-1, s.getLocalPort());
+        assertNull(s.getLocalSocketAddress());
 
         // remote address
-        assertTrue(s.getInetAddress() == null);
-        assertTrue(s.getPort() == -1);
-        assertTrue((s.getRemoteSocketAddress() == null));
+        assertNull(s.getInetAddress());
+        assertEquals(-1, s.getPort());
+        assertNull(s.getRemoteSocketAddress());
     }
 }

@@ -190,6 +190,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(getter)
   method_entry(setter)
   method_entry(abstract)
+  method_entry(object_init)
   method_entry(java_lang_math_sin  )
   method_entry(java_lang_math_cos  )
   method_entry(java_lang_math_tan  )
@@ -417,6 +418,7 @@ address TemplateInterpreterGenerator::generate_method_entry(
   case Interpreter::empty                  : break;
   case Interpreter::getter                 : break;
   case Interpreter::setter                 : break;
+  case Interpreter::object_init            : break;
   case Interpreter::abstract               : entry_point = generate_abstract_entry(); break;
   default:
     entry_point = generate_intrinsic_entry(kind); // process the rest
@@ -429,14 +431,17 @@ address TemplateInterpreterGenerator::generate_method_entry(
 
   // We expect the normal and native entry points to be generated first so we can reuse them.
   if (native) {
+    assert(kind != Interpreter::object_init, "Not supported");
     entry_point = Interpreter::entry_for_kind(synchronized ? Interpreter::native_synchronized : Interpreter::native);
     if (entry_point == nullptr) {
       entry_point = generate_native_entry(synchronized);
     }
   } else {
-    entry_point = Interpreter::entry_for_kind(synchronized ? Interpreter::zerolocals_synchronized : Interpreter::zerolocals);
+    entry_point = kind == Interpreter::object_init ?
+                  Interpreter::entry_for_kind(Interpreter::object_init) :
+                  Interpreter::entry_for_kind(synchronized ? Interpreter::zerolocals_synchronized : Interpreter::zerolocals);
     if (entry_point == nullptr) {
-      entry_point = generate_normal_entry(synchronized);
+      entry_point = generate_normal_entry(synchronized, kind == Interpreter::object_init);
     }
   }
 

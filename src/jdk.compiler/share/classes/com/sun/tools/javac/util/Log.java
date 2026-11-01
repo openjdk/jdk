@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,16 +174,8 @@ public class Log extends AbstractLog {
             }
 
             // Apply the lint configuration (if any) and discard the warning if it gets filtered out
-            if (lint != null) {
-                LintCategory category = diag.getLintCategory();
-                boolean emit = !diag.isFlagSet(DEFAULT_ENABLED) ?       // is the warning not enabled by default?
-                  lint.isEnabled(category) :                            // then emit if the category is enabled
-                  category.annotationSuppression ?                      // else emit if the category is not suppressed, where
-                    !lint.isSuppressed(category) :                      // ...suppression happens via @SuppressWarnings
-                    !options.isDisabled(Option.XLINT, category);        // ...suppression happens via -Xlint:-category
-                if (!emit)
-                    return;
-            }
+            if (lint != null && !lint.shouldEmit(diag))
+                return;
 
             // Proceed
             reportReady(diag);
@@ -566,6 +558,10 @@ public class Log extends AbstractLog {
      */
     public int nwarnings = 0;
 
+    /** The total number of non-lint warnings encountered so far.
+     */
+    public int nonLintWarnings = 0;
+
     /** Tracks whether any warnings have been encountered in each {@link LintCategory}.
      */
     public final EnumSet<LintCategory> lintWarnings = LintCategory.newEmptySet();
@@ -896,6 +892,7 @@ public class Log extends AbstractLog {
         lintWarnings.clear();
         nerrors = 0;
         nwarnings = 0;
+        nonLintWarnings = 0;
         nsuppressederrors = 0;
         nsuppressedwarns = 0;
         while (diagnosticHandler.prev != null)
@@ -989,7 +986,7 @@ public class Log extends AbstractLog {
             nwarnings++;
             Optional.of(diag)
               .map(JCDiagnostic::getLintCategory)
-              .ifPresent(lintWarnings::add);
+              .ifPresentOrElse(lintWarnings::add, () -> nonLintWarnings++);
             break;
         case ERROR:
             nerrors++;
@@ -1129,6 +1126,7 @@ public class Log extends AbstractLog {
         }
         prompt();
         nwarnings++;
+        nonLintWarnings++;
         warnWriter.flush();
     }
 

@@ -6265,3 +6265,17 @@ cmsTagDescriptor* _cmsGetTagDescriptor(cmsContext ContextID, cmsTagSignature sig
     return NULL;
 }
 
+cmsBool _cmsAvoidTypeCheckOnTags(cmsContext ContextID)
+{
+    _cmsTagLinkedList* pt;
+    _cmsTagPluginChunkType* TagPluginChunk = (_cmsTagPluginChunkType*)_cmsContextGetClientChunk(ContextID, TagPlugin);
+
+    for (pt = TagPluginChunk->Tag;
+        pt != NULL;
+        pt = pt->Next) {
+
+        if (pt->Signature == (cmsTagSignature)0) return TRUE;
+    }
+
+    return FALSE;
+}

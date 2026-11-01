@@ -25,6 +25,7 @@
  * @test
  * @bug 8350330
  * @summary C2: PhaseIdealLoop::add_parse_predicate() should mirror GraphKit::add_parse_predicate()
+ * @requires vm.flagless
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -59,7 +60,7 @@ public class TestLoopNestTooManyTraps {
                 test1(10000, 1000);
             } catch (IndexOutOfBoundsException ioobe) {
             }
-            if (j <= 1) {
+            if (j == 0) {
                 if (WHITE_BOX.isMethodCompiled(methodTest1)) {
                     throw new RuntimeException("test1 should have deoptimized at iteration " + j);
                 }

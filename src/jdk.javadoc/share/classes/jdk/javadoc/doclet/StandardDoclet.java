@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import jdk.javadoc.internal.doclets.formats.html.HtmlDoclet;
  * in documentation comments.
  *
  * Taglets invoked by the standard doclet must return strings from
- * {@link Taglet#toString(List,Element) Taglet.toString} as follows:
+ * {@link Taglet#toString(List,Element,java.net.URI) Taglet.toString} as follows:
  *
  * <dl>
  * <dt> <i>Inline Tags</i>

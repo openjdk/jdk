@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "code/codeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
@@ -53,12 +52,13 @@ G1RootProcessor::G1RootProcessor(G1CollectedHeap* g1h, bool is_parallel) :
     _threads_claim_token_scope(),
     _is_parallel(is_parallel) {}
 
-void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_id) {
+void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss) {
   G1GCPhaseTimes* phase_times = _g1h->phase_times();
 
-  G1EvacPhaseTimesTracker timer(phase_times, pss, G1GCPhaseTimes::ExtRootScan, worker_id);
+  G1EvacPhaseTimesTracker timer(phase_times, pss, G1GCPhaseTimes::ExtRootScan);
 
   G1EvacuationRootClosures* closures = pss->closures();
+  uint worker_id = pss->worker_id();
   process_java_roots(closures, phase_times, worker_id);
 
   process_vm_roots(closures, phase_times, worker_id);

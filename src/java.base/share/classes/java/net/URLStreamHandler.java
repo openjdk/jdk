@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -481,14 +481,33 @@ public abstract class URLStreamHandler {
      * @return  a string representation of the {@code URL} argument.
      */
     protected String toExternalForm(URL u) {
-        String s;
+        // The fast paths and branch-free concatenations in this method are here for
+        // a reason and should not be updated without checking performance figures.
+
+        // Optionality, subtly different for authority
+        boolean emptyAuth = u.getAuthority() == null || u.getAuthority().isEmpty();
+        boolean emptyPath = u.getPath() == null;
+        boolean emptyQuery = u.getQuery() == null;
+        boolean emptyRef = u.getRef() == null;
+        var path = emptyPath ? "" : u.getPath();
+        // Fast paths for empty components
+        if (emptyQuery && emptyRef) {
+            return emptyAuth
+                    ? (u.getProtocol() + ":" + path)
+                    : (u.getProtocol() + "://" + u.getAuthority() + path);
+        }
+        // Prefer locals for efficient concatenation
+        var authSep = emptyAuth ? ":" : "://";
+        var auth = emptyAuth ? "" : u.getAuthority();
+        var querySep = emptyQuery ? "" : "?";
+        var query = emptyQuery ? "" : u.getQuery();
+        var refSep = emptyRef ? "" : "#";
+        var ref = emptyRef ? "" : u.getRef();
         return u.getProtocol()
-            + ':'
-            + ((s = u.getAuthority()) != null && !s.isEmpty()
-               ? "//" + s : "")
-            + ((s = u.getPath()) != null ? s : "")
-            + ((s = u.getQuery()) != null ? '?' + s : "")
-            + ((s = u.getRef()) != null ? '#' + s : "");
+                + authSep + auth
+                + path
+                + querySep + query
+                + refSep + ref;
     }
 
     /**

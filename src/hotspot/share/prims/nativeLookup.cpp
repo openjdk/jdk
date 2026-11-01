@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,11 +207,6 @@ extern "C" {
   void JNICALL JVM_RegisterPerfMethods(JNIEnv *env, jclass perfclass);
   void JNICALL JVM_RegisterWhiteBoxMethods(JNIEnv *env, jclass wbclass);
   void JNICALL JVM_RegisterVectorSupportMethods(JNIEnv *env, jclass vsclass);
-#if INCLUDE_JVMCI
-  jobject  JNICALL JVM_GetJVMCIRuntime(JNIEnv *env, jclass c);
-  jlong    JNICALL JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jintArray offsets);
-  void     JNICALL JVM_RegisterJVMCINatives(JNIEnv *env, jclass compilerToVMClass);
-#endif
 }
 
 #define CC (char*)  /* cast a literal from (const char*) */
@@ -227,11 +222,6 @@ static JNINativeMethod lookup_special_native_methods[] = {
   { CC"Java_sun_hotspot_WhiteBox_registerNatives",                 nullptr, FN_PTR(JVM_RegisterWhiteBoxMethods)     },
   { CC"Java_jdk_test_whitebox_WhiteBox_registerNatives",           nullptr, FN_PTR(JVM_RegisterWhiteBoxMethods)     },
   { CC"Java_jdk_internal_vm_vector_VectorSupport_registerNatives", nullptr, FN_PTR(JVM_RegisterVectorSupportMethods)},
-#if INCLUDE_JVMCI
-  { CC"Java_jdk_vm_ci_runtime_JVMCI_initializeRuntime",            nullptr, FN_PTR(JVM_GetJVMCIRuntime)             },
-  { CC"Java_jdk_vm_ci_services_Services_readSystemPropertiesInfo", nullptr, FN_PTR(JVM_ReadSystemPropertiesInfo)    },
-  { CC"Java_jdk_vm_ci_hotspot_CompilerToVM_registerNatives",       nullptr, FN_PTR(JVM_RegisterJVMCINatives)        },
-#endif
 #if INCLUDE_JFR
   { CC"Java_jdk_jfr_internal_JVM_registerNatives",                 nullptr, FN_PTR(jfr_register_natives)            },
 #endif

@@ -141,23 +141,18 @@ class WindowsNativeDispatcher {
         throws WindowsException;
 
     /**
-     * Marks a file as a sparse file.
-     *
      * DeviceIoControl(
-     *   FSCTL_SET_SPARSE
+     *   HANDLE hDevice,
+     *   DWORD dwIoControlCode,
+     *   NULL,
+     *   0,
+     *   LPVOID lpOutBuffer,
+     *   DWORD nOutBufferSize,
+     *   LPDWORD lpBytesReturned,
+     *   NULL
      * )
      */
-    static native void DeviceIoControlSetSparse(long handle)
-        throws WindowsException;
-
-    /**
-     * Retrieves the reparse point data associated with the file or directory.
-     *
-     * DeviceIoControl(
-     *   FSCTL_GET_REPARSE_POINT
-     * )
-     */
-    static native void DeviceIoControlGetReparsePoint(long handle,
+    static native int DeviceIoControl(long handle, int dwIoControlCode,
         long bufferAddress, int bufferSize) throws WindowsException;
 
     /**
@@ -366,6 +361,24 @@ class WindowsNativeDispatcher {
     }
     private static native void GetFileAttributesEx0(long lpFileName, long address)
         throws WindowsException;
+
+    /**
+     * GetFileInformationByName(
+     *   PCWSTR                  FileName,
+     *   FILE_INFO_BY_NAME_CLASS FileInformationClass,
+     *   PVOID                   FileInfoBuffer,
+     *   ULONG                   FileInfoBufferSize
+     * )
+     */
+    static void GetFileInformationByName(String path, int infoClass, long address, int size)
+        throws WindowsException
+    {
+        try (NativeBuffer buffer = asNativeBuffer(path)) {
+            GetFileInformationByName0(buffer.address(), infoClass, address, size);
+        }
+    }
+    private static native void GetFileInformationByName0(long pathAddress,
+        int infoClass, long infoAddress, int infoSize) throws WindowsException;
 
     /**
      * SetFileTime(
@@ -1090,15 +1103,23 @@ class WindowsNativeDispatcher {
         return buffer;
     }
 
+    // -- capabilities --
+    private static final int SUPPORTS_GETFILEINFORMATIONBYNAME = 1 << 1;
+    private static final int capabilities;
+
+    static boolean supportsGetFileInformationByName() {
+        return (capabilities & SUPPORTS_GETFILEINFORMATIONBYNAME) != 0;
+    }
+
     // -- native library initialization --
 
-    private static native void initIDs();
+    private static native int init();
 
     static {
         // nio.dll has dependency on net.dll
         jdk.internal.loader.BootLoader.loadLibrary("net");
         jdk.internal.loader.BootLoader.loadLibrary("nio");
-        initIDs();
+        capabilities = init();
     }
 
 }

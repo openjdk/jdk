@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -70,6 +71,14 @@ public class SplitIfSharedFastLockBehindCastPP {
         }
     }
 
+    static class MyBox {
+        int val;
+
+        public MyBox(int val) {
+            this.val = val;
+        }
+    }
+
     private static Object test2(boolean flag) {
         int integer;
         if (flag) {
@@ -80,7 +89,7 @@ public class SplitIfSharedFastLockBehindCastPP {
             integer = 2;
         }
 
-        Object obj = integer;
+        Object obj = new MyBox(integer);
 
         // This loop will be unswitched. The condition becomes candidate for split if
         for (int i = 0; i < 100; i++) {

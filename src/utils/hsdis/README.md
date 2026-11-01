@@ -61,6 +61,11 @@ backend to use. This is done with the configure switch `--with-hsdis=<backend>`,
 where `<backend>` is either `capstone`, `llvm` or `binutils`. For details, see
 the sections on the respective backends below.
 
+A default value for `PrintAssemblyOptions` can be set at configure time with
+`--with-print-assembly-options=<value>` (e.g. `intel` for Intel syntax on x86,
+if supported by the chosen backend). The runtime `-XX:PrintAssemblyOptions=...`
+flag still takes precedence.
+
 To build the hsdis library, run `make build-hsdis`. This will build the library
 in a separate directory, but not make it available to the JDK in the
 configuration. To actually install it in the JDK, run `make install-hsdis`.

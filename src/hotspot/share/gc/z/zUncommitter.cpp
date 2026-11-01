@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 #include "gc/shared/gc_globals.hpp"
+#include "gc/z/zAdaptiveHeap.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
@@ -37,8 +38,13 @@
 #include "utilities/ticks.hpp"
 
 #include <cmath>
+#include <limits>
 
 static const ZStatCounter ZCounterUncommit("Memory", "Uncommit", ZStatUnitBytesPerSecond);
+
+bool ZUncommitter::is_enabled() {
+  return ZUncommit && !ZAdaptiveHeapSizing;
+}
 
 ZUncommitter::ZUncommitter(uint32_t id, ZPartition* partition)
   : _id(id),
@@ -51,16 +57,18 @@ ZUncommitter::ZUncommitter(uint32_t id, ZPartition* partition)
     _cycle_start(0.0),
     _to_uncommit(0),
     _uncommitted(0) {
+  if (!is_enabled()) {
+    // Disabled, do not start.
+    _stop = true;
+    return;
+  }
+
   set_name("ZUncommitter#%u", id);
   create_and_start();
 }
 
 bool ZUncommitter::wait(uint64_t timeout) const {
   ZLocker<ZConditionLock> locker(&_lock);
-  while (!ZUncommit && !_stop) {
-    _lock.wait();
-  }
-
   if (!_stop && timeout > 0) {
     if (!uncommit_cycle_is_finished()) {
       log_trace(gc, heap)("Uncommitter (%u) Timeout: " UINT64_FORMAT "ms left to uncommit: "
@@ -155,7 +163,7 @@ void ZUncommitter::run_thread() {
       }
 
       log_info(gc, heap)("Uncommitter (%u) Uncommitted: %zuM(%.0f%%) in %.3fms",
-                         _id, _uncommitted / M, percent_of(_uncommitted, ZHeap::heap()->max_capacity()),
+                         _id, _uncommitted / M, percent_of(_uncommitted, ZHeap::heap()->heuristic_max_capacity()),
                          accumulated_time.seconds() * MILLIUNITS);
     }
 
@@ -230,7 +238,7 @@ bool ZUncommitter::activate_uncommit_cycle() {
   const size_t to_uncommit = align_up(size_t(double(uncommit_watermark) * 0.9), ZGranuleSize);
 
   // Never uncommit below min capacity
-  const size_t uncommit_limit = _partition->_capacity - _partition->_min_capacity;
+  const size_t uncommit_limit = _partition->_capacity - _partition->_static_min_capacity;
 
   _to_uncommit = MIN2(uncommit_limit, to_uncommit);
   _uncommitted = 0;
@@ -375,7 +383,7 @@ size_t ZUncommitter::uncommit() {
     // We flush out and uncommit chunks at a time (~0.8% of the max capacity,
     // but at least one granule and at most 256M), in case demand for memory
     // increases while we are uncommitting.
-    const size_t current_max_capacity = _partition->_current_max_capacity;
+    const size_t current_max_capacity = _partition->current_max_capacity();
     const size_t limit_upper_bound = MAX2(ZGranuleSize, align_down(256 * M / ZNUMA::count(), ZGranuleSize));
     const size_t limit = MIN2(align_up(current_max_capacity >> 7, ZGranuleSize), limit_upper_bound);
 
@@ -387,7 +395,7 @@ size_t ZUncommitter::uncommit() {
     const size_t to_uncommit = MIN2(_to_uncommit, allowed_to_uncommit);
 
     // Never uncommit below min capacity.
-    const size_t retain = MAX2(_partition->_used, _partition->_min_capacity);
+    const size_t retain = MAX2(_partition->_used, _partition->_static_min_capacity);
     const size_t release = _partition->_capacity - retain;
     const size_t flush = MIN3(release, limit, to_uncommit);
 
@@ -400,7 +408,7 @@ size_t ZUncommitter::uncommit() {
     }
 
     // Record flushed memory as claimed and how much we've flushed for this partition
-    AtomicAccess::add(&_partition->_claimed, flushed);
+    _partition->increase_claimed(flushed);
   }
 
   // Unmap and uncommit flushed memory
@@ -416,8 +424,8 @@ size_t ZUncommitter::uncommit() {
     ZLocker<ZLock> locker(&_partition->_page_allocator->_lock);
 
     // Adjust claimed and capacity to reflect the uncommit
-    AtomicAccess::sub(&_partition->_claimed, flushed);
-    _partition->decrease_capacity(flushed, false /* set_max_capacity */);
+    _partition->decrease_claimed(flushed);
+    _partition->decrease_capacity(flushed);
     register_uncommit(flushed);
   }
 

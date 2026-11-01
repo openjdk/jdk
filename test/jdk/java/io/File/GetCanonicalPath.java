@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4899022 8003887 8355342
+ * @bug 4899022 8003887 8355342 8383867
  * @summary Look for erroneous representation of drive letter
  * @run junit GetCanonicalPath
  */
@@ -148,7 +148,14 @@ public class GetCanonicalPath {
         Runtime rt = Runtime.getRuntime();
         String share =
             "\\\\localhost\\" + cwd.charAt(0) + "$" + cwd.substring(2);
+        String junctionName = "tmpDir";
         try {
+            // create directory junction
+            Path tmpDir = Files.createTempDirectory(junctionName);
+            String tmpDirLink = cwd + "\\" + junctionName;
+            Process pmklink = rt.exec(new String[] {"cmd", "/c", "mklink", "/J", tmpDirLink, tmpDir.toString()});
+            assertEquals(0, pmklink.waitFor());
+
             Process p = rt.exec(new String[] {"net", "use", drive + ":", share});
             assertEquals(0, p.waitFor());
         } catch (InterruptedException x) {
@@ -157,13 +164,26 @@ public class GetCanonicalPath {
 
         // check that the canonical path name and its content are as expected
         try {
-            final String filename = "file.txt";
-            final String text = "This is some text";
-            Files.writeString(Path.of(share, filename), text);
-            File file = new File(drive + ":\\" + filename);
-            String canonicalPath = file.getCanonicalPath();
-            assertEquals(drive + ":\\" + filename, canonicalPath);
-            assertEquals(text, Files.readString(Path.of(canonicalPath)));
+            // use drive letter
+            {
+                final String filename = "file.txt";
+                final String text = "This is some text";
+                Files.writeString(Path.of(share, filename), text);
+                File file = new File(drive + ":\\" + filename);
+                String canonicalPath = file.getCanonicalPath();
+                assertEquals(drive + ":\\" + filename, canonicalPath);
+                assertEquals(text, Files.readString(Path.of(canonicalPath)));
+            }
+            // use reparse point (directory junction)
+            {
+                final String filename = junctionName + "\\file.txt";
+                final String text = "This is some text";
+                Files.writeString(Path.of(share, filename), text);
+                File file = new File(drive + ":\\" + filename);
+                String canonicalPath = file.getCanonicalPath();
+                assertTrue(canonicalPath.startsWith("\\\\localhost\\"));
+                assertEquals(text, Files.readString(Path.of(canonicalPath)));
+            }
         } finally {
             try {
                 Process p = rt.exec(new String[] {"net", "use", drive + ":", "/Delete"});

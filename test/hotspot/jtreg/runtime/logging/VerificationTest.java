@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,26 +39,26 @@ public class VerificationTest {
 
     static void analyzeOutputOn(ProcessBuilder pb, boolean isLogLevelInfo) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("[verification]");
+        output.shouldMatch("\\[verification *\\]");
         output.shouldContain("Verifying class VerificationTest$InternalClass with new format");
         output.shouldContain("Verifying method VerificationTest$InternalClass.<init>()V");
         output.shouldContain("End class verification for: VerificationTest$InternalClass");
 
         if (isLogLevelInfo) {
             // logging level 'info' should not output stack map and opcode data.
-            output.shouldNotContain("[verification] StackMapTable: frame_count");
-            output.shouldNotContain("[verification] offset = 0,  opcode =");
+            output.shouldNotMatch("\\[verification *\\] StackMapTable: frame_count");
+            output.shouldNotMatch("\\[verification *\\] offset = 0,  opcode =");
 
         } else { // log level debug
-            output.shouldContain("[debug][verification] StackMapTable: frame_count");
-            output.shouldContain("[debug][verification] offset = 0,  opcode =");
+            output.shouldMatch("\\[debug *\\]\\[verification *\\] StackMapTable: frame_count");
+            output.shouldMatch("\\[debug *\\]\\[verification *\\] offset = 0,  opcode =");
         }
         output.shouldHaveExitValue(0);
     }
 
     static void analyzeOutputOff(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldNotContain("[verification]");
+        output.shouldNotMatch("\\[verification *\\]");
         output.shouldHaveExitValue(0);
     }
 

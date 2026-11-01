@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,6 +258,7 @@ public final class Generators {
      * An overload for restrictable generators exists.
      */
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public final <T> Generator<T> mixed(List<Integer> weights, Generator<T>... generators) {
         return new MixedGenerator<>(this, Arrays.asList(generators), weights);
     }
@@ -279,6 +280,7 @@ public final class Generators {
      * generator.
      */
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public final <T extends Comparable<T>> RestrictableGenerator<T> mixed(List<Integer> weights, RestrictableGenerator<T>... generators) {
         return new RestrictableMixedGenerator<>(this, Arrays.asList(generators), weights);
     }

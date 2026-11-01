@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,19 @@
  * questions.
  */
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import sun.net.spi.DefaultProxySelector;
 
 import java.net.ProxySelector;
 import java.net.URI;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 /**
  * @test
  * @bug 6563286 6797318 8177648
  * @summary Tests sun.net.spi.DefaultProxySelector#select(URI)
- * @run testng DefaultProxySelectorTest
+ * @run junit ${test.main.class}
  * @modules java.base/sun.net.spi:+open
  */
 public class DefaultProxySelectorTest {
@@ -44,12 +45,7 @@ public class DefaultProxySelectorTest {
     @Test
     public void testIllegalArgForNull() {
         final ProxySelector selector = new DefaultProxySelector();
-        try {
-            selector.select(null);
-            Assert.fail("select() was expected to fail for null URI");
-        } catch (IllegalArgumentException iae) {
-            // expected
-        }
+        assertThrows(IllegalArgumentException.class, () -> selector.select(null));
     }
 
     /**
@@ -61,11 +57,10 @@ public class DefaultProxySelectorTest {
     @Test
     public void testIllegalArgForNoHost() throws Exception {
         final ProxySelector selector = new DefaultProxySelector();
-        assertFailsWithIAE(selector, new URI("http", "/test", null));
-        assertFailsWithIAE(selector, new URI("https", "/test2", null));
-        assertFailsWithIAE(selector, new URI("ftp", "/test3", null));
+        assertThrows(IllegalArgumentException.class, () -> selector.select(new URI("http", "/test", null)));
+        assertThrows(IllegalArgumentException.class, () -> selector.select(new URI("https", "/test2", null)));
+        assertThrows(IllegalArgumentException.class, () -> selector.select(new URI("ftp", "/test3", null)));
     }
-
 
     /**
      * Tests that {@link DefaultProxySelector} throws a {@link IllegalArgumentException}
@@ -76,15 +71,6 @@ public class DefaultProxySelectorTest {
     @Test
     public void testIllegalArgForNoScheme() throws Exception {
         final ProxySelector selector = new DefaultProxySelector();
-        assertFailsWithIAE(selector, new URI(null, "/test", null));
-    }
-
-    private static void assertFailsWithIAE(final ProxySelector selector, final URI uri) {
-        try {
-            selector.select(uri);
-            Assert.fail("select() was expected to fail for URI " + uri);
-        } catch (IllegalArgumentException iae) {
-            // expected
-        }
+        assertThrows(IllegalArgumentException.class, () -> selector.select(new URI(null, "/test", null)));
     }
 }

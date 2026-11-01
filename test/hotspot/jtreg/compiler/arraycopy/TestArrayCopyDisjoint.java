@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,6 @@ import java.util.Random;
  *      compiler.arraycopy.TestArrayCopyDisjoint
  * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=64 -XX:MaxVectorSize=64 -XX:ArrayCopyLoadStoreMaxElem=16
- *      compiler.arraycopy.TestArrayCopyDisjoint
- * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch -XX:+UnlockExperimentalVMOptions -XX:+AlwaysAtomicAccesses
  *      compiler.arraycopy.TestArrayCopyDisjoint
  * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:+UnlockDiagnosticVMOptions -XX:UseAVX=3 -XX:MaxVectorSize=32 -XX:ArrayOperationPartialInlineSize=32 -XX:+StressIGVN

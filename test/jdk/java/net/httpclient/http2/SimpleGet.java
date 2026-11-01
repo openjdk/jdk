@@ -27,17 +27,17 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run junit/othervm -XX:+CrashOnOutOfMemoryError SimpleGet
+ * @run junit/othervm -XX:+CrashOnOutOfMemoryError ${test.main.class}
  * @run junit/othervm -XX:+CrashOnOutOfMemoryError
  *                     -Dsimpleget.repeat=1 -Dsimpleget.chunks=1 -Dsimpleget.requests=1000
- *                     SimpleGet
+ *                     ${test.main.class}
  * @run junit/othervm -Dsimpleget.requests=150
  *                     -Dsimpleget.chunks=16384
  *                     -Djdk.httpclient.redirects.retrylimit=5
  *                     -Djdk.httpclient.HttpClient.log=errors
  *                     -XX:+CrashOnOutOfMemoryError
  *                     -XX:+HeapDumpOnOutOfMemoryError
- *                      SimpleGet
+ *                      ${test.main.class}
  */
 
 import java.io.IOException;

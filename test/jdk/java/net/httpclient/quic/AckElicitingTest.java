@@ -89,8 +89,8 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @summary tests the logic to decide whether a packet or
  *          a frame is ACK-eliciting.
  * @library /test/lib
- * @run junit AckElicitingTest
- * @run junit/othervm -Dseed=-7997973196290088038 AckElicitingTest
+ * @run junit ${test.main.class}
+ * @run junit/othervm -Dseed=-7997973196290088038 ${test.main.class}
  */
 public class AckElicitingTest {
 

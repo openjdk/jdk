@@ -23,7 +23,12 @@
 /*
  * @test
  * @bug 8333313
+ * @library /tools/javac/lib
  * @summary Verify references to local classes declared in early construction contexts
+ * @modules jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @enablePreview
+ * @run main EarlyLocalTest1
  */
 public class EarlyLocalTest1 {
 

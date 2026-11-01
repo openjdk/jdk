@@ -145,7 +145,7 @@ E* Stack<E, MT>::alloc(size_t bytes)
 template <class E, MemTag MT>
 void Stack<E, MT>::free(E* addr, size_t bytes)
 {
-  FREE_C_HEAP_ARRAY(char, (char*) addr);
+  FREE_C_HEAP_ARRAY((char*) addr);
 }
 
 // Stack is used by the GC code and in some hot paths a lot of the Stack

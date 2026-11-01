@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,6 @@ import java.io.Writer;
  * for setting and getting all times and for doing whatever
  * analysis is interesting; this class is merely a central container
  * for those timing values.
- * Note that, due to the variables in this class being static,
- * use of particular time values by multiple AppContexts will cause
- * confusing results.  For example, if two contexts run
- * simultaneously, the initTime for those will collide
- * and the results may be undefined.
  * <P>
  * To automatically track startup performance in an app
  * use the command-line parameter sun.perflog as follows:<BR>

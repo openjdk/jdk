@@ -31,7 +31,7 @@
  *        jdk.test.lib.Utils
  * @run junit/othervm
  *      -Djdk.httpclient.HttpClient.log=errors,requests,responses
- *      ServerPush
+ *      ${test.main.class}
  */
 
 import java.io.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,16 @@
 
 /*
  * @test
- * @run testng/othervm MemoryLayoutPrincipalTotalityTest
+ * @run junit/othervm MemoryLayoutPrincipalTotalityTest
  */
 
-import org.testng.annotations.*;
 
 import java.lang.foreign.*;
 
 import static java.lang.foreign.ValueLayout.*;
-import static org.testng.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class MemoryLayoutPrincipalTotalityTest {
 
@@ -43,7 +44,7 @@ public class MemoryLayoutPrincipalTotalityTest {
         int v0 = switch (memoryLayout) {
             case MemoryLayout ml -> 1;
         };
-        assertEquals(v0, 1);
+        assertEquals(1, v0);
     }
 
     @Test
@@ -55,7 +56,7 @@ public class MemoryLayoutPrincipalTotalityTest {
             case SequenceLayout sl -> 0; // leaf
             case ValueLayout vl -> 1;
         };
-        assertEquals(v1, 1);
+        assertEquals(1, v1);
     }
 
     @Test
@@ -68,7 +69,7 @@ public class MemoryLayoutPrincipalTotalityTest {
             case StructLayout sl -> 0; // leaf
             case UnionLayout ul -> 0; // leaf
         };
-        assertEquals(v2, 1);
+        assertEquals(1, v2);
     }
 
     @Test
@@ -89,7 +90,7 @@ public class MemoryLayoutPrincipalTotalityTest {
             case OfLong ol -> 0; // leaf
             case OfShort os -> 0; // leaf
         };
-        assertEquals(v3, 1);
+        assertEquals(1, v3);
     }
 
     @Test
@@ -109,7 +110,7 @@ public class MemoryLayoutPrincipalTotalityTest {
             case OfLong ol -> 0; // leaf
             case OfShort os -> 0; // leaf
         };
-        assertEquals(v4, 1);
+        assertEquals(1, v4);
     }
 
     private static MemoryLayout javaIntMemoryLayout() {

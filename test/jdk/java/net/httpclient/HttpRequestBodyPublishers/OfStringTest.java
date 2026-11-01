@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.Flow;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,10 +43,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @summary Verify all specified `HttpRequest.BodyPublishers::ofString` behavior
  * @build ByteBufferUtils
  *        RecordingSubscriber
- * @run junit OfStringTest
+ *        ReplayTestSupport
+ * @run junit ${test.main.class}
  */
 
-class OfStringTest {
+class OfStringTest extends ReplayTestSupport {
 
     private static final Charset CHARSET = StandardCharsets.US_ASCII;
 
@@ -58,7 +61,7 @@ class OfStringTest {
             contentChars[i] = (char) ('a' + i);
         }
         String content = new String(contentChars);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(content, CHARSET);
+        BodyPublisher publisher = BodyPublishers.ofString(content, CHARSET);
 
         // Subscribe
         assertEquals(length, publisher.contentLength());
@@ -87,7 +90,7 @@ class OfStringTest {
     void testCharset(String content, Charset charset) throws InterruptedException {
 
         // Create the publisher
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(content, charset);
+        BodyPublisher publisher = BodyPublishers.ofString(content, charset);
 
         // Subscribe
         ByteBuffer expectedBuffer = charset.encode(content);
@@ -108,12 +111,20 @@ class OfStringTest {
 
     @Test
     void testNullContent() {
-        assertThrows(NullPointerException.class, () -> HttpRequest.BodyPublishers.ofString(null, CHARSET));
+        assertThrows(NullPointerException.class, () -> BodyPublishers.ofString(null, CHARSET));
     }
 
     @Test
     void testNullCharset() {
-        assertThrows(NullPointerException.class, () -> HttpRequest.BodyPublishers.ofString("foo", null));
+        assertThrows(NullPointerException.class, () -> BodyPublishers.ofString("foo", null));
+    }
+
+    @Override
+    Iterable<ReplayTarget> createReplayTargets() {
+        String content = "this content needs to be replayed again and again";
+        ByteBuffer expectedBuffer = CHARSET.encode(content);
+        BodyPublisher publisher = BodyPublishers.ofString(content, CHARSET);
+        return List.of(new ReplayTarget(expectedBuffer, publisher));
     }
 
 }

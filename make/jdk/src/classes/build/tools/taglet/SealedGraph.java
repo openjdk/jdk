@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,9 @@ import jdk.javadoc.doclet.Taglet;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.util.Elements;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -78,6 +80,11 @@ public final class SealedGraph implements Taglet {
 
     @Override
     public String toString(List<? extends DocTree> tags, Element element) {
+        throw new UnsupportedOperationException();
+    }
+
+    // @Override - requires JDK-8373922 in build JDK
+    public String toString(List<? extends DocTree> tags, Element element, URI docRoot) {
         if (sealedDotOutputDir == null || sealedDotOutputDir.isEmpty()) {
             return "";
         }
@@ -85,9 +92,15 @@ public final class SealedGraph implements Taglet {
             return "";
         }
 
-        ModuleElement module = docletEnvironment.getElementUtils().getModuleOf(element);
+        Elements util = docletEnvironment.getElementUtils();
+        ModuleElement module = util.getModuleOf(element);
+
+        // '.' in .DOT file name is converted to '/' in .SVG path, so we use '-' as separator for nested classes.
+        // module_package.subpackage.Outer-Inner.dot => module/package/subpackage/Outer-Inner-sealed-graph.svg
         Path dotFile = Path.of(sealedDotOutputDir,
-                module.getQualifiedName() + "_" + typeElement.getQualifiedName() + ".dot");
+                module.getQualifiedName() + "_"
+                        + util.getPackageOf(element).getQualifiedName() + "."
+                        + packagelessCanonicalName(typeElement).replace(".", "-") + ".dot");
 
         Set<String> exports = module.getDirectives().stream()
                 .filter(ModuleElement.ExportsDirective.class::isInstance)
@@ -99,7 +112,7 @@ public final class SealedGraph implements Taglet {
                 .map(Objects::toString)
                 .collect(Collectors.toUnmodifiableSet());
 
-        String dotContent = new Renderer().graph(typeElement, exports);
+        String dotContent = new Renderer().graph(typeElement, exports, docRoot);
 
         try  {
             Files.writeString(dotFile, dotContent, WRITE, CREATE, TRUNCATE_EXISTING);
@@ -107,8 +120,8 @@ public final class SealedGraph implements Taglet {
             throw new RuntimeException(e);
         }
 
-        String simpleTypeName = packagelessCanonicalName(typeElement).replace('.', '/');
-        String imageFile = simpleTypeName + "-sealed-graph.svg";
+        String simpleTypeName = packagelessCanonicalName(typeElement);
+        String imageFile = simpleTypeName.replace(".", "-") + "-sealed-graph.svg";
         int thumbnailHeight = 100; // also appears in the stylesheet
         String hoverImage = "<span>"
             + getImage(simpleTypeName, imageFile, -1, true)
@@ -137,21 +150,26 @@ public final class SealedGraph implements Taglet {
     private final class Renderer {
 
         // Generates a graph in DOT format
-        String graph(TypeElement rootClass, Set<String> exports) {
-            final State state = new State(rootClass);
+        String graph(TypeElement rootClass, Set<String> exports, URI pathToRoot) {
+            if (!isInPublicApi(rootClass, exports)) {
+                // Alternatively we can return "" for the graph since there is no single root to render
+                throw new IllegalArgumentException("Root not in public API: " + rootClass.getQualifiedName());
+            }
+            final State state = new State(pathToRoot);
             traverse(state, rootClass, exports);
             return state.render();
         }
 
         static void traverse(State state, TypeElement node, Set<String> exports) {
+            if (!isInPublicApi(node, exports)) {
+                throw new IllegalArgumentException("Bad request, not in public API: " + node.getQualifiedName());
+            }
             state.addNode(node);
             if (!(node.getModifiers().contains(Modifier.SEALED) || node.getModifiers().contains(Modifier.FINAL))) {
                 state.addNonSealedEdge(node);
             } else {
                 for (TypeElement subNode : permittedSubclasses(node, exports)) {
-                    if (isInPublicApi(node, exports) && isInPublicApi(subNode, exports)) {
-                        state.addEdge(node, subNode);
-                    }
+                    state.addEdge(node, subNode);
                     traverse(state, subNode, exports);
                 }
             }
@@ -163,7 +181,7 @@ public final class SealedGraph implements Taglet {
             private static final String TOOLTIP = "tooltip";
             private static final String LINK = "href";
 
-            private final TypeElement rootNode;
+            private final URI pathToRoot;
 
             private final StringBuilder builder;
 
@@ -188,8 +206,8 @@ public final class SealedGraph implements Taglet {
                 }
             }
 
-            public State(TypeElement rootNode) {
-                this.rootNode = rootNode;
+            public State(URI pathToRoot) {
+                this.pathToRoot = pathToRoot;
                 nodeStyleMap = new LinkedHashMap<>();
                 builder = new StringBuilder()
                         .append("digraph G {")
@@ -212,24 +230,15 @@ public final class SealedGraph implements Taglet {
                 var styles = nodeStyleMap.computeIfAbsent(id(node), n -> new LinkedHashMap<>());
                 styles.put(LABEL, new StyleItem.PlainString(node.getSimpleName().toString()));
                 styles.put(TOOLTIP, new StyleItem.PlainString(node.getQualifiedName().toString()));
-                styles.put(LINK, new StyleItem.PlainString(relativeLink(node)));
+                styles.put(LINK, new StyleItem.PlainString(pathToRoot.resolve(relativeLink(node)).toString()));
             }
 
-            // A permitted class must be in the same package or in the same module.
-            // This implies the module is always the same.
             private String relativeLink(TypeElement node) {
                 var util = SealedGraph.this.docletEnvironment.getElementUtils();
-                var nodePackage = util.getPackageOf(node);
-                // Note: SVG files for nested types use the simple names of containing types as parent directories.
-                // We therefore need to convert all dots in the qualified name to "../" below.
-                var backNavigator = rootNode.getQualifiedName().toString().chars()
-                        .filter(c -> c == '.')
-                        .mapToObj(c -> "../")
-                        .collect(joining());
-                var forwardNavigator = nodePackage.getQualifiedName().toString()
-                        .replace(".", "/");
+                var path = util.getModuleOf(node).getQualifiedName().toString() + "/"
+                        + util.getPackageOf(node).getQualifiedName().toString().replace(".", "/");
 
-                return backNavigator + forwardNavigator + "/" + packagelessCanonicalName(node) + ".html";
+                return path + "/" + packagelessCanonicalName(node) + ".html";
             }
 
             public void addEdge(TypeElement node, TypeElement subNode) {
@@ -281,25 +290,33 @@ public final class SealedGraph implements Taglet {
             private String quotedId(TypeElement node) {
                 return "\"" + id(node) + "\"";
             }
-
-            private String simpleName(String name) {
-                int lastDot = name.lastIndexOf('.');
-                return lastDot < 0
-                        ? name
-                        : name.substring(lastDot);
-            }
-
         }
 
         private static List<TypeElement> permittedSubclasses(TypeElement node, Set<String> exports) {
-            return node.getPermittedSubclasses().stream()
-                    .filter(DeclaredType.class::isInstance)
-                    .map(DeclaredType.class::cast)
-                    .map(DeclaredType::asElement)
-                    .filter(TypeElement.class::isInstance)
-                    .map(TypeElement.class::cast)
-                    .filter(te -> isInPublicApi(te, exports))
-                    .toList();
+            List<TypeElement> dfsStack = new ArrayList<TypeElement>().reversed(); // Faster operations to head
+            SequencedCollection<TypeElement> result = new LinkedHashSet<>(); // Deduplicate diamond interface inheritance
+            // The starting node may be in the public API - still expand it
+            prependSubclasses(node, dfsStack);
+
+            while (!dfsStack.isEmpty()) {
+                TypeElement now = dfsStack.removeFirst();
+                if (isInPublicApi(now, exports)) {
+                    result.addLast(now);
+                } else {
+                    // Skip the non-exported classes in the hierarchy
+                    prependSubclasses(now, dfsStack);
+                }
+            }
+
+            return List.copyOf(result);
+        }
+
+        private static void prependSubclasses(TypeElement node, List<TypeElement> dfs) {
+            for (var e : node.getPermittedSubclasses().reversed()) {
+                if (e instanceof DeclaredType dt && dt.asElement() instanceof TypeElement te) {
+                    dfs.addFirst(te);
+                }
+            }
         }
 
         private static boolean isInPublicApi(TypeElement typeElement, Set<String> exports) {

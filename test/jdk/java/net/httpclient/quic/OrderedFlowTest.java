@@ -50,11 +50,11 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @summary tests the reordering logic implemented by OrderedFlow
  *          and its two concrete subclasses
  * @library /test/lib
- * @run junit OrderedFlowTest
- * @run junit/othervm -Dseed=-2680947227866359853 OrderedFlowTest
- * @run junit/othervm -Dseed=-273117134353023275 OrderedFlowTest
- * @run junit/othervm -Dseed=3649132517916066643 OrderedFlowTest
- * @run junit/othervm -Dseed=4568737726943220431 OrderedFlowTest
+ * @run junit ${test.main.class}
+ * @run junit/othervm -Dseed=-2680947227866359853 ${test.main.class}
+ * @run junit/othervm -Dseed=-273117134353023275 ${test.main.class}
+ * @run junit/othervm -Dseed=3649132517916066643 ${test.main.class}
+ * @run junit/othervm -Dseed=4568737726943220431 ${test.main.class}
  */
 public class OrderedFlowTest {
 

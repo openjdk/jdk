@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -530,7 +530,7 @@ public class Jdb extends LocalProcess {
                 return found;
             }
 
-            // spleep for awhile
+            // sleep for awhile
             synchronized(dummy) {
                 try {
                     dummy.wait(delta);
@@ -614,7 +614,7 @@ public class Jdb extends LocalProcess {
         searching:
         for (int pos = startPos; pos < length; ) {
 
-            // skip each simbol not suitable for prompt begin
+            // skip each symbol not suitable for prompt begin
             if (!Character.isLetterOrDigit(lines.charAt(pos))) {
                 pos++;
                 continue searching;

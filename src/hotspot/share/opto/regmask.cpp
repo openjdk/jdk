@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,8 +248,15 @@ OptoReg::Name RegMask::find_first_set(LRG &lrg, const int size) const {
   for (unsigned i = _lwm; i <= _hwm; i++) {
     if (rm_word(i) != 0) {                // Found some bits
       // Convert to bit number, return hi bit in pair
-      return OptoReg::Name(offset_bits() + (i << LogBitsPerWord) +
-                           find_lowest_bit(rm_word(i)) + (size - 1));
+      OptoReg::Name hi_bit = OptoReg::Name(offset_bits() +
+        (i << LogBitsPerWord) + find_lowest_bit(rm_word(i)) + (size - 1));
+      if (!can_represent(hi_bit)) {
+        // For scalable vector registers, whose actual length exceeds
+        // SlotsPerVecA bits, the mask may not contain the highest register
+        // number in the set (hi_bit).
+        return OptoReg::Bad;
+      }
+      return hi_bit;
     }
   }
   return OptoReg::Bad;

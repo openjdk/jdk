@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,9 @@ GENSRC_CHARACTERDATA :=
 
 CHARACTERDATA_TEMPLATES = $(MODULE_SRC)/share/classes/java/lang
 UNICODEDATA = $(MODULE_SRC)/share/data/unicodedata
+SPECIALCASING = $(UNICODEDATA)/SpecialCasing.txt
+DERIVEDCOREPROPS = $(UNICODEDATA)/DerivedCoreProperties.txt
+PROPLIST = $(UNICODEDATA)/PropList.txt
 
 ifneq ($(DEBUG_LEVEL), release)
   ifeq ($(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT), true)
@@ -49,9 +52,9 @@ define SetupCharacterData
 	$(TOOL_GENERATECHARACTER) $2 $(DEBUG_OPTION) \
 	    -template $(CHARACTERDATA_TEMPLATES)/$1.java.template \
 	    -spec $(UNICODEDATA)/UnicodeData.txt \
-	    -specialcasing $(UNICODEDATA)/SpecialCasing.txt \
-	    -proplist $(UNICODEDATA)/PropList.txt \
-	    -derivedprops $(UNICODEDATA)/DerivedCoreProperties.txt \
+	    -specialcasing $(SPECIALCASING) \
+	    -proplist $(PROPLIST) \
+	    -derivedprops $(DERIVEDCOREPROPS) \
 	    -emojidata $(UNICODEDATA)/emoji/emoji-data.txt \
 	    -o $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/$1.java \
 	    -usecharforbyte $3
@@ -88,6 +91,40 @@ $(GENSRC_STRINGCASEFOLDING): $(BUILD_TOOLS_JDK) $(STRINGCASEFOLDING_TEMPLATE) $(
 
 TARGETS += $(GENSRC_STRINGCASEFOLDING)
 
+################################################################################
+# Rule to create $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/ConditionalSpecialCasing.java
+################################################################################
+
+GENSRC_CONDITIONALSPECIALCASING := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/ConditionalSpecialCasing.java
+GENSRC_CONDITIONALSPECIALCASING_SPECIALCASING_TMP := $(GENSRC_CONDITIONALSPECIALCASING).specialcasing.tmp
+GENSRC_CONDITIONALSPECIALCASING_PROPS_TMP := $(GENSRC_CONDITIONALSPECIALCASING).props.tmp
+
+CONDITIONALSPECIALCASINGTEMP := $(MODULE_SRC)/share/classes/java/lang/ConditionalSpecialCasing.java.template
+FINALSIGMAPARAMS := Cased Case_Ignorable
+SOFTDOTTEDPARAMS := Soft_Dotted
+
+$(GENSRC_CONDITIONALSPECIALCASING): $(BUILD_TOOLS_JDK) $(CONDITIONALSPECIALCASINGTEMP) \
+        $(SPECIALCASING) $(DERIVEDCOREPROPS) $(PROPLIST)
+	$(call LogInfo, Generating $@)
+	$(call MakeTargetDir)
+	$(TOOL_GENERATESPECIALCASING) \
+	    $(CONDITIONALSPECIALCASINGTEMP) \
+	    $(SPECIALCASING) \
+	    $(GENSRC_CONDITIONALSPECIALCASING_SPECIALCASING_TMP)
+	$(TOOL_GENERATEEXTRAPROPERTIES) \
+	    $(GENSRC_CONDITIONALSPECIALCASING_SPECIALCASING_TMP) \
+	    $(DERIVEDCOREPROPS) \
+	    $(GENSRC_CONDITIONALSPECIALCASING_PROPS_TMP) \
+	    $(FINALSIGMAPARAMS)
+	$(TOOL_GENERATEEXTRAPROPERTIES) \
+	    $(GENSRC_CONDITIONALSPECIALCASING_PROPS_TMP) \
+	    $(PROPLIST) \
+	    $(GENSRC_CONDITIONALSPECIALCASING) \
+	    $(SOFTDOTTEDPARAMS)
+	$(RM) $(GENSRC_CONDITIONALSPECIALCASING_SPECIALCASING_TMP)
+	$(RM) $(GENSRC_CONDITIONALSPECIALCASING_PROPS_TMP)
+
+TARGETS += $(GENSRC_CONDITIONALSPECIALCASING)
 
 endif # include guard
 include MakeIncludeEnd.gmk

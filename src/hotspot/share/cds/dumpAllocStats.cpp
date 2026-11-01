@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,15 +129,3 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all) {
                                                                   _bytes [RW][MethodTrainingDataType]);
 
 }
-
-#ifdef ASSERT
-void DumpAllocStats::verify(int expected_byte_size, bool read_only) const {
-  int bytes = 0;
-  const int what = (int)(read_only ? RO : RW);
-  for (int type = 0; type < int(_number_of_types); type ++) {
-    bytes += _bytes[what][type];
-  }
-  assert(bytes == expected_byte_size, "counter mismatch (%s: %d vs %d)",
-         (read_only ? "RO" : "RW"), bytes, expected_byte_size);
-}
-#endif // ASSERT

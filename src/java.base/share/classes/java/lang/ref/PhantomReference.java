@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,21 @@
 
 package java.lang.ref;
 
+import java.util.Objects;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * Phantom reference objects, which are enqueued after the collector
  * determines that their referents may otherwise be reclaimed.  Phantom
  * references are most often used to schedule post-mortem cleanup actions.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          The referent must have {@linkplain Objects#hasIdentity(Object) object identity}.
+ *          When preview features are enabled, attempts to create a reference
+ *          to a {@linkplain Class#isValue value object} result in an {@link IdentityException}.
+ *      </div>
+ * </div>
  *
  * <p> Suppose the garbage collector determines at a certain point in time
  * that an object is <a href="package-summary.html#reachability">
@@ -100,6 +109,8 @@ public non-sealed class PhantomReference<@jdk.internal.RequiresIdentity T> exten
      * @param referent the object the new phantom reference will refer to
      * @param q the queue with which the reference is to be registered,
      *          or {@code null} if registration is not required
+     * @throws IdentityException if the referent is not an
+     *         {@linkplain java.util.Objects#hasIdentity(Object) identity object}
      */
     public PhantomReference(@jdk.internal.RequiresIdentity T referent, ReferenceQueue<? super T> q) {
         super(referent, q);
