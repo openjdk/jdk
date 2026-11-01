@@ -10234,8 +10234,8 @@ class StubGenerator: public StubCodeGenerator {
         SMALL_LOOP, POST_LOOP;
     const int PRE_LOOP_SIZE = UseSIMDForArrayEquals ? 0 : 16;
     // calculate if at least 32 prefetched bytes are used
-    int prefetchLoopThreshold = SoftwarePrefetchHintDistance + 32;
     int nonPrefetchLoopThreshold = (64 + PRE_LOOP_SIZE);
+    int prefetchLoopThreshold = MAX2(SoftwarePrefetchHintDistance + 32, nonPrefetchLoopThreshold);
     RegSet spilled_regs = RegSet::range(tmp6, tmp8);
     assert_different_registers(a1, a2, result, cnt1, tmp1, tmp2, tmp3, tmp4,
         tmp5, tmp6, tmp7, tmp8);
