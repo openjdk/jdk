@@ -71,3 +71,17 @@ TEST_VM(StringUtils, replace_no_expand) {
   deleted = StringUtils::replace_no_expand(s2, "\n", "");
   ASSERT_EQ(deleted, 0);
 }
+
+TEST(StringUtils, ClassListMatch) {
+  // Wild card matching doesn't look backwards
+  const char* str = "xabc";
+  const char* pat = "*abc";
+  bool match =  StringUtils::class_list_match(pat, &str[3]);
+  EXPECT_FALSE(match);
+
+  // Package name supports both / and .
+  str = "java/lang/String";
+  pat = "java.lang.String";
+  match =  StringUtils::class_list_match(pat, str);
+  EXPECT_TRUE(match);
+}

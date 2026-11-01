@@ -25,6 +25,7 @@
 #include "cds/aotClassFilter.hpp"
 #include "cds/aotCompressedPointers.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
@@ -32,10 +33,10 @@
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/klassFactory.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
@@ -143,7 +144,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
 
   HandleMark hm(THREAD);
   int len = _lambdaform_lines->length();
-  objArrayHandle list_lines = oopFactory::new_objArray_handle(vmClasses::String_klass(), len, CHECK);
+  refArrayHandle list_lines = oopFactory::new_refArray_handle(vmClasses::String_klass(), len, CHECK);
   for (int i = 0; i < len; i++) {
     Handle h_line = java_lang_String::create_from_str(_lambdaform_lines->at(i), CHECK);
     list_lines->obj_at_put(i, h_line());
@@ -172,7 +173,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
     return;
   }
 
-  objArrayHandle h_array(THREAD, (objArrayOop)result.get_oop());
+  refArrayHandle h_array(THREAD, oop_cast<refArrayOop>(result.get_oop()));
   int sz = h_array->length();
   assert(sz % 2 == 0 && sz >= 2, "Must be even size of length");
   for (int i = 0; i < sz; i+= 2) {
@@ -193,7 +194,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
         // Fake it, so that it will be included into the archive.
         klass->set_shared_classpath_index(0);
         // Set the "generated" bit, so it won't interfere with JVMTI.
-        // See SystemDictionaryShared::find_builtin_class().
+        // See AOTSystemDictionary::find_builtin_class().
         klass->set_is_aot_generated_class();
       }
     } else {
@@ -223,6 +224,9 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
                                                    cl_info,
                                                    CHECK);
 
+  // The result InstanceKlass* is never used during the JVM process lifetime.
+  // We create it only for writing to the CDS archive, and so it need not be monitored by JVMTI or JFR.
+
   assert(result->java_mirror() != nullptr, "must be");
   RegeneratedClasses::add_class(InstanceKlass::cast(klass), result);
 
@@ -235,7 +239,7 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
   result->set_is_aot_generated_class();
   if (!klass->in_aot_cache()) {
     log_info(aot, lambda)("regenerate_class excluding klass %s %s", class_name, klass->name()->as_C_string());
-    SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
+    AOTSystemDictionary::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
   }
   log_info(aot, lambda)("Regenerated class %s, old: " INTPTR_FORMAT " new: " INTPTR_FORMAT,
                  class_name, p2i(klass), p2i(result));

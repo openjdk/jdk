@@ -169,16 +169,13 @@ public final class SwitchBootstraps {
      * the length of the {@code labels} array (inclusive),
      * both  or an {@link IndexOutOfBoundsException} is thrown.
      *
-     * @param lookup Represents a lookup context with the accessibility
-     *               privileges of the caller.  When used with {@code invokedynamic},
-     *               this is stacked automatically by the VM.
+     * @param lookup the full-privilege lookup context of the caller
      * @param invocationName unused, {@code null} is permitted
      * @param invocationType The invocation type of the {@code CallSite} with two parameters,
      *                       a target type, an {@code int}, and {@code int} as a return type.
      * @param labels case labels as described above
      * @return a {@code CallSite} returning the first matching element as described above
      *
-     * @throws NullPointerException     if any argument is {@code null}, unless noted otherwise
      * @throws IllegalArgumentException if any element in the labels array is null
      * @throws IllegalArgumentException if the invocation type is not a method type of first parameter of a target type,
      *                                  second parameter of type {@code int} and with {@code int} as its return type
@@ -197,6 +194,9 @@ public final class SwitchBootstraps {
         requireNonNull(lookup);
         requireNonNull(invocationType);
         requireNonNull(labels);
+
+        if (!lookup.hasFullPrivilegeAccess())
+            throw new IllegalArgumentException("Unprivileged lookup ".concat(lookup.toString()));
 
         Class<?> selectorType = invocationType.parameterType(0);
         if (invocationType.parameterCount() != 2
@@ -275,9 +275,7 @@ public final class SwitchBootstraps {
      * @apiNote It is permissible for the {@code labels} array to contain {@code String}
      * values that do not represent any enum constants at runtime.
      *
-     * @param lookup Represents a lookup context with the accessibility
-     *               privileges of the caller. When used with {@code invokedynamic},
-     *               this is stacked automatically by the VM.
+     * @param lookup the full-privilege lookup context of the caller
      * @param invocationName unused, {@code null} is permitted
      * @param invocationType The invocation type of the {@code CallSite} with two parameters,
      *                       an enum type, an {@code int}, and {@code int} as a return type.
@@ -285,7 +283,6 @@ public final class SwitchBootstraps {
      *               in any combination
      * @return a {@code CallSite} returning the first matching element as described above
      *
-     * @throws NullPointerException     if any argument is {@code null}, unless noted otherwise
      * @throws IllegalArgumentException if any element in the labels array is null
      * @throws IllegalArgumentException if any element in the labels array is an empty {@code String}
      * @throws IllegalArgumentException if the invocation type is not a method type
@@ -304,6 +301,9 @@ public final class SwitchBootstraps {
         requireNonNull(lookup);
         requireNonNull(invocationType);
         requireNonNull(labels);
+
+        if (!lookup.hasFullPrivilegeAccess())
+            throw new IllegalArgumentException("Unprivileged lookup ".concat(lookup.toString()));
 
         if (invocationType.parameterCount() != 2
             || (!invocationType.returnType().equals(int.class))

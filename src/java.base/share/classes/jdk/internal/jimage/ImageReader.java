@@ -486,7 +486,7 @@ public final class ImageReader implements AutoCloseable {
                     ImageLocation loc = null;
                     if (isPreviewEnabled) {
                         // We must test preview location first (if in preview mode).
-                        loc = findLocation(moduleName, PREVIEW_RESOURCE_PREFIX + resourcePath);
+                        loc = findLocation(moduleName, PREVIEW_RESOURCE_PREFIX + "/" + resourcePath);
                     }
                     if (loc == null) {
                         loc = findLocation(moduleName, resourcePath);
@@ -531,7 +531,7 @@ public final class ImageReader implements AutoCloseable {
                         return node.isResource();
                     }
                 }
-                loc = findLocation(moduleName, PREVIEW_RESOURCE_PREFIX + resourcePath);
+                loc = findLocation(moduleName, PREVIEW_RESOURCE_PREFIX + "/" + resourcePath);
             }
             if (loc == null) {
                 loc = findLocation(moduleName, resourcePath);
@@ -561,7 +561,19 @@ public final class ImageReader implements AutoCloseable {
             // Now try the non-prefixed resource name, but be careful to avoid false
             // positives for names like "/modules/modules/xxx" which could return a
             // location of a directory entry.
-            loc = findLocation(name.substring(MODULES_PREFIX.length()));
+            String resourceName = name.substring(MODULES_PREFIX.length());
+            if (isPreviewEnabled) {
+                // Root-level preview resources are not pre-cached when an image
+                // is opened, so check for them first.
+                int pathStart = resourceName.indexOf('/', 1);
+                if (pathStart > 1 && resourceName.indexOf('/', pathStart + 1) < 0) {
+                    loc = findLocation(resourceName.substring(0, pathStart)
+                            + PREVIEW_INFIX + "/" + resourceName.substring(pathStart + 1));
+                }
+            }
+            if (loc == null) {
+                loc = findLocation(resourceName);
+            }
             return loc != null && loc.getType() == RESOURCE
                     ? ensureCached(newResource(name, loc))
                     : null;
@@ -649,6 +661,36 @@ public final class ImageReader implements AutoCloseable {
         private Directory completeModuleDirectory(Directory dir, ImageLocation loc) {
             assert dir.getName().equals(loc.getFullName()) : "Mismatched location for directory: " + dir;
             List<Node> previewOnlyNodes = getPreviewNodesToMerge(dir);
+            if (isPreviewEnabled && previewOnlyNodes.isEmpty()) {
+                // When opening an image in preview mode, packages that have preview
+                // content are eagerly processed, caching preview resources and
+                // preview-only directories for direct lookup. Root-level preview
+                // resources are omitted during this process, since they have no
+                // package path and the empty package is not represented under
+                // "/packages", and must be processed separately.
+                int moduleStart = MODULES_PREFIX.length() + 1;
+                if (dir.getName().indexOf('/', moduleStart) < 0) {
+                    ImageLocation previewLoc = findLocation(dir.getName() + PREVIEW_INFIX);
+                    if (previewLoc != null) {
+                        previewOnlyNodes = createChildNodes(previewLoc, 0, childLoc -> {
+                            String baseName = getBaseName(childLoc);
+                            String nonPreviewChildName = dir.getName() + "/" + baseName;
+                            boolean isPreviewOnly = ImageLocation.isPreviewOnly(childLoc.getFlags());
+                            LocationType type = childLoc.getType();
+                            if (type == RESOURCE) {
+                                Node childNode = nodes.computeIfAbsent(nonPreviewChildName, n -> newResource(n, childLoc));
+                                return isPreviewOnly ? childNode : null;
+                            } else {
+                                assert type == MODULES_DIR : "Invalid location type: " + childLoc;
+                                Node childNode = nodes.get(nonPreviewChildName);
+                                assert !(isPreviewOnly && childNode == null) :
+                                        "Inconsistent child node: " + nonPreviewChildName;
+                                return isPreviewOnly ? childNode : null;
+                            }
+                        });
+                    }
+                }
+            }
             // We hide preview names from direct lookup, but must also prevent
             // the preview directory from appearing in any META-INF directories.
             boolean parentIsMetaInfDir = isMetaInf(dir);

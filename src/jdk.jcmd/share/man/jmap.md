@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,11 @@ Debugging Tools for Windows must be installed to make these tools work. The
 `PATH` environment variable should contain the location of the `jvm.dll` file
 that's used by the target process or the location from which the core dump file
 was produced.
+
+If the target JVM is started with an alternate temporary file location, `jmap` must
+use the same temporary file location for communication; this is true by default
+but see the [`-XX:AltTempDir`](./java.html#-XX_AltTempDir) option.
+
 
 ## Options for the jmap Command
 

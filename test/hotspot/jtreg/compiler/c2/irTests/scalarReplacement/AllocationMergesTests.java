@@ -43,7 +43,6 @@ public class AllocationMergesTests {
 
         Scenario scenario0 = new Scenario(0, "-XX:+UnlockDiagnosticVMOptions",
                                              "-XX:+ReduceAllocationMerges",
-                                             "-XX:+TraceReduceAllocationMerges",
                                              "-XX:+DeoptimizeALot",
                                              "-XX:+UseCompressedOops",
                                              "-XX:CompileCommand=inline,*::charAt*",
@@ -54,7 +53,6 @@ public class AllocationMergesTests {
 
         Scenario scenario1 = new Scenario(2, "-XX:+UnlockDiagnosticVMOptions",
                                              "-XX:+ReduceAllocationMerges",
-                                             "-XX:+TraceReduceAllocationMerges",
                                              "-XX:+DeoptimizeALot",
                                              "-XX:-UseCompressedOops",
                                              "-XX:CompileCommand=inline,*::charAt*",
@@ -65,7 +63,6 @@ public class AllocationMergesTests {
 
         Scenario scenario2 = new Scenario(3, "-XX:+UnlockDiagnosticVMOptions",
                                              "-XX:+ReduceAllocationMerges",
-                                             "-XX:+TraceReduceAllocationMerges",
                                              "-XX:+DeoptimizeALot",
                                              "-XX:+UseCompressedOops",
                                              "-XX:-OptimizePtrCompare",

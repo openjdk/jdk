@@ -96,6 +96,7 @@ import static com.sun.tools.javac.code.Flags.FINAL;
 import static com.sun.tools.javac.code.Flags.INTERFACE;
 import static com.sun.tools.javac.code.Flags.LAMBDA_METHOD;
 import static com.sun.tools.javac.code.Flags.LOCAL_CAPTURE_FIELD;
+import static com.sun.tools.javac.code.Flags.OUTER_THIS_FIELD;
 import static com.sun.tools.javac.code.Flags.PARAMETER;
 import static com.sun.tools.javac.code.Flags.PRIVATE;
 import static com.sun.tools.javac.code.Flags.STATIC;
@@ -1314,6 +1315,14 @@ public class LambdaToMethod extends TreeTranslator {
                     if ((tree.sym.flags() & LOCAL_CAPTURE_FIELD) != 0) {
                         // a local, captured by Lower - re-capture!
                         addFreeVar((VarSymbol) tree.sym);
+                    } else if (isEarlyInstanceFieldInit() &&
+                            (tree.sym.flags() & OUTER_THIS_FIELD) != 0) {
+                        // If we're in early strict instance initializer we can't assume this$0 is
+                        // accessible. So we should make the lambda method static, and deal with
+                        // this$0 as if it were a regular capture. This works because language rules
+                        // prevent direct access to this/super, so a static lambda method should
+                        // always be ok as a translation target in a ctor prologue.
+                        addFreeVar((VarSymbol) tree.sym);
                     } else {
                         // a reference to an enclosing field or method, we need to capture 'this'
                         capturesThis = true;
@@ -1338,6 +1347,11 @@ public class LambdaToMethod extends TreeTranslator {
             @Override
             public void visitAnnotation(JCAnnotation tree) {
                 // do nothing (annotation values look like captured instance fields)
+            }
+
+            private boolean isEarlyInstanceFieldInit() {
+                return pendingVar != null &&
+                        pendingVar.isStrictInstance();
             }
         }
 

@@ -133,9 +133,6 @@ class VMError : public AllStatic {
   static void reporting_started();
   static void interrupt_reporting_thread();
 
-  // Helper function to get the current timestamp.
-  static jlong get_current_timestamp();
-
   // Accessors to get/set the start times for step and total timeout.
   static void record_reporting_start_time();
   static jlong get_reporting_start_time();

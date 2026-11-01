@@ -1,8 +1,7 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
- */
-
-/* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
+ * Copyright (c) 2026, IBM Corporation. All rights reserved.
+ * Copyright (c) 2002 Graz University of Technology. All rights reserved.
  *
  * Redistribution and use in  source and binary forms, with or without
  * modification, are permitted  provided that the following conditions are met:
@@ -988,6 +987,9 @@ public interface PKCS11Constants {
     public static final long  CKM_SP800_108_COUNTER_KDF      = 0x000003acL;
     public static final long  CKM_SP800_108_FEEDBACK_KDF     = 0x000003adL;
     public static final long  CKM_SP800_108_DOUBLE_PIPELINE_KDF = 0x000003aeL;
+
+    public static final long CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE = 0x00000056L;
+    public static final long CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE_DH = 0x00000057L;
 
     public static final long  CKM_VENDOR_DEFINED             = 0x80000000L;
 

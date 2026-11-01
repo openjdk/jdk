@@ -78,8 +78,8 @@ public class TestPosition extends AbstractProcessor {
                         @Override public Void scan(DocTree node, Void p) {
                             if (node != null) {
                                 DocSourcePositions sp = trees.getSourcePositions();
-                                int start = (int) sp.getStartPosition(testElement.getCompilationUnit(), docCommentTree, node);
-                                int end   = (int) sp.getEndPosition(testElement.getCompilationUnit(), docCommentTree, node);
+                                int start = (int) sp.getStartPosition(docCommentTree, node);
+                                int end   = (int) sp.getEndPosition(docCommentTree, node);
                                 String snippet = code.substring(start, end).replace(" \n", "!trailing-whitespace!\n");
 
                                 if (snippet.endsWith(" ")) {

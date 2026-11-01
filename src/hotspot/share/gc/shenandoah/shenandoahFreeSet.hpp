@@ -561,16 +561,6 @@ private:
 #endif
   }
 
-  // Increases used memory for the partition if the allocation is successful. `in_new_region` will be set
-  // if this is the first allocation in the region.
-  HeapWord* try_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest& req, bool& in_new_region);
-
-  // While holding the heap lock, allocate memory for a single object or LAB  which is to be entirely contained
-  // within a single HeapRegion as characterized by req.
-  //
-  // Precondition: !ShenandoahHeapRegion::requires_humongous(req.size())
-  HeapWord* allocate_single(ShenandoahAllocRequest& req, bool& in_new_region);
-
   bool transfer_one_region_from_mutator_to_old_collector(size_t idx, size_t alloc_capacity);
 
   // Change region r from the Mutator partition to the GC's Collector or OldCollector partition.  This requires that the
@@ -585,29 +575,8 @@ private:
   // Return true if and only if the given region is successfully flipped to the old partition
   bool flip_to_old_gc(ShenandoahHeapRegion* r);
 
-  // Handle allocation for mutator.
-  HeapWord* allocate_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
-
   // Update allocation bias and decided whether to allocate from the left or right side of the heap.
   void update_allocation_bias();
-
-  // Search for regions to satisfy allocation request using iterator.
-  template<typename Iter>
-  HeapWord* allocate_from_regions(Iter& iterator, ShenandoahAllocRequest &req, bool &in_new_region);
-
-  // Handle allocation for collector (for evacuation).
-  HeapWord* allocate_for_collector(ShenandoahAllocRequest& req, bool& in_new_region);
-
-  // Search for allocation in region with same affiliation as request, using given iterator,
-  // or affiliate the first usable FREE region with given affiliation and allocate in.
-  template<typename Iter>
-  HeapWord* allocate_with_affiliation(Iter& iterator,
-                                      ShenandoahAffiliation affiliation,
-                                      ShenandoahAllocRequest& req,
-                                      bool& in_new_region);
-
-  // Attempt to allocate memory for an evacuation from the mutator's partition.
-  HeapWord* try_allocate_from_mutator(ShenandoahAllocRequest& req, bool& in_new_region);
 
   void clear_internal();
 
@@ -616,8 +585,6 @@ private:
   // concurrent weak root processing is in progress.
   bool can_allocate_from(ShenandoahHeapRegion *r) const;
   bool can_allocate_from(size_t idx) const;
-
-  bool has_alloc_capacity(ShenandoahHeapRegion *r) const;
 
   void transfer_empty_regions_from_to(ShenandoahFreeSetPartitionId source_partition,
                                       ShenandoahFreeSetPartitionId dest_partition,
@@ -853,8 +820,6 @@ public:
   }
 
   void decrease_humongous_waste_for_regular_bypass(ShenandoahHeapRegion* r, size_t waste);
-
-  HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 
   /*
    * Internal fragmentation metric: describes how fragmented the heap regions are.

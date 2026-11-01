@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,6 @@ public class sourcename003 {
     /** Debugee's class for check **/
     private final static String checked_class = thisClassName + "[]";
 
-
-
     public static void main (String argv[]) {
         int result = run(argv,System.out);
         if (result != 0) {
@@ -84,12 +82,8 @@ public class sourcename003 {
         test_log_handler.display(message);
     }
 
-    private static void print_log_without_verbose(String message) {
-        test_log_handler.comment(message);
-    }
-
     private static void print_log_anyway(String message) {
-        test_log_handler.println(message);
+        test_log_handler.display(message);
     }
 
     /**
@@ -136,8 +130,6 @@ public class sourcename003 {
                 ("--> sourcename003: getting ReferenceType object for loaded checked class...");
             ReferenceType refType = debugee.classByName(checked_class);
             if (refType == null) {
-                print_log_without_verbose
-                    ("--> sourcename003: getting ReferenceType object for loaded checked class...");
                 print_log_anyway("##> sourcename003: FAILED: Could NOT FIND checked class: " + checked_class);
                 class_not_found_error = true;
                 break;

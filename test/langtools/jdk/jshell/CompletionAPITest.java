@@ -49,6 +49,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -59,6 +60,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
+import jdk.jshell.JShell;
 import jdk.jshell.SourceCodeAnalysis.CompletionContext;
 import jdk.jshell.SourceCodeAnalysis.CompletionState;
 import jdk.jshell.SourceCodeAnalysis.ElementSuggestion;
@@ -266,8 +268,6 @@ public class CompletionAPITest extends KullaTesting {
                 "public class JShellTest {\n" +
                 "}\n";
 
-        Path srcZip = Paths.get("src.zip");
-
         try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(srcZip))) {
             out.putNextEntry(new JarEntry("jshelltest/JShellTest.java"));
             out.write(clazz.getBytes());
@@ -277,18 +277,15 @@ public class CompletionAPITest extends KullaTesting {
 
         compiler.compile(clazz);
 
-        try {
-            Field availableSources = Class.forName("jdk.jshell.SourceCodeAnalysisImpl").getDeclaredField("availableSourcesOverride");
-            availableSources.setAccessible(true);
-            availableSources.set(null, Arrays.asList(srcZip));
-        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException | ClassNotFoundException ex) {
-            throw new IllegalStateException(ex);
-        }
-
         return compiler.getClassDir();
     }
     //where:
         private final Compiler compiler = new Compiler();
+        private final Path srcZip = Paths.get("src.zip");
+
+    public void setUp(Consumer<JShell.Builder> bc) {
+        super.setUp(bc.andThen(b -> b.binarySourceMapping(p -> compiler.getClassDir().equals(p) ? List.of(srcZip) : null)));
+    }
 
     static {
         try {

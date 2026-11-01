@@ -249,7 +249,7 @@ public class SystemdTestUtils {
 
     private static String getMemoryDSliceContent(SystemdRunOptions runOpts) {
         String format = "[Slice]\n" + basicMemoryContentFormat();
-        return String.format(format, runOpts.sliceDMemoryLimit);
+        return String.format(format, runOpts.sliceDMemoryLimit, runOpts.sliceDMemoryLimit);
     }
 
     private static String getCPUDSliceContent(SystemdRunOptions runOpts) {
@@ -268,13 +268,14 @@ public class SystemdTestUtils {
         return """
                 MemoryAccounting=true
                 MemoryLimit=%s
+                MemoryMax=%s
                 """;
     }
 
     private static String getMemorySliceContent(SystemdRunOptions runOpts) {
         String format = basicMemoryContentFormat();
 
-        return String.format(format, runOpts.memoryLimit);
+        return String.format(format, runOpts.memoryLimit, runOpts.memoryLimit);
     }
 
     private static String getBasicSliceFormat() {

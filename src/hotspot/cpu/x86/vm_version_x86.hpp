@@ -439,7 +439,7 @@ protected:
     decl(AVX512_FP16,       avx512_fp16       ) /* AVX512 FP16 ISA support*/ \
     decl(AVX10_1,           avx10_1           ) /* AVX10 512 bit vector ISA Version 1 support*/ \
     decl(AVX10_2,           avx10_2           ) /* AVX10 512 bit vector ISA Version 2 support*/ \
-    decl(HYBRID,            hybrid            ) /* Hybrid architecture */
+    decl(HYBRID,            hybrid            ) /* Hybrid architecture */ \
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name) CPU_##id,
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -453,7 +453,7 @@ protected:
    private:
     uint64_t _features_bitmap[(MAX_CPU_FEATURES / BitsPerLong) + 1];
 
-    STATIC_ASSERT(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURES);
+    static_assert(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURES);
 
     // Number of 8-byte elements in _bitmap.
     constexpr static int features_bitmap_element_count() {
@@ -677,11 +677,17 @@ protected:
     int          zmm_save[16*4]; // Save zmm0, zmm7, zmm8, zmm31
 
     // Space to save apx registers after signal handle
-    jlong        apx_save[2]; // Save r16 and r31
+    jlong        apx_save[2]; // Save r16 and the last volatile EGPR
+                              // (r29 on Windows, r31 on non-Windows)
 
     // cpuid function 0xD, subleaf 19 (APX extended state)
     uint32_t          apx_xstate_size;          // EAX: size of APX state (128)
     uint32_t          apx_xstate_offset;        // EBX: offset in standard XSAVE area
+
+    // cpuid function 0xD, subleaf 5, 6 and 7 (AVX-512 extended state)
+    uint32_t          opmask_xstate_offset;          // EBX: offset of Opmask component
+    uint32_t          zmm0to15_hi256_xstate_offset;  // EBX: offset of ZMM_Hi256 component
+    uint32_t          zmm16to31_xstate_offset;       // EBX: offset of Hi16_ZMM component
 
     VM_Features feature_flags() const;
 
@@ -748,9 +754,15 @@ public:
   static ByteSize apx_save_offset() { return byte_offset_of(CpuidInfo, apx_save); }
   static ByteSize apx_xstate_offset_offset() { return byte_offset_of(CpuidInfo, apx_xstate_offset); }
   static ByteSize apx_xstate_size_offset() { return byte_offset_of(CpuidInfo, apx_xstate_size); }
+  static ByteSize opmask_xstate_offset_offset() { return byte_offset_of(CpuidInfo, opmask_xstate_offset); }
+  static ByteSize zmm0to15_hi256_xstate_offset_offset() { return byte_offset_of(CpuidInfo, zmm0to15_hi256_xstate_offset); }
+  static ByteSize zmm16to31_xstate_offset_offset() { return byte_offset_of(CpuidInfo, zmm16to31_xstate_offset); }
 
   static uint32_t apx_xstate_offset() { return _cpuid_info.apx_xstate_offset; }
   static uint32_t apx_xstate_size()   { return _cpuid_info.apx_xstate_size; }
+  static uint32_t opmask_xstate_offset()        { return _cpuid_info.opmask_xstate_offset; }
+  static uint32_t zmm0to15_hi256_xstate_offset() { return _cpuid_info.zmm0to15_hi256_xstate_offset; }
+  static uint32_t zmm16to31_xstate_offset()      { return _cpuid_info.zmm16to31_xstate_offset; }
 
   // The value used to check ymm register after signal handle
   static int ymm_test_value()    { return 0xCAFEBABE; }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7069824 8042360 8032842 8175539 8210443 8242010 8276302 8381644
+ * @bug 7069824 8042360 8032842 8175539 8210443 8242010 8276302 8381644 8387261
  * @summary Verify implementation for Locale matching.
  * @run junit/othervm LocaleMatchingTest
  */
@@ -93,6 +93,7 @@ public class LocaleMatchingTest {
                 {"1996-de-Latn", MAX_WEIGHT},
                 // Testcase for 8042360
                 {"en-Latn-1234567890", MAX_WEIGHT},
+                {"en", Double.NaN},
         };
     }
 
@@ -146,6 +147,7 @@ public class LocaleMatchingTest {
                 // Ranges
                 {""},
                 {"ja;q=3"},
+                {"en;q=NaN"}
         };
     }
 

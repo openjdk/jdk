@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,11 @@ inline void JfrVframeStream::next_vframe() {
     return;
   }
   next_frame();
+}
+
+inline int JfrVframeStream::normalized_bci() const {
+  const int value = bci();
+  return value == InvocationEntryBci ? 0 : value;
 }
 
 #endif // SHARE_JFR_RECORDER_STACKTRACE_JFRVFRAMESTREAM_INLINE_HPP

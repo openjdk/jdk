@@ -213,7 +213,7 @@ public class NoAbortForBadClassFile extends TestRunner {
 
             long flags = sym.flags_field;
 
-            flags &= ~(Flags.CLASS_SEEN | Flags.SOURCE_SEEN);
+            flags &= ~(Flags.CLASS_SEEN | Flags.SOURCE_SEEN | Flags.IDENTITY_TYPE); // earlier ACC_SUPER was dropped by javac.
 
             result.add("sym: " + sym.flatname + ", " + sym.owner.flatName() +
                        ", " + sym.type + ", " + sym.members_field + ", " + flags);

@@ -79,12 +79,23 @@ public final class LinuxAMD64CFrame extends DwarfCFrame {
      };
    }
 
+   // In SysV AMD64, SP should be less than sender SP because return address should be
+   // pushed onto the stack.
+   protected boolean isValidFrame(Address senderCFA, Address senderFP, Address senderSP) {
+     return super.isValidFrame(senderCFA, senderFP) && sp().lessThan(senderSP);
+   }
+
    @Override
    public CFrame sender(ThreadProxy th, Address senderSP, Address senderFP, Address senderPC) {
      if (linuxDbg().isSignalTrampoline(pc())) {
        // RSP points signal context
        //   https://github.com/torvalds/linux/blob/v6.17/arch/x86/kernel/signal.c#L94
        return getFrameFromReg(linuxDbg(), r -> LinuxAMD64ThreadContext.getRegFromSignalTrampoline(sp(), r.intValue()));
+     }
+
+     if (hasNativeLibrary() && dwarf() == null) {
+       // Cannot find a sender frame if DWARF is missing even though PC in native library.
+       return null;
      }
 
      senderSP = getSenderSP(senderSP);
@@ -95,6 +106,8 @@ public final class LinuxAMD64CFrame extends DwarfCFrame {
      if (senderPC == null) {
        return null;
      }
+
+     senderFP = getSenderFP(senderFP);
 
      DwarfParser senderDwarf = null;
      boolean fallback = false;
@@ -107,16 +120,17 @@ public final class LinuxAMD64CFrame extends DwarfCFrame {
          senderDwarf = createDwarfParser(linuxDbg(), senderPC.addOffsetTo(-1));
          fallback = true;
        } catch (DebuggerException _) {
-         // We cannot unwind anymore without appropriate DWARF.
-         return null;
+         // Returns CFrame if the sender is native frame even though it does not have DWARF,
+         // otherwise returns null because we cannot unwind anymore.
+         return linuxDbg().findLibPtrByAddress(senderPC) != null
+           ? new LinuxAMD64CFrame(linuxDbg(), senderSP, senderFP, null /* no CFA */, senderPC, null /* no DWARF */)
+           : null;
        }
      }
 
-     senderFP = getSenderFP(senderFP);
-
      try {
        Address senderCFA = getSenderCFA(senderDwarf, senderSP, senderFP);
-       return isValidFrame(senderCFA, senderFP)
+       return isValidFrame(senderCFA, senderFP, senderSP)
          ? new LinuxAMD64CFrame(linuxDbg(), senderSP, senderFP, senderCFA, senderPC, senderDwarf, fallback)
          : null;
      } catch (DebuggerException e) {

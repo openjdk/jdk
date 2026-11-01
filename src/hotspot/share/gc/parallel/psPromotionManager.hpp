@@ -55,6 +55,7 @@ class ParCompactionManager;
 
 class PSPromotionManager {
   friend class PSScavenge;
+  friend class ParallelScavengeRefProcProxyTask;
   friend class ScavengeRootsTask;
 
  private:
@@ -99,7 +100,7 @@ class PSPromotionManager {
 
   void process_array_chunk(PartialArrayState* state, bool stolen);
   void process_array_chunk(objArrayOop obj, size_t start, size_t end);
-  void push_objArray(oop old_obj, oop new_obj);
+  void push_objArray(oop new_obj);
 
   inline void promotion_trace_event(oop new_obj, Klass* klass, size_t obj_size,
                                     uint age, bool tenured,

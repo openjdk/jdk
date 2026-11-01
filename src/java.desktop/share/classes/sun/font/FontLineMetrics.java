@@ -99,12 +99,10 @@ public final class FontLineMetrics extends LineMetrics implements Cloneable {
     }
 
     public boolean equals(Object rhs) {
-        try {
-            return cm.equals(((FontLineMetrics)rhs).cm);
+        if (rhs == this) {
+            return true;
         }
-        catch (ClassCastException e) {
-            return false;
-        }
+        return rhs instanceof FontLineMetrics other && cm.equals(other.cm);
     }
 
     public Object clone() {

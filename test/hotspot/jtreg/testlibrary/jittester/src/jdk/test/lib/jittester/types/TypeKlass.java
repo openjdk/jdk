@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class TypeKlass extends Type {
     public static final int FINAL = 0x01;
     public static final int INTERFACE = 0x02;
     public static final int ABSTRACT = 0x04;
-
+    public static final int VALUE_KLASS = 0x08;
 
     public TypeKlass(String name) {
         this(name, NONE);
@@ -187,6 +187,22 @@ public class TypeKlass extends Type {
 
     public void setAbstract() {
         flags |= ABSTRACT;
+    }
+
+    /**
+     * Checks whether this type represents a value class.
+     *
+     * @return true when the value-class flag is set
+     */
+    public boolean isValueKlass() {
+        return (flags & VALUE_KLASS) > 0;
+    }
+
+    /**
+     * Marks this type as a value class.
+     */
+    public void setValueKlass() {
+        flags |= VALUE_KLASS;
     }
 
     public boolean isInterface() {

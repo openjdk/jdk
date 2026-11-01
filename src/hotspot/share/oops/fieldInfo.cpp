@@ -115,6 +115,12 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
     if (fi_ref->field_flags().is_contended()) {
       assert(fi_ref->contended_group() == fi.contended_group(), "Must be");
     }
+    if (fi_ref->field_flags().is_flat()) {
+      assert(fi_ref->layout_kind() == fi.layout_kind(), "Must be");
+    }
+    if (fi_ref->field_flags().has_null_marker()) {
+      assert(fi_ref->null_marker_offset() == fi.null_marker_offset(), "Must be");
+    }
   }
 #endif // ASSERT
 
@@ -331,7 +337,7 @@ int FieldInfoReader::search_table_lookup(const Array<u1>* search_table, const Sy
   FieldInfoComparator comp(this, cp, name, signature);
   PackedTableLookup lookup(_r.limit() - 1, java_fields - 1, search_table);
   uint32_t position;
-  static_assert(sizeof(uint32_t) == sizeof(_next_index), "field size assert");
+  static_assert(sizeof(uint32_t) == sizeof(_next_index));
   if (lookup.search(comp, &position, reinterpret_cast<uint32_t*>(&_next_index))) {
     _r.set_position(static_cast<int>(position));
     return _next_index;

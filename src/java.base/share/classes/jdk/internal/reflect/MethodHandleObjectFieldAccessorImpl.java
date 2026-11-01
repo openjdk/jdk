@@ -55,7 +55,7 @@ class MethodHandleObjectFieldAccessorImpl extends MethodHandleFieldAccessorImpl 
     public Object get(Object obj) throws IllegalArgumentException {
         try {
             return isStatic() ? getter.invokeExact() : getter.invokeExact(obj);
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             throw newGetIllegalArgumentException(obj);
@@ -108,7 +108,7 @@ class MethodHandleObjectFieldAccessorImpl extends MethodHandleFieldAccessorImpl 
             } else {
                 setter.invokeExact(obj, value);
             }
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             // already ensure the receiver type.  So this CCE is due to the value.

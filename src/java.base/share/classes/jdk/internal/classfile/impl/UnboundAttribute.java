@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -504,6 +504,30 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         @Override
         public List<ClassEntry> permittedSubclasses() {
             return permittedSubclasses;
+        }
+
+        @Override
+        public Utf8Entry attributeName() {
+            return NAME;
+        }
+    }
+
+    public static final class UnboundLoadableDescriptorsAttribute
+            extends UnboundAttribute<LoadableDescriptorsAttribute>
+            implements LoadableDescriptorsAttribute {
+
+        private static final Utf8Entry NAME = TemporaryConstantPool.INSTANCE.utf8Entry(Attributes.NAME_LOADABLE_DESCRIPTORS);
+
+        private final List<Utf8Entry> loadableDescriptors;
+
+        public UnboundLoadableDescriptorsAttribute(List<Utf8Entry> loadableDescriptors) {
+            super(Attributes.loadableDescriptors());
+            this.loadableDescriptors = Util.sanitizeU2List(loadableDescriptors);
+        }
+
+        @Override
+        public List<Utf8Entry> loadableDescriptors() {
+            return loadableDescriptors;
         }
 
         @Override

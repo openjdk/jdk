@@ -387,7 +387,9 @@ public class HBShaper {
      */
     private static class IntPtr {
         MemorySegment seg;
+        @SuppressWarnings("restricted")
         IntPtr(MemorySegment seg) {
+            this.seg = seg.reinterpret(4);
         }
 
         void set(int i) {

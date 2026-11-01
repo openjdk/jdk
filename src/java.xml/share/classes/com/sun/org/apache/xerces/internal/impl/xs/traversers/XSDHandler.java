@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -132,7 +132,7 @@ import org.xml.sax.XMLReader;
  * @author Neil Graham, IBM
  * @author Pavani Mukthipudi, Sun Microsystems
  *
- * @LastModified: May 2025
+ * @LastModified: July 2026
  */
 public class XSDHandler {
 
@@ -2216,7 +2216,8 @@ public class XSDHandler {
                     if ((!schemaSource.isCreatedByResolver()) &&
                             (referType == XSDDescription.CONTEXT_IMPORT || referType == XSDDescription.CONTEXT_INCLUDE
                             || referType == XSDDescription.CONTEXT_REDEFINE)) {
-                        String accessError = SecuritySupport.checkAccess(schemaId, fAccessExternalSchema, JdkConstants.ACCESS_EXTERNAL_ALL);
+                        String accessError = SecuritySupport.checkAccess(schemaId,
+                            fSecurityManager, XMLConstants.ACCESS_EXTERNAL_SCHEMA, fAccessExternalSchema);
                         if (accessError != null) {
                             reportSchemaFatalError("schema_reference.access",
                                     new Object[] { SecuritySupport.sanitizePath(schemaId), accessError },

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,15 +34,24 @@
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/integerCast.hpp"
 
 #ifndef PRODUCT
   #define TRACE_BCEA(level, code)                                            \
-    if (EstimateArgEscape && BCEATraceLevel >= level) {                        \
+    if (EstimateArgEscape && BCEATraceLevel >= level) {                      \
+      print_header(_level);                                                  \
       code;                                                                  \
     }
 #else
   #define TRACE_BCEA(level, code)
 #endif
+
+static const int INDENTATION_WIDTH = 2;
+
+static void print_header(int level) {
+  tty->print("[EA] ");
+  tty->sp(INDENTATION_WIDTH * clamp(level, 0, max_jint / INDENTATION_WIDTH));
+}
 
 // Maintain a map of which arguments a local variable or
 // stack slot may contain.  In addition to tracking
@@ -188,14 +197,25 @@ void BCEscapeAnalyzer::set_global_escape(ArgumentMap vars, bool merge) {
 }
 
 void BCEscapeAnalyzer::set_modified(ArgumentMap vars, int offs, int size) {
-
   for (int i = 0; i < _arg_size; i++) {
     if (vars.contains(i)) {
       set_arg_modified(i, offs, size);
     }
   }
-  if (vars.contains_unknown())
+  if (vars.contains_unknown()) {
     _unknown_modified = true;
+  }
+}
+
+void BCEscapeAnalyzer::set_modified_any_offset(ArgumentMap vars) {
+  for (int i = 0; i < _arg_size; i++) {
+    if (vars.contains(i)) {
+      _arg_modified[i] = (uint)-1;
+    }
+  }
+  if (vars.contains_unknown()) {
+    _unknown_modified = true;
+  }
 }
 
 bool BCEscapeAnalyzer::is_recursive_call(ciMethod* callee) {
@@ -226,7 +246,7 @@ bool BCEscapeAnalyzer::is_arg_modified(int arg, int offset, int size_in_bytes) {
 
 void BCEscapeAnalyzer::set_arg_modified(int arg, int offset, int size_in_bytes) {
   if (offset == OFFSET_ANY) {
-    _arg_modified[arg] =  (uint) -1;
+    _arg_modified[arg] = (uint)-1;
     return;
   }
   assert(arg >= 0 && arg < _arg_size, "must be an argument.");
@@ -286,7 +306,7 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
     skip_callee = true;
   }
   if (skip_callee) {
-    TRACE_BCEA(3, tty->print_cr("[EA] skipping method %s::%s", holder->name()->as_utf8(), target->name()->as_utf8()));
+    TRACE_BCEA(3, tty->print_cr("skipping method %s::%s", holder->name()->as_klass_external_name(), target->name()->as_utf8()));
     for (i = 0; i < arg_size; i++) {
       set_method_escape(state.raw_pop());
     }
@@ -348,7 +368,7 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
       _dependencies.appendAll(analyzer.dependencies());
     }
   } else {
-    TRACE_BCEA(1, tty->print_cr("[EA] virtual method %s is not monomorphic.",
+    TRACE_BCEA(1, tty->print_cr("virtual method %s is not monomorphic.",
                                 target->name()->as_utf8()));
     // conservatively mark all actual parameters as escaping globally
     for (i = 0; i < arg_size; i++) {
@@ -536,7 +556,7 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         state.spop();
         ArgumentMap arr = state.apop();
         set_method_escape(arr);
-        set_modified(arr, OFFSET_ANY, type2size[T_INT]*HeapWordSize);
+        set_modified_any_offset(arr);
         break;
       }
       case Bytecodes::_lastore:
@@ -546,7 +566,7 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         state.spop();
         ArgumentMap arr = state.apop();
         set_method_escape(arr);
-        set_modified(arr, OFFSET_ANY, type2size[T_LONG]*HeapWordSize);
+        set_modified_any_offset(arr);
         break;
       }
       case Bytecodes::_aastore:
@@ -554,7 +574,8 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         set_global_escape(state.apop());
         state.spop();
         ArgumentMap arr = state.apop();
-        set_modified(arr, OFFSET_ANY, type2size[T_OBJECT]*HeapWordSize);
+        // If the array is a flat array, a larger part of it is modified than the size of a reference.
+        set_modified_any_offset(arr);
         break;
       }
       case Bytecodes::_pop:
@@ -1077,17 +1098,32 @@ void BCEscapeAnalyzer::merge_block_states(StateInfo *blockstates, ciBlock *dest,
   }
 }
 
+bool BCEscapeAnalyzer::datasize_overflow(uint numblocks, uint stkSize, uint numLocals, size_t& datasize) {
+  uint64_t datacount64 = (uint64_t)(numblocks + 1) * (stkSize + numLocals);
+  if (datacount64 > SIZE_MAX / sizeof(ArgumentMap)) {
+    return true;
+  }
+  datasize = integer_cast_permit_tautology<size_t>(datacount64 * sizeof(ArgumentMap));
+  return false;
+}
+
 void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
-  int numblocks = _methodBlocks->num_blocks();
-  int stkSize   = _method->max_stack();
-  int numLocals = _method->max_locals();
+  uint numblocks = _methodBlocks->num_blocks();
+  uint stkSize   = _method->max_stack();
+  uint numLocals = _method->max_locals();
   StateInfo state;
 
-  int datacount = (numblocks + 1) * (stkSize + numLocals);
-  int datasize = datacount * sizeof(ArgumentMap);
+  size_t datasize;
+  if (datasize_overflow(numblocks, stkSize, numLocals, datasize)) {
+    _conservative = true;
+    return;
+  }
+  size_t datacount = datasize / sizeof(ArgumentMap);
   StateInfo *blockstates = (StateInfo *) arena->Amalloc(numblocks * sizeof(StateInfo));
   ArgumentMap *statedata  = (ArgumentMap *) arena->Amalloc(datasize);
-  for (int i = 0; i < datacount; i++) ::new ((void*)&statedata[i]) ArgumentMap();
+  for (size_t i = 0; i < datacount; i++) {
+    ::new ((void*)&statedata[i]) ArgumentMap();
+  }
   ArgumentMap *dp = statedata;
   state._vars = dp;
   dp += numLocals;
@@ -1095,7 +1131,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
   dp += stkSize;
   state._initialized = false;
   state._max_stack = stkSize;
-  for (int i = 0; i < numblocks; i++) {
+  for (uint i = 0; i < numblocks; i++) {
     blockstates[i]._vars = dp;
     dp += numLocals;
     blockstates[i]._stack = dp;
@@ -1142,7 +1178,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
     if (blk->is_handler() || blk->is_ret_target()) {
       // for an exception handler or a target of a ret instruction, we assume the worst case,
       // that any variable could contain any argument
-      for (int i = 0; i < numLocals; i++) {
+      for (uint i = 0; i < numLocals; i++) {
         state._vars[i] = allVars;
       }
       if (blk->is_handler()) {
@@ -1155,7 +1191,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
         state._stack[i] = allVars;
       }
     } else {
-      for (int i = 0; i < numLocals; i++) {
+      for (uint i = 0; i < numLocals; i++) {
         state._vars[i] = blkState->_vars[i];
       }
       for (int i = 0; i < blkState->_stack_height; i++) {
@@ -1170,7 +1206,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
       DEBUG_ONLY(int handler_count = 0;)
       int blk_start = blk->start_bci();
       int blk_end = blk->limit_bci();
-      for (int i = 0; i < numblocks; i++) {
+      for (uint i = 0; i < numblocks; i++) {
         ciBlock *b = _methodBlocks->block(i);
         if (b->is_handler()) {
           int ex_start = b->ex_start_bci();
@@ -1298,7 +1334,8 @@ void BCEscapeAnalyzer::compute_escape_info() {
       || _level > MaxBCEAEstimateLevel
       || method()->code_size() > MaxBCEAEstimateSize)) {
     if (BCEATraceLevel >= 1) {
-      tty->print("Skipping method because: ");
+      print_header(level());
+      tty->print("skipping method because: ");
       if (method()->is_abstract())
         tty->print_cr("method is abstract.");
       else if (method()->is_native())
@@ -1320,7 +1357,8 @@ void BCEscapeAnalyzer::compute_escape_info() {
   }
 
   if (BCEATraceLevel >= 1) {
-    tty->print("[EA] estimating escape information for");
+    print_header(level());
+    tty->print("estimating escape information for");
     if (iid != vmIntrinsics::_none)
       tty->print(" intrinsic");
     method()->print_short_name();
@@ -1401,38 +1439,75 @@ void BCEscapeAnalyzer::read_escape_info() {
 }
 
 #ifndef PRODUCT
-void BCEscapeAnalyzer::dump() {
-  tty->print("[EA] estimated escape information for");
-  method()->print_short_name();
-  tty->print_cr(has_dependencies() ? " (not stored)" : "");
-  tty->print("     non-escaping args:      ");
-  _arg_local.print();
-  tty->print("     stack-allocatable args: ");
-  _arg_stack.print();
-  if (_return_local) {
-    tty->print("     returned args:          ");
-    _arg_returned.print();
-  } else if (is_return_allocated()) {
-    tty->print_cr("     return allocated value");
-  } else {
-    tty->print_cr("     return non-local value");
-  }
-  tty->print("     modified args: ");
+
+static const char* const COMMA_SEPARATOR = ", ";
+
+void BCEscapeAnalyzer::dump_arg_set(const VectorSet &set) {
+  tty->print("{");
+  const char* sep = "";
   for (int i = 0; i < _arg_size; i++) {
-    if (_arg_modified[i] == 0)
-      tty->print("    0");
-    else
-      tty->print("    0x%x", _arg_modified[i]);
+    if (set.test(i)) {
+      tty->print("%s%d", sep, i);
+      sep = COMMA_SEPARATOR;
+    }
   }
+  tty->print("}");
+}
+
+void BCEscapeAnalyzer::dump() {
+  print_header(level());
+  tty->print("estimated escape information for");
+  method()->print_short_name();
+  tty->print(has_dependencies() ? " (not stored)" : "");
+  tty->print_cr(_arg_size == 1 ? " (%d arg slot):" : " (%d arg slots):", _arg_size);
+  print_header(level());
+  tty->print("- non-escaping args:      ");
+  dump_arg_set(_arg_local);
   tty->cr();
-  tty->print("     flags: ");
-  if (_return_allocated)
-    tty->print(" return_allocated");
-  if (_allocated_escapes)
-    tty->print(" allocated_escapes");
-  if (_unknown_modified)
-    tty->print(" unknown_modified");
+  print_header(level());
+  tty->print("- stack-allocatable args: ");
+  dump_arg_set(_arg_stack);
   tty->cr();
+  print_header(level());
+  if (_return_local) {
+    tty->print("- returned args:          ");
+    dump_arg_set(_arg_returned);
+    tty->cr();
+  } else if (is_return_allocated()) {
+    tty->print_cr("- return allocated value");
+  } else {
+    tty->print_cr("- return non-local value");
+  }
+  print_header(level());
+  tty->print("- modified args:          ");
+  tty->print("[");
+  const char* sep = "";
+  for (int i = 0; i < _arg_size; i++) {
+    tty->print("%s", sep);
+    if (_arg_modified[i] == 0) {
+      tty->print("0");
+    } else {
+      tty->print("0x%x", _arg_modified[i]);
+    }
+    sep = COMMA_SEPARATOR;
+  }
+  tty->print_cr("]");
+  print_header(level());
+  tty->print("- flags:                  {");
+  sep = "";
+  if (_return_allocated) {
+    tty->print("%sreturn_allocated", sep);
+    sep = COMMA_SEPARATOR;
+  }
+  if (_allocated_escapes) {
+    tty->print("%sallocated_escapes", sep);
+    sep = COMMA_SEPARATOR;
+  }
+  if (_unknown_modified) {
+    tty->print("%sunknown_modified", sep);
+    sep = COMMA_SEPARATOR;
+  }
+  tty->print_cr("}");
 }
 #endif
 
@@ -1463,15 +1538,14 @@ BCEscapeAnalyzer::BCEscapeAnalyzer(ciMethod* method, BCEscapeAnalyzer* parent)
     if (methodData() == nullptr)
       return;
     if (methodData()->has_escape_info()) {
-      TRACE_BCEA(2, tty->print_cr("[EA] Reading previous results for %s.%s",
-                                  method->holder()->name()->as_utf8(),
+      TRACE_BCEA(2, tty->print_cr("reading previous results for %s::%s",
+                                  method->holder()->name()->as_klass_external_name(),
                                   method->name()->as_utf8()));
       read_escape_info();
     } else {
-      TRACE_BCEA(2, tty->print_cr("[EA] computing results for %s.%s",
-                                  method->holder()->name()->as_utf8(),
+      TRACE_BCEA(2, tty->print_cr("computing results for %s::%s",
+                                  method->holder()->name()->as_klass_external_name(),
                                   method->name()->as_utf8()));
-
       compute_escape_info();
       methodData()->update_escape_info();
     }

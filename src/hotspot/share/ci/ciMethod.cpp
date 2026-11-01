@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@
 #include "ci/ciSymbol.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "classfile/vmIntrinsics.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
@@ -52,6 +54,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/xmlstream.hpp"
 #ifdef COMPILER2
@@ -144,6 +147,7 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   constantPoolHandle cpool(Thread::current(), h_m->constants());
   _signature = new (env->arena()) ciSignature(_holder, cpool, sig_symbol);
   _method_data = nullptr;
+  _method_data_recorded = nullptr;
   // Take a snapshot of these values, so they will be commensurate with the MDO.
   if (ProfileInterpreter || CompilerConfig::is_c1_profiling()) {
     int invcnt = h_m->interpreter_invocation_count();
@@ -175,6 +179,7 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   _name(                   name),
   _holder(                 holder),
   _method_data(            nullptr),
+  _method_data_recorded(   nullptr),
   _method_blocks(          nullptr),
   _intrinsic_id(           vmIntrinsics::_none),
   _inline_instructions_size(-1),
@@ -662,6 +667,71 @@ bool ciMethod::parameter_profiled_type(int i, ciKlass*& type, ProfilePtrKind& pt
   return false;
 }
 
+// MDO updates are racy. C2 can observe the array type before the profiling code has updated the
+// corresponding flat/null-free flags. If the array type is known, prefer the properties it provides.
+static void update_flags_from_type(ciKlass* array_type, bool& flat_array, bool& null_free_array) {
+  if (array_type != nullptr) {
+    flat_array |= array_type->is_flat_array_klass();
+    null_free_array |= array_type->as_array_klass()->is_elem_null_free();
+  }
+}
+
+bool ciMethod::array_access_profiled_type(int bci, ciKlass*& array_type, ciKlass*& element_type, ProfilePtrKind& element_ptr, bool &flat_array, bool &null_free_array) {
+  if (method_data() != nullptr && method_data()->is_mature()) {
+    ciProfileData* data = method_data()->bci_to_data(bci);
+    if (data != nullptr) {
+      if (data->is_ArrayLoadData()) {
+        ciArrayLoadData* array_access = (ciArrayLoadData*) data->as_ArrayLoadData();
+        array_type = array_access->array()->valid_type();
+        element_type = array_access->element()->valid_type();
+        element_ptr = array_access->element()->ptr_kind();
+        flat_array = array_access->flat_array();
+        null_free_array = array_access->null_free_array();
+        update_flags_from_type(array_type, flat_array, null_free_array);
+        return true;
+      } else if (data->is_ArrayStoreData()) {
+        ciArrayStoreData* array_access = (ciArrayStoreData*) data->as_ArrayStoreData();
+        array_type = array_access->array()->valid_type();
+        flat_array = array_access->flat_array();
+        null_free_array = array_access->null_free_array();
+        update_flags_from_type(array_type, flat_array, null_free_array);
+        ciCallProfile call_profile = call_profile_at_bci(bci);
+        if (call_profile.morphism() == 1) {
+          element_type = call_profile.receiver(0);
+        } else {
+          element_type = nullptr;
+        }
+        if (!array_access->null_seen()) {
+          element_ptr = ProfileNeverNull;
+        } else if (call_profile.count() == 0) {
+          element_ptr = ProfileAlwaysNull;
+        } else {
+          element_ptr = ProfileMaybeNull;
+        }
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool ciMethod::acmp_profiled_type(int bci, ciKlass*& left_type, ciKlass*& right_type, ProfilePtrKind& left_ptr, ProfilePtrKind& right_ptr, bool &left_value_type, bool &right_value_type) {
+  if (method_data() != nullptr && method_data()->is_mature()) {
+    ciProfileData* data = method_data()->bci_to_data(bci);
+    if (data != nullptr && data->is_ACmpData()) {
+      ciACmpData* acmp = (ciACmpData*)data->as_ACmpData();
+      left_type = acmp->left()->valid_type();
+      right_type = acmp->right()->valid_type();
+      left_ptr = acmp->left()->ptr_kind();
+      right_ptr = acmp->right()->ptr_kind();
+      left_value_type = acmp->left_value_type();
+      right_value_type = acmp->right_value_type();
+      return true;
+    }
+  }
+  return false;
+}
+
 
 // ------------------------------------------------------------------
 // ciMethod::find_monomorphic_target
@@ -753,17 +823,7 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   if (target() == root_m->get_Method()) {
     return root_m;
   }
-  if (!root_m->is_public() &&
-      !root_m->is_protected()) {
-    // If we are going to reason about inheritance, it's easiest
-    // if the method in question is public, protected, or private.
-    // If the answer is not root_m, it is conservatively correct
-    // to return null, even if the CHA encountered irrelevant
-    // methods in other packages.
-    // %%% TO DO: Work out logic for package-private methods
-    // with the same name but different vtable indexes.
-    return nullptr;
-  }
+
   return CURRENT_THREAD_ENV->get_method(target());
 }
 
@@ -974,10 +1034,10 @@ bool ciMethod::is_compiled_lambda_form() const {
 }
 
 // ------------------------------------------------------------------
-// ciMethod::is_object_initializer
+// ciMethod::is_object_constructor
 //
-bool ciMethod::is_object_initializer() const {
-   return name() == ciSymbols::object_initializer_name();
+bool ciMethod::is_object_constructor() const {
+  return name() == ciSymbols::object_initializer_name();
 }
 
 // ------------------------------------------------------------------
@@ -1004,15 +1064,19 @@ bool ciMethod::has_member_arg() const {
 //
 // Generate new MethodData* objects at compile time.
 // Return true if allocation was successful or no MDO is required.
-bool ciMethod::ensure_method_data(const methodHandle& h_m) {
+bool ciMethod::ensure_method_data(const methodHandle& h_m, bool training_data_only) {
   EXCEPTION_CONTEXT;
   if (is_native() || is_abstract() || h_m()->is_accessor()) {
     return true;
   }
   if (h_m()->method_data() == nullptr) {
-    Method::build_profiling_method_data(h_m, THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      CLEAR_PENDING_EXCEPTION;
+    if (training_data_only) {
+      Method::install_training_method_data(h_m);
+    } else {
+      Method::build_profiling_method_data(h_m, THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        CLEAR_PENDING_EXCEPTION;
+      }
     }
   }
   if (h_m()->method_data() != nullptr) {
@@ -1025,12 +1089,12 @@ bool ciMethod::ensure_method_data(const methodHandle& h_m) {
 }
 
 // public, retroactive version
-bool ciMethod::ensure_method_data() {
+bool ciMethod::ensure_method_data(bool training_data_only) {
   bool result = true;
   if (_method_data == nullptr || _method_data->is_empty()) {
     GUARDED_VM_ENTRY({
       methodHandle mh(Thread::current(), get_Method());
-      result = ensure_method_data(mh);
+      result = ensure_method_data(mh, training_data_only);
     });
   }
   return result;
@@ -1041,22 +1105,44 @@ bool ciMethod::ensure_method_data() {
 // ciMethod::method_data
 //
 ciMethodData* ciMethod::method_data() {
+#if INCLUDE_CDS
+  if (CURRENT_ENV->is_aot_compile() && CURRENT_ENV->task()->comp_level() == CompLevel_full_optimization) {
+    if (_method_data_recorded == nullptr) {
+      VM_ENTRY_MARK;
+      methodHandle h_m(thread, get_Method());
+      MethodTrainingData* mtd = MethodTrainingData::find(h_m);
+      MethodData* mdo = (mtd != nullptr ? mtd->final_profile() : nullptr);
+      int comp_id = CURRENT_ENV->task()->compile_id();
+      if (mdo == nullptr) {
+        ResourceMark rm;
+        log_debug(aot, compilation)("%d: No profile for %s", comp_id, h_m->name_and_sig_as_C_string());
+        _method_data_recorded = CURRENT_ENV->get_empty_methodData();
+      } else {
+        _method_data_recorded = CURRENT_ENV->get_method_data(mdo);
+        _method_data_recorded->load_data();
+        {
+          ResourceMark rm;
+          log_debug(aot, compilation)("%d: Recorded profile " PTR_FORMAT " for %s", comp_id, p2i(mdo), h_m->name_and_sig_as_C_string());
+        }
+      }
+    }
+    assert(_method_data_recorded != nullptr, "");
+    return _method_data_recorded;
+  }
+#endif
   if (_method_data != nullptr) {
     return _method_data;
   }
   VM_ENTRY_MARK;
-  ciEnv* env = CURRENT_ENV;
-  Thread* my_thread = JavaThread::current();
-  methodHandle h_m(my_thread, get_Method());
-
-  if (h_m()->method_data() != nullptr) {
-    _method_data = CURRENT_ENV->get_method_data(h_m()->method_data());
+  methodHandle h_m(thread, get_Method());
+  MethodData* mdo = h_m()->method_data();
+  if (mdo != nullptr) {
+    _method_data = CURRENT_ENV->get_method_data(mdo);
     _method_data->load_data();
   } else {
     _method_data = CURRENT_ENV->get_empty_methodData();
   }
   return _method_data;
-
 }
 
 // ------------------------------------------------------------------
@@ -1074,12 +1160,15 @@ ciMethodData* ciMethod::method_data_or_null() {
 // ------------------------------------------------------------------
 // ciMethod::ensure_method_counters
 //
-MethodCounters* ciMethod::ensure_method_counters() {
+ciMetadata* ciMethod::ensure_method_counters() {
   check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, get_Method());
-  MethodCounters* method_counters = mh->get_method_counters(CHECK_NULL);
-  return method_counters;
+  MethodCounters* method_counters = mh->get_method_counters(THREAD);
+  if (method_counters != nullptr) {
+    return CURRENT_ENV->get_method_counters(method_counters);
+  }
+  return nullptr;
 }
 
 // ------------------------------------------------------------------
@@ -1157,7 +1246,7 @@ int ciMethod::inline_instructions_size() {
         methodHandle top_level_mh(Thread::current(), CURRENT_ENV->task()->method());
         MethodTrainingData* mtd = MethodTrainingData::find(top_level_mh);
         if (mtd != nullptr) {
-          CompileTrainingData* ctd = mtd->last_toplevel_compile(level);
+          CompileTrainingData* ctd = mtd->compile_data_for_aot_code(level);
           if (ctd != nullptr) {
             methodHandle mh(Thread::current(), get_Method());
             MethodTrainingData* this_mtd = MethodTrainingData::find(mh);
@@ -1176,7 +1265,8 @@ int ciMethod::inline_instructions_size() {
     GUARDED_VM_ENTRY(
       nmethod* code = get_Method()->code();
       if (code != nullptr && (code->comp_level() == CompLevel_full_optimization)) {
-        int isize = code->insts_end() - code->verified_entry_point() - code->skipped_instructions_size();
+        int isize = code->is_aot() ? code->aot_code_entry()->inline_instructions_size()
+                                   : code->inline_instructions_size();
         _inline_instructions_size = isize > 0 ? isize : 0;
       } else {
         _inline_instructions_size = 0;
@@ -1217,6 +1307,19 @@ bool ciMethod::is_not_reached(int bci) {
 // ------------------------------------------------------------------
 // ciMethod::was_never_executed
 bool ciMethod::was_executed_more_than(int times) {
+#if INCLUDE_CDS
+  if (CURRENT_ENV->is_aot_compile()) { // Look only on training data
+    // Invocation counter is reset when the Method* is compiled.
+    // If the method has compiled code we therefore assume it has
+    // been executed more than n times.
+    if (is_accessor() || is_empty() || has_compiled_code()) {
+      // interpreter doesn't bump invocation counter of trivial methods
+      // compiler does not bump invocation counter of compiled methods
+      return true;
+    }
+    return (method_data()->invocation_count() > times);
+  }
+#endif
   VM_ENTRY_MARK;
   return get_Method()->was_executed_more_than(times);
 }
@@ -1529,10 +1632,63 @@ bool ciMethod::is_consistent_info(ciMethod* declared_method, ciMethod* resolved_
 }
 
 // ------------------------------------------------------------------
+
+bool ciMethod::is_scalarized_arg(int idx) const {
+  VM_ENTRY_MARK;
+  return get_Method()->is_scalarized_arg(idx);
+}
+
+bool ciMethod::is_scalarized_buffer_arg(int idx) const {
+  VM_ENTRY_MARK;
+  return get_Method()->is_scalarized_buffer_arg(idx);
+}
+
+bool ciMethod::has_scalarized_args() const {
+  GUARDED_VM_ENTRY(return get_Method()->has_scalarized_args();)
+}
+
+const GrowableArray<SigEntry>* ciMethod::get_sig_cc() const {
+  VM_ENTRY_MARK;
+  if (get_Method()->adapter() == nullptr) {
+    return nullptr;
+  }
+  return get_Method()->adapter()->get_sig_cc();
+}
+
+bool ciMethod::mismatch() const {
+  VM_ENTRY_MARK;
+  return get_Method()->mismatch();
+}
+
+bool ciMethod::needs_stack_repair() const {
+  GUARDED_VM_ENTRY(return get_Method()->needs_stack_repair();)
+}
+
 // ciMethod::is_old
 //
 // Return true for redefined methods
 bool ciMethod::is_old() const {
   ASSERT_IN_VM;
   return get_Method()->is_old();
+}
+
+// A larval object can be passed into a constructor, or it can be passed into
+// MethodHandle::linkToSpecial, which, in turn, will pass it into a constructor
+bool ciMethod::receiver_maybe_larval() const {
+  bool res = is_object_constructor() || intrinsic_id() == vmIntrinsics::_linkToSpecial;
+  assert(!res || !is_scalarized_arg(0), "larval argument must not be passed as fields");
+  return res;
+}
+
+// Normally, a larval object cannot be returned. However, Unsafe::allocateInstance and
+// DirectMethodHandle::allocateInstance return an uninitialized larval object, this is required for
+// the construction of an object using the reflection API.
+bool ciMethod::return_value_is_larval() const {
+  if (intrinsic_id() == vmIntrinsics::_allocateInstance) {
+    return true;
+  }
+  if (holder()->name()->equals(ciSymbols::java_lang_invoke_DirectMethodHandle()) && name()->equals(ciSymbols::allocateInstance_name())) {
+    return true;
+  }
+  return false;
 }

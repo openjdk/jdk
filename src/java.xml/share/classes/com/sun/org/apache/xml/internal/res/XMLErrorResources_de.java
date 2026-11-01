@@ -223,7 +223,7 @@ public class XMLErrorResources_de extends ListResourceBundle
       "Fehler: Iterator f\u00FCr Achse {0} nicht implementiert "},
 
     { ER_ITERATOR_CLONE_NOT_SUPPORTED,
-      "Iteratorclone nicht unterst\u00FCtzt"},
+      "Iteratorklon nicht unterst\u00FCtzt"},
 
     { ER_UNKNOWN_AXIS_TYPE,
       "Unbekannter Achsendurchlauftyp: {0}"},

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,7 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
         return pos;
     }
 
+    @Override
     public int read() throws IOException {
         checkClosed();
         bitOffset = 0;
@@ -163,6 +164,7 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
         }
     }
 
+    @Override
     public int read(byte[] b, int off, int len) throws IOException {
         checkClosed();
 
@@ -205,6 +207,7 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
      * @see #isCachedMemory
      * @see #isCachedFile
      */
+    @Override
     public boolean isCached() {
         return true;
     }
@@ -218,6 +221,7 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
      * @see #isCached
      * @see #isCachedMemory
      */
+    @Override
     public boolean isCachedFile() {
         return true;
     }
@@ -232,6 +236,7 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
      * @see #isCached
      * @see #isCachedFile
      */
+    @Override
     public boolean isCachedMemory() {
         return false;
     }
@@ -243,6 +248,7 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
      *
      * @throws IOException if an error occurs.
      */
+    @Override
     public void close() throws IOException {
         super.close();
         disposerRecord.dispose(); // this will close/delete the cache file
@@ -261,6 +267,7 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
             this.cache = cache;
         }
 
+        @Override
         public synchronized void dispose() {
             if (cache != null) {
                 try {

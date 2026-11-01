@@ -43,15 +43,6 @@ typedef jboolean (*ZipInflateFully_t)(void *inBuf, jlong inLen,
                                       void *outBuf, jlong outLen, char **pmsg);
 static ZipInflateFully_t ZipInflateFully        = NULL;
 
-#ifndef WIN32
-    #define JNI_LIB_PREFIX "lib"
-    #ifdef __APPLE__
-        #define JNI_LIB_SUFFIX ".dylib"
-    #else
-        #define JNI_LIB_SUFFIX ".so"
-    #endif
-#endif
-
 /**
  * Return the address of the entry point named in the zip shared library.
  * @param name - the name of the entry point
@@ -179,7 +170,7 @@ void ImageDecompressor::decompress_resource(u1* compressed, u1* uncompressed,
 void ZipDecompressor::decompress_resource(u1* data, u1* uncompressed,
                 ResourceHeader* header, const ImageStrings* strings) {
     char* msg = NULL;
-    jboolean res = ZipDecompressor::decompress(data, header->_size, uncompressed,
+    [[maybe_unused]] jboolean res = ZipDecompressor::decompress(data, header->_size, uncompressed,
                     header->_uncompressed_size, &msg);
     assert(res && "decompression failed");
 }

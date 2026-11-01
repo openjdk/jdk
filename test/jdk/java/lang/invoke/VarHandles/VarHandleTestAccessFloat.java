@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,14 @@
  * questions.
  */
 
+// -- This file was mechanically generated: Do not edit! -- //
+
 /*
  * @test
  * @run junit/othervm -Diters=10   -Xint                                                   VarHandleTestAccessFloat
  *
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
  *
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestAccessFloat
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestAccessFloat
@@ -50,17 +52,17 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class VarHandleTestAccessFloat extends VarHandleBaseTest {
     static final float static_final_v = 1.0f;
 
-    static float static_v;
+    static float static_v = 1.0f;
 
-    final float final_v = 1.0f;
+    final float final_v;
 
     float v;
 
     static final float static_final_v2 = 1.0f;
 
-    static float static_v2;
+    static float static_v2 = 1.0f;
 
-    final float final_v2 = 1.0f;
+    final float final_v2;
 
     float v2;
 
@@ -74,6 +76,13 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
 
     VarHandle vhArray;
 
+    public VarHandleTestAccessFloat() {
+        final_v = 1.0f;
+        v = 1.0f;
+        final_v2 = 1.0f;
+        v2 = 1.0f;
+        super();
+    }
 
     VarHandle[] allocate(boolean same) {
         List<VarHandle> vhs = new ArrayList<>();
@@ -308,7 +317,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         // Lazy
         {
             float x = (float) vh.getAcquire(recv);
-            assertEquals(1.0f, x, "getRelease float value");
+            assertEquals(1.0f, x, "getAcquire float value");
         }
 
         // Opaque
@@ -392,7 +401,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         // Lazy
         {
             float x = (float) vh.getAcquire();
-            assertEquals(1.0f, x, "getRelease float value");
+            assertEquals(1.0f, x, "getAcquire float value");
         }
 
         // Opaque
@@ -671,7 +680,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             vh.set(recv, 1.0f);
 
             float o = (float) vh.getAndAddRelease(recv, 2.0f);
-            assertEquals(1.0f, o, "getAndAddReleasefloat");
+            assertEquals(1.0f, o, "getAndAddRelease float");
             float x = (float) vh.get(recv);
             assertEquals((float)(1.0f + 2.0f), x, "getAndAddRelease float value");
         }
@@ -931,7 +940,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             vh.set(1.0f);
 
             float o = (float) vh.getAndAddRelease(2.0f);
-            assertEquals(1.0f, o, "getAndAddReleasefloat");
+            assertEquals(1.0f, o, "getAndAddRelease float");
             float x = (float) vh.get();
             assertEquals((float)(1.0f + 2.0f), x, "getAndAddRelease float value");
         }
@@ -1194,7 +1203,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                 vh.set(array, i, 1.0f);
 
                 float o = (float) vh.getAndAddRelease(array, i, 2.0f);
-                assertEquals(1.0f, o, "getAndAddReleasefloat");
+                assertEquals(1.0f, o, "getAndAddRelease float");
                 float x = (float) vh.get(array, i);
                 assertEquals((float)(1.0f + 2.0f), x, "getAndAddRelease float value");
             }
@@ -1341,6 +1350,5 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
 
         }
     }
-
 }
 

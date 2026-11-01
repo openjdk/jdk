@@ -468,7 +468,6 @@ inline void Assembler::mtvrsave(Register s1)      { emit_int32(MTVRSAVE_OPCODE |
 inline void Assembler::mfvrsave(Register d )      { emit_int32(MFVRSAVE_OPCODE | rt(d)); }
 // Timebase
 inline void Assembler::mftb(Register d )          { emit_int32(MFTB_OPCODE  | rt(d)); }
-// Introduced with Power 8:
 // Data Stream Control Register
 inline void Assembler::mtdscr(Register s1)        { emit_int32(MTDSCR_OPCODE | rs(s1)); }
 inline void Assembler::mfdscr(Register d )        { emit_int32(MFDSCR_OPCODE | rt(d)); }
@@ -499,11 +498,10 @@ inline bool Assembler::is_within_range_of_b(address a, address pc) {
   // Guard against illegal branch targets, e.g. -1 (see CompiledDirectCall and ad-file).
   if ((((uint64_t)a) & 0x3) != 0) return false;
 
-  const int range = 1 << (29-6); // li field is from bit 6 to bit 29.
-  int value = disp(intptr_t(a), intptr_t(pc));
-  bool result = -range <= value && value < range-1;
+  int disp_instr_words = disp(intptr_t(a), intptr_t(pc));
+  bool result = is_simm(disp_instr_words, 24); // li field is 24 bits.
 #ifdef ASSERT
-  if (result) li(value); // Assert that value is in correct range.
+  if (result) li(disp_instr_words); // Assert that value is in correct range.
 #endif
   return result;
 }
@@ -513,11 +511,10 @@ inline bool Assembler::is_within_range_of_bcxx(address a, address pc) {
   // Guard against illegal branch targets, e.g. -1 (see CompiledDirectCall and ad-file).
   if ((((uint64_t)a) & 0x3) != 0) return false;
 
-  const int range = 1 << (29-16); // bd field is from bit 16 to bit 29.
-  int value = disp(intptr_t(a), intptr_t(pc));
-  bool result = -range <= value && value < range-1;
+  int disp_instr_words = disp(intptr_t(a), intptr_t(pc));
+  bool result = is_simm(disp_instr_words, 14); // bd field is 14 bits.
 #ifdef ASSERT
-  if (result) bd(value); // Assert that value is in correct range.
+  if (result) bd(disp_instr_words); // Assert that value is in correct range.
 #endif
   return result;
 }
@@ -856,6 +853,14 @@ inline void Assembler::lxvd2x(  VectorSRegister d, Register s1)              { e
 inline void Assembler::lxvd2x(  VectorSRegister d, Register s1, Register s2) { emit_int32( LXVD2X_OPCODE  | vsrt(d) | ra0mem(s1) | rb(s2)); }
 inline void Assembler::stxvd2x( VectorSRegister d, Register s1)              { emit_int32( STXVD2X_OPCODE | vsrs(d) | ra(0) | rb(s1)); }
 inline void Assembler::stxvd2x( VectorSRegister d, Register s1, Register s2) { emit_int32( STXVD2X_OPCODE | vsrs(d) | ra0mem(s1) | rb(s2)); }
+inline void Assembler::lxvw4x(  VectorSRegister d, Register s1)              { emit_int32( LXVW4X_OPCODE  | vsrt(d) | ra(0) | rb(s1)); }
+inline void Assembler::lxvw4x(  VectorSRegister d, Register s1, Register s2) { emit_int32( LXVW4X_OPCODE  | vsrt(d) | ra0mem(s1) | rb(s2)); }
+inline void Assembler::stxvw4x( VectorSRegister d, Register s1)              { emit_int32( STXVW4X_OPCODE | vsrs(d) | ra(0) | rb(s1)); }
+inline void Assembler::stxvw4x( VectorSRegister d, Register s1, Register s2) { emit_int32( STXVW4X_OPCODE | vsrs(d) | ra0mem(s1) | rb(s2)); }
+inline void Assembler::lxvb16x( VectorSRegister d, Register s1)              { emit_int32( LXVB16X_OPCODE | vsrt(d) | ra(0) | rb(s1)); }
+inline void Assembler::lxvb16x( VectorSRegister d, Register s1, Register s2) { emit_int32( LXVB16X_OPCODE | vsrt(d) | ra0mem(s1) | rb(s2)); }
+inline void Assembler::stxvb16x(VectorSRegister d, Register s1)              { emit_int32( STXVB16X_OPCODE| vsrs(d) | ra(0) | rb(s1)); }
+inline void Assembler::stxvb16x(VectorSRegister d, Register s1, Register s2) { emit_int32( STXVB16X_OPCODE| vsrs(d) | ra0mem(s1) | rb(s2)); }
 inline void Assembler::mtvsrd(  VectorSRegister d, Register a)               { emit_int32( MTVSRD_OPCODE  | vsrt(d)  | ra(a)); }
 inline void Assembler::mtvsrdd( VectorSRegister d, Register a, Register b)   { emit_int32( MTVSRDD_OPCODE | vsrt(d)  | ra(a) | rb(b)); }
 inline void Assembler::mfvsrd(  Register d, VectorSRegister a)               { emit_int32( MFVSRD_OPCODE  | vsrs(a)  | ra(d)); }
@@ -1003,7 +1008,7 @@ inline void Assembler::vmuluwm( VectorRegister d, VectorRegister a, VectorRegist
 inline void Assembler::vmhaddshs(VectorRegister d,VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMHADDSHS_OPCODE | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
 inline void Assembler::vmhraddshs(VectorRegister d,VectorRegister a,VectorRegister b, VectorRegister c) { emit_int32( VMHRADDSHS_OPCODE| vrt(d) | vra(a) | vrb(b)| vrc(c)); }
 inline void Assembler::vmladduhm(VectorRegister d,VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMLADDUHM_OPCODE | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
-inline void Assembler::vmsubuhm(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMSUBUHM_OPCODE  | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
+inline void Assembler::vmsumubm(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMSUMUBM_OPCODE  | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
 inline void Assembler::vmsummbm(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMSUMMBM_OPCODE  | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
 inline void Assembler::vmsumshm(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMSUMSHM_OPCODE  | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
 inline void Assembler::vmsumshs(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VMSUMSHS_OPCODE  | vrt(d) | vra(a) | vrb(b)| vrc(c)); }
@@ -1092,24 +1097,24 @@ inline void Assembler::mfvscr(  VectorRegister d)                               
 // Vector Negate Word (introduced with Power 9)
 inline void Assembler::vnegw(   VectorRegister d, VectorRegister b)                   { emit_int32( VNEGW_OPCODE    | vrt(d) | vrb(b)); }
 
-// AES (introduced with Power 8)
+// AES
 inline void Assembler::vcipher(     VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VCIPHER_OPCODE      | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vcipherlast( VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VCIPHERLAST_OPCODE  | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vncipher(    VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VNCIPHER_OPCODE     | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vncipherlast(VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VNCIPHERLAST_OPCODE | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vsbox(       VectorRegister d, VectorRegister a)                   { emit_int32( VSBOX_OPCODE        | vrt(d) | vra(a)         ); }
 
-// SHA (introduced with Power 8)
+// SHA
 inline void Assembler::vshasigmad(VectorRegister d, VectorRegister a, bool st, int six) { emit_int32( VSHASIGMAD_OPCODE | vrt(d) | vra(a) | vst(st) | vsix(six)); }
 inline void Assembler::vshasigmaw(VectorRegister d, VectorRegister a, bool st, int six) { emit_int32( VSHASIGMAW_OPCODE | vrt(d) | vra(a) | vst(st) | vsix(six)); }
 
-// Vector Binary Polynomial Multiplication (introduced with Power 8)
+// Vector Binary Polynomial Multiplication
 inline void Assembler::vpmsumb(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VPMSUMB_OPCODE | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vpmsumd(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VPMSUMD_OPCODE | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vpmsumh(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VPMSUMH_OPCODE | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vpmsumw(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VPMSUMW_OPCODE | vrt(d) | vra(a) | vrb(b)); }
 
-// Vector Permute and Xor (introduced with Power 8)
+// Vector Permute and Xor
 inline void Assembler::vpermxor( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VPERMXOR_OPCODE | vrt(d) | vra(a) | vrb(b) | vrc(c)); }
 
 // Deliver A Random Number (introduced with POWER9)
@@ -1230,6 +1235,108 @@ inline void Assembler::vec_perm(VectorRegister dest, VectorRegister first, Vecto
 #else
   vperm(dest, first, second, perm);
 #endif
+}
+
+inline void Assembler::load_byte_vector_unaligned(VectorRegister dest, int offs, Register base, Register tmp,
+                                                  VectorRegister vp) {
+  VectorSRegister vsr = dest->to_vsr();
+  if (PowerArchitecturePPC64 >= 9) {
+#if !defined(VM_LITTLE_ENDIAN)
+    lxv(vsr, offs, base); // all vector load/store instructions use the same byte order on BE
+#else
+    if (offs == 0) {
+      lxvb16x(vsr, base);
+    } else {
+      li(tmp, offs);
+      lxvb16x(vsr, base, tmp);
+    }
+#endif
+  } else { // Power8 only supports very limited instructions
+    if (offs == 0) {
+      lxvd2x(vsr, base);
+    } else {
+      li(tmp, offs);
+      lxvd2x(vsr, base, tmp);
+    }
+#if defined(VM_LITTLE_ENDIAN)
+    // need to swap bytes in both double-words
+    vperm(dest, dest, dest, vp);
+#endif
+  }
+}
+
+inline void Assembler::store_byte_vector_unaligned(VectorRegister val, int offs, Register base, Register tmp,
+                                                   VectorRegister vp, VectorRegister vtmp) {
+  VectorSRegister vsr = val->to_vsr();
+  if (PowerArchitecturePPC64 >= 9) {
+#if !defined(VM_LITTLE_ENDIAN)
+    stxv(vsr, offs, base); // all vector load/store instructions use the same byte order on BE
+#else
+    if (offs == 0) {
+      stxvb16x(vsr, base);
+    } else {
+      li(tmp, offs);
+      stxvb16x(vsr, base, tmp);
+    }
+#endif
+  } else { // Power8 only supports very limited instructions
+#if defined(VM_LITTLE_ENDIAN)
+    // need to swap bytes in both double-words
+    if (vtmp != vnoreg) {
+      vperm(vtmp, val, val, vp);
+      vsr = vtmp->to_vsr();
+    } else {
+      vperm(val, val, val, vp); // clobbers val!
+    }
+#endif
+    if (offs == 0) {
+      stxvd2x(vsr, base);
+    } else {
+      li(tmp, offs);
+      stxvd2x(vsr, base, tmp);
+    }
+  }
+}
+
+inline void Assembler::compute_vp_for_byte_vector_unaligned(VectorRegister dest, VectorRegister vtmp) {
+#if defined(VM_LITTLE_ENDIAN)
+  if (PowerArchitecturePPC64 < 9) {
+    li(R0, 0);
+    vspltisb(vtmp, 7);      // vtmp = [7, ..., 7]
+    lvsl(dest, R0);         // dest = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    vxor(dest, dest, vtmp); // dest = [7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8]
+  }
+#endif
+}
+
+inline void Assembler::load_word_vector_unaligned(VectorRegister dest, int offs, Register base, Register tmp) {
+  VectorSRegister vsr = dest->to_vsr();
+#if !defined(VM_LITTLE_ENDIAN)
+  if (PowerArchitecturePPC64 >= 9) {
+    lxv(vsr, offs, base); // all vector load/store instructions use the same byte order on BE
+  } else
+#endif
+  if (offs == 0) {
+    lxvw4x(vsr, base);
+  } else {
+    li(tmp, offs);
+    lxvw4x(vsr, base, tmp);
+  }
+}
+
+inline void Assembler::store_word_vector_unaligned(VectorRegister val, int offs, Register base, Register tmp) {
+  VectorSRegister vsr = val->to_vsr();
+#if !defined(VM_LITTLE_ENDIAN)
+  if (PowerArchitecturePPC64 >= 9) {
+    stxv(vsr, offs, base); // all vector load/store instructions use the same byte order on BE
+  } else
+#endif
+  if (offs == 0) {
+    stxvw4x(vsr, base);
+  } else {
+    li(tmp, offs);
+    stxvw4x(vsr, base, tmp);
+  }
 }
 
 inline void Assembler::load_const(Register d, void* x, Register tmp) {
