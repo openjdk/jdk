@@ -24,9 +24,9 @@
 /*
  * @test
  * @bug 8394183
- * @summary Ensure that we don't throw AIOOBE while reading TIFF
-            image using LZW compression and no strip data
- * @run main TIFFEmptyLZWTest
+ * @summary Ensure that we throw IIOException while reading TIFF
+            image using LZW compression and truncated strip data
+ * @run main TIFFTruncatedLZWTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -34,14 +34,15 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Iterator;
+import java.util.Objects;
 import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
-public class TIFFEmptyLZWTest {
+public class TIFFTruncatedLZWTest {
     public static void main(String[] args) throws Exception {
-        var b = ByteBuffer.allocate(74).order(ByteOrder.LITTLE_ENDIAN);
+        var b = ByteBuffer.allocate(75).order(ByteOrder.LITTLE_ENDIAN);
         b.putShort((short) 0x4949).putShort((short) 42).putInt(8)
             .putShort((short) 5);
         for (int[] t : new int[][] {
@@ -49,7 +50,7 @@ public class TIFFEmptyLZWTest {
             {257,4,1},  // height
             {259,3,5},  // Use LZW compression
             {273,4,74}, // StripOffset
-            {279,4,0}   // StripByteCount
+            {279,4,1}   // StripByteCount value 1
         }) {
             b.putShort((short) t[0]).putShort((short) t[1])
                 .putInt(1).putInt(t[2]);
@@ -66,7 +67,10 @@ public class TIFFEmptyLZWTest {
             reader.setInput(input);
             reader.read(0); // first image in the TIFF
         } catch (IIOException e) {
-            // this is expected
+            if (!Objects.equals(e.getMessage(), "Invalid LZW" +
+                " compressed strip/tile data")) {
+                throw e;
+            }
         } finally {
             reader.dispose();
         }
