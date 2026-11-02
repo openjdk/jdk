@@ -61,7 +61,7 @@ BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libGetXSpace := java.base:libjava
 # Platform specific setup
 ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c \
-      libExplicitAttach.c libImplicitAttach.c \
+      libExplicitAttach.c libImplicitAttach.c libSamplingAttach.c \
       exelauncher.c libFDLeaker.c exeFDLeakTester.c \
       libChangeSignalDisposition.c exePrintSignalDisposition.c \
       libConcNativeFork.c libPipesCloseOnExec.c
@@ -86,6 +86,7 @@ else
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libExplicitAttach := -pthread
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libImplicitAttach := -pthread
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libJNIAttachMutator := -pthread
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libSamplingAttach := -pthread
   BUILD_JDK_JTREG_EXCLUDE += exerevokeall.c
   ifeq ($(call isTargetOs, linux), true)
     BUILD_JDK_JTREG_EXECUTABLES_LIBS_exelauncher := -ldl
