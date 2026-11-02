@@ -333,6 +333,7 @@ public class TestByteBuffer {
                 } catch (IOException e) {
                     assumeFalse(e.getMessage().equals("Function not implemented"),
                             e.getMessage());
+                    throw e;
                 } finally {
                     if (arena.scope() != Arena.global().scope()) {
                         arena.close();
@@ -365,6 +366,7 @@ public class TestByteBuffer {
         } catch(IOException e) {
             assumeFalse(e.getMessage().equals("Function not implemented"),
                     e.getMessage());
+            throw e;
         }
     }
 

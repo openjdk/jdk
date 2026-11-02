@@ -36,6 +36,7 @@ CompilationLog::CompilationLog() : StringEventLog("Compilation events", "jit") {
 }
 
 void CompilationLog::log_compile(JavaThread* thread, CompileTask* task) {
+  ResourceMark rm;
   StringLogMessage lm;
   stringStream sstr(lm.buffer(), lm.size());
   // msg.time_stamp().update_to(tty->time_stamp().ticks());
@@ -44,12 +45,13 @@ void CompilationLog::log_compile(JavaThread* thread, CompileTask* task) {
 }
 
 void CompilationLog::log_nmethod(JavaThread* thread, nmethod* nm) {
-  log(thread, "nmethod %d%s " INTPTR_FORMAT " code [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",
-      nm->compile_id(), nm->is_osr_method() ? "%" : "",
+  log(thread, "nmethod %d %s " INTPTR_FORMAT " code [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",
+      nm->compile_id(), nm->compile_kind(),
       p2i(nm), p2i(nm->code_begin()), p2i(nm->code_end()));
 }
 
 void CompilationLog::log_failure(JavaThread* thread, CompileTask* task, const char* reason, const char* retry_message) {
+  ResourceMark rm;
   StringLogMessage lm;
   stringStream sstr(lm.buffer(), lm.size());
   if (task == nullptr) {

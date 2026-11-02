@@ -32,7 +32,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/universe.hpp"
-#include "oops/inlineKlass.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/upcallLinker.hpp"
 #include "runtime/arguments.hpp"
@@ -311,7 +311,7 @@ address StubGenerator::generate_call_stub(address& return_address) {
   return_address = __ pc();
   entries.append(return_address);
 
-  // All of j_rargN + rax may be used to return inline type fields so be careful
+  // All of j_rargN + rax may be used to return value type fields so be careful
   // not to clobber those.  See SharedRuntime::java_return_convention().
 
   // store result depending on type (everything that is not
@@ -398,14 +398,14 @@ address StubGenerator::generate_call_stub(address& return_address) {
 
   // handle return types different from T_INT
   __ BIND(check_prim);
-  if (InlineTypeReturnedAsFields) {
+  if (ValueTypeReturnedAsFields) {
     // Check for scalarized return value
     __ testptr(rax, 1);
     __ jcc(Assembler::zero, is_long);
     // Load pack handler address
     __ andptr(rax, -2);
-    __ movptr(rax, Address(rax, InlineKlass::adr_members_offset()));
-    __ movptr(rbx, Address(rax, InlineKlass::pack_handler_jobject_offset()));
+    __ movptr(rax, Address(rax, ValueKlass::adr_members_offset()));
+    __ movptr(rbx, Address(rax, ValueKlass::pack_handler_jobject_offset()));
     // Call pack handler to initialize the buffer
     __ call(rbx);
     __ jmp(exit);
@@ -4487,7 +4487,7 @@ address StubGenerator::generate_floatToFloat16() {
 
 static void save_return_registers(MacroAssembler* masm) {
   masm->push_ppx(rax);
-  if (InlineTypeReturnedAsFields) {
+  if (ValueTypeReturnedAsFields) {
     masm->push(rdi);
     masm->push(rsi);
     masm->push(rdx);
@@ -4496,7 +4496,7 @@ static void save_return_registers(MacroAssembler* masm) {
     masm->push(r9);
   }
   masm->push_d(xmm0);
-  if (InlineTypeReturnedAsFields) {
+  if (ValueTypeReturnedAsFields) {
     masm->push_d(xmm1);
     masm->push_d(xmm2);
     masm->push_d(xmm3);
@@ -4525,7 +4525,7 @@ static void save_return_registers(MacroAssembler* masm) {
 }
 
 static void restore_return_registers(MacroAssembler* masm) {
-  if (InlineTypeReturnedAsFields) {
+  if (ValueTypeReturnedAsFields) {
     masm->pop_d(xmm7);
     masm->pop_d(xmm6);
     masm->pop_d(xmm5);
@@ -4535,7 +4535,7 @@ static void restore_return_registers(MacroAssembler* masm) {
     masm->pop_d(xmm1);
   }
   masm->pop_d(xmm0);
-  if (InlineTypeReturnedAsFields) {
+  if (ValueTypeReturnedAsFields) {
     masm->pop(r9);
     masm->pop(r8);
     masm->pop(rcx);

@@ -25,6 +25,28 @@
 #ifndef CPU_ZERO_GC_SHENANDOAH_SHENANDOAHBARRIERSETASSEMBLER_ZERO_HPP
 #define CPU_ZERO_GC_SHENANDOAH_SHENANDOAHBARRIERSETASSEMBLER_ZERO_HPP
 
-class ShenandoahBarrierSetAssembler;
+#include "utilities/globalDefinitions.hpp"
+
+class ShenandoahBarrierSetAssembler {
+public:
+  static address parse_jump_address(address pc) {
+    ShouldNotCallThis();
+    return nullptr;
+  }
+  static void insert_patchable_nop(address pc) {
+    ShouldNotCallThis();
+  }
+  static bool is_patchable_nop(address pc) {
+    ShouldNotCallThis();
+    return false;
+  }
+  static void insert_patchable_jump(address pc, address target_pc) {
+    ShouldNotCallThis();
+  }
+  static bool is_patchable_jump(address pc, address target_pc) {
+    ShouldNotCallThis();
+    return false;
+  }
+};
 
 #endif // CPU_ZERO_GC_SHENANDOAH_SHENANDOAHBARRIERSETASSEMBLER_ZERO_HPP

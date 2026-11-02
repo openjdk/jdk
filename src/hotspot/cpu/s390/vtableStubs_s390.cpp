@@ -78,7 +78,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1)
   }
 #endif
 
-  assert(VtableStub::receiver_location() == Z_R2->as_VMReg(), "receiver expected in Z_ARG1");
+  assert(SharedRuntime::name_for_receiver() == Z_R2->as_VMReg(), "receiver expected in Z_ARG1");
 
   const Register rcvr_klass   = Z_R1_scratch;
   address        npe_addr     = __ pc(); // npe is short for null pointer exception
@@ -181,7 +181,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1)
   }
 #endif
 
-  assert(VtableStub::receiver_location() == Z_R2->as_VMReg(), "receiver expected in Z_ARG1");
+  assert(SharedRuntime::name_for_receiver() == Z_R2->as_VMReg(), "receiver expected in Z_ARG1");
 
   // Entry arguments:
   //  Z_method: Interface

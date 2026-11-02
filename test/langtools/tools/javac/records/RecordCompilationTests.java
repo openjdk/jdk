@@ -1076,6 +1076,19 @@ class RecordCompilationTests extends CompilationTestCase {
     }
 
     @Test
+    void testLocalFinalCanBeAssignedInCompactConstructor() {
+        assertOK(
+                """
+                record R() {
+                    R {
+                        final int c;
+                        c = 0;
+                    }
+                }
+                """);
+    }
+
+    @Test
     void testNoNativeMethods() {
         assertFail("compiler.err.mod.not.allowed.here", "record R(int x) { # }",
                 "public native R {}");

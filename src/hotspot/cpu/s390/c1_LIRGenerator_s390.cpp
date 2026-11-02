@@ -31,9 +31,9 @@
 #include "c1/c1_Runtime1.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArray.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "vmreg_s390.inline.hpp"
@@ -78,7 +78,7 @@ LIR_Opr LIRGenerator::syncLockOpr()     { return new_register(T_INT); }
 LIR_Opr LIRGenerator::syncTempOpr()     { return FrameMap::Z_R13_opr; }
 LIR_Opr LIRGenerator::getThreadTemp()   { return LIR_OprFact::illegalOpr; }
 
-LIR_Opr LIRGenerator::result_register_for (ValueType* type, bool callee) {
+LIR_Opr LIRGenerator::result_register_for (ValueType* type) {
   LIR_Opr opr;
   switch (type->tag()) {
     case intTag:    opr = FrameMap::Z_R2_opr;        break;
@@ -95,7 +95,7 @@ LIR_Opr LIRGenerator::result_register_for (ValueType* type, bool callee) {
   return opr;
 }
 
-LIR_Opr LIRGenerator::rlock_byte(BasicType type) {
+LIR_Opr LIRGenerator::rlock_byte() {
   return new_register(T_INT);
 }
 
@@ -205,13 +205,6 @@ LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
   return r;
 }
 
-void LIRGenerator::increment_counter(address counter, BasicType type, int step) {
-  LIR_Opr pointer = new_pointer_register();
-  __ move(LIR_OprFact::intptrConst(counter), pointer);
-  LIR_Address* addr = new LIR_Address(pointer, type);
-  increment_counter(addr, step);
-}
-
 void LIRGenerator::increment_counter(LIR_Address* addr, int step) {
   __ add((LIR_Opr)addr, LIR_OprFact::intConst(step), (LIR_Opr)addr);
 }
@@ -281,7 +274,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
     info_for_exception = state_for (x);
   }
   CodeStub* throw_ie_stub =
-      x->maybe_inlinetype() ?
+      x->maybe_valuetype() ?
       new SimpleExceptionStub(StubId::c1_throw_identity_exception_id, obj.result(), state_for(x)) :
       nullptr;
 
@@ -784,7 +777,7 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
   LIR_Opr tmp2 = FrameMap::Z_R13_oop_opr;
   LIR_Opr tmp3 = reg;
   LIR_Opr tmp4 = LIR_OprFact::illegalOpr;
-  new_instance(reg, x->klass(), x->is_unresolved(), !x->is_unresolved() && x->klass()->is_inlinetype(),
+  new_instance(reg, x->klass(), x->is_unresolved(), !x->is_unresolved() && x->klass()->is_value_klass(),
                tmp1, tmp2, tmp3, tmp4, klass_reg, info);
   LIR_Opr result = rlock_result(x);
   __ move(reg, result);
@@ -827,7 +820,8 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   // In case of patching (i.e., object class is not yet loaded), we need to reexecute the instruction
   // and therefore provide the state before the parameters have been consumed.
   CodeEmitInfo* patching_info = nullptr;
-  if (!x->klass()->is_loaded() || PatchALot) {
+  ciKlass* obj = ciObjArrayKlass::make(x->klass());
+  if (!x->klass()->is_loaded() || !obj->is_loaded() || PatchALot) {
     patching_info = state_for (x, x->state_before());
   }
 
@@ -842,13 +836,12 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   LIR_Opr klass_reg = FrameMap::Z_R11_metadata_opr;
   LIR_Opr len = length.result();
 
-  ciKlass* obj = ciObjArrayKlass::make(x->klass());
   bool is_flat = obj->is_loaded() && obj->is_flat_array_klass();
   bool is_null_free = obj->is_loaded() && obj->as_array_klass()->is_elem_null_free();
 
   CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info, is_null_free);
-  if (obj == ciEnv::unloaded_ciobjarrayklass()) {
-    BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
+  if (x->klass()->is_loaded() && !obj->is_loaded()) {
+    BAILOUT("encountered unloaded ciobjarrayklass due to out of memory error");
   }
   klass2reg_with_patching(klass_reg, obj, patching_info);
   __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, T_OBJECT, klass_reg, slow_path, true, is_null_free || is_flat);
@@ -1055,7 +1048,9 @@ void LIRGenerator::trace_block_entry(BlockBegin* block) {
 
 void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
                                         CodeEmitInfo* info) {
+  __ membar_release();
   __ store(value, address, info);
+  __ membar();
 }
 
 void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,

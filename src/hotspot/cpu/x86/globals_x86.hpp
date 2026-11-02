@@ -86,16 +86,13 @@ define_pd_global(bool, PreserveFramePointer, false);
 
 define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
-define_pd_global(bool, InlineTypePassFieldsAsArgs, true);
-define_pd_global(bool, InlineTypeReturnedAsFields, true);
+define_pd_global(bool, ValueTypePassFieldsAsArgs, true);
+define_pd_global(bool, ValueTypeReturnedAsFields, true);
 
 #define ARCH_FLAGS(develop,                                                 \
                    product,                                                 \
                    range,                                                   \
                    constraint)                                              \
-                                                                            \
-  develop(bool, IEEEPrecision, true,                                        \
-          "Enables IEEE precision (for INTEL only)")                        \
                                                                             \
   product(bool, UseStoreImmI16, true,                                       \
           "Use store immediate 16-bits value instruction on x86")           \
@@ -200,6 +197,9 @@ define_pd_global(bool, InlineTypeReturnedAsFields, true);
              "Explicitly selected mechanism will fail at startup if "       \
              "hardware does not support it.")                               \
              range(-1, 5)                                                   \
+                                                                            \
+  product(bool, UseParallelBitInstructions, false,                          \
+          "Use PDEP/PEXT instructions")                                     \
                                                                             \
 // end of ARCH_FLAGS
 

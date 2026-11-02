@@ -247,7 +247,7 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMapT* 
     if (ov->has_properties()) {
       Klass* k = java_lang_Class::as_Klass(ov->klass()->as_ConstantOopReadValue()->value()());
       if (!k->is_array_klass()) {
-        // Don't treat inline type as scalar replaced if it is null
+        // Don't treat value type as scalar replaced if it is null
         jint null_marker = StackValue::create_stack_value(fr, reg_map, ov->properties())->get_jint();
         scalar_replaced &= (null_marker != 0);
       }

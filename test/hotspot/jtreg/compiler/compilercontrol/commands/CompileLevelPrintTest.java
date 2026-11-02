@@ -30,6 +30,8 @@
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  *          & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *          & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
+ *          & vm.opt.CompileThresholdScaling == null
+ *          & vm.opt.CompileThreshold == null
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -165,12 +167,12 @@ public class CompileLevelPrintTest {
         private static final Pattern reCompileCommand = Pattern.compile(
                 "CompileCommand: (.*)");
         private static final Pattern reCompilation = Pattern.compile(
-                "(\\d+) (C1|C2|no compiler): *(\\d+) ([ %][ s][ !][ b][ n]) ([-0-4 ]) +([^ ]+).*");
+                "(\\d+) (C1|C2|no compiler): *(\\d+) ([ %][ s][ !][ b][ n][ A][ P]) ([-0-4 ]) +([^ ]+).*");
         private static final Pattern reExcludeCompile = Pattern.compile(
                 ".*made not compilable on level (\\d) +([^ ]+) .* excluded by CompileCommand");
         private static final Pattern reCompiledMethod = Pattern.compile(
                 ".*-{35} Assembly -{35}\\n(?:\\[[0-9.]+s]\\[warning]\\[os] Loading hsdis library failed\\n)?\\nCompiled method \\((?:c1|c2)\\) (\\d+) ([Cc][12]): *"
-                      + "(\\d+) ([ %][ s][ !][ b][ n]) ([-0-4 ]) +([^ ]+) +(@ -?[0-9]+ +)?\\(\\d+ bytes\\)", Pattern.DOTALL);
+                      + "(\\d+) ([ %][ s][ !][ b][ n][ A][ P]) ([-0-4 ]) +([^ ]+) +(@ -?[0-9]+ +)?\\(\\d+ bytes\\)", Pattern.DOTALL);
         private static final Pattern reMethodData = Pattern.compile(
                 ".*-{72}\\nstatic ([^\\n]+)\\n *interpreter_invocation_count: *\\d+\\n *invocation_counter: *\\d+", Pattern.DOTALL);
         private static final Pattern reEndOfLog = Pattern.compile("<hotspot_log_done .*/>");

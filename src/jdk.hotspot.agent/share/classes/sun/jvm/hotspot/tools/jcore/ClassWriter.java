@@ -858,7 +858,7 @@ public class ClassWriter implements /* imports */ ClassConstants
                 dos.writeShort(innerClasses.at(index++));
 
                 short accFlag = innerClasses.at(index++);
-                if (!klass.supportsInlineTypes()) {
+                if (!klass.supportsValueTypes()) {
                     // Filter out ACC_IDENTITY from access flags for inner class.
                     accFlag &= ~ (short) JVM_ACC_IDENTITY;
                 }

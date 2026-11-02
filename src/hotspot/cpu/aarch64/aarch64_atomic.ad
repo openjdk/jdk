@@ -40,6 +40,7 @@
 
 
 instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+  predicate(!needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -55,6 +56,7 @@ instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 %}
 
 instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+  predicate(!needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -70,6 +72,7 @@ instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 %}
 
 instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+  predicate(!needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndExchangeI mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -84,6 +87,7 @@ instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 %}
 
 instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
+  predicate(!needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndExchangeL mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -98,7 +102,7 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
 %}
 
 instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
+  predicate(!needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -113,7 +117,7 @@ instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN ne
 %}
 
 instruct compareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
+  predicate(!needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -316,6 +320,7 @@ instruct compareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP new
 %}
 
 instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+  predicate(!needs_acquiring_load_exclusive(n));
   match(Set res (WeakCompareAndSwapB mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(KILL cr);
@@ -331,6 +336,7 @@ instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 %}
 
 instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+  predicate(!needs_acquiring_load_exclusive(n));
   match(Set res (WeakCompareAndSwapS mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(KILL cr);
@@ -346,6 +352,7 @@ instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 %}
 
 instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+  predicate(!needs_acquiring_load_exclusive(n));
   match(Set res (WeakCompareAndSwapI mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(KILL cr);
@@ -361,6 +368,7 @@ instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 %}
 
 instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
+  predicate(!needs_acquiring_load_exclusive(n));
   match(Set res (WeakCompareAndSwapL mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(KILL cr);
@@ -376,7 +384,7 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
 %}
 
 instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
+  predicate(!needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(KILL cr);
@@ -392,7 +400,7 @@ instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN ne
 %}
 
 instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
+  predicate(!needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(KILL cr);

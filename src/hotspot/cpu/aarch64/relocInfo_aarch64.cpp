@@ -24,6 +24,7 @@
  */
 
 #include "asm/macroAssembler.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/nmethod.hpp"
 #include "code/relocInfo.hpp"
 #include "nativeInst_aarch64.hpp"
@@ -97,7 +98,10 @@ void trampoline_stub_Relocation::pd_fix_owner_after_move() {
   NativeCall* call = nativeCall_at(owner());
   address trampoline = addr();
   address dest = nativeCallTrampolineStub_at(trampoline)->destination();
-  if (!Assembler::reachable_from_branch_at(owner(), dest)) {
+  // Force trampoline as call's destination in assembly phase.
+  // The call will be fixed when AOT code is loaded in production run
+  // depending on distance at that time.
+  if (AOTCodeCache::is_on_for_dump() || !Assembler::reachable_from_branch_at(owner(), dest)) {
     dest = trampoline;
   }
   call->set_destination(dest);
@@ -121,4 +125,12 @@ void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffe
 }
 
 void metadata_Relocation::pd_fix_value(address x) {
+}
+
+address trampoline_stub_Relocation::pd_destination() {
+  return nativeCallTrampolineStub_at(addr())->destination();
+}
+
+void trampoline_stub_Relocation::pd_set_destination(address x) {
+  nativeCallTrampolineStub_at(addr())->set_destination(x);
 }

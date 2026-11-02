@@ -42,11 +42,6 @@
 #include "nio_util.h"
 #include "nio.h"
 
-#ifdef _AIX
-#include <stdlib.h>
-#include <sys/utsname.h>
-#endif
-
 /**
  * IP_MULTICAST_ALL supported since 2.6.31 but may not be available at
  * build time.
@@ -99,32 +94,6 @@ static void initGroupSourceReq(JNIEnv* env, jbyteArray group, jint index,
 static jboolean isIPv4MappedGroup(struct group_source_req *req) {
     struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&req->gsr_group;
     return IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr) ? JNI_TRUE : JNI_FALSE;
-}
-
-/*
- * Checks whether or not "socket extensions for multicast source filters" is supported.
- * Returns JNI_TRUE if it is supported, JNI_FALSE otherwise
- */
-static jboolean isSourceFilterSupported(){
-    static jboolean alreadyChecked = JNI_FALSE;
-    static jboolean result = JNI_TRUE;
-    if (alreadyChecked != JNI_TRUE){
-        struct utsname uts;
-        memset(&uts, 0, sizeof(uts));
-        strcpy(uts.sysname, "?");
-        const int utsRes = uname(&uts);
-        int major = -1;
-        int minor = -1;
-        major = atoi(uts.version);
-        minor = atoi(uts.release);
-        if (strcmp(uts.sysname, "AIX") == 0) {
-            if (major < 6 || (major == 6 && minor < 1)) {// unsupported on aix < 6.1
-                result = JNI_FALSE;
-            }
-        }
-        alreadyChecked = JNI_TRUE;
-    }
-    return result;
 }
 
 #endif  /* _AIX */
@@ -260,7 +229,7 @@ Java_sun_nio_ch_Net_canUseIPv6OptionsWithIPv4LocalAddress0(JNIEnv* env, jclass c
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
-                            jboolean stream, jboolean reuse, jboolean ignored)
+                            jboolean stream, jboolean reuse)
 {
     int fd;
     int type = (stream ? SOCK_STREAM : SOCK_DGRAM);
@@ -651,14 +620,6 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
         optval = (void*)&mreq;
         optlen = sizeof(mreq);
     } else {
-
-#ifdef _AIX
-        /* check AIX for support of source filtering */
-        if (isSourceFilterSupported() != JNI_TRUE){
-            return IOS_UNAVAILABLE;
-        }
-#endif
-
         mreq_source.imr_multiaddr.s_addr = htonl(group);
         mreq_source.imr_sourceaddr.s_addr = htonl(source);
         mreq_source.imr_interface.s_addr = htonl(interf);
@@ -704,14 +665,6 @@ Java_sun_nio_ch_Net_blockOrUnblock4(JNIEnv *env, jobject this, jboolean block, j
     struct ip_mreq_source mreq_source;
     int n;
     int opt = (block) ? IP_BLOCK_SOURCE : IP_UNBLOCK_SOURCE;
-
-#ifdef _AIX
-    /* check AIX for support of source filtering */
-    if (isSourceFilterSupported() != JNI_TRUE){
-        return IOS_UNAVAILABLE;
-    }
-#endif
-
     mreq_source.imr_multiaddr.s_addr = htonl(group);
     mreq_source.imr_sourceaddr.s_addr = htonl(source);
     mreq_source.imr_interface.s_addr = htonl(interf);
@@ -732,7 +685,9 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
                                 jbyteArray group, jint index, jbyteArray source)
 {
     struct ipv6_mreq mreq6;
+#ifndef __APPLE__
     struct group_source_req req;
+#endif
     int opt, n, optlen;
     void* optval;
 

@@ -1096,6 +1096,11 @@ public enum HtmlStyles implements HtmlStyle {
     packageUses,
 
     /**
+     * The class of a {@code div} element representing a heading in the settings panel.
+     */
+    panelHeading,
+
+    /**
      * The class for the list of references to an external specification.
      */
     refList,
