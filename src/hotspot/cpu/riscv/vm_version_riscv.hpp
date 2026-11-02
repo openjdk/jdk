@@ -536,6 +536,8 @@ private:
   static void initialize();
   static void initialize_cpu_information();
 
+  static uint32_t initial_vector_length() { return _initial_vector_length; }
+
   static bool use_zalasr_atomics() { return _use_zalasr_atomics; }
 
   constexpr static bool supports_stack_watermark_barrier() { return true; }
