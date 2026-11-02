@@ -255,6 +255,10 @@ abstract class AbstractVectorConversionTest {
         return args.toArray(Object[][]::new);
     }
 
+    static List<VectorShape> vectorShapes() {
+        return List.of(VectorShape.S_64_BIT, VectorShape.S_128_BIT, VectorShape.S_256_BIT, VectorShape.S_512_BIT, VectorShape.S_Max_BIT);
+    }
+
     static Object[][] fixedShapeXShapeSpeciesArgs(VectorShape srcShape) {
         List<Object[]> args = new ArrayList<>();
 
@@ -262,7 +266,7 @@ abstract class AbstractVectorConversionTest {
             VectorSpecies<?> src = VectorSpecies.of(srcE, srcShape);
             List<?> srcGens = sourceGenerators(srcE);
 
-            for (VectorShape dstShape : VectorShape.values()) {
+            for (VectorShape dstShape : vectorShapes()) {
                 for (Class<?> dstE : List.of(byte.class, short.class, int.class, long.class, float.class, double.class, Float16.class)) {
                     VectorSpecies<?> dst = VectorSpecies.of(dstE, dstShape);
 
@@ -280,7 +284,7 @@ abstract class AbstractVectorConversionTest {
         List<Object[]> args = new ArrayList<>();
         for (Class<?> srcE : List.of(byte.class, short.class, int.class, long.class, float.class, double.class, Float16.class)) {
             VectorSpecies<?> src = VectorSpecies.of(srcE, srcShape);
-            for (VectorShape dstShape : VectorShape.values()) {
+            for (VectorShape dstShape : vectorShapes()) {
                 for (Class<?> dstE : List.of(byte.class, short.class, int.class, long.class, float.class, double.class, Float16.class)) {
                     VectorSpecies<?> dst = VectorSpecies.of(dstE, dstShape);
                     if (legal == (dst.length() == src.length())) {

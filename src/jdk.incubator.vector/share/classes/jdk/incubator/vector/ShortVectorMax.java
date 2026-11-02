@@ -43,7 +43,7 @@ import static jdk.internal.vm.vector.VectorSupport.*;
 @ValueBased
 final class ShortVectorMax extends ShortVector {
     static final ShortSpecies VSPECIES =
-        (ShortSpecies) ShortVector.SPECIES_MAX;
+        (ShortSpecies) ShortVector.SPECIES_DISTINCT_MAX;
 
     static final VectorShape VSHAPE =
         VSPECIES.vectorShape();

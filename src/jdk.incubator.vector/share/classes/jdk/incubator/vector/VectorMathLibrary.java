@@ -122,7 +122,7 @@ import static jdk.internal.vm.vector.Utils.debug;
         }
 
         private static String suffix(VectorSpecies<?> vspecies) {
-            assert vspecies.vectorBitSize() <= VectorShape.getMaxVectorBitSize(vspecies.elementType());
+            assert vspecies.vectorBitSize() <= VectorShapeImpl.getMaxVectorBitSize(vspecies.elementType());
 
             if (vspecies.vectorBitSize() == 512) {
                 assert CPUFeatures.X64.SUPPORTS_AVX512F;
@@ -246,13 +246,14 @@ import static jdk.internal.vm.vector.Utils.debug;
 
     private record Entry<T> (String name, MemorySegment entry, T impl) {}
 
-    private static final @Stable Entry<?>[][][] LIBRARY_ENTRIES = new Entry<?>[SIZE][LaneType.SK_LIMIT][VectorShape.SK_LIMIT]; // OP x SHAPE x TYPE
+    private static final @Stable Entry<?>[][][] LIBRARY_ENTRIES = new Entry<?>[SIZE][LaneType.SK_LIMIT][VectorShapeImpl.SK_LIMIT]; // OP x SHAPE x TYPE
 
     @ForceInline
     private static <T> Entry<T> lookup(Operator op, int opc, VectorSpecies<?> vspecies, IntFunction<T> implSupplier) {
         int idx = opc - VectorSupport.VECTOR_OP_MATHLIB_FIRST;
-        int elem_idx = ((AbstractSpecies<?>)vspecies).laneType.switchKey;
-        int shape_idx = vspecies.vectorShape().switchKey;
+        var species = (AbstractSpecies<?>) vspecies;
+        int elem_idx = species.laneType.switchKey;
+        int shape_idx = species.vectorShape().switchKey;
         @SuppressWarnings({"unchecked"})
         Entry<T> entry = (Entry<T>)LIBRARY_ENTRIES[idx][elem_idx][shape_idx];
         if (entry == null) {

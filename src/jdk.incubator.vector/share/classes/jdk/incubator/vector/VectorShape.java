@@ -25,9 +25,6 @@
 package jdk.incubator.vector;
 
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
-
-import jdk.internal.vm.vector.VectorSupport;
 
 /**
  * A {@code VectorShape} selects a particular implementation of
@@ -50,49 +47,38 @@ import jdk.internal.vm.vector.VectorSupport;
  * to select the shape that is usually preferable for
  * most uses.
  */
-public enum VectorShape {
-    /** Shape of length 64 bits */
-    S_64_BIT(64),
-    /** Shape of length 128 bits */
-    S_128_BIT(128),
-    /** Shape of length 256 bits */
-    S_256_BIT(256),
-    /** Shape of length 512 bits */
-    S_512_BIT(512),
-    /** Shape of maximum length supported on the platform */
-    S_Max_BIT(getMaxVectorBitSize(byte.class));
+public sealed interface VectorShape permits VectorShapeImpl {
+    /**
+     * Shape of length 64 bits
+     */
+    VectorShape S_64_BIT = VectorShapeImpl.S_64_BIT;
 
-    final int vectorBitSize;
-    final int vectorBitSizeLog2;
-    final int switchKey;  // 1+ordinal(), which is non-zero
+    /**
+     * Shape of length 128 bits
+     */
+    VectorShape S_128_BIT = VectorShapeImpl.S_128_BIT;
 
-    VectorShape(int vectorBitSize) {
-        this.switchKey = 1+ordinal();
-        this.vectorBitSize = vectorBitSize;
-        this.vectorBitSizeLog2 = Integer.numberOfTrailingZeros(vectorBitSize);
-    }
+    /**
+     * Shape of length 256 bits
+     */
+    VectorShape S_256_BIT = VectorShapeImpl.S_256_BIT;
+
+    /**
+     * Shape of length 512 bits
+     */
+    VectorShape S_512_BIT = VectorShapeImpl.S_512_BIT;
+
+    /**
+     * Shape of maximum length supported on the platform
+     */
+    VectorShape S_Max_BIT = VectorShapeImpl.S_Max_BIT;
 
     /**
      * Returns the size, in bits, of vectors of this shape.
      *
      * @return the size, in bits, of vectors of this shape.
      */
-    @ForceInline
-    public int vectorBitSize() {
-        return vectorBitSize;
-    }
-
-    /**
-     * Return the number of lanes of a vector of this shape and whose element
-     * type is of the provided species
-     *
-     * @param species the species describing the element type
-     * @return the number of lanes
-     */
-    /*package-private*/
-    int laneCount(VectorSpecies<?> species) {
-        return vectorBitSize() / species.elementSize();
-    }
+    int vectorBitSize();
 
     /**
      * Finds a vector species with the given element type
@@ -105,15 +91,7 @@ public enum VectorShape {
      * @return a species for the given element type and this shape
      * @see VectorSpecies#of(Class, VectorShape)
      */
-    public <E>
-    VectorSpecies<E> withLanes(Class<E> elementType) {
-        return VectorSpecies.of(elementType, this);
-    }
-
-    // Max vector size and increments for local use.
-    static final int
-            MAX_VECTOR_SIZE   = 2048,
-            INC_VECTOR_SIZE   = 128;
+    <E> VectorSpecies<E> withLanes(Class<E> elementType);
 
     /**
      * Finds an appropriate shape depending on the
@@ -136,7 +114,7 @@ public enum VectorShape {
             case 512:
                 return VectorShape.S_512_BIT;
             default:
-                if ((bitSize > 0) && (bitSize <= MAX_VECTOR_SIZE) && (bitSize % INC_VECTOR_SIZE == 0)) {
+                if ((bitSize > 0) && (bitSize <= VectorShapeImpl.MAX_VECTOR_SIZE) && (bitSize % VectorShapeImpl.INC_VECTOR_SIZE == 0)) {
                     return VectorShape.S_Max_BIT;
                 } else {
                     throw new IllegalArgumentException("Bad vector bit-size: " + bitSize);
@@ -170,41 +148,13 @@ public enum VectorShape {
                 // Calculate the maximum of index bit size and step under given element size.
                 // For AArch64 SVE, vector size is from 128 to 2048 bits, in increments of 128.
                 // For X86, vector size is 64, 128, 256 or 512.
-                int maxBitSize = (MAX_VECTOR_SIZE/elementSize) * Integer.SIZE;
-                int step = (INC_VECTOR_SIZE/elementSize) * Integer.SIZE;
+                int maxBitSize = (VectorShapeImpl.MAX_VECTOR_SIZE/elementSize) * Integer.SIZE;
+                int step = (VectorShapeImpl.INC_VECTOR_SIZE/elementSize) * Integer.SIZE;
                 if ((indexBitSize > 0) && (indexBitSize <= maxBitSize) && (indexBitSize % step == 0)) {
                     return VectorShape.S_Max_BIT;
                 } else {
                     throw new IllegalArgumentException("Bad index vector bit-size: " + indexBitSize);
                 }
-        }
-    }
-
-    // Switch keys for local use.
-    // We need these because switches keyed on enums
-    // don't optimize properly; see JDK-8161245
-    static final int
-        SK_64_BIT   = 1,
-        SK_128_BIT  = 2,
-        SK_256_BIT  = 3,
-        SK_512_BIT  = 4,
-        SK_Max_BIT  = 5,
-        SK_LIMIT    = 6;
-
-    /*package-private*/
-    static VectorShape ofSwitchKey(int sk) {
-        switch (sk) {
-            case SK_64_BIT:     return S_64_BIT;
-            case SK_128_BIT:    return S_128_BIT;
-            case SK_256_BIT:    return S_256_BIT;
-            case SK_512_BIT:    return S_512_BIT;
-            case SK_Max_BIT:    return S_Max_BIT;
-        }
-        throw new AssertionError();
-    }
-    static {
-        for (VectorShape vs : values()) {
-            assert(ofSwitchKey(vs.switchKey) == vs);
         }
     }
 
@@ -219,7 +169,7 @@ public enum VectorShape {
      *         for the element type or the type is not a valid {@code ETYPE}.
      */
     public static VectorShape largestShapeFor(Class<?> etype) {
-        return VectorShape.forBitSize(getMaxVectorBitSize(etype));
+        return VectorShape.forBitSize(VectorShapeImpl.getMaxVectorBitSize(etype));
     }
 
     // non-public support for computing preferred shapes
@@ -240,47 +190,10 @@ public enum VectorShape {
      */
     @ForceInline
     public static VectorShape preferredShape() {
-        VectorShape shape = PREFERRED_SHAPE;
+        VectorShape shape = VectorShapeImpl.PREFERRED_SHAPE;
         if (shape != null) {
             return shape;
         }
-        return computePreferredShape();
+        return VectorShapeImpl.computePreferredShape();
     }
-
-    private static VectorShape computePreferredShape() {
-        int prefBitSize = Integer.MAX_VALUE;
-        for (LaneType type : LaneType.values()) {
-            Class<?> ctype = type.carrierType;
-            prefBitSize = Math.min(prefBitSize, getMaxVectorBitSize(ctype));
-        }
-        // If these assertions fail, we must reconsider our API portability assumptions.
-        assert(prefBitSize >= Double.SIZE && prefBitSize < Integer.MAX_VALUE / Long.SIZE);
-        assert(prefBitSize == getMaxVectorBitSize(byte.class));
-        VectorShape shape = VectorShape.forBitSize(prefBitSize);
-        PREFERRED_SHAPE = shape;
-        return shape;
-    }
-
-    /**
-     * Returns the maximum vector bit size for a given element type.
-     *
-     * @param ctype the carrier type.
-     * @return the maximum vector bit.
-     */
-     /*package-private*/
-    static int getMaxVectorBitSize(Class<?> ctype) {
-        // VectorSupport.getMaxLaneCount may return -1 if C2 is not enabled,
-        // or a value smaller than the S_64_BIT.vectorBitSize / elementSizeInBits if MaxVectorSize < 16
-        // If so default to S_64_BIT
-        int maxLaneCount = VectorSupport.getMaxLaneCount(ctype);
-        int elementSizeInBits = LaneType.of(ctype).elementSize;
-        return Math.max(maxLaneCount * elementSizeInBits, S_64_BIT.vectorBitSize);
-    }
-
-    private static @Stable VectorShape PREFERRED_SHAPE;
-
-    // ==== JROSE NAME CHANGES ====
-
-    // MOVED preferredShape() back into this file
-
 }

@@ -43,7 +43,7 @@ import static jdk.internal.vm.vector.VectorSupport.*;
 @ValueBased
 final class ByteVectorMax extends ByteVector {
     static final ByteSpecies VSPECIES =
-        (ByteSpecies) ByteVector.SPECIES_MAX;
+        (ByteSpecies) ByteVector.SPECIES_DISTINCT_MAX;
 
     static final VectorShape VSHAPE =
         VSPECIES.vectorShape();

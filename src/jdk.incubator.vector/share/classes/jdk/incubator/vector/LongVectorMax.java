@@ -44,7 +44,7 @@ import static jdk.internal.vm.vector.VectorSupport.*;
 @ValueBased
 final class LongVectorMax extends LongVector {
     static final LongSpecies VSPECIES =
-        (LongSpecies) LongVector.SPECIES_MAX;
+        (LongSpecies) LongVector.SPECIES_DISTINCT_MAX;
 
     static final VectorShape VSHAPE =
         VSPECIES.vectorShape();

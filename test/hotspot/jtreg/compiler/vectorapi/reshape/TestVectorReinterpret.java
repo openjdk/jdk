@@ -44,7 +44,9 @@ import jdk.incubator.vector.VectorSpecies;
  * @run main compiler.vectorapi.reshape.TestVectorReinterpret
  */
 public class TestVectorReinterpret {
-    private static final List<VectorShape> SHAPE_LIST = List.of(VectorShape.values());
+    private static final List<VectorShape> SHAPE_LIST = List.of(
+            VectorShape.S_64_BIT, VectorShape.S_128_BIT, VectorShape.S_256_BIT,
+            VectorShape.S_512_BIT, VectorShape.S_Max_BIT);
     private static final List<Class<?>> ETYPE_LIST = List.of(
             byte.class, short.class, int.class, long.class, float.class, double.class
     );
