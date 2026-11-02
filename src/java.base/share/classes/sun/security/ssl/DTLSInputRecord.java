@@ -651,6 +651,9 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
         // The handshake flight in progress.
         HandshakeFlight handshakeFlight = new HandshakeFlight();
 
+        // Expected handshake type for each (epoch, message_seq) pair.
+        private final Map<Integer, Byte> messageTypes = new HashMap<>();
+
         // The preceding handshake flight.
         HandshakeFlight precedingFlight = null;
 
@@ -693,6 +696,13 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
             // Clean up the retransmission messages if necessary.
             cleanUpRetransmit(hsf);
+
+            int messageKey = (hsf.recordEpoch << 16) | hsf.messageSeq;
+            Byte type = messageTypes.putIfAbsent(
+                    messageKey, hsf.handshakeType);
+            if (type != null && type != hsf.handshakeType) {
+                throw new SSLProtocolException("Inconsistent DTLS handshake fragments");
+            }
 
             // Is it the first message of next flight?
             //
@@ -1269,6 +1279,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
             // cleanup handshake message sequence numbers map
             handshakeFlight.messageSeqMap.clear();
+
+            messageTypes.clear();
 
             // Ready to accept new input record.
             flightIsReady = false;
