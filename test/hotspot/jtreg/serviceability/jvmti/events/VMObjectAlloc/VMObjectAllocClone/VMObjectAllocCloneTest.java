@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8383787
+ * @bug 8396399
  * @summary Test verifies how VMObjectAlloc works for clone() method.
  *
  * @requires vm.jvmti
@@ -44,7 +44,7 @@ public class VMObjectAllocCloneTest {
     public static void main(String[] args) {
         Payload object = createPayload();
         init(Payload.class);
-        Payload cloneObject = object.clone();
+        Payload cloneObject = cloneObject(object);
         if (eventsCount() != 1) {
             throw new RuntimeException("No expected VMObjectAlloc event for object clone().");
         }
@@ -52,7 +52,7 @@ public class VMObjectAllocCloneTest {
 
         int[] array = new int[10];
         init(int[].class);
-        int[] cloneArray = array.clone();
+        int[] cloneArray = cloneArray(array);
         if (eventsCount() != 1) {
             throw new RuntimeException("No expected VMObjectAlloc event for array clone().");
         }
@@ -63,6 +63,15 @@ public class VMObjectAllocCloneTest {
 
     private static Payload createPayload() {
         return new Payload(0x12345);
+    }
+
+    // Use separate method because main() might be deoptimized.
+    private static Payload cloneObject(Payload object) {
+        return object.clone();
+    }
+
+    private static int[] cloneArray(int[] array) {
+        return array.clone();
     }
 
     record Payload(int value) implements Cloneable {

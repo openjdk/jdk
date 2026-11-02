@@ -308,6 +308,21 @@ jlong LIRItem::get_jlong_constant() const {
   return type()->as_LongConstant()->value();
 }
 
+// This method should be executed when this allocation might be done internally by VM.
+void LIRGenerator::deoptimize_vmalloc_for_jvmti(bool is_allocated_by_vm,CodeEmitInfo* info) {
+  if (is_allocated_by_vm) {
+    LIR_Opr flag_address = new_pointer_register();
+    LIR_Opr flag_value = new_register(T_INT);
+    __ move(LIR_OprFact::intptrConst(
+                (address)&JvmtiExport::_should_notify_object_alloc),
+            flag_address);
+    __ move(new LIR_Address(flag_address, T_INT), flag_value);
+    __ cmp(lir_cond_notEqual, flag_value, LIR_OprFact::intConst(0));
+    __ branch(lir_cond_notEqual,
+              new DeoptimizeStub(info, Deoptimization::Reason_intrinsic,
+                                 Deoptimization::Action_make_not_entrant));
+  }
+}
 
 
 //--------------------------------------------------------------
