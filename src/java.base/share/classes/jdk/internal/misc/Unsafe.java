@@ -286,6 +286,7 @@ public final class Unsafe {
      *
      * A layout of 0 indicates this array is not flat.
      */
+    @ForceInline
     public int arrayLayout(Object[] array) {
         if (array == null) {
             throw new NullPointerException();
@@ -1422,6 +1423,7 @@ public final class Unsafe {
      * @see #getInt(Object, long)
      * @see #putInt(Object, long, int)
      */
+    @ForceInline
     public long arrayBaseOffset(Class<?> arrayClass) {
         if (arrayClass == null) {
             throw new NullPointerException();
@@ -1430,6 +1432,7 @@ public final class Unsafe {
         return arrayBaseOffset0(arrayClass);
     }
 
+    @ForceInline
     public long arrayInstanceBaseOffset(Object[] array) {
         if (array == null) {
             throw new NullPointerException();
@@ -1493,6 +1496,7 @@ public final class Unsafe {
      * @see #getInt(Object, long)
      * @see #putInt(Object, long, int)
      */
+    @ForceInline
     public int arrayIndexScale(Class<?> arrayClass) {
         if (arrayClass == null) {
             throw new NullPointerException();
@@ -1501,6 +1505,7 @@ public final class Unsafe {
         return arrayIndexScale0(arrayClass);
     }
 
+    @ForceInline
     public int arrayInstanceIndexScale(Object[] array) {
         if (array == null) {
             throw new NullPointerException();
@@ -1514,6 +1519,7 @@ public final class Unsafe {
      * Intended to be used by substitutability test in ValueObjectMethods only.
      * The format is subject to change.
      */
+    @ForceInline
     public int[] getFieldMap(Class<?> c) {
         if (c == null) {
             throw new NullPointerException();
@@ -1526,6 +1532,7 @@ public final class Unsafe {
      * a possible flat layout that contains no oop.
      * Required for numerical CAS safety.
      */
+    @ForceInline
     public boolean isFlatPayloadBinary(Class<?> c) {
         int[] map = getFieldMap(c);
         int nbNonRef = map[0];
@@ -1820,11 +1827,17 @@ public final class Unsafe {
         return compareAndExchangeReference(o, offset, expected, x);
     }
 
+    @ForceInline
     public final <V> Object compareAndExchangeReferenceAcquire(Object o, long offset,
                                                                Class<?> valueType,
                                                                V expected,
                                                                V x) {
-        return compareAndExchangeReference(o, offset, valueType, expected, x);
+        if (isValueObject(valueType, expected)) {
+            // Reusing a stronger operation for now, still compliant
+            return compareAndExchangeReference(o, offset, valueType, expected, x);
+        } else {
+            return compareAndExchangeReferenceAcquire(o, offset, expected, x);
+        }
     }
 
     @ForceInline
@@ -1843,11 +1856,17 @@ public final class Unsafe {
         return compareAndExchangeReference(o, offset, expected, x);
     }
 
+    @ForceInline
     public final <V> Object compareAndExchangeReferenceRelease(Object o, long offset,
                                                                Class<?> valueType,
                                                                V expected,
                                                                V x) {
-        return compareAndExchangeReference(o, offset, valueType, expected, x);
+        if (isValueObject(valueType, expected)) {
+            // Reusing a stronger operation for now, still compliant
+            return compareAndExchangeReference(o, offset, valueType, expected, x);
+        } else {
+            return compareAndExchangeReferenceRelease(o, offset, expected, x);
+        }
     }
 
     @ForceInline
@@ -1866,6 +1885,7 @@ public final class Unsafe {
         return compareAndSetReference(o, offset, expected, x);
     }
 
+    @ForceInline
     public final <V> boolean weakCompareAndSetReferencePlain(Object o, long offset,
                                                              Class<?> valueType,
                                                              V expected,
@@ -1894,6 +1914,7 @@ public final class Unsafe {
         return compareAndSetReference(o, offset, expected, x);
     }
 
+    @ForceInline
     public final <V> boolean weakCompareAndSetReferenceAcquire(Object o, long offset,
                                                                Class<?> valueType,
                                                                V expected,
@@ -1922,6 +1943,7 @@ public final class Unsafe {
         return compareAndSetReference(o, offset, expected, x);
     }
 
+    @ForceInline
     public final <V> boolean weakCompareAndSetReferenceRelease(Object o, long offset,
                                                                Class<?> valueType,
                                                                V expected,
@@ -1950,6 +1972,7 @@ public final class Unsafe {
         return compareAndSetReference(o, offset, expected, x);
     }
 
+    @ForceInline
     public final <V> boolean weakCompareAndSetReference(Object o, long offset,
                                                         Class<?> valueType,
                                                         V expected,
@@ -3418,7 +3441,12 @@ public final class Unsafe {
 
     @ForceInline
     public final Object getAndSetReferenceRelease(Object o, long offset, Class<?> valueType, Object newValue) {
-        return getAndSetReference(o, offset, valueType, newValue);
+        if (isValueObject(valueType, newValue)) {
+            // Reusing a stronger operation for now, still compliant
+            return getAndSetReference(o, offset, valueType, newValue);
+        } else {
+            return getAndSetReferenceRelease(o, offset, newValue);
+        }
     }
 
     @ForceInline
@@ -3437,7 +3465,12 @@ public final class Unsafe {
 
     @ForceInline
     public final Object getAndSetReferenceAcquire(Object o, long offset, Class<?> valueType, Object newValue) {
-        return getAndSetReference(o, offset, valueType, newValue);
+        if (isValueObject(valueType, newValue)) {
+            // Reusing a stronger operation for now, still compliant
+            return getAndSetReference(o, offset, valueType, newValue);
+        } else {
+            return getAndSetReferenceAcquire(o, offset, newValue);
+        }
     }
 
     @ForceInline

@@ -314,7 +314,7 @@ void IdealLoopTree::compute_profile_trip_cnt(PhaseIdealLoop *phase) {
       }
     } else {
       ResourceMark rm;
-      Unique_Node_List wq;
+      Unique_Node_List<Node> wq;
       wq.push(back);
       for (uint i = 0; i < wq.size(); i++) {
         Node *n = wq.at(i);
@@ -661,7 +661,7 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
 // dominates the remaining iterations. This allows us to:
 // - Remove all loop-invariant dominated tests in the main body.
 // - Remove all loop-invariant dominated stores in the main body.
-void PhaseIdealLoop::elide_redundancies_after_peeling(IdealLoopTree* loop, const Node_List& old_new) {
+void PhaseIdealLoop::elide_redundancies_after_peeling(IdealLoopTree* loop, const Node_List<Node>& old_new) {
   elide_redundant_tests_after_peeling(loop, old_new);
   elide_redundant_stores_after_peeling(loop, old_new);
 }
@@ -671,7 +671,7 @@ void PhaseIdealLoop::elide_redundancies_after_peeling(IdealLoopTree* loop, const
 // 'prev'. As a result, if the condition of 'test' is a loop invariant, 'test' will be dominated by
 // the IfProj of 'old_new[test->_idx]', and both 'test' and 'old_new[test->_idx]' will have the
 // same Bool input. This allows 'test' to be removed using PhaseIdealLoop::dominated_by.
-void PhaseIdealLoop::elide_redundant_tests_after_peeling(IdealLoopTree* loop, const Node_List& old_new) {
+void PhaseIdealLoop::elide_redundant_tests_after_peeling(IdealLoopTree* loop, const Node_List<Node>& old_new) {
   bool progress = true;
   while (progress) {
     progress = false; // Reset for next iteration
@@ -769,7 +769,7 @@ void PhaseIdealLoop::elide_redundant_tests_after_peeling(IdealLoopTree* loop, co
 // remove it from the main body. Note that this is only an analysis of the transformation as a
 // conceptual explanation. In practice, in try_move_store_before_loop, we don't actually peel and
 // unpeel the loop but we hoist the store directly.
-void PhaseIdealLoop::elide_redundant_stores_after_peeling(IdealLoopTree* loop, const Node_List& old_new) {
+void PhaseIdealLoop::elide_redundant_stores_after_peeling(IdealLoopTree* loop, const Node_List<Node>& old_new) {
   for (uint i = 0; i < loop->_body.size(); i++) {
     Node* n = loop->_body.at(i);
     if (n->is_Store() && loop->can_elide_store_after_peeling(n->as_Store(), old_new[n->_idx]->as_Store())) {
@@ -832,7 +832,7 @@ bool IdealLoopTree::can_elide_store_after_peeling_impl(StoreNode* store, StoreNo
   // with 'store'. If is_profitability_check is true, walk all the relevant nodes inside 'this'.
   // Otherwise, walk all the relevant nodes between 'store' and 'dominating_store'.
   ResourceMark rm;
-  Unique_Node_List worklist;
+  Unique_Node_List<Node> worklist;
   worklist.push(store->in(MemNode::Memory));
   AccessAnalyzer analyzer(&_phase->_igvn, store);
   for (uint worklist_idx = 0; worklist_idx < worklist.size(); worklist_idx++) {
@@ -1018,7 +1018,7 @@ bool IdealLoopTree::can_elide_store_after_peeling_impl(StoreNode* store, StoreNo
 //              v
 //             exit
 //
-void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
+void PhaseIdealLoop::do_peeling(IdealLoopTree* loop, Node_List<Node>& old_new) {
   assert(LoopPeeling != 0, "do_peeling called with loop peeling always disabled");
 
   C->set_major_progress();
@@ -1559,7 +1559,7 @@ bool IdealLoopTree::policy_peel_only(PhaseIdealLoop *phase) const {
 //------------------------------clone_up_backedge_goo--------------------------
 // If Node n lives in the back_ctrl block and cannot float, we clone a private
 // version of n in preheader_ctrl block and return that, otherwise return n.
-Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctrl, Node *n, VectorSet &visited, Node_Stack &clones) {
+Node* PhaseIdealLoop::clone_up_backedge_goo(Node* back_ctrl, Node* preheader_ctrl, Node* n, VectorSet& visited, Node_Stack<Node>& clones) {
   if (get_ctrl(n) != back_ctrl) return n;
 
   // Only visit once
@@ -1633,7 +1633,7 @@ void PhaseIdealLoop::ensure_zero_trip_guard_proj(Node* node, bool is_main_loop) 
 // Insert pre and post loops.  If peel_only is set, the pre-loop can not have
 // more iterations added.  It acts as a 'peel' only, no lower-bound RCE, no
 // alignment.  Useful to unroll loops that do no array accesses.
-void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_new, bool peel_only) {
+void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree* loop, Node_List<Node>& old_new, bool peel_only) {
 
 #ifndef PRODUCT
   if (TraceLoopOpts) {
@@ -1747,7 +1747,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   assert(post_head->in(1)->is_IfProj(), "must be zero-trip guard If node projection of the post loop");
 
   VectorSet visited;
-  Node_Stack clones(main_head->back_control()->outcnt());
+  Node_Stack<Node> clones(main_head->back_control()->outcnt());
   // Step B3: Make the fall-in values to the main-loop come from the
   // fall-out values of the pre-loop.
   const uint last_node_index_in_pre_loop_body = Compile::current()->unique() - 1;
@@ -1847,7 +1847,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
 // unroll_policy has  already informed  us that more  unrolling is  about to
 // happen  to the  main  loop.  The  resultant  post loop  will  serve as  a
 // vectorized drain loop.
-void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old_new) {
+void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree* loop, Node_List<Node>& old_new) {
   if (!loop->_head->is_CountedLoop()) return;
 
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
@@ -1931,7 +1931,7 @@ Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, const IdealLoop
 
 //------------------------------insert_post_loop-------------------------------
 // Insert post loops.  Add a post loop to the given loop passed.
-Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
+Node* PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List<Node>& old_new,
                                        CountedLoopNode* main_head, CountedLoopEndNode* main_end,
                                        Node* incr, Node* limit, CountedLoopNode*& post_head) {
   IfNode* outer_main_end = main_end;
@@ -2003,7 +2003,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   set_idom(post_head, zer_taken, dd_main_exit);
 
   VectorSet visited;
-  Node_Stack clones(main_head->back_control()->outcnt());
+  Node_Stack<Node> clones(main_head->back_control()->outcnt());
   // Step A3: Make the fall-in values to the post-loop come from the
   // fall-out values of the main-loop.
   for (DUIterator i = main_head->outs(); main_head->has_out(i); i++) {
@@ -2099,7 +2099,7 @@ void PhaseIdealLoop::update_main_loop_assertion_predicates(CountedLoopNode* new_
 void PhaseIdealLoop::initialize_assertion_predicates_for_peeled_loop(CountedLoopNode* peeled_loop_head,
                                                                      CountedLoopNode* remaining_loop_head,
                                                                      const uint first_node_index_in_cloned_loop_body,
-                                                                     const Node_List& old_new) {
+                                                                     const Node_List<Node>& old_new) {
   const NodeInOriginalLoopBody node_in_original_loop_body(first_node_index_in_cloned_loop_body, old_new);
   create_assertion_predicates_at_loop(peeled_loop_head, remaining_loop_head, node_in_original_loop_body, true);
 }
@@ -2111,7 +2111,7 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_main_loop(CountedLoopNo
                                                                    const uint first_node_index_in_pre_loop_body,
                                                                    const uint last_node_index_in_pre_loop_body,
                                                                    DEBUG_ONLY(const uint last_node_index_from_backedge_goo COMMA)
-                                                                   const Node_List& old_new) {
+                                                                   const Node_List<Node>& old_new) {
   assert(first_node_index_in_pre_loop_body < last_node_index_in_pre_loop_body, "cloned some nodes");
   const NodeInMainLoopBody node_in_main_loop_body(first_node_index_in_pre_loop_body,
                                                   last_node_index_in_pre_loop_body,
@@ -2185,7 +2185,7 @@ void PhaseIdealLoop::rewire_old_target_loop_entry_dependency_to_new_entry(
 
 //------------------------------do_unroll--------------------------------------
 // Unroll the loop body one step - make each trip do 2 iterations.
-void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adjust_min_trip) {
+void PhaseIdealLoop::do_unroll(IdealLoopTree* loop, Node_List<Node>& old_new, bool adjust_min_trip) {
   assert(LoopUnrollLimit, "");
   CountedLoopNode *loop_head = loop->_head->as_CountedLoop();
   CountedLoopEndNode *loop_end = loop_head->loopexit();
@@ -2203,8 +2203,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   }
 
   if (C->do_vector_loop() && (PrintOpto && (VerifyLoopOptimizations || TraceLoopOpts))) {
-    Node_Stack stack(C->live_nodes() >> 2);
-    Node_List rpo_list;
+    Node_Stack<Node> stack(C->live_nodes() >> 2);
+    Node_List<Node> rpo_list;
     VectorSet visited;
     visited.set(loop_head->_idx);
     rpo(loop_head, stack, visited, rpo_list);
@@ -2238,7 +2238,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
       // In rare cases, loop cloning (as for peeling, for instance) can break this by replacing
       // limit and the input of opaq by equivalent but distinct phis.
       // Next IGVN should clean it up. Let's try to detect we are in such a case.
-      Unique_Node_List& worklist = loop->_phase->_igvn._worklist;
+      Unique_Node_List<Node>& worklist = loop->_phase->_igvn._worklist;
       assert(C->major_progress(), "The operation that replaced limit and opaq->in(1) (e.g. peeling) should have set major_progress");
       assert(opaq->in(1)->is_Phi() && limit->is_Phi(), "Nodes limit and opaq->in(1) should have been replaced by PhiNodes by fix_data_uses from clone_loop.");
       assert(worklist.member(opaq->in(1)) && worklist.member(limit), "Nodes limit and opaq->in(1) differ and should have been recorded for IGVN.");
@@ -2453,7 +2453,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
 
 //------------------------------do_maximally_unroll----------------------------
 
-void PhaseIdealLoop::do_maximally_unroll(IdealLoopTree *loop, Node_List &old_new) {
+void PhaseIdealLoop::do_maximally_unroll(IdealLoopTree* loop, Node_List<Node>& old_new) {
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
   assert(cl->has_exact_trip_count(), "trip count is not exact");
   assert(cl->trip_count() > 0, "");
@@ -2612,8 +2612,15 @@ void PhaseIdealLoop::add_constraint(jlong stride_con, jlong scale_con, Node* off
 
 //----------------------------------is_iv------------------------------------
 // Return true if exp is the value (of type bt) of the given induction var.
-// This grammar of cases is recognized, where X is I|L according to bt:
-//    VIV[iv] = iv | (CastXX VIV[iv]) | (ConvI2X VIV[iv])
+// On success, we guarantee this form:
+//   if bt = T_INT (implies iv is int):
+//     exp = iv
+//   if bt = T_LONG and iv is long:
+//     exp = iv
+//   if bt = T_LONG and iv is int:
+//     exp = ConvI2L(iv)
+//
+// See grammar specification in PhaseIdealLoop::is_scaled_iv_plus_offset().
 bool PhaseIdealLoop::is_iv(Node* exp, Node* iv, BasicType bt) {
   exp = exp->uncast();
   if (exp == iv && iv->bottom_type()->isa_integer(bt)) {
@@ -2628,88 +2635,129 @@ bool PhaseIdealLoop::is_iv(Node* exp, Node* iv, BasicType bt) {
 
 //------------------------------is_scaled_iv---------------------------------
 // Return true if exp is a constant times the given induction var (of type bt).
-// The multiplication is either done in full precision (exactly of type bt),
-// or else bt is T_LONG but iv is scaled using 32-bit arithmetic followed by a ConvI2L.
-// This grammar of cases is recognized, where X is I|L according to bt:
-//    SIV[iv] = VIV[iv] | (CastXX SIV[iv])
-//            | (MulX VIV[iv] ConX) | (MulX ConX VIV[iv])
-//            | (LShiftX VIV[iv] ConI)
-//            | (ConvI2L SIV[iv])  -- a "short-scale" can occur here; note recursion
-//            | (SubX 0 SIV[iv])  -- same as MulX(iv, -scale); note recursion
-//            | (AddX SIV[iv] SIV[iv])  -- sum of two scaled iv; note recursion
-//            | (SubX SIV[iv] SIV[iv])  -- difference of two scaled iv; note recursion
-//    VIV[iv] = [either iv or its value converted; see is_iv() above]
-// On success, the constant scale value is stored back to *p_scale.
-// The value (*p_short_scale) reports if such a ConvI2L conversion was present.
-bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_scale, bool* p_short_scale, int depth) {
-  BasicType exp_bt = bt;
-  exp = exp->uncast();  //strip casts
-  assert(exp_bt == T_INT || exp_bt == T_LONG, "unexpected int type");
-  if (is_iv(exp, iv, exp_bt)) {
+// On success, we guarantee this form:
+//   if bt = T_INT (implies iv is int):
+//     exp = MulI(        iv,  p_scale)       where p_scale is int
+//   if bt = T_LONG and iv is long:
+//     exp = MulL(        iv,  p_scale)
+//   if bt = T_LONG and iv is int:
+//     exp = MulL(ConvI2L(iv), p_scale)
+//   where the constant scale value is stored back to *p_scale unless null.
+// The scaling is always done in full precision (exactly of type bt).
+// See grammar specification in PhaseIdealLoop::is_scaled_iv_plus_offset().
+bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_scale, int depth) {
+  exp = exp->uncast();  // Strip casts.
+  assert(bt == T_INT || bt == T_LONG, "unexpected int type");
+  if (is_iv(exp, iv, bt)) {
+    // if bt = T_INT (implies iv is int):
+    //   exp = iv          = MulI(        iv,  p_scale=1)      where p_scale=1 is trivially an int
+    // if bt = T_LONG and iv is long:
+    //   exp = iv          = MulL(        iv,  p_scale=1)
+    // if bt = T_LONG and iv is int:
+    //   exp = ConvI2L(iv) = MulL(ConvI2L(iv), p_scale=1)
     if (p_scale != nullptr) {
       *p_scale = 1;
     }
-    if (p_short_scale != nullptr) {
-      *p_short_scale = false;
-    }
     return true;
   }
-  if (exp_bt == T_LONG && iv->bottom_type()->isa_int() && exp->Opcode() == Op_ConvI2L) {
-    exp = exp->in(1);
-    exp_bt = T_INT;
+  if (bt == T_LONG && iv->bottom_type()->isa_int() && exp->Opcode() == Op_ConvI2L) {
+    // Risk for short scaling: avoid long range-check transformations, because
+    // the current implementation (transform_long_range_checks) does not protect
+    // against overflow.
+    return false;
   }
   int opc = exp->Opcode();
   int which = 0;  // this is which subexpression we find the iv in
   // Can't use is_Mul() here as it's true for AndI and AndL
-  if (opc == Op_Mul(exp_bt)) {
-    if ((is_iv(exp->in(which = 1), iv, exp_bt) && exp->in(2)->is_Con()) ||
-        (is_iv(exp->in(which = 2), iv, exp_bt) && exp->in(1)->is_Con())) {
+  if (opc == Op_Mul(bt)) {
+    // We need to test both ways because the multiplication node may not have
+    // been canonicalized yet, for example after successful loop predication.
+    if ((is_iv(exp->in(which = 1), iv, bt) && exp->in(2)->is_Con()) ||
+        (is_iv(exp->in(which = 2), iv, bt) && exp->in(1)->is_Con())) {
       Node* factor = exp->in(which == 1 ? 2 : 1);  // the other argument
-      jlong scale = factor->find_integer_as_long(exp_bt, 0);
+      jlong scale = factor->find_integer_as_long(bt, 0);
       if (scale == 0) {
-        return false;  // might be top
+        return false;  // find_integer_as_long may have failed, value might be top.
       }
+      // if bt = T_INT (implies iv is int):
+      //   exp->in(which) = iv
+      //   Note: find_integer_as_long ensures that scale is int
+      //   -> which = 1: exp                            = MulI(        iv,  scale)   where scale is int
+      //   -> which = 2: exp = MulI(scale,        iv)   = MulI(        iv,  scale)   where scale is int
+      // if bt = T_LONG and iv is long:
+      //   exp->in(which) = iv
+      //   -> which = 1: exp                            = MulL(        iv,  scale)
+      //   -> which = 2: exp = MulL(scale,        iv)   = MulL(        iv,  scale)
+      // if bt = T_LONG and iv is int:
+      //   exp->in(which) = ConvI2L(iv)
+      //   -> which = 1: exp                            = MulL(ConvI2L(iv), scale)
+      //   -> which = 2: exp = MulL(scale, ConvI2L(iv)) = MulL(ConvI2L(iv), scale)
       if (p_scale != nullptr) {
         *p_scale = scale;
       }
-      if (p_short_scale != nullptr) {
-        // (ConvI2L (MulI iv K)) can be 64-bit linear if iv is kept small enough...
-        *p_short_scale = (exp_bt != bt && scale != 1);
-      }
       return true;
     }
-  } else if (opc == Op_LShift(exp_bt)) {
-    if (is_iv(exp->in(1), iv, exp_bt) && exp->in(2)->is_Con()) {
+  } else if (opc == Op_LShift(bt)) {
+    if (is_iv(exp->in(1), iv, bt) && exp->in(2)->is_Con()) {
       jint shift_amount = exp->in(2)->find_int_con(min_jint);
       if (shift_amount == min_jint) {
-        return false;  // might be top
+        return false;  // find_int_con may have failed, value might be top.
       }
       jlong scale;
-      if (exp_bt == T_INT) {
+      if (bt == T_INT) {
+        // LShiftI(x, shift_amount) = MulI(x, LShiftI(1,  shift_amount)) = MulI(x, scale)
+        // Note: scale is guaranteed to be an int
         scale = java_shift_left((jint)1, (juint)shift_amount);
-      } else if (exp_bt == T_LONG) {
+      } else if (bt == T_LONG) {
+        // LShiftL(x, shift_amount) = MulL(x, LShiftL(1L, shift_amount)) = MulL(x, scale)
         scale = java_shift_left((jlong)1, (julong)shift_amount);
       }
+      // if bt = T_INT (implies iv is int):
+      //   exp->in(1) = iv
+      //   exp = LShiftI(        iv,  shift_amount) = MulI(        iv,  scale)    where scale is int
+      // if bt = T_LONG and iv is long:
+      //   exp->in(1) = iv
+      //   exp = LShiftL(        iv,  shift_amount) = MulL(        iv,  scale)
+      // if bt = T_LONG and iv is int:
+      //   exp->in(1) = ConvI2L(iv)
+      //   exp = LShiftL(ConvI2L(iv), shift_amount) = MulL(ConvI2L(iv), scale)
       if (p_scale != nullptr) {
         *p_scale = scale;
       }
-      if (p_short_scale != nullptr) {
-        // (ConvI2L (MulI iv K)) can be 64-bit linear if iv is kept small enough...
-        *p_short_scale = (exp_bt != bt && scale != 1);
-      }
       return true;
     }
-  } else if (opc == Op_Add(exp_bt)) {
+  } else if (opc == Op_Add(bt)) {
     jlong scale_l = 0;
     jlong scale_r = 0;
-    bool short_scale_l = false;
-    bool short_scale_r = false;
     if (depth == 0 &&
-        is_scaled_iv(exp->in(1), iv, exp_bt, &scale_l, &short_scale_l, depth + 1) &&
-        is_scaled_iv(exp->in(2), iv, exp_bt, &scale_r, &short_scale_r, depth + 1)) {
-      // AddX(iv*K1, iv*K2) => iv*(K1+K2)
+        is_scaled_iv(exp->in(1), iv, bt, &scale_l, depth + 1) &&
+        is_scaled_iv(exp->in(2), iv, bt, &scale_r, depth + 1)) {
+      // We know that:
+      //   AddI(MulI(x, scale_l), MulI(x, scale_r)) = MulI(x, scale=AddI(scale_l, scale_r))   where scale is int
+      //   AddL(MulL(x, scale_l), MulL(x, scale_r)) = MulL(x, scale=AddL(scale_l, scale_r))
+      //
+      // if bt = T_INT (implies iv is int):
+      //   e1 = exp->in(1) = MulI(iv, scale_l)  where scale_l is int
+      //   e2 = exp->in(2) = MulI(iv, scale_r)  where scale_r is int
+      //   exp = AddI(e1, e2) = MulI(iv, scale=AddI(scale_l, scale_r))   where scale is int
+      // if bt = T_LONG and iv is long:
+      //   e1 = exp->in(1) = MulL(iv, scale_l)
+      //   e2 = exp->in(2) = MulL(iv, scale_r)
+      //   exp = AddL(e1, e2) = MulL(iv, scale=AddL(scale_l, scale_r))
+      // if bt = T_LONG and iv is int:
+      //   e1 = exp->in(1) = MulL(ConvI2L(iv), scale_l)
+      //   e2 = exp->in(2) = MulL(ConvI2L(iv), scale_r)
+      //   exp = AddL(e1, e2) = MulL(ConvI2L(iv), scale=AddL(scale_l, scale_r))
+      //
+      // For the scale computation, we could have used the same type case
+      // distinction as in LShift above. But instead, we compute in long for
+      // all cases. We need to show that this is OK if bt=T_INT.
+      // We would have computed
+      //   scale = AddI(scale_l, scale_r)
+      // which is equivalent to the long addition if the long addition stays
+      // within (min_jint, max_jint].
       jlong scale_sum = java_add(scale_l, scale_r);
-      if (scale_sum > max_signed_integer(exp_bt) || scale_sum <= min_signed_integer(exp_bt)) {
+      if (scale_sum > max_signed_integer(bt) || scale_sum <= min_signed_integer(bt)) {
         // This logic is shared by int and long. For int, the result may overflow
         // as we use jlong to compute so do the check here. Long result may also
         // overflow but that's fine because result wraps.
@@ -2718,41 +2766,76 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_sc
       if (p_scale != nullptr) {
         *p_scale = scale_sum;
       }
-      if (p_short_scale != nullptr) {
-        *p_short_scale = short_scale_l && short_scale_r;
-      }
       return true;
     }
-  } else if (opc == Op_Sub(exp_bt)) {
-    if (exp->in(1)->find_integer_as_long(exp_bt, -1) == 0) {
-      jlong scale = 0;
-      if (depth == 0 && is_scaled_iv(exp->in(2), iv, exp_bt, &scale, p_short_scale, depth + 1)) {
-        // SubX(0, iv*K) => iv*(-K)
-        if (scale == min_signed_integer(exp_bt)) {
+  } else if (opc == Op_Sub(bt)) {
+    if (exp->in(1)->find_integer_as_long(bt, -1) == 0) {
+      jlong scale_r = 0;
+      if (depth == 0 && is_scaled_iv(exp->in(2), iv, bt, &scale_r, depth + 1)) {
+        // We know that:
+        //   SubI(0, MulI(x, scale_r)) = MulI(x, scale=SubI(0, scale_r)) where scale is int
+        //   SubL(0, MulL(x, scale_r)) = MulL(x, scale=SubL(0, scale_r))
+        //
+        // if bt = T_INT (implies iv is int):
+        //   e2  = exp->in(2)  = MulI(iv, scale_r)   where scale_r is int
+        //   exp = SubI(0, e2) = MulI(iv, scale=SubI(0, scale_r))    where scale is int
+        // if bt = T_LONG and iv is long:
+        //   e2 = exp->in(2) = MulL(iv, scale_r)
+        //   exp = SubL(0, e2) = MulL(iv, scale=SubL(0, scale_r))
+        // if bt = T_LONG and iv is int:
+        //   e2 = exp->in(2) = MulL(ConvI2L(iv), scale_r)
+        //   exp = SubL(0, e2) = MulL(ConvI2L(iv), scale=SubL(0, scale_r))
+        //
+        // Again, we could have used bt-sensitive computations as for LShift.
+        // Instead, we compute in all cases
+        //   scale = SubL(0, scale_r)
+        // How is this correct for bt=T_INT?
+        // We know that the input scale is in the int range.
+        // And so as long as the input scale != min_jint, the
+        // computation in long is equivalent, since neither the int nor
+        // the long computation would overflow.
+        if (scale_r == min_signed_integer(bt)) {
           // This should work even if -K overflows, but let's not.
           return false;
         }
-        scale = java_multiply(scale, (jlong)-1);
+        jlong scale_neg = java_multiply(scale_r, (jlong)-1);
         if (p_scale != nullptr) {
-          *p_scale = scale;
-        }
-        if (p_short_scale != nullptr) {
-          // (ConvI2L (MulI iv K)) can be 64-bit linear if iv is kept small enough...
-          *p_short_scale = *p_short_scale || (exp_bt != bt && scale != 1);
+          *p_scale = scale_neg;
         }
         return true;
       }
     } else {
       jlong scale_l = 0;
       jlong scale_r = 0;
-      bool short_scale_l = false;
-      bool short_scale_r = false;
       if (depth == 0 &&
-          is_scaled_iv(exp->in(1), iv, exp_bt, &scale_l, &short_scale_l, depth + 1) &&
-          is_scaled_iv(exp->in(2), iv, exp_bt, &scale_r, &short_scale_r, depth + 1)) {
-        // SubX(iv*K1, iv*K2) => iv*(K1-K2)
+          is_scaled_iv(exp->in(1), iv, bt, &scale_l, depth + 1) &&
+          is_scaled_iv(exp->in(2), iv, bt, &scale_r, depth + 1)) {
+        // We know that:
+        //   SubI(MulI(x, scale_l), MulI(x, scale_r)) = MulI(x, scale=SubI(scale_l, scale_r))   where scale is int
+        //   SubL(MulL(x, scale_l), MulL(x, scale_r)) = MulL(x, scale=SubL(scale_l, scale_r))
+        //
+        // if bt = T_INT (implies iv is int):
+        //   e1 = exp->in(1) = MulI(iv, scale_l)   where scale_l is int
+        //   e2 = exp->in(2) = MulI(iv, scale_r)   where scale_r is int
+        //   exp = SubI(e1, e2) = MulI(iv, scale=SubI(scale_l, scale_r))   where scale is int
+        // if bt = T_LONG and iv is long:
+        //   e1 = exp->in(1) = MulL(iv, scale_l)
+        //   e2 = exp->in(2) = MulL(iv, scale_r)
+        //   exp = SubL(e1, e2) = MulL(iv, scale=SubL(scale_l, scale_r))
+        // if bt = T_LONG and iv is int:
+        //   e1 = exp->in(1) = MulL(ConvI2L(iv), scale_l)
+        //   e2 = exp->in(2) = MulL(ConvI2L(iv), scale_r)
+        //   exp = SubL(e1, e2) = MulL(ConvI2L(iv), scale=SubL(scale_l, scale_r))
+        //
+        // For the scale computation, we could have used the same type case
+        // distinction as in LShift above. But instead, we compute in long for
+        // all cases. We need to show that this is OK if bt=T_INT.
+        // We would have computed
+        //   scale = SubI(scale_l, scale_r)
+        // which is equivalent to the long subtraction if the long subtraction
+        // stays within (min_jint, max_jint].
         jlong scale_diff = java_subtract(scale_l, scale_r);
-        if (scale_diff > max_signed_integer(exp_bt) || scale_diff <= min_signed_integer(exp_bt)) {
+        if (scale_diff > max_signed_integer(bt) || scale_diff <= min_signed_integer(bt)) {
           // This logic is shared by int and long. For int, the result may
           // overflow as we use jlong to compute so do the check here. Long
           // result may also overflow but that's fine because result wraps.
@@ -2760,9 +2843,6 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_sc
         }
         if (p_scale != nullptr) {
           *p_scale = scale_diff;
-        }
-        if (p_short_scale != nullptr) {
-          *p_short_scale = short_scale_l && short_scale_r;
         }
         return true;
       }
@@ -2773,27 +2853,75 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_sc
 }
 
 //-------------------------is_scaled_iv_plus_offset--------------------------
-// Return true if exp is a simple linear transform of the given induction var.
+// Return true if exp is a simple affine transform of the given induction var.
 // The scale must be constant and the addition tree (if any) must be simple.
-// This grammar of cases is recognized, where X is I|L according to bt:
+// On success, we guarantee this form:
+//   if bt = T_INT (implies iv is int):
+//     exp = AddI(MulI(        iv,  p_scale), p_offset)   where p_scale is int
+//   if bt = T_LONG and iv is long:
+//     exp = AddL(MulL(        iv,  p_scale), p_offset)
+//   if bt = T_LONG and iv is int:
+//     exp = AddL(MulL(ConvI2L(iv), p_scale), p_offset)
+//   where:
+//     - the constant scale value is stored back to *p_scale unless null, and
+//     - the offset (perhaps a synthetic AddX or SubX node) is stored to *p_offset unless null.
+// To avoid looping, the match is depth-limited.
 //
-//    OIV[iv] = SIV[iv] | (CastXX OIV[iv])
-//            | (AddX SIV[iv] E) | (AddX E SIV[iv])
-//            | (SubX SIV[iv] E) | (SubX E SIV[iv])
-//    SSIV[iv] = (ConvI2X SIV[iv])  -- a "short scale" might occur here
-//    SIV[iv] = [a possibly scaled value of iv; see is_scaled_iv() above]
+// This grammar of cases is recognized, where X is I (int) or L (long) according
+// to bt. CastXX operations are also accepted, but omitted for conciseness:
 //
-// On success, the constant scale value is stored back to *p_scale unless null.
-// Likewise, the addend (perhaps a synthetic AddX node) is stored to *p_offset.
-// Also, (*p_short_scale) reports if a ConvI2L conversion was seen after a MulI,
-// meaning bt is T_LONG but iv was scaled using 32-bit arithmetic.
-// To avoid looping, the match is depth-limited, and so may fail to match the grammar to complex expressions.
-bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt, jlong* p_scale, Node** p_offset, bool* p_short_scale, int depth) {
+// is_iv():
+//
+// IV[iv,I] =    iv,                                  if iv is int
+// IV[iv,L] =    iv,                                  if iv is long
+//   |           ConvI2L(iv),                         if iv is int
+//
+// is_scaled_iv():
+//
+// SIV0[iv,X] =  IV[iv,X]
+//   |           MulX(IV[iv,X], ConX),                if get_con(ConX) != 0        (ConX is top or MulX is non canonical)
+//   |           MulX(ConX, IV[iv,X]),                if get_con(ConX) != 0        (ConX is top or MulX is non canonical)
+//   |           LShiftX(IV[iv,X], ConI),             if get_con(ConI) != min_jint (ConI is top or LShiftX is non canonical)
+//
+// SIV[iv,X] =   SIV0[iv,X]
+//   |           e:AddX(SIV0[iv,X], SIV0[iv,X]),      if min_jX < scale(e) <= max_jX
+//   |           SubX(0, e:SIV0[iv,X]),               if scale(e) != min_jX
+//   |           e:SubX(SIV0[iv,X], SIV0[iv,X]),      if min_jX < scale(e) <= max_jX
+//
+// is_scaled_iv_plus_offset():
+//
+// OSIV0[iv,X] = SIV[iv,X]
+//   |           AddX(SIV[iv,X], e)
+//   |           AddX(e, SIV[iv,X])
+//   |           SubX(SIV[iv,X], e)
+//   |           SubX(e1, e2:SIV[iv,X]),              if scale(e2) != min_jX
+//
+// OSIV1[iv,X] = OSIV0[iv,X]
+//   |           AddX(OSIV0[iv,X], ConX)
+//   |           AddX(ConX, OSIV0[iv,X])
+//
+// OSIV[iv,X]  = OSIV1[iv,X]
+//   |           AddX(OSIV1[iv,X], ConX)
+//   |           AddX(ConX, OSIV1[iv,X])
+//
+// where scale(IV[iv,X])               = 1L
+//       scale(MulX(_, ConX))          = get_con(ConX)
+//       scale(MulX(ConX, _))          = get_con(ConX)
+//       scale(LShiftX(_, ConI))       = java_shift_left((jX)1, get_con(ConI))
+//       scale(AddX(e1:SIV0, e2:SIV0)) = java_add(scale(e1), scale(e2))
+//       scale(SubX(0, e:SIV0))        = java_multiply(scale(e), -1L)
+//       scale(SubX(e1:SIV0, e2:SIV0)) = java_subtract(scale(e1), scale(e2))
+bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt, jlong* p_scale, Node** p_offset, int depth) {
   assert(bt == T_INT || bt == T_LONG, "unexpected int type");
   jlong scale = 0;  // to catch result from is_scaled_iv()
-  BasicType exp_bt = bt;
   exp = exp->uncast();
-  if (is_scaled_iv(exp, iv, exp_bt, &scale, p_short_scale)) {
+  if (is_scaled_iv(exp, iv, bt, &scale)) {
+    // if bt = T_INT (implies iv is int):
+    //   exp = MulI(        iv,  scale) = AddI(MulI(        iv,  scale), offset=0)      where scale is int
+    // if bt = T_LONG and iv is long:
+    //   exp = MulL(        iv,  scale) = AddL(MulL(        iv,  scale), offset=0)
+    // if bt = T_LONG and iv is int:
+    //   exp = MulL(ConvI2L(iv), scale) = AddL(MulL(ConvI2L(iv), scale), offset=0)
     if (p_scale != nullptr) {
       *p_scale = scale;
     }
@@ -2803,58 +2931,109 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
     }
     return true;
   }
-  if (exp_bt != bt) {
-    // We would now be matching inputs like (ConvI2L exp:(AddI (MulI iv S) E)).
-    // It's hard to make 32-bit arithmetic linear if it overflows.  Although we do
-    // cope with overflowing multiplication by S, it would be even more work to
-    // handle overflowing addition of E.  So we bail out here on ConvI2L input.
-    return false;
-  }
   int opc = exp->Opcode();
-  int which = 0;  // this is which subexpression we find the iv in
-  Node* offset = nullptr;
-  if (opc == Op_Add(exp_bt)) {
-    // Check for a scaled IV in (AddX (MulX iv S) E) or (AddX E (MulX iv S)).
-    if (is_scaled_iv(exp->in(which = 1), iv, bt, &scale, p_short_scale) ||
-        is_scaled_iv(exp->in(which = 2), iv, bt, &scale, p_short_scale)) {
-      offset = exp->in(which == 1 ? 2 : 1);  // the other argument
+  int which = 0;                // Input index of the subexpression we find the IV in.
+  Node* offset_other = nullptr; // Offset subexpression (the other input).
+  if (opc == Op_Add(bt)) {
+    jlong scale_which = 0;      // Scale of the IV subexpression.
+    // Check for a scaled IV in AddX(MulX(iv, S), E) or AddX(E, MulX(iv, S)).
+    if (is_scaled_iv(exp->in(which = 1), iv, bt, &scale_which) ||
+        is_scaled_iv(exp->in(which = 2), iv, bt, &scale_which)) {
+      offset_other = exp->in(which == 1 ? 2 : 1);  // The other argument.
+      // if bt = T_INT (implies iv is int):
+      //   exp->in(which) = MulI(        iv,  scale_which)       where scale_which is int
+      //   -> which = 1: exp                                                      = AddI(MulI(        iv,  scale_which), offset_other)  where scale_which is int
+      //   -> which = 2: exp = AddI(offset_other, MulI(        iv,  scale_which)) = AddI(MulI(        iv,  scale_which), offset_other)  where scale_which is int
+      // if bt = T_LONG and iv is long:
+      //   exp->in(which) = MulL(        iv,  scale_which)
+      //   -> which = 1: exp                                                      = AddL(MulL(        iv,  scale_which), offset_other)
+      //   -> which = 2: exp = AddL(offset_other, MulL(        iv,  scale_which)) = AddL(MulL(        iv,  scale_which), offset_other)
+      // if bt = T_LONG and iv is int:
+      //   exp->in(which) = MulL(ConvI2L(iv), scale_which)
+      //   -> which = 1: exp                                                      = AddL(MulL(ConvI2L(iv), scale_which), offset_other)
+      //   -> which = 2: exp = AddL(offset_other, MulL(ConvI2L(iv), scale_which)) = AddL(MulL(ConvI2L(iv), scale_which), offset_other)
       if (p_scale != nullptr) {
-        *p_scale = scale;
+        *p_scale = scale_which;
       }
       if (p_offset != nullptr) {
-        *p_offset = offset;
+        *p_offset = offset_other;
       }
       return true;
     }
-    // Check for more addends, like (AddX (AddX (MulX iv S) E1) E2), etc.
-    if (is_scaled_iv_plus_extra_offset(exp->in(1), exp->in(2), iv, bt, p_scale, p_offset, p_short_scale, depth) ||
-        is_scaled_iv_plus_extra_offset(exp->in(2), exp->in(1), iv, bt, p_scale, p_offset, p_short_scale, depth)) {
+    // Check for more addends, like AddX(AddX(MulX(iv, S), E1), E2), etc.
+    if (is_scaled_iv_plus_extra_offset(exp->in(1), exp->in(2), iv, bt, p_scale, p_offset, depth) ||
+        is_scaled_iv_plus_extra_offset(exp->in(2), exp->in(1), iv, bt, p_scale, p_offset, depth)) {
+      // See proof in is_scaled_iv_plus_extra_offset.
       return true;
     }
-  } else if (opc == Op_Sub(exp_bt)) {
-    if (is_scaled_iv(exp->in(which = 1), iv, bt, &scale, p_short_scale) ||
-        is_scaled_iv(exp->in(which = 2), iv, bt, &scale, p_short_scale)) {
-      // Match (SubX SIV[iv] E) as if (AddX SIV[iv] (SubX 0 E)), and
-      // match (SubX E SIV[iv]) as if (AddX E (SubX 0 SIV[iv])).
-      offset = exp->in(which == 1 ? 2 : 1);  // the other argument
+  } else if (opc == Op_Sub(bt)) {
+    jlong scale_which = 0; // Scale of the IV subexpression.
+    if (is_scaled_iv(exp->in(which = 1), iv, bt, &scale_which) ||
+        is_scaled_iv(exp->in(which = 2), iv, bt, &scale_which)) {
+      offset_other = exp->in(which == 1 ? 2 : 1);  // The other argument.
+      // if bt = T_INT (implies iv is int):
+      //   exp->in(which) = MulI(iv, scale_which)       where scale_which is int
+      //   if which=1:
+      //     exp = SubI(MulI(        iv,  scale_which),                offset_other )
+      //         = AddI(MulI(        iv,  scale_which), offset=SubI(0, offset_other))
+      //   if which=2:
+      //     exp = SubI(offset_other, MulI(        iv,                scale_which ))
+      //         = AddI(offset_other, MulI(        iv,  scale=SubI(0, scale_which)))
+      //         = AddI(MulI(        iv,  scale=SubI(0, scale_which)), offset_other)
+      //
+      // if bt = T_LONG and iv is long:
+      //   exp->in(which) = MulL(iv, scale_which)
+      //   if which=1:
+      //     exp = SubL(MulL(        iv,  scale_which),                offset_other )
+      //         = AddL(MulL(        iv,  scale_which), offset=SubL(0, offset_other))
+      //   if which=2:
+      //     exp = SubL(offset_other, MulL(        iv,                scale_which ))
+      //         = AddL(offset_other, MulL(        iv,  scale=SubL(0, scale_which)))
+      //         = AddL(MulL(        iv,  scale=SubL(0, scale_which)), offset_other)
+      //
+      // if bt = T_LONG and iv is int:
+      //   exp->in(which) = MulL(ConvI2L(iv), scale_which)
+      //   if which=1:
+      //     exp = SubL(MulL(ConvI2L(iv), scale_which),                offset_other )
+      //         = AddL(MulL(ConvI2L(iv), scale_which), offset=SubL(0, offset_other))
+      //   if which=2:
+      //     exp = SubL(offset_other, MulL(ConvI2L(iv),               scale_which ))
+      //         = AddL(offset_other, MulL(ConvI2L(iv), scale=SubL(0, scale_which)))
+      //         = AddL(MulL(ConvI2L(iv), scale=SubL(0, scale_which)), offset_other)
+      //
+      // Match SubX(SIV[iv], E) as if AddX(SIV[iv], SubX(0, E)), and
+      // match SubX(E, SIV[iv]) as if AddX(E, SubX(0, SIV[iv])).
+      //
+      // Let's compute the scale:
+      //   which=1: scale=        scale_which
+      //   which=2: scale=SubX(0, scale_which)
+      // We could have used the bt case distinction for SubX(0, scale_which),
+      // but instead we compute it in long for both cases. For int, this
+      // can only lead to a wrong result (i.e. go out of int range) for
+      // min_jint, so we exclude that case.
+      jlong scale_maybe_neg = scale_which;
       if (which == 2) {
         // We can't handle a scale of min_jint (or min_jlong) here as -1 * min_jint = min_jint
-        if (scale == min_signed_integer(bt)) {
+        if (scale_which == min_signed_integer(bt)) {
           return false;   // cannot negate the scale of the iv
         }
-        scale = java_multiply(scale, (jlong)-1);
+        // scale = SubL(0, scale_which) = MulL(scale_which, -1)
+        scale_maybe_neg = java_multiply(scale_which, (jlong)-1);
       }
       if (p_scale != nullptr) {
-        *p_scale = scale;
+        *p_scale = scale_maybe_neg;
       }
+      // Now let's compute the offset:
+      //   which=1: offset=SubX(0, offset_other)
+      //   which=2: offset=        offset_other
       if (p_offset != nullptr) {
+        Node* offset_maybe_neg = offset_other;
         if (which == 1) {  // must negate the extracted offset
-          Node* zero = integercon(0, exp_bt);
-          Node *ctrl_off = get_ctrl(offset);
-          offset = SubNode::make(zero, offset, exp_bt);
-          register_new_node(offset, ctrl_off);
+          Node* zero = integercon(0, bt);
+          offset_maybe_neg = SubNode::make(zero, offset_other, bt);
+          register_new_node(offset_maybe_neg, get_ctrl(offset_other));
         }
-        *p_offset = offset;
+        *p_offset = offset_maybe_neg;
       }
       return true;
     }
@@ -2863,26 +3042,54 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
 }
 
 // Helper for is_scaled_iv_plus_offset(), not called separately.
-// The caller encountered (AddX exp1 offset3) or (AddX offset3 exp1).
-// Here, exp1 is inspected to see if it is a simple linear transform of iv.
-// If so, the offset3 is combined with any other offset2 from inside exp1.
+// The caller encountered AddX(exp1, offset3) or AddX(offset3, exp1).
+// Here, exp1 is inspected to see if it is a simple affine transform of iv.
+// If so, the (constant) offset3 is combined with any other offset2 from inside exp1.
+//
+// We assume the input form is equivalent to:
+//   if bt = T_INT:
+//     exp = AddI(exp1, offset3)
+//   if bt = T_LONG:
+//     exp = AddL(exp1, offset3)
+//
+// On success, we guarantee this form:
+//   if bt = T_INT (implies iv is int):
+//     exp = AddI(MulI(        iv,  p_scale), p_offset)   where p_scale is int
+//   if bt = T_LONG and iv is long:
+//     exp = AddL(MulL(        iv,  p_scale), p_offset)
+//   if bt = T_LONG and iv is int:
+//     exp = AddL(MulL(ConvI2L(iv), p_scale), p_offset)
+//
 bool PhaseIdealLoop::is_scaled_iv_plus_extra_offset(Node* exp1, Node* offset3, Node* iv,
                                                     BasicType bt,
                                                     jlong* p_scale, Node** p_offset,
-                                                    bool* p_short_scale, int depth) {
+                                                    int depth) {
   // By the time we reach here, it is unlikely that exp1 is a simple iv*K.
-  // If is a linear iv transform, it is probably an add or subtract.
+  // If it is an affine iv transform, it is probably an add or subtract.
   // Let's collect the internal offset2 from it.
   Node* offset2 = nullptr;
   if (offset3->is_Con() &&
       depth < 2 &&
       is_scaled_iv_plus_offset(exp1, iv, bt, p_scale,
-                               &offset2, p_short_scale, depth+1)) {
+                               &offset2, depth+1)) {
+    // We know that:
+    //   AddI(AddI(x, offset2), offset3) = AddI(x, offset=AddI(offset2, offset3))
+    //   AddL(AddL(x, offset2), offset3) = AddL(x, offset=AddL(offset2, offset3))
+    //
+    // if bt = T_INT (implies iv is int):
+    //   exp1 =        AddI(MulI(        iv,  p_scale), offset2)                                            where p_scale is int
+    //   -> exp = AddI(AddI(MulI(        iv,  p_scale), offset2), offset3) = AddI(MulI(        iv,  p_scale), offset=AddI(offset2, offset3))
+    // if bt = T_LONG and iv is long:
+    //   exp1 =        AddL(MulL(        iv,  p_scale), offset2)
+    //   -> exp = AddL(AddL(MulL(        iv,  p_scale), offset2), offset3) = AddL(MulL(        iv,  p_scale), offset=AddL(offset2, offset3))
+    // if bt = T_LONG and iv is int:
+    //   exp1 =        AddL(MulL(ConvI2L(iv), p_scale), offset2)
+    //   -> exp = AddL(AddL(MulL(ConvI2L(iv), p_scale), offset2), offset3) = AddL(MulL(ConvI2L(iv), p_scale), offset=AddL(offset2, offset3))
+    //
     if (p_offset != nullptr) {
-      Node* ctrl_off2 = get_ctrl(offset2);
-      Node* offset = AddNode::make(offset2, offset3, bt);
-      register_new_node(offset, ctrl_off2);
-      *p_offset = offset;
+      Node* offset_sum = AddNode::make(offset2, offset3, bt);
+      register_new_node(offset_sum, get_ctrl(offset2));
+      *p_offset = offset_sum;
     }
     return true;
   }
@@ -3268,7 +3475,7 @@ Node* PhaseIdealLoop::ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNod
   }
   control = pre_end->in(0);
   ResourceMark rm;
-  Unique_Node_List wq;
+  Unique_Node_List<Node> wq;
   wq.push(node);
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
@@ -3434,7 +3641,7 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
 #ifdef ASSERT
   // Call collect_loop_core_nodes to exercise the assert that checks that it finds the right number of nodes
   if (empty_loop_with_extra_nodes_candidate(phase)) {
-    Unique_Node_List wq;
+    Unique_Node_List<Node> wq;
     collect_loop_core_nodes(phase, wq);
   }
 #endif
@@ -3529,7 +3736,7 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
       return false;
     }
     // Peel the loop to ensure there's a zero trip guard
-    Node_List old_new;
+    Node_List<Node> old_new;
     phase->do_peeling(this, old_new);
   }
 
@@ -3578,8 +3785,8 @@ bool IdealLoopTree::empty_loop_with_data_nodes(PhaseIdealLoop* phase) const {
   if (!cl->is_strip_mined() || !empty_loop_with_extra_nodes_candidate(phase)) {
     return false;
   }
-  Unique_Node_List empty_loop_nodes;
-  Unique_Node_List wq;
+  Unique_Node_List<Node> empty_loop_nodes;
+  Unique_Node_List<Node> wq;
 
   // Start from all data nodes in the loop body that are not one of the EMPTY_LOOP_SIZE nodes expected in an empty body
   enqueue_data_nodes(phase, empty_loop_nodes, wq);
@@ -3620,7 +3827,7 @@ bool IdealLoopTree::empty_loop_with_data_nodes(PhaseIdealLoop* phase) const {
   return true;
 }
 
-bool IdealLoopTree::process_safepoint(PhaseIdealLoop* phase, Unique_Node_List& empty_loop_nodes, Unique_Node_List& wq,
+bool IdealLoopTree::process_safepoint(PhaseIdealLoop* phase, Unique_Node_List<Node>& empty_loop_nodes, Unique_Node_List<Node>& wq,
                                       Node* sfpt) const {
   CountedLoopNode* cl = _head->as_CountedLoop();
   if (cl->outer_safepoint() == sfpt) {
@@ -3664,8 +3871,8 @@ bool IdealLoopTree::empty_loop_with_extra_nodes_candidate(PhaseIdealLoop* phase)
   return true;
 }
 
-void IdealLoopTree::enqueue_data_nodes(PhaseIdealLoop* phase, Unique_Node_List& empty_loop_nodes,
-                                       Unique_Node_List& wq) const {
+void IdealLoopTree::enqueue_data_nodes(PhaseIdealLoop* phase, Unique_Node_List<Node>& empty_loop_nodes,
+                                       Unique_Node_List<Node>& wq) const {
   collect_loop_core_nodes(phase, empty_loop_nodes);
   for (uint i = 0; i < _body.size(); ++i) {
     Node* n = _body.at(i);
@@ -3676,7 +3883,7 @@ void IdealLoopTree::enqueue_data_nodes(PhaseIdealLoop* phase, Unique_Node_List& 
 }
 
 // This collects the node that would be left if this body was empty
-void IdealLoopTree::collect_loop_core_nodes(PhaseIdealLoop* phase, Unique_Node_List& wq) const {
+void IdealLoopTree::collect_loop_core_nodes(PhaseIdealLoop* phase, Unique_Node_List<Node>& wq) const {
   uint before = wq.size();
   wq.push(_head->in(LoopNode::LoopBackControl));
   for (uint i = before; i < wq.size(); ++i) {
@@ -3727,7 +3934,7 @@ bool IdealLoopTree::do_one_iteration_loop(PhaseIdealLoop *phase) {
 
 //=============================================================================
 //------------------------------iteration_split_impl---------------------------
-bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_new) {
+bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop* phase, Node_List<Node>& old_new) {
   if (!_head->is_Loop()) {
     // Head could be a region with a NeverBranch that was added in beautify loops but the region was not
     // yet transformed into a LoopNode. Bail out and wait until beautify loops turns it into a Loop node.
@@ -3901,7 +4108,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
 
 //=============================================================================
 //------------------------------iteration_split--------------------------------
-bool IdealLoopTree::iteration_split(PhaseIdealLoop* phase, Node_List &old_new) {
+bool IdealLoopTree::iteration_split(PhaseIdealLoop* phase, Node_List<Node>& old_new) {
   // Recursively iteration split nested loops
   if (_child && !_child->iteration_split(phase, old_new)) {
     return false;
@@ -4030,7 +4237,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
 
   // Make sure there is an appropriate fill routine
   BasicType t = msg == nullptr ?
-    store->adr_type()->isa_aryptr()->elem()->array_element_basic_type() : T_VOID;
+    store->out_adr_type()->isa_aryptr()->elem()->array_element_basic_type() : T_VOID;
   const char* fill_name;
   if (msg == nullptr &&
       StubRoutines::select_fill_function(t, false, fill_name) == nullptr) {
@@ -4277,7 +4484,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
 #endif
   }
 
-  BasicType t = store->adr_type()->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType t = store->out_adr_type()->isa_aryptr()->elem()->array_element_basic_type();
   bool aligned = false;
   if (offset != nullptr && head->init_trip()->is_Con()) {
     int element_size = type2aelembytes(t);
@@ -4302,8 +4509,9 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   Node* result_ctrl;
   Node* result_mem;
   const TypeFunc* call_type = OptoRuntime::array_fill_Type();
-  CallLeafNode *call = new CallLeafNoFPNode(call_type, fill,
-                                            fill_name, TypeAryPtr::get_array_body_type(t));
+  const TypePtr* adr_type = TypeAryPtr::get_array_body_type(t);
+  assert(adr_type == mem_phi->out_adr_type(), "incorrect adr_type");
+  CallLeafNode* call = new CallLeafNoFPNode(call_type, fill, fill_name, adr_type, adr_type);
   uint cnt = 0;
   call->init_req(TypeFunc::Parms + cnt++, from);
   call->init_req(TypeFunc::Parms + cnt++, store_value);
