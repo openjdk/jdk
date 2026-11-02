@@ -69,7 +69,7 @@ import jdk.test.whitebox.WhiteBox;
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+VerifyAfterGC -Xbatch -XX:TieredStopAtLevel=1
- *                   -XX:+UseG1GC -XX:HeapBaseMinAddress=584m -Xms4g -Xmx4g
+ *                   -XX:HeapBaseMinAddress=584m -Xms4g -Xmx4g
  *                   -XX:CompileCommand=compileonly,${test.main.class}::store
  *                   ${test.main.class}
  */
