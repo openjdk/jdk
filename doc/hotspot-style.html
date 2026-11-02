@@ -268,8 +268,8 @@ Code</h4>
 synchronization context, such as a held mutex or at a safepoint. In such
 cases the variable should be declared <code>volatile</code> and it
 should NOT be accessed as a normal C++ lvalue. Rather, access should be
-performed via functions from <code>Atomic</code>, such as
-<code>Atomic::load</code>, <code>Atomic::store</code>, etc.</p>
+performed via functions from <code>AtomicAccess</code>, such as
+<code>AtomicAccess::load</code>, <code>AtomicAccess::store</code>, etc.</p>
 <p>This special formulation makes it more clear to maintainers that the
 variable is accessed concurrently in a lock-free manner.</p>
 <h3 id="source-files">Source Files</h3>

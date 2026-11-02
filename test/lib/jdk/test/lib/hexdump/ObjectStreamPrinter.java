@@ -28,6 +28,8 @@ import java.io.EOFException;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.ObjectStreamConstants;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.UTFDataFormatException;
 import java.nio.file.Files;
@@ -876,25 +878,81 @@ public class ObjectStreamPrinter implements HexPrinter.Formatter {
             return sb.toString();
         }
     }
+
+    static HexPrinter getHexPrinter(OutputStream os) {
+        return HexPrinter.simple()
+                         .dest(os instanceof PrintStream ps ? ps : new PrintStream(os))
+                         .formatter(ObjectStreamPrinter.formatter(), "; ", 100);
+    }
+
+    // ===== programmatic entry points =====
+
     /**
-     * Simple utility to open and print contents of one or more files as a serialized object stream.
+     * Decodes and prints serialized data read from {@code i} and sends decoded output
+     * to {@code o}.
+     *
+     * @param i the InputStream to decode
+     * @param o the output destination
+     */
+    public static void print(InputStream i, OutputStream o) {
+        getHexPrinter(o).format(i);
+    }
+
+    /**
+     * Decodes and prints serialized data read from {@code i} and sends decoded output
+     * to System.out.
+     *
+     * @param i the InputStream to decode
+     */
+    public static void print(InputStream i) {
+        print(i, System.out);
+    }
+
+    /**
+     * Decodes and prints serialized data from {@code ba} and sends decoded output
+     * to {@code o}.
+     *
+     * @param ba byte array
+     * @param o the output destination
+     */
+    public static void print(byte[] ba, OutputStream o) {
+        getHexPrinter(o).format(ba);
+    }
+
+    /**
+     * Decodes and prints serialized data from {@code ba} and sends decoded output
+     * to System.out.
+     *
+     * @param ba byte array
+     */
+    public static void print(byte[] ba) {
+        print(ba, System.out);
+    }
+
+    /**
+     * Command line utility to open and print contents of one or more files as a
+     * serialized object stream.
+     *
      * @param args file names
      */
     public static void main(String[] args) {
         if (args.length < 1) {
-            System.out.println("Usage:  <object stream files>");
-            return;
+            System.out.println("Usage: object-stream-file ...");
+            System.out.println("       use - for stdin");
+            System.exit(1);
         }
-        ObjectStreamPrinter fmt = ObjectStreamPrinter.formatter();
-        for (String file : args) {
-            System.out.printf("%s%n", file);
-            try (InputStream is = Files.newInputStream(Path.of(file))) {
 
-                DataInputStream dis = new DataInputStream(is);
-                HexPrinter p = HexPrinter.simple()
-                        .dest(System.out)
-                        .formatter(ObjectStreamPrinter.formatter(), "; ", 100);
-                p.format(dis);
+        for (String file : args) {
+            boolean useStdin = "-".equals(file);
+
+            if (args.length > 1) {
+                System.out.printf("%n>>> %s%n%n", useStdin ? "(stdin)" : file);
+            }
+
+            // NOTE: if stdin is used, this closes stdin after processing. Maybe this
+            // is ok since this is main() and we exit afterward.
+            try (InputStream is = useStdin ? System.in : Files.newInputStream(Path.of(file))) {
+                getHexPrinter(System.out).format(is);
             } catch (EOFException eof) {
                 System.out.println();
             } catch (IOException ioe) {

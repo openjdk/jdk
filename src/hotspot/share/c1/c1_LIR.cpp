@@ -1265,8 +1265,10 @@ void LIR_List::set_cmp_oprs(LIR_Op* op) {
     case lir_cas_long:
     case lir_cas_obj:
     case lir_cas_int:
+      // CAS returns 1 on success and 0 on failure. Compare against 1 so
+      // a subsequent lir_cond_equal branch or conditional move tests for success.
       _cmp_opr1 = op->as_OpCompareAndSwap()->result_opr();
-      _cmp_opr2 = LIR_OprFact::intConst(0);
+      _cmp_opr2 = LIR_OprFact::intConst(1);
       break;
 #if INCLUDE_ZGC
     case lir_xloadbarrier_test:

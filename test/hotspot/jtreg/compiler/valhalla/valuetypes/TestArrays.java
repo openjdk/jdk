@@ -2021,7 +2021,11 @@ public class TestArrays {
     @IR(applyIf = {"UseArrayFlattening", "false"},
         failOn = {ALLOC, ALLOC_ARRAY, LOAD_UNKNOWN_VALUE})
     public Object test79(Object[] array, int i) {
-        NonValueClass i1 = (NonValueClass)array[0];
+        Object element = array[0];
+        if (element == null) {
+            return null;
+        }
+        NonValueClass i1 = (NonValueClass)element;
         Object o = array[1];
         return array[i];
     }
@@ -2030,6 +2034,7 @@ public class TestArrays {
     public void test79_verifier() {
         NonValueClass obj = new NonValueClass(rI);
         NonValueClass[] array = new NonValueClass[2];
+        array[0] = obj;
         array[1] = obj;
         Object result = test79(array, 1);
         Asserts.assertEquals(result, obj);
@@ -2042,7 +2047,11 @@ public class TestArrays {
     @IR(applyIf = {"UseArrayFlattening", "false"},
         failOn = {ALLOC, ALLOC_ARRAY, LOAD_UNKNOWN_VALUE})
     public Object test80(Object[] array, int i) {
-        NotFlattenable vt = (NotFlattenable)array[0];
+        Object element = array[0];
+        if (element == null) {
+            return null;
+        }
+        NotFlattenable vt = (NotFlattenable)element;
         Object o = array[1];
         return array[i];
     }
@@ -2051,6 +2060,7 @@ public class TestArrays {
     public void test80_verifier() {
         NotFlattenable vt = new NotFlattenable();
         NotFlattenable[] array = (NotFlattenable[])ValueClass.newNullRestrictedNonAtomicArray(NotFlattenable.class, 2, NotFlattenable.DEFAULT);
+        array[0] = vt;
         array[1] = vt;
         Object result = test80(array, 1);
         Asserts.assertEquals(result, vt);
@@ -2124,7 +2134,11 @@ public class TestArrays {
     @IR(applyIf = {"UseArrayFlattening", "false"},
             failOn = {ALLOC, ALLOC_ARRAY, LOAD_UNKNOWN_VALUE, STORE_UNKNOWN_VALUE, INLINE_ARRAY_NULL_GUARD})
     public void test83(Object[] array, Object o) {
-        NonValueClass i = (NonValueClass)array[0];
+        Object element = array[0];
+        if (element == null) {
+            return;
+        }
+        NonValueClass i = (NonValueClass)element;
         array[1] = o;
     }
 
@@ -2133,6 +2147,8 @@ public class TestArrays {
         NonValueClass obj = new NonValueClass(rI);
         NonValueClass[] array1 = new NonValueClass[2];
         Object[] array2 = new Object[2];
+        array1[0] = obj;
+        array2[0] = obj;
         test83(array1, obj);
         Asserts.assertEquals(array1[1], obj);
         test83(array2, null);

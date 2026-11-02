@@ -200,9 +200,6 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _osr_end_Type;
   static const TypeFunc* _register_finalizer_Type;
   static const TypeFunc* _vthread_transition_Type;
-#if INCLUDE_JFR
-  static const TypeFunc* _class_id_load_barrier_Type;
-#endif // INCLUDE_JFR
   static const TypeFunc* _dtrace_method_entry_exit_Type;
   static const TypeFunc* _dtrace_object_alloc_Type;
 
@@ -246,9 +243,6 @@ public:
   static void vthread_end_transition_C(oopDesc* vt, jboolean hide, JavaThread* current);
 
 private:
-
-  // Implicit exception support
-  static void throw_null_exception_C(JavaThread* thread);
 
   // Exception handling
   static address handle_exception_C       (JavaThread* current);
@@ -312,10 +306,6 @@ private:
 
   static UncommonTrapBlob* uncommon_trap_blob()                  { return _uncommon_trap_blob; }
   static ExceptionBlob*    exception_blob()                      { return _exception_blob; }
-
-  // Implicit exception support
-  static void throw_div0_exception_C      (JavaThread* thread);
-  static void throw_stack_overflow_error_C(JavaThread* thread);
 
   // Exception handling
   static address rethrow_stub()             { return _rethrow_Java; }
@@ -771,13 +761,6 @@ private:
   static inline const TypeFunc* vthread_end_transition_Type() {
     return vthread_transition_Type();
   }
-
-#if INCLUDE_JFR
-  static inline const TypeFunc* class_id_load_barrier_Type() {
-    assert(_class_id_load_barrier_Type != nullptr, "should be initialized");
-    return _class_id_load_barrier_Type;
-  }
-#endif // INCLUDE_JFR
 
   static const TypeFunc* load_unknown_value_Type();
   static const TypeFunc* store_unknown_value_Type();

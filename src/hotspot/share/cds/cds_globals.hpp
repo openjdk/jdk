@@ -105,7 +105,8 @@
                                                                             \
   product(ccstr, AOTMode, nullptr,                                          \
           "Specifies how AOTCache should be created or used. Valid values " \
-          "are: off, record, create, auto, on; the default is auto")        \
+          "are: off, record, create, auto, required, and (deprecated) on; "   \
+          "the default is auto")                                            \
           constraint(AOTModeConstraintFunc, AtParse)                        \
                                                                             \
   product(ccstr, AOTConfiguration, nullptr,                                 \
@@ -134,6 +135,10 @@
           "Use parallel relocation code to speed up startup.")              \
                                                                             \
   /* flags to control training and deployment modes  */                     \
+                                                                            \
+  product(bool, AOTIgnoreIncompatibleCacheInTraining, false, DIAGNOSTIC,    \
+          "If an incompatible AOT cache is specified during AOT training, " \
+          "ignore it instead of giving an error")                           \
                                                                             \
   product(bool, AOTRecordTraining, false, DIAGNOSTIC,                       \
           "Request output of training data for improved deployment.")       \

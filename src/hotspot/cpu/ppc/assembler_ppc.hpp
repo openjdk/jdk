@@ -771,24 +771,24 @@ class Assembler : public AbstractAssembler {
     MTVSCR_OPCODE  = (4u  << OPCODE_SHIFT | 1604u     ),
     MFVSCR_OPCODE  = (4u  << OPCODE_SHIFT | 1540u     ),
 
-    // AES (introduced with Power 8)
+    // AES
     VCIPHER_OPCODE      = (4u  << OPCODE_SHIFT | 1288u),
     VCIPHERLAST_OPCODE  = (4u  << OPCODE_SHIFT | 1289u),
     VNCIPHER_OPCODE     = (4u  << OPCODE_SHIFT | 1352u),
     VNCIPHERLAST_OPCODE = (4u  << OPCODE_SHIFT | 1353u),
     VSBOX_OPCODE        = (4u  << OPCODE_SHIFT | 1480u),
 
-    // SHA (introduced with Power 8)
+    // SHA
     VSHASIGMAD_OPCODE   = (4u  << OPCODE_SHIFT | 1730u),
     VSHASIGMAW_OPCODE   = (4u  << OPCODE_SHIFT | 1666u),
 
-    // Vector Binary Polynomial Multiplication (introduced with Power 8)
+    // Vector Binary Polynomial Multiplication
     VPMSUMB_OPCODE      = (4u  << OPCODE_SHIFT | 1032u),
     VPMSUMD_OPCODE      = (4u  << OPCODE_SHIFT | 1224u),
     VPMSUMH_OPCODE      = (4u  << OPCODE_SHIFT | 1096u),
     VPMSUMW_OPCODE      = (4u  << OPCODE_SHIFT | 1160u),
 
-    // Vector Permute and Xor (introduced with Power 8)
+    // Vector Permute and Xor
     VPERMXOR_OPCODE     = (4u  << OPCODE_SHIFT |   45u),
 
     // Icache and dcache related instructions
@@ -917,7 +917,7 @@ class Assembler : public AbstractAssembler {
     bcondCRbiIs1_bhintIsTaken    = bcondCRbiIs1 | bhintatIsTaken,
   };
 
-  // Elemental Memory Barriers (>=Power 8)
+  // Elemental Memory Barriers
   enum Elemental_Membar_mask_bits {
     StoreStore = 1 << 0,
     StoreLoad  = 1 << 1,
@@ -1838,7 +1838,6 @@ class Assembler : public AbstractAssembler {
   inline void mfvrsave(Register d);
   // Timebase
   inline void mftb(Register d);
-  // Introduced with Power 8:
   // Data Stream Control Register
   inline void mtdscr(Register s1);
   inline void mfdscr(Register d );
@@ -2015,18 +2014,18 @@ class Assembler : public AbstractAssembler {
   inline void ptesync();
   inline void eieio();
   inline void isync();
-  inline void elemental_membar(int e); // Elemental Memory Barriers (>=Power 8)
+  inline void elemental_membar(int e); // Elemental Memory Barriers
 
   // Wait instructions for polling. Attention: May result in SIGILL.
   inline void wait();
   inline void waitrsv();
 
   // atomics
-  inline void lbarx_unchecked(Register d, Register a, Register b, int eh1 = 0); // >=Power 8
-  inline void lharx_unchecked(Register d, Register a, Register b, int eh1 = 0); // >=Power 8
+  inline void lbarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
+  inline void lharx_unchecked(Register d, Register a, Register b, int eh1 = 0);
   inline void lwarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
   inline void ldarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
-  inline void lqarx_unchecked(Register d, Register a, Register b, int eh1 = 0); // >=Power 8
+  inline void lqarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
   inline void lbarx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
   inline void lharx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
   inline void lwarx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
@@ -2052,7 +2051,6 @@ class Assembler : public AbstractAssembler {
   inline void smt_yield();
   inline void smt_mdoio();
   inline void smt_mdoom();
-  // >= Power8
   inline void smt_miso();
 
   // trap instructions
@@ -2486,24 +2484,24 @@ class Assembler : public AbstractAssembler {
   // Deliver A Random Number (introduced with POWER9)
   inline void darn( Register d, int l = 1 /*L=CRN*/);
 
-  // AES (introduced with Power 8)
+  // AES
   inline void vcipher(     VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vcipherlast( VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vncipher(    VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vncipherlast(VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vsbox(       VectorRegister d, VectorRegister a);
 
-  // SHA (introduced with Power 8)
+  // SHA
   inline void vshasigmad(VectorRegister d, VectorRegister a, bool st, int six);
   inline void vshasigmaw(VectorRegister d, VectorRegister a, bool st, int six);
 
-  // Vector Binary Polynomial Multiplication (introduced with Power 8)
+  // Vector Binary Polynomial Multiplication
   inline void vpmsumb(  VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vpmsumd(  VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vpmsumh(  VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vpmsumw(  VectorRegister d, VectorRegister a, VectorRegister b);
 
-  // Vector Permute and Xor (introduced with Power 8)
+  // Vector Permute and Xor
   inline void vpermxor( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
 
   // The following encoders use r0 as second operand. These instructions
