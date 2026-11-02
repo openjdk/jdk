@@ -25,6 +25,10 @@
 
 package sun.security.ssl;
 
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectOutputStream;
+
 import sun.security.util.ArrayUtil;
 import sun.security.util.CurveDB;
 import sun.security.util.ECUtil;
@@ -199,6 +203,7 @@ public class Hybrid {
         private final KeyFactory left;
         private final KeyFactory right;
         private final int leftlen;
+        private final int rightlen;
         private final String leftname;
         private final String rightname;
 
@@ -209,18 +214,21 @@ public class Hybrid {
             this.name = name;
             this.left = getKeyFactory(left);
             this.right = getKeyFactory(right);
-            this.leftlen = leftPublicLength(left);
+            this.leftlen = publicLength(left);
+            this.rightlen = publicLength(right);
             this.leftname = left;
             this.rightname = right;
         }
 
-        private static int leftPublicLength(String name) {
+        private static int publicLength(String name) {
             return switch (name.toLowerCase(Locale.ROOT)) {
                 case "secp256r1" -> 65;
                 case "secp384r1" -> 97;
+                case "x25519" -> 32;
                 case "ml-kem-768" -> 1184;
+                case "ml-kem-1024" -> 1568;
                 default -> throw new IllegalArgumentException(
-                        "Unknown named group: " + name);
+                        "Unknown component algorithm: " + name);
             };
         }
 
@@ -235,11 +243,11 @@ public class Hybrid {
                     throw new InvalidKeyException(
                             "Key contains null key data");
                 }
-                if (key.length <= leftlen) {
+                int expectedLen = leftlen + rightlen;
+                if (key.length != expectedLen) {
                     throw new InvalidKeyException(
-                            "Hybrid key length " + key.length +
-                                    " is too short and its left key length is " +
-                                    leftlen);
+                            "Invalid hybrid key length " + key.length +
+                                    ", expected " + expectedLen);
                 }
 
                 byte[] leftKeyBytes = Arrays.copyOfRange(key, 0, leftlen);
@@ -357,7 +365,7 @@ public class Hybrid {
                 return new Handler(null, null, left.newDecapsulator(pk.left),
                         right.newDecapsulator(pk.right));
             }
-            throw new InvalidKeyException();
+            throw new InvalidKeyException("Incorrect private key for " + name);
         }
     }
 
@@ -491,6 +499,11 @@ public class Hybrid {
         public boolean isDestroyed() {
             return destroyed;
         }
+
+        private void writeObject(ObjectOutputStream out) throws IOException {
+            throw new NotSerializableException(
+                    "Hybrid shared secret must not be serialized");
+        }
     }
 
     /**
@@ -574,6 +587,11 @@ public class Hybrid {
         @Override
         public byte[] getEncoded() {
             return null;
+        }
+
+        private void writeObject(ObjectOutputStream out) throws IOException {
+            throw new NotSerializableException(
+                    "Hybrid private key must not be serialized");
         }
     }
 }

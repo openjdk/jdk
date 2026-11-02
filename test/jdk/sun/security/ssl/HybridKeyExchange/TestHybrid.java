@@ -28,12 +28,16 @@
  * @modules java.base/sun.security.ssl
  * @run main/othervm TestHybrid
 */
+import java.io.ByteArrayOutputStream;
+import java.io.NotSerializableException;
+import java.io.ObjectOutputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidParameterException;
 import java.security.InvalidKeyException;
 import java.security.Provider;
+import java.security.PublicKey;
 import java.security.Security;
 import java.security.spec.NamedParameterSpec;
 import java.util.Arrays;
@@ -62,6 +66,7 @@ public class TestHybrid {
 
         for (HybridGroup group : HYBRID_GROUPS) {
             testKPG(p, group);
+            testRawKeyLen(p, group);
         }
 
         testKEM(p, HYBRID_GROUPS[0]);
@@ -123,6 +128,8 @@ public class TestHybrid {
         if (enc.key().getFormat() != null || enc.key().getEncoded() != null) {
             throw new RuntimeException("Hybrid secret must be opaque");
         }
+        testNotSerializable(kp.getPrivate(), "hybrid private key");
+        testNotSerializable(enc.key(), "hybrid shared secret");
         byte[] ciphertext = enc.encapsulation();
 
         byte[] badCiphertext = Arrays.copyOf(ciphertext,
@@ -149,6 +156,60 @@ public class TestHybrid {
             throw new RuntimeException("Accepted a key for another hybrid group");
         } catch (InvalidKeyException expected) {
             System.out.println("Rejected a key for another hybrid group");
+        }
+    }
+
+    private static void testRawKeyLen(Provider provider, HybridGroup group)
+            throws Exception {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(group.name,
+                provider);
+        byte[] encoded = kpg.generateKeyPair().getPublic().getEncoded();
+        KEM kem = KEM.getInstance(group.name, provider);
+
+        testInvalidLen(kem, group.name,
+                Arrays.copyOf(encoded, encoded.length - 1));
+        testInvalidLen(kem, group.name,
+                Arrays.copyOf(encoded, encoded.length + 1));
+    }
+
+    private static void testInvalidLen(KEM kem, String alg,
+            byte[] encoded) throws Exception {
+        try {
+            kem.newEncapsulator(new RawPublicKey(alg, encoded));
+            throw new RuntimeException("Accepted invalid RAW key length for " +
+                    alg);
+        } catch (InvalidKeyException expected) {
+            System.out.println("Rejected invalid RAW key length for " +
+                    alg);
+        }
+    }
+
+    private static void testNotSerializable(Object obj, String name)
+            throws Exception {
+        try (var bytes = new ByteArrayOutputStream();
+                var output = new ObjectOutputStream(bytes)) {
+            output.writeObject(obj);
+            throw new RuntimeException("Serialized " + name);
+        } catch (NotSerializableException expected) {
+            System.out.println("Rejected serialization of " + name);
+        }
+    }
+
+    private record RawPublicKey(String alg, byte[] encoded)
+            implements PublicKey {
+        @Override
+        public String getAlgorithm() {
+            return alg;
+        }
+
+        @Override
+        public String getFormat() {
+            return "RAW";
+        }
+
+        @Override
+        public byte[] getEncoded() {
+            return encoded.clone();
         }
     }
 }
