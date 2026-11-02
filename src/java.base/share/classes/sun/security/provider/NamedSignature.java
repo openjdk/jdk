@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,9 +78,12 @@ public abstract class NamedSignature extends SignatureSpi {
     protected void engineInitVerify(PublicKey publicKey) throws InvalidKeyException {
         // translate also check the key
         var nk = (NamedX509Key) fac.toNamedKey(publicKey);
-        pname = nk.getParams().getName();
-        pubKey = nk.getRawBytes();
-        pk2 = implCheckPublicKey(pname, pubKey);
+        var newName = nk.getParams().getName();
+        var newKey = nk.getRawBytes();
+        var newCheckedKey = implCheckPublicKey(newName, newKey);
+        pname = newName;
+        pubKey = newKey;
+        pk2 = newCheckedKey;
         secKey = null;
         bout.reset();
     }
@@ -89,9 +92,12 @@ public abstract class NamedSignature extends SignatureSpi {
     protected void engineInitSign(PrivateKey privateKey) throws InvalidKeyException {
         // translate also check the key
         var nk = (NamedPKCS8Key) fac.toNamedKey(privateKey);
-        pname = nk.getParams().getName();
-        secKey = nk.getExpanded();
-        sk2 = implCheckPrivateKey(pname, secKey);
+        var newName = nk.getParams().getName();
+        var newKey = nk.getExpanded();
+        var newCheckedKey = implCheckPrivateKey(newName, newKey);
+        pname = newName;
+        secKey = newKey;
+        sk2 = newCheckedKey;
         pubKey = null;
         bout.reset();
     }
