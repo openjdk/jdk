@@ -816,6 +816,13 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
   }
 }
 
+void LIR_Assembler::decode_heap_oop(LIR_Opr src, LIR_Opr dest) {
+  assert(UseCompressedOops, "should only be used with compressed oops");
+  Register dst = dest->as_pointer_register();
+  move_regs(src->as_pointer_register(), dst);
+  __ decode_heap_oop(dst);
+}
+
 void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
   assert(src->is_register(), "should not call otherwise");
   assert(dest->is_stack(), "should not call otherwise");
@@ -2434,7 +2441,7 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr de
   if (dest->is_single_cpu()) {
     // first move left into dest so that left is not destroyed by the shift
     Register value = dest->as_register();
-    count = count & 0x1F; // Java spec
+    count &= right_n_bits(LogBitsPerInt); // Java spec
 
     move_regs(left->as_register(), value);
     switch (code) {
@@ -2446,7 +2453,7 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr de
   } else if (dest->is_double_cpu()) {
     // first move left into dest so that left is not destroyed by the shift
     Register value = dest->as_register_lo();
-    count = count & 0x1F; // Java spec
+    count &= right_n_bits(LogBitsPerLong); // Java spec
 
     move_regs(left->as_register_lo(), value);
     switch (code) {
