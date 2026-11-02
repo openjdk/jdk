@@ -138,6 +138,9 @@ public sealed interface ValueLayout extends MemoryLayout
      * method. As such, the signedness of an integral value layout
      * allows clients to select the correct widening mode for values
      * associated with that layout.
+     *
+     * @sealedGraph
+     * @since 28
      */
     sealed interface OfIntegral extends ValueLayout permits ValueLayout.OfByte,
             ValueLayout.OfShort, ValueLayout.OfInt, ValueLayout.OfLong {
@@ -251,6 +254,7 @@ public sealed interface ValueLayout extends MemoryLayout
 
         /**
          * {@inheritDoc}
+         * @since 28
          */
         @Override
         OfByte withSignedness(boolean signed);
@@ -329,6 +333,7 @@ public sealed interface ValueLayout extends MemoryLayout
 
         /**
          * {@inheritDoc}
+         * @since 28
          */
         @Override
         OfShort withSignedness(boolean signed);
@@ -371,6 +376,7 @@ public sealed interface ValueLayout extends MemoryLayout
 
         /**
          * {@inheritDoc}
+         * @since 28
          */
         @Override
         OfInt withSignedness(boolean signed);
@@ -448,6 +454,7 @@ public sealed interface ValueLayout extends MemoryLayout
 
         /**
          * {@inheritDoc}
+         * @since 28
          */
         @Override
         OfLong withSignedness(boolean signed);
