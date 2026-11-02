@@ -1088,7 +1088,8 @@ void ShenandoahFullGC::compact_humongous_objects() {
           if (c == new_start) {
             r->make_humongous_start_bypass(original_affiliation);
           } else {
-            r->make_humongous_cont_bypass(original_affiliation, new_start);
+            assert(new_start <= 0xffffffffL, "Region index must fit in 32 bits");
+            r->make_humongous_cont_bypass(original_affiliation, (uint32_t) new_start);
           }
 
           // Trailing region may be non-full, record the remainder there
