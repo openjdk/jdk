@@ -498,6 +498,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
       Label not_null;
       __ cbnz(r0, not_null);
       // Returned value is null, zero all return registers because they may belong to oop fields
+      __ mov(j_rarg0, zr);
       __ mov(j_rarg1, zr);
       __ mov(j_rarg2, zr);
       __ mov(j_rarg3, zr);
@@ -2415,7 +2416,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   }
 
   // if we don't know anything, just go through the generic arraycopy
-  if (default_type == nullptr // || basic_type == T_OBJECT
+  if (default_type == nullptr || !default_type->is_loaded() // || basic_type == T_OBJECT
       ) {
     Label done;
     assert(src == r1 && src_pos == r2, "mismatch in calling convention");
