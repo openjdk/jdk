@@ -295,10 +295,6 @@ int revival_mapping_allocate(void* vaddr, size_t length, int prot) {
  */
 int revival_mapping_docopy(const char* filename, void* vaddr, size_t length, size_t offset) {
     logd("revival_mapping_docopy: %s: %p size 0x%lx pos=%zu", filename, vaddr, length, offset);
-    if (length < 8 || length % 8 != 0) {
-        // length is expected to be at least a multiple of 8 bytes (and likely a page size multiple)
-        error("revival_mapping_docopy: unsupported mapping length: 0x%lx", length);
-    }
     if (!mem_canwrite_pd(vaddr, length)) {
         warn("revival_mapping_docopy: cannot write at vaddr 0x%p length " SIZE_FORMAT_X_0, vaddr, length);
         return -1;
@@ -318,17 +314,19 @@ int revival_mapping_docopy(const char* filename, void* vaddr, size_t length, siz
         fclose(f);
         return -1;
     }
-    // Read file at offset and copy bytes to vaddr.
-    // Test we can read and write.  Will overwrite the test write in the loop below.
+    // Read file at offset and copy bytes to vaddr.  Test we can read and write.  Will overwrite the test write below.
     uint64_t* p = (uint64_t*) vaddr;
     *p = 0xb19d1b5;
-    for (size_t i = 0; i < length / 8; i++) {
-        e = (int) fread(p++, 8, 1, f);
-        if (e != 1) {
-            warn("revival_mapping_docopy: fread failed: returns %d at %p pos=%zu : %s", e, p, i, strerror(errno));
-            fclose(f);
-            return -1;
+
+    size_t bytes = fread(vaddr, 1, length, f);
+    if (bytes != length) {
+        if (ferror(f)) {
+            warn("revival_mapping_docopy: fread into %p failed: returns 0x%lx: %d: %s", p, bytes, errno, strerror(errno));
+        } else {
+            warn("revival_mapping_docopy: fread into %p failed: returns 0x%lx", p, bytes);
         }
+        fclose(f);
+        return -1;
     }
     fclose(f);
     return 0;
@@ -567,9 +565,8 @@ int mappings_file_read(const char* corename, const char* dirname, const char* ma
         break;
     }
     if (logLevel >= LOG_VERBOSE) {
-        warn("mappings_file_read: read %d lines, Mappings: %d  map allocs: %d  Copies: %d  M converted to C: %d",
-            lines, M_count, m_count, C_count, MtoC_count);
-        warn("delayedCopySegments.size = %d", (int) delayedCopySegments.size());
+        warn("mappings_file_read: read %d lines, Mappings: %d  map allocs: %d  Copies: %d  M converted to C: %d delayedCopySegments.size = %d",
+            lines, M_count, m_count, C_count, MtoC_count, (int) delayedCopySegments.size());
     }
     if (core_fd >= 0) {
         close(core_fd);

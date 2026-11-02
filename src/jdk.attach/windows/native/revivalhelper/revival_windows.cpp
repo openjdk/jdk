@@ -342,7 +342,7 @@ bool mem_canwrite_pd(void* vaddr, size_t length) {
     }
 }
 
-bool enableLazyCopy = false;
+bool enableLazyCopy = true;
 
 bool can_lazycopy_pd(void* addr) {
     if (!enableLazyCopy) {

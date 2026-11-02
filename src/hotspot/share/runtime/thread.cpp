@@ -599,9 +599,6 @@ struct revival_data {
   void* vm_thread;
   void* tty;
   void* parse_and_execute;
-  void* info1;
-  void* info2;
-  void* info3;
 };
 
 struct revival_data vm_revival_data;
@@ -637,6 +634,7 @@ void* Thread::process_revival() {
   LogVMOutput = 0;
   NativeMemoryTracking = nullptr;
   UnlockDiagnosticVMOptions = true;
+  DebuggingContext::force(); // Disable asserts
   Mutex::clear_all_for_revive();
 
   // Initialize the revival data structure to return:

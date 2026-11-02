@@ -22,20 +22,19 @@
  */
 
 /*
- * @test id=AbortOnException_Other
- * @summary Test process revival for serviceability: jcmd on a core file (AbortVMOnException).
+ * @test id=AbortVMOnException_Other
+ * @summary Test jcmd on a core file (AbortVMOnException).
  * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
  *
  * @run main/othervm JCmdRevival abortvmonexception help VM.version_UNEXPECTED_ARG VM.unknowncommand VM.flags_UNKNOWN_ARG
  *
- * @comment Test all jcmds using the AbortOnException crash method, split across several test definitions
- * to avoid overflowing the log.
+ * @comment Test jcmds using AbortVMOnException, split across several test definitions to avoid overflowing the log.
  */
 
 /*
- * @test id=AbortOnException_Compiler_1
- * @summary Test process revival for serviceability: jcmd on a core file (AbortVMOnException).
+ * @test id=AbortVMOnException_Compiler_1
+ * @summary Test jcmd on a core file (AbortVMOnException).
  * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
  *
@@ -45,8 +44,8 @@
  */
 
 /*
- * @test id=AbortOnException_Compiler_2
- * @summary Test process revival for serviceability: jcmd on a core file (AbortVMOnException).
+ * @test id=AbortVMOnException_Compiler_2
+ * @summary Test jcmd on a core file (AbortVMOnException).
  * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
  *
@@ -54,8 +53,8 @@
  */
 
 /*
- * @test id=AbortOnException_GC
- * @summary Test process revival for serviceability: jcmd on a core file (AbortVMOnException).
+ * @test id=AbortVMOnException_GC
+ * @summary Test jcmd on a core file (AbortVMOnException).
  * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
  *
@@ -63,8 +62,8 @@
  */
 
 /*
- * @test id=AbortOnException_Thread
- * @summary Test process revival for serviceability: jcmd on a core file (AbortVMOnException).
+ * @test id=AbortVMOnException_Thread
+ * @summary Test jcmd on a core file (AbortVMOnException).
  * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
  *
@@ -72,8 +71,8 @@
  */
 
 /*
- * @test id=AbortOnException_VM_1
- * @summary Test process revival for serviceability: jcmd on a core file (AbortVMOnException).
+ * @test id=AbortVMOnException_VM_1
+ * @summary Test jcmd on a core file (AbortVMOnException).
  * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
  *
@@ -81,8 +80,8 @@
  */
 
 /*
- * @test id=AbortOnException_VM_2
- * @summary Test process revival for serviceability: jcmd on a core file (AbortVMOnException).
+ * @test id=AbortVMOnException_VM_2
+ * @summary Test jcmd on a core file (AbortVMOnException).
  * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
  *
@@ -90,8 +89,8 @@
  */
 
 /*
- * @test id=AbortOnException_VM_3
- * @summary Test process revival for serviceability: jcmd on a core file (AbortVMOnException).
+ * @test id=AbortVMOnException_VM_3
+ * @summary Test jcmd on a core file (AbortVMOnException).
  * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
  *
@@ -99,8 +98,8 @@
  */
 
 /*
- * @test id=AbortOnException_VM_4
- * @summary Test process revival for serviceability: jcmd on a core file (AbortVMOnException).
+ * @test id=AbortVMOnException_VM_4
+ * @summary Test jcmd on a core file (AbortVMOnException).
  * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
  *
@@ -109,7 +108,7 @@
 
 /*
  * @test id=OOM
- * @summary Test process revival for serviceability: jcmd on a core file (OOM crash).
+ * @summary Test jcmd on a core file (OOM crash).
  * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
  *
@@ -120,7 +119,7 @@
 
 /*
  * @test id=CICrash
- * @summary Test process revival for serviceability: jcmd on a core file (CI crash, debug VM).
+ * @summary Test jcmd on a core file (CI crash, debug VM).
  * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
  * @requires vm.debug == true
@@ -131,7 +130,19 @@
  * @comment Compiler.CodeHeap_Analytics alone is likely to overrun the log.
  */
 
+/*
+ * @test id=LingeredAppCrash
+ * @summary Test jcmd on a core file: LingeredApp crash.
+ * @requires os.family == "linux" | os.family == "windows"
+ * @library /test/lib
+ *
+ * @run main/othervm JCmdRevival lingeredappcrash Thread.print GC.heap_info
+ *
+ * @comment Test some jcmds using LingeredApp set to crash in native code.
+ */
+
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -143,10 +154,12 @@ import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
+import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.classloader.GeneratingClassLoader;
 import jdk.test.lib.hprof.HprofParser;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.OutputBuffer;
 import jdk.test.lib.util.CoreUtils;
 import jtreg.SkippedException;
 
@@ -156,53 +169,53 @@ public class JCmdRevival {
 
     public static void main(String[] args) throws Throwable {
         if (args.length > 1) {
-            // We are the initial test invocation.
+            // This is the initial test invocation, with multiple parameters: crash type and jcmds to run.
             // Will re-invoke ourself to cause crash and core, wait for that process,
             // then run "jcmd command" on the core.
             test(args);
         } else if (args.length == 1) {
-            // One argument is a re-invocation to run, with a crash and core.
-            testAndCrash(args);
+            // This is a re-invocation to crash in some way.
+            doCrash(args[0]);
         } else {
             throw new RuntimeException("Missing test arguments");
         }
     }
 
-    public static void testAndCrash(String[] args) {
-        // arg is tye type of run being tested (abortvmonexception, oom, cicrash).
-        // Do the thing that will cause a crash (if cicrash, then any activity will trigger crash).
-        System.out.println("JCmdRevival in main for test type '" + args[0] + "'");
+    public static void doCrash(String crashType) {
+        // Given the type of run being tested, do the thing that will cause a crash.
+        System.out.println("JCmdRevival in main for test type '" + crashType + "'");
 
-        if (args[0].equals("abortvmonexception")) {
-            try { Thread.sleep(3000); } catch (InterruptedException e) { } // Early MiniDump writing risks deadlock on Windows
+        try { Thread.sleep(3000); } catch (InterruptedException e) { } // Early MiniDump writing risks deadlock on Windows
+
+        if (crashType.equals("abortvmonexception")) {
             throw new NullPointerException("testing NPE");
-        } else if (args[0].equals("oom")) {
+        } else if (crashType.equals("oom")) {
             Object[] oa = new Object[Integer.MAX_VALUE / 2];
             for (int i = 0; i < oa.length; i++) {
                 oa[i] = new Object[Integer.MAX_VALUE / 2];
             }
-        } else if (args[0].equals("oom2")) {
+        } else if (crashType.equals("oom2")) {
             List<Object> list = new LinkedList<>();
             while (true) {
                 list.add("string");
                 list.add(123);
             }
-        } else if (args[0].equals("cicrash")) {
+        } else if (crashType.equals("cicrash")) {
             // Any activity will trigger crash, and likely already has done.  Add activity to make sure.
             List<Object> list = new LinkedList<>();
             while (true) {
-                list.add("string");
                 list.add(123);
             }
+        } else if (crashType.equals("lingeredappcrash")) {
+            throw new RuntimeException("Test error: doCrash called for: " + crashType);
         } else {
-            throw new RuntimeException("Unknown argument for test: " + args[0]);
+            throw new RuntimeException("Unknown argument for test: " + crashType);
         }
-        System.out.println("JCmdRevival: should not reach here.");
-        System.exit(1); // Should not reach here.
+        throw new RuntimeException("JCmdRevival: should not reach here (crash type: " + crashType + ")");
     }
 
     public static ProcessBuilder getProcessBuilder(String type) {
-
+        ProcessBuilder pb = null;
         switch (type) {
             case ("cicrash"): {
                 return ProcessTools.createTestJavaProcessBuilder("-XX:+CreateCoredumpOnCrash",
@@ -225,26 +238,48 @@ public class JCmdRevival {
                        "-Xmx128m", "-XX:MaxMetaspaceSize=64m",
                        JCmdRevival.class.getName(), type);
             }
+            case ("lingeredappcrash"): {
+                throw new RuntimeException("Test error: lingeredappcrash should not rely on getProcessBuilder");
+            }
             default: {
                 throw new RuntimeException("unknown test type");
             }
         }
+
+    }
+
+    public static String runAndCrash(String type) throws Exception {
+
+        if (type.equals("lingeredappcrash")) {
+            LingeredApp app = new LingeredApp();
+            app.setForceCrash(true);
+            try {
+                LingeredApp.startApp(app);
+                System.out.println("LingeredApp pid " + app.getPid());
+                app.waitAppTerminate();
+                OutputBuffer buff = app.getOutput();
+                return CoreUtils.getCoreFileLocation(buff.getStdout(), app.getPid());
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+        } else {
+            ProcessBuilder pb = getProcessBuilder(type);
+            // To get a core dump, apply "ulimit -c unlimited" if we can:
+            pb = CoreUtils.addCoreUlimitCommand(pb);
+            OutputAnalyzer output = ProcessTools.executeProcess(pb);
+            return CoreUtils.getCoreFileLocation(output.getStdout(), output.pid());
+        }
     }
 
     /**
-      * Test a type of crashing test process, and a list of jcmd commands.
+      * Test a crash of some type in a new process, and run a list of jcmd commands on the core.
       * e.g. oom VM.version Thread.print
       */
     static void test(String [] args) throws Throwable {
         String type = args[0];
-        ProcessBuilder pb = getProcessBuilder(type);
 
-        // For a core dump, apply "ulimit -c unlimited" if we can.
-        pb = CoreUtils.addCoreUlimitCommand(pb);
-        OutputAnalyzer output = ProcessTools.executeProcess(pb);
-        System.out.println(output);
-        // Find core, filename found is reported:
-        String coreFileName = CoreUtils.getCoreFileLocation(output.getStdout(), output.pid());
+        // Execute, find core:
+        String coreFileName = runAndCrash(type);
 
         // Run jcmd(s) on core: collect failures.
         List<Object[]> failures = new ArrayList<>();
@@ -384,8 +419,10 @@ public class JCmdRevival {
                 case "Thread.print": {
                     out.shouldContain("Full thread dump");
                     out.shouldContain("_java_thread_list=0x");
-                    // OOM crash will contain the stack of the test app, but not likely for cicrash.
-                    if (!(type.equals("cicrash"))) {
+                    if (type.equals("lingeredappcrash")) {
+                        out.shouldContain(" jdk.test.lib.apps.LingeredApp.crash(Native Method)");
+                    } else if (!(type.equals("cicrash"))) {
+                        // Stack of the test app not likely for cicrash.
                         out.shouldContain("at JCmdRevival.main(JCmdRevival.java:");
                     }
                     out.shouldContain("VM Thread");

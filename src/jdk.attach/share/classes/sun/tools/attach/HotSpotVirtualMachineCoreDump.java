@@ -121,6 +121,8 @@ public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachin
     private static final int HELPER_TRIES = 100; // Default attempts to run helper
     private static final int HELPER_ERROR = 2;   // revivalhelper exit value for error
     private static final int HELPER_RETRY = 7;   // revivalhelper exit value hint to retry due to e.g. address space clash
+    private static final int TIMEOUT_RUN_HELPER = 60;
+    private static final int TIMEOUT_GET_OUTPUT = 10;
 
     /**
      * Execute the given command in the target VM.
@@ -162,10 +164,12 @@ public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachin
         Map<String, String> newEnv = pb.environment();
         String logString = System.getProperty("jdk.attach.core.log");
         boolean verbose = false;
+        boolean debug = false;
         if (logString != null) {
             logString = logString.toLowerCase();
             newEnv.put("REVIVAL_LOG", logString); // Logging in native helper
             verbose = logString.equals("verbose") || logString.equals("debug"); // Logging in this method
+            debug = logString.equals("debug");
         }
 
         if (Boolean.getBoolean("jdk.attach.core.skipVersionCheck")) {
@@ -185,27 +189,47 @@ public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachin
             long pid = p.pid();
             if (verbose) System.err.println("Run revivalhelper: " + i + "  pid = " + pid);
 
-            try {
-                ExecutorService executor = Executors.newFixedThreadPool(2);
+            try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
                 Future<String> stdout = executor.submit(() -> drain(p.getInputStream()));
-                int e = p.waitFor();
-                out = stdout.get(30, TimeUnit.SECONDS);
 
-                if (e == 0) {
-                    ok = true; // Success, will leave loop.
-                } else if (e == 1 || e == HELPER_ERROR) {
-                    // Error from JCmd, e.g. Exception thrown by command implementation,
-                    // or non-retryable error from helper, e.g. file not found.
-                    // Will leave loop, print and throw because !ok
-                } else {
-                    // Other errors: we expect occasional requests to retry the helper.
-                    // Always show other errors, or show if we are repeating ourself, or verbose is set:
-                    if (e != HELPER_RETRY || i > 1 || verbose) {
-                        System.out.println(out);
-                        System.err.println("jcmd: revivalhelper pid " + pid + " failed, exit with: " + e + ". tries=" + i);
-                        System.out.println("(Retrying process revival.)");
+                try {
+                    boolean hasExited = p.waitFor(TIMEOUT_RUN_HELPER, TimeUnit.SECONDS);
+                    if (!hasExited) {
+                        System.err.println("Error: jcmd helper not completed");
+                        if (debug) {
+                            int e = p.waitFor(); // Expected to hang to enable external analysis
+                        }
+                        p.destroyForcibly();
+                        out = stdout.get(TIMEOUT_GET_OUTPUT, TimeUnit.SECONDS);
+                    } else {
+                        int e = p.exitValue();
+                        out = stdout.get(TIMEOUT_GET_OUTPUT, TimeUnit.SECONDS);
+
+                        if (e == 0) {
+                            ok = true; // Success, will leave loop.
+                        } else if (e == 1 || e == HELPER_ERROR) {
+                            // Error from JCmd, e.g. Exception thrown by command implementation,
+                            // or non-retryable error from helper, e.g. file not found.
+                            // Will leave loop, print and throw because !ok
+                        } else {
+                            // Other errors: we expect occasional requests to retry the helper.
+                            // Always show other errors, or show if we are repeating ourself, or verbose is set:
+                            if (e != HELPER_RETRY || i > 1 || verbose) {
+                                System.out.println(out);
+                                System.err.println("jcmd: revivalhelper pid " + pid + " failed, exit with: " + e + ". tries=" + i);
+                                System.err.println("(Retrying process revival.)");
+                            }
+                            if (!debug) {
+                                continue; // retry
+                            }
+                        }
                     }
-                    continue; // retry
+                } catch (InterruptedException | ExecutionException | TimeoutException ex) {
+                    // Destroy before the close of executor.
+                    if (p.isAlive()) {
+                        p.destroyForcibly();
+                    }
+                    throw ex;
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException ex) {
                 System.err.println("HotSpotVirtualMachineCoreDump.execute: " + ex);

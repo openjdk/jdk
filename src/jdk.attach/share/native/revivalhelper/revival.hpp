@@ -135,9 +135,6 @@ struct revival_data {
   void* vm_thread;
   void* tty;
   void* parse_and_execute;
-  void* info1;
-  void* info2;
-  void* info3;
 };
 
 // The revivalhelper tool uses the functions: revive_image, revived_dcmd, revived_exit
