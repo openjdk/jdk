@@ -1039,54 +1039,122 @@ class StubGenerator: public StubCodeGenerator {
     bool is_backward = step < 0;
     int granularity = g_uabs(step);
 
-    const Register src = x30, dst = x31, vl = x14, cnt = x15, tmp1 = x16, tmp2 = x17;
-    assert_different_registers(s, d, cnt, vl, tmp1, tmp2);
+    const Register src = x30;
+    const Register dst = x31;
+    const Register cnt = x15;
+    const Register saved_vl = x16;
+    const Register bytes_per_iter = x17;
+    const Register tmp = t0;
+
+    assert_different_registers(s, d, count, src, dst, cnt, saved_vl, bytes_per_iter, tmp);
     Assembler::SEW sew = Assembler::elembytes_to_sew(granularity);
     // Use a 128-byte tuning target for vector group capacity, with a minimum LMUL of m1.
     const int vector_length = static_cast<int>(VM_Version::initial_vector_length());
     const int lmul_multiplier = MAX2(128 / vector_length, 1);
     const Assembler::LMUL lmul = static_cast<Assembler::LMUL>(exact_log2(lmul_multiplier));
-    Label loop_forward, loop_backward, done;
+    const int max_elems_small = vector_length / granularity;
 
     __ mv(dst, d);
     __ mv(src, s);
     __ mv(cnt, count);
 
-    __ bind(loop_forward);
-    __ vsetvli(vl, cnt, sew, lmul);
-    if (is_backward) {
-      __ bne(vl, cnt, loop_backward);
-    }
+    if (!is_backward) {
+      Label loop, tail, tail_loop, done;
 
-    __ vlex_v(v0, src, sew);
-    __ sub(cnt, cnt, vl);
-    if (sew != Assembler::e8) {
-      // when sew == e8 (e.g., elem size is 1 byte), slli R, R, 0 is a nop and unnecessary
-      __ slli(vl, vl, sew);
-    }
-    __ add(src, src, vl);
-
-    __ vsex_v(v0, dst, sew);
-    __ add(dst, dst, vl);
-    __ bnez(cnt, loop_forward);
-
-    if (is_backward) {
-      __ j(done);
-
-      __ bind(loop_backward);
-      __ sub(t0, cnt, vl);
-      if (sew != Assembler::e8) {
-        // when sew == e8 (e.g., elem size is 1 byte), slli R, R, 0 is a nop and unnecessary
-        __ slli(t0, t0, sew);
+      // A copy that fits in one m1 vector does not need the wider LMUL setup.
+      if (max_elems_small > 0) {
+        __ li(tmp, max_elems_small);
+        __ bleu(cnt, tmp, tail);
       }
-      __ add(tmp1, s, t0);
-      __ vlex_v(v0, tmp1, sew);
-      __ add(tmp2, d, t0);
-      __ vsex_v(v0, tmp2, sew);
-      __ sub(cnt, cnt, vl);
-      __ bnez(cnt, loop_forward);
+
+      // Use a fixed VL for the main loop. This keeps vsetvli and the byte
+      // stride calculation out of the hot loop.
+      __ vsetvli(saved_vl, cnt, sew, lmul);
+      if (granularity > 1) {
+        __ slli(bytes_per_iter, saved_vl, exact_log2(granularity));
+      } else {
+        __ mv(bytes_per_iter, saved_vl);
+      }
+
+      __ bind(loop);
+      __ vlex_v(v0, src, sew);
+      __ vsex_v(v0, dst, sew);
+      __ add(src, src, bytes_per_iter);
+      __ add(dst, dst, bytes_per_iter);
+      __ sub(cnt, cnt, saved_vl);
+      __ bgeu(cnt, saved_vl, loop);
+
+      // Drain the remainder with m1. The remainder can be larger than one
+      // m1 vector because the main loop may use a wider LMUL.
+      __ bind(tail);
+      __ beqz(cnt, done);
+      __ bind(tail_loop);
+      __ vsetvli(tmp, cnt, sew, Assembler::m1);
+      __ vlex_v(v0, src, sew);
+      __ vsex_v(v0, dst, sew);
+      if (granularity > 1) {
+        __ slli(bytes_per_iter, tmp, exact_log2(granularity));
+      } else {
+        __ mv(bytes_per_iter, tmp);
+      }
+      __ add(src, src, bytes_per_iter);
+      __ add(dst, dst, bytes_per_iter);
+      __ sub(cnt, cnt, tmp);
+      __ bnez(cnt, tail_loop);
       __ bind(done);
+      return;
     }
+
+    Label loop, tail, tail_loop, done;
+
+    // Start at one-past-end so both the main and tail loops can walk the
+    // source and destination backwards without recomputing base + offset.
+    if (granularity > 1) {
+      __ slli(tmp, cnt, exact_log2(granularity));
+    } else {
+      __ mv(tmp, cnt);
+    }
+    __ add(src, src, tmp);
+    __ add(dst, dst, tmp);
+
+    // Small backward copies benefit from m1 for the same reason as small
+    // forward copies. The end pointers above are also used by the tail loop.
+    if (max_elems_small > 0) {
+      __ li(tmp, max_elems_small);
+      __ bleu(cnt, tmp, tail);
+    }
+
+    __ vsetvli(saved_vl, cnt, sew, lmul);
+    if (granularity > 1) {
+      __ slli(bytes_per_iter, saved_vl, exact_log2(granularity));
+    } else {
+      __ mv(bytes_per_iter, saved_vl);
+    }
+
+    __ bind(loop);
+    __ sub(src, src, bytes_per_iter);
+    __ sub(dst, dst, bytes_per_iter);
+    __ vlex_v(v0, src, sew);
+    __ vsex_v(v0, dst, sew);
+    __ sub(cnt, cnt, saved_vl);
+    __ bgeu(cnt, saved_vl, loop);
+
+    __ bind(tail);
+    __ beqz(cnt, done);
+    __ bind(tail_loop);
+    __ vsetvli(tmp, cnt, sew, Assembler::m1);
+    if (granularity > 1) {
+      __ slli(bytes_per_iter, tmp, exact_log2(granularity));
+    } else {
+      __ mv(bytes_per_iter, tmp);
+    }
+    __ sub(src, src, bytes_per_iter);
+    __ sub(dst, dst, bytes_per_iter);
+    __ vlex_v(v0, src, sew);
+    __ vsex_v(v0, dst, sew);
+    __ sub(cnt, cnt, tmp);
+    __ bnez(cnt, tail_loop);
+    __ bind(done);
   }
 
   // All-singing all-dancing memory copy.
