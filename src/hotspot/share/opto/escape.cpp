@@ -1822,7 +1822,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node* n, Unique_Node_List<Nod
     }
     case Op_Rethrow: // Exception object escapes
     case Op_Return: {
-      // Returning scalarized value types causes all component oopptr fields to escape.
+      // Returned oops always escape, including oop fields of returned scalarized value types.
       for (uint i = TypeFunc::Parms; i < n->req(); i++) {
         if (igvn->type(n->in(i))->isa_oopptr()) {
           add_local_var_and_edge(n, PointsToNode::GlobalEscape, n->in(i), delayed_worklist);
@@ -1989,7 +1989,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
     }
     case Op_Rethrow: // Exception object escapes
     case Op_Return: {
-      // Returning scalarized value types causes all component oopptr fields to escape.
+      // Returned oops always escape, including oop fields of returned scalarized value types.
       DEBUG_ONLY(bool has_oop = false;)
       for (uint i = TypeFunc::Parms; i < n->req(); i++) {
         if (_igvn->type(n->in(i))->isa_oopptr()) {
