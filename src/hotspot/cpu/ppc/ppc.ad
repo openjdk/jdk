@@ -3831,6 +3831,26 @@ operand immLpow2minus1() %{
   interface(CONST_INTER);
 %}
 
+// Long Immediate: set bits form exactly one contiguous run of ones, where the
+// run may wrap around the ends of the register (e.g. 0x00FFFF00 or 0xFF0000FF).
+operand immL_consecutive_ones() %{
+  predicate((Assembler::has_consecutive_ones((julong)(n->get_long())) ||
+             Assembler::has_consecutive_ones((julong)(~n->get_long()))));
+  match(ConL);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Long Immediate: set bits are within in a field of at most 16 bits (e.g. 0x00ABCD00).
+operand immL_field16() %{
+  predicate(Assembler::has_field16((julong)(n->get_long())));
+  match(ConL);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // constant 'long 0'.
 operand immL_0() %{
   predicate(n->get_long() == 0L);
@@ -5355,6 +5375,34 @@ instruct loadConL32_Ex(iRegLdst dst, immL32 src) %{
     loadConL32hi16(tmpL, srcHi);
     loadConL32_lo16(dst, tmpL, srcLo);
   %}
+%}
+
+// Load a long constant with one run of (maybe wrapping) consecutive set bits.
+instruct loadConL_consecutive_ones(iRegLdst dst, immL_consecutive_ones src) %{
+  match(Set dst src);
+  ins_cost(DEFAULT_COST*2);
+
+  format %{ "LI      $dst, -1\n\t"
+            "RLDIC   $dst, $dst, sh, mb \t// load long $src (consecutive ones)" %}
+  size(8);
+  ins_encode %{
+    __ load_consec_ones($dst$$Register, $src$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Load a long constant with just a 16-bit field at an arbitrary position.
+instruct loadConL_field16(iRegLdst dst, immL_field16 src) %{
+  match(Set dst src);
+  ins_cost(DEFAULT_COST*2);
+
+  format %{ "LI      $dst, field\n\t"
+            "RLDIC   $dst, $dst, sh, mb \t// load long $src (16-bit field)" %}
+  size(8);
+  ins_encode %{
+    __ load_field16($dst$$Register, $src$$constant);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // Load 34-bit long constant using prefixed addi. No constant pool entries required.
