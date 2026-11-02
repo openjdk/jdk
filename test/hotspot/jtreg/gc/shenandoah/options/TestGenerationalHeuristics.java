@@ -65,7 +65,7 @@ public class TestGenerationalHeuristics {
                 "-XX:ShenandoahGCHeuristics=aggressive",
                 "-XX:+PrintFlagsFinal",
                 "-version");
-            output.shouldMatch("ShenandoahGCHeuristics(.*)= adaptive ");
+            output.shouldMatch("ShenandoahGCHeuristics(.*)= aggressive ");
             output.shouldHaveExitValue(0);
         }
 
@@ -76,7 +76,7 @@ public class TestGenerationalHeuristics {
                 "-XX:ShenandoahGCHeuristics=compact",
                 "-XX:+PrintFlagsFinal",
                 "-version");
-            output.shouldMatch("ShenandoahGCHeuristics(.*)= adaptive ");
+            output.shouldMatch("ShenandoahGCHeuristics(.*)= compact ");
             output.shouldHaveExitValue(0);
         }
     }
