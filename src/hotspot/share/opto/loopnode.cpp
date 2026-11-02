@@ -7326,7 +7326,7 @@ int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order) {
             innermost->_has_call = 1;
           }
         }
-      } else if( n->is_Allocate() && n->as_Allocate()->_is_scalar_replaceable ) {
+      } else if (n->is_Allocate() && n->as_Allocate()->is_scalar_replaceable()) {
         // Disable loop optimizations if the loop has a scalar replaceable
         // allocation. This disabling may cause a potential performance lost
         // if the allocation is not eliminated for some reason.

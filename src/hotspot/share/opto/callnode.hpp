@@ -26,6 +26,7 @@
 #define SHARE_OPTO_CALLNODE_HPP
 
 #include "opto/connode.hpp"
+#include "opto/escape.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/multnode.hpp"
 #include "opto/opcodes.hpp"
@@ -1162,8 +1163,28 @@ public:
   }
 
   // Result of Escape Analysis
+private:
   bool _is_scalar_replaceable;
-  bool _is_non_escaping;
+  PointsToNode::EscapeState _escape_state;
+public:
+  bool is_scalar_replaceable() {
+    return _is_scalar_replaceable;
+  }
+  void set_scalar_replaceable(bool scalar_replaceable) {
+    assert(!scalar_replaceable || _escape_state == PointsToNode::NoEscape, "scalar replaceable implies NoEscape");
+    _is_scalar_replaceable = scalar_replaceable;
+  }
+  PointsToNode::EscapeState escape_state() {
+    return _escape_state;
+  }
+  bool is_non_escaping() {
+    return _escape_state == PointsToNode::NoEscape;
+  }
+  void set_escape_state(PointsToNode::EscapeState escape_state) {
+    assert(escape_state <= _escape_state, "escape state must monotonically improve");
+    _escape_state = escape_state;
+  }
+
   // True when MemBar for new is redundant with MemBar at initialzer exit
   bool _is_allocation_MemBar_redundant;
 
@@ -1217,15 +1238,15 @@ public:
   bool maybe_set_complete(PhaseGVN* phase);
 
   // Return true if allocation doesn't escape thread, its escape state
-  // needs be noEscape or ArgEscape. InitializeNode._does_not_escape
-  // is true when its allocation's escape state is noEscape or
+  // needs be NoEscape or ArgEscape. InitializeNode._does_not_escape
+  // is true when its allocation's escape state is NoEscape or
   // ArgEscape. In case allocation's InitializeNode is null, check
-  // AlllocateNode._is_non_escaping flag.
-  // AlllocateNode._is_non_escaping is true when its escape state is
-  // noEscape.
+  // AllocateNode.is_non_escaping().
+  // AllocateNode.is_non_escaping() is true when the allocation's escape state is
+  // NoEscape.
   bool does_not_escape_thread() {
     InitializeNode* init = nullptr;
-    return _is_non_escaping || (((init = initialization()) != nullptr) && init->does_not_escape());
+    return is_non_escaping() || (((init = initialization()) != nullptr) && init->does_not_escape());
   }
 
   // If object doesn't escape in <.init> method and there is memory barrier
