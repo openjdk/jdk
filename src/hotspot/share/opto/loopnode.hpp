@@ -574,7 +574,6 @@ class LoopLimitNode : public Node {
  public:
   LoopLimitNode( Compile* C, Node *init, Node *limit, Node *stride ) : Node(nullptr,init,limit,stride) {
     // Put it on the Macro nodes list to optimize during macro nodes expansion.
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
   virtual int Opcode() const;
@@ -595,7 +594,6 @@ public:
   OuterStripMinedLoopNode(Compile* C, Node *entry, Node *backedge)
     : LoopNode(entry, backedge) {
     init_class_id(Class_OuterStripMinedLoop);
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 
@@ -2069,8 +2067,6 @@ public:
   void update_addp_chain_base(const AddPNode* x, const Node* old_base, Node* new_base) const;
 
   bool can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x);
-
-  void pin_nodes_dependent_on(Node* ctrl, bool old_iff_is_rangecheck);
 
   void collect_flat_array_checks(const IdealLoopTree* loop, Node_List<IfNode>& flat_array_checks) const;
 

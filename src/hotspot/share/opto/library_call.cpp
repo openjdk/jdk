@@ -2472,6 +2472,9 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   assert(Unsafe_field_offset_to_byte_offset(11) == 11,
          "fieldOffset must be byte-scaled");
 
+  // Save state and restore on bailout
+  SavedState old_state(this);
+
   if (base->is_ValueType()) {
     assert(!is_store, "ValueTypeNodes are non-larval value objects");
     ValueTypeNode* vt = base->as_ValueType();
@@ -2495,6 +2498,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
             value = ValueTypeNode::make_from_oop(this, value, value_type->value_klass());
           }
           set_result(value);
+          old_state.discard();
           return true;
         }
       }
@@ -2510,9 +2514,6 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 
   // 32-bit machines ignore the high half!
   offset = ConvL2X(offset);
-
-  // Save state and restore on bailout
-  SavedState old_state(this);
 
   if (const TypeAryPtr* base_ary_type = _gvn.type(base)->isa_aryptr(); type == T_OBJECT && base_ary_type != nullptr) {
     // Read an object from a primitive array, or a Phi some of whose inputs are primitive arrays

@@ -490,6 +490,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
       __ testptr(rax, rax);
       __ jcc(Assembler::notZero, not_null);
       // Returned value is null, zero all return registers because they may belong to oop fields
+      __ xorq(j_rarg0, j_rarg0);
       __ xorq(j_rarg1, j_rarg1);
       __ xorq(j_rarg2, j_rarg2);
       __ xorq(j_rarg3, j_rarg3);
@@ -2433,7 +2434,7 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr de
   if (dest->is_single_cpu()) {
     // first move left into dest so that left is not destroyed by the shift
     Register value = dest->as_register();
-    count = count & 0x1F; // Java spec
+    count &= right_n_bits(LogBitsPerInt); // Java spec
 
     move_regs(left->as_register(), value);
     switch (code) {
@@ -2445,7 +2446,7 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr de
   } else if (dest->is_double_cpu()) {
     // first move left into dest so that left is not destroyed by the shift
     Register value = dest->as_register_lo();
-    count = count & 0x1F; // Java spec
+    count &= right_n_bits(LogBitsPerLong); // Java spec
 
     move_regs(left->as_register_lo(), value);
     switch (code) {
@@ -2533,7 +2534,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   }
 
   // if we don't know anything, just go through the generic arraycopy
-  if (default_type == nullptr) {
+  if (default_type == nullptr || !default_type->is_loaded()) {
     // save outgoing arguments on stack in case call to System.arraycopy is needed
     // HACK ALERT. This code used to push the parameters in a hardwired fashion
     // for interpreter calling conventions. Now we have to do it in new style conventions.
