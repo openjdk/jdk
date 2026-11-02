@@ -1884,8 +1884,10 @@ void ArchDesc::declareClasses(FILE *fp) {
     }
 
     if (!instr->expands() && instr->kills_some_inputs(*this)) {
+      fprintf(fp, "#ifdef ASSERT\n");
       fprintf(fp,"  virtual bool has_killed_inputs() const { return true; }\n");
       fprintf(fp,"  virtual bool is_killed_input(uint i) const;\n");
+      fprintf(fp, "#endif\n");
     }
 
     fprintf(fp, "#ifndef PRODUCT\n");

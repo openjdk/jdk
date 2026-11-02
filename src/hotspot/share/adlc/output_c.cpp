@@ -1751,7 +1751,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
         const char *regmask    = reg_mask(*op);
         const char *ideal_type = op->ideal_type(_globalNames, _register);
 
-        if (!comp->isa(Component::USE)) {
+        if (op->is_bound_register()) {
           if (!declared_proj) {
             // Define the variable "kill" to hold new MachProjNodes
             fprintf(fp, "  MachProjNode* proj;\n");
@@ -1764,9 +1764,10 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
           fprintf(fp, "  proj_list.push(proj);\n");
           continue;
         }
+        assert(comp->isa(Component::USE), "must be used if not bound");
 
         if (!declared_kill) {
-          // Define the variable "kill" to hold new MachProjNodes
+          // Define the variable "kill" to hold new MachKillNodes
           fprintf(fp, "  MachKillNode* kill;\n");
           declared_kill = true;
         }
@@ -1871,6 +1872,7 @@ void ArchDesc::defineIsKilledInput(FILE* fp, InstructForm* node) {
   if (node->expands() || !node->kills_some_inputs(*this)) {
     return;
   }
+  fprintf(fp, "#ifdef ASSERT\n");
   fprintf(fp, "bool %sNode::is_killed_input(uint idx) const {\n", node->_ident);
   node->_components.reset();
   Component* comp = nullptr;
@@ -1883,9 +1885,8 @@ void ArchDesc::defineIsKilledInput(FILE* fp, InstructForm* node) {
       assert(form, "component type must be a defined form");
       OperandForm *op = form->is_operand();
       assert(op, "Support additional KILLS for base operands");
-      // if (!op->is_bound_register()) {
-      if (comp->isa(Component::USE)) {
-      assert(comp->isa(Component::USE), "must be an input");
+      if (!op->is_bound_register()) {
+        assert(comp->isa(Component::USE), "must be an input");
         fprintf(fp, "  if (operand_index(%d) == (int)idx) {\n", node->_components.operand_position(comp->_name));
         fprintf(fp, "    return true;\n");
         fprintf(fp, "  }\n");
@@ -1899,6 +1900,7 @@ void ArchDesc::defineIsKilledInput(FILE* fp, InstructForm* node) {
 
   fprintf(fp, "  return false;\n");
   fprintf(fp, "}\n");
+  fprintf(fp, "#endif\n");
   fprintf(fp, "\n");
 }
 

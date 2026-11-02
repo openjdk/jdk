@@ -128,9 +128,9 @@ bool InstructForm::needs_projections(ArchDesc& AD) {
       OperandForm *op = form->is_operand();
       assert(op, "Support additional KILLS for base operands");
       assert(op->is_bound_register() || comp->isa(Component::USE), "");
-      // if (op->is_bound_register()) {
-      return true;
-        // }
+      if (op->is_bound_register()) {
+        return true;
+      }
     }
   }
   return false;
@@ -144,9 +144,10 @@ bool InstructForm::kills_some_inputs(ArchDesc& AD) {
       assert(form, "component type must be a defined form");
       OperandForm *op = form->is_operand();
       assert(op, "Support additional KILLS for base operands");
-      // if (!op->is_bound_register()) {
-      return true;
-      // }
+      if (!op->is_bound_register()) {
+        assert(comp->isa(Component::USE), "must be used if not bound");
+        return true;
+      }
     }
   }
   return false;

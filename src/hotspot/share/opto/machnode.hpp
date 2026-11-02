@@ -281,6 +281,7 @@ public:
   // cisc-spillable instructions redefine for use by in_RegMask
   virtual const RegMask *cisc_RegMask() const { return nullptr; }
 
+#ifdef ASSERT
   // Does this node's implementation cause some of its inputs to be killed?
   virtual bool has_killed_inputs() const { return false; }
   // If that's the case, is input i killed?
@@ -288,6 +289,7 @@ public:
     ShouldNotReachHere();
     return false;
   }
+#endif
 
   // If this instruction is a 2-address instruction, then return the
   // index of the input which must match the output.  Not necessary
