@@ -552,6 +552,19 @@ bool ConnectionGraph::can_reduce_cmp(PhiNode* phi, Node* cmp) const {
          cmp->outcnt() == 1;
 }
 
+bool ConnectionGraph::can_reduce_klass_load(PhiNode* phi) const {
+  bool result = true;
+  for (uint i = 1; result && i < phi->req(); i++) {
+    Node* base = phi->in(i);
+    const Type* base_t = _igvn->type(base);
+    result &=
+      /* null pointer */ base_t == TypePtr::NULL_PTR
+      || /* known-klass allocation */ AllocateNode::Ideal_klass(base, _igvn) != nullptr
+      || /* known compile-time class */ (base_t->isa_oopptr() != nullptr && base_t->is_oopptr()->klass_is_exact());
+  }
+  return result;
+}
+
 // We are going to check if any of the SafePointScalarMerge entries
 // in the SafePoint reference the Phi that we are checking.
 bool ConnectionGraph::has_been_reduced(PhiNode* phi, SafePointNode* sfpt) const {
@@ -601,7 +614,8 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
         if (!use_use->is_Load() || !use_use->as_Load()->can_split_through_phi_base(_igvn)) {
           NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. AddP user isn't a [splittable] Load(): %s", n->_idx, _invocation, use_use->Name());)
           return false;
-        } else if (load_type->isa_narrowklass() || load_type->isa_klassptr()) {
+        } else if ((load_type->isa_narrowklass() || load_type->isa_klassptr()) &&
+                   !can_reduce_klass_load(n->is_Phi() ? n->as_Phi() : n->in(1)->as_Phi())) {
           NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. [Narrow] Klass Load: %s", n->_idx, _invocation, use_use->Name());)
           return false;
         }
@@ -976,7 +990,11 @@ void ConnectionGraph::reduce_phi_on_castpp_field_load(CastPPNode* curr_castpp, G
         // 'split_castpp_load_through_phi` method will add an
         // 'If-Then-Else-Region` around nullable bases and only load from them
         // when the input is not null.
-        Node* phi = split_castpp_load_through_phi(use, use_use, ophi->in(0), &bases_for_loads, alloc_worklist);
+        const Type* load_type = _igvn->type(use_use);
+        // If it's a klass load, rewrite the Phi, otherwise split the load.
+        Node* phi = (load_type->isa_narrowklass() || load_type->isa_klassptr()) ?
+            reduce_phi_on_klass_load(ophi, use_use) :
+            split_castpp_load_through_phi(use, use_use, ophi->in(0), &bases_for_loads, alloc_worklist);
         _igvn->replace_node(use_use, phi);
 
         --j;
@@ -1078,6 +1096,54 @@ void ConnectionGraph::reduce_phi_on_cmp(Node* cmp) {
   // This CMP always compares whether the output of "res_phi" is TRUE as far as the "mask".
   Node* new_cmp = _igvn->transform(new CmpINode(_igvn->transform(res_phi), (mask == BoolTest::mask::eq) ? one : zero));
   _igvn->replace_node(cmp, new_cmp);
+}
+
+Node* ConnectionGraph::reduce_phi_on_klass_load(PhiNode* phi, Node* load) {
+  precond(can_reduce_klass_load(phi));
+
+  PhiNode* result = nullptr;
+  const Type* load_type = _igvn->type(load);
+
+  for (uint i = 1; i < phi->req(); i++) {
+    Node* base = phi->in(i);
+    const Type* base_t = _igvn->type(base);
+    // If it's a null pointer, the precise klass that gets placed in the slot
+    // doesn't matter, since the null slot is never actually observed.  The
+    // surrounding null check should have already diverted control flow away
+    // from reading the null object's header.
+    if (base_t == TypePtr::NULL_PTR) {
+      continue;
+    }
+
+    // If this is an allocation input, retrieve the klass from the node.
+    Node* klass = AllocateNode::Ideal_klass(base, _igvn);
+
+    // Otherwise, fetch the known object type (see `can_reduce_klass_load()`)
+    // and convert it into a graph constant.
+    if (klass == nullptr) {
+      klass = _igvn->makecon(base_t->is_oopptr()->as_klass_type());
+    }
+
+    // Both `AllocateNode::Ideal_klass()` and `as_klass_type()` return a decoded
+    // klass pointer.  Since we need the Phi's type to match the load type, if
+    // the load type is an encoded klass value, then we first encode the klass.
+    if (load_type->isa_narrowklass()) {
+      klass = _igvn->transform(new EncodePKlassNode(klass, _igvn->type(klass)->make_narrowklass()));
+    }
+
+    // If this is the first non-null pointer, then initialize result.  We use
+    // the `klass` value computed in this iteration as the placeholder for all
+    // slots.  The subsequent slots are overwritten in the iterations that
+    // follow, except for null slots, which are never observed.
+    if (result == nullptr) {
+      result = PhiNode::make(phi->region(), klass, load_type);
+    }
+
+    result->set_req(i, klass);
+  }
+
+  assert(result != nullptr, "a reducible merge must have an allocation input");
+  return _igvn->transform(result);
 }
 
 // Push the newly created AddP on alloc_worklist and patch
@@ -1200,11 +1266,18 @@ void ConnectionGraph::reduce_phi_on_field_access(Node* previous_addp, GrowableAr
   for (int k = previous_addp->outcnt()-1; k >= 0;) {
     Node* previous_load = previous_addp->raw_out(k);
     if (previous_load->is_Load()) {
-      Node* data_phi = previous_load->as_Load()->split_through_phi(_igvn, ignore_missing_instance_id);
-
-      // Takes care of updating CG and split_unique_types worklists due to cloned
-      // AddP->Load.
-      updates_after_load_split(data_phi, previous_load, alloc_worklist);
+      Node* data_phi;
+      const Type* load_type = _igvn->type(previous_load);
+      // If it's a klass load, rewrite the Phi, otherwise split the load.
+      if (load_type->isa_narrowklass() || load_type->isa_klassptr()) {
+        PhiNode* phi = previous_addp->in(AddPNode::Base)->as_Phi();
+        data_phi = reduce_phi_on_klass_load(phi, previous_load);
+      } else {
+        data_phi = previous_load->as_Load()->split_through_phi(_igvn, ignore_missing_instance_id);
+        // Takes care of updating CG and split_unique_types worklists due to cloned
+        // AddP->Load.
+        updates_after_load_split(data_phi, previous_load, alloc_worklist);
+      }
 
       _igvn->replace_node(previous_load, data_phi);
     }
