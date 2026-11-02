@@ -1131,9 +1131,6 @@ public class TIFFImageReader extends ImageReader {
         long offset = getTileOrStripOffset(tileIndex);
         long byteCount = getTileOrStripByteCount(tileIndex);
 
-        if (byteCount == 0) {
-            throw new IIOException("Tile/Strip has no data");
-        }
         decompressor.setPlanarBand(band);
         decompressor.setStream(stream);
         decompressor.setOffset(offset);
