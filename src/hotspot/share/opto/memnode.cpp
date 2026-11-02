@@ -3352,16 +3352,6 @@ StoreNode* MergePrimitiveStores::run() {
   Node* merged_input_value = make_merged_input_value(merge_list);
   if (merged_input_value == nullptr) { return nullptr; }
 
-  StoreNode* store = merge_list.at(merge_list.size() - 1)->as_Store();
-  Node* addr = store->in(MemNode::Address);
-  if (_phase->type(addr)->isa_aryptr()) {
-    int offset = _phase->type(addr)->isa_aryptr()->offset();
-    if (offset != Type::OffsetBot && offset <= arrayOopDesc::length_offset_in_bytes()) {
-      ShouldNotReachHere();
-      return nullptr;
-    }
-  }
-
   StoreNode* merged_store = make_merged_store(merge_list, merged_input_value);
 
   NOT_PRODUCT( if (is_trace_success()) { trace(merge_list, merged_input_value, merged_store); } )
@@ -3925,6 +3915,8 @@ const Type* StoreNode::Value(PhaseGVN* phase) const {
   const Type *t3 = phase->type( in(MemNode::ValueIn) );
   if( t3 == Type::TOP ) return Type::TOP;
   Node* addr = in(MemNode::Address);
+  // Writing to an oop header only happens during allocation as a raw memory Store. If that Store is to the header but
+  // not a raw memory Store, then it must be a dead Store.
   const TypeOopPtr* addr_t = phase->type(addr)->isa_oopptr();
   if (addr_t != nullptr) {
     int offset = addr_t->offset();

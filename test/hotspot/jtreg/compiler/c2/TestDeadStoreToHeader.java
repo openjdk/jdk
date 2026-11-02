@@ -27,7 +27,7 @@ package compiler.c2;
  * @test
  * @bug 8391179
  * @run main ${test.main.class}
- * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,${test.main.class}::test -XX:RepeatCompilation=100 -XX:+StressLoopPeeling ${test.main.class}
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,${test.main.class}::test -XX:+StressLoopPeeling ${test.main.class}
  */
 
 public class TestDeadStoreToHeader {
