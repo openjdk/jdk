@@ -62,7 +62,7 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
   _last_cycle_end(0),
   _gc_times_learned(0),
   _gc_time_penalties(0),
-  _metaspace_oom()
+  _bytes_used_at_end_of_gc(0)
 {
   size_t num_regions = ShenandoahHeap::heap()->num_regions();
   assert(num_regions > 0, "Sanity");
@@ -302,6 +302,11 @@ void ShenandoahHeuristics::assert_humongous_mark_consistency(ShenandoahHeapRegio
 }
 
 bool ShenandoahHeuristics::trigger_allocation_threshold(const size_t used, const size_t capacity) {
+  if (ShenandoahAllocationThreshold == 0) {
+    // Trigger is disabled
+    return false;
+  }
+
   const size_t threshold_bytes_allocated = capacity / 100 * ShenandoahAllocationThreshold;
   const size_t bytes_allocated = used > _bytes_used_at_end_of_gc ? used - _bytes_used_at_end_of_gc : 0;
   log_debug(gc, ergo)("trigger allocation threshold: used: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
