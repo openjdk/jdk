@@ -254,10 +254,6 @@ void ValueTypeNode::set_field_value(uint index, Node* value) {
   set_req(Values + index, value);
 }
 
-void ValueTypeNode::set_field_value_by_offset(int offset, Node* value) {
-  set_field_value(field_index(offset), value);
-}
-
 uint ValueTypeNode::field_index(int offset) const {
   uint i = 0;
   for (; i < field_count() && field(i)->offset_in_bytes() != offset; i++) { }
@@ -290,7 +286,7 @@ static uint add_top_to_safepoint(ciValueKlass* vk, SafePointNode* sfpt) {
   return cnt;
 }
 
-uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List& worklist, SafePointNode* sfpt) const {
+uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List<ValueTypeNode>& worklist, SafePointNode* sfpt) const {
   uint cnt = 0;
   for (uint i = 0; i < field_count(); ++i) {
     Node* value = field_value(i);
@@ -319,7 +315,7 @@ uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List& worklist, SafePoin
     }
     if (value->is_ValueType()) {
       // Add value type to the worklist to process later
-      worklist.push(value);
+      worklist.push(value->as_ValueType());
     }
     sfpt->add_req(value);
     cnt++;
@@ -327,7 +323,7 @@ uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List& worklist, SafePoin
   return cnt;
 }
 
-void ValueTypeNode::make_scalar_in_safepoint(PhaseIterGVN* igvn, Unique_Node_List& worklist, SafePointNode* sfpt) const {
+void ValueTypeNode::make_scalar_in_safepoint(PhaseIterGVN* igvn, Unique_Node_List<ValueTypeNode>& worklist, SafePointNode* sfpt) const {
   JVMState* jvms = sfpt->jvms();
   assert(jvms != nullptr, "missing JVMS");
   uint first_ind = (sfpt->req() - jvms->scloff());
@@ -365,17 +361,17 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
   Node* oop = get_oop();
   bool use_oop = false;
   if (allow_oop && is_allocated(igvn) && oop->is_Phi()) {
-    Unique_Node_List worklist;
+    Unique_Node_List<const PhiNode> worklist;
     VectorSet visited;
     visited.set(oop->_idx);
-    worklist.push(oop);
+    worklist.push(oop->as_Phi());
     use_oop = true;
     while (worklist.size() > 0 && use_oop) {
-      Node* n = worklist.pop();
+      const PhiNode* n = worklist.pop();
       for (uint i = 1; i < n->req(); i++) {
         Node* in = n->in(i);
         if (in->is_Phi() && !visited.test_set(in->_idx)) {
-          worklist.push(in);
+          worklist.push(in->as_Phi());
         } else if (!(in->is_Con() || in->is_Parm())) {
           use_oop = false;
           break;
@@ -388,17 +384,17 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
   }
 
   ResourceMark rm;
-  Unique_Node_List safepoints;
+  Unique_Node_List<SafePointNode> safepoints;
   if (safepoint == nullptr) {
     // Gathering all SafePoint users of `this`...
-    Unique_Node_List worklist;
+    Unique_Node_List<const Node> worklist;
     worklist.push(this);
     while (worklist.size() > 0) {
-      Node* n = worklist.pop();
+      const Node* n = worklist.pop();
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
         if (use->is_SafePoint() && !use->is_CallLeaf() && (!use->is_Call() || use->as_Call()->has_debug_use(n))) {
-          safepoints.push(use);
+          safepoints.push(use->as_SafePoint());
         } else if (use->is_ConstraintCast()) {
           worklist.push(use);
         }
@@ -415,9 +411,9 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
   if ((C->live_nodes() + safepoints.size() + NodeLimitFudgeFactor) > C->max_node_limit()) {
     return false;
   }
-  Unique_Node_List vt_worklist;
+  Unique_Node_List<ValueTypeNode> vt_worklist;
   while (safepoints.size() > 0) {
-    SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
+    SafePointNode* sfpt = safepoints.pop();
     if (use_oop) {
       for (uint i = sfpt->jvms()->debug_start(); i < sfpt->jvms()->debug_end(); i++) {
         Node* debug = sfpt->in(i);
@@ -432,7 +428,7 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
   }
   // Now scalarize non-flat fields
   for (uint i = 0; i < vt_worklist.size(); ++i) {
-    ValueTypeNode* vt = vt_worklist.at(i)->isa_ValueType();
+    ValueTypeNode* vt = vt_worklist.at(i);
     if (!vt->make_scalar_in_safepoints(igvn)) {
       return false;
     }

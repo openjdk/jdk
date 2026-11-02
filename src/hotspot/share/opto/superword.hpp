@@ -265,10 +265,10 @@ private:
     Split,     // The pack was split into two packs.           pack1        pack2
   };
   Kind _kind;
-  Node_List* _first_pack;
-  Node_List* _second_pack;
+  Node_List<Node>* _first_pack;
+  Node_List<Node>* _second_pack;
 
-  SplitStatus(Kind kind, Node_List* first_pack, Node_List* second_pack) :
+  SplitStatus(Kind kind, Node_List<Node>* first_pack, Node_List<Node>* second_pack) :
     _kind(kind), _first_pack(first_pack), _second_pack(second_pack)
   {
     assert(_kind != Unchanged || (first_pack != nullptr && second_pack == nullptr), "unchanged status conditions");
@@ -278,7 +278,7 @@ private:
   }
 
 public:
-  static SplitStatus make_unchanged(Node_List* old_pack) {
+  static SplitStatus make_unchanged(Node_List<Node>* old_pack) {
     return SplitStatus(Unchanged, old_pack, nullptr);
   }
 
@@ -286,17 +286,17 @@ public:
     return SplitStatus(Rejected, nullptr, nullptr);
   }
 
-  static SplitStatus make_modified(Node_List* first_pack) {
+  static SplitStatus make_modified(Node_List<Node>* first_pack) {
     return SplitStatus(Modified, first_pack, nullptr);
   }
 
-  static SplitStatus make_split(Node_List* first_pack, Node_List* second_pack) {
+  static SplitStatus make_split(Node_List<Node>* first_pack, Node_List<Node>* second_pack) {
     return SplitStatus(Split, first_pack, second_pack);
   }
 
   bool is_unchanged() const { return _kind == Unchanged; }
-  Node_List* first_pack() const { return _first_pack; }
-  Node_List* second_pack() const { return _second_pack; }
+  Node_List<Node>* first_pack() const { return _first_pack; }
+  Node_List<Node>* second_pack() const { return _second_pack; }
 };
 
 class PackSet : public StackObj {
@@ -305,10 +305,10 @@ private:
   const VLoopBody& _body;
 
   // Set of all packs:
-  GrowableArray<Node_List*> _packs;
+  GrowableArray<Node_List<Node>*> _packs;
 
   // Mapping from nodes to their pack: bb_idx -> pack
-  GrowableArray<Node_List*> _node_to_pack;
+  GrowableArray<Node_List<Node>*> _node_to_pack;
 
   NOT_PRODUCT(const bool _trace_packset;)
   NOT_PRODUCT(const bool _trace_rejections;)
@@ -329,15 +329,15 @@ public:
   // Accessors to iterate over packs.
   int length() const { return _packs.length(); }
   bool is_empty() const { return _packs.is_empty(); }
-  Node_List* at(int i) const { return _packs.at(i); }
+  Node_List<Node>* at(int i) const { return _packs.at(i); }
 
 private:
-  void map_node_in_pack(const Node* n, Node_List* new_pack) {
+  void map_node_in_pack(const Node* n, Node_List<Node>* new_pack) {
     assert(get_pack(n) == nullptr, "was previously unmapped");
     _node_to_pack.at_put(_body.bb_idx(n), new_pack);
   }
 
-  void remap_node_in_pack(const Node* n, Node_List* new_pack) {
+  void remap_node_in_pack(const Node* n, Node_List<Node>* new_pack) {
     assert(get_pack(n) != nullptr && new_pack != nullptr && get_pack(n) != new_pack, "was previously mapped");
     _node_to_pack.at_put(_body.bb_idx(n), new_pack);
   }
@@ -347,15 +347,15 @@ private:
     _node_to_pack.at_put(_body.bb_idx(n), nullptr);
   }
 
-  void unmap_all_nodes_in_pack(Node_List* old_pack) {
+  void unmap_all_nodes_in_pack(Node_List<Node>* old_pack) {
     for (uint i = 0; i < old_pack->size(); i++) {
       unmap_node_in_pack(old_pack->at(i));
     }
   }
 public:
-  Node_List* get_pack(const Node* n) const { return !_vloop.in_bb(n) ? nullptr : _node_to_pack.at(_body.bb_idx(n)); }
+  Node_List<Node>* get_pack(const Node* n) const { return !_vloop.in_bb(n) ? nullptr : _node_to_pack.at(_body.bb_idx(n)); }
 
-  void add_pack(Node_List* pack) {
+  void add_pack(Node_List<Node>* pack) {
     _packs.append(pack);
     for (uint i = 0; i < pack->size(); i++) {
       Node* n = pack->at(i);
@@ -363,17 +363,17 @@ public:
     }
   }
 
-  Node_List* strided_pack_input_at_index_or_null(const Node_List* pack, const int index, const int stride, const int offset) const;
-  bool is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const;
-  Node* same_inputs_at_index_or_null(const Node_List* pack, const int index) const;
-  VTransformBoolTest get_bool_test(const Node_List* bool_pack) const;
+  Node_List<Node>* strided_pack_input_at_index_or_null(const Node_List<Node>* pack, const int index, const int stride, const int offset) const;
+  bool is_muladds2i_pack_with_pack_inputs(const Node_List<Node>* pack) const;
+  static Node* same_inputs_at_index_or_null(const Node_List<Node>* pack, const int index);
+  VTransformBoolTest get_bool_test(const Node_List<Node>* bool_pack) const;
 
-  Node_List* pack_input_at_index_or_null(const Node_List* pack, const int index) const {
+  Node_List<Node>* pack_input_at_index_or_null(const Node_List<Node>* pack, const int index) const {
     return strided_pack_input_at_index_or_null(pack, index, 1, 0);
   }
 
 private:
-  SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
+  SplitStatus split_pack(const char* split_name, Node_List<Node>* pack, SplitTask task);
 public:
   template <typename SplitStrategy>
   void split_packs(const char* split_name, SplitStrategy strategy);
@@ -391,7 +391,7 @@ private:
 public:
   DEBUG_ONLY(void verify() const;)
   NOT_PRODUCT(void print() const;)
-  NOT_PRODUCT(static void print_pack(Node_List* pack);)
+  NOT_PRODUCT(static void print_pack(const Node_List<Node>* pack);)
 };
 
 // -----------------------------SuperWord---------------------------------
@@ -495,7 +495,7 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.dependency_graph().independent(n1, n2);
   }
 
-  bool mutually_independent(const Node_List* nodes) const {
+  bool mutually_independent(const Node_List<Node>* nodes) const {
     return _vloop_analyzer.dependency_graph().mutually_independent(nodes);
   }
 
@@ -545,7 +545,7 @@ class SuperWord : public ResourceObj {
   bool     do_vector_loop()        { return _do_vector_loop; }
 
   const PackSet& packset() const { return _packset; }
-  Node_List* get_pack(const Node* n) const { return _packset.get_pack(n); }
+  Node_List<Node>* get_pack(const Node* n) const { return _packset.get_pack(n); }
 
  private:
   bool           _do_vector_loop;  // whether to do vectorization/simd style
@@ -555,7 +555,6 @@ class SuperWord : public ResourceObj {
 
   // CloneMap utilities
   bool same_origin_idx(Node* a, Node* b) const;
-  bool same_generation(Node* a, Node* b) const;
 
 private:
   bool SLP_extract();
@@ -628,19 +627,19 @@ private:
   void filter_packs_for_power_of_2_size();
   void filter_packs_for_mutual_independence();
   void filter_packs_for_alignment();
-  const AlignmentSolution* pack_alignment_solution(const Node_List* pack);
+  const AlignmentSolution* pack_alignment_solution(const Node_List<Node>* pack) const;
   void filter_packs_for_implemented();
   void filter_packs_for_profitable();
 
   DEBUG_ONLY(void verify_packs() const;)
 
   // Can code be generated for the pack, restricted to size nodes?
-  bool implemented(const Node_List* pack, const uint size) const;
+  bool implemented(const Node_List<Node>* pack, const uint size) const;
   // Find the maximal implemented size smaller or equal to the packs size
-  uint max_implemented_size(const Node_List* pack);
+  uint max_implemented_size(const Node_List<Node>* pack) const;
 
   // For pack p, are all operands and all uses (with in the block) vector?
-  bool profitable(const Node_List* p) const;
+  bool profitable(const Node_List<Node>* p) const;
 
   // Verify that all uses of packs are also packs, i.e. we do not need extract operations.
   DEBUG_ONLY(void verify_no_extract();)
@@ -648,7 +647,7 @@ private:
   // Check if n_super's pack uses are a superset of n_sub's pack uses.
   bool has_use_pack_superset(const Node* n1, const Node* n2) const;
   // Find a boundary in the pack, where left and right have different pack uses and defs.
-  uint find_use_def_boundary(const Node_List* pack) const;
+  uint find_use_def_boundary(const Node_List<Node>* pack) const;
 
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx) const;

@@ -28,6 +28,7 @@
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotHeap.inline.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMapLogger.hpp"
@@ -35,6 +36,7 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotModules.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
@@ -46,7 +48,6 @@
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/finalImageRecipes.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -58,7 +59,6 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/aotCodeCache.hpp"
@@ -142,7 +142,7 @@ FileMapInfo* AOTMetaspace::_output_mapinfo = nullptr;
 // [5] SymbolTable, StringTable, SystemDictionary, and a few other read-only data
 //     are copied into the ro region as read-only tables.
 //
-// The heap region is written by HeapShared::write_heap().
+// The heap region is written by AOTHeap::write_heap().
 //
 // The bitmap region is used to relocate the ro/rw/hp regions.
 
@@ -341,15 +341,15 @@ void AOTMetaspace::initialize_for_static_dump() {
 void AOTMetaspace::open_output_mapinfo() {
   const char* static_archive = CDSConfig::output_archive_path();
   assert(static_archive != nullptr, "sanity");
-  _output_mapinfo = new FileMapInfo(static_archive, true);
+  _output_mapinfo = FileMapInfo::allocate_output_archive(static_archive, true);
   _output_mapinfo->open_as_output();
 }
 
 // Called by universe_post_init()
 void AOTMetaspace::post_initialize(TRAPS) {
   if (CDSConfig::is_using_archive()) {
-    FileMapInfo *static_mapinfo = FileMapInfo::current_info();
-    FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
+    FileMapInfo *static_mapinfo = FileMapInfo::static_input_archive();
+    FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_input_archive();
 
     if (AOTMapLogger::is_logging_at_bootstrap()) {
       // The map logging needs to be done here, as it requires some stubs on Windows,
@@ -360,7 +360,7 @@ void AOTMetaspace::post_initialize(TRAPS) {
     // Close any open file descriptors. However, mmap'ed pages will remain in memory.
     static_mapinfo->close();
 
-    if (!(HeapShared::is_loading() && HeapShared::is_loading_streaming_mode())) {
+    if (!(AOTHeap::is_loading() && AOTHeap::is_loading_streaming_mode())) {
       // Streaming mode will unmap the bm region later in AOTStreamedHeapLoader::cleanup()
       static_mapinfo->unmap_region(AOTMetaspace::bm);
     }
@@ -419,7 +419,7 @@ void AOTMetaspace::read_extra_data(JavaThread* current, const char* filename) {
         CLEAR_PENDING_EXCEPTION;
       } else {
 #if INCLUDE_CDS_JAVA_HEAP
-        if (HeapShared::is_string_too_large_to_archive(str)) {
+        if (AOTHeap::is_string_too_large_to_archive(str)) {
           log_warning(aot, heap)("[line %d] extra interned string ignored; size too large: %d",
                                  reader.last_line_no(), utf8_length);
           continue;
@@ -525,15 +525,15 @@ void AOTMetaspace::serialize(SerializeClosure* soc) {
   // Dump/restore the symbol/string/subgraph_info tables
   SymbolTable::serialize_shared_table_header(soc);
   StringTable::serialize_shared_table_header(soc);
-  HeapShared::serialize_tables(soc);
-  SystemDictionaryShared::serialize_dictionary_headers(soc);
+  AOTHeap::serialize_tables(soc);
+  AOTSystemDictionary::serialize_dictionary_headers(soc);
   AOTLinkedClassBulkLoader::serialize(soc);
   FinalImageRecipes::serialize(soc);
   TrainingData::serialize(soc);
   InstanceMirrorKlass::serialize_offsets(soc);
 
   // Dump/restore well known classes (pointers)
-  SystemDictionaryShared::serialize_vm_classes(soc);
+  AOTSystemDictionary::serialize_vm_classes(soc);
   soc->do_tag(--tag);
 
   CDS_JAVA_HEAP_ONLY(AOTModules::serialize(soc);)
@@ -709,10 +709,10 @@ public:
 
   virtual void iterate_roots(MetaspaceClosure* it) {
     AOTArtifactFinder::all_cached_classes_do(it);
-    SystemDictionaryShared::dumptime_classes_do(it);
+    AOTSystemDictionary::dumptime_classes_do(it);
     Universe::metaspace_pointers_do(it);
     vmSymbols::metaspace_pointers_do(it);
-    TrainingData::iterate_roots(it);
+    TrainingData::dumptime_iterate_roots(it);
     if (CDSConfig::is_dumping_full_module_graph()) {
       AOTModules::iterate_roots(it);
     }
@@ -749,7 +749,7 @@ char* VM_PopulateDumpSharedSpace::dump_early_read_only_tables() {
 char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*& cl_config) {
   ArchiveBuilder::OtherROAllocMark mark;
 
-  SystemDictionaryShared::write_to_archive();
+  AOTSystemDictionary::write_to_archive();
   cl_config = AOTClassLocationConfig::dumptime()->write_to_archive();
   AOTClassLinker::write_to_archive();
   if (CDSConfig::is_dumping_preimage_static_archive()) {
@@ -779,11 +779,11 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
 void VM_PopulateDumpSharedSpace::doit() {
   CDSConfig::set_is_at_aot_safepoint(true);
 
-  if (!CDSConfig::is_dumping_final_static_archive()) {
+  if (!CDSConfig::is_dumping_with_input_archive()) {
     guarantee(!CDSConfig::is_using_archive(), "We should not be using an archive when we dump");
   }
 
-  DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
+  DEBUG_ONLY(AOTSystemDictionary::NoClassLoadingMark nclm);
 
   _pending_method_handle_intrinsics = new (mtClassShared) GrowableArray<Method*>(256, mtClassShared);
   if (CDSConfig::is_dumping_method_handles()) {
@@ -843,7 +843,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   _map_info->set_cloned_vtables(CppVtables::vtables_serialized_base());
   _map_info->header()->set_class_location_config(cl_config);
 
-  HeapShared::delete_tables_with_raw_oops();
+  AOTHeap::delete_tables_with_raw_oops();
   CDSConfig::set_is_at_aot_safepoint(false);
 }
 
@@ -1027,7 +1027,7 @@ void AOTMetaspace::init_heap_settings() {
       //
       FLAG_SET_ERGO_IF_DEFAULT(AOTCompatibleOopCompression, true);
     } else if (CDSConfig::is_using_archive()) {
-      FileMapInfo* static_mapinfo = FileMapInfo::current_info();
+      FileMapInfo* static_mapinfo = FileMapInfo::static_input_archive();
       // may have been opened by get_aot_code_region_size()
       if (static_mapinfo == nullptr) {
         static_mapinfo = open_static_archive();
@@ -1142,12 +1142,12 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
       // determinism is not needed.
       assert(CDSConfig::allow_only_single_java_thread(), "Required");
     }
-    if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
+    if (!AOTHeap::is_archived_boot_layer_available(THREAD)) {
       report_loading_error("archivedBootLayer not available, disabling full module graph");
       CDSConfig::stop_dumping_full_module_graph();
     }
     // Do this before link_shared_classes(), as the following line may load new classes.
-    HeapShared::init_for_dumping(CHECK);
+    AOTHeap::init_for_dumping(CHECK);
   }
 #endif
 
@@ -1176,11 +1176,11 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    HeapShared::init_heap_writer();
+    AOTHeap::init_heap_writer();
     if (CDSConfig::is_dumping_full_module_graph()) {
       AOTModules::ensure_module_entry_tables_exist();
       AOTModules::build_tables(CHECK);
-      HeapShared::prepare_for_archiving(CHECK);
+      AOTHeap::prepare_for_archiving(CHECK);
     }
 
     AOTReferenceObjSupport::initialize(CHECK);
@@ -1192,9 +1192,6 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
 #endif
 
   if (!CDSConfig::is_dumping_preimage_static_archive()) {
-    if (CDSConfig::is_dumping_final_static_archive()) {
-      FileMapInfo::free_current_info(); // FIXME: should not free current info
-    }
     open_output_mapinfo();
   }
 
@@ -1281,7 +1278,8 @@ static int exec_jvm_with_java_tool_options(const char* java_launcher_path, TRAPS
   // Pass all arguments. These include those from JAVA_TOOL_OPTIONS and _JAVA_OPTIONS.
   for (int i = 0; i < Arguments::num_jvm_args(); i++) {
     const char* arg = Arguments::jvm_args_array()[i];
-    if (strstr(arg, "-XX:AOTCacheOutput=") == arg || // arg starts with ...
+    if (strstr(arg, "-XX:AOTCache=") == arg || // arg starts with ...
+        strstr(arg, "-XX:AOTCacheOutput=") == arg ||
         strstr(arg, "-XX:AOTConfiguration=") == arg ||
         strstr(arg, "-XX:AOTMode=") == arg) {
       // Filter these out. They wiill be set below.
@@ -1393,13 +1391,13 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
   JavaThread* THREAD = current; // For exception macros.
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
-  if (ik->in_aot_cache() && !CDSConfig::is_dumping_final_static_archive()) {
+  if (ik->in_aot_cache() && !CDSConfig::is_dumping_with_input_archive()) {
     assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
     return false;
   }
 
   if (ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
-      !SystemDictionaryShared::has_class_failed_verification(ik)) {
+      !AOTSystemDictionary::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
     if (ik->defined_by_other_loaders() && ik->class_loader() == nullptr) {
       // The verification decision is based on BytecodeVerificationRemote
@@ -1420,9 +1418,9 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
                             current->pending_exception()->klass()->external_name(),
                             message == nullptr ? "(no message)" : java_lang_String::as_utf8_string(message));
       CLEAR_PENDING_EXCEPTION;
-      SystemDictionaryShared::set_class_has_failed_verification(ik);
+      AOTSystemDictionary::set_class_has_failed_verification(ik);
     } else {
-      assert(!SystemDictionaryShared::has_class_failed_verification(ik), "sanity");
+      assert(!AOTSystemDictionary::has_class_failed_verification(ik), "sanity");
       ik->compute_has_loops_flag_for_methods();
     }
     BytecodeVerificationLocal = saved;
@@ -1434,7 +1432,7 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
 
 void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
   if (CDSConfig::is_dumping_heap()) {
-    HeapShared::write_heap(&_mapped_heap_info, &_streamed_heap_info);
+    AOTHeap::write_heap(&_mapped_heap_info, &_streamed_heap_info);
   } else if (!CDSConfig::is_dumping_preimage_static_archive()) {
     CDSConfig::log_reasons_for_not_dumping_heap();
   }
@@ -1473,9 +1471,9 @@ void AOTMetaspace::unrecoverable_loading_error(const char* message) {
   report_loading_error("%s", message);
 
   if (CDSConfig::is_dumping_final_static_archive()) {
-    vm_exit_during_initialization("Must be a valid AOT configuration generated by the current JVM", AOTConfiguration);
+    vm_exit_during_initialization("Unable to use AOT configuration file", AOTConfiguration);
   } else if (CDSConfig::new_aot_flags_used()) {
-    vm_exit_during_initialization("Unable to use AOT cache.", nullptr);
+    vm_exit_during_initialization("Unable to use AOT cache.", AOTCache);
   } else {
     vm_exit_during_initialization("Unable to use shared archive. Unrecoverable archive loading error (run with -Xlog:aot,cds for details)", message);
   }
@@ -1551,7 +1549,7 @@ void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
   assert(CDSConfig::is_using_archive(), "Must be called when UseSharedSpaces is enabled");
   MapArchiveResult result = MAP_ARCHIVE_OTHER_FAILURE;
 
-  FileMapInfo* static_mapinfo = FileMapInfo::current_info(); // may have been opened by init_heap_settings()
+  FileMapInfo* static_mapinfo = FileMapInfo::static_input_archive(); // may have been opened by init_heap_settings()
   if (static_mapinfo == nullptr) {
     static_mapinfo = open_static_archive();
   }
@@ -1603,7 +1601,12 @@ void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
       if (RequireSharedSpaces) {
         AOTMetaspace::unrecoverable_loading_error("Unable to map shared spaces");
       } else {
-        report_loading_error("Unable to map shared spaces");
+        if (CDSConfig::is_dumping_aot_configuration()) {
+          precond(AOTIgnoreIncompatibleCacheInTraining);
+          log_error(aot)("-XX:AOTCache=%s is ignored because it is incompatible with the current VM settings", AOTCache);
+        } else {
+          report_loading_error("Unable to map shared spaces");
+        }
       }
     }
   }
@@ -1631,7 +1634,7 @@ void AOTMetaspace::get_aot_code_region_size() {
   if (!AOTCodeCache::is_caching_enabled() || CDSConfig::is_dumping_final_static_archive()) {
     return;
   } else if (CDSConfig::is_using_archive()) { // production run with AOT code cache
-    precond(FileMapInfo::current_info() == nullptr);
+    precond(FileMapInfo::static_input_archive() == nullptr);
     precond(CodeCache::max_capacity() == 0);
     FileMapInfo* static_mapinfo = open_static_archive();
     if (static_mapinfo != nullptr) {
@@ -1644,10 +1647,10 @@ void AOTMetaspace::get_aot_code_region_size() {
 FileMapInfo* AOTMetaspace::open_static_archive() {
   const char* static_archive = CDSConfig::input_static_archive_path();
   assert(static_archive != nullptr, "sanity");
-  FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
+  FileMapInfo* mapinfo = FileMapInfo::allocate_static_input_archive(static_archive);
   if (!mapinfo->open_as_input()) {
     delete(mapinfo);
-    log_info(cds)("Opening of static archive %s failed", static_archive);
+    aot_log_info(aot)("Opening of %s %s failed", CDSConfig::type_of_archive_being_loaded(), static_archive);
     return nullptr;
   }
   return mapinfo;
@@ -1662,7 +1665,7 @@ FileMapInfo* AOTMetaspace::open_dynamic_archive() {
     return nullptr;
   }
 
-  FileMapInfo* mapinfo = new FileMapInfo(dynamic_archive, false);
+  FileMapInfo* mapinfo = FileMapInfo::allocate_dynamic_input_archive(dynamic_archive);
   if (!mapinfo->open_as_input()) {
     delete(mapinfo);
     if (RequireSharedSpaces) {
@@ -1877,12 +1880,12 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
 
     if (static_mapinfo->can_use_heap_region()) {
       if (static_mapinfo->object_streaming_mode()) {
-        HeapShared::initialize_loading_mode(HeapArchiveMode::_streaming);
+        AOTHeap::initialize_loading_mode(HeapArchiveMode::_streaming);
       } else {
         // map_or_load_heap_region() compares the current narrow oop and klass encodings
         // with the archived ones, so it must be done after all encodings are determined.
         static_mapinfo->map_or_load_heap_region();
-        HeapShared::initialize_loading_mode(HeapArchiveMode::_mapping);
+        AOTHeap::initialize_loading_mode(HeapArchiveMode::_mapping);
       }
     } else {
       FileMapRegion* r = static_mapinfo->region_at(AOTMetaspace::hp);
@@ -2203,8 +2206,8 @@ class CountSharedSymbols : public SymbolClosure {
 // serialize it out to its various destinations.
 
 void AOTMetaspace::initialize_shared_spaces() {
-  FileMapInfo *static_mapinfo = FileMapInfo::current_info();
-  FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
+  FileMapInfo *static_mapinfo = FileMapInfo::static_input_archive();
+  FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_input_archive();
 
   // Verify various attributes of the archive, plus initialize the
   // shared string/symbol tables.
@@ -2215,7 +2218,7 @@ void AOTMetaspace::initialize_shared_spaces() {
 
   // Finish initializing the heap dump mode used in the archive
   // Heap initialization can be done only after vtables are initialized by ReadClosure.
-  HeapShared::finalize_initialization(static_mapinfo);
+  AOTHeap::finalize_initialization(static_mapinfo);
   Universe::load_archived_object_instances();
 
   AOTCodeCache::initialize();
@@ -2254,11 +2257,11 @@ void AOTMetaspace::initialize_shared_spaces() {
       tty->print_cr("Static archive version %d", static_mapinfo->version());
     }
 
-    SystemDictionaryShared::print_shared_archive(tty);
+    AOTSystemDictionary::print_shared_archive(tty);
     if (dynamic_mapinfo != nullptr) {
       tty->print_cr("\n\nDynamic archive name: %s", dynamic_mapinfo->full_path());
       tty->print_cr("Dynamic archive version %d", dynamic_mapinfo->version());
-      SystemDictionaryShared::print_shared_archive(tty, false/*dynamic*/);
+      AOTSystemDictionary::print_shared_archive(tty, false/*dynamic*/);
     }
 
     TrainingData::print_archived_training_data_on(tty);
@@ -2269,11 +2272,11 @@ void AOTMetaspace::initialize_shared_spaces() {
     CountSharedSymbols cl;
     SymbolTable::shared_symbols_do(&cl);
     tty->print_cr("Number of shared symbols: %zu", cl.total());
-    if (HeapShared::is_loading() && HeapShared::is_loading_mapping_mode()) {
+    if (AOTHeap::is_loading() && AOTHeap::is_loading_mapping_mode()) {
       tty->print_cr("Number of shared strings: %zu", StringTable::shared_entry_count());
     }
     tty->print_cr("VM version: %s\r\n", static_mapinfo->vm_version());
-    if (FileMapInfo::current_info() == nullptr || _archive_loading_failed) {
+    if (_archive_loading_failed) {
       tty->print_cr("archive is invalid");
       vm_exit(1);
     } else {
@@ -2289,12 +2292,12 @@ bool AOTMetaspace::remap_shared_readonly_as_readwrite() {
 
   if (CDSConfig::is_using_archive()) {
     // remap the shared readonly space to shared readwrite, private
-    FileMapInfo* mapinfo = FileMapInfo::current_info();
+    FileMapInfo* mapinfo = FileMapInfo::static_input_archive();
     if (!mapinfo->remap_shared_readonly_as_readwrite()) {
       return false;
     }
-    if (FileMapInfo::dynamic_info() != nullptr) {
-      mapinfo = FileMapInfo::dynamic_info();
+    if (FileMapInfo::dynamic_input_archive() != nullptr) {
+      mapinfo = FileMapInfo::dynamic_input_archive();
       if (!mapinfo->remap_shared_readonly_as_readwrite()) {
         return false;
       }

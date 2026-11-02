@@ -357,7 +357,7 @@ void CastIINode::remove_range_check_cast(Compile* C) {
     // range check or a null divisor check.
     assert(in(0) != nullptr, "All RangeCheck CastII must have a control dependency");
     ResourceMark rm;
-    Unique_Node_List wq;
+    Unique_Node_List<Node> wq;
     wq.push(this);
     for (uint next = 0; next < wq.size(); ++next) {
       Node* m = wq.at(next);

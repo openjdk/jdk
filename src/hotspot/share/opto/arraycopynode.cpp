@@ -35,7 +35,7 @@
 const TypeFunc* ArrayCopyNode::_arraycopy_type_Type = nullptr;
 
 ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard)
-  : CallNode(arraycopy_type(), nullptr, TypePtr::BOTTOM),
+  : CallNode(arraycopy_type(), nullptr, TypePtr::BOTTOM, TypePtr::BOTTOM),
     _kind(None),
     _alloc_tightly_coupled(alloc_tightly_coupled),
     _has_negative_length_guard(has_negative_length_guard),
@@ -43,7 +43,6 @@ ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_ne
     _src_type(TypeOopPtr::BOTTOM),
     _dest_type(TypeOopPtr::BOTTOM) {
   init_class_id(Class_ArrayCopy);
-  init_flags(Flag_is_macro);
   C->add_macro_node(this);
 }
 
@@ -424,10 +423,6 @@ const TypeAryPtr* ArrayCopyNode::get_address_type(PhaseGVN* phase, const TypePtr
   }
   // adjust atp to be the correct array element address type
   return atp->add_offset(Type::OffsetBot)->is_aryptr();
-}
-
-const TypePtr* ArrayCopyNode::get_src_adr_type(PhaseGVN* phase) const {
-  return get_address_type(phase, _src_type, in(Src));
 }
 
 void ArrayCopyNode::array_copy_test_overlap(GraphKit& kit, bool disjoint_bases, int count, Node*& backward_ctl) {

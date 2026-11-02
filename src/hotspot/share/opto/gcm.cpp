@@ -305,9 +305,9 @@ static Block* find_deepest_input(Node* n, const PhaseCFG* cfg) {
 // Find the earliest Block any instruction can be placed in.  Some instructions
 // are pinned into Blocks.  Unpinned instructions can appear in last block in
 // which all their inputs occur.
-bool PhaseCFG::schedule_early(VectorSet &visited, Node_Stack &roots) {
+bool PhaseCFG::schedule_early(VectorSet& visited, Node_Stack<Node>& roots) {
   // Allocate stack with enough space to avoid frequent realloc
-  Node_Stack nstack(roots.size() + 8);
+  Node_Stack<Node> nstack(roots.size() + 8);
   // _root will be processed among C->top() inputs
   roots.push(C->top(), 0);
   visited.set(C->top()->_idx);
@@ -595,7 +595,7 @@ private:
   };
 
   GrowableArray<DefUsePair> _queue;
-  Unique_Node_List _worklist_visited; // visited mergemem nodes
+  Unique_Node_List<const MergeMemNode> _worklist_visited; // visited mergemem nodes
 
   bool already_enqueued(Node* def_mem, PhiNode* use_phi) const {
     // def_mem is one of the inputs of use_phi and at least one input of use_phi is
@@ -635,11 +635,11 @@ public:
   void push(Node* def_mem_state, Node* use_mem_state) {
     if (use_mem_state->is_MergeMem()) {
       // Be sure we don't get into combinatorial problems.
-      if (_worklist_visited.member(use_mem_state)) {
+      if (_worklist_visited.member(use_mem_state->as_MergeMem())) {
         // already on work list; do not repeat
         return;
       }
-      _worklist_visited.push(use_mem_state);
+      _worklist_visited.push(use_mem_state->as_MergeMem());
     } else if (use_mem_state->is_Phi()) {
       // A Phi could have the same mem as input multiple times. If that's the case, we don't need to enqueue it
       // more than once. We otherwise allow phis to be repeated; they can merge two relevant states.
@@ -736,7 +736,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, const bool
 
   // Compute the alias index.  Loads and stores with different alias indices
   // do not need anti-dependence edges.
-  int load_alias_idx = C->get_alias_index(load->adr_type());
+  int load_alias_idx = C->get_alias_index(load->in_adr_type());
 #ifdef ASSERT
   assert(Compile::AliasIdxTop <= load_alias_idx && load_alias_idx < C->num_alias_types(), "Invalid alias index");
   if (load_alias_idx == Compile::AliasIdxBot && C->do_aliasing() &&
@@ -793,7 +793,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, const bool
   // relevant stores is efficiency: we lazily record all possible
   // anti-dependent stores and add anti-dependence edges only to the relevant
   // ones at the very end of this method when we know the final updated LCA.
-  Node_List non_early_stores(area);
+  Node_List<Node> non_early_stores(area);
 
   // Whether we must raise the LCA after the main worklist loop below.
   bool must_raise_LCA_above_marks = false;
@@ -904,7 +904,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, const bool
     // Compute the alias index. If the use_mem_state has an alias index
     // different from the load's, it is not anti-dependent. Wide MemBar's
     // are anti-dependent with everything (except immutable memories).
-    const TypePtr* adr_type = use_mem_state->adr_type();
+    const TypePtr* adr_type = use_mem_state->out_adr_type();
     if (!C->can_alias(adr_type, load_alias_idx))  continue;
 
     // Most slow-path runtime calls do NOT modify Java memory, but
@@ -1133,19 +1133,19 @@ private:
 
 public:
   // Constructor for the iterator
-  Node_Backward_Iterator(Node *root, VectorSet &visited, Node_Stack &stack, PhaseCFG &cfg);
+  Node_Backward_Iterator(Node* root, VectorSet& visited, Node_Stack<Node>& stack, PhaseCFG& cfg);
 
   // Postincrement operator to iterate over the nodes
   Node *next();
 
 private:
-  VectorSet   &_visited;
-  Node_Stack  &_stack;
-  PhaseCFG &_cfg;
+  VectorSet& _visited;
+  Node_Stack<Node>& _stack;
+  PhaseCFG& _cfg;
 };
 
 // Constructor for the Node_Backward_Iterator
-Node_Backward_Iterator::Node_Backward_Iterator( Node *root, VectorSet &visited, Node_Stack &stack, PhaseCFG &cfg)
+Node_Backward_Iterator::Node_Backward_Iterator(Node* root, VectorSet& visited, Node_Stack<Node>& stack, PhaseCFG& cfg)
   : _visited(visited), _stack(stack), _cfg(cfg) {
   // The stack should contain exactly the root
   stack.clear();
@@ -1239,7 +1239,7 @@ Node *Node_Backward_Iterator::next() {
 
 //------------------------------ComputeLatenciesBackwards----------------------
 // Compute the latency of all the instructions.
-void PhaseCFG::compute_latencies_backwards(VectorSet &visited, Node_Stack &stack) {
+void PhaseCFG::compute_latencies_backwards(VectorSet& visited, Node_Stack<Node>& stack) {
 #ifndef PRODUCT
   if (trace_opto_pipelining())
     tty->print("\n#---- ComputeLatenciesBackwards ----\n");
@@ -1547,7 +1547,7 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
 // dominator tree of all USES of a value.  Pick the block with the least
 // loop nesting depth that is lowest in the dominator tree.
 extern const char must_clone[];
-void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
+void PhaseCFG::schedule_late(VectorSet& visited, Node_Stack<Node>& stack) {
 #ifndef PRODUCT
   if (trace_opto_pipelining())
     tty->print("\n#---- schedule_late ----\n");
@@ -1780,7 +1780,7 @@ void PhaseCFG::global_code_motion() {
   // instructions are pinned into Blocks.  Unpinned instructions can
   // appear in last block in which all their inputs occur.
   visited.clear();
-  Node_Stack stack((C->live_nodes() >> 2) + 16); // pre-grow
+  Node_Stack<Node> stack((C->live_nodes() >> 2) + 16); // pre-grow
   if (!schedule_early(visited, stack)) {
     // Bailout without retry
     assert(C->failure_is_artificial(), "early schedule failed");
